@@ -33,6 +33,16 @@ and official-repository WebSocket schema HTML
 `5cb26f07b582b314b2a80b03531ecef42eb2d66bf2457d24d36457be1961adf9`.
 The temporary response bodies were not committed.
 
+M5 refreshed the selected sources at `2026-07-22T09:27:53.188614+00:00`.
+The Agent Native index SHA-256 was
+`eba8ad91ee38ef6f15c6d2d1e698a714ee129e20fc9619b82ca2e8b2cb3dd539`;
+the USD-M connection page remained
+`912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2`,
+and the local-order-book page remained
+`d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622`.
+M5 also selected the official route-change notice below. The response bodies
+were stored only in a temporary directory and were not committed or executed.
+
 The originally supplied `https://developers.binance.com/docs/llms.txt`
 currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
 working official text index is `https://developers.binance.com/en/docs/llms.txt`.
@@ -49,6 +59,7 @@ Hashes are of the exact M2 response bodies.
 | Spot WebSocket streams | `https://developers.binance.com/en/docs/products/spot/web-socket-streams.md` | `193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f` | 10370 |
 | Spot REST API | `https://developers.binance.com/en/docs/products/spot/rest-api.md` | `3bfe5526b745c976ae2db7c6bffdee14f10663d5fe326d8aa54c8b5f12968775` | 33310 |
 | USD-M WebSocket connection | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md` | `912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2` | 2613 |
+| USD-M WebSocket route change | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice.md` | `7711169f43066cb169fa40d90193731630ffca43dc2c04a2c753a5814b596f5c` | 4303 |
 | USD-M local order book | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md` | `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622` | 1114 |
 | USD-M general information | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md` | `b2e647582fb3ae4cae3a79d6f6f6030d0c03cf403d05176117b24094a083521b` | 19261 |
 | USD-M changelog | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md` | `49bb7b194911c44e88793eca8da18822c28ffb8bdc207e9d6466d28fb4b0e532` | 98085 |
@@ -83,9 +94,11 @@ and third-party `python-binance` are absent.
   `btcusdt@aggTrade` with `E/a/f/l/T`, and `btcusdt@bookTicker` with `u` and no
   exchange event timestamp. M4 fixtures preserve those documented fields.
 - Spot public depth snapshots use `GET /api/v3/depth`.
-- USD-M documents routed `/market` aggregate-trade and `/public` depth stream
-  connections, a 24-hour connection lifetime, server ping every three minutes,
-  and pong within ten minutes.
+- USD-M documents routed `/market` aggregate-trade and `/public` depth and
+  individual book-ticker streams, a 24-hour connection lifetime, server ping
+  every three minutes, and pong within ten minutes. The route-change notice
+  states that legacy unrouted Market streams stopped pushing after
+  2026-04-23, so M5 uses only routed URLs.
 - USD-M public depth snapshots use `GET /fapi/v1/depth`; local-book continuity
   requires each new event's `pu` to equal the prior event's `u`.
 - The pinned SDK models retain Spot `U/u` and USD-M `U/u/pu`, but the shared SDK
@@ -106,8 +119,9 @@ and third-party `python-binance` are absent.
 
 ADR-0008 records the REST decision and ADR-0009 records the WebSocket decision.
 M4 revalidates Spot raw routing, `@100ms` fixtures, protocol Ping/Pong,
-serverShutdown, reconnect and public live capture. USD-M remains gated on M5's
-separate route and lifecycle validation.
+serverShutdown, reconnect and public live capture. M5 separately validates the
+USD-M route split, `U/u/pu`, protocol Ping/Pong, reconnect, exact Raw retention,
+and concurrent Spot/USD-M public capture.
 
 ## Changelog locations
 

@@ -1,8 +1,8 @@
 # Data Contract
 
 Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
-and ADR-0010. M4 implements the Spot field mappings and official fixtures below;
-USD-M mappings remain M5 work.
+and ADR-0010. M4 implements the Spot field mappings and M5 implements the
+separate USD-M mappings and official fixtures below.
 
 ## EventEnvelope v1 minimum fields
 
@@ -32,7 +32,8 @@ fabricated. Binance market-specific sequence fields remain lossless inside a
 versioned mapping and Spot/USD-M meanings are not conflated. M4 selects separate
 Spot raw stream endpoints. Therefore `raw_payload` is the exact unwrapped
 WebSocket message bytes and `stream` is known from the endpoint even if parsing
-fails. M5 must make and record its own endpoint/wrapper choice.
+fails. M5 also selects separate routed USD-M raw endpoints, so it preserves the
+same exact unwrapped-message boundary.
 
 M4 Spot mappings are:
 
@@ -41,6 +42,14 @@ M4 Spot mappings are:
 | `btcusdt@depth@100ms` | `E` as event time | `U`, `u` |
 | `btcusdt@aggTrade` | `E` as event time; `T` as trade time | `a`, `f`, `l` |
 | `btcusdt@bookTicker` | none in the documented payload | `u` |
+
+M5 USD-M mappings are:
+
+| Routed raw stream | Envelope exchange times | `source_sequence` |
+| --- | --- | --- |
+| `/public/ws/btcusdt@depth@100ms` | `E` as event time; `T` as transaction time | `U`, `u`, `pu` |
+| `/market/ws/btcusdt@aggTrade` | `E` as event time; `T` as trade time | `a`, `f`, `l` |
+| `/public/ws/btcusdt@bookTicker` | `E` as event time; `T` as transaction time | `u` |
 
 Schema-invalid messages are retained byte-for-byte with `malformed`; duplicates
 and out-of-order source IDs remain in Raw. `serverShutdown` is retained with its
@@ -60,6 +69,9 @@ Snapshots never include credentials. M4's Spot snapshot payload encoding is
 allowlisted public response/rate-limit headers, request/receive clocks,
 `/api/v3/depth`, `BTCUSDT`, requested limit, package/version, and the explicit
 `raw_http_body_available=false` boundary.
+M5 uses the same declared provenance boundary for `/fapi/v1/depth`, with
+schema `binance-usdm-depth-snapshot-provenance.v1`, the official USD-M SDK
+package/version, limit 1000, and `lastUpdateId`.
 
 ## Raw chunk logical contract
 

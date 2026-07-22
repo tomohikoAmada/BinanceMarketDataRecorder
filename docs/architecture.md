@@ -52,7 +52,9 @@ M4 implements `binance.spot` plus the Spot portion of `collector`: three
 independent raw WebSocket connections and one official-SDK REST depth snapshot.
 M3 implements the shared EventEnvelope, bounded spool, Raw
 writer/recovery/seal, internal layout, and SQLite Catalog. Other rows remain
-planned package boundaries. USD-M remains M5 work. Storage, Raw, Catalog,
+planned package boundaries. M5 adds an independent `binance.usdm` adapter,
+three routed USD-M streams, public snapshot capture, and market-local failure
+domains. Storage, Raw, Catalog,
 normalize, replay, and archive remain independent of consumer code.
 Do not add an abstraction framework for unplanned exchanges. Another exchange
 would require a separate architecture review.

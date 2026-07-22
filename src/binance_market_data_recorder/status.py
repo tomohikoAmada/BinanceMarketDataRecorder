@@ -6,17 +6,17 @@ from typing import Any
 
 
 def service_status() -> dict[str, Any]:
-    """Report implemented Spot capture without inventing a running service."""
+    """Report implemented capture libraries without inventing a service."""
 
     return {
         "command": "status",
         "status": "NOT_RUNNING",
         "service_implemented": False,
         "collector_implemented": True,
-        "implemented_markets": ["spot"],
+        "implemented_markets": ["spot", "um_perpetual"],
         "network_connected": False,
         "detail": (
-            "M4 implements the Spot Collector library, but no supervised service "
+            "M5 implements Spot and USD-M Collector libraries, but no supervised service "
             "is running or inspected by this command."
         ),
     }

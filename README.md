@@ -13,11 +13,12 @@ identity.
 
 ## Status
 
-M4 provides the Binance Spot BTCUSDT public-market Collector for diff depth at
-100 ms, aggregate trades, book ticker, and an official-SDK REST depth snapshot.
-It writes only to the internal Raw spool. USD-M, order-book reconstruction,
-normalization, external archive, launchd service installation, accounts,
-credentials, and trading remain unimplemented.
+M4 and M5 provide independent Binance Spot and USD-M BTCUSDT public-market
+Collector libraries for diff depth at 100 ms, aggregate trades, book ticker,
+and official-SDK REST depth snapshots. They write only to the internal Raw
+spool. Order-book reconstruction, USD-M side data, normalization, external
+archive, launchd service installation, accounts, credentials, and trading
+remain unimplemented.
 
 ## Identity
 
@@ -73,8 +74,9 @@ are optional and may disappear without stopping capture.
 - [M2 acceptance](docs/milestone_acceptance/M2.md)
 - [M3 acceptance](docs/milestone_acceptance/M3.md)
 - [M4 acceptance](docs/milestone_acceptance/M4.md)
+- [M5 acceptance](docs/milestone_acceptance/M5.md)
 
-## Install and verify M4
+## Install and verify M5
 
 Use Python 3.12 in a virtual environment:
 
@@ -115,9 +117,10 @@ max_frame_bytes = 16777216
 See [dependency policy](docs/dependency_policy.md) for the deliberately small
 runtime and development dependency sets. M2 selected exact-pinned official
 Spot and USD-M SDKs for unsigned public REST snapshots and `websockets` for
-market-stream transport. M4 uses the official Spot SDK only for
-`GET /api/v3/depth` and uses three independent documented raw WebSocket
-streams. It never reads credentials or calls account/order APIs.
+market-stream transport. M4/M5 use the official SDKs only for public
+`GET /api/v3/depth` and `GET /fapi/v1/depth` snapshots. Each market uses three
+independent documented raw WebSocket streams. The implementation never reads
+credentials or calls account/order APIs.
 
 The documentation updater is intentionally selective and writes to the user
 cache by default:
@@ -132,13 +135,13 @@ The updater downloads only allowlisted official sources, refuses
 probe is offline by default. Its `--online-rest` option makes only unsigned
 public depth requests and is never part of the default test suite.
 
-The M4 live smoke is explicit and excluded unless enabled. It requires at least
-900 seconds and writes only to pytest's temporary directory:
+The M5 combined live gate is explicit and excluded unless enabled. It requires
+at least 1,800 seconds and writes only to pytest's temporary directory:
 
 ```bash
 BINANCE_MARKET_RECORDER_ONLINE=1 \
   python3.12 -m pytest -m online -s -q \
-  tests/integration/test_spot_live.py
+  tests/integration/test_spot_usdm_live.py
 ```
 
 M3's resource-intensive Raw gate remains separately available:

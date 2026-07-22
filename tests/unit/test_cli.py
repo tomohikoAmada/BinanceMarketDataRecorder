@@ -51,7 +51,7 @@ def test_status_does_not_invent_a_running_collector(capsys: pytest.CaptureFixtur
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "NOT_RUNNING"
     assert payload["collector_implemented"] is True
-    assert payload["implemented_markets"] == ["spot"]
+    assert payload["implemented_markets"] == ["spot", "um_perpetual"]
     assert payload["network_connected"] is False
 
 
