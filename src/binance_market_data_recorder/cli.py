@@ -6,13 +6,16 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import NoReturn, TextIO
 
 from .config import ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
+from .metrics.report import DailyReporter
 from .paths import discover_repository_root
 from .status import service_status
+from .storage.catalog import Catalog
 from .version import version_string
 
 
@@ -44,7 +47,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     config_commands.add_parser("show", help="show effective credential-free configuration")
     commands.add_parser("doctor", help="run offline platform and path checks")
-    commands.add_parser("status", help="show honest M1 service status")
+    commands.add_parser("status", help="show structured runtime and storage status")
+    report_command = commands.add_parser("report", help="build operational reports")
+    report_commands = report_command.add_subparsers(
+        dest="report_command", required=True, parser_class=_ArgumentParser
+    )
+    daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
+    daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
     return parser
 
 
@@ -83,6 +92,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json(result)
         return 1 if result["status"] == "FAIL" else 0
     if command == "status":
-        _write_json(service_status())
+        _write_json(service_status(loaded.config.data_root))
+        return 0
+    if command == "report" and getattr(args, "report_command", None) == "daily":
+        selected_date = getattr(args, "date", None) or datetime.now(UTC).date().isoformat()
+        catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
+        if not catalog_path.is_file():
+            _write_json(
+                {
+                    "command": "report.daily",
+                    "status": "NO_DATA",
+                    "utc_date": selected_date,
+                    "catalog_path": str(catalog_path),
+                }
+            )
+            return 0
+        try:
+            with Catalog(catalog_path) as catalog:
+                reporter = DailyReporter(
+                    catalog=catalog,
+                    daily_directory=loaded.config.data_root / "data" / "reports" / "daily",
+                )
+                document = reporter.write(selected_date)
+        except ValueError as exc:
+            _write_json(
+                {"error": "report_error", "message": str(exc)}, stream=sys.stderr
+            )
+            return 2
+        _write_json({"command": "report.daily", **document})
         return 0
     parser.error(f"unsupported command: {command}")

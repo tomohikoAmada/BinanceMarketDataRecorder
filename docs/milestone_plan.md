@@ -254,6 +254,10 @@ self-referential commit hash.
 
 ## M8 — Metrics, daily traffic reports, and status
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M8.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: all project-contract input, quality, output and performance counters;
   structured runtime JSON; `binance-market-recorder status`;
   `binance-market-recorder report daily`; UTC

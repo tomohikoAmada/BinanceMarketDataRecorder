@@ -59,6 +59,7 @@ class ReconnectBackoff:
 
 
 ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnection]]
+LifecycleObserver = Callable[[str], None]
 
 
 @asynccontextmanager
@@ -96,6 +97,7 @@ class SpotStreamCollector:
         opener: ConnectionOpener = open_spot_websocket,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
+        lifecycle_observer: LifecycleObserver | None = None,
     ) -> None:
         if receipt_queue_capacity < 1:
             raise ValueError("receipt queue capacity must be positive")
@@ -113,6 +115,7 @@ class SpotStreamCollector:
         self.opener = opener
         self.utc_clock_ns = utc_clock_ns
         self.monotonic_clock_ns = monotonic_clock_ns
+        self.lifecycle_observer = lifecycle_observer
         self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(
             maxsize=receipt_queue_capacity
         )
@@ -248,6 +251,8 @@ class SpotStreamCollector:
             except asyncio.CancelledError:
                 raise
             except (WebSocketException, OSError, TimeoutError) as exc:
+                if self.lifecycle_observer is not None:
+                    self.lifecycle_observer("unexpected_disconnect")
                 if (
                     connected_at is not None
                     and asyncio.get_running_loop().time() - connected_at >= 60
@@ -278,6 +283,8 @@ class SpotStreamCollector:
                 return
             if reason in {"planned_rotation", "server_shutdown"}:
                 failures = 0
+                if reason == "planned_rotation" and self.lifecycle_observer is not None:
+                    self.lifecycle_observer("planned_rotation")
                 log_event(
                     self.logger,
                     logging.INFO,

@@ -72,6 +72,14 @@ without setting either core market's stop event. REST calls share a local
 serialization lock and record documented weight plus observed rate headers;
 M8, not M7, owns durable daily aggregation.
 
+M8 implements the ADR-0013 observability path. Raw spools emit post-append and
+post-seal summaries into retry-idempotent Catalog batches; connection and M6
+audit boundaries contribute quality counters. UTC rollover and graceful stop
+commit aggregate-only rows and atomically publish deterministic JSON/CSV under
+`data/reports/daily/`. SQLite contains no Raw payload or per-market-event row.
+The CLI reads these summaries while continuing to report `NOT_RUNNING` until a
+later supervised service supplies validated runtime state.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,

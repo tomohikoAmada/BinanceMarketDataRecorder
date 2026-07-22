@@ -15,6 +15,8 @@ class StorageLayout:
     manifests: Path
     checkpoints: Path
     quarantine: Path
+    reports: Path
+    daily_reports: Path
     state: Path
     catalog: Path
 
@@ -42,6 +44,8 @@ def ensure_storage_layout(root: Path) -> StorageLayout:
         manifests=data / "manifests",
         checkpoints=data / "checkpoints",
         quarantine=data / "quarantine",
+        reports=data / "reports",
+        daily_reports=data / "reports" / "daily",
         state=root / "state",
         catalog=root / "state" / "catalog.sqlite",
     )
@@ -53,6 +57,8 @@ def ensure_storage_layout(root: Path) -> StorageLayout:
         layout.manifests,
         layout.checkpoints,
         layout.quarantine,
+        layout.reports,
+        layout.daily_reports,
         layout.state,
     ):
         directory.mkdir(mode=0o700, parents=True, exist_ok=True)

@@ -199,3 +199,12 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
         "open_interest",
         "exchange_info",
     } <= streams
+    report_paths = sorted((tmp_path / "data" / "reports" / "daily").glob("*.json"))
+    assert report_paths
+    report = json.loads(report_paths[-1].read_text())
+    report_streams = {row["stream"]: row for row in report["streams"]}
+    assert streams <= set(report_streams)
+    for name in streams:
+        row = report_streams[name]
+        input_records = row["input"]["websocket_messages"] + row["input"]["rest_responses"]
+        assert input_records == row["output"]["raw_records_written"]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from enum import StrEnum
 
@@ -67,7 +68,12 @@ class LocalBookReconstructor:
 
     algorithm_version = "binance-local-orderbook.v1"
 
-    def __init__(self, market: Market, symbol: str = "BTCUSDT") -> None:
+    def __init__(
+        self,
+        market: Market,
+        symbol: str = "BTCUSDT",
+        audit_observer: Callable[[QualityAudit, int | None], None] | None = None,
+    ) -> None:
         if market not in {"spot", "um_perpetual"} or symbol != "BTCUSDT":
             raise OrderBookDataError("M6 supports Binance Spot/USD-M BTCUSDT only")
         self.market = market
@@ -77,6 +83,12 @@ class LocalBookReconstructor:
         self._book: OrderBook | None = None
         self.audits: list[QualityAudit] = []
         self.unreliable_intervals: list[UnreliableInterval] = []
+        self.audit_observer = audit_observer
+
+    def _record_audit(self, audit: QualityAudit, occurred_at_utc_ns: int | None = None) -> None:
+        self.audits.append(audit)
+        if self.audit_observer is not None:
+            self.audit_observer(audit, occurred_at_utc_ns)
 
     @property
     def buffered_event_count(self) -> int:
@@ -139,13 +151,14 @@ class LocalBookReconstructor:
                 return SynchronizeResult.SEQUENCE_GAP
         if was_resync:
             self._close_unreliable_interval()
-            self.audits.append(
+            self._record_audit(
                 QualityAudit(
                     kind="orderbook_resync",
                     market=self.market,
                     update_id=self.book.update_id,
                     detail="snapshot and buffered depth restored a reliable book",
-                )
+                ),
+                candidates[-1].receive_time_utc_ns,
             )
         return SynchronizeResult.SYNCHRONIZED
 
@@ -153,13 +166,14 @@ class LocalBookReconstructor:
         if self._book is None:
             raise BookUnavailableError("no snapshot-backed order book")
         if update.final_update_id <= self._book.update_id:
-            self.audits.append(
+            self._record_audit(
                 QualityAudit(
                     kind="duplicate_or_stale_depth",
                     market=self.market,
                     update_id=update.final_update_id,
                     detail="absolute update already covered by the local book",
-                )
+                ),
+                update.receive_time_utc_ns,
             )
             return True
         if self.market == "spot":
@@ -186,13 +200,14 @@ class LocalBookReconstructor:
                 started_at_receive_time_utc_ns=update.receive_time_utc_ns,
             )
         )
-        self.audits.append(
+        self._record_audit(
             QualityAudit(
                 kind="sequence_gap",
                 market=self.market,
                 update_id=self._book.update_id,
                 detail=reason,
-            )
+            ),
+            update.receive_time_utc_ns,
         )
         self.state = ReconstructionState.RESYNC_REQUIRED
         self._buffer = [update]
@@ -208,7 +223,7 @@ class LocalBookReconstructor:
         if self._book is None:
             return
         if self._book.is_empty:
-            self.audits.append(
+            self._record_audit(
                 QualityAudit(
                     kind="empty_book_side",
                     market=self.market,
@@ -217,7 +232,7 @@ class LocalBookReconstructor:
                 )
             )
         if self._book.is_crossed:
-            self.audits.append(
+            self._record_audit(
                 QualityAudit(
                     kind="crossed_book",
                     market=self.market,
@@ -252,7 +267,7 @@ class LocalBookReconstructor:
         )
         if expected == actual:
             return TickerComparison.MATCH
-        self.audits.append(
+        self._record_audit(
             QualityAudit(
                 kind="book_ticker_mismatch",
                 market=self.market,

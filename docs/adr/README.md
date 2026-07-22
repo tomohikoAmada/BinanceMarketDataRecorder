@@ -14,6 +14,7 @@ Current and historical decisions:
 - [ADR-0010: Raw chunk v1 byte format and crash lifecycle](0010-raw-chunk-v1-byte-format.md)
 - [ADR-0011: Market-specific order-book reconstruction and checkpoints](0011-orderbook-reconstruction-and-checkpoints.md)
 - [ADR-0012: USD-M side-data isolation and semantics](0012-usdm-side-data-isolation-and-semantics.md)
+- [ADR-0013: Idempotent operational metrics and UTC daily reports](0013-idempotent-operational-metrics-and-daily-reports.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

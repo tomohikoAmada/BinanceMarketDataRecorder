@@ -19,8 +19,10 @@ and official-SDK REST depth snapshots. They write only to the internal Raw
 spool. M6 reconstructs deterministic local books, detects sequence gaps,
 audits best levels/bookTicker, and writes derived checkpoints. M7 adds
 failure-isolated USD-M mark/index/funding, open-interest, liquidation and
-exchange/filter data. Normalization, external archive, launchd service
-installation, accounts, credentials, and trading remain unimplemented.
+exchange/filter data. M8 adds idempotent per-stream operational aggregates,
+UTC JSON/CSV daily reports and honest structured status. Normalization,
+external archive, launchd service installation, accounts, credentials, and
+trading remain unimplemented.
 
 ## Identity
 
@@ -79,8 +81,9 @@ are optional and may disappear without stopping capture.
 - [M5 acceptance](docs/milestone_acceptance/M5.md)
 - [M6 acceptance](docs/milestone_acceptance/M6.md)
 - [M7 acceptance](docs/milestone_acceptance/M7.md)
+- [M8 acceptance](docs/milestone_acceptance/M8.md)
 
-## Install and verify M7
+## Install and verify M8
 
 Use Python 3.12 in a virtual environment:
 
@@ -92,6 +95,7 @@ binance-market-recorder --version
 binance-market-recorder config show
 binance-market-recorder doctor
 binance-market-recorder status
+binance-market-recorder report daily --date 2026-07-22
 python3.12 -m pytest -q
 python3.12 -m ruff check .
 python3.12 -m mypy

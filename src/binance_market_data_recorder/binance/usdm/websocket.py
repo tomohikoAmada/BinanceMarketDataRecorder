@@ -33,6 +33,7 @@ ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnecti
 EnvelopeFactory = Callable[..., EventEnvelope]
 EnvelopeObserver = Callable[[EventEnvelope], None]
 FailureObserver = Callable[[str], None]
+LifecycleObserver = Callable[[str], None]
 
 
 @asynccontextmanager
@@ -74,6 +75,7 @@ class UsdMStreamCollector:
         envelope_factory: EnvelopeFactory | None = None,
         envelope_observer: EnvelopeObserver | None = None,
         failure_observer: FailureObserver | None = None,
+        lifecycle_observer: LifecycleObserver | None = None,
     ) -> None:
         if route not in {"public", "market"}:
             raise ValueError("USD-M market data route must be public or market")
@@ -100,6 +102,7 @@ class UsdMStreamCollector:
         self.envelope_factory = envelope_factory
         self.envelope_observer = envelope_observer
         self.failure_observer = failure_observer
+        self.lifecycle_observer = lifecycle_observer
         self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(maxsize=receipt_queue_capacity)
 
     @property
@@ -233,6 +236,8 @@ class UsdMStreamCollector:
             except asyncio.CancelledError:
                 raise
             except (WebSocketException, OSError, TimeoutError) as exc:
+                if self.lifecycle_observer is not None:
+                    self.lifecycle_observer("unexpected_disconnect")
                 if self.failure_observer is not None:
                     self.failure_observer(type(exc).__name__)
                 if (
@@ -267,6 +272,8 @@ class UsdMStreamCollector:
                 return
             if reason == "planned_rotation":
                 failures = 0
+                if self.lifecycle_observer is not None:
+                    self.lifecycle_observer("planned_rotation")
                 continue
             with suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=self.backoff.delay(max(1, failures)))

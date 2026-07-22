@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,7 +15,10 @@ from ..binance.usdm.rest import UsdMRestApi, capture_depth_snapshot
 from ..binance.usdm.schema import USDM_STREAMS
 from ..binance.usdm.side_data_rest import UsdMSideRestApi
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector, open_usdm_websocket
+from ..domain.event import EventEnvelope
 from ..logging import log_event
+from ..metrics.recorder import MetricsRecorder
+from ..metrics.report import DailyReporter
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
@@ -70,9 +74,33 @@ class UsdMCollector:
         safe_data_root = validate_data_root(settings.data_root)
         self.layout: StorageLayout = ensure_storage_layout(safe_data_root)
         self.catalog = Catalog(self.layout.catalog)
+        self.metrics = MetricsRecorder(
+            catalog=self.catalog,
+            data_root=self.layout.root,
+            collector_instance_id=settings.collector_instance_id,
+            logger=logger,
+        )
         rotation = RotationPolicy(seconds=settings.rotation_seconds, bytes=settings.rotation_bytes)
 
         def spool(stream: str) -> StreamSpool:
+            def observe_event(
+                envelope: EventEnvelope, frame_bytes: int, queue_depth: int
+            ) -> None:
+                self.metrics.safely_observe_written(
+                    envelope, raw_frame_bytes=frame_bytes, queue_depth=queue_depth
+                )
+
+            def observe_operation(name: str, duration: int) -> None:
+                self.metrics.safely_observe_operation(
+                    market="um_perpetual",
+                    stream=stream,
+                    name=name,
+                    duration_ns=duration,
+                )
+
+            def observe_seal(manifest: dict[str, object]) -> None:
+                self.metrics.safely_observe_seal(manifest)
+
             return StreamSpool(
                 layout=self.layout,
                 catalog=self.catalog,
@@ -85,7 +113,18 @@ class UsdMCollector:
                 rotation=rotation,
                 durability_interval_seconds=settings.durability_interval_seconds,
                 max_frame_bytes=settings.max_frame_bytes,
+                event_observer=observe_event,
+                operation_observer=observe_operation,
+                seal_observer=observe_seal,
             )
+
+        def lifecycle_observer(stream: str) -> Callable[[str], None]:
+            def observe(event: str) -> None:
+                self.metrics.safely_observe_lifecycle(
+                    market="um_perpetual", stream=stream, event=event
+                )
+
+            return observe
 
         self.streams = tuple(
             UsdMStreamCollector(
@@ -99,6 +138,7 @@ class UsdMCollector:
                 receipt_queue_capacity=settings.receipt_queue_capacity,
                 planned_rotation_seconds=settings.planned_connection_rotation_seconds,
                 opener=websocket_opener,
+                lifecycle_observer=lifecycle_observer(spec.stream.value),
             )
             for spec in USDM_STREAMS
         )
@@ -121,6 +161,7 @@ class UsdMCollector:
                 rest_timeout_ms=settings.snapshot_timeout_ms,
                 rest_api=side_rest_api,
                 websocket_opener=websocket_opener,
+                metrics=self.metrics,
             )
 
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
@@ -171,6 +212,24 @@ class UsdMCollector:
         finally:
             stop.set()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
+            days = {day for day, _market, _stream in self.metrics.pending_keys()}
+            batch_id = await asyncio.to_thread(self.metrics.safely_flush)
+            reporter = DailyReporter(
+                catalog=self.catalog, daily_directory=self.layout.daily_reports
+            )
+            if batch_id is not None:
+                for day in sorted(days):
+                    try:
+                        await asyncio.to_thread(reporter.write, day)
+                    except Exception as exc:
+                        log_event(
+                            self.logger,
+                            logging.ERROR,
+                            "daily_report_failed",
+                            "daily report write failed; Raw remains sealed",
+                            utc_date=day,
+                            error_type=type(exc).__name__,
+                        )
             self.catalog.close()
 
     def side_data_status(self) -> dict[str, dict[str, object]]:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
@@ -112,8 +112,106 @@ class Catalog:
                 relative_path TEXT NOT NULL,
                 created_at_utc_ns INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS metric_batches (
+                batch_id TEXT NOT NULL,
+                utc_date TEXT NOT NULL,
+                market TEXT NOT NULL,
+                stream TEXT NOT NULL,
+                aggregate_json TEXT NOT NULL,
+                committed_at_utc_ns INTEGER NOT NULL,
+                PRIMARY KEY(batch_id, utc_date, market, stream)
+            );
+            CREATE INDEX IF NOT EXISTS metric_batches_by_day
+                ON metric_batches(utc_date, market, stream);
             """
         )
+
+    def record_metric_batch(
+        self,
+        *,
+        batch_id: str,
+        rows: Sequence[tuple[str, str, str, Mapping[str, object]]],
+        committed_at_utc_ns: int | None = None,
+    ) -> bool:
+        """Atomically persist aggregate rows; retrying a batch never double-counts."""
+
+        if not batch_id or not rows:
+            raise ValueError("metric batch requires an identity and at least one row")
+        committed_at = time.time_ns() if committed_at_utc_ns is None else committed_at_utc_ns
+        if committed_at < 0:
+            raise ValueError("metric batch commit time must be non-negative")
+        serialized = [
+            (
+                batch_id,
+                utc_date,
+                market,
+                stream,
+                json.dumps(dict(aggregate), sort_keys=True, separators=(",", ":")),
+                committed_at,
+            )
+            for utc_date, market, stream, aggregate in rows
+        ]
+        if any(not utc_date or not market or not stream for utc_date, market, stream, _ in rows):
+            raise ValueError("metric batch row identity must be non-empty")
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT COUNT(*) AS count FROM metric_batches WHERE batch_id = ?",
+                (batch_id,),
+            ).fetchone()
+            if existing is not None and int(existing["count"]) > 0:
+                return False
+            connection.executemany(
+                """
+                INSERT INTO metric_batches(
+                    batch_id, utc_date, market, stream, aggregate_json,
+                    committed_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                serialized,
+            )
+        return True
+
+    def metric_batches(self, utc_date: str) -> list[dict[str, object]]:
+        return self._metric_batch_rows("utc_date = ?", (utc_date,))
+
+    def metric_batches_through(self, utc_date: str) -> list[dict[str, object]]:
+        return self._metric_batch_rows("utc_date <= ?", (utc_date,))
+
+    def _metric_batch_rows(
+        self, where_clause: str, parameters: tuple[object, ...]
+    ) -> list[dict[str, object]]:
+        if where_clause not in {"utc_date = ?", "utc_date <= ?"}:
+            raise ValueError("unsupported metric batch query")
+        with self._lock:
+            rows = self._connection.execute(
+                f"""
+                SELECT batch_id, utc_date, market, stream, aggregate_json,
+                       committed_at_utc_ns
+                FROM metric_batches
+                WHERE {where_clause}
+                ORDER BY utc_date, market, stream, batch_id
+                """,
+                parameters,
+            ).fetchall()
+        return [
+            {
+                "batch_id": str(row["batch_id"]),
+                "utc_date": str(row["utc_date"]),
+                "market": str(row["market"]),
+                "stream": str(row["stream"]),
+                "aggregate": json.loads(row["aggregate_json"]),
+                "committed_at_utc_ns": int(row["committed_at_utc_ns"]),
+            }
+            for row in rows
+        ]
+
+    def metric_batch_count(self, batch_id: str) -> int:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT COUNT(*) AS count FROM metric_batches WHERE batch_id = ?",
+                (batch_id,),
+            ).fetchone()
+        return int(row["count"])
 
     def register_active(
         self,
@@ -317,6 +415,7 @@ class Catalog:
             "chunk_transitions",
             "quarantined_artifacts",
             "orderbook_checkpoints",
+            "metric_batches",
         }:
             raise ValueError("unknown Catalog table")
         with self._lock:

@@ -121,6 +121,35 @@ The liquidation stream is explicitly Binance's latest snapshot within a
 1000 ms window, not an exhaustive liquidation ledger. Repeated REST history
 responses may duplicate Raw events; later normalization owns deduplication.
 
+## M8 operational metrics and report contract
+
+`operational-metric-aggregate.v1` groups statistics by UTC receive date,
+market, and stream. It stores counters, bounded histograms, last/max gauges and
+first/last receive timestamps only. It never stores payloads, prices,
+quantities, source sequences or one SQLite row per market event. Stable batch
+IDs make Catalog retries idempotent.
+
+`daily-operational-report.v1` produces one lexically ordered row per
+market/stream in both JSON and flattened CSV. Required input, quality, output
+and performance names always exist. A numeric zero means an available metric
+with no observations; unavailable values are `null` with an explicit reason:
+
+- REST wire bytes: `UNAVAILABLE_SDK_RAW_BODY`;
+- absent histogram/runtime samples: `INSUFFICIENT_DATA`;
+- external free space: `UNAVAILABLE_UNTIL_M9`;
+- normalized/archive/delete outputs: `NOT_IMPLEMENTED` until their milestones.
+
+Receive lag is non-negative local receive UTC minus documented exchange event
+time where that event time exists. p50/p95/p99 are deterministic upper bounds
+from the fixed ADR-0013 histogram. Raw output bytes include each chunk header
+once plus every framed envelope, enabling reconciliation with uncompressed
+chunk size. Archive backlog is sealed stored bytes not yet archived; before
+M10 no completed archive subtraction exists.
+
+Reports are immutable-source derived outputs at
+`data/reports/daily/YYYY-MM-DD.json` and `.csv`. Rebuilding or overwriting a
+report never modifies Raw, manifests or metric batches.
+
 ## Raw chunk logical contract
 
 ADR-0002 selects the format family and ADR-0010 is the authoritative byte

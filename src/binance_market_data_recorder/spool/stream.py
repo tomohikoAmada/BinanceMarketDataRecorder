@@ -30,6 +30,9 @@ class StreamSpool:
         durability_interval_seconds: float,
         max_frame_bytes: int,
         writer_factory: Callable[..., RawChunkWriter] = RawChunkWriter,
+        event_observer: Callable[[EventEnvelope, int, int], None] | None = None,
+        operation_observer: Callable[[str, int], None] | None = None,
+        seal_observer: Callable[[dict[str, object]], None] | None = None,
     ) -> None:
         self.layout = layout
         self.catalog = catalog
@@ -43,6 +46,9 @@ class StreamSpool:
         self.max_frame_bytes = max_frame_bytes
         self.queue = BoundedEventQueue(queue_capacity)
         self._writer_factory = writer_factory
+        self._event_observer = event_observer
+        self._operation_observer = operation_observer
+        self._seal_observer = seal_observer
         self._writer: RawChunkWriter | None = None
 
     def enqueue(self, envelope: EventEnvelope) -> None:
@@ -60,6 +66,7 @@ class StreamSpool:
             rotation=self.rotation,
             durability_interval_seconds=self.durability_interval_seconds,
             max_frame_bytes=self.max_frame_bytes,
+            operation_observer=self._operation_observer,
         )
 
     def drain_one(self) -> bool:
@@ -71,10 +78,18 @@ class StreamSpool:
                 else:
                     self._writer.sync_if_due()
             return False
-        if self._writer is None:
+        writer_created = self._writer is None
+        if writer_created:
             self._writer = self._new_writer()
-        self._writer.append(envelope)
-        if self._writer.should_rotate():
+        writer = self._writer
+        if writer is None:
+            raise RuntimeError("stream writer was not created")
+        before = 0 if writer_created else writer.bytes_written
+        writer.append(envelope)
+        raw_frame_bytes = writer.bytes_written - before
+        if self._event_observer is not None:
+            self._event_observer(envelope, raw_frame_bytes, self.queue.depth)
+        if writer.should_rotate():
             self._seal_current()
         return True
 
@@ -90,7 +105,10 @@ class StreamSpool:
         writer = self._writer
         self._writer = None
         writer.close()
-        return seal_partial(writer.path, layout=self.layout, catalog=self.catalog)
+        manifest = seal_partial(writer.path, layout=self.layout, catalog=self.catalog)
+        if self._seal_observer is not None:
+            self._seal_observer(manifest)
+        return manifest
 
     def close_and_seal(self) -> dict[str, object] | None:
         self.drain_all()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from typing import Protocol
@@ -24,6 +25,7 @@ from ..binance.usdm.side_data_schema import (
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector
 from ..domain.event import EventEnvelope
 from ..logging import log_event
+from ..metrics.recorder import MetricsRecorder
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
@@ -241,6 +243,7 @@ class UsdMSideDataManager:
         rest_timeout_ms: int,
         rest_api: UsdMSideRestApi | None,
         websocket_opener: ConnectionOpener,
+        metrics: MetricsRecorder | None = None,
     ) -> None:
         enabled = {
             **{kind.value: settings.rest_enabled(kind) for kind in REST_SIDE_DATA_SPECS},
@@ -252,6 +255,27 @@ class UsdMSideDataManager:
         self.stats = {name: SideDataStats(is_enabled) for name, is_enabled in enabled.items()}
 
         def spool(stream: str) -> StreamSpool:
+            def observe_event(
+                envelope: EventEnvelope, frame_bytes: int, queue_depth: int
+            ) -> None:
+                if metrics is not None:
+                    metrics.safely_observe_written(
+                        envelope, raw_frame_bytes=frame_bytes, queue_depth=queue_depth
+                    )
+
+            def observe_operation(name: str, duration: int) -> None:
+                if metrics is not None:
+                    metrics.safely_observe_operation(
+                        market="um_perpetual",
+                        stream=stream,
+                        name=name,
+                        duration_ns=duration,
+                    )
+
+            def observe_seal(manifest: dict[str, object]) -> None:
+                if metrics is not None:
+                    metrics.safely_observe_seal(manifest)
+
             return StreamSpool(
                 layout=layout,
                 catalog=catalog,
@@ -264,7 +288,21 @@ class UsdMSideDataManager:
                 rotation=rotation,
                 durability_interval_seconds=durability_interval_seconds,
                 max_frame_bytes=max_frame_bytes,
+                event_observer=None if metrics is None else observe_event,
+                operation_observer=None if metrics is None else observe_operation,
+                seal_observer=None if metrics is None else observe_seal,
             )
+
+        def lifecycle_observer(stream: str) -> Callable[[str], None] | None:
+            if metrics is None:
+                return None
+
+            def observe(event: str) -> None:
+                metrics.safely_observe_lifecycle(
+                    market="um_perpetual", stream=stream, event=event
+                )
+
+            return observe
 
         extensions: dict[str, SideDataExtension] = {}
         rest_request_lock = asyncio.Lock()
@@ -286,6 +324,7 @@ class UsdMSideDataManager:
                 envelope_factory=partial(envelope_from_side_stream_frame, stream=spec.stream),
                 envelope_observer=stream_stats.observe_envelope,
                 failure_observer=stream_stats.observe_failure,
+                lifecycle_observer=lifecycle_observer(spec.stream.value),
             )
         for kind in REST_SIDE_DATA_SPECS:
             if not settings.rest_enabled(kind):

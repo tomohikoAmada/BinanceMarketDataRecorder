@@ -41,9 +41,9 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | SPC-01 | 40% warning, 15% critical, emergency max(10 GiB,5%) | project/storage contracts | M11 threshold tests |
 | SPC-02 | 1h/6h/24h/7d robust growth and ETAs; insufficient/nonpositive sentinels | storage contract | M11 synthetic forecast tests |
 | SPC-03 | Emergency suspends non-core, prioritizes verified archive, never deletes unarchived; seal/stop/gap | project/storage contracts | M11 emergency integration test |
-| MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts | M8 deterministic fixture/midnight tests |
-| MET-02 | JSON+CSV reports and Catalog summary; SQLite excludes event corpus | project/data/architecture contracts | M8 persistence/reconciliation tests |
-| MET-03 | Structured status, CLI status/daily reports, restart continuity/no double count | data contract | M8 restart tests |
+| MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts, ADR-0013 | M8 deterministic fixture, Collector reconciliation and midnight tests |
+| MET-02 | JSON+CSV reports and Catalog summary; SQLite excludes event corpus | project/data/architecture contracts, ADR-0013 | M8 aggregate-schema, atomic output and deterministic rebuild tests |
+| MET-03 | Structured status, CLI status/daily reports, restart continuity/no double count | data contract, ADR-0013 | M8 stable-batch retry, restart and honest-status tests |
 | MAC-01 | Disk Arbitration startup/events/mount/eject; PyObjC or proven minimal helper | macOS contract, R-022 | M9/M12 platform evidence |
 | MAC-02 | Required storage/archive CLI surface | macOS contract | M9/M11/M12 CLI tests |
 | MAC-03 | Safe eject blocks work, syncs/closes, handles busy/refusal/forced removal | macOS/storage contracts | M12 scenario matrix |

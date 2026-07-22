@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
@@ -43,6 +44,7 @@ class RawChunkWriter:
         max_frame_bytes: int = 16 * 1024 * 1024,
         chunk_id: UUID | None = None,
         created_at_utc_ns: int | None = None,
+        operation_observer: Callable[[str, int], None] | None = None,
     ) -> None:
         if not 0 <= durability_interval_seconds <= 1.0:
             raise ValueError("durability interval must be between 0 and 1 second")
@@ -82,6 +84,7 @@ class RawChunkWriter:
         self._bytes_written = 0
         self._opened_monotonic = time.monotonic()
         self._last_sync_monotonic = self._opened_monotonic
+        self.operation_observer = operation_observer
         try:
             header_bytes = encode_chunk_header(self.header)
             self._write_all(header_bytes)
@@ -129,7 +132,10 @@ class RawChunkWriter:
             raise ValueError("envelope identity differs from chunk identity")
         frame = encode_frame(envelope, max_frame_bytes=self.header.max_frame_bytes)
         ordinal = self._record_count
+        started = time.perf_counter_ns()
         self._write_all(frame)
+        if self.operation_observer is not None:
+            self.operation_observer("write_latency_ns", time.perf_counter_ns() - started)
         self._record_count += 1
         now = time.monotonic()
         self.sync_if_due(now_monotonic=now)
@@ -150,7 +156,10 @@ class RawChunkWriter:
     def sync(self) -> None:
         if self._closed:
             raise RuntimeError("chunk writer is closed")
+        started = time.perf_counter_ns()
         os.fsync(self._descriptor)
+        if self.operation_observer is not None:
+            self.operation_observer("fsync_latency_ns", time.perf_counter_ns() - started)
         self._last_sync_monotonic = time.monotonic()
 
     def should_rotate(self, *, now_monotonic: float | None = None) -> bool:
