@@ -18,7 +18,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-011 | Verified archive becomes only copy after internal deletion and later fails | High | Explicit warning/manifest verification; user-owned independent backup; periodic verify CLI | M10/M18 | Accepted |
 | R-012 | Internal disk fills while archive unavailable or seal requires temp overhead | Critical | Thresholds/forecast, reserve includes seal overhead, emergency graceful stop, no unarchived delete | M3/M11 | Open |
 | R-013 | Daily counters duplicate or lose increments across UTC boundary/restart | High | Idempotent persisted aggregation, deterministic fixtures and midnight/restart tests | M8 | Open |
-| R-014 | Side-data polling/rate limits impair L2 collectors or funding cadence is assumed | High | Separate workers/budgets, official rate evidence, no forward fill/fixed 8-hour assumption | M7 | Open |
+| R-014 | Side-data polling/rate limits impair L2 collectors or funding cadence is assumed | High | Independent tasks/spools, serialized REST calls, documented/observed rate provenance, no forward fill or fixed 8-hour assumption, failure-isolation tests | M7 | Mitigated |
 | R-015 | Blue/green cutover stops old instance before candidate is synchronized | Critical | Independent candidate readiness, overlap evidence, rollback, normalized dedup | M13 | Open |
 | R-016 | launchd restart/multiple instances cause conflicting active writers | Critical | Single-writer locks with explicit supervised overlap identities; crash/seal recovery | M13/M14 | Open |
 | R-017 | Mac sleep/closed lid creates unavoidable data gaps | High | Detect/mark sleep, scoped optional power assertion, document no closed-lid guarantee | M14/M18 | Accepted |
@@ -34,6 +34,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-027 | V1 over-engineers an unrequested multi-exchange framework | Medium | Binance Spot/USD-M scope in ADR-0007; another exchange requires separate review | M0.2 and all design milestones | Mitigated |
 | R-028 | CloudFront/WAF challenges block scripted retrieval of some interactive developer-portal catalog pages | Medium | Treat every non-200/empty response as failure; select downloadable official Markdown and official SDK source; record challenge and never use an unofficial mirror | M2 and ongoing source refresh | Monitoring |
 | R-029 | Local-book logic mixes Spot and USD-M continuity, hides a missing event, or overstates bookTicker as a checksum | Critical | ADR-0011 market-bound rules, random deletion fault tests, immutable incomplete intervals, same-ID-only ticker comparison and explicit non-checksum wording | M6 | Mitigated |
+| R-030 | Sparse liquidation snapshots are mistaken for a complete liquidation feed, or silence is treated as zero activity | High | ADR-0012 preserves exact frames, marks snapshot/sparse semantics, records connection failures and never synthesizes missing/zero events | M7 | Mitigated |
 
 ## M0 open questions assigned to milestones
 

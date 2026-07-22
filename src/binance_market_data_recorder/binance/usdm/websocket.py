@@ -13,6 +13,7 @@ from uuid import uuid4
 from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
 
+from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...spool.queue import IngressQueueFull
 from ...spool.stream import StreamSpool
@@ -29,6 +30,9 @@ class WebSocketConnection(Protocol):
 
 
 ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnection]]
+EnvelopeFactory = Callable[..., EventEnvelope]
+EnvelopeObserver = Callable[[EventEnvelope], None]
+FailureObserver = Callable[[str], None]
 
 
 @asynccontextmanager
@@ -53,7 +57,7 @@ class UsdMStreamCollector:
     def __init__(
         self,
         *,
-        stream: UsdMStream,
+        stream: UsdMStream | str,
         route: str,
         wire_name: str,
         spool: StreamSpool,
@@ -67,6 +71,9 @@ class UsdMStreamCollector:
         opener: ConnectionOpener = open_usdm_websocket,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
+        envelope_factory: EnvelopeFactory | None = None,
+        envelope_observer: EnvelopeObserver | None = None,
+        failure_observer: FailureObserver | None = None,
     ) -> None:
         if route not in {"public", "market"}:
             raise ValueError("USD-M market data route must be public or market")
@@ -74,7 +81,10 @@ class UsdMStreamCollector:
             raise ValueError("receipt queue capacity must be positive")
         if not 0 < planned_rotation_seconds < 24 * 60 * 60:
             raise ValueError("planned rotation must occur before the 24-hour limit")
+        if envelope_factory is None and not isinstance(stream, UsdMStream):
+            raise ValueError("a side-data stream requires an envelope factory")
         self.stream = stream
+        self.stream_name = stream.value if isinstance(stream, UsdMStream) else stream
         self.route = route
         self.wire_name = wire_name
         self.spool = spool
@@ -87,6 +97,9 @@ class UsdMStreamCollector:
         self.opener = opener
         self.utc_clock_ns = utc_clock_ns
         self.monotonic_clock_ns = monotonic_clock_ns
+        self.envelope_factory = envelope_factory
+        self.envelope_observer = envelope_observer
+        self.failure_observer = failure_observer
         self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(maxsize=receipt_queue_capacity)
 
     @property
@@ -127,8 +140,10 @@ class UsdMStreamCollector:
                 except asyncio.QueueEmpty:
                     break
             for receipt in batch:
-                self.spool.enqueue(
-                    envelope_from_websocket_frame(
+                if self.envelope_factory is None:
+                    if not isinstance(self.stream, UsdMStream):
+                        raise RuntimeError("missing USD-M envelope factory")
+                    envelope = envelope_from_websocket_frame(
                         raw_payload=receipt.raw_payload,
                         stream=self.stream,
                         connection_id=receipt.connection_id,
@@ -137,7 +152,18 @@ class UsdMStreamCollector:
                         receive_time_utc_ns=receipt.receive_time_utc_ns,
                         receive_monotonic_ns=receipt.receive_monotonic_ns,
                     )
-                )
+                else:
+                    envelope = self.envelope_factory(
+                        raw_payload=receipt.raw_payload,
+                        connection_id=receipt.connection_id,
+                        collector_instance_id=self.collector_instance_id,
+                        collector_version=self.collector_version,
+                        receive_time_utc_ns=receipt.receive_time_utc_ns,
+                        receive_monotonic_ns=receipt.receive_monotonic_ns,
+                    )
+                self.spool.enqueue(envelope)
+                if self.envelope_observer is not None:
+                    self.envelope_observer(envelope)
                 self._receipts.task_done()
             await asyncio.to_thread(self.spool.drain_all)
         await asyncio.to_thread(self.spool.close_and_seal)
@@ -197,7 +223,7 @@ class UsdMStreamCollector:
                         logging.INFO,
                         "usdm_websocket_connected",
                         "Binance USD-M raw stream connected",
-                        stream=self.stream.value,
+                        stream=self.stream_name,
                         route=self.route,
                         connection_id=connection_id,
                     )
@@ -207,6 +233,8 @@ class UsdMStreamCollector:
             except asyncio.CancelledError:
                 raise
             except (WebSocketException, OSError, TimeoutError) as exc:
+                if self.failure_observer is not None:
+                    self.failure_observer(type(exc).__name__)
                 if (
                     connected_at is not None
                     and asyncio.get_running_loop().time() - connected_at >= 60
@@ -218,18 +246,20 @@ class UsdMStreamCollector:
                     logging.WARNING,
                     "usdm_websocket_disconnected",
                     "Binance USD-M stream disconnected unexpectedly",
-                    stream=self.stream.value,
+                    stream=self.stream_name,
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
                     retry=failures,
                 )
             except IngressQueueFull:
+                if self.failure_observer is not None:
+                    self.failure_observer("IngressQueueFull")
                 log_event(
                     self.logger,
                     logging.CRITICAL,
                     "usdm_ingress_overflow",
                     "bounded USD-M receipt queue is full; capture continuity is lost",
-                    stream=self.stream.value,
+                    stream=self.stream_name,
                     connection_id=connection_id,
                 )
                 raise

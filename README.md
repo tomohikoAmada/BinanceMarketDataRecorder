@@ -16,11 +16,11 @@ identity.
 M4 and M5 provide independent Binance Spot and USD-M BTCUSDT public-market
 Collector libraries for diff depth at 100 ms, aggregate trades, book ticker,
 and official-SDK REST depth snapshots. They write only to the internal Raw
-spool. USD-M side data, normalization, external archive, launchd service
-installation, accounts, credentials, and trading remain unimplemented. M6
-reconstructs deterministic local books, detects
-sequence gaps, audits best levels/bookTicker, and writes derived checkpoints;
-it never modifies Raw.
+spool. M6 reconstructs deterministic local books, detects sequence gaps,
+audits best levels/bookTicker, and writes derived checkpoints. M7 adds
+failure-isolated USD-M mark/index/funding, open-interest, liquidation and
+exchange/filter data. Normalization, external archive, launchd service
+installation, accounts, credentials, and trading remain unimplemented.
 
 ## Identity
 
@@ -52,7 +52,7 @@ architecture review rather than speculative abstraction in the current code.
   and public REST depth snapshots.
 - Binance USD-M BTCUSDT perpetual: the same three streams and public REST depth
   snapshots.
-- Later, isolated USD-M side data: mark/index/premium, funding, open interest,
+- Isolated USD-M side data: mark/index/premium, funding, open interest,
   liquidation events, and exchange/filter snapshots.
 
 All live data is written first to internal storage. External archive folders
@@ -78,8 +78,9 @@ are optional and may disappear without stopping capture.
 - [M4 acceptance](docs/milestone_acceptance/M4.md)
 - [M5 acceptance](docs/milestone_acceptance/M5.md)
 - [M6 acceptance](docs/milestone_acceptance/M6.md)
+- [M7 acceptance](docs/milestone_acceptance/M7.md)
 
-## Install and verify M6
+## Install and verify M7
 
 Use Python 3.12 in a virtual environment:
 

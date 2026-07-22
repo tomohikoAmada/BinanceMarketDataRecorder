@@ -65,6 +65,13 @@ continuity branches, withholds an unreliable book after a gap, and persists
 hash-verified checkpoints plus Catalog metadata. It never writes reconstructed
 levels into Raw or SQLite.
 
+M7 implements USD-M auxiliary tasks behind ADR-0012. Mark-price and
+liquidation WebSockets and five official-SDK REST polling kinds each own a Raw
+spool and independent configuration. A side-data supervisor contains failures
+without setting either core market's stop event. REST calls share a local
+serialization lock and record documented weight plus observed rate headers;
+M8, not M7, owns durable daily aggregation.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,

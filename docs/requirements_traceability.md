@@ -22,7 +22,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | SRC-04 | SDK WebSocket use requires raw/timing/lifecycle/IDs/fault/backpressure proof | ADR-0005, R-001 | M2 transport ADR/probes |
 | DAT-01 | Spot BTCUSDT depth 100 ms, aggTrade, bookTicker, REST snapshot | project/data contracts | M4 fixtures/mock/15-min smoke |
 | DAT-02 | USD-M BTCUSDT same core streams/snapshot with independent failure | project/data contracts | M5 fixtures/mock/30-min combined smoke |
-| DAT-03 | Side data: mark/index/premium/funding/OI/liquidation/exchange filters; cannot block L2 | project/data contracts | M7 isolated schema/failure tests |
+| DAT-03 | Side data: mark/index/premium/funding/OI/liquidation/exchange filters; cannot block L2 | project/data contracts, ADR-0012 | M7 official fixtures, rate provenance, no-fill and failure-isolation tests |
 | DAT-04 | Preserve exact payload and exchange/receive clocks, identity/version/sequence provenance | data contract, ADR-0004 | M3 envelope tests; M4/M5 live evidence |
 | DAT-05 | Raw append-only/immutable; duplicates allowed; derived dedup/repartition/rebuild | data contract, ADR-0002 | M3/M15 repeatability and hash tests |
 | DAT-06 | Per-file time/count/bytes/schema/version/hash/sequence/gap/resync metadata | data contract | M3 manifest tests; M6 checkpoint gap/resync lineage tests |

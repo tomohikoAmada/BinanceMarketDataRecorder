@@ -28,6 +28,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M4.md",
     "docs/milestone_acceptance/M5.md",
     "docs/milestone_acceptance/M6.md",
+    "docs/milestone_acceptance/M7.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -41,6 +42,7 @@ REQUIRED_FILES = (
     "docs/adr/0009-websocket-transport.md",
     "docs/adr/0010-raw-chunk-v1-byte-format.md",
     "docs/adr/0011-orderbook-reconstruction-and-checkpoints.md",
+    "docs/adr/0012-usdm-side-data-isolation-and-semantics.md",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
@@ -175,7 +177,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M6 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M7 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject

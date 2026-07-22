@@ -49,7 +49,7 @@ class UsdMRestApi(Protocol):
     def order_book(self, symbol: str, limit: int) -> DepthResponse: ...
 
 
-def _safe_headers(headers: Mapping[str, object]) -> dict[str, str]:
+def safe_provenance_headers(headers: Mapping[str, object]) -> dict[str, str]:
     return {
         str(name).lower(): str(value)
         for name, value in headers.items()
@@ -104,7 +104,7 @@ def capture_depth_snapshot(
         },
         "response": {
             "status": response.status,
-            "headers": _safe_headers(response.headers),
+            "headers": safe_provenance_headers(response.headers),
             "model": model.to_dict(),
             "receive_time_utc_ns": receive_utc_ns,
             "receive_monotonic_ns": receive_monotonic_ns,

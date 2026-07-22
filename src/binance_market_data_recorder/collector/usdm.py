@@ -6,13 +6,13 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
 
 from binance_common.errors import Error as BinanceSdkError
 
 from ..binance.spot.websocket import ReconnectBackoff
 from ..binance.usdm.rest import UsdMRestApi, capture_depth_snapshot
 from ..binance.usdm.schema import USDM_STREAMS
+from ..binance.usdm.side_data_rest import UsdMSideRestApi
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector, open_usdm_websocket
 from ..logging import log_event
 from ..paths import validate_data_root
@@ -20,15 +20,7 @@ from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
-
-
-class UsdMSideDataExtension(Protocol):
-    """M7 extension boundary; M5 does not instantiate or execute extensions."""
-
-    @property
-    def name(self) -> str: ...
-
-    async def run(self, stop: asyncio.Event) -> None: ...
+from .usdm_side_data import UsdMSideDataManager, UsdMSideDataSettings
 
 
 @dataclass(frozen=True)
@@ -48,6 +40,7 @@ class UsdMCollectorSettings:
     snapshot_retry_initial_seconds: float = 1.0
     snapshot_retry_maximum_seconds: float = 60.0
     snapshot_retry_jitter_ratio: float = 0.2
+    side_data: UsdMSideDataSettings | None = None
 
 
 class SnapshotUnavailableError(RuntimeError):
@@ -57,14 +50,13 @@ class SnapshotUnavailableError(RuntimeError):
 class UsdMCollector:
     """Own three independent USD-M streams and one public REST snapshot."""
 
-    side_data_extensions: tuple[UsdMSideDataExtension, ...] = ()
-
     def __init__(
         self,
         settings: UsdMCollectorSettings,
         *,
         logger: logging.Logger,
         rest_api: UsdMRestApi | None = None,
+        side_rest_api: UsdMSideRestApi | None = None,
         websocket_opener: ConnectionOpener = open_usdm_websocket,
     ) -> None:
         self.settings = settings
@@ -111,6 +103,25 @@ class UsdMCollector:
             for spec in USDM_STREAMS
         )
         self.snapshot_spool = spool("depth_snapshot")
+        self.side_data: UsdMSideDataManager | None = None
+        if settings.side_data is not None:
+            self.side_data = UsdMSideDataManager(
+                settings=settings.side_data,
+                layout=self.layout,
+                catalog=self.catalog,
+                collector_instance_id=settings.collector_instance_id,
+                collector_version=settings.collector_version,
+                logger=logger,
+                queue_capacity=settings.queue_capacity,
+                receipt_queue_capacity=settings.receipt_queue_capacity,
+                rotation=rotation,
+                durability_interval_seconds=settings.durability_interval_seconds,
+                max_frame_bytes=settings.max_frame_bytes,
+                planned_rotation_seconds=settings.planned_connection_rotation_seconds,
+                rest_timeout_ms=settings.snapshot_timeout_ms,
+                rest_api=side_rest_api,
+                websocket_opener=websocket_opener,
+            )
 
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
@@ -154,8 +165,13 @@ class UsdMCollector:
                 for stream in self.streams:
                     tasks.create_task(stream.run(stop))
                 tasks.create_task(self._capture_snapshot(stop))
+                if self.side_data is not None:
+                    tasks.create_task(self.side_data.run(stop))
                 await stop.wait()
         finally:
             stop.set()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
             self.catalog.close()
+
+    def side_data_status(self) -> dict[str, dict[str, object]]:
+        return self.side_data.status() if self.side_data is not None else {}

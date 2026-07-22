@@ -51,6 +51,15 @@ and USD-M local-order-book page SHA-256 values were respectively
 and `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622`.
 No full index or remote code was loaded.
 
+M7 refreshed the selection at `2026-07-22T13:53:53.157858+00:00` and added
+the official SDK REST and WebSocket market generated sources needed for side
+data. Their GitHub-rendered response SHA-256 values were
+`86d61768ae09b4bf0f46c884658c01e45f5cdadfaa7eaa839c758839ad1663c1`
+and `14f9d94c8b1260be429b2065ee94c6841170d7db0d1009f032e0fdf93f2d247b`.
+The Agent Native index remained
+`eba8ad91ee38ef6f15c6d2d1e698a714ee129e20fc9619b82ca2e8b2cb3dd539`.
+No full index or remote code was loaded.
+
 The originally supplied `https://developers.binance.com/docs/llms.txt`
 currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
 working official text index is `https://developers.binance.com/en/docs/llms.txt`.
@@ -71,6 +80,8 @@ Hashes are of the exact M2 response bodies.
 | USD-M local order book | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md` | `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622` | 1114 |
 | USD-M general information | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md` | `b2e647582fb3ae4cae3a79d6f6f6030d0c03cf403d05176117b24094a083521b` | 19261 |
 | USD-M changelog | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md` | `49bb7b194911c44e88793eca8da18822c28ffb8bdc207e9d6466d28fb4b0e532` | 98085 |
+| USD-M SDK REST market-data source | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/rest_api.py` | `86d61768ae09b4bf0f46c884658c01e45f5cdadfaa7eaa839c758839ad1663c1` | 1001109 |
+| USD-M SDK WebSocket market source | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/websocket_streams/streams/market_api.py` | `14f9d94c8b1260be429b2065ee94c6841170d7db0d1009f032e0fdf93f2d247b` | 661925 |
 | Python connectors page | `https://developers.binance.com/en/docs/sdks-tools/connectors/python.md` | `b74fdc09f25dee3b03c4d17f76835ed4b7923b548b3cc940005dcb44a2c5b989` | 2964 |
 | Official modular SDK repository README | `https://github.com/binance/binance-connector-python/blob/master/README.md` | `4f578165c03deb9b1426bd0ab2805018f7c6c3de80c8a44e6d85da083c4e01ef` | 300231 |
 | Spot SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml` | `60ec5346b5150b87e31c586d3563ba54f3a29ecf713daa33e49f2817c5acefc1` | 255068 |
@@ -109,6 +120,19 @@ and third-party `python-binance` are absent.
   2026-04-23, so M5 uses only routed URLs.
 - USD-M public depth snapshots use `GET /fapi/v1/depth`; local-book continuity
   requires each new event's `pu` to equal the prior event's `u`.
+- USD-M mark-price data uses the routed market stream
+  `/market/ws/btcusdt@markPrice@1s`. It supplies mark/index/estimated-settle
+  prices, current funding rate, mark moving average and next funding time;
+  `T` is not treated as transaction time.
+- The symbol liquidation stream `/market/ws/btcusdt@forceOrder` is explicitly
+  event-sparse: at most the latest liquidation snapshot inside 1000 ms is
+  emitted, and no event is emitted in an interval without a liquidation. It is
+  not documented as a complete order-by-order liquidation feed.
+- Public SDK REST side data uses `/fapi/v1/premiumIndex` (weight 1 with symbol),
+  `/fapi/v1/openInterest` (weight 1), `/fapi/v1/exchangeInfo` (weight 1), and
+  `/fapi/v1/fundingRate` plus `/fapi/v1/fundingInfo` sharing 500 requests per
+  five minutes per IP. Funding-info describes adjusted interval/cap/floor
+  symbols only, so absence does not imply a fixed eight-hour cadence.
 - Spot local-book bootstrap discards buffered `u <= lastUpdateId`, bridges the
   first remaining `[U,u]` over `lastUpdateId`, and treats
   `U > localUpdateId + 1` as missed events. USD-M discards buffered
@@ -152,5 +176,7 @@ scripted retrieval currently receives a CloudFront/WAF HTTP 202 challenge with
 an empty body. The updater treats non-200 responses as failures and does not
 store a challenge as documentation. Those catalog pages are not in the
 automated selection; the downloadable product Markdown, official generated SDK
-source, public smoke, and official changelogs are the recorded evidence. See
-R-028. No unofficial mirror or proxy is used.
+source, public smoke, and official changelogs are the recorded evidence. M7
+reproduced this challenge for the USD-M REST market-data catalog before
+selecting the matching official SDK generated sources. See R-028. No unofficial
+mirror or proxy is used.

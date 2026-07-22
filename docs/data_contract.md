@@ -96,6 +96,31 @@ same-update-ID bookTicker mismatches. bookTicker is not treated as an exchange
 checksum. Tickers ahead of or behind the local update ID are classified but
 not compared as if simultaneous.
 
+## M7 USD-M auxiliary data contract
+
+M7 adds seven independent Raw stream kinds under `um_perpetual` and BTCUSDT:
+
+| Stream | Source | Time/sequence meaning |
+| --- | --- | --- |
+| `mark_price` | exact `/market/ws/btcusdt@markPrice@1s` frame | `E` is event time; `T` is `nextFundingTime`, never transaction time |
+| `liquidation` | exact `/market/ws/btcusdt@forceOrder` frame | `E` event time; nested order `T` trade time; event-sparse snapshot flag |
+| `premium_index_snapshot` | official SDK `/fapi/v1/premiumIndex` | response `time` and `nextFundingTime` |
+| `funding_history` | official SDK `/fapi/v1/fundingRate` | observed first/last `fundingTime` and record count |
+| `funding_info` | official SDK `/fapi/v1/fundingInfo` | sparse adjustment record count and observed `fundingIntervalHours` |
+| `open_interest` | official SDK `/fapi/v1/openInterest` | response observation `time` |
+| `exchange_info` | official SDK `/fapi/v1/exchangeInfo` | symbol/rate-limit counts and complete SDK model |
+
+REST payloads use `binance-usdm-side-rest-provenance.v1`: public request path
+and parameters, request/receive UTC and monotonic clocks, documented weight or
+shared budget, safe response rate headers, canonical SDK model, package/version
+and `raw_http_body_available=false`. No absent value is forward-filled. Empty
+funding history, absent BTCUSDT funding adjustment metadata and WebSocket
+liquidation silence remain absence, not synthetic records.
+
+The liquidation stream is explicitly Binance's latest snapshot within a
+1000 ms window, not an exhaustive liquidation ledger. Repeated REST history
+responses may duplicate Raw events; later normalization owns deduplication.
+
 ## Raw chunk logical contract
 
 ADR-0002 selects the format family and ADR-0010 is the authoritative byte

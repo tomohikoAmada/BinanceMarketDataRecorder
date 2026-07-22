@@ -43,6 +43,18 @@ listed_in_index = true
 expected_terms = ["Change Log"]
 
 [[documents]]
+id = "usdm-sdk-rest-market-data-source"
+url = "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/rest_api.py"
+listed_in_index = false
+expected_terms = ["def exchange_information", "def get_funding_rate_history", "def get_funding_rate_info", "def mark_price", "def open_interest"]
+
+[[documents]]
+id = "usdm-sdk-websocket-market-source"
+url = "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/websocket_streams/streams/market_api.py"
+listed_in_index = false
+expected_terms = ["def liquidation_order_streams", "If no liquidation happens", "def mark_price_stream", "pushed every 3 seconds or every second"]
+
+[[documents]]
 id = "python-connectors"
 url = "https://developers.binance.com/en/docs/sdks-tools/connectors/python.md"
 listed_in_index = true
