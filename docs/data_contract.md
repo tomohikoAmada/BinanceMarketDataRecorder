@@ -73,6 +73,29 @@ M5 uses the same declared provenance boundary for `/fapi/v1/depth`, with
 schema `binance-usdm-depth-snapshot-provenance.v1`, the official USD-M SDK
 package/version, limit 1000, and `lastUpdateId`.
 
+## M6 local order-book and quality contract
+
+`binance-local-orderbook.v1` consumes only versioned snapshot and diff-depth
+inputs derived from immutable envelopes. Spot and USD-M inputs cannot be mixed.
+Snapshot bootstrap and live continuity follow ADR-0011. Price/quantity strings
+are parsed as finite decimals; updates are absolute; zero removes a level, and
+removing a missing level is valid.
+
+A reliable logical book contains market, symbol, last applied update ID,
+descending bid levels and ascending ask levels. Its deterministic hash is
+SHA-256 over canonical JSON with normalized non-exponential decimal strings.
+Repeated origin replay and checkpoint continuation must converge to that hash.
+
+Sequence failure creates an `UnreliableInterval` with last reliable ID,
+offending `U/u`, receive time, reason and optional resync end ID. Its
+`complete` field is always false, even after resync. A book in
+`RESYNC_REQUIRED` cannot be returned as reliable or checkpointed.
+
+M6 audits empty sides, crossed best prices, resyncs, duplicate/stale updates and
+same-update-ID bookTicker mismatches. bookTicker is not treated as an exchange
+checksum. Tickers ahead of or behind the local update ID are classified but
+not compared as if simultaneous.
+
 ## Raw chunk logical contract
 
 ADR-0002 selects the format family and ADR-0010 is the authoritative byte

@@ -33,6 +33,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-026 | Name, visual identity, wording, service label, or publisher metadata falsely implies an official Binance relationship | Critical | Prominent disclaimer; no Binance logo; author-controlled namespace; forbidden wording/namespace tests | M0.2/M14/M18 | Mitigated |
 | R-027 | V1 over-engineers an unrequested multi-exchange framework | Medium | Binance Spot/USD-M scope in ADR-0007; another exchange requires separate review | M0.2 and all design milestones | Mitigated |
 | R-028 | CloudFront/WAF challenges block scripted retrieval of some interactive developer-portal catalog pages | Medium | Treat every non-200/empty response as failure; select downloadable official Markdown and official SDK source; record challenge and never use an unofficial mirror | M2 and ongoing source refresh | Monitoring |
+| R-029 | Local-book logic mixes Spot and USD-M continuity, hides a missing event, or overstates bookTicker as a checksum | Critical | ADR-0011 market-bound rules, random deletion fault tests, immutable incomplete intervals, same-ID-only ticker comparison and explicit non-checksum wording | M6 | Mitigated |
 
 ## M0 open questions assigned to milestones
 

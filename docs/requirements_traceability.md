@@ -15,8 +15,8 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | IDN-03 | Independent unofficial project; no affiliation/sponsorship/endorsement/logo or Binance-owned-looking service namespace | ADR-0007, project contract | M0.2 disclaimer/forbidden-string tests; M14/M18 release checks |
 | BND-01 | Recorder independent of all consumers; one-way generic contracts | ADR-0001/0007, architecture | M0.2; generic consumer proof M16 |
 | BND-02 | Alpha101Crypto remains an untouched historical audit object and optional ordinary consumer only | project contract, repository audit | M0-M0.2 and optional M16 read-only review |
-| BND-03 | Recorder is Binance-specific with separate Spot/USD-M modules; no speculative other-exchange framework | ADR-0007, architecture/data contract | M0.2 contract check; M2/M4/M5 implementation |
-| SRC-01 | Only listed official Binance sources establish behavior and changelogs | `AGENTS.md`, `binance_sources.md` | M0 inventory; M2 updater/ADRs; M7 refresh |
+| BND-03 | Recorder is Binance-specific with separate Spot/USD-M modules; no speculative other-exchange framework | ADR-0007, architecture/data contract | M0.2 contract check; M2/M4/M5 collectors; M6 market-specific reconstruction tests |
+| SRC-01 | Only listed official Binance sources establish behavior and changelogs | `AGENTS.md`, `binance_sources.md` | M0 inventory; M2 updater/ADRs; M6 source refresh; M7 refresh |
 | SRC-02 | Select pages from llms.txt; no default llms-full; allowlisted hosts; hashes/time; no remote execution | source contract, ADR-0005 | M2 unit/security tests |
 | SRC-03 | Evaluate modular Spot/USD-M SDK; ban deprecated/unofficial core SDK/MCP | ADR-0005, source inventory | M2 dependency/probe tests |
 | SRC-04 | SDK WebSocket use requires raw/timing/lifecycle/IDs/fault/backpressure proof | ADR-0005, R-001 | M2 transport ADR/probes |
@@ -25,10 +25,10 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | DAT-03 | Side data: mark/index/premium/funding/OI/liquidation/exchange filters; cannot block L2 | project/data contracts | M7 isolated schema/failure tests |
 | DAT-04 | Preserve exact payload and exchange/receive clocks, identity/version/sequence provenance | data contract, ADR-0004 | M3 envelope tests; M4/M5 live evidence |
 | DAT-05 | Raw append-only/immutable; duplicates allowed; derived dedup/repartition/rebuild | data contract, ADR-0002 | M3/M15 repeatability and hash tests |
-| DAT-06 | Per-file time/count/bytes/schema/version/hash/sequence/gap/resync metadata | data contract | M3 manifest tests |
+| DAT-06 | Per-file time/count/bytes/schema/version/hash/sequence/gap/resync metadata | data contract | M3 manifest tests; M6 checkpoint gap/resync lineage tests |
 | DAT-07 | `.partial`, safe seal, recover/truncate/quarantine without false completeness | ADR-0002, storage contract | M3 kill/corruption/property tests |
 | DAT-08 | Format compares NDJSON, NDJSON+Zstd, MessagePack/CBOR/other and chooses language-neutral framed checksummed Zstd | ADR-0002 | M0 decision; M3 golden vectors |
-| DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004, data contract | M6/M15/M16 hash/order tests |
+| DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004, data contract | M6 fixed-hash, checkpoint-restore and random-deletion tests; M15/M16 order tests |
 | STO-01 | Internal disk always active target; no direct external active writes; external absence normal | storage contract, ADR-0003 | M4/M5/M9 fault tests |
 | STO-02 | Default application-support layout; no persistent data in repo/Desktop/Documents/iCloud/tmp | project/architecture/storage contracts | M1 path tests; M14 runtime |
 | STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003 | M9 scope-probe tests |

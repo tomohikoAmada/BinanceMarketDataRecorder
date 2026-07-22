@@ -59,3 +59,6 @@ def test_catalog_contains_metadata_not_market_event_payloads(tmp_path: Path) -> 
         columns = catalog.table_columns("chunks")
         assert not columns & {"raw_payload", "event_payload", "payload", "event_body"}
         assert {"chunk_id", "state", "record_count", "stored_sha256"} <= columns
+        checkpoint_columns = catalog.table_columns("orderbook_checkpoints")
+        assert not checkpoint_columns & {"bids", "asks", "levels", "event_payload"}
+        assert {"checkpoint_id", "market", "update_id", "book_hash"} <= checkpoint_columns

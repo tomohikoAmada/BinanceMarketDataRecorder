@@ -43,6 +43,14 @@ and the local-order-book page remained
 M5 also selected the official route-change notice below. The response bodies
 were stored only in a temporary directory and were not committed or executed.
 
+M6 refreshed the same selected official sources at
+`2026-07-22T10:10:16.759850+00:00`. The Agent Native index, Spot stream page,
+and USD-M local-order-book page SHA-256 values were respectively
+`eba8ad91ee38ef6f15c6d2d1e698a714ee129e20fc9619b82ca2e8b2cb3dd539`,
+`193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f`,
+and `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622`.
+No full index or remote code was loaded.
+
 The originally supplied `https://developers.binance.com/docs/llms.txt`
 currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
 working official text index is `https://developers.binance.com/en/docs/llms.txt`.
@@ -101,6 +109,12 @@ and third-party `python-binance` are absent.
   2026-04-23, so M5 uses only routed URLs.
 - USD-M public depth snapshots use `GET /fapi/v1/depth`; local-book continuity
   requires each new event's `pu` to equal the prior event's `u`.
+- Spot local-book bootstrap discards buffered `u <= lastUpdateId`, bridges the
+  first remaining `[U,u]` over `lastUpdateId`, and treats
+  `U > localUpdateId + 1` as missed events. USD-M discards buffered
+  `u < lastUpdateId`, bridges `U <= lastUpdateId <= u`, and then uses `pu`
+  continuity. Both products document absolute quantities and zero deletion;
+  USD-M explicitly says deleting a missing level is normal.
 - The pinned SDK models retain Spot `U/u` and USD-M `U/u/pu`, but the shared SDK
   receive loop JSON-decodes before callback, supplies neither original bytes nor
   socket-receipt time, runs callbacks inline, exposes no connection-factory

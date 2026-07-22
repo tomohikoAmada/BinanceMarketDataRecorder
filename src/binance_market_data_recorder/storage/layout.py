@@ -13,6 +13,7 @@ class StorageLayout:
     active: Path
     sealed: Path
     manifests: Path
+    checkpoints: Path
     quarantine: Path
     state: Path
     catalog: Path
@@ -39,6 +40,7 @@ def ensure_storage_layout(root: Path) -> StorageLayout:
         active=data / "active",
         sealed=data / "sealed",
         manifests=data / "manifests",
+        checkpoints=data / "checkpoints",
         quarantine=data / "quarantine",
         state=root / "state",
         catalog=root / "state" / "catalog.sqlite",
@@ -49,6 +51,7 @@ def ensure_storage_layout(root: Path) -> StorageLayout:
         layout.active,
         layout.sealed,
         layout.manifests,
+        layout.checkpoints,
         layout.quarantine,
         layout.state,
     ):

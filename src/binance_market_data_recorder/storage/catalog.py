@@ -103,6 +103,15 @@ class Catalog:
                 sha256 TEXT NOT NULL,
                 quarantined_at_utc_ns INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS orderbook_checkpoints (
+                checkpoint_id TEXT PRIMARY KEY,
+                market TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                update_id INTEGER NOT NULL,
+                book_hash TEXT NOT NULL,
+                relative_path TEXT NOT NULL,
+                created_at_utc_ns INTEGER NOT NULL
+            );
             """
         )
 
@@ -224,6 +233,44 @@ class Catalog:
                 (artifact_id, relative_path, reason, sha256, time.time_ns()),
             )
 
+    def register_orderbook_checkpoint(
+        self,
+        *,
+        checkpoint_id: str,
+        market: str,
+        symbol: str,
+        update_id: int,
+        book_hash: str,
+        relative_path: str,
+        created_at_utc_ns: int,
+    ) -> None:
+        with self._lock:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO orderbook_checkpoints(
+                    checkpoint_id, market, symbol, update_id, book_hash,
+                    relative_path, created_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    checkpoint_id,
+                    market,
+                    symbol,
+                    update_id,
+                    book_hash,
+                    relative_path,
+                    created_at_utc_ns,
+                ),
+            )
+
+    def orderbook_checkpoint(self, checkpoint_id: str) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM orderbook_checkpoints WHERE checkpoint_id = ?",
+                (checkpoint_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
     def chunk(self, chunk_id: str) -> dict[str, object] | None:
         with self._lock:
             row = self._connection.execute(
@@ -265,7 +312,12 @@ class Catalog:
         return json.loads(row["evidence_json"]) if row else None
 
     def table_columns(self, table: str) -> set[str]:
-        if table not in {"chunks", "chunk_transitions", "quarantined_artifacts"}:
+        if table not in {
+            "chunks",
+            "chunk_transitions",
+            "quarantined_artifacts",
+            "orderbook_checkpoints",
+        }:
             raise ValueError("unknown Catalog table")
         with self._lock:
             return {

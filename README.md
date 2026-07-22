@@ -16,9 +16,11 @@ identity.
 M4 and M5 provide independent Binance Spot and USD-M BTCUSDT public-market
 Collector libraries for diff depth at 100 ms, aggregate trades, book ticker,
 and official-SDK REST depth snapshots. They write only to the internal Raw
-spool. Order-book reconstruction, USD-M side data, normalization, external
-archive, launchd service installation, accounts, credentials, and trading
-remain unimplemented.
+spool. USD-M side data, normalization, external archive, launchd service
+installation, accounts, credentials, and trading remain unimplemented. M6
+reconstructs deterministic local books, detects
+sequence gaps, audits best levels/bookTicker, and writes derived checkpoints;
+it never modifies Raw.
 
 ## Identity
 
@@ -75,8 +77,9 @@ are optional and may disappear without stopping capture.
 - [M3 acceptance](docs/milestone_acceptance/M3.md)
 - [M4 acceptance](docs/milestone_acceptance/M4.md)
 - [M5 acceptance](docs/milestone_acceptance/M5.md)
+- [M6 acceptance](docs/milestone_acceptance/M6.md)
 
-## Install and verify M5
+## Install and verify M6
 
 Use Python 3.12 in a virtual environment:
 

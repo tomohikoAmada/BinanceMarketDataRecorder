@@ -42,6 +42,12 @@ for the internal Raw lifecycle. Later archive states remain unimplemented.
 Catalog paths are relative to the selected internal root, and SQLite stores
 chunk lifecycle metadata/transitions only—not market-event bodies.
 
+M6 checkpoints are derived files below `data/checkpoints/`. They are written to
+an in-directory `.partial`, flushed and fsynced, atomically renamed, and then
+registered as metadata in Catalog. A checkpoint includes source Raw chunk
+hashes and is refused for an unreliable book. It may be deleted and rebuilt;
+Raw chunks remain immutable and authoritative.
+
 ## External target identity and access boundary
 
 An archive registration contains:

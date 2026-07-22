@@ -12,6 +12,7 @@ Current and historical decisions:
 - [ADR-0008: Official modular SDKs for public REST snapshots](0008-official-sdk-rest-transport.md)
 - [ADR-0009: Generic WebSocket client for Binance market streams](0009-websocket-transport.md)
 - [ADR-0010: Raw chunk v1 byte format and crash lifecycle](0010-raw-chunk-v1-byte-format.md)
+- [ADR-0011: Market-specific order-book reconstruction and checkpoints](0011-orderbook-reconstruction-and-checkpoints.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

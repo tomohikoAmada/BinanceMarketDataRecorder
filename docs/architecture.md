@@ -59,6 +59,12 @@ normalize, replay, and archive remain independent of consumer code.
 Do not add an abstraction framework for unplanned exchanges. Another exchange
 would require a separate architecture review.
 
+M6 implements `orderbook` as a derived plane over immutable M4/M5 envelopes.
+It buffers before snapshot, uses separate Spot `U/u` and USD-M `U/u/pu`
+continuity branches, withholds an unreliable book after a gap, and persists
+hash-verified checkpoints plus Catalog metadata. It never writes reconstructed
+levels into Raw or SQLite.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,
