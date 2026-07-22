@@ -68,12 +68,13 @@ Its Binance modules are research-oriented:
 
 ## Boundary conclusion
 
-An independent Recorder repository does not conflict with Alpha101Crypto's
-current contracts. It removes live, stateful, platform-specific reliability
-work from the research release/failure domain. Integration later should adapt
-Recorder's normalized/manifests contract to `BinanceDataStore`-style reads or a
-new consumer adapter; it must not expose mountpoints or make Recorder import
-research code.
+An independent, generically named Recorder repository does not conflict with
+Alpha101Crypto's current contracts. It removes live, stateful,
+platform-specific reliability work from the research release/failure domain.
+Alpha101Crypto is only one possible external consumer. If optionally validated,
+its adapter may translate generic normalized/manifests/replay contracts to
+`BinanceDataStore`-style reads; the Recorder cannot expose mountpoints, import
+research code, or specialize core contracts for that adapter.
 
 Reusing code by cross-repository import is rejected. If a generic schema is
 eventually shared, it must be published/versioned as a data contract or neutral
@@ -81,7 +82,9 @@ package through a separate decision.
 
 ## M0 independence evidence
 
-- Recorder was initialized at the distinct requested path.
+- Recorder was initialized at the original distinct M0 path and its complete
+  Git repository was later moved intact to
+  `/Users/amada/Documents/Development/Crypto/CryptoMarketDataRecorder` by M0.1.
 - No files under Alpha101Crypto were written by M0.
 - Recorder contracts exclude all research, strategy, account, execution, and
   UI ownership.

@@ -10,8 +10,11 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | WF-02 | Stop with evidence on official API/platform/permission semantic blocker; no fake substitute | `AGENTS.md`, risks R-002/R-020/R-022 | M2/M9/M12 and any affected milestone |
 | WF-03 | No real trading, account API, API key or credential reads | project/security contract, ADR-0005 | Static/config tests M1; transport tests M2+ |
 | WF-04 | No format/repair of external disk; no GUI/web/trading/factor/backtest in Recorder | project/storage/macOS contracts | Boundary tests/reviews every milestone |
-| BND-01 | Recorder independent; Alpha101Crypto unchanged; one-way dependency | ADR-0001, repository audit | M0; consumer proof M16 |
-| BND-02 | Alpha101Crypto retains DSL/factor/strategy/backtest/ledger/UI ownership | project contract, repository audit | M0 and M16 review |
+| IDN-01 | Functional display/repository/distribution/import/CLI/application-data identity and new workspace | ADR-0006, `AGENTS.md` | M0.1 search/path/history tests; M1 packaging |
+| IDN-02 | Historical identity/path only in classified migration evidence; M0 history preserved | ADR-0006, M0.1 acceptance | M0.1 Git object and `rg` checks |
+| BND-01 | Recorder independent of all consumers; one-way generic contracts | ADR-0001/0006, architecture | M0.1; generic consumer proof M16 |
+| BND-02 | Alpha101Crypto remains an untouched historical audit object and optional ordinary consumer only | project contract, repository audit | M0/M0.1 and optional M16 read-only review |
+| BND-03 | Binance is an exchange adapter, not core/project identity | ADR-0006, architecture/data contract | M0.1 contract check; M2 adapter implementation |
 | SRC-01 | Only listed official Binance sources establish behavior and changelogs | `AGENTS.md`, `binance_sources.md` | M0 inventory; M2 updater/ADRs; M7 refresh |
 | SRC-02 | Select pages from llms.txt; no default llms-full; allowlisted hosts; hashes/time; no remote execution | source contract, ADR-0005 | M2 unit/security tests |
 | SRC-03 | Evaluate modular Spot/USD-M SDK; ban deprecated/unofficial core SDK/MCP | ADR-0005, source inventory | M2 dependency/probe tests |
@@ -49,15 +52,15 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | OPS-04 | 24-hour proactive rotation reuses blue/green mechanism | architecture/macOS contracts | M4/M5 lifecycle then M13 proof |
 | NRM-01 | Raw compression without mutation; versioned Parquet date/hour, lineage, gaps, rerunnable | data contract, ADR-0002 | M15 repeatability/DuckDB/hash tests |
 | CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | data contract, ADR-0004 | M16 deterministic tests |
-| CON-02 | Consumer hides archive location and fits Alpha101Crypto without reverse coupling | ADR-0001, architecture | M16 example/read-only validation |
+| CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0006, architecture | M16 independent example; optional named-consumer validation |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |
 | FAI-02 | 72-hour then post-fix 7-day soak; daily volume/resources/reconnect/gap/archive/forecast evidence | M17 plan | M17 complete reports |
 | REL-01 | V1 docs/package/test reports/limitations/Ubuntu preparation | M18 plan | M18 release packet |
-| REL-02 | V1 exit: continuous Spot/UM, rebuild/gaps/recovery/archive/space/blue-green/launchd/no GUI/key/trading/consumer | project contract and M18 plan | M18 acceptance; human decision |
+| REL-02 | V1 exit: continuous Spot/UM, rebuild/gaps/recovery/archive/space/blue-green/launchd/no GUI/key/trading/generic consumer | project contract and M18 plan | M18 acceptance; human decision |
 | FUT-01 | Architecture permits Ubuntu adapter/API gateway/UI/more markets/consumer strategies without adding them to V1 | architecture/project contracts | M16 contract; M18 checklist |
 
 ## Milestone coverage
 
-The M0-M18 sections in `milestone_plan.md` each contain scope, non-scope,
-dependencies, acceptance, and rollback. This traceability matrix should be
-updated whenever a requirement, ADR, or milestone acceptance changes.
+The M0, M0.1, and M1-M18 sections in `milestone_plan.md` each contain scope,
+non-scope, dependencies, acceptance, and rollback. This traceability matrix
+should be updated whenever a requirement, ADR, or milestone acceptance changes.

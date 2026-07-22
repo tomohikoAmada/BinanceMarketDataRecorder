@@ -8,9 +8,11 @@ are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Envelope schema identifier, initially `event-envelope.v1` |
-| `market` | `spot` or `um_perpetual` |
-| `symbol` | Canonical symbol, initially `BTCUSDT` |
-| `stream` | `diff_depth`, `agg_trade`, `book_ticker`, or versioned REST kind |
+| `venue` | Exchange/venue identifier supplied by an adapter; initially `binance` |
+| `market` | Generic market-type identifier; initial values include `spot` and `um_perpetual` |
+| `symbol` | Venue symbol preserved with an optional generic instrument mapping; initially `BTCUSDT` |
+| `stream` | Generic stream kind such as `diff_depth`, `agg_trade`, `book_ticker`, or versioned REST kind |
+| `adapter` | Exchange adapter name and schema/implementation version |
 | `connection_id` | Unique transport connection/session ID |
 | `collector_instance_id` | Unique process/deployment instance ID |
 | `collector_version` | Release plus Git commit provenance |
@@ -25,10 +27,13 @@ are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
 | `capture_flags` | Planned rotation, overlap, server shutdown, recovery provenance |
 
 Missing exchange fields remain absent/null with schema meaning; no field is
-fabricated. Combined-stream wrapper bytes versus inner payload bytes must be
-resolved by the M2 transport ADR and recorded explicitly—never silently mixed.
+fabricated. Venue-specific sequence fields remain lossless inside a generic
+versioned mapping and never become core assumptions. Combined-stream wrapper
+bytes versus inner payload bytes must be resolved by the M2 transport ADR and
+recorded explicitly—never silently mixed.
 
-REST snapshots use a versioned envelope with request URL/path, public request
+REST snapshots use a generic versioned envelope with venue/adapter identity,
+request URL/path, public request
 parameters, response status/headers needed for rate-limit provenance, request
 and response receive times, exact response bytes, market/symbol, transport and
 SDK version, and the returned `lastUpdateId`. They never include credentials.

@@ -11,10 +11,11 @@ stop; absence of an external target is not a Collector error.
 Allowed production root:
 
 ```text
-~/Library/Application Support/Alpha101CryptoRecorder/
+~/Library/Application Support/CryptoMarketDataRecorder/
 ```
 
-Forbidden defaults include repository paths, Desktop, Documents, iCloud Drive,
+Forbidden defaults include the repository, its parent
+`/Users/amada/Documents/Development/Crypto`, Desktop, Documents, iCloud Drive,
 and `/tmp` for persistent data.
 
 ## Chunk states

@@ -1,5 +1,9 @@
 # Official Binance Sources
 
+This is the evidence inventory for the first exchange adapter. Binance does not
+define the Crypto Market Data Recorder project identity or its generic Raw,
+Catalog, archive, replay, and consumer contracts; see ADR-0006.
+
 ## Policy and retrieval record
 
 Only Binance official sources listed in `AGENTS.md` may establish API behavior.
@@ -81,7 +85,8 @@ items. No M0 code relies on these planning notes.
 
 ## Agent Native updater boundary (M2)
 
-`tools/update_binance_docs.py` will be created only in M2. It must fetch the
+`tools/update_binance_docs.py` will be created only in M2 as Binance-adapter
+tooling. It must fetch the
 working `llms.txt`, select configured project pages, validate redirects and
 content types, allow only `developers.binance.com` and `github.com/binance`,
 save URL/retrieval time/SHA-256, avoid `llms-full.txt` by default, and never

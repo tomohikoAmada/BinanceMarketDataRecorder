@@ -1,4 +1,4 @@
-# ADR-0001: Independent stateful Recorder repository
+# ADR-0001: Independent stateful market-data Recorder repository
 
 - Status: Accepted
 - Date: 2026-07-22
@@ -18,23 +18,26 @@ different failure domain and release cadence from research compute.
 
 ## Decision
 
-Create Alpha101CryptoRecorder as an independent Git repository and stateful
-service. It does not import or modify Alpha101Crypto. The only supported future
-dependency is:
+Create an independently versioned market-data Recorder Git repository and
+stateful service. It does not import or modify consumer projects. The only
+supported future dependency direction is:
 
 ```text
-Recorder output contract -> Alpha101Crypto consumer adapter
+Recorder generic output/replay contract -> arbitrary consumer adapter
 ```
 
-Recorder cannot depend on Alpha DSL, factor, strategy, BacktestRunner, account
-Ledger, UI/API, or execution modules. Alpha101Crypto cannot control Recorder
-internals or require knowledge of external-volume mountpoints.
+Recorder cannot depend on any consumer's DSL, factor, strategy, backtest,
+account ledger, UI/API, monitoring, or execution modules. No consumer can
+control Recorder internals or require knowledge of external-volume mountpoints.
+Alpha101Crypto is the historical audit object and one possible ordinary
+consumer, not the target of a specialized contract.
 
 ## Consequences
 
 - Each project can evolve and deploy independently.
 - Storage/recovery tests do not contaminate research code.
-- A versioned M16 consumer contract and example are required before integration.
+- A versioned generic M16 consumer contract and independent example are
+  required; any named consumer validation is optional.
 - Some schema concepts may look similar; sharing happens by documented data
   format, not source imports.
 
@@ -42,8 +45,8 @@ internals or require knowledge of external-volume mountpoints.
 
 - Add Collector modules inside Alpha101Crypto: mixes stateful infrastructure
   with compute and conflicts with its module ownership.
-- Make Recorder a library controlled by BacktestRunner: reverses dependency and
-  compromises continuous independent capture.
+- Make Recorder a library controlled by any BacktestRunner: reverses dependency
+  and compromises continuous independent capture.
 - Modify Alpha101Crypto during M0: unnecessary and violates repository scope.
 
 ## Rollback

@@ -4,8 +4,11 @@
 
 The certified V1 service is a user LaunchAgent on macOS Apple Silicon, Python
 3.12, requiring the user to be logged in. Installation does not require root
-and does not silently install a LaunchDaemon. Logs and structured state live
-under the application support root, not the repository.
+and does not silently install a LaunchDaemon. Future launchd, service, log, and
+configuration identifiers derive from `CryptoMarketDataRecorder`, never a
+consumer name. Logs and structured state live under
+`~/Library/Application Support/CryptoMarketDataRecorder/`, not the repository
+or `/Users/amada/Documents/Development/Crypto`.
 
 M14 will provide install, uninstall, start, stop, and status scripts; automatic
 restart; SIGTERM sealing; configuration permission checks; and a single-instance
@@ -34,19 +37,19 @@ performed.
 
 ## Required CLI surface
 
-By M9/M12 the CLI includes:
+By M9/M12 the `crypto-market-recorder` CLI includes:
 
 ```text
-recorder storage list
-recorder storage inspect <path>
-recorder storage register <folder-path>
-recorder storage unregister <storage-id>
-recorder storage status
-recorder storage eject <storage-id>
-recorder storage forecast
-recorder archive status
-recorder archive retry
-recorder archive verify <storage-id>
+crypto-market-recorder storage list
+crypto-market-recorder storage inspect <path>
+crypto-market-recorder storage register <folder-path>
+crypto-market-recorder storage unregister <storage-id>
+crypto-market-recorder storage status
+crypto-market-recorder storage eject <storage-id>
+crypto-market-recorder storage forecast
+crypto-market-recorder archive status
+crypto-market-recorder archive retry
+crypto-market-recorder archive verify <storage-id>
 ```
 
 Registration is an explicit user action. Unregistering stops future use and

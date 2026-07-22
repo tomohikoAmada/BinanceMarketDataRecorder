@@ -1,9 +1,11 @@
-# Alpha101CryptoRecorder
+# Crypto Market Data Recorder
 
-Alpha101CryptoRecorder is an independent, long-running public market-data
-recording service for macOS Apple Silicon. It is designed to preserve exact
-Binance Spot and USD-M BTCUSDT market-data payloads, prove data quality, recover
-from crashes, and feed deterministic research datasets to Alpha101Crypto.
+Crypto Market Data Recorder is an independent, long-running crypto market-data
+recording service for macOS Apple Silicon. It preserves exact public exchange
+payloads, proves data quality, recovers from crashes, and publishes generic,
+deterministic datasets and replay contracts for arbitrary research, backtest,
+and monitoring consumers. Binance is its first adapter, not its project
+identity.
 
 ## Status
 
@@ -12,18 +14,30 @@ milestone plan, source inventory, risk register, and minimal offline acceptance
 test are committed. M0 intentionally contains no production package,
 WebSocket client, REST client, service, CLI, or storage implementation.
 
-The next milestone is M1: Python engineering skeleton, configuration, and CLI.
+M0.1 corrects the project identity and workspace without adding production
+code. The next milestone is M1: Python engineering skeleton, configuration, and
+CLI.
+
+## Identity
+
+- Repository: `CryptoMarketDataRecorder`
+- Distribution: `crypto-market-data-recorder`
+- Import package: `crypto_market_data_recorder`
+- Future CLI: `crypto-market-recorder`
+- Application data: `~/Library/Application Support/CryptoMarketDataRecorder/`
 
 ## Boundary
 
-Recorder owns capture, immutable raw chunks, local spool/catalog state,
-quality evidence, deterministic replay inputs, normalization, manifests,
-optional external archival, and operational reporting. Alpha101Crypto owns
-computation, research, factors, strategy, and backtesting.
+Recorder owns exchange adapters, capture, immutable raw chunks, local
+spool/catalog state, quality evidence, deterministic replay inputs,
+normalization, manifests, optional external archival, and operational reporting.
+Consumers own computation, research, factors, strategies, backtesting, and
+monitoring behavior.
 
 Recorder never owns trading, orders, accounts, API keys, strategies, factors,
 backtests, or a GUI. The dependency is one-way through published data
-contracts; Recorder does not import or modify Alpha101Crypto.
+contracts; Recorder does not import, modify, or specialize its core for any
+consumer.
 
 ## V1 capture scope
 
@@ -49,6 +63,7 @@ are optional and may disappear without stopping capture.
 - [Official Binance sources](docs/binance_sources.md)
 - [Risk register](docs/risk_register.md)
 - [Architecture decisions](docs/adr/README.md)
+- [M0.1 acceptance](docs/milestone_acceptance/M0.1.md)
 
 ## M0 verification
 
@@ -56,8 +71,8 @@ M0 has no runtime dependencies beyond Python 3.12 for the contract verifier.
 If pytest is available, run both gates:
 
 ```bash
-python3 -m pytest -q
-python3 tests/verify_m0_contracts.py
+python3.12 -m pytest -q
+python3.12 tests/verify_m0_contracts.py
 ```
 
 Production installation and CLI commands intentionally arrive in M1.

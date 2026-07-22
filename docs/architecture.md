@@ -2,16 +2,18 @@
 
 ## Context
 
-Alpha101CryptoRecorder is the system of record for public Binance capture and
-storage provenance. Alpha101Crypto is a separate compute and research system.
-The repositories have different lifecycles, state, reliability requirements,
-and security surfaces; ADR-0001 freezes that separation.
+Crypto Market Data Recorder is the system of record for public crypto
+market-data capture and storage provenance. Binance is the first exchange
+adapter; it does not define core identity or consumer contracts. External
+consumers have different lifecycles and may include research, backtest, or
+monitoring systems. ADR-0001 and ADR-0006 freeze that separation.
 
 ```text
-Binance public REST + WebSocket
+public exchange REST + WebSocket
               |
               v
-  transport adapters (Spot / USD-M isolated)
+  exchange transport adapters
+  (Binance Spot / USD-M first, isolated)
               |
               v
   bounded ingress -> raw spool writer -> seal/recovery
@@ -26,14 +28,14 @@ Binance public REST + WebSocket
                  archive manager                    normalization/replay
              (registered folder only)                       |
                                                             v
-                                               Alpha101Crypto adapter
+                                               arbitrary consumers
 ```
 
 ## Component responsibilities
 
 | Component | Owns | Must not own |
 | --- | --- | --- |
-| `binance` | Official public schema/transport adapters, REST snapshot provenance | accounts, keys, orders |
+| exchange adapters (`binance` first) | Official public schema/transport adapters, REST snapshot provenance | accounts, keys, orders, generic core policy |
 | `collector` | connection/session lifecycle, receive timestamps, bounded handoff | compression, Parquet, factors |
 | `spool` | framed append, rotation, fsync, seal, crash recovery | external mount logic |
 | `storage` | paths, Catalog, manifests, durable state transitions | market strategy semantics |
@@ -46,7 +48,10 @@ Binance public REST + WebSocket
 | `supervisor` | independent worker health, blue/green handoff, emergency stop | hiding gaps or coupling markets |
 | `cli` | local control/status/report/storage commands | GUI, trading interface |
 
-These are planned package boundaries, not M0 implementations.
+These are planned package boundaries, not M0/M0.1 implementations. Generic
+domain, storage, Raw, Catalog, normalize, replay, and archive modules must not
+import an exchange adapter; adapters translate official exchange semantics into
+the generic envelope without erasing raw bytes.
 
 ## Runtime isolation
 
@@ -86,7 +91,7 @@ partitions. They do not rewrite Raw.
 ## Internal directory contract
 
 ```text
-~/Library/Application Support/Alpha101CryptoRecorder/
+~/Library/Application Support/CryptoMarketDataRecorder/
 ├── data/
 │   ├── active/
 │   ├── sealed/
@@ -131,6 +136,7 @@ supports planned 24-hour connection rotation.
 ## Portability
 
 Platform-specific Disk Arbitration and launchd code sits behind `storage.macos`
-and supervisor adapters. File/chunk/manifests use specified language-neutral
-formats and UTC timestamps so future Go/Rust readers and an Ubuntu adapter do
-not require macOS internals.
+and supervisor adapters. Exchange-specific behavior sits behind transport/schema
+adapters. File/chunk/manifests use specified language-neutral formats and UTC
+timestamps so arbitrary consumers, future Go/Rust readers, and an Ubuntu
+adapter do not require macOS or Binance internals.

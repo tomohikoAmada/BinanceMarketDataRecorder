@@ -29,6 +29,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 capability spike with evidence; minimal native helper only if verified; otherwise stop/update risk | M9/M12 | Open |
 | R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | Million-event stress, event corpus stays out of SQLite, rolling growth reports | M3/M8/M11/M17 | Open |
 | R-024 | User pre-existing changes in Alpha101Crypto are overwritten | High | Research repo remains read-only; audit baseline records dirty frontend files | All | Mitigated |
+| R-025 | Project or core contracts regress to a consumer/venue-specific identity | High | ADR-0006 identity constants, legacy-name/context scans, generic M16 gate | M0.1/M1/M16/M18 | Mitigated |
 
 ## M0 open questions assigned to milestones
 
@@ -45,3 +46,5 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 - Replay total-order details and consumer dataset-version policy: M16.
 - Whether a future official Binance MCP exists with verifiable installation:
   not required; reconsider only from official documentation.
+- Future distribution/import/CLI/launchd/service identifiers must match
+  ADR-0006 exactly; M1/M14 cannot derive them from historical consumer names.

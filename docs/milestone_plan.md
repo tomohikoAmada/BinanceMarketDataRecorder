@@ -1,7 +1,8 @@
 # Milestone Plan
 
-Status: frozen by M0 on 2026-07-22. Execute exactly one milestone per run and
-one local commit per milestone. Never start the next milestone automatically.
+Status: frozen by M0 and identity-corrected by M0.1 on 2026-07-22. Execute
+exactly one milestone per run and one local commit per milestone. Never start
+the next milestone automatically.
 
 ## Universal gate
 
@@ -16,8 +17,8 @@ If official API semantics, macOS permission, or platform behavior cannot meet a
 gate, stop implementation, capture evidence, and update the risk register. No
 plausible but semantically different substitute is acceptable. Every milestone
 inherits the bans on trading/accounts/keys, GUI, filesystem format/repair, and
-modifying Alpha101Crypto unless a future user request explicitly scopes a
-read-only consumer change.
+modifying external consumer repositories. A future named-consumer validation is
+read-only and optional unless separately authorized.
 
 Rollback always preserves immutable data. “Revert commit” below means revert
 code/config/schema additions; it never means delete or rewrite captured Raw.
@@ -25,7 +26,7 @@ code/config/schema additions; it never means delete or rewrite captured Raw.
 ## Dependency graph
 
 ```text
-M0 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8 -> M9 -> M10
+M0 -> M0.1 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8 -> M9 -> M10
                                                    M8 -> M11
                                              M9 -> M12
                                    M4/M5/M6 -> M13 -> M14
@@ -57,16 +58,46 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 - Rollback: revert/archive the M0 commit and repository before implementation;
   do not touch the audited research repository.
 
+## M0.1 — Project identity, workspace, and generic consumer boundary correction
+
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M0.1.md` and reported at handoff.
+
+- Scope: preserve the M0 Git history while moving the same repository to
+  `/Users/amada/Documents/Development/Crypto/CryptoMarketDataRecorder`; freeze
+  display/distribution/import/CLI/application-data identities; remove the old
+  Recorder identity from current surfaces; make Binance an adapter; make Raw,
+  Catalog, normalize, replay, archive, and consumer contracts generic; add
+  ADR-0006, traceability and M0.1 acceptance; update contract tests.
+- Non-scope: M1 packaging/config/CLI implementation, `src` production code,
+  Binance connection, Collector/WebSocket/REST implementation, GUI, production
+  data migration, or modification of Alpha101Crypto.
+- Dependencies: accepted M0 root commit
+  `1634b09e57d287eba82ef34f117b4657979cc38b`, clean worktree, and preservation
+  of the existing `.git` object database during the directory move.
+- Acceptance: Git top-level and frozen identities equal ADR-0006; original M0
+  commit remains a commit object; exact legacy identity/path searches contain
+  only explicitly classified migration history; every Alpha101 reference is
+  classified as historical audit or optional ordinary external consumer; all
+  current CLI/data/service paths use the new identity; M0 verifier and pytest
+  pass on Python 3.12; no `src`, M1/network/GUI/Collector code, external-repo
+  change, or dirty post-commit worktree.
+- Rollback: revert the single M0.1 commit and move the same repository directory
+  back only before later milestones depend on the new public identifiers; do
+  not rewrite M0, create a second history, or move/delete production data.
+
 ## M1 — Python engineering skeleton, configuration, and CLI
 
 - Scope: Python 3.12 `src` layout; `pyproject.toml`; installable package; lint,
   type checking and pytest; structured logging; strict Pydantic configuration;
   CLI/version/Git commit injection; default application-support paths;
-  `recorder doctor`, `config show`, and `status`; path/permission guards; empty
+  `crypto-market-recorder doctor`, `config show`, and `status`;
+  `crypto-market-data-recorder` distribution and
+  `crypto_market_data_recorder` import package; path/permission guards; empty
   keys/credential surface.
 - Non-scope: any Binance connection, collector, external-volume write, raw
   writer, launchd install, or production data.
-- Dependencies: M0 contracts/ADR-0001 and clean M0 acceptance.
+- Dependencies: M0/M0.1 contracts, ADR-0001/ADR-0006, and clean M0.1 acceptance.
 - Acceptance: clean environment install; unit/lint/type tests pass; all CLI
   commands run offline; default/override path and permissions are tested;
   repository/Desktop/Documents/iCloud/persistent `/tmp` are rejected for
@@ -180,7 +211,8 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 ## M8 — Metrics, daily traffic reports, and status
 
 - Scope: all project-contract input, quality, output and performance counters;
-  structured runtime JSON; `recorder status`; `recorder report daily`; UTC
+  structured runtime JSON; `crypto-market-recorder status`;
+  `crypto-market-recorder report daily`; UTC
   rollover; persisted idempotent aggregates; per-market/stream audit.
 - Non-scope: GUI/metrics web server, full events in SQLite, storage forecast
   algorithm (M11), or external archive mechanics.
@@ -229,7 +261,7 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 
 - Scope: internal/per-target space states; 1 h/6 h/24 h/7 d robust growth rates;
   40%/15%/`max(10 GiB,5%)` thresholds and UTC ETAs; backlog/oldest age; alerts;
-  emergency policy; `recorder storage forecast`.
+  emergency policy; `crypto-market-recorder storage forecast`.
 - Non-scope: silent data deletion, changing filesystems, claiming forecast when
   history is insufficient.
 - Dependencies: M8 persisted metrics and M10 archive/delete rates.
@@ -243,7 +275,8 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 
 ## M12 — macOS safe eject
 
-- Scope: `recorder storage eject <id>`; block new allocation; wait/cancel work;
+- Scope: `crypto-market-recorder storage eject <id>`; block new allocation;
+  wait/cancel work;
   fsync/transaction completion or rollback; close handles; Disk Arbitration
   unmount/eject; safe-to-remove result; busy/refusal/forced-removal recovery.
 - Non-scope: forced filesystem manipulation, format/repair, claiming success
@@ -300,18 +333,20 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 - Rollback: delete only versioned derived/compressed copies proven rebuildable,
   retain Raw, revert M15 and regenerate with old version.
 
-## M16 — Replay interface and Alpha101Crypto data contract
+## M16 — Replay interface and generic consumer data contract
 
 - Scope: receive/exchange-time replay and event clock; market/stream/time reads;
-  checkpoint seek; explicit gap policy; manifest query/dataset version;
-  `docs/consumer_contract.md`; independent consumer example; read-only
-  Alpha101Crypto integration validation.
+  checkpoint seek; explicit gap policy; generic manifest query/dataset version;
+  generic `docs/consumer_contract.md`; independent example consumer; optional
+  read-only validation that Alpha101Crypto can connect as an ordinary consumer.
 - Non-scope: Recorder strategy, factor, BacktestRunner change, live trading, or
-  modifying Alpha101Crypto by default.
+  modifying any consumer repository. The optional named-consumer validation is
+  not a V1 gate and cannot add reverse dependencies or specialized core fields.
 - Dependencies: M15 datasets, M6 checkpoints, ADR-0004.
-- Acceptance: identical input produces identical total order; consumer does not
-  know archive mountpoint; Catalog/manifest resolves locations; integration
-  proposal preserves one-way dependency and research `S x T`/Parquet contracts.
+- Acceptance: identical input produces identical total order; any consumer does
+  not know archive mountpoint; generic Catalog/manifest APIs resolve locations;
+  the independent example uses only published contracts; no named consumer is
+  required for V1 completion.
 - Rollback: retain prior reader/version, revert new API/example, leave Raw and
   datasets intact.
 
@@ -342,8 +377,8 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 - Dependencies: accepted M17 and every prior compatibility/operations contract.
 - Acceptance: Spot/UM continuous Raw, reconstructable L2 and detectable gaps;
   crash recovery; optional unplug-safe archive; verified-delete; 40%/ETA;
-  blue/green; LaunchAgent; no GUI/trading/key; Alpha101Crypto-compatible
-  consumer; reproducible package/docs/test evidence.
+  blue/green; LaunchAgent; no GUI/trading/key; generic independent consumer;
+  reproducible package/docs/test evidence.
 - Rollback: retain prior signed/versioned package and data readers, uninstall the
   candidate LaunchAgent cleanly, restore previous service version, and await a
   new human release decision.

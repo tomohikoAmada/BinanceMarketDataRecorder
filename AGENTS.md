@@ -1,12 +1,30 @@
-# Alpha101CryptoRecorder Agent Contract
+# Crypto Market Data Recorder Agent Contract
+
+## Frozen project identity
+
+- Display name: **Crypto Market Data Recorder**
+- Repository directory: `CryptoMarketDataRecorder`
+- Repository path:
+  `/Users/amada/Documents/Development/Crypto/CryptoMarketDataRecorder`
+- Python distribution: `crypto-market-data-recorder`
+- Python import package: `crypto_market_data_recorder`
+- Future CLI: `crypto-market-recorder`
+- macOS application data:
+  `~/Library/Application Support/CryptoMarketDataRecorder/`
+
+Project, package, CLI, launchd, log, configuration, and service identifiers use
+functional market-data naming, never a consumer/research-project identity. See
+ADR-0006.
 
 ## Project goal
 
-Build a long-running, stateful Python 3.12 market-data recorder for macOS Apple
-Silicon. V1 captures public BTCUSDT Spot and USD-M perpetual depth at 100 ms,
-aggregate trades, book ticker events, and public REST depth snapshots. It keeps
-recoverable immutable raw payloads, deterministic replay metadata, explicit gap
-evidence, and optional verified archival to a user-registered directory.
+Build a general, long-running, stateful Python 3.12 crypto market-data recorder
+for macOS Apple Silicon. Binance is the first exchange adapter: V1 captures
+public BTCUSDT Spot and USD-M perpetual depth at 100 ms, aggregate trades, book
+ticker events, and public REST depth snapshots. The core keeps recoverable
+immutable raw payloads, deterministic replay metadata, explicit gap evidence,
+and optional verified archival to a user-registered directory without binding
+its data contracts to one exchange, strategy, research project, or backtester.
 
 The authoritative scope is `docs/project_contract.md`. The delivery sequence and
 acceptance gates are in `docs/milestone_plan.md`.
@@ -30,18 +48,21 @@ acceptance gates are in `docs/milestone_plan.md`.
 Dependency direction is one-way:
 
 ```text
-Binance public APIs
-  -> Alpha101CryptoRecorder
+public exchange APIs
+  -> exchange adapters (Binance first)
+  -> Crypto Market Data Recorder core
   -> immutable raw chunks
   -> normalized datasets and manifests
-  -> Alpha101Crypto consumer adapter
-  -> research, factors, strategies, and backtests
+  -> generic replay and consumer contracts
+  -> arbitrary research, backtest, and monitoring consumers
 ```
 
-Recorder is an independent repository and service. It must not import from or
-write to `Alpha101Crypto`. Research code may depend only on Recorder's published
-consumer contract, Catalog read interfaces, and manifests, never Recorder
-internals. See ADR-0001.
+Recorder is an independent repository and service. Consumers may depend only on
+its generic published contracts, Catalog read interfaces, manifests, and replay
+APIs, never Recorder internals. Recorder must not import from or write to any
+consumer project. Alpha101Crypto is one optional external consumer example; it
+has no privileged influence on Raw, Catalog, replay, normalization, or archive
+protocols. See ADR-0001 and ADR-0006.
 
 ## Data-integrity rules
 
@@ -151,8 +172,8 @@ M0 repository checks:
 
 ```bash
 git status --short --branch
-python3 -m pytest -q
-python3 tests/verify_m0_contracts.py
+python3.12 -m pytest -q
+python3.12 tests/verify_m0_contracts.py
 git diff --check
 ```
 
@@ -165,10 +186,11 @@ milestones.
 The production default is:
 
 ```text
-~/Library/Application Support/Alpha101CryptoRecorder/
+~/Library/Application Support/CryptoMarketDataRecorder/
 ```
 
 Never treat an entire external volume as project-owned. Operate only inside the
 registered relative directory identified by volume UUID plus marker and
 `storage_id`. Do not change filesystem format, repair it, write outside that
-directory, or rely only on `/Volumes/<name>`.
+directory, or rely only on `/Volumes/<name>`. Never use the repository or its
+parent `/Users/amada/Documents/Development/Crypto` as a production data root.

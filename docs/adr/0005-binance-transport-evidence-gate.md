@@ -3,6 +3,10 @@
 - Status: Accepted
 - Date: 2026-07-22
 
+M0.1 identity note: this ADR selects evidence for the first exchange adapter;
+it does not make Binance the project/core identity. Transport packages remain
+outside generic Raw, Catalog, archive, replay, and consumer policy.
+
 ## Context
 
 Official modular Python packages currently identify themselves as

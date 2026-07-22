@@ -5,12 +5,14 @@ retain traceability in `requirements_traceability.md`.
 
 ## Purpose and certified environment
 
-Alpha101CryptoRecorder is an independent stateful infrastructure service. Its
-first certified platform is macOS on Apple Silicon with Python 3.12, deployed
-as a user `launchd` LaunchAgent while the user is logged in. Docker is not the
-V1 production deployment.
+Crypto Market Data Recorder is an independent, general-purpose, stateful crypto
+market-data infrastructure service. Its identity and core contracts are not
+bound to Alpha101, a strategy, backtest engine, or exchange. Its first certified
+platform is macOS on Apple Silicon with Python 3.12, deployed as a user
+`launchd` LaunchAgent while the user is logged in. Docker is not the V1
+production deployment.
 
-V1 records public BTCUSDT market data:
+Binance is the first adapter. V1 records public BTCUSDT market data:
 
 | Market | Core streams | Recovery/bootstrap |
 | --- | --- | --- |
@@ -23,20 +25,22 @@ collectors. Side-data failure must never block the core collectors.
 
 ## Ownership and dependency contract
 
-Recorder owns:
+The Recorder core owns:
 
 - public market-data transport and exact receive evidence;
 - immutable raw chunks and their manifests;
 - crash recovery, gap/resync quality state, local spool, Catalog, and reports;
 - normalized/versioned datasets and deterministic replay;
 - registered external-directory discovery and verified archival;
-- a future read-only consumer contract for Alpha101Crypto.
+- a generic, versioned, read-only consumer contract.
 
-Alpha101Crypto owns computation, Alpha DSL, factors, research, strategies,
-target generation, simulated execution, account ledgers, backtesting, and
-research UI/API. Recorder never imports Alpha101Crypto, and Alpha101Crypto may
-not control Recorder internals. Integration is through immutable datasets,
-manifests, Catalog queries, and the M16 consumer contract.
+Consumers own computation, factors, research, strategies, target generation,
+execution simulation, account ledgers, backtesting, monitoring, and UI/API
+surfaces. Recorder never imports consumer code, and consumers may not control
+Recorder internals. Integration is through generic immutable datasets,
+manifests, Catalog queries, replay APIs, and the M16 consumer contract.
+Alpha101Crypto may be checked read-only as one ordinary consumer example, but
+that validation is optional and cannot define V1 completion.
 
 ## Data invariants
 
@@ -61,9 +65,10 @@ manifests, Catalog queries, and the M16 consumer contract.
 
 - Collector always writes to the internal data root, never directly to an
   external volume. Default root:
-  `~/Library/Application Support/Alpha101CryptoRecorder/`.
+  `~/Library/Application Support/CryptoMarketDataRecorder/`.
 - Production data is forbidden under the repository, Desktop, Documents,
-  iCloud Drive, and persistent `/tmp`.
+  iCloud Drive, persistent `/tmp`, and the repository parent
+  `/Users/amada/Documents/Development/Crypto`.
 - External archive is optional. Only a user-registered directory is writable;
   the volume remains shared and its existing filesystem stays unchanged.
 - External identity combines volume UUID, volume name, filesystem type,
@@ -132,5 +137,6 @@ stateless capture, automatic disk formatting/repair, mandatory SMART support,
 and Windows/Ubuntu certification are excluded.
 
 The design must leave adapters possible for Ubuntu storage, an API gateway,
-separate UI, additional symbols/exchanges, and independent strategy or paper
-trading consumers. Those consumers remain outside Recorder.
+separate UI, additional symbols/exchanges, and independent strategy, backtest,
+monitoring, or paper-trading consumers. Those consumers remain outside
+Recorder, and exchange-specific behavior remains behind adapters.
