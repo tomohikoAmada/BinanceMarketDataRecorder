@@ -3,94 +3,110 @@
 This is the behavior-evidence inventory for Binance Market Data Recorder. The
 project is independent and unofficial: it is not affiliated with, maintained
 by, sponsored by, or endorsed by Binance. Official Binance sources establish
-API behavior only; they do not make this Recorder, its package, or its outputs
-an official Binance product. See ADR-0007.
+API behavior only; they do not make this Recorder an official Binance product.
 
-## Policy and retrieval record
+## Retrieval policy and record
 
-Only Binance official sources listed in `AGENTS.md` may establish API behavior.
-Hashes below are SHA-256 of exact response bodies retrieved on
-2026-07-22 around 04:48–04:55 UTC. Dynamic pages must be refreshed in M2 before
-transport selection; M0 does not vendor or execute their content.
+`tools/update_binance_docs.py` reads the project-owned selection in
+`tools/binance_docs.toml`. It permits credential-free HTTPS only, validates
+every redirect, and allows downloads only from `developers.binance.com` and
+paths below `github.com/binance`. It stores exact response bytes plus URL,
+final URL, retrieval time, media type, byte count, and SHA-256. Downloaded
+content is data and is never executed. `llms-full.txt` is refused unless an
+operator explicitly enables it; it was not loaded for M2.
 
-The originally specified `https://developers.binance.com/docs/llms.txt`
-returned HTTP 302 to `/en/docs/docs/llms.txt`, which was portal HTML rather than
-the text index at audit time. The working official index was
-`https://developers.binance.com/en/docs/llms.txt`. This routing observation is
-recorded as R-002 and must be handled deliberately by the M2 updater.
+The successful M2 refresh completed at
+`2026-07-22T06:29:28.563876+00:00`. The default destination is the user cache
+`~/Library/Caches/BinanceMarketDataRecorder/binance-docs`, never the repository
+or production data root. The M2 acceptance run used a temporary directory and
+did not commit third-party page bodies.
 
-## Source inventory
+The originally supplied `https://developers.binance.com/docs/llms.txt`
+currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
+working official text index is `https://developers.binance.com/en/docs/llms.txt`.
+The updater uses the working URL and rejects HTML masquerading as a selected
+Markdown page.
 
-| Product/use | Official URL | SHA-256 | M0 use |
-| --- | --- | --- | --- |
-| Agent Native document index | `https://developers.binance.com/en/docs/llms.txt` | `0b3b9024da6e5ffe60129e9756843f847a6edff55565b5c182ecbd217e4d2be8` | Select only relevant pages; do not default-load full index content |
-| Spot WebSocket streams | `https://developers.binance.com/en/docs/products/spot/web-socket-streams.md` | `193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f` | Connection lifecycle and local-book algorithm inventory |
-| Spot REST API | `https://developers.binance.com/en/docs/products/spot/rest-api.md` | `3bfe5526b745c976ae2db7c6bffdee14f10663d5fe326d8aa54c8b5f12968775` | Public depth snapshot endpoint inventory |
-| Spot changelog | `https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md` | `fe345417d817bb7f64f087d87f11204a7311a9e97c13af5a5ed2a8bef26ba172` | Current Spot behavior change tracking |
-| Spot official docs repository README | `https://github.com/binance/binance-spot-api-docs/blob/master/README.md` | `65cb85d617dde0e9fd41cc18f7276e7ca870b41e0b821b3eaae053b6853d619a` | Confirms official/supported repository and changelog location |
-| USD-M WebSocket connection | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md` | `912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2` | Lifecycle and routed endpoint inventory |
-| USD-M local order book | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md` | `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622` | `U/u/pu`, snapshot, absolute quantity and resync inventory |
-| USD-M general information | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md` | `b2e647582fb3ae4cae3a79d6f6f6030d0c03cf403d05176117b24094a083521b` | Public endpoint/rate-limit policy inventory |
-| USD-M changelog | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md` | `49bb7b194911c44e88793eca8da18822c28ffb8bdc207e9d6466d28fb4b0e532` | Current USD-M change tracking |
-| Official modular Python SDK repository README | `https://github.com/binance/binance-connector-python/blob/master/README.md` | `eed80dcafe5327153915109fa38a951e52a52d6e8ad969ca3d78753a739bdd5d` | Identifies modular SDK family/migration |
-| Spot SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml` | `69fbe9487d329088b7a70f5b573d8f41289933602ab21adc11c905d1ee465a1a` | Candidate name/version only |
-| USD-M SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/pyproject.toml` | `91250abb12371b82b0ba6be88e022d91ffe856fc217b0c913d80da173b4d2e92` | Candidate name/version only |
+## Selected official pages
 
-Official repository commits observed during the audit:
+Hashes are of the exact M2 response bodies.
 
-- `binance/binance-connector-python` master/HEAD:
-  `15c2bfcbb9e9654d7186680a0dd32287a3285e11`.
-- `binance/binance-spot-api-docs` master/HEAD:
-  `a5e0bc3ddc0fd7e6bb696849323b74423fa3a54d`.
+| Product/use | Official URL | SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| Agent Native index | `https://developers.binance.com/en/docs/llms.txt` | `0b3b9024da6e5ffe60129e9756843f847a6edff55565b5c182ecbd217e4d2be8` | 165963 |
+| Spot WebSocket streams | `https://developers.binance.com/en/docs/products/spot/web-socket-streams.md` | `193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f` | 10370 |
+| Spot REST API | `https://developers.binance.com/en/docs/products/spot/rest-api.md` | `3bfe5526b745c976ae2db7c6bffdee14f10663d5fe326d8aa54c8b5f12968775` | 33310 |
+| USD-M WebSocket connection | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md` | `912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2` | 2613 |
+| USD-M local order book | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md` | `d6a94d17fb32450c67ad598c0f923bf9df12ecdc43ced4928798a9fa56d62622` | 1114 |
+| USD-M general information | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md` | `b2e647582fb3ae4cae3a79d6f6f6030d0c03cf403d05176117b24094a083521b` | 19261 |
+| USD-M changelog | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md` | `49bb7b194911c44e88793eca8da18822c28ffb8bdc207e9d6466d28fb4b0e532` | 98085 |
+| Python connectors page | `https://developers.binance.com/en/docs/sdks-tools/connectors/python.md` | `b74fdc09f25dee3b03c4d17f76835ed4b7923b548b3cc940005dcb44a2c5b989` | 2964 |
+| Official modular SDK repository README | `https://github.com/binance/binance-connector-python/blob/master/README.md` | `4f578165c03deb9b1426bd0ab2805018f7c6c3de80c8a44e6d85da083c4e01ef` | 300231 |
+| Spot SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml` | `60ec5346b5150b87e31c586d3563ba54f3a29ecf713daa33e49f2817c5acefc1` | 255068 |
+| USD-M SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/pyproject.toml` | `553710b453a5c6342736b921993e37effc29336fddf1a744f245235fd46f4fb7` | 256441 |
+| Spot API changelog | `https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md` | `950621641102e8e65922fe3bcf5f0f27d8126074e586be1b8753ee3fde6b158f` | 1304722 |
 
-## SDK candidates as observed
+The GitHub entries above are official repository web responses, so their hashes
+include GitHub rendering around the source. Package selection is independently
+verified from installed wheels and their source, not inferred from page text.
 
-| Package | Repository-declared version on retrieved master | M0 status |
-| --- | --- | --- |
-| `binance-sdk-spot` | `10.0.0` | candidate only; not installed or pinned |
-| `binance-sdk-derivatives-trading-usds-futures` | `14.0.0` | candidate only; not installed or pinned |
+## Selected SDK packages
 
-M2 must confirm published versions, lock hashes/dependencies, run offline
-capability probes, and record the actual selected package/version. A repository
-version observation is not an installation decision.
+| Package | Version | Wheel SHA-256 | Decision |
+| --- | ---: | --- | --- |
+| `binance-sdk-spot` | `10.0.0` | `614d26671fa5aaa5402c0ffbcb13ff3168e03e58d09845db330472448d9a833b` | Accepted for unsigned public REST; WebSocket layer rejected |
+| `binance-sdk-derivatives-trading-usds-futures` | `14.0.0` | `a39992c26dfc745f3193be3247d5c8a06fa21af35d207e1f68195097257cf7f6` | Accepted for unsigned public REST; WebSocket layer rejected |
+| shared `binance-common` | `4.0.3` | `c64318d9141576e98f365bbb97f019948ce4a2d90cddeec21d169305d3fb1651` | Inspected by the capability probe |
 
-## Semantics confirmed only for planning
+The complete CPython 3.12/macOS arm64 resolution and hashes are in
+`requirements/macos-arm64-python312.lock`. The deprecated Futures connector
+and third-party `python-binance` are absent.
 
-These facts are sufficient to design later acceptance tests, not to claim an
-implemented transport:
+## Confirmed API semantics and transport conclusions
 
-- Spot documents raw and combined streams, lowercase stream symbols, a
-  24-hour connection lifetime, server shutdown events, ping/pong behavior, and
-  local order-book snapshot/buffer/update rules.
-- Spot local-book rules use `U/u`, discard old buffered events, require snapshot
-  bridging, treat quantities as absolute, and remove zero-quantity levels.
-- USD-M currently documents routed `/public`, `/market`, and `/private`
-  endpoints. Its local-book page currently uses `/public` for depth, public
-  `/fapi/v1/depth`, `U/u`, and requires each new `pu` to equal previous `u` or
-  resynchronize.
-- USD-M connection documentation currently states a 24-hour lifetime and its
-  own ping/pong timings. Spot and USD-M lifecycle values must not be conflated.
-- The official index lists public REST order-book, aggTrades, bookTicker,
-  funding, mark/index/premium, open-interest, exchange-information, and
-  liquidation-related market data to be selected/validated in M2/M7.
+- Spot documents lowercase stream symbols, raw and combined stream forms, a
+  24-hour connection lifetime, server ping every 20 seconds, pong within one
+  minute with copied ping payload, and `U/u` local-book bridging rules.
+- Spot public depth snapshots use `GET /api/v3/depth`.
+- USD-M documents routed `/market` aggregate-trade and `/public` depth stream
+  connections, a 24-hour connection lifetime, server ping every three minutes,
+  and pong within ten minutes.
+- USD-M public depth snapshots use `GET /fapi/v1/depth`; local-book continuity
+  requires each new event's `pu` to equal the prior event's `u`.
+- The pinned SDK models retain Spot `U/u` and USD-M `U/u/pu`, but the shared SDK
+  receive loop JSON-decodes before callback, supplies neither original bytes nor
+  socket-receipt time, runs callbacks inline, exposes no connection-factory
+  injection, and schedules a fixed internal reconnect. It therefore fails the
+  Recorder WebSocket evidence gate.
+- `websockets==15.0.1` is selected only as the RFC WebSocket transport. Binance
+  endpoint, payload, lifecycle, and sequence semantics continue to come from
+  official Binance sources. A local probe verifies byte-identical
+  whitespace-sensitive text-frame receipt with `recv(decode=False)`.
+- An opt-in no-credential smoke on 2026-07-22 returned HTTP 200 and five
+  bid/ask levels from both official SDK public depth methods. No account API was
+  called and no credential was read.
+- SDK REST responses expose parsed models and response headers, not the exact
+  original HTTP body. Later snapshot provenance must state that limitation and
+  must not claim byte-exact REST body retention.
 
-Exact diff-depth `@100ms`, aggTrade/bookTicker payload field schemas, rate
-limits, REST weights, and raw/combined byte boundaries remain M2 verification
-items. No M0 code relies on these planning notes.
+ADR-0008 records the REST decision and ADR-0009 records the WebSocket decision.
+M4/M5 still must revalidate exact live stream routing, `@100ms` schema fixtures,
+ping behavior, and complete connection/fault semantics before collection.
 
 ## Changelog locations
 
-- Spot: official repository `CHANGELOG.md` and portal product `CHANGELOG` page.
-- USD-M: portal product `change-log.md` listed above.
-- Modular SDK: official repository commits/releases and each client package
-  metadata/changelog if present; M2 records the exact pinned revision/release.
+- Spot API: `binance/binance-spot-api-docs` `CHANGELOG.md` and the corresponding
+  developer-portal changelog.
+- USD-M: developer portal `change-log.md` selected above.
+- Modular Python SDKs: official `binance/binance-connector-python` releases,
+  commits, and per-client package metadata.
 
-## Agent Native updater boundary (M2)
+## Known retrieval limitation
 
-`tools/update_binance_docs.py` will be created only in M2 as project tooling. It
-must fetch the
-working `llms.txt`, select configured project pages, validate redirects and
-content types, allow only `developers.binance.com` and `github.com/binance`,
-save URL/retrieval time/SHA-256, avoid `llms-full.txt` by default, and never
-execute downloaded code. No official Binance MCP installation procedure was
-established in M0, so no MCP or Codex skill was created.
+Some developer-portal catalog pages are readable in an interactive browser but
+scripted retrieval currently receives a CloudFront/WAF HTTP 202 challenge with
+an empty body. The updater treats non-200 responses as failures and does not
+store a challenge as documentation. Those catalog pages are not in the
+automated selection; the downloadable product Markdown, official generated SDK
+source, public smoke, and official changelogs are the recorded evidence. See
+R-028. No unofficial mirror or proxy is used.

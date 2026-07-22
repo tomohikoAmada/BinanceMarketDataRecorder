@@ -5,9 +5,9 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 
 | ID | Risk | Sev. | Mitigation / evidence gate | Owner milestone | Status |
 | --- | --- | --- | --- | --- | --- |
-| R-001 | Official SDK WebSocket callbacks may hide/re-encode payloads, own receive timing, or drop under blocking callbacks | Critical | M2 raw-byte/backpressure/lifecycle/fault probes; generic client only via transport ADR if SDK fails | M2 | Open |
-| R-002 | Binance documentation paths/semantics change; specified `/docs/llms.txt` currently redirects to portal HTML | High | M2 updater validates final host, status, content type/body and selected-page hashes; stop on unresolved semantics | M2 | Open |
-| R-003 | USD-M stream routing changed to `/public` and `/market`; stale endpoints could silently omit streams | Critical | Verify each V1 stream against current official docs and public smoke; never infer routing | M2/M5/M7 | Open |
+| R-001 | Official SDK WebSocket callbacks may hide/re-encode payloads, own receive timing, or drop under blocking callbacks | Critical | Probe confirmed all three failures; ADR-0009 rejects SDK WebSocket streams and selects caller-owned exact-byte transport | M2 | Mitigated |
+| R-002 | Binance documentation paths/semantics change; specified `/docs/llms.txt` redirects to portal HTML | High | Updater uses the working official index and validates host, every redirect, HTTP 200, body/content and selected-page hashes | M2 | Mitigated |
+| R-003 | USD-M stream routing changed to `/public` and `/market`; stale endpoints could silently omit streams | Critical | M2 records official route separation and generated SDK evidence; M5/M7 must revalidate every live stream and never infer routing | M2/M5/M7 | Monitoring |
 | R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | Bounded queue, explicit failure policy, synthetic million-event and overload/fault tests | M3-M5 | Open |
 | R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | Framing/CRC scan, atomic seal, manifest/hash, recovery/quarantine fault matrix | M3 | Open |
 | R-006 | Spot or USD-M sequence semantics are applied to the other market | Critical | Separate official fixtures/implementations; `U/u` and `U/u/pu` assertions and resync tests | M4-M6 | Open |
@@ -24,7 +24,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-017 | Mac sleep/closed lid creates unavoidable data gaps | High | Detect/mark sleep, scoped optional power assertion, document no closed-lid guarantee | M14/M18 | Accepted |
 | R-018 | Compression or normalization mutates/deletes canonical Raw | Critical | Separate temp/output, source hashes, immutable manifests, repeatability tests | M3/M15 | Open |
 | R-019 | Consumer depends on external mountpoint or Recorder internals | High | Catalog/manifest resolution and versioned M16 adapter contract | M16 | Open |
-| R-020 | Official public API access is geographically/system restricted | High | Public opt-in smoke captures exact error; stop affected milestone rather than use unofficial proxy | M2/M4/M5/M7 | Open |
+| R-020 | Official public API access is geographically/system restricted | High | M2 Spot/USD-M public REST smoke passed from the certification host; later live milestones must recheck and never use an unofficial proxy | M2/M4/M5/M7 | Monitoring |
 | R-021 | CRC32C/CBOR/Zstd implementations disagree across languages | Medium | M3 canonical byte rules and Python/Go-or-Rust golden vectors before acceptance | M3 | Open |
 | R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 capability spike with evidence; minimal native helper only if verified; otherwise stop/update risk | M9/M12 | Open |
 | R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | Million-event stress, event corpus stays out of SQLite, rolling growth reports | M3/M8/M11/M17 | Open |
@@ -32,13 +32,16 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-025 | Project identifiers regress to an earlier M0/M0.1 identity | High | ADR-0007 constants and allowlisted legacy-name/path scans | M0.2/M1/M14/M18 | Mitigated |
 | R-026 | Name, visual identity, wording, service label, or publisher metadata falsely implies an official Binance relationship | Critical | Prominent disclaimer; no Binance logo; author-controlled namespace; forbidden wording/namespace tests | M0.2/M14/M18 | Mitigated |
 | R-027 | V1 over-engineers an unrequested multi-exchange framework | Medium | Binance Spot/USD-M scope in ADR-0007; another exchange requires separate review | M0.2 and all design milestones | Mitigated |
+| R-028 | CloudFront/WAF challenges block scripted retrieval of some interactive developer-portal catalog pages | Medium | Treat every non-200/empty response as failure; select downloadable official Markdown and official SDK source; record challenge and never use an unofficial mirror | M2 and ongoing source refresh | Monitoring |
 
 ## M0 open questions assigned to milestones
 
-- Exact current Spot/USD-M stream endpoints, payload schemas, ping/pong and rate
-  limits: M2.
-- Official SDK REST/WebSocket fitness and exact locked versions: M2.
-- Byte-exact combined wrapper versus inner payload capture: M2 transport ADR.
+- Exact live Spot/USD-M stream endpoints, `@100ms` payload fixtures, ping/pong
+  and rate limits: M4/M5 revalidation using the M2 source pipeline.
+- Official SDK REST/WebSocket fitness and exact locked versions: resolved by
+  ADR-0008/ADR-0009; rerun probes on upgrades.
+- Byte-exact combined wrapper versus inner payload capture: M4/M5 endpoint
+  selection must preserve whichever wire form is selected.
 - CBOR canonical profile, CRC32C coverage, Zstd parameters and file naming: M3.
 - Hard minimum reserve beyond the required emergency threshold: M11, using M3
   measured seal overhead and live growth evidence.

@@ -144,6 +144,10 @@ Status: **ACCEPTED** by the commit containing
 
 ## M2 — Agent Native docs pipeline and SDK capability validation
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M2.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: `tools/update_binance_docs.py`; working `llms.txt`; configured selected
   Spot/USD-M pages and URL/time/hash records; allowed-host/redirect/content
   validation; pinned official modular SDK candidates; offline capability probes;

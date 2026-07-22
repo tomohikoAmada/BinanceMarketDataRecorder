@@ -23,6 +23,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M0.1.md",
     "docs/milestone_acceptance/M0.2.md",
     "docs/milestone_acceptance/M1.md",
+    "docs/milestone_acceptance/M2.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -32,6 +33,12 @@ REQUIRED_FILES = (
     "docs/adr/0005-binance-transport-evidence-gate.md",
     "docs/adr/ADR-0006-project-identity-and-workspace.md",
     "docs/adr/ADR-0007-binance-scoped-project-identity.md",
+    "docs/adr/0008-official-sdk-rest-transport.md",
+    "docs/adr/0009-websocket-transport.md",
+    "tools/binance_docs.toml",
+    "tools/update_binance_docs.py",
+    "tools/probe_binance_transports.py",
+    "requirements/macos-arm64-python312.lock",
 )
 
 REQUIRED_TRACE_IDS = (
@@ -62,7 +69,6 @@ REQUIRED_TRACE_IDS = (
 )
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
-    ROOT / "tools" / "update_binance_docs.py",
     ROOT / "configs",
     ROOT / "src" / "binance_market_data_recorder" / "binance",
     ROOT / "src" / "binance_market_data_recorder" / "collector",
@@ -115,6 +121,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/adr/0001-independent-recorder-repository.md",
     "docs/milestone_acceptance/M0.md",
     "docs/milestone_acceptance/M1.md",
+    "docs/milestone_acceptance/M2.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -161,7 +168,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M1 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M2 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject
@@ -170,6 +177,12 @@ def verify() -> None:
         'binance-market-recorder = "binance_market_data_recorder.cli:main"'
         in pyproject
     )
+    for dependency in (
+        'binance-sdk-spot==10.0.0',
+        'binance-sdk-derivatives-trading-usds-futures==14.0.0',
+        'websockets==15.0.1',
+    ):
+        assert dependency in pyproject, f"M2 dependency missing: {dependency}"
 
     text_files = {
         path.relative_to(ROOT).as_posix(): path.read_text(encoding="utf-8")

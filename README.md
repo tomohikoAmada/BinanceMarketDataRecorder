@@ -68,11 +68,13 @@ are optional and may disappear without stopping capture.
 - [M0.1 acceptance](docs/milestone_acceptance/M0.1.md)
 - [M0.2 acceptance](docs/milestone_acceptance/M0.2.md)
 
-## Install and verify M1
+## Install and verify M2
 
 Use Python 3.12 in a virtual environment:
 
 ```bash
+python3.12 -m pip install --require-hashes \
+  -r requirements/macos-arm64-python312.lock
 python3.12 -m pip install -e '.[dev]'
 binance-market-recorder --version
 binance-market-recorder config show
@@ -98,4 +100,19 @@ log_level = "INFO"
 ```
 
 See [dependency policy](docs/dependency_policy.md) for the deliberately small
-runtime and development dependency sets.
+runtime and development dependency sets. M2 adds exact-pinned official Spot and
+USD-M SDKs for unsigned public REST snapshots and `websockets` for the future
+market-stream transport. It does not add a Collector or open a WebSocket.
+
+The documentation updater is intentionally selective and writes to the user
+cache by default:
+
+```bash
+python3.12 tools/update_binance_docs.py
+python3.12 tools/probe_binance_transports.py
+```
+
+The updater downloads only allowlisted official sources, refuses
+`llms-full.txt` by default, and never executes remote content. The capability
+probe is offline by default. Its `--online-rest` option makes only unsigned
+public depth requests and is never part of the default test suite.

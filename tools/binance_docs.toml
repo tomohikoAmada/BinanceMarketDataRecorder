@@ -1,0 +1,67 @@
+index_url = "https://developers.binance.com/en/docs/llms.txt"
+
+[[documents]]
+id = "spot-websocket-streams"
+url = "https://developers.binance.com/en/docs/products/spot/web-socket-streams.md"
+listed_in_index = true
+expected_terms = ["General WebSocket Streams information", "24 hours", "raw stream"]
+
+[[documents]]
+id = "spot-rest-api"
+url = "https://developers.binance.com/en/docs/products/spot/rest-api.md"
+listed_in_index = true
+expected_terms = ["General REST API Information", "data-api.binance.vision", "security type"]
+
+[[documents]]
+id = "usdm-stream-connect"
+url = "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md"
+listed_in_index = true
+expected_terms = ["24 hours", "/public", "/market"]
+
+[[documents]]
+id = "usdm-local-order-book"
+url = "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md"
+listed_in_index = true
+expected_terms = ["/fapi/v1/depth", "pu", "previous event"]
+
+[[documents]]
+id = "usdm-general-info"
+url = "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md"
+listed_in_index = true
+expected_terms = ["fapi.binance.com", "rate limit"]
+
+[[documents]]
+id = "usdm-change-log"
+url = "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md"
+listed_in_index = true
+expected_terms = ["Change Log"]
+
+[[documents]]
+id = "python-connectors"
+url = "https://developers.binance.com/en/docs/sdks-tools/connectors/python.md"
+listed_in_index = true
+expected_terms = ["binance-sdk-spot", "binance-sdk-derivatives-trading-usds-futures"]
+
+[[documents]]
+id = "connector-repository-readme"
+url = "https://github.com/binance/binance-connector-python/blob/master/README.md"
+listed_in_index = false
+expected_terms = ["binance-sdk-spot", "binance-sdk-derivatives-trading-usds-futures"]
+
+[[documents]]
+id = "spot-sdk-package"
+url = "https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml"
+listed_in_index = false
+expected_terms = ["binance-sdk-spot", "10.0.0"]
+
+[[documents]]
+id = "usdm-sdk-package"
+url = "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/pyproject.toml"
+listed_in_index = false
+expected_terms = ["binance-sdk-derivatives-trading-usds-futures", "14.0.0"]
+
+[[documents]]
+id = "spot-api-changelog"
+url = "https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md"
+listed_in_index = false
+expected_terms = ["CHANGELOG"]

@@ -177,7 +177,7 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-M1 engineering checks:
+Current M2 engineering checks:
 
 ```bash
 git status --short --branch
@@ -191,7 +191,14 @@ binance-market-recorder --version
 binance-market-recorder config show
 binance-market-recorder doctor
 binance-market-recorder status
+python3.12 tools/update_binance_docs.py --output-dir <temporary-directory>
+python3.12 tools/probe_binance_transports.py
+BINANCE_MARKET_RECORDER_ONLINE=1 python3.12 -m pytest -m online -q
 ```
+
+The documentation update performs network access only to its official
+allowlist. The transport probe is offline by default; `--online-rest` and the
+`online` pytest marker opt in only to unsigned public depth snapshots.
 
 ## Storage safety
 

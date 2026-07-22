@@ -9,7 +9,10 @@ description = "Independent, unofficial recorder for Binance public market data."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "binance-sdk-derivatives-trading-usds-futures==14.0.0",
+  "binance-sdk-spot==10.0.0",
   "pydantic>=2.10,<3",
+  "websockets==15.0.1",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +35,9 @@ where = ["src"]
 addopts = "-ra"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+  "online: opt-in tests that contact unsigned public Binance endpoints",
+]
 
 [tool.ruff]
 line-length = 100
@@ -43,6 +49,6 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
 exclude = ["tests/verify_m0_contracts.py"]
 warn_unused_configs = true

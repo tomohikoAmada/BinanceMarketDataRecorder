@@ -1,6 +1,6 @@
 # ADR-0005: Defer Binance transports until capability evidence
 
-- Status: Accepted
+- Status: Superseded by ADR-0008 and ADR-0009
 - Date: 2026-07-22
 
 M0.2 scope note: this ADR selects transport evidence for the Binance-specific
@@ -42,6 +42,10 @@ code execution are prohibited.
 M1 remains offline and M2 is an evidence milestone rather than premature
 long-running capture. If official semantics cannot be established, M2 stops and
 updates the risk register instead of building a plausible substitute.
+
+M2 completed this gate. ADR-0008 accepts the official modular SDKs for public
+REST snapshots; ADR-0009 rejects their WebSocket stream layer and accepts a
+generic WebSocket transport against official Binance endpoints.
 
 ## Rollback
 
