@@ -1,18 +1,23 @@
 # Project Contract
 
-Status: frozen by M0 on 2026-07-22. Changes require a dedicated ADR and must
-retain traceability in `requirements_traceability.md`.
+Status: frozen by M0 and identity-corrected by ADR-0007/M0.2 on 2026-07-22.
+Changes require a dedicated ADR and must retain traceability in
+`requirements_traceability.md`.
 
 ## Purpose and certified environment
 
-Crypto Market Data Recorder is an independent, general-purpose, stateful crypto
-market-data infrastructure service. Its identity and core contracts are not
-bound to Alpha101, a strategy, backtest engine, or exchange. Its first certified
-platform is macOS on Apple Silicon with Python 3.12, deployed as a user
-`launchd` LaunchAgent while the user is logged in. Docker is not the V1
+Binance Market Data Recorder is an independent, unofficial project. It is not
+affiliated with, maintained by, sponsored by, or endorsed by Binance.
+
+It is a stateful infrastructure service specifically for Binance public market
+data. The name identifies the connected data source and APIs; it does not imply
+an official relationship. The project must not use Binance logos, official
+visual identity, or identifiers that suggest Binance ownership. Its first
+certified platform is macOS on Apple Silicon with Python 3.12, deployed as a
+user `launchd` LaunchAgent while the user is logged in. Docker is not the V1
 production deployment.
 
-Binance is the first adapter. V1 records public BTCUSDT market data:
+V1 records public BTCUSDT Binance market data:
 
 | Market | Core streams | Recovery/bootstrap |
 | --- | --- | --- |
@@ -65,7 +70,7 @@ that validation is optional and cannot define V1 completion.
 
 - Collector always writes to the internal data root, never directly to an
   external volume. Default root:
-  `~/Library/Application Support/CryptoMarketDataRecorder/`.
+  `~/Library/Application Support/BinanceMarketDataRecorder/`.
 - Production data is forbidden under the repository, Desktop, Documents,
   iCloud Drive, persistent `/tmp`, and the repository parent
   `/Users/amada/Documents/Development/Crypto`.
@@ -132,11 +137,16 @@ live in SQLite. SQLite does not store the market-event corpus.
 
 Qt, web UI, FastAPI product API, trading UI, strategies, factors, backtest
 engine, orders, account connection, API-key management, live trading, maker
-queue simulation, multiple exchanges/symbols, Kafka, Kubernetes, cloud
+queue simulation, other exchanges/additional symbols, Kafka, Kubernetes, cloud
 stateless capture, automatic disk formatting/repair, mandatory SMART support,
 and Windows/Ubuntu certification are excluded.
 
-The design must leave adapters possible for Ubuntu storage, an API gateway,
-separate UI, additional symbols/exchanges, and independent strategy, backtest,
+The design may retain clean Binance Spot/USD-M modules, an Ubuntu storage
+adapter path, an API gateway boundary, and independent strategy, backtest,
 monitoring, or paper-trading consumers. Those consumers remain outside
-Recorder, and exchange-specific behavior remains behind adapters.
+Recorder. Multi-exchange support is not a V1 design or acceptance goal; any
+future exchange requires its own architecture review.
+
+Future service, launchd, and package-publisher reverse-DNS identifiers must use
+a namespace owned or controlled by the project author. Binance-owned-looking
+namespaces are forbidden, and M0.2 does not guess a replacement namespace.

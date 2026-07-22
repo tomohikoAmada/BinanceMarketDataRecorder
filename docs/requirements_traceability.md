@@ -10,11 +10,12 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | WF-02 | Stop with evidence on official API/platform/permission semantic blocker; no fake substitute | `AGENTS.md`, risks R-002/R-020/R-022 | M2/M9/M12 and any affected milestone |
 | WF-03 | No real trading, account API, API key or credential reads | project/security contract, ADR-0005 | Static/config tests M1; transport tests M2+ |
 | WF-04 | No format/repair of external disk; no GUI/web/trading/factor/backtest in Recorder | project/storage/macOS contracts | Boundary tests/reviews every milestone |
-| IDN-01 | Functional display/repository/distribution/import/CLI/application-data identity and new workspace | ADR-0006, `AGENTS.md` | M0.1 search/path/history tests; M1 packaging |
-| IDN-02 | Historical identity/path only in classified migration evidence; M0 history preserved | ADR-0006, M0.1 acceptance | M0.1 Git object and `rg` checks |
-| BND-01 | Recorder independent of all consumers; one-way generic contracts | ADR-0001/0006, architecture | M0.1; generic consumer proof M16 |
-| BND-02 | Alpha101Crypto remains an untouched historical audit object and optional ordinary consumer only | project contract, repository audit | M0/M0.1 and optional M16 read-only review |
-| BND-03 | Binance is an exchange adapter, not core/project identity | ADR-0006, architecture/data contract | M0.1 contract check; M2 adapter implementation |
+| IDN-01 | Binance-scoped display/repository/distribution/import/CLI/application-data identity and final workspace | ADR-0007, `AGENTS.md` | M0.2 search/path/history tests; M1 packaging |
+| IDN-02 | M0/M0.1 identities and paths only in classified history; both commits preserved | ADR-0006/0007, M0.1/M0.2 acceptance | M0.2 Git object and `rg` checks |
+| IDN-03 | Independent unofficial project; no affiliation/sponsorship/endorsement/logo or Binance-owned-looking service namespace | ADR-0007, project contract | M0.2 disclaimer/forbidden-string tests; M14/M18 release checks |
+| BND-01 | Recorder independent of all consumers; one-way generic contracts | ADR-0001/0007, architecture | M0.2; generic consumer proof M16 |
+| BND-02 | Alpha101Crypto remains an untouched historical audit object and optional ordinary consumer only | project contract, repository audit | M0-M0.2 and optional M16 read-only review |
+| BND-03 | Recorder is Binance-specific with separate Spot/USD-M modules; no speculative other-exchange framework | ADR-0007, architecture/data contract | M0.2 contract check; M2/M4/M5 implementation |
 | SRC-01 | Only listed official Binance sources establish behavior and changelogs | `AGENTS.md`, `binance_sources.md` | M0 inventory; M2 updater/ADRs; M7 refresh |
 | SRC-02 | Select pages from llms.txt; no default llms-full; allowlisted hosts; hashes/time; no remote execution | source contract, ADR-0005 | M2 unit/security tests |
 | SRC-03 | Evaluate modular Spot/USD-M SDK; ban deprecated/unofficial core SDK/MCP | ADR-0005, source inventory | M2 dependency/probe tests |
@@ -61,6 +62,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 
 ## Milestone coverage
 
-The M0, M0.1, and M1-M18 sections in `milestone_plan.md` each contain scope,
-non-scope, dependencies, acceptance, and rollback. This traceability matrix
-should be updated whenever a requirement, ADR, or milestone acceptance changes.
+The M0, M0.1, M0.2, and M1-M18 sections in `milestone_plan.md` each contain
+scope, non-scope, dependencies, acceptance, and rollback. This traceability
+matrix should be updated whenever a requirement, ADR, or milestone acceptance
+changes.

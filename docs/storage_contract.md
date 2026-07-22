@@ -11,7 +11,7 @@ stop; absence of an external target is not a Collector error.
 Allowed production root:
 
 ```text
-~/Library/Application Support/CryptoMarketDataRecorder/
+~/Library/Application Support/BinanceMarketDataRecorder/
 ```
 
 Forbidden defaults include the repository, its parent

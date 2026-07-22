@@ -3,9 +3,9 @@
 - Status: Accepted
 - Date: 2026-07-22
 
-M0.1 identity note: this ADR selects evidence for the first exchange adapter;
-it does not make Binance the project/core identity. Transport packages remain
-outside generic Raw, Catalog, archive, replay, and consumer policy.
+M0.2 scope note: this ADR selects transport evidence for the Binance-specific
+project. Official documentation and SDKs establish API semantics but do not
+make the independent Recorder an official or endorsed Binance product.
 
 ## Context
 

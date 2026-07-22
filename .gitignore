@@ -6,7 +6,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 
-# Crypto Market Data Recorder's var/ tree is test-only and never contains
+# Binance Market Data Recorder's var/ tree is test-only and never contains
 # production data.
 var/
 

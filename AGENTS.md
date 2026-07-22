@@ -1,30 +1,35 @@
-# Crypto Market Data Recorder Agent Contract
+# Binance Market Data Recorder Agent Contract
 
 ## Frozen project identity
 
-- Display name: **Crypto Market Data Recorder**
-- Repository directory: `CryptoMarketDataRecorder`
+- Display name: **Binance Market Data Recorder**
+- Repository directory: `BinanceMarketDataRecorder`
 - Repository path:
-  `/Users/amada/Documents/Development/Crypto/CryptoMarketDataRecorder`
-- Python distribution: `crypto-market-data-recorder`
-- Python import package: `crypto_market_data_recorder`
-- Future CLI: `crypto-market-recorder`
+  `/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder`
+- Python distribution: `binance-market-data-recorder`
+- Python import package: `binance_market_data_recorder`
+- Future CLI: `binance-market-recorder`
 - macOS application data:
-  `~/Library/Application Support/CryptoMarketDataRecorder/`
+  `~/Library/Application Support/BinanceMarketDataRecorder/`
 
 Project, package, CLI, launchd, log, configuration, and service identifiers use
-functional market-data naming, never a consumer/research-project identity. See
-ADR-0006.
+the frozen project identity in ADR-0007. This is an independent, unofficial
+project; the name identifies the public API/data source and does not imply
+affiliation, maintenance, sponsorship, certification, partnership, or
+endorsement by Binance. Never use Binance logos or official visual identity.
+Future reverse-DNS/service/publisher identifiers must use a namespace owned or
+controlled by the project author; never use a Binance-owned-looking reverse-DNS
+root under `.com`, `.org`, or `.io`, and do not guess the author's final
+namespace in advance.
 
 ## Project goal
 
-Build a general, long-running, stateful Python 3.12 crypto market-data recorder
-for macOS Apple Silicon. Binance is the first exchange adapter: V1 captures
-public BTCUSDT Spot and USD-M perpetual depth at 100 ms, aggregate trades, book
-ticker events, and public REST depth snapshots. The core keeps recoverable
+Build a long-running, stateful Python 3.12 recorder specifically for Binance
+public market data on macOS Apple Silicon. V1 captures BTCUSDT Spot and USD-M
+perpetual depth at 100 ms, aggregate trades, book ticker events, and public REST
+depth snapshots, followed by defined USD-M auxiliary data. It keeps recoverable
 immutable raw payloads, deterministic replay metadata, explicit gap evidence,
-and optional verified archival to a user-registered directory without binding
-its data contracts to one exchange, strategy, research project, or backtester.
+and optional verified archival to a user-registered directory.
 
 The authoritative scope is `docs/project_contract.md`. The delivery sequence and
 acceptance gates are in `docs/milestone_plan.md`.
@@ -35,7 +40,7 @@ acceptance gates are in `docs/milestone_plan.md`.
 - No factors, Alpha DSL, strategies, positions, backtests, account ledger, or
   live/simulated execution.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
-- No multi-exchange or multi-symbol V1.
+- No other exchanges or additional symbols in V1.
 - No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first
   stateless collection.
 - No automatic formatting, repair, repartitioning, or exclusive ownership of an
@@ -48,9 +53,9 @@ acceptance gates are in `docs/milestone_plan.md`.
 Dependency direction is one-way:
 
 ```text
-public exchange APIs
-  -> exchange adapters (Binance first)
-  -> Crypto Market Data Recorder core
+Binance public APIs
+  -> Binance Spot and USD-M modules
+  -> Binance Market Data Recorder
   -> immutable raw chunks
   -> normalized datasets and manifests
   -> generic replay and consumer contracts
@@ -62,7 +67,11 @@ its generic published contracts, Catalog read interfaces, manifests, and replay
 APIs, never Recorder internals. Recorder must not import from or write to any
 consumer project. Alpha101Crypto is one optional external consumer example; it
 has no privileged influence on Raw, Catalog, replay, normalization, or archive
-protocols. See ADR-0001 and ADR-0006.
+protocols. See ADR-0001 and ADR-0007.
+
+Spot and USD-M transport/schema modules are required boundaries. Do not build a
+framework for hypothetical exchanges as a V1 acceptance condition. Supporting
+another exchange requires a separate future architecture review.
 
 ## Data-integrity rules
 
@@ -186,7 +195,7 @@ milestones.
 The production default is:
 
 ```text
-~/Library/Application Support/CryptoMarketDataRecorder/
+~/Library/Application Support/BinanceMarketDataRecorder/
 ```
 
 Never treat an entire external volume as project-owned. Operate only inside the

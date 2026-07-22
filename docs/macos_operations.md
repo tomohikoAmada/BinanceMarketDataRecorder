@@ -5,9 +5,11 @@
 The certified V1 service is a user LaunchAgent on macOS Apple Silicon, Python
 3.12, requiring the user to be logged in. Installation does not require root
 and does not silently install a LaunchDaemon. Future launchd, service, log, and
-configuration identifiers derive from `CryptoMarketDataRecorder`, never a
-consumer name. Logs and structured state live under
-`~/Library/Application Support/CryptoMarketDataRecorder/`, not the repository
+configuration identifiers derive from `BinanceMarketDataRecorder`, never a
+consumer name or a namespace implying Binance ownership. The final reverse-DNS
+namespace must be controlled by the project author and is intentionally not
+guessed in M0.2. Logs and structured state live under
+`~/Library/Application Support/BinanceMarketDataRecorder/`, not the repository
 or `/Users/amada/Documents/Development/Crypto`.
 
 M14 will provide install, uninstall, start, stop, and status scripts; automatic
@@ -37,19 +39,19 @@ performed.
 
 ## Required CLI surface
 
-By M9/M12 the `crypto-market-recorder` CLI includes:
+By M9/M12 the `binance-market-recorder` CLI includes:
 
 ```text
-crypto-market-recorder storage list
-crypto-market-recorder storage inspect <path>
-crypto-market-recorder storage register <folder-path>
-crypto-market-recorder storage unregister <storage-id>
-crypto-market-recorder storage status
-crypto-market-recorder storage eject <storage-id>
-crypto-market-recorder storage forecast
-crypto-market-recorder archive status
-crypto-market-recorder archive retry
-crypto-market-recorder archive verify <storage-id>
+binance-market-recorder storage list
+binance-market-recorder storage inspect <path>
+binance-market-recorder storage register <folder-path>
+binance-market-recorder storage unregister <storage-id>
+binance-market-recorder storage status
+binance-market-recorder storage eject <storage-id>
+binance-market-recorder storage forecast
+binance-market-recorder archive status
+binance-market-recorder archive retry
+binance-market-recorder archive verify <storage-id>
 ```
 
 Registration is an explicit user action. Unregistering stops future use and

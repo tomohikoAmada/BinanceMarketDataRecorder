@@ -1,10 +1,14 @@
 # ADR-0006: Project identity and workspace
 
-- Status: Accepted
+- Status: Superseded by ADR-0007
 - Date: 2026-07-22
 - Milestone: M0.1
 - Supersedes: the project-identity and consumer-specific wording in ADR-0001;
   ADR-0001's independent-repository decision remains accepted
+
+This body is retained as historical M0.1 evidence. Its identity and
+exchange-neutral conclusions are no longer current and must not guide M1 or
+later work.
 
 ## Context
 

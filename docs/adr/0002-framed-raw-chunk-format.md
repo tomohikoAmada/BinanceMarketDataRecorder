@@ -3,9 +3,9 @@
 - Status: Accepted (logical format); byte-level test vectors required in M3
 - Date: 2026-07-22
 
-M0.1 identity note: this is a generic Recorder core format. It must not encode
-consumer-specific matrix concepts or an exchange as project identity;
-venue-specific provenance belongs in versioned adapter/envelope fields.
+M0.2 scope note: this is the Binance Recorder's Raw format. It preserves
+Binance Spot/USD-M provenance without encoding consumer-specific matrix
+concepts. It is not a speculative multi-exchange interchange format.
 
 ## Decision drivers
 

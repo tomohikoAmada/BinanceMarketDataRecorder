@@ -8,11 +8,11 @@ are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Envelope schema identifier, initially `event-envelope.v1` |
-| `venue` | Exchange/venue identifier supplied by an adapter; initially `binance` |
-| `market` | Generic market-type identifier; initial values include `spot` and `um_perpetual` |
-| `symbol` | Venue symbol preserved with an optional generic instrument mapping; initially `BTCUSDT` |
-| `stream` | Generic stream kind such as `diff_depth`, `agg_trade`, `book_ticker`, or versioned REST kind |
-| `adapter` | Exchange adapter name and schema/implementation version |
+| `venue` | Fixed project venue identifier `binance` in V1 |
+| `market` | Binance market identifier: `spot` or `um_perpetual` in V1 |
+| `symbol` | Binance symbol exactly associated with the payload, initially `BTCUSDT` |
+| `stream` | Binance stream kind such as `diff_depth`, `agg_trade`, `book_ticker`, or versioned REST kind |
+| `module` | `binance.spot` or `binance.usdm` plus schema/implementation version |
 | `connection_id` | Unique transport connection/session ID |
 | `collector_instance_id` | Unique process/deployment instance ID |
 | `collector_version` | Release plus Git commit provenance |
@@ -27,12 +27,12 @@ are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
 | `capture_flags` | Planned rotation, overlap, server shutdown, recovery provenance |
 
 Missing exchange fields remain absent/null with schema meaning; no field is
-fabricated. Venue-specific sequence fields remain lossless inside a generic
-versioned mapping and never become core assumptions. Combined-stream wrapper
+fabricated. Binance market-specific sequence fields remain lossless inside a
+versioned mapping and Spot/USD-M meanings are not conflated. Combined-stream wrapper
 bytes versus inner payload bytes must be resolved by the M2 transport ADR and
 recorded explicitly—never silently mixed.
 
-REST snapshots use a generic versioned envelope with venue/adapter identity,
+REST snapshots use a versioned Binance envelope with Spot/USD-M module identity,
 request URL/path, public request
 parameters, response status/headers needed for rate-limit provenance, request
 and response receive times, exact response bytes, market/symbol, transport and
@@ -125,3 +125,7 @@ across restart and does not duplicate counts.
 - Readers must reject unsupported major versions rather than guess.
 - Raw artifacts remain readable by a version-matched reader and can regenerate
   every derived dataset.
+
+The V1 format is designed for Binance data and generic downstream consumption,
+not as a speculative multi-exchange interchange standard. Another exchange
+would require a new architecture and compatibility review.

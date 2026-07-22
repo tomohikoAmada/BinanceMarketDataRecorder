@@ -1,8 +1,8 @@
 # Milestone Plan
 
-Status: frozen by M0 and identity-corrected by M0.1 on 2026-07-22. Execute
-exactly one milestone per run and one local commit per milestone. Never start
-the next milestone automatically.
+Status: frozen by M0, historically corrected by M0.1, and finally scoped/named
+by M0.2/ADR-0007 on 2026-07-22. Execute exactly one milestone per run and one
+local commit per milestone. Never start the next milestone automatically.
 
 ## Universal gate
 
@@ -26,7 +26,7 @@ code/config/schema additions; it never means delete or rewrite captured Raw.
 ## Dependency graph
 
 ```text
-M0 -> M0.1 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8 -> M9 -> M10
+M0 -> M0.1 -> M0.2 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8 -> M9 -> M10
                                                    M8 -> M11
                                              M9 -> M12
                                    M4/M5/M6 -> M13 -> M14
@@ -63,12 +63,12 @@ Status: **ACCEPTED** by commit recorded in the final M0 report.
 Status: **ACCEPTED** by the commit containing
 `docs/milestone_acceptance/M0.1.md` and reported at handoff.
 
-- Scope: preserve the M0 Git history while moving the same repository to
-  `/Users/amada/Documents/Development/Crypto/CryptoMarketDataRecorder`; freeze
-  display/distribution/import/CLI/application-data identities; remove the old
-  Recorder identity from current surfaces; make Binance an adapter; make Raw,
-  Catalog, normalize, replay, archive, and consumer contracts generic; add
-  ADR-0006, traceability and M0.1 acceptance; update contract tests.
+- Scope: preserve the M0 Git history while moving the same repository to the
+  intermediate identity/workspace recorded verbatim in ADR-0006 and the M0.1
+  acceptance record; freeze that milestone's identifiers; remove the original
+  Recorder identity from then-current surfaces; make Raw, Catalog, normalize,
+  replay, archive, and consumer contracts generic; add ADR-0006, traceability
+  and M0.1 acceptance; update contract tests.
 - Non-scope: M1 packaging/config/CLI implementation, `src` production code,
   Binance connection, Collector/WebSocket/REST implementation, GUI, production
   data migration, or modification of Alpha101Crypto.
@@ -86,18 +86,51 @@ Status: **ACCEPTED** by the commit containing
   back only before later milestones depend on the new public identifiers; do
   not rewrite M0, create a second history, or move/delete production data.
 
+## M0.2 — Binance-specific project identity correction
+
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M0.2.md` and reported at handoff.
+
+- Scope: preserve M0/M0.1 history while moving the same repository to
+  `/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder`; freeze
+  Binance-specific display/distribution/import/CLI/application-data identities;
+  establish the independent unofficial-project disclaimer and brand/service
+  namespace rules; make Spot/USD-M the product modules; remove exchange-neutral
+  V1 positioning; add ADR-0007, traceability, M0.2 acceptance, and contract
+  verification while preserving M16's generic consumer boundary.
+- Non-scope: M1 packaging/config/CLI implementation, `src`, `pyproject.toml`,
+  production configuration, Binance connection, Collector/WebSocket/REST
+  implementation, GUI, service identifiers, branding assets, other exchanges,
+  production data migration, or modification of Alpha101Crypto.
+- Dependencies: accepted M0 commit
+  `1634b09e57d287eba82ef34f117b4657979cc38b`, accepted M0.1 commit
+  `b186c08191392e7454d259d8cfd16d0263e0901f`, clean worktree, and preservation
+  of the existing `.git` object database during the directory move.
+- Acceptance: Git top-level and all current identities match ADR-0007; README,
+  project contract and release plan contain the unofficial/no-affiliation/
+  no-sponsorship/no-endorsement rule; active documents do not imply official
+  status or use Binance-owned-looking reverse-DNS namespaces; intermediate
+  names occur only in allowlisted history/migration/test evidence; active V1 is
+  Binance Spot/USD-M rather than multi-exchange; M0/M0.1 objects remain
+  reachable; Python 3.12 pytest/verifier/diff checks pass; no M1/production/
+  network/GUI code, external-repository change, or dirty post-commit worktree.
+- Rollback: revert the single M0.2 commit and move the same repository directory
+  back only before M1 publishes identifiers; do not rewrite earlier commits,
+  create a second history, or move/delete production data.
+
 ## M1 — Python engineering skeleton, configuration, and CLI
 
 - Scope: Python 3.12 `src` layout; `pyproject.toml`; installable package; lint,
   type checking and pytest; structured logging; strict Pydantic configuration;
   CLI/version/Git commit injection; default application-support paths;
-  `crypto-market-recorder doctor`, `config show`, and `status`;
-  `crypto-market-data-recorder` distribution and
-  `crypto_market_data_recorder` import package; path/permission guards; empty
+  `binance-market-recorder doctor`, `config show`, and `status`;
+  `binance-market-data-recorder` distribution and
+  `binance_market_data_recorder` import package; path/permission guards; empty
   keys/credential surface.
 - Non-scope: any Binance connection, collector, external-volume write, raw
   writer, launchd install, or production data.
-- Dependencies: M0/M0.1 contracts, ADR-0001/ADR-0006, and clean M0.1 acceptance.
+- Dependencies: M0/M0.1/M0.2 contracts, ADR-0001/ADR-0007, and clean M0.2
+  acceptance.
 - Acceptance: clean environment install; unit/lint/type tests pass; all CLI
   commands run offline; default/override path and permissions are tested;
   repository/Desktop/Documents/iCloud/persistent `/tmp` are rejected for
@@ -211,8 +244,8 @@ Status: **ACCEPTED** by the commit containing
 ## M8 — Metrics, daily traffic reports, and status
 
 - Scope: all project-contract input, quality, output and performance counters;
-  structured runtime JSON; `crypto-market-recorder status`;
-  `crypto-market-recorder report daily`; UTC
+  structured runtime JSON; `binance-market-recorder status`;
+  `binance-market-recorder report daily`; UTC
   rollover; persisted idempotent aggregates; per-market/stream audit.
 - Non-scope: GUI/metrics web server, full events in SQLite, storage forecast
   algorithm (M11), or external archive mechanics.
@@ -261,7 +294,7 @@ Status: **ACCEPTED** by the commit containing
 
 - Scope: internal/per-target space states; 1 h/6 h/24 h/7 d robust growth rates;
   40%/15%/`max(10 GiB,5%)` thresholds and UTC ETAs; backlog/oldest age; alerts;
-  emergency policy; `crypto-market-recorder storage forecast`.
+  emergency policy; `binance-market-recorder storage forecast`.
 - Non-scope: silent data deletion, changing filesystems, claiming forecast when
   history is insufficient.
 - Dependencies: M8 persisted metrics and M10 archive/delete rates.
@@ -275,7 +308,7 @@ Status: **ACCEPTED** by the commit containing
 
 ## M12 — macOS safe eject
 
-- Scope: `crypto-market-recorder storage eject <id>`; block new allocation;
+- Scope: `binance-market-recorder storage eject <id>`; block new allocation;
   wait/cancel work;
   fsync/transaction completion or rollback; close handles; Disk Arbitration
   unmount/eject; safe-to-remove result; busy/refusal/forced-removal recovery.
@@ -371,13 +404,15 @@ Status: **ACCEPTED** by the commit containing
 
 - Scope: install/launchd/config/CLI/data/archive/eject/recovery/backup docs;
   72-hour/seven-day reports; limitations; Ubuntu preparation; versioned package
-  and complete test report; manual release decision packet.
+  and complete test report; prominent independent/unofficial/no-affiliation/
+  no-sponsorship/no-endorsement disclaimer; manual release decision packet.
 - Non-scope: automatic remote merge/release, GUI/trading, Ubuntu certification,
   or features excluded from V1.
 - Dependencies: accepted M17 and every prior compatibility/operations contract.
 - Acceptance: Spot/UM continuous Raw, reconstructable L2 and detectable gaps;
   crash recovery; optional unplug-safe archive; verified-delete; 40%/ETA;
   blue/green; LaunchAgent; no GUI/trading/key; generic independent consumer;
+  Binance Spot/USD-M scope and non-official identity are unambiguous;
   reproducible package/docs/test evidence.
 - Rollback: retain prior signed/versioned package and data readers, uninstall the
   candidate LaunchAgent cleanly, restore previous service version, and await a

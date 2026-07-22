@@ -3,6 +3,10 @@
 - Status: Accepted
 - Date: 2026-07-22
 
+M0.2 scope note: ADR-0007 freezes this independent repository as a
+Binance-specific, unofficial market-data Recorder. Independence from consumers
+remains unchanged; multi-exchange scope is not implied.
+
 ## Context
 
 The audited Alpha101Crypto repository is a compute/research engine. Its frozen

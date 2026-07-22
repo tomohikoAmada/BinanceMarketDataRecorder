@@ -2,18 +2,17 @@
 
 ## Context
 
-Crypto Market Data Recorder is the system of record for public crypto
-market-data capture and storage provenance. Binance is the first exchange
-adapter; it does not define core identity or consumer contracts. External
-consumers have different lifecycles and may include research, backtest, or
-monitoring systems. ADR-0001 and ADR-0006 freeze that separation.
+Binance Market Data Recorder is the system of record for Binance public
+market-data capture and storage provenance. Its current product boundary is
+Binance Spot and USD-M perpetual data. External consumers have different
+lifecycles and may include research, backtest, monitoring, or simulation
+systems. ADR-0001 and ADR-0007 freeze that separation.
 
 ```text
-public exchange REST + WebSocket
+Binance public REST + WebSocket
               |
               v
-  exchange transport adapters
-  (Binance Spot / USD-M first, isolated)
+  Binance Spot / USD-M modules (isolated)
               |
               v
   bounded ingress -> raw spool writer -> seal/recovery
@@ -35,7 +34,8 @@ public exchange REST + WebSocket
 
 | Component | Owns | Must not own |
 | --- | --- | --- |
-| exchange adapters (`binance` first) | Official public schema/transport adapters, REST snapshot provenance | accounts, keys, orders, generic core policy |
+| `binance.spot` | Official Spot public schema/transport, REST snapshot provenance | accounts, keys, orders, USD-M policy |
+| `binance.usdm` | Official USD-M public schema/transport, REST snapshot provenance | accounts, keys, orders, Spot policy |
 | `collector` | connection/session lifecycle, receive timestamps, bounded handoff | compression, Parquet, factors |
 | `spool` | framed append, rotation, fsync, seal, crash recovery | external mount logic |
 | `storage` | paths, Catalog, manifests, durable state transitions | market strategy semantics |
@@ -48,10 +48,11 @@ public exchange REST + WebSocket
 | `supervisor` | independent worker health, blue/green handoff, emergency stop | hiding gaps or coupling markets |
 | `cli` | local control/status/report/storage commands | GUI, trading interface |
 
-These are planned package boundaries, not M0/M0.1 implementations. Generic
-domain, storage, Raw, Catalog, normalize, replay, and archive modules must not
-import an exchange adapter; adapters translate official exchange semantics into
-the generic envelope without erasing raw bytes.
+These are planned package boundaries, not M0/M0.1/M0.2 implementations. Spot
+and USD-M remain separate where their official semantics differ; storage, Raw,
+Catalog, normalize, replay, and archive remain independent of consumer code.
+Do not add an abstraction framework for unplanned exchanges. Another exchange
+would require a separate architecture review.
 
 ## Runtime isolation
 
@@ -91,7 +92,7 @@ partitions. They do not rewrite Raw.
 ## Internal directory contract
 
 ```text
-~/Library/Application Support/CryptoMarketDataRecorder/
+~/Library/Application Support/BinanceMarketDataRecorder/
 ├── data/
 │   ├── active/
 │   ├── sealed/
@@ -136,7 +137,8 @@ supports planned 24-hour connection rotation.
 ## Portability
 
 Platform-specific Disk Arbitration and launchd code sits behind `storage.macos`
-and supervisor adapters. Exchange-specific behavior sits behind transport/schema
-adapters. File/chunk/manifests use specified language-neutral formats and UTC
-timestamps so arbitrary consumers, future Go/Rust readers, and an Ubuntu
-adapter do not require macOS or Binance internals.
+and supervisor boundaries. Binance Spot and USD-M behavior sits in their own
+transport/schema modules. File/chunk/manifests use specified language-neutral
+formats and UTC timestamps so arbitrary consumers, future Go/Rust readers, and
+an Ubuntu storage adapter do not require macOS internals. This portability does
+not make multi-exchange support a current goal.

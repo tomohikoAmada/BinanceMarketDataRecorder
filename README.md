@@ -1,10 +1,14 @@
-# Crypto Market Data Recorder
+# Binance Market Data Recorder
 
-Crypto Market Data Recorder is an independent, long-running crypto market-data
-recording service for macOS Apple Silicon. It preserves exact public exchange
-payloads, proves data quality, recovers from crashes, and publishes generic,
-deterministic datasets and replay contracts for arbitrary research, backtest,
-and monitoring consumers. Binance is its first adapter, not its project
+Binance Market Data Recorder is an independent, unofficial project. It is not
+affiliated with, maintained by, sponsored by, or endorsed by Binance.
+
+It is a long-running recorder specifically for Binance public market data on
+macOS Apple Silicon. It preserves exact Binance payloads, proves data quality,
+recovers from crashes, and publishes deterministic datasets and generic replay
+contracts for research, backtest, monitoring, and simulation consumers. The
+project name identifies its data source; it does not claim an official
+relationship. This project does not use Binance logos or official visual
 identity.
 
 ## Status
@@ -14,21 +18,21 @@ milestone plan, source inventory, risk register, and minimal offline acceptance
 test are committed. M0 intentionally contains no production package,
 WebSocket client, REST client, service, CLI, or storage implementation.
 
-M0.1 corrects the project identity and workspace without adding production
-code. The next milestone is M1: Python engineering skeleton, configuration, and
-CLI.
+M0.2 finalizes the Binance-specific project identity and workspace without
+adding production code. The next milestone is M1: Python engineering skeleton,
+configuration, and CLI.
 
 ## Identity
 
-- Repository: `CryptoMarketDataRecorder`
-- Distribution: `crypto-market-data-recorder`
-- Import package: `crypto_market_data_recorder`
-- Future CLI: `crypto-market-recorder`
-- Application data: `~/Library/Application Support/CryptoMarketDataRecorder/`
+- Repository: `BinanceMarketDataRecorder`
+- Distribution: `binance-market-data-recorder`
+- Import package: `binance_market_data_recorder`
+- Future CLI: `binance-market-recorder`
+- Application data: `~/Library/Application Support/BinanceMarketDataRecorder/`
 
 ## Boundary
 
-Recorder owns exchange adapters, capture, immutable raw chunks, local
+Recorder owns Binance Spot/USD-M modules, capture, immutable raw chunks, local
 spool/catalog state, quality evidence, deterministic replay inputs,
 normalization, manifests, optional external archival, and operational reporting.
 Consumers own computation, research, factors, strategies, backtesting, and
@@ -38,6 +42,9 @@ Recorder never owns trading, orders, accounts, API keys, strategies, factors,
 backtests, or a GUI. The dependency is one-way through published data
 contracts; Recorder does not import, modify, or specialize its core for any
 consumer.
+
+Support for another exchange is not a V1 goal. It would require a separate
+architecture review rather than speculative abstraction in the current code.
 
 ## V1 capture scope
 
@@ -64,6 +71,7 @@ are optional and may disappear without stopping capture.
 - [Risk register](docs/risk_register.md)
 - [Architecture decisions](docs/adr/README.md)
 - [M0.1 acceptance](docs/milestone_acceptance/M0.1.md)
+- [M0.2 acceptance](docs/milestone_acceptance/M0.2.md)
 
 ## M0 verification
 

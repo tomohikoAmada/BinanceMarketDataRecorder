@@ -1,4 +1,4 @@
-"""Pytest entry point for the dependency-free M0/M0.1 verifier."""
+"""Pytest entry point for the dependency-free M0/M0.1/M0.2 verifier."""
 
 from __future__ import annotations
 

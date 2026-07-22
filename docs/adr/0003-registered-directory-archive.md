@@ -3,9 +3,9 @@
 - Status: Accepted
 - Date: 2026-07-22
 
-M0.1 identity note: archive identity is storage-functional and independent of
-exchange adapters and downstream consumers. Marker/service names follow
-ADR-0006.
+M0.2 scope note: archive identity is storage-functional and independent of
+downstream consumers. Marker/service names follow ADR-0007 and must not imply
+ownership or endorsement by Binance.
 
 ## Context
 

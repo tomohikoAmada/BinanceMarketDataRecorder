@@ -3,9 +3,9 @@
 - Status: Accepted
 - Date: 2026-07-22
 
-M0.1 identity note: replay clocks and total ordering are generic consumer
-contracts. Exchange-specific timestamp meanings are adapter metadata, and no
-named consumer may alter core ordering.
+M0.2 scope note: replay clocks and total ordering expose Binance data through a
+generic consumer contract. Spot/USD-M timestamp meanings remain explicit, and
+no named consumer may alter core ordering.
 
 ## Decision
 

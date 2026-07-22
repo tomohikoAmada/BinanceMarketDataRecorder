@@ -29,7 +29,9 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 capability spike with evidence; minimal native helper only if verified; otherwise stop/update risk | M9/M12 | Open |
 | R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | Million-event stress, event corpus stays out of SQLite, rolling growth reports | M3/M8/M11/M17 | Open |
 | R-024 | User pre-existing changes in Alpha101Crypto are overwritten | High | Research repo remains read-only; audit baseline records dirty frontend files | All | Mitigated |
-| R-025 | Project or core contracts regress to a consumer/venue-specific identity | High | ADR-0006 identity constants, legacy-name/context scans, generic M16 gate | M0.1/M1/M16/M18 | Mitigated |
+| R-025 | Project identifiers regress to an earlier M0/M0.1 identity | High | ADR-0007 constants and allowlisted legacy-name/path scans | M0.2/M1/M14/M18 | Mitigated |
+| R-026 | Name, visual identity, wording, service label, or publisher metadata falsely implies an official Binance relationship | Critical | Prominent disclaimer; no Binance logo; author-controlled namespace; forbidden wording/namespace tests | M0.2/M14/M18 | Mitigated |
+| R-027 | V1 over-engineers an unrequested multi-exchange framework | Medium | Binance Spot/USD-M scope in ADR-0007; another exchange requires separate review | M0.2 and all design milestones | Mitigated |
 
 ## M0 open questions assigned to milestones
 
@@ -46,5 +48,6 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 - Replay total-order details and consumer dataset-version policy: M16.
 - Whether a future official Binance MCP exists with verifiable installation:
   not required; reconsider only from official documentation.
-- Future distribution/import/CLI/launchd/service identifiers must match
-  ADR-0006 exactly; M1/M14 cannot derive them from historical consumer names.
+- Future distribution/import/CLI/application-data identifiers must match
+  ADR-0007 exactly. M14 must select an author-controlled service namespace and
+  cannot derive one from Binance ownership or historical names.
