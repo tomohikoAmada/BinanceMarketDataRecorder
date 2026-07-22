@@ -1,0 +1,15 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.py[cod]
+.DS_Store
+
+# The repository's var/ tree is test-only and never contains production data.
+var/
+
+# Local environment and credentials are forbidden from version control.
+.env
+.env.*
+!.env.example
