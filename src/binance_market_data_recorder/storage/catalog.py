@@ -9,6 +9,7 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
 
@@ -37,7 +38,10 @@ class Catalog:
     def __init__(self, path: Path) -> None:
         self.path = path
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        self._connection = sqlite3.connect(path, timeout=30, isolation_level=None)
+        self._lock = RLock()
+        self._connection = sqlite3.connect(
+            path, timeout=30, isolation_level=None, check_same_thread=False
+        )
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA journal_mode=WAL")
         self._connection.execute("PRAGMA synchronous=FULL")
@@ -45,7 +49,8 @@ class Catalog:
         self._initialize()
 
     def close(self) -> None:
-        self._connection.close()
+        with self._lock:
+            self._connection.close()
 
     def __enter__(self) -> Catalog:
         return self
@@ -55,14 +60,15 @@ class Catalog:
 
     @contextmanager
     def _transaction(self) -> Iterator[sqlite3.Connection]:
-        self._connection.execute("BEGIN IMMEDIATE")
-        try:
-            yield self._connection
-        except Exception:
-            self._connection.execute("ROLLBACK")
-            raise
-        else:
-            self._connection.execute("COMMIT")
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                yield self._connection
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
 
     def _initialize(self) -> None:
         self._connection.executescript(
@@ -128,9 +134,10 @@ class Catalog:
             )
 
     def state(self, chunk_id: str) -> ChunkState | None:
-        row = self._connection.execute(
-            "SELECT state FROM chunks WHERE chunk_id = ?", (chunk_id,)
-        ).fetchone()
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT state FROM chunks WHERE chunk_id = ?", (chunk_id,)
+            ).fetchone()
         return ChunkState(row["state"]) if row else None
 
     def transition(
@@ -207,55 +214,61 @@ class Catalog:
     def register_quarantined_artifact(
         self, *, artifact_id: str, relative_path: str, reason: str, sha256: str
     ) -> None:
-        self._connection.execute(
-            """
-            INSERT OR IGNORE INTO quarantined_artifacts(
-                artifact_id, relative_path, reason, sha256, quarantined_at_utc_ns
-            ) VALUES (?, ?, ?, ?, ?)
-            """,
-            (artifact_id, relative_path, reason, sha256, time.time_ns()),
-        )
+        with self._lock:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO quarantined_artifacts(
+                    artifact_id, relative_path, reason, sha256, quarantined_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (artifact_id, relative_path, reason, sha256, time.time_ns()),
+            )
 
     def chunk(self, chunk_id: str) -> dict[str, object] | None:
-        row = self._connection.execute(
-            "SELECT * FROM chunks WHERE chunk_id = ?", (chunk_id,)
-        ).fetchone()
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM chunks WHERE chunk_id = ?", (chunk_id,)
+            ).fetchone()
         return dict(row) if row else None
 
     def chunks_in_states(self, *states: ChunkState) -> list[dict[str, object]]:
         if not states:
             return []
         placeholders = ",".join("?" for _ in states)
-        rows = self._connection.execute(
-            f"SELECT * FROM chunks WHERE state IN ({placeholders}) ORDER BY chunk_id",
-            tuple(states),
-        ).fetchall()
+        with self._lock:
+            rows = self._connection.execute(
+                f"SELECT * FROM chunks WHERE state IN ({placeholders}) ORDER BY chunk_id",
+                tuple(states),
+            ).fetchall()
         return [dict(row) for row in rows]
 
     def transition_count(self, chunk_id: str) -> int:
-        row = self._connection.execute(
-            "SELECT COUNT(*) AS count FROM chunk_transitions WHERE chunk_id = ?",
-            (chunk_id,),
-        ).fetchone()
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT COUNT(*) AS count FROM chunk_transitions WHERE chunk_id = ?",
+                (chunk_id,),
+            ).fetchone()
         return int(row["count"])
 
     def latest_transition_evidence(
         self, chunk_id: str, to_state: ChunkState
     ) -> dict[str, object] | None:
-        row = self._connection.execute(
-            """
-            SELECT evidence_json FROM chunk_transitions
-            WHERE chunk_id = ? AND to_state = ?
-            ORDER BY transition_id DESC LIMIT 1
-            """,
-            (chunk_id, to_state),
-        ).fetchone()
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT evidence_json FROM chunk_transitions
+                WHERE chunk_id = ? AND to_state = ?
+                ORDER BY transition_id DESC LIMIT 1
+                """,
+                (chunk_id, to_state),
+            ).fetchone()
         return json.loads(row["evidence_json"]) if row else None
 
     def table_columns(self, table: str) -> set[str]:
         if table not in {"chunks", "chunk_transitions", "quarantined_artifacts"}:
             raise ValueError("unknown Catalog table")
-        return {
-            str(row["name"])
-            for row in self._connection.execute(f"PRAGMA table_info({table})")
-        }
+        with self._lock:
+            return {
+                str(row["name"])
+                for row in self._connection.execute(f"PRAGMA table_info({table})")
+            }

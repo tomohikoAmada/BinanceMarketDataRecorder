@@ -13,9 +13,11 @@ identity.
 
 ## Status
 
-M1 provides an installable, offline Python 3.12 skeleton, strict credential-free
-configuration, structured logging, and diagnostic CLI. It does not connect to
-Binance and does not yet implement a Collector or running service.
+M4 provides the Binance Spot BTCUSDT public-market Collector for diff depth at
+100 ms, aggregate trades, book ticker, and an official-SDK REST depth snapshot.
+It writes only to the internal Raw spool. USD-M, order-book reconstruction,
+normalization, external archive, launchd service installation, accounts,
+credentials, and trading remain unimplemented.
 
 ## Identity
 
@@ -70,8 +72,9 @@ are optional and may disappear without stopping capture.
 - [M1 acceptance](docs/milestone_acceptance/M1.md)
 - [M2 acceptance](docs/milestone_acceptance/M2.md)
 - [M3 acceptance](docs/milestone_acceptance/M3.md)
+- [M4 acceptance](docs/milestone_acceptance/M4.md)
 
-## Install and verify M3
+## Install and verify M4
 
 Use Python 3.12 in a virtual environment:
 
@@ -110,9 +113,11 @@ max_frame_bytes = 16777216
 ```
 
 See [dependency policy](docs/dependency_policy.md) for the deliberately small
-runtime and development dependency sets. M2 adds exact-pinned official Spot and
-USD-M SDKs for unsigned public REST snapshots and `websockets` for the future
-market-stream transport. It does not add a Collector or open a WebSocket.
+runtime and development dependency sets. M2 selected exact-pinned official
+Spot and USD-M SDKs for unsigned public REST snapshots and `websockets` for
+market-stream transport. M4 uses the official Spot SDK only for
+`GET /api/v3/depth` and uses three independent documented raw WebSocket
+streams. It never reads credentials or calls account/order APIs.
 
 The documentation updater is intentionally selective and writes to the user
 cache by default:
@@ -127,9 +132,16 @@ The updater downloads only allowlisted official sources, refuses
 probe is offline by default. Its `--online-rest` option makes only unsigned
 public depth requests and is never part of the default test suite.
 
-M3 adds no network Collector. It provides the executable EventEnvelope and
-internal Raw/Catalog foundation described by [ADR-0010](docs/adr/0010-raw-chunk-v1-byte-format.md).
-Run the resource-intensive acceptance gate separately:
+The M4 live smoke is explicit and excluded unless enabled. It requires at least
+900 seconds and writes only to pytest's temporary directory:
+
+```bash
+BINANCE_MARKET_RECORDER_ONLINE=1 \
+  python3.12 -m pytest -m online -s -q \
+  tests/integration/test_spot_live.py
+```
+
+M3's resource-intensive Raw gate remains separately available:
 
 ```bash
 python3.12 -m pytest -m stress -q tests/stress/test_million_events.py

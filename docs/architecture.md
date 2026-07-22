@@ -48,11 +48,12 @@ Binance public REST + WebSocket
 | `supervisor` | independent worker health, blue/green handoff, emergency stop | hiding gaps or coupling markets |
 | `cli` | local control/status/report/storage commands | GUI, trading interface |
 
-M3 implements the domain EventEnvelope, bounded spool, Raw writer/recovery/seal,
-internal layout, and SQLite Catalog portions. Other rows remain planned package
-boundaries. Spot and USD-M remain separate where their official semantics
-differ; storage, Raw, Catalog, normalize, replay, and archive remain independent
-of consumer code.
+M4 implements `binance.spot` plus the Spot portion of `collector`: three
+independent raw WebSocket connections and one official-SDK REST depth snapshot.
+M3 implements the shared EventEnvelope, bounded spool, Raw
+writer/recovery/seal, internal layout, and SQLite Catalog. Other rows remain
+planned package boundaries. USD-M remains M5 work. Storage, Raw, Catalog,
+normalize, replay, and archive remain independent of consumer code.
 Do not add an abstraction framework for unplanned exchanges. Another exchange
 would require a separate architecture review.
 
@@ -62,11 +63,21 @@ Spot and USD-M use separate connection/session state, queues, failure budgets,
 checkpoints, and metrics. Failure of one market cannot stop the other. USD-M
 side-data tasks are still more weakly coupled and cannot block core L2.
 
-Collector callbacks only timestamp, envelope, validate the minimum framing
-preconditions, and enqueue. They never compress, build Parquet, reconstruct
-complex books, or perform network archive I/O. Backpressure behavior must be
-explicit: no unbounded queue and no silent drop. A persistence inability is a
-visible collector fault/gap, not permission to discard payloads.
+The M4 socket receive boundary timestamps immediately after `recv(decode=False)`
+and places the exact bytes plus clocks in a bounded receipt queue before JSON
+parsing. A separate persistence loop extracts only Raw metadata, envelopes, and
+hands off to the bounded spool. It never compresses in the callback, builds
+Parquet, reconstructs books, or performs network archive I/O. Both transport
+and Recorder queues are finite; saturation is a visible collector fault, never
+a silent drop.
+
+Each Spot stream uses its own raw endpoint and connection ID. This preserves a
+known stream identity even for malformed JSON and avoids combined-stream wrapper
+ambiguity. The generic WebSocket library's client Ping loop is disabled while
+its protocol layer automatically echoes server Ping payloads; a local protocol
+test proves that behavior. Recorder replaces connections at 23 h 50 min, before
+the official 24-hour disconnect, and immediately replaces a connection after a
+persisted `serverShutdown` event.
 
 ## Data planes
 

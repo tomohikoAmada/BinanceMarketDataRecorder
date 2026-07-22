@@ -21,6 +21,18 @@ The successful M2 refresh completed at
 or production data root. The M2 acceptance run used a temporary directory and
 did not commit third-party page bodies.
 
+M4 refreshed the selection at `2026-07-22T08:01:24.392975+00:00` and added the
+official Spot documentation-repository WebSocket schema page to the configured
+selection. Relevant exact response hashes were: Agent Native index
+`da59ec5876e4014c0159f57f58b8c8ebcfab2fece51449999a4cf825ba2b2bb8`,
+developer-portal Spot WebSocket page
+`193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f`,
+Spot REST page
+`3bfe5526b745c976ae2db7c6bffdee14f10663d5fe326d8aa54c8b5f12968775`,
+and official-repository WebSocket schema HTML
+`5cb26f07b582b314b2a80b03531ecef42eb2d66bf2457d24d36457be1961adf9`.
+The temporary response bodies were not committed.
+
 The originally supplied `https://developers.binance.com/docs/llms.txt`
 currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
 working official text index is `https://developers.binance.com/en/docs/llms.txt`.
@@ -67,6 +79,9 @@ and third-party `python-binance` are absent.
 - Spot documents lowercase stream symbols, raw and combined stream forms, a
   24-hour connection lifetime, server ping every 20 seconds, pong within one
   minute with copied ping payload, and `U/u` local-book bridging rules.
+- The official Spot repository documents `btcusdt@depth@100ms` with `E/U/u/b/a`,
+  `btcusdt@aggTrade` with `E/a/f/l/T`, and `btcusdt@bookTicker` with `u` and no
+  exchange event timestamp. M4 fixtures preserve those documented fields.
 - Spot public depth snapshots use `GET /api/v3/depth`.
 - USD-M documents routed `/market` aggregate-trade and `/public` depth stream
   connections, a 24-hour connection lifetime, server ping every three minutes,
@@ -90,8 +105,9 @@ and third-party `python-binance` are absent.
   must not claim byte-exact REST body retention.
 
 ADR-0008 records the REST decision and ADR-0009 records the WebSocket decision.
-M4/M5 still must revalidate exact live stream routing, `@100ms` schema fixtures,
-ping behavior, and complete connection/fault semantics before collection.
+M4 revalidates Spot raw routing, `@100ms` fixtures, protocol Ping/Pong,
+serverShutdown, reconnect and public live capture. USD-M remains gated on M5's
+separate route and lifecycle validation.
 
 ## Changelog locations
 

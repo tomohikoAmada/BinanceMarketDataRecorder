@@ -74,8 +74,7 @@ REQUIRED_TRACE_IDS = (
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
-    ROOT / "src" / "binance_market_data_recorder" / "binance",
-    ROOT / "src" / "binance_market_data_recorder" / "collector",
+    ROOT / "src" / "binance_market_data_recorder" / "binance" / "usdm",
     ROOT / "src" / "binance_market_data_recorder" / "archive",
     ROOT / "src" / "binance_market_data_recorder" / "orderbook",
     ROOT / "src" / "binance_market_data_recorder" / "normalize",
@@ -173,7 +172,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M3 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M4 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject

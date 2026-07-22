@@ -49,8 +49,9 @@ def test_doctor_is_structured_and_non_mutating(
 def test_status_does_not_invent_a_running_collector(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["status"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "NOT_IMPLEMENTED"
-    assert payload["collector_implemented"] is False
+    assert payload["status"] == "NOT_RUNNING"
+    assert payload["collector_implemented"] is True
+    assert payload["implemented_markets"] == ["spot"]
     assert payload["network_connected"] is False
 
 

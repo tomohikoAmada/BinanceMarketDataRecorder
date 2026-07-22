@@ -65,3 +65,9 @@ id = "spot-api-changelog"
 url = "https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md"
 listed_in_index = false
 expected_terms = ["CHANGELOG"]
+
+[[documents]]
+id = "spot-websocket-schema-repository"
+url = "https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md"
+listed_in_index = false
+expected_terms = ["Aggregate Trade Streams", "Individual Symbol Book Ticker Streams", "Diff. Depth Stream"]

@@ -1,7 +1,8 @@
 # Data Contract
 
 Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
-and ADR-0010. Binance stream field mappings and fixtures remain M4/M5 work.
+and ADR-0010. M4 implements the Spot field mappings and official fixtures below;
+USD-M mappings remain M5 work.
 
 ## EventEnvelope v1 minimum fields
 
@@ -28,9 +29,22 @@ and ADR-0010. Binance stream field mappings and fixtures remain M4/M5 work.
 
 Missing exchange fields remain absent/null with schema meaning; no field is
 fabricated. Binance market-specific sequence fields remain lossless inside a
-versioned mapping and Spot/USD-M meanings are not conflated. Combined-stream
-wrapper bytes versus inner payload bytes must be selected by the M4/M5 endpoint
-implementation and recorded explicitly—never silently mixed.
+versioned mapping and Spot/USD-M meanings are not conflated. M4 selects separate
+Spot raw stream endpoints. Therefore `raw_payload` is the exact unwrapped
+WebSocket message bytes and `stream` is known from the endpoint even if parsing
+fails. M5 must make and record its own endpoint/wrapper choice.
+
+M4 Spot mappings are:
+
+| Raw stream | Envelope exchange times | `source_sequence` |
+| --- | --- | --- |
+| `btcusdt@depth@100ms` | `E` as event time | `U`, `u` |
+| `btcusdt@aggTrade` | `E` as event time; `T` as trade time | `a`, `f`, `l` |
+| `btcusdt@bookTicker` | none in the documented payload | `u` |
+
+Schema-invalid messages are retained byte-for-byte with `malformed`; duplicates
+and out-of-order source IDs remain in Raw. `serverShutdown` is retained with its
+`E` and a `server_shutdown` capture flag before reconnect.
 
 REST snapshots use a versioned Binance envelope with Spot/USD-M module identity,
 request URL/path, public request
@@ -40,7 +54,12 @@ returned `lastUpdateId`, and an explicit response-payload provenance mode. The
 M2-selected official SDK exposes parsed models and headers, not the exact HTTP
 response body, so a snapshot must not claim byte-exact body retention. It
 stores a deterministic encoded representation and declares that boundary.
-Snapshots never include credentials.
+Snapshots never include credentials. M4's Spot snapshot payload encoding is
+`utf-8-json-provenance` with schema
+`binance-spot-depth-snapshot-provenance.v1`; it contains the canonical SDK model,
+allowlisted public response/rate-limit headers, request/receive clocks,
+`/api/v3/depth`, `BTCUSDT`, requested limit, package/version, and the explicit
+`raw_http_body_available=false` boundary.
 
 ## Raw chunk logical contract
 
