@@ -159,7 +159,7 @@ def test_fixed_metrics_fixture_produces_deterministic_json_csv_and_all_fields(
         "status": "AVAILABLE",
     }
     assert stream["performance"]["external_free_bytes"]["status"] == (
-        "UNAVAILABLE_UNTIL_M9"
+        "NO_REGISTERED_TARGET_SAMPLE"
     )
     rows = list(csv.DictReader(io.StringIO(first_csv.decode())))
     assert len(rows) == 1

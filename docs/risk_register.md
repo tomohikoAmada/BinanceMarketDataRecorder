@@ -12,8 +12,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | ADR-0010 framing/CRC, actual SIGKILL mid-frame recovery, quarantine matrix, verified compression and atomic manifest/Catalog tests | M3 | Mitigated |
 | R-006 | Spot or USD-M sequence semantics are applied to the other market | Critical | Separate Spot `U/u` and USD-M `U/u/pu` schema modules and fixtures retain semantics without M6 continuity inference | M4-M6 | Mitigated |
 | R-007 | Wall clock adjustment, reboot, or sleep makes receive ordering/lag misleading | High | Dual UTC/monotonic clocks, boot domain, sleep gaps, versioned replay tie-break | M3/M6/M14/M16 | Open |
-| R-008 | External disk path aliases a different disk after rename/remount | Critical | UUID + marker + storage_id + relative path; re-resolve mountpoint; mismatch blocks writes | M9 | Open |
-| R-009 | Filesystem reports writable but lacks needed durable/atomic behavior | High | In-directory write/fsync/rename/readback probe; report DEGRADED/ERROR, never emulate success | M9 | Open |
+| R-008 | External disk path aliases a different disk after rename/remount | Critical | ADR-0014 UUID + marker + storage_id + relative path resolution; rename/remount and mismatch-block tests pass | M9 | Mitigated |
+| R-009 | Filesystem reports writable but lacks needed durable/atomic behavior | High | In-directory write/fsync/rename/readback/cleanup probe implemented; read-only and scope tests pass; physical filesystem matrix remains M17 evidence | M9/M17 | Monitoring |
 | R-010 | Disk disappears or process dies during copy/verify/Catalog boundary | Critical | Retain internal source; idempotent transaction/reconciliation at every crash point | M10 | Open |
 | R-011 | Verified archive becomes only copy after internal deletion and later fails | High | Explicit warning/manifest verification; user-owned independent backup; periodic verify CLI | M10/M18 | Accepted |
 | R-012 | Internal disk fills while archive unavailable or seal requires temp overhead | Critical | Thresholds/forecast, reserve includes seal overhead, emergency graceful stop, no unarchived delete | M3/M11 | Open |
@@ -26,7 +26,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-019 | Consumer depends on external mountpoint or Recorder internals | High | Catalog/manifest resolution and versioned M16 adapter contract | M16 | Open |
 | R-020 | Official public API access is geographically/system restricted or transiently times out | High | M4 observed a one-second SDK TLS/proxy timeout; explicit 10-second timeout plus bounded snapshot retry keeps core streams active, while no successful snapshot remains a visible failure; no unofficial proxy | M2/M4/M5/M7 | Monitoring |
 | R-021 | CRC32C/CBOR/Zstd implementations disagree across languages | Medium | ADR-0010 exact profile plus byte-identical Python vector and independent standard-library Go framing/CRC verifier | M3 | Mitigated |
-| R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 capability spike with evidence; minimal native helper only if verified; otherwise stop/update risk | M9/M12 | Open |
+| R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 unprivileged PyObjC 12.2.1 session/startup/appeared/disappeared callback proof passes; description-change registration implemented; M12 must still prove unmount/eject | M9/M12 | Monitoring |
 | R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | M3 million-frame bounded-memory gate passes and Catalog schema excludes event bodies; live growth/report validation remains M8/M11/M17 | M3/M8/M11/M17 | Monitoring |
 | R-024 | User pre-existing changes in Alpha101Crypto are overwritten | High | Research repo remains read-only; audit baseline records dirty frontend files | All | Mitigated |
 | R-025 | Project identifiers regress to an earlier M0/M0.1 identity | High | ADR-0007 constants and allowlisted legacy-name/path scans | M0.2/M1/M14/M18 | Mitigated |
@@ -48,8 +48,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
   resolved by ADR-0010; format changes require new vectors/version review.
 - Hard minimum reserve beyond the required emergency threshold: M11, using M3
   measured seal overhead and live growth evidence.
-- Disk Arbitration implementation technology and filesystem behavior matrix:
-  M9/M12.
+- Disk Arbitration discovery technology resolved by ADR-0014; physical
+  filesystem/removal matrix remains M12/M17.
 - Normalized primary keys/dedup tie-break and Parquet schemas: M15.
 - Replay total-order details and consumer dataset-version policy: M16.
 - Whether a future official Binance MCP exists with verifiable installation:

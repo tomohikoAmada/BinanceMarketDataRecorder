@@ -80,6 +80,13 @@ commit aggregate-only rows and atomically publish deterministic JSON/CSV under
 The CLI reads these summaries while continuing to report `NOT_RUNNING` until a
 later supervised service supplies validated runtime state.
 
+M9 implements `storage.macos` under ADR-0014. PyObjC bridges Disk Arbitration
+startup, appeared, description-changed and disappeared callbacks. Only
+explicitly non-internal UUID-bearing volumes are candidates. Registration
+persists UUID/relative-path/marker identity in Catalog and proves write, fsync,
+rename and readback inside the chosen folder. External absence or failure never
+enters the Collector dependency path; M10 archive transactions remain absent.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,

@@ -81,6 +81,16 @@ State transitions include evidence and timestamps. `READY` means identity and
 capability probes passed at the current mountpoint; it is not inferred from a
 path merely existing.
 
+M9 implements the public state vocabulary, UUID-based resolution, Catalog
+`storage_targets`, and the marker
+`.binance-market-data-recorder-storage.json`. `storage list` displays
+unregistered external volumes without writing. Registration requires an
+existing folder below the volume root; its probe creates, fsyncs, renames,
+reads, and removes only a unique temporary file inside that folder. Unregister
+removes Catalog eligibility but preserves the marker and user/archive data.
+`LOW_SPACE`, copy/verify, disappearance-during-copy and eject behavior are
+reserved for M10-M12 even though their public names are already frozen.
+
 ## Archive transaction
 
 For the oldest eligible sealed source:

@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Status: M3 Raw format implementation.
+Status: M9 macOS external-volume discovery and registration.
 
 ## Principles
 
@@ -23,6 +23,7 @@ Status: M3 Raw format implementation.
 | `cbor2` | `==6.1.3` | Deterministic canonical CBOR for Raw chunk headers and EventEnvelope bodies |
 | `google-crc32c` | `==1.8.0` | Castagnoli per-header/per-frame integrity checks with bounded scan performance |
 | `zstandard` | `==0.25.0` | Streaming immutable sealed Raw artifacts with checksum/readback verification |
+| `pyobjc-framework-DiskArbitration` | `==12.2.1` on macOS | Bridge to Apple's Disk Arbitration callbacks and descriptions; includes matching PyObjC core/Cocoa bridge wheels |
 
 Python's standard library supplies argparse CLI parsing, TOML reading,
 structured JSON logging, paths, platform checks, package metadata, and Git
@@ -40,7 +41,7 @@ needed.
 The build backend is `setuptools>=75,<82`; it is isolated build tooling, not a
 runtime dependency.
 
-## M3 resolution policy
+## M9 resolution policy
 
 Pydantic retains a compatible major-version range. The generated official SDKs,
 `websockets`, CBOR, CRC32C, and Zstandard packages are exact-pinned because
@@ -48,6 +49,12 @@ their concrete transport or byte-format behavior is certified by ADR-0008,
 ADR-0009, and ADR-0010. The complete certified macOS 12+ arm64/Python 3.12
 resolution and wheel hashes are recorded in
 `requirements/macos-arm64-python312.lock`.
+
+The Disk Arbitration bridge and its PyObjC core/Cocoa runtime are exact-pinned
+to 12.2.1 as one tested bridge set. The dependency is macOS-conditional in
+project metadata: non-macOS tooling can import platform-neutral storage models,
+while attempts to use Disk Arbitration fail explicitly. M9 tested session
+creation, startup enumeration and callback registration on the certified host.
 
 The deprecated Futures connector, third-party `python-binance`, unverified
 Binance MCPs, FastAPI, Qt, database, Parquet, dataframe, machine-learning,

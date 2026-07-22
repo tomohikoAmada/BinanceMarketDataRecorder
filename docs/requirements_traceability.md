@@ -31,10 +31,10 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004, data contract | M6 fixed-hash, checkpoint-restore and random-deletion tests; M15/M16 order tests |
 | STO-01 | Internal disk always active target; no direct external active writes; external absence normal | storage contract, ADR-0003 | M4/M5/M9 fault tests |
 | STO-02 | Default application-support layout; no persistent data in repo/Desktop/Documents/iCloud/tmp | project/architecture/storage contracts | M1 path tests; M14 runtime |
-| STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003 | M9 scope-probe tests |
-| STO-04 | Identity uses UUID/name/fs type/relative folder/marker/storage_id and re-resolves mountpoint | storage/macOS contracts | M9 rename/reinsert tests |
-| STO-05 | READY requires writable access and write/fsync/rename/readback; read-only reported | storage contract | M9 filesystem matrix |
-| STO-06 | Full required storage state set | storage contract | M9 state-machine tests |
+| STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003/0014 | M9 scope-probe tests pass; physical matrix M17 |
+| STO-04 | Identity uses UUID/name/fs type/relative folder/marker/storage_id and re-resolves mountpoint | storage/macOS contracts, ADR-0014 | M9 rename/reinsert and mismatch tests pass |
+| STO-05 | READY requires writable access and write/fsync/rename/readback; read-only reported | storage contract, ADR-0014 | M9 capability/read-only tests pass; physical media matrix unrun |
+| STO-06 | Full required storage state set | storage contract, ADR-0014 | M9 enum contract test passes |
 | STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003 | M10 crash/fault/idempotence matrix |
 | STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/docs; M18 handbook |
 | STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract | M9/M10 filesystem audit tests |
@@ -44,7 +44,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts, ADR-0013 | M8 deterministic fixture, Collector reconciliation and midnight tests |
 | MET-02 | JSON+CSV reports and Catalog summary; SQLite excludes event corpus | project/data/architecture contracts, ADR-0013 | M8 aggregate-schema, atomic output and deterministic rebuild tests |
 | MET-03 | Structured status, CLI status/daily reports, restart continuity/no double count | data contract, ADR-0013 | M8 stable-batch retry, restart and honest-status tests |
-| MAC-01 | Disk Arbitration startup/events/mount/eject; PyObjC or proven minimal helper | macOS contract, R-022 | M9/M12 platform evidence |
+| MAC-01 | Disk Arbitration startup/events/mount/eject; PyObjC or proven minimal helper | macOS contract, ADR-0014, R-022 | M9 startup/callback platform proof; M12 eject proof pending |
 | MAC-02 | Required storage/archive CLI surface | macOS contract | M9/M11/M12 CLI tests |
 | MAC-03 | Safe eject blocks work, syncs/closes, handles busy/refusal/forced removal | macOS/storage contracts | M12 scenario matrix |
 | OPS-01 | User LaunchAgent, logged-in default, no root; logging/restart/SIGTERM/lock | macOS contract | M14 reboot/crash/install tests |

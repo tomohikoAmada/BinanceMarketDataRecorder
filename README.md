@@ -82,8 +82,9 @@ are optional and may disappear without stopping capture.
 - [M6 acceptance](docs/milestone_acceptance/M6.md)
 - [M7 acceptance](docs/milestone_acceptance/M7.md)
 - [M8 acceptance](docs/milestone_acceptance/M8.md)
+- [M9 acceptance](docs/milestone_acceptance/M9.md)
 
-## Install and verify M8
+## Install and verify M9
 
 Use Python 3.12 in a virtual environment:
 
@@ -96,6 +97,10 @@ binance-market-recorder config show
 binance-market-recorder doctor
 binance-market-recorder status
 binance-market-recorder report daily --date 2026-07-22
+binance-market-recorder storage list
+binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
+binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
+binance-market-recorder storage status
 python3.12 -m pytest -q
 python3.12 -m ruff check .
 python3.12 -m mypy
@@ -110,6 +115,13 @@ Pass a file with `--config PATH` or
 `max_frame_bytes`; unknown settings are rejected. The default data root is
 `~/Library/Application Support/BinanceMarketDataRecorder/`, and diagnostic CLI
 commands do not create it.
+
+External storage is optional. Discovery uses macOS Disk Arbitration and volume
+UUIDs; displayed mountpoint/name values are not identity. `storage list` and
+`inspect` never write. Registration requires an existing folder below the
+volume root, then performs write/fsync/rename/readback only inside that folder
+and creates its marker there. Recorder never formats, repairs, remounts, or
+claims the whole volume. M9 does not yet copy archives or delete local Raw.
 
 ```toml
 [recorder]

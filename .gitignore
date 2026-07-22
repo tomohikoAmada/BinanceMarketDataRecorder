@@ -3,6 +3,7 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .venv/
+build/
 *.egg-info/
 *.py[cod]
 .DS_Store

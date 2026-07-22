@@ -136,7 +136,9 @@ with no observations; unavailable values are `null` with an explicit reason:
 
 - REST wire bytes: `UNAVAILABLE_SDK_RAW_BODY`;
 - absent histogram/runtime samples: `INSUFFICIENT_DATA`;
-- external free space: `UNAVAILABLE_UNTIL_M9`;
+- external free space: sampled for each READY registered target when a storage
+  monitor is active; otherwise `NO_REGISTERED_TARGET_SAMPLE` rather than a
+  fabricated zero;
 - normalized/archive/delete outputs: `NOT_IMPLEMENTED` until their milestones.
 
 Receive lag is non-negative local receive UTC minus documented exchange event

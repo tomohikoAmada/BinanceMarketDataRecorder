@@ -28,9 +28,11 @@ Arbitration capabilities to:
 - observe/request unmount and eject;
 - re-resolve the current mountpoint by UUID after reinsertion.
 
-PyObjC or a minimal native helper may be selected only after M9 capability
-tests. A polling fallback cannot be silently treated as equivalent if it misses
-required lifecycle semantics. Fixed `/Volumes/<name>` identity is forbidden.
+ADR-0014 selects exact-pinned PyObjC 12.2.1 after an unprivileged capability
+test proved session creation, startup delivery, and appeared/disappeared
+callback bridging. The adapter also registers description-change callbacks on
+its Core Foundation run loop. There is no polling fallback. Fixed
+`/Volumes/<name>` identity is forbidden.
 
 Unregistered volumes are display-only. The service writes only inside an
 explicitly registered folder and places the marker there, never at disk root.
@@ -56,6 +58,12 @@ binance-market-recorder archive verify <storage-id>
 
 Registration is an explicit user action. Unregistering stops future use and
 does not erase archived data.
+
+M9 provides `storage list`, `inspect`, `register`, `unregister`, and `status`.
+List/inspect are read-only. Register/status capability probes write only
+temporary Recorder-owned files in the selected/registered directory. Eject,
+forecast, and archive commands remain assigned to M10-M12 and are not exposed
+early.
 
 ## Eject protocol
 

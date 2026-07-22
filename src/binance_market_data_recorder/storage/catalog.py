@@ -123,8 +123,106 @@ class Catalog:
             );
             CREATE INDEX IF NOT EXISTS metric_batches_by_day
                 ON metric_batches(utc_date, market, stream);
+            CREATE TABLE IF NOT EXISTS storage_targets (
+                storage_id TEXT PRIMARY KEY,
+                volume_uuid TEXT NOT NULL,
+                volume_name TEXT,
+                filesystem_type TEXT,
+                relative_path TEXT NOT NULL,
+                marker_nonce TEXT NOT NULL,
+                registered_at_utc_ns INTEGER NOT NULL,
+                UNIQUE(volume_uuid, relative_path)
+            );
             """
         )
+
+    def register_storage_target(
+        self,
+        *,
+        storage_id: str,
+        volume_uuid: str,
+        volume_name: str | None,
+        filesystem_type: str | None,
+        relative_path: str,
+        marker_nonce: str,
+        registered_at_utc_ns: int,
+    ) -> None:
+        if not all((storage_id, volume_uuid, relative_path, marker_nonce)):
+            raise ValueError("storage target identity fields must be non-empty")
+        if relative_path in {".", "/"} or relative_path.startswith("../"):
+            raise ValueError("storage target must be below the volume root")
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT * FROM storage_targets WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            location = connection.execute(
+                """
+                SELECT storage_id FROM storage_targets
+                WHERE volume_uuid = ? AND relative_path = ?
+                """,
+                (volume_uuid, relative_path),
+            ).fetchone()
+            if location is not None and location["storage_id"] != storage_id:
+                raise CatalogStateError(
+                    "volume directory is registered with another storage_id"
+                )
+            identity = (
+                volume_uuid,
+                volume_name,
+                filesystem_type,
+                relative_path,
+                marker_nonce,
+                registered_at_utc_ns,
+            )
+            if existing is not None:
+                observed = (
+                    existing["volume_uuid"],
+                    existing["volume_name"],
+                    existing["filesystem_type"],
+                    existing["relative_path"],
+                    existing["marker_nonce"],
+                    existing["registered_at_utc_ns"],
+                )
+                if observed != identity:
+                    raise CatalogStateError("storage_id already has different identity")
+                return
+            connection.execute(
+                """
+                INSERT INTO storage_targets(
+                    storage_id, volume_uuid, volume_name, filesystem_type,
+                    relative_path, marker_nonce, registered_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (storage_id, *identity),
+            )
+
+    def unregister_storage_target(self, storage_id: str) -> bool:
+        with self._transaction() as connection:
+            cursor = connection.execute(
+                "DELETE FROM storage_targets WHERE storage_id = ?", (storage_id,)
+            )
+        return cursor.rowcount == 1
+
+    def storage_targets(self) -> list[dict[str, object]]:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM storage_targets ORDER BY storage_id"
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def storage_target_for_location(
+        self, *, volume_uuid: str, relative_path: str
+    ) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT * FROM storage_targets
+                WHERE volume_uuid = ? AND relative_path = ?
+                """,
+                (volume_uuid, relative_path),
+            ).fetchone()
+        return dict(row) if row else None
 
     def record_metric_batch(
         self,
@@ -416,6 +514,7 @@ class Catalog:
             "quarantined_artifacts",
             "orderbook_checkpoints",
             "metric_batches",
+            "storage_targets",
         }:
             raise ValueError("unknown Catalog table")
         with self._lock:

@@ -9,6 +9,7 @@ from binance_market_data_recorder.cli import main
 from binance_market_data_recorder.metrics.model import MetricAggregate
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.macos import VolumeInfo
 
 
 def test_version_identifies_distribution(capsys: pytest.CaptureFixture[str]) -> None:
@@ -138,3 +139,74 @@ def test_status_does_not_trust_an_unimplemented_service_state_as_running(
     assert payload["status"] == "NOT_RUNNING"
     assert payload["network_connected"] is False
     assert payload["network_status"] == "UNAVAILABLE_NO_SUPERVISED_SERVICE"
+
+
+def test_storage_list_is_structured_and_display_only(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class NoExternalVolumes:
+        def inventory(self) -> list[VolumeInfo]:
+            return []
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        NoExternalVolumes,
+    )
+    assert main(["storage", "list"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {
+        "command": "storage.list",
+        "external_volume_count": 0,
+        "filesystem_mutated": False,
+        "status": "OK",
+        "volumes": [],
+    }
+
+
+def test_storage_register_status_unregister_cli(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mountpoint = tmp_path / "external"
+    folder = mountpoint / "Archive" / "Recorder"
+    folder.mkdir(parents=True)
+    observed = VolumeInfo(
+        disk_id="disk9s1",
+        volume_uuid="11111111-2222-3333-4444-555555555555",
+        name="Test Archive",
+        filesystem_type="apfs",
+        mountpoint=mountpoint,
+        writable=True,
+        internal=False,
+        removable=True,
+        total_bytes=1_000_000,
+        free_bytes=900_000,
+        observed_at_utc_ns=1,
+    )
+
+    class OneExternalVolume:
+        def inventory(self) -> list[VolumeInfo]:
+            return [observed]
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        OneExternalVolume,
+    )
+    monkeypatch.setenv(
+        "BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path / "internal")
+    )
+    assert main(["storage", "register", str(folder)]) == 0
+    registered = json.loads(capsys.readouterr().out)
+    assert registered["state"] == "READY"
+    storage_id = registered["storage_id"]
+
+    assert main(["storage", "status"]) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["targets"][0]["state"] == "READY"
+    assert status["targets"][0]["storage_id"] == storage_id
+
+    assert main(["storage", "unregister", storage_id]) == 0
+    unregistered = json.loads(capsys.readouterr().out)
+    assert unregistered["status"] == "UNREGISTERED"
+    assert unregistered["marker_deleted"] is False

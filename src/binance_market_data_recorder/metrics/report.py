@@ -103,7 +103,10 @@ def _stream_document(
         "cpu_percent": _gauge(aggregate, "cpu_percent"),
         "rss_memory_bytes": _gauge(aggregate, "rss_memory_bytes"),
         "internal_free_bytes": _gauge(aggregate, "internal_free_bytes"),
-        "external_free_bytes": {"value": None, "status": "UNAVAILABLE_UNTIL_M9"},
+        "external_free_bytes": {
+            "value": None,
+            "status": "NO_REGISTERED_TARGET_SAMPLE",
+        },
         "oldest_unarchived_age_ns": {
             "value": (
                 None

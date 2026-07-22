@@ -15,7 +15,14 @@ from .diagnostics import run_doctor
 from .metrics.report import DailyReporter
 from .paths import discover_repository_root
 from .status import service_status
-from .storage.catalog import Catalog
+from .storage.catalog import Catalog, CatalogStateError
+from .storage.macos import (
+    DiskArbitrationAdapter,
+    PlatformVolumeError,
+    StorageRegistrationError,
+    StorageRegistry,
+    inspect_path,
+)
 from .version import version_string
 
 
@@ -54,6 +61,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
+    storage_command = commands.add_parser("storage", help="inspect registered external folders")
+    storage_commands = storage_command.add_subparsers(
+        dest="storage_command", required=True, parser_class=_ArgumentParser
+    )
+    storage_commands.add_parser("list", help="list discovered external volumes")
+    inspect = storage_commands.add_parser("inspect", help="inspect a folder without writing")
+    inspect.add_argument("path", type=Path)
+    register = storage_commands.add_parser("register", help="register an existing folder")
+    register.add_argument("folder_path", type=Path)
+    unregister = storage_commands.add_parser("unregister", help="stop using a registered folder")
+    unregister.add_argument("storage_id")
+    storage_commands.add_parser("status", help="resolve and probe registered folders")
     return parser
 
 
@@ -121,4 +140,69 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 2
         _write_json({"command": "report.daily", **document})
         return 0
+    if command == "storage":
+        adapter = DiskArbitrationAdapter()
+        storage_command = getattr(args, "storage_command", None)
+        try:
+            if storage_command == "list":
+                volumes = [volume.public_dict() for volume in adapter.inventory()]
+                _write_json(
+                    {
+                        "command": "storage.list",
+                        "status": "OK",
+                        "volumes": volumes,
+                        "external_volume_count": len(volumes),
+                        "filesystem_mutated": False,
+                    }
+                )
+                return 0
+            if storage_command == "inspect":
+                _write_json(
+                    {
+                        "command": "storage.inspect",
+                        **inspect_path(args.path, adapter.inventory()),
+                    }
+                )
+                return 0
+            catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
+            if storage_command == "status" and not catalog_path.is_file():
+                _write_json(
+                    {
+                        "command": "storage.status",
+                        "status": "NO_REGISTERED_TARGETS",
+                        "targets": [],
+                    }
+                )
+                return 0
+            with Catalog(catalog_path) as catalog:
+                registry = StorageRegistry(catalog=catalog, volumes=adapter)
+                if storage_command == "register":
+                    result = registry.register(args.folder_path)
+                    _write_json({"command": "storage.register", **result})
+                    return 0
+                if storage_command == "unregister":
+                    result = registry.unregister(args.storage_id)
+                    _write_json({"command": "storage.unregister", **result})
+                    return 0
+                if storage_command == "status":
+                    targets = registry.statuses()
+                    _write_json(
+                        {
+                            "command": "storage.status",
+                            "status": "OK",
+                            "targets": targets,
+                        }
+                    )
+                    return 0
+        except (
+            CatalogStateError,
+            OSError,
+            PlatformVolumeError,
+            StorageRegistrationError,
+            ValueError,
+        ) as exc:
+            _write_json(
+                {"error": "storage_error", "message": str(exc)}, stream=sys.stderr
+            )
+            return 2
     parser.error(f"unsupported command: {command}")

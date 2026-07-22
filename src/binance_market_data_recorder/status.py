@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .storage.catalog import Catalog, ChunkState
+from .storage.macos import DiskArbitrationAdapter, PlatformVolumeError, StorageRegistry
 
 
 def _nearest_existing(path: Path) -> Path:
@@ -40,6 +41,10 @@ def service_status(data_root: Path) -> dict[str, Any]:
         "active_chunks": None,
         "sealed_chunks": None,
     }
+    external_storage: dict[str, object] = {
+        "status": "NO_REGISTERED_TARGETS",
+        "targets": [],
+    }
     if catalog_path.is_file():
         with Catalog(catalog_path) as catalog:
             catalog_summary = {
@@ -51,6 +56,20 @@ def service_status(data_root: Path) -> dict[str, Any]:
                 ),
                 "sealed_chunks": len(catalog.chunks_in_states(ChunkState.SEALED)),
             }
+            try:
+                targets = StorageRegistry(
+                    catalog=catalog, volumes=DiskArbitrationAdapter()
+                ).statuses()
+                external_storage = {
+                    "status": "OK" if targets else "NO_REGISTERED_TARGETS",
+                    "targets": targets,
+                }
+            except (OSError, PlatformVolumeError) as exc:
+                external_storage = {
+                    "status": "PLATFORM_UNAVAILABLE",
+                    "targets": [],
+                    "reason": str(exc),
+                }
 
     reports = sorted((root / "data" / "reports" / "daily").glob("*.json"))
     disk = shutil.disk_usage(_nearest_existing(root))
@@ -72,7 +91,7 @@ def service_status(data_root: Path) -> dict[str, Any]:
             "free_bytes": disk.free,
             "total_bytes": disk.total,
         },
-        "external_storage": {"status": "UNAVAILABLE_UNTIL_M9"},
+        "external_storage": external_storage,
         "runtime_metrics": {
             "cpu_percent": {"value": None, "status": "NOT_RUNNING"},
             "rss_memory_bytes": {"value": None, "status": "NOT_RUNNING"},
@@ -80,7 +99,8 @@ def service_status(data_root: Path) -> dict[str, Any]:
             "last_event_age_ns": {"value": None, "status": "NOT_RUNNING"},
         },
         "detail": (
-            "Collector libraries and M8 observability are implemented; supervised "
-            "service state is not implemented, so observed files cannot claim RUNNING."
+            "Collector libraries, M8 observability, and M9 external storage discovery "
+            "are implemented; supervised service state is not implemented, so observed "
+            "files cannot claim RUNNING."
         ),
     }

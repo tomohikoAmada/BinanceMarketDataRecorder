@@ -30,6 +30,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M6.md",
     "docs/milestone_acceptance/M7.md",
     "docs/milestone_acceptance/M8.md",
+    "docs/milestone_acceptance/M9.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -45,6 +46,7 @@ REQUIRED_FILES = (
     "docs/adr/0011-orderbook-reconstruction-and-checkpoints.md",
     "docs/adr/0012-usdm-side-data-isolation-and-semantics.md",
     "docs/adr/0013-idempotent-operational-metrics-and-daily-reports.md",
+    "docs/adr/0014-macos-volume-discovery-and-registration.md",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
@@ -179,7 +181,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M8 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M9 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject
@@ -195,6 +197,7 @@ def verify() -> None:
         'google-crc32c==1.8.0',
         'websockets==15.0.1',
         'zstandard==0.25.0',
+        'pyobjc-framework-DiskArbitration==12.2.1',
     ):
         assert dependency in pyproject, f"M2 dependency missing: {dependency}"
 
