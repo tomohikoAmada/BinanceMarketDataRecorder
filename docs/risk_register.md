@@ -8,8 +8,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-001 | Official SDK WebSocket callbacks may hide/re-encode payloads, own receive timing, or drop under blocking callbacks | Critical | Probe confirmed all three failures; ADR-0009 rejects SDK WebSocket streams and selects caller-owned exact-byte transport | M2 | Mitigated |
 | R-002 | Binance documentation paths/semantics change; specified `/docs/llms.txt` redirects to portal HTML | High | Updater uses the working official index and validates host, every redirect, HTTP 200, body/content and selected-page hashes | M2 | Mitigated |
 | R-003 | USD-M stream routing changed to `/public` and `/market`; stale endpoints could silently omit streams | Critical | M2 records official route separation and generated SDK evidence; M5/M7 must revalidate every live stream and never infer routing | M2/M5/M7 | Monitoring |
-| R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | Bounded queue, explicit failure policy, synthetic million-event and overload/fault tests | M3-M5 | Open |
-| R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | Framing/CRC scan, atomic seal, manifest/hash, recovery/quarantine fault matrix | M3 | Open |
+| R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | M3 bounded queue raises explicit overload and million-frame test stays bounded; M4/M5 must connect Collector fault/gap behavior | M3-M5 | Monitoring |
+| R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | ADR-0010 framing/CRC, actual SIGKILL mid-frame recovery, quarantine matrix, verified compression and atomic manifest/Catalog tests | M3 | Mitigated |
 | R-006 | Spot or USD-M sequence semantics are applied to the other market | Critical | Separate official fixtures/implementations; `U/u` and `U/u/pu` assertions and resync tests | M4-M6 | Open |
 | R-007 | Wall clock adjustment, reboot, or sleep makes receive ordering/lag misleading | High | Dual UTC/monotonic clocks, boot domain, sleep gaps, versioned replay tie-break | M3/M6/M14/M16 | Open |
 | R-008 | External disk path aliases a different disk after rename/remount | Critical | UUID + marker + storage_id + relative path; re-resolve mountpoint; mismatch blocks writes | M9 | Open |
@@ -25,9 +25,9 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-018 | Compression or normalization mutates/deletes canonical Raw | Critical | Separate temp/output, source hashes, immutable manifests, repeatability tests | M3/M15 | Open |
 | R-019 | Consumer depends on external mountpoint or Recorder internals | High | Catalog/manifest resolution and versioned M16 adapter contract | M16 | Open |
 | R-020 | Official public API access is geographically/system restricted | High | M2 Spot/USD-M public REST smoke passed from the certification host; later live milestones must recheck and never use an unofficial proxy | M2/M4/M5/M7 | Monitoring |
-| R-021 | CRC32C/CBOR/Zstd implementations disagree across languages | Medium | M3 canonical byte rules and Python/Go-or-Rust golden vectors before acceptance | M3 | Open |
+| R-021 | CRC32C/CBOR/Zstd implementations disagree across languages | Medium | ADR-0010 exact profile plus byte-identical Python vector and independent standard-library Go framing/CRC verifier | M3 | Mitigated |
 | R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 capability spike with evidence; minimal native helper only if verified; otherwise stop/update risk | M9/M12 | Open |
-| R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | Million-event stress, event corpus stays out of SQLite, rolling growth reports | M3/M8/M11/M17 | Open |
+| R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | M3 million-frame bounded-memory gate passes and Catalog schema excludes event bodies; live growth/report validation remains M8/M11/M17 | M3/M8/M11/M17 | Monitoring |
 | R-024 | User pre-existing changes in Alpha101Crypto are overwritten | High | Research repo remains read-only; audit baseline records dirty frontend files | All | Mitigated |
 | R-025 | Project identifiers regress to an earlier M0/M0.1 identity | High | ADR-0007 constants and allowlisted legacy-name/path scans | M0.2/M1/M14/M18 | Mitigated |
 | R-026 | Name, visual identity, wording, service label, or publisher metadata falsely implies an official Binance relationship | Critical | Prominent disclaimer; no Binance logo; author-controlled namespace; forbidden wording/namespace tests | M0.2/M14/M18 | Mitigated |
@@ -42,7 +42,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
   ADR-0008/ADR-0009; rerun probes on upgrades.
 - Byte-exact combined wrapper versus inner payload capture: M4/M5 endpoint
   selection must preserve whichever wire form is selected.
-- CBOR canonical profile, CRC32C coverage, Zstd parameters and file naming: M3.
+- CBOR canonical profile, CRC32C coverage, Zstd parameters and file naming:
+  resolved by ADR-0010; format changes require new vectors/version review.
 - Hard minimum reserve beyond the required emergency threshold: M11, using M3
   measured seal overhead and live growth evidence.
 - Disk Arbitration implementation technology and filesystem behavior matrix:

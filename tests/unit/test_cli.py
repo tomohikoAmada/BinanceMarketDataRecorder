@@ -22,7 +22,15 @@ def test_config_show_is_structured_and_credential_free(
     payload = json.loads(capsys.readouterr().out)
     assert payload["command"] == "config.show"
     assert payload["contains_credentials"] is False
-    assert set(payload["config"]) == {"data_root", "log_level"}
+    assert set(payload["config"]) == {
+        "data_root",
+        "durability_interval_seconds",
+        "ingress_queue_capacity",
+        "log_level",
+        "max_frame_bytes",
+        "rotation_bytes",
+        "rotation_seconds",
+    }
 
 
 def test_doctor_is_structured_and_non_mutating(

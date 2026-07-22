@@ -1,4 +1,4 @@
-"""Honest M1 service status."""
+"""Honest pre-service status."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Any
 
 
 def service_status() -> dict[str, Any]:
-    """Report that runtime collection does not exist in M1."""
+    """Report that runtime collection is still unimplemented."""
 
     return {
         "command": "status",
@@ -14,5 +14,8 @@ def service_status() -> dict[str, Any]:
         "service_implemented": False,
         "collector_implemented": False,
         "network_connected": False,
-        "detail": "M1 provides the service skeleton only; collectors begin in later milestones.",
+        "detail": (
+            "M3 provides durable Raw/Catalog foundations only; the service and "
+            "collectors remain unimplemented."
+        ),
     }

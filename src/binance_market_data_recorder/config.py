@@ -19,6 +19,11 @@ ALLOWED_ENV_SETTINGS = {
     CONFIG_FILE_ENV,
     f"{ENV_PREFIX}DATA_ROOT",
     f"{ENV_PREFIX}LOG_LEVEL",
+    f"{ENV_PREFIX}ROTATION_SECONDS",
+    f"{ENV_PREFIX}ROTATION_BYTES",
+    f"{ENV_PREFIX}DURABILITY_INTERVAL_SECONDS",
+    f"{ENV_PREFIX}INGRESS_QUEUE_CAPACITY",
+    f"{ENV_PREFIX}MAX_FRAME_BYTES",
 }
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -28,12 +33,17 @@ class ConfigurationError(ValueError):
 
 
 class RecorderConfig(BaseModel):
-    """M1 configuration; intentionally contains no credential/account fields."""
+    """Credential-free Recorder configuration through the current milestone."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     data_root: Path
     log_level: LogLevel = "INFO"
+    rotation_seconds: float = Field(default=60.0, gt=0)
+    rotation_bytes: int = Field(default=128 * 1024 * 1024, ge=1024 * 1024)
+    durability_interval_seconds: float = Field(default=1.0, ge=0, le=1.0)
+    ingress_queue_capacity: int = Field(default=8192, ge=1)
+    max_frame_bytes: int = Field(default=16 * 1024 * 1024, ge=1024, le=64 * 1024 * 1024)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -45,10 +55,18 @@ class RecorderConfig(BaseModel):
     def _normalize_log_level(cls, value: object) -> object:
         return value.upper() if isinstance(value, str) else value
 
-    def public_dict(self) -> dict[str, str]:
-        """Return the complete safe-to-display M1 configuration."""
+    def public_dict(self) -> dict[str, object]:
+        """Return the complete safe-to-display configuration."""
 
-        return {"data_root": str(self.data_root), "log_level": self.log_level}
+        return {
+            "data_root": str(self.data_root),
+            "log_level": self.log_level,
+            "rotation_seconds": self.rotation_seconds,
+            "rotation_bytes": self.rotation_bytes,
+            "durability_interval_seconds": self.durability_interval_seconds,
+            "ingress_queue_capacity": self.ingress_queue_capacity,
+            "max_frame_bytes": self.max_frame_bytes,
+        }
 
 
 class _RecorderOverrides(BaseModel):
@@ -56,6 +74,11 @@ class _RecorderOverrides(BaseModel):
 
     data_root: Path | None = None
     log_level: LogLevel | None = None
+    rotation_seconds: float | None = Field(default=None, gt=0)
+    rotation_bytes: int | None = Field(default=None, ge=1024 * 1024)
+    durability_interval_seconds: float | None = Field(default=None, ge=0, le=1.0)
+    ingress_queue_capacity: int | None = Field(default=None, ge=1)
+    max_frame_bytes: int | None = Field(default=None, ge=1024, le=64 * 1024 * 1024)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -122,8 +145,13 @@ def load_config(
     values: dict[str, object] = {
         "data_root": default_data_root(home=home),
         "log_level": "INFO",
+        "rotation_seconds": 60.0,
+        "rotation_bytes": 128 * 1024 * 1024,
+        "durability_interval_seconds": 1.0,
+        "ingress_queue_capacity": 8192,
+        "max_frame_bytes": 16 * 1024 * 1024,
     }
-    sources = {"data_root": "default", "log_level": "default"}
+    sources = {name: "default" for name in values}
 
     if selected_file is not None:
         overrides = _read_config_file(selected_file)
@@ -133,6 +161,17 @@ def load_config(
         if overrides.log_level is not None:
             values["log_level"] = overrides.log_level
             sources["log_level"] = "config_file"
+        for name in (
+            "rotation_seconds",
+            "rotation_bytes",
+            "durability_interval_seconds",
+            "ingress_queue_capacity",
+            "max_frame_bytes",
+        ):
+            value = getattr(overrides, name)
+            if value is not None:
+                values[name] = value
+                sources[name] = "config_file"
 
     data_root_env = environment.get(f"{ENV_PREFIX}DATA_ROOT")
     if data_root_env is not None:
@@ -142,6 +181,24 @@ def load_config(
     if log_level_env is not None:
         values["log_level"] = log_level_env
         sources["log_level"] = "environment"
+    numeric_environment = {
+        "rotation_seconds": float,
+        "rotation_bytes": int,
+        "durability_interval_seconds": float,
+        "ingress_queue_capacity": int,
+        "max_frame_bytes": int,
+    }
+    for name, parser in numeric_environment.items():
+        environment_name = f"{ENV_PREFIX}{name.upper()}"
+        raw_value = environment.get(environment_name)
+        if raw_value is not None:
+            try:
+                values[name] = parser(raw_value)
+            except ValueError as exc:
+                raise ConfigurationError(
+                    f"invalid numeric environment setting {environment_name}"
+                ) from exc
+            sources[name] = "environment"
 
     try:
         parsed = RecorderConfig.model_validate(values)

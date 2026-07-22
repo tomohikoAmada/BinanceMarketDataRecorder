@@ -1,7 +1,7 @@
 # Data Contract
 
-Status: M0 logical contract. Exact binary test vectors and executable schemas
-are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
+Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
+and ADR-0010. Binance stream field mappings and fixtures remain M4/M5 work.
 
 ## EventEnvelope v1 minimum fields
 
@@ -28,23 +28,28 @@ are M3 deliverables; Binance field mappings and fixtures require M2 evidence.
 
 Missing exchange fields remain absent/null with schema meaning; no field is
 fabricated. Binance market-specific sequence fields remain lossless inside a
-versioned mapping and Spot/USD-M meanings are not conflated. Combined-stream wrapper
-bytes versus inner payload bytes must be resolved by the M2 transport ADR and
-recorded explicitly—never silently mixed.
+versioned mapping and Spot/USD-M meanings are not conflated. Combined-stream
+wrapper bytes versus inner payload bytes must be selected by the M4/M5 endpoint
+implementation and recorded explicitly—never silently mixed.
 
 REST snapshots use a versioned Binance envelope with Spot/USD-M module identity,
 request URL/path, public request
 parameters, response status/headers needed for rate-limit provenance, request
-and response receive times, exact response bytes, market/symbol, transport and
-SDK version, and the returned `lastUpdateId`. They never include credentials.
+and response receive times, market/symbol, transport and SDK version, the
+returned `lastUpdateId`, and an explicit response-payload provenance mode. The
+M2-selected official SDK exposes parsed models and headers, not the exact HTTP
+response body, so a snapshot must not claim byte-exact body retention. It
+stores a deterministic encoded representation and declares that boundary.
+Snapshots never include credentials.
 
 ## Raw chunk logical contract
 
-ADR-0002 is authoritative. A chunk has:
+ADR-0002 selects the format family and ADR-0010 is the authoritative byte
+profile. A chunk has:
 
 - versioned magic/header and format identifiers;
 - a sequence of independently length-delimited frames;
-- per-frame CRC32C covering the encoded frame data and declared length;
+- per-frame Castagnoli CRC32C covering length, flags/reserved, and encoded body;
 - exact raw payload bytes encoded as a CBOR byte string;
 - a sealed manifest with file SHA-256 and required metadata;
 - an unambiguous partial/sealed state.
@@ -67,7 +72,8 @@ Every sealed chunk manifest contains:
 - gap, resync, recovery/truncation, overlap, and completeness markers;
 - seal and fsync completion time.
 
-An incomplete interval cannot carry `complete=true`.
+An incomplete interval cannot carry `complete=true`. Tail recovery records the
+exact removed byte count and forces the later sealed manifest incomplete.
 
 ## Layer semantics
 

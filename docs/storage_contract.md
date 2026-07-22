@@ -37,6 +37,11 @@ transitions are idempotent and reconciled against both filesystem and Catalog.
 ACTIVE, SEALING, unverified, checksum-failed, or unarchived data cannot be
 deleted.
 
+M3 implements `ACTIVE`, `RECOVERED`, `SEALING`, `SEALED`, and `QUARANTINED`
+for the internal Raw lifecycle. Later archive states remain unimplemented.
+Catalog paths are relative to the selected internal root, and SQLite stores
+chunk lifecycle metadata/transitions only—not market-event bodies.
+
 ## External target identity and access boundary
 
 An archive registration contains:

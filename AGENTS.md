@@ -177,7 +177,7 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-Current M2 engineering checks:
+Current M3 engineering checks:
 
 ```bash
 git status --short --branch
@@ -194,11 +194,16 @@ binance-market-recorder status
 python3.12 tools/update_binance_docs.py --output-dir <temporary-directory>
 python3.12 tools/probe_binance_transports.py
 BINANCE_MARKET_RECORDER_ONLINE=1 python3.12 -m pytest -m online -q
+python3.12 -m pytest -m stress -q tests/stress/test_million_events.py
+go run tools/verify_raw_chunk_golden.go
 ```
 
 The documentation update performs network access only to its official
 allowlist. The transport probe is offline by default; `--online-rest` and the
 `online` pytest marker opt in only to unsigned public depth snapshots.
+The `stress` marker is excluded from the default suite and must be run
+explicitly for M3 acceptance because it writes and scans one million synthetic
+Raw frames in a temporary test directory.
 
 ## Storage safety
 

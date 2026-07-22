@@ -1,4 +1,4 @@
-"""Offline M1 command-line interface."""
+"""Offline local command-line interface."""
 
 from __future__ import annotations
 

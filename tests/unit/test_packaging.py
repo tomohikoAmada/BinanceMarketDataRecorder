@@ -17,15 +17,18 @@ def test_distribution_package_cli_and_python_contract() -> None:
     }
 
 
-def test_dependency_scope_is_m2_only() -> None:
+def test_dependency_scope_is_m3_only() -> None:
     with (ROOT / "pyproject.toml").open("rb") as handle:
         project = tomllib.load(handle)
 
     assert project["project"]["dependencies"] == [
         "binance-sdk-derivatives-trading-usds-futures==14.0.0",
         "binance-sdk-spot==10.0.0",
+        "cbor2==6.1.3",
+        "google-crc32c==1.8.0",
         "pydantic>=2.10,<3",
         "websockets==15.0.1",
+        "zstandard==0.25.0",
     ]
     serialized = str(project).casefold()
     for forbidden in (

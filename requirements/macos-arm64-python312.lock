@@ -1,4 +1,4 @@
-# M2 certified resolution: CPython 3.12, macOS 11+ arm64, generated 2026-07-22.
+# M3 certified resolution: CPython 3.12, macOS 12+ arm64, generated 2026-07-22.
 # Install with: python -m pip install --require-hashes -r requirements/macos-arm64-python312.lock
 # Each hash is the exact wheel downloaded during M2; regenerate on any dependency change.
 
@@ -10,9 +10,11 @@ attrs==26.1.0 --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b8
 binance-common==4.0.3 --hash=sha256:c64318d9141576e98f365bbb97f019948ce4a2d90cddeec21d169305d3fb1651
 binance-sdk-derivatives-trading-usds-futures==14.0.0 --hash=sha256:a39992c26dfc745f3193be3247d5c8a06fa21af35d207e1f68195097257cf7f6
 binance-sdk-spot==10.0.0 --hash=sha256:614d26671fa5aaa5402c0ffbcb13ff3168e03e58d09845db330472448d9a833b
+cbor2==6.1.3 --hash=sha256:3d939f55097c21e032f5a2d67592fcc57298986281f219356e2f519e4466f4ea
 certifi==2026.7.22 --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775
 charset-normalizer==3.4.9 --hash=sha256:45b0cc4e3556cd875e09102988d1ab8356c998b596c9fced84547c8138b487a0
 frozenlist==1.8.0 --hash=sha256:f833670942247a14eafbb675458b4e61c82e002a148f49e68257b79296e865c4
+google-crc32c==1.8.0 --hash=sha256:4b8286b659c1335172e39563ab0a768b8015e88e08329fa5321f774275fc3113
 idna==3.18 --hash=sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2
 multidict==6.7.1 --hash=sha256:b0fa96985700739c4c7853a43c0b3e169360d6855780021bfc6d0f1ce7c123e7
 propcache==0.5.2 --hash=sha256:e5cbfac9f61484f7e9f3597775500cd3ebe8274e9b050c38f9525c77c97520bf
@@ -26,3 +28,4 @@ urllib3==2.7.0 --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ed
 websocket-client==1.9.0 --hash=sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef
 websockets==15.0.1 --hash=sha256:0701bc3cfcb9164d04a14b149fd74be7347a530ad3bbf15ab2c678a2cd3dd9a2
 yarl==1.24.5 --hash=sha256:9d399bdcfb4a0f659b9b3788bbc89babe63d9a6a65aacdf4d4e7065ff2e6316c
+zstandard==0.25.0 --hash=sha256:913cbd31a400febff93b564a23e17c3ed2d56c064006f54efec210d586171c00

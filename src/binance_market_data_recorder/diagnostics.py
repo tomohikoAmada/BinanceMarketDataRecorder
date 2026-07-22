@@ -1,4 +1,4 @@
-"""Offline, non-mutating M1 doctor checks."""
+"""Offline, non-mutating platform and path doctor checks."""
 
 from __future__ import annotations
 

@@ -67,8 +67,11 @@ are optional and may disappear without stopping capture.
 - [Architecture decisions](docs/adr/README.md)
 - [M0.1 acceptance](docs/milestone_acceptance/M0.1.md)
 - [M0.2 acceptance](docs/milestone_acceptance/M0.2.md)
+- [M1 acceptance](docs/milestone_acceptance/M1.md)
+- [M2 acceptance](docs/milestone_acceptance/M2.md)
+- [M3 acceptance](docs/milestone_acceptance/M3.md)
 
-## Install and verify M2
+## Install and verify M3
 
 Use Python 3.12 in a virtual environment:
 
@@ -88,15 +91,22 @@ python3.12 tests/verify_m0_contracts.py
 
 Configuration precedence is defaults, an optional TOML file, then environment.
 Pass a file with `--config PATH` or
-`BINANCE_MARKET_RECORDER_CONFIG_FILE`. Supported settings are only
-`data_root` and `log_level`; unknown settings are rejected. The default data
-root is `~/Library/Application Support/BinanceMarketDataRecorder/`, and the CLI
-does not create it during M1 diagnostics.
+`BINANCE_MARKET_RECORDER_CONFIG_FILE`. Supported settings are `data_root`,
+`log_level`, `rotation_seconds`, `rotation_bytes`,
+`durability_interval_seconds`, `ingress_queue_capacity`, and
+`max_frame_bytes`; unknown settings are rejected. The default data root is
+`~/Library/Application Support/BinanceMarketDataRecorder/`, and diagnostic CLI
+commands do not create it.
 
 ```toml
 [recorder]
 data_root = "/safe/absolute/path"
 log_level = "INFO"
+rotation_seconds = 60.0
+rotation_bytes = 134217728
+durability_interval_seconds = 1.0
+ingress_queue_capacity = 8192
+max_frame_bytes = 16777216
 ```
 
 See [dependency policy](docs/dependency_policy.md) for the deliberately small
@@ -116,3 +126,12 @@ The updater downloads only allowlisted official sources, refuses
 `llms-full.txt` by default, and never executes remote content. The capability
 probe is offline by default. Its `--online-rest` option makes only unsigned
 public depth requests and is never part of the default test suite.
+
+M3 adds no network Collector. It provides the executable EventEnvelope and
+internal Raw/Catalog foundation described by [ADR-0010](docs/adr/0010-raw-chunk-v1-byte-format.md).
+Run the resource-intensive acceptance gate separately:
+
+```bash
+python3.12 -m pytest -m stress -q tests/stress/test_million_events.py
+go run tools/verify_raw_chunk_golden.go
+```

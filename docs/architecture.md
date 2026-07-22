@@ -48,9 +48,11 @@ Binance public REST + WebSocket
 | `supervisor` | independent worker health, blue/green handoff, emergency stop | hiding gaps or coupling markets |
 | `cli` | local control/status/report/storage commands | GUI, trading interface |
 
-These are planned package boundaries, not M0/M0.1/M0.2 implementations. Spot
-and USD-M remain separate where their official semantics differ; storage, Raw,
-Catalog, normalize, replay, and archive remain independent of consumer code.
+M3 implements the domain EventEnvelope, bounded spool, Raw writer/recovery/seal,
+internal layout, and SQLite Catalog portions. Other rows remain planned package
+boundaries. Spot and USD-M remain separate where their official semantics
+differ; storage, Raw, Catalog, normalize, replay, and archive remain independent
+of consumer code.
 Do not add an abstraction framework for unplanned exchanges. Another exchange
 would require a separate architecture review.
 
@@ -74,7 +76,8 @@ visible collector fault/gap, not permission to discard payloads.
 an endian-defined, length-prefixed CBOR frame with per-frame CRC32C, a versioned
 chunk header, SHA-256 at seal, and Zstandard only after a verified seal. Active
 uncompressed `.partial` files are recoverable by forward scan. Compression is
-never applied in place.
+never applied in place. ADR-0010 freezes the exact byte layout, canonical CBOR
+profile, file names, checksum coverage, compression parameters, and fsync order.
 
 ### State plane
 

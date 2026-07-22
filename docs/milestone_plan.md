@@ -169,6 +169,10 @@ self-referential commit hash.
 
 ## M3 — Event contract, raw chunks, Catalog, and crash recovery
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M3.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: executable EventEnvelope v1; ADR-0002 byte-level specification and
   cross-language golden vectors; framed append-only writer; bounded queue;
   60-second/128-MiB configurable rotation; <=1-second configurable durability

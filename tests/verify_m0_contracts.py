@@ -24,6 +24,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M0.2.md",
     "docs/milestone_acceptance/M1.md",
     "docs/milestone_acceptance/M2.md",
+    "docs/milestone_acceptance/M3.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -35,10 +36,13 @@ REQUIRED_FILES = (
     "docs/adr/ADR-0007-binance-scoped-project-identity.md",
     "docs/adr/0008-official-sdk-rest-transport.md",
     "docs/adr/0009-websocket-transport.md",
+    "docs/adr/0010-raw-chunk-v1-byte-format.md",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
     "requirements/macos-arm64-python312.lock",
+    "tests/golden/raw_chunk_v1.json",
+    "tools/verify_raw_chunk_golden.go",
 )
 
 REQUIRED_TRACE_IDS = (
@@ -122,6 +126,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M0.md",
     "docs/milestone_acceptance/M1.md",
     "docs/milestone_acceptance/M2.md",
+    "docs/milestone_acceptance/M3.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -168,7 +173,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M2 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M3 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject
@@ -180,7 +185,10 @@ def verify() -> None:
     for dependency in (
         'binance-sdk-spot==10.0.0',
         'binance-sdk-derivatives-trading-usds-futures==14.0.0',
+        'cbor2==6.1.3',
+        'google-crc32c==1.8.0',
         'websockets==15.0.1',
+        'zstandard==0.25.0',
     ):
         assert dependency in pyproject, f"M2 dependency missing: {dependency}"
 

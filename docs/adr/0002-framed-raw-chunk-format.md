@@ -1,6 +1,6 @@
 # ADR-0002: Framed raw chunk format
 
-- Status: Accepted (logical format); byte-level test vectors required in M3
+- Status: Accepted; byte-level profile refined by ADR-0010
 - Date: 2026-07-22
 
 M0.2 scope note: this is the Binance Recorder's Raw format. It preserves
