@@ -120,6 +120,9 @@ Status: **ACCEPTED** by the commit containing
 
 ## M1 — Python engineering skeleton, configuration, and CLI
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M1.md`.
+
 - Scope: Python 3.12 `src` layout; `pyproject.toml`; installable package; lint,
   type checking and pytest; structured logging; strict Pydantic configuration;
   CLI/version/Git commit injection; default application-support paths;

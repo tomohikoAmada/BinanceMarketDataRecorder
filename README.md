@@ -13,21 +13,16 @@ identity.
 
 ## Status
 
-Milestone M0 is complete when the contracts, architecture decisions, full
-milestone plan, source inventory, risk register, and minimal offline acceptance
-test are committed. M0 intentionally contains no production package,
-WebSocket client, REST client, service, CLI, or storage implementation.
-
-M0.2 finalizes the Binance-specific project identity and workspace without
-adding production code. The next milestone is M1: Python engineering skeleton,
-configuration, and CLI.
+M1 provides an installable, offline Python 3.12 skeleton, strict credential-free
+configuration, structured logging, and diagnostic CLI. It does not connect to
+Binance and does not yet implement a Collector or running service.
 
 ## Identity
 
 - Repository: `BinanceMarketDataRecorder`
 - Distribution: `binance-market-data-recorder`
 - Import package: `binance_market_data_recorder`
-- Future CLI: `binance-market-recorder`
+- CLI: `binance-market-recorder`
 - Application data: `~/Library/Application Support/BinanceMarketDataRecorder/`
 
 ## Boundary
@@ -73,14 +68,34 @@ are optional and may disappear without stopping capture.
 - [M0.1 acceptance](docs/milestone_acceptance/M0.1.md)
 - [M0.2 acceptance](docs/milestone_acceptance/M0.2.md)
 
-## M0 verification
+## Install and verify M1
 
-M0 has no runtime dependencies beyond Python 3.12 for the contract verifier.
-If pytest is available, run both gates:
+Use Python 3.12 in a virtual environment:
 
 ```bash
+python3.12 -m pip install -e '.[dev]'
+binance-market-recorder --version
+binance-market-recorder config show
+binance-market-recorder doctor
+binance-market-recorder status
 python3.12 -m pytest -q
+python3.12 -m ruff check .
+python3.12 -m mypy
 python3.12 tests/verify_m0_contracts.py
 ```
 
-Production installation and CLI commands intentionally arrive in M1.
+Configuration precedence is defaults, an optional TOML file, then environment.
+Pass a file with `--config PATH` or
+`BINANCE_MARKET_RECORDER_CONFIG_FILE`. Supported settings are only
+`data_root` and `log_level`; unknown settings are rejected. The default data
+root is `~/Library/Application Support/BinanceMarketDataRecorder/`, and the CLI
+does not create it during M1 diagnostics.
+
+```toml
+[recorder]
+data_root = "/safe/absolute/path"
+log_level = "INFO"
+```
+
+See [dependency policy](docs/dependency_policy.md) for the deliberately small
+runtime and development dependency sets.

@@ -8,7 +8,7 @@
   `/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder`
 - Python distribution: `binance-market-data-recorder`
 - Python import package: `binance_market_data_recorder`
-- Future CLI: `binance-market-recorder`
+- CLI: `binance-market-recorder`
 - macOS application data:
   `~/Library/Application Support/BinanceMarketDataRecorder/`
 
@@ -177,18 +177,21 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-M0 repository checks:
+M1 engineering checks:
 
 ```bash
 git status --short --branch
+python3.12 -m pip install -e '.[dev]'
 python3.12 -m pytest -q
+python3.12 -m ruff check .
+python3.12 -m mypy
 python3.12 tests/verify_m0_contracts.py
 git diff --check
+binance-market-recorder --version
+binance-market-recorder config show
+binance-market-recorder doctor
+binance-market-recorder status
 ```
-
-From M1 onward, the authoritative install, lint, type-check, and CLI commands
-must be added here when their tooling exists. Do not invent commands for future
-milestones.
 
 ## Storage safety
 

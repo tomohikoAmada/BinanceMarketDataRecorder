@@ -1,14 +1,8 @@
-"""Dependency-free M0/M0.1/M0.2 contract verifier, also collected by pytest.
-
-M0 through M0.2 intentionally have no production package or dependency
-configuration. This script keeps the acceptance gate runnable with plain Python
-3.12; pytest will also collect its single test when pytest is present.
-"""
+"""Historical contract verifier, kept dependency-free as the project grows."""
 
 from __future__ import annotations
 
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,6 +22,9 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M0.md",
     "docs/milestone_acceptance/M0.1.md",
     "docs/milestone_acceptance/M0.2.md",
+    "docs/milestone_acceptance/M1.md",
+    "docs/dependency_policy.md",
+    "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
     "docs/adr/0002-framed-raw-chunk-format.md",
     "docs/adr/0003-registered-directory-archive.md",
@@ -65,10 +62,14 @@ REQUIRED_TRACE_IDS = (
 )
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
-    ROOT / "src",
     ROOT / "tools" / "update_binance_docs.py",
     ROOT / "configs",
-    ROOT / "pyproject.toml",
+    ROOT / "src" / "binance_market_data_recorder" / "binance",
+    ROOT / "src" / "binance_market_data_recorder" / "collector",
+    ROOT / "src" / "binance_market_data_recorder" / "archive",
+    ROOT / "src" / "binance_market_data_recorder" / "orderbook",
+    ROOT / "src" / "binance_market_data_recorder" / "normalize",
+    ROOT / "src" / "binance_market_data_recorder" / "replay",
 )
 
 EXPECTED_ROOT = Path(
@@ -113,6 +114,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "AGENTS.md",
     "docs/adr/0001-independent-recorder-repository.md",
     "docs/milestone_acceptance/M0.md",
+    "docs/milestone_acceptance/M1.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -123,7 +125,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
 
 
 def verify() -> None:
-    assert ROOT == EXPECTED_ROOT, f"unexpected M0.1 workspace: {ROOT}"
+    assert ROOT == EXPECTED_ROOT, f"unexpected Recorder workspace: {ROOT}"
 
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
     assert not missing, f"missing M0 files: {missing}"
@@ -159,7 +161,15 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M0 must not create future production entry: {forbidden}"
+        assert not forbidden.exists(), f"M1 must not create later-milestone entry: {forbidden}"
+
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'name = "binance-market-data-recorder"' in pyproject
+    assert 'requires-python = ">=3.12,<3.13"' in pyproject
+    assert (
+        'binance-market-recorder = "binance_market_data_recorder.cli:main"'
+        in pyproject
+    )
 
     text_files = {
         path.relative_to(ROOT).as_posix(): path.read_text(encoding="utf-8")
@@ -232,7 +242,9 @@ def verify() -> None:
         "exchange-" + "neutral",
         "general-purpose, stateful crypto",
     ):
-        assert stale_positioning not in active_boundary, f"stale V1 positioning: {stale_positioning}"
+        assert stale_positioning not in active_boundary, (
+            f"stale V1 positioning: {stale_positioning}"
+        )
     assert "specifically for Binance public market data" in active_boundary
     assert "another exchange requires a separate" in active_boundary.casefold()
 
