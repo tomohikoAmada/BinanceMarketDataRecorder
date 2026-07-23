@@ -276,3 +276,39 @@ def test_verify_all_reports_post_archive_corruption(tmp_path: Path) -> None:
         files = cast(list[dict[str, object]], result["files"])
         assert files[0]["status"] == "FAILED"
         assert "SHA-256 mismatch" in str(files[0]["reason"])
+
+
+def test_emergency_release_only_processes_already_verified_transaction(
+    tmp_path: Path,
+) -> None:
+    untouched = prepare_archive(tmp_path / "untouched")
+    with Catalog(untouched.layout.catalog) as catalog:
+        manager = ArchiveManager(
+            layout=untouched.layout, catalog=catalog, target=untouched.target
+        )
+        assert manager.release_verified_once().state == "NO_VERIFIED_RELEASE"
+        row = catalog.chunk(untouched.chunk_ids[0])
+        assert row is not None
+        assert (untouched.layout.root / str(row["sealed_path"])).is_file()
+
+    prepared = prepare_archive(tmp_path / "verified")
+    with Catalog(prepared.layout.catalog) as catalog:
+        manager = ArchiveManager(
+            layout=prepared.layout, catalog=catalog, target=prepared.target
+        )
+
+        def stop_after_verified_commit(point: str, _path: Path | None) -> None:
+            if point == "after_catalog_commit":
+                raise RuntimeError("leave verified source")
+
+        manager.fault_hook = stop_after_verified_commit
+        with pytest.raises(ArchiveError, match="leave verified source"):
+            manager.run_once()
+        transaction = catalog.archive_transactions()[0]
+        source = prepared.layout.root / str(transaction["source_relative_path"])
+        assert source.is_file()
+        assert transaction["state"] == ArchiveState.VERIFIED
+
+        manager.fault_hook = None
+        assert manager.release_verified_once().state == ArchiveState.LOCAL_DELETED
+        assert not source.exists()

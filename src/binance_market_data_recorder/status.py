@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .storage.catalog import Catalog, ChunkState
+from .storage.forecast import space_severity
 from .storage.macos import DiskArbitrationAdapter, PlatformVolumeError, StorageRegistry
 
 
@@ -61,7 +62,11 @@ def service_status(data_root: Path) -> dict[str, Any]:
                     catalog=catalog, volumes=DiskArbitrationAdapter()
                 ).statuses()
                 external_storage = {
-                    "status": "OK" if targets else "NO_REGISTERED_TARGETS",
+                    "status": (
+                        "LOW_SPACE"
+                        if any(target["state"] == "LOW_SPACE" for target in targets)
+                        else ("OK" if targets else "NO_REGISTERED_TARGETS")
+                    ),
                     "targets": targets,
                 }
             except (OSError, PlatformVolumeError) as exc:
@@ -73,6 +78,7 @@ def service_status(data_root: Path) -> dict[str, Any]:
 
     reports = sorted((root / "data" / "reports" / "daily").glob("*.json"))
     disk = shutil.disk_usage(_nearest_existing(root))
+    internal_severity = space_severity(disk.total, disk.free)
     return {
         "command": "status",
         "status": "NOT_RUNNING",
@@ -90,6 +96,10 @@ def service_status(data_root: Path) -> dict[str, Any]:
             "path": str(root),
             "free_bytes": disk.free,
             "total_bytes": disk.total,
+            "space_severity": internal_severity.value,
+            "state": (
+                "READY" if internal_severity.value == "OK" else "LOW_SPACE"
+            ),
         },
         "external_storage": external_storage,
         "runtime_metrics": {

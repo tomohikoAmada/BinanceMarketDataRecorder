@@ -59,6 +59,7 @@ def test_fixed_metrics_fixture_produces_deterministic_json_csv_and_all_fields(
         recorder.observe_written(
             envelope(receive_time_utc_ns=at), raw_frame_bytes=120, queue_depth=3
         )
+        assert len(catalog.space_samples("internal")) == 1
         recorder.observe_operation(
             market="spot",
             stream="diff_depth",

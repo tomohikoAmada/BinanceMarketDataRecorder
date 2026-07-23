@@ -38,9 +38,9 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003, ADR-0015 | M10 crash/fault/idempotence matrix passes |
 | STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/CLI/docs; M18 handbook |
 | STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract, ADR-0015 | M9/M10 filesystem audit tests pass |
-| SPC-01 | 40% warning, 15% critical, emergency max(10 GiB,5%) | project/storage contracts | M11 threshold tests |
-| SPC-02 | 1h/6h/24h/7d robust growth and ETAs; insufficient/nonpositive sentinels | storage contract | M11 synthetic forecast tests |
-| SPC-03 | Emergency suspends non-core, prioritizes verified archive, never deletes unarchived; seal/stop/gap | project/storage contracts | M11 emergency integration test |
+| SPC-01 | 40% warning, 15% critical, emergency max(10 GiB,5%) | project/storage contracts, ADR-0016 | M11 exact-boundary and alert-transition tests pass |
+| SPC-02 | 1h/6h/24h/7d robust growth and ETAs; insufficient/nonpositive sentinels | storage contract, ADR-0016 | M11 synthetic multi-window/archive-on tests pass |
+| SPC-03 | Emergency suspends non-core, prioritizes verified archive, never deletes unarchived; seal/stop/gap | project/storage contracts, ADR-0016 | M11 real-spool emergency integration test passes |
 | MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts, ADR-0013 | M8 deterministic fixture, Collector reconciliation and midnight tests |
 | MET-02 | JSON+CSV reports and Catalog summary; SQLite excludes event corpus | project/data/architecture contracts, ADR-0013 | M8 aggregate-schema, atomic output and deterministic rebuild tests |
 | MET-03 | Structured status, CLI status/daily reports, restart continuity/no double count | data contract, ADR-0013 | M8 stable-batch retry, restart and honest-status tests |

@@ -200,8 +200,209 @@ class Catalog:
                 evidence_json TEXT NOT NULL,
                 idempotency_key TEXT NOT NULL UNIQUE
             );
+            CREATE TABLE IF NOT EXISTS storage_space_samples (
+                sample_id TEXT PRIMARY KEY,
+                scope_id TEXT NOT NULL,
+                storage_id TEXT,
+                observed_at_utc_ns INTEGER NOT NULL,
+                total_bytes INTEGER NOT NULL,
+                free_bytes INTEGER NOT NULL,
+                archive_backlog_bytes INTEGER NOT NULL,
+                oldest_unarchived_at_utc_ns INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS storage_space_samples_by_scope_time
+                ON storage_space_samples(scope_id, observed_at_utc_ns, sample_id);
+            CREATE TABLE IF NOT EXISTS storage_alert_state (
+                scope_id TEXT PRIMARY KEY,
+                severity TEXT NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS storage_alert_events (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scope_id TEXT NOT NULL,
+                from_severity TEXT,
+                to_severity TEXT NOT NULL,
+                occurred_at_utc_ns INTEGER NOT NULL,
+                evidence_json TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL UNIQUE
+            );
+            CREATE TABLE IF NOT EXISTS operational_events (
+                event_id TEXT PRIMARY KEY,
+                event_type TEXT NOT NULL,
+                occurred_at_utc_ns INTEGER NOT NULL,
+                evidence_json TEXT NOT NULL
+            );
             """
         )
+
+    def record_space_sample(
+        self,
+        *,
+        sample_id: str,
+        scope_id: str,
+        storage_id: str | None,
+        observed_at_utc_ns: int,
+        total_bytes: int,
+        free_bytes: int,
+        archive_backlog_bytes: int,
+        oldest_unarchived_at_utc_ns: int | None,
+        severity: str,
+    ) -> bool:
+        if (
+            not sample_id
+            or not scope_id
+            or not severity
+            or observed_at_utc_ns < 0
+            or total_bytes <= 0
+            or free_bytes < 0
+            or free_bytes > total_bytes
+            or archive_backlog_bytes < 0
+            or (
+                oldest_unarchived_at_utc_ns is not None
+                and oldest_unarchived_at_utc_ns < 0
+            )
+        ):
+            raise ValueError("invalid storage space sample")
+        with self._transaction() as connection:
+            if connection.execute(
+                "SELECT 1 FROM storage_space_samples WHERE sample_id = ?",
+                (sample_id,),
+            ).fetchone():
+                return False
+            connection.execute(
+                """
+                INSERT INTO storage_space_samples(
+                    sample_id, scope_id, storage_id, observed_at_utc_ns,
+                    total_bytes, free_bytes, archive_backlog_bytes,
+                    oldest_unarchived_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    sample_id,
+                    scope_id,
+                    storage_id,
+                    observed_at_utc_ns,
+                    total_bytes,
+                    free_bytes,
+                    archive_backlog_bytes,
+                    oldest_unarchived_at_utc_ns,
+                ),
+            )
+            current = connection.execute(
+                "SELECT severity FROM storage_alert_state WHERE scope_id = ?",
+                (scope_id,),
+            ).fetchone()
+            previous = str(current["severity"]) if current is not None else None
+            if previous != severity:
+                evidence = json.dumps(
+                    {
+                        "free_bytes": free_bytes,
+                        "total_bytes": total_bytes,
+                        "sample_id": sample_id,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO storage_alert_events(
+                        scope_id, from_severity, to_severity,
+                        occurred_at_utc_ns, evidence_json, idempotency_key
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        scope_id,
+                        previous,
+                        severity,
+                        observed_at_utc_ns,
+                        evidence,
+                        f"space-severity:{sample_id}",
+                    ),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO storage_alert_state(
+                        scope_id, severity, updated_at_utc_ns
+                    ) VALUES (?, ?, ?)
+                    ON CONFLICT(scope_id) DO UPDATE SET
+                        severity = excluded.severity,
+                        updated_at_utc_ns = excluded.updated_at_utc_ns
+                    """,
+                    (scope_id, severity, observed_at_utc_ns),
+                )
+        return True
+
+    def space_samples(self, scope_id: str) -> list[dict[str, object]]:
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM storage_space_samples
+                WHERE scope_id = ?
+                ORDER BY observed_at_utc_ns, sample_id
+                """,
+                (scope_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def storage_alert_events(
+        self, *, scope_id: str | None = None
+    ) -> list[dict[str, object]]:
+        query = "SELECT * FROM storage_alert_events"
+        parameters: tuple[object, ...] = ()
+        if scope_id is not None:
+            query += " WHERE scope_id = ?"
+            parameters = (scope_id,)
+        query += " ORDER BY occurred_at_utc_ns, event_id"
+        with self._lock:
+            rows = self._connection.execute(query, parameters).fetchall()
+        output: list[dict[str, object]] = []
+        for row in rows:
+            document = dict(row)
+            evidence_json = document.pop("evidence_json")
+            document["evidence"] = json.loads(str(evidence_json))
+            output.append(document)
+        return output
+
+    def record_operational_event(
+        self,
+        *,
+        event_id: str,
+        event_type: str,
+        occurred_at_utc_ns: int,
+        evidence: Mapping[str, object],
+    ) -> bool:
+        if not event_id or not event_type or occurred_at_utc_ns < 0:
+            raise ValueError("invalid operational event")
+        body = json.dumps(dict(evidence), sort_keys=True, separators=(",", ":"))
+        with self._lock:
+            cursor = self._connection.execute(
+                """
+                INSERT OR IGNORE INTO operational_events(
+                    event_id, event_type, occurred_at_utc_ns, evidence_json
+                ) VALUES (?, ?, ?, ?)
+                """,
+                (event_id, event_type, occurred_at_utc_ns, body),
+            )
+        return cursor.rowcount == 1
+
+    def operational_events(
+        self, *, event_type: str | None = None
+    ) -> list[dict[str, object]]:
+        query = "SELECT * FROM operational_events"
+        parameters: tuple[object, ...] = ()
+        if event_type is not None:
+            query += " WHERE event_type = ?"
+            parameters = (event_type,)
+        query += " ORDER BY occurred_at_utc_ns, event_id"
+        with self._lock:
+            rows = self._connection.execute(query, parameters).fetchall()
+        output: list[dict[str, object]] = []
+        for row in rows:
+            document = dict(row)
+            evidence_json = document.pop("evidence_json")
+            document["evidence"] = json.loads(str(evidence_json))
+            output.append(document)
+        return output
 
     def reserve_archive_transaction(
         self,
@@ -893,6 +1094,10 @@ class Catalog:
             "storage_targets",
             "archive_transactions",
             "archive_transaction_events",
+            "storage_space_samples",
+            "storage_alert_state",
+            "storage_alert_events",
+            "operational_events",
         }:
             raise ValueError("unknown Catalog table")
         with self._lock:

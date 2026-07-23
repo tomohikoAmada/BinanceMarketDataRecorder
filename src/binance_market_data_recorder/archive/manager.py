@@ -69,6 +69,29 @@ class ArchiveManager:
         transaction = self._next_transaction()
         if transaction is None:
             return ArchiveResult(None, None, "NO_ELIGIBLE_CHUNKS", 0, 0)
+        return self._run_transaction(transaction)
+
+    def release_verified_once(self) -> ArchiveResult:
+        """Release one locally retained source whose external commit is verified."""
+
+        transaction = next(
+            (
+                row
+                for row in self.catalog.archive_transactions(
+                    storage_id=self.target.storage_id
+                )
+                if ArchiveState(str(row["state"]))
+                in {ArchiveState.VERIFIED, ArchiveState.LOCAL_DELETE_PENDING}
+            ),
+            None,
+        )
+        if transaction is None:
+            return ArchiveResult(None, None, "NO_VERIFIED_RELEASE", 0, 0)
+        return self._run_transaction(transaction)
+
+    def _run_transaction(
+        self, transaction: dict[str, object]
+    ) -> ArchiveResult:
         transaction_id = str(transaction["transaction_id"])
         self.catalog.begin_archive_attempt(transaction_id)
         self._hit("attempt_started")

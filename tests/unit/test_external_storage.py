@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -157,6 +158,25 @@ def test_absent_unmounted_and_read_only_never_claim_ready(tmp_path: Path) -> Non
         contents = tree(folder)
         assert registry.statuses()[0]["state"] == "READ_ONLY"
         assert tree(folder) == contents
+
+
+def test_registered_external_target_reports_low_space_severity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mount = tmp_path / "External"
+    folder = mount / "Recorder"
+    folder.mkdir(parents=True)
+    fake = FakeVolumes(volume(mount))
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        registry = StorageRegistry(catalog=catalog, volumes=fake)
+        registry.register(folder)
+        monkeypatch.setattr(
+            "binance_market_data_recorder.storage.macos.registry.shutil.disk_usage",
+            lambda _path: SimpleNamespace(total=100 * 1024**3, free=14 * 1024**3),
+        )
+        status = registry.statuses()[0]
+    assert status["state"] == "LOW_SPACE"
+    assert status["space_severity"] == "CRITICAL"
 
 
 def test_marker_mismatch_blocks_ready_and_unregister_preserves_marker(tmp_path: Path) -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from .metrics.report import DailyReporter
 from .paths import discover_repository_root
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
+from .storage.forecast import StorageForecaster
 from .storage.layout import ensure_storage_layout
 from .storage.macos import (
     DiskArbitrationAdapter,
@@ -76,6 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
     unregister = storage_commands.add_parser("unregister", help="stop using a registered folder")
     unregister.add_argument("storage_id")
     storage_commands.add_parser("status", help="resolve and probe registered folders")
+    storage_commands.add_parser("forecast", help="sample capacity and forecast thresholds")
     archive_command = commands.add_parser("archive", help="manage verified Raw archival")
     archive_commands = archive_command.add_subparsers(
         dest="archive_command", required=True, parser_class=_ArgumentParser
@@ -142,12 +145,14 @@ def _select_archive_target(
     registry: StorageRegistry,
     *,
     storage_id: str | None,
+    allow_low_space: bool = False,
 ) -> ArchiveTarget:
     statuses = registry.statuses()
+    allowed_states = {"READY", *(["LOW_SPACE"] if allow_low_space else [])}
     ready = [
         status
         for status in statuses
-        if status["state"] == "READY"
+        if status["state"] in allowed_states
         and (storage_id is None or status["storage_id"] == storage_id)
     ]
     if not ready:
@@ -281,6 +286,50 @@ def main(argv: Sequence[str] | None = None) -> int:
                         }
                     )
                     return 0
+                if storage_command == "forecast":
+                    observed_at = time.time_ns()
+                    observed_at -= observed_at % 60_000_000_000
+                    forecaster = StorageForecaster(
+                        catalog=catalog,
+                        data_root=loaded.config.data_root,
+                        utc_clock_ns=lambda: observed_at,
+                    )
+                    forecaster.observe_internal(
+                        observed_at_utc_ns=observed_at
+                    )
+                    target_statuses = registry.statuses()
+                    scope_ids = ["internal"]
+                    for target_status in target_statuses:
+                        storage_id = str(target_status["storage_id"])
+                        scope_id = f"external:{storage_id}"
+                        scope_ids.append(scope_id)
+                        total = target_status.get("total_bytes")
+                        free = target_status.get("free_bytes")
+                        if (
+                            isinstance(total, int)
+                            and not isinstance(total, bool)
+                            and isinstance(free, int)
+                            and not isinstance(free, bool)
+                        ):
+                            forecaster.observe(
+                                scope_id=scope_id,
+                                storage_id=storage_id,
+                                total_bytes=total,
+                                free_bytes=free,
+                                observed_at_utc_ns=observed_at,
+                            )
+                    document = forecaster.document(
+                        scope_ids, now_utc_ns=observed_at
+                    )
+                    _write_json(
+                        {
+                            "command": "storage.forecast",
+                            **document,
+                            "storage_states": target_statuses,
+                            "alerts": catalog.storage_alert_events(),
+                        }
+                    )
+                    return 0
         except (
             CatalogStateError,
             OSError,
@@ -318,7 +367,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     else None
                 )
                 target = _select_archive_target(
-                    catalog, registry, storage_id=requested
+                    catalog,
+                    registry,
+                    storage_id=requested,
+                    allow_low_space=archive_command == "verify",
                 )
                 manager = ArchiveManager(
                     layout=ensure_storage_layout(loaded.config.data_root),

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Protocol
 
 from ..catalog import Catalog
+from ..forecast import SpaceSeverity, space_severity
 from .model import StorageState, VolumeInfo
 
 MARKER_NAME = ".binance-market-data-recorder-storage.json"
@@ -99,9 +100,18 @@ class StorageRegistry:
             marker_nonce=marker_nonce,
             registered_at_utc_ns=created_at_utc_ns,
         )
+        usage = shutil.disk_usage(folder)
+        severity = space_severity(usage.total, usage.free)
         return {
             "storage_id": storage_id,
-            "state": StorageState.READY.value,
+            "state": (
+                StorageState.READY.value
+                if severity is SpaceSeverity.OK
+                else StorageState.LOW_SPACE.value
+            ),
+            "space_severity": severity.value,
+            "free_bytes": usage.free,
+            "total_bytes": usage.total,
             "volume_uuid": volume.volume_uuid,
             "volume_name": volume.name,
             "filesystem_type": volume.filesystem_type,
@@ -186,9 +196,15 @@ class StorageRegistry:
                 "reason": str(exc),
             }
         usage = shutil.disk_usage(folder)
+        severity = space_severity(usage.total, usage.free)
         return {
             **base,
-            "state": StorageState.READY.value,
+            "state": (
+                StorageState.READY.value
+                if severity is SpaceSeverity.OK
+                else StorageState.LOW_SPACE.value
+            ),
+            "space_severity": severity.value,
             "free_bytes": usage.free,
             "total_bytes": usage.total,
             "probe": probe,

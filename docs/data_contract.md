@@ -155,6 +155,16 @@ Reports are immutable-source derived outputs at
 `data/reports/daily/YYYY-MM-DD.json` and `.csv`. Rebuilding or overwriting a
 report never modifies Raw, manifests or metric batches.
 
+## M11 capacity history contract
+
+`storage_space_samples` contains aggregate capacity observations only: scope,
+storage ID where applicable, UTC time, total/free bytes, archive backlog, and
+oldest-unarchived time. It never contains payload, price, quantity, sequence or
+one row per market event. `storage-forecast.v1` exposes exact threshold bytes,
+space severity, per-window rate availability, selected net growth, UTC ETAs,
+backlog and oldest age. Missing and non-positive evidence use the exact
+`INSUFFICIENT_DATA` and `NOT_APPROACHING` sentinels; JSON forbids NaN/infinity.
+
 ## Raw chunk logical contract
 
 ADR-0002 selects the format family and ADR-0010 is the authoritative byte

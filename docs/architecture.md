@@ -95,6 +95,14 @@ deletion is separately authorized and recorded. Every filesystem/Catalog crash
 boundary is restart-reconcilable; archive failure never stops Spot or USD-M
 capture.
 
+M11 implements capacity history and emergency control under ADR-0016.
+Aggregate-only samples in Catalog drive robust 1 h/6 h/24 h/7 d net-growth
+rates, threshold alerts and UTC ETAs independently for internal and registered
+external storage. The emergency coordinator is above spool/archive components:
+it may suspend non-core work and prioritize verified archive, but only the
+hard-reserve path seals active Raw, stops Collectors, records
+`DISK_EMERGENCY_STOP` and opens a gap. It has no unverified-delete capability.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,

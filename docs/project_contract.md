@@ -117,6 +117,11 @@ and non-core derivation, prioritizes verified archive/delete, and never deletes
 unarchived raw data. At the hard reserve it seals active files, stops Collector,
 emits `DISK_EMERGENCY_STOP`, and records the gap start.
 
+ADR-0016 fixes the hard reserve at
+`max(5 GiB, 2% of capacity, 2 * configured Raw rotation bytes)`. This is
+separate from the earlier EMERGENCY alert so the system has an archive-first
+margin before graceful capture stop.
+
 ## Daily reporting contract
 
 UTC-day summaries are partitioned by market and stream and include:

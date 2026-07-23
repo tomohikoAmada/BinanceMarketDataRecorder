@@ -297,3 +297,31 @@ def test_archive_retry_requires_a_ready_registered_target(
     error = json.loads(capsys.readouterr().err)
     assert error["error"] == "archive_error"
     assert "no READY archive target" in error["message"]
+
+
+def test_storage_forecast_cli_persists_structured_internal_sample(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class NoExternalVolumes:
+        def inventory(self) -> list[VolumeInfo]:
+            return []
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        NoExternalVolumes,
+    )
+    data_root = tmp_path / "internal"
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(data_root))
+    assert main(["storage", "forecast"]) == 0
+    payload = json.loads(
+        capsys.readouterr().out,
+        parse_constant=lambda value: pytest.fail(f"non-finite JSON: {value}"),
+    )
+    assert payload["command"] == "storage.forecast"
+    assert payload["schema_version"] == "storage-forecast.v1"
+    assert payload["targets"][0]["scope_id"] == "internal"
+    assert payload["targets"][0]["net_growth"]["status"] == "INSUFFICIENT_DATA"
+    assert payload["storage_states"] == []
+    assert (data_root / "state" / "catalog.sqlite").is_file()

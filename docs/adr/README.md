@@ -17,6 +17,7 @@ Current and historical decisions:
 - [ADR-0013: Idempotent operational metrics and UTC daily reports](0013-idempotent-operational-metrics-and-daily-reports.md)
 - [ADR-0014: macOS volume discovery and registered-directory readiness](0014-macos-volume-discovery-and-registration.md)
 - [ADR-0015: Crash-reconcilable archive transaction](0015-crash-reconcilable-archive-transaction.md)
+- [ADR-0016: Capacity forecast and emergency reserve](0016-capacity-forecast-and-emergency-reserve.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

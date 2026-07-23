@@ -141,5 +141,15 @@ net local growth, archive backlog and oldest age, UTC threshold ETAs,
 
 Emergency order is: suspend compaction/non-core derivation; prioritize archive
 and deletion already authorized by verification; never delete unarchived raw;
-at hard reserve, gracefully seal, emit `DISK_EMERGENCY_STOP`, stop collectors,
+at hard reserve, gracefully seal, stop collectors, emit `DISK_EMERGENCY_STOP`,
 and open an explicit gap interval.
+
+M11 implements ADR-0016 with persisted per-scope capacity samples. Each window
+uses the median of consecutive net-consumption slopes after at least 80% time
+coverage; the maximum available window median is the conservative operational
+rate. Internal and every `external:<storage_id>` scope remain independent.
+Severity changes are append-only alerts. The hard reserve is
+`max(5 GiB, 2% of capacity, 2 * rotation_bytes)`, below the earlier EMERGENCY
+threshold on normal disks so verified archive/delete can be prioritized first.
+At hard reserve, actions are ordered seal, Collector stop,
+`DISK_EMERGENCY_STOP`, and gap open. No emergency action deletes unarchived Raw.

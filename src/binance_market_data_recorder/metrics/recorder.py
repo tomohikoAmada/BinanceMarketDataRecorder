@@ -15,9 +15,11 @@ from uuid import uuid4
 from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..storage.catalog import Catalog
+from ..storage.forecast import StorageForecaster
 from .model import MetricAggregate
 
 MetricKey = tuple[str, str, str]
+CAPACITY_SAMPLE_BUCKET_NS = 60_000_000_000
 
 
 def utc_date_from_ns(value: int) -> str:
@@ -195,7 +197,18 @@ class MetricsRecorder:
                 cpu_percent = max(0.0, (process_now - self._last_process_time_ns) / elapsed * 100)
         rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         rss_bytes = int(rss) if __import__("sys").platform == "darwin" else int(rss) * 1024
-        free_bytes = shutil.disk_usage(self.data_root).free
+        usage = shutil.disk_usage(self.data_root)
+        free_bytes = usage.free
+        total_bytes = usage.total
+        observed_at_utc_ns = self.utc_clock_ns()
+        observed_at_utc_ns -= observed_at_utc_ns % CAPACITY_SAMPLE_BUCKET_NS
+        StorageForecaster(catalog=self.catalog, data_root=self.data_root).observe(
+            scope_id="internal",
+            storage_id=None,
+            total_bytes=total_bytes,
+            free_bytes=free_bytes,
+            observed_at_utc_ns=observed_at_utc_ns,
+        )
         for (day, _market, _stream), aggregate in self._aggregates.items():
             if day != utc_date:
                 continue

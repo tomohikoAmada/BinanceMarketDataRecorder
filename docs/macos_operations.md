@@ -68,6 +68,11 @@ advances one oldest eligible transaction; it requires exactly one READY target
 unless an ID is specified. Verify performs complete artifact and manifest
 readback. Neither command mounts, repairs, formats, or ejects a volume.
 
+M11 provides `storage forecast`; it persists a capacity observation for
+internal storage and each accessible registered target, then reports
+independent threshold state, robust rates and UTC ETAs. It never mounts a
+missing target.
+
 ## Eject protocol
 
 An eject request sets `EJECT_PENDING`, prevents new archive allocation, waits

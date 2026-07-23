@@ -23,8 +23,10 @@ exchange/filter data. M8 adds idempotent per-stream operational aggregates,
 UTC JSON/CSV daily reports and honest structured status. M9 registers and
 re-resolves optional macOS external directories. M10 safely copies, fully
 verifies, commits, and then separately deletes eligible internal Raw chunks.
-Normalization, launchd service installation, accounts, credentials, and
-trading remain unimplemented.
+M11 persists internal/per-target capacity history, reports robust multi-window
+growth and threshold ETAs, and freezes the archive-first/hard-reserve emergency
+stop policy. Normalization, launchd service installation, accounts,
+credentials, and trading remain unimplemented.
 
 ## Identity
 
@@ -86,8 +88,9 @@ are optional and may disappear without stopping capture.
 - [M8 acceptance](docs/milestone_acceptance/M8.md)
 - [M9 acceptance](docs/milestone_acceptance/M9.md)
 - [M10 acceptance](docs/milestone_acceptance/M10.md)
+- [M11 acceptance](docs/milestone_acceptance/M11.md)
 
-## Install and verify M10
+## Install and verify M11
 
 Use Python 3.12 in a virtual environment:
 
@@ -104,6 +107,7 @@ binance-market-recorder storage list
 binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage status
+binance-market-recorder storage forecast
 binance-market-recorder archive status
 binance-market-recorder archive retry
 binance-market-recorder archive verify <storage-id>
