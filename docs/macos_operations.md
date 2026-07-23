@@ -14,7 +14,8 @@ or `/Users/amada/Documents/Development/Crypto`.
 
 M14 will provide install, uninstall, start, stop, and status scripts; automatic
 restart; SIGTERM sealing; configuration permission checks; and a single-instance
-lock. M0 provides no runnable service.
+lock compatible with ADR-0018 supervised overlap. M13 provides no installed
+service.
 
 ## Volume discovery
 
@@ -101,8 +102,15 @@ operation.
 
 ## Blue/green and connection rotation
 
-Planned deploys run versioned old/candidate instances with independent
-connections. Candidate must be healthy and order-book synchronized before old
-stops. Raw overlap is allowed and tagged; a failed candidate leaves old active.
-The same handoff is used for planned 24-hour stream rotation. launchd ownership
-and instance locks must accommodate only this explicit supervised overlap.
+ADR-0018 planned deploys run versioned old/candidate instances with independent
+connections for one market. Candidate readiness requires current connections
+and durably written events for all three core streams, a durably written public
+REST snapshot, and synchronized market-specific order-book reconstruction.
+After readiness, both instances must write fresh events before old shutdown.
+
+Raw overlap carries deployment ID, role, reason, instance/version, connection,
+and source provenance; a failed or unready candidate leaves old active. Reverse
+rollback uses the same gate. Scheduled rotation invokes it at 23 h 40 min,
+while the existing 23 h 50 min per-stream reconnect is a marked fallback.
+launchd ownership and instance locks must accommodate only this explicit
+supervised overlap. M13 does not install or manipulate launchd.

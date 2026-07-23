@@ -177,7 +177,7 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-Current M12 engineering checks:
+Current M13 engineering checks:
 
 ```bash
 git status --short --branch

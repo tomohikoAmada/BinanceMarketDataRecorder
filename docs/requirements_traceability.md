@@ -49,8 +49,8 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | MAC-03 | Safe eject blocks work, syncs/closes, handles busy/refusal/forced removal | macOS/storage contracts, ADR-0017 | M12 idle/COPY/VERIFY/refusal/forced-removal/reinsert matrix passes |
 | OPS-01 | User LaunchAgent, logged-in default, no root; logging/restart/SIGTERM/lock | macOS contract | M14 reboot/crash/install tests |
 | OPS-02 | Sleep risk/marked gaps; scoped optional prevent-sleep; no closed-lid promise | macOS contract, R-017 | M14 sleep/wake; M18 limitations |
-| OPS-03 | Blue/green candidate readiness/overlap/dedup/rollback/no planned unmarked gap | architecture contract | M13 scenario tests; M15 dedup |
-| OPS-04 | 24-hour proactive rotation reuses blue/green mechanism | architecture/macOS contracts | M4/M5 lifecycle then M13 proof |
+| OPS-03 | Blue/green candidate readiness/overlap/dedup/rollback/no planned unmarked gap | architecture contract, ADR-0018 | M13 synchronized/failure/rollback/Raw-tag/Catalog scenario tests pass; M15 owns dedup |
+| OPS-04 | 24-hour proactive rotation reuses blue/green mechanism | architecture/macOS contracts, ADR-0018 | M13 scheduled 23 h 40 min path uses the same gate; M4/M5 23 h 50 min fallback remains marked |
 | NRM-01 | Raw compression without mutation; versioned Parquet date/hour, lineage, gaps, rerunnable | data contract, ADR-0002 | M15 repeatability/DuckDB/hash tests |
 | CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | data contract, ADR-0004 | M16 deterministic tests |
 | CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0006, architecture | M16 independent example; optional named-consumer validation |

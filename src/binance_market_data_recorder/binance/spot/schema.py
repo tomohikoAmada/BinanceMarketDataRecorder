@@ -134,6 +134,7 @@ def envelope_from_websocket_frame(
     collector_version: str,
     receive_time_utc_ns: int,
     receive_monotonic_ns: int,
+    additional_capture_flags: tuple[str, ...] = (),
 ) -> EventEnvelope:
     """Create a Raw envelope while retaining the exact transport bytes."""
 
@@ -152,5 +153,5 @@ def envelope_from_websocket_frame(
         exchange_trade_time=trade_time,
         source_sequence=sequence,
         raw_payload=raw_payload,
-        capture_flags=flags,
+        capture_flags=tuple(dict.fromkeys((*flags, *additional_capture_flags))),
     )

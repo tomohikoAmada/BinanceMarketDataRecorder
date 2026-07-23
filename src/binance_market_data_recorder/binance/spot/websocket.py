@@ -15,6 +15,7 @@ from uuid import uuid4
 from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
 
+from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...spool.queue import IngressQueueFull
 from ...spool.stream import StreamSpool
@@ -35,6 +36,7 @@ class ReceivedFrame:
     connection_id: str
     receive_time_utc_ns: int
     receive_monotonic_ns: int
+    capture_flags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -60,6 +62,7 @@ class ReconnectBackoff:
 
 ConnectionOpener = Callable[[str], AbstractAsyncContextManager[WebSocketConnection]]
 LifecycleObserver = Callable[[str], None]
+EnvelopeObserver = Callable[[EventEnvelope], None]
 
 
 @asynccontextmanager
@@ -98,6 +101,7 @@ class SpotStreamCollector:
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
         lifecycle_observer: LifecycleObserver | None = None,
+        envelope_observer: EnvelopeObserver | None = None,
     ) -> None:
         if receipt_queue_capacity < 1:
             raise ValueError("receipt queue capacity must be positive")
@@ -116,6 +120,8 @@ class SpotStreamCollector:
         self.utc_clock_ns = utc_clock_ns
         self.monotonic_clock_ns = monotonic_clock_ns
         self.lifecycle_observer = lifecycle_observer
+        self.envelope_observer = envelope_observer
+        self._capture_flags: tuple[str, ...] = ()
         self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(
             maxsize=receipt_queue_capacity
         )
@@ -124,6 +130,9 @@ class SpotStreamCollector:
     @property
     def url(self) -> str:
         return f"{self.base_url}/{self.wire_name}"
+
+    def set_capture_flags(self, flags: tuple[str, ...]) -> None:
+        self._capture_flags = flags
 
     async def _receive_once(
         self, websocket: WebSocketConnection, connection_id: str
@@ -137,6 +146,7 @@ class SpotStreamCollector:
             connection_id=connection_id,
             receive_time_utc_ns=receive_time_utc_ns,
             receive_monotonic_ns=receive_monotonic_ns,
+            capture_flags=self._capture_flags,
         )
 
     def _accept(self, receipt: ReceivedFrame) -> None:
@@ -148,6 +158,7 @@ class SpotStreamCollector:
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
             batch: list[ReceivedFrame] = []
+            persisted: list[EventEnvelope] = []
             try:
                 first = await asyncio.wait_for(self._receipts.get(), timeout=0.1)
                 batch.append(first)
@@ -168,12 +179,17 @@ class SpotStreamCollector:
                     collector_version=self.collector_version,
                     receive_time_utc_ns=receipt.receive_time_utc_ns,
                     receive_monotonic_ns=receipt.receive_monotonic_ns,
+                    additional_capture_flags=receipt.capture_flags,
                 )
                 self.spool.enqueue(envelope)
+                persisted.append(envelope)
                 if "server_shutdown" in envelope.capture_flags:
                     self._server_shutdown.set()
                 self._receipts.task_done()
             await asyncio.to_thread(self.spool.drain_all)
+            if self.envelope_observer is not None:
+                for envelope in persisted:
+                    self.envelope_observer(envelope)
         await asyncio.to_thread(self.spool.close_and_seal)
 
     async def _receive_connection(
@@ -234,9 +250,13 @@ class SpotStreamCollector:
             connection_id = str(uuid4())
             reason = "unexpected_disconnect"
             connected_at: float | None = None
+            was_connected = False
             try:
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
+                    was_connected = True
+                    if self.lifecycle_observer is not None:
+                        self.lifecycle_observer("connected")
                     log_event(
                         self.logger,
                         logging.INFO,
@@ -279,6 +299,9 @@ class SpotStreamCollector:
                     connection_id=connection_id,
                 )
                 raise
+            finally:
+                if was_connected and self.lifecycle_observer is not None:
+                    self.lifecycle_observer("disconnected")
             if stop.is_set() or reason == "graceful_shutdown":
                 return
             if reason in {"planned_rotation", "server_shutdown"}:

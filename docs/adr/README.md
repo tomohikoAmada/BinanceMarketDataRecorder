@@ -19,6 +19,7 @@ Current and historical decisions:
 - [ADR-0015: Crash-reconcilable archive transaction](0015-crash-reconcilable-archive-transaction.md)
 - [ADR-0016: Capacity forecast and emergency reserve](0016-capacity-forecast-and-emergency-reserve.md)
 - [ADR-0017: Non-forced macOS safe eject](0017-non-forced-macos-safe-eject.md)
+- [ADR-0018: Readiness-gated blue/green Collector handoff](0018-readiness-gated-blue-green-handoff.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

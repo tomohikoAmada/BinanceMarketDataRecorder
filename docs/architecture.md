@@ -197,11 +197,24 @@ tie-break using stable raw provenance.
 
 ## Lifecycle and upgrade
 
-M14 installs a user LaunchAgent. M13 blue/green upgrade starts a candidate with
-an independent connection, obtains snapshot/book readiness, overlaps old and
-new raw capture, then stops old only after candidate readiness. Duplicate Raw
-is expected and deterministically resolved later. The same overlap mechanism
-supports planned 24-hour connection rotation.
+ADR-0018 defines M13 as a per-market, make-before-break Collector handoff. A
+candidate uses a distinct instance ID/version and independent Spot or USD-M
+connections. Readiness requires current connections and durably written events
+for all three core streams, a durably written public REST snapshot, and an M6
+market-specific synchronized local book. The supervisor then requires fresh
+post-readiness events from old and new before stopping old.
+
+Overlap Raw remains immutable and carries deployment ID, active/candidate role,
+handoff reason, collector instance/version, and connection provenance. Catalog
+durably audits readiness, overlap, cutover, and rollback transitions. M15 owns
+deterministic deduplication. Candidate failure or loss of readiness before
+cutover leaves old running. Reverse-version rollback and proactive 23 h 40 min
+connection rotation use the same gate; the M4/M5 stream-local 23 h 50 min
+reconnect remains a marked fallback.
+
+M14 installs a user LaunchAgent and provides process-level locking compatible
+with the explicit supervised overlap identity. M13 does not install or control
+launchd.
 
 ## Portability
 

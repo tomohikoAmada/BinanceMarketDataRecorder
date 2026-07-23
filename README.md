@@ -26,7 +26,9 @@ verifies, commits, and then separately deletes eligible internal Raw chunks.
 M11 persists internal/per-target capacity history, reports robust multi-window
 growth and threshold ETAs, and freezes the archive-first/hard-reserve emergency
 stop policy. M12 adds non-forced, system-confirmed macOS safe eject serialized
-against archive transactions, plus forced-removal/reinsertion recovery.
+against archive transactions, plus forced-removal/reinsertion recovery. M13
+adds readiness-gated Spot/USD-M blue/green handoff, durable deployment audit,
+identifiable Raw overlap, rollback, and proactive 24-hour connection rotation.
 Normalization, launchd service installation, accounts,
 credentials, and trading remain unimplemented.
 
@@ -92,8 +94,9 @@ are optional and may disappear without stopping capture.
 - [M10 acceptance](docs/milestone_acceptance/M10.md)
 - [M11 acceptance](docs/milestone_acceptance/M11.md)
 - [M12 acceptance](docs/milestone_acceptance/M12.md)
+- [M13 acceptance](docs/milestone_acceptance/M13.md)
 
-## Install and verify M12
+## Install and verify M13
 
 Use Python 3.12 in a virtual environment:
 

@@ -41,6 +41,14 @@ class StorageControlState(StrEnum):
     SAFE_TO_REMOVE = "SAFE_TO_REMOVE"
 
 
+class DeploymentState(StrEnum):
+    CANDIDATE_STARTING = "CANDIDATE_STARTING"
+    CANDIDATE_READY = "CANDIDATE_READY"
+    OVERLAP_CONFIRMED = "OVERLAP_CONFIRMED"
+    CUTOVER_COMPLETE = "CUTOVER_COMPLETE"
+    ROLLED_BACK = "ROLLED_BACK"
+
+
 class CatalogStateError(RuntimeError):
     """Raised for an invalid lifecycle transition."""
 
@@ -72,6 +80,23 @@ ARCHIVE_CHUNK_STATES = {
     ArchiveState.VERIFIED: ChunkState.ARCHIVED_VERIFIED,
     ArchiveState.LOCAL_DELETE_PENDING: ChunkState.LOCAL_DELETE_PENDING,
     ArchiveState.LOCAL_DELETED: ChunkState.LOCAL_DELETED,
+}
+
+DEPLOYMENT_TRANSITIONS = {
+    DeploymentState.CANDIDATE_STARTING: {
+        DeploymentState.CANDIDATE_READY,
+        DeploymentState.ROLLED_BACK,
+    },
+    DeploymentState.CANDIDATE_READY: {
+        DeploymentState.OVERLAP_CONFIRMED,
+        DeploymentState.ROLLED_BACK,
+    },
+    DeploymentState.OVERLAP_CONFIRMED: {
+        DeploymentState.CUTOVER_COMPLETE,
+        DeploymentState.ROLLED_BACK,
+    },
+    DeploymentState.CUTOVER_COMPLETE: set(),
+    DeploymentState.ROLLED_BACK: set(),
 }
 
 
@@ -246,6 +271,32 @@ class Catalog:
                 occurred_at_utc_ns INTEGER NOT NULL,
                 evidence_json TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS deployment_sessions (
+                deployment_id TEXT PRIMARY KEY,
+                reason TEXT NOT NULL,
+                market TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                active_instance_id TEXT NOT NULL,
+                active_version TEXT NOT NULL,
+                candidate_instance_id TEXT NOT NULL,
+                candidate_version TEXT NOT NULL,
+                state TEXT NOT NULL,
+                created_at_utc_ns INTEGER NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL,
+                overlap_started_at_utc_ns INTEGER,
+                cutover_at_utc_ns INTEGER,
+                last_error TEXT
+            );
+            CREATE TABLE IF NOT EXISTS deployment_events (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                deployment_id TEXT NOT NULL
+                    REFERENCES deployment_sessions(deployment_id),
+                from_state TEXT,
+                to_state TEXT NOT NULL,
+                occurred_at_utc_ns INTEGER NOT NULL,
+                evidence_json TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL UNIQUE
+            );
             """
         )
 
@@ -417,6 +468,200 @@ class Catalog:
             document["evidence"] = json.loads(str(evidence_json))
             output.append(document)
         return output
+
+    def create_deployment(
+        self,
+        *,
+        deployment_id: str,
+        reason: str,
+        market: str,
+        symbol: str,
+        active_instance_id: str,
+        active_version: str,
+        candidate_instance_id: str,
+        candidate_version: str,
+        occurred_at_utc_ns: int,
+        evidence: Mapping[str, object],
+    ) -> None:
+        identity = (
+            deployment_id,
+            reason,
+            market,
+            symbol,
+            active_instance_id,
+            active_version,
+            candidate_instance_id,
+            candidate_version,
+        )
+        if not all(identity) or occurred_at_utc_ns < 0:
+            raise ValueError("invalid deployment identity")
+        evidence_json = json.dumps(
+            dict(evidence), sort_keys=True, separators=(",", ":")
+        )
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT * FROM deployment_sessions WHERE deployment_id = ?",
+                (deployment_id,),
+            ).fetchone()
+            if existing is not None:
+                expected = {
+                    "reason": reason,
+                    "market": market,
+                    "symbol": symbol,
+                    "active_instance_id": active_instance_id,
+                    "active_version": active_version,
+                    "candidate_instance_id": candidate_instance_id,
+                    "candidate_version": candidate_version,
+                }
+                if any(existing[key] != value for key, value in expected.items()):
+                    raise CatalogStateError("deployment identity changed")
+                return
+            connection.execute(
+                """
+                INSERT INTO deployment_sessions(
+                    deployment_id, reason, market, symbol,
+                    active_instance_id, active_version,
+                    candidate_instance_id, candidate_version,
+                    state, created_at_utc_ns, updated_at_utc_ns
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    *identity,
+                    DeploymentState.CANDIDATE_STARTING,
+                    occurred_at_utc_ns,
+                    occurred_at_utc_ns,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO deployment_events(
+                    deployment_id, from_state, to_state, occurred_at_utc_ns,
+                    evidence_json, idempotency_key
+                ) VALUES (?, NULL, ?, ?, ?, ?)
+                """,
+                (
+                    deployment_id,
+                    DeploymentState.CANDIDATE_STARTING,
+                    occurred_at_utc_ns,
+                    evidence_json,
+                    f"deployment-start:{deployment_id}",
+                ),
+            )
+
+    def transition_deployment(
+        self,
+        deployment_id: str,
+        to_state: DeploymentState,
+        *,
+        idempotency_key: str,
+        evidence: Mapping[str, object],
+        occurred_at_utc_ns: int,
+        error: str | None = None,
+    ) -> None:
+        if not deployment_id or not idempotency_key or occurred_at_utc_ns < 0:
+            raise ValueError("invalid deployment transition")
+        evidence_json = json.dumps(
+            dict(evidence), sort_keys=True, separators=(",", ":")
+        )
+        with self._transaction() as connection:
+            if connection.execute(
+                "SELECT 1 FROM deployment_events WHERE idempotency_key = ?",
+                (idempotency_key,),
+            ).fetchone():
+                return
+            row = connection.execute(
+                "SELECT state FROM deployment_sessions WHERE deployment_id = ?",
+                (deployment_id,),
+            ).fetchone()
+            if row is None:
+                raise CatalogStateError(f"unknown deployment {deployment_id}")
+            from_state = DeploymentState(row["state"])
+            if to_state not in DEPLOYMENT_TRANSITIONS[from_state]:
+                raise CatalogStateError(
+                    f"invalid deployment transition {from_state} -> {to_state}"
+                )
+            overlap_started = (
+                occurred_at_utc_ns
+                if to_state is DeploymentState.OVERLAP_CONFIRMED
+                else None
+            )
+            cutover = (
+                occurred_at_utc_ns
+                if to_state is DeploymentState.CUTOVER_COMPLETE
+                else None
+            )
+            connection.execute(
+                """
+                UPDATE deployment_sessions
+                SET state = ?, updated_at_utc_ns = ?,
+                    overlap_started_at_utc_ns =
+                        COALESCE(?, overlap_started_at_utc_ns),
+                    cutover_at_utc_ns = COALESCE(?, cutover_at_utc_ns),
+                    last_error = ?
+                WHERE deployment_id = ?
+                """,
+                (
+                    to_state,
+                    occurred_at_utc_ns,
+                    overlap_started,
+                    cutover,
+                    error,
+                    deployment_id,
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO deployment_events(
+                    deployment_id, from_state, to_state, occurred_at_utc_ns,
+                    evidence_json, idempotency_key
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    deployment_id,
+                    from_state,
+                    to_state,
+                    occurred_at_utc_ns,
+                    evidence_json,
+                    idempotency_key,
+                ),
+            )
+
+    def deployment(self, deployment_id: str) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM deployment_sessions WHERE deployment_id = ?",
+                (deployment_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def deployments(self) -> list[dict[str, object]]:
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM deployment_sessions
+                ORDER BY created_at_utc_ns, deployment_id
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def deployment_events(self, deployment_id: str) -> list[dict[str, object]]:
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM deployment_events
+                WHERE deployment_id = ?
+                ORDER BY event_id
+                """,
+                (deployment_id,),
+            ).fetchall()
+        result: list[dict[str, object]] = []
+        for row in rows:
+            document = dict(row)
+            document["evidence"] = json.loads(
+                str(document.pop("evidence_json"))
+            )
+            result.append(document)
+        return result
 
     def reserve_archive_transaction(
         self,

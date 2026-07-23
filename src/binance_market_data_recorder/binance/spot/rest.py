@@ -65,6 +65,7 @@ def capture_depth_snapshot(
     timeout_ms: int = 10_000,
     utc_clock_ns: Callable[[], int] = time.time_ns,
     monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
+    additional_capture_flags: tuple[str, ...] = (),
 ) -> EventEnvelope:
     """Call only the unsigned public Spot depth method and record its provenance."""
 
@@ -134,5 +135,13 @@ def capture_depth_snapshot(
         source_sequence={"lastUpdateId": model.last_update_id},
         payload_encoding="utf-8-json-provenance",
         raw_payload=raw_payload,
-        capture_flags=("rest_snapshot", "sdk_model_not_raw_http_body"),
+        capture_flags=tuple(
+            dict.fromkeys(
+                (
+                    "rest_snapshot",
+                    "sdk_model_not_raw_http_body",
+                    *additional_capture_flags,
+                )
+            )
+        ),
     )

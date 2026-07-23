@@ -100,8 +100,14 @@ that validation is optional and cannot define V1 completion.
   callbacks mean safe-to-remove. It never formats or repairs a filesystem.
 - Sleep/lid-close gaps must be marked. V1 does not promise collection while a
   MacBook is asleep or closed.
-- Planned upgrades use blue/green overlap. Raw duplicates are acceptable;
-  unmarked planned gaps are not.
+- Planned upgrades use ADR-0018 make-before-break blue/green overlap. Candidate
+  socket-open alone is insufficient: all core streams must durably write,
+  the public snapshot must durably write, and the local book must synchronize.
+  Fresh old/new post-readiness events prove overlap before old shutdown.
+- Raw overlap duplicates are acceptable and carry deployment/role/reason plus
+  existing instance/version provenance; unmarked planned gaps are not.
+- Reverse-version rollback and pre-24-hour connection rotation use the same
+  readiness gate. Process service installation and locking remain M14.
 
 ## Space policy
 

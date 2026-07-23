@@ -24,6 +24,7 @@ from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
+from ..supervisor.readiness import CollectorReadiness, ReadinessSnapshot
 from .usdm_side_data import UsdMSideDataManager, UsdMSideDataSettings
 
 
@@ -80,6 +81,13 @@ class UsdMCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
+        self.readiness = CollectorReadiness(
+            market="um_perpetual",
+            collector_instance_id=settings.collector_instance_id,
+            collector_version=settings.collector_version,
+        )
+        self._capture_flags: tuple[str, ...] = ()
+        self._candidate_handoff = False
         rotation = RotationPolicy(seconds=settings.rotation_seconds, bytes=settings.rotation_bytes)
 
         def spool(stream: str) -> StreamSpool:
@@ -120,6 +128,12 @@ class UsdMCollector:
 
         def lifecycle_observer(stream: str) -> Callable[[str], None]:
             def observe(event: str) -> None:
+                if event == "connected":
+                    self.readiness.observe_connected(stream)
+                    return
+                if event == "disconnected":
+                    self.readiness.observe_disconnected(stream)
+                    return
                 self.metrics.safely_observe_lifecycle(
                     market="um_perpetual", stream=stream, event=event
                 )
@@ -139,6 +153,7 @@ class UsdMCollector:
                 planned_rotation_seconds=settings.planned_connection_rotation_seconds,
                 opener=websocket_opener,
                 lifecycle_observer=lifecycle_observer(spec.stream.value),
+                envelope_observer=self.readiness.observe_persisted,
             )
             for spec in USDM_STREAMS
         )
@@ -175,6 +190,7 @@ class UsdMCollector:
                     collector_version=self.settings.collector_version,
                     limit=self.settings.snapshot_limit,
                     timeout_ms=self.settings.snapshot_timeout_ms,
+                    additional_capture_flags=self._capture_flags,
                 )
             except (BinanceSdkError, RuntimeError) as exc:
                 failures += 1
@@ -195,7 +211,19 @@ class UsdMCollector:
                 break
             self.snapshot_spool.enqueue(envelope)
             await asyncio.to_thread(self.snapshot_spool.drain_all)
-            return
+            self.readiness.observe_snapshot_persisted(envelope)
+            if self.readiness.snapshot().orderbook_synchronized:
+                return
+            if not self._candidate_handoff:
+                return
+            failures += 1
+            try:
+                await asyncio.wait_for(
+                    stop.wait(), timeout=self.snapshot_backoff.delay(failures)
+                )
+            except TimeoutError:
+                continue
+            break
         raise SnapshotUnavailableError(
             "Collector stopped before a required USD-M depth snapshot was captured"
         )
@@ -234,3 +262,32 @@ class UsdMCollector:
 
     def side_data_status(self) -> dict[str, dict[str, object]]:
         return self.side_data.status() if self.side_data is not None else {}
+
+    def readiness_snapshot(self) -> ReadinessSnapshot:
+        return self.readiness.snapshot()
+
+    def set_handoff_context(
+        self,
+        *,
+        deployment_id: str | None,
+        role: str | None,
+        reason: str | None,
+    ) -> None:
+        flags = _handoff_flags(deployment_id, role, reason)
+        self._capture_flags = flags
+        self._candidate_handoff = role == "candidate"
+        for stream in self.streams:
+            stream.set_capture_flags(flags)
+
+
+def _handoff_flags(
+    deployment_id: str | None, role: str | None, reason: str | None
+) -> tuple[str, ...]:
+    if deployment_id is None or role is None or reason is None:
+        return ()
+    return (
+        "blue_green_overlap",
+        f"deployment_id={deployment_id}",
+        f"instance_role={role}",
+        f"handoff_reason={reason.lower()}",
+    )

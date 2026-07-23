@@ -103,11 +103,15 @@ class UsdMStreamCollector:
         self.envelope_observer = envelope_observer
         self.failure_observer = failure_observer
         self.lifecycle_observer = lifecycle_observer
+        self._capture_flags: tuple[str, ...] = ()
         self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(maxsize=receipt_queue_capacity)
 
     @property
     def url(self) -> str:
         return f"{self.websocket_root}/{self.route}/ws/{self.wire_name}"
+
+    def set_capture_flags(self, flags: tuple[str, ...]) -> None:
+        self._capture_flags = flags
 
     async def _receive_once(
         self, websocket: WebSocketConnection, connection_id: str
@@ -121,6 +125,7 @@ class UsdMStreamCollector:
             connection_id=connection_id,
             receive_time_utc_ns=receive_time_utc_ns,
             receive_monotonic_ns=receive_monotonic_ns,
+            capture_flags=self._capture_flags,
         )
 
     def _accept(self, receipt: ReceivedFrame) -> None:
@@ -132,6 +137,7 @@ class UsdMStreamCollector:
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
             batch: list[ReceivedFrame] = []
+            persisted: list[EventEnvelope] = []
             try:
                 batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
             except TimeoutError:
@@ -154,6 +160,7 @@ class UsdMStreamCollector:
                         collector_version=self.collector_version,
                         receive_time_utc_ns=receipt.receive_time_utc_ns,
                         receive_monotonic_ns=receipt.receive_monotonic_ns,
+                        additional_capture_flags=receipt.capture_flags,
                     )
                 else:
                     envelope = self.envelope_factory(
@@ -164,11 +171,26 @@ class UsdMStreamCollector:
                         receive_time_utc_ns=receipt.receive_time_utc_ns,
                         receive_monotonic_ns=receipt.receive_monotonic_ns,
                     )
+                    if receipt.capture_flags:
+                        envelope = envelope.model_copy(
+                            update={
+                                "capture_flags": tuple(
+                                    dict.fromkeys(
+                                        (
+                                            *envelope.capture_flags,
+                                            *receipt.capture_flags,
+                                        )
+                                    )
+                                )
+                            }
+                        )
                 self.spool.enqueue(envelope)
-                if self.envelope_observer is not None:
-                    self.envelope_observer(envelope)
+                persisted.append(envelope)
                 self._receipts.task_done()
             await asyncio.to_thread(self.spool.drain_all)
+            if self.envelope_observer is not None:
+                for envelope in persisted:
+                    self.envelope_observer(envelope)
         await asyncio.to_thread(self.spool.close_and_seal)
 
     async def _receive_connection(
@@ -218,9 +240,13 @@ class UsdMStreamCollector:
             connection_id = str(uuid4())
             reason = "unexpected_disconnect"
             connected_at: float | None = None
+            was_connected = False
             try:
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
+                    was_connected = True
+                    if self.lifecycle_observer is not None:
+                        self.lifecycle_observer("connected")
                     log_event(
                         self.logger,
                         logging.INFO,
@@ -268,6 +294,9 @@ class UsdMStreamCollector:
                     connection_id=connection_id,
                 )
                 raise
+            finally:
+                if was_connected and self.lifecycle_observer is not None:
+                    self.lifecycle_observer("disconnected")
             if stop.is_set() or reason == "graceful_shutdown":
                 return
             if reason == "planned_rotation":

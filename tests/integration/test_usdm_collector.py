@@ -11,13 +11,14 @@ from typing import Any, ClassVar
 from binance_market_data_recorder.binance.usdm.rest import DepthResponse
 from binance_market_data_recorder.binance.usdm.websocket import WebSocketConnection
 from binance_market_data_recorder.collector.usdm import UsdMCollector, UsdMCollectorSettings
+from tests.integration.test_usdm_stream_collector import envelopes
 
 
 class Model:
-    last_update_id = 99
+    last_update_id = 100
 
     def to_dict(self) -> dict[str, object]:
-        return {"lastUpdateId": 99, "E": 1, "T": 1, "bids": [], "asks": []}
+        return {"lastUpdateId": 100, "E": 1, "T": 1, "bids": [], "asks": []}
 
 
 class Response:
@@ -59,7 +60,7 @@ class Socket:
 def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path) -> None:
     payloads = {
         "btcusdt@depth@100ms": (
-            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":1,"pu":0,"b":[],"a":[]}'
+            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":100,"u":101,"pu":99,"b":[],"a":[]}'
         ),
         "btcusdt@aggTrade": (
             b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,"p":"1","q":"1","f":1,"l":1,"m":true}'
@@ -95,13 +96,18 @@ def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path
             rest_api=RestApi(failures=1),
             websocket_opener=opener,
         )
+        collector.set_handoff_context(
+            deployment_id="usdm-deployment",
+            role="candidate",
+            reason="UPGRADE",
+        )
         task = asyncio.create_task(collector.run(stop))
         for _ in range(100):
-            if opened == set(payloads):
-                await asyncio.sleep(0.05)
+            if opened == set(payloads) and collector.readiness_snapshot().ready:
                 stop.set()
                 break
             await asyncio.sleep(0.01)
+        assert collector.readiness_snapshot().ready
         await asyncio.wait_for(task, timeout=3)
         assert routes == {
             "btcusdt@depth@100ms": "public",
@@ -120,4 +126,8 @@ def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path
         "book_ticker",
         "depth_snapshot",
     }
-    assert sum(int(document["record_count"]) for document in documents) == 4
+    assert sum(int(document["record_count"]) for document in documents) >= 4
+    for envelope in envelopes(tmp_path):
+        assert "blue_green_overlap" in envelope.capture_flags
+        assert "deployment_id=usdm-deployment" in envelope.capture_flags
+        assert "instance_role=candidate" in envelope.capture_flags

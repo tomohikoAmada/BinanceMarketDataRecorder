@@ -207,6 +207,13 @@ payload evidence, and blue/green overlap. Raw is append-only until seal and
 immutable thereafter. Recovery may truncate only a `.partial` tail to the last
 valid frame and must record that action; unrecoverable files go to quarantine.
 
+During an ADR-0018 handoff, overlap events add stable string flags for
+`blue_green_overlap`, deployment ID, `active` or `candidate` role, and handoff
+reason. These flags supplement rather than replace collector instance/version,
+connection ID, clocks, sequence provenance, and exact payload bytes. The
+EventEnvelope schema and Raw frame encoding do not change. M13 does not dedupe;
+M15 must use explicit versioned semantics and preserve source-chunk lineage.
+
 ### Normalized
 
 Normalized datasets are rebuildable, versioned, partitioned by UTC date/hour,

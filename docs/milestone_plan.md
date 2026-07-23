@@ -346,9 +346,13 @@ self-referential commit hash.
 - Non-scope: hiding overlap, stopping old on unready candidate, GUI deploys, or
   unplanned-fault guarantees beyond explicit gap marking.
 - Dependencies: M4-M6 health/reconstruction, M8 metrics, M3 raw provenance.
-- Acceptance: failed/unready candidate leaves old running; synchronized
-  candidate permits cutover; overlap duplicates are identifiable; no unmarked
-  planned gap; rollback works; no GUI.
+- Acceptance: failed/unready candidate leaves old running; readiness proves
+  current connections and persisted events for all core streams, a persisted
+  public snapshot, and market-specific book sync; synchronized candidate
+  permits cutover only after fresh post-readiness old/new events; overlap
+  duplicates are identifiable; deployment transitions are durable; reverse
+  rollback and pre-24-hour rotation use the same gate; no unmarked planned gap;
+  no GUI.
 - Rollback: stop candidate and retain old version; preserve overlap artifacts
   and deployment log; revert supervisor changes after safe state.
 
