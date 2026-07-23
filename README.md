@@ -29,7 +29,9 @@ stop policy. M12 adds non-forced, system-confirmed macOS safe eject serialized
 against archive transactions, plus forced-removal/reinsertion recovery. M13
 adds readiness-gated Spot/USD-M blue/green handoff, durable deployment audit,
 identifiable Raw overlap, rollback, and proactive 24-hour connection rotation.
-Normalization, launchd service installation, accounts,
+M14 adds the logged-in-user LaunchAgent, crash restart, SIGTERM sealing,
+single-service-process locking, honest atomic runtime status, sleep-gap
+evidence, and optional scoped idle-sleep prevention. Normalization, accounts,
 credentials, and trading remain unimplemented.
 
 ## Identity
@@ -95,8 +97,9 @@ are optional and may disappear without stopping capture.
 - [M11 acceptance](docs/milestone_acceptance/M11.md)
 - [M12 acceptance](docs/milestone_acceptance/M12.md)
 - [M13 acceptance](docs/milestone_acceptance/M13.md)
+- [M14 acceptance](docs/milestone_acceptance/M14.md)
 
-## Install and verify M13
+## Install and verify M14
 
 Use Python 3.12 in a virtual environment:
 
@@ -118,6 +121,13 @@ binance-market-recorder storage forecast
 binance-market-recorder archive status
 binance-market-recorder archive retry
 binance-market-recorder archive verify <storage-id>
+binance-market-recorder launchd install \
+  --label "$AUTHOR_CONTROLLED_LABEL" \
+  --author-controls-namespace
+binance-market-recorder launchd status
+binance-market-recorder launchd stop
+binance-market-recorder launchd start
+binance-market-recorder launchd uninstall
 python3.12 -m pytest -q
 python3.12 -m ruff check .
 python3.12 -m mypy
@@ -129,7 +139,9 @@ Pass a file with `--config PATH` or
 `BINANCE_MARKET_RECORDER_CONFIG_FILE`. Supported settings are `data_root`,
 `log_level`, `rotation_seconds`, `rotation_bytes`,
 `durability_interval_seconds`, `ingress_queue_capacity`, and
-`max_frame_bytes`; unknown settings are rejected. The default data root is
+`max_frame_bytes`; service settings are `heartbeat_seconds`,
+`sleep_gap_threshold_seconds`, and
+`prevent_sleep`; unknown settings are rejected. The default data root is
 `~/Library/Application Support/BinanceMarketDataRecorder/`, and diagnostic CLI
 commands do not create it.
 
@@ -163,7 +175,23 @@ rotation_bytes = 134217728
 durability_interval_seconds = 1.0
 ingress_queue_capacity = 8192
 max_frame_bytes = 16777216
+heartbeat_seconds = 5.0
+sleep_gap_threshold_seconds = 30.0
+prevent_sleep = false
 ```
+
+LaunchAgent installation requires a real reverse-DNS label in a namespace the
+project author controls. Set `AUTHOR_CONTROLLED_LABEL` before using the command
+above. The label must end in `.BinanceMarketDataRecorder`; Binance-owned-looking
+and placeholder namespaces are rejected. No root daemon is installed.
+Generated stdout/stderr logs live under the internal `logs/` directory.
+
+The service starts after login, and launchd restarts unsuccessful exits.
+`binance-market-recorder status` reports `RUNNING` only for a live PID with a
+fresh atomic heartbeat. SIGTERM drains and seals Collector spools. macOS sleep
+creates an explicit gap; closed-lid capture is not promised. Optional
+`prevent_sleep=true` owns a service-PID-scoped `caffeinate` assertion and never
+changes permanent power settings.
 
 See [dependency policy](docs/dependency_policy.md) for the deliberately small
 runtime and development dependency sets. M2 selected exact-pinned official

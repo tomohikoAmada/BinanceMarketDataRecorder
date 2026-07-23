@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Status: M9 macOS external-volume discovery and registration.
+Status: M14 native macOS service and power lifecycle.
 
 ## Principles
 
@@ -23,6 +23,7 @@ Status: M9 macOS external-volume discovery and registration.
 | `cbor2` | `==6.1.3` | Deterministic canonical CBOR for Raw chunk headers and EventEnvelope bodies |
 | `google-crc32c` | `==1.8.0` | Castagnoli per-header/per-frame integrity checks with bounded scan performance |
 | `zstandard` | `==0.25.0` | Streaming immutable sealed Raw artifacts with checksum/readback verification |
+| `pyobjc-framework-Cocoa` | `==12.2.1` on macOS | Direct AppKit/Foundation binding for official NSWorkspace sleep/wake notifications |
 | `pyobjc-framework-DiskArbitration` | `==12.2.1` on macOS | Bridge to Apple's Disk Arbitration callbacks and descriptions; includes matching PyObjC core/Cocoa bridge wheels |
 
 Python's standard library supplies argparse CLI parsing, TOML reading,
@@ -41,7 +42,7 @@ needed.
 The build backend is `setuptools>=75,<82`; it is isolated build tooling, not a
 runtime dependency.
 
-## M9 resolution policy
+## M14 resolution policy
 
 Pydantic retains a compatible major-version range. The generated official SDKs,
 `websockets`, CBOR, CRC32C, and Zstandard packages are exact-pinned because
@@ -55,6 +56,14 @@ to 12.2.1 as one tested bridge set. The dependency is macOS-conditional in
 project metadata: non-macOS tooling can import platform-neutral storage models,
 while attempts to use Disk Arbitration fail explicitly. M9 tested session
 creation, startup enumeration and callback registration on the certified host.
+
+M14 promotes the already locked Cocoa wheel to a direct macOS-conditional
+dependency because Recorder now imports AppKit/Foundation as a project API for
+NSWorkspace sleep/wake observation. It remains on the exact same 12.2.1 PyObjC
+bridge set; no resolved wheel or lock hash changes. launchctl, plist generation,
+flock, atomic state, signals, resource metrics, and scoped `/usr/bin/caffeinate`
+use the standard library or macOS itself, so no service framework, process
+manager, or power-management package is added.
 
 The deprecated Futures connector, third-party `python-binance`, unverified
 Binance MCPs, FastAPI, Qt, database, Parquet, dataframe, machine-learning,

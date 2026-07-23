@@ -112,6 +112,15 @@ Only both successful system callbacks produce `SAFE_TO_REMOVE`. Refusal or
 physical disappearance never authorizes local deletion or stops internal
 capture; verified reinsertion reactivates allocation.
 
+M14 implements the native process boundary under ADR-0019. One logged-in-user
+LaunchAgent owns a kernel `flock`, runs M3 startup recovery, supervises isolated
+Spot/USD-M workers, writes an atomic PID/freshness-validated state heartbeat,
+and maps SIGTERM to Collector drain/seal. All core workers stopping makes the
+process fail for launchd restart; one market failure remains isolated.
+NSWorkspace notifications plus wall/monotonic discontinuity evidence mark
+sleep gaps. Optional `caffeinate -i -w <pid>` is scoped to the service lifetime
+and never changes persistent power policy.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,
@@ -213,8 +222,10 @@ connection rotation use the same gate; the M4/M5 stream-local 23 h 50 min
 reconnect remains a marked fallback.
 
 M14 installs a user LaunchAgent and provides process-level locking compatible
-with the explicit supervised overlap identity. M13 does not install or control
-launchd.
+with the explicit supervised overlap identity. It requires an operator-supplied
+author-controlled reverse-DNS label; no Binance-owned or guessed namespace is
+built in. The process lock covers the service, while M13 old/candidate
+Collectors coexist inside that one process.
 
 ## Portability
 

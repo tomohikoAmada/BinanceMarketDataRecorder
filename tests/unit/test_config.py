@@ -20,6 +20,9 @@ def test_defaults_are_credential_free() -> None:
     assert loaded.config.durability_interval_seconds == 1.0
     assert loaded.config.ingress_queue_capacity == 8192
     assert loaded.config.max_frame_bytes == 16 * 1024 * 1024
+    assert loaded.config.heartbeat_seconds == 5.0
+    assert loaded.config.sleep_gap_threshold_seconds == 30.0
+    assert loaded.config.prevent_sleep is False
     field_names = {name.casefold() for name in RecorderConfig.model_fields}
     assert not field_names & {"api_key", "secret", "account", "order", "trading"}
 
@@ -83,3 +86,28 @@ def test_unknown_file_field_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigurationError, match="invalid configuration file"):
         load_config(config_file=config_file, environ={})
+
+
+def test_service_power_settings_support_strict_overrides(tmp_path: Path) -> None:
+    config_file = tmp_path / "settings.toml"
+    config_file.write_text(
+        "[recorder]\nheartbeat_seconds = 2.0\nprevent_sleep = true\n",
+        encoding="utf-8",
+    )
+    loaded = load_config(
+        config_file=config_file,
+        environ={
+            "BINANCE_MARKET_RECORDER_SLEEP_GAP_THRESHOLD_SECONDS": "45",
+            "BINANCE_MARKET_RECORDER_PREVENT_SLEEP": "false",
+        },
+        home=tmp_path / "home",
+        repository_root=tmp_path / "workspace" / "repo",
+    )
+    assert loaded.config.heartbeat_seconds == 2.0
+    assert loaded.config.sleep_gap_threshold_seconds == 45.0
+    assert loaded.config.prevent_sleep is False
+
+
+def test_invalid_prevent_sleep_environment_is_rejected() -> None:
+    with pytest.raises(ConfigurationError, match="invalid boolean"):
+        load_config(environ={"BINANCE_MARKET_RECORDER_PREVENT_SLEEP": "sometimes"})

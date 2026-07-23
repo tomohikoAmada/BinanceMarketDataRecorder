@@ -11,6 +11,10 @@ class MarketCollector(Protocol):
     async def run(self, stop: asyncio.Event) -> None: ...
 
 
+class AllMarketCollectorsStopped(RuntimeError):
+    """No core market Collector remains for launchd to supervise."""
+
+
 class MarketCollectorSupervisor:
     """Run markets with separate stop/failure domains.
 
@@ -49,7 +53,10 @@ class MarketCollectorSupervisor:
                     except BaseException as exc:
                         self.failures[name] = exc
             if not tasks and not stop.is_set():
-                await stop.wait()
+                failed = ",".join(sorted(self.failures)) or "all"
+                raise AllMarketCollectorsStopped(
+                    f"all core market Collectors stopped; failed={failed}"
+                )
         finally:
             stop_task.cancel()
             for child_stop in child_stops.values():

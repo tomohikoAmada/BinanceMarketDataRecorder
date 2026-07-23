@@ -17,6 +17,7 @@ ENV_PREFIX = "BINANCE_MARKET_RECORDER_"
 CONFIG_FILE_ENV = f"{ENV_PREFIX}CONFIG_FILE"
 ALLOWED_ENV_SETTINGS = {
     CONFIG_FILE_ENV,
+    f"{ENV_PREFIX}GIT_COMMIT",
     f"{ENV_PREFIX}DATA_ROOT",
     f"{ENV_PREFIX}LOG_LEVEL",
     f"{ENV_PREFIX}ROTATION_SECONDS",
@@ -24,6 +25,9 @@ ALLOWED_ENV_SETTINGS = {
     f"{ENV_PREFIX}DURABILITY_INTERVAL_SECONDS",
     f"{ENV_PREFIX}INGRESS_QUEUE_CAPACITY",
     f"{ENV_PREFIX}MAX_FRAME_BYTES",
+    f"{ENV_PREFIX}HEARTBEAT_SECONDS",
+    f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS",
+    f"{ENV_PREFIX}PREVENT_SLEEP",
 }
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -44,6 +48,9 @@ class RecorderConfig(BaseModel):
     durability_interval_seconds: float = Field(default=1.0, ge=0, le=1.0)
     ingress_queue_capacity: int = Field(default=8192, ge=1)
     max_frame_bytes: int = Field(default=16 * 1024 * 1024, ge=1024, le=64 * 1024 * 1024)
+    heartbeat_seconds: float = Field(default=5.0, ge=1.0, le=60.0)
+    sleep_gap_threshold_seconds: float = Field(default=30.0, ge=5.0, le=600.0)
+    prevent_sleep: bool = False
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -66,6 +73,9 @@ class RecorderConfig(BaseModel):
             "durability_interval_seconds": self.durability_interval_seconds,
             "ingress_queue_capacity": self.ingress_queue_capacity,
             "max_frame_bytes": self.max_frame_bytes,
+            "heartbeat_seconds": self.heartbeat_seconds,
+            "sleep_gap_threshold_seconds": self.sleep_gap_threshold_seconds,
+            "prevent_sleep": self.prevent_sleep,
         }
 
 
@@ -79,6 +89,9 @@ class _RecorderOverrides(BaseModel):
     durability_interval_seconds: float | None = Field(default=None, ge=0, le=1.0)
     ingress_queue_capacity: int | None = Field(default=None, ge=1)
     max_frame_bytes: int | None = Field(default=None, ge=1024, le=64 * 1024 * 1024)
+    heartbeat_seconds: float | None = Field(default=None, ge=1.0, le=60.0)
+    sleep_gap_threshold_seconds: float | None = Field(default=None, ge=5.0, le=600.0)
+    prevent_sleep: bool | None = None
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -150,6 +163,9 @@ def load_config(
         "durability_interval_seconds": 1.0,
         "ingress_queue_capacity": 8192,
         "max_frame_bytes": 16 * 1024 * 1024,
+        "heartbeat_seconds": 5.0,
+        "sleep_gap_threshold_seconds": 30.0,
+        "prevent_sleep": False,
     }
     sources = {name: "default" for name in values}
 
@@ -167,6 +183,9 @@ def load_config(
             "durability_interval_seconds",
             "ingress_queue_capacity",
             "max_frame_bytes",
+            "heartbeat_seconds",
+            "sleep_gap_threshold_seconds",
+            "prevent_sleep",
         ):
             value = getattr(overrides, name)
             if value is not None:
@@ -187,6 +206,8 @@ def load_config(
         "durability_interval_seconds": float,
         "ingress_queue_capacity": int,
         "max_frame_bytes": int,
+        "heartbeat_seconds": float,
+        "sleep_gap_threshold_seconds": float,
     }
     for name, parser in numeric_environment.items():
         environment_name = f"{ENV_PREFIX}{name.upper()}"
@@ -199,6 +220,16 @@ def load_config(
                     f"invalid numeric environment setting {environment_name}"
                 ) from exc
             sources[name] = "environment"
+
+    prevent_sleep_env = environment.get(f"{ENV_PREFIX}PREVENT_SLEEP")
+    if prevent_sleep_env is not None:
+        normalized = prevent_sleep_env.strip().casefold()
+        if normalized not in {"true", "false", "1", "0"}:
+            raise ConfigurationError(
+                f"invalid boolean environment setting {ENV_PREFIX}PREVENT_SLEEP"
+            )
+        values["prevent_sleep"] = normalized in {"true", "1"}
+        sources["prevent_sleep"] = "environment"
 
     try:
         parsed = RecorderConfig.model_validate(values)

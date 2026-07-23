@@ -12,10 +12,9 @@ guessed in M0.2. Logs and structured state live under
 `~/Library/Application Support/BinanceMarketDataRecorder/`, not the repository
 or `/Users/amada/Documents/Development/Crypto`.
 
-M14 will provide install, uninstall, start, stop, and status scripts; automatic
-restart; SIGTERM sealing; configuration permission checks; and a single-instance
-lock compatible with ADR-0018 supervised overlap. M13 provides no installed
-service.
+M14 provides install, uninstall, start, stop, and status scripts; crash restart;
+SIGTERM sealing; configuration permission checks; and a single-service-process
+lock compatible with ADR-0018 supervised overlap. ADR-0019 is authoritative.
 
 ## Volume discovery
 
@@ -94,11 +93,17 @@ reconciles on verified reinsertion. ADR-0017 is authoritative.
 ## Power and sleep
 
 Mac sleep suspends user processes and network capture; closed-lid continuity is
-not promised. The service detects wall-clock versus monotonic discontinuities
-where possible and records a marked gap across sleep/wake. An opt-in
-prevent-sleep mode may use a scoped system assertion while recording; it does
-not permanently change the user's power settings and cannot promise closed-lid
-operation.
+not promised. M14 subscribes to `NSWorkspaceWillSleepNotification` and
+`NSWorkspaceDidWakeNotification`, immediately records sleep start, and commits
+a marked gap at wake. It also compares wall/monotonic heartbeat deltas and
+labels that fallback as a suspend/clock inference.
+
+`prevent_sleep=false` is the default. When enabled, the service owns
+`/usr/bin/caffeinate -i -w <service-pid>` and releases it on shutdown; a crash
+also ends the assertion with that PID. This only prevents user-idle system
+sleep while policy permits. Recorder never calls `pmset`, changes persistent
+settings, or promises continuity through lid-close, explicit sleep, shutdown,
+battery exhaustion, or platform policy.
 
 ## Blue/green and connection rotation
 
@@ -113,4 +118,36 @@ and source provenance; a failed or unready candidate leaves old active. Reverse
 rollback uses the same gate. Scheduled rotation invokes it at 23 h 40 min,
 while the existing 23 h 50 min per-stream reconnect is a marked fallback.
 launchd ownership and instance locks must accommodate only this explicit
-supervised overlap. M13 does not install or manipulate launchd.
+supervised overlap.
+
+## LaunchAgent installation and control
+
+No service label is guessed. Set `AUTHOR_CONTROLLED_LABEL` to a reverse-DNS
+label in a namespace the project author actually controls; it must end in
+`.BinanceMarketDataRecorder`. Installation requires an explicit attestation and
+refuses namespaces that imply Binance ownership, root, placeholder namespaces,
+insecure config/data permissions, and an existing different data-root
+registration.
+
+```bash
+export AUTHOR_CONTROLLED_LABEL='replace-this-with-an-author-owned-label'
+scripts/install-launchagent \
+  --label "$AUTHOR_CONTROLLED_LABEL" \
+  --author-controls-namespace
+scripts/start-recorder
+scripts/status-recorder
+scripts/stop-recorder
+scripts/uninstall-launchagent
+```
+
+The literal placeholder above is intentionally invalid; substitute the real
+author-owned reverse-DNS label. For a nondefault configuration, set
+`BINANCE_MARKET_RECORDER_CONFIG_FILE` for every wrapper command.
+
+The generated mode-0600 plist lives in `~/Library/LaunchAgents/`, runs in
+`gui/<uid>`, starts at login, restarts only unsuccessful exits, throttles crash
+loops, allows 60 seconds for SIGTERM, uses umask 077, and redirects stdout and
+stderr under the internal `logs/` directory. `stop` bootouts the job for the
+current login session; `start` bootstraps or kickstarts it; `uninstall` removes
+only its selected plist and Recorder install metadata. Machine restart resumes
+only after the user logs in.

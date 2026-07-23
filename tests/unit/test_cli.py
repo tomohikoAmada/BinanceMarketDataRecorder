@@ -34,6 +34,9 @@ def test_config_show_is_structured_and_credential_free(
         "ingress_queue_capacity",
         "log_level",
         "max_frame_bytes",
+        "heartbeat_seconds",
+        "sleep_gap_threshold_seconds",
+        "prevent_sleep",
         "rotation_bytes",
         "rotation_seconds",
     }
@@ -59,7 +62,8 @@ def test_status_does_not_invent_a_running_collector(capsys: pytest.CaptureFixtur
     assert payload["collector_implemented"] is True
     assert payload["implemented_markets"] == ["spot", "um_perpetual"]
     assert payload["network_connected"] is False
-    assert payload["runtime_metrics"]["cpu_percent"]["status"] == "NOT_RUNNING"
+    assert payload["service_implemented"] is True
+    assert payload["runtime_metrics"]["process_cpu_seconds"]["status"] == "NOT_RUNNING"
 
 
 def test_invalid_command_has_machine_readable_error(
@@ -139,7 +143,35 @@ def test_status_does_not_trust_an_unimplemented_service_state_as_running(
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "NOT_RUNNING"
     assert payload["network_connected"] is False
-    assert payload["network_status"] == "UNAVAILABLE_NO_SUPERVISED_SERVICE"
+    assert payload["network_status"] == "SERVICE_NOT_RUNNING"
+    assert payload["service_state_error"] == "unsupported service state schema"
+
+
+def test_status_rejects_a_stale_but_well_formed_running_heartbeat(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    (layout.state / "service_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "service-state.v1",
+                "status": "RUNNING",
+                "pid": 1,
+                "heartbeat_at_utc_ns": 1,
+                "heartbeat_interval_seconds": 1.0,
+                "network_connected": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path))
+    assert main(["status"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "STALE"
+    assert payload["network_connected"] is False
+    assert payload["service_state_error"] == "service_heartbeat_stale"
 
 
 def test_storage_list_is_structured_and_display_only(

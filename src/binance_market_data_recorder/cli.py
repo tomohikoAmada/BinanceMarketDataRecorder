@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
+import logging
 import sys
 import time
 from collections.abc import Sequence
@@ -13,10 +15,18 @@ from pathlib import Path
 from typing import NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
-from .config import ConfigurationError, LoadedConfig, load_config
+from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
+from .logging import configure_logging, log_event
 from .metrics.report import DailyReporter
 from .paths import discover_repository_root
+from .service.launchd import (
+    LaunchAgentError,
+    LaunchAgentManager,
+    installed_service_label,
+)
+from .service.lock import ServiceAlreadyRunning
+from .service.runtime import run_service
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
 from .storage.forecast import StorageForecaster
@@ -30,6 +40,7 @@ from .storage.macos import (
     StorageRegistry,
     inspect_path,
 )
+from .version import git_commit as current_git_commit
 from .version import version_string
 
 
@@ -95,6 +106,31 @@ def build_parser() -> argparse.ArgumentParser:
     retry.add_argument("--storage-id")
     verify = archive_commands.add_parser("verify", help="verify committed external files")
     verify.add_argument("storage_id")
+    launchd_command = commands.add_parser(
+        "launchd", help="manage the user LaunchAgent"
+    )
+    launchd_commands = launchd_command.add_subparsers(
+        dest="launchd_command", required=True, parser_class=_ArgumentParser
+    )
+    install = launchd_commands.add_parser(
+        "install", help="install and bootstrap the user LaunchAgent"
+    )
+    install.add_argument("--label", required=True)
+    install.add_argument(
+        "--author-controls-namespace",
+        action="store_true",
+        help="confirm the reverse-DNS label namespace is author-controlled",
+    )
+    for action in ("uninstall", "start", "stop", "status"):
+        command = launchd_commands.add_parser(
+            action, help=f"{action} the user LaunchAgent"
+        )
+        command.add_argument("--label")
+    private_service = commands.add_parser("_service", help=argparse.SUPPRESS)
+    private_commands = private_service.add_subparsers(
+        dest="service_command", required=True, parser_class=_ArgumentParser
+    )
+    private_commands.add_parser("run", help=argparse.SUPPRESS)
     return parser
 
 
@@ -143,6 +179,30 @@ def _archive_status(catalog: Catalog) -> dict[str, object]:
         "transactions": transactions,
         "unique_copy_warning": (
             "After LOCAL_DELETED, the registered external artifact may be the only copy."
+        ),
+    }
+
+
+def _launchd_environment(loaded: LoadedConfig) -> dict[str, str]:
+    config = loaded.config
+    return {
+        f"{ENV_PREFIX}DATA_ROOT": str(config.data_root),
+        f"{ENV_PREFIX}LOG_LEVEL": config.log_level,
+        f"{ENV_PREFIX}ROTATION_SECONDS": str(config.rotation_seconds),
+        f"{ENV_PREFIX}ROTATION_BYTES": str(config.rotation_bytes),
+        f"{ENV_PREFIX}DURABILITY_INTERVAL_SECONDS": str(
+            config.durability_interval_seconds
+        ),
+        f"{ENV_PREFIX}INGRESS_QUEUE_CAPACITY": str(
+            config.ingress_queue_capacity
+        ),
+        f"{ENV_PREFIX}MAX_FRAME_BYTES": str(config.max_frame_bytes),
+        f"{ENV_PREFIX}HEARTBEAT_SECONDS": str(config.heartbeat_seconds),
+        f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS": str(
+            config.sleep_gap_threshold_seconds
+        ),
+        f"{ENV_PREFIX}PREVENT_SLEEP": (
+            "true" if config.prevent_sleep else "false"
         ),
     }
 
@@ -212,6 +272,67 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "status":
         _write_json(service_status(loaded.config.data_root))
         return 0
+    if command == "_service" and getattr(args, "service_command", None) == "run":
+        logger = configure_logging(loaded.config.log_level)
+        try:
+            asyncio.run(run_service(loaded.config, logger=logger))
+        except ServiceAlreadyRunning as exc:
+            log_event(
+                logger,
+                logging.WARNING,
+                "service_already_running",
+                "another Recorder service owns the data root",
+                reason=str(exc),
+            )
+            return 0
+        except Exception:
+            logger.exception(
+                "supervised Recorder service failed",
+                extra={"structured_event": "service_failed"},
+            )
+            return 1
+        return 0
+    if command == "launchd":
+        launchd_command = getattr(args, "launchd_command", None)
+        try:
+            label = getattr(args, "label", None)
+            if launchd_command != "install" and label is None:
+                label = installed_service_label(loaded.config.data_root)
+            if label is None:
+                raise LaunchAgentError(
+                    "no installed LaunchAgent metadata; specify --label"
+                )
+            launchd_manager = LaunchAgentManager(
+                data_root=loaded.config.data_root,
+                label=label,
+            )
+            if launchd_command == "install":
+                result = launchd_manager.install(
+                    author_controls_namespace=bool(
+                        getattr(args, "author_controls_namespace", False)
+                    ),
+                    config_file=loaded.config_file,
+                    git_commit=current_git_commit(),
+                    environment=_launchd_environment(loaded),
+                )
+            elif launchd_command == "uninstall":
+                result = launchd_manager.uninstall()
+            elif launchd_command == "start":
+                result = launchd_manager.start()
+            elif launchd_command == "stop":
+                result = launchd_manager.stop()
+            elif launchd_command == "status":
+                result = launchd_manager.status()
+            else:
+                parser.error(f"unsupported launchd command: {launchd_command}")
+            _write_json({"command": f"launchd.{launchd_command}", **result})
+            return 0
+        except (LaunchAgentError, OSError, ValueError) as exc:
+            _write_json(
+                {"error": "launchd_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
     if command == "report" and getattr(args, "report_command", None) == "daily":
         selected_date = getattr(args, "date", None) or datetime.now(UTC).date().isoformat()
         catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"

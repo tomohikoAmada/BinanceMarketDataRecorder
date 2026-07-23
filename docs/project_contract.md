@@ -107,7 +107,16 @@ that validation is optional and cannot define V1 completion.
 - Raw overlap duplicates are acceptable and carry deployment/role/reason plus
   existing instance/version provenance; unmarked planned gaps are not.
 - Reverse-version rollback and pre-24-hour connection rotation use the same
-  readiness gate. Process service installation and locking remain M14.
+  readiness gate.
+- ADR-0019 installs only a logged-in-user LaunchAgent under an explicitly
+  author-controlled label. A kernel-held service lock prevents competing
+  process writers while allowing M13 overlap inside that process.
+- SIGTERM drains/seals before `STOPPED`; crashes exit nonzero for launchd
+  restart and the next instance runs Raw recovery. Runtime status is trusted
+  only with a live PID and fresh atomic heartbeat.
+- Sleep/wake and inferred clock discontinuities open explicit operational gaps.
+  Optional prevent-sleep is a service-PID-scoped idle assertion, never a
+  permanent setting or closed-lid guarantee.
 
 ## Space policy
 

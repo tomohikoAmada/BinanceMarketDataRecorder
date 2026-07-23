@@ -358,6 +358,10 @@ self-referential commit hash.
 
 ## M14 — launchd, logs, and MacBook power risk
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M14.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: user LaunchAgent plist; install/uninstall/start/stop/status scripts;
   stdout/stderr; auto-restart; SIGTERM; permissions; multi-instance prevention
   compatible with supervised overlap; sleep-risk detection; optional scoped
@@ -365,9 +369,13 @@ self-referential commit hash.
 - Non-scope: root LaunchDaemon, permanent power-setting changes, or promise of
   closed-lid capture.
 - Dependencies: M13 lifecycle, M8 status, M3 safe sealing.
-- Acceptance: login auto-start; crash and machine reboot recovery; CLI status;
-  no root; sleep/wake gap explicitly recorded; single instance except managed
-  blue/green; power assertion cleans up.
+- Acceptance: login auto-start and machine-reboot-then-login recovery; current
+  session launchctl bootstrap/crash-restart/bootout proof; CLI status validates
+  PID/heartbeat; no root; SIGTERM seals/stops; sleep/wake gap is explicit; a
+  kernel service lock permits only in-process managed blue/green overlap;
+  scoped power assertion cleans up and no persistent power setting changes.
+  If a disruptive reboot window is unavailable, record that gate as unrun with
+  no claim of physical reboot evidence; this does not waive the V1 criterion.
 - Rollback: unload LaunchAgent, stop/seal service, restore prior manual launch
   path, revert M14; no user power setting remains changed.
 

@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
-import json
+import os
 import shutil
+import sys
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from .service.launchd import (
+    LaunchAgentError,
+    LaunchAgentManager,
+    installed_service_label,
+)
+from .service.state import ServiceStateError, ServiceStateStore
 from .storage.catalog import Catalog, ChunkState
 from .storage.forecast import space_severity
 from .storage.macos import DiskArbitrationAdapter, PlatformVolumeError, StorageRegistry
@@ -19,6 +27,18 @@ def _nearest_existing(path: Path) -> Path:
     return candidate
 
 
+def _process_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def service_status(data_root: Path) -> dict[str, Any]:
     """Read current evidence; missing service state remains explicitly NOT_RUNNING."""
 
@@ -26,15 +46,52 @@ def service_status(data_root: Path) -> dict[str, Any]:
     state_path = root / "state" / "service_state.json"
     service_state: dict[str, object] | None = None
     state_error: str | None = None
-    if state_path.is_file():
-        try:
-            decoded = json.loads(state_path.read_text(encoding="utf-8"))
-            if isinstance(decoded, dict):
-                service_state = decoded
+    try:
+        service_state = ServiceStateStore(state_path).read()
+    except ServiceStateError as exc:
+        state_error = str(exc)
+
+    current_status = "NOT_RUNNING"
+    network_connected = False
+    network_status = "SERVICE_NOT_RUNNING"
+    if service_state is not None:
+        observed_status = service_state.get("status")
+        pid = service_state.get("pid")
+        heartbeat = service_state.get("heartbeat_at_utc_ns")
+        interval = service_state.get("heartbeat_interval_seconds")
+        if (
+            observed_status in {"STARTING", "RUNNING", "STOPPING"}
+            and isinstance(pid, int)
+            and not isinstance(pid, bool)
+            and isinstance(heartbeat, int)
+            and not isinstance(heartbeat, bool)
+            and isinstance(interval, (int, float))
+            and not isinstance(interval, bool)
+        ):
+            age_ns = time.time_ns() - heartbeat
+            maximum_age_ns = int(max(30.0, float(interval) * 3) * 1_000_000_000)
+            if age_ns < -5_000_000_000:
+                current_status = "STALE"
+                state_error = "heartbeat_in_future"
+            elif not _process_alive(pid):
+                current_status = "STALE"
+                state_error = "service_pid_not_running"
+            elif age_ns > maximum_age_ns:
+                current_status = "STALE"
+                state_error = "service_heartbeat_stale"
             else:
-                state_error = "service_state_not_object"
-        except (OSError, json.JSONDecodeError) as exc:
-            state_error = type(exc).__name__
+                current_status = str(observed_status)
+                network_connected = bool(service_state.get("network_connected"))
+                network_status = str(
+                    service_state.get("network_status", "UNKNOWN")
+                )
+        elif observed_status == "FAILED":
+            current_status = "FAILED"
+            network_status = "SERVICE_FAILED"
+        elif observed_status == "STOPPED":
+            current_status = "NOT_RUNNING"
+        else:
+            state_error = state_error or "invalid_service_state_fields"
 
     catalog_path = root / "state" / "catalog.sqlite"
     catalog_summary: dict[str, object] = {
@@ -79,14 +136,53 @@ def service_status(data_root: Path) -> dict[str, Any]:
     reports = sorted((root / "data" / "reports" / "daily").glob("*.json"))
     disk = shutil.disk_usage(_nearest_existing(root))
     internal_severity = space_severity(disk.total, disk.free)
+    launchagent: dict[str, object] = {
+        "status": "NOT_INSTALLED",
+        "loaded": False,
+    }
+    if sys.platform == "darwin":
+        try:
+            label = installed_service_label(root)
+            if label is not None:
+                launchagent = LaunchAgentManager(
+                    data_root=root,
+                    label=label,
+                ).status()
+        except (LaunchAgentError, OSError) as exc:
+            launchagent = {
+                "status": "ERROR",
+                "loaded": False,
+                "reason": str(exc),
+            }
+    runtime_state_metrics: dict[str, object] = {}
+    markets: dict[str, object] = {}
+    if service_state is not None:
+        metrics_value = service_state.get("runtime_metrics")
+        markets_value = service_state.get("markets")
+        if isinstance(metrics_value, dict):
+            runtime_state_metrics = cast(dict[str, object], metrics_value)
+        if isinstance(markets_value, dict):
+            markets = cast(dict[str, object], markets_value)
+    last_receive_times = [
+        value
+        for market in markets.values()
+        if isinstance(market, dict)
+        and isinstance((value := market.get("last_receive_time_utc_ns")), int)
+        and not isinstance(value, bool)
+    ]
+    last_event_age_ns = (
+        max(0, time.time_ns() - max(last_receive_times))
+        if last_receive_times and current_status == "RUNNING"
+        else None
+    )
     return {
         "command": "status",
-        "status": "NOT_RUNNING",
-        "service_implemented": False,
+        "status": current_status,
+        "service_implemented": True,
         "collector_implemented": True,
         "implemented_markets": ["spot", "um_perpetual"],
-        "network_connected": False,
-        "network_status": "UNAVAILABLE_NO_SUPERVISED_SERVICE",
+        "network_connected": network_connected,
+        "network_status": network_status,
         "observed_service_state": service_state,
         "service_state_path": str(state_path),
         "service_state_error": state_error,
@@ -102,15 +198,24 @@ def service_status(data_root: Path) -> dict[str, Any]:
             ),
         },
         "external_storage": external_storage,
+        "launchagent": launchagent,
         "runtime_metrics": {
-            "cpu_percent": {"value": None, "status": "NOT_RUNNING"},
-            "rss_memory_bytes": {"value": None, "status": "NOT_RUNNING"},
-            "queue_depth": {"value": None, "status": "NOT_RUNNING"},
-            "last_event_age_ns": {"value": None, "status": "NOT_RUNNING"},
+            "process_cpu_seconds": {
+                "value": runtime_state_metrics.get("process_cpu_seconds"),
+                "status": current_status,
+            },
+            "rss_memory_bytes": {
+                "value": runtime_state_metrics.get("rss_memory_bytes"),
+                "status": current_status,
+            },
+            "queue_depth": {"value": None, "status": "UNAVAILABLE"},
+            "last_event_age_ns": {
+                "value": last_event_age_ns,
+                "status": current_status,
+            },
         },
         "detail": (
-            "Collector libraries, M8 observability, and M9 external storage discovery "
-            "are implemented; supervised service state is not implemented, so observed "
-            "files cannot claim RUNNING."
+            "RUNNING requires a live PID and a fresh atomic service heartbeat; "
+            "a stale or malformed state file never fabricates service health."
         ),
     }

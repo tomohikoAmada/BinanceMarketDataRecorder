@@ -201,6 +201,7 @@ def verify() -> None:
         'google-crc32c==1.8.0',
         'websockets==15.0.1',
         'zstandard==0.25.0',
+        'pyobjc-framework-Cocoa==12.2.1',
         'pyobjc-framework-DiskArbitration==12.2.1',
     ):
         assert dependency in pyproject, f"M2 dependency missing: {dependency}"

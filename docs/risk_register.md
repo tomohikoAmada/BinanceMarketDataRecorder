@@ -11,7 +11,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | M3 bounded spool plus M4/M5 finite WebSocket buffer/receipt queues; overflow raises a critical market-local Collector fault, never drops silently | M3-M5 | Mitigated |
 | R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | ADR-0010 framing/CRC, actual SIGKILL mid-frame recovery, quarantine matrix, verified compression and atomic manifest/Catalog tests | M3 | Mitigated |
 | R-006 | Spot or USD-M sequence semantics are applied to the other market | Critical | Separate Spot `U/u` and USD-M `U/u/pu` schema modules and fixtures retain semantics without M6 continuity inference | M4-M6 | Mitigated |
-| R-007 | Wall clock adjustment, reboot, or sleep makes receive ordering/lag misleading | High | Dual UTC/monotonic clocks, boot domain, sleep gaps, versioned replay tie-break | M3/M6/M14/M16 | Open |
+| R-007 | Wall clock adjustment, reboot, or sleep makes receive ordering/lag misleading | High | Dual event clocks plus ADR-0019 NSWorkspace sleep intervals and wall/monotonic discontinuity events prevent silent continuity; M16 still owns replay boot-domain/tie-break policy | M3/M6/M14/M16 | Monitoring |
 | R-008 | External disk path aliases a different disk after rename/remount | Critical | ADR-0014 UUID + marker + storage_id + relative path resolution; rename/remount and mismatch-block tests pass | M9 | Mitigated |
 | R-009 | Filesystem reports writable but lacks needed durable/atomic behavior | High | In-directory write/fsync/rename/readback/cleanup probe implemented; read-only and scope tests pass; physical filesystem matrix remains M17 evidence | M9/M17 | Monitoring |
 | R-010 | Disk disappears or process dies during copy/verify/Catalog boundary | Critical | ADR-0015 transaction; actual SIGKILL at copy, verify and both Catalog-commit sides; retry reconciliation retains the source until verified commit | M10/M17 | Mitigated |
@@ -20,8 +20,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-013 | Daily counters duplicate or lose increments across UTC boundary/restart | High | Transactional stable-ID aggregate batches, deterministic JSON/CSV, midnight/restart/retry tests; kill-before-flush reconciliation remains M17 | M8/M17 | Monitoring |
 | R-014 | Side-data polling/rate limits impair L2 collectors or funding cadence is assumed | High | Independent tasks/spools, serialized REST calls, documented/observed rate provenance, no forward fill or fixed 8-hour assumption, failure-isolation tests | M7 | Mitigated |
 | R-015 | Blue/green cutover stops old instance before candidate is synchronized | Critical | ADR-0018 requires durable three-stream/snapshot/book readiness plus fresh post-readiness old/new events; failure leaves old running; Raw tags and Catalog transitions pass Spot/USD-M and rollback tests; normalized dedup remains M15 | M13/M15 | Mitigated |
-| R-016 | launchd restart/multiple instances cause conflicting active writers | Critical | M13 freezes explicit supervised overlap identities; M14 must add process locks, service ownership and crash/restart recovery compatible with that exception | M13/M14 | Open |
-| R-017 | Mac sleep/closed lid creates unavoidable data gaps | High | Detect/mark sleep, scoped optional power assertion, document no closed-lid guarantee | M14/M18 | Accepted |
+| R-016 | launchd restart/multiple instances cause conflicting active writers | Critical | ADR-0019 kernel-held per-data-root service lock, atomic state, SIGKILL restart test and one-process ADR-0018 overlap boundary; all-core failure exits for launchd restart | M13/M14 | Mitigated |
+| R-017 | Mac sleep/closed lid creates unavoidable data gaps | High | NSWorkspace begin/wake plus clock-discontinuity gap evidence; optional service-PID-scoped caffeinate cleanup; explicit no closed-lid/explicit-sleep guarantee | M14/M18 | Accepted |
 | R-018 | Compression or normalization mutates/deletes canonical Raw | Critical | Separate temp/output, source hashes, immutable manifests, repeatability tests | M3/M15 | Open |
 | R-019 | Consumer depends on external mountpoint or Recorder internals | High | Catalog/manifest resolution and versioned M16 adapter contract | M16 | Open |
 | R-020 | Official public API access is geographically/system restricted or transiently times out | High | M4 observed a one-second SDK TLS/proxy timeout; explicit 10-second timeout plus bounded snapshot retry keeps core streams active, while no successful snapshot remains a visible failure; no unofficial proxy | M2/M4/M5/M7 | Monitoring |
@@ -56,5 +56,6 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 - Whether a future official Binance MCP exists with verifiable installation:
   not required; reconsider only from official documentation.
 - Future distribution/import/CLI/application-data identifiers must match
-  ADR-0007 exactly. M14 must select an author-controlled service namespace and
-  cannot derive one from Binance ownership or historical names.
+  ADR-0007 exactly. ADR-0019 resolves service identity without guessing: install
+  requires an explicit author-controlled label/attestation and forbids
+  Binance-owned-looking or placeholder namespaces.

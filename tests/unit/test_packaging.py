@@ -17,7 +17,7 @@ def test_distribution_package_cli_and_python_contract() -> None:
     }
 
 
-def test_dependency_scope_through_m9_only() -> None:
+def test_dependency_scope_through_m14_only() -> None:
     with (ROOT / "pyproject.toml").open("rb") as handle:
         project = tomllib.load(handle)
 
@@ -27,6 +27,7 @@ def test_dependency_scope_through_m9_only() -> None:
         "cbor2==6.1.3",
         "google-crc32c==1.8.0",
         "pydantic>=2.10,<3",
+        "pyobjc-framework-Cocoa==12.2.1; sys_platform == 'darwin'",
         "pyobjc-framework-DiskArbitration==12.2.1; sys_platform == 'darwin'",
         "websockets==15.0.1",
         "zstandard==0.25.0",
