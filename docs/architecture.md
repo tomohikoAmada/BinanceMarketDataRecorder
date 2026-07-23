@@ -85,7 +85,15 @@ startup, appeared, description-changed and disappeared callbacks. Only
 explicitly non-internal UUID-bearing volumes are candidates. Registration
 persists UUID/relative-path/marker identity in Catalog and proves write, fsync,
 rename and readback inside the chosen folder. External absence or failure never
-enters the Collector dependency path; M10 archive transactions remain absent.
+enters the Collector dependency path.
+
+M10 implements `archive` under ADR-0015. It reserves the oldest sealed Raw
+chunk, streams only to a transaction-owned external temporary file, verifies a
+full reopened read by size and SHA-256, commits the immutable final artifact and
+external manifest, then commits external verification in Catalog. Local source
+deletion is separately authorized and recorded. Every filesystem/Catalog crash
+boundary is restart-reconcilable; archive failure never stops Spot or USD-M
+capture.
 
 ## Runtime isolation
 

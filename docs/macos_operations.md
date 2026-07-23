@@ -62,8 +62,11 @@ does not erase archived data.
 M9 provides `storage list`, `inspect`, `register`, `unregister`, and `status`.
 List/inspect are read-only. Register/status capability probes write only
 temporary Recorder-owned files in the selected/registered directory. Eject,
-forecast, and archive commands remain assigned to M10-M12 and are not exposed
-early.
+and forecast remain assigned to M11-M12. M10 provides `archive status`,
+`archive retry [--storage-id ID]`, and `archive verify <storage-id>`. Retry
+advances one oldest eligible transaction; it requires exactly one READY target
+unless an ID is specified. Verify performs complete artifact and manifest
+readback. Neither command mounts, repairs, formats, or ejects a volume.
 
 ## Eject protocol
 

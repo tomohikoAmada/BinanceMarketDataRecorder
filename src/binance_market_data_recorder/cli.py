@@ -6,16 +6,19 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import NoReturn, TextIO
 
+from .archive import ArchiveError, ArchiveManager, ArchiveTarget
 from .config import ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
 from .metrics.report import DailyReporter
 from .paths import discover_repository_root
 from .status import service_status
-from .storage.catalog import Catalog, CatalogStateError
+from .storage.catalog import Catalog, CatalogStateError, ChunkState
+from .storage.layout import ensure_storage_layout
 from .storage.macos import (
     DiskArbitrationAdapter,
     PlatformVolumeError,
@@ -73,6 +76,15 @@ def build_parser() -> argparse.ArgumentParser:
     unregister = storage_commands.add_parser("unregister", help="stop using a registered folder")
     unregister.add_argument("storage_id")
     storage_commands.add_parser("status", help="resolve and probe registered folders")
+    archive_command = commands.add_parser("archive", help="manage verified Raw archival")
+    archive_commands = archive_command.add_subparsers(
+        dest="archive_command", required=True, parser_class=_ArgumentParser
+    )
+    archive_commands.add_parser("status", help="show archive transactions and backlog")
+    retry = archive_commands.add_parser("retry", help="advance one archive transaction")
+    retry.add_argument("--storage-id")
+    verify = archive_commands.add_parser("verify", help="verify committed external files")
+    verify.add_argument("storage_id")
     return parser
 
 
@@ -84,6 +96,81 @@ def _config_payload(loaded: LoadedConfig) -> dict[str, object]:
         "sources": dict(loaded.sources),
         "contains_credentials": False,
     }
+
+
+def _archive_status(catalog: Catalog) -> dict[str, object]:
+    transactions = catalog.archive_transactions()
+    states: dict[str, int] = {}
+    for transaction in transactions:
+        state = str(transaction["state"])
+        states[state] = states.get(state, 0) + 1
+    backlog = catalog.chunks_in_states(
+        ChunkState.SEALED,
+        ChunkState.ARCHIVE_COPYING,
+        ChunkState.ARCHIVE_VERIFYING,
+        ChunkState.ARCHIVED_VERIFIED,
+        ChunkState.LOCAL_DELETE_PENDING,
+    )
+    return {
+        "command": "archive.status",
+        "status": (
+            "DISAPPEARED_DURING_COPY"
+            if any(
+                "DISAPPEARED_DURING_COPY" in str(row.get("last_error"))
+                for row in transactions
+            )
+            else "OK"
+        ),
+        "transaction_count": len(transactions),
+        "transactions_by_state": dict(sorted(states.items())),
+        "backlog_files": len(backlog),
+        "backlog_bytes": sum(
+            value
+            for row in backlog
+            if isinstance((value := row.get("stored_bytes")), int)
+            and not isinstance(value, bool)
+        ),
+        "transactions": transactions,
+        "unique_copy_warning": (
+            "After LOCAL_DELETED, the registered external artifact may be the only copy."
+        ),
+    }
+
+
+def _select_archive_target(
+    catalog: Catalog,
+    registry: StorageRegistry,
+    *,
+    storage_id: str | None,
+) -> ArchiveTarget:
+    statuses = registry.statuses()
+    ready = [
+        status
+        for status in statuses
+        if status["state"] == "READY"
+        and (storage_id is None or status["storage_id"] == storage_id)
+    ]
+    if not ready:
+        identity = storage_id or "any registered target"
+        raise ArchiveError(f"no READY archive target for {identity}")
+    if storage_id is None and len(ready) != 1:
+        raise ArchiveError("multiple READY targets; specify --storage-id")
+    status = ready[0]
+    target_rows = {
+        str(row["storage_id"]): row for row in catalog.storage_targets()
+    }
+    target_id = str(status["storage_id"])
+    row = target_rows[target_id]
+    resolved_path = status.get("resolved_path")
+    if not isinstance(resolved_path, str):
+        raise ArchiveError("READY target lacks a resolved path")
+    return ArchiveTarget(
+        storage_id=target_id,
+        volume_uuid=str(row["volume_uuid"]),
+        registered_relative_path=str(row["relative_path"]),
+        marker_nonce=str(row["marker_nonce"]),
+        root=Path(resolved_path),
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -203,6 +290,64 @@ def main(argv: Sequence[str] | None = None) -> int:
         ) as exc:
             _write_json(
                 {"error": "storage_error", "message": str(exc)}, stream=sys.stderr
+            )
+            return 2
+    if command == "archive":
+        archive_command = getattr(args, "archive_command", None)
+        catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
+        if not catalog_path.is_file():
+            _write_json(
+                {
+                    "command": f"archive.{archive_command}",
+                    "status": "NO_DATA",
+                    "catalog_path": str(catalog_path),
+                }
+            )
+            return 0
+        try:
+            with Catalog(catalog_path) as catalog:
+                if archive_command == "status":
+                    _write_json(_archive_status(catalog))
+                    return 0
+                registry = StorageRegistry(
+                    catalog=catalog, volumes=DiskArbitrationAdapter()
+                )
+                requested = (
+                    args.storage_id
+                    if archive_command in {"retry", "verify"}
+                    else None
+                )
+                target = _select_archive_target(
+                    catalog, registry, storage_id=requested
+                )
+                manager = ArchiveManager(
+                    layout=ensure_storage_layout(loaded.config.data_root),
+                    catalog=catalog,
+                    target=target,
+                )
+                if archive_command == "retry":
+                    archive_result = manager.run_once()
+                    _write_json(
+                        {
+                            "command": "archive.retry",
+                            **asdict(archive_result),
+                        }
+                    )
+                    return 0
+                if archive_command == "verify":
+                    verify_result = manager.verify_all()
+                    _write_json({"command": "archive.verify", **verify_result})
+                    return 1 if verify_result["status"] == "FAILED" else 0
+        except (
+            ArchiveError,
+            CatalogStateError,
+            OSError,
+            PlatformVolumeError,
+            StorageRegistrationError,
+            ValueError,
+        ) as exc:
+            _write_json(
+                {"error": "archive_error", "message": str(exc)}, stream=sys.stderr
             )
             return 2
     parser.error(f"unsupported command: {command}")

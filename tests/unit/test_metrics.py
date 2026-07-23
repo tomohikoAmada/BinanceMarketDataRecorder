@@ -153,6 +153,9 @@ def test_fixed_metrics_fixture_produces_deterministic_json_csv_and_all_fields(
     assert stream["output"]["raw_records_written"] == 1
     assert stream["output"]["raw_bytes_written"] == 120
     assert stream["output"]["normalized_rows"] is None
+    assert stream["output"]["archived_files"] == 0
+    assert stream["output"]["archived_bytes"] == 0
+    assert stream["output"]["deleted_local_bytes"] == 0
     assert stream["performance"]["receive_lag_ns"]["status"] == "AVAILABLE"
     assert stream["performance"]["queue_depth_max"] == {
         "value": 3,
@@ -281,6 +284,7 @@ def test_archive_backlog_is_cumulative_state_not_only_daily_new_bytes(tmp_path: 
     second = MetricAggregate()
     second.increment("compressed_bytes", 25)
     second.increment("archive_backlog_bytes", 25)
+    second.increment("archived_bytes", 40)
     with Catalog(layout.catalog) as catalog:
         catalog.record_metric_batch(
             batch_id="backlog-day-one",
@@ -295,7 +299,7 @@ def test_archive_backlog_is_cumulative_state_not_only_daily_new_bytes(tmp_path: 
         ).build("2026-07-23", generated_at_utc_ns=utc_ns("2026-07-23T23:59:59"))
     stream = cast(list[dict[str, Any]], report["streams"])[0]
     assert stream["output"]["compressed_bytes"] == 25
-    assert stream["output"]["archive_backlog_bytes"] == 125
+    assert stream["output"]["archive_backlog_bytes"] == 85
 
 
 def test_metrics_observer_failure_is_visible_and_isolated(tmp_path: Path) -> None:

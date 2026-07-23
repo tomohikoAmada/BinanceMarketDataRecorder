@@ -177,7 +177,7 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-Current M9 engineering checks:
+Current M10 engineering checks:
 
 ```bash
 git status --short --branch
@@ -197,6 +197,9 @@ binance-market-recorder storage inspect <path>
 binance-market-recorder storage register <folder-path>
 binance-market-recorder storage unregister <storage-id>
 binance-market-recorder storage status
+binance-market-recorder archive status
+binance-market-recorder archive retry [--storage-id <storage-id>]
+binance-market-recorder archive verify <storage-id>
 python3.12 tools/update_binance_docs.py --output-dir <temporary-directory>
 python3.12 tools/probe_binance_transports.py
 BINANCE_MARKET_RECORDER_ONLINE=1 python3.12 -m pytest -m online -q

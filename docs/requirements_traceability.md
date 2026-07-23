@@ -35,9 +35,9 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | STO-04 | Identity uses UUID/name/fs type/relative folder/marker/storage_id and re-resolves mountpoint | storage/macOS contracts, ADR-0014 | M9 rename/reinsert and mismatch tests pass |
 | STO-05 | READY requires writable access and write/fsync/rename/readback; read-only reported | storage contract, ADR-0014 | M9 capability/read-only tests pass; physical media matrix unrun |
 | STO-06 | Full required storage state set | storage contract, ADR-0014 | M9 enum contract test passes |
-| STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003 | M10 crash/fault/idempotence matrix |
-| STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/docs; M18 handbook |
-| STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract | M9/M10 filesystem audit tests |
+| STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003, ADR-0015 | M10 crash/fault/idempotence matrix passes |
+| STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/CLI/docs; M18 handbook |
+| STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract, ADR-0015 | M9/M10 filesystem audit tests pass |
 | SPC-01 | 40% warning, 15% critical, emergency max(10 GiB,5%) | project/storage contracts | M11 threshold tests |
 | SPC-02 | 1h/6h/24h/7d robust growth and ETAs; insufficient/nonpositive sentinels | storage contract | M11 synthetic forecast tests |
 | SPC-03 | Emergency suspends non-core, prioritizes verified archive, never deletes unarchived; seal/stop/gap | project/storage contracts | M11 emergency integration test |

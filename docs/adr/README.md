@@ -16,6 +16,7 @@ Current and historical decisions:
 - [ADR-0012: USD-M side-data isolation and semantics](0012-usdm-side-data-isolation-and-semantics.md)
 - [ADR-0013: Idempotent operational metrics and UTC daily reports](0013-idempotent-operational-metrics-and-daily-reports.md)
 - [ADR-0014: macOS volume discovery and registered-directory readiness](0014-macos-volume-discovery-and-registration.md)
+- [ADR-0015: Crash-reconcilable archive transaction](0015-crash-reconcilable-archive-transaction.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

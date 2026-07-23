@@ -31,6 +31,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M7.md",
     "docs/milestone_acceptance/M8.md",
     "docs/milestone_acceptance/M9.md",
+    "docs/milestone_acceptance/M10.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -47,6 +48,7 @@ REQUIRED_FILES = (
     "docs/adr/0012-usdm-side-data-isolation-and-semantics.md",
     "docs/adr/0013-idempotent-operational-metrics-and-daily-reports.md",
     "docs/adr/0014-macos-volume-discovery-and-registration.md",
+    "docs/adr/0015-crash-reconcilable-archive-transaction.md",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
@@ -84,7 +86,6 @@ REQUIRED_TRACE_IDS = (
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
-    ROOT / "src" / "binance_market_data_recorder" / "archive",
     ROOT / "src" / "binance_market_data_recorder" / "normalize",
     ROOT / "src" / "binance_market_data_recorder" / "replay",
 )
@@ -135,6 +136,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M2.md",
     "docs/milestone_acceptance/M3.md",
     "docs/milestone_acceptance/M5.md",
+    "docs/milestone_acceptance/M10.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -181,7 +183,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M9 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M10 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject

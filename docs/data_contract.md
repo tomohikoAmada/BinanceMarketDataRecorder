@@ -139,14 +139,17 @@ with no observations; unavailable values are `null` with an explicit reason:
 - external free space: sampled for each READY registered target when a storage
   monitor is active; otherwise `NO_REGISTERED_TARGET_SAMPLE` rather than a
   fabricated zero;
-- normalized/archive/delete outputs: `NOT_IMPLEMENTED` until their milestones.
+- normalized outputs: `NOT_IMPLEMENTED` until M15;
+- archive/delete outputs: available from M10 as idempotent
+  `archived_files`, `archived_bytes`, and `deleted_local_bytes` counters.
 
 Receive lag is non-negative local receive UTC minus documented exchange event
 time where that event time exists. p50/p95/p99 are deterministic upper bounds
 from the fixed ADR-0013 histogram. Raw output bytes include each chunk header
 once plus every framed envelope, enabling reconciliation with uncompressed
-chunk size. Archive backlog is sealed stored bytes not yet archived; before
-M10 no completed archive subtraction exists.
+chunk size. Archive backlog is sealed stored bytes minus verified archived
+bytes, clamped at zero. M10 uses stable transaction-derived metric batch IDs,
+so a retry cannot double-count archive or local deletion output.
 
 Reports are immutable-source derived outputs at
 `data/reports/daily/YYYY-MM-DD.json` and `.csv`. Rebuilding or overwriting a

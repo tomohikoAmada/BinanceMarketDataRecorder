@@ -20,8 +20,10 @@ spool. M6 reconstructs deterministic local books, detects sequence gaps,
 audits best levels/bookTicker, and writes derived checkpoints. M7 adds
 failure-isolated USD-M mark/index/funding, open-interest, liquidation and
 exchange/filter data. M8 adds idempotent per-stream operational aggregates,
-UTC JSON/CSV daily reports and honest structured status. Normalization,
-external archive, launchd service installation, accounts, credentials, and
+UTC JSON/CSV daily reports and honest structured status. M9 registers and
+re-resolves optional macOS external directories. M10 safely copies, fully
+verifies, commits, and then separately deletes eligible internal Raw chunks.
+Normalization, launchd service installation, accounts, credentials, and
 trading remain unimplemented.
 
 ## Identity
@@ -83,8 +85,9 @@ are optional and may disappear without stopping capture.
 - [M7 acceptance](docs/milestone_acceptance/M7.md)
 - [M8 acceptance](docs/milestone_acceptance/M8.md)
 - [M9 acceptance](docs/milestone_acceptance/M9.md)
+- [M10 acceptance](docs/milestone_acceptance/M10.md)
 
-## Install and verify M9
+## Install and verify M10
 
 Use Python 3.12 in a virtual environment:
 
@@ -101,6 +104,9 @@ binance-market-recorder storage list
 binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage status
+binance-market-recorder archive status
+binance-market-recorder archive retry
+binance-market-recorder archive verify <storage-id>
 python3.12 -m pytest -q
 python3.12 -m ruff check .
 python3.12 -m mypy
@@ -121,7 +127,11 @@ UUIDs; displayed mountpoint/name values are not identity. `storage list` and
 `inspect` never write. Registration requires an existing folder below the
 volume root, then performs write/fsync/rename/readback only inside that folder
 and creates its marker there. Recorder never formats, repairs, remounts, or
-claims the whole volume. M9 does not yet copy archives or delete local Raw.
+claims the whole volume. M10 archive retry selects one oldest sealed chunk,
+copies it under the registered folder, fsyncs and fully re-reads it, checks size
+and SHA-256, commits an external manifest and Catalog state, and only then
+deletes the internal artifact. After that deletion, the external artifact may
+be the only Raw copy; this feature is not a backup policy.
 
 ```toml
 [recorder]

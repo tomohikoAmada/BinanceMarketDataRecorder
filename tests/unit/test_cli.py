@@ -10,6 +10,7 @@ from binance_market_data_recorder.metrics.model import MetricAggregate
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from binance_market_data_recorder.storage.macos import VolumeInfo
+from tests.archive_support import FixedVolumes, prepare_archive
 
 
 def test_version_identifies_distribution(capsys: pytest.CaptureFixture[str]) -> None:
@@ -210,3 +211,89 @@ def test_storage_register_status_unregister_cli(
     unregistered = json.loads(capsys.readouterr().out)
     assert unregistered["status"] == "UNREGISTERED"
     assert unregistered["marker_deleted"] is False
+
+
+def test_archive_status_retry_and_verify_cli(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    volume = VolumeInfo(
+        disk_id="disk9s1",
+        volume_uuid=prepared.target.volume_uuid,
+        name="Test Archive",
+        filesystem_type="apfs",
+        mountpoint=prepared.target.root.parents[1],
+        writable=True,
+        internal=False,
+        removable=True,
+        total_bytes=10**9,
+        free_bytes=9 * 10**8,
+        observed_at_utc_ns=1,
+    )
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        lambda: FixedVolumes(volume),
+    )
+    monkeypatch.setenv(
+        "BINANCE_MARKET_RECORDER_DATA_ROOT", str(prepared.layout.root)
+    )
+
+    assert main(["archive", "status"]) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["backlog_files"] == 1
+    assert status["transaction_count"] == 0
+
+    assert (
+        main(
+            [
+                "archive",
+                "retry",
+                "--storage-id",
+                prepared.target.storage_id,
+            ]
+        )
+        == 0
+    )
+    retry = json.loads(capsys.readouterr().out)
+    assert retry["state"] == "LOCAL_DELETED"
+    assert retry["warning"]
+
+    assert main(["archive", "verify", prepared.target.storage_id]) == 0
+    verify = json.loads(capsys.readouterr().out)
+    assert verify["status"] == "VERIFIED"
+    assert verify["verified_files"] == 1
+
+
+def test_archive_retry_requires_a_ready_registered_target(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        lambda: FixedVolumes(
+            VolumeInfo(
+                disk_id="disk9s1",
+                volume_uuid="DIFFERENT-VOLUME",
+                name="Other",
+                filesystem_type="apfs",
+                mountpoint=tmp_path / "other",
+                writable=True,
+                internal=False,
+                removable=True,
+                total_bytes=1,
+                free_bytes=1,
+                observed_at_utc_ns=1,
+            )
+        ),
+    )
+    monkeypatch.setenv(
+        "BINANCE_MARKET_RECORDER_DATA_ROOT", str(prepared.layout.root)
+    )
+    assert main(["archive", "retry"]) == 2
+    error = json.loads(capsys.readouterr().err)
+    assert error["error"] == "archive_error"
+    assert "no READY archive target" in error["message"]

@@ -38,7 +38,8 @@ ACTIVE, SEALING, unverified, checksum-failed, or unarchived data cannot be
 deleted.
 
 M3 implements `ACTIVE`, `RECOVERED`, `SEALING`, `SEALED`, and `QUARANTINED`
-for the internal Raw lifecycle. Later archive states remain unimplemented.
+for the internal Raw lifecycle. M10 implements all archive states through
+`LOCAL_DELETED` under ADR-0015.
 Catalog paths are relative to the selected internal root, and SQLite stores
 chunk lifecycle metadata/transitions only—not market-event bodies.
 
@@ -88,8 +89,8 @@ unregistered external volumes without writing. Registration requires an
 existing folder below the volume root; its probe creates, fsyncs, renames,
 reads, and removes only a unique temporary file inside that folder. Unregister
 removes Catalog eligibility but preserves the marker and user/archive data.
-`LOW_SPACE`, copy/verify, disappearance-during-copy and eject behavior are
-reserved for M10-M12 even though their public names are already frozen.
+M10 implements copy/verify and disappearance-during-copy behavior.
+`LOW_SPACE` and eject behavior remain reserved for M11-M12.
 
 ## Archive transaction
 
@@ -115,6 +116,15 @@ belong to an abandoned Recorder transaction.
 
 After local deletion, status must warn that the external target may be the only
 remaining copy. Recorder archival is not itself a multi-copy backup policy.
+
+M10 uses `raw/<sealed-name>` and
+`manifests/<chunk-id>.archive-manifest.json` below the registered root.
+`external-archive-manifest.v1` includes the exact Raw manifest bytes, its
+SHA-256, the final artifact identity, full-readback evidence, and verification
+time. The internal Raw manifest is retained after local artifact deletion as
+provenance, not as another copy of the event data. `archive retry` advances one
+oldest item, `archive status` is local/read-only, and
+`archive verify <storage-id>` re-reads every committed artifact and manifest.
 
 ## Space measurements and forecasts
 

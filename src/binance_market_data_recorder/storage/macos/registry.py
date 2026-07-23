@@ -296,6 +296,29 @@ def inspect_path(path: Path, volumes: Sequence[VolumeInfo]) -> dict[str, object]
     }
 
 
+def validate_registered_root(
+    path: Path,
+    *,
+    volume_uuid: str,
+    relative_path: str,
+    storage_id: str,
+    marker_nonce: str,
+) -> None:
+    """Revalidate the M9 identity marker before an archive filesystem action."""
+
+    folder = path.resolve()
+    if not folder.is_dir():
+        raise StorageRegistrationError("registered storage directory is unavailable")
+    marker = _read_marker(folder / MARKER_NAME)
+    _validate_marker(
+        marker,
+        volume_uuid=volume_uuid,
+        relative_path=relative_path,
+        storage_id=storage_id,
+        marker_nonce=marker_nonce,
+    )
+
+
 def _write_marker(path: Path, marker: dict[str, object]) -> None:
     temporary = path.with_name(f"{path.name}.{uuid.uuid4().hex}.partial")
     encoded = (json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n").encode()

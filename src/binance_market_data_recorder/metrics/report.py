@@ -27,9 +27,6 @@ _REPORT_LOCK = RLock()
 NOT_IMPLEMENTED_OUTPUTS = (
     "normalized_rows",
     "normalized_bytes",
-    "archived_files",
-    "archived_bytes",
-    "deleted_local_bytes",
 )
 
 
@@ -186,21 +183,28 @@ class DailyReporter:
                 raise ValueError("invalid historical metric row identity")
             aggregate = historical.setdefault((market, stream), MetricAggregate())
             aggregate.merge(MetricAggregate.from_document(row["aggregate"]))
-        streams = [
-            _stream_document(
-                market,
-                stream,
-                aggregate,
-                generated_at_utc_ns=generated_at,
-                archive_backlog_bytes=historical[(market, stream)].counters.get(
-                    "archive_backlog_bytes", 0
-                ),
-                oldest_unarchived_time_utc_ns=historical[
-                    (market, stream)
-                ].first_event_time_utc_ns,
+        streams = []
+        for (market, stream), aggregate in sorted(aggregates.items()):
+            lifetime = historical[(market, stream)]
+            archive_backlog_bytes = max(
+                0,
+                lifetime.counters.get("archive_backlog_bytes", 0)
+                - lifetime.counters.get("archived_bytes", 0),
             )
-            for (market, stream), aggregate in sorted(aggregates.items())
-        ]
+            streams.append(
+                _stream_document(
+                    market,
+                    stream,
+                    aggregate,
+                    generated_at_utc_ns=generated_at,
+                    archive_backlog_bytes=archive_backlog_bytes,
+                    oldest_unarchived_time_utc_ns=(
+                        lifetime.first_event_time_utc_ns
+                        if archive_backlog_bytes
+                        else None
+                    ),
+                )
+            )
         return {
             "schema_version": REPORT_SCHEMA_VERSION,
             "utc_date": selected_date,
