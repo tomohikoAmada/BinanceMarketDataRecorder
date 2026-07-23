@@ -20,6 +20,7 @@ class StorageState(StrEnum):
     COPYING = "COPYING"
     VERIFYING = "VERIFYING"
     EJECT_PENDING = "EJECT_PENDING"
+    SAFE_TO_REMOVE = "SAFE_TO_REMOVE"
     DISAPPEARED_DURING_COPY = "DISAPPEARED_DURING_COPY"
     DEGRADED = "DEGRADED"
     ERROR = "ERROR"
@@ -73,3 +74,29 @@ class VolumeInfo:
 class VolumeLifecycleEvent:
     kind: Literal["appeared", "changed", "disappeared"]
     volume: VolumeInfo
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformEjectResult:
+    disk_id: str
+    unmounted: bool
+    ejected: bool
+    failed_stage: Literal["unmount", "eject", "timeout"] | None
+    dissenter_status: int | None
+    dissenter_message: str | None
+
+    @property
+    def safe_to_remove(self) -> bool:
+        return self.unmounted and self.ejected and self.failed_stage is None
+
+    def public_dict(self) -> dict[str, object]:
+        return {
+            "disk_id": self.disk_id,
+            "unmounted": self.unmounted,
+            "ejected": self.ejected,
+            "failed_stage": self.failed_stage,
+            "dissenter_status": self.dissenter_status,
+            "dissenter_message": self.dissenter_message,
+            "safe_to_remove": self.safe_to_remove,
+            "forced": False,
+        }

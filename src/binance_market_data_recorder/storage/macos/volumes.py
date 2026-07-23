@@ -11,9 +11,9 @@ from collections.abc import Callable
 from pathlib import Path
 from threading import Event
 from types import ModuleType
-from typing import Any, cast
+from typing import Any, Literal, cast
 
-from .model import VolumeInfo, VolumeLifecycleEvent
+from .model import PlatformEjectResult, VolumeInfo, VolumeLifecycleEvent
 
 
 class PlatformVolumeError(RuntimeError):
@@ -36,7 +36,7 @@ def _load_frameworks() -> tuple[ModuleType, ModuleType, ModuleType]:
 
 
 class DiskArbitrationAdapter:
-    """Observe external volumes without mounting, ejecting, or writing to them."""
+    """Observe external volumes and request non-forced system eject."""
 
     def __init__(self, *, startup_window_seconds: float = 0.35) -> None:
         if startup_window_seconds <= 0:
@@ -181,6 +181,110 @@ class DiskArbitrationAdapter:
             da.DASessionUnscheduleFromRunLoop(
                 session, run_loop, cf.kCFRunLoopDefaultMode
             )
+
+    def request_eject(
+        self, volume: VolumeInfo, *, timeout_seconds: float = 30.0
+    ) -> PlatformEjectResult:
+        """Unmount one volume and eject its media only after system callbacks succeed."""
+
+        if timeout_seconds <= 0:
+            raise ValueError("eject timeout must be positive")
+        if volume.internal is not False:
+            raise PlatformVolumeError("refusing to eject a non-external volume")
+        if not volume.disk_id or volume.disk_id == "unknown":
+            raise PlatformVolumeError("volume lacks a usable BSD disk identifier")
+        da, cf, objc = _load_frameworks()
+        session = da.DASessionCreate(None)
+        if session is None:
+            raise PlatformVolumeError("DASessionCreate returned no session")
+        disk = da.DADiskCreateFromBSDName(None, session, volume.disk_id.encode("utf-8"))
+        if disk is None:
+            raise PlatformVolumeError(
+                f"cannot create Disk Arbitration object for {volume.disk_id}"
+            )
+        run_loop = cf.CFRunLoopGetCurrent()
+        state: dict[str, object] = {
+            "unmounted": False,
+            "ejected": False,
+            "failed_stage": None,
+            "dissenter_status": None,
+            "dissenter_message": None,
+            "complete": False,
+        }
+
+        def finish(stage: str, dissenter: object | None) -> None:
+            state["complete"] = True
+            state["failed_stage"] = stage
+            if dissenter is not None:
+                state["dissenter_status"] = int(da.DADissenterGetStatus(dissenter))
+                message = da.DADissenterGetStatusString(dissenter)
+                state["dissenter_message"] = str(message) if message is not None else None
+            cf.CFRunLoopStop(run_loop)
+
+        @objc.callbackFor(da.DADiskEject)  # type: ignore[untyped-decorator]
+        def ejected(
+            _disk: object, dissenter: object | None, _context: object
+        ) -> None:
+            if dissenter is not None:
+                finish("eject", dissenter)
+                return
+            state["ejected"] = True
+            state["complete"] = True
+            cf.CFRunLoopStop(run_loop)
+
+        @objc.callbackFor(da.DADiskUnmount)  # type: ignore[untyped-decorator]
+        def unmounted(
+            callback_disk: object,
+            dissenter: object | None,
+            _context: object,
+        ) -> None:
+            if dissenter is not None:
+                finish("unmount", dissenter)
+                return
+            state["unmounted"] = True
+            da.DADiskEject(
+                callback_disk,
+                da.kDADiskEjectOptionDefault,
+                ejected,
+                None,
+            )
+
+        da.DASessionScheduleWithRunLoop(session, run_loop, cf.kCFRunLoopDefaultMode)
+        try:
+            da.DADiskUnmount(
+                disk,
+                da.kDADiskUnmountOptionDefault,
+                unmounted,
+                None,
+            )
+            deadline = time.monotonic() + timeout_seconds
+            while not bool(state["complete"]):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    state["failed_stage"] = "timeout"
+                    break
+                cf.CFRunLoopRunInMode(
+                    cf.kCFRunLoopDefaultMode,
+                    min(remaining, 0.25),
+                    False,
+                )
+        finally:
+            da.DASessionUnscheduleFromRunLoop(
+                session, run_loop, cf.kCFRunLoopDefaultMode
+            )
+        failed_stage = state["failed_stage"]
+        if failed_stage not in {None, "unmount", "eject", "timeout"}:
+            raise PlatformVolumeError("invalid Disk Arbitration eject outcome")
+        return PlatformEjectResult(
+            disk_id=volume.disk_id,
+            unmounted=bool(state["unmounted"]),
+            ejected=bool(state["ejected"]),
+            failed_stage=cast(
+                Literal["unmount", "eject", "timeout"] | None, failed_stage
+            ),
+            dissenter_status=cast(int | None, state["dissenter_status"]),
+            dissenter_message=cast(str | None, state["dissenter_message"]),
+        )
 
     @staticmethod
     def _disk_id(da: ModuleType, disk: object) -> str:

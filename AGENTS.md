@@ -177,7 +177,7 @@ registered a test folder and the milestone calls for it.
 
 ## Common commands
 
-Current M11 engineering checks:
+Current M12 engineering checks:
 
 ```bash
 git status --short --branch
@@ -197,6 +197,7 @@ binance-market-recorder storage inspect <path>
 binance-market-recorder storage register <folder-path>
 binance-market-recorder storage unregister <storage-id>
 binance-market-recorder storage status
+binance-market-recorder storage eject <storage-id>
 binance-market-recorder storage forecast
 binance-market-recorder archive status
 binance-market-recorder archive retry [--storage-id <storage-id>]

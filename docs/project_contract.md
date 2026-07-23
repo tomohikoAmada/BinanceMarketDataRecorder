@@ -96,7 +96,8 @@ that validation is optional and cannot define V1 completion.
   trading.
 - No root LaunchDaemon installation by default.
 - macOS controls normal mounting. Recorder observes Disk Arbitration events and
-  may request safe unmount/eject; it never formats or repairs a filesystem.
+  may request default non-forced safe unmount/eject; only both successful
+  callbacks mean safe-to-remove. It never formats or repairs a filesystem.
 - Sleep/lid-close gaps must be marked. V1 does not promise collection while a
   MacBook is asleep or closed.
 - Planned upgrades use blue/green overlap. Raw duplicates are acceptable;

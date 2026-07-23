@@ -69,6 +69,7 @@ def test_public_storage_state_contract_is_complete() -> None:
         "COPYING",
         "VERIFYING",
         "EJECT_PENDING",
+        "SAFE_TO_REMOVE",
         "DISAPPEARED_DURING_COPY",
         "DEGRADED",
         "ERROR",

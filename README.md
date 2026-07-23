@@ -25,7 +25,9 @@ re-resolves optional macOS external directories. M10 safely copies, fully
 verifies, commits, and then separately deletes eligible internal Raw chunks.
 M11 persists internal/per-target capacity history, reports robust multi-window
 growth and threshold ETAs, and freezes the archive-first/hard-reserve emergency
-stop policy. Normalization, launchd service installation, accounts,
+stop policy. M12 adds non-forced, system-confirmed macOS safe eject serialized
+against archive transactions, plus forced-removal/reinsertion recovery.
+Normalization, launchd service installation, accounts,
 credentials, and trading remain unimplemented.
 
 ## Identity
@@ -89,8 +91,9 @@ are optional and may disappear without stopping capture.
 - [M9 acceptance](docs/milestone_acceptance/M9.md)
 - [M10 acceptance](docs/milestone_acceptance/M10.md)
 - [M11 acceptance](docs/milestone_acceptance/M11.md)
+- [M12 acceptance](docs/milestone_acceptance/M12.md)
 
-## Install and verify M11
+## Install and verify M12
 
 Use Python 3.12 in a virtual environment:
 
@@ -107,6 +110,7 @@ binance-market-recorder storage list
 binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage status
+binance-market-recorder storage eject <storage-id>
 binance-market-recorder storage forecast
 binance-market-recorder archive status
 binance-market-recorder archive retry
@@ -136,6 +140,16 @@ copies it under the registered folder, fsyncs and fully re-reads it, checks size
 and SHA-256, commits an external manifest and Catalog state, and only then
 deletes the internal artifact. After that deletion, the external artifact may
 be the only Raw copy; this feature is not a backup policy.
+
+`storage eject <storage-id>` first blocks new archive allocation. It returns
+`BUSY` while an archive transaction is incomplete; complete it with
+`archive retry` and retry eject. Recorder fsyncs its archive directories and
+Catalog, then requests default non-forced Disk Arbitration unmount and eject.
+Only confirmation of both operations returns zero and “可以拔出”. A refusal,
+timeout, unmount-only result, or forced removal never claims safe-to-remove and
+never authorizes deletion of internal Raw. Timeout conservatively keeps archive
+allocation blocked until an explicit eject retry resolves the asynchronous
+outcome.
 
 ```toml
 [recorder]

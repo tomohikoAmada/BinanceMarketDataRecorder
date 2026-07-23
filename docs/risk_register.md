@@ -26,7 +26,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-019 | Consumer depends on external mountpoint or Recorder internals | High | Catalog/manifest resolution and versioned M16 adapter contract | M16 | Open |
 | R-020 | Official public API access is geographically/system restricted or transiently times out | High | M4 observed a one-second SDK TLS/proxy timeout; explicit 10-second timeout plus bounded snapshot retry keeps core streams active, while no successful snapshot remains a visible failure; no unofficial proxy | M2/M4/M5/M7 | Monitoring |
 | R-021 | CRC32C/CBOR/Zstd implementations disagree across languages | Medium | ADR-0010 exact profile plus byte-identical Python vector and independent standard-library Go framing/CRC verifier | M3 | Mitigated |
-| R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 unprivileged PyObjC 12.2.1 session/startup/appeared/disappeared callback proof passes; description-change registration implemented; M12 must still prove unmount/eject | M9/M12 | Monitoring |
+| R-022 | PyObjC/Disk Arbitration cannot deliver required event/eject semantics in user context | High | M9 unprivileged callbacks pass; M12 verifies official SDK/PyObjC callback signatures and default non-forced unmount/eject bridge, dissenter evidence and timeout behavior; physical target exercise remains M17 | M9/M12/M17 | Monitoring |
 | R-023 | Data volumes exceed initial forecast or Catalog becomes a bottleneck | Medium | M3 bounded-memory gate; M11 minute-scale aggregate-only samples and robust multi-window rates; live forecast accuracy remains M17 | M3/M8/M11/M17 | Monitoring |
 | R-024 | User pre-existing changes in Alpha101Crypto are overwritten | High | Research repo remains read-only; audit baseline records dirty frontend files | All | Mitigated |
 | R-025 | Project identifiers regress to an earlier M0/M0.1 identity | High | ADR-0007 constants and allowlisted legacy-name/path scans | M0.2/M1/M14/M18 | Mitigated |
@@ -35,6 +35,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-028 | CloudFront/WAF challenges block scripted retrieval of some interactive developer-portal catalog pages | Medium | Treat every non-200/empty response as failure; select downloadable official Markdown and official SDK source; record challenge and never use an unofficial mirror | M2 and ongoing source refresh | Monitoring |
 | R-029 | Local-book logic mixes Spot and USD-M continuity, hides a missing event, or overstates bookTicker as a checksum | Critical | ADR-0011 market-bound rules, random deletion fault tests, immutable incomplete intervals, same-ID-only ticker comparison and explicit non-checksum wording | M6 | Mitigated |
 | R-030 | Sparse liquidation snapshots are mistaken for a complete liquidation feed, or silence is treated as zero activity | High | ADR-0012 preserves exact frames, marks snapshot/sparse semantics, records connection failures and never synthesizes missing/zero events | M7 | Mitigated |
+| R-031 | Eject races archive allocation, force-unmounts busy media, or treats disappearance/unmount-only as safe | Critical | ADR-0017 atomic Catalog latch; all nonterminal archive work is BUSY; default non-force callbacks require both unmount and eject success; forced removal preserves internal source; scenario tests pass | M12/M17 | Mitigated |
 
 ## M0 open questions assigned to milestones
 
@@ -48,8 +49,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
   resolved by ADR-0010; format changes require new vectors/version review.
 - Hard minimum reserve beyond the required emergency threshold: M11, using M3
   measured seal overhead and live growth evidence.
-- Disk Arbitration discovery technology resolved by ADR-0014; physical
-  filesystem/removal matrix remains M12/M17.
+- Disk Arbitration discovery/eject design resolved by ADR-0014/0017; physical
+  filesystem, busy-process and removal matrix remains M17.
 - Normalized primary keys/dedup tie-break and Parquet schemas: M15.
 - Replay total-order details and consumer dataset-version policy: M16.
 - Whether a future official Binance MCP exists with verifiable installation:

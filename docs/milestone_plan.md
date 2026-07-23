@@ -332,7 +332,9 @@ self-referential commit hash.
 - Dependencies: M9 Disk Arbitration and M10 transactions.
 - Acceptance: idle, COPY, VERIFY, system refusal, forced unplug, and reinsertion
   tests; internal source never lost; busy immediate request is refused or
-  explicitly waits; current transaction reconciles.
+  explicitly waits; current transaction reconciles. M12 chooses immediate
+  structured `BUSY`; the existing idempotent archive retry completes work
+  before a repeated eject request.
 - Rollback: disable eject command while preserving passive disappearance
   recovery; users may use macOS eject; revert M12.
 

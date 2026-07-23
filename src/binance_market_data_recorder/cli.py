@@ -23,7 +23,9 @@ from .storage.forecast import StorageForecaster
 from .storage.layout import ensure_storage_layout
 from .storage.macos import (
     DiskArbitrationAdapter,
+    EjectError,
     PlatformVolumeError,
+    SafeEjectCoordinator,
     StorageRegistrationError,
     StorageRegistry,
     inspect_path,
@@ -78,6 +80,11 @@ def build_parser() -> argparse.ArgumentParser:
     unregister = storage_commands.add_parser("unregister", help="stop using a registered folder")
     unregister.add_argument("storage_id")
     storage_commands.add_parser("status", help="resolve and probe registered folders")
+    eject = storage_commands.add_parser(
+        "eject", help="request non-forced system unmount and eject"
+    )
+    eject.add_argument("storage_id")
+    eject.add_argument("--timeout-seconds", type=float, default=30.0)
     storage_commands.add_parser("forecast", help="sample capacity and forecast thresholds")
     archive_command = commands.add_parser("archive", help="manage verified Raw archival")
     archive_commands = archive_command.add_subparsers(
@@ -286,6 +293,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                         }
                     )
                     return 0
+                if storage_command == "eject":
+                    eject_result = SafeEjectCoordinator(
+                        catalog=catalog,
+                        platform=adapter,
+                    ).eject(
+                        args.storage_id,
+                        timeout_seconds=args.timeout_seconds,
+                    )
+                    _write_json(
+                        {"command": "storage.eject", **eject_result.public_dict()}
+                    )
+                    return 0 if eject_result.safe_to_remove else 1
                 if storage_command == "forecast":
                     observed_at = time.time_ns()
                     observed_at -= observed_at % 60_000_000_000
@@ -332,6 +351,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     return 0
         except (
             CatalogStateError,
+            EjectError,
             OSError,
             PlatformVolumeError,
             StorageRegistrationError,

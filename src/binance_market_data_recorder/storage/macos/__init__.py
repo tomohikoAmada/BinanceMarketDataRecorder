@@ -1,6 +1,7 @@
 """macOS volume discovery and registered-directory storage support."""
 
-from .model import StorageState, VolumeInfo, VolumeLifecycleEvent
+from .eject import EjectError, EjectResult, SafeEjectCoordinator
+from .model import PlatformEjectResult, StorageState, VolumeInfo, VolumeLifecycleEvent
 from .registry import (
     StorageRegistrationError,
     StorageRegistry,
@@ -11,7 +12,11 @@ from .volumes import DiskArbitrationAdapter, PlatformVolumeError
 
 __all__ = [
     "DiskArbitrationAdapter",
+    "EjectError",
+    "EjectResult",
+    "PlatformEjectResult",
     "PlatformVolumeError",
+    "SafeEjectCoordinator",
     "StorageRegistrationError",
     "StorageRegistry",
     "StorageState",

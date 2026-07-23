@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import time
 from collections.abc import Iterator, Mapping, Sequence
@@ -32,6 +33,12 @@ class ArchiveState(StrEnum):
     VERIFIED = "VERIFIED"
     LOCAL_DELETE_PENDING = "LOCAL_DELETE_PENDING"
     LOCAL_DELETED = "LOCAL_DELETED"
+
+
+class StorageControlState(StrEnum):
+    ACTIVE = "ACTIVE"
+    EJECT_PENDING = "EJECT_PENDING"
+    SAFE_TO_REMOVE = "SAFE_TO_REMOVE"
 
 
 class CatalogStateError(RuntimeError):
@@ -166,6 +173,13 @@ class Catalog:
                 marker_nonce TEXT NOT NULL,
                 registered_at_utc_ns INTEGER NOT NULL,
                 UNIQUE(volume_uuid, relative_path)
+            );
+            CREATE TABLE IF NOT EXISTS storage_control (
+                storage_id TEXT PRIMARY KEY REFERENCES storage_targets(storage_id),
+                state TEXT NOT NULL,
+                request_id TEXT,
+                updated_at_utc_ns INTEGER NOT NULL,
+                evidence_json TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS archive_transactions (
                 transaction_id TEXT PRIMARY KEY,
@@ -447,6 +461,18 @@ class Catalog:
             _validate_relative_path(path)
         now = time.time_ns()
         with self._transaction() as connection:
+            control = connection.execute(
+                "SELECT state FROM storage_control WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            if (
+                control is not None
+                and StorageControlState(control["state"])
+                is not StorageControlState.ACTIVE
+            ):
+                raise CatalogStateError(
+                    f"storage target blocks new archive allocation: {control['state']}"
+                )
             existing = connection.execute(
                 "SELECT * FROM archive_transactions WHERE chunk_id = ?",
                 (chunk_id,),
@@ -699,6 +725,191 @@ class Catalog:
             rows = self._connection.execute(query, parameters).fetchall()
         return [dict(row) for row in rows]
 
+    def begin_storage_eject(
+        self,
+        *,
+        storage_id: str,
+        request_id: str,
+        occurred_at_utc_ns: int,
+    ) -> list[dict[str, object]]:
+        """Atomically reject active archive work or block every new allocation."""
+
+        if not storage_id or not request_id or occurred_at_utc_ns < 0:
+            raise ValueError("invalid storage eject request")
+        with self._transaction() as connection:
+            target = connection.execute(
+                "SELECT 1 FROM storage_targets WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            if target is None:
+                raise CatalogStateError(f"unknown storage_id: {storage_id}")
+            rows = connection.execute(
+                """
+                SELECT transaction_id, chunk_id, state
+                FROM archive_transactions
+                WHERE storage_id = ? AND state != ?
+                ORDER BY created_at_utc_ns, transaction_id
+                """,
+                (storage_id, ArchiveState.LOCAL_DELETED),
+            ).fetchall()
+            if rows:
+                return [dict(row) for row in rows]
+            evidence = json.dumps(
+                {"request_id": request_id},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            connection.execute(
+                """
+                INSERT INTO storage_control(
+                    storage_id, state, request_id, updated_at_utc_ns, evidence_json
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(storage_id) DO UPDATE SET
+                    state = excluded.state,
+                    request_id = excluded.request_id,
+                    updated_at_utc_ns = excluded.updated_at_utc_ns,
+                    evidence_json = excluded.evidence_json
+                """,
+                (
+                    storage_id,
+                    StorageControlState.EJECT_PENDING,
+                    request_id,
+                    occurred_at_utc_ns,
+                    evidence,
+                ),
+            )
+        return []
+
+    def finish_storage_eject(
+        self,
+        *,
+        storage_id: str,
+        request_id: str,
+        succeeded: bool,
+        occurred_at_utc_ns: int,
+        evidence: Mapping[str, object],
+    ) -> None:
+        if not storage_id or not request_id or occurred_at_utc_ns < 0:
+            raise ValueError("invalid storage eject completion")
+        state = (
+            StorageControlState.SAFE_TO_REMOVE
+            if succeeded
+            else StorageControlState.ACTIVE
+        )
+        evidence_json = json.dumps(
+            dict(evidence), sort_keys=True, separators=(",", ":")
+        )
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT state, request_id FROM storage_control WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            if row is None:
+                raise CatalogStateError("storage eject request is not pending")
+            if row["request_id"] != request_id:
+                raise CatalogStateError("storage eject request identity changed")
+            connection.execute(
+                """
+                UPDATE storage_control
+                SET state = ?, updated_at_utc_ns = ?, evidence_json = ?
+                WHERE storage_id = ?
+                """,
+                (state, occurred_at_utc_ns, evidence_json, storage_id),
+            )
+
+    def retain_storage_eject_pending(
+        self,
+        *,
+        storage_id: str,
+        request_id: str,
+        occurred_at_utc_ns: int,
+        evidence: Mapping[str, object],
+    ) -> None:
+        """Persist uncertain asynchronous outcome without reopening allocation."""
+
+        evidence_json = json.dumps(
+            dict(evidence), sort_keys=True, separators=(",", ":")
+        )
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT state, request_id FROM storage_control WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            if (
+                row is None
+                or row["state"] != StorageControlState.EJECT_PENDING
+                or row["request_id"] != request_id
+            ):
+                raise CatalogStateError("storage eject request is not pending")
+            connection.execute(
+                """
+                UPDATE storage_control
+                SET updated_at_utc_ns = ?, evidence_json = ?
+                WHERE storage_id = ?
+                """,
+                (occurred_at_utc_ns, evidence_json, storage_id),
+            )
+
+    def activate_storage_target(
+        self, storage_id: str, *, occurred_at_utc_ns: int
+    ) -> None:
+        """Clear a completed eject latch only after UUID/marker readiness is proven."""
+
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT state FROM storage_control WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+            if (
+                row is None
+                or StorageControlState(row["state"]) is StorageControlState.ACTIVE
+            ):
+                return
+            connection.execute(
+                """
+                UPDATE storage_control
+                SET state = ?, request_id = NULL, updated_at_utc_ns = ?,
+                    evidence_json = ?
+                WHERE storage_id = ?
+                """,
+                (
+                    StorageControlState.ACTIVE,
+                    occurred_at_utc_ns,
+                    '{"reason":"ready_after_reinsertion"}',
+                    storage_id,
+                ),
+            )
+
+    def storage_control(self, storage_id: str) -> dict[str, object]:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM storage_control WHERE storage_id = ?",
+                (storage_id,),
+            ).fetchone()
+        if row is None:
+            return {
+                "storage_id": storage_id,
+                "state": StorageControlState.ACTIVE.value,
+                "request_id": None,
+            }
+        document = dict(row)
+        document["evidence"] = json.loads(str(document.pop("evidence_json")))
+        return document
+
+    def checkpoint(self) -> None:
+        """Durably checkpoint Catalog WAL before releasing an external volume."""
+
+        try:
+            with self._lock:
+                self._connection.execute("PRAGMA wal_checkpoint(FULL)").fetchone()
+        except sqlite3.Error as exc:
+            raise CatalogStateError(f"Catalog checkpoint failed: {exc}") from exc
+        descriptor = os.open(self.path.parent, os.O_RDONLY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+
     def oldest_chunk_in_states(self, *states: ChunkState) -> dict[str, object] | None:
         if not states:
             return None
@@ -776,6 +987,9 @@ class Catalog:
 
     def unregister_storage_target(self, storage_id: str) -> bool:
         with self._transaction() as connection:
+            connection.execute(
+                "DELETE FROM storage_control WHERE storage_id = ?", (storage_id,)
+            )
             cursor = connection.execute(
                 "DELETE FROM storage_targets WHERE storage_id = ?", (storage_id,)
             )

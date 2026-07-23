@@ -34,7 +34,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003/0014 | M9 scope-probe tests pass; physical matrix M17 |
 | STO-04 | Identity uses UUID/name/fs type/relative folder/marker/storage_id and re-resolves mountpoint | storage/macOS contracts, ADR-0014 | M9 rename/reinsert and mismatch tests pass |
 | STO-05 | READY requires writable access and write/fsync/rename/readback; read-only reported | storage contract, ADR-0014 | M9 capability/read-only tests pass; physical media matrix unrun |
-| STO-06 | Full required storage state set | storage contract, ADR-0014 | M9 enum contract test passes |
+| STO-06 | Full required storage state set | storage contract, ADR-0014/0017 | M9/M12 enum contract test passes |
 | STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003, ADR-0015 | M10 crash/fault/idempotence matrix passes |
 | STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/CLI/docs; M18 handbook |
 | STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract, ADR-0015 | M9/M10 filesystem audit tests pass |
@@ -44,9 +44,9 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts, ADR-0013 | M8 deterministic fixture, Collector reconciliation and midnight tests |
 | MET-02 | JSON+CSV reports and Catalog summary; SQLite excludes event corpus | project/data/architecture contracts, ADR-0013 | M8 aggregate-schema, atomic output and deterministic rebuild tests |
 | MET-03 | Structured status, CLI status/daily reports, restart continuity/no double count | data contract, ADR-0013 | M8 stable-batch retry, restart and honest-status tests |
-| MAC-01 | Disk Arbitration startup/events/mount/eject; PyObjC or proven minimal helper | macOS contract, ADR-0014, R-022 | M9 startup/callback platform proof; M12 eject proof pending |
-| MAC-02 | Required storage/archive CLI surface | macOS contract | M9/M11/M12 CLI tests |
-| MAC-03 | Safe eject blocks work, syncs/closes, handles busy/refusal/forced removal | macOS/storage contracts | M12 scenario matrix |
+| MAC-01 | Disk Arbitration startup/events/mount/eject; PyObjC or proven minimal helper | macOS contract, ADR-0014/0017, R-022 | M9 startup callbacks and M12 non-forced unmount/eject callback bridge pass; physical media matrix M17 |
+| MAC-02 | Required storage/archive CLI surface | macOS contract | M9/M11/M12 CLI tests pass |
+| MAC-03 | Safe eject blocks work, syncs/closes, handles busy/refusal/forced removal | macOS/storage contracts, ADR-0017 | M12 idle/COPY/VERIFY/refusal/forced-removal/reinsert matrix passes |
 | OPS-01 | User LaunchAgent, logged-in default, no root; logging/restart/SIGTERM/lock | macOS contract | M14 reboot/crash/install tests |
 | OPS-02 | Sleep risk/marked gaps; scoped optional prevent-sleep; no closed-lid promise | macOS contract, R-017 | M14 sleep/wake; M18 limitations |
 | OPS-03 | Blue/green candidate readiness/overlap/dedup/rollback/no planned unmarked gap | architecture contract | M13 scenario tests; M15 dedup |

@@ -152,19 +152,34 @@ class StorageRegistry:
             "observed_filesystem_type": target["filesystem_type"],
             "observed_at_utc_ns": time.time_ns(),
         }
+        control = self._catalog.storage_control(storage_id)
+        control_state = str(control["state"])
+        base["control"] = control
         volume = volumes.get(volume_uuid)
         if volume is None:
+            if control_state == StorageState.SAFE_TO_REMOVE.value:
+                return {
+                    **base,
+                    "state": StorageState.SAFE_TO_REMOVE.value,
+                    "resolved_path": None,
+                }
             return {**base, "state": StorageState.ABSENT.value, "resolved_path": None}
         base["current_volume"] = volume.public_dict()
         if volume.mountpoint is None:
             return {
                 **base,
-                "state": StorageState.PRESENT_UNMOUNTED.value,
+                "state": (
+                    StorageState.SAFE_TO_REMOVE.value
+                    if control_state == StorageState.SAFE_TO_REMOVE.value
+                    else StorageState.PRESENT_UNMOUNTED.value
+                ),
                 "resolved_path": None,
             }
         relative_path = str(target["relative_path"])
         folder = (volume.mountpoint / relative_path).resolve()
         base["resolved_path"] = str(folder)
+        if control_state == StorageState.EJECT_PENDING.value:
+            return {**base, "state": StorageState.EJECT_PENDING.value}
         try:
             resolved_relative = folder.relative_to(volume.mountpoint).as_posix()
         except ValueError:
@@ -197,6 +212,9 @@ class StorageRegistry:
             }
         usage = shutil.disk_usage(folder)
         severity = space_severity(usage.total, usage.free)
+        self._catalog.activate_storage_target(
+            storage_id, occurred_at_utc_ns=time.time_ns()
+        )
         return {
             **base,
             "state": (

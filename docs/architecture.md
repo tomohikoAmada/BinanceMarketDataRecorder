@@ -103,6 +103,15 @@ it may suspend non-core work and prioritize verified archive, but only the
 hard-reserve path seals active Raw, stops Collectors, records
 `DISK_EMERGENCY_STOP` and opens a gap. It has no unverified-delete capability.
 
+M12 implements safe external-volume release under ADR-0017. A Catalog
+`EJECT_PENDING` latch and archive reservation share an immediate transaction:
+active archive work wins and eject reports `BUSY`, or eject wins and no new
+work can be allocated. Recorder fsyncs its registered archive directories and
+Catalog before requesting non-forced Disk Arbitration unmount then eject.
+Only both successful system callbacks produce `SAFE_TO_REMOVE`. Refusal or
+physical disappearance never authorizes local deletion or stops internal
+capture; verified reinsertion reactivates allocation.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,

@@ -76,7 +76,7 @@ At least these public states are required:
 
 `ABSENT`, `PRESENT_UNMOUNTED`, `MOUNTED`, `UNREGISTERED`, `PROBING`, `READY`,
 `READ_ONLY`, `LOW_SPACE`, `COPYING`, `VERIFYING`, `EJECT_PENDING`,
-`DISAPPEARED_DURING_COPY`, `DEGRADED`, and `ERROR`.
+`SAFE_TO_REMOVE`, `DISAPPEARED_DURING_COPY`, `DEGRADED`, and `ERROR`.
 
 State transitions include evidence and timestamps. `READY` means identity and
 capability probes passed at the current mountpoint; it is not inferred from a
@@ -90,7 +90,8 @@ existing folder below the volume root; its probe creates, fsyncs, renames,
 reads, and removes only a unique temporary file inside that folder. Unregister
 removes Catalog eligibility but preserves the marker and user/archive data.
 M10 implements copy/verify and disappearance-during-copy behavior.
-`LOW_SPACE` and eject behavior remain reserved for M11-M12.
+M11 implements `LOW_SPACE`. M12 implements `EJECT_PENDING` and
+`SAFE_TO_REMOVE` under ADR-0017.
 
 ## Archive transaction
 
@@ -116,6 +117,25 @@ belong to an abandoned Recorder transaction.
 
 After local deletion, status must warn that the external target may be the only
 remaining copy. Recorder archival is not itself a multi-copy backup policy.
+
+## Safe eject transaction
+
+An immediate eject request is mutually exclusive with archive reservation in
+Catalog. Any nonterminal archive transaction (`COPYING`, `VERIFYING`,
+`VERIFIED`, or `LOCAL_DELETE_PENDING`) returns `BUSY`; the user completes it
+with the existing idempotent archive retry before requesting eject again. With
+no such work, `EJECT_PENDING` blocks every new reservation.
+
+Recorder revalidates target identity, fsyncs its external archive directories,
+checkpoints/fsyncs internal Catalog state, closes its handles, and requests
+default non-forced Disk Arbitration unmount followed by eject. Both callbacks
+must succeed before `SAFE_TO_REMOVE`/“可以拔出”. A dissenter, timeout, unmount
+without eject, or physical disappearance never claims success and never
+deletes internal Raw. No force/whole-disk option, format, repair, or remount is
+allowed. A timeout retains `EJECT_PENDING` because a late asynchronous
+completion remains possible; an explicit retry resolves it. The same UUID plus
+valid marker and readiness probe after confirmed removal/reinsertion returns
+the target to `ACTIVE` and resumes allocation.
 
 M10 uses `raw/<sealed-name>` and
 `manifests/<chunk-id>.archive-manifest.json` below the registered root.

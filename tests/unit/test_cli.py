@@ -9,7 +9,7 @@ from binance_market_data_recorder.cli import main
 from binance_market_data_recorder.metrics.model import MetricAggregate
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
-from binance_market_data_recorder.storage.macos import VolumeInfo
+from binance_market_data_recorder.storage.macos import PlatformEjectResult, VolumeInfo
 from tests.archive_support import FixedVolumes, prepare_archive
 
 
@@ -297,6 +297,70 @@ def test_archive_retry_requires_a_ready_registered_target(
     error = json.loads(capsys.readouterr().err)
     assert error["error"] == "archive_error"
     assert "no READY archive target" in error["message"]
+
+
+def test_storage_eject_cli_only_succeeds_after_platform_confirmation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    volume = VolumeInfo(
+        disk_id="disk9s1",
+        volume_uuid=prepared.target.volume_uuid,
+        name="Test Archive",
+        filesystem_type="apfs",
+        mountpoint=prepared.target.root.parents[1],
+        writable=True,
+        internal=False,
+        removable=True,
+        total_bytes=10**9,
+        free_bytes=9 * 10**8,
+        observed_at_utc_ns=1,
+    )
+
+    class ConfirmedEject:
+        def inventory(self) -> list[VolumeInfo]:
+            return [volume]
+
+        def request_eject(
+            self, observed: VolumeInfo, *, timeout_seconds: float = 30.0
+        ) -> PlatformEjectResult:
+            assert observed == volume
+            assert timeout_seconds == 5.0
+            return PlatformEjectResult(
+                disk_id=volume.disk_id,
+                unmounted=True,
+                ejected=True,
+                failed_stage=None,
+                dissenter_status=None,
+                dissenter_message=None,
+            )
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+        ConfirmedEject,
+    )
+    monkeypatch.setenv(
+        "BINANCE_MARKET_RECORDER_DATA_ROOT", str(prepared.layout.root)
+    )
+    assert (
+        main(
+            [
+                "storage",
+                "eject",
+                prepared.target.storage_id,
+                "--timeout-seconds",
+                "5",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["command"] == "storage.eject"
+    assert payload["status"] == "SAFE_TO_REMOVE"
+    assert payload["safe_to_remove"] is True
+    assert payload["forced"] is False
 
 
 def test_storage_forecast_cli_persists_structured_internal_sample(

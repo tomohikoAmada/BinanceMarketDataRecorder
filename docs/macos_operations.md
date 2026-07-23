@@ -61,8 +61,7 @@ does not erase archived data.
 
 M9 provides `storage list`, `inspect`, `register`, `unregister`, and `status`.
 List/inspect are read-only. Register/status capability probes write only
-temporary Recorder-owned files in the selected/registered directory. Eject,
-and forecast remain assigned to M11-M12. M10 provides `archive status`,
+temporary Recorder-owned files in the selected/registered directory. M10 provides `archive status`,
 `archive retry [--storage-id ID]`, and `archive verify <storage-id>`. Retry
 advances one oldest eligible transaction; it requires exactly one READY target
 unless an ID is specified. Verify performs complete artifact and manifest
@@ -73,14 +72,23 @@ internal storage and each accessible registered target, then reports
 independent threshold state, robust rates and UTC ETAs. It never mounts a
 missing target.
 
+M12 provides `storage eject <storage-id> [--timeout-seconds N]`. Exit zero
+means Disk Arbitration confirmed both unmount and eject. Structured `BUSY`,
+`EJECT_REFUSED`, `FORCED_REMOVAL`, and error results are nonzero and never mean
+safe-to-remove.
+
 ## Eject protocol
 
-An eject request sets `EJECT_PENDING`, prevents new archive allocation, waits
-for or safely cancels current work, completes/rolls back the archive transaction,
-fsyncs, closes handles, then asks Disk Arbitration to unmount/eject. “Safe to
-remove” is printed only after system success. Busy or system-refused eject is
-reported without data deletion. Forced removal preserves internal source and
-reconciles temp/Catalog state on reinsertion.
+An eject request sets `EJECT_PENDING`, prevents new archive allocation, and
+requires current work to be completed through the existing idempotent retry
+path. Recorder fsyncs its archive directories and Catalog, closes its handles,
+then asks Disk Arbitration to unmount and eject with default non-forced
+options. Immediate requests are refused as `BUSY` while any archive transaction
+is nonterminal; Recorder does not kill that worker or discard its temp evidence.
+“Safe to remove”/“可以拔出” is printed only after both system callbacks succeed.
+Busy, timeout, unmount-only, or system-refused eject is reported without data
+deletion. Forced removal is not success, preserves internal source, and
+reconciles on verified reinsertion. ADR-0017 is authoritative.
 
 ## Power and sleep
 
