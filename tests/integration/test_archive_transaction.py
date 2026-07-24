@@ -178,6 +178,24 @@ def test_checksum_unplug_and_delete_failures_retain_internal_source(
         assert "DISAPPEARED_DURING_COPY" in str(transaction["last_error"])
         assert manager.status()["status"] == "DISAPPEARED_DURING_COPY"
         assert (unplug.layout.root / str(transaction["source_relative_path"])).is_file()
+        failure_events = catalog.operational_events(
+            event_type="ARCHIVE_ATTEMPT_FAILED"
+        )
+        assert len(failure_events) == 1
+        assert failure_events[0]["evidence"] == {
+            "attempt_count": 1,
+            "catalog_state": "COPYING",
+            "chunk_id": transaction["chunk_id"],
+            "error": (
+                "ArchiveError: DISAPPEARED_DURING_COPY: "
+                "[Errno 19] device disappeared"
+            ),
+            "failure_kind": "DISAPPEARED_DURING_COPY",
+            "source_exists": True,
+            "source_preserved": True,
+            "storage_id": unplug.target.storage_id,
+            "transaction_id": transaction["transaction_id"],
+        }
 
     deletion = prepare_archive(tmp_path / "delete")
     with Catalog(deletion.layout.catalog) as catalog:
@@ -254,6 +272,27 @@ def test_archive_changes_nothing_outside_registered_directory(tmp_path: Path) ->
         "QuantData",
         "volume-user-file",
     ]
+
+
+def test_archive_rejects_symlinked_owned_subdirectory_and_retains_source(
+    tmp_path: Path,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (prepared.target.root / "raw").symlink_to(outside, target_is_directory=True)
+    with Catalog(prepared.layout.catalog) as catalog:
+        row = catalog.chunk(prepared.chunk_ids[0])
+        assert row is not None
+        source = prepared.layout.root / str(row["sealed_path"])
+        with pytest.raises(ArchiveError, match="symbolic link"):
+            ArchiveManager(
+                layout=prepared.layout,
+                catalog=catalog,
+                target=prepared.target,
+            ).run_once()
+        assert source.is_file()
+        assert list(outside.iterdir()) == []
 
 
 def test_verify_all_reports_post_archive_corruption(tmp_path: Path) -> None:

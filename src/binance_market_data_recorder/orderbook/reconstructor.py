@@ -66,21 +66,33 @@ class BookUnavailableError(RuntimeError):
 class LocalBookReconstructor:
     """Buffer, bridge, apply, audit and resynchronize one Binance market."""
 
-    algorithm_version = "binance-local-orderbook.v1"
+    algorithm_version = "binance-local-orderbook.v2"
 
     def __init__(
         self,
         market: Market,
         symbol: str = "BTCUSDT",
         audit_observer: Callable[[QualityAudit, int | None], None] | None = None,
+        bootstrap_buffer_capacity: int = 8192,
+        bootstrap_buffer_warning_ratio: float = 0.75,
     ) -> None:
         if market not in {"spot", "um_perpetual"} or symbol != "BTCUSDT":
             raise OrderBookDataError("M6 supports Binance Spot/USD-M BTCUSDT only")
+        if bootstrap_buffer_capacity < 2:
+            raise ValueError("bootstrap buffer capacity must be at least two")
+        if not 0 < bootstrap_buffer_warning_ratio < 1:
+            raise ValueError("bootstrap buffer warning ratio must be between zero and one")
         self.market = market
         self.symbol = symbol
+        self.bootstrap_buffer_capacity = bootstrap_buffer_capacity
+        self.bootstrap_buffer_warning_count = max(
+            1, int(bootstrap_buffer_capacity * bootstrap_buffer_warning_ratio)
+        )
         self.state = ReconstructionState.BUFFERING
         self._buffer: list[DepthUpdate] = []
         self._book: OrderBook | None = None
+        self._bootstrap_buffer_warned = False
+        self._bootstrap_buffer_overflowed = False
         self.audits: list[QualityAudit] = []
         self.unreliable_intervals: list[UnreliableInterval] = []
         self.audit_observer = audit_observer
@@ -99,6 +111,10 @@ class LocalBookReconstructor:
         return self.state is ReconstructionState.SYNCHRONIZED
 
     @property
+    def bootstrap_buffer_overflowed(self) -> bool:
+        return self._bootstrap_buffer_overflowed
+
+    @property
     def book(self) -> OrderBook:
         if not self.is_reliable or self._book is None:
             raise BookUnavailableError("order book is not synchronized and reliable")
@@ -109,7 +125,42 @@ class LocalBookReconstructor:
 
         self._check_identity(update.market, update.symbol)
         if self.state is not ReconstructionState.SYNCHRONIZED:
+            if self._bootstrap_buffer_overflowed:
+                return False
+            if len(self._buffer) >= self.bootstrap_buffer_capacity:
+                self._buffer.clear()
+                self._bootstrap_buffer_overflowed = True
+                self._record_audit(
+                    QualityAudit(
+                        kind="bootstrap_buffer_overflow",
+                        market=self.market,
+                        update_id=update.final_update_id,
+                        detail=(
+                            "bounded bootstrap buffer exhausted; discard invalid "
+                            "bootstrap state and restart connection plus snapshot"
+                        ),
+                    ),
+                    update.receive_time_utc_ns,
+                )
+                return False
             self._buffer.append(update)
+            if (
+                not self._bootstrap_buffer_warned
+                and len(self._buffer) >= self.bootstrap_buffer_warning_count
+            ):
+                self._bootstrap_buffer_warned = True
+                self._record_audit(
+                    QualityAudit(
+                        kind="bootstrap_buffer_near_capacity",
+                        market=self.market,
+                        update_id=update.final_update_id,
+                        detail=(
+                            f"bootstrap buffer reached {len(self._buffer)}/"
+                            f"{self.bootstrap_buffer_capacity} events"
+                        ),
+                    ),
+                    update.receive_time_utc_ns,
+                )
             return False
         return self._apply_live(update)
 
@@ -120,14 +171,14 @@ class LocalBookReconstructor:
         if not self._buffer:
             return SynchronizeResult.NEED_MORE_EVENTS
         ordered = self._buffer
-        if snapshot.last_update_id < ordered[0].first_update_id:
-            return SynchronizeResult.SNAPSHOT_TOO_OLD
 
         if self.market == "spot":
+            bootstrap_target = snapshot.last_update_id + 1
             candidates = [
-                update for update in ordered if update.final_update_id > snapshot.last_update_id
+                update for update in ordered if update.final_update_id >= bootstrap_target
             ]
         else:
+            bootstrap_target = snapshot.last_update_id
             candidates = [
                 update for update in ordered if update.final_update_id >= snapshot.last_update_id
             ]
@@ -135,13 +186,19 @@ class LocalBookReconstructor:
             self._buffer.clear()
             return SynchronizeResult.NEED_MORE_EVENTS
         first = candidates[0]
-        if not (first.first_update_id <= snapshot.last_update_id <= first.final_update_id):
+        if not (
+            first.first_update_id
+            <= bootstrap_target
+            <= first.final_update_id
+        ):
             return SynchronizeResult.SNAPSHOT_TOO_OLD
 
         was_resync = self.state is ReconstructionState.RESYNC_REQUIRED
         self._book = OrderBook(snapshot)
         self.state = ReconstructionState.SYNCHRONIZED
         self._buffer = []
+        self._bootstrap_buffer_warned = False
+        self._bootstrap_buffer_overflowed = False
         for index, update in enumerate(candidates):
             if index == 0:
                 self._book.apply(update)
@@ -280,6 +337,15 @@ class LocalBookReconstructor:
     def _check_identity(self, market: Market, symbol: str) -> None:
         if market != self.market or symbol != self.symbol:
             raise OrderBookDataError("Spot and USD-M reconstruction inputs cannot be mixed")
+
+    def restart_bootstrap(self) -> None:
+        """Discard only derived invalid state before a fresh connection/snapshot cycle."""
+
+        self.state = ReconstructionState.BUFFERING
+        self._buffer.clear()
+        self._book = None
+        self._bootstrap_buffer_warned = False
+        self._bootstrap_buffer_overflowed = False
 
     @classmethod
     def from_checkpoint(

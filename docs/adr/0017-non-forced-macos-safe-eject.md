@@ -15,7 +15,9 @@ evidence that media is safe to remove.
 
 The macOS 26.5 SDK `DiskArbitration.h` defines `DADiskUnmount` and `DADiskEject`
 as asynchronous operations. Their callbacks receive a non-null `DADissenter`
-on failure and null on success. The same header defines
+on failure and null on success. `DADisk.h` defines `DADiskCopyWholeDisk` as
+returning the associated whole-disk object for a specified disk. The same
+framework defines
 `kDADiskUnmountOptionForce` as unmounting even while files are active. PyObjC
 12.2.1 exposes these exact callback signatures plus dissenter status and status
 text. M12 verified the installed SDK headers with `xcrun --show-sdk-path` and
@@ -42,26 +44,41 @@ Once latched, Recorder:
 2. fsyncs its existing `raw`, `manifests`, and registered-root directories;
 3. checkpoints the internal Catalog WAL and fsyncs its state directory;
 4. calls `DADiskUnmount` with `kDADiskUnmountOptionDefault`;
-5. only after a null unmount dissenter calls `DADiskEject` with
-   `kDADiskEjectOptionDefault`;
+5. only after a null unmount dissenter obtains the associated media with
+   `DADiskCopyWholeDisk`, then calls `DADiskEject` on that whole-disk object
+   with `kDADiskEjectOptionDefault`;
 6. reports `SAFE_TO_REMOVE` and “可以拔出” only after both callbacks succeed.
 
-No force or whole-disk option is used. Default single-volume unmount avoids
-silently unmounting sibling volumes; media eject may consequently be refused
-when another volume remains active. A refusal clears the allocation latch and
-records dissenter evidence. If unmount succeeds but eject is refused, the
-result is still not safe-to-remove. Physical disappearance without both success
-callbacks is `FORCED_REMOVAL`, not success, and preserves the internal source.
+No force or whole-disk **unmount option** is used. Default single-volume
+unmount avoids silently unmounting sibling volumes. Eject necessarily targets
+the associated whole media; Disk Arbitration remains responsible for refusing
+that request if a sibling volume or another process makes it unsafe. A refusal
+clears the allocation latch and records dissenter evidence. If unmount succeeds
+but eject is refused, the result is still not safe-to-remove. Physical
+disappearance without both success callbacks is `FORCED_REMOVAL`, not success,
+and preserves the internal source.
 
-A successful eject retains `SAFE_TO_REMOVE` while absent or unmounted. After
-the same UUID returns and marker/capability readiness succeeds at its current
-mountpoint, the registry atomically returns the target to `ACTIVE`; archive
-allocation may resume. A crash while `EJECT_PENDING` remains conservatively
-blocked until a verified ready status or a repeated explicit eject resolves it.
-Likewise, a callback timeout or exception after the system request retains
-`EJECT_PENDING`: the asynchronous operation might still complete, so reopening
-archive allocation would race a late unmount. A confirmed physical
-disappearance is recorded separately and remains non-success.
+An explicit retry while the registered volume is already unmounted is allowed
+only when Catalog evidence from the immediately preceding completed request
+states `unmounted=true`, `ejected=false`, and `failed_stage=eject`. The retry
+does not remount or access the external filesystem: it checkpoints the internal
+Catalog and asks Disk Arbitration to eject the associated whole media. Any
+other unmounted state is rejected because the marker and archive root cannot be
+revalidated.
+
+A successful eject retains the Catalog control state `SAFE_TO_REMOVE`.
+Physical observation is reported separately: while the device remains attached
+but unmounted the target state is `SAFE_TO_REMOVE`; after physical removal it is
+`ABSENT`, with the retained control evidence still visible in structured
+status. After the same UUID returns and marker/capability readiness succeeds at
+its current mountpoint, the registry atomically returns the target control to
+`ACTIVE`; archive allocation may resume. A crash while `EJECT_PENDING` remains
+conservatively blocked until a verified ready status or a repeated explicit
+eject resolves it. Likewise, a callback timeout or exception after the system
+request retains `EJECT_PENDING`: the asynchronous operation might still
+complete, so reopening archive allocation would race a late unmount. A
+confirmed physical disappearance without prior eject success is recorded
+separately and remains non-success.
 
 ## Consequences
 
@@ -72,6 +89,8 @@ disappearance is recorded separately and remains non-success.
   spool.
 - Other processes may still hold a volume; Disk Arbitration remains the final
   authority and may refuse.
+- An already-unmounted retry is evidence-gated and cannot be used as a general
+  BSD-disk eject command.
 - M12 proves the adapter callback bridge with deterministic fakes and the live
   machine's framework metadata. Physical APFS/HFS+/exFAT/read-only and busy-app
   device testing remains part of M17.
@@ -82,6 +101,9 @@ disappearance is recorded separately and remains non-success.
   unnecessary process parsing.
 - `kDADiskUnmountOptionForce`: violates the busy/refusal safety contract.
 - Whole-disk unmount: could affect unregistered sibling volumes.
+- Ejecting the partition object itself: physical ExFAT exercise returned
+  `kDAReturnUnsupported`; Apple documents `DADiskCopyWholeDisk` for obtaining
+  the media object used by the eject request.
 - Treating disappearance or unmount alone as success: media may have been
   forcibly removed or eject may have failed.
 - Cancelling or deleting an in-flight `.copying` transaction: M10 recovery and

@@ -41,7 +41,7 @@ class FakeApi:
         return self.response
 
 
-def test_snapshot_uses_only_public_depth_and_records_sdk_model_provenance() -> None:
+def test_snapshot_uses_only_public_depth_and_records_model_provenance() -> None:
     api = FakeApi()
     ticks = iter([100, 200])
     monotonic = iter([300, 400])
@@ -57,9 +57,10 @@ def test_snapshot_uses_only_public_depth_and_records_sdk_model_provenance() -> N
     assert api.calls == [("BTCUSDT", 5000)]
     assert captured.source_sequence == {"lastUpdateId": 42}
     assert provenance["request"]["path"] == "/api/v3/depth"
+    assert provenance["request"]["request_weight"] == 250
     assert provenance["response"]["headers"] == {"x-mbx-used-weight-1m": "250"}
     assert provenance["transport"]["raw_http_body_available"] is False
-    assert "sdk_model_not_raw_http_body" in captured.capture_flags
+    assert "injected_model_without_raw_http_body" in captured.capture_flags
 
 
 def test_snapshot_rejects_http_failure_and_missing_update_id() -> None:

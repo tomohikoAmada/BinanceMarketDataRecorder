@@ -420,39 +420,57 @@ self-referential commit hash.
 - Rollback: retain prior reader/version, revert new API/example, leave Raw and
   datasets intact.
 
-## M17 — Fault injection and long-running proof
+## M17 — Short-term reliability and fault injection
 
-- Scope: network/DNS/Binance close/serverShutdown; missing/duplicate/out-of-order
-  depth; Collector/Archive kill -9; Catalog lock/transaction fault; local space;
-  missing/read-only external disk; checksum mismatch; sleep/wake; failed
-  blue/green; 72-hour PoC then seven-day run after fixes; daily operational
-  evidence and forecast error.
-- Non-scope: lowering durations, explaining gaps without evidence, or release
-  packaging.
+- Scope: Spot bootstrap boundary correction; Spot snapshot rate-limit
+  containment; network/DNS/Binance close/serverShutdown;
+  missing/duplicate/out-of-order depth; Collector/Archive kill -9; Catalog
+  lock/transaction fault; local space; missing/read-only external disk;
+  checksum mismatch; sleep/wake; failed blue/green; physical normal archive,
+  safe eject, pull-during-copy and idempotent reinsertion recovery; complete
+  offline engineering gates.
+- Non-scope: 72-hour/168-hour continuous-operation proof, release packaging, or
+  claiming production/trading readiness.
 - Dependencies: all M1-M16 acceptance gates and representative macOS hardware.
-- Acceptance: full required fault matrix; daily messages/bytes/CPU/RSS/disk/
-  reconnect/gap/resync/archive throughput/forecast error; no unexplained gap,
-  unbounded memory, infinite partial buildup, or wrong deletion; complete
-  seven-day report. Any restart after a fix restarts the applicable soak clock.
+- Acceptance: complete required short-term fault matrix; Spot bootstrap and
+  rate-limit regressions; physical external normal/error paths; no wrong source
+  deletion or false archive commit; complete offline pytest, Ruff, strict mypy,
+  contract verification, independent Go Raw golden verification and clean
+  diff. Record 72-hour/168-hour proof as explicitly unexecuted and deferred.
+- Status statement: short-term functionality and fault injection passed;
+  continuous 72-hour and 168-hour operation was not executed. This does not
+  make the version suitable for real-money trading.
 - Rollback: return to last accepted version, preserve all test/run evidence and
-  Raw, repeat affected soak after correction.
+  Raw, and repeat affected short-term tests after correction.
 
-## M18 — macOS V1 release
+## M18 — Mac Developer Preview
 
-- Scope: install/launchd/config/CLI/data/archive/eject/recovery/backup docs;
-  72-hour/seven-day reports; limitations; Ubuntu preparation; versioned package
-  and complete test report; prominent independent/unofficial/no-affiliation/
-  no-sponsorship/no-endorsement disclaimer; manual release decision packet.
-- Non-scope: automatic remote merge/release, GUI/trading, Ubuntu certification,
-  or features excluded from V1.
-- Dependencies: accepted M17 and every prior compatibility/operations contract.
-- Acceptance: Spot/UM continuous Raw, reconstructable L2 and detectable gaps;
-  crash recovery; optional unplug-safe archive; verified-delete; 40%/ETA;
-  blue/green; LaunchAgent; no GUI/trading/key; generic independent consumer;
-  Binance Spot/USD-M scope and non-official identity are unambiguous;
-  reproducible package/docs/test evidence.
-- Rollback: retain prior signed/versioned package and data readers, uninstall the
-  candidate LaunchAgent cleanly, restore previous service version, and await a
-  new human release decision.
+- Scope: `0.1.0a1` wheel/sdist and SHA-256 manifest; CLI/version/commit
+  provenance; logged-in-user LaunchAgent install/start/stop/status/uninstall;
+  uninstall-with-data-retention proof; concise macOS quickstart, architecture,
+  data/storage, operations and limitations documentation; clean-environment
+  install verification; short public-data Spot/USD-M smoke; focused safety
+  review and complete test report.
+- Non-scope: Production/Stable/Trading Ready claims, remote publication, PyPI,
+  GitHub Release, 72-hour/168-hour run, GUI, strategy, backtest, trading,
+  accounts/keys, other exchanges, Ubuntu or Windows implementation.
+- Dependencies: accepted M17 short-term gates and every prior
+  compatibility/operations contract.
+- Acceptance: reproducible wheel/sdist; verified CLI; rootless LaunchAgent
+  lifecycle whose uninstall preserves data and whose reinstall reads Catalog;
+  5–15-minute independent-data-root Spot/USD-M smoke; focused boundary review;
+  complete offline pytest/Ruff/strict-mypy/contracts/Go-golden/build/install
+  evidence; all skips listed; Developer Preview and long-run warning in every
+  required release surface.
+- Rollback: uninstall only the candidate LaunchAgent/code environment, preserve
+  the application data root and Catalog, and reinstall the prior package.
 
 Completion of M18 still stops and waits for explicit human publication/merge.
+
+## Future Work
+
+Unscheduled future work may include the deferred 72-hour/168-hour reliability
+proof, repeated 24-hour connection rotations, Ubuntu or Windows portability,
+and a separately reviewed GUI. Future work has no milestone number, is not part
+of the current M0–M18 plan, and does not include strategy, backtest or trading
+implementation without a new human-approved project scope.

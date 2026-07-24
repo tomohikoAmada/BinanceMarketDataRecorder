@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import logging
+import socket
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -187,6 +188,33 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
     }
     assert sum(int(document["record_count"]) for document in documents) == 2
     assert len(connection_ids) == 2
+
+
+def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise socket.gaierror(-2, "injected DNS failure")
+            yield ScriptedWebSocket([depth(20, 20)], stop)
+
+        collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+        finally:
+            catalog.close()
+        assert attempts == 2
+
+    asyncio.run(exercise())
+    captured = sealed_envelopes(tmp_path)
+    assert [item.raw_payload for item in captured] == [depth(20, 20)]
 
 
 def test_local_server_ping_payload_is_ponged_and_frame_is_persisted(tmp_path: Path) -> None:

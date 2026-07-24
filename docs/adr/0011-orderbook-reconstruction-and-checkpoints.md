@@ -1,6 +1,6 @@
 # ADR-0011: Market-Specific Order-Book Reconstruction and Checkpoints
 
-- Status: Accepted
+- Status: Accepted; Spot algorithm amended by M17 on 2026-07-24
 - Date: 2026-07-22
 - Milestone: M6
 
@@ -13,13 +13,33 @@ are similar at snapshot bootstrap but have different live continuity tests.
 Raw duplicates and malformed evidence must remain unchanged, and a derived
 checkpoint must never turn an unreliable interval into a complete one.
 
-The official Spot procedure buffers diff events, obtains `/api/v3/depth`,
-discards buffered events whose `u <= lastUpdateId`, requires the first remaining
-event to contain `lastUpdateId` in `[U,u]`, and declares a gap when a live
-event's `U` is greater than local update ID plus one. The official USD-M
+The official Global Spot procedure buffers diff events, obtains
+`/api/v3/depth`, discards buffered events whose `u <= lastUpdateId`, requires
+the first remaining event to contain `lastUpdateId` in `[U,u]`, and declares a
+gap when a live event's `U` is greater than local update ID plus one. The
+official USD-M
 procedure buffers diff events, obtains `/fapi/v1/depth`, discards events whose
 `u < lastUpdateId`, requires `U <= lastUpdateId <= u`, then requires each new
 event's `pu` to equal the preceding applied `u`.
+
+M17 established a Spot conflict that must remain explicit:
+
+- **A — official Global documentation:** still says the first remaining event
+  contains `lastUpdateId`, not `lastUpdateId + 1`.
+- **B — official example-code behavior:** Binance's
+  `binance-toolbox-python/manage_local_order_book.py` at commit
+  `51547845a9e3725b98e5a1bc55d4895c69ca0ca2` accepts
+  `U <= last_update_id + 1 <= u`.
+- **C — immutable Raw evidence:** one public snapshot ended at
+  `97799318619`; the first remaining diff was
+  `[97799318620, 97799318630]`.
+- **D — engineering inference:** after a snapshot covering through `L`, the
+  next required sequence is `L + 1`; accepting an event that contains that
+  target is consistent with the official example and the documented live-gap
+  rule. This inference is not represented as a correction to the Global page.
+
+Binance maintainers have not directly confirmed the discrepancy. R-034 remains
+open, and the issue text is retained locally as an unpublished draft.
 
 ## Decision
 
@@ -41,6 +61,25 @@ Create a derived `orderbook` package with:
   version, logical hash, source Raw chunk hashes, collector version and gap
   history; Catalog stores only checkpoint metadata.
 
+For Spot, `binance-local-orderbook.v2` freezes this state machine:
+
+1. set `bootstrap_target = snapshot.lastUpdateId + 1`;
+2. discard buffered events where `u < bootstrap_target`;
+3. accept the first remaining event only when
+   `U <= bootstrap_target <= u`; `U > bootstrap_target` is a bootstrap gap;
+4. after synchronization set each next target to `local_last_update_id + 1`;
+5. treat `u < target` as stale/duplicate, accept
+   `U <= target <= u`, and treat `U > target` as a live gap;
+6. after applying an event set `local_last_update_id = u`.
+
+USD-M bootstrap and `pu` continuity are unchanged.
+
+The pre-snapshot diff buffer is bounded. It emits a near-capacity audit before
+exhaustion. At capacity it clears only the invalid derived bootstrap state,
+marks the cause, stops that Spot capture session, waits bounded full-jitter
+backoff, and starts fresh connections plus a new paced snapshot. Raw events
+already written remain immutable.
+
 An update already covered by the local `u` is ignored as duplicate/stale. Since
 updates are absolute quantities, this is logically idempotent. It does not
 relax the next unseen event's market-specific continuity test.
@@ -58,7 +97,8 @@ evidence but does not invent missing sequence IDs.
 
 ## Consequences
 
-Spot and USD-M inputs cannot be mixed. A deleted sequential event forces a gap
+Spot v1 checkpoints are not loaded as v2 checkpoints. They are derived and can
+be rebuilt from immutable Raw. Spot and USD-M inputs cannot be mixed. A deleted sequential event forces a gap
 under both algorithms, but for different reasons. Repeated origin replay and
 checkpoint continuation produce the same logical hash. Snapshot depth limits
 mean levels outside the snapshot are unknown until updated; the local book is
@@ -70,7 +110,10 @@ old Raw remains the rebuild source.
 
 ## Rollback
 
-Stop derived reconstruction, remove M6 checkpoint/Catalog metadata only after
-confirming it is derived, and revert M6. Retain all Raw chunks unchanged so a
-corrected algorithm can rebuild them. Never rewrite or delete Raw as part of
-this rollback.
+If Binance publishes a corrected normative procedure or a maintainer confirms
+different semantics, stop Spot readiness, version (do not silently mutate) the
+algorithm again, invalidate only derived checkpoints/normalized products, and
+rebuild from Raw. Operational anomalies such as crossed books, unexplained
+gaps, or repeatable divergence from bookTicker also trigger that review.
+Rollback may select the prior code only with readiness disabled; it must not
+label the known `[L+1, ...]` boundary complete. Never rewrite or delete Raw.

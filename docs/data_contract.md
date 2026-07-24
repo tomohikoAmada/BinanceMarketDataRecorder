@@ -63,21 +63,27 @@ returned `lastUpdateId`, and an explicit response-payload provenance mode. The
 M2-selected official SDK exposes parsed models and headers, not the exact HTTP
 response body, so a snapshot must not claim byte-exact body retention. It
 stores a deterministic encoded representation and declares that boundary.
-Snapshots never include credentials. M4's Spot snapshot payload encoding is
-`utf-8-json-provenance` with schema
-`binance-spot-depth-snapshot-provenance.v1`; it contains the canonical SDK model,
-allowlisted public response/rate-limit headers, request/receive clocks,
-`/api/v3/depth`, `BTCUSDT`, requested limit, package/version, and the explicit
-`raw_http_body_available=false` boundary.
+Snapshots never include credentials. Existing M4 Spot records use
+`binance-spot-depth-snapshot-provenance.v1` and retain the SDK model with
+`raw_http_body_available=false`. M17 adds
+`binance-spot-depth-snapshot-provenance.v2`/`binance.spot.rest.v2`: a minimal
+unsigned official-host transport stores requested limit and weight,
+allowlisted response/rate-limit headers, clocks, parsed model, and the exact
+HTTP body as base64 with `raw_http_body_available=true`. Both versions remain
+immutable and readable.
 M5 uses the same declared provenance boundary for `/fapi/v1/depth`, with
 schema `binance-usdm-depth-snapshot-provenance.v1`, the official USD-M SDK
 package/version, limit 1000, and `lastUpdateId`.
 
 ## M6 local order-book and quality contract
 
-`binance-local-orderbook.v1` consumes only versioned snapshot and diff-depth
+`binance-local-orderbook.v2` consumes only versioned snapshot and diff-depth
 inputs derived from immutable envelopes. Spot and USD-M inputs cannot be mixed.
-Snapshot bootstrap and live continuity follow ADR-0011. Price/quantity strings
+For Spot, the bootstrap target and each live target are the prior reliable
+update ID plus one; an event is accepted only if `U <= target <= u`. Existing
+v1 checkpoints are derived and must be rebuilt rather than relabeled. USD-M
+`pu` continuity is unchanged. Full semantics and the official-source conflict
+follow ADR-0011. Price/quantity strings
 are parsed as finite decimals; updates are absolute; zero removes a level, and
 removing a missing level is valid.
 

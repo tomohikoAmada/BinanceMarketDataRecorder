@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -45,6 +46,10 @@ class FakeDiskArbitration:
         self.unmount_options: int | None = None
         self.eject_options: int | None = None
         self.bsd_name: bytes | None = None
+        self.partition_disk = object()
+        self.whole_disk = object()
+        self.unmounted_disk: object | None = None
+        self.ejected_disk: object | None = None
 
     @staticmethod
     def DASessionCreate(_allocator: object) -> object:
@@ -54,7 +59,11 @@ class FakeDiskArbitration:
         self, _allocator: object, _session: object, bsd_name: bytes
     ) -> object:
         self.bsd_name = bsd_name
-        return object()
+        return self.partition_disk
+
+    def DADiskCopyWholeDisk(self, disk: object) -> object:
+        assert disk is self.partition_disk
+        return self.whole_disk
 
     @staticmethod
     def DASessionScheduleWithRunLoop(
@@ -75,6 +84,7 @@ class FakeDiskArbitration:
         callback: Callable[[object, object | None, object], None],
         context: object,
     ) -> None:
+        self.unmounted_disk = disk
         self.unmount_options = options
         callback(disk, self.unmount_dissenter, context)
 
@@ -85,6 +95,7 @@ class FakeDiskArbitration:
         callback: Callable[[object, object | None, object], None],
         context: object,
     ) -> None:
+        self.ejected_disk = disk
         self.eject_options = options
         callback(disk, None, context)
 
@@ -126,6 +137,8 @@ def test_adapter_uses_only_default_non_forced_options(
     assert da.bsd_name == b"disk9s1"
     assert da.unmount_options == 0
     assert da.eject_options == 0
+    assert da.unmounted_disk is da.partition_disk
+    assert da.ejected_disk is da.whole_disk
 
 
 def test_adapter_stops_on_unmount_dissenter(
@@ -142,3 +155,23 @@ def test_adapter_stops_on_unmount_dissenter(
     assert result.dissenter_status == 49153
     assert result.dissenter_message == "volume busy"
     assert da.eject_options is None
+
+
+def test_adapter_ejects_already_unmounted_media_without_second_unmount(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    da = FakeDiskArbitration()
+    monkeypatch.setattr(
+        "binance_market_data_recorder.storage.macos.volumes._load_frameworks",
+        lambda: (da, FakeCoreFoundation, FakeObjC),
+    )
+    result = DiskArbitrationAdapter().request_eject(
+        replace(_volume(), mountpoint=None),
+        timeout_seconds=1,
+    )
+    assert result.safe_to_remove is True
+    assert result.unmounted is True
+    assert da.unmounted_disk is None
+    assert da.unmount_options is None
+    assert da.ejected_disk is da.whole_disk
+    assert da.eject_options == 0

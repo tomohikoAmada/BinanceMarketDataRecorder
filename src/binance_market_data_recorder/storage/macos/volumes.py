@@ -202,9 +202,14 @@ class DiskArbitrationAdapter:
             raise PlatformVolumeError(
                 f"cannot create Disk Arbitration object for {volume.disk_id}"
             )
+        whole_disk = da.DADiskCopyWholeDisk(disk)
+        if whole_disk is None:
+            raise PlatformVolumeError(
+                f"cannot resolve whole-disk media for {volume.disk_id}"
+            )
         run_loop = cf.CFRunLoopGetCurrent()
         state: dict[str, object] = {
-            "unmounted": False,
+            "unmounted": volume.mountpoint is None,
             "ejected": False,
             "failed_stage": None,
             "dissenter_status": None,
@@ -234,7 +239,7 @@ class DiskArbitrationAdapter:
 
         @objc.callbackFor(da.DADiskUnmount)  # type: ignore[untyped-decorator]
         def unmounted(
-            callback_disk: object,
+            _callback_disk: object,
             dissenter: object | None,
             _context: object,
         ) -> None:
@@ -243,7 +248,7 @@ class DiskArbitrationAdapter:
                 return
             state["unmounted"] = True
             da.DADiskEject(
-                callback_disk,
+                whole_disk,
                 da.kDADiskEjectOptionDefault,
                 ejected,
                 None,
@@ -251,12 +256,20 @@ class DiskArbitrationAdapter:
 
         da.DASessionScheduleWithRunLoop(session, run_loop, cf.kCFRunLoopDefaultMode)
         try:
-            da.DADiskUnmount(
-                disk,
-                da.kDADiskUnmountOptionDefault,
-                unmounted,
-                None,
-            )
+            if volume.mountpoint is None:
+                da.DADiskEject(
+                    whole_disk,
+                    da.kDADiskEjectOptionDefault,
+                    ejected,
+                    None,
+                )
+            else:
+                da.DADiskUnmount(
+                    disk,
+                    da.kDADiskUnmountOptionDefault,
+                    unmounted,
+                    None,
+                )
             deadline = time.monotonic() + timeout_seconds
             while not bool(state["complete"]):
                 remaining = deadline - time.monotonic()

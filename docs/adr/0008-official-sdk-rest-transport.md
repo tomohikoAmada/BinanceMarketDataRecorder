@@ -1,6 +1,6 @@
 # ADR-0008: Use official modular SDKs for public REST snapshots
 
-- Status: Accepted
+- Status: Partially superseded by ADR-0022 for Spot depth snapshots
 - Date: 2026-07-22
 - Supersedes: REST portion of ADR-0005
 
@@ -52,6 +52,12 @@ The runtime gains the generated SDKs and their transitive dependencies. Exact
 SDK versions are intentional because generated model/API changes require a new
 capability review. Online tests remain opt-in. M4/M5 must add fixture and live
 snapshot provenance tests, not reinterpret this M2 smoke as a Collector.
+
+M17 found one demonstrated exception to this decision: the pinned common SDK
+raises 418/429 exception objects without retaining the HTTP response headers,
+so a caller cannot strictly honor or preserve `Retry-After`. ADR-0022 replaces
+only the Spot depth-snapshot transport with a minimal credential-free HTTPS
+wrapper. USD-M and other approved public SDK calls remain governed by this ADR.
 
 ## Rollback
 

@@ -297,6 +297,26 @@ class MetricsRecorder:
             return False
         return True
 
+    def safely_observe_quality(
+        self,
+        *,
+        market: str,
+        stream: str,
+        event: str,
+        occurred_at_utc_ns: int,
+    ) -> bool:
+        try:
+            self.observe_quality(
+                market=market,
+                stream=stream,
+                event=event,
+                occurred_at_utc_ns=occurred_at_utc_ns,
+            )
+        except Exception as exc:
+            self._record_isolated_failure("observe_quality", exc)
+            return False
+        return True
+
     def safely_flush(self) -> str | None:
         try:
             return self.flush()

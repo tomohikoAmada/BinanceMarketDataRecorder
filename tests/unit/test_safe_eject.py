@@ -9,6 +9,7 @@ import pytest
 from binance_market_data_recorder.archive import ArchiveError, ArchiveManager
 from binance_market_data_recorder.storage.catalog import Catalog, CatalogStateError
 from binance_market_data_recorder.storage.macos import (
+    EjectError,
     PlatformEjectResult,
     SafeEjectCoordinator,
     StorageRegistry,
@@ -98,7 +99,10 @@ def test_idle_eject_blocks_allocation_until_reinsertion(tmp_path: Path) -> None:
 
         platform.volumes = []
         status = StorageRegistry(catalog=catalog, volumes=platform).statuses()[0]
-        assert status["state"] == "SAFE_TO_REMOVE"
+        assert status["state"] == "ABSENT"
+        control = status["control"]
+        assert isinstance(control, dict)
+        assert control["state"] == "SAFE_TO_REMOVE"
 
         platform.volumes = [replace(volume, mountpoint=volume.mountpoint)]
         reinserted = StorageRegistry(catalog=catalog, volumes=platform).statuses()[0]
@@ -171,6 +175,54 @@ def test_system_refusal_never_claims_safe_and_reopens_allocation(
         events = catalog.operational_events(event_type="STORAGE_EJECT_REFUSED")
         assert len(events) == 1
         assert next(prepared.layout.sealed.iterdir()).is_file()
+
+
+def test_explicit_retry_can_eject_after_confirmed_unmount_refusal(
+    tmp_path: Path,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    mounted = _volume(tmp_path, prepared.target.volume_uuid)
+    platform = FakeEjectPlatform(
+        mounted,
+        _platform_result(unmounted=True, ejected=False, failed_stage="eject"),
+    )
+    with Catalog(prepared.layout.catalog) as catalog:
+        first = SafeEjectCoordinator(catalog=catalog, platform=platform).eject(
+            prepared.target.storage_id
+        )
+        assert first.status == "EJECT_REFUSED"
+        platform.volumes = [replace(mounted, mountpoint=None)]
+        platform.result = _platform_result(unmounted=True, ejected=True)
+
+        retried = SafeEjectCoordinator(catalog=catalog, platform=platform).eject(
+            prepared.target.storage_id
+        )
+
+        assert retried.safe_to_remove is True
+        assert retried.status == "SAFE_TO_REMOVE"
+        assert platform.calls == 2
+        assert catalog.storage_control(prepared.target.storage_id)["state"] == (
+            "SAFE_TO_REMOVE"
+        )
+
+
+def test_unmounted_volume_without_prior_refusal_evidence_is_rejected(
+    tmp_path: Path,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    volume = replace(
+        _volume(tmp_path, prepared.target.volume_uuid),
+        mountpoint=None,
+    )
+    platform = FakeEjectPlatform(
+        volume, _platform_result(unmounted=True, ejected=True)
+    )
+    with Catalog(prepared.layout.catalog) as catalog:
+        with pytest.raises(EjectError, match="no confirmed prior unmount"):
+            SafeEjectCoordinator(catalog=catalog, platform=platform).eject(
+                prepared.target.storage_id
+            )
+        assert platform.calls == 0
 
 
 def test_forced_disappearance_is_not_reported_as_safe(tmp_path: Path) -> None:

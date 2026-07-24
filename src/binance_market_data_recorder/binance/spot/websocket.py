@@ -212,9 +212,11 @@ class SpotStreamCollector:
                 timeout=remaining,
                 return_when=asyncio.FIRST_COMPLETED,
             )
-            for task in pending:
-                if task is not writer_task:
-                    task.cancel()
+            cancelled = [task for task in pending if task is not writer_task]
+            for task in cancelled:
+                task.cancel()
+            if cancelled:
+                await asyncio.gather(*cancelled, return_exceptions=True)
             if writer_task in done:
                 await writer_task
                 raise RuntimeError("Spot Raw writer stopped unexpectedly")

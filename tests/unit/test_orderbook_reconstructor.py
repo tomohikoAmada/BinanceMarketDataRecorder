@@ -61,6 +61,91 @@ def test_official_spot_buffer_snapshot_bridge_and_live_rule() -> None:
     assert reconstructor.book.update_id == 162
 
 
+@pytest.mark.parametrize(
+    ("first", "final"),
+    [
+        (161, 170),
+        (160, 170),
+    ],
+)
+def test_spot_bootstrap_accepts_event_covering_snapshot_plus_one(
+    first: int,
+    final: int,
+) -> None:
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", first, final))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+    assert reconstructor.book.update_id == final
+
+
+def test_spot_bootstrap_discards_event_ending_at_snapshot_id() -> None:
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", 159, 160))
+    reconstructor.offer(update("spot", 161, 170))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+    assert reconstructor.book.update_id == 170
+
+
+def test_spot_bootstrap_rejects_first_event_after_snapshot_plus_one() -> None:
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", 162, 170))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SNAPSHOT_TOO_OLD
+    assert reconstructor.state is ReconstructionState.BUFFERING
+
+
+def test_spot_duplicate_and_partially_overlapping_live_events_are_idempotent() -> None:
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", 161, 170, bids=(("99", "2"),)))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+    before_duplicate = reconstructor.book.best_bid
+    assert reconstructor.offer(update("spot", 161, 170, bids=(("99", "3"),)))
+    assert reconstructor.book.best_bid == before_duplicate
+    assert reconstructor.offer(update("spot", 169, 175, bids=(("99", "4"),)))
+    assert reconstructor.book.update_id == 175
+    assert reconstructor.book.best_bid is not None
+    assert str(reconstructor.book.best_bid[1]) == "4"
+
+
+def test_spot_bootstrap_uses_later_batch_that_covers_target() -> None:
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", 150, 159))
+    reconstructor.offer(update("spot", 158, 162))
+    reconstructor.offer(update("spot", 163, 170))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+    assert reconstructor.book.update_id == 170
+
+
+def test_spot_bootstrap_supports_update_ids_larger_than_signed_64_bit() -> None:
+    last = 2**80
+    reconstructor = LocalBookReconstructor("spot")
+    reconstructor.offer(update("spot", last + 1, last + 10))
+    assert (
+        reconstructor.synchronize(snapshot("spot", last))
+        is SynchronizeResult.SYNCHRONIZED
+    )
+    assert reconstructor.book.update_id == last + 10
+
+
+def test_bootstrap_buffer_is_bounded_and_restartable() -> None:
+    reconstructor = LocalBookReconstructor(
+        "spot",
+        bootstrap_buffer_capacity=4,
+        bootstrap_buffer_warning_ratio=0.5,
+    )
+    for sequence in range(1, 6):
+        reconstructor.offer(update("spot", sequence))
+    assert reconstructor.buffered_event_count == 0
+    assert reconstructor.bootstrap_buffer_overflowed
+    assert [audit.kind for audit in reconstructor.audits][-2:] == [
+        "bootstrap_buffer_near_capacity",
+        "bootstrap_buffer_overflow",
+    ]
+    reconstructor.restart_bootstrap()
+    assert not reconstructor.bootstrap_buffer_overflowed
+    reconstructor.offer(update("spot", 161, 170))
+    assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+
+
 def test_snapshot_cannot_skip_the_required_initial_diff_buffer() -> None:
     reconstructor = LocalBookReconstructor("spot")
     assert reconstructor.synchronize(snapshot("spot")) is SynchronizeResult.NEED_MORE_EVENTS

@@ -298,6 +298,8 @@ class UsdMSideDataManager:
                 return None
 
             def observe(event: str) -> None:
+                if event in {"connected", "disconnected"}:
+                    return
                 metrics.safely_observe_lifecycle(
                     market="um_perpetual", stream=stream, event=event
                 )

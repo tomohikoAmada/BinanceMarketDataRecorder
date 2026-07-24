@@ -93,19 +93,34 @@ class SafeEjectCoordinator:
         )
         if volume is None:
             raise EjectError("registered volume is absent")
-        if volume.mountpoint is None:
-            raise EjectError("registered volume is not mounted")
-        root = (volume.mountpoint / str(target["relative_path"])).resolve()
-        try:
-            validate_registered_root(
-                root,
-                volume_uuid=str(target["volume_uuid"]),
-                relative_path=str(target["relative_path"]),
-                storage_id=storage_id,
-                marker_nonce=str(target["marker_nonce"]),
-            )
-        except StorageRegistrationError as exc:
-            raise EjectError(f"registered target identity unavailable: {exc}") from exc
+        root: Path | None = None
+        if volume.mountpoint is not None:
+            root = (volume.mountpoint / str(target["relative_path"])).resolve()
+            try:
+                validate_registered_root(
+                    root,
+                    volume_uuid=str(target["volume_uuid"]),
+                    relative_path=str(target["relative_path"]),
+                    storage_id=storage_id,
+                    marker_nonce=str(target["marker_nonce"]),
+                )
+            except StorageRegistrationError as exc:
+                raise EjectError(
+                    f"registered target identity unavailable: {exc}"
+                ) from exc
+        else:
+            control = self._catalog.storage_control(storage_id)
+            evidence = control.get("evidence")
+            if (
+                not isinstance(evidence, dict)
+                or evidence.get("unmounted") is not True
+                or evidence.get("ejected") is not False
+                or evidence.get("failed_stage") != "eject"
+            ):
+                raise EjectError(
+                    "registered volume is not mounted and Catalog has no confirmed "
+                    "prior unmount/eject-refusal evidence"
+                )
 
         request_id = str(uuid.uuid4())
         requested_at = self._utc_clock_ns()
@@ -135,7 +150,8 @@ class SafeEjectCoordinator:
             )
 
         try:
-            _fsync_archive_directories(root)
+            if root is not None:
+                _fsync_archive_directories(root)
             self._catalog.checkpoint()
         except (CatalogStateError, OSError) as exc:
             completed_at = self._utc_clock_ns()

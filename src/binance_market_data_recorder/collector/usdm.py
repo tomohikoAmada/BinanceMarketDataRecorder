@@ -19,6 +19,7 @@ from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
+from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
@@ -81,10 +82,21 @@ class UsdMCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
+        def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
+            if occurred_at_utc_ns is None:
+                return
+            self.metrics.safely_observe_quality(
+                market="um_perpetual",
+                stream="diff_depth",
+                event=audit.kind,
+                occurred_at_utc_ns=occurred_at_utc_ns,
+            )
+
         self.readiness = CollectorReadiness(
             market="um_perpetual",
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
+            audit_observer=observe_quality,
         )
         self._capture_flags: tuple[str, ...] = ()
         self._candidate_handoff = False

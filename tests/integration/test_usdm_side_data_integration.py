@@ -177,6 +177,7 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
         assert opened == set(payloads)
         assert collector.side_data is not None
         assert collector.side_data.supervisor.failures == {}
+        assert collector.metrics.failure_count == 0
         return collector.side_data_status()
 
     status = asyncio.run(exercise())

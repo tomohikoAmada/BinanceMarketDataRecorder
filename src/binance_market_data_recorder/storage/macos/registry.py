@@ -41,7 +41,10 @@ class StorageRegistry:
         return inspect_path(path, self._volumes.inventory())
 
     def register(self, path: Path) -> dict[str, object]:
-        folder = path.expanduser().resolve()
+        selected = path.expanduser()
+        if selected.is_symlink():
+            raise StorageRegistrationError("registered folder cannot be a symbolic link")
+        folder = selected.resolve()
         volume = self._containing_volume(folder, self._volumes.inventory())
         reason = self._registrable_reason(folder, volume)
         if reason is not None or volume is None or volume.mountpoint is None:
@@ -49,6 +52,8 @@ class StorageRegistry:
         relative_path = folder.relative_to(volume.mountpoint).as_posix()
         probe = probe_directory(folder)
         marker_path = folder / MARKER_NAME
+        if marker_path.is_symlink():
+            raise StorageRegistrationError("storage marker cannot be a symbolic link")
         existing = _read_marker(marker_path) if marker_path.exists() else None
         catalog_target = self._catalog.storage_target_for_location(
             volume_uuid=volume.volume_uuid, relative_path=relative_path
@@ -157,12 +162,6 @@ class StorageRegistry:
         base["control"] = control
         volume = volumes.get(volume_uuid)
         if volume is None:
-            if control_state == StorageState.SAFE_TO_REMOVE.value:
-                return {
-                    **base,
-                    "state": StorageState.SAFE_TO_REMOVE.value,
-                    "resolved_path": None,
-                }
             return {**base, "state": StorageState.ABSENT.value, "resolved_path": None}
         base["current_volume"] = volume.public_dict()
         if volume.mountpoint is None:
@@ -316,9 +315,13 @@ def probe_directory(folder: Path) -> dict[str, object]:
 def inspect_path(path: Path, volumes: Sequence[VolumeInfo]) -> dict[str, object]:
     """Describe a path without creating a Catalog or touching the filesystem."""
 
-    folder = path.expanduser().resolve()
+    selected = path.expanduser()
+    selected_is_symlink = selected.is_symlink()
+    folder = selected.resolve()
     volume = StorageRegistry._containing_volume(folder, volumes)
     reason = StorageRegistry._registrable_reason(folder, volume)
+    if selected_is_symlink:
+        reason = "registered folder cannot be a symbolic link"
     return {
         "path": str(folder),
         "exists": folder.exists(),
@@ -326,6 +329,7 @@ def inspect_path(path: Path, volumes: Sequence[VolumeInfo]) -> dict[str, object]
         "volume": volume.public_dict() if volume else None,
         "registrable": reason is None,
         "reason": reason,
+        "is_symbolic_link": selected_is_symlink,
         "filesystem_mutated": False,
     }
 
@@ -340,10 +344,15 @@ def validate_registered_root(
 ) -> None:
     """Revalidate the M9 identity marker before an archive filesystem action."""
 
+    if path.is_symlink():
+        raise StorageRegistrationError("registered storage directory is a symbolic link")
     folder = path.resolve()
     if not folder.is_dir():
         raise StorageRegistrationError("registered storage directory is unavailable")
-    marker = _read_marker(folder / MARKER_NAME)
+    marker_path = folder / MARKER_NAME
+    if marker_path.is_symlink():
+        raise StorageRegistrationError("storage marker is a symbolic link")
+    marker = _read_marker(marker_path)
     _validate_marker(
         marker,
         volume_uuid=volume_uuid,

@@ -107,6 +107,9 @@ For Binance behavior, use only these sources, in this order:
    behavior.
 4. Official `binance/binance-spot-api-docs` repository for Spot behavior and
    changelog corroboration.
+5. Official `binance/binance-toolbox-python` examples only as corroborating
+   implementation evidence, never as a silent replacement for conflicting
+   normative product documentation.
 
 Record URL, UTC retrieval time, content SHA-256, and relevant conclusion in
 `docs/binance_sources.md`. Do not load all of `llms-full.txt` by default. The

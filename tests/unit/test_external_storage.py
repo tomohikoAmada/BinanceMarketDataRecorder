@@ -231,3 +231,25 @@ def test_replaced_registered_path_symlink_cannot_escape_volume(tmp_path: Path) -
     assert status["state"] == "ERROR"
     assert "alias" in str(status["reason"])
     assert tree(outside) == before
+
+
+def test_registration_rejects_selected_folder_or_marker_symlink(tmp_path: Path) -> None:
+    mount = tmp_path / "External"
+    real_folder = mount / "RealRecorder"
+    alias = mount / "RecorderAlias"
+    real_folder.mkdir(parents=True)
+    alias.symlink_to(real_folder, target_is_directory=True)
+    fake = FakeVolumes(volume(mount))
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        registry = StorageRegistry(catalog=catalog, volumes=fake)
+        with pytest.raises(StorageRegistrationError, match="symbolic link"):
+            registry.register(alias)
+        inspected = registry.inspect(alias)
+        assert inspected["registrable"] is False
+        assert inspected["is_symbolic_link"] is True
+
+        marker_target = real_folder / "marker-target.json"
+        marker_target.write_text("{}", encoding="utf-8")
+        (real_folder / MARKER_NAME).symlink_to(marker_target)
+        with pytest.raises(StorageRegistrationError, match=r"marker.*symbolic link"):
+            registry.register(real_folder)

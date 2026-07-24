@@ -60,6 +60,57 @@ The Agent Native index remained
 `eba8ad91ee38ef6f15c6d2d1e698a714ee129e20fc9619b82ca2e8b2cb3dd539`.
 No full index or remote code was loaded.
 
+M17 rechecked the current Spot stream sources at `2026-07-24T02:25:45Z`
+after a public, credential-free fault/soak preflight could not establish Spot
+order-book readiness. The developer-portal Markdown SHA-256 remained
+`193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f`.
+The raw official `binance/binance-spot-api-docs` Markdown SHA-256 was
+`32bf73a0bed3b75e3ca981fdbaf48c53544bbdfb5944ef8ed1c4d7af9aceba0a`.
+Both say to discard `u <= lastUpdateId` and require the first remaining event
+to contain `lastUpdateId` in `[U,u]`; the same official procedure says a normal
+next event has `U = previous u + 1` and treats only
+`U > localUpdateId + 1` as a live gap.
+
+The second M17 probe preserved 24 Spot snapshots and 355 Spot diff-depth
+events. Its first snapshot/update pair was
+`lastUpdateId=97799318536`, `[U,u]=[97799318545,97799318546]`. A later
+snapshot was `97799318619`; after discarding covered events, the next event was
+`[97799318620,97799318630]`. That is the normal adjacent boundary described by
+the live rule, but it does not contain `lastUpdateId` as the bootstrap sentence
+requires. The Recorder therefore did not change the rule to
+`lastUpdateId + 1`, did not claim readiness, and stopped M17. Rapid semantic
+retries during diagnosis also produced official `TooManyRequestsError` and
+`RateLimitBanError`; no further public API probe or soak was started. This
+unresolved official-source/observed-data conflict is R-034.
+
+M17 then refreshed the selected sources at
+`2026-07-24T08:57:51.459312+00:00`. Exact response hashes were:
+Agent Native index
+`7c0c8bf0a3c9200f370c11a54f00ef80496701953ab28eb3225fec93f2cbc3dd`,
+Global Spot Markdown
+`193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f`,
+official Spot-repository GitHub page
+`490c298efc4602a585fbf16ae667372a7a106b65b8dc883278580c4c65c0bc81`,
+official toolbox GitHub page
+`41b5eeac9d2e5b4bc7e997159120a07f15b027a3123be9a2d62cd94a88933216`,
+and official connector common-transport GitHub page
+`e02be5d57a308e8e33da95f09f3c61d0a405cffee48423ec2eeaefe31ab39b8f`.
+GitHub-rendered HTML is not a stable source-code digest, so the embedded exact
+source was independently extracted without execution. Toolbox commit
+`51547845a9e3725b98e5a1bc55d4895c69ca0ca2` produced 4,187 bytes with SHA-256
+`993498520ae240ccae03bc54ad451091e8e0a10c8ef5ec9447f9876058cb9f61`;
+connector commit `15c2bfcbb9e9654d7186680a0dd32287a3285e11` produced 30,724 bytes with SHA-256
+`7b7934fbde13c29b6b128e7898749874d0f04ebbc0132345ac462f2fd4985391`.
+No `llms-full.txt` or remote code was loaded or executed.
+
+The Global text still requires `lastUpdateId` inside the first `[U,u]`. It has
+not been formally corrected. Separately, the official toolbox example uses
+`U <= last_update_id + 1 <= u`. Together with the immutable observed
+`L=97799318619`, `[U,u]=[97799318620,97799318630]`, this is the documented
+basis for the versioned engineering decision in ADR-0011. The distinction
+between normative text, example behavior, Raw observation, and inference is
+intentional. A clarification draft exists locally and was not published.
+
 The originally supplied `https://developers.binance.com/docs/llms.txt`
 currently redirects to `/en/docs/docs/llms.txt` and returns portal HTML. The
 working official text index is `https://developers.binance.com/en/docs/llms.txt`.
@@ -82,11 +133,13 @@ Hashes are of the exact M2 response bodies.
 | USD-M changelog | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md` | `49bb7b194911c44e88793eca8da18822c28ffb8bdc207e9d6466d28fb4b0e532` | 98085 |
 | USD-M SDK REST market-data source | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/rest_api.py` | `86d61768ae09b4bf0f46c884658c01e45f5cdadfaa7eaa839c758839ad1663c1` | 1001109 |
 | USD-M SDK WebSocket market source | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/websocket_streams/streams/market_api.py` | `14f9d94c8b1260be429b2065ee94c6841170d7db0d1009f032e0fdf93f2d247b` | 661925 |
+| Python connector REST error source (M17) | `https://github.com/binance/binance-connector-python/blob/master/common/src/binance_common/utils.py` | `e02be5d57a308e8e33da95f09f3c61d0a405cffee48423ec2eeaefe31ab39b8f` | 775072 |
 | Python connectors page | `https://developers.binance.com/en/docs/sdks-tools/connectors/python.md` | `b74fdc09f25dee3b03c4d17f76835ed4b7923b548b3cc940005dcb44a2c5b989` | 2964 |
 | Official modular SDK repository README | `https://github.com/binance/binance-connector-python/blob/master/README.md` | `4f578165c03deb9b1426bd0ab2805018f7c6c3de80c8a44e6d85da083c4e01ef` | 300231 |
 | Spot SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml` | `60ec5346b5150b87e31c586d3563ba54f3a29ecf713daa33e49f2817c5acefc1` | 255068 |
 | USD-M SDK package metadata | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/pyproject.toml` | `553710b453a5c6342736b921993e37effc29336fddf1a744f245235fd46f4fb7` | 256441 |
 | Spot API changelog | `https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md` | `950621641102e8e65922fe3bcf5f0f27d8126074e586be1b8753ee3fde6b158f` | 1304722 |
+| Spot local-book toolbox example (M17) | `https://github.com/binance/binance-toolbox-python/blob/master/manage_local_order_book.py` | `41b5eeac9d2e5b4bc7e997159120a07f15b027a3123be9a2d62cd94a88933216` | 314804 |
 
 The GitHub entries above are official repository web responses, so their hashes
 include GitHub rendering around the source. Package selection is independently
@@ -133,9 +186,12 @@ and third-party `python-binance` are absent.
   `/fapi/v1/fundingRate` plus `/fapi/v1/fundingInfo` sharing 500 requests per
   five minutes per IP. Funding-info describes adjusted interval/cap/floor
   symbols only, so absence does not imply a fixed eight-hour cadence.
-- Spot local-book bootstrap discards buffered `u <= lastUpdateId`, bridges the
-  first remaining `[U,u]` over `lastUpdateId`, and treats
-  `U > localUpdateId + 1` as missed events. USD-M discards buffered
+- The Global Spot page says bootstrap discards buffered
+  `u <= lastUpdateId` and bridges the first remaining `[U,u]` over
+  `lastUpdateId`; it treats `U > localUpdateId + 1` as missed events. The
+  official toolbox example instead tests containment of `lastUpdateId + 1`.
+  ADR-0011 records the unresolved distinction and versioned engineering rule;
+  this inventory does not claim the Global page was corrected. USD-M discards buffered
   `u < lastUpdateId`, bridges `U <= lastUpdateId <= u`, and then uses `pu`
   continuity. Both products document absolute quantities and zero deletion;
   USD-M explicitly says deleting a missing level is normal.
@@ -151,11 +207,14 @@ and third-party `python-binance` are absent.
 - An opt-in no-credential smoke on 2026-07-22 returned HTTP 200 and five
   bid/ask levels from both official SDK public depth methods. No account API was
   called and no credential was read.
-- SDK REST responses expose parsed models and response headers, not the exact
-  original HTTP body. Later snapshot provenance must state that limitation and
-  must not claim byte-exact REST body retention.
+- Successful SDK REST responses expose parsed models and response headers, not
+  the exact original HTTP body. The pinned common transport discards response
+  headers when raising 418/429, so it cannot preserve `Retry-After`. ADR-0022
+  therefore replaces only Spot depth snapshots with a minimal unsigned HTTPS
+  wrapper that records exact body/headers; USD-M retains the SDK boundary.
 
-ADR-0008 records the REST decision and ADR-0009 records the WebSocket decision.
+ADR-0008 records the general REST decision, ADR-0022 its Spot snapshot
+exception, and ADR-0009 the WebSocket decision.
 M4 revalidates Spot raw routing, `@100ms` fixtures, protocol Ping/Pong,
 serverShutdown, reconnect and public live capture. M5 separately validates the
 USD-M route split, `U/u/pu`, protocol Ping/Pong, reconnect, exact Raw retention,

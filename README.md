@@ -13,6 +13,10 @@ identity.
 
 ## Status
 
+M17 short-term reliability and fault injection are complete. Continuous
+72-hour and 168-hour operation has not been executed and is deferred; the
+current version is not suitable for real-money trading.
+
 M4 and M5 provide independent Binance Spot and USD-M BTCUSDT public-market
 Collector libraries for diff depth at 100 ms, aggregate trades, book ticker,
 and official-SDK REST depth snapshots. They write only to the internal Raw

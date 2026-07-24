@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -10,7 +11,11 @@ from typing import Any, ClassVar
 
 import pytest
 
-from binance_market_data_recorder.binance.spot.rest import DepthResponse
+from binance_market_data_recorder.binance.spot.rate_limit import SpotIpRateLimiter
+from binance_market_data_recorder.binance.spot.rest import (
+    DepthResponse,
+    SpotSnapshotRequester,
+)
 from binance_market_data_recorder.binance.spot.websocket import WebSocketConnection
 from binance_market_data_recorder.collector.spot import SpotCollector, SpotCollectorSettings
 from binance_market_data_recorder.paths import UnsafeDataRootError
@@ -37,7 +42,7 @@ class RestApi:
         self.failures = failures
 
     def depth(self, symbol: str, limit: int) -> DepthResponse:
-        assert (symbol, limit) == ("BTCUSDT", 5000)
+        assert (symbol, limit) == ("BTCUSDT", 1000)
         if self.failures:
             self.failures -= 1
             raise RuntimeError("injected public snapshot failure")
@@ -91,7 +96,6 @@ def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: 
                 durability_interval_seconds=0,
                 snapshot_retry_initial_seconds=0.001,
                 snapshot_retry_maximum_seconds=0.001,
-                snapshot_retry_jitter_ratio=0,
             ),
             logger=logging.getLogger("test.spot.complete"),
             rest_api=RestApi(failures=1),
@@ -140,3 +144,112 @@ def test_spot_collector_refuses_repository_as_data_root() -> None:
             logger=logging.getLogger("test.spot.unsafe"),
             rest_api=RestApi(),
         )
+
+
+def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
+    tmp_path: Path,
+) -> None:
+    class RestartRestApi:
+        def __init__(self) -> None:
+            self.calls = 0
+            self.first_started = threading.Event()
+            self.release_first = threading.Event()
+
+        def depth(self, symbol: str, limit: int) -> DepthResponse:
+            self.calls += 1
+            if self.calls == 1:
+                self.first_started.set()
+                assert self.release_first.wait(timeout=2)
+            return Response()
+
+    class SequenceSocket:
+        def __init__(self, payloads: list[bytes]) -> None:
+            self.payloads = payloads
+
+        async def recv(self, decode: bool | None = None) -> bytes:
+            if self.payloads:
+                return self.payloads.pop(0)
+            await asyncio.Future[None]()
+            raise AssertionError("unreachable")
+
+        async def close(self, code: int = 1000, reason: str = "") -> None:
+            return None
+
+    async def exercise() -> None:
+        stop = asyncio.Event()
+        rest_api = RestartRestApi()
+        opens: dict[str, int] = {}
+
+        @asynccontextmanager
+        async def opener(url: str) -> AsyncIterator[WebSocketConnection]:
+            wire_name = url.rsplit("/", 1)[-1]
+            ordinal = opens.get(wire_name, 0) + 1
+            opens[wire_name] = ordinal
+            if wire_name == "btcusdt@depth@100ms":
+                if ordinal == 1:
+                    payloads = [
+                        (
+                            b'{"e":"depthUpdate","E":1,"s":"BTCUSDT","U":'
+                            + str(sequence).encode()
+                            + b',"u":'
+                            + str(sequence).encode()
+                            + b',"b":[],"a":[]}'
+                        )
+                        for sequence in range(90, 94)
+                    ]
+                else:
+                    payloads = [
+                        b'{"e":"depthUpdate","E":2,"s":"BTCUSDT",'
+                        b'"U":101,"u":110,"b":[],"a":[]}'
+                    ]
+            elif wire_name == "btcusdt@aggTrade":
+                payloads = [
+                    b'{"e":"aggTrade","E":1,"s":"BTCUSDT","a":1,"p":"1",'
+                    b'"q":"1","f":1,"l":1,"T":1,"m":true,"M":true}'
+                ]
+            else:
+                payloads = [
+                    b'{"u":110,"s":"BTCUSDT","b":"1","B":"1","a":"2","A":"1"}'
+                ]
+            yield SequenceSocket(payloads)
+
+        requester = SpotSnapshotRequester(
+            rest_api=rest_api,
+            rate_limiter=SpotIpRateLimiter(weight_budget_per_minute=1_000_000_000),
+        )
+        collector = SpotCollector(
+            SpotCollectorSettings(
+                data_root=tmp_path,
+                collector_instance_id="collector-overflow",
+                collector_version="test",
+                durability_interval_seconds=0,
+                bootstrap_buffer_capacity=2,
+                snapshot_retry_initial_seconds=0.001,
+                snapshot_retry_maximum_seconds=0.001,
+            ),
+            logger=logging.getLogger("test.spot.bootstrap-overflow"),
+            rest_api=rest_api,
+            websocket_opener=opener,
+            snapshot_requester=requester,
+        )
+        task = asyncio.create_task(collector.run(stop))
+        assert await asyncio.to_thread(rest_api.first_started.wait, 1)
+        for _ in range(100):
+            if collector._bootstrap_restart.is_set():
+                rest_api.release_first.set()
+                break
+            await asyncio.sleep(0.01)
+        else:
+            raise AssertionError("bootstrap buffer did not request a restart")
+        for _ in range(200):
+            if collector.readiness_snapshot().ready:
+                stop.set()
+                break
+            await asyncio.sleep(0.01)
+        assert collector.readiness_snapshot().ready
+        await asyncio.wait_for(task, timeout=3)
+        assert opens["btcusdt@depth@100ms"] >= 2
+        assert 2 <= rest_api.calls <= 3
+        assert requester.inflight_count() == 0
+
+    asyncio.run(exercise())

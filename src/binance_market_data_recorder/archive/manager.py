@@ -109,6 +109,8 @@ class ArchiveManager:
                 self.catalog.record_archive_error(
                     transaction_id, f"{type(error).__name__}: {error}"
                 )
+            with suppress(Exception):
+                self._record_attempt_failure(transaction_id, error)
             if error is exc:
                 raise
             raise error from exc
@@ -329,11 +331,13 @@ class ArchiveManager:
         descriptor = os.open(
             temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
         )
+        self._hit("before_copy", temporary)
         try:
             with source.open("rb", buffering=0) as source_handle:
                 while block := source_handle.read(COPY_BUFFER_BYTES):
                     _write_all(descriptor, block)
                     self._hit("copy_progress", temporary)
+            self._hit("before_copy_fsync", temporary)
             os.fsync(descriptor)
         finally:
             os.close(descriptor)
@@ -357,6 +361,7 @@ class ArchiveManager:
         else:
             if not temporary.exists():
                 self._copy(transaction)
+            self._hit("before_verify", temporary)
             try:
                 self._validate_external_artifact(temporary, transaction)
             except ArchiveError:
@@ -496,7 +501,11 @@ class ArchiveManager:
     def _ensure_external_directories(self) -> None:
         for name in ("raw", "manifests"):
             path = self.target.root / name
+            if path.is_symlink():
+                raise ArchiveError(f"archive subdirectory is a symbolic link: {name}")
             path.mkdir(mode=0o700, exist_ok=True)
+            if path.is_symlink():
+                raise ArchiveError(f"archive subdirectory became a symbolic link: {name}")
             resolved = path.resolve()
             if resolved.parent != self.target.root.resolve() or resolved.name != name:
                 raise ArchiveError("archive subdirectory resolves outside registered root")
@@ -506,7 +515,12 @@ class ArchiveManager:
         fsync_directory(self.target.root)
 
     def _external_path(self, relative: str) -> Path:
-        candidate = (self.target.root / relative).resolve()
+        unresolved = self.target.root
+        for part in Path(relative).parts:
+            unresolved /= part
+            if unresolved.is_symlink():
+                raise ArchiveError("external archive path is a symbolic link")
+        candidate = unresolved.resolve()
         try:
             resolved_relative = candidate.relative_to(self.target.root.resolve()).as_posix()
         except ValueError as exc:
@@ -583,6 +597,36 @@ class ArchiveManager:
                 )
             ],
             committed_at_utc_ns=deleted_at_utc_ns,
+        )
+
+    def _record_attempt_failure(
+        self,
+        transaction_id: str,
+        error: ArchiveError,
+    ) -> None:
+        transaction = self._required_transaction(transaction_id)
+        attempt_count = _row_int(transaction, "attempt_count")
+        source = self._source_path(transaction)
+        failure_kind = (
+            "DISAPPEARED_DURING_COPY"
+            if "DISAPPEARED_DURING_COPY" in str(error)
+            else "ARCHIVE_ERROR"
+        )
+        self.catalog.record_operational_event(
+            event_id=f"archive-attempt-failed:{transaction_id}:{attempt_count}",
+            event_type="ARCHIVE_ATTEMPT_FAILED",
+            occurred_at_utc_ns=self.utc_clock_ns(),
+            evidence={
+                "transaction_id": transaction_id,
+                "chunk_id": transaction["chunk_id"],
+                "storage_id": transaction["storage_id"],
+                "attempt_count": attempt_count,
+                "catalog_state": transaction["state"],
+                "failure_kind": failure_kind,
+                "error": f"{type(error).__name__}: {error}",
+                "source_exists": source.is_file(),
+                "source_preserved": source.is_file(),
+            },
         )
 
     def _hit(self, point: str, path: Path | None = None) -> None:

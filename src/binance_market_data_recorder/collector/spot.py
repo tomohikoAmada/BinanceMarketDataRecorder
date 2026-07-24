@@ -4,17 +4,22 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from binance_common.errors import Error as BinanceSdkError
-
-from ..binance.spot.rest import SpotRestApi, capture_depth_snapshot
+from ..binance.spot.rate_limit import FullJitterBackoff, SpotRateLimitBlocked
+from ..binance.spot.rest import (
+    PublicSpotRestApi,
+    SpotRestApi,
+    SpotSnapshotHttpError,
+    SpotSnapshotRequester,
+)
 from ..binance.spot.schema import SPOT_STREAMS
 from ..binance.spot.websocket import (
     ConnectionOpener,
-    ReconnectBackoff,
     SpotStreamCollector,
     open_spot_websocket,
 )
@@ -22,6 +27,7 @@ from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
+from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
@@ -42,11 +48,11 @@ class SpotCollectorSettings:
     durability_interval_seconds: float = 1.0
     max_frame_bytes: int = 16 * 1024 * 1024
     planned_connection_rotation_seconds: float = 23 * 60 * 60 + 50 * 60
-    snapshot_limit: int = 5000
+    snapshot_limit: int = 1000
     snapshot_timeout_ms: int = 10_000
     snapshot_retry_initial_seconds: float = 1.0
     snapshot_retry_maximum_seconds: float = 60.0
-    snapshot_retry_jitter_ratio: float = 0.2
+    bootstrap_buffer_capacity: int = 8192
 
 
 class SnapshotUnavailableError(RuntimeError):
@@ -63,15 +69,21 @@ class SpotCollector:
         logger: logging.Logger,
         rest_api: SpotRestApi | None = None,
         websocket_opener: ConnectionOpener = open_spot_websocket,
+        snapshot_requester: SpotSnapshotRequester | None = None,
     ) -> None:
         self.settings = settings
         self.logger = logger
-        self.rest_api = rest_api
-        self.snapshot_backoff = ReconnectBackoff(
+        self.rest_api = rest_api or PublicSpotRestApi(
+            timeout_ms=settings.snapshot_timeout_ms
+        )
+        self.snapshot_requester = snapshot_requester or SpotSnapshotRequester(
+            rest_api=self.rest_api
+        )
+        self.snapshot_backoff = FullJitterBackoff(
             initial_seconds=settings.snapshot_retry_initial_seconds,
             maximum_seconds=settings.snapshot_retry_maximum_seconds,
-            jitter_ratio=settings.snapshot_retry_jitter_ratio,
         )
+        self._bootstrap_restart = asyncio.Event()
         safe_data_root = validate_data_root(settings.data_root)
         self.layout: StorageLayout = ensure_storage_layout(safe_data_root)
         self.catalog = Catalog(self.layout.catalog)
@@ -81,10 +93,23 @@ class SpotCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
+        def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
+            if occurred_at_utc_ns is None:
+                return
+            self.metrics.safely_observe_quality(
+                market="spot",
+                stream="diff_depth",
+                event=audit.kind,
+                occurred_at_utc_ns=occurred_at_utc_ns,
+            )
+
         self.readiness = CollectorReadiness(
             market="spot",
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
+            audit_observer=observe_quality,
+            bootstrap_buffer_capacity=settings.bootstrap_buffer_capacity,
+            bootstrap_overflow_observer=self._bootstrap_restart.set,
         )
         self._capture_flags: tuple[str, ...] = ()
         self._candidate_handoff = False
@@ -160,62 +185,166 @@ class SpotCollector:
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
         while not stop.is_set():
-            try:
-                envelope = await asyncio.to_thread(
-                    capture_depth_snapshot,
-                    rest_api=self.rest_api,
+            request_task = asyncio.create_task(
+                self.snapshot_requester.capture(
                     collector_instance_id=self.settings.collector_instance_id,
                     collector_version=self.settings.collector_version,
                     limit=self.settings.snapshot_limit,
                     timeout_ms=self.settings.snapshot_timeout_ms,
                     additional_capture_flags=self._capture_flags,
                 )
-            except (BinanceSdkError, RuntimeError) as exc:
+            )
+            stop_task = asyncio.create_task(stop.wait())
+            try:
+                done, _pending = await asyncio.wait(
+                    {request_task, stop_task},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if stop_task in done and stop_task.result():
+                    request_task.cancel()
+                    await asyncio.gather(request_task, return_exceptions=True)
+                    await self.snapshot_requester.wait_for_idle()
+                    return
+                stop_task.cancel()
+                await asyncio.gather(stop_task, return_exceptions=True)
+                envelope = await request_task
+            except SpotRateLimitBlocked as exc:
                 failures += 1
                 log_event(
                     self.logger,
                     logging.WARNING,
-                    "spot_snapshot_failed",
-                    "public Spot depth snapshot failed; core streams remain active",
-                    error_type=type(exc).__name__,
+                    "spot_snapshot_rate_limited",
+                    "Spot public REST is blocked until the official retry boundary",
+                    http_status=exc.status,
+                    retry_at_utc_ns=exc.retry_at_utc_ns,
+                    response_headers=exc.headers,
                     retry=failures,
                 )
-                delay = self.snapshot_backoff.delay(failures)
+                delay = max(
+                    0.0,
+                    (exc.retry_at_utc_ns - time.time_ns()) / 1_000_000_000,
+                )
                 try:
                     await asyncio.wait_for(stop.wait(), timeout=delay)
                 except TimeoutError:
                     continue
-                break
+                return
+            except SpotSnapshotHttpError as exc:
+                if not 500 <= exc.status < 600:
+                    raise
+                failures += 1
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    "spot_snapshot_server_error",
+                    "Spot public depth snapshot returned a transient server error",
+                    http_status=exc.status,
+                    response_headers=exc.headers,
+                    retry=failures,
+                )
+                delay = self.snapshot_backoff.delay(failures)
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
+                continue
+            except (OSError, RuntimeError, TimeoutError) as exc:
+                failures += 1
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    "spot_snapshot_transport_error",
+                    "Spot public depth snapshot transport failed",
+                    error_type=type(exc).__name__,
+                    retry=failures,
+                )
+                delay = self.snapshot_backoff.delay(failures)
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
+                continue
+            finally:
+                if not stop_task.done():
+                    stop_task.cancel()
+                    await asyncio.gather(stop_task, return_exceptions=True)
             self.snapshot_spool.enqueue(envelope)
             await asyncio.to_thread(self.snapshot_spool.drain_all)
-            self.readiness.observe_snapshot_persisted(envelope)
+            result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
                 return
-            if not self._candidate_handoff:
-                return
             failures += 1
+            log_event(
+                self.logger,
+                logging.WARNING,
+                "spot_snapshot_bridge_pending",
+                "snapshot did not bridge buffered depth; retry remains rate limited",
+                synchronize_result=result.value,
+                retry=failures,
+            )
             try:
                 await asyncio.wait_for(
                     stop.wait(), timeout=self.snapshot_backoff.delay(failures)
                 )
             except TimeoutError:
                 continue
-            break
-        raise SnapshotUnavailableError(
-            "Collector stopped before a required Spot depth snapshot was captured"
-        )
+            return
+
+    async def _run_capture_session(
+        self,
+        external_stop: asyncio.Event,
+    ) -> None:
+        session_stop = asyncio.Event()
+
+        async def control_session() -> None:
+            external = asyncio.create_task(external_stop.wait())
+            overflow = asyncio.create_task(self._bootstrap_restart.wait())
+            try:
+                await asyncio.wait(
+                    {external, overflow},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                session_stop.set()
+                for task in (external, overflow):
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(external, overflow, return_exceptions=True)
+
+        async with asyncio.TaskGroup() as tasks:
+            for stream in self.streams:
+                tasks.create_task(stream.run(session_stop))
+            tasks.create_task(self._capture_snapshot(session_stop))
+            tasks.create_task(control_session())
 
     async def run(self, stop: asyncio.Event) -> None:
         """Start streams before snapshot, then gracefully seal when stopped."""
 
         try:
-            async with asyncio.TaskGroup() as tasks:
-                for stream in self.streams:
-                    tasks.create_task(stream.run(stop))
-                tasks.create_task(self._capture_snapshot(stop))
-                await stop.wait()
+            restart_failures = 0
+            while not stop.is_set():
+                self._bootstrap_restart.clear()
+                await self._run_capture_session(stop)
+                if stop.is_set():
+                    break
+                if not self._bootstrap_restart.is_set():
+                    raise SnapshotUnavailableError(
+                        "Spot capture session ended without shutdown or bootstrap restart"
+                    )
+                restart_failures += 1
+                log_event(
+                    self.logger,
+                    logging.CRITICAL,
+                    "spot_bootstrap_buffer_restart",
+                    "bounded bootstrap buffer invalidated; restarting Spot connections",
+                    buffered_capacity=self.settings.bootstrap_buffer_capacity,
+                    restart=restart_failures,
+                )
+                self.readiness.restart_bootstrap()
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(
+                        stop.wait(),
+                        timeout=self.snapshot_backoff.delay(restart_failures),
+                    )
         finally:
             stop.set()
+            await self.snapshot_requester.wait_for_idle()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
             batch_id = await asyncio.to_thread(self.metrics.safely_flush)
