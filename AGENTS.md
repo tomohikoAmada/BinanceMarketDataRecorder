@@ -192,6 +192,8 @@ binance-market-recorder config show
 binance-market-recorder doctor
 binance-market-recorder status
 binance-market-recorder report daily --date <YYYY-MM-DD>
+binance-market-recorder normalize status
+binance-market-recorder normalize run
 binance-market-recorder storage list
 binance-market-recorder storage inspect <path>
 binance-market-recorder storage register <folder-path>

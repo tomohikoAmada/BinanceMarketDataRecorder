@@ -33,6 +33,10 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M9.md",
     "docs/milestone_acceptance/M10.md",
     "docs/milestone_acceptance/M11.md",
+    "docs/milestone_acceptance/M12.md",
+    "docs/milestone_acceptance/M13.md",
+    "docs/milestone_acceptance/M14.md",
+    "docs/milestone_acceptance/M15.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -51,6 +55,10 @@ REQUIRED_FILES = (
     "docs/adr/0014-macos-volume-discovery-and-registration.md",
     "docs/adr/0015-crash-reconcilable-archive-transaction.md",
     "docs/adr/0016-capacity-forecast-and-emergency-reserve.md",
+    "docs/adr/0017-non-forced-macos-safe-eject.md",
+    "docs/adr/0018-readiness-gated-blue-green-handoff.md",
+    "docs/adr/0019-user-launchagent-and-power-lifecycle.md",
+    "docs/adr/0020-content-addressed-normalized-parquet.md",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
@@ -88,7 +96,6 @@ REQUIRED_TRACE_IDS = (
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
-    ROOT / "src" / "binance_market_data_recorder" / "normalize",
     ROOT / "src" / "binance_market_data_recorder" / "replay",
 )
 
@@ -139,6 +146,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M3.md",
     "docs/milestone_acceptance/M5.md",
     "docs/milestone_acceptance/M10.md",
+    "docs/milestone_acceptance/M15.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -185,7 +193,7 @@ def verify() -> None:
         assert candidate in raw_adr, f"raw ADR missing candidate/decision {candidate}"
 
     for forbidden in FORBIDDEN_PRODUCTION_ENTRIES:
-        assert not forbidden.exists(), f"M10 must not create later-milestone entry: {forbidden}"
+        assert not forbidden.exists(), f"M15 must not create later-milestone entry: {forbidden}"
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert 'name = "binance-market-data-recorder"' in pyproject
@@ -199,6 +207,7 @@ def verify() -> None:
         'binance-sdk-derivatives-trading-usds-futures==14.0.0',
         'cbor2==6.1.3',
         'google-crc32c==1.8.0',
+        'pyarrow==25.0.0',
         'websockets==15.0.1',
         'zstandard==0.25.0',
         'pyobjc-framework-Cocoa==12.2.1',

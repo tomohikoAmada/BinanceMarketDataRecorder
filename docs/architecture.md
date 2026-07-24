@@ -121,6 +121,15 @@ NSWorkspace notifications plus wall/monotonic discontinuity evidence mark
 sleep gaps. Optional `caffeinate -i -w <pid>` is scoped to the service lifetime
 and never changes persistent power policy.
 
+M15 implements `normalize` under ADR-0020 as an explicit non-core derived
+process. It verifies sealed Raw by stored and decompressed hashes, externally
+merge-sorts stable semantic identities, preserves conflicts and malformed
+evidence, and writes explicit-schema Zstandard Parquet to content-addressed UTC
+market/stream/date/hour partitions. Immutable build manifests bind partitions
+and verified M6 checkpoints to Raw content hashes without recording external
+mountpoints. Collector callbacks and the launchd capture path never execute
+normalization.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,
@@ -163,9 +172,12 @@ idempotent and reconcile filesystem state after a crash.
 
 ### Derived plane
 
-Normalization and replay outputs are rebuildable and contain source chunk
-hashes, dataset/schema versions, deterministic dedup/gap decisions, and UTC
-partitions. They do not rewrite Raw.
+`normalized-dataset.v1` is rebuildable and contains source chunk hashes,
+dataset/stream-schema/dedup/writer-profile versions, deterministic
+dedup/conflict decisions, propagated gap state, and UTC partitions. Candidate
+sorting and partition spooling use bounded batches on internal storage; output
+is atomically committed only after Parquet logical readback. Replay remains
+M16 scope. Neither derived layer rewrites Raw.
 
 ## Internal directory contract
 

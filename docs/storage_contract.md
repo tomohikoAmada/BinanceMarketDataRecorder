@@ -49,6 +49,17 @@ registered as metadata in Catalog. A checkpoint includes source Raw chunk
 hashes and is refused for an unreliable book. It may be deleted and rebuilt;
 Raw chunks remain immutable and authoritative.
 
+M15 normalized outputs are derived files below
+`data/normalized/normalized-dataset.v1/`. Work files stay under its `.work`
+directory and are disposable after interruption. Final Parquet partitions and
+their manifests are content-addressed, written through in-directory unique
+partials, fsynced, reopened for logical verification, atomically renamed, and
+never modified in place. A build may read an internally retained Raw artifact
+or the same content from a verified currently READY M10 archive; manifests
+record content hashes and relative Recorder paths, never a mountpoint.
+Unavailable or unverified Raw aborts the build. Deleting normalized artifacts
+does not authorize deletion or mutation of Raw.
+
 ## External target identity and access boundary
 
 An archive registration contains:

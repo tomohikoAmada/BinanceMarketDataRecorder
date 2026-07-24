@@ -1,8 +1,8 @@
 # Data Contract
 
 Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
-and ADR-0010. M4 implements the Spot field mappings and M5 implements the
-separate USD-M mappings and official fixtures below.
+and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
+the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
 ## EventEnvelope v1 minimum fields
 
@@ -139,7 +139,8 @@ with no observations; unavailable values are `null` with an explicit reason:
 - external free space: sampled for each READY registered target when a storage
   monitor is active; otherwise `NO_REGISTERED_TARGET_SAMPLE` rather than a
   fabricated zero;
-- normalized outputs: `NOT_IMPLEMENTED` until M15;
+- normalized outputs: available from M15 as idempotent `normalized_rows` and
+  `normalized_bytes` partition-commit counters;
 - archive/delete outputs: available from M10 as idempotent
   `archived_files`, `archived_bytes`, and `deleted_local_bytes` counters.
 
@@ -216,10 +217,36 @@ M15 must use explicit versioned semantics and preserve source-chunk lineage.
 
 ### Normalized
 
-Normalized datasets are rebuildable, versioned, partitioned by UTC date/hour,
-and trace every partition to source chunk hashes. They own explicit schema
-validation, deduplication, timestamp normalization, gap propagation, and
-market-specific field interpretation. No forward fill hides missing events.
+`normalized-dataset.v1` is rebuildable and immutable. One explicit build
+manifest selects an exact sorted Raw/checkpoint source set and the exact
+content-addressed partitions belonging to that build. Consumers must not glob
+all artifact files, because builds may share or supersede partitions.
+
+Partitions live below
+`market=<market>/stream=<stream>/date=<receive UTC date>/hour=<HH>` and use
+explicit Arrow schemas. Every row carries the dataset, stream schema and
+`normalized-dedup.v1` versions; receive/exchange clocks with units in their
+names; Collector/connection provenance; source chunk ID/SHA and record
+ordinal; source sequence/capture flags; exact Raw payload SHA; and semantic and
+logical identity hashes. Decimal exchange values remain strings. Complex level
+arrays, filters and rate-limit models are canonical JSON text.
+
+The current matrix covers Spot diff depth, aggregate trade, book ticker and
+depth snapshot, plus the same USD-M core inputs and mark price, liquidation,
+premium-index snapshot, funding history, funding info, open interest and
+exchange info. Funding-history empty responses and missing BTCUSDT funding-info
+records become explicit observations. Invalid payloads become `valid=false`
+rows; they are not silently dropped.
+
+Deduplication uses versioned stream semantic identities, not receive paths or
+filesystem order. Same identity and same logical content select the smallest
+stable Raw provenance tuple while retaining every contributing source and a
+duplicate count. Same identity with conflicting logical content retains every
+variant with `identity_conflict=true`. Source manifest completeness, gap,
+resync and recovery fields propagate to rows and partition manifests. No
+forward fill hides missing events. Partition manifests bind logical/stored
+SHA-256, counts, time bounds, source hashes and the exact Parquet writer
+profile; build manifests index verified M6 checkpoints and their Raw lineage.
 
 ### Order-book checkpoints
 

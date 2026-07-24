@@ -31,8 +31,11 @@ adds readiness-gated Spot/USD-M blue/green handoff, durable deployment audit,
 identifiable Raw overlap, rollback, and proactive 24-hour connection rotation.
 M14 adds the logged-in-user LaunchAgent, crash restart, SIGTERM sealing,
 single-service-process locking, honest atomic runtime status, sleep-gap
-evidence, and optional scoped idle-sleep prevention. Normalization, accounts,
-credentials, and trading remain unimplemented.
+evidence, and optional scoped idle-sleep prevention. M15 adds immutable,
+content-addressed normalized Parquet for every current Spot/USD-M stream,
+deterministic overlap deduplication, explicit gap/malformed evidence, Raw and
+checkpoint lineage, and DuckDB interoperability validation. Generic replay,
+accounts, credentials, and trading remain unimplemented.
 
 ## Identity
 
@@ -98,8 +101,9 @@ are optional and may disappear without stopping capture.
 - [M12 acceptance](docs/milestone_acceptance/M12.md)
 - [M13 acceptance](docs/milestone_acceptance/M13.md)
 - [M14 acceptance](docs/milestone_acceptance/M14.md)
+- [M15 acceptance](docs/milestone_acceptance/M15.md)
 
-## Install and verify M14
+## Install and verify M15
 
 Use Python 3.12 in a virtual environment:
 
@@ -112,6 +116,8 @@ binance-market-recorder config show
 binance-market-recorder doctor
 binance-market-recorder status
 binance-market-recorder report daily --date 2026-07-22
+binance-market-recorder normalize status
+binance-market-recorder normalize run
 binance-market-recorder storage list
 binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
@@ -200,6 +206,15 @@ market-stream transport. M4/M5 use the official SDKs only for public
 `GET /api/v3/depth` and `GET /fapi/v1/depth` snapshots. Each market uses three
 independent documented raw WebSocket streams. The implementation never reads
 credentials or calls account/order APIs.
+
+M15 exact-pins PyArrow as the production Parquet writer. DuckDB is an
+exact-pinned development-only interoperability check and is not used as the
+Catalog or event store. `normalize run` is an explicit offline derived task:
+it verifies every selected sealed Raw artifact, writes only below
+`data/normalized/normalized-dataset.v1/`, and fails rather than publish a
+silently partial build if Raw is unavailable. `normalize status` is read-only.
+Build and partition manifests are content-addressed; consumers must select a
+specific build manifest and must not glob artifacts from different builds.
 
 The documentation updater is intentionally selective and writes to the user
 cache by default:

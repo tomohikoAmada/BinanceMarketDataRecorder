@@ -381,6 +381,10 @@ self-referential commit hash.
 
 ## M15 — Compression, normalized Parquet, and rebuildable data
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M15.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: operationalize/version sealed Raw compression from ADR-0002 without
   in-place mutation; normalize every Spot/UM stream; Parquet UTC date/hour
   partitions; schema/version/source hashes; deterministic dedup and gap

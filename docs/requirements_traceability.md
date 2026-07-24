@@ -51,7 +51,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | OPS-02 | Sleep risk/marked gaps; scoped optional prevent-sleep; no closed-lid promise | macOS contract, ADR-0019, R-017 | M14 NSWorkspace registration, deterministic sleep-gap and real scoped-caffeinate cleanup tests pass; M18 retains lid limit |
 | OPS-03 | Blue/green candidate readiness/overlap/dedup/rollback/no planned unmarked gap | architecture contract, ADR-0018 | M13 synchronized/failure/rollback/Raw-tag/Catalog scenario tests pass; M15 owns dedup |
 | OPS-04 | 24-hour proactive rotation reuses blue/green mechanism | architecture/macOS contracts, ADR-0018 | M13 scheduled 23 h 40 min path uses the same gate; M4/M5 23 h 50 min fallback remains marked |
-| NRM-01 | Raw compression without mutation; versioned Parquet date/hour, lineage, gaps, rerunnable | data contract, ADR-0002 | M15 repeatability/DuckDB/hash tests |
+| NRM-01 | Raw compression without mutation; versioned Parquet date/hour, lineage, gaps, rerunnable | data contract, ADR-0002/0020 | M15 all-stream parser, repeatability, Raw-hash, lineage, gap/dedup/conflict and DuckDB tests pass |
 | CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | data contract, ADR-0004 | M16 deterministic tests |
 | CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0006, architecture | M16 independent example; optional named-consumer validation |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |

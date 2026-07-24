@@ -19,6 +19,7 @@ from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
 from .logging import configure_logging, log_event
 from .metrics.report import DailyReporter
+from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
 from .service.launchd import (
     LaunchAgentError,
@@ -79,6 +80,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
+    normalize_command = commands.add_parser(
+        "normalize", help="build or inspect versioned normalized Parquet"
+    )
+    normalize_commands = normalize_command.add_subparsers(
+        dest="normalize_command",
+        required=True,
+        parser_class=_ArgumentParser,
+    )
+    normalize_commands.add_parser("run", help="build from every verified Raw chunk")
+    normalize_commands.add_parser("status", help="inspect normalized build manifests")
     storage_command = commands.add_parser("storage", help="inspect registered external folders")
     storage_commands = storage_command.add_subparsers(
         dest="storage_command", required=True, parser_class=_ArgumentParser
@@ -359,6 +370,54 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 2
         _write_json({"command": "report.daily", **document})
+        return 0
+    if command == "normalize":
+        normalize_command = getattr(args, "normalize_command", None)
+        if normalize_command == "status":
+            try:
+                result = normalization_status(loaded.config.data_root)
+            except NormalizationError as exc:
+                _write_json(
+                    {"error": "normalization_error", "message": str(exc)},
+                    stream=sys.stderr,
+                )
+                return 2
+            _write_json({"command": "normalize.status", **result})
+            return 0
+        layout = ensure_storage_layout(loaded.config.data_root)
+        try:
+            with Catalog(layout.catalog) as catalog:
+                external_roots: dict[str, Path] = {}
+                try:
+                    statuses = StorageRegistry(
+                        catalog=catalog,
+                        volumes=DiskArbitrationAdapter(),
+                    ).statuses()
+                except (OSError, PlatformVolumeError):
+                    statuses = []
+                for status in statuses:
+                    resolved = status.get("resolved_path")
+                    storage_id = status.get("storage_id")
+                    if (
+                        status.get("state") in {"READY", "LOW_SPACE"}
+                        and isinstance(resolved, str)
+                        and isinstance(storage_id, str)
+                    ):
+                        external_roots[storage_id] = Path(resolved)
+                normalization_result = Normalizer(
+                    layout=layout,
+                    catalog=catalog,
+                    external_roots=external_roots,
+                ).run()
+        except (NormalizationError, OSError, ValueError) as exc:
+            _write_json(
+                {"error": "normalization_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
+        _write_json(
+            {"command": "normalize.run", **normalization_result.public_dict()}
+        )
         return 0
     if command == "storage":
         adapter = DiskArbitrationAdapter()

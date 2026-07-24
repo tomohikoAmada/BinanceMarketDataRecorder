@@ -129,6 +129,37 @@ def test_daily_report_cli_rejects_invalid_date(
     assert json.loads(capsys.readouterr().err)["error"] == "report_error"
 
 
+def test_normalize_status_is_structured_and_non_mutating(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "not-created"
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(data_root))
+    assert main(["normalize", "status"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "build_count": 0,
+        "builds": [],
+        "command": "normalize.status",
+        "dataset_version": "normalized-dataset.v1",
+        "status": "NO_BUILDS",
+    }
+    assert not data_root.exists()
+
+
+def test_normalize_run_without_raw_is_honest(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path))
+    assert main(["normalize", "run"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["command"] == "normalize.run"
+    assert result["status"] == "NO_RAW_CHUNKS"
+    assert result["normalized_rows"] == 0
+
+
 def test_status_does_not_trust_an_unimplemented_service_state_as_running(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

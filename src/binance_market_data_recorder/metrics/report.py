@@ -24,10 +24,6 @@ from .model import (
 
 REPORT_SCHEMA_VERSION = "daily-operational-report.v1"
 _REPORT_LOCK = RLock()
-NOT_IMPLEMENTED_OUTPUTS = (
-    "normalized_rows",
-    "normalized_bytes",
-)
 
 
 def _validate_date(value: str) -> str:
@@ -87,7 +83,6 @@ def _stream_document(
         name: aggregate.counters.get(name, 0) for name in OUTPUT_COUNTERS
     }
     output["archive_backlog_bytes"] = archive_backlog_bytes
-    output.update({name: None for name in NOT_IMPLEMENTED_OUTPUTS})
     last_event = aggregate.last_event_time_utc_ns
     last_event_age = (
         None if last_event is None else max(0, generated_at_utc_ns - last_event)
@@ -122,9 +117,6 @@ def _stream_document(
         },
     }
     unavailable = {"input.rest_bytes": rest_bytes_status}
-    unavailable.update(
-        {f"output.{name}": "NOT_IMPLEMENTED" for name in NOT_IMPLEMENTED_OUTPUTS}
-    )
     return {
         "market": market,
         "stream": stream,

@@ -40,6 +40,8 @@ OUTPUT_COUNTERS = (
     "archived_bytes",
     "deleted_local_bytes",
     "archive_backlog_bytes",
+    "normalized_rows",
+    "normalized_bytes",
 )
 COUNTER_NAMES = INPUT_COUNTERS + QUALITY_COUNTERS + OUTPUT_COUNTERS
 

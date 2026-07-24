@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Status: M14 native macOS service and power lifecycle.
+Status: M15 normalized Parquet and interoperability.
 
 ## Principles
 
@@ -23,6 +23,7 @@ Status: M14 native macOS service and power lifecycle.
 | `cbor2` | `==6.1.3` | Deterministic canonical CBOR for Raw chunk headers and EventEnvelope bodies |
 | `google-crc32c` | `==1.8.0` | Castagnoli per-header/per-frame integrity checks with bounded scan performance |
 | `zstandard` | `==0.25.0` | Streaming immutable sealed Raw artifacts with checksum/readback verification |
+| `pyarrow` | `==25.0.0` | Explicit-schema Parquet 2.6 writer/reader with Zstandard compression and logical readback verification |
 | `pyobjc-framework-Cocoa` | `==12.2.1` on macOS | Direct AppKit/Foundation binding for official NSWorkspace sleep/wake notifications |
 | `pyobjc-framework-DiskArbitration` | `==12.2.1` on macOS | Bridge to Apple's Disk Arbitration callbacks and descriptions; includes matching PyObjC core/Cocoa bridge wheels |
 
@@ -38,11 +39,12 @@ needed.
 | `pytest` | `>=8.3,<10` | Offline deterministic tests |
 | `ruff` | `>=0.9,<1` | Linting and import/style checks |
 | `mypy` | `>=1.14,<2` | Strict static type checking |
+| `duckdb` | `==1.5.5` | Development-only independent Parquet/Hive-partition smoke query |
 
 The build backend is `setuptools>=75,<82`; it is isolated build tooling, not a
 runtime dependency.
 
-## M14 resolution policy
+## M15 resolution policy
 
 Pydantic retains a compatible major-version range. The generated official SDKs,
 `websockets`, CBOR, CRC32C, and Zstandard packages are exact-pinned because
@@ -65,6 +67,17 @@ flock, atomic state, signals, resource metrics, and scoped `/usr/bin/caffeinate`
 use the standard library or macOS itself, so no service framework, process
 manager, or power-management package is added.
 
+M15 exact-pins PyArrow 25.0.0 because its concrete Parquet encoding, metadata,
+compression, page-checksum and readback behavior form `bmdr-parquet.v1`.
+Changing the writer requires compatibility review and a new profile/schema
+version rather than an unconstrained upgrade. The certified macOS arm64 wheel
+hash is in the runtime lock.
+
+DuckDB 1.5.5 is exact-pinned in the `dev` extra only. It independently queries
+published Parquet paths with Hive partitioning during acceptance and is never
+imported by production Recorder code, used as Catalog, or used to store Raw.
+No pandas/dataframe layer is needed.
+
 The deprecated Futures connector, third-party `python-binance`, unverified
-Binance MCPs, FastAPI, Qt, database, Parquet, dataframe, machine-learning,
-archive, and storage-service dependencies remain absent.
+Binance MCPs, FastAPI, Qt, general-purpose database, dataframe,
+machine-learning, archive, and storage-service dependencies remain absent.

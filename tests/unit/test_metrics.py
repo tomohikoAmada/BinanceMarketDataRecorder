@@ -153,7 +153,8 @@ def test_fixed_metrics_fixture_produces_deterministic_json_csv_and_all_fields(
     assert stream["quality"]["unexpected_disconnect"] == 1
     assert stream["output"]["raw_records_written"] == 1
     assert stream["output"]["raw_bytes_written"] == 120
-    assert stream["output"]["normalized_rows"] is None
+    assert stream["output"]["normalized_rows"] == 0
+    assert stream["output"]["normalized_bytes"] == 0
     assert stream["output"]["archived_files"] == 0
     assert stream["output"]["archived_bytes"] == 0
     assert stream["output"]["deleted_local_bytes"] == 0
