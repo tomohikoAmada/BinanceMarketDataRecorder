@@ -22,6 +22,7 @@ Current and historical decisions:
 - [ADR-0018: Readiness-gated blue/green Collector handoff](0018-readiness-gated-blue-green-handoff.md)
 - [ADR-0019: User LaunchAgent and power-aware service lifecycle](0019-user-launchagent-and-power-lifecycle.md)
 - [ADR-0020: Content-addressed normalized Parquet datasets](0020-content-addressed-normalized-parquet.md)
+- [ADR-0021: Deterministic replay and generic consumer boundary](0021-deterministic-replay-and-consumer-boundary.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

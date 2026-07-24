@@ -257,10 +257,24 @@ the same deterministic book hash.
 
 ### Replay
 
-Replay supports receive-time and exchange-time clocks. Ordering is defined by a
-versioned policy and a stable provenance tie-break, never filesystem listing
-order. Callers select an explicit gap policy. Equal timestamps and duplicate
-events produce deterministic output.
+`consumer-contract.v1` exposes one explicit `normalized-dataset.v1` build
+through `ManifestCatalog`; it never infers “latest” or globs across builds.
+Replay query bounds are half-open Unix nanoseconds in the selected clock.
+
+`replay-order.v1` supports receive UTC and stream-specific documented exchange
+time. Exchange milliseconds convert exactly to nanoseconds. Streams without a
+documented exchange clock require explicit error, exclusion, or marked
+receive-time fallback. Total ordering uses event time, stable
+market/stream/symbol, Collector/connection, source-sequence, Raw chunk/ordinal
+and logical identity fields; exchange order also uses receive UTC. Filesystem
+order and cross-instance monotonic comparison are never semantic.
+
+Gap policy is explicit error/include/exclude. Included events retain all source
+quality fields and expose `is_unreliable`; excluded data is not relabeled
+complete. A verified M6 checkpoint can seed only its single-market/symbol
+diff-depth query and skips already covered final update IDs. Full public fields,
+clock precedence, errors and compatibility rules are in
+`docs/consumer_contract.md` and ADR-0021.
 
 ## Daily metrics schema categories
 

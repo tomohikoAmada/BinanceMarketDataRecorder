@@ -37,6 +37,8 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M13.md",
     "docs/milestone_acceptance/M14.md",
     "docs/milestone_acceptance/M15.md",
+    "docs/milestone_acceptance/M16.md",
+    "docs/consumer_contract.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
     "docs/adr/0001-independent-recorder-repository.md",
@@ -59,6 +61,9 @@ REQUIRED_FILES = (
     "docs/adr/0018-readiness-gated-blue-green-handoff.md",
     "docs/adr/0019-user-launchagent-and-power-lifecycle.md",
     "docs/adr/0020-content-addressed-normalized-parquet.md",
+    "docs/adr/0021-deterministic-replay-and-consumer-boundary.md",
+    "examples/replay_consumer.py",
+    "src/binance_market_data_recorder/py.typed",
     "tools/binance_docs.toml",
     "tools/update_binance_docs.py",
     "tools/probe_binance_transports.py",
@@ -96,7 +101,6 @@ REQUIRED_TRACE_IDS = (
 
 FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
-    ROOT / "src" / "binance_market_data_recorder" / "replay",
 )
 
 EXPECTED_ROOT = Path(
@@ -147,6 +151,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M5.md",
     "docs/milestone_acceptance/M10.md",
     "docs/milestone_acceptance/M15.md",
+    "docs/milestone_acceptance/M16.md",
     "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
@@ -202,6 +207,7 @@ def verify() -> None:
         'binance-market-recorder = "binance_market_data_recorder.cli:main"'
         in pyproject
     )
+    assert 'binance_market_data_recorder = ["py.typed"]' in pyproject
     for dependency in (
         'binance-sdk-spot==10.0.0',
         'binance-sdk-derivatives-trading-usds-futures==14.0.0',

@@ -15,9 +15,13 @@ def test_distribution_package_cli_and_python_contract() -> None:
     assert project["project"]["scripts"] == {
         "binance-market-recorder": "binance_market_data_recorder.cli:main"
     }
+    assert project["tool"]["setuptools"]["package-data"] == {
+        "binance_market_data_recorder": ["py.typed"]
+    }
+    assert (ROOT / "src/binance_market_data_recorder/py.typed").is_file()
 
 
-def test_dependency_scope_through_m15_only() -> None:
+def test_dependency_scope_through_m16_only() -> None:
     with (ROOT / "pyproject.toml").open("rb") as handle:
         project = tomllib.load(handle)
 

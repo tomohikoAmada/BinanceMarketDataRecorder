@@ -34,8 +34,11 @@ single-service-process locking, honest atomic runtime status, sleep-gap
 evidence, and optional scoped idle-sleep prevention. M15 adds immutable,
 content-addressed normalized Parquet for every current Spot/USD-M stream,
 deterministic overlap deduplication, explicit gap/malformed evidence, Raw and
-checkpoint lineage, and DuckDB interoperability validation. Generic replay,
-accounts, credentials, and trading remain unimplemented.
+checkpoint lineage, and DuckDB interoperability validation. M16 adds generic
+replay build discovery, receive/exchange event clocks, versioned deterministic total
+ordering, explicit gap/missing-time policies, verified checkpoint seek, a
+typed generic consumer contract, and an independent read-only example. Accounts,
+credentials, and trading remain unimplemented.
 
 ## Identity
 
@@ -102,6 +105,8 @@ are optional and may disappear without stopping capture.
 - [M13 acceptance](docs/milestone_acceptance/M13.md)
 - [M14 acceptance](docs/milestone_acceptance/M14.md)
 - [M15 acceptance](docs/milestone_acceptance/M15.md)
+- [M16 acceptance](docs/milestone_acceptance/M16.md)
+- [Generic consumer contract](docs/consumer_contract.md)
 
 ## Install and verify M15
 
@@ -118,6 +123,11 @@ binance-market-recorder status
 binance-market-recorder report daily --date 2026-07-22
 binance-market-recorder normalize status
 binance-market-recorder normalize run
+python3.12 examples/replay_consumer.py \
+  --data-root "$HOME/Library/Application Support/BinanceMarketDataRecorder" \
+  --build-id <64-hex-build-id> \
+  --market spot \
+  --stream agg_trade
 binance-market-recorder storage list
 binance-market-recorder storage inspect /Volumes/Archive/QuantData/Recorder
 binance-market-recorder storage register /Volumes/Archive/QuantData/Recorder
@@ -215,6 +225,15 @@ it verifies every selected sealed Raw artifact, writes only below
 silently partial build if Raw is unavailable. `normalize status` is read-only.
 Build and partition manifests are content-addressed; consumers must select a
 specific build manifest and must not glob artifacts from different builds.
+
+M16 consumers use `binance_market_data_recorder.replay.ManifestCatalog` with
+one configured application-data root and one explicit build ID. Public
+descriptors expose hashes, counts and versions, not absolute artifact or
+external archive paths. Replay supports half-open nanosecond ranges,
+receive/exchange clocks, deterministic equal-time tie-breaks, explicit
+gap/missing-exchange-time policies, and verified depth-checkpoint continuation.
+There is deliberately no automatic “latest build”. See the generic consumer
+contract before building an adapter.
 
 The documentation updater is intentionally selective and writes to the user
 cache by default:

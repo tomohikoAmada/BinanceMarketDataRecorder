@@ -194,6 +194,8 @@ binance-market-recorder status
 binance-market-recorder report daily --date <YYYY-MM-DD>
 binance-market-recorder normalize status
 binance-market-recorder normalize run
+python3.12 examples/replay_consumer.py --data-root <root> \
+  --build-id <sha256> --market spot --stream agg_trade
 binance-market-recorder storage list
 binance-market-recorder storage inspect <path>
 binance-market-recorder storage register <folder-path>

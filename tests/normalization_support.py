@@ -28,6 +28,10 @@ def envelope(
     source_sequence: dict[str, int | str] | None = None,
     flags: tuple[str, ...] = (),
     collector_instance_id: str = "normalization-fixture",
+    receive_time_utc_ns: int | None = None,
+    exchange_event_time: int | None = 1_672_515_782_136,
+    exchange_transaction_time: int | None = None,
+    exchange_trade_time: int | None = None,
 ) -> EventEnvelope:
     return EventEnvelope(
         market=market,
@@ -40,9 +44,15 @@ def envelope(
         connection_id=f"fixture-connection-{ordinal}",
         collector_instance_id=collector_instance_id,
         collector_version="0.1.0+normalization-test",
-        receive_time_utc_ns=BASE_NS + ordinal * 1_000_000,
+        receive_time_utc_ns=(
+            BASE_NS + ordinal * 1_000_000
+            if receive_time_utc_ns is None
+            else receive_time_utc_ns
+        ),
         receive_monotonic_ns=ordinal * 1_000_000,
-        exchange_event_time=1_672_515_782_136,
+        exchange_event_time=exchange_event_time,
+        exchange_transaction_time=exchange_transaction_time,
+        exchange_trade_time=exchange_trade_time,
         source_sequence=source_sequence or {},
         raw_payload=raw_payload,
         capture_flags=flags,

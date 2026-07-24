@@ -28,7 +28,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | DAT-06 | Per-file time/count/bytes/schema/version/hash/sequence/gap/resync metadata | data contract | M3 manifest tests; M6 checkpoint gap/resync lineage tests |
 | DAT-07 | `.partial`, safe seal, recover/truncate/quarantine without false completeness | ADR-0002, storage contract | M3 kill/corruption/property tests |
 | DAT-08 | Format compares NDJSON, NDJSON+Zstd, MessagePack/CBOR/other and chooses language-neutral framed checksummed Zstd | ADR-0002 | M0 decision; M3 golden vectors |
-| DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004, data contract | M6 fixed-hash, checkpoint-restore and random-deletion tests; M15/M16 order tests |
+| DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004/0021, data contract | M6 fixed-hash/checkpoint tests; M16 equal-time order, clock, gap and checkpoint-seek tests pass |
 | STO-01 | Internal disk always active target; no direct external active writes; external absence normal | storage contract, ADR-0003 | M4/M5/M9 fault tests |
 | STO-02 | Default application-support layout; no persistent data in repo/Desktop/Documents/iCloud/tmp | project/architecture/storage contracts | M1 path tests; M14 runtime |
 | STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003/0014 | M9 scope-probe tests pass; physical matrix M17 |
@@ -52,8 +52,8 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | OPS-03 | Blue/green candidate readiness/overlap/dedup/rollback/no planned unmarked gap | architecture contract, ADR-0018 | M13 synchronized/failure/rollback/Raw-tag/Catalog scenario tests pass; M15 owns dedup |
 | OPS-04 | 24-hour proactive rotation reuses blue/green mechanism | architecture/macOS contracts, ADR-0018 | M13 scheduled 23 h 40 min path uses the same gate; M4/M5 23 h 50 min fallback remains marked |
 | NRM-01 | Raw compression without mutation; versioned Parquet date/hour, lineage, gaps, rerunnable | data contract, ADR-0002/0020 | M15 all-stream parser, repeatability, Raw-hash, lineage, gap/dedup/conflict and DuckDB tests pass |
-| CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | data contract, ADR-0004 | M16 deterministic tests |
-| CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0006, architecture | M16 independent example; optional named-consumer validation |
+| CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | consumer/data contracts, ADR-0004/0021 | M16 half-open range, equal-time order, missing-clock/gap, manifest corruption and checkpoint-seek tests pass |
+| CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0007/0021, architecture | M16 public descriptors omit paths; independent example imports only replay API; named-consumer validation remains optional |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |
 | FAI-02 | 72-hour then post-fix 7-day soak; daily volume/resources/reconnect/gap/archive/forecast evidence | M17 plan | M17 complete reports |
 | REL-01 | V1 docs/package/test reports/limitations/Ubuntu preparation | M18 plan | M18 release packet |

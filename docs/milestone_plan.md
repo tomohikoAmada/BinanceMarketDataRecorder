@@ -401,6 +401,10 @@ self-referential commit hash.
 
 ## M16 — Replay interface and generic consumer data contract
 
+Status: **ACCEPTED** by the commit containing
+`docs/milestone_acceptance/M16.md`; exact SHA is reported at handoff to avoid a
+self-referential commit hash.
+
 - Scope: receive/exchange-time replay and event clock; market/stream/time reads;
   checkpoint seek; explicit gap policy; generic manifest query/dataset version;
   generic `docs/consumer_contract.md`; independent example consumer; optional

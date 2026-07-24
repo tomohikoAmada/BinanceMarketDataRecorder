@@ -38,6 +38,9 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+binance_market_data_recorder = ["py.typed"]
+
 [tool.pytest.ini_options]
 addopts = "-ra -m 'not stress'"
 testpaths = ["tests"]

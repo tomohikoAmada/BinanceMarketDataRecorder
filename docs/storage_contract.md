@@ -60,6 +60,14 @@ record content hashes and relative Recorder paths, never a mountpoint.
 Unavailable or unverified Raw aborts the build. Deleting normalized artifacts
 does not authorize deletion or mutation of Raw.
 
+M16 consumers configure only the internal Recorder application-data root and
+an explicit normalized build ID. `ManifestCatalog` resolves build-relative
+partition/checkpoint paths after containment and hash checks. Public
+descriptors never expose an external Raw archive mountpoint, archive
+transaction or `storage_id`; consumers do not decide where Raw resides.
+Replay uses only ephemeral non-persistent sort work and never modifies the
+internal root.
+
 ## External target identity and access boundary
 
 An archive registration contains:

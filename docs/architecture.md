@@ -130,6 +130,15 @@ and verified M6 checkpoints to Raw content hashes without recording external
 mountpoints. Collector callbacks and the launchd capture path never execute
 normalization.
 
+M16 implements `replay` under ADR-0021 as a public read-only consumer boundary.
+A manifest catalog opens one explicit content-addressed build, verifies all
+selected partition/checkpoint identities, and resolves relative paths without
+exposing archive mountpoints. Replay scans Parquet in fixed batches and uses
+bounded external merge passes to implement receive/exchange clocks, stable
+equal-time ordering, explicit gap/missing-clock policies and verified depth
+checkpoint continuation. The independent example imports only this public
+package; no consumer code enters Recorder core.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,
@@ -176,8 +185,10 @@ idempotent and reconcile filesystem state after a crash.
 dataset/stream-schema/dedup/writer-profile versions, deterministic
 dedup/conflict decisions, propagated gap state, and UTC partitions. Candidate
 sorting and partition spooling use bounded batches on internal storage; output
-is atomically committed only after Parquet logical readback. Replay remains
-M16 scope. Neither derived layer rewrites Raw.
+is atomically committed only after Parquet logical readback.
+`consumer-contract.v1`/`replay-order.v1` selects one such build and exposes
+deterministic read-only events without filesystem-order or mountpoint semantics.
+Neither derived layer rewrites Raw.
 
 ## Internal directory contract
 

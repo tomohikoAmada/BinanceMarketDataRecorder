@@ -1,6 +1,6 @@
 # Dependency Policy
 
-Status: M15 normalized Parquet and interoperability.
+Status: M16 deterministic replay and generic consumer API.
 
 ## Principles
 
@@ -77,6 +77,12 @@ DuckDB 1.5.5 is exact-pinned in the `dev` extra only. It independently queries
 published Parquet paths with Hive partitioning during acceptance and is never
 imported by production Recorder code, used as Catalog, or used to store Raw.
 No pandas/dataframe layer is needed.
+
+M16 adds no runtime or development dependency. Replay reuses the exact-pinned
+PyArrow reader, standard-library JSON/hash/tempfile/heap primitives, and the
+published M15 manifests. The distribution includes a zero-byte `py.typed`
+marker as package data so consumers can type-check the public replay API; this
+is metadata, not another dependency.
 
 The deprecated Futures connector, third-party `python-binance`, unverified
 Binance MCPs, FastAPI, Qt, general-purpose database, dataframe,
