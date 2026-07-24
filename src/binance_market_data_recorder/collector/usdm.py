@@ -223,12 +223,19 @@ class UsdMCollector:
                 break
             self.snapshot_spool.enqueue(envelope)
             await asyncio.to_thread(self.snapshot_spool.drain_all)
-            self.readiness.observe_snapshot_persisted(envelope)
+            result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
                 return
-            if not self._candidate_handoff:
-                return
             failures += 1
+            log_event(
+                self.logger,
+                logging.WARNING,
+                "usdm_snapshot_bridge_pending",
+                "snapshot did not bridge buffered depth; retry remains backoff bounded",
+                synchronize_result=result.value,
+                candidate_handoff=self._candidate_handoff,
+                retry=failures,
+            )
             try:
                 await asyncio.wait_for(
                     stop.wait(), timeout=self.snapshot_backoff.delay(failures)
@@ -236,6 +243,8 @@ class UsdMCollector:
             except TimeoutError:
                 continue
             break
+        if self.readiness.snapshot().snapshot_persisted:
+            return
         raise SnapshotUnavailableError(
             "Collector stopped before a required USD-M depth snapshot was captured"
         )

@@ -1,5 +1,9 @@
 # Architecture
 
+This document describes the `0.1.0a1` Mac Developer Preview. The implemented
+system remains subject to the deferred long-running reliability limitation in
+`docs/known_limitations.md`.
+
 ## Context
 
 Binance Market Data Recorder is the system of record for Binance public
@@ -48,14 +52,12 @@ Binance public REST + WebSocket
 | `supervisor` | independent worker health, blue/green handoff, emergency stop | hiding gaps or coupling markets |
 | `cli` | local control/status/report/storage commands | GUI, trading interface |
 
-M4 implements `binance.spot` plus the Spot portion of `collector`: three
+The implemented `binance.spot` and `binance.usdm` modules each own three
 independent raw WebSocket connections and one official-SDK REST depth snapshot.
-M3 implements the shared EventEnvelope, bounded spool, Raw
-writer/recovery/seal, internal layout, and SQLite Catalog. Other rows remain
-planned package boundaries. M5 adds an independent `binance.usdm` adapter,
-three routed USD-M streams, public snapshot capture, and market-local failure
-domains. Storage, Raw, Catalog,
-normalize, replay, and archive remain independent of consumer code.
+The shared EventEnvelope, bounded spool, Raw writer/recovery/seal, internal
+layout, and SQLite Catalog support both markets. Storage, Raw, Catalog,
+normalize, replay, and archive remain independent of consumer code and are all
+implemented within the preview boundary.
 Do not add an abstraction framework for unplanned exchanges. Another exchange
 would require a separate architecture review.
 

@@ -123,9 +123,13 @@ class LaunchAgentManager:
         self.home = (home or Path.home()).resolve()
         self.uid = os.getuid() if uid is None else uid
         self.command_runner = command_runner
-        self.python_executable = (
+        selected_python = (
             Path(sys.executable) if python_executable is None else python_executable
-        ).resolve()
+        )
+        # A virtual environment's interpreter is normally a symlink. Resolving
+        # it would make launchd execute the base interpreter and could load a
+        # different installed Recorder version.
+        self.python_executable = selected_python.expanduser().absolute()
         self.launch_agents = self.home / "Library" / "LaunchAgents"
         self.plist_path = self.launch_agents / f"{self.label}.plist"
         self.metadata_path = self.data_root / "state" / "launchagent.json"

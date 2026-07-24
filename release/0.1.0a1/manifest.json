@@ -1,0 +1,21 @@
+{
+  "artifacts": [
+    {
+      "bytes": 170486,
+      "filename": "binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+      "sha256": "255d934539c2a2cc42f47bdbd1e19f9dcae8c54f6765628bacba45e582eb855b"
+    },
+    {
+      "bytes": 132688,
+      "filename": "binance_market_data_recorder-0.1.0a1.tar.gz",
+      "sha256": "1524ad6395a84d7642e2b38e1a50ea47bcb09e21138846d6c2a3cbb438ff589f"
+    }
+  ],
+  "build_base_commit": "5fad0c88aea36032a01f83200485a5d0b7e44964",
+  "built_at_utc": "2026-07-24T11:35:53Z",
+  "distribution": "binance-market-data-recorder",
+  "release_status": "Mac Developer Preview",
+  "source_revision": "the M18 commit containing this manifest",
+  "version": "0.1.0a1",
+  "warning": "连续72小时和168小时长期运行验收尚未执行。静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。当前版本仅为Mac Developer Preview，不得用于真实资金交易。"
+}

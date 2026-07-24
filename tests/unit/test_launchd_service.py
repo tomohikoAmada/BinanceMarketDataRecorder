@@ -17,6 +17,7 @@ from binance_market_data_recorder.service.launchd import (
     installed_service_label,
     validate_service_label,
 )
+from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 LABEL = "dev.recorderowner.BinanceMarketDataRecorder"
@@ -107,11 +108,21 @@ def test_install_renders_secure_user_launchagent_and_controls_lifecycle(
     assert any(call[:2] == ("/bin/launchctl", "kickstart") for call in runner.calls)
     assert manager.stop()["loaded"] is False
     assert manager.start()["loaded"] is True
+    retained = manager.data_root / "data" / "sealed" / "must-survive-uninstall.raw"
+    retained.write_bytes(b"immutable-market-data")
+    catalog = manager.data_root / "state" / "catalog.sqlite"
+    with Catalog(catalog):
+        pass
+    assert catalog.is_file()
     removed = manager.uninstall()
     assert removed["status"] == "UNINSTALLED"
     assert not manager.plist_path.exists()
     assert not manager.metadata_path.exists()
     assert runner.loaded is False
+    assert retained.read_bytes() == b"immutable-market-data"
+    assert catalog.is_file()
+    with Catalog(catalog):
+        pass
 
 
 def test_install_requires_namespace_attestation_and_secure_config(
@@ -138,6 +149,30 @@ def test_install_requires_namespace_attestation_and_secure_config(
             environment={},
         )
     assert not manager.plist_path.exists()
+
+
+def test_launchagent_preserves_virtualenv_python_symlink(tmp_path: Path) -> None:
+    runner = FakeLaunchctl()
+    layout = ensure_storage_layout(tmp_path / "internal")
+    virtualenv_python = tmp_path / "venv" / "bin" / "python"
+    virtualenv_python.parent.mkdir(parents=True)
+    virtualenv_python.symlink_to(Path(sys.executable))
+    manager = LaunchAgentManager(
+        data_root=layout.root,
+        label=LABEL,
+        home=tmp_path / "home",
+        uid=os.getuid(),
+        command_runner=runner,
+        python_executable=virtualenv_python,
+    )
+
+    assert manager.python_executable == virtualenv_python.absolute()
+    assert manager.python_executable.is_symlink()
+    assert manager.plist(
+        config_file=None,
+        git_commit="preview-commit",
+        environment={},
+    )["Program"] == str(virtualenv_python.absolute())
 
 
 def test_failed_bootstrap_rolls_back_new_plist(tmp_path: Path) -> None:

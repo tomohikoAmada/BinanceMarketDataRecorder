@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "binance-market-data-recorder"
-version = "0.1.0"
+version = "0.1.0a1"
 description = "Independent, unofficial recorder for Binance public market data."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"

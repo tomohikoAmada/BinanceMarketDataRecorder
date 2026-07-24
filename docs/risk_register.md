@@ -1,5 +1,9 @@
 # Risk Register
 
+连续72小时和168小时长期运行验收尚未执行。
+静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
+当前版本仅为Mac Developer Preview，不得用于真实资金交易。
+
 Severity: Critical / High / Medium / Low. Status is Open, Monitoring, Mitigated,
 or Accepted. Each implementing milestone must update its risks and evidence.
 

@@ -10,7 +10,7 @@ from pathlib import Path
 from .paths import discover_repository_root
 
 DIST_NAME = "binance-market-data-recorder"
-FALLBACK_VERSION = "0.1.0"
+FALLBACK_VERSION = "0.1.0a1"
 GIT_COMMIT_ENV = "BINANCE_MARKET_RECORDER_GIT_COMMIT"
 
 
