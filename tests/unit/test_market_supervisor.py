@@ -4,7 +4,10 @@ import asyncio
 
 import pytest
 
-from binance_market_data_recorder.collector.supervisor import MarketCollectorSupervisor
+from binance_market_data_recorder.collector.supervisor import (
+    CoreMarketTerminalFailure,
+    MarketCollectorSupervisor,
+)
 
 
 class FailingCollector:
@@ -15,26 +18,26 @@ class FailingCollector:
 class HealthyCollector:
     def __init__(self) -> None:
         self.ticks = 0
+        self.stopped = False
 
     async def run(self, stop: asyncio.Event) -> None:
         while not stop.is_set():
             self.ticks += 1
             await asyncio.sleep(0.001)
+        self.stopped = True
 
 
 @pytest.mark.parametrize("failed_market", ["spot", "um_perpetual"])
-def test_one_market_crash_does_not_stop_the_other(failed_market: str) -> None:
+def test_one_market_crash_stops_and_seals_the_other(failed_market: str) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         healthy = HealthyCollector()
         other = "um_perpetual" if failed_market == "spot" else "spot"
         supervisor = MarketCollectorSupervisor({failed_market: FailingCollector(), other: healthy})
-        task = asyncio.create_task(supervisor.run(stop))
-        await asyncio.sleep(0.03)
-        assert healthy.ticks > 1
+        with pytest.raises(CoreMarketTerminalFailure, match=failed_market):
+            await supervisor.run(stop)
+        assert healthy.ticks >= 1
+        assert healthy.stopped
         assert failed_market in supervisor.failures
-        assert not task.done()
-        stop.set()
-        await task
 
     asyncio.run(exercise())

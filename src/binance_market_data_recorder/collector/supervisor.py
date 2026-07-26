@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Protocol
 
 
@@ -15,18 +15,23 @@ class AllMarketCollectorsStopped(RuntimeError):
     """No core market Collector remains for launchd to supervise."""
 
 
+class CoreMarketTerminalFailure(RuntimeError):
+    """A core market terminated, so launchd must restart the whole service."""
+
+
 class MarketCollectorSupervisor:
-    """Run markets with separate stop/failure domains.
+    """Run core markets and fail the process if either terminates unexpectedly."""
 
-    A failed child is reported through ``failures`` but never stops a healthy
-    child. Automatic process supervision belongs to later milestones.
-    """
-
-    def __init__(self, collectors: Mapping[str, MarketCollector]) -> None:
+    def __init__(
+        self,
+        collectors: Mapping[str, MarketCollector],
+        terminal_failure_observer: Callable[[str, BaseException], None] | None = None,
+    ) -> None:
         if not collectors:
             raise ValueError("at least one market Collector is required")
         self.collectors = dict(collectors)
         self.failures: dict[str, BaseException] = {}
+        self.terminal_failure_observer = terminal_failure_observer
 
     async def run(self, stop: asyncio.Event) -> None:
         child_stops = {name: asyncio.Event() for name in self.collectors}
@@ -52,6 +57,14 @@ class MarketCollectorSupervisor:
                         raise
                     except BaseException as exc:
                         self.failures[name] = exc
+                        if self.terminal_failure_observer is not None:
+                            self.terminal_failure_observer(name, exc)
+                        for child_stop in child_stops.values():
+                            child_stop.set()
+                        await asyncio.gather(*tasks.values(), return_exceptions=True)
+                        raise CoreMarketTerminalFailure(
+                            f"core market Collector terminated: {name}"
+                        ) from exc
             if not tasks and not stop.is_set():
                 failed = ",".join(sorted(self.failures)) or "all"
                 raise AllMarketCollectorsStopped(

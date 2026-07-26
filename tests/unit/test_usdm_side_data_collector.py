@@ -56,16 +56,18 @@ def test_terminal_side_failure_does_not_set_shared_core_stop() -> None:
         healthy = Healthy()
         stats = {"failing": SideDataStats(True), "healthy": SideDataStats(True)}
         supervisor = SideDataSupervisor(
-            {"failing": Failing(), "healthy": healthy},
+            {"failing": Failing, "healthy": lambda: healthy},
             stats,
             logging.getLogger("test.side-supervisor"),
+            retry_initial_seconds=0.001,
+            retry_maximum_seconds=0.001,
         )
         task = asyncio.create_task(supervisor.run(stop))
         await asyncio.wait_for(healthy.started.wait(), timeout=1)
         for _ in range(100):
-            if "failing" in supervisor.failures:
+            if stats["failing"].attempts >= 2:
                 break
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.001)
         assert not stop.is_set()
         assert not task.done()
         stop.set()
@@ -75,4 +77,5 @@ def test_terminal_side_failure_does_not_set_shared_core_stop() -> None:
     supervisor, stop = asyncio.run(exercise())
     assert stop.is_set()
     assert isinstance(supervisor.failures["failing"], RuntimeError)
-    assert supervisor.stats["failing"].failures == 1
+    assert supervisor.stats["failing"].failures >= 1
+    assert supervisor.stats["failing"].attempts >= 2

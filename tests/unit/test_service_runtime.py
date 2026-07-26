@@ -196,7 +196,7 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
             sleep_observer_factory=FakeSleepObserver,
             power_assertion=FakePowerAssertion(),
         )
-        with pytest.raises(RuntimeError, match="all core market"):
+        with pytest.raises(RuntimeError, match="core market Collector terminated"):
             await runtime.run()
         state = runtime.state_store.read()
         assert state is not None
@@ -205,3 +205,6 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
     asyncio.run(exercise())
     with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
         assert len(catalog.operational_events(event_type="SERVICE_FAILED")) == 1
+        assert len(
+            catalog.operational_events(event_type="CORE_MARKET_TERMINAL_FAILURE")
+        ) == 1

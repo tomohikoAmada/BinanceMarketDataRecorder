@@ -19,6 +19,7 @@ from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
+from ..orderbook.parser import snapshot_from_envelope
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -26,6 +27,7 @@ from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CollectorReadiness, ReadinessSnapshot
+from .resync import DepthResyncCoordinator
 from .usdm_side_data import UsdMSideDataManager, UsdMSideDataSettings
 
 
@@ -46,6 +48,7 @@ class UsdMCollectorSettings:
     snapshot_retry_initial_seconds: float = 1.0
     snapshot_retry_maximum_seconds: float = 60.0
     snapshot_retry_jitter_ratio: float = 0.2
+    bootstrap_buffer_capacity: int = 8192
     side_data: UsdMSideDataSettings | None = None
 
 
@@ -82,6 +85,9 @@ class UsdMCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
+        self.resync = DepthResyncCoordinator(
+            market="um_perpetual", catalog=self.catalog
+        )
         def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
             if occurred_at_utc_ns is None:
                 return
@@ -91,12 +97,19 @@ class UsdMCollector:
                 event=audit.kind,
                 occurred_at_utc_ns=occurred_at_utc_ns,
             )
+            if audit.kind == "sequence_gap":
+                self.readiness.record_failure("sequence_gap")
+                self.resync.request("sequence_gap", occurred_at_utc_ns)
 
         self.readiness = CollectorReadiness(
             market="um_perpetual",
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
+            bootstrap_buffer_capacity=settings.bootstrap_buffer_capacity,
+            bootstrap_overflow_observer=lambda: self.resync.request(
+                "bootstrap_buffer_overflow"
+            ),
         )
         self._capture_flags: tuple[str, ...] = ()
         self._candidate_handoff = False
@@ -149,6 +162,13 @@ class UsdMCollector:
                 self.metrics.safely_observe_lifecycle(
                     market="um_perpetual", stream=stream, event=event
                 )
+                if stream == "diff_depth" and event in {
+                    "unexpected_disconnect",
+                    "planned_rotation",
+                    "server_shutdown",
+                }:
+                    self.readiness.record_failure(event)
+                    self.resync.request(event)
 
             return observe
 
@@ -165,7 +185,7 @@ class UsdMCollector:
                 planned_rotation_seconds=settings.planned_connection_rotation_seconds,
                 opener=websocket_opener,
                 lifecycle_observer=lifecycle_observer(spec.stream.value),
-                envelope_observer=self.readiness.observe_persisted,
+                envelope_observer=self._observe_persisted,
             )
             for spec in USDM_STREAMS
         )
@@ -225,6 +245,9 @@ class UsdMCollector:
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
+                self.resync.complete(
+                    envelope, snapshot_from_envelope(envelope).last_update_id
+                )
                 return
             failures += 1
             log_event(
@@ -249,15 +272,71 @@ class UsdMCollector:
             "Collector stopped before a required USD-M depth snapshot was captured"
         )
 
+    async def _run_capture_session(self, external_stop: asyncio.Event) -> None:
+        session_stop = asyncio.Event()
+
+        async def control_session() -> None:
+            external = asyncio.create_task(external_stop.wait())
+            restart = asyncio.create_task(self.resync.requested.wait())
+            try:
+                await asyncio.wait(
+                    {external, restart}, return_when=asyncio.FIRST_COMPLETED
+                )
+            finally:
+                session_stop.set()
+                for task in (external, restart):
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(external, restart, return_exceptions=True)
+
+        async with asyncio.TaskGroup() as tasks:
+            for stream in self.streams:
+                tasks.create_task(stream.run(session_stop))
+            tasks.create_task(self._capture_snapshot(session_stop))
+            tasks.create_task(control_session())
+
     async def run(self, stop: asyncio.Event) -> None:
         try:
-            async with asyncio.TaskGroup() as tasks:
-                for stream in self.streams:
-                    tasks.create_task(stream.run(stop))
-                tasks.create_task(self._capture_snapshot(stop))
-                if self.side_data is not None:
-                    tasks.create_task(self.side_data.run(stop))
-                await stop.wait()
+            side_task = (
+                asyncio.create_task(self.side_data.run(stop))
+                if self.side_data is not None
+                else None
+            )
+            restart_failures = 0
+            while not stop.is_set():
+                self.resync.requested.clear()
+                await self._run_capture_session(stop)
+                if stop.is_set():
+                    break
+                if not self.resync.requested.is_set():
+                    raise SnapshotUnavailableError(
+                        "USD-M capture session ended without shutdown or resync"
+                    )
+                restart_failures += 1
+                log_event(
+                    self.logger,
+                    logging.CRITICAL,
+                    "usdm_depth_resync_restart",
+                    "depth continuity invalidated; restarting USD-M capture session",
+                    buffered_capacity=self.settings.bootstrap_buffer_capacity,
+                    reason=(
+                        self.resync.active.reason
+                        if self.resync.active is not None
+                        else "unknown"
+                    ),
+                    restart=restart_failures,
+                )
+                self.readiness.restart_bootstrap()
+                self.resync.prepare_restart()
+                try:
+                    await asyncio.wait_for(
+                        stop.wait(),
+                        timeout=self.snapshot_backoff.delay(restart_failures),
+                    )
+                except TimeoutError:
+                    continue
+            if side_task is not None:
+                await asyncio.gather(side_task, return_exceptions=True)
         finally:
             stop.set()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
@@ -286,6 +365,11 @@ class UsdMCollector:
 
     def readiness_snapshot(self) -> ReadinessSnapshot:
         return self.readiness.snapshot()
+
+    def _observe_persisted(self, envelope: EventEnvelope) -> None:
+        if envelope.stream == "diff_depth":
+            self.resync.observe_depth(envelope)
+        self.readiness.observe_persisted(envelope)
 
     def set_handoff_context(
         self,

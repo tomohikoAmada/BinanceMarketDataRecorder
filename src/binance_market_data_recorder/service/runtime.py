@@ -5,9 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import resource
 import signal
-import sys
 import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
@@ -31,6 +29,7 @@ from ..supervisor.readiness import ReadinessSnapshot
 from ..version import git_commit, package_version
 from .lock import ServiceProcessLock
 from .power import CaffeinateAssertion, ClockDiscontinuityDetector, MacSleepObserver, SleepGap
+from .resources import current_rss_bytes, peak_rss_bytes
 from .state import ServiceStateStore
 
 
@@ -83,16 +82,25 @@ def _collector_factory(
                 rotation_bytes=config.rotation_bytes,
                 durability_interval_seconds=config.durability_interval_seconds,
                 max_frame_bytes=config.max_frame_bytes,
-                side_data=UsdMSideDataSettings(),
+                side_data=UsdMSideDataSettings(
+                    mark_price_enabled=config.side_mark_price_enabled,
+                    liquidation_enabled=config.side_liquidation_enabled,
+                    premium_index_enabled=config.side_premium_index_enabled,
+                    funding_history_enabled=config.side_funding_history_enabled,
+                    funding_info_enabled=config.side_funding_info_enabled,
+                    open_interest_enabled=config.side_open_interest_enabled,
+                    exchange_info_enabled=config.side_exchange_info_enabled,
+                    premium_index_interval_seconds=config.side_premium_index_interval_seconds,
+                    funding_history_interval_seconds=config.side_funding_history_interval_seconds,
+                    funding_info_interval_seconds=config.side_funding_info_interval_seconds,
+                    open_interest_interval_seconds=config.side_open_interest_interval_seconds,
+                    exchange_info_interval_seconds=config.side_exchange_info_interval_seconds,
+                    degraded_after_seconds=config.side_degraded_after_seconds,
+                ),
             ),
             logger=logger,
         ),
     }
-
-
-def _rss_memory_bytes() -> int:
-    value = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return int(value if sys.platform == "darwin" else value * 1024)
 
 
 class ServiceRuntime:
@@ -241,6 +249,9 @@ class ServiceRuntime:
                     else readiness.failure
                 ),
             }
+            side_status = getattr(collector, "side_data_status", None)
+            if callable(side_status):
+                output[name]["side_data"] = side_status()
         return output
 
     def _state_document(self) -> dict[str, object]:
@@ -252,6 +263,19 @@ class ServiceRuntime:
             network_status = "DEGRADED"
         else:
             network_status = "CONNECTING"
+        side_items: list[dict[str, object]] = []
+        for market in markets.values():
+            side_data = market.get("side_data")
+            if isinstance(side_data, dict):
+                side_items.extend(
+                    item for item in side_data.values() if isinstance(item, dict)
+                )
+        if any(
+            item.get("enabled")
+            and item.get("status") in {"RETRYING", "STALE"}
+            for item in side_items
+        ):
+            network_status = "DEGRADED"
         heartbeat = self.utc_clock_ns()
         return {
             "schema_version": "service-state.v1",
@@ -276,7 +300,8 @@ class ServiceRuntime:
             "recovery_action_count": self._recovery_action_count,
             "runtime_metrics": {
                 "process_cpu_seconds": time.process_time(),
-                "rss_memory_bytes": _rss_memory_bytes(),
+                "current_rss_bytes": current_rss_bytes(),
+                "peak_rss_bytes": peak_rss_bytes(),
             },
         }
 
@@ -347,7 +372,27 @@ class ServiceRuntime:
                 self.collector_version,
                 self.service_instance_id,
             )
-            self._supervisor = MarketCollectorSupervisor(self._collectors)
+            def observe_terminal(name: str, exc: BaseException) -> None:
+                if self._catalog is None:
+                    return
+                occurred_at = self.utc_clock_ns()
+                self._catalog.record_operational_event(
+                    event_id=(
+                        f"core-market-terminal:{self.service_instance_id}:"
+                        f"{name}:{occurred_at}"
+                    ),
+                    event_type="CORE_MARKET_TERMINAL_FAILURE",
+                    occurred_at_utc_ns=occurred_at,
+                    evidence={
+                        "market": name,
+                        "error_type": type(exc).__name__,
+                        "restart_owner": "launchd",
+                    },
+                )
+
+            self._supervisor = MarketCollectorSupervisor(
+                self._collectors, terminal_failure_observer=observe_terminal
+            )
             self.power_assertion.start()
             observer.start()
             self._status = "RUNNING"
