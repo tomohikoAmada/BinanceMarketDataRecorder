@@ -1,4 +1,25 @@
-"""Content-addressed, crash-safe and deterministic Raw-to-Parquet pipeline."""
+"""内容寻址、崩溃安全且确定性的 Raw 到 Parquet 管道。
+
+Normalizer 将已验证的 SEALED Raw chunk(以及可选的 archive-verified 外部副本)
+转换为 normalized-dataset.v1 层次结构下的不可变、内容寻址 Parquet 分区。
+
+管道不变量:
+- 所有 Raw chunk 必须在任何行被解析前通过验证(sealed artifact 的大小/哈希
+  与 manifest 匹配)。不可用或未验证的 Raw 中止构建。
+- 候选行写入 NDJSON 文件,然后使用有界 10,000 行运行和 heapq k 路归并
+  进行外部归并排序。这避免了将所有行保存在内存中。
+- 排序候选行在一次遍历中去重:相同 semantic_key_sha256 + 相同
+  logical_record_sha256 合并为一行,具有最小的稳定来源元组。
+  相同语义键 + 不同逻辑内容创建 identity_conflict=true 行(保留所有变体)。
+- 分区 spool 将去重行按 (market, stream, date, hour) 键写入 NDJSON 文件。
+  有界打开 spool 数量防止 fd 耗尽。
+- 每个分区通过写入、fsync、Parquet 逻辑回读、哈希比较、原子重命名来提交。
+  分区 manifest 绑定逻辑/存储哈希。
+- 构建 manifest 将所有分区 manifest 和已验证 M6 checkpoint 绑定到
+  一个内容寻址的 build ID。构建一旦写入即不可变。
+- 基于 kernel flock 的锁防止对同一 data root 进行并发规范化运行。
+- 中断构建留下的过期 .partial 文件在启动时清理。
+"""
 
 from __future__ import annotations
 

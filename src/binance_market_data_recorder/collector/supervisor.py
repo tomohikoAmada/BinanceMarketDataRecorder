@@ -1,4 +1,13 @@
-"""Failure-isolated coordination for market Collectors."""
+"""故障隔离的 market Collector 协调。
+
+MarketCollectorSupervisor 以独立 asyncio 任务运行 Spot 和 USD-M 两个 Collector。
+若任一终止(正常或异常),它设置所有子 stop 事件、等待剩余任务完成,
+然后抛出 CoreMarketTerminalFailure。这种 fail-closed 方法(ADR-0023)
+由 launchd 执行全进程重启,而非依赖单市场的进程中恢复。
+
+若全部 Collector 在没有全局 stop 信号的情况下停止,抛出 AllMarketCollectorsStopped。
+这覆盖了 Collector 无异常退出但被视为终端故障的边界情况。
+"""
 
 from __future__ import annotations
 

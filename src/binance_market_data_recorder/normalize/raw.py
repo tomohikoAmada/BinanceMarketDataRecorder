@@ -1,4 +1,13 @@
-"""Verified location-independent reading of immutable sealed Raw chunks."""
+"""已验证、位置无关的不可变 sealed Raw chunk 读取。
+
+本模块加载 sealed Raw chunk 用于规范化,从内部 sealed/ 目录或
+archive-verified 外部副本解析来源。它在解压帧流式输出之前,
+按 Raw manifest 验证 sealed artifact(大小 + 存储 SHA-256 + 解压 SHA-256)。
+不可用或未验证的来源中止规范化构建,而非静默产生不完整输出。
+
+源 chunk 身份包括 uncompressed_sha256、manifest_sha256 和全部 manifest 元数据。
+规范化在每一输出行中以此进行来源追踪。
+"""
 
 from __future__ import annotations
 

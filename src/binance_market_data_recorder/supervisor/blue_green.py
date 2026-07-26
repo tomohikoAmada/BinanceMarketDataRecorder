@@ -1,4 +1,23 @@
-"""Audited readiness-gated blue/green Collector instance handoff."""
+"""经审计的 readiness-gated blue/green Collector 实例交接。
+
+BlueGreenSupervisor 实现 ADR-0018:在活跃 Collector 继续运行的同时启动候选
+Collector。交接通过 Catalog 审计状态进行:
+
+1. CANDIDATE_STARTING:身份验证,创建 Catalog deployment 记录。
+2. CANDIDATE_READY:候选者达到完全 readiness(3 条流已连接 + 已持久化 +
+   snapshot 已同步 + orderbook 可靠)。
+3. OVERLAP_CONFIRMED:活跃和候选者均至少产生了一个新的 post-readiness 事件,
+   证明并发运行。
+4. CUTOVER_COMPLETE:活跃被停止(通过 stop 事件 + drain 优雅停止),
+   候选者成为唯一运行的 Collector。
+
+若任何步骤失败,候选者被停止,deployment 标记为 ROLLED_BACK。
+活跃 Collector 在 overlap 确认之前永不被停止。overlap 期间的 Raw 事件携带
+capture flags(blue_green_overlap、deployment_id、instance_role、handoff_reason),
+因此规范化可确定性地去重。
+
+Deployment 状态以幂等键经 Catalog 持久化,因此交接期间崩溃可在重启时协调。
+"""
 
 from __future__ import annotations
 

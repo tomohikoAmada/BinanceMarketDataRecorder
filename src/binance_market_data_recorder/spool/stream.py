@@ -1,4 +1,14 @@
-"""Offline stream spool orchestration for bounded enqueue, rotation, and seal."""
+"""流 spool 编排: 有界入队, 旋转和密封。
+
+StreamSpool 将 RawChunkWriter、BoundedEventQueue 和 seal_partial 组装为一个生命周期:
+
+1. 事件从 asyncio 回调通过 enqueue() 入队, 若队列满则抛出 IngressQueueFull。
+2. drain 循环从队列取出事件, append 到活跃 chunk, 按 durability_interval_seconds
+   fsync, 并在 should_rotate 触发时调用 seal_partial 密封当前 chunk 并创建新 chunk。
+3. 空闲时 sync_if_due() 确保低流量流也能在间隔内持久化。
+4. 关闭流程: 停止 drain, 密封活跃 chunk, 等待密封完成。
+5. 不直接管理 WebSocket 连接或 Catalog 事务; 这些由 Collector 和 Catalog 分别处理。
+"""
 
 from __future__ import annotations
 

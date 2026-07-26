@@ -1,4 +1,12 @@
-"""Bounded deterministic replay over one verified normalized build."""
+"""有界确定性重放, 基于一个已验证的规范化构建。
+
+ReplayReader 是公共消费者边界 (ADR-0021): 按 receive_time_utc_ns 排序, 使用 heapq
+k 路归并跨分区流式读取。GapPolicy 在 detect_gap 秒无事件时控制行为 (wait/error/skip)。
+支持按时间 seek, 但不支持按序列号或 update ID seek。
+
+Historical 行 (clock_semantics=archive_source) 不得通过 receive-time 重放器消费;
+仅 Live 行可进入此路径。Live 和 Historical 不会在此层自动拼接。
+"""
 
 from __future__ import annotations
 

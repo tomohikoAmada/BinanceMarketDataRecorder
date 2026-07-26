@@ -1,4 +1,17 @@
-"""Market-local depth resynchronization evidence and coordination."""
+"""市场级深度再同步的证据与协调。
+
+DepthResyncCoordinator 是唯一的决策点,将生命周期违背(意外断开、计划轮换、
+服务端关机、序列缺口或 bootstrap 缓冲区溢出)转换为幂等的 snapshot 触发恢复周期。
+Spot 和 USD-M 各自拥有隔离的协调器,因此一个市场的 resync 永不会停滞另一个。
+
+关键不变量:
+- 在活跃 resync 周期内,request() 是幂等的:仅首次调用递增 failure_count
+  并创建 Catalog 证据。
+- complete() 记录 snapshot 来源、恢复的 update ID,并重置活跃请求。
+- prepare_restart() 是 resync 循环到会话重启的交接点;它清除 asyncio 事件,
+  使下一周期可重新触发。
+- RLock 保护 _active 和 _failure_count 免受并发观察和生命周期回调竞争。
+"""
 
 from __future__ import annotations
 

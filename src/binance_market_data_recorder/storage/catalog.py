@@ -1,4 +1,31 @@
-"""SQLite lifecycle Catalog; market-event payloads never enter this database."""
+"""SQLite 生命周期 Catalog;market-event 负载永不进入此数据库。
+
+Catalog 是 Recorder 中所有状态转换的唯一持久协调点。它存储生命周期元数据,
+而非 market-event 语料库。
+
+状态机:
+- ChunkState:ACTIVE -> RECOVERED/SEALING->SEALED -> ARCHIVE_COPYING ->
+  ARCHIVE_VERIFYING -> ARCHIVED_VERIFIED -> LOCAL_DELETE_PENDING -> LOCAL_DELETED。
+  Quarantine 是终态。允许的转换见 ALLOWED_TRANSITIONS。
+- ArchiveState:COPYING -> VERIFYING -> VERIFIED -> LOCAL_DELETE_PENDING ->
+  LOCAL_DELETED。Chunk 和 archive 状态必须始终一致(ARCHIVE_CHUNK_STATES)。
+- DeploymentState:CANDIDATE_STARTING -> CANDIDATE_READY -> OVERLAP_CONFIRMED ->
+  CUTOVER_COMPLETE。ROLLED_BACK 可从任何非终态到达。
+
+事务语义:
+- 所有写入使用 BEGIN IMMEDIATE 事务,受 RLock 保护。RLock 串行化所有 Catalog
+  访问,确保状态转换原子性。
+- chunk_transitions、archive_transaction_events 和 deployment_events 中的
+  幂等键防止崩溃后重放同一转换。
+- WAL journal mode + synchronous=FULL + foreign_keys=ON。
+- Catalog 通过 RLock 是线程安全的,但不设计用于多进程并发写入;
+  内核 flock(service/lock.py)确保一次只有一个进程拥有 data root。
+
+Catalog 不包含:Raw 负载字节、价格水平、订单簿状态、market-event 行。
+Metrics 仅以聚合 JSON 批次存储(以 batch_id 为键实现幂等重试)。
+Side-data cursors 是小型记录,包含 kind、last_persisted_period_timestamp
+和保留元数据。
+"""
 
 from __future__ import annotations
 

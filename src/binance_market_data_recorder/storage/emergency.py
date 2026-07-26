@@ -1,4 +1,17 @@
-"""Ordered, idempotent disk-emergency actions without silent Raw deletion."""
+"""有序、幂等的磁盘紧急操作,绝不静默删除 Raw。
+
+DiskEmergencyCoordinator 应用 ADR-0016 紧急策略:
+1. WARNING(空闲 <= 40%)和 CRITICAL(空闲 <= 15%)仅告警;无自动操作。
+2. EMERGENCY(空闲 <= max(10 GiB, 5%))触发:暂停非核心工作,优先处理
+   已验证归档(加速 LOCAL_DELETE_PENDING 完成)。
+3. 若空闲字节 <= hard_reserve(max(5 GiB, 2% 容量, 2 * rotation_bytes)),
+   密封活跃 Raw、停止 Collector、记录 DISK_EMERGENCY_STOP 并打开缺口。
+   这是幂等的:若 Catalog 中已存在 DISK_EMERGENCY_STOP,仅重新执行
+   SEAL_ACTIVE + STOP_COLLECTORS。
+
+紧急策略绝不删除未归档的 Raw。hard reserve 确保在磁盘真正满之前有足够余量
+完成优雅密封 + 停止。
+"""
 
 from __future__ import annotations
 

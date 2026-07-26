@@ -1,4 +1,22 @@
-"""Market-specific inputs and deterministic logical order-book state."""
+"""特定市场的输入和确定性逻辑订单簿状态。
+
+本模型强制执行结构完整性,但不拥有排序逻辑(排序逻辑位于
+LocalBookReconstructor 中)。
+
+DepthUpdate 中编码的 Spot 与 USD-M 差异:
+- Spot:previous_final_update_id 必须为 None(Spot 无 'pu' 字段)。
+- USD-M:previous_final_update_id 必须是非负整数('pu' 字段)。
+此差异在 __post_init__ 中通过市场特定验证强制执行。
+
+DepthUpdate 的价格和数量通过 Decimal 验证:
+- Price:必须有限且为正。
+- Quantity:必须有限且非负。零数量移除一个价位。
+- 移除不存在的价位不视为错误(dict.pop,默认 None)。
+
+OrderBook.canonical_mapping() 为 SHA-256 哈希生成确定性 JSON 结构。
+所有 decimal 值以无尾随零、无科学记数法呈现(canonical_decimal)。
+映射按键排序,bids 数组按价格降序排列,确保无论插入顺序如何哈希均一致。
+"""
 
 from __future__ import annotations
 

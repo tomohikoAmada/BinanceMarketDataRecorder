@@ -1,4 +1,16 @@
-"""Binance USD-M BTCUSDT Collector assembly for M5."""
+"""M5 的 Binance USD-M BTCUSDT Collector 组装。
+
+UsdMCollector 镜像 SpotCollector 的生命周期(三条独立流、snapshot resync、优雅关闭),
+但增加以下 USD-M 特定不变量:
+
+- USD-M 深度使用 U/u/pu 连续性(ADR-0011);Spot 使用 lastUpdateId+1。
+  重建器强制执行此差异;Collector 自身不感知。
+- Side data 任务(mark price、liquidation、REST 轮询)由 UsdMSideDataManager 管理,
+  在核心关闭前被等待,确保 side Raw 在核心 Collector 的 Catalog 关闭之前持久化。
+- Snapshot 循环容忍 Binance SDK 错误,以有上限的回退重试。不对非 5xx HTTP 错误
+  重试(Spot 会对非 5xx 重试),这反映了官方 USD-M SDK 更简单的错误模型。
+- Finally 块在关闭时排出 side data;side-task 错误被记录日志但不掩盖核心异常。
+"""
 
 from __future__ import annotations
 

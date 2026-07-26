@@ -1,4 +1,18 @@
-"""Thread-safe health and order-book readiness evidence for one market instance."""
+"""单 market 实例的线程安全健康与 order-book readiness 证据。
+
+CollectorReadiness 把控 Collector 生命周期:Collector 仅在全部三条核心流
+(diff_depth、agg_trade、book_ticker)均已连接、至少各持久化了一个事件、
+depth snapshot 已持久写入且 LocalBookReconstructor 已同步时才视为 "ready"。
+
+线程安全:所有公共方法获取 RLock,因为生命周期观察者在 WebSocket 回调中运行
+(通过 asyncio.to_thread drain 单线程化),而 snapshot 循环可能从另一个 asyncio
+任务读取 readiness 状态。RLock 涵盖整个 Snapshot + Book 状态;锁内的单个计数器
+更新是原子的,因为 GIL 下的 Python dict/set 操作是串行的。
+
+在 restart_bootstrap()(resync 请求后调用)上重建 readiness 时从零开始。
+旧的 LocalBookReconstructor 被丢弃并创建新实例,因此缺口之前的任何已缓冲 diff
+将丢失。这是有意为之:缺口之前的深度无法重放,因为序列缺口是永久的。
+"""
 
 from __future__ import annotations
 

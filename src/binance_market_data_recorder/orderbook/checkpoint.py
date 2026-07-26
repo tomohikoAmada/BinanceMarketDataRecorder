@@ -1,4 +1,12 @@
-"""Atomic, hash-verified local order-book checkpoints."""
+"""原子、哈希验证的本地订单簿 checkpoint。
+
+Checkpoint 记录 (market, 重建后的 logical_orderbook 的 SHA-256, last_update_id, 时间戳)。
+M6 规范化管道将 checkpoint 作为 content-addressed artifact 绑定到 normalized build
+manifest 中, 供 replay 消费者验证深度状态恢复。
+
+原子性: checkpoint JSON 写入临时文件, fsync, 然后原子 rename 到最终路径。
+写入中断时残留的 .tmp 文件在下次写入前被清理。
+"""
 
 from __future__ import annotations
 

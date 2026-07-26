@@ -1,4 +1,14 @@
-"""Verified manifest catalog that hides physical artifact resolution."""
+"""经验证的 Manifest Catalog,隐藏物理 artifact 解析。
+
+ManifestCatalog 是公共消费者边界(ADR-0021)。它打开一个显式内容寻址的
+规范化构建,验证所有选定分区和 checkpoint 身份,并将相对路径解析到内部
+Recorder 根目录。它从不暴露外部 archive 挂载点或 storage_ids。
+
+- 消费者仅配置 data_root 和显式 build ID。没有 "latest" 推断或跨构建 glob。
+- 每个分区和 checkpoint manifest 在返回给消费者前通过内容哈希验证。
+  缺失或篡改的 artifact 中止打开。
+- 路径相对于 data root 解析,具有包含性检查以防止目录遍历。
+"""
 
 from __future__ import annotations
 

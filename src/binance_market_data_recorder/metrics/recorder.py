@@ -1,4 +1,21 @@
-"""Thread-safe batching of operational summaries into the Catalog."""
+"""线程安全的操作摘要批量写入 Catalog。
+
+MetricsRecorder 在内存中聚合每流计数器(写入事件数、字节数、质量审计、生命周期
+事件、操作延迟),并将其作为幂等 JSON 批次刷新到 Catalog.metric_batches。
+每个批次具有稳定 ID,因此崩溃后重试不会重复计数。
+
+计数器 vs 测量值:
+- 计数器:accepted、duplicate、malformed、out_of_order 事件;sealed bytes;
+  archived/deleted bytes。这些在 UTC 日内单调递增。
+- 测量值:queue depth、last_event_age、current_rss、peak_rss。这些反映
+  瞬时状态,在批处理周期内记录为 last/max。
+
+Metrics 仅为聚合数据:没有任何单个 market event 进入 SQLite。批次聚合 JSON
+原样存储;日报告(DailyReporter)将每个 UTC 日内的批次求和以生成 JSON/CSV 报告。
+
+Recorder 不在任何 metrics 表中存储原始负载、价格水平、序列 ID 或逐事件行。
+聚合 JSON schema 为 operational-metric-aggregate.v1。
+"""
 
 from __future__ import annotations
 
