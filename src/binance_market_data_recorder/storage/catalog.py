@@ -271,6 +271,13 @@ class Catalog:
                 occurred_at_utc_ns INTEGER NOT NULL,
                 evidence_json TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS side_data_cursors (
+                kind TEXT PRIMARY KEY,
+                last_persisted_period_timestamp INTEGER NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL,
+                source_retention_window TEXT NOT NULL,
+                retention_window_ms INTEGER NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS deployment_sessions (
                 deployment_id TEXT PRIMARY KEY,
                 reason TEXT NOT NULL,
@@ -468,6 +475,65 @@ class Catalog:
             document["evidence"] = json.loads(str(evidence_json))
             output.append(document)
         return output
+
+    def side_data_cursor(self, kind: str) -> dict[str, object] | None:
+        if not kind:
+            raise ValueError("side-data cursor kind must be non-empty")
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM side_data_cursors WHERE kind = ?", (kind,)
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def advance_side_data_cursor(
+        self,
+        *,
+        kind: str,
+        last_persisted_period_timestamp: int,
+        updated_at_utc_ns: int,
+        source_retention_window: str,
+        retention_window_ms: int,
+    ) -> bool:
+        if (
+            not kind
+            or last_persisted_period_timestamp < 0
+            or updated_at_utc_ns < 0
+            or not source_retention_window
+            or retention_window_ms <= 0
+        ):
+            raise ValueError("invalid side-data cursor")
+        with self._transaction() as connection:
+            existing = connection.execute(
+                "SELECT * FROM side_data_cursors WHERE kind = ?", (kind,)
+            ).fetchone()
+            if existing is not None:
+                current = int(existing["last_persisted_period_timestamp"])
+                if last_persisted_period_timestamp < current:
+                    raise CatalogStateError("side-data cursor cannot move backward")
+                if last_persisted_period_timestamp == current:
+                    return False
+            connection.execute(
+                """
+                INSERT INTO side_data_cursors(
+                    kind, last_persisted_period_timestamp, updated_at_utc_ns,
+                    source_retention_window, retention_window_ms
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(kind) DO UPDATE SET
+                    last_persisted_period_timestamp =
+                        excluded.last_persisted_period_timestamp,
+                    updated_at_utc_ns = excluded.updated_at_utc_ns,
+                    source_retention_window = excluded.source_retention_window,
+                    retention_window_ms = excluded.retention_window_ms
+                """,
+                (
+                    kind,
+                    last_persisted_period_timestamp,
+                    updated_at_utc_ns,
+                    source_retention_window,
+                    retention_window_ms,
+                ),
+            )
+        return True
 
     def create_deployment(
         self,

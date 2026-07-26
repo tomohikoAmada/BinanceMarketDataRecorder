@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +39,9 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M14.md",
     "docs/milestone_acceptance/M15.md",
     "docs/milestone_acceptance/M16.md",
+    "docs/milestone_acceptance/M19.md",
+    "docs/milestone_acceptance/M19.2.md",
+    "docs/data_coverage.md",
     "docs/consumer_contract.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
@@ -62,6 +66,8 @@ REQUIRED_FILES = (
     "docs/adr/0019-user-launchagent-and-power-lifecycle.md",
     "docs/adr/0020-content-addressed-normalized-parquet.md",
     "docs/adr/0021-deterministic-replay-and-consumer-boundary.md",
+    "docs/adr/0023-depth-resync-and-terminal-recovery.md",
+    "docs/adr/0024-historical-source-contract.md",
     "examples/replay_consumer.py",
     "src/binance_market_data_recorder/py.typed",
     "tools/binance_docs.toml",
@@ -84,6 +90,7 @@ REQUIRED_TRACE_IDS = (
     "SRC-04",
     "DAT-01",
     "DAT-09",
+    "DAT-11",
     "STO-01",
     "STO-09",
     "SPC-01",
@@ -103,8 +110,16 @@ FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
 )
 
-EXPECTED_ROOT = Path(
+DEFAULT_EXPECTED_ROOT = Path(
     "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder"
+)
+_ci_expected_root = os.environ.get("M0_CONTRACT_ROOT")
+if _ci_expected_root is not None:
+    assert os.environ.get("CI") == "true", "contract root override is CI-only"
+EXPECTED_ROOT = (
+    Path(_ci_expected_root).resolve()
+    if _ci_expected_root is not None
+    else DEFAULT_EXPECTED_ROOT
 )
 
 IDENTITY_VALUES = (
@@ -168,12 +183,12 @@ def verify() -> None:
     assert not missing, f"missing M0 files: {missing}"
 
     plan = (ROOT / "docs/milestone_plan.md").read_text(encoding="utf-8")
-    for number in range(19):
+    for number in range(20):
         assert f"## M{number} " in plan, f"M{number} missing from milestone plan"
     assert "## M0.1 " in plan, "M0.1 missing from milestone plan"
     assert "## M0.2 " in plan, "M0.2 missing from milestone plan"
     for heading in ("Scope", "Non-scope", "Dependencies", "Acceptance", "Rollback"):
-        assert plan.count(f"- {heading}:") == 21, f"expected 21 {heading} sections"
+        assert plan.count(f"- {heading}:") == 22, f"expected 22 {heading} sections"
     assert "## M16 — Replay interface and generic consumer data contract" in plan
     assert "named consumer is" in plan and "required for V1 completion" in plan
 
@@ -307,6 +322,32 @@ def verify() -> None:
     assert "Alpha101Crypto is one optional external" in text_files[
         "docs/adr/ADR-0007-binance-scoped-project-identity.md"
     ]
+
+    m19_2 = text_files["docs/milestone_acceptance/M19.2.md"]
+    assert "unsupported Raw stream" in m19_2
+    data_contract = text_files["docs/data_contract.md"]
+    assert (
+        "Historical and Live datasets are not automatically joined"
+        in data_contract
+    )
+    normalized_model = text_files[
+        "src/binance_market_data_recorder/normalize/model.py"
+    ]
+    normalized_parser = text_files[
+        "src/binance_market_data_recorder/normalize/parser.py"
+    ]
+    for stream in (
+        "open_interest_statistics_5m",
+        "taker_buy_sell_volume_5m",
+        "global_long_short_ratio_5m",
+        "top_long_short_account_ratio_5m",
+        "top_long_short_position_ratio_5m",
+        "basis_5m",
+    ):
+        assert stream in normalized_model
+        assert stream in normalized_parser
+    assert '("spot", "exchange_info")' in normalized_model
+    assert "requested_start_ms" in normalized_parser
 
     assert "python-binance" in tracked_text  # its prohibition must be explicit
     assert "No GUI" in tracked_text or "no GUI" in tracked_text

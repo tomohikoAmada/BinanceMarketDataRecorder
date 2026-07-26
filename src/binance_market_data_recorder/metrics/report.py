@@ -93,7 +93,8 @@ def _stream_document(
         "write_latency_ns": _percentiles(aggregate, "write_latency_ns"),
         "fsync_latency_ns": _percentiles(aggregate, "fsync_latency_ns"),
         "cpu_percent": _gauge(aggregate, "cpu_percent"),
-        "rss_memory_bytes": _gauge(aggregate, "rss_memory_bytes"),
+        "current_rss_bytes": _gauge(aggregate, "current_rss_bytes"),
+        "peak_rss_bytes": _gauge(aggregate, "peak_rss_bytes"),
         "internal_free_bytes": _gauge(aggregate, "internal_free_bytes"),
         "external_free_bytes": {
             "value": None,

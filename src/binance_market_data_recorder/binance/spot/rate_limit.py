@@ -85,6 +85,14 @@ class SpotIpRateLimiter:
         """Wait for both the current ban gate and conservative IP-weight pacing."""
 
         weight = depth_request_weight(limit)
+        await self.acquire_weight(weight=weight, limit=limit)
+        return weight
+
+    async def acquire_weight(self, *, weight: int, limit: int | None = None) -> None:
+        """Pace any documented public Spot REST operation by its IP weight."""
+
+        if weight < 1:
+            raise ValueError("Spot REST request weight must be positive")
         while True:
             async with self._lock:
                 now = self._monotonic_clock()
@@ -106,7 +114,7 @@ class SpotIpRateLimiter:
                         limit,
                         weight,
                     )
-                    return weight
+                    return
             if self._sleep is None:
                 await asyncio.sleep(delay)
             else:
@@ -136,6 +144,24 @@ class SpotIpRateLimiter:
                 _normalized_headers(headers),
                 limit,
                 depth_request_weight(limit),
+            )
+
+    async def observe_success_weight(
+        self, *, weight: int, headers: Mapping[str, str]
+    ) -> None:
+        if weight < 1:
+            raise ValueError("Spot REST request weight must be positive")
+        async with self._lock:
+            now_utc_ns = self._utc_clock_ns()
+            blocked_until = self._state.blocked_until_utc_ns
+            still_blocked = blocked_until is not None and now_utc_ns < blocked_until
+            self._state = RateLimitState(
+                blocked_until if still_blocked else None,
+                self._state.ban_until_utc_ns if still_blocked else None,
+                200,
+                _normalized_headers(headers),
+                None,
+                weight,
             )
 
     async def observe_rejection(
@@ -179,6 +205,46 @@ class SpotIpRateLimiter:
                 f"Spot REST HTTP {status}; requests blocked until "
                 f"{datetime.fromtimestamp(retry_at_utc_ns / 1e9, tz=UTC).isoformat()}"
             ),
+        )
+
+    async def observe_weight_rejection(
+        self,
+        *,
+        status: int,
+        weight: int,
+        headers: Mapping[str, str],
+        body_text: str,
+    ) -> SpotRateLimitBlocked:
+        if status not in {418, 429} or weight < 1:
+            raise ValueError("invalid weighted Spot REST rejection")
+        normalized = _normalized_headers(headers)
+        now_utc_ns = self._utc_clock_ns()
+        now_monotonic = self._monotonic_clock()
+        retry_at_utc_ns = _retry_at_utc_ns(
+            status=status,
+            headers=normalized,
+            body_text=body_text,
+            now_utc_ns=now_utc_ns,
+        )
+        blocked_seconds = max(0.0, (retry_at_utc_ns - now_utc_ns) / 1_000_000_000)
+        async with self._lock:
+            self._blocked_until_monotonic = max(
+                self._blocked_until_monotonic,
+                now_monotonic + blocked_seconds,
+            )
+            self._state = RateLimitState(
+                retry_at_utc_ns,
+                retry_at_utc_ns if status == 418 else self._state.ban_until_utc_ns,
+                status,
+                normalized,
+                None,
+                weight,
+            )
+        return SpotRateLimitBlocked(
+            status=status,
+            retry_at_utc_ns=retry_at_utc_ns,
+            headers=normalized,
+            detail=f"Spot REST HTTP {status}; weighted operation blocked",
         )
 
     def state(self) -> RateLimitState:

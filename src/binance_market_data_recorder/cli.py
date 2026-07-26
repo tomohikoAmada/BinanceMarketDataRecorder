@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
+from .backfill import HistoricalImporter, build_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
 from .logging import configure_logging, log_event
@@ -74,6 +75,25 @@ def build_parser() -> argparse.ArgumentParser:
     config_commands.add_parser("show", help="show effective credential-free configuration")
     commands.add_parser("doctor", help="run offline platform and path checks")
     commands.add_parser("status", help="show structured runtime and storage status")
+    backfill_command = commands.add_parser(
+        "backfill", help="plan and import official Binance public archives"
+    )
+    backfill_commands = backfill_command.add_subparsers(
+        dest="backfill_command", required=True, parser_class=_ArgumentParser
+    )
+    for action in ("plan", "run"):
+        command = backfill_commands.add_parser(
+            action, help=f"{action} a historical archive import"
+        )
+        command.add_argument(
+            "--profile",
+            choices=("baseline-bars", "microstructure-trades"),
+            default="baseline-bars",
+        )
+        command.add_argument("--start", required=True, help="inclusive YYYY-MM-DD")
+        command.add_argument("--end", required=True, help="inclusive YYYY-MM-DD")
+    backfill_commands.add_parser("status", help="show historical import state")
+    backfill_commands.add_parser("verify", help="verify every imported source revision")
     report_command = commands.add_parser("report", help="build operational reports")
     report_commands = report_command.add_subparsers(
         dest="report_command", required=True, parser_class=_ArgumentParser
@@ -282,6 +302,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1 if result["status"] == "FAIL" else 0
     if command == "status":
         _write_json(service_status(loaded.config.data_root))
+        return 0
+    if command == "backfill":
+        action = getattr(args, "backfill_command", None)
+        importer = HistoricalImporter(data_root=loaded.config.data_root)
+        try:
+            if action in {"plan", "run"}:
+                plan = build_plan(
+                    str(args.profile),
+                    datetime.strptime(str(args.start), "%Y-%m-%d").date(),
+                    datetime.strptime(str(args.end), "%Y-%m-%d").date(),
+                )
+                result = (
+                    plan.public_dict() if action == "plan" else importer.run(plan)
+                )
+            elif action == "status":
+                result = importer.status()
+            elif action == "verify":
+                result = importer.verify()
+            else:
+                parser.error(f"unsupported backfill command: {action}")
+        except (OSError, RuntimeError, ValueError) as exc:
+            _write_json(
+                {"error": "backfill_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
+        _write_json({"command": f"backfill.{action}", **result})
         return 0
     if command == "_service" and getattr(args, "service_command", None) == "run":
         logger = configure_logging(loaded.config.log_level)

@@ -149,6 +149,8 @@ def test_spot_collector_refuses_repository_as_data_root() -> None:
 def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
     tmp_path: Path,
 ) -> None:
+    second_depth_persisted = threading.Event()
+
     class RestartRestApi:
         def __init__(self) -> None:
             self.calls = 0
@@ -160,6 +162,8 @@ def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
             if self.calls == 1:
                 self.first_started.set()
                 assert self.release_first.wait(timeout=2)
+            else:
+                assert second_depth_persisted.wait(timeout=2)
             return Response()
 
     class SequenceSocket:
@@ -232,6 +236,18 @@ def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
             websocket_opener=opener,
             snapshot_requester=requester,
         )
+        depth_stream = next(
+            stream for stream in collector.streams if stream.stream.value == "diff_depth"
+        )
+        original_observer = depth_stream.envelope_observer
+
+        def observe_depth(envelope: Any) -> None:
+            assert original_observer is not None
+            original_observer(envelope)
+            if envelope.source_sequence.get("U") == 101:
+                second_depth_persisted.set()
+
+        depth_stream.envelope_observer = observe_depth
         task = asyncio.create_task(collector.run(stop))
         assert await asyncio.to_thread(rest_api.first_started.wait, 1)
         for _ in range(100):
@@ -249,7 +265,7 @@ def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
         assert collector.readiness_snapshot().ready
         await asyncio.wait_for(task, timeout=3)
         assert opens["btcusdt@depth@100ms"] >= 2
-        assert 2 <= rest_api.calls <= 3
+        assert rest_api.calls == 2
         assert requester.inflight_count() == 0
 
     asyncio.run(exercise())

@@ -51,6 +51,37 @@ class RecorderConfig(BaseModel):
     heartbeat_seconds: float = Field(default=5.0, ge=1.0, le=60.0)
     sleep_gap_threshold_seconds: float = Field(default=30.0, ge=5.0, le=600.0)
     prevent_sleep: bool = False
+    side_mark_price_enabled: bool = True
+    side_liquidation_enabled: bool = True
+    side_premium_index_enabled: bool = True
+    side_funding_history_enabled: bool = True
+    side_funding_info_enabled: bool = True
+    side_open_interest_enabled: bool = True
+    side_exchange_info_enabled: bool = True
+    side_premium_index_interval_seconds: float = Field(default=60.0, gt=0)
+    side_funding_history_interval_seconds: float = Field(default=300.0, gt=0)
+    side_funding_info_interval_seconds: float = Field(default=3600.0, gt=0)
+    side_open_interest_interval_seconds: float = Field(default=60.0, gt=0)
+    side_exchange_info_interval_seconds: float = Field(default=3600.0, gt=0)
+    side_degraded_after_seconds: float = Field(default=900.0, gt=0)
+    spot_exchange_info_enabled: bool = True
+    spot_exchange_info_interval_seconds: float = Field(default=3600.0, gt=0)
+    side_open_interest_statistics_enabled: bool = True
+    side_taker_buy_sell_volume_enabled: bool = True
+    side_global_long_short_ratio_enabled: bool = True
+    side_top_long_short_account_ratio_enabled: bool = True
+    side_top_long_short_position_ratio_enabled: bool = True
+    side_basis_enabled: bool = True
+    side_open_interest_statistics_interval_seconds: float = Field(default=300.0, gt=0)
+    side_taker_buy_sell_volume_interval_seconds: float = Field(default=300.0, gt=0)
+    side_global_long_short_ratio_interval_seconds: float = Field(default=300.0, gt=0)
+    side_top_long_short_account_ratio_interval_seconds: float = Field(
+        default=300.0, gt=0
+    )
+    side_top_long_short_position_ratio_interval_seconds: float = Field(
+        default=300.0, gt=0
+    )
+    side_basis_interval_seconds: float = Field(default=300.0, gt=0)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -76,6 +107,11 @@ class RecorderConfig(BaseModel):
             "heartbeat_seconds": self.heartbeat_seconds,
             "sleep_gap_threshold_seconds": self.sleep_gap_threshold_seconds,
             "prevent_sleep": self.prevent_sleep,
+            **{
+                name: getattr(self, name)
+                for name in self.__class__.model_fields
+                if name.startswith(("side_", "spot_"))
+            },
         }
 
 
@@ -92,6 +128,43 @@ class _RecorderOverrides(BaseModel):
     heartbeat_seconds: float | None = Field(default=None, ge=1.0, le=60.0)
     sleep_gap_threshold_seconds: float | None = Field(default=None, ge=5.0, le=600.0)
     prevent_sleep: bool | None = None
+    side_mark_price_enabled: bool | None = None
+    side_liquidation_enabled: bool | None = None
+    side_premium_index_enabled: bool | None = None
+    side_funding_history_enabled: bool | None = None
+    side_funding_info_enabled: bool | None = None
+    side_open_interest_enabled: bool | None = None
+    side_exchange_info_enabled: bool | None = None
+    side_premium_index_interval_seconds: float | None = Field(default=None, gt=0)
+    side_funding_history_interval_seconds: float | None = Field(default=None, gt=0)
+    side_funding_info_interval_seconds: float | None = Field(default=None, gt=0)
+    side_open_interest_interval_seconds: float | None = Field(default=None, gt=0)
+    side_exchange_info_interval_seconds: float | None = Field(default=None, gt=0)
+    side_degraded_after_seconds: float | None = Field(default=None, gt=0)
+    spot_exchange_info_enabled: bool | None = None
+    spot_exchange_info_interval_seconds: float | None = Field(default=None, gt=0)
+    side_open_interest_statistics_enabled: bool | None = None
+    side_taker_buy_sell_volume_enabled: bool | None = None
+    side_global_long_short_ratio_enabled: bool | None = None
+    side_top_long_short_account_ratio_enabled: bool | None = None
+    side_top_long_short_position_ratio_enabled: bool | None = None
+    side_basis_enabled: bool | None = None
+    side_open_interest_statistics_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_taker_buy_sell_volume_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_global_long_short_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_top_long_short_account_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_top_long_short_position_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_basis_interval_seconds: float | None = Field(default=None, gt=0)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -166,6 +239,33 @@ def load_config(
         "heartbeat_seconds": 5.0,
         "sleep_gap_threshold_seconds": 30.0,
         "prevent_sleep": False,
+        "side_mark_price_enabled": True,
+        "side_liquidation_enabled": True,
+        "side_premium_index_enabled": True,
+        "side_funding_history_enabled": True,
+        "side_funding_info_enabled": True,
+        "side_open_interest_enabled": True,
+        "side_exchange_info_enabled": True,
+        "side_premium_index_interval_seconds": 60.0,
+        "side_funding_history_interval_seconds": 300.0,
+        "side_funding_info_interval_seconds": 3600.0,
+        "side_open_interest_interval_seconds": 60.0,
+        "side_exchange_info_interval_seconds": 3600.0,
+        "side_degraded_after_seconds": 900.0,
+        "spot_exchange_info_enabled": True,
+        "spot_exchange_info_interval_seconds": 3600.0,
+        "side_open_interest_statistics_enabled": True,
+        "side_taker_buy_sell_volume_enabled": True,
+        "side_global_long_short_ratio_enabled": True,
+        "side_top_long_short_account_ratio_enabled": True,
+        "side_top_long_short_position_ratio_enabled": True,
+        "side_basis_enabled": True,
+        "side_open_interest_statistics_interval_seconds": 300.0,
+        "side_taker_buy_sell_volume_interval_seconds": 300.0,
+        "side_global_long_short_ratio_interval_seconds": 300.0,
+        "side_top_long_short_account_ratio_interval_seconds": 300.0,
+        "side_top_long_short_position_ratio_interval_seconds": 300.0,
+        "side_basis_interval_seconds": 300.0,
     }
     sources = {name: "default" for name in values}
 
@@ -186,6 +286,33 @@ def load_config(
             "heartbeat_seconds",
             "sleep_gap_threshold_seconds",
             "prevent_sleep",
+            "side_mark_price_enabled",
+            "side_liquidation_enabled",
+            "side_premium_index_enabled",
+            "side_funding_history_enabled",
+            "side_funding_info_enabled",
+            "side_open_interest_enabled",
+            "side_exchange_info_enabled",
+            "side_premium_index_interval_seconds",
+            "side_funding_history_interval_seconds",
+            "side_funding_info_interval_seconds",
+            "side_open_interest_interval_seconds",
+            "side_exchange_info_interval_seconds",
+            "side_degraded_after_seconds",
+            "spot_exchange_info_enabled",
+            "spot_exchange_info_interval_seconds",
+            "side_open_interest_statistics_enabled",
+            "side_taker_buy_sell_volume_enabled",
+            "side_global_long_short_ratio_enabled",
+            "side_top_long_short_account_ratio_enabled",
+            "side_top_long_short_position_ratio_enabled",
+            "side_basis_enabled",
+            "side_open_interest_statistics_interval_seconds",
+            "side_taker_buy_sell_volume_interval_seconds",
+            "side_global_long_short_ratio_interval_seconds",
+            "side_top_long_short_account_ratio_interval_seconds",
+            "side_top_long_short_position_ratio_interval_seconds",
+            "side_basis_interval_seconds",
         ):
             value = getattr(overrides, name)
             if value is not None:

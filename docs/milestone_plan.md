@@ -467,10 +467,69 @@ self-referential commit hash.
 
 Completion of M18 still stops and waits for explicit human publication/merge.
 
+## M19 — Reliability repair and critical market-data completeness
+
+- Scope: market-local depth resync; fail-fast core terminal recovery;
+  restartable/visible side data; truthful RSS gauges; Spot exchangeInfo; six
+  official USD-M latest-closed 5m statistics; revisioned official historical
+  backfill; offline macOS CI and coverage contracts.
+- Non-scope: strategies, models, backtests, accounts, orders, trading, API
+  credentials, live raw-trade/kline streams, L3 fabrication, other exchanges,
+  Ubuntu/RK3588, or long-running acceptance.
+- Dependencies: accepted M18 Developer Preview; ADR-0011/0012/0022; current
+  official Binance documentation, modular SDK, and public-data README.
+- Acceptance: A–G audit recorded; every resync and terminal path tested;
+  side-task recovery/status tested; public schemas and rate-limit provenance
+  tested; archive checksum/revision/404/timestamp/clock/idempotency tested;
+  offline pytest plus explicit stress, Ruff, strict mypy, contracts, Go golden,
+  build/install and clean diff pass; branch pushed and PR opened without merge.
+- Rollback: preserve immutable Live Raw, historical source revisions, Catalog
+  evidence and gaps; disable affected side dataset/readiness, revert only M19
+  commits, and never substitute third-party or fabricated data.
+
+### M19.1 — Second-review blockers
+
+**Scope.** Explicit official archive filenames and online URL smoke; immediate
+  fail-fast for normally returning core collectors; ordered USD-M side-task
+  shutdown; durable 5-minute Cursors and bounded catch-up; streaming Parquet
+  normalization; safe HTTP Range recovery; truthful recovered book update ID;
+  full backfill lineage verification; and repair of the existing macOS CI
+  workflow validation failure.
+**Non-scope.** Other symbols, credentials, accounts, orders, trading, strategy,
+  models, R-034 production-rule changes, new PRs, or merge.
+**Dependencies.** The M19 branch and immutable contracts in ADR-0023/0024.
+
+**Acceptance.** Focused regressions, complete offline/stress/toolchain gates,
+  explicit unsigned online archive and six-endpoint smoke, same-branch push,
+  and a successful existing-PR CI run.
+**Rollback.** Revert only M19.1 commits; preserve Raw, historical revisions,
+  Catalog Cursors/events, and the open R-034 evidence.
+
+### M19.2 — Normalized consumer contract for M19 Live data
+
+**Scope.** Market-specific Spot/USD-M exchange-info schemas; six USD-M
+5-minute schemas; multi-record REST expansion; timestamp-centered semantic
+identity; explicit empty observations; and deterministic duplicate/conflict
+handling through Raw-to-Parquet.
+**Non-scope.** Collector lifecycle, Historical Importer architecture, R-034
+production rules, other symbols, credentials, accounts, trading, strategy,
+models, platform ports, new PRs, or merge.
+**Dependencies.** The M19/M19.1 Live Raw provenance and the immutable
+`normalized-dataset.v1` contract in ADR-0020.
+
+**Acceptance.** Offline real-envelope-shaped parser fixtures and full
+Raw-to-Parquet tests cover every M19 Live stream, multi-record expansion,
+overlap deduplication, conflicts, empty and malformed observations, plus old
+stream regression; complete offline/stress/toolchain/install gates pass; the
+same PR branch is pushed and its CI succeeds.
+**Rollback.** Revert only the M19.2 commit; preserve immutable Live Raw,
+Catalog and existing normalized artifacts, and rebuild compatible datasets
+from Raw after a corrected parser is available.
+
 ## Future Work
 
 Unscheduled future work may include the deferred 72-hour/168-hour reliability
 proof, repeated 24-hour connection rotations, Ubuntu or Windows portability,
 and a separately reviewed GUI. Future work has no milestone number, is not part
-of the current M0–M18 plan, and does not include strategy, backtest or trading
+of the current M0–M19 plan, and does not include strategy, backtest or trading
 implementation without a new human-approved project scope.

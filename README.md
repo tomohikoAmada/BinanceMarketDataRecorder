@@ -12,6 +12,23 @@ by, or endorsed by Binance. The name identifies the public data source; the
 project does not use Binance logos or claim an official relationship.
 This project is specifically for Binance public market data.
 
+M19 adds fail-closed depth resynchronization, restartable public side-data
+tasks, Spot BTCUSDT exchange rules, six USD-M latest-closed 5m statistics, and
+an official `data.binance.vision` historical importer. Historical rows retain
+an archive-source clock and are never represented as Live receive-clock Raw.
+See [data coverage](docs/data_coverage.md).
+
+```bash
+binance-market-recorder backfill plan --start 2025-01-01 --end 2025-01-31
+binance-market-recorder backfill run --start 2025-01-01 --end 2025-01-31
+binance-market-recorder backfill status
+binance-market-recorder backfill verify
+```
+
+The default `baseline-bars` profile does not download trades. Use
+`--profile microstructure-trades` explicitly for official Spot/USD-M
+trades/aggTrades.
+
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本仅为Mac Developer Preview，不得用于真实资金交易。

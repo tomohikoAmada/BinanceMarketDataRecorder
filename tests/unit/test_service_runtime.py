@@ -25,11 +25,17 @@ from binance_market_data_recorder.supervisor import ReadinessSnapshot
 
 class FakeCollector:
     def __init__(
-        self, market: Market, instance_id: str, *, fail: bool = False
+        self,
+        market: Market,
+        instance_id: str,
+        *,
+        fail: bool = False,
+        return_early: bool = False,
     ) -> None:
         self.market = market
         self.instance_id = instance_id
         self.fail = fail
+        self.return_early = return_early
         self.started = False
         self.stopped = False
 
@@ -37,6 +43,8 @@ class FakeCollector:
         self.started = True
         if self.fail:
             raise RuntimeError("injected collector failure")
+        if self.return_early:
+            return
         await stop.wait()
         self.stopped = True
 
@@ -145,8 +153,11 @@ def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
                 break
         else:
             pytest.fail("runtime did not become RUNNING")
-        await asyncio.sleep(0)
-        live = service_status(tmp_path)
+        for _ in range(200):
+            live = service_status(tmp_path)
+            if live["network_connected"] is True:
+                break
+            await asyncio.sleep(0.01)
         assert live["status"] == "RUNNING"
         assert live["network_connected"] is True
         assert live["network_status"] == "ALL_MARKETS_READY"
@@ -196,7 +207,7 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
             sleep_observer_factory=FakeSleepObserver,
             power_assertion=FakePowerAssertion(),
         )
-        with pytest.raises(RuntimeError, match="all core market"):
+        with pytest.raises(RuntimeError, match="core market Collector terminated"):
             await runtime.run()
         state = runtime.state_store.read()
         assert state is not None
@@ -205,3 +216,47 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
     asyncio.run(exercise())
     with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
         assert len(catalog.operational_events(event_type="SERVICE_FAILED")) == 1
+        assert len(
+            catalog.operational_events(event_type="CORE_MARKET_TERMINAL_FAILURE")
+        ) == 1
+
+
+def test_normally_returning_core_marks_service_failed_and_stops_peer(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        returning = FakeCollector(
+            "spot", "returning-spot", return_early=True
+        )
+        healthy = FakeCollector("um_perpetual", "healthy-um")
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            return {"spot": returning, "um_perpetual": healthy}
+
+        runtime = ServiceRuntime(
+            config=_config(tmp_path),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+        )
+        with pytest.raises(RuntimeError, match="core market Collector terminated"):
+            await runtime.run()
+        assert healthy.stopped
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+
+    asyncio.run(exercise())
+    with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+        failures = catalog.operational_events(
+            event_type="CORE_MARKET_TERMINAL_FAILURE"
+        )
+        assert len(failures) == 1
+        evidence = cast(dict[str, object], failures[0]["evidence"])
+        assert evidence["market"] == "spot"
+        assert evidence["error_type"] == "RuntimeError"

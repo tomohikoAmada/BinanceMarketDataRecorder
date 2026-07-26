@@ -111,6 +111,14 @@ class LocalBookReconstructor:
         return self.state is ReconstructionState.SYNCHRONIZED
 
     @property
+    def reliable_update_id(self) -> int | None:
+        """Return the applied local-book ID only while the book is reliable."""
+
+        if not self.is_reliable or self._book is None:
+            return None
+        return self._book.update_id
+
+    @property
     def bootstrap_buffer_overflowed(self) -> bool:
         return self._bootstrap_buffer_overflowed
 

@@ -204,8 +204,12 @@ def service_status(data_root: Path) -> dict[str, Any]:
                 "value": runtime_state_metrics.get("process_cpu_seconds"),
                 "status": current_status,
             },
-            "rss_memory_bytes": {
-                "value": runtime_state_metrics.get("rss_memory_bytes"),
+            "current_rss_bytes": {
+                "value": runtime_state_metrics.get("current_rss_bytes"),
+                "status": current_status,
+            },
+            "peak_rss_bytes": {
+                "value": runtime_state_metrics.get("peak_rss_bytes"),
                 "status": current_status,
             },
             "queue_depth": {"value": None, "status": "UNAVAILABLE"},

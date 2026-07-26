@@ -6,9 +6,12 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
-from binance_market_data_recorder.binance.usdm.side_data_rest import PublicResponse
+from binance_market_data_recorder.binance.usdm.side_data_rest import (
+    PublicResponse,
+    UsdMSideRestApi,
+)
 from binance_market_data_recorder.binance.usdm.websocket import WebSocketConnection
 from binance_market_data_recorder.collector.usdm import UsdMCollector, UsdMCollectorSettings
 from binance_market_data_recorder.collector.usdm_side_data import UsdMSideDataSettings
@@ -159,7 +162,7 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
             ),
             logger=logging.getLogger("test.usdm.side-data"),
             rest_api=SnapshotApi(),
-            side_rest_api=SideApi(),
+            side_rest_api=cast(UsdMSideRestApi, SideApi()),
             websocket_opener=opener,
         )
         task = asyncio.create_task(collector.run(stop))
@@ -168,7 +171,11 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
             if (
                 opened == set(payloads)
                 and count(status, "open_interest", "failures") >= 1
-                and all(count(status, name, "accepted") >= 1 for name in status)
+                    and all(
+                        not bool(item["enabled"])
+                        or count(status, name, "accepted") >= 1
+                        for name, item in status.items()
+                    )
             ):
                 stop.set()
                 break

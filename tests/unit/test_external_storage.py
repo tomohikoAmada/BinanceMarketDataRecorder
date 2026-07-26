@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -37,8 +36,8 @@ def volume(mountpoint: Path | None, *, writable: bool = True) -> VolumeInfo:
         writable=writable,
         internal=False,
         removable=True,
-        total_bytes=1_000_000,
-        free_bytes=750_000,
+        total_bytes=100 * 1024**3,
+        free_bytes=75 * 1024**3,
         observed_at_utc_ns=1,
     )
 
@@ -162,7 +161,7 @@ def test_absent_unmounted_and_read_only_never_claim_ready(tmp_path: Path) -> Non
 
 
 def test_registered_external_target_reports_low_space_severity(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     mount = tmp_path / "External"
     folder = mount / "Recorder"
@@ -171,10 +170,13 @@ def test_registered_external_target_reports_low_space_severity(
     with Catalog(tmp_path / "catalog.sqlite") as catalog:
         registry = StorageRegistry(catalog=catalog, volumes=fake)
         registry.register(folder)
-        monkeypatch.setattr(
-            "binance_market_data_recorder.storage.macos.registry.shutil.disk_usage",
-            lambda _path: SimpleNamespace(total=100 * 1024**3, free=14 * 1024**3),
-        )
+        fake.volumes = [
+            replace(
+                volume(mount),
+                total_bytes=100 * 1024**3,
+                free_bytes=14 * 1024**3,
+            )
+        ]
         status = registry.statuses()[0]
     assert status["state"] == "LOW_SPACE"
     assert status["space_severity"] == "CRITICAL"

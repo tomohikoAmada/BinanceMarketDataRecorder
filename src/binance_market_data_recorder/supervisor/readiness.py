@@ -173,6 +173,13 @@ class CollectorReadiness:
                 failure=self._failure,
             )
 
+    @property
+    def reliable_update_id(self) -> int | None:
+        """Expose only the fully bridged and applied local-book update ID."""
+
+        with self._lock:
+            return self._book.reliable_update_id
+
     def _check_identity(self, envelope: EventEnvelope) -> None:
         if (
             envelope.market != self._market

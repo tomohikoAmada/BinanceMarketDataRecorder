@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+import random
+import time
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
 from typing import Protocol
@@ -12,6 +14,9 @@ from typing import Protocol
 from binance_common.errors import Error as BinanceSdkError
 
 from ..binance.usdm.side_data_rest import (
+    FIVE_MINUTE_KINDS,
+    FIVE_MINUTE_PERIOD_MS,
+    FIVE_MINUTE_RETENTION,
     REST_SIDE_DATA_SPECS,
     RestSideDataKind,
     UsdMSideRestApi,
@@ -20,6 +25,7 @@ from ..binance.usdm.side_data_rest import (
 from ..binance.usdm.side_data_schema import (
     USDM_SIDE_STREAMS,
     UsdMSideStream,
+    UsdMSideStreamSpec,
     envelope_from_side_stream_frame,
 )
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector
@@ -41,11 +47,26 @@ class UsdMSideDataSettings:
     funding_info_enabled: bool = True
     open_interest_enabled: bool = True
     exchange_info_enabled: bool = True
+    open_interest_statistics_enabled: bool = False
+    taker_buy_sell_volume_enabled: bool = False
+    global_long_short_ratio_enabled: bool = False
+    top_long_short_account_ratio_enabled: bool = False
+    top_long_short_position_ratio_enabled: bool = False
+    basis_enabled: bool = False
     premium_index_interval_seconds: float = 60.0
     funding_history_interval_seconds: float = 300.0
     funding_info_interval_seconds: float = 3600.0
     open_interest_interval_seconds: float = 60.0
     exchange_info_interval_seconds: float = 3600.0
+    open_interest_statistics_interval_seconds: float = 300.0
+    taker_buy_sell_volume_interval_seconds: float = 300.0
+    global_long_short_ratio_interval_seconds: float = 300.0
+    top_long_short_account_ratio_interval_seconds: float = 300.0
+    top_long_short_position_ratio_interval_seconds: float = 300.0
+    basis_interval_seconds: float = 300.0
+    degraded_after_seconds: float = 900.0
+    retry_initial_seconds: float = 1.0
+    retry_maximum_seconds: float = 60.0
 
     def __post_init__(self) -> None:
         intervals = (
@@ -54,6 +75,15 @@ class UsdMSideDataSettings:
             self.funding_info_interval_seconds,
             self.open_interest_interval_seconds,
             self.exchange_info_interval_seconds,
+            self.open_interest_statistics_interval_seconds,
+            self.taker_buy_sell_volume_interval_seconds,
+            self.global_long_short_ratio_interval_seconds,
+            self.top_long_short_account_ratio_interval_seconds,
+            self.top_long_short_position_ratio_interval_seconds,
+            self.basis_interval_seconds,
+            self.degraded_after_seconds,
+            self.retry_initial_seconds,
+            self.retry_maximum_seconds,
         )
         if any(interval <= 0 for interval in intervals):
             raise ValueError("USD-M side-data polling intervals must be positive")
@@ -65,6 +95,20 @@ class UsdMSideDataSettings:
             RestSideDataKind.FUNDING_INFO: self.funding_info_enabled,
             RestSideDataKind.OPEN_INTEREST: self.open_interest_enabled,
             RestSideDataKind.EXCHANGE_INFO: self.exchange_info_enabled,
+            RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+                self.open_interest_statistics_enabled
+            ),
+            RestSideDataKind.TAKER_BUY_SELL_VOLUME: self.taker_buy_sell_volume_enabled,
+            RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+                self.global_long_short_ratio_enabled
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+                self.top_long_short_account_ratio_enabled
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+                self.top_long_short_position_ratio_enabled
+            ),
+            RestSideDataKind.BASIS: self.basis_enabled,
         }[kind]
 
     def rest_interval(self, kind: RestSideDataKind) -> float:
@@ -74,6 +118,22 @@ class UsdMSideDataSettings:
             RestSideDataKind.FUNDING_INFO: self.funding_info_interval_seconds,
             RestSideDataKind.OPEN_INTEREST: self.open_interest_interval_seconds,
             RestSideDataKind.EXCHANGE_INFO: self.exchange_info_interval_seconds,
+            RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+                self.open_interest_statistics_interval_seconds
+            ),
+            RestSideDataKind.TAKER_BUY_SELL_VOLUME: (
+                self.taker_buy_sell_volume_interval_seconds
+            ),
+            RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+                self.global_long_short_ratio_interval_seconds
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+                self.top_long_short_account_ratio_interval_seconds
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+                self.top_long_short_position_ratio_interval_seconds
+            ),
+            RestSideDataKind.BASIS: self.basis_interval_seconds,
         }[kind]
 
     def stream_enabled(self, stream: UsdMSideStream) -> bool:
@@ -86,31 +146,58 @@ class UsdMSideDataSettings:
 @dataclass
 class SideDataStats:
     enabled: bool
+    status: str = "STOPPED"
+    running: bool = False
     attempts: int = 0
     accepted: int = 0
     malformed: int = 0
     failures: int = 0
+    consecutive_failures: int = 0
+    last_success_at_utc_ns: int | None = None
     last_error_type: str | None = None
+    next_retry_at_utc_ns: int | None = None
 
     def observe_envelope(self, envelope: EventEnvelope) -> None:
-        self.attempts += 1
         if "malformed" in envelope.capture_flags:
             self.malformed += 1
         else:
             self.accepted += 1
+            self.observe_success()
+
+    def observe_success(self) -> None:
+        self.consecutive_failures = 0
+        self.last_success_at_utc_ns = time.time_ns()
+        self.last_error_type = None
+        self.next_retry_at_utc_ns = None
+        self.status = "RUNNING"
 
     def observe_failure(self, error_type: str) -> None:
         self.failures += 1
+        self.consecutive_failures += 1
         self.last_error_type = error_type
+        self.status = "RETRYING"
 
-    def public_dict(self) -> dict[str, object]:
+    def public_dict(self, *, degraded_after_seconds: float) -> dict[str, object]:
+        status = self.status
+        if (
+            self.enabled
+            and self.last_success_at_utc_ns is not None
+            and time.time_ns() - self.last_success_at_utc_ns
+            > int(degraded_after_seconds * 1_000_000_000)
+        ):
+            status = "STALE"
         return {
+            "status": status,
             "enabled": self.enabled,
+            "running": self.running,
             "attempts": self.attempts,
             "accepted": self.accepted,
             "malformed": self.malformed,
             "failures": self.failures,
+            "consecutive_failures": self.consecutive_failures,
+            "last_success_at_utc_ns": self.last_success_at_utc_ns,
             "last_error_type": self.last_error_type,
+            "next_retry_at_utc_ns": self.next_retry_at_utc_ns,
         }
 
 
@@ -129,9 +216,14 @@ class RestSideDataPoller:
         collector_instance_id: str,
         collector_version: str,
         logger: logging.Logger,
+        catalog: Catalog,
         rest_api: UsdMSideRestApi | None = None,
         timeout_ms: int = 10_000,
         request_lock: asyncio.Lock | None = None,
+        catchup_batch_limit: int = 500,
+        catchup_batches_per_attempt: int = 2,
+        utc_clock_ns: Callable[[], int] = time.time_ns,
+        cursor_observer: Callable[[str, dict[str, object]], None] | None = None,
     ) -> None:
         self.kind = kind
         self.interval_seconds = interval_seconds
@@ -140,27 +232,28 @@ class RestSideDataPoller:
         self.collector_instance_id = collector_instance_id
         self.collector_version = collector_version
         self.logger = logger
+        self.catalog = catalog
         self.rest_api = rest_api
         self.timeout_ms = timeout_ms
         self.request_lock = request_lock or asyncio.Lock()
+        if not 1 <= catchup_batch_limit <= 500:
+            raise ValueError("USD-M catch-up batch limit must be between 1 and 500")
+        if catchup_batches_per_attempt < 1:
+            raise ValueError("USD-M catch-up batches per attempt must be positive")
+        self.catchup_batch_limit = catchup_batch_limit
+        self.catchup_batches_per_attempt = catchup_batches_per_attempt
+        self.utc_clock_ns = utc_clock_ns
+        self.cursor_observer = cursor_observer
 
     async def run(self, stop: asyncio.Event) -> None:
         try:
             while not stop.is_set():
-                self.stats.attempts += 1
+                caught_up = True
                 try:
-                    async with self.request_lock:
-                        envelope = await asyncio.to_thread(
-                            capture_rest_side_data,
-                            kind=self.kind,
-                            rest_api=self.rest_api,
-                            collector_instance_id=self.collector_instance_id,
-                            collector_version=self.collector_version,
-                            timeout_ms=self.timeout_ms,
-                        )
-                    self.spool.enqueue(envelope)
-                    await asyncio.to_thread(self.spool.drain_all)
-                    self.stats.accepted += 1
+                    if self.kind in FIVE_MINUTE_KINDS:
+                        caught_up = await self._catch_up_five_minute(stop)
+                    else:
+                        await self._capture_and_persist()
                 except (BinanceSdkError, RuntimeError, OSError, TimeoutError, ValueError) as exc:
                     self.stats.observe_failure(type(exc).__name__)
                     log_event(
@@ -173,48 +266,234 @@ class RestSideDataPoller:
                         failures=self.stats.failures,
                     )
                 try:
-                    await asyncio.wait_for(stop.wait(), timeout=self.interval_seconds)
+                    delay = (
+                        self.interval_seconds
+                        if caught_up
+                        else min(self.interval_seconds, 5.0)
+                    )
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
                 except TimeoutError:
                     continue
         finally:
             await asyncio.to_thread(self.spool.close_and_seal)
 
+    async def _capture_and_persist(self) -> EventEnvelope:
+        async with self.request_lock:
+            envelope = await asyncio.to_thread(
+                capture_rest_side_data,
+                kind=self.kind,
+                rest_api=self.rest_api,
+                collector_instance_id=self.collector_instance_id,
+                collector_version=self.collector_version,
+                timeout_ms=self.timeout_ms,
+            )
+        await self._persist(envelope)
+        self.stats.accepted += 1
+        self.stats.observe_success()
+        return envelope
+
+    async def _persist(self, envelope: EventEnvelope) -> None:
+        self.spool.enqueue(envelope)
+        await asyncio.to_thread(self.spool.drain_all)
+        await asyncio.to_thread(self.spool.sync)
+
+    async def _catch_up_five_minute(self, stop: asyncio.Event) -> bool:
+        retention_name, retention_ms = FIVE_MINUTE_RETENTION[self.kind]
+        now_ms = self.utc_clock_ns() // 1_000_000
+        last_closed = (
+            now_ms // FIVE_MINUTE_PERIOD_MS
+        ) * FIVE_MINUTE_PERIOD_MS - FIVE_MINUTE_PERIOD_MS
+        if last_closed < 0:
+            return True
+        earliest_recoverable = max(
+            0, last_closed - retention_ms + FIVE_MINUTE_PERIOD_MS
+        )
+        cursor = self.catalog.side_data_cursor(self.kind.value)
+        if cursor is not None:
+            persisted_value = cursor["last_persisted_period_timestamp"]
+            if not isinstance(persisted_value, int):
+                raise RuntimeError("side-data cursor timestamp is not an integer")
+            next_period = persisted_value + FIVE_MINUTE_PERIOD_MS
+        else:
+            unresolved_empty_starts = [
+                evidence["requested_start_timestamp"]
+                for event in self.catalog.operational_events(
+                    event_type="SIDE_DATA_EMPTY_RESPONSE"
+                )
+                if (
+                    isinstance((evidence := event.get("evidence")), dict)
+                    and evidence.get("kind") == self.kind.value
+                    and isinstance(
+                        evidence.get("requested_start_timestamp"), int
+                    )
+                )
+            ]
+            next_period = (
+                min(unresolved_empty_starts)
+                if unresolved_empty_starts
+                else earliest_recoverable
+            )
+        if next_period < earliest_recoverable:
+            gap_end = earliest_recoverable - FIVE_MINUTE_PERIOD_MS
+            self.catalog.record_operational_event(
+                event_id=(
+                    f"side-data-unrecoverable-gap:{self.kind.value}:"
+                    f"{next_period}:{gap_end}"
+                ),
+                event_type="SIDE_DATA_UNRECOVERABLE_GAP",
+                occurred_at_utc_ns=self.utc_clock_ns(),
+                evidence={
+                    "kind": self.kind.value,
+                    "gap_start_timestamp": next_period,
+                    "gap_end_timestamp": gap_end,
+                    "source_retention_window": retention_name,
+                    "retention_window_ms": retention_ms,
+                },
+            )
+            next_period = earliest_recoverable
+        for _batch in range(self.catchup_batches_per_attempt):
+            if stop.is_set() or next_period > last_closed:
+                return next_period > last_closed
+            remaining = (
+                (last_closed - next_period) // FIVE_MINUTE_PERIOD_MS
+            ) + 1
+            requested_count = min(self.catchup_batch_limit, remaining)
+            request_end = (
+                next_period
+                + requested_count * FIVE_MINUTE_PERIOD_MS
+                - 1
+            )
+            async with self.request_lock:
+                envelope = await asyncio.to_thread(
+                    capture_rest_side_data,
+                    kind=self.kind,
+                    rest_api=self.rest_api,
+                    collector_instance_id=self.collector_instance_id,
+                    collector_version=self.collector_version,
+                    timeout_ms=self.timeout_ms,
+                    period_start_ms=next_period,
+                    period_end_ms=request_end,
+                    period_limit=requested_count,
+                )
+            await self._persist(envelope)
+            record_count = int(envelope.source_sequence["requestedRecordCount"])
+            if record_count == 0:
+                self.catalog.record_operational_event(
+                    event_id=(
+                        f"side-data-empty-response:{self.kind.value}:{next_period}"
+                    ),
+                    event_type="SIDE_DATA_EMPTY_RESPONSE",
+                    occurred_at_utc_ns=envelope.receive_time_utc_ns,
+                    evidence={
+                        "kind": self.kind.value,
+                        "requested_start_timestamp": next_period,
+                        "requested_end_timestamp": request_end,
+                        "source_retention_window": retention_name,
+                    },
+                )
+                raise RuntimeError("EMPTY_RESPONSE")
+            last_timestamp = int(
+                envelope.source_sequence["lastRequestedTimestamp"]
+            )
+            updated_at_utc_ns = envelope.receive_time_utc_ns
+            self.catalog.advance_side_data_cursor(
+                kind=self.kind.value,
+                last_persisted_period_timestamp=last_timestamp,
+                updated_at_utc_ns=updated_at_utc_ns,
+                source_retention_window=retention_name,
+                retention_window_ms=retention_ms,
+            )
+            if self.cursor_observer is not None:
+                self.cursor_observer(
+                    self.kind.value,
+                    {
+                        "kind": self.kind.value,
+                        "last_persisted_period_timestamp": last_timestamp,
+                        "updated_at_utc_ns": updated_at_utc_ns,
+                        "source_retention_window": retention_name,
+                        "retention_window_ms": retention_ms,
+                    },
+                )
+            self.stats.accepted += 1
+            self.stats.observe_success()
+            next_period = last_timestamp + FIVE_MINUTE_PERIOD_MS
+        return next_period > last_closed
+
 
 class SideDataSupervisor:
-    """Contain terminal side-task failures without setting the core stop event."""
+    """Restart terminal side-task failures without setting the core stop event."""
 
     def __init__(
         self,
-        extensions: dict[str, SideDataExtension],
+        factories: Mapping[str, Callable[[], SideDataExtension] | SideDataExtension],
         stats: dict[str, SideDataStats],
         logger: logging.Logger,
+        *,
+        retry_initial_seconds: float = 1.0,
+        retry_maximum_seconds: float = 60.0,
     ) -> None:
-        self.extensions = extensions
+        self.factories = {
+            name: (
+                candidate
+                if callable(candidate)
+                else (lambda extension=candidate: extension)
+            )
+            for name, candidate in factories.items()
+        }
         self.stats = stats
         self.logger = logger
         self.failures: dict[str, BaseException] = {}
+        self.retry_initial_seconds = retry_initial_seconds
+        self.retry_maximum_seconds = retry_maximum_seconds
 
-    async def _run_one(self, name: str, extension: SideDataExtension, stop: asyncio.Event) -> None:
-        try:
-            await extension.run(stop)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:
-            self.failures[name] = exc
-            self.stats[name].observe_failure(type(exc).__name__)
-            log_event(
-                self.logger,
-                logging.ERROR,
-                "usdm_side_task_stopped",
-                "USD-M side-data task stopped; core collectors remain active",
-                stream=name,
-                error_type=type(exc).__name__,
-            )
+    async def _run_one(
+        self, name: str, factory: Callable[[], SideDataExtension], stop: asyncio.Event
+    ) -> None:
+        stats = self.stats[name]
+        while not stop.is_set():
+            stats.attempts += 1
+            stats.running = True
+            stats.status = "RUNNING"
+            try:
+                await factory().run(stop)
+                if not stop.is_set():
+                    raise RuntimeError("side-data task returned before service stop")
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                self.failures[name] = exc
+                stats.observe_failure(type(exc).__name__)
+                delay = min(
+                    self.retry_maximum_seconds,
+                    self.retry_initial_seconds
+                    * (2 ** min(stats.consecutive_failures - 1, 16)),
+                )
+                delay = random.uniform(0.0, delay)
+                stats.next_retry_at_utc_ns = time.time_ns() + int(
+                    delay * 1_000_000_000
+                )
+                log_event(
+                    self.logger,
+                    logging.ERROR,
+                    "usdm_side_task_retry",
+                    "USD-M side-data task stopped; retry scheduled while core remains active",
+                    stream=name,
+                    error_type=type(exc).__name__,
+                    consecutive_failures=stats.consecutive_failures,
+                    retry_seconds=delay,
+                )
+                try:
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
+                except TimeoutError:
+                    continue
+            finally:
+                stats.running = False
+        stats.status = "STOPPED"
 
     async def run(self, stop: asyncio.Event) -> None:
         tasks = [
-            asyncio.create_task(self._run_one(name, extension, stop))
-            for name, extension in self.extensions.items()
+            asyncio.create_task(self._run_one(name, factory, stop))
+            for name, factory in self.factories.items()
         ]
         try:
             await stop.wait()
@@ -253,6 +532,15 @@ class UsdMSideDataManager:
             },
         }
         self.stats = {name: SideDataStats(is_enabled) for name, is_enabled in enabled.items()}
+        self.degraded_after_seconds = settings.degraded_after_seconds
+        self.catalog = catalog
+        self.cursor_state = {
+            kind.value: catalog.side_data_cursor(kind.value)
+            for kind in FIVE_MINUTE_KINDS
+        }
+
+        def observe_cursor(kind: str, cursor: dict[str, object]) -> None:
+            self.cursor_state[kind] = dict(cursor)
 
         def spool(stream: str) -> StreamSpool:
             def observe_event(
@@ -306,47 +594,78 @@ class UsdMSideDataManager:
 
             return observe
 
-        extensions: dict[str, SideDataExtension] = {}
+        factories: dict[str, Callable[[], SideDataExtension]] = {}
         rest_request_lock = asyncio.Lock()
         for spec in USDM_SIDE_STREAMS:
             if not settings.stream_enabled(spec.stream):
                 continue
             stream_stats = self.stats[spec.stream.value]
-            extensions[spec.stream.value] = UsdMStreamCollector(
-                stream=spec.stream.value,
-                route=spec.route,
-                wire_name=spec.wire_name,
-                spool=spool(spec.stream.value),
-                collector_instance_id=collector_instance_id,
-                collector_version=collector_version,
-                logger=logger,
-                receipt_queue_capacity=receipt_queue_capacity,
-                planned_rotation_seconds=planned_rotation_seconds,
-                opener=websocket_opener,
-                envelope_factory=partial(envelope_from_side_stream_frame, stream=spec.stream),
-                envelope_observer=stream_stats.observe_envelope,
-                failure_observer=stream_stats.observe_failure,
-                lifecycle_observer=lifecycle_observer(spec.stream.value),
-            )
+
+            def stream_factory(
+                stream_spec: UsdMSideStreamSpec = spec,
+                stats: SideDataStats = stream_stats,
+            ) -> SideDataExtension:
+                return UsdMStreamCollector(
+                    stream=stream_spec.stream.value,
+                    route=stream_spec.route,
+                    wire_name=stream_spec.wire_name,
+                    spool=spool(stream_spec.stream.value),
+                    collector_instance_id=collector_instance_id,
+                    collector_version=collector_version,
+                    logger=logger,
+                    receipt_queue_capacity=receipt_queue_capacity,
+                    planned_rotation_seconds=planned_rotation_seconds,
+                    opener=websocket_opener,
+                    envelope_factory=partial(
+                        envelope_from_side_stream_frame, stream=stream_spec.stream
+                    ),
+                    envelope_observer=stats.observe_envelope,
+                    failure_observer=stats.observe_failure,
+                    lifecycle_observer=lifecycle_observer(stream_spec.stream.value),
+                )
+
+            factories[spec.stream.value] = stream_factory
         for kind in REST_SIDE_DATA_SPECS:
             if not settings.rest_enabled(kind):
                 continue
-            extensions[kind.value] = RestSideDataPoller(
-                kind=kind,
-                interval_seconds=settings.rest_interval(kind),
-                spool=spool(kind.value),
-                stats=self.stats[kind.value],
-                collector_instance_id=collector_instance_id,
-                collector_version=collector_version,
-                logger=logger,
-                rest_api=rest_api,
-                timeout_ms=rest_timeout_ms,
-                request_lock=rest_request_lock,
-            )
-        self.supervisor = SideDataSupervisor(extensions, self.stats, logger)
+
+            def rest_factory(
+                rest_kind: RestSideDataKind = kind,
+            ) -> SideDataExtension:
+                return RestSideDataPoller(
+                    kind=rest_kind,
+                    interval_seconds=settings.rest_interval(rest_kind),
+                    spool=spool(rest_kind.value),
+                    stats=self.stats[rest_kind.value],
+                    collector_instance_id=collector_instance_id,
+                    collector_version=collector_version,
+                    logger=logger,
+                    catalog=catalog,
+                    rest_api=rest_api,
+                    timeout_ms=rest_timeout_ms,
+                    request_lock=rest_request_lock,
+                    cursor_observer=observe_cursor,
+                )
+
+            factories[kind.value] = rest_factory
+        self.supervisor = SideDataSupervisor(
+            factories,
+            self.stats,
+            logger,
+            retry_initial_seconds=settings.retry_initial_seconds,
+            retry_maximum_seconds=settings.retry_maximum_seconds,
+        )
 
     async def run(self, stop: asyncio.Event) -> None:
         await self.supervisor.run(stop)
 
     def status(self) -> dict[str, dict[str, object]]:
-        return {name: stats.public_dict() for name, stats in sorted(self.stats.items())}
+        result = {
+            name: stats.public_dict(
+                degraded_after_seconds=self.degraded_after_seconds
+            )
+            for name, stats in sorted(self.stats.items())
+        }
+        for kind in FIVE_MINUTE_KINDS:
+            result[kind.value]["cursor"] = self.cursor_state[kind.value]
+        return result

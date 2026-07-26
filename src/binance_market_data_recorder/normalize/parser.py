@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from ..domain.event import EventEnvelope
-from .model import SUPPORTED_STREAMS, ParsedEvent
+from .model import SUPPORTED_STREAMS, ParsedEvent, stream_fields
 
 
 class NormalizedSchemaError(ValueError):
@@ -39,6 +39,13 @@ def _text(value: dict[str, Any], name: str) -> str:
     item = value.get(name)
     if not isinstance(item, str) or not item:
         raise NormalizedSchemaError(f"{name} must be non-empty text")
+    return item
+
+
+def _string(value: dict[str, Any], name: str) -> str:
+    item = value.get(name)
+    if not isinstance(item, str):
+        raise NormalizedSchemaError(f"{name} must be text")
     return item
 
 
@@ -106,7 +113,8 @@ def _core_websocket(envelope: EventEnvelope, payload: dict[str, Any]) -> list[Pa
     if payload.get("e") == "serverShutdown":
         event_time = _integer(payload, "E")
         fields: dict[str, object] = {
-            name: None for name in _stream_field_names(stream)
+            name: None
+            for name in _stream_field_names(envelope.market, stream)
         }
         content = {"event_kind": "server_shutdown", "event_time": event_time}
         return [
@@ -259,10 +267,247 @@ def _liquidation(envelope: EventEnvelope, payload: dict[str, Any]) -> list[Parse
     return [ParsedEvent(fields, identity, fields)]
 
 
+FIVE_MINUTE_STREAMS = frozenset(
+    {
+        "open_interest_statistics_5m",
+        "taker_buy_sell_volume_5m",
+        "global_long_short_ratio_5m",
+        "top_long_short_account_ratio_5m",
+        "top_long_short_position_ratio_5m",
+        "basis_5m",
+    }
+)
+
+
+def _optional_json_array(value: dict[str, Any], name: str) -> str | None:
+    if name not in value:
+        return None
+    return canonical_json(_array(value.get(name), name))
+
+
+def _spot_exchange_info(
+    envelope: EventEnvelope, model: object
+) -> list[ParsedEvent]:
+    item = _object(model, "response.model")
+    symbols = _array(item.get("symbols"), "symbols")
+    matches = [
+        _object(symbol, "exchange symbol")
+        for symbol in symbols
+        if isinstance(symbol, dict) and symbol.get("symbol") == envelope.symbol
+    ]
+    if len(matches) > 1:
+        raise NormalizedSchemaError(
+            "Spot exchange info identifies BTCUSDT more than once"
+        )
+    symbol = matches[0] if matches else None
+    model_hash = sha256_json(item)
+    fields = {
+        "symbol_present": symbol is not None,
+        "server_time_ms": (
+            _integer(item, "serverTime") if "serverTime" in item else None
+        ),
+        "trading_status": (
+            _text(symbol, "status") if symbol is not None else None
+        ),
+        "filters_json": (
+            canonical_json(_array(symbol.get("filters"), "filters"))
+            if symbol is not None
+            else None
+        ),
+        "order_types_json": (
+            canonical_json(_array(symbol.get("orderTypes"), "orderTypes"))
+            if symbol is not None
+            else None
+        ),
+        "rate_limits_json": (
+            canonical_json(_array(item.get("rateLimits"), "rateLimits"))
+            if "rateLimits" in item
+            else None
+        ),
+        "permissions_json": (
+            _optional_json_array(symbol, "permissions")
+            if symbol is not None
+            else None
+        ),
+        "permission_sets_json": (
+            _optional_json_array(symbol, "permissionSets")
+            if symbol is not None
+            else None
+        ),
+        "response_model_sha256": model_hash,
+    }
+    identity = {
+        "kind": "exchange_info",
+        "market": envelope.market,
+        "symbol": envelope.symbol,
+        "model_sha256": model_hash,
+    }
+    return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
+
+
+def _usdm_exchange_info(
+    envelope: EventEnvelope, model: object
+) -> list[ParsedEvent]:
+    item = _object(model, "response.model")
+    symbols = _array(item.get("symbols"), "symbols")
+    rate_limits = _array(item.get("rateLimits"), "rateLimits")
+    matches = [
+        _object(symbol, "exchange symbol")
+        for symbol in symbols
+        if isinstance(symbol, dict) and symbol.get("symbol") == envelope.symbol
+    ]
+    if len(matches) != 1:
+        raise NormalizedSchemaError("exchange info does not identify BTCUSDT once")
+    symbol = matches[0]
+    fields = {
+        "symbol_present": True,
+        "server_time_ms": (
+            _integer(item, "serverTime") if "serverTime" in item else None
+        ),
+        "contract_type": _text(symbol, "contractType"),
+        "trading_status": _text(symbol, "status"),
+        "filters_json": canonical_json(_array(symbol.get("filters"), "filters")),
+        "rate_limits_json": canonical_json(rate_limits),
+    }
+    model_hash = sha256_json(item)
+    identity = {
+        "kind": envelope.stream,
+        **_poll_identity(envelope, model_hash=model_hash),
+    }
+    return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
+
+
+def _request_period_range(provenance: dict[str, Any]) -> tuple[int, int]:
+    request = _object(provenance.get("request"), "request")
+    parameters = _object(request.get("parameters"), "request.parameters")
+    start_name = (
+        "requestedStartTime"
+        if "requestedStartTime" in parameters
+        else "startTime"
+    )
+    end_name = (
+        "requestedEndTime" if "requestedEndTime" in parameters else "endTime"
+    )
+    return _integer(parameters, start_name), _integer(parameters, end_name)
+
+
+def _five_minute_rest(
+    envelope: EventEnvelope,
+    provenance: dict[str, Any],
+    model: object,
+) -> list[ParsedEvent]:
+    items = _array(model, "response.model")
+    stream = envelope.stream
+    if not items:
+        start_ms, end_ms = _request_period_range(provenance)
+        model_hash = sha256_json(items)
+        fields: dict[str, object] = {
+            name: None
+            for name, _type, _nullable in stream_fields(
+                envelope.market, stream
+            )
+        }
+        fields["observation_empty"] = True
+        identity = {
+            "kind": stream,
+            "market": envelope.market,
+            "symbol": envelope.symbol,
+            "requested_start_ms": start_ms,
+            "requested_end_ms": end_ms,
+            "model_sha256": model_hash,
+        }
+        return [
+            ParsedEvent(
+                fields,
+                identity,
+                fields,
+                event_kind="empty_observation",
+            )
+        ]
+
+    output: list[ParsedEvent] = []
+    ratio_streams = {
+        "global_long_short_ratio_5m",
+        "top_long_short_account_ratio_5m",
+        "top_long_short_position_ratio_5m",
+    }
+    for ordinal, raw_item in enumerate(items):
+        item = _object(raw_item, f"{stream} item")
+        timestamp = _integer(item, "timestamp")
+        if stream == "open_interest_statistics_5m":
+            if _text(item, "symbol") != envelope.symbol:
+                raise NormalizedSchemaError("open-interest symbol differs")
+            fields = {
+                "observation_empty": False,
+                "timestamp_ms": timestamp,
+                "sum_open_interest": _text(item, "sumOpenInterest"),
+                "sum_open_interest_value": _text(
+                    item, "sumOpenInterestValue"
+                ),
+            }
+        elif stream == "taker_buy_sell_volume_5m":
+            fields = {
+                "observation_empty": False,
+                "timestamp_ms": timestamp,
+                "buy_sell_ratio": _text(item, "buySellRatio"),
+                "buy_volume": _text(item, "buyVol"),
+                "sell_volume": _text(item, "sellVol"),
+            }
+        elif stream in ratio_streams:
+            if _text(item, "symbol") != envelope.symbol:
+                raise NormalizedSchemaError("long-short ratio symbol differs")
+            fields = {
+                "observation_empty": False,
+                "timestamp_ms": timestamp,
+                "long_short_ratio": _text(item, "longShortRatio"),
+                "long_account": _text(item, "longAccount"),
+                "short_account": _text(item, "shortAccount"),
+            }
+        else:
+            pair = _text(item, "pair")
+            if pair != envelope.symbol:
+                raise NormalizedSchemaError("basis pair differs from envelope")
+            fields = {
+                "observation_empty": False,
+                "timestamp_ms": timestamp,
+                "pair": pair,
+                "contract_type": _text(item, "contractType"),
+                "index_price": _text(item, "indexPrice"),
+                "futures_price": _text(item, "futuresPrice"),
+                "basis": _text(item, "basis"),
+                "basis_rate": _text(item, "basisRate"),
+                "annualized_basis_rate": _string(
+                    item, "annualizedBasisRate"
+                ),
+            }
+        identity = {
+            "kind": stream,
+            "market": envelope.market,
+            "symbol": envelope.symbol,
+            "timestamp_ms": timestamp,
+        }
+        output.append(
+            ParsedEvent(
+                fields,
+                identity,
+                fields,
+                subrecord_ordinal=ordinal,
+                event_kind="rest_period",
+            )
+        )
+    return output
+
+
 def _side_rest(envelope: EventEnvelope, provenance: dict[str, Any]) -> list[ParsedEvent]:
     response = _object(provenance.get("response"), "response")
     model = response.get("model")
     stream = envelope.stream
+    if stream == "exchange_info":
+        if envelope.market == "spot":
+            return _spot_exchange_info(envelope, model)
+        return _usdm_exchange_info(envelope, model)
+    if stream in FIVE_MINUTE_STREAMS:
+        return _five_minute_rest(envelope, provenance, model)
     if stream == "premium_index_snapshot":
         item = _object(model, "response.model")
         fields = {
@@ -371,46 +616,18 @@ def _side_rest(envelope: EventEnvelope, provenance: dict[str, Any]) -> list[Pars
             **_poll_identity(envelope, model_hash=model_hash),
         }
         return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
-    item = _object(model, "response.model")
-    symbols = _array(item.get("symbols"), "symbols")
-    rate_limits = _array(item.get("rateLimits"), "rateLimits")
-    matches = [
-        _object(symbol, "exchange symbol")
-        for symbol in symbols
-        if isinstance(symbol, dict) and symbol.get("symbol") == envelope.symbol
-    ]
-    if len(matches) != 1:
-        raise NormalizedSchemaError("exchange info does not identify BTCUSDT once")
-    symbol = matches[0]
-    filters = _array(symbol.get("filters"), "filters")
-    fields = {
-        "symbol_present": True,
-        "server_time_ms": (
-            _integer(item, "serverTime") if "serverTime" in item else None
-        ),
-        "contract_type": _text(symbol, "contractType"),
-        "trading_status": _text(symbol, "status"),
-        "filters_json": canonical_json(filters),
-        "rate_limits_json": canonical_json(rate_limits),
-    }
-    model_hash = sha256_json(item)
-    identity = {
-        "kind": stream,
-        **_poll_identity(envelope, model_hash=model_hash),
-    }
-    return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
+    raise NormalizedSchemaError(f"unhandled REST side-data stream {stream}")
 
 
-def _stream_field_names(stream: str) -> tuple[str, ...]:
-    from .model import STREAM_FIELDS
-
-    return tuple(name for name, _type, _nullable in STREAM_FIELDS[stream])
+def _stream_field_names(market: str, stream: str) -> tuple[str, ...]:
+    return tuple(name for name, _type, _nullable in stream_fields(market, stream))
 
 
 def _invalid(envelope: EventEnvelope, error: str) -> list[ParsedEvent]:
     payload_hash = hashlib.sha256(envelope.raw_payload).hexdigest()
     fields: dict[str, object] = {
-        name: None for name in _stream_field_names(envelope.stream)
+        name: None
+        for name in _stream_field_names(envelope.market, envelope.stream)
     }
     for name, default in (
         ("observation_empty", False),

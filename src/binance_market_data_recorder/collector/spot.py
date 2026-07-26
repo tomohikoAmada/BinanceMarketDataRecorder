@@ -10,6 +10,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
+from ..binance.spot.exchange_info import SpotExchangeInfoApi
 from ..binance.spot.rate_limit import FullJitterBackoff, SpotRateLimitBlocked
 from ..binance.spot.rest import (
     PublicSpotRestApi,
@@ -34,6 +35,9 @@ from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CollectorReadiness, ReadinessSnapshot
+from .resync import DepthResyncCoordinator
+from .spot_side_data import SpotExchangeInfoPoller
+from .usdm_side_data import SideDataStats, SideDataSupervisor
 
 
 @dataclass(frozen=True)
@@ -53,6 +57,9 @@ class SpotCollectorSettings:
     snapshot_retry_initial_seconds: float = 1.0
     snapshot_retry_maximum_seconds: float = 60.0
     bootstrap_buffer_capacity: int = 8192
+    exchange_info_enabled: bool = False
+    exchange_info_interval_seconds: float = 3600.0
+    side_data_degraded_after_seconds: float = 900.0
 
 
 class SnapshotUnavailableError(RuntimeError):
@@ -70,6 +77,7 @@ class SpotCollector:
         rest_api: SpotRestApi | None = None,
         websocket_opener: ConnectionOpener = open_spot_websocket,
         snapshot_requester: SpotSnapshotRequester | None = None,
+        exchange_info_api: SpotExchangeInfoApi | None = None,
     ) -> None:
         self.settings = settings
         self.logger = logger
@@ -83,7 +91,6 @@ class SpotCollector:
             initial_seconds=settings.snapshot_retry_initial_seconds,
             maximum_seconds=settings.snapshot_retry_maximum_seconds,
         )
-        self._bootstrap_restart = asyncio.Event()
         safe_data_root = validate_data_root(settings.data_root)
         self.layout: StorageLayout = ensure_storage_layout(safe_data_root)
         self.catalog = Catalog(self.layout.catalog)
@@ -93,6 +100,8 @@ class SpotCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
+        self.resync = DepthResyncCoordinator(market="spot", catalog=self.catalog)
+        self._bootstrap_restart = self.resync.requested
         def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
             if occurred_at_utc_ns is None:
                 return
@@ -102,6 +111,9 @@ class SpotCollector:
                 event=audit.kind,
                 occurred_at_utc_ns=occurred_at_utc_ns,
             )
+            if audit.kind == "sequence_gap":
+                self.readiness.record_failure("sequence_gap")
+                self.resync.request("sequence_gap", occurred_at_utc_ns)
 
         self.readiness = CollectorReadiness(
             market="spot",
@@ -109,7 +121,9 @@ class SpotCollector:
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
             bootstrap_buffer_capacity=settings.bootstrap_buffer_capacity,
-            bootstrap_overflow_observer=self._bootstrap_restart.set,
+            bootstrap_overflow_observer=lambda: self.resync.request(
+                "bootstrap_buffer_overflow"
+            ),
         )
         self._capture_flags: tuple[str, ...] = ()
         self._candidate_handoff = False
@@ -161,6 +175,13 @@ class SpotCollector:
                 self.metrics.safely_observe_lifecycle(
                     market="spot", stream=stream, event=event
                 )
+                if stream == "diff_depth" and event in {
+                    "unexpected_disconnect",
+                    "planned_rotation",
+                    "server_shutdown",
+                }:
+                    self.readiness.record_failure(event)
+                    self.resync.request(event)
 
             return observe
 
@@ -176,11 +197,34 @@ class SpotCollector:
                 planned_rotation_seconds=settings.planned_connection_rotation_seconds,
                 opener=websocket_opener,
                 lifecycle_observer=lifecycle_observer(spec.stream.value),
-                envelope_observer=self.readiness.observe_persisted,
+                envelope_observer=self._observe_persisted,
             )
             for spec in SPOT_STREAMS
         )
         self.snapshot_spool = spool("depth_snapshot")
+        self._side_stats = {
+            "exchange_info": SideDataStats(settings.exchange_info_enabled)
+        }
+        self._side_degraded_after_seconds = settings.side_data_degraded_after_seconds
+        side_factories = {}
+        if settings.exchange_info_enabled:
+            side_factories["exchange_info"] = lambda: SpotExchangeInfoPoller(
+                interval_seconds=settings.exchange_info_interval_seconds,
+                spool=spool("exchange_info"),
+                stats=self._side_stats["exchange_info"],
+                collector_instance_id=settings.collector_instance_id,
+                collector_version=settings.collector_version,
+                rest_api=exchange_info_api,
+                timeout_ms=settings.snapshot_timeout_ms,
+                logger=logger,
+            )
+        self._side_supervisor = SideDataSupervisor(
+            side_factories,
+            self._side_stats,
+            logger,
+            retry_initial_seconds=settings.snapshot_retry_initial_seconds,
+            retry_maximum_seconds=settings.snapshot_retry_maximum_seconds,
+        )
 
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
@@ -268,6 +312,12 @@ class SpotCollector:
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
+                recovered_update_id = self.readiness.reliable_update_id
+                if recovered_update_id is None:
+                    raise RuntimeError(
+                        "Spot readiness reported synchronized without a local update ID"
+                    )
+                self.resync.complete(envelope, recovered_update_id)
                 return
             failures += 1
             log_event(
@@ -294,7 +344,7 @@ class SpotCollector:
 
         async def control_session() -> None:
             external = asyncio.create_task(external_stop.wait())
-            overflow = asyncio.create_task(self._bootstrap_restart.wait())
+            overflow = asyncio.create_task(self.resync.requested.wait())
             try:
                 await asyncio.wait(
                     {external, overflow},
@@ -317,13 +367,14 @@ class SpotCollector:
         """Start streams before snapshot, then gracefully seal when stopped."""
 
         try:
+            side_task = asyncio.create_task(self._side_supervisor.run(stop))
             restart_failures = 0
             while not stop.is_set():
-                self._bootstrap_restart.clear()
+                self.resync.requested.clear()
                 await self._run_capture_session(stop)
                 if stop.is_set():
                     break
-                if not self._bootstrap_restart.is_set():
+                if not self.resync.requested.is_set():
                     raise SnapshotUnavailableError(
                         "Spot capture session ended without shutdown or bootstrap restart"
                     )
@@ -331,12 +382,18 @@ class SpotCollector:
                 log_event(
                     self.logger,
                     logging.CRITICAL,
-                    "spot_bootstrap_buffer_restart",
-                    "bounded bootstrap buffer invalidated; restarting Spot connections",
+                    "spot_depth_resync_restart",
+                    "depth continuity invalidated; restarting Spot capture session",
                     buffered_capacity=self.settings.bootstrap_buffer_capacity,
+                    reason=(
+                        self.resync.active.reason
+                        if self.resync.active is not None
+                        else "unknown"
+                    ),
                     restart=restart_failures,
                 )
                 self.readiness.restart_bootstrap()
+                self.resync.prepare_restart()
                 with suppress(TimeoutError):
                     await asyncio.wait_for(
                         stop.wait(),
@@ -344,6 +401,8 @@ class SpotCollector:
                     )
         finally:
             stop.set()
+            if "side_task" in locals():
+                await asyncio.gather(side_task, return_exceptions=True)
             await self.snapshot_requester.wait_for_idle()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
@@ -368,6 +427,19 @@ class SpotCollector:
 
     def readiness_snapshot(self) -> ReadinessSnapshot:
         return self.readiness.snapshot()
+
+    def side_data_status(self) -> dict[str, dict[str, object]]:
+        return {
+            name: stats.public_dict(
+                degraded_after_seconds=self._side_degraded_after_seconds
+            )
+            for name, stats in sorted(self._side_stats.items())
+        }
+
+    def _observe_persisted(self, envelope: EventEnvelope) -> None:
+        if envelope.stream == "diff_depth":
+            self.resync.observe_depth(envelope)
+        self.readiness.observe_persisted(envelope)
 
     def set_handoff_context(
         self,

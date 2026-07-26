@@ -341,3 +341,25 @@ def test_shared_limiter_allows_only_one_snapshot_request_on_the_wire() -> None:
         }
 
     asyncio.run(exercise())
+
+
+def test_exchange_info_weight_shares_the_same_ban_and_pacing_state() -> None:
+    async def exercise() -> None:
+        limiter = SpotIpRateLimiter(weight_budget_per_minute=1_000_000_000)
+        await limiter.acquire_weight(weight=20)
+        await limiter.observe_success_weight(
+            weight=20, headers={"X-MBX-USED-WEIGHT-1M": "70"}
+        )
+        assert limiter.state().last_limit is None
+        assert limiter.state().last_weight == 20
+        assert limiter.state().last_headers["x-mbx-used-weight-1m"] == "70"
+        blocked = await limiter.observe_weight_rejection(
+            status=429,
+            weight=20,
+            headers={"Retry-After": "1"},
+            body_text="rate limited",
+        )
+        assert blocked.status == 429
+        assert limiter.state().blocked_until_utc_ns is not None
+
+    asyncio.run(exercise())

@@ -100,7 +100,13 @@ def test_every_raw_stream_has_a_versioned_parser(
 def test_supported_stream_matrix_is_complete() -> None:
     assert {
         "spot": frozenset(
-            {"diff_depth", "agg_trade", "book_ticker", "depth_snapshot"}
+            {
+                "diff_depth",
+                "agg_trade",
+                "book_ticker",
+                "depth_snapshot",
+                "exchange_info",
+            }
         ),
         "um_perpetual": frozenset(
             {
@@ -115,6 +121,12 @@ def test_supported_stream_matrix_is_complete() -> None:
                 "funding_info",
                 "open_interest",
                 "exchange_info",
+                "open_interest_statistics_5m",
+                "taker_buy_sell_volume_5m",
+                "global_long_short_ratio_5m",
+                "top_long_short_account_ratio_5m",
+                "top_long_short_position_ratio_5m",
+                "basis_5m",
             }
         ),
     } == SUPPORTED_STREAMS

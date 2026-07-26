@@ -4,6 +4,59 @@ Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
 the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
+## M19 public side-data and historical clocks
+
+Spot `exchange_info` preserves BTCUSDT `filters`, `status`, `orderTypes`,
+response rate-limit headers, request/receive times, and server time when
+supplied. Each USD-M stream ending `_5m` owns a durable, monotonic Cursor with
+kind, last durably persisted period timestamp, update time, and official
+retention-window label. It catches up in bounded pages from Cursor + 5 minutes
+through the last closed period. Raw is drained and fsynced before Cursor
+advance. Duplicate Raw polls are allowed; normalization owns deterministic
+deduplication. A failed or empty requested period does not advance the Cursor,
+is not zero, and is never forward-filled. Once a missing period ages beyond
+the official window it becomes an explicit unrecoverable gap.
+
+The public `takerBuySellVol` endpoint was observed to include one leading
+5-minute overlap and to require the next period boundary as `endTime`. The
+request provenance preserves the actual query and logical requested range;
+Raw preserves the overlap, while Cursor advancement uses only contiguous
+timestamps inside the logical requested range.
+
+Historical source manifests use `historical-source.v1`; gaps use
+`historical-gap.v1`. Historical normalized rows expose
+`archive_event_time_utc_ns`, source revision, ZIP SHA-256 and
+`clock_semantics=archive_source`. They have no receive UTC/monotonic clock and
+must not be admitted to receive-time replay.
+
+### M19 Live normalized consumer contract
+
+M19 Live Raw additions are consumable through `normalized-dataset.v1` without
+changing any pre-existing stream field or dataset meaning. Spot
+`exchange_info` uses a market-specific v1 schema containing symbol presence,
+server time, trading status, canonical filters/order-types/rate-limits and
+optional permissions/permission-sets JSON, plus the canonical response-model
+SHA-256. USD-M `exchange_info` retains its existing v1 fields and meanings:
+symbol presence, server time, contract type, trading status, filters JSON and
+rate-limits JSON. A shared stream name therefore does not imply a shared
+market-incompatible schema.
+
+Each USD-M 5-minute REST response model is expanded into one normalized row per
+exchange period. Its semantic identity is
+`(market, stream, symbol-or-pair, timestamp_ms)` and excludes receive time,
+connection/Collector identity and REST request identity. Repeated catch-up,
+restart and leading-overlap observations of identical content collapse
+deterministically; differing content with the same identity remains visible as
+an identity conflict. Exchange decimal values remain exact strings.
+
+An empty response becomes an explicit `empty_observation` with no fabricated
+period timestamp. Its identity uses the logical requested start/end and the
+canonical response-model hash, so it cannot collide with a real period.
+Out-of-range leading records remain ordinary timestamp-identified observations
+and can deduplicate against the same period returned by another request.
+Historical and Live datasets are not automatically joined, and M19.2 does not
+provide historical L2.
+
 ## EventEnvelope v1 minimum fields
 
 | Field | Meaning |
