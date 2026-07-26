@@ -94,6 +94,15 @@ emits an explicit observation row. Funding-info emits the BTCUSDT adjustment
 when present or an explicit `symbol_present=false` observation. This preserves
 the sparse/no-fixed-cadence semantics from ADR-0012.
 
+M19.2 extends, but does not replace, `normalized-dataset.v1`. Existing stream
+field order and meaning remain unchanged. Spot and USD-M `exchange_info` use
+separate market/stream field maps because their official models are not
+field-compatible; the existing USD-M schema remains unchanged. Each new USD-M
+5-minute stream has its own v1 schema and expands a REST response array into one
+row per exchange timestamp. Decimal strings are never converted to floating
+point. Empty arrays emit an explicit no-timestamp observation identified by
+logical request range plus model hash.
+
 Verified M6 order-book checkpoints are not rewritten. The build manifest indexes
 their file hash, logical book hash, algorithm/schema version, source Raw hashes
 and immutable incomplete intervals. Consumers can therefore select a checkpoint
@@ -112,6 +121,10 @@ without treating it as Raw or hiding prior gaps.
 - depth snapshots use update ID plus canonical model hash;
 - funding-info and exchange-info preserve distinct poll observations, except
   attributable ADR-0018 overlap uses deployment plus canonical model identity.
+- M19 USD-M 5-minute statistics use market, stream, symbol/pair and exchange
+  period timestamp; request, receive, connection and attempt identity do not
+  participate. Empty observations instead use logical request range plus
+  canonical empty-model hash.
 
 Malformed events use exact payload hash. Within one semantic identity, rows with
 the same logical content collapse to the lexicographically smallest stable Raw

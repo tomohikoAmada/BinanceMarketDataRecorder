@@ -505,6 +505,27 @@ Completion of M18 still stops and waits for explicit human publication/merge.
 **Rollback.** Revert only M19.1 commits; preserve Raw, historical revisions,
   Catalog Cursors/events, and the open R-034 evidence.
 
+### M19.2 — Normalized consumer contract for M19 Live data
+
+**Scope.** Market-specific Spot/USD-M exchange-info schemas; six USD-M
+5-minute schemas; multi-record REST expansion; timestamp-centered semantic
+identity; explicit empty observations; and deterministic duplicate/conflict
+handling through Raw-to-Parquet.
+**Non-scope.** Collector lifecycle, Historical Importer architecture, R-034
+production rules, other symbols, credentials, accounts, trading, strategy,
+models, platform ports, new PRs, or merge.
+**Dependencies.** The M19/M19.1 Live Raw provenance and the immutable
+`normalized-dataset.v1` contract in ADR-0020.
+
+**Acceptance.** Offline real-envelope-shaped parser fixtures and full
+Raw-to-Parquet tests cover every M19 Live stream, multi-record expansion,
+overlap deduplication, conflicts, empty and malformed observations, plus old
+stream regression; complete offline/stress/toolchain/install gates pass; the
+same PR branch is pushed and its CI succeeds.
+**Rollback.** Revert only the M19.2 commit; preserve immutable Live Raw,
+Catalog and existing normalized artifacts, and rebuild compatible datasets
+from Raw after a corrected parser is available.
+
 ## Future Work
 
 Unscheduled future work may include the deferred 72-hour/168-hour reliability

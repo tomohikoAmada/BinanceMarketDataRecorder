@@ -40,6 +40,7 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M15.md",
     "docs/milestone_acceptance/M16.md",
     "docs/milestone_acceptance/M19.md",
+    "docs/milestone_acceptance/M19.2.md",
     "docs/data_coverage.md",
     "docs/consumer_contract.md",
     "docs/dependency_policy.md",
@@ -89,6 +90,7 @@ REQUIRED_TRACE_IDS = (
     "SRC-04",
     "DAT-01",
     "DAT-09",
+    "DAT-11",
     "STO-01",
     "STO-09",
     "SPC-01",
@@ -320,6 +322,32 @@ def verify() -> None:
     assert "Alpha101Crypto is one optional external" in text_files[
         "docs/adr/ADR-0007-binance-scoped-project-identity.md"
     ]
+
+    m19_2 = text_files["docs/milestone_acceptance/M19.2.md"]
+    assert "unsupported Raw stream" in m19_2
+    data_contract = text_files["docs/data_contract.md"]
+    assert (
+        "Historical and Live datasets are not automatically joined"
+        in data_contract
+    )
+    normalized_model = text_files[
+        "src/binance_market_data_recorder/normalize/model.py"
+    ]
+    normalized_parser = text_files[
+        "src/binance_market_data_recorder/normalize/parser.py"
+    ]
+    for stream in (
+        "open_interest_statistics_5m",
+        "taker_buy_sell_volume_5m",
+        "global_long_short_ratio_5m",
+        "top_long_short_account_ratio_5m",
+        "top_long_short_position_ratio_5m",
+        "basis_5m",
+    ):
+        assert stream in normalized_model
+        assert stream in normalized_parser
+    assert '("spot", "exchange_info")' in normalized_model
+    assert "requested_start_ms" in normalized_parser
 
     assert "python-binance" in tracked_text  # its prohibition must be explicit
     assert "No GUI" in tracked_text or "no GUI" in tracked_text

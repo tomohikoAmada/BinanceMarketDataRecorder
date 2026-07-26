@@ -58,6 +58,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | Deferred; explicitly not satisfied by M17/M18 |
 | FAI-03 | Depth lifecycle/gap resync, fail-fast core terminal recovery and restartable side data | ADR-0023 | M19 deterministic lifecycle/overflow/terminal/retry tests |
 | DAT-10 | Critical Spot rules/USD-M 5m statistics plus revisioned official archive import without clock fabrication | ADR-0024, data coverage | M19 schema/checksum/404/revision/timestamp/idempotency tests |
+| DAT-11 | Market-specific normalized schemas for M19 Live data; one row per 5m period; exchange-timestamp identity; explicit empty response; deterministic duplicate/conflict treatment | data contract, ADR-0020, data coverage | M19.2 parser/schema and Raw-to-Parquet regressions |
 | REL-01 | V1 docs/package/test reports/limitations/Ubuntu preparation | M18 plan | M18 release packet |
 | REL-02 | V1 exit: continuous Spot/UM, rebuild/gaps/recovery/archive/space/blue-green/launchd/no GUI/key/trading/generic consumer | project contract and M18 plan | M18 acceptance; human decision |
 | FUT-01 | Architecture permits Ubuntu adapter/API gateway/UI/more markets/consumer strategies without adding them to V1 | architecture/project contracts | M16 contract; M18 checklist |
@@ -65,6 +66,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 ## Milestone coverage
 
 The M0, M0.1, M0.2, and M1-M19 sections in `milestone_plan.md` each contain
-scope, non-scope, dependencies, acceptance, and rollback. This traceability
-matrix should be updated whenever a requirement, ADR, or milestone acceptance
-changes.
+scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
+submilestones add scoped acceptance records without extending the top-level
+M0-M19 plan. This matrix should be updated whenever a requirement, ADR, or
+milestone acceptance changes.

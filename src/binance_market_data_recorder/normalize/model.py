@@ -13,7 +13,13 @@ PARQUET_PROFILE = "bmdr-parquet.v1"
 
 SUPPORTED_STREAMS: dict[str, frozenset[str]] = {
     "spot": frozenset(
-        {"diff_depth", "agg_trade", "book_ticker", "depth_snapshot"}
+        {
+            "diff_depth",
+            "agg_trade",
+            "book_ticker",
+            "depth_snapshot",
+            "exchange_info",
+        }
     ),
     "um_perpetual": frozenset(
         {
@@ -28,6 +34,12 @@ SUPPORTED_STREAMS: dict[str, frozenset[str]] = {
             "funding_info",
             "open_interest",
             "exchange_info",
+            "open_interest_statistics_5m",
+            "taker_buy_sell_volume_5m",
+            "global_long_short_ratio_5m",
+            "top_long_short_account_ratio_5m",
+            "top_long_short_position_ratio_5m",
+            "basis_5m",
         }
     ),
 }
@@ -171,7 +183,82 @@ STREAM_FIELDS: dict[str, tuple[tuple[str, pa.DataType, bool], ...]] = {
         ("filters_json", pa.string(), True),
         ("rate_limits_json", pa.string(), True),
     ),
+    "open_interest_statistics_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("sum_open_interest", pa.string(), True),
+        ("sum_open_interest_value", pa.string(), True),
+    ),
+    "taker_buy_sell_volume_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("buy_sell_ratio", pa.string(), True),
+        ("buy_volume", pa.string(), True),
+        ("sell_volume", pa.string(), True),
+    ),
+    "global_long_short_ratio_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("long_short_ratio", pa.string(), True),
+        ("long_account", pa.string(), True),
+        ("short_account", pa.string(), True),
+    ),
+    "top_long_short_account_ratio_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("long_short_ratio", pa.string(), True),
+        ("long_account", pa.string(), True),
+        ("short_account", pa.string(), True),
+    ),
+    "top_long_short_position_ratio_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("long_short_ratio", pa.string(), True),
+        ("long_account", pa.string(), True),
+        ("short_account", pa.string(), True),
+    ),
+    "basis_5m": (
+        ("observation_empty", pa.bool_(), False),
+        ("timestamp_ms", pa.int64(), True),
+        ("pair", pa.string(), True),
+        ("contract_type", pa.string(), True),
+        ("index_price", pa.string(), True),
+        ("futures_price", pa.string(), True),
+        ("basis", pa.string(), True),
+        ("basis_rate", pa.string(), True),
+        ("annualized_basis_rate", pa.string(), True),
+    ),
 }
+
+SPOT_EXCHANGE_INFO_FIELDS: tuple[tuple[str, pa.DataType, bool], ...] = (
+    ("symbol_present", pa.bool_(), False),
+    ("server_time_ms", pa.int64(), True),
+    ("trading_status", pa.string(), True),
+    ("filters_json", pa.string(), True),
+    ("order_types_json", pa.string(), True),
+    ("rate_limits_json", pa.string(), True),
+    ("permissions_json", pa.string(), True),
+    ("permission_sets_json", pa.string(), True),
+    ("response_model_sha256", pa.string(), True),
+)
+
+MARKET_STREAM_FIELDS: dict[
+    tuple[str, str], tuple[tuple[str, pa.DataType, bool], ...]
+] = {
+    ("spot", "exchange_info"): SPOT_EXCHANGE_INFO_FIELDS,
+}
+
+
+def stream_fields(
+    market: str, stream: str
+) -> tuple[tuple[str, pa.DataType, bool], ...]:
+    fields = MARKET_STREAM_FIELDS.get((market, stream))
+    if fields is not None:
+        return fields
+    try:
+        return STREAM_FIELDS[stream]
+    except KeyError as exc:
+        raise ValueError(f"unsupported normalized stream {market}/{stream}") from exc
 
 
 def schema_version(market: str, stream: str) -> str:
@@ -184,7 +271,7 @@ def schema_for(market: str, stream: str) -> pa.Schema:
         raise ValueError(f"unsupported normalized stream {market}/{stream}")
     fields = [
         pa.field(name, data_type, nullable=nullable)
-        for name, data_type, nullable in (*COMMON_FIELDS, *STREAM_FIELDS[stream])
+        for name, data_type, nullable in (*COMMON_FIELDS, *stream_fields(market, stream))
     ]
     metadata = {
         b"bmdr.dataset_version": DATASET_VERSION.encode(),

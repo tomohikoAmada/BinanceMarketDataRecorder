@@ -68,12 +68,14 @@ def provenance(
     model: object,
     path: str,
     kind: str | None = None,
+    parameters: dict[str, object] | None = None,
 ) -> bytes:
     document: dict[str, Any] = {
         "schema_version": schema_version,
         "request": {
             "method": "GET",
             "path": path,
+            "parameters": parameters or {},
             "request_time_utc_ns": BASE_NS - 1_000,
         },
         "response": {
