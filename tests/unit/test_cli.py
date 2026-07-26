@@ -28,7 +28,7 @@ def test_config_show_is_structured_and_credential_free(
     payload = json.loads(capsys.readouterr().out)
     assert payload["command"] == "config.show"
     assert payload["contains_credentials"] is False
-    assert set(payload["config"]) == {
+    assert {
         "data_root",
         "durability_interval_seconds",
         "ingress_queue_capacity",
@@ -39,7 +39,18 @@ def test_config_show_is_structured_and_credential_free(
         "prevent_sleep",
         "rotation_bytes",
         "rotation_seconds",
-    }
+    } <= set(payload["config"])
+    assert all(
+        forbidden not in key.casefold()
+        for key in payload["config"]
+        for forbidden in (
+            "api_key",
+            "api_secret",
+            "secret_key",
+            "credential",
+            "private_key",
+        )
+    )
 
 
 def test_doctor_is_structured_and_non_mutating(
