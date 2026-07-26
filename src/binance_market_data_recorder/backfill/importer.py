@@ -25,6 +25,19 @@ from ..version import package_version
 from .planner import BackfillPlan, PlanEntry
 
 CHECKSUM = re.compile(r"^(?P<digest>[0-9a-fA-F]{64})\s+\*?(?P<name>[^\s]+)\s*$")
+CONTENT_RANGE = re.compile(
+    r"^bytes (?P<start>[0-9]+)-(?P<end>[0-9]+)/(?P<total>[0-9]+|\*)$"
+)
+NORMALIZED_SCHEMA = pa.schema(
+    [
+        pa.field("archive_event_time_utc_ns", pa.int64(), nullable=False),
+        pa.field("source_row_ordinal", pa.int64(), nullable=False),
+        pa.field("source_values_json", pa.string(), nullable=False),
+        pa.field("source_revision", pa.string(), nullable=False),
+        pa.field("source_zip_sha256", pa.string(), nullable=False),
+        pa.field("clock_semantics", pa.string(), nullable=False),
+    ]
+)
 
 
 class HttpResponse(Protocol):
@@ -57,7 +70,10 @@ class HistoricalImporter:
         data_root: Path,
         opener: object = urllib.request.urlopen,
         chunk_bytes: int = 1024 * 1024,
+        normalization_batch_rows: int = 50_000,
     ) -> None:
+        if chunk_bytes <= 0 or normalization_batch_rows <= 0:
+            raise ValueError("historical importer bounds must be positive")
         self.root = data_root.resolve() / "data" / "historical"
         self.sources = self.root / "sources"
         self.normalized = self.root / "normalized"
@@ -67,6 +83,7 @@ class HistoricalImporter:
             directory.mkdir(parents=True, exist_ok=True)
         self.opener = opener
         self.chunk_bytes = chunk_bytes
+        self.normalization_batch_rows = normalization_batch_rows
 
     @staticmethod
     def _validate_url(url: str) -> None:
@@ -99,13 +116,45 @@ class HistoricalImporter:
         if offset:
             headers["Range"] = f"bytes={offset}-"
         request = urllib.request.Request(url, headers=headers)
-        with self._open(request) as response:
-            mode = "ab" if offset and response.status == 206 else "wb"
+        try:
+            response_context = self._open(request)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 416 and offset:
+                return
+            raise
+        with response_context as response:
+            if response.status == 206:
+                content_range = self._response_header(response.headers, "Content-Range")
+                match = CONTENT_RANGE.fullmatch(content_range or "")
+                if (
+                    match is None
+                    or int(match["start"]) != offset
+                    or int(match["end"]) < offset
+                ):
+                    partial.unlink(missing_ok=True)
+                    raise ValueError(
+                        "historical Range response has an invalid Content-Range"
+                    )
+                mode = "ab"
+            elif response.status == 200:
+                mode = "wb"
+            else:
+                raise RuntimeError(
+                    f"historical archive returned unexpected HTTP {response.status}"
+                )
             with partial.open(mode) as handle:
                 while block := response.read(self.chunk_bytes):
                     handle.write(block)
                 handle.flush()
                 os.fsync(handle.fileno())
+
+    @staticmethod
+    def _response_header(headers: object, name: str) -> str | None:
+        getter = getattr(headers, "get", None)
+        if not callable(getter):
+            return None
+        value = getter(name)
+        return str(value) if value is not None else None
 
     @staticmethod
     def _parse_checksum(body: bytes, expected_filename: str) -> tuple[str, str]:
@@ -160,7 +209,11 @@ class HistoricalImporter:
             if exc.code == 404:
                 return self._record_gap(entry, "ZIP_NOT_FOUND")
             raise
-        actual_sha = self._verify_file(partial, expected_sha)
+        try:
+            actual_sha = self._verify_file(partial, expected_sha)
+        except ValueError:
+            partial.unlink(missing_ok=True)
+            raise
         os.replace(partial, zip_path)
         self._atomic_bytes(checksum_path, checksum_body)
         supersedes = self._previous_revisions(identity, revision)
@@ -229,49 +282,116 @@ class HistoricalImporter:
         output = self.normalized / f"{revision}.parquet"
         if output.is_file():
             return output
-        rows: list[dict[str, object]] = []
-        with zipfile.ZipFile(zip_path) as archive:
-            members = [name for name in archive.namelist() if name.endswith(".csv")]
-            if len(members) != 1:
-                raise ValueError("historical ZIP must contain exactly one CSV")
-            with archive.open(members[0]) as raw:
-                reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8", newline=""))
-                for ordinal, values in enumerate(reader):
-                    if not values or not values[0].lstrip("-").isdigit():
-                        continue
-                    timestamp = int(values[self._timestamp_index(entry)])
-                    multiplier = (
-                        1_000
-                        if entry.timestamp_unit == "microseconds"
-                        else 1_000_000
-                    )
-                    rows.append(
-                        {
-                            "archive_event_time_utc_ns": timestamp * multiplier,
-                            "source_row_ordinal": ordinal,
-                            "source_values_json": json.dumps(
-                                values, separators=(",", ":")
-                            ),
-                            "source_revision": revision,
-                            "source_zip_sha256": source_sha,
-                            "clock_semantics": "archive_source",
-                        }
-                    )
-        table = pa.Table.from_pylist(rows)
         metadata = {
-            **(table.schema.metadata or {}),
             b"source_revision": revision.encode(),
             b"source_zip_sha256": source_sha.encode(),
             b"clock_semantics": b"archive_source_no_live_receive_clock",
         }
-        table = table.replace_schema_metadata(metadata)
+        schema = NORMALIZED_SCHEMA.with_metadata(metadata)
         partial = output.with_suffix(".parquet.partial")
-        pq.write_table(table, partial, compression="zstd")
-        with partial.open("rb") as handle:
-            os.fsync(handle.fileno())
-        os.replace(partial, output)
-        fsync_directory(output.parent)
-        return output
+        row_count = 0
+        try:
+            with (
+                pq.ParquetWriter(partial, schema, compression="zstd") as writer,
+                zipfile.ZipFile(zip_path) as archive,
+            ):
+                members = [
+                    name for name in archive.namelist() if name.endswith(".csv")
+                ]
+                if len(members) != 1:
+                    raise ValueError(
+                        "historical ZIP must contain exactly one CSV"
+                    )
+                with archive.open(members[0]) as raw:
+                    reader = csv.reader(
+                        io.TextIOWrapper(raw, encoding="utf-8", newline="")
+                    )
+                    batch: list[dict[str, object]] = []
+                    for ordinal, values in enumerate(reader):
+                        if not values or not values[0].lstrip("-").isdigit():
+                            continue
+                        batch.append(
+                            self._normalized_row(
+                                entry,
+                                revision,
+                                source_sha,
+                                ordinal,
+                                values,
+                            )
+                        )
+                        if len(batch) == self.normalization_batch_rows:
+                            writer.write_table(
+                                pa.Table.from_pylist(batch, schema=schema)
+                            )
+                            row_count += len(batch)
+                            batch.clear()
+                    if batch:
+                        writer.write_table(pa.Table.from_pylist(batch, schema=schema))
+                        row_count += len(batch)
+            with partial.open("rb") as handle:
+                os.fsync(handle.fileno())
+            self._verify_normalized(
+                partial,
+                revision=revision,
+                source_sha=source_sha,
+                expected_rows=row_count,
+            )
+            os.replace(partial, output)
+            fsync_directory(output.parent)
+            return output
+        except BaseException:
+            partial.unlink(missing_ok=True)
+            raise
+
+    @staticmethod
+    def _normalized_row(
+        entry: PlanEntry,
+        revision: str,
+        source_sha: str,
+        ordinal: int,
+        values: list[str],
+    ) -> dict[str, object]:
+        timestamp = int(values[HistoricalImporter._timestamp_index(entry)])
+        multiplier = 1_000 if entry.timestamp_unit == "microseconds" else 1_000_000
+        return {
+            "archive_event_time_utc_ns": timestamp * multiplier,
+            "source_row_ordinal": ordinal,
+            "source_values_json": json.dumps(values, separators=(",", ":")),
+            "source_revision": revision,
+            "source_zip_sha256": source_sha,
+            "clock_semantics": "archive_source",
+        }
+
+    @staticmethod
+    def _verify_normalized(
+        path: Path,
+        *,
+        revision: str,
+        source_sha: str,
+        expected_rows: int | None = None,
+    ) -> int:
+        parquet = pq.ParquetFile(path)
+        metadata = parquet.schema_arrow.metadata or {}
+        if metadata.get(b"source_revision") != revision.encode():
+            raise ValueError("normalized source_revision metadata mismatch")
+        if metadata.get(b"source_zip_sha256") != source_sha.encode():
+            raise ValueError("normalized source ZIP SHA-256 metadata mismatch")
+        if metadata.get(b"clock_semantics") != (
+            b"archive_source_no_live_receive_clock"
+        ):
+            raise ValueError("normalized clock semantics metadata mismatch")
+        rows = int(parquet.metadata.num_rows)
+        if expected_rows is not None and rows != expected_rows:
+            raise ValueError(
+                f"normalized row-count mismatch: expected={expected_rows} actual={rows}"
+            )
+        for batch in parquet.iter_batches(
+            batch_size=50_000,
+            columns=["source_row_ordinal", "archive_event_time_utc_ns"],
+        ):
+            if batch.num_rows > 50_000:
+                raise ValueError("normalized readback batch exceeded its bound")
+        return rows
 
     @staticmethod
     def _timestamp_index(entry: PlanEntry) -> int:
@@ -297,14 +417,51 @@ class HistoricalImporter:
 
     def verify(self) -> dict[str, object]:
         verified = 0
+        normalized_rows = 0
         for manifest_path in self.sources.glob("*/source_manifest.json"):
             manifest = json.loads(manifest_path.read_text())
+            revision = str(manifest.get("source_revision", ""))
+            if (
+                manifest.get("schema_version") != "historical-source.v1"
+                or revision != manifest_path.parent.name
+            ):
+                raise ValueError("historical source manifest identity mismatch")
             filename = Path(urlparse(manifest["official_url"]).path).name
-            self._verify_file(
-                manifest_path.parent / filename, manifest["actual_sha256"]
+            source_sha = str(manifest.get("actual_sha256", ""))
+            zip_path = manifest_path.parent / filename
+            if not zip_path.is_file():
+                raise ValueError("historical source ZIP is missing")
+            if (
+                manifest.get("checksum_url") != f"{manifest['official_url']}.CHECKSUM"
+                or manifest.get("file_size") != zip_path.stat().st_size
+            ):
+                raise ValueError("historical source manifest does not match source ZIP")
+            checksum_path = manifest_path.parent / f"{filename}.CHECKSUM"
+            if not checksum_path.is_file():
+                raise ValueError("historical source CHECKSUM is missing")
+            checksum_sha, checksum_text = self._parse_checksum(
+                checksum_path.read_bytes(), filename
+            )
+            if (
+                checksum_sha != source_sha
+                or checksum_text != manifest.get("official_checksum_text")
+            ):
+                raise ValueError("historical source CHECKSUM manifest mismatch")
+            self._verify_file(zip_path, source_sha)
+            normalized_path = self.normalized / f"{revision}.parquet"
+            if not normalized_path.is_file():
+                raise ValueError("historical normalized Parquet is missing")
+            normalized_rows += self._verify_normalized(
+                normalized_path,
+                revision=revision,
+                source_sha=source_sha,
             )
             verified += 1
-        return {"status": "VERIFIED", "verified_source_revisions": verified}
+        return {
+            "status": "VERIFIED",
+            "verified_source_revisions": verified,
+            "verified_normalized_rows": normalized_rows,
+        }
 
     @staticmethod
     def _atomic_bytes(path: Path, body: bytes) -> None:

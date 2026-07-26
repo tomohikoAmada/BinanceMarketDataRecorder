@@ -21,10 +21,15 @@ from binance_market_data_recorder.cli import build_parser
 
 
 class Response:
-    def __init__(self, body: bytes, status: int = 200) -> None:
+    def __init__(
+        self,
+        body: bytes,
+        status: int = 200,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         self.body = io.BytesIO(body)
         self.status = status
-        self.headers: dict[str, str] = {}
+        self.headers = headers or {}
 
     def read(self, amount: int = -1) -> bytes:
         return self.body.read(amount)
@@ -51,7 +56,15 @@ class FixtureOpener:
         range_header = request.get_header("Range")
         if range_header:
             offset = int(range_header.removeprefix("bytes=").removesuffix("-"))
-            return Response(body[offset:], status=206)
+            return Response(
+                body[offset:],
+                status=206,
+                headers={
+                    "Content-Range": (
+                        f"bytes {offset}-{len(body) - 1}/{len(body)}"
+                    )
+                },
+            )
         return Response(body)
 
 
@@ -84,6 +97,60 @@ def test_microstructure_profile_is_explicit_and_never_in_baseline() -> None:
     )
     assert all(item.data_type not in {"trades", "aggTrades"} for item in baseline.entries)
     assert {item.data_type for item in micro.entries} == {"trades", "aggTrades"}
+
+
+@pytest.mark.parametrize(
+    ("profile", "market", "data_type", "interval", "filename_middle"),
+    [
+        ("baseline-bars", "spot", "klines", "1m", "1m"),
+        ("baseline-bars", "futures/um", "klines", "1m", "1m"),
+        ("baseline-bars", "futures/um", "markPriceKlines", "1m", "1m"),
+        ("baseline-bars", "futures/um", "indexPriceKlines", "1m", "1m"),
+        ("baseline-bars", "futures/um", "premiumIndexKlines", "1m", "1m"),
+        ("baseline-bars", "futures/um", "fundingRate", None, "fundingRate"),
+        ("microstructure-trades", "spot", "trades", None, "trades"),
+        ("microstructure-trades", "futures/um", "trades", None, "trades"),
+        ("microstructure-trades", "spot", "aggTrades", None, "aggTrades"),
+        ("microstructure-trades", "futures/um", "aggTrades", None, "aggTrades"),
+    ],
+)
+@pytest.mark.parametrize(
+    ("start", "end", "granularity", "period"),
+    [
+        (date(2024, 1, 15), date(2024, 1, 15), "daily", "2024-01-15"),
+        (date(2024, 2, 1), date(2024, 2, 29), "monthly", "2024-02"),
+    ],
+)
+def test_planner_uses_official_product_specific_filenames(
+    profile: str,
+    market: str,
+    data_type: str,
+    interval: str | None,
+    filename_middle: str,
+    start: date,
+    end: date,
+    granularity: str,
+    period: str,
+) -> None:
+    entry = next(
+        item
+        for item in build_plan(profile, start, end).entries
+        if item.market == market
+        and item.data_type == data_type
+        and item.interval == interval
+        and (
+            item.granularity == granularity
+            or data_type == "fundingRate"
+        )
+    )
+    expected_period = (
+        start.strftime("%Y-%m") if data_type == "fundingRate" else period
+    )
+    if data_type == "fundingRate":
+        assert entry.granularity == "monthly"
+    expected = f"BTCUSDT-{filename_middle}-{expected_period}.zip"
+    assert entry.zip_url.endswith(f"/{expected}")
+    assert entry.checksum_url.endswith(f"/{expected}.CHECKSUM")
 
 
 def _entry() -> PlanEntry:
@@ -163,6 +230,207 @@ def test_checksum_failure_never_commits_zip(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="checksum mismatch"):
         importer.import_entry(entry)
     assert not list(importer.sources.glob("*/*.zip"))
+    assert not list(importer.sources.glob("*/*.partial"))
+
+
+def test_range_resume_rejects_wrong_content_range_and_restarts_from_zero(
+    tmp_path: Path,
+) -> None:
+    entry = _entry()
+    archive = _zip(["1735689600000000,1,2,0,1,10"])
+    digest = sha256(archive).hexdigest()
+    checksum = f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+
+    class WrongRangeOpener(FixtureOpener):
+        def __call__(self, request: Request, timeout: int) -> Response:
+            if request.full_url == entry.checksum_url:
+                return Response(checksum)
+            offset = int(
+                cast(str, request.get_header("Range"))
+                .removeprefix("bytes=")
+                .removesuffix("-")
+            )
+            return Response(
+                archive[offset:],
+                status=206,
+                headers={
+                    "Content-Range": (
+                        f"bytes {offset + 1}-{len(archive) - 1}/{len(archive)}"
+                    )
+                },
+            )
+
+    importer = HistoricalImporter(data_root=tmp_path, opener=WrongRangeOpener({}))
+    revision = (
+        f"{sha256(entry.zip_url.encode()).hexdigest()[:16]}-{digest[:16]}"
+    )
+    partial = importer.sources / revision / "BTCUSDT-1m-2025-01-01.zip.partial"
+    partial.parent.mkdir(parents=True)
+    partial.write_bytes(archive[:10])
+    with pytest.raises(ValueError, match="Content-Range"):
+        importer.import_entry(entry)
+    assert not partial.exists()
+
+
+def test_server_ignoring_range_rewrites_partial_from_zero(tmp_path: Path) -> None:
+    entry = _entry()
+    archive = _zip(["1735689600000000,1,2,0,1,10"])
+    digest = sha256(archive).hexdigest()
+    checksum = f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+
+    class IgnoreRangeOpener(FixtureOpener):
+        def __call__(self, request: Request, timeout: int) -> Response:
+            if request.full_url == entry.checksum_url:
+                return Response(checksum)
+            return Response(archive, status=200)
+
+    importer = HistoricalImporter(data_root=tmp_path, opener=IgnoreRangeOpener({}))
+    revision = (
+        f"{sha256(entry.zip_url.encode()).hexdigest()[:16]}-{digest[:16]}"
+    )
+    partial = importer.sources / revision / "BTCUSDT-1m-2025-01-01.zip.partial"
+    partial.parent.mkdir(parents=True)
+    partial.write_bytes(b"bad-prefix")
+    result = importer.import_entry(entry)
+    assert result.status == "IMPORTED"
+    assert Path(cast(str, result.zip_path)).read_bytes() == archive
+
+
+@pytest.mark.parametrize("partial_is_complete", [True, False])
+def test_range_416_validates_partial_before_commit_or_restart(
+    tmp_path: Path, partial_is_complete: bool
+) -> None:
+    entry = _entry()
+    archive = _zip(["1735689600000000,1,2,0,1,10"])
+    digest = sha256(archive).hexdigest()
+    checksum = f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+
+    class Range416Opener:
+        def __init__(self) -> None:
+            self.zip_attempts = 0
+
+        def __call__(self, request: Request, timeout: int) -> Response:
+            if request.full_url == entry.checksum_url:
+                return Response(checksum)
+            self.zip_attempts += 1
+            if self.zip_attempts == 1:
+                raise urllib.error.HTTPError(
+                    request.full_url, 416, "range", Message(), None
+                )
+            return Response(archive)
+
+    opener = Range416Opener()
+    importer = HistoricalImporter(data_root=tmp_path, opener=opener)
+    revision = (
+        f"{sha256(entry.zip_url.encode()).hexdigest()[:16]}-{digest[:16]}"
+    )
+    partial = importer.sources / revision / "BTCUSDT-1m-2025-01-01.zip.partial"
+    partial.parent.mkdir(parents=True)
+    partial.write_bytes(archive if partial_is_complete else b"corrupt")
+    if partial_is_complete:
+        result = importer.import_entry(entry)
+        assert result.status == "IMPORTED"
+        assert opener.zip_attempts == 1
+    else:
+        with pytest.raises(ValueError, match="checksum mismatch"):
+            importer.import_entry(entry)
+        assert not partial.exists()
+        result = importer.import_entry(entry)
+        assert result.status == "IMPORTED"
+        assert opener.zip_attempts == 2
+
+
+def test_checksum_failure_can_retry_from_zero(tmp_path: Path) -> None:
+    entry = _entry()
+    good = _zip(["1735689600000000,1,2,0,1,10"])
+    bad = _zip(["1735689600000000,9,9,9,9,9"])
+    digest = sha256(good).hexdigest()
+    checksum = f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+
+    class ChangingOpener:
+        def __init__(self) -> None:
+            self.zip_attempts = 0
+
+        def __call__(self, request: Request, timeout: int) -> Response:
+            if request.full_url == entry.checksum_url:
+                return Response(checksum)
+            self.zip_attempts += 1
+            return Response(bad if self.zip_attempts == 1 else good)
+
+    opener = ChangingOpener()
+    importer = HistoricalImporter(data_root=tmp_path, opener=opener)
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        importer.import_entry(entry)
+    assert importer.import_entry(entry).status == "IMPORTED"
+    assert opener.zip_attempts == 2
+
+
+def test_normalization_uses_fixed_batches_and_verifies_lineage(
+    tmp_path: Path,
+) -> None:
+    entry = _entry()
+    archive = _zip(
+        [
+            f"{1_735_689_600_000_000 + index},1,2,0,1,10"
+            for index in range(7)
+        ]
+    )
+    digest = sha256(archive).hexdigest()
+    opener = FixtureOpener(
+        {
+            entry.zip_url: archive,
+            entry.checksum_url: (
+                f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+            ),
+        }
+    )
+    importer = HistoricalImporter(
+        data_root=tmp_path,
+        opener=opener,
+        normalization_batch_rows=2,
+    )
+    result = importer.import_entry(entry)
+    parquet = pq.ParquetFile(cast(str, result.normalized_path))
+    assert parquet.metadata.num_rows == 7
+    assert parquet.metadata.num_row_groups == 4
+    assert all(
+        parquet.metadata.row_group(index).num_rows <= 2
+        for index in range(parquet.metadata.num_row_groups)
+    )
+    table = parquet.read()
+    assert table.column("source_row_ordinal").to_pylist() == list(range(7))
+    metadata = table.schema.metadata or {}
+    assert metadata[b"source_revision"].decode() == result.source_revision
+    assert metadata[b"source_zip_sha256"].decode() == digest
+    assert importer.verify() == {
+        "status": "VERIFIED",
+        "verified_source_revisions": 1,
+        "verified_normalized_rows": 7,
+    }
+
+
+def test_verify_rejects_missing_or_mismatched_normalized_lineage(
+    tmp_path: Path,
+) -> None:
+    entry = _entry()
+    archive = _zip(["1735689600000000,1,2,0,1,10"])
+    digest = sha256(archive).hexdigest()
+    importer = HistoricalImporter(
+        data_root=tmp_path,
+        opener=FixtureOpener(
+            {
+                entry.zip_url: archive,
+                entry.checksum_url: (
+                    f"{digest}  BTCUSDT-1m-2025-01-01.zip\n".encode()
+                ),
+            }
+        ),
+    )
+    result = importer.import_entry(entry)
+    normalized = Path(cast(str, result.normalized_path))
+    normalized.unlink()
+    with pytest.raises(ValueError, match="Parquet is missing"):
+        importer.verify()
 
 
 def test_404_is_explicit_gap_not_empty_data(tmp_path: Path) -> None:

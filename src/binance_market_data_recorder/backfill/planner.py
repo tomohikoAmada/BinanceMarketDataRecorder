@@ -38,6 +38,16 @@ MICROSTRUCTURE_DATASETS = (
     Dataset("futures/um", "aggTrades", None, 500_000_000),
 )
 
+KLINE_DATA_TYPES = frozenset(
+    {
+        "klines",
+        "markPriceKlines",
+        "indexPriceKlines",
+        "premiumIndexKlines",
+    }
+)
+NAMED_DATA_TYPES = frozenset({"trades", "aggTrades", "fundingRate"})
+
 
 @dataclass(frozen=True, slots=True)
 class PlanEntry:
@@ -86,8 +96,15 @@ def _next_month(day: date) -> date:
 
 
 def _filename(dataset: Dataset, period: str) -> str:
-    interval = f"-{dataset.interval}" if dataset.interval else ""
-    return f"BTCUSDT{interval}-{period}.zip"
+    if dataset.data_type in KLINE_DATA_TYPES:
+        if dataset.interval is None:
+            raise ValueError(f"{dataset.data_type} requires an interval")
+        return f"BTCUSDT-{dataset.interval}-{period}.zip"
+    if dataset.data_type in NAMED_DATA_TYPES:
+        if dataset.interval is not None:
+            raise ValueError(f"{dataset.data_type} must not have an interval")
+        return f"BTCUSDT-{dataset.data_type}-{period}.zip"
+    raise ValueError(f"unsupported historical data type: {dataset.data_type}")
 
 
 def _entry(
@@ -136,6 +153,20 @@ def build_plan(profile: str, start: date, end: date) -> BackfillPlan:
     )
     entries: list[PlanEntry] = []
     for dataset in datasets:
+        if dataset.data_type == "fundingRate":
+            source_month = date(start.year, start.month, 1)
+            final_month = date(end.year, end.month, 1)
+            while source_month <= final_month:
+                entries.append(
+                    _entry(
+                        dataset,
+                        "monthly",
+                        source_month,
+                        _month_end(source_month),
+                    )
+                )
+                source_month = _next_month(source_month)
+            continue
         cursor = start
         while cursor <= end:
             month_last = _month_end(cursor)
