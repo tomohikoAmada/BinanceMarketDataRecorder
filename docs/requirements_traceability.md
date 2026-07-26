@@ -6,7 +6,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 
 | ID | Requirement family | Contract / decision | Delivery and proof |
 | --- | --- | --- | --- |
-| WF-01 | Exactly one milestone/run/commit; read prerequisites/status; report and stop | `AGENTS.md`, milestone universal gate | Every M0-M18; acceptance record per milestone |
+| WF-01 | Exactly one milestone/run; read prerequisites/status; report and stop; use multiple logical commits only when a milestone explicitly requires them | `AGENTS.md`, milestone universal gate | Every M0-M19; acceptance record per milestone |
 | WF-02 | Stop with evidence on official API/platform/permission semantic blocker; no fake substitute | `AGENTS.md`, risks R-002/R-020/R-022 | M2/M9/M12 and any affected milestone |
 | WF-03 | No real trading, account API, API key or credential reads | project/security contract, ADR-0005 | Static/config tests M1; transport tests M2+ |
 | WF-04 | No format/repair of external disk; no GUI/web/trading/factor/backtest in Recorder | project/storage/macOS contracts | Boundary tests/reviews every milestone |
@@ -56,13 +56,15 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0007/0021, architecture | M16 public descriptors omit paths; independent example imports only replay API; named-consumer validation remains optional |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |
 | FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | Deferred; explicitly not satisfied by M17/M18 |
+| FAI-03 | Depth lifecycle/gap resync, fail-fast core terminal recovery and restartable side data | ADR-0023 | M19 deterministic lifecycle/overflow/terminal/retry tests |
+| DAT-10 | Critical Spot rules/USD-M 5m statistics plus revisioned official archive import without clock fabrication | ADR-0024, data coverage | M19 schema/checksum/404/revision/timestamp/idempotency tests |
 | REL-01 | V1 docs/package/test reports/limitations/Ubuntu preparation | M18 plan | M18 release packet |
 | REL-02 | V1 exit: continuous Spot/UM, rebuild/gaps/recovery/archive/space/blue-green/launchd/no GUI/key/trading/generic consumer | project contract and M18 plan | M18 acceptance; human decision |
 | FUT-01 | Architecture permits Ubuntu adapter/API gateway/UI/more markets/consumer strategies without adding them to V1 | architecture/project contracts | M16 contract; M18 checklist |
 
 ## Milestone coverage
 
-The M0, M0.1, M0.2, and M1-M18 sections in `milestone_plan.md` each contain
+The M0, M0.1, M0.2, and M1-M19 sections in `milestone_plan.md` each contain
 scope, non-scope, dependencies, acceptance, and rollback. This traceability
 matrix should be updated whenever a requirement, ADR, or milestone acceptance
 changes.

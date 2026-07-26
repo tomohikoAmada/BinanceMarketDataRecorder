@@ -38,6 +38,8 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M14.md",
     "docs/milestone_acceptance/M15.md",
     "docs/milestone_acceptance/M16.md",
+    "docs/milestone_acceptance/M19.md",
+    "docs/data_coverage.md",
     "docs/consumer_contract.md",
     "docs/dependency_policy.md",
     "pyproject.toml",
@@ -62,6 +64,8 @@ REQUIRED_FILES = (
     "docs/adr/0019-user-launchagent-and-power-lifecycle.md",
     "docs/adr/0020-content-addressed-normalized-parquet.md",
     "docs/adr/0021-deterministic-replay-and-consumer-boundary.md",
+    "docs/adr/0023-depth-resync-and-terminal-recovery.md",
+    "docs/adr/0024-historical-source-contract.md",
     "examples/replay_consumer.py",
     "src/binance_market_data_recorder/py.typed",
     "tools/binance_docs.toml",
@@ -168,12 +172,12 @@ def verify() -> None:
     assert not missing, f"missing M0 files: {missing}"
 
     plan = (ROOT / "docs/milestone_plan.md").read_text(encoding="utf-8")
-    for number in range(19):
+    for number in range(20):
         assert f"## M{number} " in plan, f"M{number} missing from milestone plan"
     assert "## M0.1 " in plan, "M0.1 missing from milestone plan"
     assert "## M0.2 " in plan, "M0.2 missing from milestone plan"
     for heading in ("Scope", "Non-scope", "Dependencies", "Acceptance", "Rollback"):
-        assert plan.count(f"- {heading}:") == 21, f"expected 21 {heading} sections"
+        assert plan.count(f"- {heading}:") == 22, f"expected 22 {heading} sections"
     assert "## M16 — Replay interface and generic consumer data contract" in plan
     assert "named consumer is" in plan and "required for V1 completion" in plan
 

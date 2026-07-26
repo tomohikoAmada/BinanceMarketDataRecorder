@@ -4,6 +4,20 @@ Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
 the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
+## M19 public side-data and historical clocks
+
+Spot `exchange_info` preserves BTCUSDT `filters`, `status`, `orderTypes`,
+response rate-limit headers, request/receive times, and server time when
+supplied. USD-M streams ending `_5m` request only the latest closed 5-minute
+period and retain complete official-SDK models and headers. Duplicate Raw polls
+are allowed. Missing/failed polls are not zero and are never forward-filled.
+
+Historical source manifests use `historical-source.v1`; gaps use
+`historical-gap.v1`. Historical normalized rows expose
+`archive_event_time_utc_ns`, source revision, ZIP SHA-256 and
+`clock_semantics=archive_source`. They have no receive UTC/monotonic clock and
+must not be admitted to receive-time replay.
+
 ## EventEnvelope v1 minimum fields
 
 | Field | Meaning |

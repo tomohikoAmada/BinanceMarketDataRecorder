@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+
+from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
 from ..binance.spot.exchange_info import (
     SpotExchangeInfoApi,
     capture_spot_exchange_info,
 )
+from ..binance.spot.rate_limit import shared_spot_ip_rate_limiter
 from ..spool.stream import StreamSpool
 from .usdm_side_data import SideDataStats
 
@@ -39,17 +43,35 @@ class SpotExchangeInfoPoller:
         try:
             while not stop.is_set():
                 try:
-                    envelope = await asyncio.to_thread(
-                        capture_spot_exchange_info,
-                        rest_api=self.rest_api,
-                        collector_instance_id=self.collector_instance_id,
-                        collector_version=self.collector_version,
-                        timeout_ms=self.timeout_ms,
+                    limiter = shared_spot_ip_rate_limiter()
+                    await limiter.acquire_weight(weight=20)
+                    async with limiter.request_slot():
+                        envelope = await asyncio.to_thread(
+                            capture_spot_exchange_info,
+                            rest_api=self.rest_api,
+                            collector_instance_id=self.collector_instance_id,
+                            collector_version=self.collector_version,
+                            timeout_ms=self.timeout_ms,
+                        )
+                    provenance = json.loads(envelope.raw_payload)
+                    await limiter.observe_success_weight(
+                        weight=20,
+                        headers=provenance["response"]["headers"],
                     )
                     self.spool.enqueue(envelope)
                     await asyncio.to_thread(self.spool.drain_all)
                     self.stats.accepted += 1
                     self.stats.observe_success()
+                except (RateLimitBanError, TooManyRequestsError) as exc:
+                    status = 418 if isinstance(exc, RateLimitBanError) else 429
+                    limiter = shared_spot_ip_rate_limiter()
+                    await limiter.observe_weight_rejection(
+                        status=status,
+                        weight=20,
+                        headers={},
+                        body_text=str(exc),
+                    )
+                    self.stats.observe_failure(type(exc).__name__)
                 except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
                     self.stats.observe_failure(type(exc).__name__)
                     self.logger.warning(

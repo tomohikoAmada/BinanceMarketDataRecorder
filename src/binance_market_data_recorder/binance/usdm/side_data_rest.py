@@ -220,6 +220,13 @@ def _text(value: dict[str, Any], name: str) -> str:
     return item
 
 
+def _string(value: dict[str, Any], name: str) -> str:
+    item = value.get(name)
+    if not isinstance(item, str):
+        raise SideDataSchemaError(f"{name} must be text")
+    return item
+
+
 def _integer(value: dict[str, Any], name: str) -> int:
     item = value.get(name)
     if not isinstance(item, int) or isinstance(item, bool) or item < 0:
@@ -318,11 +325,14 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
                     "futuresPrice",
                     "basis",
                     "basisRate",
-                    "annualizedBasisRate",
                 ):
                     _text(item, name)
+                _string(item, "annualizedBasisRate")
             else:
-                if _text(item, "symbol") != "BTCUSDT":
+                if (
+                    kind is not RestSideDataKind.TAKER_BUY_SELL_VOLUME
+                    and _text(item, "symbol") != "BTCUSDT"
+                ):
                     raise SideDataSchemaError("unexpected statistics symbol")
                 required = {
                     RestSideDataKind.OPEN_INTEREST_STATISTICS: (

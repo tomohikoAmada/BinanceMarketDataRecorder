@@ -2,6 +2,13 @@
 
 Status: M16 deterministic replay and generic consumer API.
 
+## M19 dependency decision
+
+No new runtime dependency was added. Current RSS uses macOS `libproc` and a
+Linux `/proc` adapter point, so `psutil` was unnecessary. Historical
+normalization reuses pinned `pyarrow==25.0.0`; HTTPS downloads use the standard
+library. Official modular Spot and USD-M SDK pins remain unchanged.
+
 ## Principles
 
 - Runtime dependencies must solve an immediate accepted milestone requirement.

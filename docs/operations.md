@@ -1,5 +1,18 @@
 # Operations
 
+## Side-data and backfill status
+
+Runtime market state includes each side task's `status`, `enabled`, `running`,
+`attempts`, `accepted`, `failures`, `consecutive_failures`,
+`last_success_at_utc_ns`, `last_error_type`, and `next_retry_at_utc_ns`.
+Retrying/stale enabled tasks make network status `DEGRADED`; core collection
+continues.
+
+Always run `backfill plan` before `backfill run` and review estimated bytes and
+URLs. Imports use concurrency one, `.partial` files, official checksums and
+atomic revision commits. `backfill verify` rereads immutable ZIP hashes. A 404
+is a recorded gap, not empty data.
+
 ## Status and reports
 
 All commands return structured JSON:

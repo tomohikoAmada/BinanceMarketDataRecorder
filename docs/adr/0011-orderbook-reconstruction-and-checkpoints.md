@@ -40,6 +40,12 @@ M17 established a Spot conflict that must remain explicit:
 
 Binance maintainers have not directly confirmed the discrepancy. R-034 remains
 open, and the issue text is retained locally as an unpublished draft.
+M19 re-fetched the official Global page on 2026-07-26 with SHA-256
+`8a127810e46793aa47b42e33ce0df963c9a169c3f27f89b97cbc6a603f0c823e`.
+The conflict remains. `tools/evaluate_spot_bootstrap.py` compares target `L`
+and `L+1` on one Raw window and reports bridge/gap differences without changing
+the production algorithm or representing engineering inference as official
+wording.
 
 ## Decision
 

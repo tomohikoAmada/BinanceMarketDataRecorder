@@ -156,8 +156,10 @@ Before completing a milestone:
 1. Run all acceptance commands possible in the current environment.
 2. List tests not run and why; never silently lower a gate.
 3. Update the plan, risk/source records, contracts, and acceptance evidence.
-4. Ensure the commit contains only the current milestone, create one local
-   commit, verify a clean worktree, and stop.
+4. Ensure every commit contains only the current milestone. Normally create one
+   local commit; when the human milestone instruction explicitly requires
+   multiple logical commits (as in M19), keep those commits milestone-pure,
+   verify a clean worktree, and stop.
 5. Report milestone, modified files, architecture decisions, commands, test
    results, unrun tests, known limitations, compatibility impact, and the next
    milestone name.

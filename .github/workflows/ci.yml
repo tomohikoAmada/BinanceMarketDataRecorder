@@ -1,0 +1,41 @@
+name: offline-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  macos-python312:
+    runs-on: macos-14
+    timeout-minutes: 45
+    env:
+      BINANCE_MARKET_RECORDER_DATA_ROOT: ${{ runner.temp }}/recorder-data
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+      - run: python -m pip install --require-hashes -r requirements/macos-arm64-python312.lock
+      - run: python -m pip install -r requirements/ci-macos-python312.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest -q
+      - run: python -m ruff check .
+      - run: python -m mypy
+      - run: python tests/verify_m0_contracts.py
+      - run: go run tools/verify_raw_chunk_golden.go
+      - run: python -m build --no-isolation
+      - name: Clean wheel install and CLI smoke
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/pip" install dist/*.whl
+          "$RUNNER_TEMP/wheel-venv/bin/binance-market-recorder" --version
+          "$RUNNER_TEMP/wheel-venv/bin/binance-market-recorder" doctor
+          "$RUNNER_TEMP/wheel-venv/bin/binance-market-recorder" status

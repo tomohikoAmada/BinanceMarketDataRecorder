@@ -467,10 +467,30 @@ self-referential commit hash.
 
 Completion of M18 still stops and waits for explicit human publication/merge.
 
+## M19 — Reliability repair and critical market-data completeness
+
+- Scope: market-local depth resync; fail-fast core terminal recovery;
+  restartable/visible side data; truthful RSS gauges; Spot exchangeInfo; six
+  official USD-M latest-closed 5m statistics; revisioned official historical
+  backfill; offline macOS CI and coverage contracts.
+- Non-scope: strategies, models, backtests, accounts, orders, trading, API
+  credentials, live raw-trade/kline streams, L3 fabrication, other exchanges,
+  Ubuntu/RK3588, or long-running acceptance.
+- Dependencies: accepted M18 Developer Preview; ADR-0011/0012/0022; current
+  official Binance documentation, modular SDK, and public-data README.
+- Acceptance: A–G audit recorded; every resync and terminal path tested;
+  side-task recovery/status tested; public schemas and rate-limit provenance
+  tested; archive checksum/revision/404/timestamp/clock/idempotency tested;
+  offline pytest plus explicit stress, Ruff, strict mypy, contracts, Go golden,
+  build/install and clean diff pass; branch pushed and PR opened without merge.
+- Rollback: preserve immutable Live Raw, historical source revisions, Catalog
+  evidence and gaps; disable affected side dataset/readiness, revert only M19
+  commits, and never substitute third-party or fabricated data.
+
 ## Future Work
 
 Unscheduled future work may include the deferred 72-hour/168-hour reliability
 proof, repeated 24-hour connection rotations, Ubuntu or Windows portability,
 and a separately reviewed GUI. Future work has no milestone number, is not part
-of the current M0–M18 plan, and does not include strategy, backtest or trading
+of the current M0–M19 plan, and does not include strategy, backtest or trading
 implementation without a new human-approved project scope.

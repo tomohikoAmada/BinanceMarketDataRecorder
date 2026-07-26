@@ -184,7 +184,6 @@ def test_invalid_side_data_schema_is_not_silently_accepted() -> None:
         (
             RestSideDataKind.TAKER_BUY_SELL_VOLUME,
             {
-                "symbol": "BTCUSDT",
                 "buySellRatio": "1",
                 "buyVol": "2",
                 "sellVol": "2",
@@ -234,7 +233,7 @@ def test_invalid_side_data_schema_is_not_silently_accepted() -> None:
                 "futuresPrice": "1",
                 "basis": "0",
                 "basisRate": "0",
-                "annualizedBasisRate": "0",
+                "annualizedBasisRate": "",
                 "timestamp": 300_000,
             },
             "basis",

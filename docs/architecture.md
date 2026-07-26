@@ -4,6 +4,20 @@ This document describes the `0.1.0a1` Mac Developer Preview. The implemented
 system remains subject to the deferred long-running reliability limitation in
 `docs/known_limitations.md`.
 
+## M19 recovery boundary
+
+Each core market owns a depth capture session and resync coordinator. A depth
+lifecycle break, sequence gap, or bounded bootstrap overflow restarts only that
+market's connections and snapshot bridge. A terminal core task records
+evidence, seals the other core market, exits nonzero, and lets launchd perform
+whole-process recovery. Auxiliary public datasets restart independently and
+can degrade status without stopping core Raw.
+
+Historical Importer is an offline sibling of Live collection. It writes below
+`data/historical`, uses official archive checksums/revisions, and publishes
+archive-clock Parquet with source lineage. It does not enter Live Raw chunks or
+pretend to possess local receive time.
+
 ## Context
 
 Binance Market Data Recorder is the system of record for Binance public

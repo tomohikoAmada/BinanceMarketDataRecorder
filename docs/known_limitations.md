@@ -4,6 +4,17 @@
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本仅为Mac Developer Preview，不得用于真实资金交易。
 
+## M19
+
+- R-034 remains open: official Global Spot bootstrap wording and the official
+  toolbox/observed adjacent boundary disagree. The offline evaluator compares
+  both targets; it is evidence, not an official resolution.
+- Historical archives provide no local receive clock and no historical L2.
+- USD-M statistics have only the official latest-month/latest-30-day window;
+  missed polling periods may be unrecoverable.
+- Live raw trades, live klines, L3 queue data, accounts, orders and trading are
+  not implemented.
+
 - Repeated 24-hour Binance connection rotation has not been demonstrated in a
   long-running acceptance window.
 - Long-term memory, file-descriptor, bounded-queue, archive-backlog, growth

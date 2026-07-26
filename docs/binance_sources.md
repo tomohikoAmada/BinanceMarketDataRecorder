@@ -5,6 +5,30 @@ project is independent and unofficial: it is not affiliated with, maintained
 by, sponsored by, or endorsed by Binance. Official Binance sources establish
 API behavior only; they do not make this Recorder an official Binance product.
 
+## M19 refresh — 2026-07-26T08:06:37.425492+00:00
+
+The allowlisted updater fetched 20 sources, did not load `llms-full.txt`, and
+did not execute remote content.
+
+| Source | URL | SHA-256 |
+|---|---|---|
+| llms.txt | `https://developers.binance.com/en/docs/llms.txt` | `554ab6217738b845aba19e4bc3637424968d1885a8ec05755bd4dd186f9e4d62` |
+| Spot WebSocket | `https://developers.binance.com/en/docs/products/spot/web-socket-streams.md` | `193aa07cd537b2ccc94662474fb3dda3cb774d550b1e117825919d99f91b725f` |
+| Spot REST | `https://developers.binance.com/en/docs/products/spot/rest-api.md` | `3bfe5526b745c976ae2db7c6bffdee14f10663d5fe326d8aa54c8b5f12968775` |
+| Spot official REST schema | `https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md` | `1f81a02d05822696de40a2b2be21867f2243fda766e0cbbfa7057ac72cf2f93d` |
+| Spot official WebSocket schema | `https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md` | `8a127810e46793aa47b42e33ce0df963c9a169c3f27f89b97cbc6a603f0c823e` |
+| USD-M general REST/rate limits | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md` | `b2e647582fb3ae4cae3a79d6f6f6030d0c03cf403d05176117b24094a083521b` |
+| USD-M official SDK REST methods | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/rest_api.py` | `c54a30a8778c335f71e7b83899b926eb1635b51e59d5bf31a439c201e2c36d6f` |
+| Binance Public Data README | `https://github.com/binance/binance-public-data/blob/master/README.md` | `fe14fa39cbbbc7630f271492cd8d64b0d4709697114adb9a3bc1a13514f453e4` |
+| Spot SDK package | `https://github.com/binance/binance-connector-python/blob/master/clients/spot/pyproject.toml` | `eb6f365ace01e8b3c8ae05456f61102bae077decc3f0be6e3a71950e97c38295` |
+| USD-M SDK package | `https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/pyproject.toml` | `a33a6e20040b7e4228515a836c5fe08c9eea5919949feab6b6a57488d45bd489` |
+
+Pinned official USD-M SDK 14.0.0 confirms
+`open_interest_statistics`, `taker_buy_sell_volume`, `long_short_ratio`,
+both top-trader ratio methods, and `basis`. Spot SDK 10.0.0 confirms public
+`exchange_info`. Public Data documents daily/monthly files, adjacent
+`.CHECKSUM`, and Spot microsecond timestamps from 2025-01-01.
+
 ## Retrieval policy and record
 
 `tools/update_binance_docs.py` reads the project-owned selection in
