@@ -22,7 +22,8 @@ ArchiveManager 实现 ADR-0015:每笔事务保留最旧的 SEALED chunk,将其�
 每一步均可重启协调。若外部卷在复制期间消失(EIO、ENXIO、ENODEV),错误记录为
 DISAPPEARED_DURING_COPY,内部源保留。卷重新出现后事务幂等重试。
 
-内部源删除仅在第 6 步(VERIFIED)之后授权。第 1-5 步永不删除内部数据。
+内部源删除仅在第 5 步 VERIFIED 已提交、进入第 6 步 LOCAL_DELETE_PENDING
+并再次验证外部提交后授权。第 1-5 步永不删除内部数据。
 进入 LOCAL_DELETED 后,外部 artifact 可能是唯一副本;这不是备份策略。
 """
 

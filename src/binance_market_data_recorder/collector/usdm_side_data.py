@@ -16,7 +16,7 @@ funding、open interest、exchange info 和六种 5 分钟统计的 REST 轮询)
 - Cursor 通过 Catalog.side_data_cursor/advance_side_data_cursor 实现持久化,
   因此停机后重启从最后持久化的周期恢复。
 - USD-M 5 分钟 REST 调用共享单个 asyncio.Lock 进行串行化
-  (ADR-0014 意在控制 side-data 开销预算,而非严格 weight 核算)。
+  (ADR-0012;用于避免初始请求突发,而非严格 weight 核算)。
 """
 
 from __future__ import annotations

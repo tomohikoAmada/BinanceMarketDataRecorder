@@ -50,18 +50,25 @@ Binance WebSocket / REST API
 | 自动混合 | 否 | 否 |
 | 重放时钟 | receive-time 重放 | 不支持 receive-time 重放 |
 
-Live 和 Historical 从不自动混合。Historical 行带有 `clock_semantics=archive_source` 标记。
+Live 和 Historical 从不自动混合。Historical 行带有 `clock_semantics=archive_source`
+标记。Replay 支持 `ReplayClock.RECEIVE_TIME` 和 `ReplayClock.EXCHANGE_TIME`，
+所选时钟决定排序键。缺少 exchange time 时，`MissingExchangeTimePolicy` 为
+`ERROR`、`EXCLUDE` 或 `FALLBACK_RECEIVE`；`GapPolicy` 为 `ERROR`、`INCLUDE`
+或 `EXCLUDE`，依据 `source_gap` 和 `source_complete` 处理来源缺口。
 
 ## 4. Spot 和 USD-M 模块边界
 
 | 市场 | Spot | USD-M Perpetual |
 |------|------|-----------------|
 | 序列语义 | `U/u`（first/final update ID） | `U/u/pu`（含 previous final update ID） |
-| bootstrap 规则 | `lastUpdateId + 1`（R-034 Open 冲突） | 官方 `U/u/pu` 连续性 |
+| bootstrap 规则 | `U <= snapshot.last_update_id + 1 <= u`（R-034 Open 冲突） | `U <= snapshot.last_update_id <= u` |
 | WebSocket 端点 | `stream.binance.com:443/ws` | `/public/ws/`, `/market/ws/` |
 | side data | exchange_info | mark price, liquidation + 11 REST poll 类型 |
 
-Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标。一个市场的故障不会终止另一个。
+Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标。市场级
+Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心 Collector 任务
+终止，`MarketCollectorSupervisor` 会设置全部子 stop 事件、等待封口并抛出
+`CoreMarketTerminalFailure`，由 launchd 重启整个进程。
 
 ## 5. Snapshot 与 Depth Resync
 
@@ -69,14 +76,23 @@ Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标
 1. 三个 WebSocket 流（diff_depth、agg_trade、book_ticker）先于 snapshot 启动。
 2. diff_depth 事件被缓冲到 `LocalBookReconstructor._buffer`（有界，默认 8192 条）。
 3. 公共 REST depth snapshot（limit=1000）被获取并持久化。
-4. snapshot 尝试桥接缓冲：Spot 用 `lastUpdateId + 1`，USD-M 用 `lastUpdateId`。
+4. snapshot 尝试桥接缓冲：Spot 接受
+   `U <= snapshot.last_update_id + 1 <= u`，USD-M 接受
+   `U <= snapshot.last_update_id <= u`。
 5. 成功后，缓冲的 diff 被依次应用到 Book，然后进入实时 `_apply_live` 模式。
+   USD-M 实时连续性要求下一事件的 `pu` 等于当前本地 Book 的 `update_id`。
 
 **Depth Resync（ADR-0023）：**
 - 触发条件：`unexpected_disconnect`、`planned_rotation`、`server_shutdown`、`sequence_gap`、`bootstrap_buffer_overflow`。
-- 触发后：标记 readiness 失败 → 停止当前 capture session → 带 jitter 回退 → 新连接 + 新 snapshot → 重新桥接。
+- Gap 触发 `RESYNC_REQUIRED`；offending update 保留为 `_buffer` 首项，
+  非同步期间后续事件继续进入有界缓冲。
+- Collector 的完整恢复周期随后可调用 `restart_bootstrap` 清除派生状态，
+  停止当前 capture session → 带 jitter 回退 → 新连接 + 新 snapshot → 重新桥接。
 - Spot 和 USD-M 的 resync 隔离：各自独立的 `DepthResyncCoordinator`。
 - R-034 仍为 Open：官方 Spot bootstrap 文辞与官方 toolbox 示例存在冲突。代码使用 `L+1` 规则，不作官方纠正声明。
+- M6 创建和验证本地订单簿 Checkpoint；M15 Normalizer 将经验证 Checkpoint 绑定到
+  Normalized Build Manifest；M16 Replay 消费 Checkpoint。Checkpoint 临时文件后缀
+  为 `.partial`，当前模块不负责清理此前遗留的临时文件。
 
 ## 6. Spool 和 Archive 事务
 
@@ -125,7 +141,7 @@ Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标
 | 外置 volume 消失 | `ArchiveManager` 记录 `DISAPPEARED_DURING_COPY`，保留内部源 |
 | 磁盘空间耗尽 | `DiskEmergencyCoordinator`：WARNING → CRITICAL → EMERGENCY → hard reserve seal+stop |
 | 网络断开 | WebSocket 自动重连 + snapshot resync |
-| Catalog 损坏 | `catalog.sqlite` 的 WAL + `synchronous=FULL` 保证 crash-safe |
+| 进程/操作系统崩溃或掉电 | Catalog 的 WAL + `synchronous=FULL` 用于事务一致性和持久性；真正的 SQLite 文件损坏不宣称可自动恢复 |
 
 ## 9. 顶级 Python 包职责
 
@@ -141,8 +157,8 @@ Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标
 | `storage.macos` | Disk Arbitration 观察、UUID 解析、探针、弹出 | 格式化/修复/root 守护进程 |
 | `normalize` | 版本化 schema、确定性去重/分区、谱系 | Raw 的变异 |
 | `replay` | 确定性事件时钟、寻道、gap 策略 | 策略/回测行为 |
-| `metrics` | 计数器、延迟/存储预测、每日 UTC 报告 | SQLite 中的 market-event 语料库 |
-| `supervisor` | 独立工作进程健康、blue/green 交接、紧急停止 | 隐藏 gap 或耦合市场 |
+| `metrics` | 计数器、延迟/运行时采样、每日 UTC 报告 | SQLite 中的 market-event 语料库 |
+| `supervisor` | Collector readiness、blue/green 交接、紧急停止 | 隐藏 gap 或耦合市场 |
 | `cli` | 本地控制/状态/报告/存储命令 | GUI、交易界面 |
 | `backfill` | 官方 data.binance.vision 历史导入 | 实时数据 |
 | `service` | launchd、进程锁、电源生命周期、运行时状态 | root 守护进程 |
@@ -187,14 +203,15 @@ Spot 和 USD-M 各拥有独立的连接、队列、checkpoint 和 Catalog 指标
 - macOS Apple Silicon 为唯一认证平台；Ubuntu 尚待 M20 适配和长期测试。
 - Live 和 Historical 数据集从不自动混合。
 
-## 13. Durable Cursor 语义
+## 13. Durable Cursor 与实际持久状态
 
-Catalog 中的 Durable Cursor 是持久化的位置标记，用于确保崩溃后可恢复：
-
-- **Raw chunk Cursor**：仅在 Raw 数据完成写入、fsync 和 seal 后推进。Raw 未持久化前不得推进 Cursor，否则崩溃恢复可能永久跳过未持久化周期。
-- **Side-data Cursor**：每种 side-data 类型独立维护 Cursor，记录已持久化的最后一个 UTC 周期。空响应不推进 Cursor。
-- **Archive Cursor**：记录已复制到外部卷的最旧 SEALED chunk，驱动 Archive 事务的选择逻辑。
-- **Metrics Cursor**：记录已刷新到 Catalog 的最后一个 batch ID，防止幂等写入时重复计数。
+- **Side-data Cursor**：每种 5 分钟统计独立记录
+  `last_persisted_period_timestamp`；Raw 完成排空和 fsync 后才推进，
+  空响应不推进。
+- **Raw**：使用 `ChunkState`、manifest 和 Catalog 状态转换协调恢复，不使用 Cursor。
+- **Archive**：使用 `archive_transactions`、`ArchiveState` 和 `ChunkState`，
+  不使用 Cursor。
+- **Metrics**：使用稳定 `batch_id` 实现幂等批次提交，不使用 Cursor。
 
 ## 14. 关于本文档
 

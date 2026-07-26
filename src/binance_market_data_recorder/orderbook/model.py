@@ -1,7 +1,7 @@
 """特定市场的输入和确定性逻辑订单簿状态。
 
-本模型强制执行结构完整性,但不拥有排序逻辑(排序逻辑位于
-LocalBookReconstructor 中)。
+本模型负责结构完整性、价位状态和确定性序列化;市场特定的 update ID 连续性
+决策位于 LocalBookReconstructor 中。
 
 DepthUpdate 中编码的 Spot 与 USD-M 差异:
 - Spot:previous_final_update_id 必须为 None(Spot 无 'pu' 字段)。
@@ -15,7 +15,8 @@ DepthUpdate 的价格和数量通过 Decimal 验证:
 
 OrderBook.canonical_mapping() 为 SHA-256 哈希生成确定性 JSON 结构。
 所有 decimal 值以无尾随零、无科学记数法呈现(canonical_decimal)。
-映射按键排序,bids 数组按价格降序排列,确保无论插入顺序如何哈希均一致。
+映射序列化时按键排序,bids 按价格降序、asks 按价格升序排列,
+确保无论插入顺序如何哈希均一致。
 """
 
 from __future__ import annotations

@@ -5,8 +5,8 @@ MarketCollectorSupervisor 以独立 asyncio 任务运行 Spot 和 USD-M 两个 C
 然后抛出 CoreMarketTerminalFailure。这种 fail-closed 方法(ADR-0023)
 由 launchd 执行全进程重启,而非依赖单市场的进程中恢复。
 
-若全部 Collector 在没有全局 stop 信号的情况下停止,抛出 AllMarketCollectorsStopped。
-这覆盖了 Collector 无异常退出但被视为终端故障的边界情况。
+正常路径在首个 Collector 提前终止时即抛出 CoreMarketTerminalFailure;
+AllMarketCollectorsStopped 仅是循环意外到达无任务状态时的防御性保护。
 """
 
 from __future__ import annotations

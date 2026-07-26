@@ -3,14 +3,14 @@
 LocalBookReconstructor 是深度恢复的唯一决策点:
 
 - bootstrap: snapshot 到达后尝试桥接缓冲的 diff_depth 事件。
-  Spot 要求 first_update_id == lastUpdateId + 1 (R-034 Open 冲突)。
-  USD-M 要求 U <= lastUpdateId + 1 且 lastUpdateId < u 且 pu 可为 None 或等于前次 u。
-- apply: 每个 diff 在处理前验证 update ID 连续性。一次 gap 触发 RESYNC_REQUIRED,
-  之后的所有 diff 被丢弃,直到下一 snapshot 完成重新桥接。
-- 缓冲区有界 (max 8192),溢出触发 bootstrap_buffer_overflow → RESYNC_REQUIRED。
-- 质量标志 (checksum_failure, mixed_sequence_type, orderbook_resync, recovered_tail,
-  sequence_gap) 随每个 EventEnvelope 传播到 Raw,最终体现在 sealed chunk 的
-  manifest complete 标志中。
+  Spot 接受 U <= snapshot.last_update_id + 1 <= u (R-034 Open 冲突);
+  USD-M 接受 U <= snapshot.last_update_id <= u。
+- apply: Spot 检查下一目标 update_id 是否被 U/u 覆盖;USD-M 要求下一事件 pu
+  等于当前本地 Book 的 update_id。gap 触发 RESYNC_REQUIRED,offending update
+  保留为 _buffer 首项,非同步期间的后续事件继续进入有界缓冲。
+- Collector 的完整 resync 周期随后可调用 restart_bootstrap 清除派生状态,
+  创建新连接和新 snapshot;Raw 生命周期证据不被改写。
+- 缓冲区有界 (默认 8192),溢出触发 bootstrap_buffer_overflow → RESYNC_REQUIRED。
 - 不负责执行或队列位置推理;仅保证逻辑深度状态与官方序列一致或明确标记 gap。
 """
 

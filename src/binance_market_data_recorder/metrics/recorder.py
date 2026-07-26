@@ -7,11 +7,12 @@ MetricsRecorder 在内存中聚合每流计数器(写入事件数、字节数、
 计数器 vs 测量值:
 - 计数器:accepted、duplicate、malformed、out_of_order 事件;sealed bytes;
   archived/deleted bytes。这些在 UTC 日内单调递增。
-- 测量值:queue depth、last_event_age、current_rss、peak_rss。这些反映
-  瞬时状态,在批处理周期内记录为 last/max。
+- 测量值:queue_depth、cpu_percent、rss_memory_bytes、internal_free_bytes。
+  这些在批处理周期内记录为 last/max。
 
 Metrics 仅为聚合数据:没有任何单个 market event 进入 SQLite。批次聚合 JSON
-原样存储;日报告(DailyReporter)将每个 UTC 日内的批次求和以生成 JSON/CSV 报告。
+原样存储;日报告(DailyReporter)按指标类型合并 UTC 日内批次:
+计数器和直方图求和,gauge 取 last/max,事件时间取 min/max。
 
 Recorder 不在任何 metrics 表中存储原始负载、价格水平、序列 ID 或逐事件行。
 聚合 JSON schema 为 operational-metric-aggregate.v1。

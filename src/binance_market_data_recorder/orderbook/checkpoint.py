@@ -1,11 +1,11 @@
 """原子、哈希验证的本地订单簿 checkpoint。
 
 Checkpoint 记录 (market, 重建后的 logical_orderbook 的 SHA-256, last_update_id, 时间戳)。
-M6 规范化管道将 checkpoint 作为 content-addressed artifact 绑定到 normalized build
-manifest 中, 供 replay 消费者验证深度状态恢复。
+M6 创建并验证本地订单簿 checkpoint;M15 Normalizer 将经验证 checkpoint 作为
+content-addressed artifact 绑定到 normalized build manifest;M16 Replay 消费它。
 
-原子性: checkpoint JSON 写入临时文件, fsync, 然后原子 rename 到最终路径。
-写入中断时残留的 .tmp 文件在下次写入前被清理。
+原子性:checkpoint JSON 写入 .partial 临时文件,fsync,然后原子 rename 到最终路径。
+本模块不负责清理此前遗留的临时文件。
 """
 
 from __future__ import annotations
