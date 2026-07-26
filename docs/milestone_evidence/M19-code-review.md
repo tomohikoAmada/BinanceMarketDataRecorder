@@ -14,3 +14,22 @@ Baseline: `c9d3c07b25f9688da9f55c6b12c8b4b2f42eeab4`.
 
 A/B/C were all reproducible, so implementation proceeded. No finding required
 a strategy, trading, account, GUI, or multi-service design.
+
+## M19.1 second-review results
+
+All nine reported blockers were independently reproduced or verified:
+
+- archive products without an interval used an invalid ambiguous filename;
+- a normally returning core collector was not terminal until all tasks ended;
+- USD-M did not await side-data cleanup before closing downstream resources;
+- six limited-retention statistics had no durable per-kind catch-up Cursor;
+- historical CSV normalization accumulated the complete file in `rows`;
+- Range resume did not validate `Content-Range` or recover safely from
+  `200`/`416`/checksum failure;
+- resync completion reported snapshot `lastUpdateId`, not the post-bridge
+  reliable local-book ID;
+- verification did not open and reconcile normalized Parquet lineage;
+- Actions was enabled, but job-level use of unavailable `runner.temp` context
+  caused workflow validation to fail before any job was created.
+
+Regression tests now cover each path. R-034's production rule is unchanged.

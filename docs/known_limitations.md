@@ -10,8 +10,9 @@
   toolbox/observed adjacent boundary disagree. The offline evaluator compares
   both targets; it is evidence, not an official resolution.
 - Historical archives provide no local receive clock and no historical L2.
-- USD-M statistics have only the official latest-month/latest-30-day window;
-  missed polling periods may be unrecoverable.
+- USD-M statistics have only the official latest-month/latest-30-day window.
+  Durable Cursors and bounded catch-up recover in-window downtime, but periods
+  older than the source window remain unrecoverable and are recorded as gaps.
 - Live raw trades, live klines, L3 queue data, accounts, orders and trading are
   not implemented.
 

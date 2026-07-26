@@ -23,18 +23,25 @@ market-specific bridge succeeds. Spot and USD-M coordinators are isolated.
 
 Catalog evidence records reason, gap UTC time, prior/new connection IDs,
 snapshot payload hash/source sequence, recovered update ID, and failure count.
+The recovered update ID is the reconstructor's read-only reliable local-book
+ID after snapshot bridging and buffered diff application; the snapshot
+`lastUpdateId` is not a substitute.
 Raw events, lifecycle evidence, and gaps are never rewritten or fabricated.
 Spot continues to use ADR-0011's open-risk `L+1` rule; USD-M continues to use
 official `U/u/pu` continuity.
 
-Any core market task that terminates unexpectedly records
+Any core market task that terminates before the global service stop—whether it
+returns normally or raises—records
 `CORE_MARKET_TERMINAL_FAILURE`, sets both child stop events, lets the healthy
 collector seal, and exits the service nonzero. `launchd`, not an in-process
 worker pool, owns process restart and startup Raw recovery.
 
 Side-data tasks use independently recreated attempts with unbounded attempt
 count, capped exponential full jitter, stop-interruptible waits, and visible
-per-task status. They never stop core Raw capture.
+per-task status. They never stop core Raw capture. USD-M shutdown sets the
+shared side stop and awaits the side-data task before sealing snapshot Raw,
+flushing metrics, and closing the Catalog, so a core exception cannot orphan a
+side task or create Catalog use-after-close.
 
 ## Consequences
 

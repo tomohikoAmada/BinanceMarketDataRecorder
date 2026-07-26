@@ -8,9 +8,20 @@ the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
 Spot `exchange_info` preserves BTCUSDT `filters`, `status`, `orderTypes`,
 response rate-limit headers, request/receive times, and server time when
-supplied. USD-M streams ending `_5m` request only the latest closed 5-minute
-period and retain complete official-SDK models and headers. Duplicate Raw polls
-are allowed. Missing/failed polls are not zero and are never forward-filled.
+supplied. Each USD-M stream ending `_5m` owns a durable, monotonic Cursor with
+kind, last durably persisted period timestamp, update time, and official
+retention-window label. It catches up in bounded pages from Cursor + 5 minutes
+through the last closed period. Raw is drained and fsynced before Cursor
+advance. Duplicate Raw polls are allowed; normalization owns deterministic
+deduplication. A failed or empty requested period does not advance the Cursor,
+is not zero, and is never forward-filled. Once a missing period ages beyond
+the official window it becomes an explicit unrecoverable gap.
+
+The public `takerBuySellVol` endpoint was observed to include one leading
+5-minute overlap and to require the next period boundary as `endTime`. The
+request provenance preserves the actual query and logical requested range;
+Raw preserves the overlap, while Cursor advancement uses only contiguous
+timestamps inside the logical requested range.
 
 Historical source manifests use `historical-source.v1`; gaps use
 `historical-gap.v1`. Historical normalized rows expose

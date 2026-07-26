@@ -41,3 +41,16 @@
 - the official Spot local-order-book prose and official example behavior still
   disagree about the first bootstrap target;
 - online smoke is deliberately opt-in and CI remains offline by default.
+
+## M19.1 follow-up
+
+- fixes product-specific official archive filenames and adds opt-in URL/file
+  validation;
+- fails immediately when any core collector returns before global stop;
+- awaits USD-M side-data shutdown before Catalog close;
+- adds durable per-kind 5-minute Cursors with bounded catch-up and explicit
+  empty/gap semantics;
+- streams historical CSV into 50,000-row Parquet batches;
+- validates Range resume, ZIP/manifest/checksum, and Parquet lineage;
+- records the post-bridge reliable book update ID;
+- fixes the existing macOS CI workflow's pre-job context validation error.

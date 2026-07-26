@@ -487,6 +487,24 @@ Completion of M18 still stops and waits for explicit human publication/merge.
   evidence and gaps; disable affected side dataset/readiness, revert only M19
   commits, and never substitute third-party or fabricated data.
 
+### M19.1 — Second-review blockers
+
+**Scope.** Explicit official archive filenames and online URL smoke; immediate
+  fail-fast for normally returning core collectors; ordered USD-M side-task
+  shutdown; durable 5-minute Cursors and bounded catch-up; streaming Parquet
+  normalization; safe HTTP Range recovery; truthful recovered book update ID;
+  full backfill lineage verification; and repair of the existing macOS CI
+  workflow validation failure.
+**Non-scope.** Other symbols, credentials, accounts, orders, trading, strategy,
+  models, R-034 production-rule changes, new PRs, or merge.
+**Dependencies.** The M19 branch and immutable contracts in ADR-0023/0024.
+
+**Acceptance.** Focused regressions, complete offline/stress/toolchain gates,
+  explicit unsigned online archive and six-endpoint smoke, same-branch push,
+  and a successful existing-PR CI run.
+**Rollback.** Revert only M19.1 commits; preserve Raw, historical revisions,
+  Catalog Cursors/events, and the open R-034 evidence.
+
 ## Future Work
 
 Unscheduled future work may include the deferred 72-hour/168-hour reliability

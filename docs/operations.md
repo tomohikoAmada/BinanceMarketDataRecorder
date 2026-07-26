@@ -10,8 +10,18 @@ continues.
 
 Always run `backfill plan` before `backfill run` and review estimated bytes and
 URLs. Imports use concurrency one, `.partial` files, official checksums and
-atomic revision commits. `backfill verify` rereads immutable ZIP hashes. A 404
-is a recorded gap, not empty data.
+atomic revision commits. Funding-rate archives are planned monthly because that
+is the verified official layout; other partial months use daily files.
+Normalization streams fixed-size Arrow batches instead of retaining an entire
+CSV in memory. `backfill verify` rereads immutable ZIP hashes and verifies
+Parquet readability and lineage metadata. A 404 is a recorded gap, not empty
+data.
+
+Each limited-retention USD-M 5-minute dataset has an independent durable
+Cursor. Restart catches up from the next unpersisted period in bounded pages.
+`EMPTY_RESPONSE` and request/fsync failures keep the Cursor stationary. Monitor
+`consecutive_failures` and explicit unrecoverable-gap events; no process can
+recover a period after Binance removes it from the public retention window.
 
 ## Status and reports
 

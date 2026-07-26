@@ -12,10 +12,10 @@ jobs:
   macos-python312:
     runs-on: macos-14
     timeout-minutes: 45
-    env:
-      BINANCE_MARKET_RECORDER_DATA_ROOT: ${{ runner.temp }}/recorder-data
     steps:
       - uses: actions/checkout@v4
+      - name: Configure safe temporary data root
+        run: echo "BINANCE_MARKET_RECORDER_DATA_ROOT=$RUNNER_TEMP/recorder-data" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
