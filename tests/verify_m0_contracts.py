@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,8 +108,16 @@ FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
 )
 
-EXPECTED_ROOT = Path(
+DEFAULT_EXPECTED_ROOT = Path(
     "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder"
+)
+_ci_expected_root = os.environ.get("BINANCE_MARKET_RECORDER_CONTRACT_ROOT")
+if _ci_expected_root is not None:
+    assert os.environ.get("CI") == "true", "contract root override is CI-only"
+EXPECTED_ROOT = (
+    Path(_ci_expected_root).resolve()
+    if _ci_expected_root is not None
+    else DEFAULT_EXPECTED_ROOT
 )
 
 IDENTITY_VALUES = (

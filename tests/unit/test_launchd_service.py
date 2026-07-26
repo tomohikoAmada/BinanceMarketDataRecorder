@@ -93,7 +93,7 @@ def test_install_renders_secure_user_launchagent_and_controls_lifecycle(
     with manager.plist_path.open("rb") as handle:
         plist = plistlib.load(handle)
     assert plist["Label"] == LABEL
-    assert plist["Program"] == str(Path(sys.executable).resolve())
+    assert plist["Program"] == str(Path(sys.executable).absolute())
     assert plist["ProgramArguments"][-2:] == ["_service", "run"]
     assert plist["RunAtLoad"] is True
     assert plist["KeepAlive"] == {"SuccessfulExit": False}

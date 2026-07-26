@@ -21,6 +21,20 @@ MARKER_SCHEMA = "registered-storage.v1"
 PROBE_PREFIX = ".binance-market-data-recorder-probe-"
 
 
+def _observed_space(folder: Path, volume: VolumeInfo) -> tuple[int, int]:
+    """Use the same volume observation that established mount identity."""
+
+    if (
+        isinstance(volume.total_bytes, int)
+        and volume.total_bytes > 0
+        and isinstance(volume.free_bytes, int)
+        and 0 <= volume.free_bytes <= volume.total_bytes
+    ):
+        return volume.total_bytes, volume.free_bytes
+    usage = shutil.disk_usage(folder)
+    return usage.total, usage.free
+
+
 class StorageRegistrationError(RuntimeError):
     """Registration or readiness evidence is invalid."""
 
@@ -105,8 +119,8 @@ class StorageRegistry:
             marker_nonce=marker_nonce,
             registered_at_utc_ns=created_at_utc_ns,
         )
-        usage = shutil.disk_usage(folder)
-        severity = space_severity(usage.total, usage.free)
+        total_bytes, free_bytes = _observed_space(folder, volume)
+        severity = space_severity(total_bytes, free_bytes)
         return {
             "storage_id": storage_id,
             "state": (
@@ -115,8 +129,8 @@ class StorageRegistry:
                 else StorageState.LOW_SPACE.value
             ),
             "space_severity": severity.value,
-            "free_bytes": usage.free,
-            "total_bytes": usage.total,
+            "free_bytes": free_bytes,
+            "total_bytes": total_bytes,
             "volume_uuid": volume.volume_uuid,
             "volume_name": volume.name,
             "filesystem_type": volume.filesystem_type,
@@ -209,8 +223,8 @@ class StorageRegistry:
                 "state": StorageState.ERROR.value,
                 "reason": str(exc),
             }
-        usage = shutil.disk_usage(folder)
-        severity = space_severity(usage.total, usage.free)
+        total_bytes, free_bytes = _observed_space(folder, volume)
+        severity = space_severity(total_bytes, free_bytes)
         self._catalog.activate_storage_target(
             storage_id, occurred_at_utc_ns=time.time_ns()
         )
@@ -222,8 +236,8 @@ class StorageRegistry:
                 else StorageState.LOW_SPACE.value
             ),
             "space_severity": severity.value,
-            "free_bytes": usage.free,
-            "total_bytes": usage.total,
+            "free_bytes": free_bytes,
+            "total_bytes": total_bytes,
             "probe": probe,
         }
 

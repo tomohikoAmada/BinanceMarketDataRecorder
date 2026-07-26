@@ -46,8 +46,8 @@ def prepare_archive(
         writable=True,
         internal=False,
         removable=True,
-        total_bytes=10**9,
-        free_bytes=9 * 10**8,
+        total_bytes=100 * 1024**3,
+        free_bytes=90 * 1024**3,
         observed_at_utc_ns=1,
     )
     chunk_ids: list[str] = []

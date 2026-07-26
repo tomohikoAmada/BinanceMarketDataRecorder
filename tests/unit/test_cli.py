@@ -255,8 +255,8 @@ def test_storage_register_status_unregister_cli(
         writable=True,
         internal=False,
         removable=True,
-        total_bytes=1_000_000,
-        free_bytes=900_000,
+        total_bytes=100 * 1024**3,
+        free_bytes=90 * 1024**3,
         observed_at_utc_ns=1,
     )
 
@@ -302,8 +302,8 @@ def test_archive_status_retry_and_verify_cli(
         writable=True,
         internal=False,
         removable=True,
-        total_bytes=10**9,
-        free_bytes=9 * 10**8,
+        total_bytes=100 * 1024**3,
+        free_bytes=90 * 1024**3,
         observed_at_utc_ns=1,
     )
     monkeypatch.setattr(
@@ -388,8 +388,8 @@ def test_storage_eject_cli_only_succeeds_after_platform_confirmation(
         writable=True,
         internal=False,
         removable=True,
-        total_bytes=10**9,
-        free_bytes=9 * 10**8,
+        total_bytes=100 * 1024**3,
+        free_bytes=90 * 1024**3,
         observed_at_utc_ns=1,
     )
 
