@@ -28,7 +28,6 @@ from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
-from ..orderbook.parser import snapshot_from_envelope
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -313,9 +312,12 @@ class SpotCollector:
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
-                self.resync.complete(
-                    envelope, snapshot_from_envelope(envelope).last_update_id
-                )
+                recovered_update_id = self.readiness.reliable_update_id
+                if recovered_update_id is None:
+                    raise RuntimeError(
+                        "Spot readiness reported synchronized without a local update ID"
+                    )
+                self.resync.complete(envelope, recovered_update_id)
                 return
             failures += 1
             log_event(

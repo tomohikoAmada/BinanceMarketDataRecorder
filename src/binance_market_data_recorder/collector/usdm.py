@@ -19,7 +19,6 @@ from ..domain.event import EventEnvelope
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
-from ..orderbook.parser import snapshot_from_envelope
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -245,9 +244,12 @@ class UsdMCollector:
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
-                self.resync.complete(
-                    envelope, snapshot_from_envelope(envelope).last_update_id
-                )
+                recovered_update_id = self.readiness.reliable_update_id
+                if recovered_update_id is None:
+                    raise RuntimeError(
+                        "USD-M readiness reported synchronized without a local update ID"
+                    )
+                self.resync.complete(envelope, recovered_update_id)
                 return
             failures += 1
             log_event(
@@ -296,12 +298,12 @@ class UsdMCollector:
             tasks.create_task(control_session())
 
     async def run(self, stop: asyncio.Event) -> None:
+        side_task = (
+            asyncio.create_task(self.side_data.run(stop))
+            if self.side_data is not None
+            else None
+        )
         try:
-            side_task = (
-                asyncio.create_task(self.side_data.run(stop))
-                if self.side_data is not None
-                else None
-            )
             restart_failures = 0
             while not stop.is_set():
                 self.resync.requested.clear()
@@ -335,10 +337,18 @@ class UsdMCollector:
                     )
                 except TimeoutError:
                     continue
-            if side_task is not None:
-                await asyncio.gather(side_task, return_exceptions=True)
         finally:
             stop.set()
+            if side_task is not None:
+                side_result = await asyncio.gather(side_task, return_exceptions=True)
+                if side_result and isinstance(side_result[0], BaseException):
+                    log_event(
+                        self.logger,
+                        logging.ERROR,
+                        "usdm_side_shutdown_failed",
+                        "USD-M side-data cleanup failed after stop; preserving core cause",
+                        error_type=type(side_result[0]).__name__,
+                    )
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
             batch_id = await asyncio.to_thread(self.metrics.safely_flush)

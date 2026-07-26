@@ -8,6 +8,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from importlib.metadata import version
+from itertools import pairwise
 from typing import Any, Protocol, runtime_checkable
 from uuid import uuid4
 
@@ -41,6 +42,45 @@ class RestSideDataKind(StrEnum):
     TOP_LONG_SHORT_ACCOUNT_RATIO = "top_long_short_account_ratio_5m"
     TOP_LONG_SHORT_POSITION_RATIO = "top_long_short_position_ratio_5m"
     BASIS = "basis_5m"
+
+
+FIVE_MINUTE_PERIOD_MS = 300_000
+FIVE_MINUTE_KINDS = frozenset(
+    {
+        RestSideDataKind.OPEN_INTEREST_STATISTICS,
+        RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+        RestSideDataKind.GLOBAL_LONG_SHORT_RATIO,
+        RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO,
+        RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO,
+        RestSideDataKind.BASIS,
+    }
+)
+FIVE_MINUTE_RETENTION: dict[RestSideDataKind, tuple[str, int]] = {
+    RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+        "latest_1_month",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+    RestSideDataKind.TAKER_BUY_SELL_VOLUME: (
+        "latest_30_days",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+    RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+        "latest_30_days",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+    RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+        "latest_30_days",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+    RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+        "latest_30_days",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+    RestSideDataKind.BASIS: (
+        "latest_30_days",
+        30 * 24 * 60 * 60 * 1000,
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -385,7 +425,13 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
 
 
 def _call(
-    api: UsdMSideRestApi, kind: RestSideDataKind, now_ms: int
+    api: UsdMSideRestApi,
+    kind: RestSideDataKind,
+    now_ms: int,
+    *,
+    period_start_ms: int | None = None,
+    period_end_ms: int | None = None,
+    period_limit: int = 1,
 ) -> tuple[PublicResponse, dict[str, object]]:
     if kind is RestSideDataKind.PREMIUM_INDEX:
         return api.mark_price("BTCUSDT"), {"symbol": "BTCUSDT"}
@@ -400,20 +446,58 @@ def _call(
         return api.open_interest("BTCUSDT"), {"symbol": "BTCUSDT"}
     if kind is RestSideDataKind.EXCHANGE_INFO:
         return api.exchange_information(), {}
-    period_end = (now_ms // 300_000) * 300_000 - 1
-    period_start = period_end - 300_000 + 1
+    if kind not in FIVE_MINUTE_KINDS:
+        raise ValueError(f"unsupported REST side-data kind: {kind}")
+    if period_limit < 1 or period_limit > 500:
+        raise ValueError("five-minute request limit must be between 1 and 500")
+    period_start = (
+        (now_ms // FIVE_MINUTE_PERIOD_MS) * FIVE_MINUTE_PERIOD_MS
+        - FIVE_MINUTE_PERIOD_MS
+        if period_start_ms is None
+        else period_start_ms
+    )
+    period_end = (
+        period_start + period_limit * FIVE_MINUTE_PERIOD_MS - 1
+        if period_end_ms is None
+        else period_end_ms
+    )
+    if (
+        period_start < 0
+        or period_start % FIVE_MINUTE_PERIOD_MS
+        or period_end < period_start
+        or period_end % FIVE_MINUTE_PERIOD_MS != FIVE_MINUTE_PERIOD_MS - 1
+    ):
+        raise ValueError("five-minute request range is not period aligned")
+    api_limit = (
+        min(period_limit + 1, 500)
+        if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
+        else period_limit
+    )
+    api_end = (
+        period_end + FIVE_MINUTE_PERIOD_MS
+        if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
+        else period_end
+    )
     parameters: dict[str, object] = {
         "symbol": "BTCUSDT",
         "period": "5m",
-        "limit": 1,
+        "limit": api_limit,
+        "requestedPeriodCount": period_limit,
         "startTime": period_start,
-        "endTime": period_end,
+        "endTime": api_end,
     }
+    if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME:
+        # The public endpoint has repeatedly returned the period immediately
+        # preceding startTime and treats endTime as an exclusive period
+        # boundary. Preserve that response in Raw, but ask through the next
+        # boundary so the requested closed period is also returned.
+        parameters["requestedStartTime"] = period_start
+        parameters["requestedEndTime"] = period_end
     if kind is RestSideDataKind.OPEN_INTEREST_STATISTICS:
         response = api.open_interest_statistics(
             "BTCUSDT",
             OpenInterestStatisticsPeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
             period_end,
         )
@@ -421,15 +505,15 @@ def _call(
         response = api.taker_buy_sell_volume(
             "BTCUSDT",
             TakerBuySellVolumePeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
-            period_end,
+            api_end,
         )
     elif kind is RestSideDataKind.GLOBAL_LONG_SHORT_RATIO:
         response = api.long_short_ratio(
             "BTCUSDT",
             LongShortRatioPeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
             period_end,
         )
@@ -437,7 +521,7 @@ def _call(
         response = api.top_trader_long_short_ratio_accounts(
             "BTCUSDT",
             TopTraderLongShortRatioAccountsPeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
             period_end,
         )
@@ -445,7 +529,7 @@ def _call(
         response = api.top_trader_long_short_ratio_positions(
             "BTCUSDT",
             TopTraderLongShortRatioPositionsPeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
             period_end,
         )
@@ -456,7 +540,7 @@ def _call(
             "BTCUSDT",
             BasisContractTypeEnum.PERPETUAL,
             BasisPeriodEnum.PERIOD_5m,
-            1,
+            api_limit,
             period_start,
             period_end,
         )
@@ -470,6 +554,9 @@ def capture_rest_side_data(
     collector_instance_id: str,
     collector_version: str,
     timeout_ms: int = 10_000,
+    period_start_ms: int | None = None,
+    period_end_ms: int | None = None,
+    period_limit: int = 1,
     utc_clock_ns: Callable[[], int] = time.time_ns,
     monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
 ) -> EventEnvelope:
@@ -486,13 +573,73 @@ def capture_rest_side_data(
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
-    response, parameters = _call(api, kind, request_utc_ns // 1_000_000)
+    response, parameters = _call(
+        api,
+        kind,
+        request_utc_ns // 1_000_000,
+        period_start_ms=period_start_ms,
+        period_end_ms=period_end_ms,
+        period_limit=period_limit,
+    )
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
         raise RuntimeError(f"USD-M {kind.value} returned HTTP {response.status}")
     model = _sdk_model_value(response.data())
     source_sequence: dict[str, int | str] = _validate_model(kind, model)
+    if kind in FIVE_MINUTE_KINDS:
+        requested_start_value = parameters.get(
+            "requestedStartTime", parameters["startTime"]
+        )
+        requested_end_value = parameters.get(
+            "requestedEndTime", parameters["endTime"]
+        )
+        if not isinstance(requested_start_value, int) or not isinstance(
+            requested_end_value, int
+        ):
+            raise SideDataSchemaError("five-minute request timestamps are not integers")
+        requested_start = requested_start_value
+        requested_end = requested_end_value
+        source_sequence["requestedStartTimestamp"] = requested_start
+        source_sequence["requestedEndTimestamp"] = requested_end
+        timestamps = sorted(
+            {
+                _integer(_object(item), "timestamp")
+                for item in _array(model)
+            }
+        )
+        requested_timestamps = [
+            timestamp
+            for timestamp in timestamps
+            if requested_start <= timestamp <= requested_end
+        ]
+        allowed_leading_timestamp = (
+            requested_start - FIVE_MINUTE_PERIOD_MS
+            if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
+            else None
+        )
+        if any(
+            timestamp < requested_start
+            and timestamp != allowed_leading_timestamp
+            for timestamp in timestamps
+        ) or any(timestamp > requested_end for timestamp in timestamps):
+            raise SideDataSchemaError(
+                "five-minute response contains an unexpected out-of-range timestamp"
+            )
+        if requested_timestamps and (
+            requested_timestamps[0] != requested_start
+            or any(
+                current - previous != FIVE_MINUTE_PERIOD_MS
+                for previous, current in pairwise(requested_timestamps)
+            )
+        ):
+            raise SideDataSchemaError(
+                "five-minute response does not continuously cover request start"
+            )
+        source_sequence["requestedRecordCount"] = len(requested_timestamps)
+        if requested_timestamps:
+            source_sequence["firstRequestedTimestamp"] = requested_timestamps[0]
+            source_sequence["lastRequestedTimestamp"] = requested_timestamps[-1]
     spec = REST_SIDE_DATA_SPECS[kind]
     provenance = {
         "schema_version": "binance-usdm-side-rest-provenance.v1",

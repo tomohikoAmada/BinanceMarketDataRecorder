@@ -65,6 +65,18 @@ class MarketCollectorSupervisor:
                         raise CoreMarketTerminalFailure(
                             f"core market Collector terminated: {name}"
                         ) from exc
+                    normal_exit = RuntimeError(
+                        "core market Collector returned before global stop"
+                    )
+                    self.failures[name] = normal_exit
+                    if self.terminal_failure_observer is not None:
+                        self.terminal_failure_observer(name, normal_exit)
+                    for child_stop in child_stops.values():
+                        child_stop.set()
+                    await asyncio.gather(*tasks.values(), return_exceptions=True)
+                    raise CoreMarketTerminalFailure(
+                        f"core market Collector terminated: {name}"
+                    ) from normal_exit
             if not tasks and not stop.is_set():
                 failed = ",".join(sorted(self.failures)) or "all"
                 raise AllMarketCollectorsStopped(

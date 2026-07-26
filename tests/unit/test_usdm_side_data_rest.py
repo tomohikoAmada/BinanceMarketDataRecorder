@@ -258,6 +258,47 @@ def test_five_minute_statistics_capture_latest_closed_period(
     assert api.calls[0][0] == call_name
     assert provenance["request"]["parameters"]["period"] == "5m"
     assert provenance["request"]["parameters"]["startTime"] == 300_000
-    assert provenance["request"]["parameters"]["endTime"] == 599_999
+    expected_end = (
+        899_999
+        if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
+        else 599_999
+    )
+    assert provenance["request"]["parameters"]["endTime"] == expected_end
     assert envelope.source_sequence["recordCount"] == 1
     assert envelope.source_sequence["period"] == "5m"
+
+
+def test_taker_volume_preserves_official_leading_overlap_but_advances_requested_range() -> None:
+    api = Api("funding_history.json")
+    api.value = [
+        {
+            "buySellRatio": "1",
+            "buyVol": "2",
+            "sellVol": "2",
+            "timestamp": 0,
+        },
+        {
+            "buySellRatio": "1",
+            "buyVol": "3",
+            "sellVol": "3",
+            "timestamp": 300_000,
+        },
+    ]
+    envelope = capture_rest_side_data(
+        kind=RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+        rest_api=api,
+        collector_instance_id="collector-1",
+        collector_version="test",
+        period_start_ms=300_000,
+        period_end_ms=599_999,
+        period_limit=1,
+    )
+    assert api.calls[0][1][2] == 2
+    assert api.calls[0][1][4] == 899_999
+    provenance = json.loads(envelope.raw_payload)
+    assert provenance["request"]["parameters"]["requestedEndTime"] == 599_999
+    assert envelope.source_sequence["recordCount"] == 2
+    assert envelope.source_sequence["firstTimestamp"] == 0
+    assert envelope.source_sequence["requestedRecordCount"] == 1
+    assert envelope.source_sequence["firstRequestedTimestamp"] == 300_000
+    assert envelope.source_sequence["lastRequestedTimestamp"] == 300_000

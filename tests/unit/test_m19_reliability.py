@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import time
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
+from binance_market_data_recorder.collector.resync import DepthResyncCoordinator
 from binance_market_data_recorder.collector.spot import (
     SpotCollector,
     SpotCollectorSettings,
@@ -21,6 +24,7 @@ from binance_market_data_recorder.service.resources import (
     peak_rss_bytes,
 )
 from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.supervisor.readiness import CollectorReadiness
 
 
 def _depth_event(
@@ -127,3 +131,114 @@ def test_current_and_peak_rss_have_distinct_truthful_semantics() -> None:
     peak = peak_rss_bytes()
     assert peak > 0
     assert current is None or 0 < current <= peak
+
+
+def _snapshot_event(
+    market: Market, instance: str, last_update_id: int
+) -> EventEnvelope:
+    payload = json.dumps(
+        {
+            "schema_version": "test-snapshot",
+            "response": {
+                "model": {
+                    "lastUpdateId": last_update_id,
+                    "bids": [["1", "1"]],
+                    "asks": [["2", "1"]],
+                }
+            },
+        }
+    ).encode()
+    return EventEnvelope(
+        market=market,
+        symbol="BTCUSDT",
+        stream="depth_snapshot",
+        module=f"binance.{market}.rest",
+        connection_id="rest",
+        collector_instance_id=instance,
+        collector_version="test",
+        receive_time_utc_ns=time.time_ns(),
+        receive_monotonic_ns=time.monotonic_ns(),
+        source_sequence={"lastUpdateId": last_update_id},
+        payload_encoding="utf-8-json-provenance",
+        raw_payload=payload,
+    )
+
+
+def test_resync_completion_records_applied_local_book_update_id(
+    tmp_path: Path,
+) -> None:
+    instance = "resync-applied-id"
+    catalog = Catalog(tmp_path / "catalog.sqlite")
+    readiness = CollectorReadiness(
+        market="spot",
+        collector_instance_id=instance,
+        collector_version="test",
+    )
+    coordinator = DepthResyncCoordinator(market="spot", catalog=catalog)
+    first = _depth_event("spot", instance, 100, "new-connection")
+    second = _depth_event("spot", instance, 101, "new-connection")
+    readiness.observe_persisted(first)
+    readiness.observe_persisted(second)
+    snapshot = _snapshot_event("spot", instance, 99)
+    coordinator.observe_depth(second)
+    coordinator.request("sequence_gap")
+    readiness.observe_snapshot_persisted(snapshot)
+    assert readiness.reliable_update_id == 101
+    recovered_update_id = readiness.reliable_update_id
+    assert recovered_update_id is not None
+    coordinator.complete(snapshot, recovered_update_id)
+    completed = catalog.operational_events(event_type="DEPTH_RESYNC_COMPLETED")
+    evidence = cast(dict[str, object], completed[0]["evidence"])
+    assert int(cast(int, evidence["recovered_update_id"])) == 101
+    catalog.close()
+
+
+def test_usdm_core_failure_awaits_side_cleanup_before_catalog_close(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        collector = UsdMCollector(
+            UsdMCollectorSettings(
+                tmp_path,
+                "usdm-cleanup",
+                "test",
+            ),
+            logger=logging.getLogger("test.m19.usdm-cleanup"),
+        )
+        side_stopped = asyncio.Event()
+
+        class RunningSideData:
+            async def run(self, stop: asyncio.Event) -> None:
+                await stop.wait()
+                collector.catalog.record_operational_event(
+                    event_id="side-cleanup-complete",
+                    event_type="SIDE_CLEANUP_COMPLETE",
+                    occurred_at_utc_ns=time.time_ns(),
+                    evidence={"sealed": True},
+                )
+                side_stopped.set()
+
+            def status(self) -> dict[str, dict[str, object]]:
+                return {}
+
+        async def fail_core(_stop: asyncio.Event) -> None:
+            raise RuntimeError("original core failure")
+
+        collector_any = cast(Any, collector)
+        collector_any.side_data = RunningSideData()
+        collector_any._run_capture_session = fail_core
+        with pytest.raises(RuntimeError, match="original core failure"):
+            await collector.run(asyncio.Event())
+        assert side_stopped.is_set()
+        pending = [
+            task
+            for task in asyncio.all_tasks()
+            if task is not asyncio.current_task() and not task.done()
+        ]
+        assert pending == []
+        with Catalog(collector.layout.catalog) as catalog:
+            assert len(
+                catalog.operational_events(event_type="SIDE_CLEANUP_COMPLETE")
+            ) == 1
+
+    asyncio.run(exercise())

@@ -99,6 +99,12 @@ class StreamSpool:
             count += 1
         return count
 
+    def sync(self) -> None:
+        """Make the current partial durable before committing external progress."""
+
+        if self._writer is not None:
+            self._writer.sync()
+
     def _seal_current(self) -> dict[str, object] | None:
         if self._writer is None:
             return None
