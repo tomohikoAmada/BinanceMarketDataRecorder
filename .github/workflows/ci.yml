@@ -17,7 +17,7 @@ jobs:
       - name: Configure safe temporary data root
         run: |
           echo "BINANCE_MARKET_RECORDER_DATA_ROOT=$RUNNER_TEMP/recorder-data" >> "$GITHUB_ENV"
-          echo "BINANCE_MARKET_RECORDER_CONTRACT_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "M0_CONTRACT_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

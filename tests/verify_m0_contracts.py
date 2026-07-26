@@ -111,7 +111,7 @@ FORBIDDEN_PRODUCTION_ENTRIES = (
 DEFAULT_EXPECTED_ROOT = Path(
     "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder"
 )
-_ci_expected_root = os.environ.get("BINANCE_MARKET_RECORDER_CONTRACT_ROOT")
+_ci_expected_root = os.environ.get("M0_CONTRACT_ROOT")
 if _ci_expected_root is not None:
     assert os.environ.get("CI") == "true", "contract root override is CI-only"
 EXPECTED_ROOT = (
