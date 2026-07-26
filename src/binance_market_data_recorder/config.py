@@ -64,6 +64,24 @@ class RecorderConfig(BaseModel):
     side_open_interest_interval_seconds: float = Field(default=60.0, gt=0)
     side_exchange_info_interval_seconds: float = Field(default=3600.0, gt=0)
     side_degraded_after_seconds: float = Field(default=900.0, gt=0)
+    spot_exchange_info_enabled: bool = True
+    spot_exchange_info_interval_seconds: float = Field(default=3600.0, gt=0)
+    side_open_interest_statistics_enabled: bool = True
+    side_taker_buy_sell_volume_enabled: bool = True
+    side_global_long_short_ratio_enabled: bool = True
+    side_top_long_short_account_ratio_enabled: bool = True
+    side_top_long_short_position_ratio_enabled: bool = True
+    side_basis_enabled: bool = True
+    side_open_interest_statistics_interval_seconds: float = Field(default=300.0, gt=0)
+    side_taker_buy_sell_volume_interval_seconds: float = Field(default=300.0, gt=0)
+    side_global_long_short_ratio_interval_seconds: float = Field(default=300.0, gt=0)
+    side_top_long_short_account_ratio_interval_seconds: float = Field(
+        default=300.0, gt=0
+    )
+    side_top_long_short_position_ratio_interval_seconds: float = Field(
+        default=300.0, gt=0
+    )
+    side_basis_interval_seconds: float = Field(default=300.0, gt=0)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -92,7 +110,7 @@ class RecorderConfig(BaseModel):
             **{
                 name: getattr(self, name)
                 for name in self.__class__.model_fields
-                if name.startswith("side_")
+                if name.startswith(("side_", "spot_"))
             },
         }
 
@@ -123,6 +141,30 @@ class _RecorderOverrides(BaseModel):
     side_open_interest_interval_seconds: float | None = Field(default=None, gt=0)
     side_exchange_info_interval_seconds: float | None = Field(default=None, gt=0)
     side_degraded_after_seconds: float | None = Field(default=None, gt=0)
+    spot_exchange_info_enabled: bool | None = None
+    spot_exchange_info_interval_seconds: float | None = Field(default=None, gt=0)
+    side_open_interest_statistics_enabled: bool | None = None
+    side_taker_buy_sell_volume_enabled: bool | None = None
+    side_global_long_short_ratio_enabled: bool | None = None
+    side_top_long_short_account_ratio_enabled: bool | None = None
+    side_top_long_short_position_ratio_enabled: bool | None = None
+    side_basis_enabled: bool | None = None
+    side_open_interest_statistics_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_taker_buy_sell_volume_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_global_long_short_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_top_long_short_account_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_top_long_short_position_ratio_interval_seconds: float | None = Field(
+        default=None, gt=0
+    )
+    side_basis_interval_seconds: float | None = Field(default=None, gt=0)
 
     @field_validator("data_root", mode="before")
     @classmethod
@@ -210,6 +252,20 @@ def load_config(
         "side_open_interest_interval_seconds": 60.0,
         "side_exchange_info_interval_seconds": 3600.0,
         "side_degraded_after_seconds": 900.0,
+        "spot_exchange_info_enabled": True,
+        "spot_exchange_info_interval_seconds": 3600.0,
+        "side_open_interest_statistics_enabled": True,
+        "side_taker_buy_sell_volume_enabled": True,
+        "side_global_long_short_ratio_enabled": True,
+        "side_top_long_short_account_ratio_enabled": True,
+        "side_top_long_short_position_ratio_enabled": True,
+        "side_basis_enabled": True,
+        "side_open_interest_statistics_interval_seconds": 300.0,
+        "side_taker_buy_sell_volume_interval_seconds": 300.0,
+        "side_global_long_short_ratio_interval_seconds": 300.0,
+        "side_top_long_short_account_ratio_interval_seconds": 300.0,
+        "side_top_long_short_position_ratio_interval_seconds": 300.0,
+        "side_basis_interval_seconds": 300.0,
     }
     sources = {name: "default" for name in values}
 
@@ -243,6 +299,20 @@ def load_config(
             "side_open_interest_interval_seconds",
             "side_exchange_info_interval_seconds",
             "side_degraded_after_seconds",
+            "spot_exchange_info_enabled",
+            "spot_exchange_info_interval_seconds",
+            "side_open_interest_statistics_enabled",
+            "side_taker_buy_sell_volume_enabled",
+            "side_global_long_short_ratio_enabled",
+            "side_top_long_short_account_ratio_enabled",
+            "side_top_long_short_position_ratio_enabled",
+            "side_basis_enabled",
+            "side_open_interest_statistics_interval_seconds",
+            "side_taker_buy_sell_volume_interval_seconds",
+            "side_global_long_short_ratio_interval_seconds",
+            "side_top_long_short_account_ratio_interval_seconds",
+            "side_top_long_short_position_ratio_interval_seconds",
+            "side_basis_interval_seconds",
         ):
             value = getattr(overrides, name)
             if value is not None:

@@ -15,6 +15,15 @@ from binance_common.configuration import ConfigurationRestAPI
 from binance_sdk_derivatives_trading_usds_futures.derivatives_trading_usds_futures import (
     DerivativesTradingUsdsFutures,
 )
+from binance_sdk_derivatives_trading_usds_futures.rest_api.models.enums import (
+    BasisContractTypeEnum,
+    BasisPeriodEnum,
+    LongShortRatioPeriodEnum,
+    OpenInterestStatisticsPeriodEnum,
+    TakerBuySellVolumePeriodEnum,
+    TopTraderLongShortRatioAccountsPeriodEnum,
+    TopTraderLongShortRatioPositionsPeriodEnum,
+)
 
 from ...domain.event import EventEnvelope
 from .rest import USDM_SDK_DISTRIBUTION, safe_provenance_headers
@@ -26,6 +35,12 @@ class RestSideDataKind(StrEnum):
     FUNDING_INFO = "funding_info"
     OPEN_INTEREST = "open_interest"
     EXCHANGE_INFO = "exchange_info"
+    OPEN_INTEREST_STATISTICS = "open_interest_statistics_5m"
+    TAKER_BUY_SELL_VOLUME = "taker_buy_sell_volume_5m"
+    GLOBAL_LONG_SHORT_RATIO = "global_long_short_ratio_5m"
+    TOP_LONG_SHORT_ACCOUNT_RATIO = "top_long_short_account_ratio_5m"
+    TOP_LONG_SHORT_POSITION_RATIO = "top_long_short_position_ratio_5m"
+    BASIS = "basis_5m"
 
 
 @dataclass(frozen=True)
@@ -67,6 +82,42 @@ REST_SIDE_DATA_SPECS: dict[RestSideDataKind, RestSideDataSpec] = {
         "periodic_exchange_rules_and_filters_snapshot",
         "IP weight 1",
     ),
+    RestSideDataKind.OPEN_INTEREST_STATISTICS: RestSideDataSpec(
+        RestSideDataKind.OPEN_INTEREST_STATISTICS,
+        "/futures/data/openInterestHist",
+        "latest_closed_5m_period_no_forward_fill_latest_one_month",
+        "IP weight 0; IP rate limit 1000 requests per 5 minutes",
+    ),
+    RestSideDataKind.TAKER_BUY_SELL_VOLUME: RestSideDataSpec(
+        RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+        "/futures/data/takerlongshortRatio",
+        "latest_closed_5m_period_no_forward_fill_latest_30_days",
+        "IP weight 0; IP rate limit 1000 requests per 5 minutes",
+    ),
+    RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: RestSideDataSpec(
+        RestSideDataKind.GLOBAL_LONG_SHORT_RATIO,
+        "/futures/data/globalLongShortAccountRatio",
+        "latest_closed_5m_period_no_forward_fill_latest_30_days",
+        "IP weight 0; IP rate limit 1000 requests per 5 minutes",
+    ),
+    RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: RestSideDataSpec(
+        RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO,
+        "/futures/data/topLongShortAccountRatio",
+        "latest_closed_5m_period_no_forward_fill_latest_30_days",
+        "IP weight 0; IP rate limit 1000 requests per 5 minutes",
+    ),
+    RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: RestSideDataSpec(
+        RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO,
+        "/futures/data/topLongShortPositionRatio",
+        "latest_closed_5m_period_no_forward_fill_latest_30_days",
+        "IP weight 0; IP rate limit 1000 requests per 5 minutes",
+    ),
+    RestSideDataKind.BASIS: RestSideDataSpec(
+        RestSideDataKind.BASIS,
+        "/futures/data/basis",
+        "latest_closed_5m_perpetual_period_no_forward_fill_latest_30_days",
+        "IP weight 0",
+    ),
 }
 
 
@@ -101,6 +152,61 @@ class UsdMSideRestApi(Protocol):
     def open_interest(self, symbol: str | None) -> PublicResponse: ...
 
     def exchange_information(self) -> PublicResponse: ...
+
+    def open_interest_statistics(
+        self,
+        symbol: str | None,
+        period: OpenInterestStatisticsPeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
+
+    def taker_buy_sell_volume(
+        self,
+        symbol: str | None,
+        period: TakerBuySellVolumePeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
+
+    def long_short_ratio(
+        self,
+        symbol: str | None,
+        period: LongShortRatioPeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
+
+    def top_trader_long_short_ratio_accounts(
+        self,
+        symbol: str | None,
+        period: TopTraderLongShortRatioAccountsPeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
+
+    def top_trader_long_short_ratio_positions(
+        self,
+        symbol: str | None,
+        period: TopTraderLongShortRatioPositionsPeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
+
+    def basis(
+        self,
+        pair: str | None,
+        contract_type: BasisContractTypeEnum | None,
+        period: BasisPeriodEnum | None,
+        limit: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+    ) -> PublicResponse: ...
 
 
 class SideDataSchemaError(RuntimeError):
@@ -191,6 +297,70 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
             if interval == 0:
                 raise SideDataSchemaError("fundingIntervalHours must be positive")
         return {"recordCount": len(items)}
+    if kind in {
+        RestSideDataKind.OPEN_INTEREST_STATISTICS,
+        RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+        RestSideDataKind.GLOBAL_LONG_SHORT_RATIO,
+        RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO,
+        RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO,
+        RestSideDataKind.BASIS,
+    }:
+        items = _array(model)
+        timestamps: list[int] = []
+        for raw_item in items:
+            item = _object(raw_item)
+            if kind is RestSideDataKind.BASIS:
+                if _text(item, "pair") != "BTCUSDT":
+                    raise SideDataSchemaError("unexpected basis pair")
+                for name in (
+                    "contractType",
+                    "indexPrice",
+                    "futuresPrice",
+                    "basis",
+                    "basisRate",
+                    "annualizedBasisRate",
+                ):
+                    _text(item, name)
+            else:
+                if _text(item, "symbol") != "BTCUSDT":
+                    raise SideDataSchemaError("unexpected statistics symbol")
+                required = {
+                    RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+                        "sumOpenInterest",
+                        "sumOpenInterestValue",
+                    ),
+                    RestSideDataKind.TAKER_BUY_SELL_VOLUME: (
+                        "buySellRatio",
+                        "buyVol",
+                        "sellVol",
+                    ),
+                    RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+                        "longShortRatio",
+                        "longAccount",
+                        "shortAccount",
+                    ),
+                    RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+                        "longShortRatio",
+                        "longAccount",
+                        "shortAccount",
+                    ),
+                    RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+                        "longShortRatio",
+                        "longAccount",
+                        "shortAccount",
+                    ),
+                }[kind]
+                for name in required:
+                    _text(item, name)
+            timestamps.append(_integer(item, "timestamp"))
+        output: dict[str, int | str] = {
+            "recordCount": len(items),
+            "period": "5m",
+        }
+        if timestamps:
+            output["firstTimestamp"] = min(timestamps)
+            output["lastTimestamp"] = max(timestamps)
+        return output
     item = _object(model)
     symbols = _array(item.get("symbols"))
     rate_limits = _array(item.get("rateLimits"))
@@ -204,7 +374,9 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
     return {"symbolCount": len(symbols), "rateLimitCount": len(rate_limits)}
 
 
-def _call(api: UsdMSideRestApi, kind: RestSideDataKind) -> tuple[PublicResponse, dict[str, object]]:
+def _call(
+    api: UsdMSideRestApi, kind: RestSideDataKind, now_ms: int
+) -> tuple[PublicResponse, dict[str, object]]:
     if kind is RestSideDataKind.PREMIUM_INDEX:
         return api.mark_price("BTCUSDT"), {"symbol": "BTCUSDT"}
     if kind is RestSideDataKind.FUNDING_HISTORY:
@@ -216,7 +388,69 @@ def _call(api: UsdMSideRestApi, kind: RestSideDataKind) -> tuple[PublicResponse,
         return api.get_funding_rate_info(), {}
     if kind is RestSideDataKind.OPEN_INTEREST:
         return api.open_interest("BTCUSDT"), {"symbol": "BTCUSDT"}
-    return api.exchange_information(), {}
+    if kind is RestSideDataKind.EXCHANGE_INFO:
+        return api.exchange_information(), {}
+    period_end = (now_ms // 300_000) * 300_000 - 1
+    period_start = period_end - 300_000 + 1
+    parameters: dict[str, object] = {
+        "symbol": "BTCUSDT",
+        "period": "5m",
+        "limit": 1,
+        "startTime": period_start,
+        "endTime": period_end,
+    }
+    if kind is RestSideDataKind.OPEN_INTEREST_STATISTICS:
+        response = api.open_interest_statistics(
+            "BTCUSDT",
+            OpenInterestStatisticsPeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    elif kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME:
+        response = api.taker_buy_sell_volume(
+            "BTCUSDT",
+            TakerBuySellVolumePeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    elif kind is RestSideDataKind.GLOBAL_LONG_SHORT_RATIO:
+        response = api.long_short_ratio(
+            "BTCUSDT",
+            LongShortRatioPeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    elif kind is RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO:
+        response = api.top_trader_long_short_ratio_accounts(
+            "BTCUSDT",
+            TopTraderLongShortRatioAccountsPeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    elif kind is RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO:
+        response = api.top_trader_long_short_ratio_positions(
+            "BTCUSDT",
+            TopTraderLongShortRatioPositionsPeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    else:
+        parameters["pair"] = parameters.pop("symbol")
+        parameters["contractType"] = "PERPETUAL"
+        response = api.basis(
+            "BTCUSDT",
+            BasisContractTypeEnum.PERPETUAL,
+            BasisPeriodEnum.PERIOD_5m,
+            1,
+            period_start,
+            period_end,
+        )
+    return response, parameters
 
 
 def capture_rest_side_data(
@@ -242,7 +476,7 @@ def capture_rest_side_data(
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
-    response, parameters = _call(api, kind)
+    response, parameters = _call(api, kind, request_utc_ns // 1_000_000)
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:

@@ -10,6 +10,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
+from ..binance.spot.exchange_info import SpotExchangeInfoApi
 from ..binance.spot.rate_limit import FullJitterBackoff, SpotRateLimitBlocked
 from ..binance.spot.rest import (
     PublicSpotRestApi,
@@ -36,6 +37,8 @@ from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CollectorReadiness, ReadinessSnapshot
 from .resync import DepthResyncCoordinator
+from .spot_side_data import SpotExchangeInfoPoller
+from .usdm_side_data import SideDataStats, SideDataSupervisor
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,9 @@ class SpotCollectorSettings:
     snapshot_retry_initial_seconds: float = 1.0
     snapshot_retry_maximum_seconds: float = 60.0
     bootstrap_buffer_capacity: int = 8192
+    exchange_info_enabled: bool = False
+    exchange_info_interval_seconds: float = 3600.0
+    side_data_degraded_after_seconds: float = 900.0
 
 
 class SnapshotUnavailableError(RuntimeError):
@@ -72,6 +78,7 @@ class SpotCollector:
         rest_api: SpotRestApi | None = None,
         websocket_opener: ConnectionOpener = open_spot_websocket,
         snapshot_requester: SpotSnapshotRequester | None = None,
+        exchange_info_api: SpotExchangeInfoApi | None = None,
     ) -> None:
         self.settings = settings
         self.logger = logger
@@ -196,6 +203,29 @@ class SpotCollector:
             for spec in SPOT_STREAMS
         )
         self.snapshot_spool = spool("depth_snapshot")
+        self._side_stats = {
+            "exchange_info": SideDataStats(settings.exchange_info_enabled)
+        }
+        self._side_degraded_after_seconds = settings.side_data_degraded_after_seconds
+        side_factories = {}
+        if settings.exchange_info_enabled:
+            side_factories["exchange_info"] = lambda: SpotExchangeInfoPoller(
+                interval_seconds=settings.exchange_info_interval_seconds,
+                spool=spool("exchange_info"),
+                stats=self._side_stats["exchange_info"],
+                collector_instance_id=settings.collector_instance_id,
+                collector_version=settings.collector_version,
+                rest_api=exchange_info_api,
+                timeout_ms=settings.snapshot_timeout_ms,
+                logger=logger,
+            )
+        self._side_supervisor = SideDataSupervisor(
+            side_factories,
+            self._side_stats,
+            logger,
+            retry_initial_seconds=settings.snapshot_retry_initial_seconds,
+            retry_maximum_seconds=settings.snapshot_retry_maximum_seconds,
+        )
 
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
@@ -335,6 +365,7 @@ class SpotCollector:
         """Start streams before snapshot, then gracefully seal when stopped."""
 
         try:
+            side_task = asyncio.create_task(self._side_supervisor.run(stop))
             restart_failures = 0
             while not stop.is_set():
                 self.resync.requested.clear()
@@ -368,6 +399,8 @@ class SpotCollector:
                     )
         finally:
             stop.set()
+            if "side_task" in locals():
+                await asyncio.gather(side_task, return_exceptions=True)
             await self.snapshot_requester.wait_for_idle()
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
@@ -392,6 +425,14 @@ class SpotCollector:
 
     def readiness_snapshot(self) -> ReadinessSnapshot:
         return self.readiness.snapshot()
+
+    def side_data_status(self) -> dict[str, dict[str, object]]:
+        return {
+            name: stats.public_dict(
+                degraded_after_seconds=self._side_degraded_after_seconds
+            )
+            for name, stats in sorted(self._side_stats.items())
+        }
 
     def _observe_persisted(self, envelope: EventEnvelope) -> None:
         if envelope.stream == "diff_depth":

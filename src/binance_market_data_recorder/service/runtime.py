@@ -69,6 +69,11 @@ def _collector_factory(
                 rotation_bytes=config.rotation_bytes,
                 durability_interval_seconds=config.durability_interval_seconds,
                 max_frame_bytes=config.max_frame_bytes,
+                exchange_info_enabled=config.spot_exchange_info_enabled,
+                exchange_info_interval_seconds=(
+                    config.spot_exchange_info_interval_seconds
+                ),
+                side_data_degraded_after_seconds=config.side_degraded_after_seconds,
             ),
             logger=logger,
         ),
@@ -96,6 +101,38 @@ def _collector_factory(
                     open_interest_interval_seconds=config.side_open_interest_interval_seconds,
                     exchange_info_interval_seconds=config.side_exchange_info_interval_seconds,
                     degraded_after_seconds=config.side_degraded_after_seconds,
+                    open_interest_statistics_enabled=(
+                        config.side_open_interest_statistics_enabled
+                    ),
+                    taker_buy_sell_volume_enabled=(
+                        config.side_taker_buy_sell_volume_enabled
+                    ),
+                    global_long_short_ratio_enabled=(
+                        config.side_global_long_short_ratio_enabled
+                    ),
+                    top_long_short_account_ratio_enabled=(
+                        config.side_top_long_short_account_ratio_enabled
+                    ),
+                    top_long_short_position_ratio_enabled=(
+                        config.side_top_long_short_position_ratio_enabled
+                    ),
+                    basis_enabled=config.side_basis_enabled,
+                    open_interest_statistics_interval_seconds=(
+                        config.side_open_interest_statistics_interval_seconds
+                    ),
+                    taker_buy_sell_volume_interval_seconds=(
+                        config.side_taker_buy_sell_volume_interval_seconds
+                    ),
+                    global_long_short_ratio_interval_seconds=(
+                        config.side_global_long_short_ratio_interval_seconds
+                    ),
+                    top_long_short_account_ratio_interval_seconds=(
+                        config.side_top_long_short_account_ratio_interval_seconds
+                    ),
+                    top_long_short_position_ratio_interval_seconds=(
+                        config.side_top_long_short_position_ratio_interval_seconds
+                    ),
+                    basis_interval_seconds=config.side_basis_interval_seconds,
                 ),
             ),
             logger=logger,

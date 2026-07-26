@@ -46,7 +46,7 @@ expected_terms = ["Change Log"]
 id = "usdm-sdk-rest-market-data-source"
 url = "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/rest_api.py"
 listed_in_index = false
-expected_terms = ["def exchange_information", "def get_funding_rate_history", "def get_funding_rate_info", "def mark_price", "def open_interest"]
+expected_terms = ["def exchange_information", "def get_funding_rate_history", "def get_funding_rate_info", "def mark_price", "def open_interest", "def open_interest_statistics", "def taker_buy_sell_volume", "def long_short_ratio", "def top_trader_long_short_ratio_accounts", "def top_trader_long_short_ratio_positions", "def basis"]
 
 [[documents]]
 id = "usdm-sdk-websocket-market-source"
@@ -95,6 +95,18 @@ id = "spot-websocket-schema-repository"
 url = "https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md"
 listed_in_index = false
 expected_terms = ["Aggregate Trade Streams", "Individual Symbol Book Ticker Streams", "Diff. Depth Stream"]
+
+[[documents]]
+id = "spot-rest-schema-repository"
+url = "https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md"
+listed_in_index = false
+expected_terms = ["Exchange information", "GET /api/v3/exchangeInfo", "REQUEST_WEIGHT"]
+
+[[documents]]
+id = "binance-public-data-readme"
+url = "https://github.com/binance/binance-public-data/blob/master/README.md"
+listed_in_index = false
+expected_terms = ["data.binance.vision", "daily", "monthly", ".CHECKSUM", "January 1st 2025", "microseconds"]
 
 [[documents]]
 id = "spot-local-order-book-toolbox"

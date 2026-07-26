@@ -71,6 +71,24 @@ class Api:
     def exchange_information(self) -> PublicResponse:
         return self._response("exchange_info")
 
+    def open_interest_statistics(self, *args: object) -> PublicResponse:
+        return self._response("open_interest_statistics", *args)
+
+    def taker_buy_sell_volume(self, *args: object) -> PublicResponse:
+        return self._response("taker_buy_sell_volume", *args)
+
+    def long_short_ratio(self, *args: object) -> PublicResponse:
+        return self._response("long_short_ratio", *args)
+
+    def top_trader_long_short_ratio_accounts(self, *args: object) -> PublicResponse:
+        return self._response("top_accounts", *args)
+
+    def top_trader_long_short_ratio_positions(self, *args: object) -> PublicResponse:
+        return self._response("top_positions", *args)
+
+    def basis(self, *args: object) -> PublicResponse:
+        return self._response("basis", *args)
+
 
 @pytest.mark.parametrize(
     ("kind", "fixture", "call"),
@@ -148,3 +166,99 @@ def test_invalid_side_data_schema_is_not_silently_accepted() -> None:
             collector_instance_id="collector-1",
             collector_version="test",
         )
+
+
+@pytest.mark.parametrize(
+    ("kind", "model", "call_name"),
+    [
+        (
+            RestSideDataKind.OPEN_INTEREST_STATISTICS,
+            {
+                "symbol": "BTCUSDT",
+                "sumOpenInterest": "1",
+                "sumOpenInterestValue": "2",
+                "timestamp": 300_000,
+            },
+            "open_interest_statistics",
+        ),
+        (
+            RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+            {
+                "symbol": "BTCUSDT",
+                "buySellRatio": "1",
+                "buyVol": "2",
+                "sellVol": "2",
+                "timestamp": 300_000,
+            },
+            "taker_buy_sell_volume",
+        ),
+        (
+            RestSideDataKind.GLOBAL_LONG_SHORT_RATIO,
+            {
+                "symbol": "BTCUSDT",
+                "longShortRatio": "1",
+                "longAccount": "0.5",
+                "shortAccount": "0.5",
+                "timestamp": 300_000,
+            },
+            "long_short_ratio",
+        ),
+        (
+            RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO,
+            {
+                "symbol": "BTCUSDT",
+                "longShortRatio": "1",
+                "longAccount": "0.5",
+                "shortAccount": "0.5",
+                "timestamp": 300_000,
+            },
+            "top_accounts",
+        ),
+        (
+            RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO,
+            {
+                "symbol": "BTCUSDT",
+                "longShortRatio": "1",
+                "longAccount": "0.5",
+                "shortAccount": "0.5",
+                "timestamp": 300_000,
+            },
+            "top_positions",
+        ),
+        (
+            RestSideDataKind.BASIS,
+            {
+                "pair": "BTCUSDT",
+                "contractType": "PERPETUAL",
+                "indexPrice": "1",
+                "futuresPrice": "1",
+                "basis": "0",
+                "basisRate": "0",
+                "annualizedBasisRate": "0",
+                "timestamp": 300_000,
+            },
+            "basis",
+        ),
+    ],
+)
+def test_five_minute_statistics_capture_latest_closed_period(
+    kind: RestSideDataKind, model: dict[str, object], call_name: str
+) -> None:
+    api = Api("funding_history.json")
+    api.value = [model]
+    wall = iter([600_000_000_000, 600_100_000_000])
+    envelope = capture_rest_side_data(
+        kind=kind,
+        rest_api=api,
+        collector_instance_id="collector-1",
+        collector_version="test",
+        utc_clock_ns=lambda: next(wall),
+        monotonic_clock_ns=iter([1, 2]).__next__,
+    )
+    provenance = json.loads(envelope.raw_payload)
+    assert api.calls[0][0] == call_name
+    assert provenance["request"]["parameters"]["period"] == "5m"
+    assert provenance["request"]["parameters"]["startTime"] == 300_000
+    assert provenance["request"]["parameters"]["endTime"] == 599_999
+    assert envelope.source_sequence["recordCount"] == 1
+    assert envelope.source_sequence["period"] == "5m"

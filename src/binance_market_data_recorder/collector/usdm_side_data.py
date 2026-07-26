@@ -44,11 +44,23 @@ class UsdMSideDataSettings:
     funding_info_enabled: bool = True
     open_interest_enabled: bool = True
     exchange_info_enabled: bool = True
+    open_interest_statistics_enabled: bool = False
+    taker_buy_sell_volume_enabled: bool = False
+    global_long_short_ratio_enabled: bool = False
+    top_long_short_account_ratio_enabled: bool = False
+    top_long_short_position_ratio_enabled: bool = False
+    basis_enabled: bool = False
     premium_index_interval_seconds: float = 60.0
     funding_history_interval_seconds: float = 300.0
     funding_info_interval_seconds: float = 3600.0
     open_interest_interval_seconds: float = 60.0
     exchange_info_interval_seconds: float = 3600.0
+    open_interest_statistics_interval_seconds: float = 300.0
+    taker_buy_sell_volume_interval_seconds: float = 300.0
+    global_long_short_ratio_interval_seconds: float = 300.0
+    top_long_short_account_ratio_interval_seconds: float = 300.0
+    top_long_short_position_ratio_interval_seconds: float = 300.0
+    basis_interval_seconds: float = 300.0
     degraded_after_seconds: float = 900.0
     retry_initial_seconds: float = 1.0
     retry_maximum_seconds: float = 60.0
@@ -60,6 +72,12 @@ class UsdMSideDataSettings:
             self.funding_info_interval_seconds,
             self.open_interest_interval_seconds,
             self.exchange_info_interval_seconds,
+            self.open_interest_statistics_interval_seconds,
+            self.taker_buy_sell_volume_interval_seconds,
+            self.global_long_short_ratio_interval_seconds,
+            self.top_long_short_account_ratio_interval_seconds,
+            self.top_long_short_position_ratio_interval_seconds,
+            self.basis_interval_seconds,
             self.degraded_after_seconds,
             self.retry_initial_seconds,
             self.retry_maximum_seconds,
@@ -74,6 +92,20 @@ class UsdMSideDataSettings:
             RestSideDataKind.FUNDING_INFO: self.funding_info_enabled,
             RestSideDataKind.OPEN_INTEREST: self.open_interest_enabled,
             RestSideDataKind.EXCHANGE_INFO: self.exchange_info_enabled,
+            RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+                self.open_interest_statistics_enabled
+            ),
+            RestSideDataKind.TAKER_BUY_SELL_VOLUME: self.taker_buy_sell_volume_enabled,
+            RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+                self.global_long_short_ratio_enabled
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+                self.top_long_short_account_ratio_enabled
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+                self.top_long_short_position_ratio_enabled
+            ),
+            RestSideDataKind.BASIS: self.basis_enabled,
         }[kind]
 
     def rest_interval(self, kind: RestSideDataKind) -> float:
@@ -83,6 +115,22 @@ class UsdMSideDataSettings:
             RestSideDataKind.FUNDING_INFO: self.funding_info_interval_seconds,
             RestSideDataKind.OPEN_INTEREST: self.open_interest_interval_seconds,
             RestSideDataKind.EXCHANGE_INFO: self.exchange_info_interval_seconds,
+            RestSideDataKind.OPEN_INTEREST_STATISTICS: (
+                self.open_interest_statistics_interval_seconds
+            ),
+            RestSideDataKind.TAKER_BUY_SELL_VOLUME: (
+                self.taker_buy_sell_volume_interval_seconds
+            ),
+            RestSideDataKind.GLOBAL_LONG_SHORT_RATIO: (
+                self.global_long_short_ratio_interval_seconds
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO: (
+                self.top_long_short_account_ratio_interval_seconds
+            ),
+            RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO: (
+                self.top_long_short_position_ratio_interval_seconds
+            ),
+            RestSideDataKind.BASIS: self.basis_interval_seconds,
         }[kind]
 
     def stream_enabled(self, stream: UsdMSideStream) -> bool:
