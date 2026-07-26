@@ -1,4 +1,25 @@
-"""Immutable, revision-aware importer for official Binance public archives."""
+"""官方 Binance 公开归档的不可变、版本感知导入器。
+
+HistoricalImporter 是 Live 采集的离线兄弟(ADR-0024)。它从 data.binance.vision
+(免凭证 HTTPS)下载 ZIP 文件,按相邻 .CHECKSUM 文件验证每个文件,以固定 50,000
+行批次将 CSV 行流式写入 Parquet,并以源谱系信息发布 archive-clock Parquet。
+
+关键不变量:
+- 无接收时钟:historical 行携带 archive_event_time_utc_ns,clock_semantics=archive_source。
+  它们不得进入 receive-time 重放。Live 和 Historical 从不会静默混合。
+- 校验和修订:.CHECKSUM 变更会创建新修订版,带有 'supersedes' 谱系。
+  不可变的 URL+SHA-256 身份被保留。
+- 下载安全性:文件使用 .partial 后缀,通过 206 Content-Range 实现断点续传,
+  Range 不支持时回退到全量下载(HTTP 200),显式处理 416 错误。无效/校验失败
+  的 partial 在重试前被删除,防止损坏字节无限追加。
+- 月/日排程:planner.py 将日期范围映射为整月文件和部分月的日文件。
+  fundingRate 在官方归档布局中仅按月提供。
+- 时间戳单位:2025-01-01 之后的 Spot 数据为微秒;更早的 Spot 和全部 USD-M
+  为毫秒。规范化器输出 UTC 纳秒。
+- 无历史 L2:归档不提供深度订单簿数据。
+- 流式 CSV 规范化通过 ParquetWriter 写入固定批次 Arrow record group。
+  不构建全量行列表。
+"""
 
 from __future__ import annotations
 

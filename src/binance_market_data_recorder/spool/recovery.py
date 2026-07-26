@@ -1,4 +1,24 @@
-"""Idempotent startup recovery and quarantine for Raw artifacts."""
+"""Raw artifact 的幂等启动恢复与隔离。
+
+recover_storage() 是 M3 启动协调,在任何 Collector 任务开始之前调用。
+它按固定顺序运行:
+
+1. recover_partials():扫描 active/ 中的每个 .bmdr.partial。干净的 partial
+   在 Catalog 中注册。可截尾 partial 被 ftruncate 到最后一个有效帧,
+   重新扫描并标记为 RECOVERED。损坏的 partial(无效头、校验和失败、不支持的
+   flags)被隔离并以 SHA-256 哈希保留用于取证。
+2. SEALING 协调:任何处于 SEALING 状态且存在未删除 partial 的 chunk 被重新
+   提交给 seal_partial()。这覆盖了压缩/重命名与 Catalog SEALED 提交之间的
+   崩溃窗口。
+3. reconcile_sealed():manifests/ 中的每个 manifest.json 与 sealed artifact
+   (大小、存储哈希、解压哈希)进行交叉验证。若 Catalog 仍显示 ACTIVE 或
+   RECOVERED,chunk 被幂等推进到 SEALED。这覆盖了 manifest 写入后但 Catalog
+   提交前的崩溃窗口。
+
+恢复顺序很重要:partial 必须在 sealed manifest 之前协调,因为 SEALING chunk
+可能需要先完成压缩,其 manifest 才能被协调。恢复可安全重复运行;所有 Catalog
+转换使用幂等键。
+"""
 
 from __future__ import annotations
 

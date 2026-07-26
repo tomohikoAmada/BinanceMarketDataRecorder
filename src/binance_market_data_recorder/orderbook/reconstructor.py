@@ -1,4 +1,18 @@
-"""Official Spot and USD-M sequence bridging and quality state."""
+"""官方 Spot (U/u) 和 USD-M (U/u/pu) 序列桥接与质量状态。
+
+LocalBookReconstructor 是深度恢复的唯一决策点:
+
+- bootstrap: snapshot 到达后尝试桥接缓冲的 diff_depth 事件。
+  Spot 接受 U <= snapshot.last_update_id + 1 <= u (R-034 Open 冲突);
+  USD-M 接受 U <= snapshot.last_update_id <= u。
+- apply: Spot 检查下一目标 update_id 是否被 U/u 覆盖;USD-M 要求下一事件 pu
+  等于当前本地 Book 的 update_id。gap 触发 RESYNC_REQUIRED,offending update
+  保留为 _buffer 首项,非同步期间的后续事件继续进入有界缓冲。
+- Collector 的完整 resync 周期随后可调用 restart_bootstrap 清除派生状态,
+  创建新连接和新 snapshot;Raw 生命周期证据不被改写。
+- 缓冲区有界 (默认 8192),溢出触发 bootstrap_buffer_overflow → RESYNC_REQUIRED。
+- 不负责执行或队列位置推理;仅保证逻辑深度状态与官方序列一致或明确标记 gap。
+"""
 
 from __future__ import annotations
 

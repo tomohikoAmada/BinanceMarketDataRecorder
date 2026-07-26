@@ -1,4 +1,23 @@
-"""Failure-isolated USD-M auxiliary public market-data tasks."""
+"""故障隔离的 USD-M 辅助公共市场数据任务。
+
+Side-data 任务(mark price WebSocket、liquidation WebSocket、以及 premium index、
+funding、open interest、exchange info 和六种 5 分钟统计的 REST 轮询)遵循以下
+不变量:
+
+- 每个任务拥有自己的 StreamSpool,因此 REST 限流或 WebSocket 故障不会阻塞
+  核心 L2 diff_depth/agg_trade/book_ticker。
+- SideDataSupervisor 以有上限的指数完全抖动回退重启失败任务,保留尝试计数和
+  连续失败计数。它永不设置核心 stop 事件,因此 side-data 故障不能终止核心采集。
+- RestSideDataPoller._catch_up_five_minute 为 M19 5 分钟统计实现有界追赶。
+  它从 Cursor + 5 分钟查询到最后一个已关闭的 UTC 周期,以可配置批次进行。
+  Raw 在 Cursor 推进前完成排空和 fsync。空响应不推进 Cursor 并创建
+  SIDE_DATA_EMPTY_RESPONSE 事件。超出官方保留窗口的缺失周期变为
+  SIDE_DATA_UNRECOVERABLE_GAP 事件。
+- Cursor 通过 Catalog.side_data_cursor/advance_side_data_cursor 实现持久化,
+  因此停机后重启从最后持久化的周期恢复。
+- USD-M 5 分钟 REST 调用共享单个 asyncio.Lock 进行串行化
+  (ADR-0012;用于避免初始请求突发,而非严格 weight 核算)。
+"""
 
 from __future__ import annotations
 

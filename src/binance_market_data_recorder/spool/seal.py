@@ -1,4 +1,26 @@
-"""Verified immutable sealing and manifest commit for Raw chunks."""
+"""Raw chunk 的经验证不可变密封与 manifest 提交。
+
+seal_partial() 实现 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
+按以下顺序执行:
+
+1. scan:验证所有帧,计算统计信息和解压 SHA-256。
+2. SEALING 转换:在 Catalog 中记录意图(幂等键防重放)。
+3. compress:Zstd level 3 带 content-size 和 checksum,写入 sealed 目录中的
+   .partial 文件,然后 fsync。
+4. 解压回读:解压并哈希以验证压缩 artifact 与原始解压数据匹配。
+5. 原子重命名到 sealed/ 并 fsync 目录。
+6. manifest:JSON 文档,绑定 chunk 身份、统计信息、压缩参数和双重哈希
+   (存储 + 解压)。
+7. SEALED 转换:提交到 Catalog,然后删除原始 .partial 并 fsync active 目录。
+
+仅在 Catalog SEALED 提交后删除 partial 源。此前的所有步骤是幂等的:
+若任何步骤失败且进程重启,恢复重新扫描 partial 并重试。已存在且解压哈希
+匹配的 sealed 文件被接受,无需重新压缩。
+
+当 capture_flags 包含 checksum_failure、mixed_sequence_type、orderbook_resync、
+recovered_tail、sequence_gap 中任一项时,manifest 中的 'complete' 标志为 False。
+不完整区间不能携带 complete=true。
+"""
 
 from __future__ import annotations
 

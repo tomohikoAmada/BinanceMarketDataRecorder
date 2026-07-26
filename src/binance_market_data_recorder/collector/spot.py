@@ -1,4 +1,20 @@
-"""Binance Spot BTCUSDT Collector assembly for M4."""
+"""M4 的 Binance Spot BTCUSDT Collector 组装。
+
+SpotCollector 拥有三条独立的 Spot WebSocket 流(diff_depth、agg_trade、book_ticker)
+和一个公共 REST depth snapshot。生命周期不变量:
+
+- 流在 snapshot 循环之前启动;这确保 diff-depth 事件在 snapshot 桥接前被缓冲,
+  降低 SNAPSHOT_TOO_OLD 的概率。
+- _capture_snapshot 在 capture session 的 TaskGroup 内运行,由监控外部 stop 事件
+  和 resync-coordinator 请求事件的控制任务监督。
+- 任何非干净全局停止的会话退出后,run() 循环以全新的 snapshot+stream 周期
+  重新进入 _run_capture_session。这是 ADR-0023 描述的完整 resync 重启路径。
+- 优雅关闭(stop.is_set())时,finally 块设置 stop 以确保 side-data 任务感知、
+  密封 snapshot spool、刷新 metrics、写入日报告并关闭 Catalog。side data 在密封
+  之前被等待,以确保 side Raw 在核心 Collector 退出前已持久化。
+- 接收时间在 WebSocket 回调的 JSON 解析之前捕获(参见 binance.spot.websocket),
+  保证解析异常不影响墙上时钟记录。
+"""
 
 from __future__ import annotations
 

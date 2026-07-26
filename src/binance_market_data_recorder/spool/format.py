@@ -1,4 +1,23 @@
-"""Raw chunk v1 framing, canonical CBOR, CRC32C, and bounded scanner."""
+"""Raw chunk v1 帧格式、规范 CBOR、CRC32C 和有界扫描器。
+
+ADR-0010 冻结了准确的字节布局:
+
+- 固定头(28 字节):魔数 "BMRCHNK\x1a" + 版本号(1.0)+ BOM(0xFEFF)
+  + flags(恒为 0)+ CBOR body 长度 + CRC32C。Header CRC 覆盖固定前缀和
+  CBOR body。CBOR body 必须为规范格式(RFC 8949 第 4.2.1 节),恰好 11 个键;
+  任何偏差视为 INVALID_HEADER。
+- 每个帧:12 字节前缀(body length + flags=0 + reserved=0 + CRC32C),
+  然后是规范 CBOR body。CRC32C 覆盖前缀(字节 0-7)和 body。
+  帧长度必须在 0 到 max_frame_bytes(默认 16 MiB)之间。
+- scan_chunk() 在一次正向遍历中读取文件,不缓冲完整帧。它验证每个帧的 CRC
+  和 envelope 身份,累积统计信息。任何失败时,返回第一个无效字节位置的
+  ScanIssue。这在帧数量上为 O(1) 内存。
+
+Envelope CBOR 必须为规范格式。decode_envelope() 通过重新编码并比较来强制执行。
+非规范 CBOR 被视为无效,即使它解码到相同逻辑值。这确保确定性哈希。
+Raw 中的 capture_flags 是 JSON(或 CBOR)数组;decode_envelope() 将其转换为
+Python tuple 以兼容 Pydantic。
+"""
 
 from __future__ import annotations
 

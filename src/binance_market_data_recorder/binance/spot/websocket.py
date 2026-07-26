@@ -1,4 +1,18 @@
-"""Owned lifecycle for one Binance Spot raw WebSocket stream."""
+"""Binance Spot 单条原始 WebSocket 流的自有生命周期。
+
+SpotStreamCollector 管理一条 websocket 连接的生命周期,遵循以下不变量(ADR-0009):
+
+- 接收时间(UTC 墙上时钟 + monotonic)在 recv(decode=False) 之后、JSON 解析或
+  CBOR 编码之前立即记录。这确保解析异常、畸变负载和编码失败不影响计时记录。
+- 有界接收队列(BoundedEventQueue,receipt_queue_capacity)防止背压下无限内存
+  增长。若队列已满,抛出 IngressQueueFull 作为可见故障;事件永不静默丢弃。
+- 连接在 planned_rotation_seconds(默认 23h50m)时轮换,早于 Binance 文档规定的
+  24 小时断开。server_shutdown 事件触发立即重连。
+- websockets 库的客户端 Ping 循环被禁用;协议层自动回显服务端 Ping 负载。
+  本地协议测试(M4)已验证此行为。
+- 每个流使用自己的 raw 端点和连接 ID。这即使对畸变 JSON 也能保留流身份,
+  并避免组合流包装的歧义。
+"""
 
 from __future__ import annotations
 

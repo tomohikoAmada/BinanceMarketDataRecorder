@@ -1,4 +1,19 @@
-"""Append-only Raw chunk writer with bounded rotation and durability."""
+"""仅追加的 Raw chunk 写入器,具有有界轮换和持久性。
+
+RawChunkWriter 为单个 market/symbol/stream 元组持有一个 .partial 文件。
+关键设计约束:
+
+- 写入器使用 os.open 配合 O_EXCL 以防止非干净关闭后意外复用 partial 文件。
+  恢复必须扫描和协调所有 partial。
+- append() 写入 CBOR 编码帧(长度前缀 + CRC32C + body),并根据
+  durability_interval_seconds(最大 1 秒)有条件地 fsync。spool 循环在空闲时
+  也调用 sync_if_due(),确保即使在低流量流上,最后写入的事件也在间隔内持久化。
+- should_rotate() 检查时间(自打开以来的耗时)和大小(已写入字节),
+  触发当前 chunk 的密封和新 chunk 的创建。
+- header(chunk 身份、创建时间、schema 版本)在 Catalog register_active 调用
+  之前被写入和 fsync,因此 header 之后、第一个帧之前的崩溃留下可恢复的 partial。
+- close() 是幂等的;密封转换由 StreamSpool 处理。
+"""
 
 from __future__ import annotations
 

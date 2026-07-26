@@ -1,4 +1,31 @@
-"""Crash-reconcilable archive transaction and separately committed local delete."""
+"""崩溃可协调的归档事务和独立提交的本地删除。
+
+ArchiveManager 实现 ADR-0015:每笔事务保留最旧的 SEALED chunk,将其流式
+复制到注册外部卷上的 .copying 临时文件,通过大小和 SHA-256 验证完整回读,
+原子重命名为最终不可变名称,提交外部 manifest,在 Catalog 中提交已验证位置,
+然后单独授权内部源删除。
+
+事务步骤与崩溃边界:
+1. _reserve:验证源 sealed artifact 和 manifest,以 COPYING 状态创建幂等
+   Catalog archive_transaction。chunk 从 SEALED 迁移到 ARCHIVE_COPYING。
+2. _copy:将源字节流式传输到目标 .copying 文件,fsync,目录 fsync。
+   若目标已存在,验证其匹配(幂等;不覆盖)。
+3. VERIFYING 转换:提交到 Catalog。
+4. _verify_and_commit_external:验证目标大小/哈希,从 .copying 原子重命名为
+   最终名称,fsync 目录。写入嵌入 Raw manifest 字节(base64)的外部 manifest,
+   实现自包含验证。
+5. VERIFIED 转换:提交到 Catalog。chunk 迁移到 ARCHIVED_VERIFIED。
+6. LOCAL_DELETE_PENDING 转换:重新验证外部提交,提交到 Catalog。
+7. _local_delete:验证内部源与存储哈希匹配,unlink 源文件,fsync sealed 目录。
+   LOCAL_DELETED 转换提交删除。
+
+每一步均可重启协调。若外部卷在复制期间消失(EIO、ENXIO、ENODEV),错误记录为
+DISAPPEARED_DURING_COPY,内部源保留。卷重新出现后事务幂等重试。
+
+内部源删除仅在第 5 步 VERIFIED 已提交、进入第 6 步 LOCAL_DELETE_PENDING
+并再次验证外部提交后授权。第 1-5 步永不删除内部数据。
+进入 LOCAL_DELETED 后,外部 artifact 可能是唯一副本;这不是备份策略。
+"""
 
 from __future__ import annotations
 
