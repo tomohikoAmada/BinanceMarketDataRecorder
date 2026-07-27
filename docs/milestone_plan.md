@@ -528,6 +528,10 @@ from Raw after a corrected parser is available.
 
 ## M20 — Ubuntu ARM64/RK3588 transport and native deployment
 
+- Status: **ACCEPTED and merged through PR #3.**
+  Final PR Head: `2ebb981ea956929467b6dc4b0990875cc43e53bf`;
+  Merge Commit: `80b8a5745fc64ee4e0ed0db7691c3acf7d2567bc`.
+  macOS and Ubuntu CI both passed. M20 is closed.
 - Scope: one redaction-safe `direct`/`environment`/`explicit` proxy policy for
   every Spot/USD-M WebSocket and REST exit plus Historical Backfill; Linux XDG
   paths; Ubuntu ARM64 dependency proof; non-root systemd service lifecycle;
@@ -547,7 +551,9 @@ from Raw after a corrected parser is available.
   smoke; 30-minute concurrent service run; graceful stop/recovery/restart;
   Mihomo restart causes visible disconnect/reconnect/depth resync or explicit
   unreliable evidence; no proxy URL/credential/production data committed;
-  branch pushed and PR opened without merge.
+  branch pushed, PR opened, Code Reviewed, and merged through PR #3.
+  Post-merge handoff completed. macOS Python 3.12 CI pass; Ubuntu Python 3.12
+  CI pass.
 - Rollback: stop/seal the service, retain `/var/lib` data and Catalog, install
   the prior Wheel/unit/config, and restart. Revert M20 code only; never delete
   or rewrite Raw. Linux blue/green and long soak remain M21 work.

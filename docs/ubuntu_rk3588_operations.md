@@ -148,10 +148,28 @@ binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml
   storage register /media/orangepi/archive/Recorder
 ```
 
-Registration requires an existing subdirectory, external/hotplug block-device
-evidence, a reliable filesystem UUID, writable capability, marker, and
-write/fsync/rename/readback probe. The external directory receives only sealed
-archive transactions; Active Raw always stays internal.
+Registration requires a candidate directory on an already-mounted filesystem
+that meets all of the following conditions:
+
+- the filesystem is already mounted by the OS (Recorder never mounts);
+- its source is a resolvable block device identifiable through
+  `/proc/self/mountinfo`, `findmnt --json`, and `lsblk --json`;
+- the device is not part of the root backing-device lineage (i.e., does not
+  share a parent block device with the root filesystem);
+- the mountinfo, findmnt, and lsblk evidence is internally consistent;
+- the filesystem has a reliable filesystem UUID;
+- the registered subdirectory already exists, is writable, and the user
+  explicitly selects and registers it;
+- the marker/storage_id and write/fsync/rename/readback probe succeed.
+
+RM (removable), HOTPLUG, and TRAN fields are recorded as auxiliary observations
+only. A USB-SATA or USB-NVMe bridge device that reports `RM=false` and
+`HOTPLUG=false` is still eligible for discovery and registration when the
+conditions above are met.
+
+Recorder never automatically registers, mounts, unmounts, formats, repairs,
+partitions, or creates udev rules. Real physical external disk validation
+remains unexecuted.
 
 If the filesystem disappears, collection continues, the archive attempt is
 reported failed/absent, and the internal source is retained. M20 has no trusted
