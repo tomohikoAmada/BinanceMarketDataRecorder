@@ -17,7 +17,11 @@ from binance_market_data_recorder.service.lock import (
     ServiceProcessLock,
 )
 from binance_market_data_recorder.service.power import CaffeinateAssertion
-from binance_market_data_recorder.service.runtime import RuntimeCollector, ServiceRuntime
+from binance_market_data_recorder.service.runtime import (
+    RuntimeCollector,
+    ServiceRuntime,
+    _collector_factory,
+)
 from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
@@ -78,6 +82,25 @@ class FakeSleepObserver:
 
     def stop(self) -> None:
         self.stopped = True
+
+
+def test_runtime_applies_ingress_capacity_to_both_bounded_queue_levels(
+    tmp_path: Path,
+) -> None:
+    collectors = _collector_factory(
+        RecorderConfig(data_root=tmp_path, ingress_queue_capacity=65_536),
+        logging.getLogger("test.runtime.capacity"),
+        "test",
+        "service-instance",
+    )
+    spot = collectors["spot"]
+    usdm = collectors["um_perpetual"]
+    assert spot.settings.queue_capacity == 65_536  # type: ignore[attr-defined]
+    assert spot.settings.receipt_queue_capacity == 65_536  # type: ignore[attr-defined]
+    assert usdm.settings.queue_capacity == 65_536  # type: ignore[attr-defined]
+    assert usdm.settings.receipt_queue_capacity == 65_536  # type: ignore[attr-defined]
+    spot.catalog.close()  # type: ignore[attr-defined]
+    usdm.catalog.close()  # type: ignore[attr-defined]
 
 
 class FakePowerAssertion(CaffeinateAssertion):

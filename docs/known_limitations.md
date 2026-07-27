@@ -2,11 +2,13 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-macOS 为 Developer Preview，Ubuntu ARM64/RK3588 为 Developer Preview /
-Soak Candidate；不得用于真实资金交易。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
 ## M20 Ubuntu ARM64
 
+- RK3588 short validation found that side-data staleness must include the
+  task's scheduled poll interval plus its failure grace; the final code does
+  so, while `RETRYING` remains immediately visible.
 - The 72-hour and 168-hour soaks, repeated 24-hour rotations, and 7/30-day
   operational observations have not run; they are M21.
 - Linux blue/green upgrade is not certified. Use stop/seal/update/readiness and

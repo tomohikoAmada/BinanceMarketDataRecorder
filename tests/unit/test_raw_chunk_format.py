@@ -9,7 +9,10 @@ from binance_market_data_recorder.spool.format import (
     ScanIssue,
     scan_chunk,
 )
-from binance_market_data_recorder.spool.writer import RawChunkWriter
+from binance_market_data_recorder.spool.writer import (
+    RawChunkWriter,
+    _rotation_deadline,
+)
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.factories import event
@@ -112,3 +115,26 @@ def test_writer_rejects_unreadable_frame_bound_before_creating_file(tmp_path: Pa
             max_frame_bytes=65 * 1024 * 1024,
         )
     assert not list(layout.active.iterdir())
+
+
+def test_stream_rotation_deadlines_are_bounded_and_phase_staggered() -> None:
+    opened = 1_000.0
+    period = 60.0
+    deadlines = {
+        _rotation_deadline(
+            opened_monotonic=opened,
+            period_seconds=period,
+            market=market,
+            stream=stream,
+        )
+        for market, stream in (
+            ("spot", "book_ticker"),
+            ("spot", "agg_trade"),
+            ("spot", "diff_depth"),
+            ("um_perpetual", "book_ticker"),
+            ("um_perpetual", "agg_trade"),
+            ("um_perpetual", "diff_depth"),
+        )
+    }
+    assert len(deadlines) == 6
+    assert all(opened < deadline <= opened + period for deadline in deadlines)

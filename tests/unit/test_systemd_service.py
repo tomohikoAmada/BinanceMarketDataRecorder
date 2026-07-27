@@ -58,6 +58,7 @@ def _manager(tmp_path: Path, runner: FakeSystemctl) -> SystemdManager:
         unit_path=tmp_path / SYSTEMD_SERVICE_NAME,
         python_executable=Path(sys.executable),
         command_runner=runner,
+        git_commit="abc1234",
     )
 
 
@@ -71,12 +72,17 @@ def test_systemd_unit_has_required_dependencies_and_shutdown_policy(
     assert "After=network-online.target mihomo.service" in unit
     assert "Wants=network-online.target mihomo.service" in unit
     assert "Requires=mihomo.service" not in unit
+    assert f"WorkingDirectory={tmp_path}" in unit
+    assert 'WorkingDirectory="' not in unit
     assert "Restart=on-failure" in unit
     assert "RestartSec=10s" in unit
     assert "TimeoutStopSec=90s" in unit
     assert "KillSignal=SIGTERM" in unit
     assert "UMask=0027" in unit
     assert "Environment=PYTHONUNBUFFERED=1" in unit
+    assert (
+        'Environment="BINANCE_MARKET_RECORDER_GIT_COMMIT=abc1234"' in unit
+    )
     assert "HTTP_PROXY" not in unit
     assert "Listen" not in unit
 

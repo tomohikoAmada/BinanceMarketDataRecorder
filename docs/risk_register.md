@@ -2,8 +2,7 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-macOS 为 Developer Preview，Ubuntu ARM64/RK3588 为 Developer Preview /
-Soak Candidate；均不得用于真实资金交易。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
 Severity: Critical / High / Medium / Low. Status is Open, Monitoring, Mitigated,
 or Accepted. Each implementing milestone must update its risks and evidence.
@@ -13,7 +12,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-001 | Official SDK WebSocket callbacks may hide/re-encode payloads, own receive timing, or drop under blocking callbacks | Critical | Probe confirmed all three failures; ADR-0009 rejects SDK WebSocket streams and selects caller-owned exact-byte transport | M2 | Mitigated |
 | R-002 | Binance documentation paths/semantics change; specified `/docs/llms.txt` redirects to portal HTML | High | Updater uses the working official index and validates host, every redirect, HTTP 200, body/content and selected-page hashes | M2 | Mitigated |
 | R-003 | USD-M stream routing changed to `/public` and `/market`; stale endpoints could silently omit streams | Critical | M5 pins the current notice: depth/bookTicker use `/public`, aggTrade uses `/market`; live acceptance verifies every route; M7 must revalidate side-data routes | M2/M5/M7 | Mitigated |
-| R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | M3 bounded spool plus M4/M5 finite WebSocket buffer/receipt queues; overflow raises a critical market-local Collector fault, never drops silently | M3-M5 | Mitigated |
+| R-004 | Callback or writer backpressure causes silent loss/unbounded memory | Critical | M3 bounded spool plus M4/M5 finite WebSocket buffer/receipt queues; M20 wires one configured bound to both layers and phase-staggers per-stream Raw seals after an RK3588/eMMC overflow observation. Overflow remains a visible critical fault, never a silent drop; M21 must trend queue/RSS at the production bound | M3-M5/M20/M21 | Monitoring |
 | R-005 | kill -9 leaves a corrupt tail that appears sealed | Critical | ADR-0010 framing/CRC, actual SIGKILL mid-frame recovery, quarantine matrix, verified compression and atomic manifest/Catalog tests | M3 | Mitigated |
 | R-006 | Spot or USD-M sequence semantics are applied to the other market | Critical | Separate Spot `U/u` and USD-M `U/u/pu` schema modules and fixtures retain semantics without M6 continuity inference | M4-M6 | Mitigated |
 | R-007 | Wall clock adjustment, reboot, or sleep makes receive ordering/lag misleading | High | Dual event clocks plus ADR-0019 NSWorkspace sleep intervals and wall/monotonic discontinuity events prevent silent continuity; M16 still owns replay boot-domain/tie-break policy | M3/M6/M14/M16 | Monitoring |

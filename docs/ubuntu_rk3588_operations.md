@@ -43,12 +43,21 @@ by the service group, mode `0640`:
 data_root = "/var/lib/binance-market-data-recorder"
 network_proxy_mode = "explicit"
 network_proxy_url = "http://127.0.0.1:7890"
+ingress_queue_capacity = 262144
 log_level = "INFO"
 ```
 
 This loopback URL contains no credentials. Never add proxy username/password,
 API keys, account fields, controller secrets, node authentication, or
 subscription URLs.
+
+The RK3588 acceptance host uses the bounded `262144` capacity for both the
+WebSocket receipt queues and Raw spool ingress queues. The generic default
+remains `8192`. Raw time rotation is deterministically phase-staggered by
+market/stream so that eMMC compression and fsync work does not start for every
+stream in the same instant. Queue depth, resident memory, seal latency, and
+overflow faults remain M21 soak observations; increasing the bound is not a
+claim of unlimited buffering or zero interruption.
 
 Validate before installation:
 

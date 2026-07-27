@@ -165,6 +165,7 @@ class UsdMSideDataSettings:
 @dataclass
 class SideDataStats:
     enabled: bool
+    expected_interval_seconds: float | None = None
     status: str = "STOPPED"
     running: bool = False
     attempts: int = 0
@@ -198,11 +199,14 @@ class SideDataStats:
 
     def public_dict(self, *, degraded_after_seconds: float) -> dict[str, object]:
         status = self.status
+        stale_after_seconds = degraded_after_seconds
+        if self.expected_interval_seconds is not None:
+            stale_after_seconds += self.expected_interval_seconds
         if (
             self.enabled
             and self.last_success_at_utc_ns is not None
             and time.time_ns() - self.last_success_at_utc_ns
-            > int(degraded_after_seconds * 1_000_000_000)
+            > int(stale_after_seconds * 1_000_000_000)
         ):
             status = "STALE"
         return {
@@ -324,8 +328,13 @@ class RestSideDataPoller:
         ) * FIVE_MINUTE_PERIOD_MS - FIVE_MINUTE_PERIOD_MS
         if last_closed < 0:
             return True
+        # The public statistics routes enforce retention against request time,
+        # not merely against the aligned period boundary. Starting exactly one
+        # nominal retention window behind ``last_closed`` can therefore be a
+        # few minutes too old while the current period is in progress. Keep one
+        # additional fully closed period inside the published window.
         earliest_recoverable = max(
-            0, last_closed - retention_ms + FIVE_MINUTE_PERIOD_MS
+            0, last_closed - retention_ms + 2 * FIVE_MINUTE_PERIOD_MS
         )
         cursor = self.catalog.side_data_cursor(self.kind.value)
         if cursor is not None:
@@ -550,7 +559,17 @@ class UsdMSideDataManager:
                 for spec in USDM_SIDE_STREAMS
             },
         }
-        self.stats = {name: SideDataStats(is_enabled) for name, is_enabled in enabled.items()}
+        rest_intervals = {
+            kind.value: settings.rest_interval(kind)
+            for kind in REST_SIDE_DATA_SPECS
+        }
+        self.stats = {
+            name: SideDataStats(
+                is_enabled,
+                expected_interval_seconds=rest_intervals.get(name),
+            )
+            for name, is_enabled in enabled.items()
+        }
         self.degraded_after_seconds = settings.degraded_after_seconds
         self.catalog = catalog
         self.cursor_state = {

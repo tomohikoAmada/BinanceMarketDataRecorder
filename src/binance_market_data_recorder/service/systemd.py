@@ -5,6 +5,7 @@ from __future__ import annotations
 import grp
 import os
 import pwd
+import re
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
@@ -14,6 +15,7 @@ from ..storage.layout import fsync_directory
 
 SYSTEMD_SERVICE_NAME = "binance-market-data-recorder.service"
 _UNIT_MARKER = "# Managed by BinanceMarketDataRecorder"
+_GIT_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{7,64}$")
 
 
 class SystemdError(RuntimeError):
@@ -45,6 +47,23 @@ def _quote(value: str) -> str:
     return f'"{escaped}"'
 
 
+def _directive_path(value: str) -> str:
+    """Encode an absolute path for directives that don't use ExecStart parsing."""
+
+    if not value.startswith("/") or "\n" in value or "\r" in value or "\0" in value:
+        raise SystemdError("systemd directive path must be an absolute safe path")
+    encoded: list[str] = []
+    for byte in value.encode("utf-8"):
+        character = chr(byte)
+        if character.isascii() and (character.isalnum() or character in "/._-"):
+            encoded.append(character)
+        elif character == "%":
+            encoded.append("%%")
+        else:
+            encoded.append(f"\\x{byte:02x}")
+    return "".join(encoded)
+
+
 def _atomic_write(path: Path, body: bytes, *, mode: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(f".{path.name}.partial")
@@ -74,6 +93,7 @@ class SystemdManager:
         group: str,
         unit_path: Path = Path("/etc/systemd/system") / SYSTEMD_SERVICE_NAME,
         python_executable: Path | None = None,
+        git_commit: str | None = None,
         command_runner: CommandRunner = _run_command,
     ) -> None:
         self.data_root = data_root.resolve()
@@ -84,6 +104,9 @@ class SystemdManager:
         selected = Path(sys.executable) if python_executable is None else python_executable
         self.python_executable = selected.expanduser().absolute()
         self.command_runner = command_runner
+        if git_commit is not None and not _GIT_COMMIT_PATTERN.fullmatch(git_commit):
+            raise SystemdError("Git commit provenance must be a hexadecimal revision")
+        self.git_commit = git_commit
 
     def _run(
         self,
@@ -130,21 +153,28 @@ class SystemdManager:
             "_service",
             "run",
         ]
-        return "\n".join(
+        service_lines = [
+            _UNIT_MARKER,
+            "[Unit]",
+            "Description=Binance public market data recorder",
+            "After=network-online.target mihomo.service",
+            "Wants=network-online.target mihomo.service",
+            "",
+            "[Service]",
+            "Type=simple",
+            f"User={self.user}",
+            f"Group={self.group}",
+            f"WorkingDirectory={_directive_path(str(self.data_root))}",
+            "ExecStart=" + " ".join(_quote(argument) for argument in arguments),
+            "Environment=PYTHONUNBUFFERED=1",
+        ]
+        if self.git_commit is not None:
+            service_lines.append(
+                "Environment="
+                + _quote(f"BINANCE_MARKET_RECORDER_GIT_COMMIT={self.git_commit}")
+            )
+        service_lines.extend(
             (
-                _UNIT_MARKER,
-                "[Unit]",
-                "Description=Binance public market data recorder",
-                "After=network-online.target mihomo.service",
-                "Wants=network-online.target mihomo.service",
-                "",
-                "[Service]",
-                "Type=simple",
-                f"User={self.user}",
-                f"Group={self.group}",
-                f"WorkingDirectory={_quote(str(self.data_root))}",
-                "ExecStart=" + " ".join(_quote(argument) for argument in arguments),
-                "Environment=PYTHONUNBUFFERED=1",
                 "Restart=on-failure",
                 "RestartSec=10s",
                 "TimeoutStopSec=90s",
@@ -157,6 +187,7 @@ class SystemdManager:
                 "",
             )
         )
+        return "\n".join(service_lines)
 
     def install(self) -> dict[str, object]:
         self._assert_install_inputs()

@@ -210,17 +210,30 @@ class UsdMStreamCollector:
             remaining = max(0.0, deadline - asyncio.get_running_loop().time())
             receive_task = asyncio.create_task(self._receive_once(websocket, connection_id))
             stop_task = asyncio.create_task(stop.wait())
-            done, pending = await asyncio.wait(
-                {receive_task, stop_task, writer_task},
-                timeout=remaining,
-                return_when=asyncio.FIRST_COMPLETED,
-            )
+            try:
+                done, pending = await asyncio.wait(
+                    {receive_task, stop_task, writer_task},
+                    timeout=remaining,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            except BaseException:
+                for cleanup_task in (receive_task, stop_task):
+                    if not cleanup_task.done():
+                        cleanup_task.cancel()
+                await asyncio.gather(
+                    receive_task,
+                    stop_task,
+                    return_exceptions=True,
+                )
+                raise
             cancelled = [task for task in pending if task is not writer_task]
-            for task in cancelled:
-                task.cancel()
+            for cancelled_task in cancelled:
+                cancelled_task.cancel()
             if cancelled:
                 await asyncio.gather(*cancelled, return_exceptions=True)
             if writer_task in done:
+                if receive_task in done:
+                    await asyncio.gather(receive_task, return_exceptions=True)
                 await writer_task
                 raise RuntimeError("USD-M Raw writer stopped unexpectedly")
             if not done:

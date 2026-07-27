@@ -40,6 +40,92 @@ def test_linux_fixture_reports_source_uuid_filesystem_and_mountpoint() -> None:
     assert document["observed_at_utc_ns"] == 123
 
 
+def test_linux_nested_findmnt_excludes_hotplug_root_device(
+    tmp_path: Path,
+) -> None:
+    mountpoint = tmp_path / "external"
+    mountpoint.mkdir()
+    adapter = LinuxVolumeAdapter(
+        mountinfo_text=(
+            "31 1 179:2 / / rw - ext4 /dev/mmcblk0p2 rw\n"
+            f"42 31 8:17 / {mountpoint} rw - ext4 /dev/sdb1 rw\n"
+        ),
+        findmnt_json=json.dumps(
+            {
+                "filesystems": [
+                    {
+                        "source": "/dev/mmcblk0p2",
+                        "target": "/",
+                        "fstype": "ext4",
+                        "options": "rw",
+                        "children": [
+                            {
+                                "source": "/dev/sdb1",
+                                "target": str(mountpoint),
+                                "fstype": "ext4",
+                                "options": "rw",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        lsblk_json=json.dumps(
+            {
+                "blockdevices": [
+                    {
+                        "name": "mmcblk0",
+                        "path": "/dev/mmcblk0",
+                        "pkname": None,
+                        "rm": False,
+                        "hotplug": True,
+                        "children": [
+                            {
+                                "name": "mmcblk0p1",
+                                "path": "/dev/mmcblk0p1",
+                                "pkname": "mmcblk0",
+                                "uuid": "BOOT",
+                                "rm": False,
+                                "hotplug": True,
+                            },
+                            {
+                                "name": "mmcblk0p2",
+                                "path": "/dev/mmcblk0p2",
+                                "pkname": "mmcblk0",
+                                "uuid": "ROOT",
+                                "rm": False,
+                                "hotplug": True,
+                            },
+                        ],
+                    },
+                    {
+                        "name": "sdb",
+                        "path": "/dev/sdb",
+                        "pkname": None,
+                        "rm": False,
+                        "hotplug": True,
+                        "children": [
+                            {
+                                "name": "sdb1",
+                                "path": "/dev/sdb1",
+                                "pkname": "sdb",
+                                "uuid": "0123-abcd",
+                                "fstype": "ext4",
+                                "rm": False,
+                                "hotplug": False,
+                            }
+                        ],
+                    },
+                ]
+            }
+        ),
+    )
+
+    volumes = adapter.inventory()
+
+    assert [volume.disk_id for volume in volumes] == ["/dev/sdb1"]
+
+
 def test_linux_registration_uses_only_an_existing_mounted_directory(
     tmp_path: Path,
 ) -> None:

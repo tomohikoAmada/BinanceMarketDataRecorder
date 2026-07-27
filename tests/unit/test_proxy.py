@@ -81,6 +81,19 @@ def test_environment_lowercase_precedence_no_proxy_and_sdk_mapping() -> None:
     }
 
 
+def test_environment_wss_proxy_is_sdk_fallback_for_public_https() -> None:
+    policy = ProxyPolicy(
+        "environment",
+        environment={"wss_proxy": "http://127.0.0.1:7890"},
+    )
+    assert policy.websocket_proxy("wss://fstream.binance.com/public/ws") is True
+    assert policy.sdk_proxy("https://fapi.binance.com") == {
+        "host": "127.0.0.1",
+        "port": 7890,
+        "protocol": "http",
+    }
+
+
 def test_explicit_urllib_and_sdk_share_one_validated_proxy() -> None:
     policy = ProxyPolicy("explicit", "http://127.0.0.1:7890")
     assert policy.urllib_proxy_map("https://api.binance.com") == {
@@ -281,6 +294,38 @@ def test_local_mock_connect_proxy_failure_is_visible() -> None:
             policy.urllib_opener(request.full_url).open(request, timeout=1)
         assert _ConnectFailureHandler.observed_connect.wait(timeout=1)
     finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+class _ConnectTimeoutHandler(BaseHTTPRequestHandler):
+    observed_connect = threading.Event()
+    release = threading.Event()
+
+    def do_CONNECT(self) -> None:
+        self.observed_connect.set()
+        self.release.wait(timeout=2)
+
+    def log_message(self, _format: str, *args: object) -> None:
+        pass
+
+
+def test_local_mock_connect_proxy_timeout_is_visible_and_bounded() -> None:
+    _ConnectTimeoutHandler.observed_connect.clear()
+    _ConnectTimeoutHandler.release.clear()
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _ConnectTimeoutHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        port = server.server_address[1]
+        policy = ProxyPolicy("explicit", f"http://127.0.0.1:{port}")
+        request = urllib.request.Request("https://example.invalid/")
+        with pytest.raises((TimeoutError, urllib.error.URLError)):
+            policy.urllib_opener(request.full_url).open(request, timeout=0.1)
+        assert _ConnectTimeoutHandler.observed_connect.wait(timeout=1)
+    finally:
+        _ConnectTimeoutHandler.release.set()
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)

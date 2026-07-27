@@ -15,8 +15,7 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前版本在 macOS 为 Developer Preview，在 Ubuntu ARM64/RK3588 为
-Developer Preview / Soak Candidate，不得用于真实资金交易。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
 的本地录制、完整性验证、
@@ -744,7 +743,7 @@ binance-market-recorder storage forecast
 | `rotation_seconds` | `60.0` | 轮换时间（秒） |
 | `rotation_bytes` | `134217728` (128 MiB) | 轮换大小（字节） |
 | `durability_interval_seconds` | `1.0` | fsync 间隔 |
-| `ingress_queue_capacity` | `8192` | Ingress 队列容量 |
+| `ingress_queue_capacity` | `8192` | WebSocket receipt 与 Raw ingress 的有界队列容量 |
 | `max_frame_bytes` | `16777216` (16 MiB) | 单帧最大字节 |
 | `heartbeat_seconds` | `5.0` | 心跳间隔 |
 | `sleep_gap_threshold_seconds` | `30.0` | 睡眠 gap 阈值 |
@@ -991,6 +990,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - 仅 BTCUSDT Spot 和 USD-M Perpetual。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署，但 72h/168h 尚未运行，因此仅为
   Developer Preview / Soak Candidate；Windows 尚未实现。
+- RK3588 实机配置使用有界 `ingress_queue_capacity = 262144` 并错开各流的
+  Raw seal 相位；长期队列、RSS 与 eMMC seal 延迟仍属于 M21 soak 验证。
 - 无 Historical L2（data.binance.vision 不提供深度数据）。
 - 六种 5 分钟统计受官方 latest month / latest 30-day 保留窗口约束。
 - Live raw trades 和 Live klines 流尚未实现。

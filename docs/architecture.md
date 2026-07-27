@@ -168,7 +168,12 @@ parsing. A separate persistence loop extracts only Raw metadata, envelopes, and
 hands off to the bounded spool. It never compresses in the callback, builds
 Parquet, reconstructs books, or performs network archive I/O. Both transport
 and Recorder queues are finite; saturation is a visible collector fault, never
-a silent drop.
+a silent drop. `ingress_queue_capacity` applies to both receipt and spool
+queues. Time-based Raw rotations use a stable market/stream phase inside the
+configured period, spreading compression/fsync load without delaying any
+stream beyond that period. The RK3588 deployment uses an explicitly larger
+bounded capacity than the generic default; M21 must validate its queue and RSS
+trend under 72-hour and 168-hour load.
 
 Each Spot stream uses its own raw endpoint and connection ID. This preserves a
 known stream identity even for malformed JSON and avoids combined-stream wrapper

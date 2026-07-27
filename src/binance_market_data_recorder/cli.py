@@ -403,6 +403,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             config_file=loaded.config_file,
             user=str(getattr(args, "user", "")),
             group=str(getattr(args, "group", "")),
+            git_commit=current_git_commit(),
         )
         try:
             if systemd_command == "install":

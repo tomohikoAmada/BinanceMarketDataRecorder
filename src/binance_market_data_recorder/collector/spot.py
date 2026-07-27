@@ -219,7 +219,10 @@ class SpotCollector:
         )
         self.snapshot_spool = spool("depth_snapshot")
         self._side_stats = {
-            "exchange_info": SideDataStats(settings.exchange_info_enabled)
+            "exchange_info": SideDataStats(
+                settings.exchange_info_enabled,
+                expected_interval_seconds=settings.exchange_info_interval_seconds,
+            )
         }
         self._side_degraded_after_seconds = settings.side_data_degraded_after_seconds
         side_factories = {}

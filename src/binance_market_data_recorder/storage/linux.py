@@ -93,6 +93,60 @@ def _flatten_lsblk(
     return output
 
 
+def _flatten_findmnt(filesystems: object) -> list[dict[str, object]]:
+    if not isinstance(filesystems, list):
+        raise PlatformVolumeError("invalid findmnt filesystems")
+    output: list[dict[str, object]] = []
+    for item in filesystems:
+        if not isinstance(item, dict):
+            raise PlatformVolumeError("invalid findmnt filesystem")
+        output.append(item)
+        output.extend(_flatten_findmnt(item.get("children", [])))
+    return output
+
+
+def _root_backing_names(
+    *,
+    kernel_by_target: Mapping[str, Mapping[str, str]],
+    block_by_path: Mapping[str, Mapping[str, object]],
+    block_by_name: Mapping[str, Mapping[str, object]],
+) -> frozenset[str]:
+    root = kernel_by_target.get("/")
+    if root is None:
+        return frozenset()
+    source_path = root["source"].split("[", 1)[0]
+    row = block_by_path.get(source_path)
+    names: set[str] = set()
+    while row is not None:
+        name = row.get("name")
+        if not isinstance(name, str) or name in names:
+            break
+        names.add(name)
+        parent = row.get("pkname")
+        row = block_by_name.get(parent) if isinstance(parent, str) else None
+    return frozenset(names)
+
+
+def _shares_root_device(
+    row: Mapping[str, object],
+    *,
+    root_names: frozenset[str],
+    block_by_name: Mapping[str, Mapping[str, object]],
+) -> bool:
+    current: Mapping[str, object] | None = row
+    visited: set[str] = set()
+    while current is not None:
+        name = current.get("name")
+        if not isinstance(name, str) or name in visited:
+            return False
+        if name in root_names:
+            return True
+        visited.add(name)
+        parent = current.get("pkname")
+        current = block_by_name.get(parent) if isinstance(parent, str) else None
+    return False
+
+
 class LinuxVolumeAdapter:
     """Combine mountinfo, findmnt, and lsblk evidence for external volumes."""
 
@@ -157,36 +211,49 @@ class LinuxVolumeAdapter:
                     "--json",
                     "--bytes",
                     "--output",
-                    "NAME,PATH,UUID,FSTYPE,TYPE,RM,HOTPLUG,MOUNTPOINTS",
+                    "NAME,PATH,PKNAME,UUID,FSTYPE,TYPE,RM,HOTPLUG,MOUNTPOINTS",
                 ),
                 self._lsblk_json,
             ),
             source="lsblk",
         )
-        mount_rows = findmnt.get("filesystems")
-        if not isinstance(mount_rows, list):
-            raise PlatformVolumeError("findmnt JSON lacks filesystems")
+        mount_rows = _flatten_findmnt(findmnt.get("filesystems"))
         kernel_by_target = {
             str(row["mountpoint"]): row for row in kernel_mounts
         }
         block_rows = _flatten_lsblk(lsblk.get("blockdevices"))
         block_by_path: dict[str, Mapping[str, object]] = {}
+        block_by_name: dict[str, Mapping[str, object]] = {}
         for row in block_rows:
             path = row.get("path")
             if isinstance(path, str):
                 block_by_path[path] = row
+            name = row.get("name")
+            if isinstance(name, str):
+                block_by_name[name] = row
+        root_names = _root_backing_names(
+            kernel_by_target=kernel_by_target,
+            block_by_path=block_by_path,
+            block_by_name=block_by_name,
+        )
 
         observations: list[VolumeInfo] = []
         for raw_mount in mount_rows:
-            if not isinstance(raw_mount, dict):
-                raise PlatformVolumeError("invalid findmnt filesystem")
             source = raw_mount.get("source")
             target = raw_mount.get("target")
             if not isinstance(source, str) or not isinstance(target, str):
                 continue
             source_path = source.split("[", 1)[0]
             block = block_by_path.get(source_path)
-            if block is None or block.get("_external") is not True:
+            if (
+                block is None
+                or block.get("_external") is not True
+                or _shares_root_device(
+                    block,
+                    root_names=root_names,
+                    block_by_name=block_by_name,
+                )
+            ):
                 continue
             kernel = kernel_by_target.get(target)
             if kernel is None or kernel["source"].split("[", 1)[0] != source_path:

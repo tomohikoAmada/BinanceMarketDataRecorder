@@ -23,6 +23,14 @@ service managers are operational metadata, not data identity. Historical
 Backfill continues to use archive-source clocks and now shares the selected
 transport policy; it never invents a receive clock.
 
+M20 additively annotates future `DEPTH_RESYNC_REQUESTED` and
+`DEPTH_RESYNC_COMPLETED` operational-event evidence with
+`interval_classification="UNRELIABLE"`; completion also carries
+`gap_ended_at_utc_ns`. Existing Catalog rows are immutable and are not
+backfilled. Readers of the open evidence object must continue to ignore unknown
+fields. EventEnvelope, Raw chunk, manifest, normalized, and replay versions are
+unchanged.
+
 ## M19 public side-data and historical clocks
 
 Spot `exchange_info` preserves BTCUSDT `filters`, `status`, `orderTypes`,
