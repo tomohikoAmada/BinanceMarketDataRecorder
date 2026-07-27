@@ -41,6 +41,7 @@ from urllib.parse import urlparse
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
+from ..network import ProxyPolicy
 from ..storage.layout import fsync_directory
 from ..version import package_version
 from .planner import BackfillPlan, PlanEntry
@@ -89,7 +90,8 @@ class HistoricalImporter:
         self,
         *,
         data_root: Path,
-        opener: object = urllib.request.urlopen,
+        opener: object | None = None,
+        proxy_policy: ProxyPolicy | None = None,
         chunk_bytes: int = 1024 * 1024,
         normalization_batch_rows: int = 50_000,
     ) -> None:
@@ -102,7 +104,10 @@ class HistoricalImporter:
         self.state = self.root / "state"
         for directory in (self.sources, self.normalized, self.gaps, self.state):
             directory.mkdir(parents=True, exist_ok=True)
-        self.opener = opener
+        policy = proxy_policy or ProxyPolicy("direct")
+        self.opener = opener or policy.urllib_opener(
+            "https://data.binance.vision"
+        ).open
         self.chunk_bytes = chunk_bytes
         self.normalization_batch_rows = normalization_batch_rows
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 APPLICATION_DIRECTORY = "BinanceMarketDataRecorder"
@@ -17,11 +18,20 @@ class UnsafeDataRootError(ValueError):
         super().__init__(f"unsafe data root ({reason}): {path}")
 
 
-def default_data_root(*, home: Path | None = None) -> Path:
-    """Return the non-creating macOS application-support data path."""
+def default_data_root(
+    *,
+    home: Path | None = None,
+    platform: str | None = None,
+) -> Path:
+    """Return the non-creating interactive data path for the current platform."""
 
     base = home if home is not None else Path.home()
-    return base / "Library" / "Application Support" / APPLICATION_DIRECTORY
+    selected_platform = sys.platform if platform is None else platform
+    if selected_platform == "darwin":
+        return base / "Library" / "Application Support" / APPLICATION_DIRECTORY
+    if selected_platform.startswith("linux"):
+        return base / ".local" / "share" / APPLICATION_DIRECTORY
+    raise RuntimeError(f"unsupported platform: {selected_platform}")
 
 
 def discover_repository_root(start: Path | None = None) -> Path | None:
@@ -86,7 +96,11 @@ def validate_data_root(
     )
     if detected_repository is not None:
         workspace = detected_repository.parent
-        if _is_within(resolved, workspace):
+        if _is_within(resolved, detected_repository):
+            raise UnsafeDataRootError(resolved, "repository_or_workspace")
+        # A common Linux checkout is directly under $HOME. Treating all of
+        # $HOME as the workspace would reject the XDG default by construction.
+        if workspace != selected_home and _is_within(resolved, workspace):
             raise UnsafeDataRootError(resolved, "repository_or_workspace")
 
     for directory in (resolved, *resolved.parents):

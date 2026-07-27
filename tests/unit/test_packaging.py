@@ -21,7 +21,7 @@ def test_distribution_package_cli_and_python_contract() -> None:
     assert (ROOT / "src/binance_market_data_recorder/py.typed").is_file()
 
 
-def test_dependency_scope_through_m16_only() -> None:
+def test_dependency_scope_through_m20_only() -> None:
     with (ROOT / "pyproject.toml").open("rb") as handle:
         project = tomllib.load(handle)
 
@@ -47,6 +47,7 @@ def test_dependency_scope_through_m16_only() -> None:
     ):
         assert forbidden not in serialized
     assert project["project"]["optional-dependencies"]["dev"] == [
+        "build>=1.2,<2",
         "duckdb==1.5.5",
         "mypy>=1.14,<2",
         "pytest>=8.3,<10",

@@ -5,12 +5,18 @@
 - Display name: **Binance Market Data Recorder**
 - Repository directory: `BinanceMarketDataRecorder`
 - Repository path:
-  `/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder`
+  macOS `/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder`;
+  Ubuntu ARM64 `/home/orangepi/BinanceMarketDataRecorder`
 - Python distribution: `binance-market-data-recorder`
 - Python import package: `binance_market_data_recorder`
 - CLI: `binance-market-recorder`
 - macOS application data:
   `~/Library/Application Support/BinanceMarketDataRecorder/`
+- Linux interactive data:
+  `~/.local/share/BinanceMarketDataRecorder/`
+- Linux system service data/config:
+  `/var/lib/binance-market-data-recorder/` and
+  `/etc/binance-market-data-recorder/recorder.toml`
 
 Project, package, CLI, launchd, log, configuration, and service identifiers use
 the frozen project identity in ADR-0007. This is an independent, unofficial
@@ -25,7 +31,7 @@ namespace in advance.
 ## Project goal
 
 Build a long-running, stateful Python 3.12 recorder specifically for Binance
-public market data on macOS Apple Silicon. V1 captures BTCUSDT Spot and USD-M
+public market data on macOS Apple Silicon and Ubuntu ARM64. V1 captures BTCUSDT Spot and USD-M
 perpetual depth at 100 ms, aggregate trades, book ticker events, and public REST
 depth snapshots, followed by defined USD-M auxiliary data. It keeps recoverable
 immutable raw payloads, deterministic replay metadata, explicit gap evidence,
@@ -129,6 +135,13 @@ and metadata. Do not add deprecated `binance-futures-connector-python`, the
 third-party `python-binance` package as a production core dependency, or an
 unverified “Binance MCP”.
 
+Every production network exit uses the M20 proxy policy. `direct` explicitly
+ignores proxy environment variables, `environment` uses standard environment
+discovery plus `no_proxy`, and `explicit` accepts only unauthenticated HTTP(S)
+proxy URLs. Never emit a raw proxy URL into logs, status, Raw, manifests,
+Catalog event bodies, or snapshots. Public state is limited to proxy mode,
+scheme, loopback, and port.
+
 Use an official SDK for WebSocket capture only if M2 proves raw-payload
 fidelity, receive-time control, lifecycle/reconnect/24-hour rotation control,
 unhidden depth update IDs, fault-injection support, and backpressure without
@@ -217,6 +230,12 @@ binance-market-recorder launchd start
 binance-market-recorder launchd stop
 binance-market-recorder launchd status
 binance-market-recorder launchd uninstall
+sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd install --user <user> --group <group>
+sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd start
+binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd status
 python3.12 tools/update_binance_docs.py --output-dir <temporary-directory>
 python3.12 tools/probe_binance_transports.py
 BINANCE_MARKET_RECORDER_ONLINE=1 python3.12 -m pytest -m online -q
@@ -233,11 +252,18 @@ Raw frames in a temporary test directory.
 
 ## Storage safety
 
-The production default is:
+The interactive defaults are:
 
 ```text
-~/Library/Application Support/BinanceMarketDataRecorder/
+macOS: ~/Library/Application Support/BinanceMarketDataRecorder/
+Linux: ~/.local/share/BinanceMarketDataRecorder/
 ```
+
+The Ubuntu system-service root is `/var/lib/binance-market-data-recorder`.
+Linux discovers only already-mounted external block filesystems; it never
+mounts, unmounts, formats, repairs, or creates udev rules. Without a reliable
+OS eject capability it must report manual action and must not claim
+`SAFE_TO_REMOVE`.
 
 Never treat an entire external volume as project-owned. Operate only inside the
 registered relative directory identified by volume UUID plus marker and

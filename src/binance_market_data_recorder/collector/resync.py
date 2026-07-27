@@ -71,6 +71,7 @@ class DepthResyncCoordinator:
                         "market": self.market,
                         "reason": request.reason,
                         "gap_started_at_utc_ns": request.gap_started_at_utc_ns,
+                        "interval_classification": "UNRELIABLE",
                         "original_connection_id": request.original_connection_id,
                         "failure_count": request.failure_count,
                     },
@@ -91,6 +92,8 @@ class DepthResyncCoordinator:
                     "market": self.market,
                     "reason": request.reason,
                     "gap_started_at_utc_ns": request.gap_started_at_utc_ns,
+                    "gap_ended_at_utc_ns": completed_at,
+                    "interval_classification": "UNRELIABLE",
                     "original_connection_id": request.original_connection_id,
                     "new_connection_id": self._last_connection_id,
                     "snapshot_provenance": {

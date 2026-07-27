@@ -6,7 +6,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 
 | ID | Requirement family | Contract / decision | Delivery and proof |
 | --- | --- | --- | --- |
-| WF-01 | Exactly one milestone/run; read prerequisites/status; report and stop; use multiple logical commits only when a milestone explicitly requires them | `AGENTS.md`, milestone universal gate | Every M0-M19; acceptance record per milestone |
+| WF-01 | Exactly one milestone/run; read prerequisites/status; report and stop; use multiple logical commits only when a milestone explicitly requires them | `AGENTS.md`, milestone universal gate | Every M0-M20; acceptance record per milestone |
 | WF-02 | Stop with evidence on official API/platform/permission semantic blocker; no fake substitute | `AGENTS.md`, risks R-002/R-020/R-022 | M2/M9/M12 and any affected milestone |
 | WF-03 | No real trading, account API, API key or credential reads | project/security contract, ADR-0005 | Static/config tests M1; transport tests M2+ |
 | WF-04 | No format/repair of external disk; no GUI/web/trading/factor/backtest in Recorder | project/storage/macOS contracts | Boundary tests/reviews every milestone |
@@ -30,7 +30,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | DAT-08 | Format compares NDJSON, NDJSON+Zstd, MessagePack/CBOR/other and chooses language-neutral framed checksummed Zstd | ADR-0002 | M0 decision; M3 golden vectors |
 | DAT-09 | Deterministic replay, clock choices, checkpoints, explicit gaps | ADR-0004/0021, data contract | M6 fixed-hash/checkpoint tests; M16 equal-time order, clock, gap and checkpoint-seek tests pass |
 | STO-01 | Internal disk always active target; no direct external active writes; external absence normal | storage contract, ADR-0003 | M4/M5/M9 fault tests |
-| STO-02 | Default application-support layout; no persistent data in repo/Desktop/Documents/iCloud/tmp | project/architecture/storage contracts | M1 path tests; M14 runtime |
+| STO-02 | Platform default application-data layout; no persistent data in repo/Desktop/Documents/iCloud/tmp | project/architecture/storage contracts | M1 macOS and M20 Linux path tests; M14/M20 runtime |
 | STO-03 | External folder optional/shared, registration only; no volume ownership/format change | storage/macOS contracts, ADR-0003/0014 | M9 scope-probe tests pass; physical matrix M17 |
 | STO-04 | Identity uses UUID/name/fs type/relative folder/marker/storage_id and re-resolves mountpoint | storage/macOS contracts, ADR-0014 | M9 rename/reinsert and mismatch tests pass |
 | STO-05 | READY requires writable access and write/fsync/rename/readback; read-only reported | storage contract, ADR-0014 | M9 capability/read-only tests pass; physical media matrix unrun |
@@ -62,11 +62,16 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | REL-01 | V1 docs/package/test reports/limitations/Ubuntu preparation | M18 plan | M18 release packet |
 | REL-02 | V1 exit: continuous Spot/UM, rebuild/gaps/recovery/archive/space/blue-green/launchd/no GUI/key/trading/generic consumer | project contract and M18 plan | M18 acceptance; human decision |
 | FUT-01 | Architecture permits Ubuntu adapter/API gateway/UI/more markets/consumer strategies without adding them to V1 | architecture/project contracts | M16 contract; M18 checklist |
+| NET-01 | One direct/environment/explicit proxy decision for Spot/USD-M WS, REST SDK/urllib and Historical; no raw URL disclosure | ADR-0025, data contract, R-038 | M20 proxy/config/Mock CONNECT and redaction tests plus direct/explicit online smoke |
+| LNX-01 | Ubuntu ARM64 Python 3.12 paths and dependencies; PyObjC Darwin-only | ADR-0026, operations guide | M20 Linux paths, fresh-Wheel aarch64 import smoke and doctor |
+| LNX-02 | Non-root idempotent systemd lifecycle, journald, SIGTERM seal, TOML proxy, no data deletion | ADR-0026, operations guide | M20 static unit tests and RK3588 install/start/stop/restart/uninstall-retention evidence |
+| LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
+| FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
 
 ## Milestone coverage
 
-The M0, M0.1, M0.2, and M1-M19 sections in `milestone_plan.md` each contain
+The M0, M0.1, M0.2, and M1-M20 sections in `milestone_plan.md` each contain
 scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
 submilestones add scoped acceptance records without extending the top-level
-M0-M19 plan. This matrix should be updated whenever a requirement, ADR, or
+M0-M20 plan. This matrix should be updated whenever a requirement, ADR, or
 milestone acceptance changes.

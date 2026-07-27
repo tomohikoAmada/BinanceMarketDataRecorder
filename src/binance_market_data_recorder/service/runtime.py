@@ -6,12 +6,20 @@ import asyncio
 import logging
 import os
 import signal
+import sys
 import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
+from functools import partial
 from typing import Protocol
 from uuid import uuid4
 
+from ..binance.spot.exchange_info import create_spot_exchange_info_api
+from ..binance.spot.rest import PublicSpotRestApi
+from ..binance.spot.websocket import SPOT_WEBSOCKET_BASE_URL, open_spot_websocket
+from ..binance.usdm.rest import create_usdm_rest_api
+from ..binance.usdm.side_data_rest import create_usdm_side_rest_api
+from ..binance.usdm.websocket import USDM_WEBSOCKET_ROOT, open_usdm_websocket
 from ..collector import (
     MarketCollectorSupervisor,
     SpotCollector,
@@ -28,7 +36,13 @@ from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import ReadinessSnapshot
 from ..version import git_commit, package_version
 from .lock import ServiceProcessLock
-from .power import CaffeinateAssertion, ClockDiscontinuityDetector, MacSleepObserver, SleepGap
+from .power import (
+    CaffeinateAssertion,
+    ClockDiscontinuityDetector,
+    MacSleepObserver,
+    NoopSleepObserver,
+    SleepGap,
+)
 from .resources import current_rss_bytes, peak_rss_bytes
 from .state import ServiceStateStore
 
@@ -58,6 +72,16 @@ def _collector_factory(
     collector_version: str,
     service_instance_id: str,
 ) -> Mapping[str, RuntimeCollector]:
+    proxy_policy = config.proxy_policy()
+    spot_websocket_opener = partial(
+        open_spot_websocket,
+        proxy=proxy_policy.websocket_proxy(SPOT_WEBSOCKET_BASE_URL),
+    )
+    usdm_websocket_opener = partial(
+        open_usdm_websocket,
+        proxy=proxy_policy.websocket_proxy(USDM_WEBSOCKET_ROOT),
+    )
+    timeout_ms = 10_000
     return {
         "spot": SpotCollector(
             SpotCollectorSettings(
@@ -65,6 +89,7 @@ def _collector_factory(
                 collector_instance_id=f"{service_instance_id}-spot",
                 collector_version=collector_version,
                 queue_capacity=config.ingress_queue_capacity,
+                receipt_queue_capacity=config.ingress_queue_capacity,
                 rotation_seconds=config.rotation_seconds,
                 rotation_bytes=config.rotation_bytes,
                 durability_interval_seconds=config.durability_interval_seconds,
@@ -76,6 +101,15 @@ def _collector_factory(
                 side_data_degraded_after_seconds=config.side_degraded_after_seconds,
             ),
             logger=logger,
+            rest_api=PublicSpotRestApi(
+                timeout_ms=timeout_ms,
+                proxy_policy=proxy_policy,
+            ),
+            websocket_opener=spot_websocket_opener,
+            exchange_info_api=create_spot_exchange_info_api(
+                timeout_ms=timeout_ms,
+                proxy_policy=proxy_policy,
+            ),
         ),
         "um_perpetual": UsdMCollector(
             UsdMCollectorSettings(
@@ -83,6 +117,7 @@ def _collector_factory(
                 collector_instance_id=f"{service_instance_id}-um",
                 collector_version=collector_version,
                 queue_capacity=config.ingress_queue_capacity,
+                receipt_queue_capacity=config.ingress_queue_capacity,
                 rotation_seconds=config.rotation_seconds,
                 rotation_bytes=config.rotation_bytes,
                 durability_interval_seconds=config.durability_interval_seconds,
@@ -136,6 +171,15 @@ def _collector_factory(
                 ),
             ),
             logger=logger,
+            rest_api=create_usdm_rest_api(
+                timeout_ms=timeout_ms,
+                proxy_policy=proxy_policy,
+            ),
+            side_rest_api=create_usdm_side_rest_api(
+                timeout_ms=timeout_ms,
+                proxy_policy=proxy_policy,
+            ),
+            websocket_opener=usdm_websocket_opener,
         ),
     }
 
@@ -149,7 +193,7 @@ class ServiceRuntime:
         config: RecorderConfig,
         logger: logging.Logger,
         collector_factory: CollectorFactory = _collector_factory,
-        sleep_observer_factory: SleepObserverFactory = MacSleepObserver,
+        sleep_observer_factory: SleepObserverFactory | None = None,
         power_assertion: CaffeinateAssertion | None = None,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
@@ -157,7 +201,9 @@ class ServiceRuntime:
         self.config = config
         self.logger = logger
         self.collector_factory = collector_factory
-        self.sleep_observer_factory = sleep_observer_factory
+        self.sleep_observer_factory = sleep_observer_factory or (
+            MacSleepObserver if sys.platform == "darwin" else NoopSleepObserver
+        )
         self.utc_clock_ns = utc_clock_ns
         self.monotonic_clock_ns = monotonic_clock_ns
         self.layout: StorageLayout = ensure_storage_layout(config.data_root)
@@ -325,6 +371,7 @@ class ServiceRuntime:
             "heartbeat_interval_seconds": self.config.heartbeat_seconds,
             "network_connected": ready_count > 0,
             "network_status": network_status,
+            **self.config.proxy_policy().status().public_dict(),
             "markets": markets,
             "shutdown_reason": self.shutdown_reason,
             "prevent_sleep_enabled": self.config.prevent_sleep,
@@ -423,7 +470,9 @@ class ServiceRuntime:
                     evidence={
                         "market": name,
                         "error_type": type(exc).__name__,
-                        "restart_owner": "launchd",
+                        "restart_owner": (
+                            "systemd" if sys.platform.startswith("linux") else "launchd"
+                        ),
                     },
                 )
 

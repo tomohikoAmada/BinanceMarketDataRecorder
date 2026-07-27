@@ -24,6 +24,14 @@ LABEL = "dev.recorderowner.BinanceMarketDataRecorder"
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.fixture(autouse=True)
+def _simulate_macos(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "binance_market_data_recorder.service.launchd.sys.platform",
+        "darwin",
+    )
+
+
 class FakeLaunchctl:
     def __init__(self) -> None:
         self.loaded = False

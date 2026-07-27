@@ -526,10 +526,37 @@ same PR branch is pushed and its CI succeeds.
 Catalog and existing normalized artifacts, and rebuild compatible datasets
 from Raw after a corrected parser is available.
 
+## M20 — Ubuntu ARM64/RK3588 transport and native deployment
+
+- Scope: one redaction-safe `direct`/`environment`/`explicit` proxy policy for
+  every Spot/USD-M WebSocket and REST exit plus Historical Backfill; Linux XDG
+  paths; Ubuntu ARM64 dependency proof; non-root systemd service lifecycle;
+  discovery and registration of already-mounted Linux external archive
+  directories; RK3588 short public-data deployment and Mihomo-restart fault
+  evidence.
+- Non-scope: new symbols/markets, account/key/order/trading features, Raw or
+  normalized schema changes, automatic mount/unmount/format/repair, firewall
+  or routing changes, Docker/Kafka/Kubernetes, Linux blue/green certification,
+  72-hour/168-hour soak, Production Ready claims, merge, release, or tag.
+- Dependencies: M19.2 merged into `main`; Python `>=3.12,<3.13`; existing Raw,
+  Catalog, reconnect/resync/gap and archive safety contracts; user-selected
+  Mihomo node left unchanged.
+- Acceptance: complete offline/stress/lint/type/contracts/Go/build gates;
+  clean-venv final-Wheel ARM64 imports; static and real systemd lifecycle;
+  direct and explicit public Spot/USD-M REST/WebSocket plus small Historical
+  smoke; 30-minute concurrent service run; graceful stop/recovery/restart;
+  Mihomo restart causes visible disconnect/reconnect/depth resync or explicit
+  unreliable evidence; no proxy URL/credential/production data committed;
+  branch pushed and PR opened without merge.
+- Rollback: stop/seal the service, retain `/var/lib` data and Catalog, install
+  the prior Wheel/unit/config, and restart. Revert M20 code only; never delete
+  or rewrite Raw. Linux blue/green and long soak remain M21 work.
+
 ## Future Work
 
-Unscheduled future work may include the deferred 72-hour/168-hour reliability
-proof, repeated 24-hour connection rotations, Ubuntu or Windows portability,
+M21 is reserved for the deferred 72-hour/168-hour Ubuntu ARM64 soak and
+operational hardening. Other unscheduled future work may include repeated
+24-hour connection rotations, Windows portability,
 and a separately reviewed GUI. Future work has no milestone number, is not part
-of the current M0–M19 plan, and does not include strategy, backtest or trading
+of the current M0–M20 plan, and does not include strategy, backtest or trading
 implementation without a new human-approved project scope.

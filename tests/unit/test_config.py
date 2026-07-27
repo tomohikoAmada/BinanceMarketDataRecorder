@@ -5,15 +5,14 @@ from pathlib import Path
 import pytest
 
 from binance_market_data_recorder.config import ConfigurationError, RecorderConfig, load_config
+from binance_market_data_recorder.paths import default_data_root
 
 
 def test_defaults_are_credential_free() -> None:
     fake_home = Path("/Users/config-test-user")
     loaded = load_config(environ={}, home=fake_home)
 
-    assert loaded.config.data_root == (
-        fake_home / "Library" / "Application Support" / "BinanceMarketDataRecorder"
-    ).resolve()
+    assert loaded.config.data_root == default_data_root(home=fake_home).resolve()
     assert loaded.config.log_level == "INFO"
     assert loaded.config.rotation_seconds == 60.0
     assert loaded.config.rotation_bytes == 128 * 1024 * 1024

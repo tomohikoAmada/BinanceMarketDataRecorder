@@ -6,16 +6,18 @@ import json
 import time
 from collections.abc import Callable, Mapping
 from importlib.metadata import version
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 from uuid import uuid4
 
 from binance_common.configuration import ConfigurationRestAPI
 from binance_sdk_spot.spot import Spot
 
 from ...domain.event import EventEnvelope
+from ...network import ProxyPolicy
 from ..usdm.rest import safe_provenance_headers
 
 SPOT_SDK_DISTRIBUTION = "binance-sdk-spot"
+SPOT_REST_BASE_URL = "https://api.binance.com"
 
 
 @runtime_checkable
@@ -44,6 +46,23 @@ class SpotExchangeInfoApi(Protocol):
     ) -> PublicResponse: ...
 
 
+def create_spot_exchange_info_api(
+    *,
+    timeout_ms: int,
+    proxy_policy: ProxyPolicy,
+) -> SpotExchangeInfoApi:
+    """Build the credential-free SDK client with the shared proxy policy."""
+
+    configuration = ConfigurationRestAPI(
+        timeout=timeout_ms,
+        retries=0,
+        proxy=proxy_policy.sdk_proxy(SPOT_REST_BASE_URL),
+    )
+    rest_api = Spot(config_rest_api=configuration).rest_api
+    proxy_policy.configure_sdk_rest_api(rest_api)
+    return cast(SpotExchangeInfoApi, rest_api)
+
+
 def capture_spot_exchange_info(
     *,
     rest_api: SpotExchangeInfoApi | None = None,
@@ -58,9 +77,10 @@ def capture_spot_exchange_info(
     api = (
         rest_api
         if rest_api is not None
-        else Spot(
-            config_rest_api=ConfigurationRestAPI(timeout=timeout_ms, retries=0)
-        ).rest_api
+        else create_spot_exchange_info_api(
+            timeout_ms=timeout_ms,
+            proxy_policy=ProxyPolicy("direct"),
+        )
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()

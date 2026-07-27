@@ -11,12 +11,18 @@ stop; absence of an external target is not a Collector error.
 Allowed production root:
 
 ```text
-~/Library/Application Support/BinanceMarketDataRecorder/
+macOS interactive: ~/Library/Application Support/BinanceMarketDataRecorder/
+Linux interactive: ~/.local/share/BinanceMarketDataRecorder/
+Linux systemd:     /var/lib/binance-market-data-recorder/
 ```
 
 Forbidden defaults include the repository, its parent
 `/Users/amada/Documents/Development/Crypto`, Desktop, Documents, iCloud Drive,
 and `/tmp` for persistent data.
+
+When a Linux checkout is directly below `$HOME`, the repository itself remains
+forbidden but `$HOME` cannot be treated wholesale as a workspace because that
+would reject the XDG default by construction.
 
 ## Chunk states
 
@@ -73,7 +79,8 @@ internal root.
 An archive registration contains:
 
 - application-generated `storage_id`;
-- macOS volume UUID;
+- reliable filesystem/volume UUID;
+- source device on Linux;
 - observed volume name and filesystem type;
 - registered directory relative to the volume mount root;
 - a marker file inside the registered directory;
@@ -84,10 +91,18 @@ agree before use. Recorder only scans, creates, copies, verifies, renames, and
 deletes its own known files within the registered directory. It never writes
 at the volume root or accesses unrelated siblings.
 
-Usable filesystems are capability-based, not allowlisted: macOS must mount the
+Usable filesystems are capability-based, not allowlisted: the OS must mount the
 volume writable, the directory must be accessible, and an in-directory probe
 must pass write, fsync, rename, reopen, and readback. A read-only mount reports
 `READ_ONLY`; Recorder never remounts, repairs, or reformats it.
+
+On Linux, `/proc/self/mountinfo` is the current mount-namespace authority and
+`findmnt --json` plus `lsblk --json` corroborate source, filesystem, UUID, and
+external/hotplug identity. Recorder considers only user/OS already-mounted
+external block filesystems and requires a reliable filesystem UUID before
+registration. It never mounts/unmounts, creates udev rules, or changes
+partition/filesystem state. Missing media leaves Active Collection running;
+archive status becomes absent/failed and the internal sealed source remains.
 
 ## Storage states
 
@@ -111,6 +126,12 @@ removes Catalog eligibility but preserves the marker and user/archive data.
 M10 implements copy/verify and disappearance-during-copy behavior.
 M11 implements `LOW_SPACE`. M12 implements `EJECT_PENDING` and
 `SAFE_TO_REMOVE` under ADR-0017.
+
+M20 does not map Linux to the macOS eject transaction. Without a proven udisks
+capability, `storage eject` returns `MANUAL_ACTION_REQUIRED`,
+`safe_to_remove=false`, and performs no unmount/eject mutation. Only macOS
+Disk Arbitration's successful unmount plus eject callbacks may produce the
+existing `SAFE_TO_REMOVE` claim.
 
 ## Archive transaction
 

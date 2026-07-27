@@ -1,6 +1,7 @@
 # Project Contract
 
-Status: frozen by M0 and identity-corrected by ADR-0007/M0.2 on 2026-07-22.
+Status: frozen by M0, identity-corrected by ADR-0007/M0.2, and extended to
+Ubuntu ARM64 Developer Preview / Soak Candidate by M20 on 2026-07-27.
 Changes require a dedicated ADR and must retain traceability in
 `requirements_traceability.md`.
 
@@ -13,9 +14,10 @@ It is a stateful infrastructure service specifically for Binance public market
 data. The name identifies the connected data source and APIs; it does not imply
 an official relationship. The project must not use Binance logos, official
 visual identity, or identifiers that suggest Binance ownership. Its first
-certified platform is macOS on Apple Silicon with Python 3.12, deployed as a
-user `launchd` LaunchAgent while the user is logged in. Docker is not the V1
-production deployment.
+supported preview platforms are macOS Apple Silicon and Ubuntu ARM64 with
+Python 3.12. macOS uses a user `launchd` LaunchAgent while logged in; Ubuntu
+uses a non-root systemd service. Ubuntu/RK3588 remains a Soak Candidate until
+72-hour/168-hour evidence exists. Docker is not the production deployment.
 
 V1 records public BTCUSDT Binance market data:
 
@@ -69,8 +71,10 @@ that validation is optional and cannot define V1 completion.
 ## Storage invariants
 
 - Collector always writes to the internal data root, never directly to an
-  external volume. Default root:
-  `~/Library/Application Support/BinanceMarketDataRecorder/`.
+  external volume. Interactive defaults are macOS
+  `~/Library/Application Support/BinanceMarketDataRecorder/` and Linux
+  `~/.local/share/BinanceMarketDataRecorder/`; Linux systemd uses
+  `/var/lib/binance-market-data-recorder`.
 - Production data is forbidden under the repository, Desktop, Documents,
   iCloud Drive, persistent `/tmp`, and the repository parent
   `/Users/amada/Documents/Development/Crypto`.
@@ -95,9 +99,15 @@ that validation is optional and cannot define V1 completion.
 - No API keys, account access, order endpoints, trading permissions, or real
   trading.
 - No root LaunchDaemon installation by default.
+- Linux Collector processes also never run as root. The managed systemd unit
+  takes an explicit User/Group and keeps proxy behavior in TOML, not SSH
+  environment variables.
 - macOS controls normal mounting. Recorder observes Disk Arbitration events and
   may request default non-forced safe unmount/eject; only both successful
   callbacks mean safe-to-remove. It never formats or repairs a filesystem.
+- Linux observes only already-mounted external block filesystems through
+  mountinfo/findmnt/lsblk. It never mounts or unmounts them; without a reliable
+  eject backend it reports manual action and no safe-removal success.
 - Sleep/lid-close gaps must be marked. V1 does not promise collection while a
   MacBook is asleep or closed.
 - Planned upgrades use ADR-0018 make-before-break blue/green overlap. Candidate
@@ -160,10 +170,12 @@ Qt, web UI, FastAPI product API, trading UI, strategies, factors, backtest
 engine, orders, account connection, API-key management, live trading, maker
 queue simulation, other exchanges/additional symbols, Kafka, Kubernetes, cloud
 stateless capture, automatic disk formatting/repair, mandatory SMART support,
-and Windows/Ubuntu certification are excluded.
+and Windows certification are excluded. Ubuntu ARM64 long-run certification,
+zero-interruption claims, and Linux blue/green certification remain excluded
+from M20.
 
-The design may retain clean Binance Spot/USD-M modules, an Ubuntu storage
-adapter path, an API gateway boundary, and independent strategy, backtest,
+The design retains clean Binance Spot/USD-M modules, a Linux storage adapter,
+an API gateway boundary, and independent strategy, backtest,
 monitoring, or paper-trading consumers. Those consumers remain outside
 Recorder. Multi-exchange support is not a V1 design or acceptance goal; any
 future exchange requires its own architecture review.

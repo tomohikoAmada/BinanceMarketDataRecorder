@@ -1,5 +1,18 @@
 # Operations
 
+Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
+directory, and M21 soak procedures are in
+[`ubuntu_rk3588_operations.md`](ubuntu_rk3588_operations.md). Ubuntu is an M20
+Developer Preview / Soak Candidate, not Production Ready.
+
+## Proxy status
+
+`config show`, `doctor`, and `status` expose only proxy mode, scheme, loopback,
+and port. They never expose the configured URL. `direct` ignores the shell,
+`environment` honors standard variables plus `no_proxy`, and `explicit` uses
+one credential-free HTTP(S) proxy for all production network exits. systemd
+production uses TOML `explicit`, never an SSH environment.
+
 ## Side-data and backfill status
 
 Runtime market state includes each side task's `status`, `enabled`, `running`,
@@ -58,6 +71,22 @@ data root.
 Uninstall never removes market data or the Catalog. Confirm the configured
 data root separately before removing any code environment.
 
+## systemd lifecycle
+
+Use an explicit config on every management command:
+
+```bash
+sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd install --user orangepi --group orangepi
+sudo binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd start
+binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd status
+```
+
+Stop/restart/uninstall are idempotent. SIGTERM drains/seals; uninstall retains
+configuration and all data. Logs are in journald.
+
 ## External storage
 
 Only an explicit project subdirectory may be registered:
@@ -81,6 +110,8 @@ binance-market-recorder storage eject <storage-id>
 Do not unplug until the command confirms both system operations. `BUSY`,
 refusal, timeout, or disappearance is not safe-to-remove confirmation.
 External absence does not stop internal capture.
+Linux M20 performs no automatic eject; it reports manual action without
+`SAFE_TO_REMOVE`.
 
 ## Sleep and resource operation
 

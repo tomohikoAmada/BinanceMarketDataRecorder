@@ -1,0 +1,26 @@
+{
+  "blockdevices": [
+    {
+      "name": "sdb",
+      "path": "/dev/sdb",
+      "uuid": null,
+      "fstype": null,
+      "type": "disk",
+      "rm": false,
+      "hotplug": true,
+      "mountpoints": [null],
+      "children": [
+        {
+          "name": "sdb1",
+          "path": "/dev/sdb1",
+          "uuid": "0123-abcd",
+          "fstype": "ext4",
+          "type": "part",
+          "rm": false,
+          "hotplug": false,
+          "mountpoints": ["/media/orangepi/archive"]
+        }
+      ]
+    }
+  ]
+}

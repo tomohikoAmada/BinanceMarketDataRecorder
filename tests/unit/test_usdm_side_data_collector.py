@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
@@ -23,6 +24,16 @@ from binance_market_data_recorder.collector.usdm_side_data import (
 )
 from binance_market_data_recorder.domain.event import EventEnvelope
 from binance_market_data_recorder.storage.catalog import Catalog
+
+
+def test_periodic_side_data_is_not_stale_before_its_next_poll_plus_grace() -> None:
+    stats = SideDataStats(True, expected_interval_seconds=3600.0)
+    stats.status = "RUNNING"
+    stats.last_success_at_utc_ns = time.time_ns() - 1800 * 1_000_000_000
+    assert stats.public_dict(degraded_after_seconds=900.0)["status"] == "RUNNING"
+
+    stats.last_success_at_utc_ns = time.time_ns() - 4501 * 1_000_000_000
+    assert stats.public_dict(degraded_after_seconds=900.0)["status"] == "STALE"
 
 
 def test_each_side_data_kind_can_be_enabled_independently() -> None:
@@ -251,7 +262,7 @@ def test_each_five_minute_kind_uses_independent_durable_bounded_cursor(
             now_ms // FIVE_MINUTE_PERIOD_MS
         ) * FIVE_MINUTE_PERIOD_MS - FIVE_MINUTE_PERIOD_MS
         _, retention_ms = FIVE_MINUTE_RETENTION[kind]
-        earliest = last_closed - retention_ms + FIVE_MINUTE_PERIOD_MS
+        earliest = last_closed - retention_ms + 2 * FIVE_MINUTE_PERIOD_MS
         catalog = Catalog(tmp_path / f"{kind.value}.sqlite")
         api = CursorApi(kind)
         spool = CursorSpool()

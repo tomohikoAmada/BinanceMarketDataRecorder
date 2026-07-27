@@ -86,6 +86,7 @@ def test_diff_depth_lifecycle_requests_market_local_resync(
     assert len(events) == 1
     evidence = cast(dict[str, object], events[0]["evidence"])
     assert evidence["market"] == market
+    assert evidence["interval_classification"] == "UNRELIABLE"
     collector.catalog.close()
 
 
@@ -190,6 +191,10 @@ def test_resync_completion_records_applied_local_book_update_id(
     completed = catalog.operational_events(event_type="DEPTH_RESYNC_COMPLETED")
     evidence = cast(dict[str, object], completed[0]["evidence"])
     assert int(cast(int, evidence["recovered_update_id"])) == 101
+    assert evidence["interval_classification"] == "UNRELIABLE"
+    assert cast(int, evidence["gap_ended_at_utc_ns"]) >= cast(
+        int, evidence["gap_started_at_utc_ns"]
+    )
     catalog.close()
 
 

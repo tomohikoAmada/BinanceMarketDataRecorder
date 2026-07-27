@@ -133,6 +133,19 @@ class CaffeinateAssertion:
 SleepCallback = Callable[[str, int], None]
 
 
+class NoopSleepObserver:
+    """Linux observer; clock discontinuities remain handled by the heartbeat."""
+
+    def __init__(self, _callback: SleepCallback) -> None:
+        pass
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
+
+
 def _load_workspace_frameworks() -> tuple[ModuleType, ModuleType]:
     if sys.platform != "darwin":
         raise RuntimeError("NSWorkspace sleep observation requires macOS")

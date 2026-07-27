@@ -4,6 +4,33 @@ Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
 the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
+## M20 transport and platform compatibility
+
+M20 changes no EventEnvelope, Raw chunk, manifest, normalized, replay, or
+Catalog market-data schema. `direct`, `environment`, and `explicit` select only
+the transport used before bytes reach the existing receive boundary.
+
+The proxy URL, proxy host, environment variable names/values, Mihomo node,
+controller information, and credentials are forbidden from Raw payloads,
+manifests, Catalog event bodies, normalized rows, and ordinary logs. Runtime
+state may contain only mode, scheme, loopback, and port. A proxy disconnect
+does not authorize an inferred complete interval: the existing connection ID,
+unexpected-disconnect, gap/unreliable interval, snapshot, resync, and sequence
+contracts apply unchanged.
+
+Linux and macOS write byte-compatible Raw and Catalog state. Platform paths and
+service managers are operational metadata, not data identity. Historical
+Backfill continues to use archive-source clocks and now shares the selected
+transport policy; it never invents a receive clock.
+
+M20 additively annotates future `DEPTH_RESYNC_REQUESTED` and
+`DEPTH_RESYNC_COMPLETED` operational-event evidence with
+`interval_classification="UNRELIABLE"`; completion also carries
+`gap_ended_at_utc_ns`. Existing Catalog rows are immutable and are not
+backfilled. Readers of the open evidence object must continue to ignore unknown
+fields. EventEnvelope, Raw chunk, manifest, normalized, and replay versions are
+unchanged.
+
 ## M19 public side-data and historical clocks
 
 Spot `exchange_info` preserves BTCUSDT `filters`, `status`, `orderTypes`,

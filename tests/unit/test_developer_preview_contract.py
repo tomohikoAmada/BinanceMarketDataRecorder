@@ -6,9 +6,13 @@ from pathlib import Path
 from binance_market_data_recorder.version import FALLBACK_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
-LONG_RUN_NOTICE = """连续72小时和168小时长期运行验收尚未执行。
-静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前版本仅为Mac Developer Preview\uff0c不得用于真实资金交易。"""
+LONG_RUN_NOTICE = (
+    "连续72小时和168小时长期运行验收尚未执行。\n"
+    "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
+    "当前版本为Mac Developer Preview;"
+    "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"
+    "不得用于真实资金交易。"
+)
 
 
 def _normalized(path: Path) -> str:

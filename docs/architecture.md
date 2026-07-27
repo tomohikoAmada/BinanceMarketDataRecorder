@@ -1,6 +1,7 @@
 # Architecture
 
-This document describes the `0.1.0a1` Mac Developer Preview. The implemented
+This document describes the `0.1.0a1` Mac Developer Preview and M20 Ubuntu
+ARM64/RK3588 Developer Preview / Soak Candidate. The implemented
 system remains subject to the deferred long-running reliability limitation in
 `docs/known_limitations.md`.
 
@@ -167,7 +168,12 @@ parsing. A separate persistence loop extracts only Raw metadata, envelopes, and
 hands off to the bounded spool. It never compresses in the callback, builds
 Parquet, reconstructs books, or performs network archive I/O. Both transport
 and Recorder queues are finite; saturation is a visible collector fault, never
-a silent drop.
+a silent drop. `ingress_queue_capacity` applies to both receipt and spool
+queues. Time-based Raw rotations use a stable market/stream phase inside the
+configured period, spreading compression/fsync load without delaying any
+stream beyond that period. The RK3588 deployment uses an explicitly larger
+bounded capacity than the generic default; M21 must validate its queue and RSS
+trend under 72-hour and 168-hour load.
 
 Each Spot stream uses its own raw endpoint and connection ID. This preserves a
 known stream identity even for malformed JSON and avoids combined-stream wrapper
@@ -268,9 +274,20 @@ Collectors coexist inside that one process.
 
 ## Portability
 
-Platform-specific Disk Arbitration and launchd code sits behind `storage.macos`
-and supervisor boundaries. Binance Spot and USD-M behavior sits in their own
-transport/schema modules. File/chunk/manifests use specified language-neutral
-formats and UTC timestamps so arbitrary consumers, future Go/Rust readers, and
-an Ubuntu storage adapter do not require macOS internals. This portability does
-not make multi-exchange support a current goal.
+Platform-specific Disk Arbitration/launchd and mountinfo/systemd code sits
+behind `storage.macos`, `storage.linux`, and service boundaries. Linux never
+imports PyObjC. Binance Spot and USD-M behavior sits in transport/schema
+modules, while ADR-0025's `ProxyPolicy` is injected at assembly time into every
+WebSocket, urllib, official-SDK REST, and Historical exit.
+
+macOS keeps its Application Support, NSWorkspace/caffeinate, LaunchAgent, and
+safe-eject behavior. Linux uses an XDG interactive path, a no-op native sleep
+observer plus clock-discontinuity detection, a non-root systemd unit, journald,
+and read-only discovery of already-mounted external filesystems. The production
+unit contains no proxy environment variables; redacted policy state is written
+to `service-state.v1`.
+
+File/chunk/manifests use the unchanged language-neutral formats and UTC
+timestamps, so consumers do not depend on either platform adapter. This
+portability does not make multi-exchange support a current goal, and M20 does
+not certify Linux blue/green or long-run operation.

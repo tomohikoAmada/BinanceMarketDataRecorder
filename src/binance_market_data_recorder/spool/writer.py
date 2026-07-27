@@ -21,6 +21,7 @@ import os
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from hashlib import sha256
 from uuid import UUID, uuid4
 
 from ..domain.event import EventEnvelope
@@ -98,6 +99,12 @@ class RawChunkWriter:
         self._record_count = 0
         self._bytes_written = 0
         self._opened_monotonic = time.monotonic()
+        self._rotation_deadline_monotonic = _rotation_deadline(
+            opened_monotonic=self._opened_monotonic,
+            period_seconds=self.rotation.seconds,
+            market=market,
+            stream=stream,
+        )
         self._last_sync_monotonic = self._opened_monotonic
         self.operation_observer = operation_observer
         try:
@@ -181,7 +188,7 @@ class RawChunkWriter:
         now = time.monotonic() if now_monotonic is None else now_monotonic
         return (
             self._bytes_written >= self.rotation.bytes
-            or now - self._opened_monotonic >= self.rotation.seconds
+            or now >= self._rotation_deadline_monotonic
         )
 
     def close(self) -> None:
@@ -196,3 +203,22 @@ class RawChunkWriter:
 
     def __exit__(self, *_args: object) -> None:
         self.close()
+
+
+def _rotation_deadline(
+    *,
+    opened_monotonic: float,
+    period_seconds: float,
+    market: str,
+    stream: str,
+) -> float:
+    """Spread stream seals across one bounded period using a stable phase."""
+
+    identity = f"{market}\0{stream}".encode()
+    phase_ratio = int.from_bytes(sha256(identity).digest()[:8], "big") / 2**64
+    phase_seconds = period_seconds * phase_ratio
+    cycle_start = (opened_monotonic // period_seconds) * period_seconds
+    deadline = cycle_start + phase_seconds
+    if deadline <= opened_monotonic:
+        deadline += period_seconds
+    return deadline
