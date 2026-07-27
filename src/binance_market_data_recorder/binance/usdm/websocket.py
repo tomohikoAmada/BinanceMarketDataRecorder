@@ -15,6 +15,7 @@ from websockets.exceptions import WebSocketException
 
 from ...domain.event import EventEnvelope
 from ...logging import log_event
+from ...network import WebSocketProxy
 from ...spool.queue import IngressQueueFull
 from ...spool.stream import StreamSpool
 from ..spot.websocket import ReceivedFrame, ReconnectBackoff
@@ -37,12 +38,16 @@ LifecycleObserver = Callable[[str], None]
 
 
 @asynccontextmanager
-async def open_usdm_websocket(url: str) -> AsyncIterator[WebSocketConnection]:
+async def open_usdm_websocket(
+    url: str,
+    *,
+    proxy: WebSocketProxy = None,
+) -> AsyncIterator[WebSocketConnection]:
     """Open a routed USD-M raw stream with bounded library buffering."""
 
     async with connect(
         url,
-        proxy=None,
+        proxy=proxy,
         compression=None,
         ping_interval=None,
         max_queue=(32, 8),

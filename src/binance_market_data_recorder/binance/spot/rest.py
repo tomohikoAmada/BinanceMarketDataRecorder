@@ -8,13 +8,14 @@ import json
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from uuid import uuid4
 
 from ...domain.event import EventEnvelope
+from ...network import ProxyPolicy
 from .rate_limit import (
     SpotIpRateLimiter,
     SpotRateLimitBlocked,
@@ -101,7 +102,8 @@ class PublicSpotRestApi:
         *,
         base_url: str = SPOT_REST_BASE_URL,
         timeout_ms: int = 10_000,
-        opener: Callable[..., object] = urlopen,
+        opener: Callable[..., Any] | None = None,
+        proxy_policy: ProxyPolicy | None = None,
     ) -> None:
         if base_url != SPOT_REST_BASE_URL:
             raise ValueError("Spot public REST base URL is frozen to api.binance.com")
@@ -109,7 +111,8 @@ class PublicSpotRestApi:
             raise ValueError("Spot REST timeout must be at least 1000 ms")
         self.base_url = base_url
         self.timeout_ms = timeout_ms
-        self._opener = opener
+        policy = proxy_policy or ProxyPolicy("direct")
+        self._opener = opener or policy.urllib_opener(base_url).open
 
     def depth(self, symbol: str, limit: int) -> PublicDepthResponse:
         if symbol != "BTCUSDT":
@@ -125,11 +128,14 @@ class PublicSpotRestApi:
             method="GET",
         )
         try:
-            response = self._opener(request, timeout=self.timeout_ms / 1_000)
-            with response:  # type: ignore[attr-defined]
-                status = int(response.status)  # type: ignore[attr-defined]
-                headers = dict(response.headers.items())  # type: ignore[attr-defined]
-                raw_body = response.read()  # type: ignore[attr-defined]
+            response = cast(
+                Any,
+                self._opener(request, timeout=self.timeout_ms / 1_000),
+            )
+            with response:
+                status = int(response.status)
+                headers = dict(response.headers.items())
+                raw_body = response.read()
         except HTTPError as exc:
             with exc:
                 return PublicDepthResponse(

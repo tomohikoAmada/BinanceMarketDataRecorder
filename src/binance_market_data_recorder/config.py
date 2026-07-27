@@ -7,10 +7,18 @@ import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
+from .network import ProxyConfigurationError, ProxyMode, ProxyPolicy
 from .paths import UnsafeDataRootError, default_data_root, validate_data_root
 
 ENV_PREFIX = "BINANCE_MARKET_RECORDER_"
@@ -28,6 +36,8 @@ ALLOWED_ENV_SETTINGS = {
     f"{ENV_PREFIX}HEARTBEAT_SECONDS",
     f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS",
     f"{ENV_PREFIX}PREVENT_SLEEP",
+    f"{ENV_PREFIX}NETWORK_PROXY_MODE",
+    f"{ENV_PREFIX}NETWORK_PROXY_URL",
 }
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -39,10 +49,14 @@ class ConfigurationError(ValueError):
 class RecorderConfig(BaseModel):
     """Credential-free Recorder configuration through the current milestone."""
 
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, strict=True, hide_input_in_errors=True
+    )
 
     data_root: Path
     log_level: LogLevel = "INFO"
+    network_proxy_mode: ProxyMode = "direct"
+    network_proxy_url: str | None = None
     rotation_seconds: float = Field(default=60.0, gt=0)
     rotation_bytes: int = Field(default=128 * 1024 * 1024, ge=1024 * 1024)
     durability_interval_seconds: float = Field(default=1.0, ge=0, le=1.0)
@@ -93,12 +107,31 @@ class RecorderConfig(BaseModel):
     def _normalize_log_level(cls, value: object) -> object:
         return value.upper() if isinstance(value, str) else value
 
+    @model_validator(mode="after")
+    def _proxy_policy_is_valid(self) -> Self:
+        try:
+            ProxyPolicy(self.network_proxy_mode, self.network_proxy_url)
+        except ProxyConfigurationError as exc:
+            raise ValueError(str(exc)) from exc
+        return self
+
+    def proxy_policy(
+        self, *, environment: Mapping[str, str] | None = None
+    ) -> ProxyPolicy:
+        return ProxyPolicy(
+            self.network_proxy_mode,
+            self.network_proxy_url,
+            environment=environment,
+        )
+
     def public_dict(self) -> dict[str, object]:
         """Return the complete safe-to-display configuration."""
 
         return {
             "data_root": str(self.data_root),
             "log_level": self.log_level,
+            "network_proxy_mode": self.network_proxy_mode,
+            **self.proxy_policy().status().public_dict(),
             "rotation_seconds": self.rotation_seconds,
             "rotation_bytes": self.rotation_bytes,
             "durability_interval_seconds": self.durability_interval_seconds,
@@ -116,10 +149,14 @@ class RecorderConfig(BaseModel):
 
 
 class _RecorderOverrides(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(
+        extra="forbid", strict=True, hide_input_in_errors=True
+    )
 
     data_root: Path | None = None
     log_level: LogLevel | None = None
+    network_proxy_mode: ProxyMode | None = None
+    network_proxy_url: str | None = None
     rotation_seconds: float | None = Field(default=None, gt=0)
     rotation_bytes: int | None = Field(default=None, ge=1024 * 1024)
     durability_interval_seconds: float | None = Field(default=None, ge=0, le=1.0)
@@ -178,7 +215,9 @@ class _RecorderOverrides(BaseModel):
 
 
 class _ConfigFile(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(
+        extra="forbid", strict=True, hide_input_in_errors=True
+    )
 
     recorder: _RecorderOverrides = Field(default_factory=_RecorderOverrides)
 
@@ -231,6 +270,8 @@ def load_config(
     values: dict[str, object] = {
         "data_root": default_data_root(home=home),
         "log_level": "INFO",
+        "network_proxy_mode": "direct",
+        "network_proxy_url": None,
         "rotation_seconds": 60.0,
         "rotation_bytes": 128 * 1024 * 1024,
         "durability_interval_seconds": 1.0,
@@ -277,6 +318,12 @@ def load_config(
         if overrides.log_level is not None:
             values["log_level"] = overrides.log_level
             sources["log_level"] = "config_file"
+        if overrides.network_proxy_mode is not None:
+            values["network_proxy_mode"] = overrides.network_proxy_mode
+            sources["network_proxy_mode"] = "config_file"
+        if overrides.network_proxy_url is not None:
+            values["network_proxy_url"] = overrides.network_proxy_url
+            sources["network_proxy_url"] = "config_file"
         for name in (
             "rotation_seconds",
             "rotation_bytes",
@@ -327,6 +374,14 @@ def load_config(
     if log_level_env is not None:
         values["log_level"] = log_level_env
         sources["log_level"] = "environment"
+    proxy_mode_env = environment.get(f"{ENV_PREFIX}NETWORK_PROXY_MODE")
+    if proxy_mode_env is not None:
+        values["network_proxy_mode"] = proxy_mode_env.strip().casefold()
+        sources["network_proxy_mode"] = "environment"
+    proxy_url_env = environment.get(f"{ENV_PREFIX}NETWORK_PROXY_URL")
+    if proxy_url_env is not None:
+        values["network_proxy_url"] = proxy_url_env
+        sources["network_proxy_url"] = "environment"
     numeric_environment = {
         "rotation_seconds": float,
         "rotation_bytes": int,

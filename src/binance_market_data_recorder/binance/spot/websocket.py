@@ -31,6 +31,7 @@ from websockets.exceptions import WebSocketException
 
 from ...domain.event import EventEnvelope
 from ...logging import log_event
+from ...network import WebSocketProxy
 from ...spool.queue import IngressQueueFull
 from ...spool.stream import StreamSpool
 from .schema import SpotStream, envelope_from_websocket_frame
@@ -80,12 +81,16 @@ EnvelopeObserver = Callable[[EventEnvelope], None]
 
 
 @asynccontextmanager
-async def open_spot_websocket(url: str) -> AsyncIterator[WebSocketConnection]:
+async def open_spot_websocket(
+    url: str,
+    *,
+    proxy: WebSocketProxy = None,
+) -> AsyncIterator[WebSocketConnection]:
     """Open a raw stream with finite library buffering and no client Ping loop."""
 
     async with connect(
         url,
-        proxy=None,
+        proxy=proxy,
         compression=None,
         ping_interval=None,
         max_queue=(32, 8),

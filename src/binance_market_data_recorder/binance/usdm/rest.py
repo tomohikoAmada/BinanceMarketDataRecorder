@@ -15,8 +15,10 @@ from binance_sdk_derivatives_trading_usds_futures.derivatives_trading_usds_futur
 )
 
 from ...domain.event import EventEnvelope
+from ...network import ProxyPolicy
 
 USDM_SDK_DISTRIBUTION = "binance-sdk-derivatives-trading-usds-futures"
+USDM_REST_BASE_URL = "https://fapi.binance.com"
 SNAPSHOT_LIMIT = 1000
 _PROVENANCE_HEADERS = {
     "content-type",
@@ -49,6 +51,23 @@ class UsdMRestApi(Protocol):
     def order_book(self, symbol: str, limit: int) -> DepthResponse: ...
 
 
+def create_usdm_rest_api(
+    *,
+    timeout_ms: int,
+    proxy_policy: ProxyPolicy,
+) -> UsdMRestApi:
+    """Build the unsigned SDK client with an explicit transport decision."""
+
+    configuration = ConfigurationRestAPI(
+        timeout=timeout_ms,
+        retries=0,
+        proxy=proxy_policy.sdk_proxy(USDM_REST_BASE_URL),
+    )
+    rest_api = DerivativesTradingUsdsFutures(config_rest_api=configuration).rest_api
+    proxy_policy.configure_sdk_rest_api(rest_api)
+    return rest_api
+
+
 def safe_provenance_headers(headers: Mapping[str, object]) -> dict[str, str]:
     return {
         str(name).lower(): str(value)
@@ -78,9 +97,10 @@ def capture_depth_snapshot(
     api = (
         rest_api
         if rest_api is not None
-        else DerivativesTradingUsdsFutures(
-            config_rest_api=ConfigurationRestAPI(timeout=timeout_ms, retries=0)
-        ).rest_api
+        else create_usdm_rest_api(
+            timeout_ms=timeout_ms,
+            proxy_policy=ProxyPolicy("direct"),
+        )
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()

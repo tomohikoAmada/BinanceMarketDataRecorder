@@ -27,7 +27,8 @@ from binance_sdk_derivatives_trading_usds_futures.rest_api.models.enums import (
 )
 
 from ...domain.event import EventEnvelope
-from .rest import USDM_SDK_DISTRIBUTION, safe_provenance_headers
+from ...network import ProxyPolicy
+from .rest import USDM_REST_BASE_URL, USDM_SDK_DISTRIBUTION, safe_provenance_headers
 
 
 class RestSideDataKind(StrEnum):
@@ -247,6 +248,23 @@ class UsdMSideRestApi(Protocol):
         start_time: int | None = None,
         end_time: int | None = None,
     ) -> PublicResponse: ...
+
+
+def create_usdm_side_rest_api(
+    *,
+    timeout_ms: int,
+    proxy_policy: ProxyPolicy,
+) -> UsdMSideRestApi:
+    """Build all unsigned USD-M side-data routes with the shared proxy policy."""
+
+    configuration = ConfigurationRestAPI(
+        timeout=timeout_ms,
+        retries=0,
+        proxy=proxy_policy.sdk_proxy(USDM_REST_BASE_URL),
+    )
+    rest_api = DerivativesTradingUsdsFutures(config_rest_api=configuration).rest_api
+    proxy_policy.configure_sdk_rest_api(rest_api)
+    return rest_api
 
 
 class SideDataSchemaError(RuntimeError):
@@ -567,9 +585,10 @@ def capture_rest_side_data(
     api = (
         rest_api
         if rest_api is not None
-        else DerivativesTradingUsdsFutures(
-            config_rest_api=ConfigurationRestAPI(timeout=timeout_ms, retries=0)
-        ).rest_api
+        else create_usdm_side_rest_api(
+            timeout_ms=timeout_ms,
+            proxy_policy=ProxyPolicy("direct"),
+        )
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
