@@ -15,6 +15,7 @@ from ..storage.layout import fsync_directory
 
 SYSTEMD_SERVICE_NAME = "binance-market-data-recorder.service"
 _UNIT_MARKER = "# Managed by BinanceMarketDataRecorder"
+_UNIT_MARKER_BYTES = _UNIT_MARKER.encode()
 _GIT_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{7,64}$")
 
 
@@ -143,6 +144,14 @@ class SystemdManager:
         if config_mode & 0o007:
             raise SystemdError("systemd configuration must not be accessible by others")
 
+    def _check_managed_unit(self) -> str:
+        if not self.unit_path.is_file():
+            return "absent"
+        existing = self.unit_path.read_bytes()
+        if existing.startswith(_UNIT_MARKER_BYTES):
+            return "managed"
+        return "unmanaged"
+
     def unit(self) -> str:
         arguments = [
             str(self.python_executable),
@@ -192,13 +201,10 @@ class SystemdManager:
     def install(self) -> dict[str, object]:
         self._assert_install_inputs()
         encoded = self.unit().encode()
-        changed = True
-        if self.unit_path.is_file():
-            existing = self.unit_path.read_bytes()
-            if existing == encoded:
-                changed = False
-            elif not existing.startswith(_UNIT_MARKER.encode()):
-                raise SystemdError("refusing to overwrite an unmanaged systemd unit")
+        managed_state = self._check_managed_unit()
+        if managed_state == "unmanaged":
+            raise SystemdError("refusing to overwrite an unmanaged systemd unit")
+        changed = managed_state != "managed" or self.unit_path.read_bytes() != encoded
         if changed:
             _atomic_write(self.unit_path, encoded, mode=0o644)
         self._run("/usr/bin/systemctl", "daemon-reload")
@@ -206,24 +212,44 @@ class SystemdManager:
         return {"status": "INSTALLED", "changed": changed, **self.status()}
 
     def start(self) -> dict[str, object]:
-        if not self.unit_path.is_file():
+        managed_state = self._check_managed_unit()
+        if managed_state == "absent":
             raise SystemdError("systemd unit is not installed")
+        if managed_state == "unmanaged":
+            raise SystemdError("refusing to start an unmanaged systemd unit")
         self._run("/usr/bin/systemctl", "start", SYSTEMD_SERVICE_NAME)
         return {"status": "START_REQUESTED", **self.status()}
 
     def stop(self) -> dict[str, object]:
+        managed_state = self._check_managed_unit()
+        if managed_state == "unmanaged":
+            raise SystemdError("refusing to stop an unmanaged systemd unit")
         was_active = self.is_active()
-        if was_active:
+        if managed_state == "managed" and was_active:
             self._run("/usr/bin/systemctl", "stop", SYSTEMD_SERVICE_NAME)
         return {"status": "STOPPED", "was_active": was_active, **self.status()}
 
     def restart(self) -> dict[str, object]:
-        if not self.unit_path.is_file():
+        managed_state = self._check_managed_unit()
+        if managed_state == "absent":
             raise SystemdError("systemd unit is not installed")
+        if managed_state == "unmanaged":
+            raise SystemdError("refusing to restart an unmanaged systemd unit")
         self._run("/usr/bin/systemctl", "restart", SYSTEMD_SERVICE_NAME)
         return {"status": "RESTART_REQUESTED", **self.status()}
 
     def uninstall(self) -> dict[str, object]:
+        managed_state = self._check_managed_unit()
+        if managed_state == "unmanaged":
+            raise SystemdError("refusing to uninstall an unmanaged systemd unit")
+        if managed_state == "absent":
+            return {
+                "status": "UNINSTALLED",
+                "unit_removed": False,
+                "data_removed": False,
+                "enabled": False,
+                "running": False,
+            }
         self.stop()
         self._run(
             "/usr/bin/systemctl",
@@ -270,10 +296,13 @@ class SystemdManager:
         )
 
     def status(self) -> dict[str, object]:
+        managed_state = self._check_managed_unit()
+        installed = self.unit_path.is_file()
         return {
             "unit": SYSTEMD_SERVICE_NAME,
             "unit_path": str(self.unit_path),
-            "installed": self.unit_path.is_file(),
+            "installed": installed,
+            "managed": managed_state == "managed" if installed else False,
             "enabled": self.is_enabled(),
             "running": self.is_active(),
         }
