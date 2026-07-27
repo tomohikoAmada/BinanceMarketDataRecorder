@@ -72,10 +72,34 @@ def _json_object(document: str, *, source: str) -> dict[str, Any]:
     return value
 
 
+_PSEUDO_FS_TYPES = frozenset(
+    {
+        "autofs",
+        "bpf",
+        "cgroup",
+        "cgroup2",
+        "configfs",
+        "debugfs",
+        "devpts",
+        "devtmpfs",
+        "efivarfs",
+        "fusectl",
+        "hugetlbfs",
+        "mqueue",
+        "overlay",
+        "proc",
+        "pstore",
+        "ramfs",
+        "securityfs",
+        "sysfs",
+        "tmpfs",
+        "tracefs",
+    }
+)
+
+
 def _flatten_lsblk(
     devices: object,
-    *,
-    inherited_external: bool = False,
 ) -> list[dict[str, object]]:
     if not isinstance(devices, list):
         raise PlatformVolumeError("invalid lsblk blockdevices")
@@ -83,13 +107,10 @@ def _flatten_lsblk(
     for item in devices:
         if not isinstance(item, dict):
             raise PlatformVolumeError("invalid lsblk device")
-        external = inherited_external or bool(item.get("rm")) or bool(item.get("hotplug"))
         row = dict(item)
-        row["_external"] = external
+        row["_external"] = True
         output.append(row)
-        output.extend(
-            _flatten_lsblk(item.get("children", []), inherited_external=external)
-        )
+        output.extend(_flatten_lsblk(item.get("children", [])))
     return output
 
 
@@ -241,18 +262,17 @@ class LinuxVolumeAdapter:
         for raw_mount in mount_rows:
             source = raw_mount.get("source")
             target = raw_mount.get("target")
+            fstype = str(raw_mount.get("fstype") or "")
             if not isinstance(source, str) or not isinstance(target, str):
+                continue
+            if fstype in _PSEUDO_FS_TYPES:
                 continue
             source_path = source.split("[", 1)[0]
             block = block_by_path.get(source_path)
-            if (
-                block is None
-                or block.get("_external") is not True
-                or _shares_root_device(
-                    block,
-                    root_names=root_names,
-                    block_by_name=block_by_name,
-                )
+            if block is None or _shares_root_device(
+                block,
+                root_names=root_names,
+                block_by_name=block_by_name,
             ):
                 continue
             kernel = kernel_by_target.get(target)
