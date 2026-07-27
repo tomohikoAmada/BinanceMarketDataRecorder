@@ -52,7 +52,13 @@ def test_small_clock_drift_does_not_invent_sleep() -> None:
     assert detector.observe(11_100_000_000, 11_000_000_000) is None
 
 
-def test_scoped_caffeinate_assertion_uses_service_pid_and_cleans_up() -> None:
+def test_scoped_caffeinate_assertion_uses_service_pid_and_cleans_up(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "binance_market_data_recorder.service.power.sys.platform",
+        "darwin",
+    )
     process = FakeProcess()
     calls: list[tuple[str, ...]] = []
 

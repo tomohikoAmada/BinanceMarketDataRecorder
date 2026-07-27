@@ -1,6 +1,6 @@
 # Binance Market Data Recorder
 
-> **Mac Developer Preview — `0.1.0a1`**
+> **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
@@ -15,7 +15,8 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前版本仅为Mac Developer Preview，不得用于真实资金交易。
+当前版本在 macOS 为 Developer Preview，在 Ubuntu ARM64/RK3588 为
+Developer Preview / Soak Candidate，不得用于真实资金交易。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
 的本地录制、完整性验证、
@@ -23,8 +24,9 @@ Binance Market Data Recorder 是 specifically for Binance public market data
 原始字节，持久化为不可变 Raw 数据，再派生为版本化 Parquet 数据集，供外部研究、
 回测、监控和模拟项目消费。
 
-认证平台仅限于 **macOS Apple Silicon**，以 **logged-in-user LaunchAgent**
-方式运行。Ubuntu 和 Windows 尚未实现或认证。V1 仅支持 BTCUSDT Spot 和
+macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持；Ubuntu
+ARM64/RK3588 增加非 root **systemd** 部署，平台状态为 Soak Candidate，
+尚未完成 72h/168h 认证。Windows 尚未实现。V1 仅支持 BTCUSDT Spot 和
 BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
@@ -60,14 +62,14 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 
 > **严重警告**
 >
-> - 本项目是 **Mac Developer Preview**（`0.1.0a1`）。
+> - 本项目是 **Mac Developer Preview / Ubuntu ARM64 Soak Candidate**（`0.1.0a1`）。
 > - **72 小时和 168 小时长期运行验收尚未执行。**
 >   静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 > - **不得用于真实资金交易。**
 > - 本项目**不包含 API Key、账户、订单或交易能力**。
 > - 本项目**与 Binance 无任何隶属、维护、赞助或背书关系**。
-> - 认证平台仅为 macOS Apple Silicon、logged-in-user LaunchAgent。
->- Ubuntu 和 Windows 尚未实现或认证。
+> - macOS Apple Silicon 为 Developer Preview；Ubuntu ARM64/RK3588 为
+>   Developer Preview / Soak Candidate；Windows 尚未实现。
 
 ## 当前实现状态
 
@@ -78,9 +80,9 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | CLI | `binance-market-recorder` |
 | 版本 | `0.1.0a1` |
 | Python | 3.12 (`>=3.12,<3.13`) |
-| 认证平台 | macOS Apple Silicon |
-| 部署方式 | logged-in-user LaunchAgent |
-| 默认 data root | `~/Library/Application Support/BinanceMarketDataRecorder/` |
+| 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate |
+| 部署方式 | logged-in-user LaunchAgent / non-root systemd |
+| 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | 72h/168h 未执行 |
@@ -111,6 +113,8 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
+| systemd 服务 | M20 已实现 | `systemd install` CLI | system unit + journald | Ubuntu ARM64 Soak Candidate |
+| 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
 
@@ -476,6 +480,8 @@ SEALED → ARCHIVE_COPYING → ARCHIVE_VERIFYING → ARCHIVED_VERIFIED
 - 请求非强制 Disk Arbitration unmount → eject
 - 只有两个回调都成功才 `SAFE_TO_REMOVE`
 - 永不强制 unmount，永不格式化或修复
+- Linux M20 仅发现用户已挂载目录；没有可靠 eject backend 时返回
+  `MANUAL_ACTION_REQUIRED`，不伪造 `SAFE_TO_REMOVE`
 
 ## Normalized Parquet
 
@@ -642,7 +648,7 @@ binance-market-recorder storage forecast
 
 ## 服务运行、故障隔离与 Blue/Green
 
-### LaunchAgent
+### LaunchAgent 与 systemd
 
 - logged-in-user LaunchAgent，无需 root
 - 需要 author-controlled reverse-DNS label
@@ -652,6 +658,8 @@ binance-market-recorder storage forecast
 - SIGTERM → graceful drain/seal → `STOPPED`
 - 崩溃 exit nonzero → launchd 重启 → Raw recovery
 - `binance-market-recorder launchd install --label <label> --author-controls-namespace`
+- Ubuntu systemd 使用显式非 root User/Group、journald、
+  `Restart=on-failure`、SIGTERM/90 秒 seal 窗口；unit 仅 `Wants` Mihomo。
 
 ### 故障边界
 
@@ -685,7 +693,7 @@ binance-market-recorder storage forecast
 
 ## CLI 完整参考
 
-所有命令输出为结构化 JSON。隐藏命令 `_service run` 仅为内部 LaunchAgent 入口。
+所有命令输出为结构化 JSON。隐藏命令 `_service run` 仅为原生服务入口。
 
 | 命令 | 用途 | 联网 | 修改状态 |
 |------|------|------|---------|
@@ -716,6 +724,8 @@ binance-market-recorder storage forecast
 | `launchd start [--label]` | 启动 LaunchAgent | 否 | 是 |
 | `launchd stop [--label]` | 停止 LaunchAgent | 否 | 是 |
 | `launchd status [--label]` | 查看 LaunchAgent 状态 | 否 | 否 |
+| `systemd install --user <user> --group <group>` | 安装/启用 Linux unit | 否 | 是 |
+| `systemd start/stop/restart/status/uninstall` | 管理 Linux unit | 否 | 是/否 |
 
 ## 配置
 
@@ -729,6 +739,8 @@ binance-market-recorder storage forecast
 |--------|--------|------|
 | `data_root` | `~/Library/Application Support/BinanceMarketDataRecorder/` | 数据根目录 |
 | `log_level` | `INFO` | 日志级别 |
+| `network_proxy_mode` | `direct` | `direct` / `environment` / `explicit` |
+| `network_proxy_url` | 无 | 仅 explicit；只允许无认证 HTTP(S) URL |
 | `rotation_seconds` | `60.0` | 轮换时间（秒） |
 | `rotation_bytes` | `134217728` (128 MiB) | 轮换大小（字节） |
 | `durability_interval_seconds` | `1.0` | fsync 间隔 |
@@ -779,7 +791,9 @@ binance-market-recorder storage forecast
 
 ## 安装和快速开始
 
-当前只认证 macOS Apple Silicon。
+macOS Apple Silicon 为 Developer Preview；Ubuntu ARM64/RK3588 为 M20
+Developer Preview / Soak Candidate。Ubuntu 完整步骤见
+[`docs/ubuntu_rk3588_operations.md`](docs/ubuntu_rk3588_operations.md)。
 
 ### A. 从 Developer Preview Wheel 安装
 
@@ -839,7 +853,23 @@ binance-market-recorder launchd uninstall
 ### D. 手工运行
 
 不提供直接手工运行 Collector 的 CLI 命令。
-服务进程由 `_service run` 内部入口管理，仅通过 LaunchAgent 运行。
+服务进程由 `_service run` 内部入口管理，通过 LaunchAgent 或 systemd 运行。
+
+### E. Ubuntu systemd
+
+生产布局为 `/opt/binance-market-data-recorder/venv`、
+`/etc/binance-market-data-recorder/recorder.toml` 和
+`/var/lib/binance-market-data-recorder`。最终 Wheel 安装后：
+
+```bash
+sudo binance-market-recorder \
+  --config /etc/binance-market-data-recorder/recorder.toml \
+  systemd install --user orangepi --group orangepi
+sudo binance-market-recorder \
+  --config /etc/binance-market-data-recorder/recorder.toml systemd start
+```
+
+unit 不继承 SSH Shell 代理变量；生产代理必须写入 TOML。卸载 unit 不删除数据。
 
 ## 数据目录
 
@@ -959,7 +989,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   但无法恢复 Binance 不再提供的事件。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
 - 仅 BTCUSDT Spot 和 USD-M Perpetual。
-- Ubuntu 和 Windows 尚未实现或认证。
+- Ubuntu ARM64/RK3588 已实现 M20 短期部署，但 72h/168h 尚未运行，因此仅为
+  Developer Preview / Soak Candidate；Windows 尚未实现。
 - 无 Historical L2（data.binance.vision 不提供深度数据）。
 - 六种 5 分钟统计受官方 latest month / latest 30-day 保留窗口约束。
 - Live raw trades 和 Live klines 流尚未实现。
@@ -1090,6 +1121,7 @@ python3.12 examples/replay_consumer.py \
 
 - [中文代码维护者指南](docs/code_guide.zh-CN.md)
 - [macOS Quickstart](docs/quickstart_macos.md)
+- [Ubuntu ARM64 / RK3588 operations](docs/ubuntu_rk3588_operations.md)
 - [Architecture](docs/architecture.md)
 - [Project Contract](docs/project_contract.md)
 - [Data Contract](docs/data_contract.md)
@@ -1111,5 +1143,6 @@ python3.12 examples/replay_consumer.py \
 - **本项目是独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
   关系。** 项目名称仅标识其连接的公开数据源和 API。
 - 本项目不使用 Binance 商标、Logo 或官方视觉识别。
-- **当前版本为 Mac Developer Preview（0.1.0a1），不得用于真实资金交易。**
+- **当前版本为 Mac Developer Preview / Ubuntu ARM64 Soak Candidate
+  （0.1.0a1），不得用于真实资金交易。**
 - 72 小时和 168 小时长期运行验收尚未执行。

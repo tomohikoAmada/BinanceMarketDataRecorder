@@ -24,6 +24,10 @@ Current and historical decisions:
 - [ADR-0020: Content-addressed normalized Parquet datasets](0020-content-addressed-normalized-parquet.md)
 - [ADR-0021: Deterministic replay and generic consumer boundary](0021-deterministic-replay-and-consumer-boundary.md)
 - [ADR-0022: Spot public REST rate-limit containment](0022-spot-rest-rate-limit-containment.md)
+- [ADR-0023: Depth resync and terminal recovery](0023-depth-resync-and-terminal-recovery.md)
+- [ADR-0024: Historical source contract](0024-historical-source-contract.md)
+- [ADR-0025: Unified proxy transport policy](0025-proxy-transport-policy.md)
+- [ADR-0026: Ubuntu ARM64, systemd, and mounted storage](0026-linux-arm64-systemd.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

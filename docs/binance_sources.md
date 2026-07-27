@@ -1,5 +1,20 @@
 # Official Binance Sources
 
+## M20 proxy transport verification — 2026-07-27T09:29:15+00:00
+
+M20 did not change Binance endpoint/schema semantics. It revalidated transport
+capabilities from primary project sources:
+
+| Source | URL | SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| websockets 15 stable proxy guide | `https://websockets.readthedocs.io/en/stable/topics/proxies.html` | `4487fdd632e521549d60555a918483299928494112dae3ef216363c69f72c718` | `proxy=True` performs environment discovery including bypass behavior; `proxy=None` disables proxy; a URL selects an explicit proxy |
+| Official Binance connector common REST configuration | `https://raw.githubusercontent.com/binance/binance-connector-python/master/common/src/binance_common/configuration.py` | `25a04806125bf73f0dbdfc92a1625594bafd301a90945e1806ba7f45e96a5c98` | `ConfigurationRestAPI` accepts an explicit proxy dictionary; M20 passes only unauthenticated host, port, and protocol |
+
+Retrieval used text-only HTTPS and executed no downloaded content. The pinned
+runtime distributions remain `binance-sdk-spot==10.0.0`,
+`binance-sdk-derivatives-trading-usds-futures==14.0.0`, and
+`binance-common==4.0.3`. ADR-0025 defines redaction and mode semantics.
+
 This is the behavior-evidence inventory for Binance Market Data Recorder. The
 project is independent and unofficial: it is not affiliated with, maintained
 by, sponsored by, or endorsed by Binance. Official Binance sources establish

@@ -1,0 +1,10 @@
+{
+  "filesystems": [
+    {
+      "source": "/dev/sdb1",
+      "target": "/media/orangepi/archive",
+      "fstype": "ext4",
+      "options": "rw,nosuid,nodev"
+    }
+  ]
+}

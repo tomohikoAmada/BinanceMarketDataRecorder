@@ -2,7 +2,8 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前版本仅为Mac Developer Preview，不得用于真实资金交易。
+macOS 为 Developer Preview，Ubuntu ARM64/RK3588 为 Developer Preview /
+Soak Candidate；均不得用于真实资金交易。
 
 Severity: Critical / High / Medium / Low. Status is Open, Monitoring, Mitigated,
 or Accepted. Each implementing milestone must update its risks and evidence.
@@ -43,9 +44,14 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-032 | Normalization exhausts memory/disk or publishes a partial/incompatible Parquet build | High | ADR-0020 uses fixed 10,000-row external-sort/write batches, bounded open partition spools, internal `.work`, fsync/readback/atomic commit, exact PyArrow profile and DuckDB smoke; an abnormally large semantic collision group and live-volume sizing remain M17 evidence | M15/M17 | Monitoring |
 | R-033 | Replay silently mixes builds, clocks, gaps or physical storage order, or exhausts descriptors/memory | High | ADR-0021 requires explicit build/clock/policies; verifies manifest paths/hashes; fixed 10,000-row batches and bounded 32-way merge; equal-time, orphan, corruption, missing-clock, gap and checkpoint tests pass; live-volume sort-space sizing remains M17 | M16/M17 | Monitoring |
 | R-034 | Current official Global Spot bootstrap wording conflicts with the official toolbox example and observed adjacent snapshot/diff boundary | Critical | 2026-07-26 Global page SHA-256 `8a127810e46793aa47b42e33ce0df963c9a169c3f27f89b97cbc6a603f0c823e` remains conflicting. Preserve Raw; ADR-0011 uses `lastUpdateId + 1` without claiming official correction. `tools/evaluate_spot_bootstrap.py` reports both outcomes. Revert only on corrected normative source/maintainer answer or repeatable quality divergence. | M17/M19 | Open |
-| R-035 | Long-running reliability not yet validated | Critical | 24-hour connection rotation has not been proven over repeated long runs. Memory, file handles, queues and archive backlog have not been validated for continuous 72-hour/168-hour operation. Long-running tests must be completed before simulated or live trading use. | Future Work | Open |
+| R-035 | Long-running reliability not yet validated | Critical | 24-hour connection rotation has not been proven over repeated long runs. Memory, file handles, queues and archive backlog have not been validated for continuous 72-hour/168-hour operation. Long-running tests must be completed before simulated or live trading use. | M21 | Open |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
+| R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |
+| R-039 | Mihomo restart or CONNECT timeout silently loses depth continuity | Critical | Transport failure enters existing bounded reconnect; depth unexpected-disconnect requests a fresh snapshot/resync; service/Catalog evidence and M20 real restart injection must not claim the interrupted interval complete | M20/M21 | Monitoring |
+| R-040 | systemd runs Collector as root, inherits an SSH proxy, or uninstall removes data | Critical | Explicit non-root User/Group validation; unit has only PYTHONUNBUFFERED, TOML proxy, SIGTERM/90s, managed-unit marker and data-retaining idempotent uninstall tests | M20 | Mitigated |
+| R-041 | Linux mount alias/UUID or disappearance targets the wrong archive directory | Critical | mountinfo + findmnt + lsblk corroboration, external/hotplug evidence, reliable UUID + marker + relative path + storage_id, existing capability probe; fixture disappearance retains internal source; physical external media not exercised in M20 remains open | M20/M21 | Monitoring |
+| R-042 | ARM64 dependency lacks compatible native Wheel or Linux imports PyObjC | High | Fresh CPython 3.12 venv installs final Wheel; aarch64 native import smoke covers PyArrow/Zstd/CRC32C/CBOR/websockets/Binance SDK; Darwin markers and Linux no-PyObjC import test | M20 | Mitigated |
 
 ## M0 open questions assigned to milestones
 

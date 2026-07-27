@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,8 @@ REQUIRED_FILES = (
     "docs/milestone_acceptance/M16.md",
     "docs/milestone_acceptance/M19.md",
     "docs/milestone_acceptance/M19.2.md",
+    "docs/milestone_acceptance/M20.md",
+    "docs/milestone_evidence/M20-rk3588-deployment.md",
     "docs/data_coverage.md",
     "docs/consumer_contract.md",
     "docs/dependency_policy.md",
@@ -68,6 +71,9 @@ REQUIRED_FILES = (
     "docs/adr/0021-deterministic-replay-and-consumer-boundary.md",
     "docs/adr/0023-depth-resync-and-terminal-recovery.md",
     "docs/adr/0024-historical-source-contract.md",
+    "docs/adr/0025-proxy-transport-policy.md",
+    "docs/adr/0026-linux-arm64-systemd.md",
+    "docs/ubuntu_rk3588_operations.md",
     "examples/replay_consumer.py",
     "src/binance_market_data_recorder/py.typed",
     "tools/binance_docs.toml",
@@ -110,8 +116,10 @@ FORBIDDEN_PRODUCTION_ENTRIES = (
     ROOT / "configs",
 )
 
-DEFAULT_EXPECTED_ROOT = Path(
-    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder"
+DEFAULT_EXPECTED_ROOT = (
+    Path.home() / "BinanceMarketDataRecorder"
+    if sys.platform.startswith("linux")
+    else Path("/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder")
 )
 _ci_expected_root = os.environ.get("M0_CONTRACT_ROOT")
 if _ci_expected_root is not None:
@@ -183,12 +191,12 @@ def verify() -> None:
     assert not missing, f"missing M0 files: {missing}"
 
     plan = (ROOT / "docs/milestone_plan.md").read_text(encoding="utf-8")
-    for number in range(20):
+    for number in range(21):
         assert f"## M{number} " in plan, f"M{number} missing from milestone plan"
     assert "## M0.1 " in plan, "M0.1 missing from milestone plan"
     assert "## M0.2 " in plan, "M0.2 missing from milestone plan"
     for heading in ("Scope", "Non-scope", "Dependencies", "Acceptance", "Rollback"):
-        assert plan.count(f"- {heading}:") == 22, f"expected 22 {heading} sections"
+        assert plan.count(f"- {heading}:") == 23, f"expected 23 {heading} sections"
     assert "## M16 — Replay interface and generic consumer data contract" in plan
     assert "named consumer is" in plan and "required for V1 completion" in plan
 

@@ -12,8 +12,14 @@ from binance_market_data_recorder.paths import (
 
 
 def test_default_macos_data_root() -> None:
-    assert default_data_root(home=Path("/Users/example")) == Path(
+    assert default_data_root(home=Path("/Users/example"), platform="darwin") == Path(
         "/Users/example/Library/Application Support/BinanceMarketDataRecorder"
+    )
+
+
+def test_default_linux_data_root() -> None:
+    assert default_data_root(home=Path("/home/example"), platform="linux") == Path(
+        "/home/example/.local/share/BinanceMarketDataRecorder"
     )
 
 
