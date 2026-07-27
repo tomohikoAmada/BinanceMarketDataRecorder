@@ -33,16 +33,21 @@ def run_doctor(loaded: LoadedConfig, *, repository_root: Path | None = None) -> 
         }
     )
 
-    certified_platform = sys.platform == "darwin" and platform.machine().lower() in {
-        "arm64",
-        "aarch64",
-    }
+    machine = platform.machine().lower()
+    certified_platform = (
+        sys.platform == "darwin" and machine in {"arm64", "aarch64"}
+    ) or (sys.platform.startswith("linux") and machine == "aarch64")
     checks.append(
         {
             "name": "certified_platform",
             "status": "PASS" if certified_platform else "WARN",
             "observed": {"system": platform.system(), "machine": platform.machine()},
-            "required": "macOS Apple Silicon",
+            "required": "macOS Apple Silicon or Ubuntu Linux ARM64",
+            "support_level": (
+                "DEVELOPER_PREVIEW"
+                if sys.platform.startswith("linux")
+                else "SUPPORTED"
+            ),
         }
     )
 
@@ -61,7 +66,12 @@ def run_doctor(loaded: LoadedConfig, *, repository_root: Path | None = None) -> 
     )
 
     if repository_root is not None:
-        separate = not data_root.is_relative_to(repository_root.parent.resolve())
+        resolved_repository = repository_root.resolve()
+        workspace = resolved_repository.parent
+        separate = not data_root.is_relative_to(resolved_repository) and (
+            workspace == Path.home().resolve()
+            or not data_root.is_relative_to(workspace)
+        )
         checks.append(
             {
                 "name": "data_root_outside_repository_workspace",
@@ -69,6 +79,16 @@ def run_doctor(loaded: LoadedConfig, *, repository_root: Path | None = None) -> 
                 "repository_root": str(repository_root.resolve()),
             }
         )
+
+    proxy_status = loaded.config.proxy_policy().status().public_dict()
+    checks.append(
+        {
+            "name": "proxy_policy",
+            "status": "PASS",
+            **proxy_status,
+            "raw_proxy_url_exposed": False,
+        }
+    )
 
     statuses = {str(check["status"]) for check in checks}
     if "FAIL" in statuses:

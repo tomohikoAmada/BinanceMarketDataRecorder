@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -15,9 +16,11 @@ from .service.launchd import (
     installed_service_label,
 )
 from .service.state import ServiceStateError, ServiceStateStore
+from .service.systemd import SystemdError, SystemdManager
 from .storage.catalog import Catalog, ChunkState
 from .storage.forecast import space_severity
-from .storage.macos import DiskArbitrationAdapter, PlatformVolumeError, StorageRegistry
+from .storage.macos import PlatformVolumeError, StorageRegistry
+from .storage.platform import volume_adapter
 
 
 def _nearest_existing(path: Path) -> Path:
@@ -39,7 +42,11 @@ def _process_alive(pid: int) -> bool:
     return True
 
 
-def service_status(data_root: Path) -> dict[str, Any]:
+def service_status(
+    data_root: Path,
+    *,
+    configured_proxy_status: Mapping[str, object] | None = None,
+) -> dict[str, Any]:
     """Read current evidence; missing service state remains explicitly NOT_RUNNING."""
 
     root = data_root.resolve()
@@ -116,7 +123,7 @@ def service_status(data_root: Path) -> dict[str, Any]:
             }
             try:
                 targets = StorageRegistry(
-                    catalog=catalog, volumes=DiskArbitrationAdapter()
+                    catalog=catalog, volumes=volume_adapter()
                 ).statuses()
                 external_storage = {
                     "status": (
@@ -154,6 +161,26 @@ def service_status(data_root: Path) -> dict[str, Any]:
                 "loaded": False,
                 "reason": str(exc),
             }
+    systemd: dict[str, object] = {
+        "installed": False,
+        "enabled": False,
+        "running": False,
+    }
+    if sys.platform.startswith("linux"):
+        try:
+            systemd = SystemdManager(
+                data_root=root,
+                config_file=Path("/etc/binance-market-data-recorder/recorder.toml"),
+                user="",
+                group="",
+            ).status()
+        except (OSError, SystemdError) as exc:
+            systemd = {
+                "installed": False,
+                "enabled": False,
+                "running": False,
+                "reason": str(exc),
+            }
     runtime_state_metrics: dict[str, object] = {}
     markets: dict[str, object] = {}
     if service_state is not None:
@@ -183,6 +210,42 @@ def service_status(data_root: Path) -> dict[str, Any]:
         "implemented_markets": ["spot", "um_perpetual"],
         "network_connected": network_connected,
         "network_status": network_status,
+        "proxy_mode": (
+            service_state.get("proxy_mode")
+            if service_state is not None
+            else (
+                configured_proxy_status.get("proxy_mode")
+                if configured_proxy_status is not None
+                else None
+            )
+        ),
+        "proxy_scheme": (
+            service_state.get("proxy_scheme")
+            if service_state is not None
+            else (
+                configured_proxy_status.get("proxy_scheme")
+                if configured_proxy_status is not None
+                else None
+            )
+        ),
+        "proxy_loopback": (
+            service_state.get("proxy_loopback")
+            if service_state is not None
+            else (
+                configured_proxy_status.get("proxy_loopback")
+                if configured_proxy_status is not None
+                else None
+            )
+        ),
+        "proxy_port": (
+            service_state.get("proxy_port")
+            if service_state is not None
+            else (
+                configured_proxy_status.get("proxy_port")
+                if configured_proxy_status is not None
+                else None
+            )
+        ),
         "observed_service_state": service_state,
         "service_state_path": str(state_path),
         "service_state_error": state_error,
@@ -199,6 +262,7 @@ def service_status(data_root: Path) -> dict[str, Any]:
         },
         "external_storage": external_storage,
         "launchagent": launchagent,
+        "systemd": systemd,
         "runtime_metrics": {
             "process_cpu_seconds": {
                 "value": runtime_state_metrics.get("process_cpu_seconds"),

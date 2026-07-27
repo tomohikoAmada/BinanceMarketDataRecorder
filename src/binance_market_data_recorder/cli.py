@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import NoReturn, TextIO
+from typing import Any, NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
 from .backfill import HistoricalImporter, build_plan
@@ -29,10 +29,12 @@ from .service.launchd import (
 )
 from .service.lock import ServiceAlreadyRunning
 from .service.runtime import run_service
+from .service.systemd import SystemdError, SystemdManager
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
 from .storage.forecast import StorageForecaster
 from .storage.layout import ensure_storage_layout
+from .storage.linux import LinuxVolumeAdapter
 from .storage.macos import (
     DiskArbitrationAdapter,
     EjectError,
@@ -42,6 +44,7 @@ from .storage.macos import (
     StorageRegistry,
     inspect_path,
 )
+from .storage.platform import volume_adapter
 from .version import git_commit as current_git_commit
 from .version import version_string
 
@@ -50,6 +53,17 @@ class _ArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         _write_json({"error": "argument_error", "message": message}, stream=sys.stderr)
         raise SystemExit(2)
+
+
+_ORIGINAL_DISK_ARBITRATION_ADAPTER = DiskArbitrationAdapter
+
+
+def _volume_adapter() -> Any:
+    """Keep legacy macOS test injection while selecting Linux in production."""
+
+    if DiskArbitrationAdapter is not _ORIGINAL_DISK_ARBITRATION_ADAPTER:
+        return DiskArbitrationAdapter()
+    return volume_adapter()
 
 
 def _write_json(payload: object, *, stream: TextIO | None = None) -> None:
@@ -157,6 +171,19 @@ def build_parser() -> argparse.ArgumentParser:
             action, help=f"{action} the user LaunchAgent"
         )
         command.add_argument("--label")
+    systemd_command = commands.add_parser(
+        "systemd", help="manage the Linux system service"
+    )
+    systemd_commands = systemd_command.add_subparsers(
+        dest="systemd_command", required=True, parser_class=_ArgumentParser
+    )
+    systemd_install = systemd_commands.add_parser(
+        "install", help="install and enable the Linux system service"
+    )
+    systemd_install.add_argument("--user", required=True)
+    systemd_install.add_argument("--group", required=True)
+    for action in ("uninstall", "start", "stop", "restart", "status"):
+        systemd_commands.add_parser(action, help=f"{action} the Linux system service")
     private_service = commands.add_parser("_service", help=argparse.SUPPRESS)
     private_commands = private_service.add_subparsers(
         dest="service_command", required=True, parser_class=_ArgumentParser
@@ -301,11 +328,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json(result)
         return 1 if result["status"] == "FAIL" else 0
     if command == "status":
-        _write_json(service_status(loaded.config.data_root))
+        _write_json(
+            service_status(
+                loaded.config.data_root,
+                configured_proxy_status=(
+                    loaded.config.proxy_policy().status().public_dict()
+                ),
+            )
+        )
         return 0
     if command == "backfill":
         action = getattr(args, "backfill_command", None)
-        importer = HistoricalImporter(data_root=loaded.config.data_root)
+        importer = HistoricalImporter(
+            data_root=loaded.config.data_root,
+            proxy_policy=loaded.config.proxy_policy(),
+        )
         try:
             if action in {"plan", "run"}:
                 plan = build_plan(
@@ -350,6 +387,46 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 1
         return 0
+    if command == "systemd":
+        systemd_command = getattr(args, "systemd_command", None)
+        if loaded.config_file is None:
+            _write_json(
+                {
+                    "error": "systemd_error",
+                    "message": "systemd management requires an explicit --config file",
+                },
+                stream=sys.stderr,
+            )
+            return 2
+        systemd_manager = SystemdManager(
+            data_root=loaded.config.data_root,
+            config_file=loaded.config_file,
+            user=str(getattr(args, "user", "")),
+            group=str(getattr(args, "group", "")),
+        )
+        try:
+            if systemd_command == "install":
+                result = systemd_manager.install()
+            elif systemd_command == "uninstall":
+                result = systemd_manager.uninstall()
+            elif systemd_command == "start":
+                result = systemd_manager.start()
+            elif systemd_command == "stop":
+                result = systemd_manager.stop()
+            elif systemd_command == "restart":
+                result = systemd_manager.restart()
+            elif systemd_command == "status":
+                result = systemd_manager.status()
+            else:
+                parser.error(f"unsupported systemd command: {systemd_command}")
+            _write_json({"command": f"systemd.{systemd_command}", **result})
+            return 0
+        except (OSError, SystemdError, ValueError) as exc:
+            _write_json(
+                {"error": "systemd_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
     if command == "launchd":
         launchd_command = getattr(args, "launchd_command", None)
         try:
@@ -438,7 +515,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 try:
                     statuses = StorageRegistry(
                         catalog=catalog,
-                        volumes=DiskArbitrationAdapter(),
+                        volumes=_volume_adapter(),
                     ).statuses()
                 except (OSError, PlatformVolumeError):
                     statuses = []
@@ -467,7 +544,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     if command == "storage":
-        adapter = DiskArbitrationAdapter()
+        adapter = _volume_adapter()
         storage_command = getattr(args, "storage_command", None)
         try:
             if storage_command == "list":
@@ -521,6 +598,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0
                 if storage_command == "eject":
+                    if isinstance(adapter, LinuxVolumeAdapter):
+                        _write_json(
+                            {
+                                "command": "storage.eject",
+                                "storage_id": args.storage_id,
+                                "status": "MANUAL_ACTION_REQUIRED",
+                                "safe_to_remove": False,
+                                "forced": False,
+                                "message": (
+                                    "Automatic Linux unmount/eject is unavailable; "
+                                    "no safe-removal success is claimed."
+                                ),
+                            }
+                        )
+                        return 1
                     eject_result = SafeEjectCoordinator(
                         catalog=catalog,
                         platform=adapter,
@@ -606,7 +698,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     _write_json(_archive_status(catalog))
                     return 0
                 registry = StorageRegistry(
-                    catalog=catalog, volumes=DiskArbitrationAdapter()
+                    catalog=catalog, volumes=_volume_adapter()
                 )
                 requested = (
                     args.storage_id

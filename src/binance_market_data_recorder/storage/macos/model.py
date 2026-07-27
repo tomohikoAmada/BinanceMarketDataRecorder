@@ -55,7 +55,7 @@ class VolumeInfo:
                 observed_state = StorageState.UNREGISTERED
         return {
             "disk_id": self.disk_id,
-            "volume_uuid": self.volume_uuid,
+            "volume_uuid": self.volume_uuid or None,
             "volume_name": self.name,
             "filesystem_type": self.filesystem_type,
             "mountpoint": str(self.mountpoint) if self.mountpoint else None,
@@ -65,6 +65,11 @@ class VolumeInfo:
             "removable": self.removable,
             "total_bytes": self.total_bytes,
             "free_bytes": self.free_bytes,
+            "used_bytes": (
+                self.total_bytes - self.free_bytes
+                if self.total_bytes is not None and self.free_bytes is not None
+                else None
+            ),
             "observed_at_utc_ns": self.observed_at_utc_ns,
             "state": observed_state.value,
         }

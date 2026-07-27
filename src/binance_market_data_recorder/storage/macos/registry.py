@@ -63,6 +63,7 @@ class StorageRegistry:
         reason = self._registrable_reason(folder, volume)
         if reason is not None or volume is None or volume.mountpoint is None:
             raise StorageRegistrationError(reason or "volume is unavailable")
+        volume_uuid = volume.volume_uuid
         relative_path = folder.relative_to(volume.mountpoint).as_posix()
         probe = probe_directory(folder)
         marker_path = folder / MARKER_NAME
@@ -70,7 +71,7 @@ class StorageRegistry:
             raise StorageRegistrationError("storage marker cannot be a symbolic link")
         existing = _read_marker(marker_path) if marker_path.exists() else None
         catalog_target = self._catalog.storage_target_for_location(
-            volume_uuid=volume.volume_uuid, relative_path=relative_path
+            volume_uuid=volume_uuid, relative_path=relative_path
         )
         if existing is None and catalog_target is not None:
             raise StorageRegistrationError(
@@ -79,7 +80,7 @@ class StorageRegistry:
         if existing is not None:
             _validate_marker(
                 existing,
-                volume_uuid=volume.volume_uuid,
+                volume_uuid=volume_uuid,
                 relative_path=relative_path,
             )
             storage_id = _required_marker_text(existing, "storage_id")
@@ -105,14 +106,14 @@ class StorageRegistry:
                 "schema": MARKER_SCHEMA,
                 "storage_id": storage_id,
                 "marker_nonce": marker_nonce,
-                "volume_uuid": volume.volume_uuid,
+                "volume_uuid": volume_uuid,
                 "registered_relative_path": relative_path,
                 "created_at_utc_ns": created_at_utc_ns,
             }
             _write_marker(marker_path, marker)
         self._catalog.register_storage_target(
             storage_id=storage_id,
-            volume_uuid=volume.volume_uuid,
+            volume_uuid=volume_uuid,
             volume_name=volume.name,
             filesystem_type=volume.filesystem_type,
             relative_path=relative_path,
@@ -131,7 +132,7 @@ class StorageRegistry:
             "space_severity": severity.value,
             "free_bytes": free_bytes,
             "total_bytes": total_bytes,
-            "volume_uuid": volume.volume_uuid,
+            "volume_uuid": volume_uuid,
             "volume_name": volume.name,
             "filesystem_type": volume.filesystem_type,
             "registered_relative_path": relative_path,
@@ -264,6 +265,8 @@ class StorageRegistry:
             return "path is not on a discovered external volume"
         if volume.internal is not False:
             return "path is not on an external volume"
+        if not volume.volume_uuid:
+            return "volume lacks a reliable filesystem UUID"
         if volume.mountpoint is None:
             return "volume is not mounted"
         if path == volume.mountpoint:
