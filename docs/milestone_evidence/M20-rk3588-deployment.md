@@ -1,6 +1,6 @@
 # M20 RK3588 deployment evidence
 
-Status: **RK3588 SHORT-TERM VALIDATION COMPLETE — GITHUB HANDOFF PENDING**
+Status: **RK3588 SHORT-TERM VALIDATION COMPLETE — M20 MERGED; LONG-RUN SOAK PENDING**
 
 Platform classification: Ubuntu ARM64/RK3588 **Developer Preview / Soak
 Candidate**, not Production Ready. Neither the 72-hour nor 168-hour soak was
@@ -194,3 +194,39 @@ capability, safe removal remains report-only.
 - No disk was formatted, repaired, partitioned, mounted, or unmounted.
 - No 72-hour or 168-hour run was performed.
 - No Production Ready or zero-interruption conclusion is permitted.
+
+## Post-review and merge closure
+
+After the pre-review validation detailed above (all numbers are pre-review
+RK3588 validation results):
+
+1. PR [#3](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/3)
+   was opened, Code Reviewed in two rounds, and merged.
+
+2. Final PR Head: `2ebb981ea956929467b6dc4b0990875cc43e53bf`
+   Merge Commit: `80b8a5745fc64ee4e0ed0db7691c3acf7d2567bc`
+
+3. Code Review identified four issues and two fix commits were added:
+
+   - `2fb6364` fix: harden systemd lifecycle and cross-platform tests
+   - `2ebb981` fix: complete Linux storage discovery and CI coverage
+
+4. CI gates:
+
+   - macOS `offline-ci` Python 3.12: **pass** (1m6s)
+   - Ubuntu `offline-ci` Python 3.12: **pass** (1m37s)
+   - Post-fix default pytest: 450 passed, 28 skipped, 0 failed
+
+5. Production deployment verified:
+   `/opt/binance-market-data-recorder/venv/bin/binance-market-recorder --version`
+   reports `git 80b8a5745fc6` (merge commit).
+
+6. Current service state (read-only check, no restart):
+
+   - Recorder: enabled, active
+   - Mihomo: enabled, active
+
+7. GitHub handoff is complete. The branch, PR, merge, and CI evidence reside
+   at `tomohikoAmada/BinanceMarketDataRecorder`.
+
+8. 72-hour and 168-hour soaks remain unexecuted. M21 has not started.
