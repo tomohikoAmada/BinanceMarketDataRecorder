@@ -18,8 +18,11 @@ Catalog 是 Recorder 中所有状态转换的唯一持久协调点。它存储�
 - chunk_transitions、archive_transaction_events 和 deployment_events 中的
   幂等键防止崩溃后重放同一转换。
 - WAL journal mode + synchronous=FULL + foreign_keys=ON。
-- Catalog 通过 RLock 是线程安全的,但不设计用于多进程并发写入;
-  内核 flock(service/lock.py)确保一次只有一个进程拥有 data root。
+- Catalog 通过 RLock 保证单个实例内的线程安全。经认证的多进程边界是一个
+  Recorder 写进程、一个 Archive 写进程和一个只读 Soak observer 共享
+  Catalog:SQLite WAL、30 秒 busy timeout 和 BEGIN IMMEDIATE 负责两个写
+  进程的跨进程序列化。DrainLock 另行阻止多个 Archive Drain;不宣称支持
+  任意数量的写进程。
 
 Catalog 不包含:Raw 负载字节、价格水平、订单簿状态、market-event 行。
 Metrics 仅以聚合 JSON 批次存储(以 batch_id 为键实现幂等重试)。
@@ -77,7 +80,7 @@ class DeploymentState(StrEnum):
 
 
 class CatalogStateError(RuntimeError):
-    """Raised for an invalid lifecycle transition."""
+    """Raised for invalid Catalog lifecycle state or access mode."""
 
 
 ALLOWED_TRANSITIONS = {
@@ -128,18 +131,47 @@ DEPLOYMENT_TRANSITIONS = {
 
 
 class Catalog:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = path
-        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.read_only = read_only
         self._lock = RLock()
-        self._connection = sqlite3.connect(
-            path, timeout=30, isolation_level=None, check_same_thread=False
-        )
+        if read_only:
+            if not self.path.is_file():
+                raise CatalogStateError("read-only Catalog does not exist")
+            uri = f"{self.path.resolve().as_uri()}?mode=ro"
+            # A checkpointed WAL database has no ``-wal`` file. Opening that
+            # idle database through ordinary WAL read-only locking would create
+            # empty ``-wal``/``-shm`` sidecars. Immutable mode is a true
+            # filesystem-read-only snapshot in that case. When a writer's WAL
+            # exists, retain normal ``mode=ro`` so the observer sees committed
+            # WAL content and participates in SQLite's read locking.
+            wal_path = self.path.with_name(f"{self.path.name}-wal")
+            if not wal_path.exists():
+                uri += "&immutable=1"
+            try:
+                self._connection = sqlite3.connect(
+                    uri,
+                    timeout=30,
+                    isolation_level=None,
+                    check_same_thread=False,
+                    uri=True,
+                )
+            except sqlite3.Error as exc:
+                raise CatalogStateError("cannot open read-only Catalog") from exc
+        else:
+            self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            self._connection = sqlite3.connect(
+                path, timeout=30, isolation_level=None, check_same_thread=False
+            )
         self._connection.row_factory = sqlite3.Row
-        self._connection.execute("PRAGMA journal_mode=WAL")
-        self._connection.execute("PRAGMA synchronous=FULL")
+        self._connection.execute("PRAGMA busy_timeout=30000")
         self._connection.execute("PRAGMA foreign_keys=ON")
-        self._initialize()
+        if read_only:
+            self._connection.execute("PRAGMA query_only=ON")
+        else:
+            self._connection.execute("PRAGMA journal_mode=WAL")
+            self._connection.execute("PRAGMA synchronous=FULL")
+            self._initialize()
 
     def close(self) -> None:
         with self._lock:
@@ -153,6 +185,7 @@ class Catalog:
 
     @contextmanager
     def _transaction(self) -> Iterator[sqlite3.Connection]:
+        self._require_writable()
         with self._lock:
             self._connection.execute("BEGIN IMMEDIATE")
             try:
@@ -163,7 +196,12 @@ class Catalog:
             else:
                 self._connection.execute("COMMIT")
 
+    def _require_writable(self) -> None:
+        if self.read_only:
+            raise CatalogStateError("Catalog is read-only")
+
     def _initialize(self) -> None:
+        self._require_writable()
         self._connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS chunks (
@@ -470,6 +508,7 @@ class Catalog:
         occurred_at_utc_ns: int,
         evidence: Mapping[str, object],
     ) -> bool:
+        self._require_writable()
         if not event_id or not event_type or occurred_at_utc_ns < 0:
             raise ValueError("invalid operational event")
         body = json.dumps(dict(evidence), sort_keys=True, separators=(",", ":"))
@@ -1008,6 +1047,7 @@ class Catalog:
             )
 
     def begin_archive_attempt(self, transaction_id: str) -> None:
+        self._require_writable()
         with self._lock:
             cursor = self._connection.execute(
                 """
@@ -1022,6 +1062,7 @@ class Catalog:
             raise CatalogStateError(f"unknown archive transaction {transaction_id}")
 
     def record_archive_error(self, transaction_id: str, error: str) -> None:
+        self._require_writable()
         with self._lock:
             cursor = self._connection.execute(
                 """
@@ -1237,6 +1278,7 @@ class Catalog:
     def checkpoint(self) -> None:
         """Durably checkpoint Catalog WAL before releasing an external volume."""
 
+        self._require_writable()
         try:
             with self._lock:
                 self._connection.execute("PRAGMA wal_checkpoint(FULL)").fetchone()
@@ -1261,6 +1303,185 @@ class Catalog:
                 tuple(states),
             ).fetchone()
         return dict(row) if row else None
+
+    def oldest_incomplete_archive_transaction(
+        self, storage_id: str
+    ) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT * FROM archive_transactions
+                WHERE storage_id = ?
+                  AND state IN (?, ?, ?, ?)
+                ORDER BY created_at_utc_ns, transaction_id
+                LIMIT 1
+                """,
+                (
+                    storage_id,
+                    ArchiveState.COPYING,
+                    ArchiveState.VERIFYING,
+                    ArchiveState.VERIFIED,
+                    ArchiveState.LOCAL_DELETE_PENDING,
+                ),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def archive_aggregate(
+        self, storage_id: str
+    ) -> dict[str, object]:
+        """Return target archive totals from one bounded SQLite read snapshot.
+
+        ``unassigned_sealed_*`` is the global queue of SEALED chunks that has
+        not yet been assigned to any storage target. ``target_inflight_*`` is
+        scoped to ``storage_id``. Backlog is the sum of those two disjoint
+        populations.
+        """
+
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                state_counts = self._connection.execute(
+                    """
+                    SELECT state, COUNT(*) AS cnt
+                    FROM archive_transactions
+                    WHERE storage_id = ?
+                    GROUP BY state
+                    """,
+                    (storage_id,),
+                ).fetchall()
+                aggregate_row = self._connection.execute(
+                    """
+                    WITH
+                    unassigned AS (
+                        SELECT c.stored_bytes
+                        FROM chunks AS c
+                        WHERE c.state = ?
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM archive_transactions AS assigned
+                              WHERE assigned.chunk_id = c.chunk_id
+                          )
+                    ),
+                    target_inflight AS (
+                        SELECT stored_bytes
+                        FROM archive_transactions
+                        WHERE storage_id = ?
+                          AND state IN (?, ?, ?, ?)
+                    ),
+                    target_verified AS (
+                        SELECT stored_bytes, state, verified_at_utc_ns
+                        FROM archive_transactions
+                        WHERE storage_id = ?
+                          AND state IN (?, ?, ?)
+                    )
+                    SELECT
+                        (SELECT COUNT(*) FROM unassigned)
+                            AS unassigned_sealed_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM unassigned)
+                            AS unassigned_sealed_bytes,
+                        (SELECT COUNT(*) FROM target_inflight)
+                            AS target_inflight_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM target_inflight)
+                            AS target_inflight_bytes,
+                        (SELECT COUNT(*) FROM target_verified)
+                            AS external_verified_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM target_verified)
+                            AS external_verified_bytes,
+                        (
+                            SELECT COUNT(*) FROM target_verified
+                            WHERE state = ?
+                        ) AS local_deleted_files,
+                        (
+                            SELECT COALESCE(SUM(stored_bytes), 0)
+                            FROM target_verified
+                            WHERE state = ?
+                        ) AS local_deleted_bytes,
+                        (SELECT MAX(verified_at_utc_ns) FROM target_verified)
+                            AS last_verified_at
+                    """,
+                    (
+                        ChunkState.SEALED,
+                        storage_id,
+                        ArchiveState.COPYING,
+                        ArchiveState.VERIFYING,
+                        ArchiveState.VERIFIED,
+                        ArchiveState.LOCAL_DELETE_PENDING,
+                        storage_id,
+                        ArchiveState.VERIFIED,
+                        ArchiveState.LOCAL_DELETE_PENDING,
+                        ArchiveState.LOCAL_DELETED,
+                        ArchiveState.LOCAL_DELETED,
+                        ArchiveState.LOCAL_DELETED,
+                    ),
+                ).fetchone()
+                error_row = self._connection.execute(
+                    """
+                    SELECT last_error, updated_at_utc_ns
+                    FROM archive_transactions
+                    WHERE storage_id = ?
+                      AND last_error IS NOT NULL
+                      AND last_error != ''
+                    ORDER BY updated_at_utc_ns DESC
+                    LIMIT 1
+                    """,
+                    (storage_id,),
+                ).fetchone()
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
+
+        txn_states = {
+            str(row["state"]): int(row["cnt"])
+            for row in state_counts
+        }
+        unassigned_sealed_files = int(aggregate_row["unassigned_sealed_files"])
+        unassigned_sealed_bytes = int(aggregate_row["unassigned_sealed_bytes"])
+        target_inflight_files = int(aggregate_row["target_inflight_files"])
+        target_inflight_bytes = int(aggregate_row["target_inflight_bytes"])
+        external_verified_files = int(aggregate_row["external_verified_files"])
+        external_verified_bytes = int(aggregate_row["external_verified_bytes"])
+        local_deleted_files = int(aggregate_row["local_deleted_files"])
+        local_deleted_bytes = int(aggregate_row["local_deleted_bytes"])
+        last_verified_at_utc_ns: object = aggregate_row["last_verified_at"]
+        latest_error_type: object = None
+        latest_error_at_utc_ns: object = None
+        if error_row:
+            raw_error = str(error_row["last_error"] or "")
+            if raw_error:
+                if "DISAPPEARED" in raw_error:
+                    latest_error_type = "DISAPPEARED_DURING_COPY"
+                elif "SHA" in raw_error or "hash" in raw_error.lower():
+                    latest_error_type = "HASH_MISMATCH"
+                elif "size" in raw_error.lower() or "missing" in raw_error.lower():
+                    latest_error_type = "MISSING"
+                elif "ArchiveError" in raw_error:
+                    latest_error_type = "ARCHIVE_ERROR"
+                else:
+                    latest_error_type = "UNKNOWN"
+            latest_error_at_utc_ns = error_row["updated_at_utc_ns"]
+
+        backlog_files = unassigned_sealed_files + target_inflight_files
+        backlog_bytes = unassigned_sealed_bytes + target_inflight_bytes
+
+        return {
+            "transactions_by_state": txn_states,
+            "unassigned_sealed_scope": "GLOBAL",
+            "unassigned_sealed_files": unassigned_sealed_files,
+            "unassigned_sealed_bytes": unassigned_sealed_bytes,
+            "target_inflight_files": target_inflight_files,
+            "target_inflight_bytes": target_inflight_bytes,
+            "external_verified_files": external_verified_files,
+            "external_verified_bytes": external_verified_bytes,
+            "local_deleted_files": local_deleted_files,
+            "local_deleted_bytes": local_deleted_bytes,
+            "backlog_files": backlog_files,
+            "backlog_bytes": backlog_bytes,
+            "last_verified_at_utc_ns": last_verified_at_utc_ns,
+            "latest_error_type": latest_error_type,
+            "latest_error_at_utc_ns": latest_error_at_utc_ns,
+        }
 
     def register_storage_target(
         self,
@@ -1548,6 +1769,7 @@ class Catalog:
     def register_quarantined_artifact(
         self, *, artifact_id: str, relative_path: str, reason: str, sha256: str
     ) -> None:
+        self._require_writable()
         with self._lock:
             self._connection.execute(
                 """
@@ -1569,6 +1791,7 @@ class Catalog:
         relative_path: str,
         created_at_utc_ns: int,
     ) -> None:
+        self._require_writable()
         with self._lock:
             self._connection.execute(
                 """

@@ -201,6 +201,13 @@ checkpoints, and aggregates—not full market events. Files/manifests are the
 source artifacts; Catalog makes their lifecycle queryable. Transitions are
 idempotent and reconcile filesystem state after a crash.
 
+The M21.0 Soak sampler is a read-only state-plane observer. Its Catalog
+connection uses SQLite URI `mode=ro`, `query_only=ON`, and a busy timeout; it
+does not initialize schema, set journal mode, enter `BEGIN IMMEDIATE`, probe an
+external directory, activate a storage target, or change storage control. The
+certified concurrent boundary is one Recorder writer, one Archive writer, and
+one read-only Soak observer—not three writers or arbitrary writer fan-out.
+
 ### Derived plane
 
 `normalized-dataset.v1` is rebuildable and contains source chunk hashes,

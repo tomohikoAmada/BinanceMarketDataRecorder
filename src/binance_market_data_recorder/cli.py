@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
+from .archive.drain import archive_drain
 from .backfill import HistoricalImporter, build_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
@@ -22,6 +23,7 @@ from .logging import configure_logging, log_event
 from .metrics.report import DailyReporter
 from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
+from .service.archive_timer import ArchiveTimerManager, SystemdArchiveError
 from .service.launchd import (
     LaunchAgentError,
     LaunchAgentManager,
@@ -29,7 +31,9 @@ from .service.launchd import (
 )
 from .service.lock import ServiceAlreadyRunning
 from .service.runtime import run_service
+from .service.soak_timer import SoakTimerManager, SystemdSoakError
 from .service.systemd import SystemdError, SystemdManager
+from .soak.sample import soak_sample
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
 from .storage.forecast import StorageForecaster
@@ -151,6 +155,52 @@ def build_parser() -> argparse.ArgumentParser:
     retry.add_argument("--storage-id")
     verify = archive_commands.add_parser("verify", help="verify committed external files")
     verify.add_argument("storage_id")
+    drain = archive_commands.add_parser("drain", help="bounded drain loop")
+    drain.add_argument("--storage-id", required=True)
+    drain.add_argument("--max-runtime-seconds", type=float, default=50.0)
+    drain.add_argument("--max-files", type=int, default=1000)
+    archive_timer = archive_commands.add_parser(
+        "timer", help="manage the archive companion systemd timer"
+    )
+    archive_timer_commands = archive_timer.add_subparsers(
+        dest="archive_timer_command", required=True, parser_class=_ArgumentParser
+    )
+    archive_timer_install = archive_timer_commands.add_parser(
+        "install", help="install and enable the archive timer"
+    )
+    archive_timer_install.add_argument("--user", required=True)
+    archive_timer_install.add_argument("--group", required=True)
+    archive_timer_install.add_argument("--storage-id", required=True)
+    archive_timer_install.add_argument("--interval-seconds", type=int, default=60)
+    archive_timer_install.add_argument("--max-runtime-seconds", type=int, default=50)
+    archive_timer_install.add_argument("--max-files", type=int, default=1000)
+    for action in ("start", "stop", "restart", "status", "uninstall"):
+        archive_timer_commands.add_parser(action, help=f"{action} the archive timer")
+    soak_command = commands.add_parser("soak", help="M21 soak sampling operations")
+    soak_commands = soak_command.add_subparsers(
+        dest="soak_command", required=True, parser_class=_ArgumentParser
+    )
+    soak_sample_cmd = soak_commands.add_parser(
+        "sample", help="capture a single time-point observation"
+    )
+    soak_sample_cmd.add_argument("--storage-id", required=True)
+    soak_sample_cmd.add_argument("--output", type=Path, required=True)
+    soak_timer = soak_commands.add_parser(
+        "timer", help="manage the soak sampling systemd timer"
+    )
+    soak_timer_commands = soak_timer.add_subparsers(
+        dest="soak_timer_command", required=True, parser_class=_ArgumentParser
+    )
+    soak_timer_install = soak_timer_commands.add_parser(
+        "install", help="install and enable the soak timer"
+    )
+    soak_timer_install.add_argument("--user", required=True)
+    soak_timer_install.add_argument("--group", required=True)
+    soak_timer_install.add_argument("--storage-id", required=True)
+    soak_timer_install.add_argument("--interval-seconds", type=int, default=300)
+    soak_timer_install.add_argument("--output", type=Path, required=True)
+    for action in ("start", "stop", "restart", "status", "uninstall"):
+        soak_timer_commands.add_parser(action, help=f"{action} the soak timer")
     launchd_command = commands.add_parser(
         "launchd", help="manage the user LaunchAgent"
     )
@@ -683,6 +733,47 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 2
     if command == "archive":
         archive_command = getattr(args, "archive_command", None)
+        if archive_command == "timer":
+            timer_command = getattr(args, "archive_timer_command", None)
+            if loaded.config_file is None:
+                _write_json(
+                    {"error": "archive_timer_error",
+                     "message": "archive timer requires an explicit --config file"},
+                    stream=sys.stderr,
+                )
+                return 2
+            timer_manager = ArchiveTimerManager(
+                config_file=loaded.config_file,
+                user=str(getattr(args, "user", "")),
+                group=str(getattr(args, "group", "")),
+                storage_id=str(getattr(args, "storage_id", "")),
+                interval_seconds=int(getattr(args, "interval_seconds", 60)),
+                max_runtime_seconds=int(getattr(args, "max_runtime_seconds", 50)),
+                max_files=int(getattr(args, "max_files", 1000)),
+            )
+            try:
+                if timer_command == "install":
+                    result = timer_manager.install()
+                elif timer_command == "start":
+                    result = timer_manager.start()
+                elif timer_command == "stop":
+                    result = timer_manager.stop()
+                elif timer_command == "restart":
+                    result = timer_manager.restart()
+                elif timer_command == "status":
+                    result = timer_manager.status()
+                elif timer_command == "uninstall":
+                    result = timer_manager.uninstall()
+                else:
+                    parser.error(f"unsupported archive timer command: {timer_command}")
+                _write_json({"command": f"archive.timer.{timer_command}", **result})
+                return 0
+            except (OSError, SystemdArchiveError, ValueError) as exc:
+                _write_json(
+                    {"error": "archive_timer_error", "message": str(exc)},
+                    stream=sys.stderr,
+                )
+                return 2
         catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
         if not catalog_path.is_file():
             _write_json(
@@ -698,6 +789,24 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if archive_command == "status":
                     _write_json(_archive_status(catalog))
                     return 0
+                if archive_command == "drain":
+                    drain_result = archive_drain(
+                        layout=ensure_storage_layout(loaded.config.data_root),
+                        catalog=catalog,
+                        storage_id=args.storage_id,
+                        max_runtime_seconds=args.max_runtime_seconds,
+                        max_files=args.max_files,
+                    )
+                    _write_json(drain_result)
+                    return (
+                        0
+                        if drain_result.get("exit_reason")
+                        in ("BACKLOG_EMPTY", "MAX_FILES", "DEADLINE",
+                            "ALREADY_RUNNING", "INTERRUPTED",
+                            "TARGET_ABSENT", "TARGET_NOT_READY",
+                            "TARGET_LOW_SPACE")
+                        else 1
+                    )
                 registry = StorageRegistry(
                     catalog=catalog, volumes=_volume_adapter()
                 )
@@ -742,4 +851,66 @@ def main(argv: Sequence[str] | None = None) -> int:
                 {"error": "archive_error", "message": str(exc)}, stream=sys.stderr
             )
             return 2
+    if command == "soak":
+        soak_command = getattr(args, "soak_command", None)
+        if soak_command == "timer":
+            timer_command = getattr(args, "soak_timer_command", None)
+            if loaded.config_file is None:
+                _write_json(
+                    {"error": "soak_timer_error",
+                     "message": "soak timer requires an explicit --config file"},
+                    stream=sys.stderr,
+                )
+                return 2
+            soak_timer_manager = SoakTimerManager(
+                config_file=loaded.config_file,
+                user=str(getattr(args, "user", "")),
+                group=str(getattr(args, "group", "")),
+                storage_id=str(getattr(args, "storage_id", "")),
+                interval_seconds=int(getattr(args, "interval_seconds", 300)),
+                output_path=Path(str(getattr(args, "output", ""))).resolve()
+                if getattr(args, "output", None) else Path(
+                    "/var/lib/binance-market-data-recorder/operations/soak/samples.jsonl"
+                ),
+            )
+            try:
+                if timer_command == "install":
+                    result = soak_timer_manager.install()
+                elif timer_command == "start":
+                    result = soak_timer_manager.start()
+                elif timer_command == "stop":
+                    result = soak_timer_manager.stop()
+                elif timer_command == "restart":
+                    result = soak_timer_manager.restart()
+                elif timer_command == "status":
+                    result = soak_timer_manager.status()
+                elif timer_command == "uninstall":
+                    result = soak_timer_manager.uninstall()
+                else:
+                    parser.error(f"unsupported soak timer command: {timer_command}")
+                _write_json({"command": f"soak.timer.{timer_command}", **result})
+                return 0
+            except (OSError, SystemdSoakError, ValueError) as exc:
+                _write_json(
+                    {"error": "soak_timer_error", "message": str(exc)},
+                    stream=sys.stderr,
+                )
+                return 2
+        if soak_command == "sample":
+            try:
+                sample_result = soak_sample(
+                    data_root=loaded.config.data_root,
+                    output_path=args.output,
+                    storage_id=args.storage_id,
+                    config_dict=loaded.config.public_dict(),
+                    recorder_version=version_string(),
+                )
+                _write_json({"command": "soak.sample", **sample_result})
+                return 0
+            except (OSError, ValueError) as exc:
+                _write_json(
+                    {"error": "soak_sample_error", "message": str(exc)},
+                    stream=sys.stderr,
+                )
+                return 2
     parser.error(f"unsupported command: {command}")
