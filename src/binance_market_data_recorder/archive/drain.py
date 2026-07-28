@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..storage.catalog import Catalog, CatalogStateError, ChunkState
+from ..storage.catalog import Catalog, CatalogStateError
 from ..storage.layout import StorageLayout
 from ..storage.macos import PlatformVolumeError, StorageRegistrationError, StorageRegistry
 from ..storage.platform import volume_adapter
@@ -69,20 +69,17 @@ class _DrainLock:
             os.close(descriptor)
 
 
-def _backlog_snapshot(catalog: Catalog) -> tuple[int, int]:
-    backlog = catalog.chunks_in_states(
-        ChunkState.SEALED,
-        ChunkState.ARCHIVE_COPYING,
-        ChunkState.ARCHIVE_VERIFYING,
-        ChunkState.ARCHIVED_VERIFIED,
-        ChunkState.LOCAL_DELETE_PENDING,
-    )
-    files = len(backlog)
-    total_bytes = 0
-    for row in backlog:
-        value = row.get("stored_bytes")
-        if isinstance(value, int) and not isinstance(value, bool):
-            total_bytes += value
+def _backlog_snapshot(catalog: Catalog, storage_id: str) -> tuple[int, int]:
+    aggregate = catalog.archive_aggregate(storage_id)
+    files = aggregate["backlog_files"]
+    total_bytes = aggregate["backlog_bytes"]
+    if (
+        not isinstance(files, int)
+        or isinstance(files, bool)
+        or not isinstance(total_bytes, int)
+        or isinstance(total_bytes, bool)
+    ):
+        raise CatalogStateError("archive aggregate returned invalid backlog totals")
     return files, total_bytes
 
 
@@ -178,7 +175,7 @@ def archive_drain(
             elif target_state not in ("READY",):
                 ended_at = utc_clock_ns()
                 elapsed = max(0.0, (ended_at - started_at) / 1e9)
-                before_files, before_bytes = _backlog_snapshot(catalog)
+                before_files, before_bytes = _backlog_snapshot(catalog, storage_id)
                 return {
                     "command": "archive.drain",
                     "storage_id": storage_id,
@@ -226,7 +223,7 @@ def archive_drain(
             utc_clock_ns=utc_clock_ns,
         )
 
-        before_files, before_bytes = _backlog_snapshot(catalog)
+        before_files, before_bytes = _backlog_snapshot(catalog, storage_id)
 
         while not interrupted:
             if processed_files >= max_files:
@@ -237,6 +234,8 @@ def archive_drain(
             if target_state == "LOW_SPACE":
                 break
 
+            if interrupted:
+                break
             result = manager.run_once()
             if result.state == "NO_ELIGIBLE_CHUNKS":
                 break
@@ -264,7 +263,7 @@ def archive_drain(
         elif target_state == "LOW_SPACE":
             exit_reason = "TARGET_LOW_SPACE"
 
-        after_files, after_bytes = _backlog_snapshot(catalog)
+        after_files, after_bytes = _backlog_snapshot(catalog, storage_id)
         ended_at = utc_clock_ns()
         elapsed = max(0.0, (ended_at - started_at) / 1e9)
 
@@ -291,7 +290,7 @@ def archive_drain(
 
     except (ArchiveError, CatalogStateError, OSError,
             PlatformVolumeError, StorageRegistrationError, ValueError) as exc:
-        after_files, after_bytes = _backlog_snapshot(catalog)
+        after_files, after_bytes = _backlog_snapshot(catalog, storage_id)
         ended_at = utc_clock_ns()
         elapsed = max(0.0, (ended_at - started_at) / 1e9)
         return {

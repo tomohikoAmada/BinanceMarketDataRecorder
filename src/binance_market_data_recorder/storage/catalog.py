@@ -18,8 +18,10 @@ Catalog 是 Recorder 中所有状态转换的唯一持久协调点。它存储�
 - chunk_transitions、archive_transaction_events 和 deployment_events 中的
   幂等键防止崩溃后重放同一转换。
 - WAL journal mode + synchronous=FULL + foreign_keys=ON。
-- Catalog 通过 RLock 是线程安全的,但不设计用于多进程并发写入;
-  内核 flock(service/lock.py)确保一次只有一个进程拥有 data root。
+- Catalog 通过 RLock 保证单个实例内的线程安全。经认证的多进程边界是一个
+  Recorder 写进程和一个 Archive 写进程共享 Catalog:SQLite WAL、30 秒
+  busy timeout 和 BEGIN IMMEDIATE 负责跨进程序列化。DrainLock 另行阻止
+  多个 Archive Drain;不宣称支持任意数量的写进程。
 
 Catalog 不包含:Raw 负载字节、价格水平、订单簿状态、market-event 行。
 Metrics 仅以聚合 JSON 批次存储(以 batch_id 为键实现幂等重试)。
@@ -137,6 +139,7 @@ class Catalog:
         )
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA journal_mode=WAL")
+        self._connection.execute("PRAGMA busy_timeout=30000")
         self._connection.execute("PRAGMA synchronous=FULL")
         self._connection.execute("PRAGMA foreign_keys=ON")
         self._initialize()
@@ -1287,88 +1290,122 @@ class Catalog:
     def archive_aggregate(
         self, storage_id: str
     ) -> dict[str, object]:
-        with self._lock:
-            state_counts = self._connection.execute(
-                """
-                SELECT state, COUNT(*) AS cnt
-                FROM archive_transactions
-                WHERE storage_id = ?
-                GROUP BY state
-                """,
-                (storage_id,),
-            ).fetchall()
-        txn_states: dict[str, int] = {}
-        for row in state_counts:
-            txn_states[str(row["state"])] = int(row["cnt"])
+        """Return target archive totals from one bounded SQLite read snapshot.
+
+        ``unassigned_sealed_*`` is the global queue of SEALED chunks that has
+        not yet been assigned to any storage target. ``target_inflight_*`` is
+        scoped to ``storage_id``. Backlog is the sum of those two disjoint
+        populations.
+        """
 
         with self._lock:
-            verified_row = self._connection.execute(
-                """
-                SELECT
-                    COUNT(*) AS verified_files,
-                    COALESCE(SUM(stored_bytes), 0) AS verified_bytes
-                FROM archive_transactions
-                WHERE storage_id = ?
-                  AND state IN (?, ?, ?)
-                """,
-                (
-                    storage_id,
-                    ArchiveState.VERIFIED,
-                    ArchiveState.LOCAL_DELETE_PENDING,
-                    ArchiveState.LOCAL_DELETED,
-                ),
-            ).fetchone()
-        external_verified_files = int(verified_row["verified_files"]) if verified_row else 0
-        external_verified_bytes = int(verified_row["verified_bytes"]) if verified_row else 0
+            self._connection.execute("BEGIN")
+            try:
+                state_counts = self._connection.execute(
+                    """
+                    SELECT state, COUNT(*) AS cnt
+                    FROM archive_transactions
+                    WHERE storage_id = ?
+                    GROUP BY state
+                    """,
+                    (storage_id,),
+                ).fetchall()
+                aggregate_row = self._connection.execute(
+                    """
+                    WITH
+                    unassigned AS (
+                        SELECT c.stored_bytes
+                        FROM chunks AS c
+                        WHERE c.state = ?
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM archive_transactions AS assigned
+                              WHERE assigned.chunk_id = c.chunk_id
+                          )
+                    ),
+                    target_inflight AS (
+                        SELECT stored_bytes
+                        FROM archive_transactions
+                        WHERE storage_id = ?
+                          AND state IN (?, ?, ?, ?)
+                    ),
+                    target_verified AS (
+                        SELECT stored_bytes, state, verified_at_utc_ns
+                        FROM archive_transactions
+                        WHERE storage_id = ?
+                          AND state IN (?, ?, ?)
+                    )
+                    SELECT
+                        (SELECT COUNT(*) FROM unassigned)
+                            AS unassigned_sealed_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM unassigned)
+                            AS unassigned_sealed_bytes,
+                        (SELECT COUNT(*) FROM target_inflight)
+                            AS target_inflight_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM target_inflight)
+                            AS target_inflight_bytes,
+                        (SELECT COUNT(*) FROM target_verified)
+                            AS external_verified_files,
+                        (SELECT COALESCE(SUM(stored_bytes), 0) FROM target_verified)
+                            AS external_verified_bytes,
+                        (
+                            SELECT COUNT(*) FROM target_verified
+                            WHERE state = ?
+                        ) AS local_deleted_files,
+                        (
+                            SELECT COALESCE(SUM(stored_bytes), 0)
+                            FROM target_verified
+                            WHERE state = ?
+                        ) AS local_deleted_bytes,
+                        (SELECT MAX(verified_at_utc_ns) FROM target_verified)
+                            AS last_verified_at
+                    """,
+                    (
+                        ChunkState.SEALED,
+                        storage_id,
+                        ArchiveState.COPYING,
+                        ArchiveState.VERIFYING,
+                        ArchiveState.VERIFIED,
+                        ArchiveState.LOCAL_DELETE_PENDING,
+                        storage_id,
+                        ArchiveState.VERIFIED,
+                        ArchiveState.LOCAL_DELETE_PENDING,
+                        ArchiveState.LOCAL_DELETED,
+                        ArchiveState.LOCAL_DELETED,
+                        ArchiveState.LOCAL_DELETED,
+                    ),
+                ).fetchone()
+                error_row = self._connection.execute(
+                    """
+                    SELECT last_error, updated_at_utc_ns
+                    FROM archive_transactions
+                    WHERE storage_id = ?
+                      AND last_error IS NOT NULL
+                      AND last_error != ''
+                    ORDER BY updated_at_utc_ns DESC
+                    LIMIT 1
+                    """,
+                    (storage_id,),
+                ).fetchone()
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
 
-        with self._lock:
-            deleted_row = self._connection.execute(
-                """
-                SELECT
-                    COUNT(*) AS deleted_files,
-                    COALESCE(SUM(stored_bytes), 0) AS deleted_bytes
-                FROM archive_transactions
-                WHERE storage_id = ?
-                  AND state = ?
-                """,
-                (storage_id, ArchiveState.LOCAL_DELETED),
-            ).fetchone()
-        local_deleted_files = int(deleted_row["deleted_files"]) if deleted_row else 0
-        local_deleted_bytes = int(deleted_row["deleted_bytes"]) if deleted_row else 0
-
-        with self._lock:
-            verified_row2 = self._connection.execute(
-                """
-                SELECT MAX(verified_at_utc_ns) AS last_verified_at
-                FROM archive_transactions
-                WHERE storage_id = ?
-                  AND state IN (?, ?, ?)
-                  AND verified_at_utc_ns IS NOT NULL
-                """,
-                (
-                    storage_id,
-                    ArchiveState.VERIFIED,
-                    ArchiveState.LOCAL_DELETE_PENDING,
-                    ArchiveState.LOCAL_DELETED,
-                ),
-            ).fetchone()
-        last_verified_at_utc_ns: object = (
-            verified_row2["last_verified_at"] if verified_row2 else None
-        )
-
-        with self._lock:
-            error_row = self._connection.execute(
-                """
-                SELECT last_error, updated_at_utc_ns
-                FROM archive_transactions
-                WHERE storage_id = ?
-                  AND last_error IS NOT NULL
-                  AND last_error != ''
-                ORDER BY updated_at_utc_ns DESC
-                LIMIT 1
-                """,
-                (storage_id,),
-            ).fetchone()
+        txn_states = {
+            str(row["state"]): int(row["cnt"])
+            for row in state_counts
+        }
+        unassigned_sealed_files = int(aggregate_row["unassigned_sealed_files"])
+        unassigned_sealed_bytes = int(aggregate_row["unassigned_sealed_bytes"])
+        target_inflight_files = int(aggregate_row["target_inflight_files"])
+        target_inflight_bytes = int(aggregate_row["target_inflight_bytes"])
+        external_verified_files = int(aggregate_row["external_verified_files"])
+        external_verified_bytes = int(aggregate_row["external_verified_bytes"])
+        local_deleted_files = int(aggregate_row["local_deleted_files"])
+        local_deleted_bytes = int(aggregate_row["local_deleted_bytes"])
+        last_verified_at_utc_ns: object = aggregate_row["last_verified_at"]
         latest_error_type: object = None
         latest_error_at_utc_ns: object = None
         if error_row:
@@ -1386,29 +1423,16 @@ class Catalog:
                     latest_error_type = "UNKNOWN"
             latest_error_at_utc_ns = error_row["updated_at_utc_ns"]
 
-        backlog_files = sum(
-            txn_states.get(s, 0) for s in (
-                str(ArchiveState.COPYING),
-                str(ArchiveState.VERIFYING),
-                str(ArchiveState.VERIFIED),
-                str(ArchiveState.LOCAL_DELETE_PENDING),
-            )
-        )
-        backlog_bytes_chunks = self.chunks_in_states(
-            ChunkState.SEALED,
-            ChunkState.ARCHIVE_COPYING,
-            ChunkState.ARCHIVE_VERIFYING,
-            ChunkState.ARCHIVED_VERIFIED,
-            ChunkState.LOCAL_DELETE_PENDING,
-        )
-        backlog_bytes = sum(
-            v for row in backlog_bytes_chunks
-            if isinstance((v := row.get("stored_bytes")), int)
-            and not isinstance(v, bool)
-        )
+        backlog_files = unassigned_sealed_files + target_inflight_files
+        backlog_bytes = unassigned_sealed_bytes + target_inflight_bytes
 
         return {
             "transactions_by_state": txn_states,
+            "unassigned_sealed_scope": "GLOBAL",
+            "unassigned_sealed_files": unassigned_sealed_files,
+            "unassigned_sealed_bytes": unassigned_sealed_bytes,
+            "target_inflight_files": target_inflight_files,
+            "target_inflight_bytes": target_inflight_bytes,
             "external_verified_files": external_verified_files,
             "external_verified_bytes": external_verified_bytes,
             "local_deleted_files": local_deleted_files,

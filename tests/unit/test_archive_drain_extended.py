@@ -5,13 +5,17 @@ Covers: LOW_SPACE CLI exit 0, O(N²) bounded query, crash recovery, SIGTERM, etc
 
 from __future__ import annotations
 
-import subprocess
+import json
+import signal
 from pathlib import Path
+
+import pytest
 
 from binance_market_data_recorder.archive import ArchiveManager
 from binance_market_data_recorder.archive.drain import (
     archive_drain,
 )
+from binance_market_data_recorder.cli import main
 from binance_market_data_recorder.storage.catalog import (
     ArchiveState,
     Catalog,
@@ -45,30 +49,46 @@ def _test_volumes(
 
 # ── LOW_SPACE CLI exit 0 ────────────────────────────────────────────
 
-def _drain_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["/opt/binance-market-data-recorder/venv/bin/python",
-         "-m", "binance_market_data_recorder",
-         *args],
-        capture_output=True, text=True, timeout=60,
-    )
-
-
-def test_low_space_drain_exit_zero(tmp_path: Path) -> None:
+def test_low_space_drain_exit_zero(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     prepared = prepare_archive(tmp_path, chunk_count=3)
     vols = _test_volumes(prepared, free_pct=3.0)
+    monkeypatch.setattr(
+        "binance_market_data_recorder.archive.drain.volume_adapter",
+        lambda: vols,
+    )
+    monkeypatch.setenv(
+        "BINANCE_MARKET_RECORDER_DATA_ROOT",
+        str(prepared.layout.root),
+    )
     with Catalog(prepared.layout.catalog) as catalog:
-        result = archive_drain(
-            layout=prepared.layout,
-            catalog=catalog,
-            storage_id=prepared.target.storage_id,
-            max_runtime_seconds=60,
-            max_files=1000,
-            volumes=vols,
-        )
-        assert result["exit_reason"] == "TARGET_LOW_SPACE"
-        assert result["processed_files"] == 0
-        assert result["target_state"] == "LOW_SPACE"
+        chunk = catalog.chunk(prepared.chunk_ids[0])
+        assert chunk is not None
+        chunk_path = prepared.layout.root / str(chunk["sealed_path"])
+    assert chunk_path.is_file()
+
+    exit_code = main(
+        [
+            "archive",
+            "drain",
+            "--storage-id",
+            prepared.target.storage_id,
+            "--max-runtime-seconds",
+            "60",
+            "--max-files",
+            "1000",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["exit_reason"] == "TARGET_LOW_SPACE"
+    assert payload["processed_files"] == 0
+    assert payload["target_state"] == "LOW_SPACE"
+    assert chunk_path.is_file()
 
 
 def test_low_space_preserves_source(tmp_path: Path) -> None:
@@ -148,6 +168,45 @@ def test_drain_sigterm_finishes_current_then_stops(tmp_path: Path) -> None:
             assert result["lock_acquired"] is True
         finally:
             signal.signal(signal.SIGTERM, prev)
+
+
+def test_drain_sigterm_before_first_run_once_processes_nothing(
+    tmp_path: Path,
+) -> None:
+    prepared = prepare_archive(tmp_path, chunk_count=1)
+    volumes = _test_volumes(prepared)
+
+    class InterruptBeforeFirstTransaction:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def __call__(self) -> float:
+            self.calls += 1
+            if self.calls == 2:
+                import os
+
+                os.kill(os.getpid(), signal.SIGTERM)
+            return 0.0
+
+    with Catalog(prepared.layout.catalog) as catalog:
+        chunk = catalog.chunk(prepared.chunk_ids[0])
+        assert chunk is not None
+        source = prepared.layout.root / str(chunk["sealed_path"])
+        result = archive_drain(
+            layout=prepared.layout,
+            catalog=catalog,
+            storage_id=prepared.target.storage_id,
+            max_runtime_seconds=60,
+            max_files=1000,
+            volumes=volumes,
+            monotonic_clock=InterruptBeforeFirstTransaction(),
+        )
+
+        assert result["processed_files"] == 0
+        assert result["successful_transactions"] == 0
+        assert result["exit_reason"] == "INTERRUPTED"
+        assert source.is_file()
+        assert catalog.archive_transactions() == []
 
 
 # ── crash recovery ─────────────────────────────────────────────────

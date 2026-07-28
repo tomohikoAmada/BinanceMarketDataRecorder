@@ -1,26 +1,31 @@
-"""Integration test: Recorder writer + Archive Drain share one SQLite Catalog."""
+"""Certified Catalog boundary: one Recorder writer plus one Archive writer."""
 
 from __future__ import annotations
 
 import json
 import multiprocessing
-import time
 from pathlib import Path
+from typing import Any
 
-from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.archive import ArchiveManager
+from binance_market_data_recorder.storage.catalog import (
+    ArchiveState,
+    Catalog,
+    ChunkState,
+)
 from tests.archive_support import prepare_archive
+
+INITIAL_BACKLOG = 50
+WRITER_CHUNKS = 200
 
 
 def _writer_worker(
     catalog_path: str,
     layout_root: str,
     iteration_count: int,
-    ready_event: str,
-    done_event: str,
+    start_barrier: Any,
+    result_path: str,
 ) -> None:
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
     from binance_market_data_recorder.spool.seal import seal_partial
     from binance_market_data_recorder.spool.writer import RawChunkWriter
     from binance_market_data_recorder.storage.catalog import Catalog
@@ -28,138 +33,192 @@ def _writer_worker(
     from tests.factories import event
 
     layout = ensure_storage_layout(Path(layout_root))
+    created = 0
+    start_barrier.wait(timeout=30)
     with Catalog(Path(catalog_path)) as catalog:
-        # Let parent know we're ready
-        with open(ready_event, "w") as f:
-            f.write("ready")
-        # Wait for parent to start draining
-        while not Path(done_event).exists():
-            time.sleep(0.05)
-
-        for i in range(iteration_count):
+        for ordinal in range(iteration_count):
             writer = RawChunkWriter(
                 layout=layout,
                 catalog=catalog,
                 market="spot",
                 symbol="BTCUSDT",
                 stream="diff_depth",
-                collector_instance_id="mp-test",
+                collector_instance_id="multiprocess-recorder",
                 collector_version="0.1.0+test",
                 durability_interval_seconds=0,
-                created_at_utc_ns=1_700_000_000_000_000_000 + i,
+                created_at_utc_ns=1_800_000_000_000_000_000 + ordinal,
             )
-            writer.append(event(i + 1))
+            writer.append(event(10_000 + ordinal))
             writer.close()
             seal_partial(writer.path, layout=layout, catalog=catalog)
+            created += 1
+    Path(result_path).write_text(
+        json.dumps({"created_and_sealed": created}),
+        encoding="utf-8",
+    )
 
 
 def _drain_worker(
     catalog_path: str,
     layout_root: str,
     storage_id: str,
+    volume_uuid: str,
+    mountpoint: str,
+    start_barrier: Any,
     result_path: str,
 ) -> None:
-    import json
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
     from binance_market_data_recorder.archive.drain import archive_drain
     from binance_market_data_recorder.storage.catalog import Catalog
     from binance_market_data_recorder.storage.layout import ensure_storage_layout
+    from binance_market_data_recorder.storage.macos import VolumeInfo
+    from tests.archive_support import FixedVolumes
 
     layout = ensure_storage_layout(Path(layout_root))
+    volumes = FixedVolumes(
+        VolumeInfo(
+            disk_id="multiprocess-test-volume",
+            volume_uuid=volume_uuid,
+            name="Multiprocess Test Archive",
+            filesystem_type="testfs",
+            mountpoint=Path(mountpoint),
+            writable=True,
+            internal=False,
+            removable=True,
+            total_bytes=100 * 1024**3,
+            free_bytes=90 * 1024**3,
+            observed_at_utc_ns=1,
+        )
+    )
+    start_barrier.wait(timeout=30)
     with Catalog(Path(catalog_path)) as catalog:
         result = archive_drain(
             layout=layout,
             catalog=catalog,
             storage_id=storage_id,
-            max_runtime_seconds=60,
+            max_runtime_seconds=120,
             max_files=1000,
+            volumes=volumes,
         )
-    Path(result_path).write_text(json.dumps(result))
+    Path(result_path).write_text(json.dumps(result), encoding="utf-8")
 
 
 def test_multiprocess_recorder_and_archive_drain(tmp_path: Path) -> None:
-    """Recorder (writer) and Archive Drain share the same Catalog concurrently."""
+    """Both independently opened Catalog writers make real forward progress."""
 
-    prepared = prepare_archive(tmp_path, chunk_count=0)
-    ready_file = str(tmp_path / "ready.txt")
-    done_file = str(tmp_path / "done.txt")
+    prepared = prepare_archive(
+        tmp_path,
+        chunk_count=INITIAL_BACKLOG,
+        payload_bytes=32,
+    )
+    context = multiprocessing.get_context("spawn")
+    start_barrier = context.Barrier(3)
+    writer_result_path = tmp_path / "writer-result.json"
+    drain_result_path = tmp_path / "drain-result.json"
 
-    iteration_count = 200
-
-    writer_proc = multiprocessing.Process(
+    writer_proc = context.Process(
+        name="certified-recorder-writer",
         target=_writer_worker,
         args=(
             str(prepared.layout.catalog),
             str(prepared.layout.root),
-            iteration_count,
-            ready_file,
-            done_file,
+            WRITER_CHUNKS,
+            start_barrier,
+            str(writer_result_path),
         ),
     )
-    writer_proc.start()
-
-    try:
-        # Wait for writer to signal readiness
-        timeout = 30
-        start = time.time()
-        while not Path(ready_file).exists():
-            if time.time() - start > timeout:
-                raise TimeoutError("writer process did not start in time")
-            time.sleep(0.1)
-
-        # Signal writer to start producing chunks
-        Path(done_file).write_text("go")
-
-        # Run drain concurrently while writer is still writing
-        drain_result_path = tmp_path / "drain_result.json"
-        _drain_worker(
+    archive_proc = context.Process(
+        name="certified-archive-writer",
+        target=_drain_worker,
+        args=(
             str(prepared.layout.catalog),
             str(prepared.layout.root),
             prepared.target.storage_id,
+            prepared.target.volume_uuid,
+            str(prepared.target.root.parents[1]),
+            start_barrier,
             str(drain_result_path),
-        )
-        drain_result = json.loads(Path(drain_result_path).read_text())
+        ),
+    )
+    writer_proc.start()
+    archive_proc.start()
+    start_barrier.wait(timeout=30)
 
-        writer_proc.join(timeout=60)
-        if writer_proc.is_alive():
-            writer_proc.terminate()
-            writer_proc.join(timeout=5)
+    writer_proc.join(timeout=120)
+    archive_proc.join(timeout=150)
+    try:
+        assert not writer_proc.is_alive(), "Recorder writer did not terminate"
+        assert not archive_proc.is_alive(), "Archive writer did not terminate"
+        assert writer_proc.exitcode == 0
+        assert archive_proc.exitcode == 0
 
-        assert writer_proc.exitcode == 0, f"Writer failed with exitcode {writer_proc.exitcode}"
-
-        assert drain_result["lock_acquired"] is True
-        assert drain_result.get("error_type") is None
+        writer_result = json.loads(writer_result_path.read_text(encoding="utf-8"))
+        drain_result = json.loads(drain_result_path.read_text(encoding="utf-8"))
+        assert writer_result["created_and_sealed"] == WRITER_CHUNKS
+        assert drain_result["processed_files"] > 0
+        assert drain_result["successful_transactions"] > 0
         assert drain_result["failed_transactions"] == 0
+        assert drain_result.get("error_type") is None
+        print(
+            "multiprocess archive "
+            f"processed_files={drain_result['processed_files']} "
+            f"successful_transactions={drain_result['successful_transactions']}"
+        )
 
-        # Verify Catolog integrity
         with Catalog(prepared.layout.catalog) as catalog:
-            state_counts: dict[str, int] = {}
-            for chunk in catalog.chunks_in_states():
-                s = str(chunk["state"])
-                state_counts[s] = state_counts.get(s, 0) + 1
+            state_rows = catalog._connection.execute(
+                "SELECT state, COUNT(*) AS count FROM chunks GROUP BY state"
+            ).fetchall()
+            state_counts = {
+                str(row["state"]): int(row["count"])
+                for row in state_rows
+            }
+            assert sum(state_counts.values()) == INITIAL_BACKLOG + WRITER_CHUNKS
+            assert state_counts.get(str(ChunkState.LOCAL_DELETED), 0) > 0
+            assert set(state_counts) <= {
+                str(ChunkState.SEALED),
+                str(ChunkState.ARCHIVE_COPYING),
+                str(ChunkState.ARCHIVE_VERIFYING),
+                str(ChunkState.ARCHIVED_VERIFIED),
+                str(ChunkState.LOCAL_DELETE_PENDING),
+                str(ChunkState.LOCAL_DELETED),
+            }
 
-            # All chunks should be in a valid final state
-            for state in state_counts:
-                assert state in {
-                    "SEALED", "ARCHIVE_COPYING", "ARCHIVE_VERIFYING",
-                    "ARCHIVED_VERIFIED", "LOCAL_DELETE_PENDING", "LOCAL_DELETED",
-                }, f"Unexpected chunk state: {state}"
-
-            # No duplicate states
             transactions = catalog.archive_transactions()
-            chunk_ids_from_txn = {t["chunk_id"] for t in transactions}
-            assert len(transactions) == len(chunk_ids_from_txn), (
-                "Duplicate archive transactions found"
-            )
+            transaction_chunk_ids = [
+                str(transaction["chunk_id"])
+                for transaction in transactions
+            ]
+            assert len(transaction_chunk_ids) == len(set(transaction_chunk_ids))
+            incomplete_states = {
+                str(ArchiveState.COPYING),
+                str(ArchiveState.VERIFYING),
+                str(ArchiveState.VERIFIED),
+                str(ArchiveState.LOCAL_DELETE_PENDING),
+            }
+            assert {
+                str(transaction["state"])
+                for transaction in transactions
+                if str(transaction["state"]) != str(ArchiveState.LOCAL_DELETED)
+            } <= incomplete_states
 
-            # Verify SQLite integrity
-            cursor = catalog._connection.execute("PRAGMA integrity_check")
-            result = cursor.fetchone()
-            assert result[0] == "ok", f"Integrity check failed: {result[0]}"
+            integrity = catalog._connection.execute(
+                "PRAGMA integrity_check"
+            ).fetchone()
+            assert integrity is not None
+            assert integrity[0] == "ok"
 
+            verification = ArchiveManager(
+                layout=prepared.layout,
+                catalog=catalog,
+                target=prepared.target,
+            ).verify_all()
+            assert verification["status"] == "VERIFIED"
+            assert verification["verified_files"] > 0  # type: ignore[operator]
+            assert verification["failed_files"] == 0
     finally:
         if writer_proc.is_alive():
             writer_proc.terminate()
             writer_proc.join(timeout=5)
+        if archive_proc.is_alive():
+            archive_proc.terminate()
+            archive_proc.join(timeout=5)

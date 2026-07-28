@@ -13,11 +13,26 @@ import os
 import platform
 import socket
 import subprocess
+import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ..service.state import ServiceStateError, ServiceStateStore
+
 SOAK_SCHEMA_VERSION = "m21-soak-sample.v2"
+
+
+@dataclass(frozen=True, slots=True)
+class _ServiceStateEvidence:
+    document: dict[str, object] | None
+    observed_application_status: str | None
+    service_state_pid: int | None
+    heartbeat_at_utc_ns: int | None
+    heartbeat_age_ns: int | None
+    service_state_fresh: bool
+    service_state_error: str | None
 
 
 # ── public entry point ──────────────────────────────────────────────
@@ -46,9 +61,13 @@ def soak_sample(
         "sample_id": f"soak-{sampled_at}",
     }
 
-    sample["systemd"] = _systemd_status()
-    sample["process"] = _process_metrics(root)
-    sample["markets"] = _market_state(root)
+    systemd = _systemd_status()
+    state_evidence = _service_state_evidence(root, sampled_at)
+    service = _service_health(systemd, state_evidence)
+    sample["systemd"] = systemd
+    sample["service"] = service
+    sample["process"] = _process_metrics(systemd, state_evidence, service)
+    sample["markets"] = _market_state(state_evidence, service)
     sample["archive"] = _archive_state(root, storage_id)
     sample["disk"] = _disk_state(root, storage_id)
 
@@ -98,69 +117,264 @@ def _systemd_status() -> dict[str, object]:
         "recorder_nrestarts": None,
         "recorder_active_enter_timestamp_monotonic": None,
         "recorder_service_result": None,
+        "recorder_error": None,
         "archive_timer_active_state": "UNKNOWN",
         "archive_service_result": None,
     }
-    if sys.platform.startswith("linux"):
-        try:
-            out = subprocess.run(
-                [
-                    "systemctl", "show",
-                    "binance-market-data-recorder.service",
-                    "-p", "ActiveState",
-                    "-p", "SubState",
-                    "-p", "MainPID",
-                    "-p", "NRestarts",
-                    "-p", "ActiveEnterTimestampMonotonic",
-                    "-p", "Result",
-                ],
-                capture_output=True, text=True, timeout=15, check=False,
-            )
+    if not sys.platform.startswith("linux"):
+        result["recorder_error"] = "systemd_unavailable_on_platform"
+        return result
+
+    try:
+        out = subprocess.run(
+            [
+                "systemctl", "show",
+                "binance-market-data-recorder.service",
+                "-p", "ActiveState",
+                "-p", "SubState",
+                "-p", "MainPID",
+                "-p", "NRestarts",
+                "-p", "ActiveEnterTimestampMonotonic",
+                "-p", "Result",
+            ],
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+        if out.returncode != 0:
+            result["recorder_error"] = f"systemctl_show_failed:{out.returncode}"
+        else:
+            parsed_keys: set[str] = set()
             for line in out.stdout.strip().split("\n"):
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    if key == "ActiveState":
-                        result["recorder_active_state"] = val or "UNKNOWN"
-                    elif key == "SubState":
-                        result["recorder_sub_state"] = val or "UNKNOWN"
-                    elif key == "MainPID":
-                        result["recorder_main_pid"] = int(val) if val.isdigit() else None
-                    elif key == "NRestarts":
-                        result["recorder_nrestarts"] = int(val) if val.isdigit() else None
-                    elif key == "ActiveEnterTimestampMonotonic":
-                        result["recorder_active_enter_timestamp_monotonic"] = (
-                            int(val) if val.isdigit() else None
-                        )
-                    elif key == "Result":
-                        result["recorder_service_result"] = val or None
-        except Exception:
-            pass
-        try:
-            out = subprocess.run(
-                ["systemctl", "is-active", "binance-market-data-archive.timer"],
-                capture_output=True, text=True, timeout=10, check=False,
-            )
-            result["archive_timer_active_state"] = out.stdout.strip() or "inactive"
-        except Exception:
-            pass
-        try:
-            out = subprocess.run(
-                ["systemctl", "show", "-p", "Result",
-                 "binance-market-data-archive.service"],
-                capture_output=True, text=True, timeout=10, check=False,
-            )
-            for line in out.stdout.strip().split("\n"):
-                if line.startswith("Result="):
-                    result["archive_service_result"] = line.split("=", 1)[1] or None
-        except Exception:
-            pass
+                if "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                parsed_keys.add(key)
+                if key == "ActiveState":
+                    result["recorder_active_state"] = val or "UNKNOWN"
+                elif key == "SubState":
+                    result["recorder_sub_state"] = val or "UNKNOWN"
+                elif key == "MainPID":
+                    result["recorder_main_pid"] = (
+                        int(val) if val.isdigit() and val != "0" else None
+                    )
+                elif key == "NRestarts":
+                    result["recorder_nrestarts"] = int(val) if val.isdigit() else None
+                elif key == "ActiveEnterTimestampMonotonic":
+                    result["recorder_active_enter_timestamp_monotonic"] = (
+                        int(val) if val.isdigit() else None
+                    )
+                elif key == "Result":
+                    result["recorder_service_result"] = val or None
+            required = {"ActiveState", "SubState", "MainPID"}
+            if not required <= parsed_keys:
+                result["recorder_error"] = "systemctl_show_incomplete"
+    except (OSError, subprocess.SubprocessError) as exc:
+        result["recorder_error"] = f"systemctl_unavailable:{type(exc).__name__}"
+
+    try:
+        out = subprocess.run(
+            ["systemctl", "is-active", "binance-market-data-archive.timer"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        result["archive_timer_active_state"] = out.stdout.strip() or "inactive"
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        out = subprocess.run(
+            ["systemctl", "show", "-p", "Result",
+             "binance-market-data-archive.service"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        for line in out.stdout.strip().split("\n"):
+            if line.startswith("Result="):
+                result["archive_service_result"] = line.split("=", 1)[1] or None
+    except (OSError, subprocess.SubprocessError):
+        pass
     return result
+
+
+# ── service state and health ────────────────────────────────────────
+
+def _service_state_evidence(
+    root: Path,
+    sampled_at_utc_ns: int,
+) -> _ServiceStateEvidence:
+    state_path = root / "state" / "service_state.json"
+    try:
+        document = ServiceStateStore(state_path).read()
+    except ServiceStateError as exc:
+        return _ServiceStateEvidence(
+            None, None, None, None, None, False, str(exc)
+        )
+    if document is None:
+        return _ServiceStateEvidence(
+            None, None, None, None, None, False, "service_state_missing"
+        )
+
+    observed_status = document.get("status")
+    pid_value = document.get("pid")
+    heartbeat_value = document.get("heartbeat_at_utc_ns")
+    interval_value = document.get("heartbeat_interval_seconds")
+    pid = (
+        pid_value
+        if isinstance(pid_value, int) and not isinstance(pid_value, bool)
+        else None
+    )
+    heartbeat = (
+        heartbeat_value
+        if isinstance(heartbeat_value, int)
+        and not isinstance(heartbeat_value, bool)
+        else None
+    )
+    observed = observed_status if isinstance(observed_status, str) else None
+    if (
+        observed not in {"STARTING", "RUNNING", "STOPPING", "STOPPED", "FAILED"}
+        or pid is None
+        or heartbeat is None
+        or not isinstance(interval_value, (int, float))
+        or isinstance(interval_value, bool)
+        or float(interval_value) <= 0
+    ):
+        return _ServiceStateEvidence(
+            document,
+            observed,
+            pid,
+            heartbeat,
+            None if heartbeat is None else sampled_at_utc_ns - heartbeat,
+            False,
+            "invalid_service_state_fields",
+        )
+
+    heartbeat_age = sampled_at_utc_ns - heartbeat
+    maximum_age_ns = int(
+        max(30.0, float(interval_value) * 3.0) * 1_000_000_000
+    )
+    if heartbeat_age < -5_000_000_000:
+        error = "heartbeat_in_future"
+        fresh = False
+    elif heartbeat_age > maximum_age_ns:
+        error = "service_heartbeat_stale"
+        fresh = False
+    else:
+        error = None
+        fresh = True
+    return _ServiceStateEvidence(
+        document,
+        observed,
+        pid,
+        heartbeat,
+        heartbeat_age,
+        fresh,
+        error,
+    )
+
+
+def _service_health(
+    systemd: dict[str, object],
+    evidence: _ServiceStateEvidence,
+) -> dict[str, object]:
+    active_state = str(systemd.get("recorder_active_state", "UNKNOWN"))
+    sub_state = str(systemd.get("recorder_sub_state", "UNKNOWN"))
+    systemd_pid_value = systemd.get("recorder_main_pid")
+    systemd_pid = (
+        systemd_pid_value
+        if isinstance(systemd_pid_value, int)
+        and not isinstance(systemd_pid_value, bool)
+        and systemd_pid_value > 0
+        else None
+    )
+    service_pid = evidence.service_state_pid
+    if systemd_pid is None and service_pid is None:
+        pid_mismatch: bool | None = None
+    else:
+        pid_mismatch = systemd_pid != service_pid
+
+    systemd_error = systemd.get("recorder_error")
+    if systemd_error is not None or active_state == "UNKNOWN":
+        application_status = "UNKNOWN"
+    elif active_state == "failed":
+        application_status = "FAILED"
+    elif active_state != "active":
+        application_status = "NOT_RUNNING"
+    elif not evidence.service_state_fresh:
+        application_status = "STALE"
+    elif pid_mismatch is not False:
+        application_status = "UNTRUSTED"
+    else:
+        application_status = evidence.observed_application_status or "UNKNOWN"
+
+    return {
+        "systemd_active_state": active_state,
+        "systemd_sub_state": sub_state,
+        "systemd_main_pid": systemd_pid,
+        "application_status": application_status,
+        "observed_application_status": evidence.observed_application_status,
+        "service_state_pid": service_pid,
+        "pid_mismatch": pid_mismatch,
+        "heartbeat_at_utc_ns": evidence.heartbeat_at_utc_ns,
+        "heartbeat_age_ns": evidence.heartbeat_age_ns,
+        "service_state_fresh": evidence.service_state_fresh,
+        "service_state_error": evidence.service_state_error,
+    }
 
 
 # ── process ─────────────────────────────────────────────────────────
 
-def _process_metrics(root: Path) -> dict[str, object]:
-    state_path = root / "state" / "service_state.json"
+def _process_metrics(
+    systemd: dict[str, object],
+    evidence: _ServiceStateEvidence,
+    service: dict[str, object],
+) -> dict[str, object]:
+    systemd_pid_value = systemd.get("recorder_main_pid")
+    systemd_pid = (
+        systemd_pid_value
+        if isinstance(systemd_pid_value, int)
+        and not isinstance(systemd_pid_value, bool)
+        and systemd_pid_value > 0
+        else None
+    )
+    result: dict[str, object] = {
+        "pid": systemd_pid,
+        "pid_source": "SYSTEMD_MAIN_PID",
+        "service_state_pid": evidence.service_state_pid,
+        "pid_mismatch": service["pid_mismatch"],
+        "current_rss_bytes": None,
+        "peak_rss_bytes": None,
+        "open_fd_count": None,
+        "thread_count": None,
+        "process_cpu_seconds": None,
+        "process_start_time": None,
+    }
+    if systemd_pid is not None:
+        result.update(_proc_metrics(systemd_pid))
+
+    runtime_values: dict[str, object] = {}
+    if evidence.document is not None:
+        raw_metrics = evidence.document.get("runtime_metrics")
+        if isinstance(raw_metrics, dict):
+            runtime_values = {
+                str(key): value
+                for key, value in raw_metrics.items()
+            }
+    trusted = (
+        evidence.service_state_fresh
+        and service["pid_mismatch"] is False
+        and service["systemd_active_state"] == "active"
+    )
+    if trusted:
+        runtime_status = "CURRENT"
+        current_runtime_metrics = runtime_values
+    elif evidence.service_state_error == "service_heartbeat_stale":
+        runtime_status = "STALE"
+        current_runtime_metrics = {}
+    else:
+        runtime_status = "UNAVAILABLE"
+        current_runtime_metrics = {}
+    result["runtime_metrics_status"] = runtime_status
+    result["runtime_metrics"] = current_runtime_metrics
+    return result
+
+
+def _proc_metrics(pid: int) -> dict[str, object]:
     result: dict[str, object] = {
         "current_rss_bytes": None,
         "peak_rss_bytes": None,
@@ -168,84 +382,99 @@ def _process_metrics(root: Path) -> dict[str, object]:
         "thread_count": None,
         "process_cpu_seconds": None,
         "process_start_time": None,
-        "pid": None,
-        "pid_mismatch": None,
     }
-    app_pid: int | None = None
-    if state_path.is_file():
+    proc_dir = Path(f"/proc/{pid}")
+    if not proc_dir.is_dir():
+        return result
+    try:
+        for line in (proc_dir / "status").read_text(encoding="ascii").splitlines():
+            key, separator, value = line.partition(":")
+            if not separator:
+                continue
+            parts = value.split()
+            if key in {"VmRSS", "VmHWM"} and parts and parts[0].isdigit():
+                destination = (
+                    "current_rss_bytes" if key == "VmRSS" else "peak_rss_bytes"
+                )
+                result[destination] = int(parts[0]) * 1024
+            elif key == "Threads" and parts and parts[0].isdigit():
+                result["thread_count"] = int(parts[0])
+    except (OSError, UnicodeError):
+        pass
+    result["open_fd_count"] = _count_proc_files(proc_dir / "fd")
+    result["thread_count"] = (
+        result["thread_count"]
+        if result["thread_count"] is not None
+        else _count_proc_files(proc_dir / "task")
+    )
+    start_ticks = _proc_stat_field(pid, 22)
+    user_ticks = _proc_stat_field(pid, 14)
+    system_ticks = _proc_stat_field(pid, 15)
+    result["process_start_time"] = start_ticks
+    if user_ticks is not None and system_ticks is not None:
         try:
-            body = json.loads(state_path.read_text(encoding="utf-8"))
-            pid_val = body.get("pid")
-            if isinstance(pid_val, int) and not isinstance(pid_val, bool):
-                app_pid = pid_val
-            metrics = body.get("runtime_metrics", {})
-            if isinstance(metrics, dict):
-                result["current_rss_bytes"] = metrics.get("current_rss_bytes")
-                result["peak_rss_bytes"] = metrics.get("peak_rss_bytes")
-                result["process_cpu_seconds"] = metrics.get("process_cpu_seconds")
-        except (OSError, json.JSONDecodeError, ValueError):
-            pass
-
-    systemd_pid = _systemd_pid_get()
-    if app_pid is not None and systemd_pid is not None:
-        result["pid_mismatch"] = app_pid != systemd_pid
-    elif app_pid is not None or systemd_pid is not None:
-        result["pid_mismatch"] = True
-    else:
-        result["pid_mismatch"] = None
-
-    proc_pid = app_pid if app_pid is not None else systemd_pid
-    result["pid"] = proc_pid
-    if proc_pid is not None:
-        proc_dir = Path(f"/proc/{proc_pid}")
-        if proc_dir.is_dir():
-            result["process_start_time"] = _proc_stat_field(proc_pid, 21)
-            result["thread_count"] = _count_proc_files(proc_dir / "task")
-            result["open_fd_count"] = _count_proc_files(proc_dir / "fd")
+            ticks_per_second = int(os.sysconf("SC_CLK_TCK"))
+        except (OSError, ValueError):
+            ticks_per_second = 0
+        if ticks_per_second > 0:
+            result["process_cpu_seconds"] = (
+                user_ticks + system_ticks
+            ) / ticks_per_second
     return result
 
 
-def _systemd_pid_get() -> int | None:
-    try:
-        out = subprocess.run(
-            ["systemctl", "show", "-p", "MainPID",
-             "binance-market-data-recorder.service"],
-            capture_output=True, text=True, timeout=10, check=False,
-        )
-        for line in out.stdout.strip().split("\n"):
-            if line.startswith("MainPID="):
-                val = line.split("=", 1)[1]
-                return int(val) if val.isdigit() and val != "0" else None
-    except Exception:
-        pass
-    return None
+# ── market state from validated service evidence ────────────────────
 
-
-# ── market state from real service_state ─────────────────────────────
-
-def _market_state(root: Path) -> dict[str, object]:
-    state_path = root / "state" / "service_state.json"
+def _market_state(
+    evidence: _ServiceStateEvidence,
+    service: dict[str, object],
+) -> dict[str, object]:
     result: dict[str, object] = {
         "overall_network_state": "UNKNOWN",
         "spot_state": "UNKNOWN",
         "usdm_state": "UNKNOWN",
+        "observed_overall_network_state": "UNKNOWN",
+        "observed_spot_state": "UNKNOWN",
+        "observed_usdm_state": "UNKNOWN",
     }
-    if state_path.is_file():
-        try:
-            body = json.loads(state_path.read_text(encoding="utf-8"))
-            result["overall_network_state"] = body.get("network_status", "UNKNOWN")
-            markets = body.get("markets", {})
-            if isinstance(markets, dict):
-                for key, label in (("spot", "spot"), ("um_perpetual", "usdm")):
-                    market = markets.get(key)
-                    if isinstance(market, dict):
-                        result[f"{label}_state"] = market.get("status", "UNKNOWN")
-                        for sk in ("last_receive_time_utc_ns", "last_error_type",
-                                   "recovery_action_count", "orderbook_synchronized"):
-                            if sk in market:
-                                result[f"{label}_{sk}"] = market[sk]
-        except (OSError, json.JSONDecodeError, ValueError):
-            pass
+    document = evidence.document
+    if document is not None:
+        result["observed_overall_network_state"] = document.get(
+            "network_status", "UNKNOWN"
+        )
+        markets = document.get("markets", {})
+        if isinstance(markets, dict):
+            for key, label in (("spot", "spot"), ("um_perpetual", "usdm")):
+                market = markets.get(key)
+                if not isinstance(market, dict):
+                    continue
+                result[f"observed_{label}_state"] = market.get(
+                    "status", "UNKNOWN"
+                )
+                for state_key in (
+                    "last_receive_time_utc_ns",
+                    "last_error_type",
+                    "recovery_action_count",
+                    "orderbook_synchronized",
+                ):
+                    if state_key in market:
+                        result[f"observed_{label}_{state_key}"] = market[state_key]
+
+    application_status = service["application_status"]
+    if application_status == "RUNNING":
+        result["overall_network_state"] = result["observed_overall_network_state"]
+        result["spot_state"] = result["observed_spot_state"]
+        result["usdm_state"] = result["observed_usdm_state"]
+    elif application_status == "STALE":
+        result["overall_network_state"] = "STALE"
+        result["spot_state"] = "STALE"
+        result["usdm_state"] = "STALE"
+    elif application_status == "UNKNOWN":
+        pass
+    else:
+        result["overall_network_state"] = "UNTRUSTED"
+        result["spot_state"] = "UNTRUSTED"
+        result["usdm_state"] = "UNTRUSTED"
     return result
 
 
@@ -260,6 +489,11 @@ def _archive_state(root: Path, storage_id: str | None) -> dict[str, object]:
         "archived_bytes": 0,
         "local_deleted_files": 0,
         "local_deleted_bytes": 0,
+        "unassigned_sealed_scope": "GLOBAL",
+        "unassigned_sealed_files": 0,
+        "unassigned_sealed_bytes": 0,
+        "target_inflight_files": 0,
+        "target_inflight_bytes": 0,
         "backlog_files": 0,
         "backlog_bytes": 0,
         "last_archive_success_at": None,
@@ -277,6 +511,21 @@ def _archive_state(root: Path, storage_id: str | None) -> dict[str, object]:
                 result["archived_bytes"] = agg.get("external_verified_bytes", 0)
                 result["local_deleted_files"] = agg.get("local_deleted_files", 0)
                 result["local_deleted_bytes"] = agg.get("local_deleted_bytes", 0)
+                result["unassigned_sealed_scope"] = agg.get(
+                    "unassigned_sealed_scope", "GLOBAL"
+                )
+                result["unassigned_sealed_files"] = agg.get(
+                    "unassigned_sealed_files", 0
+                )
+                result["unassigned_sealed_bytes"] = agg.get(
+                    "unassigned_sealed_bytes", 0
+                )
+                result["target_inflight_files"] = agg.get(
+                    "target_inflight_files", 0
+                )
+                result["target_inflight_bytes"] = agg.get(
+                    "target_inflight_bytes", 0
+                )
                 result["backlog_files"] = agg.get("backlog_files", 0)
                 result["backlog_bytes"] = agg.get("backlog_bytes", 0)
                 result["last_archive_success_at"] = agg.get("last_verified_at_utc_ns")
@@ -380,8 +629,9 @@ def _proc_stat_field(pid: int, field_index: int) -> int | None:
         if after_paren < 0:
             return None
         fields = text[after_paren + 2:].split()
-        if field_index <= len(fields):
-            return int(fields[field_index - 1])
+        offset = field_index - 3
+        if 0 <= offset < len(fields):
+            return int(fields[offset])
     except (OSError, ValueError):
         pass
     return None
@@ -392,6 +642,3 @@ def _count_proc_files(dir_path: Path) -> int | None:
         return len(list(dir_path.iterdir()))
     except OSError:
         return None
-
-
-import sys  # noqa: E402 (used above for platform checks)

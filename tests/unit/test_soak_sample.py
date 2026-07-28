@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
+
+import binance_market_data_recorder.soak.sample as sample_module
+from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.soak.sample import soak_sample
 
 TEST_CONFIG = {
@@ -17,6 +21,79 @@ TEST_CONFIG = {
     "proxy_loopback": True,
 }
 TEST_STORAGE = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+SAMPLED_AT = 1_700_000_100_000_000_000
+
+
+def _systemd(
+    *,
+    active_state: str = "active",
+    sub_state: str = "running",
+    pid: int | None = 1234,
+    error: str | None = None,
+) -> dict[str, object]:
+    return {
+        "recorder_active_state": active_state,
+        "recorder_sub_state": sub_state,
+        "recorder_main_pid": pid,
+        "recorder_nrestarts": 0,
+        "recorder_active_enter_timestamp_monotonic": 1,
+        "recorder_service_result": "success",
+        "recorder_error": error,
+        "archive_timer_active_state": "inactive",
+        "archive_service_result": None,
+    }
+
+
+def _write_service_state(
+    data_root: Path,
+    *,
+    pid: int = 1234,
+    heartbeat_at: int = SAMPLED_AT,
+) -> None:
+    ServiceStateStore(data_root / "state" / "service_state.json").write(
+        {
+            "status": "RUNNING",
+            "pid": pid,
+            "heartbeat_at_utc_ns": heartbeat_at,
+            "heartbeat_interval_seconds": 5.0,
+            "network_status": "READY",
+            "markets": {
+                "spot": {
+                    "status": "READY",
+                    "last_receive_time_utc_ns": heartbeat_at,
+                },
+                "um_perpetual": {
+                    "status": "READY",
+                    "last_receive_time_utc_ns": heartbeat_at,
+                },
+            },
+            "runtime_metrics": {
+                "current_rss_bytes": 123,
+                "process_cpu_seconds": 4.5,
+            },
+            "proxy_url": "http://proxy-user:proxy-secret@127.0.0.1:7890",
+        }
+    )
+
+
+def _sample_with_systemd(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    systemd: dict[str, object],
+) -> tuple[Path, dict[str, object]]:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    monkeypatch.setattr(sample_module, "_systemd_status", lambda: systemd)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+    return data_root, result
 
 
 def test_soak_sample_writes_valid_jsonl(tmp_path: Path) -> None:
@@ -220,3 +297,251 @@ def test_soak_sample_none_storage_id_does_not_crash(tmp_path: Path) -> None:
 
     assert cast(Any, result)["archive"]["storage_id"] is None
     assert cast(Any, result)["disk"]["external_storage_id"] is None
+
+
+def test_soak_stale_heartbeat_never_reports_observed_ready_as_current(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(
+        data_root,
+        heartbeat_at=SAMPLED_AT - 31_000_000_000,
+    )
+    monkeypatch.setattr(sample_module, "_systemd_status", _systemd)
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    service = cast(dict[str, object], result["service"])
+    markets = cast(dict[str, object], result["markets"])
+    process = cast(dict[str, object], result["process"])
+    assert service["application_status"] == "STALE"
+    assert service["service_state_fresh"] is False
+    assert service["service_state_error"] == "service_heartbeat_stale"
+    assert markets["observed_spot_state"] == "READY"
+    assert markets["observed_usdm_state"] == "READY"
+    assert markets["spot_state"] == "STALE"
+    assert markets["usdm_state"] == "STALE"
+    assert process["runtime_metrics_status"] == "STALE"
+    assert process["runtime_metrics"] == {}
+
+
+def test_soak_systemd_inactive_does_not_report_ready_markets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root, _ = _sample_with_systemd(
+        tmp_path,
+        monkeypatch,
+        _systemd(active_state="inactive", sub_state="dead", pid=None),
+    )
+    _write_service_state(data_root)
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "second.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    assert cast(Any, result)["service"]["application_status"] == "NOT_RUNNING"
+    assert cast(Any, result)["markets"]["observed_spot_state"] == "READY"
+    assert cast(Any, result)["markets"]["spot_state"] == "UNTRUSTED"
+    assert cast(Any, result)["markets"]["usdm_state"] == "UNTRUSTED"
+
+
+def test_soak_pid_mismatch_is_untrusted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(data_root, pid=111)
+    monkeypatch.setattr(sample_module, "_systemd_status", lambda: _systemd(pid=222))
+    monkeypatch.setattr(sample_module, "_proc_metrics", lambda _pid: {})
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    service = cast(dict[str, object], result["service"])
+    process = cast(dict[str, object], result["process"])
+    assert service["systemd_main_pid"] == 222
+    assert service["service_state_pid"] == 111
+    assert service["pid_mismatch"] is True
+    assert service["application_status"] == "UNTRUSTED"
+    assert process["pid"] == 222
+    assert process["runtime_metrics_status"] == "UNAVAILABLE"
+
+
+def test_soak_proc_sampling_uses_systemd_main_pid(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(data_root, pid=111)
+    monkeypatch.setattr(sample_module, "_systemd_status", lambda: _systemd(pid=222))
+    sampled_pids: list[int] = []
+
+    def fake_proc_metrics(pid: int) -> dict[str, object]:
+        sampled_pids.append(pid)
+        return {"open_fd_count": 7}
+
+    monkeypatch.setattr(sample_module, "_proc_metrics", fake_proc_metrics)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    assert sampled_pids == [222]
+    assert cast(Any, result)["process"]["pid_source"] == "SYSTEMD_MAIN_PID"
+    assert cast(Any, result)["process"]["open_fd_count"] == 7
+
+
+def test_soak_fresh_matching_pid_reports_current_ready(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(data_root, pid=1234)
+    monkeypatch.setattr(sample_module, "_systemd_status", _systemd)
+    monkeypatch.setattr(sample_module, "_proc_metrics", lambda _pid: {})
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    service = cast(dict[str, object], result["service"])
+    process = cast(dict[str, object], result["process"])
+    markets = cast(dict[str, object], result["markets"])
+    assert {
+        "systemd_active_state",
+        "systemd_sub_state",
+        "systemd_main_pid",
+        "application_status",
+        "service_state_pid",
+        "pid_mismatch",
+        "heartbeat_at_utc_ns",
+        "heartbeat_age_ns",
+        "service_state_fresh",
+        "service_state_error",
+    } <= service.keys()
+    assert service["application_status"] == "RUNNING"
+    assert service["service_state_fresh"] is True
+    assert service["pid_mismatch"] is False
+    assert markets["spot_state"] == "READY"
+    assert markets["usdm_state"] == "READY"
+    assert process["runtime_metrics_status"] == "CURRENT"
+    assert cast(Any, process)["runtime_metrics"]["current_rss_bytes"] == 123
+
+
+def test_soak_systemctl_unavailable_is_explicit_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(data_root)
+    monkeypatch.setattr(
+        sample_module,
+        "_systemd_status",
+        lambda: _systemd(
+            active_state="UNKNOWN",
+            sub_state="UNKNOWN",
+            pid=None,
+            error="systemctl_unavailable:FileNotFoundError",
+        ),
+    )
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+
+    assert cast(Any, result)["service"]["application_status"] == "UNKNOWN"
+    assert cast(Any, result)["markets"]["spot_state"] == "UNKNOWN"
+    assert cast(Any, result)["process"]["runtime_metrics_status"] == "UNAVAILABLE"
+
+
+def test_systemd_status_queries_recorder_main_pid_once_and_reports_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[list[str]] = []
+
+    def unavailable(arguments: list[str], **_kwargs: object) -> object:
+        calls.append(arguments)
+        raise FileNotFoundError("systemctl")
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.soak.sample.sys.platform", "linux"
+    )
+    monkeypatch.setattr(
+        "binance_market_data_recorder.soak.sample.subprocess.run", unavailable
+    )
+    result = sample_module._systemd_status()
+
+    assert result["recorder_active_state"] == "UNKNOWN"
+    assert result["recorder_main_pid"] is None
+    assert result["recorder_error"] == "systemctl_unavailable:FileNotFoundError"
+    assert sum("MainPID" in call for call in calls) == 1
+
+
+def test_soak_does_not_leak_proxy_from_service_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    _write_service_state(data_root)
+    monkeypatch.setattr(sample_module, "_systemd_status", _systemd)
+    monkeypatch.setattr(sample_module, "_proc_metrics", lambda _pid: {})
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=tmp_path / "samples.jsonl",
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+        utc_clock_ns=lambda: SAMPLED_AT,
+    )
+    serialized = json.dumps(result)
+
+    assert "proxy-user" not in serialized
+    assert "proxy-secret" not in serialized
+    assert "proxy_url" not in serialized
