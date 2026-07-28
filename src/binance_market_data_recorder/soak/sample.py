@@ -279,11 +279,12 @@ def _archive_state(root: Path) -> dict[str, object]:
                         if isinstance(b, int) and not isinstance(b, bool):
                             archived_bytes += b
                             local_deleted_bytes += b
-                    if s == "VERIFIED" and txn.get("verified_at_utc_ns"):
+                    if (s == "VERIFIED" and txn.get("verified_at_utc_ns")):
                         vat = txn["verified_at_utc_ns"]
-                        if isinstance(vat, int) and not isinstance(vat, bool):
-                            if last_archive_success_at is None or vat > last_archive_success_at:
-                                last_archive_success_at = vat
+                        if (isinstance(vat, int) and not isinstance(vat, bool)
+                                and (last_archive_success_at is None
+                                     or vat > last_archive_success_at)):
+                            last_archive_success_at = vat
                     err = txn.get("last_error")
                     if err is not None and err != "" and last_error_type is None:
                         last_error_type = str(err)[:200]
