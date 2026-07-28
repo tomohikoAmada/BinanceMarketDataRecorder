@@ -91,16 +91,36 @@ def test_low_space_drain_exit_zero(
     assert chunk_path.is_file()
 
 
-def test_low_space_preserves_source(tmp_path: Path) -> None:
+def test_warning_target_continues_real_archive(tmp_path: Path) -> None:
     prepared = prepare_archive(tmp_path, chunk_count=1)
-    vols = _test_volumes(prepared, free_pct=3.0)
+    volumes = _test_volumes(prepared, free_pct=40.0)
+    with Catalog(prepared.layout.catalog) as catalog:
+        result = archive_drain(
+            layout=prepared.layout,
+            catalog=catalog,
+            storage_id=prepared.target.storage_id,
+            max_runtime_seconds=60,
+            max_files=1000,
+            volumes=volumes,
+        )
+
+        assert result["processed_files"] >= 1  # type: ignore[operator]
+        assert result["successful_transactions"] >= 1  # type: ignore[operator]
+        assert result["exit_reason"] == "BACKLOG_EMPTY"
+        assert result["target_state"] == "READY"
+        assert catalog.state(prepared.chunk_ids[0]) is ChunkState.LOCAL_DELETED
+
+
+def test_critical_target_stops_and_preserves_source(tmp_path: Path) -> None:
+    prepared = prepare_archive(tmp_path, chunk_count=1)
+    vols = _test_volumes(prepared, free_pct=15.0)
     with Catalog(prepared.layout.catalog) as catalog:
         chunk = catalog.chunk(prepared.chunk_ids[0])
         assert chunk is not None
         source = prepared.layout.root / str(chunk["sealed_path"])
         assert source.exists()
 
-        archive_drain(
+        result = archive_drain(
             layout=prepared.layout,
             catalog=catalog,
             storage_id=prepared.target.storage_id,
@@ -109,6 +129,9 @@ def test_low_space_preserves_source(tmp_path: Path) -> None:
             volumes=vols,
         )
 
+        assert result["exit_reason"] == "TARGET_LOW_SPACE"
+        assert result["processed_files"] == 0
+        assert result["target_state"] == "LOW_SPACE"
         assert source.exists()
 
 

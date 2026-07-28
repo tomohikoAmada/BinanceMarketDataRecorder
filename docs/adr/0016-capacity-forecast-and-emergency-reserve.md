@@ -47,9 +47,10 @@ Unrepresentably distant times are `BEYOND_SUPPORTED_RANGE`; JSON never contains
 NaN or infinity.
 
 Severity transitions are append-only Catalog alerts. Internal and each
-`external:<storage_id>` scope have independent histories. An accessible
-external target at warning or worse reports `LOW_SPACE` plus its exact
-severity.
+`external:<storage_id>` scope have independent histories. As clarified for
+M21.0, an accessible external target at WARNING remains `READY` and reports its
+exact warning so archival can continue. CRITICAL and EMERGENCY report
+`LOW_SPACE` and block new archive transactions. Threshold values are unchanged.
 
 Emergency and hard stop are distinct. EMERGENCY first suspends non-core work
 and prioritizes only already-safe verified archive/delete work. The hard reserve

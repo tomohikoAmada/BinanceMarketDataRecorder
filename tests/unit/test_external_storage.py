@@ -160,26 +160,39 @@ def test_absent_unmounted_and_read_only_never_claim_ready(tmp_path: Path) -> Non
         assert tree(folder) == contents
 
 
-def test_registered_external_target_reports_low_space_severity(
+@pytest.mark.parametrize(
+    ("free_gib", "expected_state", "expected_severity"),
+    [
+        (41, "READY", "OK"),
+        (40, "READY", "WARNING"),
+        (16, "READY", "WARNING"),
+        (15, "LOW_SPACE", "CRITICAL"),
+        (10, "LOW_SPACE", "EMERGENCY"),
+    ],
+)
+def test_registered_external_target_space_policy_boundaries(
     tmp_path: Path,
+    free_gib: int,
+    expected_state: str,
+    expected_severity: str,
 ) -> None:
     mount = tmp_path / "External"
     folder = mount / "Recorder"
     folder.mkdir(parents=True)
-    fake = FakeVolumes(volume(mount))
+    observed_volume = replace(
+        volume(mount),
+        total_bytes=100 * 1024**3,
+        free_bytes=free_gib * 1024**3,
+    )
+    fake = FakeVolumes(observed_volume)
     with Catalog(tmp_path / "catalog.sqlite") as catalog:
         registry = StorageRegistry(catalog=catalog, volumes=fake)
-        registry.register(folder)
-        fake.volumes = [
-            replace(
-                volume(mount),
-                total_bytes=100 * 1024**3,
-                free_bytes=14 * 1024**3,
-            )
-        ]
+        registered = registry.register(folder)
         status = registry.statuses()[0]
-    assert status["state"] == "LOW_SPACE"
-    assert status["space_severity"] == "CRITICAL"
+    assert registered["state"] == expected_state
+    assert registered["space_severity"] == expected_severity
+    assert status["state"] == expected_state
+    assert status["space_severity"] == expected_severity
 
 
 def test_marker_mismatch_blocks_ready_and_unregister_preserves_marker(tmp_path: Path) -> None:

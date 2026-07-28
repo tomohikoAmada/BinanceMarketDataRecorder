@@ -21,6 +21,12 @@ MARKER_SCHEMA = "registered-storage.v1"
 PROBE_PREFIX = ".binance-market-data-recorder-probe-"
 
 
+def _state_for_space_severity(severity: SpaceSeverity) -> str:
+    if severity in {SpaceSeverity.OK, SpaceSeverity.WARNING}:
+        return StorageState.READY.value
+    return StorageState.LOW_SPACE.value
+
+
 def _observed_space(folder: Path, volume: VolumeInfo) -> tuple[int, int]:
     """Use the same volume observation that established mount identity."""
 
@@ -124,11 +130,7 @@ class StorageRegistry:
         severity = space_severity(total_bytes, free_bytes)
         return {
             "storage_id": storage_id,
-            "state": (
-                StorageState.READY.value
-                if severity is SpaceSeverity.OK
-                else StorageState.LOW_SPACE.value
-            ),
+            "state": _state_for_space_severity(severity),
             "space_severity": severity.value,
             "free_bytes": free_bytes,
             "total_bytes": total_bytes,
@@ -231,11 +233,7 @@ class StorageRegistry:
         )
         return {
             **base,
-            "state": (
-                StorageState.READY.value
-                if severity is SpaceSeverity.OK
-                else StorageState.LOW_SPACE.value
-            ),
+            "state": _state_for_space_severity(severity),
             "space_severity": severity.value,
             "free_bytes": free_bytes,
             "total_bytes": total_bytes,

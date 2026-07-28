@@ -12,6 +12,7 @@ import json
 import os
 import platform
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
@@ -20,6 +21,14 @@ from pathlib import Path
 from typing import Any
 
 from ..service.state import ServiceStateError, ServiceStateStore
+from ..storage.catalog import Catalog, CatalogStateError
+from ..storage.forecast import space_severity
+from ..storage.macos import (
+    PlatformVolumeError,
+    StorageRegistrationError,
+    StorageRegistry,
+)
+from ..storage.platform import volume_adapter
 
 SOAK_SCHEMA_VERSION = "m21-soak-sample.v2"
 
@@ -480,60 +489,93 @@ def _market_state(
 
 # ── archive state via bounded aggregation ───────────────────────────
 
+def _stable_error_type(exc: Exception) -> str:
+    if isinstance(exc, CatalogStateError):
+        return "CatalogStateError"
+    if isinstance(exc, sqlite3.Error):
+        return "SQLiteError"
+    if isinstance(exc, PlatformVolumeError):
+        return "PlatformVolumeError"
+    if isinstance(exc, StorageRegistrationError):
+        return "StorageRegistrationError"
+    if isinstance(exc, OSError):
+        return "OSError"
+    if isinstance(exc, ValueError):
+        return "ValueError"
+    return "UnexpectedError"
+
+
 def _archive_state(root: Path, storage_id: str | None) -> dict[str, object]:
     catalog_path = root / "state" / "catalog.sqlite"
     result: dict[str, object] = {
         "storage_id": storage_id,
-        "transactions_by_state": {},
-        "archived_files": 0,
-        "archived_bytes": 0,
-        "local_deleted_files": 0,
-        "local_deleted_bytes": 0,
-        "unassigned_sealed_scope": "GLOBAL",
-        "unassigned_sealed_files": 0,
-        "unassigned_sealed_bytes": 0,
-        "target_inflight_files": 0,
-        "target_inflight_bytes": 0,
-        "backlog_files": 0,
-        "backlog_bytes": 0,
+        "archive_evidence_status": "NO_CATALOG",
+        "archive_error_type": None,
+        "transactions_by_state": None,
+        "archived_files": None,
+        "archived_bytes": None,
+        "local_deleted_files": None,
+        "local_deleted_bytes": None,
+        "unassigned_sealed_scope": None,
+        "unassigned_sealed_files": None,
+        "unassigned_sealed_bytes": None,
+        "target_inflight_files": None,
+        "target_inflight_bytes": None,
+        "backlog_files": None,
+        "backlog_bytes": None,
         "last_archive_success_at": None,
         "last_archive_error_type": None,
     }
-    if catalog_path.is_file() and storage_id is not None:
-        try:
-            from ..storage.catalog import Catalog
-            with Catalog(catalog_path) as catalog:
-                agg = catalog.archive_aggregate(storage_id)
-                raw_txn = agg.get("transactions_by_state", {})
-                if isinstance(raw_txn, dict):
-                    result["transactions_by_state"] = dict(raw_txn)
-                result["archived_files"] = agg.get("external_verified_files", 0)
-                result["archived_bytes"] = agg.get("external_verified_bytes", 0)
-                result["local_deleted_files"] = agg.get("local_deleted_files", 0)
-                result["local_deleted_bytes"] = agg.get("local_deleted_bytes", 0)
-                result["unassigned_sealed_scope"] = agg.get(
-                    "unassigned_sealed_scope", "GLOBAL"
-                )
-                result["unassigned_sealed_files"] = agg.get(
-                    "unassigned_sealed_files", 0
-                )
-                result["unassigned_sealed_bytes"] = agg.get(
-                    "unassigned_sealed_bytes", 0
-                )
-                result["target_inflight_files"] = agg.get(
-                    "target_inflight_files", 0
-                )
-                result["target_inflight_bytes"] = agg.get(
-                    "target_inflight_bytes", 0
-                )
-                result["backlog_files"] = agg.get("backlog_files", 0)
-                result["backlog_bytes"] = agg.get("backlog_bytes", 0)
-                result["last_archive_success_at"] = agg.get("last_verified_at_utc_ns")
-                result["last_archive_error_type"] = agg.get("latest_error_type")
-        except Exception:
-            pass
-    elif catalog_path.is_file() and storage_id is None:
-        result["_note"] = "no storage_id provided; archive stats unavailable"
+    if not catalog_path.is_file():
+        return result
+    if storage_id is None:
+        result["archive_evidence_status"] = "ERROR"
+        result["archive_error_type"] = "MissingStorageId"
+        return result
+    try:
+        with Catalog(catalog_path) as catalog:
+            aggregate = catalog.archive_aggregate(storage_id)
+    except Exception as exc:
+        result["archive_evidence_status"] = "ERROR"
+        result["archive_error_type"] = _stable_error_type(exc)
+        return result
+
+    raw_transactions = aggregate.get("transactions_by_state", {})
+    result.update(
+        {
+            "archive_evidence_status": "OK",
+            "transactions_by_state": (
+                dict(raw_transactions)
+                if isinstance(raw_transactions, dict)
+                else {}
+            ),
+            "archived_files": aggregate.get("external_verified_files", 0),
+            "archived_bytes": aggregate.get("external_verified_bytes", 0),
+            "local_deleted_files": aggregate.get("local_deleted_files", 0),
+            "local_deleted_bytes": aggregate.get("local_deleted_bytes", 0),
+            "unassigned_sealed_scope": aggregate.get(
+                "unassigned_sealed_scope", "GLOBAL"
+            ),
+            "unassigned_sealed_files": aggregate.get(
+                "unassigned_sealed_files", 0
+            ),
+            "unassigned_sealed_bytes": aggregate.get(
+                "unassigned_sealed_bytes", 0
+            ),
+            "target_inflight_files": aggregate.get(
+                "target_inflight_files", 0
+            ),
+            "target_inflight_bytes": aggregate.get(
+                "target_inflight_bytes", 0
+            ),
+            "backlog_files": aggregate.get("backlog_files", 0),
+            "backlog_bytes": aggregate.get("backlog_bytes", 0),
+            "last_archive_success_at": aggregate.get(
+                "last_verified_at_utc_ns"
+            ),
+            "last_archive_error_type": aggregate.get("latest_error_type"),
+        }
+    )
     return result
 
 
@@ -541,64 +583,95 @@ def _archive_state(root: Path, storage_id: str | None) -> dict[str, object]:
 
 def _disk_state(root: Path, storage_id: str | None) -> dict[str, object]:
     result: dict[str, object] = {
-        "internal_total_bytes": 0,
-        "internal_free_bytes": 0,
-        "internal_free_fraction": 0.0,
-        "internal_space_severity": "UNKNOWN",
+        "internal_evidence_status": "ERROR",
+        "internal_error_type": None,
+        "internal_total_bytes": None,
+        "internal_free_bytes": None,
+        "internal_free_fraction": None,
+        "internal_space_severity": None,
         "external_storage_id": storage_id,
+        "external_evidence_status": "NO_CATALOG",
+        "external_error_type": None,
+        "external_target_state": None,
         "external_total_bytes": None,
         "external_free_bytes": None,
         "external_free_fraction": None,
-        "external_space_severity": "ABSENT",
+        "external_space_severity": None,
     }
     try:
-        from ..storage.forecast import space_severity
         st = os.statvfs(root)
         internal_total = st.f_frsize * st.f_blocks
         internal_free = st.f_frsize * st.f_bavail
+        result["internal_evidence_status"] = "OK"
         result["internal_total_bytes"] = internal_total
         result["internal_free_bytes"] = internal_free
         if internal_total > 0:
             result["internal_free_fraction"] = round(internal_free / internal_total, 4)
         result["internal_space_severity"] = space_severity(internal_total, internal_free).value
-    except OSError:
-        pass
+    except Exception as exc:
+        result["internal_error_type"] = _stable_error_type(exc)
 
-    if storage_id is not None:
-        try:
-            from ..storage.catalog import Catalog
-            from ..storage.macos import StorageRegistry
-            from ..storage.platform import volume_adapter
-            catalog_path = root / "state" / "catalog.sqlite"
-            if catalog_path.is_file():
-                with Catalog(catalog_path) as catalog:
-                    targets = StorageRegistry(
-                        catalog=catalog, volumes=volume_adapter()
-                    ).statuses()
-                    for t in targets:
-                        if str(t.get("storage_id", "")) == storage_id:
-                            state = t.get("state")
-                            if state in ("READY", "LOW_SPACE"):
-                                ext_total = t.get("total_bytes")
-                                ext_free = t.get("free_bytes")
-                                if isinstance(ext_total, int) and not isinstance(ext_total, bool):
-                                    result["external_total_bytes"] = ext_total
-                                if isinstance(ext_free, int) and not isinstance(ext_free, bool):
-                                    result["external_free_bytes"] = ext_free
-                                et = result.get("external_total_bytes")
-                                ef = result.get("external_free_bytes")
-                                if (
-                                    isinstance(et, (int, float))
-                                    and isinstance(ef, (int, float))
-                                    and et > 0
-                                ):
-                                    result["external_free_fraction"] = round(ef / et, 4)
-                            result["external_space_severity"] = t.get("space_severity", state)
-                            break
-                    if result["external_space_severity"] == "ABSENT":
-                        pass
-        except Exception:
-            pass
+    catalog_path = root / "state" / "catalog.sqlite"
+    if not catalog_path.is_file():
+        return result
+    if storage_id is None:
+        result["external_evidence_status"] = "ERROR"
+        result["external_error_type"] = "MissingStorageId"
+        result["external_target_state"] = "ERROR"
+        return result
+    try:
+        with Catalog(catalog_path) as catalog:
+            targets = StorageRegistry(
+                catalog=catalog, volumes=volume_adapter()
+            ).statuses()
+    except Exception as exc:
+        result["external_evidence_status"] = "ERROR"
+        result["external_error_type"] = _stable_error_type(exc)
+        result["external_target_state"] = "ERROR"
+        return result
+
+    target = next(
+        (
+            candidate
+            for candidate in targets
+            if str(candidate.get("storage_id", "")) == storage_id
+        ),
+        None,
+    )
+    if target is None:
+        result["external_evidence_status"] = "ABSENT"
+        result["external_target_state"] = "ABSENT"
+        result["external_space_severity"] = "ABSENT"
+        return result
+
+    state = str(target.get("state") or "ERROR")
+    result["external_target_state"] = state
+    if state in {"ABSENT", "PRESENT_UNMOUNTED"}:
+        result["external_evidence_status"] = "ABSENT"
+        result["external_space_severity"] = target.get(
+            "space_severity", "ABSENT"
+        )
+        return result
+
+    result["external_evidence_status"] = "OK"
+    result["external_space_severity"] = target.get("space_severity", state)
+    if state in {"READY", "LOW_SPACE"}:
+        external_total = target.get("total_bytes")
+        external_free = target.get("free_bytes")
+        if isinstance(external_total, int) and not isinstance(external_total, bool):
+            result["external_total_bytes"] = external_total
+        if isinstance(external_free, int) and not isinstance(external_free, bool):
+            result["external_free_bytes"] = external_free
+        if (
+            isinstance(external_total, int)
+            and not isinstance(external_total, bool)
+            and isinstance(external_free, int)
+            and not isinstance(external_free, bool)
+            and external_total > 0
+        ):
+            result["external_free_fraction"] = round(
+                external_free / external_total, 4
+            )
     return result
 
 

@@ -127,6 +127,17 @@ M10 implements copy/verify and disappearance-during-copy behavior.
 M11 implements `LOW_SPACE`. M12 implements `EJECT_PENDING` and
 `SAFE_TO_REMOVE` under ADR-0017.
 
+Capacity severity and archive eligibility are deliberately distinct:
+
+- `OK` and `WARNING` targets remain `READY`; WARNING emits capacity evidence
+  but does not stop a new verified archive transaction.
+- `CRITICAL` and `EMERGENCY` targets report `LOW_SPACE`; Archive Drain starts
+  no new transaction and exits successfully with `TARGET_LOW_SPACE`.
+
+The shared thresholds remain exactly 40% warning, 15% critical, and the
+existing emergency rule. This distinction changes neither archive verification
+nor the Catalog state machine.
+
 M20 does not map Linux to the macOS eject transaction. Without a proven udisks
 capability, `storage eject` returns `MANUAL_ACTION_REQUIRED`,
 `safe_to_remove=false`, and performs no unmount/eject mutation. Only macOS
@@ -198,6 +209,8 @@ The most severe applicable state wins. Growth history includes at least 1 h,
 6 h, 24 h, and 7 d windows with a documented robust median/EWMA method. Output
 net local growth, archive backlog and oldest age, UTC threshold ETAs,
 `INSUFFICIENT_DATA`, or `NOT_APPROACHING`; it never emits NaN/infinity as JSON.
+For an external archive target, WARNING remains `READY` and allows archival;
+CRITICAL and EMERGENCY map to `LOW_SPACE` and stop new archive transactions.
 
 Emergency order is: suspend compaction/non-core derivation; prioritize archive
 and deletion already authorized by verification; never delete unarchived raw;

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 from typing import Any, cast
 
@@ -9,6 +10,7 @@ import pytest
 import binance_market_data_recorder.soak.sample as sample_module
 from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.soak.sample import soak_sample
+from binance_market_data_recorder.storage.catalog import Catalog
 
 TEST_CONFIG = {
     "data_root": "/tmp/test",
@@ -178,7 +180,9 @@ def test_soak_sample_recorder_not_running(tmp_path: Path) -> None:
     assert "recorder_active_state" in systemd
 
 
-def test_soak_sample_external_absent_no_crash(tmp_path: Path) -> None:
+def test_soak_sample_no_catalog_does_not_invent_zero_or_absence(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "samples.jsonl"
     data_root = tmp_path / "data_root"
     data_root.mkdir()
@@ -190,10 +194,130 @@ def test_soak_sample_external_absent_no_crash(tmp_path: Path) -> None:
         recorder_version="0.1.0-test",
     )
 
-    disk = result.get("disk", {})
-    assert isinstance(disk, dict)
-    assert disk.get("external_space_severity") == "ABSENT"
-    assert disk.get("external_storage_id") == TEST_STORAGE
+    archive = cast(dict[str, object], result["archive"])
+    disk = cast(dict[str, object], result["disk"])
+    assert archive["archive_evidence_status"] == "NO_CATALOG"
+    assert archive["archive_error_type"] is None
+    assert archive["backlog_files"] is None
+    assert archive["backlog_bytes"] is None
+    assert archive["archived_files"] is None
+    assert disk["external_evidence_status"] == "NO_CATALOG"
+    assert disk["external_target_state"] is None
+    assert disk["external_space_severity"] is None
+    assert disk["external_storage_id"] == TEST_STORAGE
+
+
+def test_soak_archive_error_is_explicit_and_jsonl_is_still_written(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    with Catalog(data_root / "state" / "catalog.sqlite"):
+        pass
+
+    def fail_aggregate(
+        _catalog: Catalog,
+        _storage_id: str,
+    ) -> dict[str, object]:
+        raise sqlite3.OperationalError("/private/catalog/path is locked")
+
+    monkeypatch.setattr(Catalog, "archive_aggregate", fail_aggregate)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    archive = cast(dict[str, object], result["archive"])
+    assert archive["archive_evidence_status"] == "ERROR"
+    assert archive["archive_error_type"] == "SQLiteError"
+    assert archive["backlog_files"] is None
+    assert archive["backlog_bytes"] is None
+    parsed = json.loads(output.read_text(encoding="utf-8"))
+    assert parsed["archive"]["archive_evidence_status"] == "ERROR"
+    assert "/private/catalog/path" not in json.dumps(parsed)
+
+
+def test_soak_real_zero_archive_backlog_is_ok(tmp_path: Path) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    with Catalog(data_root / "state" / "catalog.sqlite"):
+        pass
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    archive = cast(dict[str, object], result["archive"])
+    assert archive["archive_evidence_status"] == "OK"
+    assert archive["archive_error_type"] is None
+    assert archive["backlog_files"] == 0
+    assert archive["backlog_bytes"] == 0
+
+
+def test_soak_volume_adapter_error_is_not_absent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    with Catalog(data_root / "state" / "catalog.sqlite"):
+        pass
+
+    def fail_volume_adapter() -> object:
+        raise OSError("/private/mount/path unavailable")
+
+    monkeypatch.setattr(sample_module, "volume_adapter", fail_volume_adapter)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    disk = cast(dict[str, object], result["disk"])
+    assert disk["external_evidence_status"] == "ERROR"
+    assert disk["external_error_type"] == "OSError"
+    assert disk["external_target_state"] == "ERROR"
+    assert disk["external_space_severity"] is None
+    assert "/private/mount/path" not in json.dumps(result)
+
+
+def test_soak_true_external_absence_is_explicit(tmp_path: Path) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    with Catalog(data_root / "state" / "catalog.sqlite"):
+        pass
+
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=TEST_STORAGE,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    disk = cast(dict[str, object], result["disk"])
+    assert disk["external_evidence_status"] == "ABSENT"
+    assert disk["external_error_type"] is None
+    assert disk["external_target_state"] == "ABSENT"
+    assert disk["external_space_severity"] == "ABSENT"
 
 
 def test_soak_sample_config_hash_excludes_credentials(tmp_path: Path) -> None:
