@@ -8,9 +8,12 @@ from typing import Any, cast
 import pytest
 
 import binance_market_data_recorder.soak.sample as sample_module
+import binance_market_data_recorder.storage.macos.registry as registry_module
 from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.soak.sample import soak_sample
 from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.macos import StorageRegistry, VolumeInfo
+from binance_market_data_recorder.storage.macos.registry import PROBE_PREFIX
 
 TEST_CONFIG = {
     "data_root": "/tmp/test",
@@ -24,6 +27,53 @@ TEST_CONFIG = {
 }
 TEST_STORAGE = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 SAMPLED_AT = 1_700_000_100_000_000_000
+
+
+class _FixedVolumes:
+    def __init__(self, *volumes: VolumeInfo) -> None:
+        self._volumes = list(volumes)
+
+    def inventory(self) -> list[VolumeInfo]:
+        return list(self._volumes)
+
+
+def _register_test_storage(
+    data_root: Path,
+    tmp_path: Path,
+    *,
+    free_gib: int = 75,
+) -> tuple[str, Path, _FixedVolumes]:
+    mountpoint = tmp_path / "external-volume"
+    folder = mountpoint / "Recorder"
+    folder.mkdir(parents=True)
+    volume = VolumeInfo(
+        disk_id="soak-test-volume",
+        volume_uuid="AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+        name="Soak Test Archive",
+        filesystem_type="testfs",
+        mountpoint=mountpoint,
+        writable=True,
+        internal=False,
+        removable=True,
+        total_bytes=100 * 1024**3,
+        free_bytes=free_gib * 1024**3,
+        observed_at_utc_ns=1,
+    )
+    volumes = _FixedVolumes(volume)
+    with Catalog(data_root / "state" / "catalog.sqlite") as catalog:
+        registered = StorageRegistry(
+            catalog=catalog,
+            volumes=volumes,
+        ).register(folder)
+    return str(registered["storage_id"]), folder, volumes
+
+
+def _catalog_snapshot(catalog_path: Path) -> dict[str, tuple[int, bytes]]:
+    return {
+        path.name: (path.stat().st_mtime_ns, path.read_bytes())
+        for path in catalog_path.parent.iterdir()
+        if path.name.startswith(catalog_path.name)
+    }
 
 
 def _systemd(
@@ -274,8 +324,10 @@ def test_soak_volume_adapter_error_is_not_absent(
     data_root = tmp_path / "data_root"
     data_root.mkdir()
     (data_root / "state").mkdir()
-    with Catalog(data_root / "state" / "catalog.sqlite"):
-        pass
+    storage_id, _folder, _volumes = _register_test_storage(
+        data_root,
+        tmp_path,
+    )
 
     def fail_volume_adapter() -> object:
         raise OSError("/private/mount/path unavailable")
@@ -284,7 +336,7 @@ def test_soak_volume_adapter_error_is_not_absent(
     result = soak_sample(
         data_root=data_root,
         output_path=output,
-        storage_id=TEST_STORAGE,
+        storage_id=storage_id,
         config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
@@ -297,7 +349,37 @@ def test_soak_volume_adapter_error_is_not_absent(
     assert "/private/mount/path" not in json.dumps(result)
 
 
-def test_soak_true_external_absence_is_explicit(tmp_path: Path) -> None:
+def test_soak_true_external_absence_is_explicit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    storage_id, _folder, _volumes = _register_test_storage(
+        data_root,
+        tmp_path,
+    )
+    monkeypatch.setattr(sample_module, "volume_adapter", lambda: _FixedVolumes())
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=storage_id,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    disk = cast(dict[str, object], result["disk"])
+    assert disk["external_evidence_status"] == "ABSENT"
+    assert disk["external_error_type"] is None
+    assert disk["external_target_state"] == "ABSENT"
+    assert disk["external_space_severity"] == "ABSENT"
+
+
+def test_soak_unknown_storage_id_is_not_reported_as_absent(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "samples.jsonl"
     data_root = tmp_path / "data_root"
     data_root.mkdir()
@@ -314,10 +396,140 @@ def test_soak_true_external_absence_is_explicit(tmp_path: Path) -> None:
     )
 
     disk = cast(dict[str, object], result["disk"])
-    assert disk["external_evidence_status"] == "ABSENT"
+    assert disk["external_evidence_status"] == "ERROR"
+    assert disk["external_error_type"] == "UnknownStorageId"
+    assert disk["external_target_state"] == "NOT_REGISTERED"
+    assert disk["external_space_severity"] is None
+
+
+def test_soak_registered_warning_target_is_ready_without_probe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    storage_id, folder, volumes = _register_test_storage(
+        data_root,
+        tmp_path,
+        free_gib=40,
+    )
+    files_before = {
+        path.relative_to(folder).as_posix() for path in folder.rglob("*")
+    }
+
+    def forbidden_probe(_folder: Path) -> dict[str, object]:
+        raise AssertionError("Soak called probe_directory")
+
+    monkeypatch.setattr(registry_module, "probe_directory", forbidden_probe)
+    monkeypatch.setattr(sample_module, "volume_adapter", lambda: volumes)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=storage_id,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    disk = cast(dict[str, object], result["disk"])
+    assert disk["external_evidence_status"] == "OK"
     assert disk["external_error_type"] is None
-    assert disk["external_target_state"] == "ABSENT"
-    assert disk["external_space_severity"] == "ABSENT"
+    assert disk["external_target_state"] == "READY"
+    assert disk["external_space_severity"] == "WARNING"
+    assert {
+        path.relative_to(folder).as_posix() for path in folder.rglob("*")
+    } == files_before
+    assert not any(
+        path.name.startswith(PROBE_PREFIX) for path in folder.iterdir()
+    )
+
+
+def test_soak_never_activates_storage_target_or_changes_control(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    storage_id, _folder, volumes = _register_test_storage(
+        data_root,
+        tmp_path,
+    )
+    catalog_path = data_root / "state" / "catalog.sqlite"
+    with Catalog(catalog_path, read_only=True) as catalog:
+        control_before = catalog.storage_control(storage_id)
+
+    def forbidden_activate(
+        _catalog: Catalog,
+        _storage_id: str,
+        *,
+        occurred_at_utc_ns: int,
+    ) -> None:
+        raise AssertionError(
+            f"Soak called activate_storage_target at {occurred_at_utc_ns}"
+        )
+
+    monkeypatch.setattr(Catalog, "activate_storage_target", forbidden_activate)
+    monkeypatch.setattr(sample_module, "volume_adapter", lambda: volumes)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=storage_id,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    with Catalog(catalog_path, read_only=True) as catalog:
+        control_after = catalog.storage_control(storage_id)
+    assert cast(dict[str, object], result["disk"])[
+        "external_evidence_status"
+    ] == "OK"
+    assert control_after == control_before
+
+
+def test_soak_catalog_observation_has_no_write_transaction_or_file_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+    storage_id, folder, volumes = _register_test_storage(
+        data_root,
+        tmp_path,
+    )
+    catalog_path = data_root / "state" / "catalog.sqlite"
+    catalog_before = _catalog_snapshot(catalog_path)
+    external_before = {
+        path.relative_to(folder).as_posix() for path in folder.rglob("*")
+    }
+
+    def forbidden_transaction(_catalog: Catalog) -> object:
+        raise AssertionError("Soak attempted BEGIN IMMEDIATE")
+
+    monkeypatch.setattr(Catalog, "_transaction", forbidden_transaction)
+    monkeypatch.setattr(sample_module, "volume_adapter", lambda: volumes)
+    result = soak_sample(
+        data_root=data_root,
+        output_path=output,
+        storage_id=storage_id,
+        config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    assert cast(dict[str, object], result["archive"])[
+        "archive_evidence_status"
+    ] == "OK"
+    assert cast(dict[str, object], result["disk"])[
+        "external_evidence_status"
+    ] == "OK"
+    assert _catalog_snapshot(catalog_path) == catalog_before
+    assert {
+        path.relative_to(folder).as_posix() for path in folder.rglob("*")
+    } == external_before
 
 
 def test_soak_sample_config_hash_excludes_credentials(tmp_path: Path) -> None:

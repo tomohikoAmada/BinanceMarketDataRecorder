@@ -533,7 +533,7 @@ def _archive_state(root: Path, storage_id: str | None) -> dict[str, object]:
         result["archive_error_type"] = "MissingStorageId"
         return result
     try:
-        with Catalog(catalog_path) as catalog:
+        with Catalog(catalog_path, read_only=True) as catalog:
             aggregate = catalog.archive_aggregate(storage_id)
     except Exception as exc:
         result["archive_evidence_status"] = "ERROR"
@@ -620,10 +620,19 @@ def _disk_state(root: Path, storage_id: str | None) -> dict[str, object]:
         result["external_target_state"] = "ERROR"
         return result
     try:
-        with Catalog(catalog_path) as catalog:
+        with Catalog(catalog_path, read_only=True) as catalog:
+            registered = {
+                str(target["storage_id"])
+                for target in catalog.storage_targets()
+            }
+            if storage_id not in registered:
+                result["external_evidence_status"] = "ERROR"
+                result["external_error_type"] = "UnknownStorageId"
+                result["external_target_state"] = "NOT_REGISTERED"
+                return result
             targets = StorageRegistry(
                 catalog=catalog, volumes=volume_adapter()
-            ).statuses()
+            ).observe_statuses()
     except Exception as exc:
         result["external_evidence_status"] = "ERROR"
         result["external_error_type"] = _stable_error_type(exc)

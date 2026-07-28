@@ -59,9 +59,13 @@ separately prove unmount/eject callbacks before exposing safe eject.
   atomic rename, directory fsync, reopen/readback and cleanup probe. A read-only
   observation returns `READ_ONLY` without attempting the probe.
 - `storage list` and `storage inspect` are read-only. `storage register` is the
-  explicit authorization to probe and create a marker. `storage status` may
-  repeat the probe only inside registered folders. `unregister` removes Catalog
-  eligibility but deliberately retains marker and archived files.
+  explicit authorization to probe and create a marker. `storage status` and
+  normal Archive readiness may repeat the probe only inside registered folders.
+  The M21.0 Soak observer instead uses a dedicated observation path: it reads
+  volume inventory, registration, control and marker identity plus current
+  mount/writability/capacity, but never runs the directory capability probe or
+  reactivates a storage-control latch. `unregister` removes Catalog eligibility
+  but deliberately retains marker and archived files.
 - M9 defines the complete public state vocabulary, while M10-M12 own archive,
   low-space forecasting, and eject transitions. M9 does not copy or delete Raw.
 

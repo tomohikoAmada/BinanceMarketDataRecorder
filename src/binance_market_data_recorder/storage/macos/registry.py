@@ -157,12 +157,26 @@ class StorageRegistry:
 
     def statuses(self) -> list[dict[str, object]]:
         volumes = {volume.volume_uuid: volume for volume in self._volumes.inventory()}
-        return [self._resolve_target(target, volumes) for target in self._catalog.storage_targets()]
+        return [
+            self._resolve_target(target, volumes, observation_only=False)
+            for target in self._catalog.storage_targets()
+        ]
+
+    def observe_statuses(self) -> list[dict[str, object]]:
+        """Observe registered targets without probing or changing Catalog state."""
+
+        volumes = {volume.volume_uuid: volume for volume in self._volumes.inventory()}
+        return [
+            self._resolve_target(target, volumes, observation_only=True)
+            for target in self._catalog.storage_targets()
+        ]
 
     def _resolve_target(
         self,
         target: dict[str, object],
         volumes: dict[str, VolumeInfo],
+        *,
+        observation_only: bool,
     ) -> dict[str, object]:
         storage_id = str(target["storage_id"])
         volume_uuid = str(target["volume_uuid"])
@@ -206,12 +220,15 @@ class StorageRegistry:
                 "state": StorageState.ERROR.value,
                 "reason": "registered path now resolves through a different alias",
             }
-        if volume.writable is False:
+        if volume.writable is False and not observation_only:
             return {**base, "state": StorageState.READ_ONLY.value}
         if not folder.is_dir():
             return {**base, "state": StorageState.DEGRADED.value, "reason": "directory_missing"}
         try:
-            marker = _read_marker(folder / MARKER_NAME)
+            marker_path = folder / MARKER_NAME
+            if observation_only and marker_path.is_symlink():
+                raise StorageRegistrationError("storage marker is a symbolic link")
+            marker = _read_marker(marker_path)
             _validate_marker(
                 marker,
                 volume_uuid=volume_uuid,
@@ -219,7 +236,7 @@ class StorageRegistry:
                 storage_id=storage_id,
                 marker_nonce=str(target["marker_nonce"]),
             )
-            probe = probe_directory(folder)
+            probe = None if observation_only else probe_directory(folder)
         except (OSError, ValueError, StorageRegistrationError) as exc:
             return {
                 **base,
@@ -228,17 +245,28 @@ class StorageRegistry:
             }
         total_bytes, free_bytes = _observed_space(folder, volume)
         severity = space_severity(total_bytes, free_bytes)
-        self._catalog.activate_storage_target(
-            storage_id, occurred_at_utc_ns=time.time_ns()
-        )
-        return {
+        if volume.writable is False:
+            return {
+                **base,
+                "state": StorageState.READ_ONLY.value,
+                "space_severity": severity.value,
+                "free_bytes": free_bytes,
+                "total_bytes": total_bytes,
+            }
+        if not observation_only:
+            self._catalog.activate_storage_target(
+                storage_id, occurred_at_utc_ns=time.time_ns()
+            )
+        result = {
             **base,
             "state": _state_for_space_severity(severity),
             "space_severity": severity.value,
             "free_bytes": free_bytes,
             "total_bytes": total_bytes,
-            "probe": probe,
         }
+        if probe is not None:
+            result["probe"] = probe
+        return result
 
     @staticmethod
     def _containing_volume(path: Path, volumes: Sequence[VolumeInfo]) -> VolumeInfo | None:

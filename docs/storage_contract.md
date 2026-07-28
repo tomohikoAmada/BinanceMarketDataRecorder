@@ -116,6 +116,15 @@ State transitions include evidence and timestamps. `READY` means identity and
 capability probes passed at the current mountpoint; it is not inferred from a
 path merely existing.
 
+M21.0 adds a strictly observational Soak path without weakening that readiness
+contract. Soak opens the existing Catalog through SQLite `mode=ro` with
+`query_only=ON`, reads registration/control state and validates the existing
+marker, mount, writability and capacity, but does not run the in-directory
+capability probe, call storage activation, or modify `storage_control`. Normal
+Archive and `storage status` paths retain the full probe and activation safety
+behavior. An unregistered configured `storage_id` is `NOT_REGISTERED` evidence,
+not evidence that a registered disk is physically `ABSENT`.
+
 M9 implements the public state vocabulary, UUID-based resolution, Catalog
 `storage_targets`, and the marker
 `.binance-market-data-recorder-storage.json`. `storage list` displays

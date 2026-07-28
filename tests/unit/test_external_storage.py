@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import pytest
 
+import binance_market_data_recorder.storage.macos.registry as registry_module
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.macos import (
     StorageRegistrationError,
@@ -158,6 +159,79 @@ def test_absent_unmounted_and_read_only_never_claim_ready(tmp_path: Path) -> Non
         contents = tree(folder)
         assert registry.statuses()[0]["state"] == "READ_ONLY"
         assert tree(folder) == contents
+
+
+def test_observe_statuses_validates_marker_without_probe_activate_or_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mount = tmp_path / "External"
+    folder = mount / "Recorder"
+    folder.mkdir(parents=True)
+    fake = FakeVolumes(volume(mount))
+    catalog_path = tmp_path / "catalog.sqlite"
+    with Catalog(catalog_path) as catalog:
+        registered = StorageRegistry(catalog=catalog, volumes=fake).register(folder)
+        control_before = catalog.storage_control(str(registered["storage_id"]))
+    files_before = tree(mount)
+
+    def forbidden_probe(_folder: Path) -> dict[str, object]:
+        raise AssertionError("observation attempted a directory probe")
+
+    def forbidden_activate(
+        _catalog: Catalog,
+        _storage_id: str,
+        *,
+        occurred_at_utc_ns: int,
+    ) -> None:
+        raise AssertionError(
+            f"observation attempted activation at {occurred_at_utc_ns}"
+        )
+
+    monkeypatch.setattr(registry_module, "probe_directory", forbidden_probe)
+    monkeypatch.setattr(Catalog, "activate_storage_target", forbidden_activate)
+    with Catalog(catalog_path, read_only=True) as catalog:
+        observed = StorageRegistry(
+            catalog=catalog,
+            volumes=fake,
+        ).observe_statuses()[0]
+        control_after = catalog.storage_control(str(registered["storage_id"]))
+
+    assert observed["state"] == "READY"
+    assert observed["space_severity"] == "OK"
+    assert "probe" not in observed
+    assert control_after == control_before
+    assert tree(mount) == files_before
+    assert not any(
+        path.name.startswith(PROBE_PREFIX) for path in folder.iterdir()
+    )
+
+
+def test_observe_statuses_validates_marker_even_when_volume_is_read_only(
+    tmp_path: Path,
+) -> None:
+    mount = tmp_path / "External"
+    folder = mount / "Recorder"
+    folder.mkdir(parents=True)
+    catalog_path = tmp_path / "catalog.sqlite"
+    with Catalog(catalog_path) as catalog:
+        StorageRegistry(
+            catalog=catalog,
+            volumes=FakeVolumes(volume(mount)),
+        ).register(folder)
+    marker_path = folder / MARKER_NAME
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    marker["marker_nonce"] = "wrong"
+    marker_path.write_text(json.dumps(marker), encoding="utf-8")
+
+    with Catalog(catalog_path, read_only=True) as catalog:
+        observed = StorageRegistry(
+            catalog=catalog,
+            volumes=FakeVolumes(volume(mount, writable=False)),
+        ).observe_statuses()[0]
+
+    assert observed["state"] == "ERROR"
+    assert "identity mismatch" in str(observed["reason"])
 
 
 @pytest.mark.parametrize(
