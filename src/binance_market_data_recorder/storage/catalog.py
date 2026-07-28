@@ -1262,6 +1262,164 @@ class Catalog:
             ).fetchone()
         return dict(row) if row else None
 
+    def oldest_incomplete_archive_transaction(
+        self, storage_id: str
+    ) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT * FROM archive_transactions
+                WHERE storage_id = ?
+                  AND state IN (?, ?, ?, ?)
+                ORDER BY created_at_utc_ns, transaction_id
+                LIMIT 1
+                """,
+                (
+                    storage_id,
+                    ArchiveState.COPYING,
+                    ArchiveState.VERIFYING,
+                    ArchiveState.VERIFIED,
+                    ArchiveState.LOCAL_DELETE_PENDING,
+                ),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def archive_aggregate(
+        self, storage_id: str
+    ) -> dict[str, object]:
+        with self._lock:
+            state_counts = self._connection.execute(
+                """
+                SELECT state, COUNT(*) AS cnt
+                FROM archive_transactions
+                WHERE storage_id = ?
+                GROUP BY state
+                """,
+                (storage_id,),
+            ).fetchall()
+        txn_states: dict[str, int] = {}
+        for row in state_counts:
+            txn_states[str(row["state"])] = int(row["cnt"])
+
+        with self._lock:
+            verified_row = self._connection.execute(
+                """
+                SELECT
+                    COUNT(*) AS verified_files,
+                    COALESCE(SUM(stored_bytes), 0) AS verified_bytes
+                FROM archive_transactions
+                WHERE storage_id = ?
+                  AND state IN (?, ?, ?)
+                """,
+                (
+                    storage_id,
+                    ArchiveState.VERIFIED,
+                    ArchiveState.LOCAL_DELETE_PENDING,
+                    ArchiveState.LOCAL_DELETED,
+                ),
+            ).fetchone()
+        external_verified_files = int(verified_row["verified_files"]) if verified_row else 0
+        external_verified_bytes = int(verified_row["verified_bytes"]) if verified_row else 0
+
+        with self._lock:
+            deleted_row = self._connection.execute(
+                """
+                SELECT
+                    COUNT(*) AS deleted_files,
+                    COALESCE(SUM(stored_bytes), 0) AS deleted_bytes
+                FROM archive_transactions
+                WHERE storage_id = ?
+                  AND state = ?
+                """,
+                (storage_id, ArchiveState.LOCAL_DELETED),
+            ).fetchone()
+        local_deleted_files = int(deleted_row["deleted_files"]) if deleted_row else 0
+        local_deleted_bytes = int(deleted_row["deleted_bytes"]) if deleted_row else 0
+
+        with self._lock:
+            verified_row2 = self._connection.execute(
+                """
+                SELECT MAX(verified_at_utc_ns) AS last_verified_at
+                FROM archive_transactions
+                WHERE storage_id = ?
+                  AND state IN (?, ?, ?)
+                  AND verified_at_utc_ns IS NOT NULL
+                """,
+                (
+                    storage_id,
+                    ArchiveState.VERIFIED,
+                    ArchiveState.LOCAL_DELETE_PENDING,
+                    ArchiveState.LOCAL_DELETED,
+                ),
+            ).fetchone()
+        last_verified_at_utc_ns: object = (
+            verified_row2["last_verified_at"] if verified_row2 else None
+        )
+
+        with self._lock:
+            error_row = self._connection.execute(
+                """
+                SELECT last_error, updated_at_utc_ns
+                FROM archive_transactions
+                WHERE storage_id = ?
+                  AND last_error IS NOT NULL
+                  AND last_error != ''
+                ORDER BY updated_at_utc_ns DESC
+                LIMIT 1
+                """,
+                (storage_id,),
+            ).fetchone()
+        latest_error_type: object = None
+        latest_error_at_utc_ns: object = None
+        if error_row:
+            raw_error = str(error_row["last_error"] or "")
+            if raw_error:
+                if "DISAPPEARED" in raw_error:
+                    latest_error_type = "DISAPPEARED_DURING_COPY"
+                elif "SHA" in raw_error or "hash" in raw_error.lower():
+                    latest_error_type = "HASH_MISMATCH"
+                elif "size" in raw_error.lower() or "missing" in raw_error.lower():
+                    latest_error_type = "MISSING"
+                elif "ArchiveError" in raw_error:
+                    latest_error_type = "ARCHIVE_ERROR"
+                else:
+                    latest_error_type = "UNKNOWN"
+            latest_error_at_utc_ns = error_row["updated_at_utc_ns"]
+
+        backlog_files = sum(
+            txn_states.get(s, 0) for s in (
+                str(ArchiveState.COPYING),
+                str(ArchiveState.VERIFYING),
+                str(ArchiveState.VERIFIED),
+                str(ArchiveState.LOCAL_DELETE_PENDING),
+            )
+        )
+        backlog_bytes_chunks = self.chunks_in_states(
+            ChunkState.SEALED,
+            ChunkState.ARCHIVE_COPYING,
+            ChunkState.ARCHIVE_VERIFYING,
+            ChunkState.ARCHIVED_VERIFIED,
+            ChunkState.LOCAL_DELETE_PENDING,
+        )
+        backlog_bytes = sum(
+            v for row in backlog_bytes_chunks
+            if isinstance((v := row.get("stored_bytes")), int)
+            and not isinstance(v, bool)
+        )
+
+        return {
+            "transactions_by_state": txn_states,
+            "external_verified_files": external_verified_files,
+            "external_verified_bytes": external_verified_bytes,
+            "local_deleted_files": local_deleted_files,
+            "local_deleted_bytes": local_deleted_bytes,
+            "backlog_files": backlog_files,
+            "backlog_bytes": backlog_bytes,
+            "last_verified_at_utc_ns": last_verified_at_utc_ns,
+            "latest_error_type": latest_error_type,
+            "latest_error_at_utc_ns": latest_error_at_utc_ns,
+        }
+
     def register_storage_target(
         self,
         *,

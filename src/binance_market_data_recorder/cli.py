@@ -183,6 +183,7 @@ def build_parser() -> argparse.ArgumentParser:
     soak_sample_cmd = soak_commands.add_parser(
         "sample", help="capture a single time-point observation"
     )
+    soak_sample_cmd.add_argument("--storage-id", required=True)
     soak_sample_cmd.add_argument("--output", type=Path, required=True)
     soak_timer = soak_commands.add_parser(
         "timer", help="manage the soak sampling systemd timer"
@@ -195,6 +196,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     soak_timer_install.add_argument("--user", required=True)
     soak_timer_install.add_argument("--group", required=True)
+    soak_timer_install.add_argument("--storage-id", required=True)
     soak_timer_install.add_argument("--interval-seconds", type=int, default=300)
     soak_timer_install.add_argument("--output", type=Path, required=True)
     for action in ("start", "stop", "restart", "status", "uninstall"):
@@ -801,7 +803,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         if drain_result.get("exit_reason")
                         in ("BACKLOG_EMPTY", "MAX_FILES", "DEADLINE",
                             "ALREADY_RUNNING", "INTERRUPTED",
-                            "TARGET_ABSENT", "TARGET_NOT_READY")
+                            "TARGET_ABSENT", "TARGET_NOT_READY",
+                            "TARGET_LOW_SPACE")
                         else 1
                     )
                 registry = StorageRegistry(
@@ -863,6 +866,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 config_file=loaded.config_file,
                 user=str(getattr(args, "user", "")),
                 group=str(getattr(args, "group", "")),
+                storage_id=str(getattr(args, "storage_id", "")),
                 interval_seconds=int(getattr(args, "interval_seconds", 300)),
                 output_path=Path(str(getattr(args, "output", ""))).resolve()
                 if getattr(args, "output", None) else Path(
@@ -897,6 +901,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sample_result = soak_sample(
                     data_root=loaded.config.data_root,
                     output_path=args.output,
+                    storage_id=args.storage_id,
                     config_dict=loaded.config.public_dict(),
                     recorder_version=version_string(),
                 )

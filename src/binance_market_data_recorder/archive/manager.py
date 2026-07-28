@@ -215,10 +215,11 @@ class ArchiveManager:
         }
 
     def _next_transaction(self) -> dict[str, object] | None:
-        transactions = self.catalog.archive_transactions(storage_id=self.target.storage_id)
-        for transaction in transactions:
-            if ArchiveState(str(transaction["state"])) is not ArchiveState.LOCAL_DELETED:
-                return transaction
+        transaction = self.catalog.oldest_incomplete_archive_transaction(
+            self.target.storage_id
+        )
+        if transaction is not None:
+            return transaction
         chunk = self.catalog.oldest_chunk_in_states(ChunkState.SEALED)
         if chunk is None:
             return None
