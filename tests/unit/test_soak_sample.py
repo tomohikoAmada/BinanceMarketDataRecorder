@@ -16,6 +16,7 @@ TEST_CONFIG = {
     "proxy_port": 7890,
     "proxy_loopback": True,
 }
+TEST_STORAGE = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 
 def test_soak_sample_writes_valid_jsonl(tmp_path: Path) -> None:
@@ -27,6 +28,7 @@ def test_soak_sample_writes_valid_jsonl(tmp_path: Path) -> None:
     _result = soak_sample(
         data_root=data_root,
         output_path=output,
+        storage_id=TEST_STORAGE,
         config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
@@ -35,7 +37,7 @@ def test_soak_sample_writes_valid_jsonl(tmp_path: Path) -> None:
     lines = output.read_text(encoding="utf-8").strip().split("\n")
     assert len(lines) == 1
     parsed = json.loads(lines[0])
-    assert parsed["schema_version"] == "m21-soak-sample.v1"
+    assert parsed["schema_version"] == "m21-soak-sample.v2"
     assert isinstance(parsed["sampled_at_utc_ns"], int)
     assert "proxy_url" not in str(parsed.get("config_hash", ""))
 
@@ -47,15 +49,13 @@ def test_soak_sample_two_samples_do_not_overwrite(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     _r1 = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
     _r2 = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
@@ -73,9 +73,8 @@ def test_soak_sample_no_network_no_binance(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
@@ -92,13 +91,12 @@ def test_soak_sample_recorder_not_running(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
-    systemd = cast(Any, result).get("systemd", {})
+    systemd = result.get("systemd", {})
     assert isinstance(systemd, dict)
     assert "recorder_active_state" in systemd
 
@@ -110,15 +108,15 @@ def test_soak_sample_external_absent_no_crash(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
-    disk = cast(Any, result).get("disk", {})
+    disk = result.get("disk", {})
     assert isinstance(disk, dict)
     assert disk.get("external_space_severity") == "ABSENT"
+    assert disk.get("external_storage_id") == TEST_STORAGE
 
 
 def test_soak_sample_config_hash_excludes_credentials(tmp_path: Path) -> None:
@@ -128,13 +126,12 @@ def test_soak_sample_config_hash_excludes_credentials(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
-    hash_val = cast(Any, result).get("config_hash", "")
+    hash_val = result.get("config_hash", "")
     assert isinstance(hash_val, str)
     assert "secret_user" not in hash_val
     assert "secret_pass" not in hash_val
@@ -148,9 +145,8 @@ def test_soak_sample_output_dir_auto_created(tmp_path: Path) -> None:
     (data_root / "state").mkdir()
 
     _result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
@@ -167,10 +163,60 @@ def test_soak_sample_does_not_scan_raw_directory(tmp_path: Path) -> None:
     (raw_dir / "test.bmdr.partial").write_bytes(b"secret raw data")
 
     _result = soak_sample(
-        data_root=data_root,
-        output_path=output,
-        config_dict=TEST_CONFIG,
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
         recorder_version="0.1.0-test",
     )
 
     assert b"secret raw data" not in output.read_bytes()
+
+
+def test_soak_sample_storage_id_in_output(tmp_path: Path) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+
+    result = soak_sample(
+        data_root=data_root, output_path=output,
+        storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    assert cast(Any, result).get("disk", {}).get("external_storage_id") == TEST_STORAGE
+    assert cast(Any, result).get("archive", {}).get("storage_id") == TEST_STORAGE
+
+
+def test_soak_sample_each_line_independently_parseable(tmp_path: Path) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+
+    for _ in range(3):
+        soak_sample(
+            data_root=data_root, output_path=output,
+            storage_id=TEST_STORAGE, config_dict=TEST_CONFIG,
+            recorder_version="0.1.0-test",
+        )
+
+    for line in output.read_text().strip().split("\n"):
+        parsed = json.loads(line)
+        assert isinstance(parsed, dict)
+        assert "schema_version" in parsed
+
+
+def test_soak_sample_none_storage_id_does_not_crash(tmp_path: Path) -> None:
+    output = tmp_path / "samples.jsonl"
+    data_root = tmp_path / "data_root"
+    data_root.mkdir()
+    (data_root / "state").mkdir()
+
+    result = soak_sample(
+        data_root=data_root, output_path=output,
+        storage_id=None, config_dict=TEST_CONFIG,
+        recorder_version="0.1.0-test",
+    )
+
+    assert cast(Any, result)["archive"]["storage_id"] is None
+    assert cast(Any, result)["disk"]["external_storage_id"] is None

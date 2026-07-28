@@ -85,6 +85,7 @@ class SoakTimerManager:
         config_file: Path,
         user: str,
         group: str,
+        storage_id: str,
         interval_seconds: int = 300,
         output_path: Path = Path(
             "/var/lib/binance-market-data-recorder/operations/soak/samples.jsonl"
@@ -96,6 +97,7 @@ class SoakTimerManager:
         self.config_file = config_file.resolve()
         self.user = user
         self.group = group
+        self.storage_id = storage_id
         self.interval_seconds = int(interval_seconds)
         self.output_path = output_path.resolve()
         self.unit_dir = unit_dir.resolve()
@@ -164,6 +166,7 @@ class SoakTimerManager:
                     cli, "-m", "binance_market_data_recorder",
                     "--config", str(self.config_file),
                     "soak", "sample",
+                    "--storage-id", self.storage_id,
                     "--output", str(self.output_path),
                 ]
             ),
