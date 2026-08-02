@@ -7,6 +7,7 @@ import pytest
 
 from binance_market_data_recorder.binance.usdm.rest import (
     DepthResponse,
+    UsdMSnapshotResponseError,
     capture_depth_snapshot,
 )
 
@@ -69,15 +70,28 @@ def test_usdm_snapshot_rejects_bad_limit_http_and_missing_id() -> None:
         capture_depth_snapshot(
             rest_api=FakeApi(), collector_instance_id="c", collector_version="v", limit=5000
         )
-    with pytest.raises(RuntimeError, match="HTTP 429"):
+    with pytest.raises(UsdMSnapshotResponseError, match="HTTP 429"):
         capture_depth_snapshot(
             rest_api=FakeApi(FakeResponse(status=429)),
             collector_instance_id="c",
             collector_version="v",
         )
-    with pytest.raises(RuntimeError, match="no lastUpdateId"):
+    with pytest.raises(UsdMSnapshotResponseError, match="no lastUpdateId"):
         capture_depth_snapshot(
             rest_api=FakeApi(FakeResponse(model=FakeModel(last_update_id=None))),
+            collector_instance_id="c",
+            collector_version="v",
+        )
+
+
+def test_usdm_snapshot_model_parse_failure_is_a_fatal_response_error() -> None:
+    class InvalidModelResponse(FakeResponse):
+        def data(self) -> FakeModel:
+            raise ValueError("invalid model")
+
+    with pytest.raises(UsdMSnapshotResponseError, match="could not be parsed"):
+        capture_depth_snapshot(
+            rest_api=FakeApi(InvalidModelResponse()),
             collector_instance_id="c",
             collector_version="v",
         )

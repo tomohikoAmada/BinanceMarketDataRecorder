@@ -51,6 +51,10 @@ class UsdMRestApi(Protocol):
     def order_book(self, symbol: str, limit: int) -> DepthResponse: ...
 
 
+class UsdMSnapshotResponseError(RuntimeError):
+    """Raised when Binance returns an unusable USD-M snapshot response."""
+
+
 def create_usdm_rest_api(
     *,
     timeout_ms: int,
@@ -108,10 +112,18 @@ def capture_depth_snapshot(
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
-        raise RuntimeError(f"USD-M depth snapshot returned HTTP {response.status}")
-    model = response.data()
+        raise UsdMSnapshotResponseError(
+            f"USD-M depth snapshot returned HTTP {response.status}"
+        )
+    try:
+        model = response.data()
+        model_document = model.to_dict()
+    except Exception as exc:
+        raise UsdMSnapshotResponseError(
+            "USD-M depth snapshot response could not be parsed"
+        ) from exc
     if model.last_update_id is None:
-        raise RuntimeError("USD-M depth snapshot has no lastUpdateId")
+        raise UsdMSnapshotResponseError("USD-M depth snapshot has no lastUpdateId")
     provenance = {
         "schema_version": "binance-usdm-depth-snapshot-provenance.v1",
         "request": {
@@ -126,7 +138,7 @@ def capture_depth_snapshot(
         "response": {
             "status": response.status,
             "headers": safe_provenance_headers(response.headers),
-            "model": model.to_dict(),
+            "model": model_document,
             "receive_time_utc_ns": receive_utc_ns,
             "receive_monotonic_ns": receive_monotonic_ns,
         },
