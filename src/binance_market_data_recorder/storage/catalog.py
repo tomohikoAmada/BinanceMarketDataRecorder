@@ -1826,6 +1826,61 @@ class Catalog:
             ).fetchone()
         return dict(row) if row else None
 
+    def chunk_archive_snapshot(
+        self, chunk_id: str
+    ) -> tuple[dict[str, object] | None, dict[str, object] | None]:
+        """Read Chunk and Archive identity from one consistent SQL statement."""
+
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT
+                    chunks.*,
+                    archive_transactions.transaction_id AS archive_transaction_id,
+                    archive_transactions.chunk_id AS archive_chunk_id,
+                    archive_transactions.state AS archive_state,
+                    archive_transactions.market AS archive_market,
+                    archive_transactions.stream AS archive_stream,
+                    archive_transactions.source_relative_path
+                        AS archive_source_relative_path,
+                    archive_transactions.source_manifest_relative_path
+                        AS archive_source_manifest_relative_path,
+                    archive_transactions.source_manifest_sha256
+                        AS archive_source_manifest_sha256,
+                    archive_transactions.stored_bytes AS archive_stored_bytes,
+                    archive_transactions.stored_sha256 AS archive_stored_sha256
+                FROM chunks
+                LEFT JOIN archive_transactions
+                    ON archive_transactions.chunk_id = chunks.chunk_id
+                WHERE chunks.chunk_id = ?
+                """,
+                (chunk_id,),
+            ).fetchone()
+        if row is None:
+            return None, None
+        combined = dict(row)
+        archive_aliases = {
+            "transaction_id": "archive_transaction_id",
+            "chunk_id": "archive_chunk_id",
+            "state": "archive_state",
+            "market": "archive_market",
+            "stream": "archive_stream",
+            "source_relative_path": "archive_source_relative_path",
+            "source_manifest_relative_path": (
+                "archive_source_manifest_relative_path"
+            ),
+            "source_manifest_sha256": "archive_source_manifest_sha256",
+            "stored_bytes": "archive_stored_bytes",
+            "stored_sha256": "archive_stored_sha256",
+        }
+        archive = {
+            name: combined.pop(alias)
+            for name, alias in archive_aliases.items()
+        }
+        if archive["transaction_id"] is None:
+            return combined, None
+        return combined, archive
+
     def chunks_in_states(self, *states: ChunkState) -> list[dict[str, object]]:
         if not states:
             return []
