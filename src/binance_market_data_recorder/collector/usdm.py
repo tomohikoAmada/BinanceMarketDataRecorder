@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,7 @@ from binance_common.errors import Error as BinanceSdkError
 from ..binance.spot.websocket import ReconnectBackoff
 from ..binance.usdm.rest import (
     UsdMRestApi,
+    UsdMSnapshotHttpError,
     UsdMSnapshotResponseError,
     capture_depth_snapshot,
 )
@@ -248,6 +250,40 @@ class UsdMCollector:
                 # finishes, retrieve its outcome, then preserve cancellation.
                 await asyncio.gather(request_task, return_exceptions=True)
                 raise
+            except UsdMSnapshotHttpError as exc:
+                if not exc.rate_limited and not 500 <= exc.status < 600:
+                    raise
+                failures += 1
+                if exc.rate_limited and exc.retry_at_utc_ns is not None:
+                    delay = max(
+                        0.0,
+                        (exc.retry_at_utc_ns - time.time_ns()) / 1_000_000_000,
+                    )
+                else:
+                    delay = self.snapshot_backoff.delay(failures)
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    (
+                        "usdm_snapshot_rate_limited"
+                        if exc.rate_limited
+                        else "usdm_snapshot_server_error"
+                    ),
+                    (
+                        "USD-M public REST is rate limited; retry remains bounded"
+                        if exc.rate_limited
+                        else "USD-M public depth snapshot returned a transient server error"
+                    ),
+                    http_status=exc.status,
+                    retry_at_utc_ns=exc.retry_at_utc_ns,
+                    response_headers=exc.headers,
+                    retry=failures,
+                )
+                try:
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
+                except TimeoutError:
+                    continue
+                return
             except UsdMSnapshotResponseError:
                 raise
             except (BinanceSdkError, RuntimeError) as exc:

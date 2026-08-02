@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
@@ -10,7 +11,7 @@ import pytest
 
 from binance_market_data_recorder.binance.usdm.rest import (
     DepthResponse,
-    UsdMSnapshotResponseError,
+    UsdMSnapshotHttpError,
 )
 from binance_market_data_recorder.collector.spot import (
     SpotCollector,
@@ -28,18 +29,28 @@ class FailingRestApi:
         raise RuntimeError("transient controlled snapshot failure")
 
 
-class InvalidResponse:
-    status = 429
-    headers: ClassVar[dict[str, object]] = {}
+class HttpErrorResponse:
+    def __init__(
+        self,
+        status: int,
+        headers: Mapping[str, object] | None = None,
+    ) -> None:
+        self.status = status
+        self.headers = dict(headers or {})
 
     def data(self) -> Any:
         raise AssertionError("an unacceptable HTTP response must not be parsed")
 
 
-class InvalidResponseApi:
+class SequenceRestApi:
+    def __init__(self, responses: list[DepthResponse]) -> None:
+        self.responses = responses
+        self.calls = 0
+
     def order_book(self, symbol: str, limit: int) -> DepthResponse:
         assert (symbol, limit) == ("BTCUSDT", 1000)
-        return cast(DepthResponse, InvalidResponse())
+        self.calls += 1
+        return self.responses.pop(0)
 
 
 class ValidModel:
@@ -74,15 +85,20 @@ class IdleStream:
         await stop.wait()
 
 
-def _collector(tmp_path: Path, rest_api: Any) -> UsdMCollector:
+def _collector(
+    tmp_path: Path,
+    rest_api: Any,
+    *,
+    retry_seconds: float = 0.001,
+) -> UsdMCollector:
     collector = UsdMCollector(
         UsdMCollectorSettings(
             data_root=tmp_path,
             collector_instance_id="m21-3-usdm",
             collector_version="0.1.0+test",
             durability_interval_seconds=0,
-            snapshot_retry_initial_seconds=0.001,
-            snapshot_retry_maximum_seconds=0.001,
+            snapshot_retry_initial_seconds=retry_seconds,
+            snapshot_retry_maximum_seconds=retry_seconds,
             snapshot_retry_jitter_ratio=0,
         ),
         logger=logging.getLogger("test.m21-3.usdm"),
@@ -95,6 +111,14 @@ def _collector(tmp_path: Path, rest_api: Any) -> UsdMCollector:
 async def _close_collector(collector: UsdMCollector) -> None:
     await asyncio.to_thread(collector.snapshot_spool.close_and_seal)
     collector.catalog.close()
+
+
+async def _wait_until(predicate: Callable[[], bool], *, timeout: float = 1.0) -> None:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while not predicate():
+        if asyncio.get_running_loop().time() >= deadline:
+            raise TimeoutError("condition was not reached")
+        await asyncio.sleep(0.001)
 
 
 def test_usdm_snapshot_returns_when_session_stop_precedes_first_snapshot(
@@ -220,13 +244,108 @@ def test_usdm_true_snapshot_task_exception_still_propagates(
     asyncio.run(exercise())
 
 
-def test_usdm_invalid_snapshot_response_is_not_retried_or_swallowed(
+def test_usdm_permanent_snapshot_http_error_is_not_retried_or_swallowed(
     tmp_path: Path,
 ) -> None:
     async def exercise() -> None:
-        collector = _collector(tmp_path, InvalidResponseApi())
-        with pytest.raises(UsdMSnapshotResponseError, match="HTTP 429"):
+        rest_api = SequenceRestApi(
+            [cast(DepthResponse, HttpErrorResponse(status=400))]
+        )
+        collector = _collector(tmp_path, rest_api)
+        with pytest.raises(UsdMSnapshotHttpError, match="HTTP 400") as captured:
             await collector._capture_snapshot(asyncio.Event())
+        assert captured.value.status == 400
+        assert captured.value.rate_limited is False
+        assert rest_api.calls == 1
+        await _close_collector(collector)
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("status", [418, 429])
+def test_usdm_rate_limit_does_not_end_capture_session(
+    tmp_path: Path,
+    status: int,
+) -> None:
+    async def exercise() -> None:
+        rest_api = SequenceRestApi(
+            [
+                cast(
+                    DepthResponse,
+                    HttpErrorResponse(status, {"Retry-After": "60"}),
+                )
+            ]
+        )
+        collector = _collector(tmp_path, rest_api)
+        external_stop = asyncio.Event()
+        session = asyncio.create_task(collector._run_capture_session(external_stop))
+        await _wait_until(lambda: rest_api.calls == 1)
+        external_stop.set()
+        await asyncio.wait_for(session, timeout=0.5)
+        assert collector.readiness_snapshot().snapshot_persisted is False
+        assert [
+            task
+            for task in asyncio.all_tasks()
+            if task is not asyncio.current_task() and not task.done()
+        ] == []
+        await _close_collector(collector)
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("status", [500, 503])
+def test_usdm_server_error_retries_then_persists_snapshot(
+    tmp_path: Path,
+    status: int,
+) -> None:
+    async def exercise() -> None:
+        rest_api = SequenceRestApi(
+            [
+                cast(DepthResponse, HttpErrorResponse(status)),
+                cast(DepthResponse, ValidResponse()),
+            ]
+        )
+        collector = _collector(tmp_path, rest_api, retry_seconds=0.05)
+        stop = asyncio.Event()
+        capture = asyncio.create_task(collector._capture_snapshot(stop))
+        await _wait_until(
+            lambda: collector.readiness_snapshot().snapshot_persisted,
+            timeout=0.5,
+        )
+        stop.set()
+        await asyncio.wait_for(capture, timeout=0.5)
+        assert rest_api.calls == 2
+        assert collector.readiness_snapshot().orderbook_synchronized is False
+        await _close_collector(collector)
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_usdm_transient_http_retry_wait_is_session_stop_interruptible(
+    tmp_path: Path,
+    status: int,
+) -> None:
+    async def exercise() -> None:
+        headers = {"Retry-After": "60"} if status == 429 else {}
+        rest_api = SequenceRestApi(
+            [cast(DepthResponse, HttpErrorResponse(status, headers))]
+        )
+        collector = _collector(tmp_path, rest_api, retry_seconds=60)
+        stop = asyncio.Event()
+        baseline = set(asyncio.all_tasks())
+        capture = asyncio.create_task(collector._capture_snapshot(stop))
+        await _wait_until(lambda: rest_api.calls == 1)
+        stop.set()
+        await asyncio.wait_for(capture, timeout=0.5)
+        await asyncio.sleep(0)
+        assert [
+            task
+            for task in asyncio.all_tasks()
+            if task not in baseline
+            and task is not asyncio.current_task()
+            and not task.done()
+        ] == []
         await _close_collector(collector)
 
     asyncio.run(exercise())

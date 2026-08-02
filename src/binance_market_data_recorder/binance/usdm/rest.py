@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 from collections.abc import Callable, Mapping
+from datetime import UTC
+from email.utils import parsedate_to_datetime
 from importlib.metadata import version
 from typing import Any, Protocol
 from uuid import uuid4
@@ -55,6 +58,25 @@ class UsdMSnapshotResponseError(RuntimeError):
     """Raised when Binance returns an unusable USD-M snapshot response."""
 
 
+class UsdMSnapshotHttpError(UsdMSnapshotResponseError):
+    """A classified USD-M HTTP response that cannot produce a snapshot."""
+
+    def __init__(
+        self,
+        *,
+        status: int,
+        headers: Mapping[str, object],
+        retry_after_seconds: float | None,
+        retry_at_utc_ns: int | None,
+    ) -> None:
+        super().__init__(f"USD-M depth snapshot returned HTTP {status}")
+        self.status = status
+        self.headers = safe_provenance_headers(headers)
+        self.rate_limited = status in {418, 429}
+        self.retry_after_seconds = retry_after_seconds
+        self.retry_at_utc_ns = retry_at_utc_ns
+
+
 def create_usdm_rest_api(
     *,
     timeout_ms: int,
@@ -79,6 +101,63 @@ def safe_provenance_headers(headers: Mapping[str, object]) -> dict[str, str]:
         if str(name).lower() in _PROVENANCE_HEADERS
         or str(name).lower().startswith("x-mbx-used-weight-")
     }
+
+
+def _non_negative_seconds(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return None
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(seconds) or seconds < 0:
+        return None
+    return seconds
+
+
+def _retry_boundary(
+    response: DepthResponse,
+    *,
+    receive_utc_ns: int,
+) -> tuple[float | None, int | None]:
+    safe_headers = safe_provenance_headers(response.headers)
+    retry_after = safe_headers.get("retry-after")
+    if retry_after is not None:
+        seconds = _non_negative_seconds(retry_after.strip())
+        if seconds is not None:
+            return seconds, receive_utc_ns + int(seconds * 1_000_000_000)
+        try:
+            boundary = parsedate_to_datetime(retry_after.strip())
+        except (TypeError, ValueError, OverflowError):
+            pass
+        else:
+            if boundary.tzinfo is None:
+                boundary = boundary.replace(tzinfo=UTC)
+            retry_at_utc_ns = max(
+                receive_utc_ns,
+                int(boundary.timestamp() * 1_000_000_000),
+            )
+            return (
+                (retry_at_utc_ns - receive_utc_ns) / 1_000_000_000,
+                retry_at_utc_ns,
+            )
+
+    # The official SDK exposes parsed rate-limit records when the transport
+    # supplies them. Read only the documented retryAfter field; never inspect
+    # or retain an error body or exception string.
+    for rate_limit in getattr(response, "rate_limits", ()) or ():
+        if isinstance(rate_limit, Mapping):
+            value = rate_limit.get("retryAfter", rate_limit.get("retry_after"))
+        else:
+            value = getattr(
+                rate_limit,
+                "retryAfter",
+                getattr(rate_limit, "retry_after", None),
+            )
+        seconds = _non_negative_seconds(value)
+        if seconds is not None:
+            return seconds, receive_utc_ns + int(seconds * 1_000_000_000)
+    return None, None
 
 
 def capture_depth_snapshot(
@@ -112,18 +191,35 @@ def capture_depth_snapshot(
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
-        raise UsdMSnapshotResponseError(
-            f"USD-M depth snapshot returned HTTP {response.status}"
+        retry_after_seconds, retry_at_utc_ns = _retry_boundary(
+            response,
+            receive_utc_ns=receive_utc_ns,
+        )
+        raise UsdMSnapshotHttpError(
+            status=response.status,
+            headers=response.headers,
+            retry_after_seconds=retry_after_seconds,
+            retry_at_utc_ns=retry_at_utc_ns,
         )
     try:
         model = response.data()
         model_document = model.to_dict()
+        last_update_id = model.last_update_id
     except Exception as exc:
         raise UsdMSnapshotResponseError(
             "USD-M depth snapshot response could not be parsed"
         ) from exc
-    if model.last_update_id is None:
+    if last_update_id is None:
         raise UsdMSnapshotResponseError("USD-M depth snapshot has no lastUpdateId")
+    if (
+        not isinstance(last_update_id, int)
+        or isinstance(last_update_id, bool)
+        or not isinstance(model_document, dict)
+        or model_document.get("lastUpdateId") != last_update_id
+    ):
+        raise UsdMSnapshotResponseError(
+            "USD-M depth snapshot response schema is invalid"
+        )
     provenance = {
         "schema_version": "binance-usdm-depth-snapshot-provenance.v1",
         "request": {
@@ -162,7 +258,7 @@ def capture_depth_snapshot(
         collector_version=collector_version,
         receive_time_utc_ns=receive_utc_ns,
         receive_monotonic_ns=receive_monotonic_ns,
-        source_sequence={"lastUpdateId": model.last_update_id},
+        source_sequence={"lastUpdateId": last_update_id},
         payload_encoding="utf-8-json-provenance",
         raw_payload=raw_payload,
         capture_flags=tuple(
