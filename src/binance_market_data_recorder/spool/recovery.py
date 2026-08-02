@@ -28,7 +28,13 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..storage.catalog import Catalog, ChunkState
+from ..storage.catalog import (
+    ARCHIVE_CHUNK_STATES,
+    ArchiveState,
+    Catalog,
+    CatalogStateError,
+    ChunkState,
+)
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, scan_chunk
 from .seal import SealError, seal_partial, validate_sealed_artifact
@@ -41,12 +47,107 @@ class RecoveryAction:
     detail: str
 
 
+class RecoveryConflictError(CatalogStateError):
+    """Raised when a manifest contradicts immutable Catalog identity."""
+
+
+_ARCHIVE_STATES = frozenset(ARCHIVE_CHUNK_STATES.values())
+_CHUNK_TO_ARCHIVE_STATE = {
+    chunk_state: archive_state
+    for archive_state, chunk_state in ARCHIVE_CHUNK_STATES.items()
+}
+
+
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb", buffering=0) as source:
         while block := source.read(1024 * 1024):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _required_int(document: dict[str, object], name: str) -> int:
+    value = document[name]
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"Raw manifest field {name} must be an integer")
+    return value
+
+
+def _required_text(document: dict[str, object], name: str) -> str:
+    value = document[name]
+    if not isinstance(value, str) or not value:
+        raise TypeError(f"Raw manifest field {name} must be non-empty text")
+    return value
+
+
+def _manifest_catalog_fields(
+    *,
+    layout: StorageLayout,
+    manifest_path: Path,
+    manifest: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "created_at_utc_ns": _required_int(manifest, "created_at_utc_ns"),
+        "manifest_path": layout.relative(manifest_path),
+        "record_count": _required_int(manifest, "record_count"),
+        "sealed_path": _required_text(manifest, "relative_path"),
+        "stored_bytes": _required_int(manifest, "stored_bytes"),
+        "stored_sha256": _required_text(manifest, "stored_sha256"),
+        "uncompressed_bytes": _required_int(manifest, "uncompressed_bytes"),
+        "uncompressed_sha256": _required_text(manifest, "uncompressed_sha256"),
+    }
+
+
+def _validate_catalog_identity(
+    row: dict[str, object], expected: dict[str, object]
+) -> None:
+    if any(row.get(name) != value for name, value in expected.items()):
+        raise RecoveryConflictError(
+            "RECOVERY_MANIFEST_CATALOG_IDENTITY_CONFLICT"
+        )
+
+
+def _validate_archive_identity(
+    *,
+    row: dict[str, object],
+    transaction: dict[str, object] | None,
+    manifest: dict[str, object],
+    manifest_bytes: bytes,
+    expected_fields: dict[str, object],
+) -> None:
+    _validate_catalog_identity(row, expected_fields)
+    chunk_id = _required_text(manifest, "chunk_id")
+    if transaction is None:
+        raise RecoveryConflictError("RECOVERY_ARCHIVE_TRANSACTION_MISSING")
+    chunk_state = ChunkState(str(row["state"]))
+    expected_archive_state = _CHUNK_TO_ARCHIVE_STATE[chunk_state]
+    try:
+        archive_state = ArchiveState(str(transaction["state"]))
+    except (KeyError, ValueError) as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_ARCHIVE_TRANSACTION_STATE_CONFLICT"
+        ) from exc
+    if archive_state is not expected_archive_state:
+        raise RecoveryConflictError(
+            "RECOVERY_ARCHIVE_TRANSACTION_STATE_CONFLICT"
+        )
+    expected_transaction = {
+        "chunk_id": chunk_id,
+        "market": _required_text(manifest, "market"),
+        "source_manifest_relative_path": expected_fields["manifest_path"],
+        "source_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "source_relative_path": expected_fields["sealed_path"],
+        "stored_bytes": expected_fields["stored_bytes"],
+        "stored_sha256": expected_fields["stored_sha256"],
+        "stream": _required_text(manifest, "stream"),
+    }
+    if any(
+        transaction.get(name) != value
+        for name, value in expected_transaction.items()
+    ):
+        raise RecoveryConflictError(
+            "RECOVERY_ARCHIVE_TRANSACTION_IDENTITY_CONFLICT"
+        )
 
 
 def _quarantine(
@@ -149,43 +250,118 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
     actions: list[RecoveryAction] = []
     for manifest_path in sorted(layout.manifests.glob("*.manifest.json")):
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            sealed = layout.root / manifest["relative_path"]
-            validate_sealed_artifact(sealed, manifest)
-            chunk_id = str(manifest["chunk_id"])
-            if catalog.state(chunk_id) is None:
-                catalog.register_active(
-                    chunk_id=chunk_id,
-                    partial_path="",
-                    created_at_utc_ns=int(manifest["created_at_utc_ns"]),
-                )
-            current = catalog.state(chunk_id)
-            if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
-                catalog.transition(
-                    chunk_id,
-                    ChunkState.SEALING,
-                    idempotency_key=f"reconcile-sealing:{chunk_id}",
-                    evidence={"source": "manifest"},
-                )
-            catalog.transition(
-                chunk_id,
-                ChunkState.SEALED,
-                idempotency_key=f"reconcile-sealed:{chunk_id}",
-                evidence={"source": "manifest"},
-                fields={
-                    "manifest_path": layout.relative(manifest_path),
-                    "partial_path": None,
-                    "record_count": manifest["record_count"],
-                    "sealed_path": manifest["relative_path"],
-                    "stored_bytes": manifest["stored_bytes"],
-                    "stored_sha256": manifest["stored_sha256"],
-                    "uncompressed_bytes": manifest["uncompressed_bytes"],
-                    "uncompressed_sha256": manifest["uncompressed_sha256"],
-                },
+            manifest_bytes = manifest_path.read_bytes()
+            manifest = json.loads(manifest_bytes)
+            if not isinstance(manifest, dict):
+                raise TypeError("Raw manifest must be a JSON object")
+            sealed = layout.root / _required_text(manifest, "relative_path")
+            chunk_id = _required_text(manifest, "chunk_id")
+            expected_fields = _manifest_catalog_fields(
+                layout=layout,
+                manifest_path=manifest_path,
+                manifest=manifest,
             )
-            actions.append(
-                RecoveryAction(layout.relative(manifest_path), "catalog_reconciled", "verified")
-            )
+            artifact_validated = False
+            catalog_changed = False
+            while True:
+                row, transaction = catalog.chunk_archive_snapshot(chunk_id)
+                if row is None:
+                    if not artifact_validated:
+                        validate_sealed_artifact(sealed, manifest)
+                        artifact_validated = True
+                    catalog.register_active(
+                        chunk_id=chunk_id,
+                        partial_path="",
+                        created_at_utc_ns=_required_int(
+                            manifest, "created_at_utc_ns"
+                        ),
+                    )
+                    catalog_changed = True
+                    continue
+
+                current = ChunkState(str(row["state"]))
+                if current in _ARCHIVE_STATES:
+                    _validate_archive_identity(
+                        row=row,
+                        transaction=transaction,
+                        manifest=manifest,
+                        manifest_bytes=manifest_bytes,
+                        expected_fields=expected_fields,
+                    )
+                    actions.append(
+                        RecoveryAction(
+                            layout.relative(manifest_path),
+                            "archive_state_preserved",
+                            current.value,
+                        )
+                    )
+                    break
+                if current is ChunkState.QUARANTINED:
+                    raise RecoveryConflictError(
+                        "RECOVERY_QUARANTINED_CHUNK_CONFLICT"
+                    )
+                if not artifact_validated:
+                    validate_sealed_artifact(sealed, manifest)
+                    artifact_validated = True
+                if current is ChunkState.SEALED:
+                    _validate_catalog_identity(row, expected_fields)
+                    if transaction is not None:
+                        raise RecoveryConflictError(
+                            "RECOVERY_SEALED_ARCHIVE_TRANSACTION_CONFLICT"
+                        )
+                    actions.append(
+                        RecoveryAction(
+                            layout.relative(manifest_path),
+                            (
+                                "catalog_reconciled"
+                                if catalog_changed
+                                else "catalog_unchanged"
+                            ),
+                            "SEALED",
+                        )
+                    )
+                    break
+                if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
+                    target = ChunkState.SEALING
+                    idempotency_key = f"reconcile-sealing:{chunk_id}"
+                    fields: dict[str, object] | None = None
+                elif current is ChunkState.SEALING:
+                    target = ChunkState.SEALED
+                    idempotency_key = f"reconcile-sealed:{chunk_id}"
+                    fields = {
+                        "manifest_path": expected_fields["manifest_path"],
+                        "partial_path": None,
+                        "record_count": expected_fields["record_count"],
+                        "sealed_path": expected_fields["sealed_path"],
+                        "stored_bytes": expected_fields["stored_bytes"],
+                        "stored_sha256": expected_fields["stored_sha256"],
+                        "uncompressed_bytes": expected_fields["uncompressed_bytes"],
+                        "uncompressed_sha256": expected_fields[
+                            "uncompressed_sha256"
+                        ],
+                    }
+                else:  # pragma: no cover - exhaustive guard for future states
+                    raise RecoveryConflictError(
+                        "RECOVERY_UNSUPPORTED_CHUNK_STATE"
+                    )
+                try:
+                    catalog.transition(
+                        chunk_id,
+                        target,
+                        idempotency_key=idempotency_key,
+                        evidence={"source": "manifest"},
+                        fields=fields,
+                    )
+                    catalog_changed = True
+                except CatalogStateError:
+                    # Archive may atomically reserve the chunk immediately after
+                    # another recovery writer commits SEALED. Re-read and
+                    # classify the winning state rather than issuing a reverse
+                    # transition. A genuine contradiction still fails below.
+                    latest = catalog.state(chunk_id)
+                    if latest not in _ARCHIVE_STATES:
+                        raise
+                continue
         except (KeyError, OSError, TypeError, ValueError, SealError) as exc:
             actions.append(
                 RecoveryAction(layout.relative(manifest_path), "reconcile_failed", str(exc))

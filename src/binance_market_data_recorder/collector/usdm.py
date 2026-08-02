@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,7 +24,12 @@ from pathlib import Path
 from binance_common.errors import Error as BinanceSdkError
 
 from ..binance.spot.websocket import ReconnectBackoff
-from ..binance.usdm.rest import UsdMRestApi, capture_depth_snapshot
+from ..binance.usdm.rest import (
+    UsdMRestApi,
+    UsdMSnapshotHttpError,
+    UsdMSnapshotResponseError,
+    capture_depth_snapshot,
+)
 from ..binance.usdm.schema import USDM_STREAMS
 from ..binance.usdm.side_data_rest import UsdMSideRestApi
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector, open_usdm_websocket
@@ -64,7 +70,7 @@ class UsdMCollectorSettings:
 
 
 class SnapshotUnavailableError(RuntimeError):
-    """Raised on shutdown when no required USD-M snapshot was captured."""
+    """Raised when a USD-M capture session terminates without a control signal."""
 
 
 class UsdMCollector:
@@ -225,8 +231,8 @@ class UsdMCollector:
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
         while not stop.is_set():
-            try:
-                envelope = await asyncio.to_thread(
+            request_task = asyncio.create_task(
+                asyncio.to_thread(
                     capture_depth_snapshot,
                     rest_api=self.rest_api,
                     collector_instance_id=self.settings.collector_instance_id,
@@ -235,6 +241,51 @@ class UsdMCollector:
                     timeout_ms=self.settings.snapshot_timeout_ms,
                     additional_capture_flags=self._capture_flags,
                 )
+            )
+            try:
+                envelope = await asyncio.shield(request_task)
+            except asyncio.CancelledError:
+                # asyncio cannot cancel an SDK call already running in a
+                # worker thread. Keep ownership of the Task until the call
+                # finishes, retrieve its outcome, then preserve cancellation.
+                await asyncio.gather(request_task, return_exceptions=True)
+                raise
+            except UsdMSnapshotHttpError as exc:
+                if not exc.rate_limited and not 500 <= exc.status < 600:
+                    raise
+                failures += 1
+                if exc.rate_limited and exc.retry_at_utc_ns is not None:
+                    delay = max(
+                        0.0,
+                        (exc.retry_at_utc_ns - time.time_ns()) / 1_000_000_000,
+                    )
+                else:
+                    delay = self.snapshot_backoff.delay(failures)
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    (
+                        "usdm_snapshot_rate_limited"
+                        if exc.rate_limited
+                        else "usdm_snapshot_server_error"
+                    ),
+                    (
+                        "USD-M public REST is rate limited; retry remains bounded"
+                        if exc.rate_limited
+                        else "USD-M public depth snapshot returned a transient server error"
+                    ),
+                    http_status=exc.status,
+                    retry_at_utc_ns=exc.retry_at_utc_ns,
+                    response_headers=exc.headers,
+                    retry=failures,
+                )
+                try:
+                    await asyncio.wait_for(stop.wait(), timeout=delay)
+                except TimeoutError:
+                    continue
+                return
+            except UsdMSnapshotResponseError:
+                raise
             except (BinanceSdkError, RuntimeError) as exc:
                 failures += 1
                 log_event(
@@ -252,6 +303,11 @@ class UsdMCollector:
                 except TimeoutError:
                     continue
                 break
+            if stop.is_set():
+                # The blocking SDK request completed after this capture
+                # session was retired. Its snapshot belongs to the old stream
+                # generation and must not participate in a new diff bridge.
+                return
             self.snapshot_spool.enqueue(envelope)
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
@@ -280,11 +336,12 @@ class UsdMCollector:
             except TimeoutError:
                 continue
             break
-        if self.readiness.snapshot().snapshot_persisted:
-            return
-        raise SnapshotUnavailableError(
-            "Collector stopped before a required USD-M depth snapshot was captured"
-        )
+        # Session retirement is normal control flow. A resync (including
+        # disconnect, planned rotation, or server shutdown) deliberately stops
+        # this snapshot attempt and the outer loop starts a fresh snapshot +
+        # diff bridge. Global shutdown follows the same cleanup path. Genuine
+        # REST/response/integrity failures still escape above.
+        return
 
     async def _run_capture_session(self, external_stop: asyncio.Event) -> None:
         session_stop = asyncio.Event()
