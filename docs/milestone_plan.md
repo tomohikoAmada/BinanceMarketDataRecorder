@@ -558,6 +558,17 @@ from Raw after a corrected parser is available.
   the prior Wheel/unit/config, and restart. Revert M20 code only; never delete
   or rewrite Raw. Linux blue/green and long soak remain M21 work.
 
+## M21.2 / M21.3 — long-run evidence and recovery stability
+
+- M21.2 completed its formal 72-hour window but failed because the Recorder
+  restarted 639 times. Archive and disk evidence passed; the run isn't eligible
+  for 168-hour continuation. See
+  `docs/milestone_evidence/M21.2-72h-failure-analysis.md`.
+- M21.3 is an unmerged, undeployed stability repair for the confirmed USD-M
+  session-stop exception propagation and Archive-state recovery race. It does
+  not change data formats or begin a new soak. See
+  `docs/milestone_acceptance/M21.3.md`.
+
 ## Future Work
 
 M21 is reserved for the deferred 72-hour/168-hour Ubuntu ARM64 soak and
