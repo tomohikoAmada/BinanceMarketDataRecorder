@@ -193,7 +193,13 @@ def test_usdm_snapshot_task_cancellation_awaits_worker_and_propagates(
 
 @pytest.mark.parametrize(
     "reason",
-    ["unexpected_disconnect", "planned_rotation", "server_shutdown", "outer_resync"],
+    [
+        "unexpected_disconnect",
+        "planned_rotation",
+        "server_shutdown",
+        "outer_resync",
+        "ingress_backpressure",
+    ],
 )
 def test_usdm_resync_reason_ends_pre_snapshot_session_cleanly(
     tmp_path: Path, reason: str
