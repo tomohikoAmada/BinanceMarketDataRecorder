@@ -558,16 +558,22 @@ from Raw after a corrected parser is available.
   the prior Wheel/unit/config, and restart. Revert M20 code only; never delete
   or rewrite Raw. Linux blue/green and long soak remain M21 work.
 
-## M21.2 / M21.3 — long-run evidence and recovery stability
+## M21.2 / M21.3 / M21.4 — long-run evidence and recovery stability
 
 - M21.2 completed its formal 72-hour window but failed because the Recorder
   restarted 639 times. Archive and disk evidence passed; the run isn't eligible
   for 168-hour continuation. See
   `docs/milestone_evidence/M21.2-72h-failure-analysis.md`.
-- M21.3 is an unmerged, undeployed stability repair for the confirmed USD-M
-  session-stop exception propagation and Archive-state recovery race. It does
-  not change data formats or begin a new soak. See
-  `docs/milestone_acceptance/M21.3.md`.
+- M21.3 was merged through PR #6 at
+  `a9db145718338faa49a4e4c57bea9a821e74d828`. Its 2-hour preflight and closed
+  12-hour observation passed, but a later USD-M `book_ticker` ingress overflow
+  ended PID continuity before the 24-hour gate could start.
+- M21.4 is the unmerged, undeployed bounded-backpressure and truthful stream-gap
+  repair for that incident. The unchanged production Wheel repeated the same
+  overflow once during offline development; that second event was also
+  preserved without intervention. M21.4 does not change public data schemas or
+  begin a new soak. See `docs/milestone_acceptance/M21.4.md` and
+  `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`.
 
 ## Future Work
 
