@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import io
 import json
 import logging
+import os
 import threading
 import time
 from collections.abc import AsyncIterator, Callable
@@ -19,10 +21,14 @@ from binance_market_data_recorder.binance.spot.websocket import (
     ReceivedFrame,
     ReconnectBackoff,
 )
-from binance_market_data_recorder.binance.usdm.schema import UsdMStream
+from binance_market_data_recorder.binance.usdm.schema import (
+    UsdMStream,
+    envelope_from_websocket_frame,
+)
 from binance_market_data_recorder.binance.usdm.websocket import (
     UsdMStreamCollector,
     WebSocketConnection,
+    _run_owned_blocking_call,
 )
 from binance_market_data_recorder.collector.supervisor import MarketCollectorSupervisor
 from binance_market_data_recorder.spool.format import (
@@ -31,6 +37,7 @@ from binance_market_data_recorder.spool.format import (
     decode_envelope,
 )
 from binance_market_data_recorder.spool.queue import IngressGapStateConflict
+from binance_market_data_recorder.spool.recovery import recover_storage
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -100,6 +107,86 @@ class BlockingDrainStreamSpool(StreamSpool):
         if not self.release_drain.wait(timeout=3):
             raise TimeoutError("test did not release blocked Raw drain")
         return super().drain_all()
+
+
+class BlockingWriterOperationStreamSpool(StreamSpool):
+    def __init__(
+        self,
+        *args: Any,
+        blocked_operation: str,
+        fail_operation: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.blocked_operation = blocked_operation
+        self.fail_operation = fail_operation
+        self.operation_started = threading.Event()
+        self.release_operation = threading.Event()
+        self.abort_started = threading.Event()
+        self.concurrent_abort = False
+        self.abort_calls = 0
+        self._active_operation: str | None = None
+        self._test_guard = threading.Lock()
+
+    def _enter_blocked_operation(self, operation: str) -> None:
+        if self.blocked_operation != operation:
+            return
+        with self._test_guard:
+            if self._active_operation is not None:
+                raise AssertionError("writer test operation overlapped itself")
+            self._active_operation = operation
+        self.operation_started.set()
+        if not self.release_operation.wait(timeout=3):
+            raise TimeoutError(f"test did not release blocked Raw {operation}")
+
+    def _leave_blocked_operation(self, operation: str) -> None:
+        if self.blocked_operation != operation:
+            return
+        with self._test_guard:
+            self._active_operation = None
+
+    def drain_all(self) -> int:
+        self._enter_blocked_operation("drain")
+        try:
+            if self.fail_operation and self.blocked_operation == "drain":
+                raise OSError("injected Raw drain failure")
+            return super().drain_all()
+        finally:
+            self._leave_blocked_operation("drain")
+
+    def sync(self) -> None:
+        self._enter_blocked_operation("sync")
+        try:
+            if self.fail_operation and self.blocked_operation == "sync":
+                raise OSError("injected Raw sync failure")
+            super().sync()
+        finally:
+            self._leave_blocked_operation("sync")
+
+    def close_and_seal(self) -> dict[str, object] | None:
+        self._enter_blocked_operation("seal")
+        try:
+            if self.fail_operation and self.blocked_operation == "seal":
+                raise OSError("injected Raw seal failure")
+            return super().close_and_seal()
+        finally:
+            self._leave_blocked_operation("seal")
+
+    def abort_writer(self) -> None:
+        with self._test_guard:
+            if self._active_operation is not None:
+                self.concurrent_abort = True
+            self.abort_calls += 1
+        self.abort_started.set()
+        super().abort_writer()
+
+
+async def wait_for_thread_event(event: threading.Event, *, timeout: float = 1) -> None:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while not event.is_set():
+        if asyncio.get_running_loop().time() >= deadline:
+            raise TimeoutError("timed out waiting for worker thread")
+        await asyncio.sleep(0.001)
 
 
 class HealthyMarket:
@@ -215,6 +302,63 @@ def make_collector(
         post_close_handoff_timeout_seconds=0.5,
     )
     return collector, catalog
+
+
+def make_blocking_writer_collector(
+    root: Path,
+    *,
+    blocked_operation: str,
+    fail_operation: bool = False,
+) -> tuple[UsdMStreamCollector, Catalog, BlockingWriterOperationStreamSpool]:
+    layout = ensure_storage_layout(root)
+    catalog = Catalog(layout.catalog)
+    spool = BlockingWriterOperationStreamSpool(
+        layout=layout,
+        catalog=catalog,
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream="book_ticker",
+        collector_instance_id="m21-4-owned-worker",
+        collector_version="0.1.0+test",
+        queue_capacity=4,
+        rotation=RotationPolicy(seconds=60),
+        durability_interval_seconds=0.75,
+        max_frame_bytes=1024 * 1024,
+        blocked_operation=blocked_operation,
+        fail_operation=fail_operation,
+    )
+
+    @asynccontextmanager
+    async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+        yield BlockingSocket()
+
+    collector = UsdMStreamCollector(
+        stream=UsdMStream.BOOK_TICKER,
+        route="public",
+        wire_name="btcusdt@bookTicker",
+        spool=spool,
+        collector_instance_id="m21-4-owned-worker",
+        collector_version="0.1.0+test",
+        logger=logging.getLogger("test.m21-4.owned-worker"),
+        receipt_queue_capacity=2,
+        opener=unused_opener,
+    )
+    return collector, catalog, spool
+
+
+async def run_writer_with_one_frame(
+    collector: UsdMStreamCollector,
+    frame: ReceivedFrame,
+) -> asyncio.Task[None]:
+    placeholder = asyncio.create_task(asyncio.sleep(60))
+    try:
+        await collector._receipts.put(frame, writer_task=placeholder)
+    finally:
+        placeholder.cancel()
+        await asyncio.gather(placeholder, return_exceptions=True)
+    producer_done = asyncio.Event()
+    producer_done.set()
+    return asyncio.create_task(collector._writer_loop(producer_done))
 
 
 def captured(root: Path) -> tuple[list[Any], list[dict[str, Any]]]:
@@ -866,7 +1010,9 @@ def test_cancel_during_raw_drain_waits_for_worker_then_cleans_up(
         try:
             assert await asyncio.to_thread(spool.drain_started.wait, 1)
             task.cancel()
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.01)
+            task.cancel()
+            await asyncio.sleep(0.01)
             assert task.done() is False
             spool.release_drain.set()
             with pytest.raises(asyncio.CancelledError):
@@ -1270,6 +1416,9 @@ def test_cancel_after_gap_sync_before_catalog_writes_no_completion_or_leaks_task
         try:
             await asyncio.wait_for(sync_completed.wait(), timeout=1)
             task.cancel()
+            await asyncio.sleep(0.02)
+            assert task.done() is False
+            release_completion.set()
             with pytest.raises(asyncio.CancelledError):
                 await asyncio.wait_for(task, timeout=2)
             assert catalog.operational_events(
@@ -1293,3 +1442,586 @@ def test_cancel_after_gap_sync_before_catalog_writes_no_completion_or_leaks_task
             catalog.close()
 
     asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("fail_sync", [False, True])
+def test_cancel_inside_owned_gap_sync_waits_before_abort(
+    tmp_path: Path,
+    fail_sync: bool,
+) -> None:
+    gap_id = f"owned-sync-{'failure' if fail_sync else 'success'}"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id)
+
+    async def exercise() -> None:
+        collector, catalog, spool = make_blocking_writer_collector(
+            tmp_path,
+            blocked_operation="sync",
+            fail_operation=fail_sync,
+        )
+        frame = ReceivedFrame(
+            raw_payload=book_ticker(401),
+            connection_id="new-owned-sync",
+            receive_time_utc_ns=401,
+            receive_monotonic_ns=401,
+            capture_flags=("sequence_gap",),
+        )
+        baseline = set(asyncio.all_tasks())
+        loop_errors: list[dict[str, Any]] = []
+        loop = asyncio.get_running_loop()
+        previous_handler = loop.get_exception_handler()
+        loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+        task = await run_writer_with_one_frame(collector, frame)
+        try:
+            await wait_for_thread_event(spool.operation_started)
+            writer = spool._writer
+            assert writer is not None
+            os.fstat(writer._descriptor)
+
+            task.cancel()
+            await asyncio.sleep(0.02)
+            assert task.done() is False
+            assert spool.abort_started.is_set() is False
+            assert spool.concurrent_abort is False
+            os.fstat(writer._descriptor)
+
+            spool.release_operation.set()
+            if fail_sync:
+                with pytest.raises(OSError, match="injected Raw sync failure"):
+                    await asyncio.wait_for(task, timeout=1)
+            else:
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(task, timeout=1)
+
+            assert spool.abort_calls == 1
+            assert spool.concurrent_abort is False
+            assert writer.closed is True
+            assert catalog.operational_events(
+                event_type="STREAM_DISCONTINUITY_COMPLETED"
+            ) == []
+            open_gaps = catalog.unclosed_stream_discontinuities(
+                market="um_perpetual", stream="book_ticker"
+            )
+            assert [cast(dict[str, Any], event["evidence"])["gap_id"] for event in open_gaps] == [
+                gap_id
+            ]
+            recover_storage(layout=layout, catalog=catalog)
+            await asyncio.sleep(0)
+            assert loop_errors == []
+            assert [
+                pending
+                for pending in asyncio.all_tasks()
+                if pending not in baseline
+                and pending is not asyncio.current_task()
+                and not pending.done()
+            ] == []
+        finally:
+            spool.release_operation.set()
+            loop.set_exception_handler(previous_handler)
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("fail_write", [False, True])
+def test_cancel_inside_owned_catalog_completion_waits_before_close(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fail_write: bool,
+) -> None:
+    gap_id = f"owned-completed-{'failure' if fail_write else 'success'}"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id)
+
+    async def exercise() -> None:
+        @asynccontextmanager
+        async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BlockingSocket()
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=unused_opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        write_started = threading.Event()
+        release_write = threading.Event()
+        close_started = threading.Event()
+        write_active = threading.Event()
+        close_raced = False
+        original_record = catalog.record_operational_event
+        original_close = catalog.close
+
+        def blocking_record(
+            *,
+            event_id: str,
+            event_type: str,
+            occurred_at_utc_ns: int,
+            evidence: Any,
+        ) -> bool:
+            if event_type != "STREAM_DISCONTINUITY_COMPLETED":
+                return original_record(
+                    event_id=event_id,
+                    event_type=event_type,
+                    occurred_at_utc_ns=occurred_at_utc_ns,
+                    evidence=evidence,
+                )
+            write_active.set()
+            write_started.set()
+            try:
+                if not release_write.wait(timeout=3):
+                    raise TimeoutError("test did not release Catalog COMPLETED write")
+                if fail_write:
+                    raise OSError("injected Catalog COMPLETED failure")
+                return original_record(
+                    event_id=event_id,
+                    event_type=event_type,
+                    occurred_at_utc_ns=occurred_at_utc_ns,
+                    evidence=evidence,
+                )
+            finally:
+                write_active.clear()
+
+        def tracked_close() -> None:
+            nonlocal close_raced
+            close_started.set()
+            close_raced = write_active.is_set()
+            original_close()
+
+        monkeypatch.setattr(catalog, "record_operational_event", blocking_record)
+        monkeypatch.setattr(catalog, "close", tracked_close)
+        frame = ReceivedFrame(
+            raw_payload=book_ticker(402),
+            connection_id="new-owned-completed",
+            receive_time_utc_ns=402,
+            receive_monotonic_ns=402,
+            capture_flags=("sequence_gap",),
+        )
+        writer_task = await run_writer_with_one_frame(collector, frame)
+
+        async def own_writer_then_close() -> None:
+            try:
+                await writer_task
+            finally:
+                catalog.close()
+
+        owner_task = asyncio.create_task(own_writer_then_close())
+        try:
+            await wait_for_thread_event(write_started)
+            owner_task.cancel()
+            await asyncio.sleep(0.02)
+            assert owner_task.done() is False
+            assert close_started.is_set() is False
+            assert write_active.is_set() is True
+
+            release_write.set()
+            if fail_write:
+                with pytest.raises(OSError, match="injected Catalog COMPLETED failure"):
+                    await asyncio.wait_for(owner_task, timeout=1)
+            else:
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(owner_task, timeout=1)
+            assert close_started.is_set() is True
+            assert close_raced is False
+        finally:
+            release_write.set()
+            if not owner_task.done():
+                owner_task.cancel()
+                await asyncio.gather(owner_task, return_exceptions=True)
+
+    asyncio.run(exercise())
+    with Catalog(layout.catalog) as reopened:
+        completed = reopened.operational_events(
+            event_type="STREAM_DISCONTINUITY_COMPLETED"
+        )
+        assert len(completed) == (0 if fail_write else 1)
+        open_gaps = reopened.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert len(open_gaps) == (1 if fail_write else 0)
+
+
+@pytest.mark.parametrize("fail_write", [False, True])
+def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fail_write: bool,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+
+    async def exercise() -> str | None:
+        @asynccontextmanager
+        async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BlockingSocket()
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=unused_opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        write_started = threading.Event()
+        release_write = threading.Event()
+        close_started = threading.Event()
+        write_active = threading.Event()
+        close_raced = False
+        original_record = catalog.record_operational_event
+        original_close = catalog.close
+        attempted_gap_id: str | None = None
+
+        def blocking_record(
+            *,
+            event_id: str,
+            event_type: str,
+            occurred_at_utc_ns: int,
+            evidence: Any,
+        ) -> bool:
+            nonlocal attempted_gap_id
+            if event_type != "STREAM_DISCONTINUITY_STARTED":
+                return original_record(
+                    event_id=event_id,
+                    event_type=event_type,
+                    occurred_at_utc_ns=occurred_at_utc_ns,
+                    evidence=evidence,
+                )
+            attempted_gap_id = str(evidence["gap_id"])
+            write_active.set()
+            write_started.set()
+            try:
+                if not release_write.wait(timeout=3):
+                    raise TimeoutError("test did not release Catalog STARTED write")
+                if fail_write:
+                    raise OSError("injected Catalog STARTED failure")
+                return original_record(
+                    event_id=event_id,
+                    event_type=event_type,
+                    occurred_at_utc_ns=occurred_at_utc_ns,
+                    evidence=evidence,
+                )
+            finally:
+                write_active.clear()
+
+        def tracked_close() -> None:
+            nonlocal close_raced
+            close_started.set()
+            close_raced = write_active.is_set()
+            original_close()
+
+        monkeypatch.setattr(catalog, "record_operational_event", blocking_record)
+        monkeypatch.setattr(catalog, "close", tracked_close)
+        boundary = ReceivedFrame(
+            raw_payload=book_ticker(403),
+            connection_id="old-owned-started",
+            receive_time_utc_ns=403,
+            receive_monotonic_ns=403,
+            capture_flags=("sequence_gap",),
+        )
+
+        async def record_then_close() -> None:
+            try:
+                await collector._record_gap_started(boundary)
+            finally:
+                catalog.close()
+
+        task = asyncio.create_task(record_then_close())
+        try:
+            await wait_for_thread_event(write_started)
+            task.cancel()
+            await asyncio.sleep(0.02)
+            assert task.done() is False
+            assert close_started.is_set() is False
+            assert write_active.is_set() is True
+            release_write.set()
+            if fail_write:
+                with pytest.raises(OSError, match="injected Catalog STARTED failure"):
+                    await asyncio.wait_for(task, timeout=1)
+            else:
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(task, timeout=1)
+            assert close_started.is_set() is True
+            assert close_raced is False
+            return attempted_gap_id
+        finally:
+            release_write.set()
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+    gap_id = asyncio.run(exercise())
+    with Catalog(layout.catalog) as reopened:
+        open_gaps = reopened.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert len(open_gaps) == (0 if fail_write else 1)
+        if fail_write:
+            assert reopened.operational_events() == []
+        else:
+            assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
+
+            @asynccontextmanager
+            async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+                yield BlockingSocket()
+
+            spool = StreamSpool(
+                layout=layout,
+                catalog=reopened,
+                market="um_perpetual",
+                symbol="BTCUSDT",
+                stream="book_ticker",
+                collector_instance_id="m21-4-started-restart",
+                collector_version="0.1.0+test",
+                queue_capacity=4,
+                rotation=RotationPolicy(seconds=60),
+                durability_interval_seconds=0.75,
+                max_frame_bytes=1024 * 1024,
+            )
+            restarted = UsdMStreamCollector(
+                stream=UsdMStream.BOOK_TICKER,
+                route="public",
+                wire_name="btcusdt@bookTicker",
+                spool=spool,
+                collector_instance_id="m21-4-started-restart",
+                collector_version="0.1.0+test",
+                logger=logging.getLogger("test.m21-4.started-restart"),
+                opener=unused_opener,
+            )
+            assert restarted._pending_gap is not None
+            assert restarted._pending_gap["gap_id"] == gap_id
+
+
+@pytest.mark.parametrize("blocked_operation", ["drain", "seal"])
+def test_cancel_inside_owned_raw_operation_never_overlaps_abort(
+    tmp_path: Path,
+    blocked_operation: str,
+) -> None:
+    async def exercise() -> None:
+        collector, catalog, spool = make_blocking_writer_collector(
+            tmp_path,
+            blocked_operation=blocked_operation,
+        )
+        frame = ReceivedFrame(
+            raw_payload=book_ticker(404),
+            connection_id=f"owned-{blocked_operation}",
+            receive_time_utc_ns=404,
+            receive_monotonic_ns=404,
+        )
+        task = await run_writer_with_one_frame(collector, frame)
+        try:
+            await wait_for_thread_event(spool.operation_started)
+            writer = spool._writer
+            if blocked_operation == "seal":
+                assert writer is not None
+                os.fstat(writer._descriptor)
+            task.cancel()
+            await asyncio.sleep(0.02)
+            assert task.done() is False
+            assert spool.abort_started.is_set() is False
+            assert spool.concurrent_abort is False
+            if writer is not None:
+                os.fstat(writer._descriptor)
+
+            spool.release_operation.set()
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=1)
+            assert spool.abort_calls == 1
+            assert spool.concurrent_abort is False
+            if writer is not None:
+                assert writer.closed is True
+            recover_storage(layout=spool.layout, catalog=catalog)
+        finally:
+            spool.release_operation.set()
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            catalog.close()
+
+    asyncio.run(exercise())
+
+
+def test_writer_integrity_failure_survives_cancel_during_owned_abort(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        @asynccontextmanager
+        async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BlockingSocket()
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=unused_opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        abort_started = threading.Event()
+        release_abort = threading.Event()
+        original_abort = collector.spool.abort_writer
+
+        def fail_drain() -> int:
+            raise OSError("injected Writer integrity failure")
+
+        def blocking_abort() -> None:
+            abort_started.set()
+            if not release_abort.wait(timeout=3):
+                raise TimeoutError("test did not release owned abort")
+            original_abort()
+
+        monkeypatch.setattr(collector.spool, "drain_all", fail_drain)
+        monkeypatch.setattr(collector.spool, "abort_writer", blocking_abort)
+        task = await run_writer_with_one_frame(
+            collector,
+            ReceivedFrame(
+                raw_payload=book_ticker(405),
+                connection_id="writer-failure-during-cancel",
+                receive_time_utc_ns=405,
+                receive_monotonic_ns=405,
+            ),
+        )
+        try:
+            await wait_for_thread_event(abort_started)
+            task.cancel()
+            await asyncio.sleep(0.02)
+            assert task.done() is False
+            release_abort.set()
+            with pytest.raises(OSError, match="injected Writer integrity failure"):
+                await asyncio.wait_for(task, timeout=1)
+        finally:
+            release_abort.set()
+            if not task.done():
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.stress
+def test_owned_blocking_worker_100_cancellation_races_do_not_leak(
+    tmp_path: Path,
+) -> None:
+    fd_root = Path("/proc/self/fd")
+    if not fd_root.exists():
+        fd_root = Path("/dev/fd")
+    fd_before = len(list(fd_root.iterdir()))
+    threads_before = threading.active_count()
+
+    async def exercise() -> None:
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        loop = asyncio.get_running_loop()
+        loop_errors: list[dict[str, Any]] = []
+        previous_handler = loop.get_exception_handler()
+        loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+        baseline = set(asyncio.all_tasks())
+        try:
+            for iteration in range(100):
+                spool = StreamSpool(
+                    layout=layout,
+                    catalog=catalog,
+                    market="um_perpetual",
+                    symbol="BTCUSDT",
+                    stream="book_ticker",
+                    collector_instance_id="m21-4-cancel-race",
+                    collector_version="0.1.0+test",
+                    queue_capacity=4,
+                    rotation=RotationPolicy(seconds=60),
+                    durability_interval_seconds=0.75,
+                    max_frame_bytes=1024 * 1024,
+                )
+                operation_kind = iteration % 4
+                if operation_kind in {0, 2, 3}:
+                    payload_id = 5_000 + iteration
+                    spool.enqueue(
+                        envelope_from_websocket_frame(
+                            raw_payload=book_ticker(payload_id),
+                            stream=UsdMStream.BOOK_TICKER,
+                            connection_id=f"cancel-race-{iteration}",
+                            collector_instance_id="m21-4-cancel-race",
+                            collector_version="0.1.0+test",
+                            receive_time_utc_ns=payload_id,
+                            receive_monotonic_ns=payload_id,
+                        )
+                    )
+                    assert spool.drain_all() == 1
+
+                entered = threading.Event()
+                release = threading.Event()
+                if operation_kind == 0:
+                    blocking_operation: Callable[[], object] = spool.sync
+                elif operation_kind == 1:
+
+                    def record_event(iteration: int = iteration) -> object:
+                        return catalog.record_operational_event(
+                            event_id=f"owned-cancel-race:{iteration}",
+                            event_type="OWNED_CANCEL_RACE",
+                            occurred_at_utc_ns=iteration,
+                            evidence={"iteration": iteration},
+                        )
+
+                    blocking_operation = record_event
+                else:
+                    blocking_operation = spool.close_and_seal
+
+                def hold_worker(
+                    entered: threading.Event = entered,
+                    release: threading.Event = release,
+                    operation: Callable[[], object] = blocking_operation,
+                ) -> object:
+                    entered.set()
+                    if not release.wait(timeout=3):
+                        raise TimeoutError("test did not release cancellation race")
+                    return operation()
+
+                worker_owner = asyncio.create_task(
+                    _run_owned_blocking_call(hold_worker)
+                )
+                await wait_for_thread_event(entered)
+                if operation_kind != 3:
+                    worker_owner.cancel()
+                    await asyncio.sleep(0)
+                    assert worker_owner.done() is False
+                release.set()
+                if operation_kind == 3:
+                    await asyncio.wait_for(worker_owner, timeout=1)
+                else:
+                    with pytest.raises(asyncio.CancelledError):
+                        await asyncio.wait_for(worker_owner, timeout=1)
+
+                if operation_kind == 0 or spool._writer is not None:
+                    spool.abort_writer()
+
+            recover_storage(layout=layout, catalog=catalog)
+            assert len(
+                catalog.operational_events(event_type="OWNED_CANCEL_RACE")
+            ) == 25
+            await asyncio.sleep(0)
+            assert loop_errors == []
+            assert [
+                task
+                for task in asyncio.all_tasks()
+                if task not in baseline
+                and task is not asyncio.current_task()
+                and not task.done()
+            ] == []
+        finally:
+            loop.set_exception_handler(previous_handler)
+            catalog.close()
+
+    asyncio.run(exercise())
+    gc.collect()
+    assert threading.active_count() <= threads_before + 1
+    assert len(list(fd_root.iterdir())) <= fd_before + 2

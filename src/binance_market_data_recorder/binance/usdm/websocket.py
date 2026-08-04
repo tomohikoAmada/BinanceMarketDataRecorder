@@ -45,6 +45,40 @@ FailureObserver = Callable[[str], None]
 LifecycleObserver = Callable[[str], None]
 
 
+async def _run_owned_blocking_call[**BlockingParams, BlockingResult](
+    function: Callable[BlockingParams, BlockingResult],
+    /,
+    *args: BlockingParams.args,
+    **kwargs: BlockingParams.kwargs,
+) -> BlockingResult:
+    """Own a non-cancellable worker until its mutation and outcome are complete."""
+
+    worker_task = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
+    try:
+        return await asyncio.shield(worker_task)
+    except asyncio.CancelledError as cancellation:
+        # Cancelling the asyncio waiter cannot stop an in-flight thread. Keep
+        # ownership until it exits and retrieve the outcome before cleanup may
+        # touch the same Raw writer or Catalog connection.
+        while not worker_task.done():
+            try:
+                await asyncio.shield(worker_task)
+            except asyncio.CancelledError:
+                # Repeated cancellation must not cancel the Task which owns the
+                # still-running thread future.
+                continue
+            except BaseException:
+                # Retrieve and classify the worker failure below.
+                break
+        try:
+            worker_task.result()
+        except BaseException as worker_error:
+            # Integrity failures outrank coincident cancellation. Chaining
+            # retains both facts while keeping storage failure fail-closed.
+            raise worker_error from cancellation
+        raise
+
+
 @asynccontextmanager
 async def open_usdm_websocket(
     url: str,
@@ -338,7 +372,7 @@ class UsdMStreamCollector:
             ),
             **self._queue_fields(),
         }
-        await asyncio.to_thread(
+        await _run_owned_blocking_call(
             self.spool.catalog.record_operational_event,
             event_id=f"stream-discontinuity-started:{gap_id}",
             event_type="STREAM_DISCONTINUITY_STARTED",
@@ -358,8 +392,8 @@ class UsdMStreamCollector:
             return
         completed_at = envelope.receive_time_utc_ns
         gap_id = str(gap["gap_id"])
-        await asyncio.to_thread(self.spool.sync)
-        await asyncio.to_thread(
+        await _run_owned_blocking_call(self.spool.sync)
+        await _run_owned_blocking_call(
             self.spool.catalog.record_operational_event,
             event_id=f"stream-discontinuity-completed:{gap_id}",
             event_type="STREAM_DISCONTINUITY_COMPLETED",
@@ -385,10 +419,9 @@ class UsdMStreamCollector:
         try:
             await self._write_until_done(producer_done)
         except asyncio.CancelledError:
-            with suppress(Exception):
-                await asyncio.to_thread(self.spool.abort_writer)
+            await _run_owned_blocking_call(self.spool.abort_writer)
             raise
-        except BaseException:
+        except BaseException as writer_error:
             log_event(
                 self.logger,
                 logging.CRITICAL,
@@ -400,8 +433,14 @@ class UsdMStreamCollector:
                 outcome="FATAL",
                 **self._queue_fields(),
             )
-            with suppress(Exception):
-                await asyncio.to_thread(self.spool.abort_writer)
+            try:
+                await _run_owned_blocking_call(self.spool.abort_writer)
+            except asyncio.CancelledError as cancellation:
+                # Once the Writer has failed, a coincident cancellation during
+                # descriptor cleanup must not hide the integrity failure.
+                raise writer_error from cancellation
+            except BaseException as abort_error:
+                raise abort_error from writer_error
             raise
 
     async def _persist_batch(
@@ -444,7 +483,7 @@ class UsdMStreamCollector:
             self.spool.enqueue(envelope)
             persisted.append(envelope)
         drain_started = time.perf_counter_ns()
-        drained = await asyncio.to_thread(self.spool.drain_all)
+        drained = await _run_owned_blocking_call(self.spool.drain_all)
         drain_duration = time.perf_counter_ns() - drain_started
         self._last_writer_batch_size = len(batch)
         self._last_writer_drain_ns = drain_duration
@@ -459,7 +498,7 @@ class UsdMStreamCollector:
             try:
                 batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
             except TimeoutError:
-                await asyncio.to_thread(self.spool.drain_all)
+                await _run_owned_blocking_call(self.spool.drain_all)
                 continue
             for _ in range(min(255, self.spool.queue.capacity - 1)):
                 try:
@@ -489,7 +528,7 @@ class UsdMStreamCollector:
                     connection_id=connection_id,
                     outcome="RECOVERED",
                 )
-        await asyncio.to_thread(self.spool.close_and_seal)
+        await _run_owned_blocking_call(self.spool.close_and_seal)
 
     async def _receive_connection(
         self,
