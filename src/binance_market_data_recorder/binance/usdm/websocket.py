@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
+from dataclasses import replace
 from typing import Protocol
 from uuid import uuid4
 
@@ -16,7 +18,13 @@ from websockets.exceptions import WebSocketException
 from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...network import WebSocketProxy
-from ...spool.queue import IngressQueueFull
+from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
+from ...spool.queue import (
+    IngressBackpressureTimeout,
+    IngressGapStateConflict,
+    IngressPostCloseHandoffTimeout,
+    IngressStopRequested,
+)
 from ...spool.stream import StreamSpool
 from ..spot.websocket import ReceivedFrame, ReconnectBackoff
 from .schema import UsdMStream, envelope_from_websocket_frame
@@ -35,6 +43,40 @@ EnvelopeFactory = Callable[..., EventEnvelope]
 EnvelopeObserver = Callable[[EventEnvelope], None]
 FailureObserver = Callable[[str], None]
 LifecycleObserver = Callable[[str], None]
+
+
+async def _run_owned_blocking_call[**BlockingParams, BlockingResult](
+    function: Callable[BlockingParams, BlockingResult],
+    /,
+    *args: BlockingParams.args,
+    **kwargs: BlockingParams.kwargs,
+) -> BlockingResult:
+    """Own a non-cancellable worker until its mutation and outcome are complete."""
+
+    worker_task = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
+    try:
+        return await asyncio.shield(worker_task)
+    except asyncio.CancelledError as cancellation:
+        # Cancelling the asyncio waiter cannot stop an in-flight thread. Keep
+        # ownership until it exits and retrieve the outcome before cleanup may
+        # touch the same Raw writer or Catalog connection.
+        while not worker_task.done():
+            try:
+                await asyncio.shield(worker_task)
+            except asyncio.CancelledError:
+                # Repeated cancellation must not cancel the Task which owns the
+                # still-running thread future.
+                continue
+            except BaseException:
+                # Retrieve and classify the worker failure below.
+                break
+        try:
+            worker_task.result()
+        except BaseException as worker_error:
+            # Integrity failures outrank coincident cancellation. Chaining
+            # retains both facts while keeping storage failure fail-closed.
+            raise worker_error from cancellation
+        raise
 
 
 @asynccontextmanager
@@ -81,6 +123,9 @@ class UsdMStreamCollector:
         envelope_observer: EnvelopeObserver | None = None,
         failure_observer: FailureObserver | None = None,
         lifecycle_observer: LifecycleObserver | None = None,
+        backpressure_put_timeout_seconds: float = 1.0,
+        backpressure_saturation_timeout_seconds: float = 30.0,
+        post_close_handoff_timeout_seconds: float = 5.0,
     ) -> None:
         if route not in {"public", "market"}:
             raise ValueError("USD-M market data route must be public or market")
@@ -88,6 +133,8 @@ class UsdMStreamCollector:
             raise ValueError("receipt queue capacity must be positive")
         if not 0 < planned_rotation_seconds < 24 * 60 * 60:
             raise ValueError("planned rotation must occur before the 24-hour limit")
+        if post_close_handoff_timeout_seconds <= 0:
+            raise ValueError("post-close handoff timeout must be positive")
         if envelope_factory is None and not isinstance(stream, UsdMStream):
             raise ValueError("a side-data stream requires an envelope factory")
         self.stream = stream
@@ -109,7 +156,23 @@ class UsdMStreamCollector:
         self.failure_observer = failure_observer
         self.lifecycle_observer = lifecycle_observer
         self._capture_flags: tuple[str, ...] = ()
-        self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(maxsize=receipt_queue_capacity)
+        self._receipts = BoundedAsyncQueue[ReceivedFrame](
+            receipt_queue_capacity,
+            put_timeout_seconds=backpressure_put_timeout_seconds,
+            saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
+        )
+        self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
+        self._backpressure_active = False
+        self._generation = 0
+        self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
+        self._pending_gap: dict[str, object] | None = None
+        self._backpressure_boundary: ReceivedFrame | None = None
+        self._last_writer_batch_size = 0
+        self._last_writer_drain_ns = 0
+        self._max_writer_drain_ns = 0
+        self._active_connection_id: str | None = None
+        self._restore_open_gap()
 
     @property
     def url(self) -> str:
@@ -117,6 +180,69 @@ class UsdMStreamCollector:
 
     def set_capture_flags(self, flags: tuple[str, ...]) -> None:
         self._capture_flags = flags
+
+    @property
+    def receipt_queue_stats(self) -> AsyncQueueStats:
+        return self._receipts.snapshot()
+
+    def _restore_open_gap(self) -> None:
+        open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
+            market="um_perpetual",
+            stream=self.stream_name,
+        )
+        if len(open_gaps) > 1:
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has {len(open_gaps)} conflicting "
+                "unclosed stream discontinuities"
+            )
+        if not open_gaps:
+            return
+        evidence = open_gaps[0].get("evidence")
+        if not isinstance(evidence, dict):
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has malformed open gap evidence"
+            )
+        gap_id = evidence.get("gap_id")
+        started_at = evidence.get("gap_started_at_utc_ns")
+        connection_id = evidence.get("original_connection_id")
+        original_generation = evidence.get("original_generation")
+        if (
+            not isinstance(gap_id, str)
+            or not gap_id
+            or not isinstance(started_at, int)
+            or isinstance(started_at, bool)
+            or started_at < 0
+            or not isinstance(connection_id, str)
+            or not connection_id
+            or not isinstance(original_generation, int)
+            or isinstance(original_generation, bool)
+            or original_generation < 0
+            or evidence.get("reason") != "ingress_backpressure"
+        ):
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has invalid open gap identity"
+            )
+        self._pending_gap = {
+            "gap_id": gap_id,
+            "gap_started_at_utc_ns": started_at,
+            "original_connection_id": connection_id,
+            "original_generation": original_generation,
+        }
+        self._generation = original_generation + 1
+        self._recovery_flag_pending = True
+        self._recovery_marker_enqueued = False
+        log_event(
+            self.logger,
+            logging.WARNING,
+            "usdm_ingress_gap_recovered",
+            "USD-M stream recovered an unclosed discontinuity from Catalog",
+            stream=self.stream_name,
+            connection_id=connection_id,
+            generation=self._generation,
+            gap_id=gap_id,
+            outcome="RECOVERY_PENDING",
+            **self._queue_fields(),
+        )
 
     async def _receive_once(
         self, websocket: WebSocketConnection, connection_id: str
@@ -133,70 +259,276 @@ class UsdMStreamCollector:
             capture_flags=self._capture_flags,
         )
 
-    def _accept(self, receipt: ReceivedFrame) -> None:
+    def _with_recovery_marker(self, receipt: ReceivedFrame) -> ReceivedFrame:
+        if not self._recovery_flag_pending or self._recovery_marker_enqueued:
+            return receipt
+        return replace(
+            receipt,
+            capture_flags=tuple(
+                dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
+            ),
+        )
+
+    async def _accept(
+        self,
+        receipt: ReceivedFrame,
+        writer_task: asyncio.Task[None],
+        stop: asyncio.Event,
+    ) -> None:
+        if self._receipts.depth >= self._receipts.capacity and not self._backpressure_active:
+            self._backpressure_active = True
+            self._log_ingress_state(
+                logging.WARNING,
+                "usdm_ingress_backpressure_started",
+                "bounded USD-M receipt queue started applying producer backpressure",
+                connection_id=receipt.connection_id,
+                outcome="WAITING",
+            )
+        recovery_marker = self._with_recovery_marker(receipt)
+        reserved = recovery_marker is not receipt
+        if reserved:
+            self._recovery_marker_enqueued = True
         try:
-            self._receipts.put_nowait(receipt)
-        except asyncio.QueueFull as exc:
-            raise IngressQueueFull("WebSocket receipt queue is full") from exc
+            await self._receipts.put(
+                recovery_marker,
+                writer_task=writer_task,
+                stop=stop,
+            )
+        except BaseException:
+            if reserved and self._pending_gap is not None:
+                self._recovery_marker_enqueued = False
+            raise
+
+    def _queue_fields(self) -> dict[str, object]:
+        stats = self._receipts.snapshot()
+        operations = self.spool.operation_stats()
+        return {
+            "receipt_queue_capacity": stats.capacity,
+            "receipt_queue_depth": stats.depth,
+            "receipt_queue_high_watermark": stats.high_watermark,
+            "queue_wait_count": stats.wait_count,
+            "queue_wait_total_ns": stats.wait_total_ns,
+            "queue_wait_max_ns": stats.wait_max_ns,
+            "queue_wait_p50_ns": stats.wait_p50_ns,
+            "queue_wait_p95_ns": stats.wait_p95_ns,
+            "queue_wait_p99_ns": stats.wait_p99_ns,
+            "saturation_seconds": stats.saturation_seconds,
+            "writer_batch_size": self._last_writer_batch_size,
+            "writer_drain_ns": self._last_writer_drain_ns,
+            "writer_drain_max_ns": self._max_writer_drain_ns,
+            "writer_append_ns": operations.append_last_ns,
+            "writer_append_max_ns": operations.append_max_ns,
+            "writer_write_ns": operations.write_last_ns,
+            "writer_write_max_ns": operations.write_max_ns,
+            "writer_fsync_ns": operations.fsync_last_ns,
+            "writer_fsync_max_ns": operations.fsync_max_ns,
+            "writer_seal_ns": operations.seal_last_ns,
+            "writer_seal_max_ns": operations.seal_max_ns,
+        }
+
+    def _log_ingress_state(
+        self,
+        level: int,
+        event: str,
+        message: str,
+        *,
+        connection_id: str,
+        outcome: str,
+    ) -> None:
+        log_event(
+            self.logger,
+            level,
+            event,
+            message,
+            stream=self.stream_name,
+            connection_id=connection_id,
+            generation=self._generation,
+            outcome=outcome,
+            **self._queue_fields(),
+        )
+
+    async def _record_gap_started(self, boundary: ReceivedFrame) -> None:
+        if self._pending_gap is not None:
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} cannot start a second discontinuity "
+                "while an earlier gap remains open"
+            )
+        gap_id = str(uuid4())
+        started_at = boundary.receive_time_utc_ns
+        evidence: dict[str, object] = {
+            "gap_id": gap_id,
+            "market": "um_perpetual",
+            "stream": self.stream_name,
+            "reason": "ingress_backpressure",
+            "interval_classification": "UNRELIABLE",
+            "gap_started_at_utc_ns": started_at,
+            "original_connection_id": boundary.connection_id,
+            "original_generation": self._generation,
+            "boundary_frame_persisted": True,
+            "boundary_payload_sha256": hashlib.sha256(boundary.raw_payload).hexdigest(),
+            "boundary_precision": (
+                "connection closed after the last Recorder-received frame; "
+                "unread WebSocket/TCP buffers are indeterminate"
+            ),
+            **self._queue_fields(),
+        }
+        await _run_owned_blocking_call(
+            self.spool.catalog.record_operational_event,
+            event_id=f"stream-discontinuity-started:{gap_id}",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=started_at,
+            evidence=evidence,
+        )
+        self._pending_gap = {
+            "gap_id": gap_id,
+            "gap_started_at_utc_ns": started_at,
+            "original_connection_id": boundary.connection_id,
+            "original_generation": self._generation,
+        }
+
+    async def _record_gap_completed(self, envelope: EventEnvelope) -> None:
+        gap = self._pending_gap
+        if gap is None or "sequence_gap" not in envelope.capture_flags:
+            return
+        completed_at = envelope.receive_time_utc_ns
+        gap_id = str(gap["gap_id"])
+        await _run_owned_blocking_call(self.spool.sync)
+        await _run_owned_blocking_call(
+            self.spool.catalog.record_operational_event,
+            event_id=f"stream-discontinuity-completed:{gap_id}",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=completed_at,
+            evidence={
+                **gap,
+                "market": "um_perpetual",
+                "stream": self.stream_name,
+                "reason": "ingress_backpressure",
+                "interval_classification": "UNRELIABLE",
+                "gap_ended_at_utc_ns": completed_at,
+                "new_connection_id": envelope.connection_id,
+                "new_generation": self._generation,
+                "raw_gap_marker": "sequence_gap",
+                "historical_continuity_restored": False,
+            },
+        )
+        self._pending_gap = None
+        self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
 
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
+        try:
+            await self._write_until_done(producer_done)
+        except asyncio.CancelledError:
+            await _run_owned_blocking_call(self.spool.abort_writer)
+            raise
+        except BaseException as writer_error:
+            log_event(
+                self.logger,
+                logging.CRITICAL,
+                "usdm_ingress_writer_failed",
+                "USD-M Raw writer stopped before its ingress generation completed",
+                stream=self.stream_name,
+                connection_id=self._active_connection_id or "unavailable",
+                generation=self._generation,
+                outcome="FATAL",
+                **self._queue_fields(),
+            )
+            try:
+                await _run_owned_blocking_call(self.spool.abort_writer)
+            except asyncio.CancelledError as cancellation:
+                # Once the Writer has failed, a coincident cancellation during
+                # descriptor cleanup must not hide the integrity failure.
+                raise writer_error from cancellation
+            except BaseException as abort_error:
+                raise abort_error from writer_error
+            raise
+
+    async def _persist_batch(
+        self, batch: list[ReceivedFrame]
+    ) -> list[EventEnvelope]:
+        persisted: list[EventEnvelope] = []
+        for receipt in batch:
+            if self.envelope_factory is None:
+                if not isinstance(self.stream, UsdMStream):
+                    raise RuntimeError("missing USD-M envelope factory")
+                envelope = envelope_from_websocket_frame(
+                    raw_payload=receipt.raw_payload,
+                    stream=self.stream,
+                    connection_id=receipt.connection_id,
+                    collector_instance_id=self.collector_instance_id,
+                    collector_version=self.collector_version,
+                    receive_time_utc_ns=receipt.receive_time_utc_ns,
+                    receive_monotonic_ns=receipt.receive_monotonic_ns,
+                    additional_capture_flags=receipt.capture_flags,
+                )
+            else:
+                envelope = self.envelope_factory(
+                    raw_payload=receipt.raw_payload,
+                    connection_id=receipt.connection_id,
+                    collector_instance_id=self.collector_instance_id,
+                    collector_version=self.collector_version,
+                    receive_time_utc_ns=receipt.receive_time_utc_ns,
+                    receive_monotonic_ns=receipt.receive_monotonic_ns,
+                )
+                if receipt.capture_flags:
+                    envelope = envelope.model_copy(
+                        update={
+                            "capture_flags": tuple(
+                                dict.fromkeys(
+                                    (*envelope.capture_flags, *receipt.capture_flags)
+                                )
+                            )
+                        }
+                    )
+            self.spool.enqueue(envelope)
+            persisted.append(envelope)
+        drain_started = time.perf_counter_ns()
+        drained = await _run_owned_blocking_call(self.spool.drain_all)
+        drain_duration = time.perf_counter_ns() - drain_started
+        self._last_writer_batch_size = len(batch)
+        self._last_writer_drain_ns = drain_duration
+        self._max_writer_drain_ns = max(self._max_writer_drain_ns, drain_duration)
+        if drained != len(batch):
+            raise RuntimeError("USD-M Raw spool did not drain the complete writer batch")
+        return persisted
+
+    async def _write_until_done(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
             batch: list[ReceivedFrame] = []
-            persisted: list[EventEnvelope] = []
             try:
                 batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
             except TimeoutError:
-                await asyncio.to_thread(self.spool.drain_all)
+                await _run_owned_blocking_call(self.spool.drain_all)
                 continue
             for _ in range(min(255, self.spool.queue.capacity - 1)):
                 try:
                     batch.append(self._receipts.get_nowait())
                 except asyncio.QueueEmpty:
                     break
-            for receipt in batch:
-                if self.envelope_factory is None:
-                    if not isinstance(self.stream, UsdMStream):
-                        raise RuntimeError("missing USD-M envelope factory")
-                    envelope = envelope_from_websocket_frame(
-                        raw_payload=receipt.raw_payload,
-                        stream=self.stream,
-                        connection_id=receipt.connection_id,
-                        collector_instance_id=self.collector_instance_id,
-                        collector_version=self.collector_version,
-                        receive_time_utc_ns=receipt.receive_time_utc_ns,
-                        receive_monotonic_ns=receipt.receive_monotonic_ns,
-                        additional_capture_flags=receipt.capture_flags,
-                    )
-                else:
-                    envelope = self.envelope_factory(
-                        raw_payload=receipt.raw_payload,
-                        connection_id=receipt.connection_id,
-                        collector_instance_id=self.collector_instance_id,
-                        collector_version=self.collector_version,
-                        receive_time_utc_ns=receipt.receive_time_utc_ns,
-                        receive_monotonic_ns=receipt.receive_monotonic_ns,
-                    )
-                    if receipt.capture_flags:
-                        envelope = envelope.model_copy(
-                            update={
-                                "capture_flags": tuple(
-                                    dict.fromkeys(
-                                        (
-                                            *envelope.capture_flags,
-                                            *receipt.capture_flags,
-                                        )
-                                    )
-                                )
-                            }
-                        )
-                self.spool.enqueue(envelope)
-                persisted.append(envelope)
+            try:
+                persisted = await self._persist_batch(batch)
+            except BaseException:
+                for _receipt in batch:
+                    self._receipts.task_done()
+                raise
+            for _receipt in batch:
                 self._receipts.task_done()
-            await asyncio.to_thread(self.spool.drain_all)
+            for envelope in persisted:
+                await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
-        await asyncio.to_thread(self.spool.close_and_seal)
+            if self._receipts.note_consumer_progress() and self._backpressure_active:
+                self._backpressure_active = False
+                connection_id = persisted[-1].connection_id if persisted else "unknown"
+                self._log_ingress_state(
+                    logging.INFO,
+                    "usdm_ingress_backpressure_recovered",
+                    "USD-M receipt queue recovered below its low watermark",
+                    connection_id=connection_id,
+                    outcome="RECOVERED",
+                )
+        await _run_owned_blocking_call(self.spool.close_and_seal)
 
     async def _receive_connection(
         self,
@@ -242,7 +574,56 @@ class UsdMStreamCollector:
                 return "planned_rotation"
             if receive_task in done:
                 try:
-                    self._accept(receive_task.result())
+                    receipt = receive_task.result()
+                    await self._accept(receipt, writer_task, stop)
+                except IngressBackpressureTimeout:
+                    self._log_ingress_state(
+                        logging.ERROR,
+                        "usdm_ingress_backpressure_timeout",
+                        "USD-M receipt queue exceeded its bounded saturation budget",
+                        connection_id=connection_id,
+                        outcome="ROTATE_CONNECTION",
+                    )
+                    await websocket.close(
+                        code=1013,
+                        reason="bounded ingress backpressure",
+                    )
+                    boundary = replace(
+                        receipt,
+                        capture_flags=tuple(
+                            dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
+                        ),
+                    )
+                    try:
+                        await self._receipts.put_after_connection_close(
+                            boundary,
+                            writer_task=writer_task,
+                            timeout_seconds=self.post_close_handoff_timeout_seconds,
+                        )
+                    except IngressPostCloseHandoffTimeout:
+                        self._log_ingress_state(
+                            logging.CRITICAL,
+                            "usdm_ingress_post_close_handoff_timeout",
+                            "received USD-M boundary frame couldn't enter its Raw writer queue",
+                            connection_id=connection_id,
+                            outcome="FATAL",
+                        )
+                        raise
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
+                    self._backpressure_boundary = boundary
+                    return "ingress_backpressure"
+                except IngressStopRequested:
+                    await websocket.close(code=1000, reason="collector shutdown")
+                    receipt = self._with_recovery_marker(receipt)
+                    await self._receipts.put_after_connection_close(
+                        receipt,
+                        writer_task=writer_task,
+                        timeout_seconds=self.post_close_handoff_timeout_seconds,
+                    )
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
+                    return "graceful_shutdown"
                 except (WebSocketException, OSError, TimeoutError):
                     if stop.is_set():
                         await websocket.close(code=1000, reason="collector shutdown")
@@ -254,7 +635,9 @@ class UsdMStreamCollector:
                 await websocket.close(code=1000, reason="collector shutdown")
                 return "graceful_shutdown"
 
-    async def _connection_loop(self, stop: asyncio.Event, writer_task: asyncio.Task[None]) -> None:
+    async def _connection_loop(
+        self, stop: asyncio.Event, writer_task: asyncio.Task[None]
+    ) -> str:
         failures = 0
         while not stop.is_set():
             connection_id = str(uuid4())
@@ -265,6 +648,7 @@ class UsdMStreamCollector:
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
                     was_connected = True
+                    self._active_connection_id = connection_id
                     if self.lifecycle_observer is not None:
                         self.lifecycle_observer("connected")
                     log_event(
@@ -302,23 +686,17 @@ class UsdMStreamCollector:
                     error_type=type(exc).__name__,
                     retry=failures,
                 )
-            except IngressQueueFull:
-                if self.failure_observer is not None:
-                    self.failure_observer("IngressQueueFull")
-                log_event(
-                    self.logger,
-                    logging.CRITICAL,
-                    "usdm_ingress_overflow",
-                    "bounded USD-M receipt queue is full; capture continuity is lost",
-                    stream=self.stream_name,
-                    connection_id=connection_id,
-                )
-                raise
             finally:
                 if was_connected and self.lifecycle_observer is not None:
                     self.lifecycle_observer("disconnected")
             if stop.is_set() or reason == "graceful_shutdown":
-                return
+                return "stopped"
+            if reason == "ingress_backpressure":
+                if self.failure_observer is not None:
+                    self.failure_observer("IngressBackpressureTimeout")
+                if self.lifecycle_observer is not None:
+                    self.lifecycle_observer("ingress_backpressure")
+                return reason
             if reason == "planned_rotation":
                 failures = 0
                 if self.lifecycle_observer is not None:
@@ -326,12 +704,39 @@ class UsdMStreamCollector:
                 continue
             with suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=self.backoff.delay(max(1, failures)))
+        return "stopped"
 
     async def run(self, stop: asyncio.Event) -> None:
-        producer_done = asyncio.Event()
-        writer_task = asyncio.create_task(self._writer_loop(producer_done))
-        try:
-            await self._connection_loop(stop, writer_task)
-        finally:
-            producer_done.set()
-            await writer_task
+        while not stop.is_set():
+            producer_done = asyncio.Event()
+            writer_task = asyncio.create_task(self._writer_loop(producer_done))
+            try:
+                outcome = await self._connection_loop(stop, writer_task)
+            finally:
+                producer_done.set()
+                await writer_task
+            if outcome != "ingress_backpressure":
+                return
+            boundary = self._backpressure_boundary
+            self._backpressure_boundary = None
+            if boundary is None:
+                raise RuntimeError("missing USD-M backpressure generation boundary")
+            await self._record_gap_started(boundary)
+            self._generation += 1
+            self._recovery_flag_pending = True
+            self._recovery_marker_enqueued = False
+            self._backpressure_active = False
+            self._receipts.note_consumer_progress()
+            self._log_ingress_state(
+                logging.WARNING,
+                "usdm_ingress_stream_recovery",
+                "USD-M stream is opening a new generation with persistent gap evidence",
+                connection_id=boundary.connection_id,
+                outcome=(
+                    "DEPTH_RESYNC_REQUIRED"
+                    if self.stream == UsdMStream.DIFF_DEPTH
+                    else "STREAM_RECONNECT"
+                ),
+            )
+            if self.stream == UsdMStream.DIFF_DEPTH:
+                return

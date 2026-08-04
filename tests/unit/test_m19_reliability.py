@@ -165,6 +165,84 @@ def _snapshot_event(
     )
 
 
+def _non_depth_event(
+    stream: str, instance: str, ordinal: int, connection: str
+) -> EventEnvelope:
+    return EventEnvelope(
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream=stream,
+        module="binance.um_perpetual.websocket",
+        connection_id=connection,
+        collector_instance_id=instance,
+        collector_version="test",
+        receive_time_utc_ns=time.time_ns() + ordinal,
+        receive_monotonic_ns=time.monotonic_ns() + ordinal,
+        raw_payload=b'{"s":"BTCUSDT"}',
+    )
+
+
+def test_usdm_ingress_backpressure_forces_fresh_depth_snapshot_bridge(
+    tmp_path: Path,
+) -> None:
+    instance = "usdm-ingress-backpressure"
+    collector = UsdMCollector(
+        UsdMCollectorSettings(tmp_path, instance, "test"),
+        logger=logging.getLogger("test.m21-4.usdm-resync"),
+    )
+    observers = {
+        stream.stream_name: stream.lifecycle_observer for stream in collector.streams
+    }
+    assert all(observer is not None for observer in observers.values())
+
+    for observer in observers.values():
+        assert observer is not None
+        observer("connected")
+    collector._observe_persisted(_depth_event("um_perpetual", instance, 100, "old"))
+    collector._observe_persisted(_non_depth_event("agg_trade", instance, 2, "old"))
+    collector._observe_persisted(_non_depth_event("book_ticker", instance, 3, "old"))
+    collector.readiness.observe_snapshot_persisted(
+        _snapshot_event("um_perpetual", instance, 100)
+    )
+    assert collector.readiness_snapshot().ready is True
+
+    depth_observer = observers["diff_depth"]
+    assert depth_observer is not None
+    depth_observer("disconnected")
+    depth_observer("ingress_backpressure")
+    assert collector.readiness_snapshot().ready is False
+    assert collector.readiness_snapshot().failure == "ingress_backpressure"
+    assert collector.resync.active is not None
+    assert collector.resync.active.reason == "ingress_backpressure"
+
+    # Even an old-generation event can't clear the fail-closed readiness state.
+    depth_observer("connected")
+    collector._observe_persisted(_depth_event("um_perpetual", instance, 101, "old"))
+    assert collector.readiness_snapshot().ready is False
+
+    collector.readiness.restart_bootstrap()
+    collector.resync.prepare_restart()
+    reset = collector.readiness_snapshot()
+    assert reset.ready is False
+    assert reset.snapshot_persisted is False
+    assert reset.persisted_streams == frozenset()
+    for observer in observers.values():
+        assert observer is not None
+        observer("connected")
+    collector._observe_persisted(_depth_event("um_perpetual", instance, 200, "new"))
+    collector._observe_persisted(_non_depth_event("agg_trade", instance, 5, "new"))
+    collector._observe_persisted(_non_depth_event("book_ticker", instance, 6, "new"))
+    assert collector.readiness_snapshot().ready is False
+    snapshot = _snapshot_event("um_perpetual", instance, 200)
+    collector.readiness.observe_snapshot_persisted(snapshot)
+    assert collector.readiness_snapshot().ready is True
+    recovered_update_id = collector.readiness.reliable_update_id
+    assert recovered_update_id == 200
+    collector.resync.complete(snapshot, recovered_update_id)
+    assert collector.resync.active is None
+    collector.catalog.close()
+
+
 def test_resync_completion_records_applied_local_book_update_id(
     tmp_path: Path,
 ) -> None:

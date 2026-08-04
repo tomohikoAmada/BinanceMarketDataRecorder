@@ -198,6 +198,14 @@ class RawChunkWriter:
         os.close(self._descriptor)
         self._closed = True
 
+    def abort(self) -> None:
+        """Close without sealing after a write failure; recovery owns the partial."""
+
+        if self._closed:
+            return
+        os.close(self._descriptor)
+        self._closed = True
+
     def __enter__(self) -> RawChunkWriter:
         return self
 

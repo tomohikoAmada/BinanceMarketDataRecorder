@@ -12,7 +12,11 @@ StreamSpool 将 RawChunkWriter、BoundedEventQueue 和 seal_partial 组装为一
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
+from contextlib import suppress
+from dataclasses import dataclass
+from threading import Lock
 
 from ..domain.event import EventEnvelope
 from ..storage.catalog import Catalog
@@ -20,6 +24,18 @@ from ..storage.layout import StorageLayout
 from .queue import BoundedEventQueue
 from .seal import seal_partial
 from .writer import RawChunkWriter, RotationPolicy
+
+
+@dataclass(frozen=True, slots=True)
+class SpoolOperationStats:
+    append_last_ns: int
+    append_max_ns: int
+    write_last_ns: int
+    write_max_ns: int
+    fsync_last_ns: int
+    fsync_max_ns: int
+    seal_last_ns: int
+    seal_max_ns: int
 
 
 class StreamSpool:
@@ -60,6 +76,14 @@ class StreamSpool:
         self._operation_observer = operation_observer
         self._seal_observer = seal_observer
         self._writer: RawChunkWriter | None = None
+        self._operation_lock = Lock()
+        self._operation_last_ns = {
+            "append_latency_ns": 0,
+            "write_latency_ns": 0,
+            "fsync_latency_ns": 0,
+            "seal_latency_ns": 0,
+        }
+        self._operation_max_ns = dict(self._operation_last_ns)
 
     def enqueue(self, envelope: EventEnvelope) -> None:
         self.queue.put_nowait(envelope)
@@ -76,8 +100,33 @@ class StreamSpool:
             rotation=self.rotation,
             durability_interval_seconds=self.durability_interval_seconds,
             max_frame_bytes=self.max_frame_bytes,
-            operation_observer=self._operation_observer,
+            operation_observer=self._observe_writer_operation,
         )
+
+    def _observe_duration(self, name: str, duration_ns: int) -> None:
+        with self._operation_lock:
+            self._operation_last_ns[name] = duration_ns
+            self._operation_max_ns[name] = max(
+                self._operation_max_ns[name], duration_ns
+            )
+
+    def _observe_writer_operation(self, name: str, duration_ns: int) -> None:
+        self._observe_duration(name, duration_ns)
+        if self._operation_observer is not None:
+            self._operation_observer(name, duration_ns)
+
+    def operation_stats(self) -> SpoolOperationStats:
+        with self._operation_lock:
+            return SpoolOperationStats(
+                append_last_ns=self._operation_last_ns["append_latency_ns"],
+                append_max_ns=self._operation_max_ns["append_latency_ns"],
+                write_last_ns=self._operation_last_ns["write_latency_ns"],
+                write_max_ns=self._operation_max_ns["write_latency_ns"],
+                fsync_last_ns=self._operation_last_ns["fsync_latency_ns"],
+                fsync_max_ns=self._operation_max_ns["fsync_latency_ns"],
+                seal_last_ns=self._operation_last_ns["seal_latency_ns"],
+                seal_max_ns=self._operation_max_ns["seal_latency_ns"],
+            )
 
     def drain_one(self) -> bool:
         envelope = self.queue.get_nowait()
@@ -95,7 +144,13 @@ class StreamSpool:
         if writer is None:
             raise RuntimeError("stream writer was not created")
         before = 0 if writer_created else writer.bytes_written
-        writer.append(envelope)
+        append_started = time.perf_counter_ns()
+        try:
+            writer.append(envelope)
+        finally:
+            self._observe_duration(
+                "append_latency_ns", time.perf_counter_ns() - append_started
+            )
         raw_frame_bytes = writer.bytes_written - before
         if self._event_observer is not None:
             self._event_observer(envelope, raw_frame_bytes, self.queue.depth)
@@ -119,9 +174,19 @@ class StreamSpool:
         if self._writer is None:
             return None
         writer = self._writer
-        self._writer = None
-        writer.close()
-        manifest = seal_partial(writer.path, layout=self.layout, catalog=self.catalog)
+        seal_started = time.perf_counter_ns()
+        try:
+            writer.close()
+            manifest = seal_partial(writer.path, layout=self.layout, catalog=self.catalog)
+        except BaseException:
+            with suppress(OSError):
+                writer.abort()
+            raise
+        finally:
+            self._writer = None
+            self._observe_duration(
+                "seal_latency_ns", time.perf_counter_ns() - seal_started
+            )
         if self._seal_observer is not None:
             self._seal_observer(manifest)
         return manifest
@@ -129,3 +194,11 @@ class StreamSpool:
     def close_and_seal(self) -> dict[str, object] | None:
         self.drain_all()
         return self._seal_current()
+
+    def abort_writer(self) -> None:
+        """Release a failed writer descriptor while retaining its recoverable partial."""
+
+        writer = self._writer
+        self._writer = None
+        if writer is not None:
+            writer.abort()

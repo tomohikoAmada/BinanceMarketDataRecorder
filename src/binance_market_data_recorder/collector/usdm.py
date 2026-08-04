@@ -176,6 +176,11 @@ class UsdMCollector:
                 if event == "disconnected":
                     self.readiness.observe_disconnected(stream)
                     return
+                if event == "ingress_backpressure":
+                    if stream == "diff_depth":
+                        self.readiness.record_failure(event)
+                        self.resync.request(event)
+                    return
                 self.metrics.safely_observe_lifecycle(
                     market="um_perpetual", stream=stream, event=event
                 )
