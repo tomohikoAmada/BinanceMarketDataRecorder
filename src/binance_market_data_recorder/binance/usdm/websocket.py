@@ -21,7 +21,8 @@ from ...network import WebSocketProxy
 from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
 from ...spool.queue import (
     IngressBackpressureTimeout,
-    IngressPersistenceTimeout,
+    IngressGapStateConflict,
+    IngressPostCloseHandoffTimeout,
     IngressStopRequested,
 )
 from ...spool.stream import StreamSpool
@@ -90,7 +91,7 @@ class UsdMStreamCollector:
         lifecycle_observer: LifecycleObserver | None = None,
         backpressure_put_timeout_seconds: float = 1.0,
         backpressure_saturation_timeout_seconds: float = 30.0,
-        backpressure_persist_timeout_seconds: float = 5.0,
+        post_close_handoff_timeout_seconds: float = 5.0,
     ) -> None:
         if route not in {"public", "market"}:
             raise ValueError("USD-M market data route must be public or market")
@@ -98,8 +99,8 @@ class UsdMStreamCollector:
             raise ValueError("receipt queue capacity must be positive")
         if not 0 < planned_rotation_seconds < 24 * 60 * 60:
             raise ValueError("planned rotation must occur before the 24-hour limit")
-        if backpressure_persist_timeout_seconds <= 0:
-            raise ValueError("backpressure persistence timeout must be positive")
+        if post_close_handoff_timeout_seconds <= 0:
+            raise ValueError("post-close handoff timeout must be positive")
         if envelope_factory is None and not isinstance(stream, UsdMStream):
             raise ValueError("a side-data stream requires an envelope factory")
         self.stream = stream
@@ -126,16 +127,18 @@ class UsdMStreamCollector:
             put_timeout_seconds=backpressure_put_timeout_seconds,
             saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
         )
-        self.backpressure_persist_timeout_seconds = backpressure_persist_timeout_seconds
+        self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
         self._backpressure_active = False
         self._generation = 0
         self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
         self._pending_gap: dict[str, object] | None = None
         self._backpressure_boundary: ReceivedFrame | None = None
         self._last_writer_batch_size = 0
         self._last_writer_drain_ns = 0
         self._max_writer_drain_ns = 0
         self._active_connection_id: str | None = None
+        self._restore_open_gap()
 
     @property
     def url(self) -> str:
@@ -148,6 +151,65 @@ class UsdMStreamCollector:
     def receipt_queue_stats(self) -> AsyncQueueStats:
         return self._receipts.snapshot()
 
+    def _restore_open_gap(self) -> None:
+        open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
+            market="um_perpetual",
+            stream=self.stream_name,
+        )
+        if len(open_gaps) > 1:
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has {len(open_gaps)} conflicting "
+                "unclosed stream discontinuities"
+            )
+        if not open_gaps:
+            return
+        evidence = open_gaps[0].get("evidence")
+        if not isinstance(evidence, dict):
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has malformed open gap evidence"
+            )
+        gap_id = evidence.get("gap_id")
+        started_at = evidence.get("gap_started_at_utc_ns")
+        connection_id = evidence.get("original_connection_id")
+        original_generation = evidence.get("original_generation")
+        if (
+            not isinstance(gap_id, str)
+            or not gap_id
+            or not isinstance(started_at, int)
+            or isinstance(started_at, bool)
+            or started_at < 0
+            or not isinstance(connection_id, str)
+            or not connection_id
+            or not isinstance(original_generation, int)
+            or isinstance(original_generation, bool)
+            or original_generation < 0
+            or evidence.get("reason") != "ingress_backpressure"
+        ):
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} has invalid open gap identity"
+            )
+        self._pending_gap = {
+            "gap_id": gap_id,
+            "gap_started_at_utc_ns": started_at,
+            "original_connection_id": connection_id,
+            "original_generation": original_generation,
+        }
+        self._generation = original_generation + 1
+        self._recovery_flag_pending = True
+        self._recovery_marker_enqueued = False
+        log_event(
+            self.logger,
+            logging.WARNING,
+            "usdm_ingress_gap_recovered",
+            "USD-M stream recovered an unclosed discontinuity from Catalog",
+            stream=self.stream_name,
+            connection_id=connection_id,
+            generation=self._generation,
+            gap_id=gap_id,
+            outcome="RECOVERY_PENDING",
+            **self._queue_fields(),
+        )
+
     async def _receive_once(
         self, websocket: WebSocketConnection, connection_id: str
     ) -> ReceivedFrame:
@@ -155,14 +217,21 @@ class UsdMStreamCollector:
         receive_time_utc_ns = self.utc_clock_ns()
         receive_monotonic_ns = self.monotonic_clock_ns()
         payload = message.encode() if isinstance(message, str) else message
-        recovery_flags = ("sequence_gap",) if self._recovery_flag_pending else ()
         return ReceivedFrame(
             raw_payload=payload,
             connection_id=connection_id,
             receive_time_utc_ns=receive_time_utc_ns,
             receive_monotonic_ns=receive_monotonic_ns,
+            capture_flags=self._capture_flags,
+        )
+
+    def _with_recovery_marker(self, receipt: ReceivedFrame) -> ReceivedFrame:
+        if not self._recovery_flag_pending or self._recovery_marker_enqueued:
+            return receipt
+        return replace(
+            receipt,
             capture_flags=tuple(
-                dict.fromkeys((*self._capture_flags, *recovery_flags))
+                dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
             ),
         )
 
@@ -181,9 +250,20 @@ class UsdMStreamCollector:
                 connection_id=receipt.connection_id,
                 outcome="WAITING",
             )
-        await self._receipts.put(receipt, writer_task=writer_task, stop=stop)
-        if self._recovery_flag_pending and "sequence_gap" in receipt.capture_flags:
-            self._recovery_flag_pending = False
+        recovery_marker = self._with_recovery_marker(receipt)
+        reserved = recovery_marker is not receipt
+        if reserved:
+            self._recovery_marker_enqueued = True
+        try:
+            await self._receipts.put(
+                recovery_marker,
+                writer_task=writer_task,
+                stop=stop,
+            )
+        except BaseException:
+            if reserved and self._pending_gap is not None:
+                self._recovery_marker_enqueued = False
+            raise
 
     def _queue_fields(self) -> dict[str, object]:
         stats = self._receipts.snapshot()
@@ -234,6 +314,11 @@ class UsdMStreamCollector:
         )
 
     async def _record_gap_started(self, boundary: ReceivedFrame) -> None:
+        if self._pending_gap is not None:
+            raise IngressGapStateConflict(
+                f"USD-M {self.stream_name} cannot start a second discontinuity "
+                "while an earlier gap remains open"
+            )
         gap_id = str(uuid4())
         started_at = boundary.receive_time_utc_ns
         evidence: dict[str, object] = {
@@ -273,6 +358,7 @@ class UsdMStreamCollector:
             return
         completed_at = envelope.receive_time_utc_ns
         gap_id = str(gap["gap_id"])
+        await asyncio.to_thread(self.spool.sync)
         await asyncio.to_thread(
             self.spool.catalog.record_operational_event,
             event_id=f"stream-discontinuity-completed:{gap_id}",
@@ -292,6 +378,8 @@ class UsdMStreamCollector:
             },
         )
         self._pending_gap = None
+        self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
 
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
         try:
@@ -386,11 +474,11 @@ class UsdMStreamCollector:
                 raise
             for _receipt in batch:
                 self._receipts.task_done()
+            for envelope in persisted:
+                await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
-            for envelope in persisted:
-                await self._record_gap_completed(envelope)
             if self._receipts.note_consumer_progress() and self._backpressure_active:
                 self._backpressure_active = False
                 connection_id = persisted[-1].connection_id if persisted else "unknown"
@@ -471,26 +559,31 @@ class UsdMStreamCollector:
                         await self._receipts.put_after_connection_close(
                             boundary,
                             writer_task=writer_task,
-                            timeout_seconds=self.backpressure_persist_timeout_seconds,
+                            timeout_seconds=self.post_close_handoff_timeout_seconds,
                         )
-                    except IngressPersistenceTimeout:
+                    except IngressPostCloseHandoffTimeout:
                         self._log_ingress_state(
                             logging.CRITICAL,
-                            "usdm_ingress_persistence_timeout",
-                            "received USD-M boundary frame couldn't reach its Raw writer",
+                            "usdm_ingress_post_close_handoff_timeout",
+                            "received USD-M boundary frame couldn't enter its Raw writer queue",
                             connection_id=connection_id,
                             outcome="FATAL",
                         )
                         raise
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
                     self._backpressure_boundary = boundary
                     return "ingress_backpressure"
                 except IngressStopRequested:
                     await websocket.close(code=1000, reason="collector shutdown")
+                    receipt = self._with_recovery_marker(receipt)
                     await self._receipts.put_after_connection_close(
                         receipt,
                         writer_task=writer_task,
-                        timeout_seconds=self.backpressure_persist_timeout_seconds,
+                        timeout_seconds=self.post_close_handoff_timeout_seconds,
                     )
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
                     return "graceful_shutdown"
                 except (WebSocketException, OSError, TimeoutError):
                     if stop.is_set():
@@ -592,6 +685,7 @@ class UsdMStreamCollector:
             await self._record_gap_started(boundary)
             self._generation += 1
             self._recovery_flag_pending = True
+            self._recovery_marker_enqueued = False
             self._backpressure_active = False
             self._receipts.note_consumer_progress()
             self._log_ingress_state(

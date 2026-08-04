@@ -15,8 +15,12 @@ class IngressBackpressureTimeout(IngressQueueFull):
     """A bounded receipt handoff stayed saturated beyond its continuity budget."""
 
 
-class IngressPersistenceTimeout(IngressQueueFull):
-    """A received frame couldn't reach the writer after its connection was closed."""
+class IngressPostCloseHandoffTimeout(IngressQueueFull):
+    """A closed connection's last received frame couldn't enter the writer queue."""
+
+
+class IngressGapStateConflict(RuntimeError):
+    """Catalog contains ambiguous open stream-discontinuity evidence."""
 
 
 class IngressWriterStopped(RuntimeError):

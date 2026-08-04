@@ -10,7 +10,7 @@ from typing import TypeVar
 
 from .queue import (
     IngressBackpressureTimeout,
-    IngressPersistenceTimeout,
+    IngressPostCloseHandoffTimeout,
     IngressStopRequested,
     IngressWriterStopped,
 )
@@ -142,7 +142,7 @@ class BoundedAsyncQueue[T]:
         writer_task: asyncio.Task[None],
         timeout_seconds: float,
     ) -> int:
-        """Persist the already-received boundary frame after stopping its producer."""
+        """Hand off the already-received boundary frame after stopping its producer."""
 
         if timeout_seconds <= 0:
             raise ValueError("post-close put timeout must be positive")
@@ -151,7 +151,7 @@ class BoundedAsyncQueue[T]:
             item,
             writer_task=writer_task,
             timeout_seconds=timeout_seconds,
-            timeout_type=IngressPersistenceTimeout,
+            timeout_type=IngressPostCloseHandoffTimeout,
         )
         if not inserted:  # pragma: no cover - timeout_type guarantees an exception
             raise AssertionError("post-close handoff timed out without an exception")
@@ -166,7 +166,7 @@ class BoundedAsyncQueue[T]:
         *,
         writer_task: asyncio.Task[None],
         timeout_seconds: float,
-        timeout_type: type[IngressPersistenceTimeout] | None,
+        timeout_type: type[IngressPostCloseHandoffTimeout] | None,
         stop: asyncio.Event | None = None,
     ) -> bool:
         put_task = asyncio.create_task(self._queue.put(item))

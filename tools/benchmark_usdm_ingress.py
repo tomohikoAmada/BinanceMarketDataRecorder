@@ -279,7 +279,7 @@ async def _run_scenario(scenario: Scenario, root: Path) -> dict[str, Any]:
         opener=opener,
         backpressure_put_timeout_seconds=0.05,
         backpressure_saturation_timeout_seconds=10,
-        backpressure_persist_timeout_seconds=1,
+        post_close_handoff_timeout_seconds=1,
     )
     collector.logger.setLevel(logging.CRITICAL)
     peak_rss = current_rss_bytes() or 0

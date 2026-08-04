@@ -15,7 +15,10 @@ import pytest
 import zstandard
 
 import binance_market_data_recorder.spool.stream as stream_module
-from binance_market_data_recorder.binance.spot.websocket import ReconnectBackoff
+from binance_market_data_recorder.binance.spot.websocket import (
+    ReceivedFrame,
+    ReconnectBackoff,
+)
 from binance_market_data_recorder.binance.usdm.schema import UsdMStream
 from binance_market_data_recorder.binance.usdm.websocket import (
     UsdMStreamCollector,
@@ -27,6 +30,7 @@ from binance_market_data_recorder.spool.format import (
     decode_chunk_header,
     decode_envelope,
 )
+from binance_market_data_recorder.spool.queue import IngressGapStateConflict
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -168,6 +172,7 @@ def make_collector(
     put_timeout_seconds: float,
     saturation_timeout_seconds: float,
     stream: UsdMStream = UsdMStream.BOOK_TICKER,
+    durability_interval_seconds: float = 0,
 ) -> tuple[UsdMStreamCollector, Catalog]:
     layout = ensure_storage_layout(root)
     catalog = Catalog(layout.catalog)
@@ -181,7 +186,7 @@ def make_collector(
         collector_version="0.1.0+test",
         queue_capacity=max(4, capacity),
         rotation=RotationPolicy(seconds=60),
-        durability_interval_seconds=0,
+        durability_interval_seconds=durability_interval_seconds,
         max_frame_bytes=1024 * 1024,
         drain_delay_seconds=drain_delay_seconds,
     )
@@ -207,7 +212,7 @@ def make_collector(
         opener=opener,
         backpressure_put_timeout_seconds=put_timeout_seconds,
         backpressure_saturation_timeout_seconds=saturation_timeout_seconds,
-        backpressure_persist_timeout_seconds=0.5,
+        post_close_handoff_timeout_seconds=0.5,
     )
     return collector, catalog
 
@@ -229,6 +234,52 @@ def captured(root: Path) -> tuple[list[Any], list[dict[str, Any]]]:
             length, _flags, _reserved, _checksum = FRAME_PREFIX.unpack(prefix)
             envelopes.append(decode_envelope(source.read(length)))
     return envelopes, documents
+
+
+def record_gap_started(
+    catalog: Catalog,
+    *,
+    gap_id: str,
+    stream: str = "book_ticker",
+    generation: int = 3,
+) -> None:
+    assert catalog.record_operational_event(
+        event_id=f"stream-discontinuity-started:{gap_id}",
+        event_type="STREAM_DISCONTINUITY_STARTED",
+        occurred_at_utc_ns=100,
+        evidence={
+            "gap_id": gap_id,
+            "market": "um_perpetual",
+            "stream": stream,
+            "reason": "ingress_backpressure",
+            "interval_classification": "UNRELIABLE",
+            "gap_started_at_utc_ns": 100,
+            "original_connection_id": f"old-{gap_id}",
+            "original_generation": generation,
+            "boundary_frame_persisted": True,
+        },
+    )
+
+
+def record_gap_completed(
+    catalog: Catalog,
+    *,
+    gap_id: str,
+    stream: str = "book_ticker",
+) -> None:
+    assert catalog.record_operational_event(
+        event_id=f"stream-discontinuity-completed:{gap_id}",
+        event_type="STREAM_DISCONTINUITY_COMPLETED",
+        occurred_at_utc_ns=200,
+        evidence={
+            "gap_id": gap_id,
+            "market": "um_perpetual",
+            "stream": stream,
+            "reason": "ingress_backpressure",
+            "gap_ended_at_utc_ns": 200,
+            "historical_continuity_restored": False,
+        },
+    )
 
 
 def test_short_burst_above_capacity_is_lossless_and_ordered(tmp_path: Path) -> None:
@@ -870,3 +921,375 @@ def test_stop_interrupts_reconnect_backoff(tmp_path: Path) -> None:
             catalog.close()
 
     assert asyncio.run(exercise()) < 0.5
+
+
+def test_new_generation_marker_sync_precedes_catalog_completion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gap_id = "crash-order"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id)
+
+    async def exercise() -> list[str]:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([book_ticker(1)], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        order: list[str] = []
+        original_spool_sync = collector.spool.sync
+        original_record = catalog.record_operational_event
+
+        def defer_periodic_sync(
+            _writer: RawChunkWriter,
+            *,
+            now_monotonic: float | None = None,
+        ) -> bool:
+            return False
+
+        def ordered_sync() -> None:
+            order.append("raw_sync")
+            original_spool_sync()
+
+        def ordered_record(**kwargs: Any) -> bool:
+            inserted = original_record(**kwargs)
+            if kwargs["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
+                assert "raw_sync" in order
+                order.append("catalog_completion")
+            return inserted
+
+        monkeypatch.setattr(RawChunkWriter, "sync_if_due", defer_periodic_sync)
+        monkeypatch.setattr(collector.spool, "sync", ordered_sync)
+        monkeypatch.setattr(catalog, "record_operational_event", ordered_record)
+        collector.envelope_observer = lambda _envelope: order.append("observer")
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            completed = catalog.operational_events(
+                event_type="STREAM_DISCONTINUITY_COMPLETED"
+            )
+            assert len(completed) == 1
+            return order
+        finally:
+            catalog.close()
+
+    order = asyncio.run(exercise())
+    assert order[:3] == ["raw_sync", "catalog_completion", "observer"]
+    persisted, _manifests = captured(tmp_path)
+    assert persisted[0].capture_flags.count("sequence_gap") == 1
+
+
+def test_gap_marker_sync_failure_leaves_started_open_and_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gap_id = "sync-failure"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id, stream="diff_depth")
+
+    async def exercise() -> None:
+        stop = asyncio.Event()
+        observed: list[Any] = []
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([diff_depth(2)], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            stream=UsdMStream.DIFF_DEPTH,
+            durability_interval_seconds=0.75,
+        )
+
+        def fail_sync() -> None:
+            raise OSError("injected recovery marker sync failure")
+
+        monkeypatch.setattr(collector.spool, "sync", fail_sync)
+        collector.envelope_observer = observed.append
+        baseline = set(asyncio.all_tasks())
+        try:
+            with pytest.raises(OSError, match="recovery marker sync"):
+                await collector.run(stop)
+            assert catalog.operational_events(
+                event_type="STREAM_DISCONTINUITY_COMPLETED"
+            ) == []
+            open_gaps = catalog.unclosed_stream_discontinuities(
+                market="um_perpetual", stream="diff_depth"
+            )
+            assert len(open_gaps) == 1
+            assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
+            assert observed == []
+            await asyncio.sleep(0)
+            assert [
+                task
+                for task in asyncio.all_tasks()
+                if task not in baseline
+                and task is not asyncio.current_task()
+                and not task.done()
+            ] == []
+        finally:
+            catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize(
+    "stream,payload_factory",
+    [
+        (UsdMStream.BOOK_TICKER, book_ticker),
+        (UsdMStream.AGG_TRADE, agg_trade),
+    ],
+)
+def test_process_restart_restores_gap_and_completes_same_identity_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stream: UsdMStream,
+    payload_factory: Callable[[int], bytes],
+) -> None:
+    @asynccontextmanager
+    async def unused_opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+        yield BlockingSocket()
+
+    first, first_catalog = make_collector(
+        tmp_path,
+        opener=unused_opener,
+        capacity=2,
+        drain_delay_seconds=0,
+        put_timeout_seconds=0.1,
+        saturation_timeout_seconds=0.2,
+        stream=stream,
+        durability_interval_seconds=0.75,
+    )
+    boundary = ReceivedFrame(
+        raw_payload=payload_factory(90),
+        connection_id="old-process-connection",
+        receive_time_utc_ns=100,
+        receive_monotonic_ns=100,
+        capture_flags=("sequence_gap",),
+    )
+
+    async def persist_started_then_exit() -> str:
+        await first._persist_batch([boundary])
+        await asyncio.to_thread(first.spool.close_and_seal)
+        await first._record_gap_started(boundary)
+        events = first_catalog.operational_events(
+            event_type="STREAM_DISCONTINUITY_STARTED"
+        )
+        return str(cast(dict[str, Any], events[0]["evidence"])["gap_id"])
+
+    gap_id = asyncio.run(persist_started_then_exit())
+    first_catalog.close()
+
+    async def recover() -> tuple[list[dict[str, object]], int]:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([payload_factory(100), payload_factory(101)], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            stream=stream,
+            durability_interval_seconds=0.75,
+        )
+        sync_calls = 0
+        original_sync = collector.spool.sync
+
+        def count_sync() -> None:
+            nonlocal sync_calls
+            sync_calls += 1
+            original_sync()
+
+        monkeypatch.setattr(collector.spool, "sync", count_sync)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            return catalog.operational_events(), sync_calls
+        finally:
+            catalog.close()
+
+    events, sync_calls = asyncio.run(recover())
+    starts = [event for event in events if event["event_type"] == "STREAM_DISCONTINUITY_STARTED"]
+    completions = [
+        event
+        for event in events
+        if event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED"
+    ]
+    assert len(starts) == len(completions) == 1
+    completed = cast(dict[str, Any], completions[0]["evidence"])
+    assert completed["gap_id"] == gap_id
+    assert completed["original_connection_id"] == "old-process-connection"
+    assert completed["original_generation"] == 0
+    assert completed["new_generation"] == 1
+    assert completed["historical_continuity_restored"] is False
+    assert sync_calls == 1
+    persisted, _manifests = captured(tmp_path)
+    new_events = [event for event in persisted if event.raw_payload != payload_factory(90)]
+    assert new_events[0].capture_flags.count("sequence_gap") == 1
+    assert "sequence_gap" not in new_events[1].capture_flags
+
+
+def test_multiple_unclosed_gaps_fail_closed_without_new_evidence(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    catalog = Catalog(layout.catalog)
+    record_gap_started(catalog, gap_id="conflict-one", generation=1)
+    record_gap_started(catalog, gap_id="conflict-two", generation=2)
+    before = catalog.operational_events()
+    spool = StreamSpool(
+        layout=layout,
+        catalog=catalog,
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream="book_ticker",
+        collector_instance_id="m21-4-conflict",
+        collector_version="0.1.0+test",
+        queue_capacity=4,
+        rotation=RotationPolicy(seconds=60),
+        durability_interval_seconds=0.75,
+        max_frame_bytes=1024 * 1024,
+    )
+    try:
+        with pytest.raises(
+            IngressGapStateConflict,
+            match="2 conflicting unclosed stream discontinuities",
+        ):
+            UsdMStreamCollector(
+                stream=UsdMStream.BOOK_TICKER,
+                route="public",
+                wire_name="btcusdt@bookTicker",
+                spool=spool,
+                collector_instance_id="m21-4-conflict",
+                collector_version="0.1.0+test",
+                logger=logging.getLogger("test.m21-4.gap-conflict"),
+            )
+        assert catalog.operational_events() == before
+    finally:
+        catalog.close()
+
+
+def test_completed_gap_does_not_mark_normal_startup_event(tmp_path: Path) -> None:
+    gap_id = "already-completed"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id)
+        record_gap_completed(seed_catalog, gap_id=gap_id)
+
+    async def exercise() -> None:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([book_ticker(3)], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            assert len(catalog.operational_events()) == 2
+        finally:
+            catalog.close()
+
+    asyncio.run(exercise())
+    persisted, _manifests = captured(tmp_path)
+    assert persisted[0].capture_flags == ()
+
+
+def test_cancel_after_gap_sync_before_catalog_writes_no_completion_or_leaks_task(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gap_id = "cancel-during-sync"
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as seed_catalog:
+        record_gap_started(seed_catalog, gap_id=gap_id)
+
+    async def exercise() -> None:
+        stop = asyncio.Event()
+        sync_completed = asyncio.Event()
+        release_completion = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([book_ticker(4)], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+            durability_interval_seconds=0.75,
+        )
+        original_to_thread = asyncio.to_thread
+        gap_sync = collector.spool.sync
+
+        async def hold_after_gap_sync(
+            function: Callable[..., Any],
+            /,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Any:
+            result = await original_to_thread(function, *args, **kwargs)
+            if function == gap_sync:
+                sync_completed.set()
+                await release_completion.wait()
+            return result
+
+        monkeypatch.setattr(asyncio, "to_thread", hold_after_gap_sync)
+        baseline = set(asyncio.all_tasks())
+        task = asyncio.create_task(collector.run(stop))
+        try:
+            await asyncio.wait_for(sync_completed.wait(), timeout=1)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=2)
+            assert catalog.operational_events(
+                event_type="STREAM_DISCONTINUITY_COMPLETED"
+            ) == []
+            assert len(
+                catalog.unclosed_stream_discontinuities(
+                    market="um_perpetual", stream="book_ticker"
+                )
+            ) == 1
+            await asyncio.sleep(0)
+            assert [
+                pending
+                for pending in asyncio.all_tasks()
+                if pending not in baseline
+                and pending is not asyncio.current_task()
+                and not pending.done()
+            ] == []
+        finally:
+            release_completion.set()
+            catalog.close()
+
+    asyncio.run(exercise())

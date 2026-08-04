@@ -542,6 +542,51 @@ class Catalog:
             output.append(document)
         return output
 
+    def unclosed_stream_discontinuities(
+        self, *, market: str, stream: str
+    ) -> list[dict[str, object]]:
+        """Return STARTED evidence without a matching COMPLETED gap identifier."""
+
+        if not market or not stream:
+            raise ValueError("market and stream must be non-empty")
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY occurred_at_utc_ns, event_id
+                """
+            ).fetchall()
+        started: list[dict[str, object]] = []
+        completed_gap_ids: set[str] = set()
+        for row in rows:
+            document = dict(row)
+            evidence_json = document.pop("evidence_json")
+            evidence = json.loads(str(evidence_json))
+            if not isinstance(evidence, dict):
+                continue
+            if evidence.get("market") != market or evidence.get("stream") != stream:
+                continue
+            document["evidence"] = evidence
+            gap_id = evidence.get("gap_id")
+            if document["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
+                if isinstance(gap_id, str) and gap_id:
+                    completed_gap_ids.add(gap_id)
+            else:
+                started.append(document)
+        return [
+            event
+            for event in started
+            if not (
+                isinstance(event["evidence"], dict)
+                and isinstance(event["evidence"].get("gap_id"), str)
+                and event["evidence"].get("gap_id") in completed_gap_ids
+            )
+        ]
+
     def side_data_cursor(self, kind: str) -> dict[str, object] | None:
         if not kind:
             raise ValueError("side-data cursor kind must be non-empty")

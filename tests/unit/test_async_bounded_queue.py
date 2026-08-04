@@ -7,7 +7,7 @@ import pytest
 from binance_market_data_recorder.spool.async_queue import BoundedAsyncQueue
 from binance_market_data_recorder.spool.queue import (
     IngressBackpressureTimeout,
-    IngressPersistenceTimeout,
+    IngressPostCloseHandoffTimeout,
     IngressStopRequested,
     IngressWriterStopped,
 )
@@ -100,7 +100,7 @@ def test_post_close_boundary_timeout_is_explicit() -> None:
 
         writer_task = asyncio.create_task(idle_writer())
         await queue.put(1, writer_task=writer_task)
-        with pytest.raises(IngressPersistenceTimeout):
+        with pytest.raises(IngressPostCloseHandoffTimeout):
             await queue.put_after_connection_close(
                 2,
                 writer_task=writer_task,
