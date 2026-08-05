@@ -1,10 +1,13 @@
 # Known Limitations
 
+连续72小时和168小时长期运行验收尚未执行。
+静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+
 M21.4 was deployed and passed 2h and 12h formal stability windows with
 independent evidence reviews. The 24h, 72h, and 168h windows remain
 pending. Static review, unit tests, fault injection, and short online
 tests cannot substitute for long-running proof.
-当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
 ## M21.4 validation status
 
