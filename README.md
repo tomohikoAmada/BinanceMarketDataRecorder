@@ -2,6 +2,10 @@
 
 > **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
+> **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
+> 正式 2 小时和 12 小时稳定性验收通过并完成独立证据复核。
+> 正式 24 小时、72 小时和 168 小时验收尚未执行。
+>
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
 > 商标、Logo 或官方视觉识别。
@@ -10,12 +14,21 @@
 > It is not affiliated with, maintained by, sponsored by, or endorsed by Binance.
 > This project does not use Binance logos or official visual identity.
 >
+> M21.4 (USD-M Backpressure repair) was merged through PR #7 and deployed to
+> production. Formal 2-hour and 12-hour stability validations passed with
+> independent evidence reviews. The 24-hour, 72-hour, and 168-hour validations
+> have not yet run.
+>
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+
+M21.4 USD-M Backpressure修复已合并和部署，正式2h和12h稳定性验收通过。
+正式24h、72h和168h验收未执行。
+不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
 的本地录制、完整性验证、
@@ -84,9 +97,13 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | 72h/168h 未执行 |
+| 长期验证 | 2h PASS, 12h PASS, 24h 待执行, 72h/168h 未执行 |
+| PR/部署 | PR #7 已合并 (Merge Commit cf1e749c...), 生产 Wheel 已部署 |
 
-使用 `binance-market-recorder --version` 查看版本和 Git commit hash。
+CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
+检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
+安装位置和 Canonical Installed Identity Gate 为准，不能仅凭 CLI 输出或仓库 HEAD
+确定。详见 `docs/milestone_evidence/M21.4-deployment-and-validation.md`。
 
 ## 已实现功能总览
 
@@ -1132,6 +1149,7 @@ python3.12 examples/replay_consumer.py \
 - [Operations](docs/operations.md)
 - [Known Limitations](docs/known_limitations.md)
 - [Risk Register](docs/risk_register.md)
+- [M21.4 Deployment and Validation Evidence](docs/milestone_evidence/M21.4-deployment-and-validation.md)
 - [Official Binance Sources](docs/binance_sources.md)
 - [Consumer Contract](docs/consumer_contract.md)
 - [ADR Directory](docs/adr/)
