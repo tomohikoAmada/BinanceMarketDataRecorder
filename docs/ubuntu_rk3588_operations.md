@@ -185,6 +185,31 @@ M21 owns both runs:
 - 30-day operational observation: disk growth/forecast, journal retention,
   external disappearance/reinsertion, update/rollback drills, and alert review.
 
-The separate 72-hour gate must also be recorded. Until those results exist the
-platform remains a Soak Candidate and must not be described as Production
-Ready or zero-interruption.
+The separate 72-hour gate must also be recorded. M21.4 2h and 12h windows
+passed with independent evidence reviews; 24h/72h/168h remain pending.
+Until all long-run gates are completed the platform remains a Soak Candidate
+and must not be described as Production Ready or zero-interruption.
+
+## M21.4 deployment notes
+
+### Artifact identity
+
+Production identity is the immutable deployed Wheel SHA-256 plus
+`direct_url.json` match, non-editable install state, and Canonical Gate
+static verification. CLI `--version` Git suffix is for display only and
+may be affected by the runtime working directory. Run production CLI from
+`/tmp` or another non-repository directory.
+
+### Observation collection
+
+When collecting structured observations from `systemctl show`, do not
+blindly parse all values as numbers or timestamps. Fields such as
+`NextElapseUSecRealtime` and `NextElapseUSecMonotonic` are timer properties
+that should be preserved as raw strings. Save both raw command output and
+parsed JSON; JSON generation failure must not discard the raw evidence.
+
+### Backpressure
+
+Do not actively trigger backpressure in production. The M21.4 repair
+provides stream-level recovery when it occurs naturally, but the
+recovery path should not be exercised through artificial load.

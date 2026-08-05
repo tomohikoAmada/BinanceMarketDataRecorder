@@ -156,6 +156,50 @@ equal-time ordering, explicit gap/missing-clock policies and verified depth
 checkpoint continuation. The independent example imports only this public
 package; no consumer code enters Recorder core.
 
+## M21.4 USD-M ingress backpressure and stream recovery
+
+M21.4 replaces the prior `put_nowait`-based bounded receipt queue with
+bounded, Writer-aware, stop-aware awaitable backpressure for USD-M WebSocket
+streams. The key architectural changes are:
+
+- **Stream-local recovery**: Sustained receipt queue saturation causes
+  connection/stream-level closure and recovery rather than immediate
+  process-wide `CoreMarketTerminalFailure`. Only Writer, Raw sync, Catalog,
+  and seal integrity failures remain process-level fatal.
+
+- **Generation and Gap boundaries**: `diff_depth` enters UNTRUSTED on
+  saturation; a fresh REST Snapshot and correct `U/u/pu` bridging are
+  required before READY. `book_ticker` and `agg_trade` cannot reconstruct
+  historical completeness; lost events produce persistent gap evidence with
+  `gap=true` and `complete=false`.
+
+- **First-new marker ordering**: The first-new `sequence_gap` Raw event is
+  appended, drained, and explicitly `StreamSpool.sync()`ed before Catalog
+  `STREAM_DISCONTINUITY_COMPLETED` is committed. Raw sync precedes Catalog
+  completion, and an unmatched `STARTED` record is recovered across process
+  restart. Multiple conflicting unmatched gaps fail closed.
+
+- **Owned blocking worker**: Cancellation of an asyncio Task awaiting
+  `asyncio.to_thread(...)` does not stop a blocking Raw or SQLite operation
+  already executing in its worker thread. The asyncio owner retains ownership
+  through `asyncio.shield` and waits for the worker to finish. Permanently
+  hung kernel I/O therefore remains a known risk.
+
+- **Scope**: These changes apply to USD-M only. Spot streams have not
+  received the same backpressure repair; their existing `put_nowait` overflow
+  behavior (visible collector fault → `CoreMarketTerminalFailure`) remains.
+
+- **Schema compatibility**: No EventEnvelope, Raw chunk, manifest,
+  normalized, replay, or Catalog market-data schema changed. The two new
+  operational event types (`STREAM_DISCONTINUITY_STARTED`,
+  `STREAM_DISCONTINUITY_COMPLETED`) are internal additive evidence, not a
+  schema upgrade. The existing `sequence_gap`, `gap=true`, and
+  `complete=false` semantics are reused.
+
+M21.4 passed 2h and 12h formal windows (both markets 100% READY, PID
+unchanged, NRestarts=0). Backpressure recovery was not naturally exercised.
+The formal 24h window is the next gate.
+
 ## Runtime isolation
 
 Spot and USD-M use separate connection/session state, queues, failure budgets,
@@ -167,13 +211,16 @@ and places the exact bytes plus clocks in a bounded receipt queue before JSON
 parsing. A separate persistence loop extracts only Raw metadata, envelopes, and
 hands off to the bounded spool. It never compresses in the callback, builds
 Parquet, reconstructs books, or performs network archive I/O. Both transport
-and Recorder queues are finite; saturation is a visible collector fault, never
-a silent drop. `ingress_queue_capacity` applies to both receipt and spool
+and Recorder queues are finite; for USD-M streams, sustained saturation now
+triggers stream-level backpressure and recovery rather than an immediate
+process-wide `CoreMarketTerminalFailure` (see M21.4 section above). Spot
+streams retain the prior behavior where saturation is a visible collector
+fault. `ingress_queue_capacity` applies to both receipt and spool
 queues. Time-based Raw rotations use a stable market/stream phase inside the
 configured period, spreading compression/fsync load without delaying any
 stream beyond that period. The RK3588 deployment uses an explicitly larger
-bounded capacity than the generic default; M21 must validate its queue and RSS
-trend under 72-hour and 168-hour load.
+bounded capacity than the generic default; M21.4 validated queue and RSS trends
+in 2h and 12h windows; 24h/72h/168h windows remain pending.
 
 Each Spot stream uses its own raw endpoint and connection ID. This preserves a
 known stream identity even for malformed JSON and avoids combined-stream wrapper

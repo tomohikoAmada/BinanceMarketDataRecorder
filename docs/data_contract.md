@@ -379,6 +379,45 @@ Per UTC date, market, and stream, retain at least:
 JSON and CSV contain schema/report versions. Catalog aggregation is idempotent
 across restart and does not duplicate counts.
 
+## M21.4 USD-M stream discontinuity and gap evidence
+
+M21.4 adds additive operational evidence for stream-local USD-M backpressure
+recovery without changing public data schemas:
+
+- **`sequence_gap`**: Marked on both the last-old boundary frame and the
+  first-new recovered frame. The first-new marker is appended, drained, and
+  explicitly `StreamSpool.sync()`ed before `STREAM_DISCONTINUITY_COMPLETED`
+  is committed to Catalog. Raw sync precedes Catalog completion.
+
+- **`gap=true`, `complete=false`**: Already-existing manifest fields are
+  reused. Chunks containing a discontinuity boundary remain incomplete.
+  The last-old and first-new generations must not be mixed in one chunk.
+
+- **`STREAM_DISCONTINUITY_STARTED`** and **`STREAM_DISCONTINUITY_COMPLETED`**:
+  Internal additive operational event evidence. A unique unmatched STARTED
+  record is recoverable across process restart; multiple conflicting
+  unmatched gaps fail closed. A matched pair clears recovery state.
+
+- **`historical_continuity_restored=false`**: `book_ticker` and `agg_trade`
+  streams cannot reconstruct lost historical events from a Snapshot.
+  The gap is persistent and visible.
+
+- **Generation boundaries**: A closed/saturated connection seals its
+  generation before a new connection opens. The `connection_id` change
+  flows through Raw, manifest, and Catalog metadata.
+
+- **`diff_depth` reliability contract**: After sustained saturation,
+  `diff_depth` enters UNTRUSTED. A fresh REST Snapshot and correct
+  `U/u/pu` bridging are required before READY is restored. Existing
+  bridging rules (Spot `U <= snapshot.last_update_id + 1 <= u`,
+  USD-M `U <= snapshot.last_update_id <= u`, `next.pu == current_local_book.update_id`)
+  are unchanged.
+
+No EventEnvelope, Raw chunk, manifest, normalized, replay, or Catalog
+market-data schema version changed. The two new operational event names
+are internal additive evidence, not a consumer-facing schema upgrade.
+Readers of operational event evidence must continue to ignore unknown fields.
+
 ## Compatibility policy
 
 - Additive optional envelope/manifest fields are minor schema changes.

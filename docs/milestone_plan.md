@@ -568,12 +568,20 @@ from Raw after a corrected parser is available.
   `a9db145718338faa49a4e4c57bea9a821e74d828`. Its 2-hour preflight and closed
   12-hour observation passed, but a later USD-M `book_ticker` ingress overflow
   ended PID continuity before the 24-hour gate could start.
-- M21.4 is the unmerged, undeployed bounded-backpressure and truthful stream-gap
-  repair for that incident. The unchanged production Wheel repeated the same
-  overflow once during offline development; that second event was also
-  preserved without intervention. M21.4 does not change public data schemas or
-  begin a new soak. See `docs/milestone_acceptance/M21.4.md` and
-  `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`.
+- M21.4 was merged through PR #7 at
+  `cf1e749c7a533e916dbfb685212e5549a38c70dd`. The production Wheel
+  (SHA-256 `926615b09ef46130f49a87fe8ab20acb7cfa6313daa67af5b718931bd95ff329`)
+  was deployed and passed Stage D plus the Canonical Installed Identity Gate.
+  Formal 2-hour and 12-hour stability windows passed with independent evidence
+  reviews. Formal 24-hour, 72-hour, and 168-hour windows remain pending and
+  do not represent M21 overall completion. M21.4 does not change public data
+  schemas or begin a new soak. See `docs/milestone_acceptance/M21.4.md`,
+  `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`, and
+  `docs/milestone_evidence/M21.4-deployment-and-validation.md`.
+
+  The validation sequence continues: 24h → 72h → 168h → final release
+  assessment. Backpressure recovery has not been naturally exercised in
+  production; this remains a known monitoring gap.
 
 ## Future Work
 

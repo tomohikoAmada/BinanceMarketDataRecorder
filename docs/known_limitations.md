@@ -4,6 +4,22 @@
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
+M21.4 was deployed and passed 2h and 12h formal stability windows with
+independent evidence reviews. The 24h, 72h, and 168h windows remain
+pending. Static review, unit tests, fault injection, and short online
+tests cannot substitute for long-running proof.
+
+## M21.4 validation status
+
+- 2h preflight: PASS (independent evidence review complete)
+- 12h observation: PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS)
+- 24h window: PENDING
+- 72h window: PENDING
+- 168h window: PENDING
+- Planned rotation: verified once in 12h window; repeated cycles not proven
+- Backpressure recovery: not naturally exercised in production
+- Production Ready: NOT CLAIMED
+
 ## M20 Ubuntu ARM64
 
 - RK3588 short validation found that side-data staleness must include the
@@ -34,10 +50,12 @@
 - Live raw trades, live klines, L3 queue data, accounts, orders and trading are
   not implemented.
 
-- Repeated 24-hour Binance connection rotation has not been demonstrated in a
-  long-running acceptance window.
+- Repeated 24-hour Binance connection rotation has been verified once in the
+  M21.4 12h window (at 06:52-06:53 UTC). Multiple repeated rotation cycles
+  over 72h/168h have not been demonstrated.
 - Long-term memory, file-descriptor, bounded-queue, archive-backlog, growth
-  forecast, and resource-leak behavior remains unvalidated.
+  forecast, and resource-leak behavior has been validated in 2h and 12h
+  windows only; 24h/72h/168h remain pending.
 - macOS sleep and closed lid interrupt user-session networking. The Recorder
   marks detected gaps but cannot recover events Binance no longer provides.
 - macOS Apple Silicon retains its logged-in-user LaunchAgent behavior. Ubuntu
@@ -60,3 +78,21 @@ Before simulated or live trading work, complete a frozen-commit 168-hour run
 whose first 72 hours pass the stability gate, including repeated connection
 rotation and resource/backlog evidence. Such work is Future Work and is not
 part of M20; it is the M21 acceptance scope.
+
+### Additional M21.4 known limitations
+
+- **Observation collector timer parsing**: The 12h observation loop failed
+  to save JSON observations because a timer-field parser mishandled
+  `systemctl show` output ordering. Core continuity was independently
+  verified. The 24h collector must preserve raw text and use safe parsing.
+- **taker_buy_sell_volume_5m**: Cumulative failures=56 (RuntimeError),
+  not recovered. This side-data stream continues to accumulate errors
+  across process lifetime and requires monitoring.
+- **Spot backpressure**: Spot streams have not received the same
+  backpressure repair as USD-M. Their existing `put_nowait` overflow
+  behavior (visible collector fault → `CoreMarketTerminalFailure`) remains.
+- **Permanently hung kernel I/O**: Remains an uncancellable risk even
+  under the M21.4.2 owned-worker cancellation protection.
+- **CLI --version CWD contamination**: The Git commit suffix in
+  `--version` output may change when the CLI is invoked from a repository
+  directory. Production identity must use immutable artifact properties.

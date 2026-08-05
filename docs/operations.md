@@ -137,3 +137,56 @@ approaches the hard reserve.
 
 See [data and storage](data_and_storage.md) for artifact guarantees and
 [known limitations](known_limitations.md) before operating the preview.
+
+## M21.4 production deployment experience
+
+M21.4 deployment established several operational practices that supplement
+`ubuntu_rk3588_operations.md`:
+
+### Wheel identity verification
+
+The production artifact identity is determined by immutable Wheel SHA-256,
+`direct_url.json` matching, non-editable install confirmation, and static
+file verification inside the installed `dist-info`. The CLI `--version`
+output contains a Git suffix that may be affected by the runtime working
+directory; it is a display convenience, not the authoritative identity.
+Always run production CLI checks from `/tmp` to avoid CWD contamination.
+
+### Deployed RECORD SHA
+
+The SHA-256 of the entire installed `RECORD` file is environment-specific
+and cannot serve as a cross-machine fixed identity gate. It is preserved as
+installation evidence only.
+
+### Stop/seal/offline Wheel install
+
+The production venv was updated with the service stopped and all active
+Raw sealed. The new Wheel was installed with pip, the systemd unit refreshed,
+and the service restarted. Both markets were confirmed READY with orderbooks
+synchronized before the deployment was considered complete.
+
+### Rollback Wheel
+
+The prior Wheel was preserved. Rollback follows the same stop/seal/offline
+install sequence but reinstalls the saved prior artifact.
+
+### Canonical Installed Identity Gate
+
+After installation, a static audit verified: Wheel file SHA, direct_url.json,
+non-editable state, module_file path, dist-info path, RECORD file hashes,
+and production Python/CLI resolution. This gate confirms the deployed artifact
+is the intended build before any production validation window starts.
+
+### Production code revision vs documentation revision
+
+The production code commit (`cf1e749c...` for M21.4) and the repository
+documentation revision are tracked separately. Documentation-only commits
+merged to `main` after the production deployment do not change the production
+Wheel, collector version, or running code. Do not conflate a documentation
+merge commit with a production code change.
+
+### 2h/12h/24h/72h/168h T0 independence
+
+Each validation window has its own T0, Target, and evidence root. A prior
+window's PASS does not automatically start the next window. Each window
+must be explicitly created with its own T0 anchor and continuous observation.

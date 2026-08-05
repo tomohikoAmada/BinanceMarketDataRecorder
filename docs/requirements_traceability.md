@@ -73,5 +73,27 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 The M0, M0.1, M0.2, and M1-M20 sections in `milestone_plan.md` each contain
 scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
 submilestones add scoped acceptance records without extending the top-level
-M0-M20 plan. This matrix should be updated whenever a requirement, ADR, or
+M0-M20 plan. M21.4 (USD-M ingress backpressure repair) was merged through
+PR #7, deployed to production, and passed 2h and 12h formal validation
+windows with independent evidence reviews. 24h/72h/168h remain pending.
+
+### M21.4 traceability
+
+| Element | Reference | Status |
+|---------|-----------|--------|
+| Incident | M21.3 USD-M book_ticker ingress overflow → CoreMarketTerminalFailure | Root cause identified |
+| Code repair | PR #7, commit cf1e749c..., bounded awaitable backpressure, stream-local recovery, owned-worker protection | Merged |
+| Deterministic tests | 603 pytest, stress, 1000-cycle, M0 contracts, Go golden | PASS |
+| Deployment identity | Wheel SHA 926615b09..., direct_url, Canonical Gate | CONFIRMED |
+| Stage D | stop/seal/install/readiness | PASS |
+| 2h preflight | PID continuity, both markets READY 100% | PASS (independent review) |
+| 12h observation | 141 soak samples, 0 core errors, planned rotation verified | PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS) |
+| 24h window | — | PENDING |
+| 72h window | — | PENDING |
+| 168h window | — | PENDING |
+| Documentation | M21.4 acceptance, deployment evidence, architecture update | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md` |
+| Risk updates | R-004 (Monitoring), R-035 (Open, 24h/72h/168h pending), R-043-R-046 (new) | `docs/risk_register.md` |
+| Production Ready | Not claimed | — |
+
+This matrix should be updated whenever a requirement, ADR, or
 milestone acceptance changes.
