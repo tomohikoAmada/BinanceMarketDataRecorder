@@ -196,9 +196,48 @@ streams. The key architectural changes are:
   schema upgrade. The existing `sequence_gap`, `gap=true`, and
   `complete=false` semantics are reused.
 
-M21.4 passed 2h and 12h formal windows (both markets 100% READY, PID
-unchanged, NRestarts=0). Backpressure recovery was not naturally exercised.
-The formal 24h window is the next gate.
+M21.4 passed 2h, 12h, and 24h formal windows (both markets READY, PID
+unchanged, NRestarts=0). The 24h PASS was confirmed by a corrective
+integrity review and a Backpressure contract forensic review. Inside the
+formal 24h window, USD-M `book_ticker` naturally exercised backpressure once
+(gen5) and the full recovery contract passed (RECOVERY_CONTRACT_PASS).
+The formal 72h window is the next gate and is never started automatically.
+
+### M21.4 backpressure timing semantics (24h evidence)
+
+The formal 24h window clarified the deployed timing semantics. These are
+architectural facts, not implementation changes:
+
+- **`queue_backpressure_recovered` ≠ stream recovery completed**:
+  `usdm_ingress_backpressure_recovered` fires when the queue depth falls
+  below the low watermark. The complete stream recovery boundary is the new
+  connection plus the first-new `sequence_gap` persisted plus Raw sync plus
+  Catalog `STREAM_DISCONTINUITY_COMPLETED`. In the gen5 formal-window cycle
+  these are distinct instants (queue recovered 13:51:09.996638Z; old
+  generation sealed 13:54:38.251Z; new connection 13:54:38.577Z; first-new
+  Raw and Catalog COMPLETED 13:54:38.582474Z).
+
+- **The 30 s saturation budget is not a strict 30 s wall-clock closure
+  ceiling**: the saturation timer accumulates only while the queue stays
+  above low_watermark; the timeout raises only when a later `put` again
+  encounters a full queue after the budget is exhausted. The gen6 cycle
+  accumulated 1358.9 s of saturation with only 7 put waits before the
+  boundary frame hit a full queue and triggered the timeout.
+
+- **low_watermark reset semantics**: the timer resets only when the queue
+  drops to or below low_watermark; a queue hovering above it continues
+  accumulating saturation time even while the writer drains continuously.
+
+- **Connection closure still implies a potential exchange-side gap**: an
+  internal zero-drop guarantee (no Recorder queue drop, persisted frames
+  CRC-verified) does not prove that exchange events between the close and
+  the first new connection frame were captured. Missing interval events are
+  therefore persisted as `sequence_gap`/`gap=true`/`complete=false` and
+  `historical_continuity_restored=false`.
+
+- **Zero internal drop ≠ zero market-data absence**: the Recorder can prove
+  it dropped nothing internally, but it cannot prove the exchange sent
+  nothing it missed. Do not equate the two.
 
 ## Runtime isolation
 
@@ -220,7 +259,7 @@ queues. Time-based Raw rotations use a stable market/stream phase inside the
 configured period, spreading compression/fsync load without delaying any
 stream beyond that period. The RK3588 deployment uses an explicitly larger
 bounded capacity than the generic default; M21.4 validated queue and RSS trends
-in 2h and 12h windows; 24h/72h/168h windows remain pending.
+in the 2h, 12h, and 24h windows; 72h/168h windows remain pending.
 
 Each Spot stream uses its own raw endpoint and connection ID. This preserves a
 known stream identity even for malformed JSON and avoids combined-stream wrapper

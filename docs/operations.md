@@ -190,3 +190,45 @@ merge commit with a production code change.
 Each validation window has its own T0, Target, and evidence root. A prior
 window's PASS does not automatically start the next window. Each window
 must be explicitly created with its own T0 anchor and continuous observation.
+The 24h window passed (formal_24h_result=PASS, eligible_for_72h=true) with
+corrective and contract forensic confirmation; the 72h and 168h windows
+remain pending and are never started automatically.
+
+### Formal evidence collection rules (24h corrective lessons, mandatory for 72h/168h)
+
+The 24h corrective review and Backpressure contract forensic review
+established binding rules for every future formal window:
+
+1. **Journal exports must use exact epoch/UTC-nanosecond bounds**
+   (`journalctl --since "2026-08-06 13:46:28.640526Z"` style with an explicit
+   `Z`, or epoch seconds). Never use bare local-time strings such as
+   `--since "2026-08-05 15:09:30"` without a timezone suffix; journalctl
+   interprets them in local time and the formal boundary shifts
+   (the 24h export shifted 8 hours).
+2. **Forbidden**: timezone-ambiguous since/until strings in any formal
+   export.
+3. **Verify exported bounds**: after every export, check the first and last
+   lines against the formal T0/Target UTC nanoseconds.
+4. **Formal samples/observations** must be strictly filtered by the T0/Target
+   nanosecond bounds; post-Target data must never be mixed into formal
+   statistics (it may be reported separately as post-window current state).
+5. **Catalog events must be queried from Catalog**: `STREAM_DISCONTINUITY_*`
+   and other operational events are written only to Catalog, never to the
+   journal. Journal string counts are invalid evidence for them.
+6. **Raw gaps must be read from Raw** (EventEnvelope `capture_flags`) and
+   **manifest status from manifests** (`gap`/`complete`). Each layer has its
+   own evidence responsibility.
+7. **Save both raw text and parsed JSON** for every observation round; a
+   serialization failure must not discard the raw command output
+   (12h timer-parsing lesson).
+8. **Never overwrite original evidence**: corrective reviews and forensic
+   reviews must create their own independent directories under the run root
+   and leave all original files byte-identical.
+9. **Distinguish recovery events precisely**: `queue_backpressure_recovered`
+   (queue below low_watermark) is not stream recovery completion; the
+   completion boundary is new connection + first-new `sequence_gap` persisted
+   + Raw sync + Catalog COMPLETED.
+10. **Saturation semantics**: the 30 s backpressure budget is accumulated
+    saturation time above low_watermark, and the timeout raises only when a
+    later put re-encounters a full queue. A long started→timeout span is not
+    a continuous full-queue span; record it as accumulated saturation.
