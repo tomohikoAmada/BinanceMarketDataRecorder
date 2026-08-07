@@ -97,10 +97,11 @@ part of M20; it is the M21 acceptance scope.
   formal-window coverage. The first corrective review counted
   `STREAM_DISCONTINUITY` via journal string search (0/0), which is invalid
   because those events are Catalog-only (Catalog holds 7 complete
-  STARTED/COMPLETED pairs). Epoch-bounded re-export recovers the formal
-  conclusions; original artifacts were preserved and the contract forensic
-  review is the correcting record. "Formal 24h PASS" does not mean every
-  original artifact was correct.
+  STARTED/COMPLETED pairs). Re-export with epoch-derived UTC bounds
+  (journald microsecond resolution; journal filtering is not
+  nanosecond-exact) recovers the formal conclusions; original artifacts were
+  preserved and the contract forensic review is the correcting record.
+  "Formal 24h PASS" does not mean every original artifact was correct.
 - **gen6 cross-window recovery**: gen6 backpressure started inside the
   formal 24h window but its timeout and complete recovery occurred after
   Target (POST_WINDOW). The formal window claims only the gen6 started
@@ -121,10 +122,17 @@ part of M20; it is the M21 acceptance scope.
   missed. Reconnect boundaries therefore stay `sequence_gap`/`gap=true`/
   `complete=false`/`historical_continuity_restored=false`. Do not claim
   "zero data loss" or "historical continuity restored".
-- **taker_buy_sell_volume_5m**: continues to fail (RuntimeError,
-  cumulative failures grew past 60 during the 24h window; corrective review
-  recorded cumulative 232 by window end), not recovered. This side-data
-  stream continues to accumulate errors and requires monitoring.
+- **taker_buy_sell_volume_5m**: continues to fail (RuntimeError), not
+  recovered, lifetime cumulative counter keeps increasing. Proven 24h-window
+  traceability (lifetime cumulative value, not a window delta):
+  `RUN_ROOT/corrective-integrity-review-20260806T152159Z/journals/recorder.log`
+  holds a contiguous `usdm_side_rest_failed` series with
+  `fields.failures` 88→232 (145 events, no gaps); first observed 88 at
+  2026-08-05T15:10:37.615037Z (61 s after T0), last observed 232 at
+  2026-08-06T15:02:28.961437Z (last failure event inside the window); delta
+  within the exported span = 144. The exact value at T0 is not captured by
+  that export (12h boundary value was 56). Corroborated by corrective review
+  `report.md` and `review.json` ("cumulative 232 at window end").
 - **Spot backpressure**: Spot streams have not received the same
   backpressure repair as USD-M. Their existing `put_nowait` overflow
   behavior (visible collector fault → `CoreMarketTerminalFailure`) remains.

@@ -92,7 +92,7 @@ passed in-window. 72h/168h remain pending and have not started.
 | 2h preflight | PID continuity, both markets READY 100% | PASS (independent review) |
 | 12h observation | 141 soak samples, 0 core errors, planned rotation verified | PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS) |
 | 24h window | Formal 24h PASS, eligible_for_72h=true | PASS (corrective + contract forensic reviews) |
-| 24h corrective review | Journal epoch-boundary re-export; gen2/3/4 reclassified PRE_WINDOW; gen5 found in-window | EVIDENCE_INTEGRITY_PASS_WITH_CORRECTED_REPORT |
+| 24h corrective review | Journal re-export with epoch-derived UTC bounds (journald microsecond resolution); gen2/3/4 reclassified PRE_WINDOW; gen5 found in-window | EVIDENCE_INTEGRITY_PASS_WITH_CORRECTED_REPORT |
 | 24h contract forensic review | gen5 RECOVERY_CONTRACT_PASS; gen6 timing CONSISTENT; contamination classification; evidence-source matrix | FORENSIC_CONTRACT_REVIEW |
 | gen5 contract proof | Catalog STARTED/COMPLETED paired; Raw first-new sequence_gap; manifests gap=true/complete=false; historical_continuity_restored=false | PASS |
 | 72h window | — | PENDING (not started) |

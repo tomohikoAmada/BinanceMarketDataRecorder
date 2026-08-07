@@ -198,13 +198,27 @@ zero-interruption.
 
 The 24h window produced binding evidence rules for all later formal windows:
 
-- **Journal exports must use exact epoch/UTC-nanosecond bounds** with an
-  explicit `Z` suffix or epoch seconds; never bare local-time strings.
-  The original 24h export used `--since "2026-08-05 15:09:30"` (no `Z`),
-  which journalctl interpreted as local time and shifted the formal
-  boundary by 8 hours (FORMAL_JOURNAL_ARTIFACT_CONTAMINATION=true).
-- **Verify first/last exported lines** against T0/Target UTC nanoseconds
-  after every export.
+- **Journal boundaries derive from the formal T0/Target UTC nanoseconds, but
+  journald filtering is not nanosecond-exact.** `journalctl`/systemd time
+  parsing and the journal `__REALTIME_TIMESTAMP` field have **microsecond**
+  resolution. Derive explicit UTC timestamps from the nanosecond T0/Target
+  and pass explicit RFC3339 UTC timestamps with microsecond precision, e.g.
+  `journalctl --since "2026-08-05 15:09:30.200566Z"`, or the `@<Unix-seconds>`
+  syntax that the project has verified read-only on the target systemd
+  version; do not assume fractional `@` forms are accepted without that
+  read-only test. Never bare local-time strings. The original 24h export
+  used `--since "2026-08-05 15:09:30"` (no `Z`), which journalctl
+  interpreted as local time and shifted the formal boundary by 8 hours
+  (FORMAL_JOURNAL_ARTIFACT_CONTAMINATION=true). Do not claim journal
+  filtering itself is nanosecond-exact.
+- **Export structured formats**: use `--output=json` / `--output=json-seq` /
+  `--output=export` so every record carries `__REALTIME_TIMESTAMP` (UTC
+  microseconds); verify first/last records' `__REALTIME_TIMESTAMP` against
+  the derived UTC microsecond bounds (T0/Target nanoseconds truncated to
+  microseconds) after every export. Boundary enforcement happens at
+  journald's documented microsecond resolution; a record that cannot be
+  classified inside/outside at that resolution is recorded as
+  `BOUNDARY_PRECISION_AMBIGUOUS`, never guessed.
 - **Formal samples strictly filtered by T0/Target nanoseconds**; post-Target
   data is reported separately as post-window current state and never mixed
   into formal statistics.

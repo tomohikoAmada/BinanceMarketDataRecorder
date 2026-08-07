@@ -196,12 +196,16 @@ streams. The key architectural changes are:
   schema upgrade. The existing `sequence_gap`, `gap=true`, and
   `complete=false` semantics are reused.
 
-M21.4 passed 2h, 12h, and 24h formal windows (both markets READY, PID
-unchanged, NRestarts=0). The 24h PASS was confirmed by a corrective
-integrity review and a Backpressure contract forensic review. Inside the
-formal 24h window, USD-M `book_ticker` naturally exercised backpressure once
-(gen5) and the full recovery contract passed (RECOVERY_CONTRACT_PASS).
-The formal 72h window is the next gate and is never started automatically.
+M21.4 passed the 2h, 12h, and 24h formal windows with PID unchanged and
+NRestarts=0. The 24h PASS was confirmed by a corrective integrity review
+and a Backpressure contract forensic review. The formal 24h window's exact
+readiness record: Spot READY 280/280; USD-M READY 279/280 (one formal Soak
+sample observed USD-M transiently CONNECTING during gen5 stream recovery);
+both orderbooks synchronized 280/280; both markets READY at window end and
+in the post-window current state. Inside the formal 24h window, USD-M
+`book_ticker` naturally exercised backpressure once (gen5) and the full
+recovery contract passed (RECOVERY_CONTRACT_PASS). The formal 72h window is
+the next gate and is never started automatically.
 
 ### M21.4 backpressure timing semantics (24h evidence)
 
