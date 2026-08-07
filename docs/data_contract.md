@@ -418,6 +418,40 @@ market-data schema version changed. The two new operational event names
 are internal additive evidence, not a consumer-facing schema upgrade.
 Readers of operational event evidence must continue to ignore unknown fields.
 
+### M21.4 24h forensic confirmation of gap semantics
+
+The formal 24-hour window and its corrective/contract forensic reviews
+confirmed the following contract semantics on production evidence:
+
+- **No queue drop is not synonymous with `complete=true`**: the Recorder can
+  prove it dropped nothing internally (0 drop events, persisted frames
+  CRC-verified) while the interval between a WebSocket close and the first
+  new connection frame cannot be proven complete from the exchange side.
+  A cycle without internal drops therefore still writes
+  `sequence_gap`/`gap=true`/`complete=false`.
+
+- **Potential loss across reconnect must remain `gap=true`/`complete=false`**:
+  after a backpressure-driven reconnect, the last-old boundary frame and the
+  first-new frame both carry `sequence_gap`; both old and new manifests stay
+  incomplete. No layer may relabel such an interval complete.
+
+- **`historical_continuity_restored=false`**: `book_ticker` and `agg_trade`
+  cannot reconstruct missed events from a Snapshot; the persisted gap remains
+  visible in Raw flags, manifest fields, and Catalog
+  `STREAM_DISCONTINUITY_COMPLETED` evidence.
+
+- **Evidence responsibilities differ by layer**: Catalog
+  `operational_events` owns STARTED/COMPLETED pairing and gap_id; Raw owns
+  the exact first-new `sequence_gap` EventEnvelope; manifests own
+  `gap`/`complete` per chunk; the journal logs the backpressure lifecycle but
+  **never** logs the STREAM_DISCONTINUITY operational events. Journal string
+  counts must not substitute for Catalog/Raw/Manifest conclusions.
+
+- **Stream recovery completion boundary**: queue `recovered` (below
+  low_watermark) is not stream recovery completion. The completion boundary
+  is the new connection plus first-new `sequence_gap` persisted plus Raw sync
+  plus Catalog COMPLETED.
+
 ## Compatibility policy
 
 - Additive optional envelope/manifest fields are minor schema changes.

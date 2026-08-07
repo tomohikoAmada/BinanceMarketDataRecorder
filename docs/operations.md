@@ -190,3 +190,64 @@ merge commit with a production code change.
 Each validation window has its own T0, Target, and evidence root. A prior
 window's PASS does not automatically start the next window. Each window
 must be explicitly created with its own T0 anchor and continuous observation.
+The 24h window passed (formal_24h_result=PASS, eligible_for_72h=true) with
+corrective and contract forensic confirmation; the 72h and 168h windows
+remain pending and are never started automatically.
+
+### Formal evidence collection rules (24h corrective lessons, mandatory for 72h/168h)
+
+The 24h corrective review and Backpressure contract forensic review
+established binding rules for every future formal window:
+
+1. **Journal boundaries derive from the formal T0/Target UTC nanoseconds, but
+   journald filtering is not nanosecond-exact.** `journalctl`/systemd time
+   parsing and the journal `__REALTIME_TIMESTAMP` field have **microsecond**
+   resolution, not nanosecond. Derive explicit UTC timestamps from the
+   nanosecond T0/Target and pass them as:
+   - explicit RFC3339 UTC timestamps with microsecond precision, e.g.
+     `2026-08-05T15:09:30.200566Z`
+     (`journalctl --since "2026-08-05 15:09:30.200566Z"`), or
+   - the `@<Unix-seconds>` syntax that the project has verified read-only on
+     the actual target systemd version; do not assume fractional `@` forms
+     are accepted without that read-only test.
+   Never use bare local-time strings such as `--since "2026-08-05 15:09:30"`
+   without a timezone suffix; journalctl interprets them in local time and
+   the formal boundary shifts (the 24h export shifted 8 hours). Do not claim
+   journal filtering itself is nanosecond-exact.
+2. **Forbidden**: timezone-ambiguous since/until strings in any formal
+   export.
+3. **Export structured formats and verify bounds independently**: export with
+   `--output=json` / `--output=json-seq` / `--output=export` so every record
+   carries `__REALTIME_TIMESTAMP` (UTC microseconds); after each export,
+   verify the first and last records' `__REALTIME_TIMESTAMP` against the
+   derived UTC microsecond bounds (T0/Target nanoseconds truncated to
+   microseconds). Boundary enforcement happens at journald's documented
+   microsecond resolution.
+4. **Boundary ambiguity**: if a record's timestamp falls in the boundary
+   microsecond and its inside/outside classification cannot be decided at
+   microsecond resolution, record `BOUNDARY_PRECISION_AMBIGUOUS` instead of
+   guessing. Soak samples and observations carry their own nanosecond fields
+   and remain strictly filtered by the nanosecond T0/Target.
+5. **Formal samples/observations** must be strictly filtered by the T0/Target
+   nanosecond bounds; post-Target data must never be mixed into formal
+   statistics (it may be reported separately as post-window current state).
+6. **Catalog events must be queried from Catalog**: `STREAM_DISCONTINUITY_*`
+   and other operational events are written only to Catalog, never to the
+   journal. Journal string counts are invalid evidence for them.
+7. **Raw gaps must be read from Raw** (EventEnvelope `capture_flags`) and
+   **manifest status from manifests** (`gap`/`complete`). Each layer has its
+   own evidence responsibility.
+8. **Save both raw text and parsed JSON** for every observation round; a
+   serialization failure must not discard the raw command output
+   (12h timer-parsing lesson).
+9. **Never overwrite original evidence**: corrective reviews and forensic
+   reviews must create their own independent directories under the run root
+   and leave all original files byte-identical.
+10. **Distinguish recovery events precisely**: `queue_backpressure_recovered`
+    (queue below low_watermark) is not stream recovery completion; the
+    completion boundary is new connection + first-new `sequence_gap` persisted
+    + Raw sync + Catalog COMPLETED.
+11. **Saturation semantics**: the 30 s backpressure budget is accumulated
+    saturation time above low_watermark, and the timeout raises only when a
+    later put re-encounters a full queue. A long started→timeout span is not
+    a continuous full-queue span; record it as accumulated saturation.

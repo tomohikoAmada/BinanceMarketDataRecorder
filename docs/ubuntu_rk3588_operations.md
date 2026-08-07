@@ -186,9 +186,60 @@ M21 owns both runs:
   external disappearance/reinsertion, update/rollback drills, and alert review.
 
 The separate 72-hour gate must also be recorded. M21.4 2h and 12h windows
-passed with independent evidence reviews; 24h/72h/168h remain pending.
-Until all long-run gates are completed the platform remains a Soak Candidate
-and must not be described as Production Ready or zero-interruption.
+passed with independent evidence reviews; the formal 24-hour window passed
+with corrective and contract forensic confirmation, and the natural gen5
+backpressure recovery contract passed inside the formal window.
+The 72-hour and 168-hour windows remain pending and are never started
+automatically. Until all long-run gates are completed the platform remains a
+Soak Candidate and must not be described as Production Ready or
+zero-interruption.
+
+### Formal evidence rules for 72h/168h (24h corrective lessons)
+
+The 24h window produced binding evidence rules for all later formal windows:
+
+- **Journal boundaries derive from the formal T0/Target UTC nanoseconds, but
+  journald filtering is not nanosecond-exact.** `journalctl`/systemd time
+  parsing and the journal `__REALTIME_TIMESTAMP` field have **microsecond**
+  resolution. Derive explicit UTC timestamps from the nanosecond T0/Target
+  and pass explicit RFC3339 UTC timestamps with microsecond precision, e.g.
+  `journalctl --since "2026-08-05 15:09:30.200566Z"`, or the `@<Unix-seconds>`
+  syntax that the project has verified read-only on the target systemd
+  version; do not assume fractional `@` forms are accepted without that
+  read-only test. Never bare local-time strings. The original 24h export
+  used `--since "2026-08-05 15:09:30"` (no `Z`), which journalctl
+  interpreted as local time and shifted the formal boundary by 8 hours
+  (FORMAL_JOURNAL_ARTIFACT_CONTAMINATION=true). Do not claim journal
+  filtering itself is nanosecond-exact.
+- **Export structured formats**: use `--output=json` / `--output=json-seq` /
+  `--output=export` so every record carries `__REALTIME_TIMESTAMP` (UTC
+  microseconds); verify first/last records' `__REALTIME_TIMESTAMP` against
+  the derived UTC microsecond bounds (T0/Target nanoseconds truncated to
+  microseconds) after every export. Boundary enforcement happens at
+  journald's documented microsecond resolution; a record that cannot be
+  classified inside/outside at that resolution is recorded as
+  `BOUNDARY_PRECISION_AMBIGUOUS`, never guessed.
+- **Formal samples strictly filtered by T0/Target nanoseconds**; post-Target
+  data is reported separately as post-window current state and never mixed
+  into formal statistics.
+- **Catalog events are queried from Catalog**: `STREAM_DISCONTINUITY_*`
+  operational events are Catalog-only writes and never appear in the
+  journal; journal string searches cannot count them (the first corrective
+  review's 0/0 count was invalid; Catalog holds 7 complete pairs gen0–gen6).
+- **Raw gap evidence is read from Raw** (`capture_flags=sequence_gap`);
+  **manifest status is read from manifests** (`gap`/`complete`).
+- **Save both raw command output and parsed JSON** every round; generation
+  failure must not discard raw evidence.
+- **Never overwrite original evidence**: corrective/forensic reviews go to
+  their own independent directories under the run root.
+- **Recovery wording**: `queue_backpressure_recovered` (below low_watermark)
+  is not stream recovery completion; the completion boundary is new
+  connection + first-new `sequence_gap` persisted + Raw sync + Catalog
+  COMPLETED. Internal zero-drop does not prove exchange-side completeness;
+  a reconnect boundary stays `gap=true`/`complete=false`.
+- **Saturation timing**: the 30 s budget is accumulated saturation time above
+  low_watermark; timeout raises only when a later put again meets a full
+  queue, so started→timeout spans are not continuous full-queue spans.
 
 ## M21.4 deployment notes
 
@@ -212,4 +263,8 @@ parsed JSON; JSON generation failure must not discard the raw evidence.
 
 Do not actively trigger backpressure in production. The M21.4 repair
 provides stream-level recovery when it occurs naturally, but the
-recovery path should not be exercised through artificial load.
+recovery path should not be exercised through artificial load. The formal
+24h window did observe one natural gen5 `book_ticker` cycle that passed its
+recovery contract (RECOVERY_CONTRACT_PASS) and one gen6 cycle that started
+inside the window and completed after Target (POST_WINDOW); post-window
+recovery is valid for current health judgment only.

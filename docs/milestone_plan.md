@@ -573,15 +573,24 @@ from Raw after a corrected parser is available.
   (SHA-256 `926615b09ef46130f49a87fe8ab20acb7cfa6313daa67af5b718931bd95ff329`)
   was deployed and passed Stage D plus the Canonical Installed Identity Gate.
   Formal 2-hour and 12-hour stability windows passed with independent evidence
-  reviews. Formal 24-hour, 72-hour, and 168-hour windows remain pending and
-  do not represent M21 overall completion. M21.4 does not change public data
-  schemas or begin a new soak. See `docs/milestone_acceptance/M21.4.md`,
-  `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`, and
-  `docs/milestone_evidence/M21.4-deployment-and-validation.md`.
+  reviews. The formal 24-hour window passed
+  (formal_24h_result=PASS, eligible_for_72h_from_24h_evidence=true) and was
+  confirmed by a corrective integrity review and a Backpressure contract
+  forensic review; the natural gen5 backpressure recovery cycle inside the
+  formal window passed its recovery contract (RECOVERY_CONTRACT_PASS).
+  M21.4 does not change public data schemas or begin a new soak. See
+  `docs/milestone_acceptance/M21.4.md`,
+  `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`,
+  `docs/milestone_evidence/M21.4-deployment-and-validation.md`, and
+  `docs/milestone_evidence/M21.4-24h-validation-forensics.md`.
 
-  The validation sequence continues: 24h → 72h → 168h → final release
-  assessment. Backpressure recovery has not been naturally exercised in
-  production; this remains a known monitoring gap.
+  The validation sequence continues: 72h → 168h → final release
+  assessment. The 72-hour window is the next formal gate and is never started
+  automatically. The 168-hour window should extend the same production
+  artifact and process continuity after the 72-hour gate passes. Backpressure
+  recovery was naturally exercised in production inside the 24h window
+  (gen5 contract PASS; gen6 completed after Target as POST_WINDOW); repeated
+  cycles and long-run behavior remain 72h/168h observations.
 
 ## Future Work
 

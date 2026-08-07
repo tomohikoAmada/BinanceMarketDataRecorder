@@ -75,7 +75,10 @@ scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
 submilestones add scoped acceptance records without extending the top-level
 M0-M20 plan. M21.4 (USD-M ingress backpressure repair) was merged through
 PR #7, deployed to production, and passed 2h and 12h formal validation
-windows with independent evidence reviews. 24h/72h/168h remain pending.
+windows with independent evidence reviews. The formal 24-hour window passed
+and was confirmed by a corrective integrity review and a Backpressure
+contract forensic review; the gen5 natural backpressure recovery contract
+passed in-window. 72h/168h remain pending and have not started.
 
 ### M21.4 traceability
 
@@ -88,12 +91,29 @@ windows with independent evidence reviews. 24h/72h/168h remain pending.
 | Stage D | stop/seal/install/readiness | PASS |
 | 2h preflight | PID continuity, both markets READY 100% | PASS (independent review) |
 | 12h observation | 141 soak samples, 0 core errors, planned rotation verified | PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS) |
-| 24h window | — | PENDING |
-| 72h window | — | PENDING |
-| 168h window | — | PENDING |
-| Documentation | M21.4 acceptance, deployment evidence, architecture update | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md` |
-| Risk updates | R-004 (Monitoring), R-035 (Open, 24h/72h/168h pending), R-043-R-046 (new) | `docs/risk_register.md` |
+| 24h window | Formal 24h PASS, eligible_for_72h=true | PASS (corrective + contract forensic reviews) |
+| 24h corrective review | Journal re-export with epoch-derived UTC bounds (journald microsecond resolution); gen2/3/4 reclassified PRE_WINDOW; gen5 found in-window | EVIDENCE_INTEGRITY_PASS_WITH_CORRECTED_REPORT |
+| 24h contract forensic review | gen5 RECOVERY_CONTRACT_PASS; gen6 timing CONSISTENT; contamination classification; evidence-source matrix | FORENSIC_CONTRACT_REVIEW |
+| gen5 contract proof | Catalog STARTED/COMPLETED paired; Raw first-new sequence_gap; manifests gap=true/complete=false; historical_continuity_restored=false | PASS |
+| 72h window | — | PENDING (not started) |
+| 168h window | — | PENDING (not started) |
+| Documentation | M21.4 acceptance, deployment evidence, 24h forensics | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-24h-validation-forensics.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md` |
+| Risk updates | R-004 (Monitoring, gen5 PASS), R-035 (Open, 72h/168h pending), R-044 (Monitoring, epoch-bound mitigations), R-045 (Monitoring, not recovered) | `docs/risk_register.md` |
 | Production Ready | Not claimed | — |
+
+### M21.4 24h evidence paths (host-local)
+
+| Purpose | Path |
+|---------|------|
+| 24h run root | `/var/tmp/bmdr-m21-4-deploy-postmerge-20260804T023200Z/preflight/m21-4-24h-20260805T150930Z` |
+| Original run | `RUN_ROOT/run/` (run-start.json, analysis.json, report.md, artifacts/formal-window.samples.jsonl, journals/) |
+| Corrective review | `RUN_ROOT/corrective-integrity-review-20260806T152159Z/` |
+| Contract forensic review | `RUN_ROOT/backpressure-contract-review-20260806T153010Z/` |
+| Anchors | `RUN_ROOT/anchors/` |
+
+These paths are local to the RK3588 host. Only the documentation in this
+repository is published to GitHub; the run, review, and archive evidence
+themselves are not uploaded.
 
 This matrix should be updated whenever a requirement, ADR, or
 milestone acceptance changes.
