@@ -8,21 +8,28 @@ SpotStreamCollector 管理一条 websocket 连接的生命周期,遵循以下不
   增长。若队列已满,抛出 IngressQueueFull 作为可见故障;事件永不静默丢弃。
 - 连接在 planned_rotation_seconds(默认 23h50m)时轮换,早于 Binance 文档规定的
   24 小时断开。server_shutdown 事件触发立即重连。
-- websockets 库的客户端 Ping 循环被禁用;协议层自动回显服务端 Ping 负载。
-  本地协议测试(M4)已验证此行为。
 - 每个流使用自己的 raw 端点和连接 ID。这即使对畸变 JSON 也能保留流身份,
   并避免组合流包装的歧义。
+- M21.4.11: 任意 transport 边界(unexpected disconnect / planned rotation /
+  server_shutdown / session restart)都走统一 reconnect-boundary 状态机:
+  旧 generation drain + seal(必要时 manifest 级 reconnect_gap 强制不完整)
+  -> Catalog STREAM_DISCONTINUITY_STARTED durable -> generation++ ->
+  新连接 -> 首个新帧携带 sequence_gap -> Raw sync -> COMPLETED。
+  exchange-side completeness 在 close 与首个新帧之间永远无法证明;
+  intentional close 不是完整性豁免。Spot 的 IngressQueueFull 溢出仍保持
+  进程级致命(不属于本修复范围)。
 """
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import random
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 from uuid import uuid4
 
@@ -32,8 +39,13 @@ from websockets.exceptions import WebSocketException
 from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...network import WebSocketProxy
-from ...spool.queue import IngressQueueFull
+from ...spool.queue import IngressGapStateConflict, IngressQueueFull
+from ...spool.seal import RECONNECT_GAP_FLAG
 from ...spool.stream import StreamSpool
+from ..websocket_common import (
+    RECONNECT_REASONS,
+    run_owned_blocking_call,
+)
 from .schema import SpotStream, envelope_from_websocket_frame
 
 SPOT_WEBSOCKET_BASE_URL = "wss://stream.binance.com:443/ws"
@@ -145,6 +157,15 @@ class SpotStreamCollector:
             maxsize=receipt_queue_capacity
         )
         self._server_shutdown = asyncio.Event()
+        self._generation = 0
+        self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
+        self._pending_gap: dict[str, object] | None = None
+        self._forced_seal_flags: frozenset[str] = frozenset()
+        self._boundary_connection_id: str | None = None
+        self._boundary_detected_at_utc_ns: int | None = None
+        self._connection_receipt_count = 0
+        self._restore_open_gap()
 
     @property
     def url(self) -> str:
@@ -152,6 +173,65 @@ class SpotStreamCollector:
 
     def set_capture_flags(self, flags: tuple[str, ...]) -> None:
         self._capture_flags = flags
+
+    def _restore_open_gap(self) -> None:
+        open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
+            market="spot",
+            stream=self.stream.value,
+        )
+        if len(open_gaps) > 1:
+            raise IngressGapStateConflict(
+                f"Spot {self.stream.value} has {len(open_gaps)} conflicting "
+                "unclosed stream discontinuities"
+            )
+        if not open_gaps:
+            return
+        evidence = open_gaps[0].get("evidence")
+        if not isinstance(evidence, dict):
+            raise IngressGapStateConflict(
+                f"Spot {self.stream.value} has malformed open gap evidence"
+            )
+        gap_id = evidence.get("gap_id")
+        started_at = evidence.get("gap_started_at_utc_ns")
+        connection_id = evidence.get("original_connection_id")
+        original_generation = evidence.get("original_generation")
+        if (
+            not isinstance(gap_id, str)
+            or not gap_id
+            or not isinstance(started_at, int)
+            or isinstance(started_at, bool)
+            or started_at < 0
+            or not isinstance(connection_id, str)
+            or not connection_id
+            or not isinstance(original_generation, int)
+            or isinstance(original_generation, bool)
+            or original_generation < 0
+            or evidence.get("reason") not in RECONNECT_REASONS
+        ):
+            raise IngressGapStateConflict(
+                f"Spot {self.stream.value} has invalid open gap identity"
+            )
+        self._pending_gap = {
+            "gap_id": gap_id,
+            "gap_started_at_utc_ns": started_at,
+            "original_connection_id": connection_id,
+            "original_generation": original_generation,
+            "reason": evidence["reason"],
+        }
+        self._generation = original_generation + 1
+        self._recovery_flag_pending = True
+        self._recovery_marker_enqueued = False
+        log_event(
+            self.logger,
+            logging.WARNING,
+            "spot_ingress_gap_recovered",
+            "Spot stream recovered an unclosed discontinuity from Catalog",
+            stream=self.stream.value,
+            connection_id=connection_id,
+            generation=self._generation,
+            gap_id=gap_id,
+            outcome="RECOVERY_PENDING",
+        )
 
     async def _receive_once(
         self, websocket: WebSocketConnection, connection_id: str
@@ -168,11 +248,117 @@ class SpotStreamCollector:
             capture_flags=self._capture_flags,
         )
 
+    def _with_recovery_marker(self, receipt: ReceivedFrame) -> ReceivedFrame:
+        if not self._recovery_flag_pending or self._recovery_marker_enqueued:
+            return receipt
+        return replace(
+            receipt,
+            capture_flags=tuple(
+                dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
+            ),
+        )
+
     def _accept(self, receipt: ReceivedFrame) -> None:
+        marker = self._with_recovery_marker(receipt)
+        if marker is not receipt:
+            self._recovery_marker_enqueued = True
         try:
-            self._receipts.put_nowait(receipt)
+            self._receipts.put_nowait(marker)
         except asyncio.QueueFull as exc:
+            if marker is not receipt and self._pending_gap is not None:
+                self._recovery_marker_enqueued = False
             raise IngressQueueFull("WebSocket receipt queue is full") from exc
+        self._connection_receipt_count += 1
+
+    async def _record_gap_started(
+        self,
+        boundary: ReceivedFrame | None,
+        reason: str,
+        *,
+        started_at_utc_ns: int,
+        connection_id: str,
+    ) -> None:
+        if reason not in RECONNECT_REASONS:
+            raise ValueError(f"unknown Spot reconnect reason: {reason}")
+        if self._pending_gap is not None:
+            raise IngressGapStateConflict(
+                f"Spot {self.stream.value} cannot start a second discontinuity "
+                "while an earlier gap remains open"
+            )
+        gap_id = str(uuid4())
+        evidence: dict[str, object] = {
+            "gap_id": gap_id,
+            "market": "spot",
+            "stream": self.stream.value,
+            "reason": reason,
+            "interval_classification": "UNRELIABLE",
+            "gap_started_at_utc_ns": started_at_utc_ns,
+            "original_connection_id": connection_id,
+            "original_generation": self._generation,
+            "boundary_kind": (
+                "last_frame_in_hand"
+                if boundary is not None
+                else "no_last_frame_available"
+            ),
+            "boundary_frame_persisted": boundary is not None,
+            "boundary_precision": (
+                "connection closed after the last Recorder-received frame; "
+                "unread WebSocket/TCP buffers are indeterminate"
+                if boundary is not None
+                else (
+                    "no unpersisted last-old frame exists at the boundary; "
+                    "already persisted frames were not modified and no "
+                    "boundary payload hash is fabricated"
+                )
+            ),
+        }
+        if boundary is not None:
+            evidence["boundary_payload_sha256"] = hashlib.sha256(
+                boundary.raw_payload
+            ).hexdigest()
+        await run_owned_blocking_call(
+            self.spool.catalog.record_operational_event,
+            event_id=f"stream-discontinuity-started:{gap_id}",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=started_at_utc_ns,
+            evidence=evidence,
+        )
+        self._pending_gap = {
+            "gap_id": gap_id,
+            "gap_started_at_utc_ns": started_at_utc_ns,
+            "original_connection_id": connection_id,
+            "original_generation": self._generation,
+            "reason": reason,
+        }
+
+    async def _record_gap_completed(self, envelope: EventEnvelope) -> None:
+        gap = self._pending_gap
+        if gap is None or "sequence_gap" not in envelope.capture_flags:
+            return
+        completed_at = envelope.receive_time_utc_ns
+        gap_id = str(gap["gap_id"])
+        await run_owned_blocking_call(self.spool.sync)
+        await run_owned_blocking_call(
+            self.spool.catalog.record_operational_event,
+            event_id=f"stream-discontinuity-completed:{gap_id}",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=completed_at,
+            evidence={
+                **gap,
+                "market": "spot",
+                "stream": self.stream.value,
+                "reason": gap["reason"],
+                "interval_classification": "UNRELIABLE",
+                "gap_ended_at_utc_ns": completed_at,
+                "new_connection_id": envelope.connection_id,
+                "new_generation": self._generation,
+                "raw_gap_marker": "sequence_gap",
+                "historical_continuity_restored": False,
+            },
+        )
+        self._pending_gap = None
+        self._recovery_flag_pending = False
+        self._recovery_marker_enqueued = False
 
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
@@ -206,10 +392,15 @@ class SpotStreamCollector:
                     self._server_shutdown.set()
                 self._receipts.task_done()
             await asyncio.to_thread(self.spool.drain_all)
+            for envelope in persisted:
+                await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
-        await asyncio.to_thread(self.spool.close_and_seal)
+        await run_owned_blocking_call(
+            self.spool.close_and_seal,
+            forced_flags=self._forced_seal_flags,
+        )
 
     async def _receive_connection(
         self,
@@ -217,6 +408,7 @@ class SpotStreamCollector:
         connection_id: str,
         stop: asyncio.Event,
         writer_task: asyncio.Task[None],
+        session_restart: asyncio.Event | None = None,
     ) -> str:
         deadline = asyncio.get_running_loop().time() + self.planned_rotation_seconds
         while True:
@@ -261,6 +453,9 @@ class SpotStreamCollector:
                 try:
                     receipt = receive_task.result()
                 except (WebSocketException, OSError, TimeoutError):
+                    if self._is_session_restart(session_restart):
+                        await websocket.close(code=1000, reason="collector shutdown")
+                        return "session_restart"
                     if stop.is_set():
                         await websocket.close(code=1000, reason="collector shutdown")
                         return "graceful_shutdown"
@@ -270,6 +465,8 @@ class SpotStreamCollector:
             if stop_task in done and stop_task.result():
                 receive_task.cancel()
                 await websocket.close(code=1000, reason="collector shutdown")
+                if self._is_session_restart(session_restart):
+                    return "session_restart"
                 return "graceful_shutdown"
             if shutdown_task in done and shutdown_task.result():
                 receive_task.cancel()
@@ -277,15 +474,28 @@ class SpotStreamCollector:
                 await websocket.close(code=1000, reason="serverShutdown received")
                 return "server_shutdown"
 
+    @staticmethod
+    def _is_session_restart(session_restart: asyncio.Event | None) -> bool:
+        return session_restart is not None and session_restart.is_set()
+
+    def _remember_boundary(self, connection_id: str) -> None:
+        """Capture the closing connection identity before the generation seals."""
+        self._boundary_connection_id = connection_id
+        self._boundary_detected_at_utc_ns = self.utc_clock_ns()
+
     async def _connection_loop(
-        self, stop: asyncio.Event, writer_task: asyncio.Task[None]
-    ) -> None:
+        self,
+        stop: asyncio.Event,
+        writer_task: asyncio.Task[None],
+        session_restart: asyncio.Event | None = None,
+    ) -> str:
         failures = 0
         while not stop.is_set():
             connection_id = str(uuid4())
             reason = "unexpected_disconnect"
             connected_at: float | None = None
             was_connected = False
+            self._connection_receipt_count = 0
             try:
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
@@ -301,7 +511,11 @@ class SpotStreamCollector:
                         connection_id=connection_id,
                     )
                     reason = await self._receive_connection(
-                        websocket, connection_id, stop, writer_task
+                        websocket,
+                        connection_id,
+                        stop,
+                        writer_task,
+                        session_restart=session_restart,
                     )
             except asyncio.CancelledError:
                 raise
@@ -324,6 +538,18 @@ class SpotStreamCollector:
                     error_type=type(exc).__name__,
                     retry=failures,
                 )
+                if not was_connected or self._connection_receipt_count == 0:
+                    # The opener failed or the connection closed before
+                    # delivering any frame; an open pending gap simply
+                    # continues with no new STARTED or generation bump.
+                    with suppress(TimeoutError):
+                        await asyncio.wait_for(
+                            stop.wait(),
+                            timeout=self.backoff.delay(max(1, failures)),
+                        )
+                    continue
+                self._remember_boundary(connection_id)
+                return "unexpected_disconnect"
             except IngressQueueFull:
                 log_event(
                     self.logger,
@@ -337,12 +563,13 @@ class SpotStreamCollector:
             finally:
                 if was_connected and self.lifecycle_observer is not None:
                     self.lifecycle_observer("disconnected")
-            if stop.is_set() or reason == "graceful_shutdown":
-                return
-            if reason in {"planned_rotation", "server_shutdown"}:
-                failures = 0
-                if reason == "planned_rotation" and self.lifecycle_observer is not None:
-                    self.lifecycle_observer("planned_rotation")
+            if reason in RECONNECT_REASONS:
+                if reason == "planned_rotation":
+                    failures = 0
+                    if self.lifecycle_observer is not None:
+                        self.lifecycle_observer("planned_rotation")
+                elif reason == "server_shutdown" and self.lifecycle_observer is not None:
+                    self.lifecycle_observer("server_shutdown")
                 log_event(
                     self.logger,
                     logging.INFO,
@@ -351,18 +578,92 @@ class SpotStreamCollector:
                     stream=self.stream.value,
                     connection_id=connection_id,
                 )
-                continue
+                self._remember_boundary(connection_id)
+                return reason
+            if stop.is_set() or reason == "graceful_shutdown":
+                return "stopped"
             delay = self.backoff.delay(max(1, failures))
             with suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=delay)
+        return "stopped"
 
-    async def run(self, stop: asyncio.Event) -> None:
-        """Run until requested to stop; seal all accepted records on exit."""
+    async def run(
+        self,
+        stop: asyncio.Event,
+        session_restart: asyncio.Event | None = None,
+    ) -> None:
+        """Run one generation at a time; every reconnect boundary seals it."""
 
-        producer_done = asyncio.Event()
-        writer_task = asyncio.create_task(self._writer_loop(producer_done))
-        try:
-            await self._connection_loop(stop, writer_task)
-        finally:
-            producer_done.set()
-            await writer_task
+        while not stop.is_set():
+            producer_done = asyncio.Event()
+            self._forced_seal_flags = frozenset()
+            self._boundary_connection_id = None
+            self._boundary_detected_at_utc_ns = None
+            writer_task = asyncio.create_task(self._writer_loop(producer_done))
+            outcome = "stopped"
+            try:
+                outcome = await self._connection_loop(
+                    stop, writer_task, session_restart=session_restart
+                )
+            finally:
+                if outcome in RECONNECT_REASONS:
+                    # No unpersisted last-old frame exists on the Spot path;
+                    # the sealed tail chunk gets the manifest-level
+                    # reconnect_gap flag. Persisted Raw frames stay untouched.
+                    self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
+                producer_done.set()
+                await writer_task
+            if outcome == "stopped":
+                return
+            if outcome not in RECONNECT_REASONS:
+                raise RuntimeError(f"unknown Spot connection outcome: {outcome}")
+            if self._pending_gap is None:
+                if (
+                    self._boundary_connection_id is None
+                    or self._boundary_detected_at_utc_ns is None
+                ):
+                    raise RuntimeError(f"missing Spot boundary identity for {outcome}")
+                await self._record_gap_started(
+                    None,
+                    outcome,
+                    started_at_utc_ns=self._boundary_detected_at_utc_ns,
+                    connection_id=self._boundary_connection_id,
+                )
+                self._generation += 1
+                self._recovery_flag_pending = True
+                self._recovery_marker_enqueued = False
+                self._forced_seal_flags = frozenset()
+            else:
+                # A pending gap already covers this boundary; it continues
+                # until the first reliable new-generation frame is persisted.
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    "spot_ingress_gap_extended",
+                    "Spot reconnect boundary extends the pending discontinuity",
+                    stream=self.stream.value,
+                    connection_id=self._boundary_connection_id or "unknown",
+                    generation=self._generation,
+                    gap_id=self._pending_gap["gap_id"],
+                    reason=outcome,
+                    outcome="GAP_EXTENDED",
+                )
+                if self.stream == SpotStream.DIFF_DEPTH:
+                    return
+                continue
+            log_event(
+                self.logger,
+                logging.WARNING,
+                "spot_ingress_stream_recovery",
+                "Spot stream is opening a new generation with persistent gap evidence",
+                stream=self.stream.value,
+                connection_id=self._boundary_connection_id or "unknown",
+                generation=self._generation,
+                outcome=(
+                    "DEPTH_RESYNC_REQUIRED"
+                    if self.stream == SpotStream.DIFF_DEPTH
+                    else "STREAM_RECONNECT"
+                ),
+            )
+            if self.stream == SpotStream.DIFF_DEPTH:
+                return

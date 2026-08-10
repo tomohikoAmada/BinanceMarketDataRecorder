@@ -163,12 +163,14 @@ class BlockingWriterOperationStreamSpool(StreamSpool):
         finally:
             self._leave_blocked_operation("sync")
 
-    def close_and_seal(self) -> dict[str, object] | None:
+    def close_and_seal(
+        self, forced_flags: frozenset[str] = frozenset()
+    ) -> dict[str, object] | None:
         self._enter_blocked_operation("seal")
         try:
             if self.fail_operation and self.blocked_operation == "seal":
                 raise OSError("injected Raw seal failure")
-            return super().close_and_seal()
+            return super().close_and_seal(forced_flags=forced_flags)
         finally:
             self._leave_blocked_operation("seal")
 
@@ -528,11 +530,18 @@ def test_sustained_overload_rotates_generation_with_persistent_gap(
     assert all("sequence_gap" not in item.capture_flags for item in envelopes[first_new + 1 :])
     assert high_watermark == 2
     assert sockets[1].close_reasons == ["bounded ingress backpressure"]
-    assert len({tuple(document["connection_ids"]) for document in manifests}) == 2
+    # The first connection's injected disconnect is now itself a reconnect
+    # boundary (unexpected_disconnect), so all three connections are isolated
+    # in their own sealed generation chunk.
+    assert len({tuple(document["connection_ids"]) for document in manifests}) == 3
     gap_manifests = [document for document in manifests if document["gap"]]
-    assert len(gap_manifests) == 2
+    assert len(gap_manifests) == 3
     assert all(document["complete"] is False for document in gap_manifests)
-    assert all(document["capture_flags"] == ["sequence_gap"] for document in gap_manifests)
+    assert gap_manifests[0]["capture_flags"] == ["reconnect_gap"]
+    assert all(
+        document["capture_flags"] == ["sequence_gap"]
+        for document in gap_manifests[1:]
+    )
     assert len(gap_manifests[-1]["connection_ids"]) == 1
     assert set(gap_manifests[0]["connection_ids"]).isdisjoint(
         gap_manifests[-1]["connection_ids"]
@@ -546,14 +555,26 @@ def test_sustained_overload_rotates_generation_with_persistent_gap(
     assert [event["event_type"] for event in discontinuities] == [
         "STREAM_DISCONTINUITY_STARTED",
         "STREAM_DISCONTINUITY_COMPLETED",
+        "STREAM_DISCONTINUITY_STARTED",
+        "STREAM_DISCONTINUITY_COMPLETED",
     ]
     started = discontinuities[0]["evidence"]
     completed = discontinuities[1]["evidence"]
     assert isinstance(started, dict)
     assert isinstance(completed, dict)
-    assert started["boundary_frame_persisted"] is True
+    assert started["reason"] == "unexpected_disconnect"
+    assert started["boundary_frame_persisted"] is False
     assert completed["historical_continuity_restored"] is False
-    assert completed["raw_gap_marker"] == "sequence_gap"
+    assert completed["gap_id"] == started["gap_id"]
+    overload_started = discontinuities[2]["evidence"]
+    overload_completed = discontinuities[3]["evidence"]
+    assert isinstance(overload_started, dict)
+    assert isinstance(overload_completed, dict)
+    assert overload_started["reason"] == "ingress_backpressure"
+    assert overload_started["boundary_frame_persisted"] is True
+    assert overload_completed["historical_continuity_restored"] is False
+    assert overload_completed["raw_gap_marker"] == "sequence_gap"
+    assert overload_completed["gap_id"] == overload_started["gap_id"]
     timeout_records = [
         record
         for record in caplog.records
@@ -1234,7 +1255,12 @@ def test_process_restart_restores_gap_and_completes_same_identity_once(
     async def persist_started_then_exit() -> str:
         await first._persist_batch([boundary])
         await asyncio.to_thread(first.spool.close_and_seal)
-        await first._record_gap_started(boundary)
+        await first._record_gap_started(
+            boundary,
+            "ingress_backpressure",
+            started_at_utc_ns=boundary.receive_time_utc_ns,
+            connection_id=boundary.connection_id,
+        )
         events = first_catalog.operational_events(
             event_type="STREAM_DISCONTINUITY_STARTED"
         )
@@ -1730,7 +1756,12 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
 
         async def record_then_close() -> None:
             try:
-                await collector._record_gap_started(boundary)
+                await collector._record_gap_started(
+                    boundary,
+                    "ingress_backpressure",
+                    started_at_utc_ns=boundary.receive_time_utc_ns,
+                    connection_id=boundary.connection_id,
+                )
             finally:
                 catalog.close()
 

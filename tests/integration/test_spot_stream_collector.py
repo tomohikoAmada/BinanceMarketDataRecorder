@@ -8,7 +8,7 @@ import socket
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import zstandard
 from websockets.asyncio.server import serve
@@ -97,10 +97,12 @@ def make_stream(
 
 
 def manifests(root: Path) -> list[dict[str, Any]]:
-    return [
+    documents = [
         json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted((root / "data" / "manifests").glob("*.json"))
+        for path in (root / "data" / "manifests").glob("*.json")
     ]
+    documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
+    return documents
 
 
 def sealed_envelopes(root: Path) -> list[Any]:
@@ -174,7 +176,10 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
 
         collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
         try:
-            await collector.run(stop)
+            # DIFF_DEPTH retires its capture session at a reconnect boundary;
+            # the outer collector restarts the session (second run() call).
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
         finally:
             catalog.close()
         assert attempts == 2
@@ -188,6 +193,11 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
     }
     assert sum(int(document["record_count"]) for document in documents) == 2
     assert len(connection_ids) == 2
+    assert len(documents) == 2
+    assert all(document["complete"] is False for document in documents)
+    assert all(document["gap"] is True for document in documents)
+    assert "reconnect_gap" in documents[0]["capture_flags"]
+    assert "sequence_gap" in documents[1]["capture_flags"]
 
 
 def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
@@ -269,11 +279,24 @@ def test_planned_rotation_replaces_connection_before_24_hours(tmp_path: Path) ->
             tmp_path, opener=opener, stop=stop, planned_rotation_seconds=0.02
         )
         try:
-            await collector.run(stop)
+            # DIFF_DEPTH retires its capture session at a reconnect boundary.
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            assert attempts == 2
+            assert sockets[0].close_reasons == ["planned 24-hour rotation"]
+            started = [
+                event
+                for event in catalog.operational_events()
+                if event["event_type"] == "STREAM_DISCONTINUITY_STARTED"
+            ]
+            assert len(started) == 1
+            assert cast(dict[str, Any], started[0]["evidence"])["reason"] == "planned_rotation"
+            assert (
+                cast(dict[str, Any], started[0]["evidence"])["boundary_frame_persisted"]
+                is False
+            )
         finally:
             catalog.close()
-        assert attempts == 2
-        assert sockets[0].close_reasons == ["planned 24-hour rotation"]
 
     asyncio.run(exercise())
 
@@ -297,6 +320,8 @@ def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> 
 
         collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
         try:
+            # DIFF_DEPTH retires its capture session at a reconnect boundary.
+            await asyncio.wait_for(collector.run(stop), timeout=3)
             await asyncio.wait_for(collector.run(stop), timeout=3)
         finally:
             catalog.close()
@@ -306,3 +331,8 @@ def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> 
     captured = sealed_envelopes(tmp_path)
     assert len(captured) == 2
     assert captured[0].capture_flags == ("server_shutdown",)
+    documents = manifests(tmp_path)
+    assert len(documents) == 2
+    assert all(document["complete"] is False for document in documents)
+    assert "reconnect_gap" in documents[0]["capture_flags"]
+    assert "sequence_gap" in documents[1]["capture_flags"]

@@ -4,22 +4,37 @@
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
-M21.4 was deployed and passed 2h, 12h, and 24h formal stability windows.
-The 24h PASS was confirmed by a corrective evidence review and a Backpressure
-contract forensic review; the natural gen5 backpressure recovery contract
-passed inside the formal window. The 72h and 168h windows remain pending
-and have not started. Static review, unit tests, fault injection, and short
-online tests cannot substitute for long-running proof.
+> **72小时验收结果为 FAIL（数据完整性合同失败）**。72小时窗口的核心进程
+> 稳定性 PASS，但 2026-08-07T14:08:24Z USD-M `book_ticker` 意外断线及所有
+> planned rotation 边界均无 gap 证据（gap=false/complete=true）。修复
+> (M21.4.11) 已实现并提交 PR 审查，未部署。完整记录：
+> `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
+
+M21.4 was deployed and passed 2h, 12h, and 24h formal process-stability
+windows. **The formal 72h window FAILED on data integrity**: the
+2026-08-07T14:08:24Z USD-M `book_ticker` unexpected disconnect and every
+planned rotation sealed their reconnect boundaries without gap evidence
+(gap=false/complete=true). The M21.4.11 reconnect-boundary repair is
+implemented and under review; it is NOT deployed. Static review, unit
+tests, fault injection, and short online tests cannot substitute for
+long-running proof.
 
 ## M21.4 validation status
 
-- 2h preflight: PASS (independent evidence review complete)
-- 12h observation: PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS)
-- 24h formal window: PASS (corrective + contract forensic review confirmed;
-  eligible_for_72h=true)
-- 72h window: PENDING (not started)
+- 2h preflight: PASS (short-window process stability; independent review)
+- 12h observation: PROCESS-STABILITY PASS; data-integrity
+  SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING
+- 24h formal window: PROCESS-STABILITY PASS (corrective + contract forensic
+  review confirmed); data-integrity
+  SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING
+- **72h formal window: FAIL** (core process stability PASS; data integrity
+  FAIL; eligible_for_next_stage=false)
 - 168h window: PENDING (not started)
-- Planned rotation: verified in 12h and 24h windows; repeated cycles not proven
+- Planned rotation: **FAIL on Raw gap evidence** — all five observed
+  rotations (12h/24h/72h windows and post-window) seal with
+  gap=false/complete=true and no Catalog gap
+- Reconnect boundary integrity: 4,680 historical unmarked transitions found
+  by read-only audit; forward fix implemented, NOT DEPLOYED
 - Backpressure natural exercise: gen5 PASS in formal 24h window
   (RECOVERY_CONTRACT_PASS); gen6 started in window, completed POST_WINDOW;
   Spot backpressure repair still absent
@@ -57,7 +72,11 @@ online tests cannot substitute for long-running proof.
 
 - Repeated 24-hour Binance connection rotation has been verified in the
   M21.4 12h window (06:52-06:53 UTC) and 24h window (06:43:11–06:43:23Z).
-  Multiple repeated rotation cycles over 72h/168h have not been demonstrated.
+  **However, rotation is process/orderbook-stable only: every observed
+  rotation seals its reconnect boundary without Raw gap evidence
+  (gap=false/complete=true). Rotation Raw-data integrity is
+  SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING until the M21.4.11 fix
+  deploys.**
 - Long-term memory, file-descriptor, bounded-queue, archive-backlog, growth
   forecast, and resource-leak behavior has been validated in 2h, 12h, and 24h
   windows only; 72h/168h remain pending.
@@ -86,6 +105,25 @@ part of M20; it is the M21 acceptance scope.
 
 ### Additional M21.4 known limitations
 
+- **Ordinary reconnect and planned rotation seal without gap evidence
+  (72h FAIL root cause)**: the deployed artifact reconnects
+  unexpected_disconnect/planned_rotation/server_shutdown/session-restart
+  boundaries in the same generation with no Catalog STARTED/COMPLETED, no
+  `sequence_gap`, and manifest `gap=false/complete=true`. The formal 72h
+  window FAILED on this contract (2026-08-07T14:08:24Z book_ticker
+  disconnect; receive gap ~1.73 s; u jump 56,294,564). The M21.4.11 forward
+  fix (unified Reconnect Boundary state machine, manifest-level
+  `reconnect_gap`, seal defense) is implemented and under review; **until it
+  is deployed, any interval crossing a reconnect boundary produced by the
+  running artifact must not be trusted as complete.**
+- **Historical silent gaps are immutable**: a read-only audit found 4,680
+  unmarked reconnect boundaries (11 explicit backpressure gaps) across all
+  WebSocket streams since capture began. Sealed Raw/Manifest evidence cannot
+  be rewritten; additive remediation is designed but not executed
+  (POST_MERGE_MIGRATION_REQUIRED=true).
+- **Planned rotation is not an integrity exemption**: all five observed
+  rotations (12h, 24h, 72h x3) and the post-window rotation carry no Raw gap
+  evidence; only the forward fix changes this.
 - **Observation collector timer parsing**: The 12h observation loop failed
   to save JSON observations because a timer-field parser mishandled
   `systemctl show` output ordering. Core continuity was independently

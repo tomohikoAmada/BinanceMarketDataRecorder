@@ -350,14 +350,22 @@ class UsdMCollector:
 
     async def _run_capture_session(self, external_stop: asyncio.Event) -> None:
         session_stop = asyncio.Event()
+        restarting = asyncio.Event()
 
         async def control_session() -> None:
             external = asyncio.create_task(external_stop.wait())
             restart = asyncio.create_task(self.resync.requested.wait())
             try:
-                await asyncio.wait(
+                done, _pending = await asyncio.wait(
                     {external, restart}, return_when=asyncio.FIRST_COMPLETED
                 )
+                if restart in done and external not in done:
+                    # A resync-requested session retirement reopens every
+                    # stream connection in a fresh session. That close/open
+                    # boundary is a transport reconnect boundary for every
+                    # stream and must carry persistent gap evidence; a true
+                    # global stop must not.
+                    restarting.set()
             finally:
                 session_stop.set()
                 for task in (external, restart):
@@ -367,7 +375,7 @@ class UsdMCollector:
 
         async with asyncio.TaskGroup() as tasks:
             for stream in self.streams:
-                tasks.create_task(stream.run(session_stop))
+                tasks.create_task(stream.run(session_stop, session_restart=restarting))
             tasks.create_task(self._capture_snapshot(session_stop))
             tasks.create_task(control_session())
 

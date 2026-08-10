@@ -452,6 +452,56 @@ confirmed the following contract semantics on production evidence:
   is the new connection plus first-new `sequence_gap` persisted plus Raw sync
   plus Catalog COMPLETED.
 
+### M21.4.11 Reconnect boundary gap contract (all transports)
+
+The formal 72h window failed because ordinary and planned reconnect paths
+sealed cross-connection intervals as complete. The M21.4.11 contract
+generalizes the M21.4 backpressure evidence to **every** transport boundary
+in Spot and USD-M:
+
+- **Reason taxonomy**: `ingress_backpressure`, `unexpected_disconnect`,
+  `planned_rotation`, `server_shutdown`, `session_restart`. Intentional
+  close is not an exemption: exchange-side completeness between close and
+  the first new frame can never be proven, so every one of these reasons
+  requires persistent gap evidence.
+- **Manifest-level forced gap**: when no unpersisted last-old frame exists
+  (unexpected disconnect, planned rotation, server shutdown, session
+  restart), the sealed tail chunk receives the `reconnect_gap` manifest
+  flag: `gap=true`, `complete=false`. The flag is written only to the
+  manifest (and seal evidence), never to Raw frames; already-persisted
+  frames are never mutated and no exchange payload is fabricated. Catalog
+  evidence states `boundary_frame_persisted=false`,
+  `boundary_kind=no_last_frame_available`, and records the disconnect
+  transport time rather than a payload hash.
+- **Ordering**: drain old generation -> seal (forced gap) -> Catalog
+  `STREAM_DISCONTINUITY_STARTED` durable -> `generation++` -> open new
+  connection -> first new frame `sequence_gap` -> Raw sync -> Catalog
+  `STREAM_DISCONTINUITY_COMPLETED` -> connected with
+  `historical_continuity_restored=false`.
+- **Pending-gap extension**: a connection that fails before its first frame
+  extends the pending gap; one gap_id, one STARTED, one generation
+  transition, one COMPLETED. No nested STARTED, no GapStateConflict, no
+  per-attempt generation bump.
+- **Generation isolation**: one generation never contains multiple
+  non-overlap connections; old receipts drain before `generation++`.
+- **Seal defense in depth**: any chunk with more than one `connection_id`
+  and no `sequence_gap`/`reconnect_gap`/`blue_green_overlap` provenance
+  fails closed to `reconnect_gap`. Blue/green deployment overlap remains the
+  only explicit safe multi-connection provenance.
+- **`diff_depth`**: every boundary retires the capture session (UNTRUSTED ->
+  fresh REST Snapshot -> correct U/u/pu bridge -> READY). Raw gap evidence
+  stays incomplete regardless of orderbook recovery.
+- **Server shutdown**: the shutdown frame keeps its `server_shutdown` Raw
+  flag; the boundary additionally carries `reconnect_gap`/STARTED/COMPLETED.
+  Both flags coexist.
+- **Graceful global stop** creates no gap; a depth-resync session restart
+  (which reopens connections) is a reconnect boundary for every stream.
+
+No EventEnvelope, Raw chunk, normalized, replay, or Catalog schema changed.
+The manifest flag set gains the additive value `reconnect_gap`; manifests
+remain `raw-chunk-manifest.v1` because the flag set is open-ended and only
+existing `gap`/`complete` semantics are reused.
+
 ## Compatibility policy
 
 - Additive optional envelope/manifest fields are minor schema changes.

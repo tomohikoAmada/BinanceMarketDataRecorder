@@ -81,7 +81,11 @@ class BlockingValidRestApi:
 
 
 class IdleStream:
-    async def run(self, stop: asyncio.Event) -> None:
+    async def run(
+        self,
+        stop: asyncio.Event,
+        session_restart: asyncio.Event | None = None,
+    ) -> None:
         await stop.wait()
 
 

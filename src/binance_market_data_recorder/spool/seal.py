@@ -18,8 +18,13 @@ seal_partial() 实现 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
 匹配的 sealed 文件被接受,无需重新压缩。
 
 当 capture_flags 包含 checksum_failure、mixed_sequence_type、orderbook_resync、
-recovered_tail、sequence_gap 中任一项时,manifest 中的 'complete' 标志为 False。
-不完整区间不能携带 complete=true。
+recovered_tail、sequence_gap、reconnect_gap 中任一项时,manifest 中的 'complete'
+标志为 False。不完整区间不能携带 complete=true。
+
+reconnect_gap 是 manifest 级强制不完整标志:它只能通过 forced_flags 或
+多连接无蓝绿重叠来源的防线产生,永远不写入 Raw 帧。一个 chunk 一旦包含多个
+connection_id 且无 sequence_gap/reconnect_gap/blue_green_overlap 证据,
+密封时 fail closed 为 gap=true/complete=false,绝不宣称跨连接完整。
 """
 
 from __future__ import annotations
@@ -41,6 +46,29 @@ COMPRESSION_SCHEMA_VERSION = "zstd-frame.v1"
 MANIFEST_SCHEMA_VERSION = "raw-chunk-manifest.v1"
 ZSTD_LEVEL = 3
 READ_BUFFER_BYTES = 1024 * 1024
+
+#: Manifest-level evidence that a chunk ends at a transport reconnect boundary
+#: whose exchange-side completeness cannot be proven. The flag is written only
+#: to the manifest (and seal evidence), never to Raw frames: an already
+#: persisted last-old frame must not be mutated, and no exchange payload is
+#: fabricated. It forces gap=true and complete=false.
+RECONNECT_GAP_FLAG = "reconnect_gap"
+
+#: Explicit provenance that multiple connections in one chunk are an intended
+#: blue/green deployment overlap rather than an unmarked reconnect boundary.
+OVERLAP_FLAG = "blue_green_overlap"
+
+#: Flags that alone make a chunk interval unprovably incomplete.
+INCOMPLETE_FLAGS = frozenset(
+    {
+        "checksum_failure",
+        "mixed_sequence_type",
+        "orderbook_resync",
+        "recovered_tail",
+        "sequence_gap",
+        RECONNECT_GAP_FLAG,
+    }
+)
 
 
 class SealError(RuntimeError):
@@ -113,6 +141,7 @@ def _manifest(
     sealed: Path,
     *,
     recovery: dict[str, object] | None,
+    forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     if scan.header is None or scan.uncompressed_sha256 is None:
         raise SealError("clean header and hash required")
@@ -122,14 +151,17 @@ def _manifest(
     capture_flags = set(statistics.capture_flags)
     if recovery is not None:
         capture_flags.add("recovered_tail")
-    incomplete_flags = {
-        "checksum_failure",
-        "mixed_sequence_type",
-        "orderbook_resync",
-        "recovered_tail",
-        "sequence_gap",
-    }
-    complete = not bool(capture_flags & incomplete_flags)
+    capture_flags.update(forced_flags)
+    if (
+        len(statistics.connection_ids) > 1
+        and not capture_flags & (INCOMPLETE_FLAGS | {OVERLAP_FLAG})
+    ):
+        # Defense in depth: a sealed chunk must never claim
+        # gap=false/complete=true across an unmarked connection boundary.
+        # Blue/green overlap is the only explicit safe multi-connection
+        # provenance; anything else fails closed to an incomplete interval.
+        capture_flags.add(RECONNECT_GAP_FLAG)
+    complete = not bool(capture_flags & INCOMPLETE_FLAGS)
     sealed_at = time.time_ns()
     return {
         "capture_flags": sorted(capture_flags),
@@ -154,7 +186,7 @@ def _manifest(
             for name, values in sorted(statistics.exchange_time_ranges.items())
         },
         "fsync_completed_at_utc_ns": sealed_at,
-        "gap": "sequence_gap" in capture_flags,
+        "gap": bool(capture_flags & {"sequence_gap", RECONNECT_GAP_FLAG}),
         "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
         "market": scan.header.market,
         "overlap": "overlap" in capture_flags,
@@ -199,8 +231,18 @@ def _validate_existing_manifest(path: Path, expected: dict[str, object]) -> None
         raise SealError("existing manifest does not identify the same verified chunk")
 
 
-def seal_partial(path: Path, *, layout: StorageLayout, catalog: Catalog) -> dict[str, object]:
-    """Seal a closed partial idempotently; never delete it before Catalog commit."""
+def seal_partial(
+    path: Path,
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    forced_flags: frozenset[str] = frozenset(),
+) -> dict[str, object]:
+    """Seal a closed partial idempotently; never delete it before Catalog commit.
+
+    ``forced_flags`` are manifest-level only (see ``_manifest``); they never
+    mutate Raw frames and therefore cannot fabricate exchange payloads.
+    """
 
     scan = scan_chunk(path)
     if not scan.is_clean or scan.header is None or scan.uncompressed_sha256 is None:
@@ -244,6 +286,7 @@ def seal_partial(path: Path, *, layout: StorageLayout, catalog: Catalog) -> dict
         layout,
         sealed,
         recovery=recovery_evidence,
+        forced_flags=forced_flags,
     )
     manifest_path = layout.manifests / f"{scan.header.chunk_id.hex}.manifest.json"
     if manifest_path.exists():

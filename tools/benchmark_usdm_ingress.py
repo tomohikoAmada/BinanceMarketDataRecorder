@@ -117,12 +117,14 @@ class InstrumentedSpool(StreamSpool):
         finally:
             self.drain_durations_ns.append(time.perf_counter_ns() - started)
 
-    def close_and_seal(self) -> dict[str, object] | None:
+    def close_and_seal(
+        self, forced_flags: frozenset[str] = frozenset()
+    ) -> dict[str, object] | None:
         started = time.perf_counter_ns()
         if self.seal_delay_seconds:
             time.sleep(self.seal_delay_seconds)
         try:
-            return super().close_and_seal()
+            return super().close_and_seal(forced_flags=forced_flags)
         finally:
             self.seal_durations_ns.append(time.perf_counter_ns() - started)
 

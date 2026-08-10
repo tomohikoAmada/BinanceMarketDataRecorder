@@ -190,9 +190,13 @@ merge commit with a production code change.
 Each validation window has its own T0, Target, and evidence root. A prior
 window's PASS does not automatically start the next window. Each window
 must be explicitly created with its own T0 anchor and continuous observation.
-The 24h window passed (formal_24h_result=PASS, eligible_for_72h=true) with
-corrective and contract forensic confirmation; the 72h and 168h windows
-remain pending and are never started automatically.
+The 24h window passed on process stability with corrective and contract
+forensic confirmation; **the formal 72h window FAILED on data integrity
+(reconnect boundaries seal without gap evidence; see
+`docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`)**.
+The 168h window remains pending and is never started automatically. A new
+artifact must restart the full chain (2h→12h→24h→72h→168h) after review and
+deployment.
 
 ### Formal evidence collection rules (24h corrective lessons, mandatory for 72h/168h)
 
