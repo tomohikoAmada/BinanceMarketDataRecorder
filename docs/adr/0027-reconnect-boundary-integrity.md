@@ -1,6 +1,6 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
-- Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5)
+- Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery)
@@ -48,25 +48,11 @@ Spot and USD-M goes through one Reconnect Boundary state machine:
 7. Raw sync, then Catalog `STREAM_DISCONTINUITY_COMPLETED` with
    `historical_continuity_restored=false`.
 
-### Crash-durable state machine (M21.4.11-R1)
-
-The durable ordering makes the reconnect fact survive every crash phase:
-
-| Phase | Durable state after crash | Recovery behavior |
-|---|---|---|
-| `BOUNDARY_DETECTED` | in-memory only; nothing durable | no evidence exists; Raw preserved as-is |
-| `BOUNDARY_INTENT_DURABLE` | Catalog STARTED committed | startup restores the same gap_id |
-| `OLD_GENERATION_DRAINED` | STARTED + partial (ACTIVE) | partial preserved; never sealed complete |
-| `OLD_GENERATION_SEALING` | STARTED + Catalog SEALING + partial | `recover_storage` re-seals with forced `reconnect_gap` derived from the open gap |
-| `OLD_GENERATION_SEALED_INCOMPLETE` | STARTED + sealed manifest `gap=true` | `reconcile_sealed` keeps the manifest; no rewrite |
-| `NEW_GENERATION_AUTHORIZED` | STARTED + old manifest | first new frame carries `sequence_gap` |
-| `FIRST_NEW_RAW_SYNCED` | STARTED + first-new frame | pending gap restores; COMPLETED re-recorded idempotently |
-| `DISCONTINUITY_COMPLETED` | STARTED + COMPLETED | no duplicate events on restart |
+### Crash-durable state machine (M21.4.11-R1, extended M21.4.11-R2)
 
 Startup recovery (`spool/recovery.py`) derives fail-closed seal flags from
-durable state: a partial re-sealed for a market/stream that has an unclosed
-Catalog STARTED is forced to `reconnect_gap`. In-memory `forced_flags` are
-never required for correctness after a crash. An existing manifest that
+durable state (see the R2 authority rules below). In-memory `forced_flags`
+are never required for correctness after a crash. An existing manifest that
 contradicts freshly derived completeness semantics (e.g. `complete=true`
 while durable reconnect intent requires `gap=true`) is rejected, never
 silently adopted (`seal_partial._validate_existing_manifest`).
@@ -110,6 +96,77 @@ Supporting rules:
   exempts an unrelated transition (M21.4.11-R2/REQ-601).
 - Historical sealed evidence is immutable.
 
+### Crash fallback: durable SEALING seal intent (M21.4.11-R2/P1-A)
+
+Recording STARTED before the seal closes every single-fault crash path, but
+a double fault can still erase the reconnect semantics:
+
+1. the boundary is detected and the intent decision runs;
+2. the Catalog `STREAM_DISCONTINUITY_STARTED` write fails before committing;
+3. the writer still seals the old generation with the in-memory forced
+   flags, committing `ChunkState.SEALING`;
+4. the seal then crashes before SEALED, and the writer error must not be
+   swallowed by the intent failure;
+5. on restart the SEALING coordination previously derived forced flags only
+   from unmatched STARTED records — with STARTED absent the old partial
+   could be sealed `gap=false`/`complete=true`.
+
+R2 closes the double fault with a durable seal-intent authority:
+
+- The writer's `seal_partial` call persists the reconnect seal semantics
+  into the `ChunkState.SEALING` transition evidence (`seal_intent`), BEFORE
+  any artifact, manifest, or SEALED mutation. The intent carries the
+  required forced flags plus the exact boundary identity: `gap_id`, reason,
+  market, stream, `original_connection_id`, `original_generation`,
+  `gap_started_at_utc_ns`, boundary kind, and (when a boundary frame was in
+  hand) its payload SHA-256. The `gap_id` is minted once per boundary in
+  `run()` and shared by the seal intent and the STARTED/COMPLETED pair, so
+  recovery never invents a second logical gap (INV-010).
+- Startup recovery derives the required forced flags from ALL durable
+  authority, in priority order:
+  1. the durable SEALING seal intent (authority B — survives the STARTED
+     write failure);
+  2. an unclosed `STREAM_DISCONTINUITY_STARTED` (authority A).
+  When the intent exists without a matching STARTED, recovery
+  deterministically materializes the pending discontinuity with the same
+  `gap_id` (same identity fields), so the replacement generation restores
+  it, marks its first new frame `sequence_gap`, and later closes exactly one
+  coherent COMPLETED event. When both authorities exist they must agree on
+  `gap_id`, market, stream, reason, original connection, and generation; a
+  mismatch fails closed (`RecoveryConflictError`), never guessing.
+- A SEALING chunk with no reconnect intent at all is sealed with ordinary
+  semantics: blanket "every SEALING chunk is a gap" forcing is prohibited
+  (TEST-106).
+- The propagated intent failure retains the writer failure as its cause
+  (REQ-109): a seal failure after the SEALING commit never disappears.
+- A crash before the intent write and before any SEALING transition leaves
+  a clean orphan ACTIVE partial. Startup deliberately retains it (P2-A):
+  it is registered ACTIVE, never auto-sealed complete, no manifest is
+  written, no gap event is fabricated, and the next collector opens a fresh
+  generation. There is no durable evidence that it was cut at a transport
+  boundary, and unsealed Raw evidence stays recoverable; the recorded
+  interval is never claimed complete=true without a boundary decision.
+- Spot owns its blocking writer work with the same deferred-cancellation
+  policy as USD-M (P2-B): `drain_all`/`close_and_seal` run through
+  `run_owned_blocking_call`, and a cancelled writer task waits for its
+  worker then releases the descriptor via the owned `abort_writer` chain. A
+  cancelled asyncio owner never reports complete while a worker thread still
+  mutates the StreamSpool.
+
+The durable ordering table therefore gains one phase:
+
+| Phase | Durable state after crash | Recovery behavior |
+|---|---|---|
+| `BOUNDARY_DETECTED` | in-memory only; nothing durable | no evidence exists; Raw preserved as-is; orphan ACTIVE partial retained, never sealed complete |
+| `SEAL_INTENT_DURABLE` | SEALING evidence `seal_intent` (STARTED absent) | STARTED materialized with the same gap_id; old partial sealed fail-closed |
+| `BOUNDARY_INTENT_DURABLE` | Catalog STARTED committed | startup restores the same gap_id |
+| `OLD_GENERATION_DRAINED` | STARTED + partial (ACTIVE) | partial preserved; never sealed complete |
+| `OLD_GENERATION_SEALING` | STARTED + Catalog SEALING + partial | `recover_storage` re-seals with forced `reconnect_gap` derived from the open gap |
+| `OLD_GENERATION_SEALED_INCOMPLETE` | STARTED + sealed manifest `gap=true` | `reconcile_sealed` keeps the manifest; no rewrite |
+| `NEW_GENERATION_AUTHORIZED` | STARTED + old manifest | first new frame carries `sequence_gap` |
+| `FIRST_NEW_RAW_SYNCED` | STARTED + first-new frame | pending gap restores; COMPLETED re-recorded idempotently |
+| `DISCONTINUITY_COMPLETED` | STARTED + COMPLETED | no duplicate events on restart |
+
 ### Side-data transport tasks fail closed (M21.4.11-R4)
 
 Side-data WebSocket collectors (`mark_price`, `liquidation`) handle their own
@@ -121,7 +178,7 @@ boundary. The side stream may stay FAILED (recovered only by a service
 restart that runs startup recovery) while the core continues. REST pollers
 are stateless per request and remain retryable.
 
-### Historical audit (M21.4.11-R2/R3/R5)
+### Historical audit (M21.4.11-R2/R3/R5, exact-pair matching R2)
 
 `tools/audit_reconnect_boundaries.py` classifies each connection transition
 boundary-locally as EXPLICIT_SEQUENCE_GAP / BLUE_GREEN_OVERLAP /
@@ -135,10 +192,30 @@ UNMARKED_RECONNECT / UNKNOWN:
 - Inter-chunk transitions use the exact pair plus boundary-specific
   manifest proof: a single-connection old chunk sealed with
   `reconnect_gap` documents exactly its own end boundary, and a Catalog
-  gap interval whose `original_connection_id`/`new_connection_id` match the
-  exact connection pair proves the boundary. Unattributable evidence is
-  UNKNOWN; adjacent-manifest flags are never borrowed for an unrelated
-  transition.
+  gap interval whose connection pair matches exactly proves the boundary.
+  Unattributable evidence is UNKNOWN; adjacent-manifest flags are never
+  borrowed for an unrelated transition.
+- **Exact Catalog boundary identity (R2/P1-B).** The transition identity is
+  the pair `(old_connection_id, new_connection_id)`; the Catalog interval
+  identity is `(original_connection_id, new_connection_id)`. The match is
+  classified explicitly, never collapsed into one boolean:
+  `EXACT_PAIR` (all four identities exist and `old == original AND new ==
+  interval.new`), `PARTIAL_OLD`, `PARTIAL_NEW`, `TIME_ONLY`, `AMBIGUOUS`,
+  or `NONE`. Only `EXACT_PAIR` may classify an inter-chunk boundary
+  EXPLICIT_SEQUENCE_GAP from Catalog evidence alone; a one-sided identity
+  (old matches, new matches, or either missing) is at best UNKNOWN, never
+  optimistic EXPLICIT. Multiple exact candidates are AMBIGUOUS. Matching is
+  market/stream specific: identical connection ids on a different stream
+  never match. Every transition record exposes the decision provenance:
+  `catalog_gap_match`, `catalog_identity_match`,
+  `catalog_identity_match_kind`, and `catalog_matched_gap_id`.
+- **UNKNOWN vs UNMARKED (R2/P2-C).** `UNMARKED_RECONNECT` means no relevant
+  gap/overlap evidence exists anywhere near the boundary. If any adjacent
+  manifest carries gap or overlap evidence that cannot be attributed to the
+  exact inter-chunk boundary (for example a multi-connection old chunk
+  sealed with `reconnect_gap` whose exact transition location is unknown,
+  or an unattributable overlap flag), the boundary is UNKNOWN — evidence
+  exists but cannot be placed, and it must never be labelled unmarked.
 - The tool is strictly read-only: it never creates directories, opens the
   Catalog read-only, rejects `--output` that resolves inside the data root
   (including through symlinks), and works on read-only mounts.
@@ -163,6 +240,11 @@ UNMARKED_RECONNECT / UNKNOWN:
   crash window in which startup re-seals the old partial without forced
   flags and could claim complete=true; the corrected ordering records
   STARTED first.
+- Adding another best-effort Catalog event after `_record_gap_started`
+  fails (R2 rejected alternative): a fallback that depends on the same
+  failed operation without durable state cannot close the double fault.
+  The seal intent is persisted as part of the SEALING transition evidence
+  itself, before any artifact/manifest mutation (REQ-102).
 
 ## Consequences
 
@@ -172,24 +254,29 @@ UNMARKED_RECONNECT / UNKNOWN:
 - Manifests gain the additive `reconnect_gap` flag value; `raw-chunk-manifest.v1`
   is unchanged because the flag set is open-ended and only existing
   `gap`/`complete` semantics are reused.
-- Corrected read-only historical audit (2026-08-10, cutoff
-  1786349202047196027, inventory 161,817 manifests, SHA-256
+- Corrected read-only historical audit re-run (M21.4.11-R2, 2026-08-10,
+  fixed cutoff `1786349202047196027`, inventory 161,817 manifests, SHA-256
   `ffaf34bdc29c016b0251f64252bc2c35edd43faba014c030b0834b9cc585dad3`,
   canonical payload SHA-256
-  `7143bc0cd3370c831df773a5bd9246d86ee95377beb57e08097519a9c8a520b3`):
-  **4,691 connection transitions, 11 explicit, 4,680 unmarked, 0 unknown/
-  ambiguous**. The 11 explicit transitions are exactly the known USD-M
-  `book_ticker` backpressure cycles, now proven by exact Catalog
-  connection-pair identity. The earlier 4,680/11 figures from the
-  manifest-flag-classified scanner are retained only as
-  `SUPERSEDED_BY_CORRECTED_BOUNDARY_LOCAL_AUDIT`; the corrected rerun
-  confirms the same totals with boundary-local evidence.
+  `1122431c56ebd8367bbbed1a8fc0e30f1f020d7edfd9c34602c9988d89d4b35f`):
+  **4,691 connection transitions, 11 explicit, 4,680 unmarked, 0 unknown,
+  0 blue/green overlap**. The totals are an observed reproduction of the
+  R1 corrected run (not a hardcoded expectation, REQ-607): with the
+  exact-pair classifier, every one of the 11 explicit transitions is
+  Catalog-proven with `catalog_identity_match_kind == EXACT_PAIR` and an
+  explicit `catalog_matched_gap_id` (the known USD-M `book_ticker`
+  backpressure cycles). The production inventory contains no inter-chunk
+  boundary with unattributable adjacent-manifest evidence, so the P2-C
+  taxonomy change does not alter the counts at this cutoff. The canonical
+  payload SHA changed from `7143bc0c...` because every transition record
+  now carries the identity-match provenance fields.
 - Consumers must treat the 4,680 unmarked intervals as unreliable until an
   additive correction ships.
 - M21.4.11 is a correction to the PR #10 implementation; the production
   artifact has not been deployed, and no production data was modified by
-  the audit (before/after inventory diff shows only the running recorder's
-  own writes).
+  the audit (before/after inventory diff at the R2 run shows zero
+  pre-existing production files modified; the only changes are the running
+  recorder's own sealed/active/state writes).
 
 ## Rollback
 

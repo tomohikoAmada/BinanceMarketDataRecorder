@@ -44,6 +44,7 @@ from ...spool.seal import RECONNECT_GAP_FLAG
 from ...spool.stream import StreamSpool
 from ..websocket_common import (
     RECONNECT_REASONS,
+    release_writer_preserving_errors,
     run_owned_blocking_call,
 )
 from .schema import SpotStream, envelope_from_websocket_frame
@@ -162,9 +163,11 @@ class SpotStreamCollector:
         self._recovery_marker_enqueued = False
         self._pending_gap: dict[str, object] | None = None
         self._forced_seal_flags: frozenset[str] = frozenset()
+        self._seal_intent: dict[str, object] | None = None
         self._boundary_connection_id: str | None = None
         self._boundary_detected_at_utc_ns: int | None = None
         self._connection_receipt_count = 0
+        self._active_connection_id: str | None = None
         self._restore_open_gap()
 
     @property
@@ -275,17 +278,19 @@ class SpotStreamCollector:
         boundary: ReceivedFrame | None,
         reason: str,
         *,
+        gap_id: str,
         started_at_utc_ns: int,
         connection_id: str,
     ) -> None:
         if reason not in RECONNECT_REASONS:
             raise ValueError(f"unknown Spot reconnect reason: {reason}")
+        if not gap_id:
+            raise ValueError("gap_id must be non-empty")
         if self._pending_gap is not None:
             raise IngressGapStateConflict(
                 f"Spot {self.stream.value} cannot start a second discontinuity "
                 "while an earlier gap remains open"
             )
-        gap_id = str(uuid4())
         evidence: dict[str, object] = {
             "gap_id": gap_id,
             "market": "spot",
@@ -367,6 +372,37 @@ class SpotStreamCollector:
         self._recovery_marker_enqueued = False
 
     async def _writer_loop(self, producer_done: asyncio.Event) -> None:
+        try:
+            await self._write_until_done(producer_done)
+        except asyncio.CancelledError:
+            # P2-B (M21.4.11-R2): Spot owns its blocking writer work exactly
+            # like USD-M. Cancellation never abandons an in-flight drain/seal
+            # thread: the owned call above has already deferred cancellation
+            # behind the worker; only then is the descriptor released.
+            await run_owned_blocking_call(self.spool.abort_writer)
+            raise
+        except BaseException as writer_error:
+            log_event(
+                self.logger,
+                logging.CRITICAL,
+                "spot_ingress_writer_failed",
+                "Spot Raw writer stopped before its ingress generation completed",
+                stream=self.stream.value,
+                connection_id=self._active_connection_id or "unavailable",
+                generation=self._generation,
+                outcome="FATAL",
+            )
+            try:
+                await run_owned_blocking_call(self.spool.abort_writer)
+            except asyncio.CancelledError as cancellation:
+                # Once the Writer has failed, a coincident cancellation during
+                # descriptor cleanup must not hide the integrity failure.
+                raise writer_error from cancellation
+            except BaseException as abort_error:
+                raise abort_error from writer_error
+            raise
+
+    async def _write_until_done(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
             batch: list[ReceivedFrame] = []
             persisted: list[EventEnvelope] = []
@@ -374,7 +410,7 @@ class SpotStreamCollector:
                 first = await asyncio.wait_for(self._receipts.get(), timeout=0.1)
                 batch.append(first)
             except TimeoutError:
-                await asyncio.to_thread(self.spool.drain_all)
+                await run_owned_blocking_call(self.spool.drain_all)
                 continue
             for _ in range(min(255, self.spool.queue.capacity - 1)):
                 try:
@@ -397,7 +433,7 @@ class SpotStreamCollector:
                 if "server_shutdown" in envelope.capture_flags:
                     self._server_shutdown.set()
                 self._receipts.task_done()
-            await asyncio.to_thread(self.spool.drain_all)
+            await run_owned_blocking_call(self.spool.drain_all)
             for envelope in persisted:
                 await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
@@ -406,6 +442,7 @@ class SpotStreamCollector:
         await run_owned_blocking_call(
             self.spool.close_and_seal,
             forced_flags=self._forced_seal_flags,
+            seal_intent=self._seal_intent,
         )
 
     async def _receive_connection(
@@ -489,6 +526,44 @@ class SpotStreamCollector:
         self._boundary_connection_id = connection_id
         self._boundary_detected_at_utc_ns = self.utc_clock_ns()
 
+    def _build_seal_intent(
+        self, outcome: str, boundary: ReceivedFrame | None
+    ) -> dict[str, object] | None:
+        """Build the durable seal-intent document for a reconnect boundary.
+
+        Captures the required manifest-level seal semantics plus the exact
+        boundary identity before any storage mutation whose crash recovery
+        depends on it. ``seal_partial`` persists it into the ChunkState.SEALING
+        transition evidence; if the Catalog STARTED event then fails to
+        commit, startup recovery reconstructs the fail-closed seal and the
+        pending discontinuity from this evidence (P1-A, INV-005/INV-007). The
+        gap_id is minted once per boundary and shared with the STARTED/
+        COMPLETED pair (INV-010, REQ-106).
+        """
+        if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
+            return None
+        intent: dict[str, object] = {
+            "required_forced_flags": sorted(self._forced_seal_flags),
+            "gap_id": str(uuid4()),
+            "reason": outcome,
+            "market": "spot",
+            "stream": self.stream.value,
+            "original_connection_id": self._boundary_connection_id,
+            "original_generation": self._generation,
+            "gap_started_at_utc_ns": self._boundary_detected_at_utc_ns,
+            "boundary_kind": (
+                "last_frame_in_hand"
+                if boundary is not None
+                else "no_last_frame_available"
+            ),
+            "boundary_frame_persisted": boundary is not None,
+        }
+        if boundary is not None:
+            intent["boundary_payload_sha256"] = hashlib.sha256(
+                boundary.raw_payload
+            ).hexdigest()
+        return intent
+
     async def _connection_loop(
         self,
         stop: asyncio.Event,
@@ -506,6 +581,7 @@ class SpotStreamCollector:
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
                     was_connected = True
+                    self._active_connection_id = connection_id
                     if self.lifecycle_observer is not None:
                         self.lifecycle_observer("connected")
                     log_event(
@@ -611,6 +687,7 @@ class SpotStreamCollector:
         while not stop.is_set():
             producer_done = asyncio.Event()
             self._forced_seal_flags = frozenset()
+            self._seal_intent = None
             self._boundary_connection_id = None
             self._boundary_detected_at_utc_ns = None
             writer_task = asyncio.create_task(self._writer_loop(producer_done))
@@ -626,13 +703,20 @@ class SpotStreamCollector:
                     # the sealed tail chunk gets the manifest-level
                     # reconnect_gap flag. Persisted Raw frames stay untouched.
                     self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
+                    # Build the durable seal intent BEFORE any storage
+                    # mutation whose crash recovery depends on it (INV-007,
+                    # P1-A): the SEALING transition evidence preserves the
+                    # required flags and boundary identity even if the
+                    # STARTED event below fails to commit.
+                    self._seal_intent = self._build_seal_intent(outcome, None)
                     if self._pending_gap is None:
                         # Persist the reconnect intent BEFORE the seal below
                         # (INV-007): a crash during the seal must not let
                         # startup seal the old partial complete=true.
                         try:
                             if (
-                                self._boundary_connection_id is None
+                                self._seal_intent is None
+                                or self._boundary_connection_id is None
                                 or self._boundary_detected_at_utc_ns is None
                             ):
                                 raise RuntimeError(
@@ -641,6 +725,7 @@ class SpotStreamCollector:
                             await self._record_gap_started(
                                 None,
                                 outcome,
+                                gap_id=str(self._seal_intent["gap_id"]),
                                 started_at_utc_ns=self._boundary_detected_at_utc_ns,
                                 connection_id=self._boundary_connection_id,
                             )
@@ -652,19 +737,13 @@ class SpotStreamCollector:
                             # Release the writer (drain + fail-closed seal)
                             # before propagating the intent failure; on
                             # cancellation keep the deferred-owned-worker
-                            # semantics of the writer task.
+                            # semantics of the writer task. If the writer
+                            # also fails, both causal facts are preserved
+                            # (REQ-109).
                             producer_done.set()
-                            if isinstance(
-                                intent_error, asyncio.CancelledError
-                            ):
-                                writer_task.cancel()
-                                await asyncio.gather(
-                                    writer_task, return_exceptions=True
-                                )
-                            else:
-                                with suppress(BaseException):
-                                    await writer_task
-                            raise
+                            await release_writer_preserving_errors(
+                                writer_task, intent_error
+                            )
                 producer_done.set()
                 await writer_task
                 if (
@@ -680,9 +759,11 @@ class SpotStreamCollector:
                     # yet: the replacement generation must not deliver frames
                     # before STARTED is durable (INV-007/INV-009), so the
                     # intent is recorded now, before the next connection
-                    # opens.
+                    # opens. The gap identity is the same one the durable
+                    # seal intent carried.
                     if (
-                        self._boundary_connection_id is None
+                        self._seal_intent is None
+                        or self._boundary_connection_id is None
                         or self._boundary_detected_at_utc_ns is None
                     ):
                         raise RuntimeError(
@@ -691,6 +772,7 @@ class SpotStreamCollector:
                     await self._record_gap_started(
                         None,
                         outcome,
+                        gap_id=str(self._seal_intent["gap_id"]),
                         started_at_utc_ns=self._boundary_detected_at_utc_ns,
                         connection_id=self._boundary_connection_id,
                     )

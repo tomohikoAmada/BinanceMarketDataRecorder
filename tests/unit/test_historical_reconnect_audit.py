@@ -69,6 +69,8 @@ def seal_chunk(
     layout: Any,
     catalog: Catalog,
     envelopes: list[Any],
+    *,
+    forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     writer = RawChunkWriter(
         layout=layout,
@@ -84,7 +86,9 @@ def seal_chunk(
     for envelope in envelopes:
         writer.append(envelope)
     writer.close()
-    return seal_partial(writer.path, layout=layout, catalog=catalog)
+    return seal_partial(
+        writer.path, layout=layout, catalog=catalog, forced_flags=forced_flags
+    )
 
 
 def legacy_manifest(layout: Any, manifest: dict[str, Any]) -> None:
@@ -392,7 +396,14 @@ def test_audit_single_frame_marked_connection_is_ambiguous(tmp_path: Path) -> No
 def test_audit_inter_chunk_ignores_unrelated_old_manifest_gap(
     tmp_path: Path,
 ) -> None:
-    """An earlier sequence_gap inside the old chunk does not mark old->new."""
+    """An earlier sequence_gap inside the old chunk does not mark old->new.
+
+    The old chunk's manifest carries gap evidence (the sequence_gap on its
+    first connection), but that evidence cannot be attributed to exactly the
+    old->new inter-chunk boundary. Per the P2-C taxonomy the boundary is
+    UNKNOWN (evidence exists but unattributable), never UNMARKED_RECONNECT
+    (whose meaning is "no evidence exists") and never EXPLICIT.
+    """
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         seal_chunk(
@@ -414,13 +425,19 @@ def test_audit_inter_chunk_ignores_unrelated_old_manifest_gap(
     assert len(inter) == 1
     assert inter[0]["old_connection_id"] == "conn-b2"
     assert inter[0]["new_connection_id"] == "conn-c2"
-    assert inter[0]["kind"] == UNMARKED_RECONNECT
+    assert inter[0]["kind"] == UNKNOWN
 
 
 def test_audit_inter_chunk_ignores_unrelated_new_manifest_gap(
     tmp_path: Path,
 ) -> None:
-    """A later sequence_gap inside the new chunk does not mark old->new."""
+    """A later sequence_gap inside the new chunk does not mark old->new.
+
+    The new chunk's manifest carries gap evidence (the sequence_gap on its
+    later connection), but that evidence cannot be attributed to exactly the
+    old->new inter-chunk boundary. Per the P2-C taxonomy the boundary is
+    UNKNOWN (evidence exists but unattributable), never UNMARKED_RECONNECT.
+    """
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         seal_chunk(
@@ -444,7 +461,7 @@ def test_audit_inter_chunk_ignores_unrelated_new_manifest_gap(
     assert len(inter) == 1
     assert inter[0]["old_connection_id"] == "conn-a3"
     assert inter[0]["new_connection_id"] == "conn-b3"
-    assert inter[0]["kind"] == UNMARKED_RECONNECT
+    assert inter[0]["kind"] == UNKNOWN
 
 
 def test_audit_blue_green_overlap_is_transition_local(tmp_path: Path) -> None:
@@ -794,3 +811,376 @@ def test_audit_archived_boundary_without_any_evidence_is_unmarked(
     assert inter[0]["new_connection_id"] == "conn-q"
     assert inter[0]["kind"] == UNMARKED_RECONNECT
     assert inter[0]["frame_detail_unavailable"] is True
+
+
+def record_gap_interval(
+    catalog: Catalog,
+    *,
+    gap_id: str,
+    market: str,
+    stream: str,
+    started_at_utc_ns: int,
+    ended_at_utc_ns: int,
+    original_connection_id: str | None = None,
+    new_connection_id: str | None = None,
+) -> None:
+    evidence: dict[str, Any] = {
+        "gap_id": gap_id,
+        "market": market,
+        "stream": stream,
+        "gap_started_at_utc_ns": started_at_utc_ns,
+    }
+    if original_connection_id is not None:
+        evidence["original_connection_id"] = original_connection_id
+    catalog.record_operational_event(
+        event_id=f"stream-discontinuity-started:{gap_id}",
+        event_type="STREAM_DISCONTINUITY_STARTED",
+        occurred_at_utc_ns=started_at_utc_ns,
+        evidence=evidence,
+    )
+    completed: dict[str, Any] = {
+        **evidence,
+        "gap_ended_at_utc_ns": ended_at_utc_ns,
+    }
+    if new_connection_id is not None:
+        completed["new_connection_id"] = new_connection_id
+    catalog.record_operational_event(
+        event_id=f"stream-discontinuity-completed:{gap_id}",
+        event_type="STREAM_DISCONTINUITY_COMPLETED",
+        occurred_at_utc_ns=ended_at_utc_ns,
+        evidence=completed,
+    )
+
+
+def two_chunk_boundary(root: Path, old_conn: str, new_conn: str) -> None:
+    """Seal two adjacent single-connection chunks: old_conn -> new_conn."""
+    layout = ensure_storage_layout(root)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope(old_conn, 101)])
+        seal_chunk(layout, catalog, [usdm_envelope(new_conn, 102)])
+
+
+def inter_transitions(document: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        transition
+        for stream in document["streams"]
+        for transition in stream["transitions"]
+        if transition["boundary_kind"] == "inter_chunk"
+    ]
+
+
+def test_catalog_exact_pair_proves_explicit(tmp_path: Path) -> None:
+    """TEST-201: Catalog A->B plus transition A->B is EXACT_PAIR and may
+    classify the boundary EXPLICIT_SEQUENCE_GAP with matched gap provenance."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-exact",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+            new_connection_id="conn-B",
+        )
+    document = audit_data_root(tmp_path)
+    transitions = inter_transitions(document)
+    assert len(transitions) == 1
+    transition = transitions[0]
+    assert transition["kind"] == EXPLICIT_SEQUENCE_GAP
+    assert transition["catalog_identity_match"] is True
+    assert transition["catalog_identity_match_kind"] == "EXACT_PAIR"
+    assert transition["catalog_matched_gap_id"] == "gap-exact"
+    assert transition["catalog_gap_match"] == "MATCHED"
+
+
+def test_catalog_partial_old_match_is_never_explicit(tmp_path: Path) -> None:
+    """TEST-202: Catalog A->C, transition A->B: old matches, new mismatches.
+    PARTIAL_OLD must classify UNKNOWN, never EXPLICIT."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-partial-old",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+            new_connection_id="conn-C",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["kind"] == UNKNOWN
+    assert transition["catalog_identity_match"] is False
+    assert transition["catalog_identity_match_kind"] == "PARTIAL_OLD"
+    assert transition["catalog_matched_gap_id"] == "gap-partial-old"
+
+
+def test_catalog_partial_new_match_is_never_explicit(tmp_path: Path) -> None:
+    """TEST-203: Catalog C->B, transition A->B: new matches, old mismatches.
+    PARTIAL_NEW must classify UNKNOWN, never EXPLICIT."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-partial-new",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-C",
+            new_connection_id="conn-B",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["kind"] == UNKNOWN
+    assert transition["catalog_identity_match"] is False
+    assert transition["catalog_identity_match_kind"] == "PARTIAL_NEW"
+
+
+def test_catalog_unrelated_pair_has_no_identity_match(tmp_path: Path) -> None:
+    """TEST-204: Catalog C->D vs transition A->B: no identity match at all."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        # The interval's time window is placed away from the boundary so
+        # neither identity nor time overlap can match.
+        record_gap_interval(
+            catalog,
+            gap_id="gap-unrelated",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=9_000_000_101,
+            ended_at_utc_ns=9_000_000_102,
+            original_connection_id="conn-C",
+            new_connection_id="conn-D",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["kind"] == UNMARKED_RECONNECT
+    assert transition["catalog_identity_match"] is False
+    assert transition["catalog_identity_match_kind"] == "NONE"
+    assert transition["catalog_matched_gap_id"] is None
+
+
+def test_catalog_started_without_completed_new_is_not_exact(tmp_path: Path) -> None:
+    """TEST-205: STARTED old=A, new connection absent: not an exact pair."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-pending",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["catalog_identity_match"] is False
+    assert transition["catalog_identity_match_kind"] == "PARTIAL_OLD"
+    assert transition["kind"] == UNKNOWN
+
+
+def test_catalog_exact_pair_wins_over_nearby_partial(tmp_path: Path) -> None:
+    """TEST-206: exact A->B plus a nearby partial A->C; the exact candidate
+    is selected and may prove EXPLICIT."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-nearby",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_100,
+            ended_at_utc_ns=1_000_000_103,
+            original_connection_id="conn-A",
+            new_connection_id="conn-C",
+        )
+        record_gap_interval(
+            catalog,
+            gap_id="gap-exact",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+            new_connection_id="conn-B",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["kind"] == EXPLICIT_SEQUENCE_GAP
+    assert transition["catalog_identity_match_kind"] == "EXACT_PAIR"
+    assert transition["catalog_matched_gap_id"] == "gap-exact"
+
+
+def test_catalog_two_exact_candidates_are_ambiguous(tmp_path: Path) -> None:
+    """TEST-207: two exact A->B intervals: AMBIGUOUS, fail closed to UNKNOWN."""
+    two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        record_gap_interval(
+            catalog,
+            gap_id="gap-exact-1",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+            new_connection_id="conn-B",
+        )
+        record_gap_interval(
+            catalog,
+            gap_id="gap-exact-2",
+            market="um_perpetual",
+            stream="book_ticker",
+            started_at_utc_ns=1_000_000_101,
+            ended_at_utc_ns=1_000_000_102,
+            original_connection_id="conn-A",
+            new_connection_id="conn-B",
+        )
+    document = audit_data_root(tmp_path)
+    transition = inter_transitions(document)[0]
+    assert transition["kind"] == UNKNOWN
+    assert transition["catalog_gap_match"] == "AMBIGUOUS"
+    assert transition["catalog_identity_match"] is False
+    assert transition["catalog_identity_match_kind"] == "AMBIGUOUS"
+    assert transition["catalog_matched_gap_id"] is None
+
+
+def test_catalog_matching_is_market_stream_specific_exact(tmp_path: Path) -> None:
+    """TEST-208: identical connection ids on a different stream never match."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="agg_trade",
+            collector_instance_id="audit-test",
+            collector_version="0.1.0+test",
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+        )
+        from binance_market_data_recorder.binance.usdm.schema import (
+            envelope_from_websocket_frame,
+        )
+
+        for index, connection_id in enumerate(("conn-A", "conn-B")):
+            writer.append(
+                envelope_from_websocket_frame(
+                    raw_payload=book_ticker(200 + index),
+                    stream=UsdMStream.AGG_TRADE,
+                    connection_id=connection_id,
+                    collector_instance_id="audit-test",
+                    collector_version="0.1.0+test",
+                    receive_time_utc_ns=1_000_000_200 + index,
+                    receive_monotonic_ns=200 + index,
+                )
+            )
+        writer.close()
+        seal_partial(writer.path, layout=layout, catalog=catalog)
+        record_gap_interval(
+            catalog,
+            gap_id="gap-other-stream",
+            market="um_perpetual",
+            stream="agg_trade",
+            started_at_utc_ns=1_000_000_200,
+            ended_at_utc_ns=1_000_000_201,
+            original_connection_id="conn-A",
+            new_connection_id="conn-B",
+        )
+        # The same connection pair on book_ticker must NOT match the
+        # agg_trade interval.
+        two_chunk_boundary(tmp_path, "conn-A", "conn-B")
+    document = audit_data_root(tmp_path)
+    agg = next(
+        stream for stream in document["streams"]
+        if stream["stream"] == "agg_trade"
+    )
+    # The agg_trade chunk has its own intra-chunk transition; its Catalog
+    # interval matches it exactly, but never the book_ticker boundary that
+    # reuses the same connection ids.
+    assert len(agg["transitions"]) == 1
+    agg_transition = agg["transitions"][0]
+    assert agg_transition["catalog_identity_match_kind"] == "EXACT_PAIR"
+    assert agg_transition["catalog_matched_gap_id"] == "gap-other-stream"
+    book = next(
+        stream for stream in document["streams"]
+        if stream["stream"] == "book_ticker"
+    )
+    book_transitions = [
+        transition for transition in book["transitions"]
+        if transition["boundary_kind"] == "inter_chunk"
+    ]
+    assert len(book_transitions) == 1
+    assert book_transitions[0]["catalog_identity_match_kind"] == "NONE"
+    assert book_transitions[0]["catalog_gap_match"] == "UNMATCHED"
+
+
+def test_multi_connection_old_chunk_with_reconnect_gap_is_unknown(
+    tmp_path: Path,
+) -> None:
+    """TEST-501 (P2-C): multi-connection old chunk sealed with reconnect_gap
+    whose exact transition location cannot be attributed to the current
+    inter-chunk boundary classifies UNKNOWN, never UNMARKED_RECONNECT."""
+    from binance_market_data_recorder.spool.seal import RECONNECT_GAP_FLAG
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(
+            layout,
+            catalog,
+            [
+                usdm_envelope("conn-a1", 111),
+                usdm_envelope("conn-b1", 112),
+            ],
+            forced_flags=frozenset({RECONNECT_GAP_FLAG}),
+        )
+        seal_chunk(layout, catalog, [usdm_envelope("conn-c1", 113)])
+    document = audit_data_root(tmp_path)
+    inter = inter_transitions(document)
+    b_to_c = [
+        transition for transition in inter
+        if transition["old_connection_id"] == "conn-b1"
+    ]
+    assert len(b_to_c) == 1
+    assert b_to_c[0]["kind"] == UNKNOWN
+    assert b_to_c[0]["old_manifest"]["gap"] is True
+    assert b_to_c[0]["old_manifest"]["complete"] is False
+
+
+def test_multi_connection_old_chunk_with_overlap_is_unknown(
+    tmp_path: Path,
+) -> None:
+    """TEST-502 (P2-C): equivalent unattributable overlap evidence on the old
+    manifest classifies UNKNOWN, never UNMARKED_RECONNECT."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(
+            layout,
+            catalog,
+            [
+                usdm_envelope("conn-a2", 121, (OVERLAP_FLAG, "deployment_id=d")),
+                usdm_envelope("conn-b2", 122, (OVERLAP_FLAG, "deployment_id=d")),
+            ],
+        )
+        seal_chunk(layout, catalog, [usdm_envelope("conn-c2", 123)])
+    document = audit_data_root(tmp_path)
+    inter = inter_transitions(document)
+    b_to_c = [
+        transition for transition in inter
+        if transition["old_connection_id"] == "conn-b2"
+    ]
+    assert len(b_to_c) == 1
+    assert b_to_c[0]["kind"] == UNKNOWN
+    assert "blue_green_overlap" in b_to_c[0]["old_manifest"]["capture_flags"]

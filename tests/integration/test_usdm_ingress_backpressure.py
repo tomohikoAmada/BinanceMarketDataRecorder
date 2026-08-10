@@ -164,13 +164,17 @@ class BlockingWriterOperationStreamSpool(StreamSpool):
             self._leave_blocked_operation("sync")
 
     def close_and_seal(
-        self, forced_flags: frozenset[str] = frozenset()
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         self._enter_blocked_operation("seal")
         try:
             if self.fail_operation and self.blocked_operation == "seal":
                 raise OSError("injected Raw seal failure")
-            return super().close_and_seal(forced_flags=forced_flags)
+            return super().close_and_seal(
+                forced_flags=forced_flags, seal_intent=seal_intent
+            )
         finally:
             self._leave_blocked_operation("seal")
 
@@ -1258,6 +1262,7 @@ def test_process_restart_restores_gap_and_completes_same_identity_once(
         await first._record_gap_started(
             boundary,
             "ingress_backpressure",
+            gap_id="restart-gap",
             started_at_utc_ns=boundary.receive_time_utc_ns,
             connection_id=boundary.connection_id,
         )
@@ -1759,6 +1764,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
                 await collector._record_gap_started(
                     boundary,
                     "ingress_backpressure",
+                    gap_id="owned-started-gap",
                     started_at_utc_ns=boundary.receive_time_utc_ns,
                     connection_id=boundary.connection_id,
                 )

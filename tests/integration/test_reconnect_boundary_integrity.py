@@ -5,6 +5,8 @@ import io
 import json
 import logging
 import threading
+import time
+import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -690,7 +692,9 @@ def test_completed_write_failure_after_first_new_is_fatal_and_recoverable(
 
 class FailingSealSpool(StreamSpool):
     def close_and_seal(
-        self, forced_flags: frozenset[str] = frozenset()
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         raise OSError("injected seal failure during generation boundary")
 
@@ -998,7 +1002,9 @@ class CrashDuringSealSpool(StreamSpool):
     """Enter Catalog SEALING and crash before any sealed artifact exists."""
 
     def close_and_seal(
-        self, forced_flags: frozenset[str] = frozenset()
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         self.drain_all()
         writer = self._writer
@@ -2269,3 +2275,815 @@ def test_spot_drain_completing_gap_then_next_boundary_records_new_intent(
     assert evidence["completed_again"]["new_connection_id"] == new[
         "connection_ids"
     ][0]
+
+
+class IntentFailureCollector:
+    """Build a USD-M collector whose STARTED write fails before committing.
+
+    The durable seal intent must still be persisted into the ChunkState.SEALING
+    transition evidence by the writer's seal_partial call (P1-A).
+    """
+
+    @staticmethod
+    def build(
+        root: Path,
+        *,
+        opener: Any,
+        stream: UsdMStream = UsdMStream.BOOK_TICKER,
+        spool_cls: type[StreamSpool] = StreamSpool,
+    ) -> tuple[UsdMStreamCollector, Catalog, StreamSpool]:
+        layout = ensure_storage_layout(root)
+        catalog = Catalog(layout.catalog)
+        spool = spool_cls(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream=stream.value,
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = UsdMStreamCollector(
+            stream=stream,
+            route="market" if stream == UsdMStream.AGG_TRADE else "public",
+            wire_name={
+                UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
+                UsdMStream.AGG_TRADE: "btcusdt@aggTrade",
+                UsdMStream.BOOK_TICKER: "btcusdt@bookTicker",
+            }[stream],
+            spool=spool,
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-r2"),
+            receipt_queue_capacity=16,
+            planned_rotation_seconds=60,
+            backoff=ReconnectBackoff(
+                initial_seconds=0.001,
+                maximum_seconds=0.001,
+                jitter_ratio=0,
+            ),
+            opener=opener,
+        )
+        return collector, catalog, spool
+
+
+def fail_started_writes(
+    catalog: Catalog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Inject a STARTED write failure that happens BEFORE any commit."""
+
+    original_record = catalog.record_operational_event
+
+    def failing_record(
+        *, event_id: str, event_type: str, occurred_at_utc_ns: int, evidence: Any
+    ) -> bool:
+        if event_type == "STREAM_DISCONTINUITY_STARTED":
+            raise OSError("injected STARTED write failure")
+        return original_record(
+            event_id=event_id,
+            event_type=event_type,
+            occurred_at_utc_ns=occurred_at_utc_ns,
+            evidence=evidence,
+        )
+
+    monkeypatch.setattr(catalog, "record_operational_event", failing_record)
+
+
+def sealing_intent(catalog: Catalog, chunk_id: str) -> dict[str, Any]:
+    evidence = catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING)
+    assert evidence is not None
+    intent = evidence.get("seal_intent")
+    assert isinstance(intent, dict)
+    return intent
+
+
+def assert_materialized_gap_recovery(
+    root: Path,
+    intent: dict[str, Any],
+    *,
+    expected_manifests: int,
+) -> dict[str, Any]:
+    """Restart with fresh Catalog/StreamSpool/collector (TEST-701/702).
+
+    Startup recovery must reconstruct the pending discontinuity from the
+    durable SEALING intent (same gap_id, never a new random one), the old
+    generation must seal gap=true/complete=false, and the replacement
+    generation must mark its first frame sequence_gap and close exactly one
+    coherent COMPLETED pair (REQ-105/REQ-106).
+    """
+    layout = ensure_storage_layout(root)
+    recovered_catalog = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered_catalog)
+    recovered_catalog.close()
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        for action in actions
+    )
+    documents = manifests(root)
+    assert len(documents) == expected_manifests
+    assert all(
+        document["complete"] is False and document["gap"] is True
+        for document in documents
+    )
+    assert RECONNECT_GAP_FLAG in documents[-1]["capture_flags"]
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(root, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            started = cast(dict[str, Any], events[0]["evidence"])
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            assert started["gap_id"] == intent["gap_id"]
+            assert completed["gap_id"] == intent["gap_id"]
+            assert completed["original_generation"] == intent[
+                "original_generation"
+            ]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    reopened = manifests(root)
+    assert len(reopened) == expected_manifests + 1
+    assert reopened[-1]["complete"] is False
+    assert reopened[-1]["gap"] is True
+    assert "sequence_gap" in reopened[-1]["capture_flags"]
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    assert completed["historical_continuity_restored"] is False
+    return completed
+
+
+def test_intent_failure_then_seal_success_restart_fail_closed_same_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-101: intent write fails BEFORE commit; the writer seal SUCCEEDS.
+
+    The durable SEALING intent survives; restart reconstructs the pending
+    discontinuity with the same gap_id, the old manifest stays
+    gap=true/complete=false, and one coherent COMPLETED closes the gap.
+    """
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        collector, catalog, _spool = IntentFailureCollector.build(
+            tmp_path, opener=opener
+        )
+        fail_started_writes(catalog, monkeypatch)
+        try:
+            with pytest.raises(OSError, match="injected STARTED write failure") as raised:
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            # The writer seal itself succeeded: no writer failure to chain.
+            assert raised.value.__cause__ is None
+            assert discontinuity_events(catalog) == []
+            documents = manifests(tmp_path)
+            assert len(documents) == 1
+            assert documents[0]["gap"] is True
+            assert documents[0]["complete"] is False
+            assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+            return sealing_intent(catalog, documents[0]["chunk_id"])
+        finally:
+            catalog.close()
+
+    intent = asyncio.run(crash())
+    assert_materialized_gap_recovery(tmp_path, intent, expected_manifests=1)
+
+
+def test_intent_failure_then_seal_crash_after_sealing_commit_restart_fail_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-102 (exact blocking regression): intent write fails BEFORE commit
+    AND the seal fails immediately AFTER the SEALING transition commits.
+
+    Restart must seal the old partial gap=true/complete=false (never
+    complete=true), keep one coherent gap identity, mark the replacement
+    first frame sequence_gap, and later close exactly one COMPLETED.
+    """
+    import binance_market_data_recorder.spool.seal as seal_module
+
+    original_compress = seal_module._compress
+
+    def crash_after_sealing(
+        source_path: Any, target_partial: Any, source_size: int
+    ) -> None:
+        raise OSError("injected crash after SEALING transition commit")
+
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        with monkeypatch.context() as context:
+            context.setattr(seal_module, "_compress", crash_after_sealing)
+            collector, catalog, _spool = IntentFailureCollector.build(
+                tmp_path, opener=opener
+            )
+            fail_started_writes(catalog, monkeypatch)
+            try:
+                with pytest.raises(
+                    OSError, match="injected STARTED write failure"
+                ) as raised:
+                    await asyncio.wait_for(
+                        collector.run(asyncio.Event()), timeout=3
+                    )
+                # REQ-109: the writer failure must not disappear; it is
+                # retained as the cause of the propagated intent failure.
+                assert raised.value.__cause__ is not None
+                assert "SEALING transition commit" in str(raised.value.__cause__)
+                assert discontinuity_events(catalog) == []
+                layout = ensure_storage_layout(tmp_path)
+                partials = list(layout.active.glob("*.bmdr.partial"))
+                assert len(partials) == 1
+                chunk_id = str(uuid.UUID(partials[0].name.split(".")[0]))
+                row = catalog.chunk(chunk_id)
+                assert row is not None
+                assert ChunkState(str(row["state"])) is ChunkState.SEALING
+                return sealing_intent(catalog, chunk_id)
+            finally:
+                catalog.close()
+
+    intent = asyncio.run(crash())
+    monkeypatch.setattr(seal_module, "_compress", original_compress)
+    assert_materialized_gap_recovery(tmp_path, intent, expected_manifests=1)
+
+
+def test_intent_failure_then_sealed_artifact_before_manifest_restart(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-103: intent write fails; the sealed compressed artifact exists but
+    the manifest write never happened. Restart reconstructs the intent."""
+    import binance_market_data_recorder.spool.seal as seal_module
+
+    original_write = seal_module._atomic_json
+
+    def crash_manifest_write(path: Path, document: dict[str, object]) -> None:
+        raise OSError("injected crash before manifest write")
+
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        with monkeypatch.context() as context:
+            context.setattr(seal_module, "_atomic_json", crash_manifest_write)
+            collector, catalog, _spool = IntentFailureCollector.build(
+                tmp_path, opener=opener
+            )
+            fail_started_writes(catalog, monkeypatch)
+            try:
+                with pytest.raises(
+                    OSError, match="injected STARTED write failure"
+                ):
+                    await asyncio.wait_for(
+                        collector.run(asyncio.Event()), timeout=3
+                    )
+                layout = ensure_storage_layout(tmp_path)
+                sealed = list(layout.sealed.glob("*.bmdr.zst"))
+                assert len(sealed) == 1
+                assert len(list(layout.manifests.glob("*.json"))) == 0
+                partials = list(layout.active.glob("*.bmdr.partial"))
+                assert len(partials) == 1
+                return sealing_intent(
+                    catalog, str(uuid.UUID(partials[0].name.split(".")[0]))
+                )
+            finally:
+                catalog.close()
+
+    intent = asyncio.run(crash())
+    monkeypatch.setattr(seal_module, "_atomic_json", original_write)
+    assert_materialized_gap_recovery(tmp_path, intent, expected_manifests=1)
+
+
+def test_intent_failure_then_manifest_before_catalog_sealed_restart(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-104: intent write fails; the manifest exists but the Catalog
+    SEALED transition is absent. Restart reconstructs the intent and
+    completes the seal idempotently."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        original_transition = catalog.transition
+
+        def failing_transition(
+            chunk_id: str, to_state: ChunkState, **kwargs: Any
+        ) -> None:
+            if to_state is ChunkState.SEALED:
+                raise OSError("injected crash before Catalog SEALED")
+            original_transition(chunk_id, to_state, **kwargs)
+
+        monkeypatch.setattr(catalog, "transition", failing_transition)
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = UsdMStreamCollector(
+            stream=UsdMStream.BOOK_TICKER,
+            route="public",
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-r2"),
+            opener=opener,
+        )
+        fail_started_writes(catalog, monkeypatch)
+        try:
+            with pytest.raises(OSError, match="injected STARTED write failure"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            documents = manifests(tmp_path)
+            assert len(documents) == 1
+            assert documents[0]["gap"] is True
+            assert documents[0]["complete"] is False
+            return sealing_intent(catalog, documents[0]["chunk_id"])
+        finally:
+            catalog.close()
+
+    intent = asyncio.run(crash())
+    assert_materialized_gap_recovery(tmp_path, intent, expected_manifests=1)
+
+
+def test_intent_failure_with_conflicting_existing_started_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-105: durable SEALING intent conflicts with an existing unmatched
+    STARTED (different gap_id for the same market/stream): recovery must
+    fail closed hard instead of guessing a boundary identity."""
+    import binance_market_data_recorder.spool.seal as seal_module
+
+    original_compress = seal_module._compress
+
+    def crash_after_sealing(
+        source_path: Any, target_partial: Any, source_size: int
+    ) -> None:
+        raise OSError("injected crash after SEALING transition commit")
+
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        with monkeypatch.context() as context:
+            context.setattr(seal_module, "_compress", crash_after_sealing)
+            collector, catalog, _spool = IntentFailureCollector.build(
+                tmp_path, opener=opener
+            )
+            fail_started_writes(catalog, monkeypatch)
+            try:
+                with pytest.raises(OSError, match="injected STARTED write failure"):
+                    await asyncio.wait_for(
+                        collector.run(asyncio.Event()), timeout=3
+                    )
+                layout = ensure_storage_layout(tmp_path)
+                partials = list(layout.active.glob("*.bmdr.partial"))
+                return sealing_intent(
+                    catalog, str(uuid.UUID(partials[0].name.split(".")[0]))
+                )
+            finally:
+                catalog.close()
+
+    intent = asyncio.run(crash())
+    monkeypatch.setattr(seal_module, "_compress", original_compress)
+    # A different unmatched STARTED for the same market/stream already exists.
+    from binance_market_data_recorder.spool.recovery import (
+        RecoveryConflictError,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        catalog.record_operational_event(
+            event_id="stream-discontinuity-started:other-gap",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
+            evidence={
+                "gap_id": "other-gap",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "reason": "planned_rotation",
+                "interval_classification": "UNRELIABLE",
+                "gap_started_at_utc_ns": intent["gap_started_at_utc_ns"],
+                "original_connection_id": "some-other-connection",
+                "original_generation": 0,
+            },
+        )
+        with pytest.raises(
+            RecoveryConflictError, match="RECOVERY_SEAL_INTENT_STARTED_CONFLICT"
+        ):
+            recover_storage(layout=layout, catalog=catalog)
+        # Fail closed: the old partial was NOT sealed complete.
+        assert list(layout.manifests.glob("*.json")) == []
+        assert len(list(layout.active.glob("*.bmdr.partial"))) == 1
+
+
+def test_normal_sealing_crash_without_intent_does_not_fake_reconnect_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-106: a plain SEALING crash with no reconnect intent must NOT be
+    forced to reconnect_gap on restart: blanket 'all SEALING is a gap'
+    forcing is prohibited."""
+    import binance_market_data_recorder.spool.seal as seal_module
+    from binance_market_data_recorder.binance.usdm.schema import (
+        envelope_from_websocket_frame,
+    )
+
+    original_compress = seal_module._compress
+
+    def crash_after_sealing(
+        source_path: Any, target_partial: Any, source_size: int
+    ) -> None:
+        raise OSError("injected crash after SEALING transition commit")
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="plain-sealing",
+            collector_version="0.1.0+test",
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+        )
+        writer.append(
+            envelope_from_websocket_frame(
+                raw_payload=book_ticker(1),
+                stream=UsdMStream.BOOK_TICKER,
+                connection_id="plain-conn",
+                collector_instance_id="plain-sealing",
+                collector_version="0.1.0+test",
+                receive_time_utc_ns=4_000_000_000,
+                receive_monotonic_ns=1,
+            )
+        )
+        writer.close()
+        monkeypatch.setattr(seal_module, "_compress", crash_after_sealing)
+        with pytest.raises(OSError, match="SEALING transition commit"):
+            seal_partial(
+                writer.path,
+                layout=layout,
+                catalog=catalog,
+                forced_flags=frozenset(),
+            )
+    monkeypatch.setattr(seal_module, "_compress", original_compress)
+
+    recovered_catalog = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered_catalog)
+    recovered_catalog.close()
+    assert any(action.action == "seal_completed_after_crash" for action in actions)
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["gap"] is False
+    assert documents[0]["complete"] is True
+    assert RECONNECT_GAP_FLAG not in documents[0]["capture_flags"]
+
+
+def test_phase_a_crash_before_started_retains_orphan_active_partial(
+    tmp_path: Path,
+) -> None:
+    """TEST-301 (P2-A): the boundary is remembered in memory only; the process
+    fails before STARTED (or any SEALING evidence) becomes durable.
+
+    Startup recovery must deliberately retain the clean orphan ACTIVE
+    partial: registered ACTIVE, never sealed complete, no manifest, no gap
+    events, no quarantine. The next collector opens a fresh generation and
+    no false-complete claim is ever made for the orphan interval.
+    """
+    from binance_market_data_recorder.binance.usdm.schema import (
+        envelope_from_websocket_frame,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="phase-a",
+            collector_version="0.1.0+test",
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+        )
+        writer.append(
+            envelope_from_websocket_frame(
+                raw_payload=book_ticker(1),
+                stream=UsdMStream.BOOK_TICKER,
+                connection_id="phase-a-conn",
+                collector_instance_id="phase-a",
+                collector_version="0.1.0+test",
+                receive_time_utc_ns=5_000_000_000,
+                receive_monotonic_ns=1,
+            )
+        )
+        # Simulated crash: the descriptor was closed without a boundary
+        # being detected durably (no STARTED, no SEALING evidence).
+        writer.close()
+
+    partials = list(layout.active.glob("*.bmdr.partial"))
+    assert len(partials) == 1
+    chunk_id = str(uuid.UUID(partials[0].name.split(".")[0]))
+
+    # Fresh recovery objects (TEST-701): the policy is durable-state driven.
+    recovered_catalog = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered_catalog)
+    recovered_catalog.close()
+    assert partials[0].exists()
+    assert list(layout.manifests.glob("*.json")) == []
+    assert list(layout.quarantine.glob("*")) == []
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        row = catalog.chunk(chunk_id)
+        assert row is not None
+        assert ChunkState(str(row["state"])) is ChunkState.ACTIVE
+        assert discontinuity_events(catalog) == []
+    assert all(
+        action.action in {"unchanged", "catalog_unchanged"}
+        for action in actions
+    )
+
+    async def exercise() -> None:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            assert discontinuity_events(catalog) == []
+        finally:
+            catalog.close()
+
+    asyncio.run(exercise())
+    documents = manifests(tmp_path)
+    # The orphan ACTIVE partial was never claimed complete; only the fresh
+    # generation sealed its own graceful chunk (complete=true is legal: the
+    # recorded interval has no transport boundary inside it).
+    assert len(documents) == 1
+    assert documents[0]["complete"] is True
+    assert documents[0]["gap"] is False
+    assert partials[0].exists()
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        row = catalog.chunk(chunk_id)
+        assert row is not None
+        assert ChunkState(str(row["state"])) is ChunkState.ACTIVE
+
+
+class SpotDrainBlockSpool(StreamSpool):
+    """Block every Spot drain while engaged; track drain invocations."""
+
+    def __init__(
+        self, engage: threading.Event, release: threading.Event, **kwargs: Any
+    ) -> None:
+        super().__init__(**kwargs)
+        self.engage = engage
+        self.release = release
+        self.drain_calls = 0
+        self.blocked = threading.Event()
+
+    def drain_all(self) -> int:
+        self.drain_calls += 1
+        if self.engage.is_set():
+            self.blocked.set()
+            try:
+                if not self.release.wait(timeout=10):
+                    raise RuntimeError("test drain hold timed out")
+            finally:
+                self.blocked.clear()
+        return super().drain_all()
+
+
+def test_spot_writer_cancellation_owns_blocking_drain(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-401 (P2-B): a Spot drain blocked in a worker thread must be owned.
+
+    Cancelling the writer task must NOT let it report complete while the
+    worker still mutates the StreamSpool: the owner stays pending until the
+    blocked drain finishes, then releases the descriptor (abort_writer).
+    After the owner reports complete, no further writer mutation may occur
+    (no unowned drain calls).
+    """
+    from binance_market_data_recorder.binance.spot.websocket import (
+        SpotStreamCollector,
+    )
+
+    engage = threading.Event()
+    release = threading.Event()
+    gate = asyncio.Event()
+    captured_writer_tasks: list[asyncio.Task[None]] = []
+    original_create_task = asyncio.create_task
+
+    def capturing_create_task(
+        coroutine: Any, *args: Any, **kwargs: Any
+    ) -> asyncio.Task[Any]:
+        task = original_create_task(coroutine, *args, **kwargs)
+        if "_writer_loop" in getattr(coroutine, "__qualname__", ""):
+            captured_writer_tasks.append(task)
+        return task
+
+    monkeypatch.setattr(asyncio, "create_task", capturing_create_task)
+
+    class GatedSocket(ScriptedSocket):
+        async def recv(self, decode: bool | None = None) -> bytes:
+            try:
+                return next(self.messages)
+            except StopIteration:
+                await gate.wait()
+                await asyncio.Future[None]()
+                raise RuntimeError(
+                    "test socket exhausted unreachably"
+                ) from None
+
+    async def scenario() -> dict[str, Any]:
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = SpotDrainBlockSpool(
+            engage=engage,
+            release=release,
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield GatedSocket([book_ticker(1), book_ticker(2)])
+
+        collector = SpotStreamCollector(
+            stream=SpotStream.BOOK_TICKER,
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-r2",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-r2"),
+            opener=opener,
+        )
+        run_task = asyncio.create_task(collector.run(stop))
+        writer_task: asyncio.Task[None] | None = None
+        try:
+            # Frame 1 is drained by the owned writer.
+            deadline = asyncio.get_running_loop().time() + 5
+            while spool.drain_calls < 1 and asyncio.get_running_loop().time() < deadline:
+                await asyncio.sleep(0.01)
+            assert spool.drain_calls >= 1
+            engage.set()
+            # The next drain (frame 2, or an idle drain) now blocks in its
+            # worker thread; wait for the deterministic blocked state.
+            gate.set()
+            deadline = asyncio.get_running_loop().time() + 5
+            while not spool.blocked.is_set() and asyncio.get_running_loop().time() < deadline:
+                await asyncio.sleep(0.01)
+            assert spool.blocked.is_set()
+            assert captured_writer_tasks, "writer task was not captured"
+            writer_task = captured_writer_tasks[0]
+            writer_task.cancel()
+            # The owner must NOT report complete while its worker is blocked:
+            # cancellation is deferred behind the owned blocking call.
+            with pytest.raises(TimeoutError):
+                await asyncio.wait_for(
+                    asyncio.shield(writer_task), timeout=0.3
+                )
+            assert not writer_task.done()
+            return {
+                "writer_task": writer_task,
+                "run_task": run_task,
+                "attempts_ref": attempts,
+                "spool": spool,
+            }
+        finally:
+            release.set()
+            if writer_task is not None:
+                await asyncio.gather(
+                    run_task, writer_task, return_exceptions=True
+                )
+            else:
+                await asyncio.gather(run_task, return_exceptions=True)
+            stop.set()
+            catalog.close()
+
+    captured = asyncio.run(scenario())
+    writer_task = captured["writer_task"]
+    run_task = captured["run_task"]
+    spool = cast(SpotDrainBlockSpool, captured["spool"])
+    # The owner completed after its worker finished (deferred cancellation);
+    # no drain may run after the owner reported complete.
+    assert writer_task.done()
+    assert run_task.done()
+    assert captured["attempts_ref"] == 1
+    drains_at_completion = spool.drain_calls
+    deadline = time.monotonic() + 0.4
+    while time.monotonic() < deadline:
+        pass
+    assert spool.drain_calls == drains_at_completion
+
+    # TEST-402: the partial/descriptor state stays recoverable and no
+    # replacement transport was opened.
+    layout = ensure_storage_layout(tmp_path)
+    partials = list(layout.active.glob("*.bmdr.partial"))
+    assert len(partials) == 1
+    recovered_catalog = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered_catalog)
+    recovered_catalog.close()
+    assert partials[0].exists()
+    assert all(
+        action.action in {"unchanged", "catalog_unchanged", "seal_completed_after_crash"}
+        for action in actions
+    )

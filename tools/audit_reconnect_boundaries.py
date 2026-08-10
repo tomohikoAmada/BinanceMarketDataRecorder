@@ -69,6 +69,16 @@ BLUE_GREEN_OVERLAP = "BLUE_GREEN_OVERLAP"
 UNMARKED_RECONNECT = "UNMARKED_RECONNECT"
 UNKNOWN = "UNKNOWN"
 
+#: Catalog boundary-identity classification strength (P1-B, M21.4.11-R2).
+#: Only EXACT_PAIR may prove an inter-chunk boundary by itself; every weaker
+#: identity is at best UNKNOWN and never optimistic EXPLICIT.
+EXACT_PAIR = "EXACT_PAIR"
+PARTIAL_OLD = "PARTIAL_OLD"
+PARTIAL_NEW = "PARTIAL_NEW"
+TIME_ONLY = "TIME_ONLY"
+AMBIGUOUS = "AMBIGUOUS"
+NONE = "NONE"
+
 #: WebSocket streams whose connection_id continuity has integrity meaning.
 #: REST-polled streams (depth_snapshot, exchange_info, 5m statistics, ...)
 #: mint a new connection_id per request; their connection transitions are
@@ -143,6 +153,8 @@ class Transition:
     new_manifest: dict[str, Any]
     catalog_gap_match: str
     catalog_identity_match: bool
+    catalog_identity_match_kind: str
+    catalog_matched_gap_id: str | None
     occurred_at_utc_ns: int
     collector_instance_id: str | None
     frame_detail_unavailable: bool = False
@@ -172,6 +184,8 @@ class Transition:
             },
             "catalog_gap_match": self.catalog_gap_match,
             "catalog_identity_match": self.catalog_identity_match,
+            "catalog_identity_match_kind": self.catalog_identity_match_kind,
+            "catalog_matched_gap_id": self.catalog_matched_gap_id,
             "occurred_at_utc_ns": self.occurred_at_utc_ns,
             "collector_instance_id": self.collector_instance_id,
             "frame_detail_unavailable": self.frame_detail_unavailable,
@@ -375,52 +389,80 @@ def _catalog_gap_match(
     occurred_at_utc_ns: int,
     old_connection_id: str | None,
     new_connection_id: str | None,
-) -> tuple[str, bool]:
-    """Match a transition to Catalog discontinuity intervals.
+) -> tuple[str, str, str | None]:
+    """Match a transition to Catalog discontinuity intervals (P1-B).
 
-    Matching is market/stream specific and prefers exact connection
-    identity; time overlap alone is only a fallback and multiple candidates
-    classify as AMBIGUOUS.
+    Exact boundary identity is the connection pair:
+    transition (old, new) vs interval (original, new). The transition is
+    EXACT_PAIR only when all four identities exist and
+    ``old == original AND new == interval.new``; a one-sided match is
+    PARTIAL_OLD / PARTIAL_NEW and can never prove the boundary by itself.
+    Matching is market/stream specific. Multiple candidates of equal
+    strength classify AMBIGUOUS; time overlap alone is TIME_ONLY.
+
+    Returns (match, identity_match_kind, matched_gap_id).
     """
     stream_intervals = [
         interval
         for interval in intervals
         if interval.market == market and interval.stream == stream
     ]
-    identity_candidates = [
-        interval
-        for interval in stream_intervals
-        if (
+
+    def within(interval: CatalogGapInterval) -> bool:
+        return interval.started_at_utc_ns <= occurred_at_utc_ns and (
+            interval.ended_at_utc_ns is None
+            or occurred_at_utc_ns <= interval.ended_at_utc_ns
+        )
+
+    exact: list[CatalogGapInterval] = []
+    partial: list[tuple[CatalogGapInterval, str]] = []
+    time_only: list[CatalogGapInterval] = []
+    for interval in stream_intervals:
+        old_known = (
             old_connection_id is not None
-            and interval.original_connection_id == old_connection_id
+            and interval.original_connection_id is not None
         )
-        or (
-            new_connection_id is not None
-            and interval.new_connection_id == new_connection_id
+        new_known = (
+            new_connection_id is not None and interval.new_connection_id is not None
         )
-    ]
-    if identity_candidates:
-        candidates = identity_candidates
-        identity_based = True
-    else:
-        candidates = [
-            interval
-            for interval in stream_intervals
-            if interval.started_at_utc_ns <= occurred_at_utc_ns
-            and (
-                interval.ended_at_utc_ns is None
-                or occurred_at_utc_ns <= interval.ended_at_utc_ns
-            )
-        ]
-        identity_based = False
-    if not candidates:
-        return "UNMATCHED", False
-    if len(candidates) > 1:
-        return "AMBIGUOUS", False
-    interval = candidates[0]
-    if interval.ended_at_utc_ns is None:
-        return "PENDING", identity_based
-    return "MATCHED", identity_based
+        old_eq = old_known and interval.original_connection_id == old_connection_id
+        new_eq = new_known and interval.new_connection_id == new_connection_id
+        if old_eq and new_eq:
+            exact.append(interval)
+        elif old_eq:
+            partial.append((interval, PARTIAL_OLD))
+        elif new_eq:
+            partial.append((interval, PARTIAL_NEW))
+        elif within(interval):
+            time_only.append(interval)
+    if len(exact) == 1:
+        interval = exact[0]
+        return (
+            "PENDING" if interval.ended_at_utc_ns is None else "MATCHED",
+            EXACT_PAIR,
+            interval.gap_id,
+        )
+    if len(exact) > 1:
+        return "AMBIGUOUS", AMBIGUOUS, None
+    if len(partial) == 1:
+        interval, kind = partial[0]
+        return (
+            "PENDING" if interval.ended_at_utc_ns is None else "MATCHED",
+            kind,
+            interval.gap_id,
+        )
+    if len(partial) > 1 or len(time_only) > 1 or (partial and time_only):
+        # No exact candidate but multiple partial/time candidates: the
+        # evidence cannot be attributed to exactly one boundary.
+        return "AMBIGUOUS", AMBIGUOUS, None
+    if len(time_only) == 1:
+        interval = time_only[0]
+        return (
+            "PENDING" if interval.ended_at_utc_ns is None else "MATCHED",
+            TIME_ONLY,
+            interval.gap_id,
+        )
+    return "UNMATCHED", NONE, None
 
 
 def _catalog_intervals(events: list[dict[str, Any]]) -> list[CatalogGapInterval]:
@@ -548,10 +590,21 @@ def _classify_inter_chunk(
     last_old: FrameIdentity | None,
     first_new: FrameIdentity | None,
     *,
-    catalog_identity_match: bool,
+    catalog_identity_kind: str,
+    catalog_matched_gap_id: str | None,
     old_frames: list[FrameIdentity] | None,
 ) -> str:
-    """Classify one exact old-chunk-end -> new-chunk-start transition."""
+    """Classify one exact old-chunk-end -> new-chunk-start transition.
+
+    Boundary-specific evidence only: a first-new-frame ``sequence_gap``
+    marker, an end marker on the old chunk's last frame, a blue/green
+    overlap pair on both boundary frames, a single-connection old chunk
+    sealed with manifest ``reconnect_gap`` (documents exactly its own end
+    boundary), or an EXACT_PAIR Catalog interval. One-sided Catalog
+    identities (PARTIAL_OLD/PARTIAL_NEW), time-only matches, and adjacent
+    manifest evidence that cannot be attributed to this exact boundary are
+    UNKNOWN, never optimistically EXPLICIT and never UNMARKED (P1-B/P2-C).
+    """
     if _frame_has_gap(first_new):
         return EXPLICIT_SEQUENCE_GAP
     if (
@@ -580,24 +633,38 @@ def _classify_inter_chunk(
         # protocol: manifest-level reconnect_gap is boundary-specific for
         # exactly this transition.
         return EXPLICIT_SEQUENCE_GAP
-    if catalog_identity_match:
+    if catalog_identity_kind == EXACT_PAIR:
         # The Catalog documents this exact connection pair as a durable
-        # discontinuity interval.
+        # discontinuity interval (matched_gap_id provenance).
         return EXPLICIT_SEQUENCE_GAP
-    if last_old is None or first_new is None:
-        if _manifest_gap_evidence(
-            old_chunk.manifest
-        ) or _manifest_overlap_evidence(old_chunk.manifest):
-            return UNKNOWN
-        if _manifest_gap_evidence(
-            new_chunk.manifest
-        ) or _manifest_overlap_evidence(new_chunk.manifest):
-            return UNKNOWN
-        # Neither adjacent manifest carries any gap evidence: this is an
-        # unmarked reconnect whose evidence is absent, not merely
-        # unattributable.
-        return UNMARKED_RECONNECT
+    if catalog_identity_kind in {
+        PARTIAL_OLD,
+        PARTIAL_NEW,
+        TIME_ONLY,
+        AMBIGUOUS,
+    }:
+        # Catalog gap evidence exists for this stream at this boundary but
+        # cannot be attributed to exactly this connection pair.
+        return UNKNOWN
+    if _adjacent_unattributable_evidence(old_chunk.manifest, new_chunk.manifest):
+        # Gap/overlap evidence exists on an adjacent manifest but cannot be
+        # attributed to exactly this inter-chunk boundary (for example a
+        # multi-connection old chunk sealed with reconnect_gap whose exact
+        # transition location is unknown). UNMARKED_RECONNECT means "no
+        # evidence exists"; this is evidence that cannot be placed.
+        return UNKNOWN
     return UNMARKED_RECONNECT
+
+
+def _adjacent_unattributable_evidence(
+    old_manifest: dict[str, Any], new_manifest: dict[str, Any]
+) -> bool:
+    return bool(
+        _manifest_gap_evidence(old_manifest)
+        or _manifest_overlap_evidence(old_manifest)
+        or _manifest_gap_evidence(new_manifest)
+        or _manifest_overlap_evidence(new_manifest)
+    )
 
 
 def _manifest_level_intra_kind(chunk: ChunkScan) -> str:
@@ -699,7 +766,7 @@ def collect_transitions(
                     kind = BLUE_GREEN_OVERLAP
                 else:
                     kind = UNMARKED_RECONNECT
-                match, identity_match = _catalog_gap_match(
+                match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
                     stream,
@@ -726,7 +793,9 @@ def collect_transitions(
                     old_manifest=chunk.manifest,
                     new_manifest=chunk.manifest,
                     catalog_gap_match=match,
-                    catalog_identity_match=identity_match,
+                    catalog_identity_match=identity_kind == EXACT_PAIR,
+                    catalog_identity_match_kind=identity_kind,
+                    catalog_matched_gap_id=matched_gap_id,
                     occurred_at_utc_ns=frame.receive_time_utc_ns,
                     collector_instance_id=_collector_id(chunk.manifest),
                 )
@@ -740,7 +809,7 @@ def collect_transitions(
                 # Only a manifest with no gap evidence at all proves an
                 # unmarked boundary; any gap/overlap flag is ambiguous.
                 kind = _manifest_level_intra_kind(chunk)
-                match, identity_match = _catalog_gap_match(
+                match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
                     stream,
@@ -762,7 +831,9 @@ def collect_transitions(
                     old_manifest=chunk.manifest,
                     new_manifest=chunk.manifest,
                     catalog_gap_match=match,
-                    catalog_identity_match=identity_match,
+                    catalog_identity_match=identity_kind == EXACT_PAIR,
+                    catalog_identity_match_kind=identity_kind,
+                    catalog_matched_gap_id=matched_gap_id,
                     occurred_at_utc_ns=int(
                         chunk.manifest.get("created_at_utc_ns", 0)
                     ),
@@ -789,7 +860,7 @@ def collect_transitions(
                     if first_new is not None
                     else int(chunk.manifest.get("created_at_utc_ns", 0))
                 )
-                match, identity_match = _catalog_gap_match(
+                match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
                     stream,
@@ -802,7 +873,8 @@ def collect_transitions(
                     chunk,
                     last_old,
                     first_new,
-                    catalog_identity_match=identity_match,
+                    catalog_identity_kind=identity_kind,
+                    catalog_matched_gap_id=matched_gap_id,
                     old_frames=previous.frames,
                 )
                 transition = Transition(
@@ -832,7 +904,9 @@ def collect_transitions(
                     old_manifest=previous.manifest,
                     new_manifest=chunk.manifest,
                     catalog_gap_match=match,
-                    catalog_identity_match=identity_match,
+                    catalog_identity_match=identity_kind == EXACT_PAIR,
+                    catalog_identity_match_kind=identity_kind,
+                    catalog_matched_gap_id=matched_gap_id,
                     occurred_at_utc_ns=occurred_at,
                     collector_instance_id=_collector_id(chunk.manifest),
                     frame_detail_unavailable=(

@@ -171,7 +171,9 @@ class StreamSpool:
             self._writer.sync()
 
     def _seal_current(
-        self, forced_flags: frozenset[str] = frozenset()
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         if self._writer is None:
             return None
@@ -184,6 +186,7 @@ class StreamSpool:
                 layout=self.layout,
                 catalog=self.catalog,
                 forced_flags=forced_flags,
+                seal_intent=seal_intent,
             )
         except BaseException:
             with suppress(OSError):
@@ -199,10 +202,12 @@ class StreamSpool:
         return manifest
 
     def close_and_seal(
-        self, forced_flags: frozenset[str] = frozenset()
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         self.drain_all()
-        return self._seal_current(forced_flags=forced_flags)
+        return self._seal_current(forced_flags=forced_flags, seal_intent=seal_intent)
 
     def abort_writer(self) -> None:
         """Release a failed writer descriptor while retaining its recoverable partial."""

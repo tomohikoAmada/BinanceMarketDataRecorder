@@ -77,3 +77,41 @@ async def run_owned_blocking_call[**BlockingParams, BlockingResult](
             # retains both facts while keeping storage failure fail-closed.
             raise worker_error from cancellation
         raise
+
+
+async def release_writer_preserving_errors(
+    writer_task: asyncio.Task[None],
+    intent_error: BaseException,
+) -> None:
+    """Release the boundary writer and preserve BOTH failure facts (REQ-109).
+
+    Called when the reconnect-intent write failed: the writer is still owned
+    by its task, which must drain and seal (or abort) the old generation
+    before the intent failure propagates. If the writer also fails, the two
+    causal facts must not collapse: the intent error remains the raised
+    exception (its original message and type are unchanged) while the writer
+    failure is retained as its cause/context. On cancellation the integrity
+    failure outranks coincident cancellation, mirroring
+    ``run_owned_blocking_call``.
+    """
+
+    writer_error: BaseException | None = None
+    if isinstance(intent_error, asyncio.CancelledError):
+        writer_task.cancel()
+        (result,) = await asyncio.gather(writer_task, return_exceptions=True)
+        if isinstance(result, BaseException) and not isinstance(
+            result, asyncio.CancelledError
+        ):
+            writer_error = result
+    else:
+        try:
+            await writer_task
+        except asyncio.CancelledError as cancellation:
+            writer_error = cancellation
+        except BaseException as error:
+            writer_error = error
+    if writer_error is None:
+        raise intent_error
+    if isinstance(intent_error, asyncio.CancelledError):
+        raise writer_error from intent_error
+    raise intent_error from writer_error

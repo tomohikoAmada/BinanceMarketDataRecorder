@@ -1959,6 +1959,34 @@ class Catalog:
             ).fetchone()
         return json.loads(row["evidence_json"]) if row else None
 
+    def sealing_transition_evidence(
+        self,
+    ) -> list[tuple[str, dict[str, object]]]:
+        """Return (chunk_id, evidence) for every ChunkState.SEALING transition.
+
+        The SEALING transition is the first durable seal mutation and carries
+        the reconnect-boundary seal intent (``seal_intent``) when the seal was
+        requested with reconnect semantics (M21.4.11-R2 P1-A). Startup
+        recovery scans all of them, not only currently-SEALING chunks, so a
+        crash after the seal completed but before the Catalog STARTED event
+        committed still reconstructs the pending discontinuity.
+        """
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT chunk_id, evidence_json FROM chunk_transitions
+                WHERE to_state = ?
+                ORDER BY transition_id
+                """,
+                (ChunkState.SEALING,),
+            ).fetchall()
+        output: list[tuple[str, dict[str, object]]] = []
+        for row in rows:
+            evidence = json.loads(row["evidence_json"])
+            if isinstance(evidence, dict):
+                output.append((str(row["chunk_id"]), evidence))
+        return output
+
     def table_columns(self, table: str) -> set[str]:
         if table not in {
             "chunks",

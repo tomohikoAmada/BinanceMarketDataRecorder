@@ -33,6 +33,7 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,14 @@ INCOMPLETE_FLAGS = frozenset(
         RECONNECT_GAP_FLAG,
     }
 )
+
+#: Key of the durable seal-intent document inside the ChunkState.SEALING
+#: transition evidence (M21.4.11-R2). The seal intent is the crash fallback
+#: authority for reconnect-boundary semantics: it is persisted BEFORE any
+#: artifact/manifest mutation, so a restart can reconstruct the required
+#: forced flags and the pending discontinuity even when the Catalog
+#: STREAM_DISCONTINUITY_STARTED event itself failed to commit (P1-A).
+SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
 
 
 class SealError(RuntimeError):
@@ -288,11 +297,21 @@ def seal_partial(
     layout: StorageLayout,
     catalog: Catalog,
     forced_flags: frozenset[str] = frozenset(),
+    seal_intent: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Seal a closed partial idempotently; never delete it before Catalog commit.
 
     ``forced_flags`` are manifest-level only (see ``_manifest``); they never
     mutate Raw frames and therefore cannot fabricate exchange payloads.
+
+    ``seal_intent`` is the durable reconnect-boundary fallback (P1-A): when a
+    seal is requested with reconnect semantics, the intent document is
+    persisted into the ChunkState.SEALING transition evidence BEFORE any
+    artifact, manifest, or SEALED mutation. If the process then crashes and
+    the Catalog STREAM_DISCONTINUITY_STARTED event never committed, startup
+    recovery reconstructs the required forced flags and the pending
+    discontinuity from this evidence instead of sealing the partial
+    complete=true.
     """
 
     scan = scan_chunk(path)
@@ -308,12 +327,33 @@ def seal_partial(
         )
         current = ChunkState.ACTIVE
     if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
+        evidence: dict[str, object] = {
+            "verified_frames": scan.statistics.record_count,
+        }
+        if seal_intent is not None:
+            evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
         catalog.transition(
             chunk_id,
             ChunkState.SEALING,
             idempotency_key=f"sealing:{chunk_id}",
-            evidence={"verified_frames": scan.statistics.record_count},
+            evidence=evidence,
         )
+    elif current is ChunkState.SEALING and seal_intent is not None:
+        # A previous seal attempt already made this chunk durable SEALING
+        # evidence (possibly with a different intent). A conflicting intent
+        # on re-seal is a double-fault: fail closed rather than silently
+        # adopting a second boundary identity.
+        existing = catalog.latest_transition_evidence(
+            chunk_id, ChunkState.SEALING
+        ) or {}
+        prior = existing.get(SEAL_INTENT_EVIDENCE_KEY)
+        if prior is not None and (
+            not isinstance(prior, dict) or dict(prior) != dict(seal_intent)
+        ):
+            raise SealError(
+                "durable SEALING evidence conflicts with the requested "
+                "seal intent"
+            )
 
     sealed = layout.sealed / f"{scan.header.chunk_id.hex}.bmdr.zst"
     target_partial = sealed.with_suffix(sealed.suffix + ".partial")
