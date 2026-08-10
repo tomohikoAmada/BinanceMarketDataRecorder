@@ -62,10 +62,14 @@ def test_polling_intervals_must_be_positive() -> None:
 
 def test_terminal_side_failure_does_not_set_shared_core_stop() -> None:
     class Failing:
+        terminal_on_failure = False
+
         async def run(self, stop: asyncio.Event) -> None:
             raise RuntimeError("injected terminal side failure")
 
     class Healthy:
+        terminal_on_failure = False
+
         def __init__(self) -> None:
             self.started = asyncio.Event()
 

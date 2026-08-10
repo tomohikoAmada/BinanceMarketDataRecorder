@@ -1,37 +1,50 @@
-"""Read-only historical reconnect-boundary audit (M21.4.11).
+"""Read-only historical reconnect-boundary audit (M21.4.11 correction).
 
 Scans sealed Raw chunks, manifests, and the lifecycle Catalog to find every
-connection_id transition and classify it:
+connection_id transition and classify it boundary-locally:
 
-- EXPLICIT_SEQUENCE_GAP: at least one side carries persistent gap evidence
-  (manifest gap / capture_flags ``sequence_gap`` or ``reconnect_gap``);
-- BLUE_GREEN_OVERLAP: the chunk carries explicit blue/green overlap
+- EXPLICIT_SEQUENCE_GAP: the exact transition pair carries persistent gap
+  evidence (frame ``sequence_gap`` on either boundary frame, a single-
+  connection old chunk sealed with manifest ``reconnect_gap``, or an
+  identity-matched Catalog discontinuity interval);
+- BLUE_GREEN_OVERLAP: the exact transition pair carries blue/green overlap
   provenance;
 - UNMARKED_RECONNECT: a connection change with no gap evidence at all; the
   sealed interval claims gap=false/complete=true even though exchange-side
   completeness between close and the first new frame cannot be proven;
-- UNKNOWN: malformed or unverifiable inputs.
+- UNKNOWN: evidence exists but cannot be attributed to exactly this
+  transition (archived Raw, ambiguous manifest flags, multiple matching
+  Catalog gaps). Never classified optimistically as explicit.
 
-The tool is strictly read-only: it never modifies Raw, manifests, or Catalog.
-JSON output is deterministic (sorted keys, stable ordering). Sealed chunks
-whose local copy was deleted after verified archival are classified from
-manifest evidence alone and marked ``frame_detail_unavailable=true``.
+Classification is boundary-local: a flag anywhere in an adjacent manifest is
+never reused to classify an unrelated transition.
+
+The tool is strictly read-only: it never creates directories, never writes
+under ``data_root``, opens the Catalog read-only, and works on read-only
+mounted trees. JSON canonical output is deterministic: given the same
+immutable manifest inventory and cutoff, canonical payload bytes are
+byte-identical. Execution metadata (generated_at, canonical SHA-256) is kept
+in a non-canonical artifact wrapper.
 
 Usage:
 
     python3.12 tools/audit_reconnect_boundaries.py [--data-root DIR]
         [--market spot|um_perpetual] [--stream NAME]
-        [--json] [--output historical-reconnect-audit.json]
+        [--cutoff-utc-ns NS] [--json]
+        [--output historical-reconnect-audit.json]
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
-import itertools
 import json
+import os
 import sys
+import tempfile
 import time
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -45,9 +58,10 @@ from binance_market_data_recorder.spool.format import (
     decode_envelope,
 )
 from binance_market_data_recorder.storage.catalog import Catalog
-from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.layout import StorageLayout
 
 TOOL_SCHEMA_VERSION = "historical-reconnect-audit.v1"
+ARTIFACT_SCHEMA_VERSION = "historical-reconnect-audit-artifact.v1"
 GAP_FLAGS = frozenset({"sequence_gap", "reconnect_gap"})
 
 EXPLICIT_SEQUENCE_GAP = "EXPLICIT_SEQUENCE_GAP"
@@ -65,6 +79,19 @@ WEBSOCKET_STREAMS: dict[str, frozenset[str]] = {
         {"diff_depth", "book_ticker", "agg_trade", "mark_price", "liquidation"}
     ),
 }
+
+#: Expected relative directories below a data root. The audit reports missing
+#: inputs but never creates them.
+EXPECTED_RELATIVE_DIRECTORIES = (
+    "data",
+    "data/active",
+    "data/sealed",
+    "data/manifests",
+    "data/checkpoints",
+    "data/quarantine",
+    "data/reports",
+    "state",
+)
 
 
 @dataclass(frozen=True)
@@ -89,8 +116,15 @@ class ChunkScan:
 @dataclass
 class CatalogGapInterval:
     gap_id: str
+    market: str
+    stream: str
     started_at_utc_ns: int
     ended_at_utc_ns: int | None
+    reason: str | None = None
+    original_connection_id: str | None = None
+    new_connection_id: str | None = None
+    original_generation: int | None = None
+    new_generation: int | None = None
 
 
 @dataclass
@@ -108,6 +142,7 @@ class Transition:
     old_manifest: dict[str, Any]
     new_manifest: dict[str, Any]
     catalog_gap_match: str
+    catalog_identity_match: bool
     occurred_at_utc_ns: int
     collector_instance_id: str | None
     frame_detail_unavailable: bool = False
@@ -136,6 +171,7 @@ class Transition:
                 "capture_flags": self.new_manifest.get("capture_flags"),
             },
             "catalog_gap_match": self.catalog_gap_match,
+            "catalog_identity_match": self.catalog_identity_match,
             "occurred_at_utc_ns": self.occurred_at_utc_ns,
             "collector_instance_id": self.collector_instance_id,
             "frame_detail_unavailable": self.frame_detail_unavailable,
@@ -143,6 +179,37 @@ class Transition:
         if self.connection_ids is not None:
             document["connection_ids"] = list(self.connection_ids)
         return document
+
+
+def read_only_layout(root: Path) -> StorageLayout:
+    """Build the StorageLayout view without creating any directory."""
+    root = root.resolve()
+    data = root / "data"
+    return StorageLayout(
+        root=root,
+        active=data / "active",
+        sealed=data / "sealed",
+        manifests=data / "manifests",
+        checkpoints=data / "checkpoints",
+        quarantine=data / "quarantine",
+        reports=data / "reports",
+        daily_reports=data / "reports" / "daily",
+        state=root / "state",
+        catalog=root / "state" / "catalog.sqlite",
+    )
+
+
+def missing_inputs(root: Path) -> list[str]:
+    """Return expected relative inputs that are absent (never created)."""
+    missing: list[str] = []
+    if not root.is_dir():
+        return ["data_root"]
+    for relative in EXPECTED_RELATIVE_DIRECTORIES:
+        if not (root / relative).is_dir():
+            missing.append(relative)
+    if not (root / "state" / "catalog.sqlite").is_file():
+        missing.append("state/catalog.sqlite")
+    return missing
 
 
 def _frame_identity(
@@ -205,6 +272,7 @@ def load_manifest_chunks(
     *,
     market: str | None,
     stream: str | None,
+    cutoff_utc_ns: int | None = None,
 ) -> list[ChunkScan]:
     chunks: list[ChunkScan] = []
     manifest_dir = layout.manifests
@@ -221,9 +289,28 @@ def load_manifest_chunks(
             continue
         if stream is not None and document.get("stream") != stream:
             continue
+        if cutoff_utc_ns is not None:
+            created_at = document.get("created_at_utc_ns")
+            if not isinstance(created_at, int) or created_at > cutoff_utc_ns:
+                continue
         chunks.append(ChunkScan(manifest=document))
     chunks.sort(key=lambda item: int(item.manifest.get("created_at_utc_ns", 0)))
     return chunks
+
+
+def manifest_inventory(chunks: list[ChunkScan], layout: Any) -> tuple[int, str]:
+    """Deterministic SHA-256 over the scanned manifest relative paths."""
+    relative_paths: list[str] = []
+    for chunk in chunks:
+        relative = chunk.manifest.get("relative_path")
+        if isinstance(relative, str) and relative:
+            relative_paths.append(layout.relative(layout.root / relative))
+        else:
+            relative_paths.append(str(chunk.manifest.get("chunk_id", "")))
+    relative_paths.sort()
+    inventory = "\n".join(relative_paths) + "\n"
+    digest = hashlib.sha256(inventory.encode("utf-8")).hexdigest()
+    return len(relative_paths), digest
 
 
 def _sealed_path(layout: Any, manifest: dict[str, Any]) -> Path:
@@ -233,14 +320,10 @@ def _sealed_path(layout: Any, manifest: dict[str, Any]) -> Path:
     return Path(layout.root) / relative
 
 
-def _decompress_multi_connection(chunks: list[ChunkScan], layout: Any) -> None:
-    multi = {
-        chunk.manifest["chunk_id"]
-        for chunk in chunks
-        if len(chunk.manifest.get("connection_ids", [])) > 1
-    }
+def _load_frames(chunks: list[ChunkScan], layout: Any) -> None:
+    """Decompress every locally available sealed chunk in frame order."""
     for chunk in chunks:
-        if chunk.manifest["chunk_id"] not in multi:
+        if chunk.frames is not None:
             continue
         try:
             sealed = _sealed_path(layout, chunk.manifest)
@@ -274,17 +357,15 @@ def _first_connection(chunk: ChunkScan) -> tuple[str | None, FrameIdentity | Non
     return None, None
 
 
-def _manifest_gap_evidence(manifest: dict[str, Any]) -> bool:
+def _manifest_flags(manifest: dict[str, Any]) -> frozenset[str]:
     flags = manifest.get("capture_flags")
-    return bool(
-        manifest.get("gap") is True
-        or (isinstance(flags, list) and bool(set(flags) & GAP_FLAGS))
-    )
+    if not isinstance(flags, list):
+        return frozenset()
+    return frozenset(str(flag) for flag in flags)
 
 
-def _manifest_overlap(manifest: dict[str, Any]) -> bool:
-    flags = manifest.get("capture_flags")
-    return isinstance(flags, list) and "blue_green_overlap" in flags
+def _manifest_has(manifest: dict[str, Any], flag: str) -> bool:
+    return flag in _manifest_flags(manifest)
 
 
 def _catalog_gap_match(
@@ -292,26 +373,246 @@ def _catalog_gap_match(
     market: str,
     stream: str,
     occurred_at_utc_ns: int,
-) -> str:
-    for interval in intervals:
-        if interval.started_at_utc_ns <= occurred_at_utc_ns:
-            if interval.ended_at_utc_ns is None:
-                return "PENDING"
-            if occurred_at_utc_ns <= interval.ended_at_utc_ns:
-                return "MATCHED"
-    return "UNMATCHED"
+    old_connection_id: str | None,
+    new_connection_id: str | None,
+) -> tuple[str, bool]:
+    """Match a transition to Catalog discontinuity intervals.
+
+    Matching is market/stream specific and prefers exact connection
+    identity; time overlap alone is only a fallback and multiple candidates
+    classify as AMBIGUOUS.
+    """
+    stream_intervals = [
+        interval
+        for interval in intervals
+        if interval.market == market and interval.stream == stream
+    ]
+    identity_candidates = [
+        interval
+        for interval in stream_intervals
+        if (
+            old_connection_id is not None
+            and interval.original_connection_id == old_connection_id
+        )
+        or (
+            new_connection_id is not None
+            and interval.new_connection_id == new_connection_id
+        )
+    ]
+    if identity_candidates:
+        candidates = identity_candidates
+        identity_based = True
+    else:
+        candidates = [
+            interval
+            for interval in stream_intervals
+            if interval.started_at_utc_ns <= occurred_at_utc_ns
+            and (
+                interval.ended_at_utc_ns is None
+                or occurred_at_utc_ns <= interval.ended_at_utc_ns
+            )
+        ]
+        identity_based = False
+    if not candidates:
+        return "UNMATCHED", False
+    if len(candidates) > 1:
+        return "AMBIGUOUS", False
+    interval = candidates[0]
+    if interval.ended_at_utc_ns is None:
+        return "PENDING", identity_based
+    return "MATCHED", identity_based
 
 
-def _classify(
+def _catalog_intervals(events: list[dict[str, Any]]) -> list[CatalogGapInterval]:
+    intervals: list[CatalogGapInterval] = []
+    started: dict[str, CatalogGapInterval] = {}
+    for event in events:
+        evidence = event.get("evidence")
+        if not isinstance(evidence, dict):
+            continue
+        gap_id = evidence.get("gap_id")
+        if not isinstance(gap_id, str) or not gap_id:
+            continue
+        if event["event_type"] == "STREAM_DISCONTINUITY_STARTED":
+            interval = CatalogGapInterval(
+                gap_id=gap_id,
+                market=str(evidence.get("market", "")),
+                stream=str(evidence.get("stream", "")),
+                started_at_utc_ns=int(evidence.get("gap_started_at_utc_ns", 0)),
+                ended_at_utc_ns=None,
+                reason=(
+                    str(evidence["reason"])
+                    if isinstance(evidence.get("reason"), str)
+                    else None
+                ),
+                original_connection_id=(
+                    str(evidence["original_connection_id"])
+                    if isinstance(evidence.get("original_connection_id"), str)
+                    else None
+                ),
+                new_connection_id=(
+                    str(evidence["new_connection_id"])
+                    if isinstance(evidence.get("new_connection_id"), str)
+                    else None
+                ),
+                original_generation=_optional_int(evidence, "original_generation"),
+                new_generation=_optional_int(evidence, "new_generation"),
+            )
+            started[gap_id] = interval
+            intervals.append(interval)
+        elif event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
+            completed_interval = started.get(gap_id)
+            if completed_interval is None:
+                continue
+            completed_interval.ended_at_utc_ns = int(
+                evidence.get("gap_ended_at_utc_ns", 0)
+            )
+            if isinstance(evidence.get("new_connection_id"), str):
+                completed_interval.new_connection_id = str(
+                    evidence["new_connection_id"]
+                )
+            if isinstance(evidence.get("new_generation"), int):
+                completed_interval.new_generation = evidence["new_generation"]
+    intervals.sort(key=lambda interval: (interval.started_at_utc_ns, interval.gap_id))
+    return intervals
+
+
+def _optional_int(evidence: dict[str, Any], name: str) -> int | None:
+    value = evidence.get(name)
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
+def _frame_has_gap(frame: FrameIdentity | None) -> bool:
+    return frame is not None and "sequence_gap" in frame.capture_flags
+
+
+def _is_first_frame_of_connection(
+    frames: list[FrameIdentity], index: int
+) -> bool:
+    if index == 0:
+        return True
+    return frames[index - 1].connection_id != frames[index].connection_id
+
+
+def _marker_is_end_evidence(
+    frames: list[FrameIdentity], index: int
+) -> bool:
+    """True when a sequence_gap marker on frames[index] is an end marker.
+
+    A marker on a frame that is also the first frame of its connection may
+    belong to the earlier boundary (start marker) instead of this one; only
+    multi-frame connections produce unambiguous end markers.
+    """
+    return not _is_first_frame_of_connection(frames, index)
+
+
+def _frame_deployments(frame: FrameIdentity) -> set[str]:
+    return {
+        flag for flag in frame.capture_flags if flag.startswith("deployment_id=")
+    }
+
+
+def _overlap_pair(
+    last_old: FrameIdentity | None, first_new: FrameIdentity | None
+) -> bool:
+    """True when blue/green overlap provably covers this exact transition."""
+    if last_old is None or first_new is None:
+        return False
+    if (
+        "blue_green_overlap" not in last_old.capture_flags
+        or "blue_green_overlap" not in first_new.capture_flags
+    ):
+        return False
+    old_deployments = _frame_deployments(last_old)
+    new_deployments = _frame_deployments(first_new)
+    if not old_deployments and not new_deployments:
+        return True
+    return bool(old_deployments & new_deployments)
+
+
+def _manifest_gap_evidence(manifest: dict[str, Any]) -> bool:
+    return bool(manifest.get("gap") is True) or bool(
+        _manifest_flags(manifest) & GAP_FLAGS
+    )
+
+
+def _manifest_overlap_evidence(manifest: dict[str, Any]) -> bool:
+    return "blue_green_overlap" in _manifest_flags(manifest)
+
+
+def _classify_inter_chunk(
     old_chunk: ChunkScan,
     new_chunk: ChunkScan,
+    last_old: FrameIdentity | None,
+    first_new: FrameIdentity | None,
+    *,
+    catalog_identity_match: bool,
+    old_frames: list[FrameIdentity] | None,
 ) -> str:
-    if _manifest_gap_evidence(old_chunk.manifest) or _manifest_gap_evidence(
-        new_chunk.manifest
-    ):
+    """Classify one exact old-chunk-end -> new-chunk-start transition."""
+    if _frame_has_gap(first_new):
         return EXPLICIT_SEQUENCE_GAP
-    if _manifest_overlap(old_chunk.manifest) or _manifest_overlap(new_chunk.manifest):
+    if (
+        _frame_has_gap(last_old)
+        and last_old is not None
+        and old_frames is not None
+        and _marker_is_end_evidence(old_frames, len(old_frames) - 1)
+    ):
+        # The old chunk's last frame carries an end marker (ingress
+        # backpressure boundary frame): boundary-specific for this
+        # transition.
+        return EXPLICIT_SEQUENCE_GAP
+    if _frame_has_gap(last_old) and last_old is not None:
+        # A marker on a single-frame connection could belong to the earlier
+        # boundary; attribution is ambiguous without frame context.
+        return UNKNOWN
+    if _overlap_pair(last_old, first_new):
         return BLUE_GREEN_OVERLAP
+    old_connections = old_chunk.manifest.get("connection_ids")
+    if (
+        isinstance(old_connections, list)
+        and len(old_connections) == 1
+        and _manifest_has(old_chunk.manifest, "reconnect_gap")
+    ):
+        # The old chunk was sealed at its end by the reconnect-boundary
+        # protocol: manifest-level reconnect_gap is boundary-specific for
+        # exactly this transition.
+        return EXPLICIT_SEQUENCE_GAP
+    if catalog_identity_match:
+        # The Catalog documents this exact connection pair as a durable
+        # discontinuity interval.
+        return EXPLICIT_SEQUENCE_GAP
+    if last_old is None or first_new is None:
+        if _manifest_gap_evidence(
+            old_chunk.manifest
+        ) or _manifest_overlap_evidence(old_chunk.manifest):
+            return UNKNOWN
+        if _manifest_gap_evidence(
+            new_chunk.manifest
+        ) or _manifest_overlap_evidence(new_chunk.manifest):
+            return UNKNOWN
+        # Neither adjacent manifest carries any gap evidence: this is an
+        # unmarked reconnect whose evidence is absent, not merely
+        # unattributable.
+        return UNMARKED_RECONNECT
+    return UNMARKED_RECONNECT
+
+
+def _manifest_level_intra_kind(chunk: ChunkScan) -> str:
+    """Classify an intra-chunk boundary when frame detail is unavailable.
+
+    Without frame positions, a manifest-level gap/overlap flag cannot be
+    attributed to exactly one transition: such evidence classifies UNKNOWN,
+    never optimistically EXPLICIT. A manifest with no gap evidence at all
+    stays UNMARKED_RECONNECT.
+    """
+    flags = _manifest_flags(chunk.manifest)
+    if chunk.manifest.get("gap") is True or bool(flags & GAP_FLAGS):
+        return UNKNOWN
+    if "blue_green_overlap" in flags:
+        return UNKNOWN
     return UNMARKED_RECONNECT
 
 
@@ -338,33 +639,14 @@ def collect_transitions(
     chunks: list[ChunkScan],
     layout: Any,
     catalog: Catalog | None,
-) -> tuple[list[Transition], dict[tuple[str, str], dict[str, int]]]:
-    """Return deterministic per-stream transitions and per-stream summaries."""
-    _decompress_multi_connection(chunks, layout)
-    intervals: list[CatalogGapInterval] = []
-    if catalog is not None:
-        for event in catalog.operational_events():
-            evidence = event.get("evidence")
-            if not isinstance(evidence, dict):
-                continue
-            gap_id = evidence.get("gap_id")
-            if not isinstance(gap_id, str):
-                continue
-            if event["event_type"] == "STREAM_DISCONTINUITY_STARTED":
-                intervals.append(
-                    CatalogGapInterval(
-                        gap_id=gap_id,
-                        started_at_utc_ns=int(evidence["gap_started_at_utc_ns"]),
-                        ended_at_utc_ns=None,
-                    )
-                )
-            elif event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
-                for interval in intervals:
-                    if interval.gap_id == gap_id:
-                        interval.ended_at_utc_ns = int(
-                            evidence.get("gap_ended_at_utc_ns", 0)
-                        )
-        intervals.sort(key=lambda interval: interval.started_at_utc_ns)
+) -> tuple[list[Transition], dict[tuple[str, str], dict[str, int]], list[CatalogGapInterval]]:
+    """Return deterministic per-stream transitions, summaries, and intervals."""
+    _load_frames(chunks, layout)
+    intervals = (
+        _catalog_intervals(catalog.operational_events())
+        if catalog is not None
+        else []
+    )
 
     transitions: list[Transition] = []
     summaries: dict[tuple[str, str], dict[str, int]] = {}
@@ -383,6 +665,7 @@ def collect_transitions(
                 "blue_green_overlap": 0,
                 "unmarked_reconnect": 0,
                 "unknown": 0,
+                "chunks_with_scan_issues": 0,
             }
         summaries[key]["chunks_scanned"] += 1
         if stream not in WEBSOCKET_STREAMS.get(market, frozenset()):
@@ -391,19 +674,41 @@ def collect_transitions(
             continue
         frames = chunk.frames
         if frames is not None and len(frames) > 1:
-            for previous_frame, frame in itertools.pairwise(frames):
+            for index in range(1, len(frames)):
+                previous_frame = frames[index - 1]
+                frame = frames[index]
                 if previous_frame.connection_id == frame.connection_id:
                     continue
+                if _frame_has_gap(frame):
+                    # The first frame of the new connection carries the
+                    # recovery marker: boundary-specific for this transition.
+                    kind = EXPLICIT_SEQUENCE_GAP
+                elif (
+                    _frame_has_gap(previous_frame)
+                    and _marker_is_end_evidence(frames, index - 1)
+                ):
+                    # The last frame of the old connection carries an end
+                    # marker (ingress backpressure boundary frame):
+                    # boundary-specific for this transition.
+                    kind = EXPLICIT_SEQUENCE_GAP
+                elif _frame_has_gap(previous_frame):
+                    # A marker on a single-frame connection could belong to
+                    # the earlier boundary; attribution is ambiguous.
+                    kind = UNKNOWN
+                elif _overlap_pair(previous_frame, frame):
+                    kind = BLUE_GREEN_OVERLAP
+                else:
+                    kind = UNMARKED_RECONNECT
+                match, identity_match = _catalog_gap_match(
+                    intervals,
+                    market,
+                    stream,
+                    frame.receive_time_utc_ns,
+                    previous_frame.connection_id,
+                    frame.connection_id,
+                )
                 transition = Transition(
-                    kind=(
-                        EXPLICIT_SEQUENCE_GAP
-                        if _manifest_gap_evidence(chunk.manifest)
-                        else (
-                            BLUE_GREEN_OVERLAP
-                            if _manifest_overlap(chunk.manifest)
-                            else UNMARKED_RECONNECT
-                        )
-                    ),
+                    kind=kind,
                     boundary_kind="intra_chunk",
                     old_chunk_id=chunk.manifest["chunk_id"],
                     new_chunk_id=chunk.manifest["chunk_id"],
@@ -420,9 +725,8 @@ def collect_transitions(
                     ),
                     old_manifest=chunk.manifest,
                     new_manifest=chunk.manifest,
-                    catalog_gap_match=_catalog_gap_match(
-                        intervals, market, stream, frame.receive_time_utc_ns
-                    ),
+                    catalog_gap_match=match,
+                    catalog_identity_match=identity_match,
                     occurred_at_utc_ns=frame.receive_time_utc_ns,
                     collector_instance_id=_collector_id(chunk.manifest),
                 )
@@ -431,18 +735,18 @@ def collect_transitions(
         elif frames is None:
             connections = chunk.manifest.get("connection_ids")
             if isinstance(connections, list) and len(connections) > 1:
-                # The local sealed copy was deleted after verified archival;
-                # frame order inside the chunk is unrecoverable. The manifest
-                # alone still proves an unmarked or evidenced connection
-                # boundary existed inside this chunk.
-                kind = (
-                    EXPLICIT_SEQUENCE_GAP
-                    if _manifest_gap_evidence(chunk.manifest)
-                    else (
-                        BLUE_GREEN_OVERLAP
-                        if _manifest_overlap(chunk.manifest)
-                        else UNMARKED_RECONNECT
-                    )
+                # The local sealed copy is unavailable (archived, deleted, or
+                # unreadable); frame order inside the chunk is unrecoverable.
+                # Only a manifest with no gap evidence at all proves an
+                # unmarked boundary; any gap/overlap flag is ambiguous.
+                kind = _manifest_level_intra_kind(chunk)
+                match, identity_match = _catalog_gap_match(
+                    intervals,
+                    market,
+                    stream,
+                    int(chunk.manifest.get("created_at_utc_ns", 0)),
+                    None,
+                    None,
                 )
                 transition = Transition(
                     kind=kind,
@@ -457,12 +761,8 @@ def collect_transitions(
                     exchange_event_gap_seconds=None,
                     old_manifest=chunk.manifest,
                     new_manifest=chunk.manifest,
-                    catalog_gap_match=_catalog_gap_match(
-                        intervals,
-                        market,
-                        stream,
-                        int(chunk.manifest.get("created_at_utc_ns", 0)),
-                    ),
+                    catalog_gap_match=match,
+                    catalog_identity_match=identity_match,
                     occurred_at_utc_ns=int(
                         chunk.manifest.get("created_at_utc_ns", 0)
                     ),
@@ -473,8 +773,9 @@ def collect_transitions(
                 transitions.append(transition)
                 _tally(summaries[key], transition.kind)
         previous = previous_by_key.get(key)
-        if previous is not None and previous.manifest.get("stream") == stream and (
-            previous.manifest.get("market") == market
+        if previous is not None and (
+            previous.manifest.get("stream") == stream
+            and previous.manifest.get("market") == market
         ):
             old_connection, last_old = _last_connection(previous)
             new_connection, first_new = _first_connection(chunk)
@@ -488,8 +789,24 @@ def collect_transitions(
                     if first_new is not None
                     else int(chunk.manifest.get("created_at_utc_ns", 0))
                 )
+                match, identity_match = _catalog_gap_match(
+                    intervals,
+                    market,
+                    stream,
+                    occurred_at,
+                    old_connection,
+                    new_connection,
+                )
+                kind = _classify_inter_chunk(
+                    previous,
+                    chunk,
+                    last_old,
+                    first_new,
+                    catalog_identity_match=identity_match,
+                    old_frames=previous.frames,
+                )
                 transition = Transition(
-                    kind=_classify(previous, chunk),
+                    kind=kind,
                     boundary_kind="inter_chunk",
                     old_chunk_id=previous.manifest["chunk_id"],
                     new_chunk_id=chunk.manifest["chunk_id"],
@@ -514,33 +831,46 @@ def collect_transitions(
                     ),
                     old_manifest=previous.manifest,
                     new_manifest=chunk.manifest,
-                    catalog_gap_match=_catalog_gap_match(
-                        intervals, market, stream, occurred_at
-                    ),
+                    catalog_gap_match=match,
+                    catalog_identity_match=identity_match,
                     occurred_at_utc_ns=occurred_at,
                     collector_instance_id=_collector_id(chunk.manifest),
+                    frame_detail_unavailable=(
+                        previous.frames is None or chunk.frames is None
+                    ),
                 )
                 transitions.append(transition)
                 _tally(summaries[key], transition.kind)
         previous_by_key[key] = chunk
 
     for chunk in chunks:
-        if chunk.issue is not None and chunk.frames is None:
-            connections = chunk.manifest.get("connection_ids")
-            if isinstance(connections, list) and len(connections) > 1:
-                # Already reported as a manifest-level intra-chunk transition.
-                continue
-            key = _stream_key(str(chunk.manifest["market"]), str(chunk.manifest["stream"]))
-            if key in summaries:
-                summaries[key]["unknown"] += 1
+        if chunk.issue is None or chunk.frames is not None:
+            continue
+        if str(chunk.issue).startswith("sealed_file_missing_after_archival"):
+            # Normal archived state: frame detail is unavailable and every
+            # affected transition already carries
+            # frame_detail_unavailable=true; not an anomaly.
+            continue
+        connections = chunk.manifest.get("connection_ids")
+        if isinstance(connections, list) and len(connections) > 1:
+            # Already reported as a manifest-level intra-chunk transition.
+            continue
+        key = _stream_key(
+            str(chunk.manifest["market"]), str(chunk.manifest["stream"])
+        )
+        if key in summaries:
+            summaries[key]["chunks_with_scan_issues"] += 1
     transitions.sort(
         key=lambda item: (
             item.occurred_at_utc_ns,
             item.old_chunk_id,
             item.new_chunk_id,
+            item.old_connection_id or "",
+            item.new_connection_id or "",
+            item.boundary_kind,
         )
     )
-    return transitions, summaries
+    return transitions, summaries, intervals
 
 
 def _exchange_gap(
@@ -577,20 +907,35 @@ def audit_data_root(
     *,
     market: str | None = None,
     stream: str | None = None,
+    cutoff_utc_ns: int | None = None,
 ) -> dict[str, Any]:
-    layout = ensure_storage_layout(data_root)
+    """Read-only canonical audit payload (deterministic for a fixed input set).
+
+    Never creates directories, never writes into ``data_root``, and opens the
+    Catalog read-only. The returned document contains no wall-clock values;
+    execution metadata belongs to the artifact wrapper only.
+    """
+    if cutoff_utc_ns is not None and cutoff_utc_ns < 0:
+        raise ValueError("cutoff_utc_ns must be non-negative")
+    layout = read_only_layout(data_root)
+    missing = missing_inputs(data_root)
     catalog: Catalog | None = None
     catalog_path = layout.catalog
     if catalog_path.is_file():
         try:
             catalog = Catalog(catalog_path, read_only=True)
         except Exception:
+            missing.append("state/catalog.sqlite")
             catalog = None
     try:
         chunks = load_manifest_chunks(
-            layout, market=market, stream=stream
+            layout,
+            market=market,
+            stream=stream,
+            cutoff_utc_ns=cutoff_utc_ns,
         )
-        transitions, summaries = collect_transitions(chunks, layout, catalog)
+        inventory_count, inventory_sha256 = manifest_inventory(chunks, layout)
+        transitions, summaries, intervals = collect_transitions(chunks, layout, catalog)
         streams_output: list[dict[str, Any]] = []
         for (market_name, stream_name), summary in sorted(summaries.items()):
             stream_transitions = [
@@ -610,6 +955,9 @@ def audit_data_root(
                         "blue_green_overlap": summary["blue_green_overlap"],
                         "unmarked_reconnect": summary["unmarked_reconnect"],
                         "unknown": summary["unknown"],
+                        "chunks_with_scan_issues": summary[
+                            "chunks_with_scan_issues"
+                        ],
                     },
                     "transitions": stream_transitions,
                 }
@@ -625,35 +973,58 @@ def audit_data_root(
                 item["unmarked_reconnect"] for item in summaries.values()
             ),
             "unknown": sum(item["unknown"] for item in summaries.values()),
+            "chunks_with_scan_issues": sum(
+                item["chunks_with_scan_issues"] for item in summaries.values()
+            ),
         }
-        discontinuity_events = (
-            catalog.operational_events()
-            if catalog is not None
-            else []
-        )
-        started_count = sum(
-            1
-            for event in discontinuity_events
-            if event["event_type"] == "STREAM_DISCONTINUITY_STARTED"
-        )
-        completed_count = sum(
-            1
-            for event in discontinuity_events
-            if event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED"
-        )
+        started_by_id: dict[str, dict[str, Any]] = {}
+        completed_by_id: dict[str, dict[str, Any]] = {}
+        for event in catalog.operational_events() if catalog is not None else []:
+            evidence = event.get("evidence")
+            if not isinstance(evidence, dict):
+                continue
+            gap_id = evidence.get("gap_id")
+            if not isinstance(gap_id, str) or not gap_id:
+                continue
+            if event["event_type"] == "STREAM_DISCONTINUITY_STARTED":
+                started_by_id[gap_id] = event
+            elif event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_by_id[gap_id] = event
+        matched_pairs = len(set(started_by_id) & set(completed_by_id))
+        unmatched_started = len(started_by_id) - matched_pairs
+        unmatched_completed = len(completed_by_id) - matched_pairs
         return {
             "tool": "audit_reconnect_boundaries",
             "schema_version": TOOL_SCHEMA_VERSION,
             "data_root": str(data_root.resolve()),
             "filters": {"market": market, "stream": stream},
-            "generated_at_utc_ns": time.time_ns(),
-            "generated_at_utc": datetime.now(UTC).isoformat(),
+            "audit_cutoff_utc_ns": cutoff_utc_ns,
+            "manifest_inventory_count": inventory_count,
+            "manifest_inventory_sha256": inventory_sha256,
+            "missing_inputs": sorted(set(missing)),
             "summary": total,
             "streams": streams_output,
             "catalog": {
-                "discontinuity_started": started_count,
-                "discontinuity_completed": completed_count,
-                "unmatched_started": max(0, started_count - completed_count),
+                "discontinuity_started": len(started_by_id),
+                "discontinuity_completed": len(completed_by_id),
+                "matched_pairs": matched_pairs,
+                "unmatched_started": unmatched_started,
+                "unmatched_completed": unmatched_completed,
+                "gap_intervals": [
+                    {
+                        "gap_id": interval.gap_id,
+                        "market": interval.market,
+                        "stream": interval.stream,
+                        "started_at_utc_ns": interval.started_at_utc_ns,
+                        "ended_at_utc_ns": interval.ended_at_utc_ns,
+                        "reason": interval.reason,
+                        "original_connection_id": interval.original_connection_id,
+                        "new_connection_id": interval.new_connection_id,
+                        "original_generation": interval.original_generation,
+                        "new_generation": interval.new_generation,
+                    }
+                    for interval in intervals
+                ],
             },
         }
     finally:
@@ -661,10 +1032,44 @@ def audit_data_root(
             catalog.close()
 
 
+def _canonical_body(document: dict[str, Any]) -> str:
+    return json.dumps(document, sort_keys=True, separators=(",", ":")) + "\n"
+
+
+def _validate_output_target(data_root: Path, output: Path) -> None:
+    root = data_root.resolve()
+    target = output.resolve()
+    if target == root or root in target.parents:
+        raise ValueError(
+            f"--output {output} resolves inside the audited data root {root}"
+        )
+
+
+def _write_artifact(path: Path, body: str) -> None:
+    """Atomically write the artifact; the parent is proven external already."""
+    descriptor, temporary = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+            target.write(body)
+            target.flush()
+            os.fsync(target.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        with suppress(OSError):
+            os.unlink(temporary)
+        raise
+
+
 def _print_summary(document: dict[str, Any], output: TextIO) -> None:
     summary = document["summary"]
     output.write(
         f"data_root: {document['data_root']}\n"
+        f"audit_cutoff_utc_ns: {document['audit_cutoff_utc_ns']}\n"
+        f"manifest_inventory_count: {document['manifest_inventory_count']}\n"
+        f"manifest_inventory_sha256: {document['manifest_inventory_sha256']}\n"
+        f"missing_inputs: {', '.join(document['missing_inputs']) or 'none'}\n"
         f"chunks_scanned: {summary['chunks_scanned']}\n"
         f"transitions_total: {summary['transitions_total']}\n"
         f"  explicit_gap: {summary['explicit_gap']}\n"
@@ -678,7 +1083,8 @@ def _print_summary(document: dict[str, Any], output: TextIO) -> None:
             f"{stream['market']}/{stream['stream']}: "
             f"chunks={item['chunks_scanned']} transitions={item['transitions_total']} "
             f"(explicit={item['explicit_gap']} overlap={item['blue_green_overlap']} "
-            f"unmarked={item['unmarked_reconnect']} unknown={item['unknown']})\n"
+            f"unmarked={item['unmarked_reconnect']} unknown={item['unknown']}"
+            f" issues={item['chunks_with_scan_issues']})\n"
         )
     for stream in document["streams"]:
         for transition in stream["transitions"]:
@@ -687,10 +1093,14 @@ def _print_summary(document: dict[str, Any], output: TextIO) -> None:
                     f"  {transition['kind']}: {stream['market']}/{stream['stream']} "
                     f"chunk {transition['old_chunk_id'][:8]} -> "
                     f"{transition['new_chunk_id'][:8]} "
-                    f"conn {transition['old_connection_id'][:8]} -> "
-                    f"{transition['new_connection_id'][:8]} "
+                    f"conn {_short(transition['old_connection_id'])} -> "
+                    f"{_short(transition['new_connection_id'])} "
                     f"at {transition['occurred_at_utc_ns']}\n"
                 )
+
+
+def _short(value: str | None) -> str:
+    return value[:8] if value else "-"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -705,25 +1115,48 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--market", choices=["spot", "um_perpetual"], default=None)
     parser.add_argument("--stream", default=None, help="exact stream name")
-    parser.add_argument("--json", action="store_true", help="emit deterministic JSON")
+    parser.add_argument(
+        "--cutoff-utc-ns",
+        type=int,
+        default=None,
+        help="include only manifests with created_at_utc_ns <= cutoff",
+    )
+    parser.add_argument("--json", action="store_true", help="emit the JSON artifact")
     parser.add_argument(
         "--output",
         type=Path,
         default=None,
-        help="write the JSON document to a file (never into the data root)",
+        help="write the JSON artifact to a file (never into the data root)",
     )
     args = parser.parse_args(argv)
     document = audit_data_root(
-        args.data_root, market=args.market, stream=args.stream
+        args.data_root,
+        market=args.market,
+        stream=args.stream,
+        cutoff_utc_ns=args.cutoff_utc_ns,
     )
-    body = json.dumps(document, sort_keys=True, separators=(",", ":")) + "\n"
+    canonical = _canonical_body(document)
+    canonical_sha256 = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    artifact: dict[str, Any] = {
+        "tool": "audit_reconnect_boundaries",
+        "schema_version": ARTIFACT_SCHEMA_VERSION,
+        "canonical_sha256": canonical_sha256,
+        "execution": {
+            "generated_at_utc_ns": time.time_ns(),
+            "generated_at_utc": datetime.now(UTC).isoformat(),
+        },
+        "canonical": document,
+    }
+    artifact_body = json.dumps(artifact, sort_keys=True, separators=(",", ":")) + "\n"
     if args.output is not None:
+        _validate_output_target(args.data_root, args.output)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(body, encoding="utf-8")
+        _write_artifact(args.output, artifact_body)
     if args.json:
-        sys.stdout.write(body)
+        sys.stdout.write(artifact_body)
     else:
         _print_summary(document, sys.stdout)
+        sys.stdout.write(f"canonical_sha256: {canonical_sha256}\n")
     return 0
 
 

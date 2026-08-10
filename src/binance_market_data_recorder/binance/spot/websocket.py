@@ -335,6 +335,12 @@ class SpotStreamCollector:
         gap = self._pending_gap
         if gap is None or "sequence_gap" not in envelope.capture_flags:
             return
+        if str(envelope.connection_id) == str(gap["original_connection_id"]):
+            # The gap's own boundary frame must not close the discontinuity:
+            # COMPLETED is legal only after a first-new-generation frame is
+            # durably synced. The identity check keeps the completion
+            # boundary-local.
+            return
         completed_at = envelope.receive_time_utc_ns
         gap_id = str(gap["gap_id"])
         await run_owned_blocking_call(self.spool.sync)
@@ -592,7 +598,15 @@ class SpotStreamCollector:
         stop: asyncio.Event,
         session_restart: asyncio.Event | None = None,
     ) -> None:
-        """Run one generation at a time; every reconnect boundary seals it."""
+        """Run one generation at a time; every reconnect boundary seals it.
+
+        Crash-durable ordering (M21.4.11-R1): the Catalog
+        STREAM_DISCONTINUITY_STARTED intent is persisted BEFORE the old
+        generation drains and seals. A crash at any persistence phase then
+        leaves the durable intent behind, and startup recovery seals the old
+        partial fail-closed (reconnect_gap) instead of claiming
+        complete=true.
+        """
 
         while not stop.is_set():
             producer_done = asyncio.Event()
@@ -601,6 +615,7 @@ class SpotStreamCollector:
             self._boundary_detected_at_utc_ns = None
             writer_task = asyncio.create_task(self._writer_loop(producer_done))
             outcome = "stopped"
+            gap_just_started = False
             try:
                 outcome = await self._connection_loop(
                     stop, writer_task, session_restart=session_restart
@@ -611,29 +626,52 @@ class SpotStreamCollector:
                     # the sealed tail chunk gets the manifest-level
                     # reconnect_gap flag. Persisted Raw frames stay untouched.
                     self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
+                    if self._pending_gap is None:
+                        # Persist the reconnect intent BEFORE the seal below
+                        # (INV-007): a crash during the seal must not let
+                        # startup seal the old partial complete=true.
+                        try:
+                            if (
+                                self._boundary_connection_id is None
+                                or self._boundary_detected_at_utc_ns is None
+                            ):
+                                raise RuntimeError(
+                                    f"missing Spot boundary identity for {outcome}"
+                                )
+                            await self._record_gap_started(
+                                None,
+                                outcome,
+                                started_at_utc_ns=self._boundary_detected_at_utc_ns,
+                                connection_id=self._boundary_connection_id,
+                            )
+                            gap_just_started = True
+                            self._generation += 1
+                            self._recovery_flag_pending = True
+                            self._recovery_marker_enqueued = False
+                        except BaseException as intent_error:
+                            # Release the writer (drain + fail-closed seal)
+                            # before propagating the intent failure; on
+                            # cancellation keep the deferred-owned-worker
+                            # semantics of the writer task.
+                            producer_done.set()
+                            if isinstance(
+                                intent_error, asyncio.CancelledError
+                            ):
+                                writer_task.cancel()
+                                await asyncio.gather(
+                                    writer_task, return_exceptions=True
+                                )
+                            else:
+                                with suppress(BaseException):
+                                    await writer_task
+                            raise
                 producer_done.set()
                 await writer_task
             if outcome == "stopped":
                 return
             if outcome not in RECONNECT_REASONS:
                 raise RuntimeError(f"unknown Spot connection outcome: {outcome}")
-            if self._pending_gap is None:
-                if (
-                    self._boundary_connection_id is None
-                    or self._boundary_detected_at_utc_ns is None
-                ):
-                    raise RuntimeError(f"missing Spot boundary identity for {outcome}")
-                await self._record_gap_started(
-                    None,
-                    outcome,
-                    started_at_utc_ns=self._boundary_detected_at_utc_ns,
-                    connection_id=self._boundary_connection_id,
-                )
-                self._generation += 1
-                self._recovery_flag_pending = True
-                self._recovery_marker_enqueued = False
-                self._forced_seal_flags = frozenset()
-            else:
+            if self._pending_gap is not None and not gap_just_started:
                 # A pending gap already covers this boundary; it continues
                 # until the first reliable new-generation frame is persisted.
                 log_event(

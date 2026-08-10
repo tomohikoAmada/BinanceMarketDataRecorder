@@ -137,7 +137,7 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 |---------|---------|
 | kill -9 进程 | 启动时 `recover_storage()` 恢复：截断尾部 frame、完成未完成的 seal、协调 manifest |
 | 核心 market 异常退出 | `MarketCollectorSupervisor` 设置子 stop 事件，`CoreMarketTerminalFailure` → launchd 重启 |
-| side-data 任务失败 | `SideDataSupervisor` 独立重启，不设置核心 stop 事件 |
+| side-data 任务失败 | REST poller 由 `SideDataSupervisor` 独立重启，不设置核心 stop 事件；WebSocket side 任务（mark_price/liquidation）的终态完整性/存储故障 **fail closed**（FAILED，不自动重连，M21.4.11-R4），仅网络断连在 collector 内部走 reconnect-boundary 恢复 |
 | 外置 volume 消失 | `ArchiveManager` 记录 `DISAPPEARED_DURING_COPY`，保留内部源 |
 | 磁盘空间耗尽 | `DiskEmergencyCoordinator`：WARNING → CRITICAL → EMERGENCY → hard reserve seal+stop |
 | 网络断开 | WebSocket 自动重连 + snapshot resync |

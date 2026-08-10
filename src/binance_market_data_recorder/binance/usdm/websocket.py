@@ -428,6 +428,13 @@ class UsdMStreamCollector:
         gap = self._pending_gap
         if gap is None or "sequence_gap" not in envelope.capture_flags:
             return
+        if str(envelope.connection_id) == str(gap["original_connection_id"]):
+            # The gap's own boundary frame (for example an ingress
+            # backpressure sequence_gap marker drained with the old
+            # generation) must not close the discontinuity: COMPLETED is
+            # legal only after a first-new-generation frame is durably
+            # synced. The identity check keeps the completion boundary-local.
+            return
         completed_at = envelope.receive_time_utc_ns
         gap_id = str(gap["gap_id"])
         await _run_owned_blocking_call(self.spool.sync)
@@ -790,7 +797,15 @@ class UsdMStreamCollector:
         stop: asyncio.Event,
         session_restart: asyncio.Event | None = None,
     ) -> None:
-        """Run one generation at a time; every reconnect boundary seals it."""
+        """Run one generation at a time; every reconnect boundary seals it.
+
+        Crash-durable ordering (M21.4.11-R1): the Catalog
+        STREAM_DISCONTINUITY_STARTED intent is persisted BEFORE the old
+        generation drains and seals. A crash at any persistence phase then
+        leaves the durable intent behind, and startup recovery seals the old
+        partial fail-closed (reconnect_gap) instead of claiming
+        complete=true.
+        """
         while not stop.is_set():
             producer_done = asyncio.Event()
             self._forced_seal_flags = frozenset()
@@ -798,6 +813,7 @@ class UsdMStreamCollector:
             self._boundary_detected_at_utc_ns = None
             writer_task = asyncio.create_task(self._writer_loop(producer_done))
             outcome = "stopped"
+            gap_just_started = False
             try:
                 outcome = await self._connection_loop(
                     stop, writer_task, session_restart=session_restart
@@ -812,6 +828,56 @@ class UsdMStreamCollector:
                     # marker; the sealed tail chunk gets the manifest-level
                     # reconnect_gap flag. Persisted Raw frames stay untouched.
                     self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
+                if outcome in RECONNECT_REASONS and self._pending_gap is None:
+                    # Persist the reconnect intent BEFORE any storage mutation
+                    # whose correct recovery depends on it (INV-007): the
+                    # seal below is exactly such a mutation, because a crash
+                    # during it must not later seal complete=true.
+                    try:
+                        boundary = (
+                            self._backpressure_boundary
+                            if outcome == "ingress_backpressure"
+                            else None
+                        )
+                        if (
+                            self._boundary_connection_id is None
+                            or self._boundary_detected_at_utc_ns is None
+                        ):
+                            raise RuntimeError(
+                                f"missing USD-M boundary identity for {outcome}"
+                            )
+                        await self._record_gap_started(
+                            boundary,
+                            outcome,
+                            started_at_utc_ns=(
+                                boundary.receive_time_utc_ns
+                                if boundary is not None
+                                else self._boundary_detected_at_utc_ns
+                            ),
+                            connection_id=self._boundary_connection_id,
+                        )
+                        gap_just_started = True
+                        self._generation += 1
+                        self._recovery_flag_pending = True
+                        self._recovery_marker_enqueued = False
+                    except BaseException as intent_error:
+                        # The durable intent could not be recorded. Release
+                        # the writer so no owned blocking work is abandoned:
+                        # it drains and seals the old generation with the
+                        # fail-closed flags set above, then the intent failure
+                        # propagates. On cancellation the writer is cancelled
+                        # exactly as the pre-R1 owned-await chain did, so
+                        # cancellation stays deferred behind its blocking work.
+                        producer_done.set()
+                        if isinstance(intent_error, asyncio.CancelledError):
+                            writer_task.cancel()
+                            await asyncio.gather(
+                                writer_task, return_exceptions=True
+                            )
+                        else:
+                            with suppress(BaseException):
+                                await writer_task
+                        raise
                 producer_done.set()
                 await writer_task
             if outcome == "stopped":
@@ -820,34 +886,14 @@ class UsdMStreamCollector:
                 boundary = self._backpressure_boundary
                 self._backpressure_boundary = None
                 if boundary is None:
-                    raise RuntimeError("missing USD-M backpressure generation boundary")
+                    raise RuntimeError(
+                        "missing USD-M backpressure generation boundary"
+                    )
             elif outcome in RECONNECT_REASONS:
                 boundary = None
             else:
                 raise RuntimeError(f"unknown USD-M connection outcome: {outcome}")
-            if self._pending_gap is None:
-                if (
-                    self._boundary_connection_id is None
-                    or self._boundary_detected_at_utc_ns is None
-                ):
-                    raise RuntimeError(
-                        f"missing USD-M boundary identity for {outcome}"
-                    )
-                await self._record_gap_started(
-                    boundary,
-                    outcome,
-                    started_at_utc_ns=(
-                        boundary.receive_time_utc_ns
-                        if boundary is not None
-                        else self._boundary_detected_at_utc_ns
-                    ),
-                    connection_id=self._boundary_connection_id,
-                )
-                self._generation += 1
-                self._recovery_flag_pending = True
-                self._recovery_marker_enqueued = False
-                self._forced_seal_flags = frozenset()
-            else:
+            if self._pending_gap is not None and not gap_just_started:
                 # A pending gap already covers this boundary (for example a
                 # connection that failed before its first frame); it continues
                 # until the first reliable new-generation frame is persisted.

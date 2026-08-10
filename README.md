@@ -409,16 +409,20 @@ Gap 触发 `RESYNC_REQUIRED`，offending update 保留为 `_buffer` 首项，
 任意 transport 边界（unexpected disconnect / planned rotation / server
 shutdown / session restart / backpressure）都会：
 
-1. drain 并 seal 旧 generation（无可用未持久化 boundary frame 时，manifest
+1. 先持久化 Catalog `STREAM_DISCONTINUITY_STARTED`（crash-durable
+   reconnect intent，M21.4.11-R1：任何崩溃阶段后启动恢复都 fail closed）；
+2. drain 并 seal 旧 generation（无可用未持久化 boundary frame 时，manifest
    级 `reconnect_gap` 强制 `gap=true`/`complete=false`；Raw 帧绝不改写）；
-2. 先持久化 Catalog `STREAM_DISCONTINUITY_STARTED`，再 `generation++`；
-3. 打开新连接；首个新帧携带 `sequence_gap`；
+3. `generation++`；打开新连接；首个新帧携带 `sequence_gap`；
 4. Raw sync 之后才提交 `STREAM_DISCONTINUITY_COMPLETED`；
    `historical_continuity_restored=false`。
 
 close 与首个新帧之间的 exchange-side completeness 永远无法证明，
 planned rotation 不是豁免。diff_depth 永远不流内重连：边界即会话退休，
-必须先 fresh Snapshot + 正确桥接才能 READY。详情：
+必须先 fresh Snapshot + 正确桥接才能 READY。side-data WebSocket 任务
+（mark_price/liquidation）的终态完整性故障 fail closed，绝不无 durable
+boundary 地静默重连。历史审计工具边界局部、严格只读、确定性输出。
+详情：
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
 
 R-034 仍为 Open：官方 Global Spot bootstrap 文辞与官方 toolbox 示例冲突。

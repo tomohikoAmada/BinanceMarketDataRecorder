@@ -230,14 +230,16 @@ USD-M collectors:
   READY); Raw gap evidence is independent of orderbook recovery.
 - Intentional close (planned rotation) is not an integrity exemption;
   `server_shutdown` and `sequence_gap` evidence coexist.
-- Seal defense in depth: a chunk with multiple connection_ids and no
-  `sequence_gap`/`reconnect_gap`/`blue_green_overlap` provenance fails
-  closed to `reconnect_gap` (`gap=true`, `complete=false`). Blue/green
-  overlap remains the only explicit safe multi-connection provenance.
-- `tools/audit_reconnect_boundaries.py` is a read-only historical scanner
-  (classifications EXPLICIT_SEQUENCE_GAP / BLUE_GREEN_OVERLAP /
-  UNMARKED_RECONNECT / UNKNOWN) used to quantify the 4,680 unmarked
-  historical boundaries; historical sealed evidence is never rewritten.
+- Seal defense in depth: a chunk with multiple connection_ids whose
+  connection transitions lack boundary-local evidence fails closed to
+  `reconnect_gap` (`gap=true`, `complete=false`). Blue/green overlap is safe
+  only when it covers the exact transition.
+- `tools/audit_reconnect_boundaries.py` is a strictly read-only historical
+  scanner (classifications EXPLICIT_SEQUENCE_GAP / BLUE_GREEN_OVERLAP /
+  UNMARKED_RECONNECT / UNKNOWN, boundary-local per connection transition,
+  deterministic canonical output with cutoff + manifest inventory) used to
+  quantify the 4,680 unmarked historical boundaries; historical sealed
+  evidence is never rewritten.
 
 Full record: `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 

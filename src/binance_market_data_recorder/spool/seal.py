@@ -135,6 +135,49 @@ def _decompressed_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _deployment_ids(flags: frozenset[str]) -> set[str]:
+    return {flag for flag in flags if flag.startswith("deployment_id=")}
+
+
+def _overlap_covers_transition(
+    old_flags: frozenset[str], new_flags: frozenset[str]
+) -> bool:
+    """True when a blue/green overlap provably covers this exact transition.
+
+    Both boundary frames must carry the overlap flag, and when a
+    ``deployment_id`` is present on either side the two sides must share at
+    least one deployment identity. A lone overlap flag elsewhere in the chunk
+    never exempts an unrelated connection transition.
+    """
+    if OVERLAP_FLAG not in old_flags or OVERLAP_FLAG not in new_flags:
+        return False
+    old_deployments = _deployment_ids(old_flags)
+    new_deployments = _deployment_ids(new_flags)
+    if not old_deployments and not new_deployments:
+        return True
+    return bool(old_deployments & new_deployments)
+
+
+def _boundary_local_evidence_safe(
+    transitions: tuple[
+        tuple[str, str, frozenset[str], frozenset[str]], ...
+    ],
+) -> bool:
+    """Every connection transition inside a chunk must carry boundary-local proof.
+
+    A transition is safe only when the exact boundary pair carries
+    ``sequence_gap`` on either side or a blue/green overlap that covers that
+    exact transition. Evidence from one transition never exempts another.
+    """
+    for _old, _new, old_flags, new_flags in transitions:
+        if "sequence_gap" in old_flags or "sequence_gap" in new_flags:
+            continue
+        if _overlap_covers_transition(old_flags, new_flags):
+            continue
+        return False
+    return True
+
+
 def _manifest(
     scan: ScanResult,
     layout: StorageLayout,
@@ -154,12 +197,14 @@ def _manifest(
     capture_flags.update(forced_flags)
     if (
         len(statistics.connection_ids) > 1
-        and not capture_flags & (INCOMPLETE_FLAGS | {OVERLAP_FLAG})
+        and not capture_flags & INCOMPLETE_FLAGS
+        and not _boundary_local_evidence_safe(scan.connection_transitions)
     ):
         # Defense in depth: a sealed chunk must never claim
-        # gap=false/complete=true across an unmarked connection boundary.
-        # Blue/green overlap is the only explicit safe multi-connection
-        # provenance; anything else fails closed to an incomplete interval.
+        # gap=false/complete=true across a connection transition that lacks
+        # boundary-local evidence. Blue/green overlap is safe only when it
+        # covers the exact transition; anything else fails closed to an
+        # incomplete interval.
         capture_flags.add(RECONNECT_GAP_FLAG)
     complete = not bool(capture_flags & INCOMPLETE_FLAGS)
     sealed_at = time.time_ns()
@@ -229,6 +274,12 @@ def _validate_existing_manifest(path: Path, expected: dict[str, object]) -> None
     )
     if any(existing.get(name) != expected[name] for name in stable_fields):
         raise SealError("existing manifest does not identify the same verified chunk")
+    for name in ("gap", "complete"):
+        if existing.get(name) != expected[name]:
+            raise SealError(
+                "existing manifest contradicts freshly derived completeness "
+                f"semantics: expected {name}={expected[name]}"
+            )
 
 
 def seal_partial(

@@ -591,10 +591,15 @@ from Raw after a corrected parser is available.
   seals `gap=false/complete=true`. FORMAL_72H_RESULT=FAIL,
   eligible_for_next_stage=false. The 12h/24h data-integrity acceptance is
   SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING (process stability stands). A
-  read-only audit found 4,680 unmarked reconnect boundaries. The M21.4.11
+  corrected boundary-local read-only audit found 4,680 unmarked reconnect
+  boundaries (11 explicit, 0 ambiguous). The M21.4.11
   repair (`fix/m21-4-reconnect-boundary-integrity`) implements the unified
   Reconnect Boundary state machine, manifest-level `reconnect_gap`, seal
-  defense, and the read-only audit tool; it is under review and NOT DEPLOYED.
+  defense, and the read-only audit tool; the M21.4.11-R1..R5 correction adds
+  crash-durable STARTED-before-seal ordering, boundary-local audit
+  classification, strictly read-only audit semantics, side-data fail-closed
+  terminal restart, and deterministic canonical audit output. It is under
+  review and NOT DEPLOYED.
   Full record:
   `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 

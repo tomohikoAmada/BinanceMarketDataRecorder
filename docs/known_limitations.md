@@ -33,8 +33,9 @@ long-running proof.
 - Planned rotation: **FAIL on Raw gap evidence** — all five observed
   rotations (12h/24h/72h windows and post-window) seal with
   gap=false/complete=true and no Catalog gap
-- Reconnect boundary integrity: 4,680 historical unmarked transitions found
-  by read-only audit; forward fix implemented, NOT DEPLOYED
+- Reconnect boundary integrity: corrected boundary-local read-only audit
+  found 4,680 historical unmarked transitions (11 explicit, 0 ambiguous);
+  forward fix implemented, NOT DEPLOYED
 - Backpressure natural exercise: gen5 PASS in formal 24h window
   (RECOVERY_CONTRACT_PASS); gen6 started in window, completed POST_WINDOW;
   Spot backpressure repair still absent
@@ -116,11 +117,16 @@ part of M20; it is the M21 acceptance scope.
   `reconnect_gap`, seal defense) is implemented and under review; **until it
   is deployed, any interval crossing a reconnect boundary produced by the
   running artifact must not be trusted as complete.**
-- **Historical silent gaps are immutable**: a read-only audit found 4,680
-  unmarked reconnect boundaries (11 explicit backpressure gaps) across all
-  WebSocket streams since capture began. Sealed Raw/Manifest evidence cannot
-  be rewritten; additive remediation is designed but not executed
-  (POST_MERGE_MIGRATION_REQUIRED=true).
+- **Historical silent gaps are immutable**: the corrected boundary-local
+  read-only audit (M21.4.11-R2/R3/R5, cutoff `1786349202047196027`,
+  inventory 161,817 manifests) found 4,680 unmarked reconnect boundaries
+  (11 explicit backpressure gaps, 0 ambiguous) across all WebSocket streams
+  since capture began. The earlier 4,680/11 figures from the
+  manifest-flag-classified scanner are retained only as
+  `SUPERSEDED_BY_CORRECTED_BOUNDARY_LOCAL_AUDIT`; the corrected rerun
+  confirms the same totals with boundary-local evidence. Sealed
+  Raw/Manifest evidence cannot be rewritten; additive remediation is
+  designed but not executed (POST_MERGE_MIGRATION_REQUIRED=true).
 - **Planned rotation is not an integrity exemption**: all five observed
   rotations (12h, 24h, 72h x3) and the post-window rotation carry no Raw gap
   evidence; only the forward fix changes this.

@@ -36,8 +36,8 @@ from ..storage.catalog import (
     ChunkState,
 )
 from ..storage.layout import StorageLayout, fsync_directory
-from .format import ScanIssue, scan_chunk
-from .seal import SealError, seal_partial, validate_sealed_artifact
+from .format import ScanIssue, decode_chunk_header, scan_chunk
+from .seal import RECONNECT_GAP_FLAG, SealError, seal_partial, validate_sealed_artifact
 
 
 @dataclass(frozen=True)
@@ -369,6 +369,30 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
     return actions
 
 
+def _derived_seal_flags(
+    partial_path: Path, catalog: Catalog
+) -> frozenset[str]:
+    """Derive fail-closed seal flags from durable reconnect-boundary intent.
+
+    A clean partial scanned during startup has no in-memory forced flags: the
+    collector that crashed was the only holder of that memory. If the Catalog
+    still carries an unclosed STREAM_DISCONTINUITY_STARTED for the same
+    market/stream, the durable intent proves this partial was cut at a
+    reconnect boundary, and sealing it complete=true would fabricate
+    exchange-side completeness. Startup therefore forces the manifest-level
+    reconnect_gap marker. When no open discontinuity exists the partial is
+    sealed with ordinary semantics.
+    """
+    with partial_path.open("rb", buffering=0) as source:
+        header, _body = decode_chunk_header(source)
+    open_gaps = catalog.unclosed_stream_discontinuities(
+        market=header.market, stream=header.stream
+    )
+    if open_gaps:
+        return frozenset({RECONNECT_GAP_FLAG})
+    return frozenset()
+
+
 def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
     """Run the complete M3 startup reconciliation in a stable order."""
 
@@ -380,7 +404,12 @@ def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[Recovery
         partial_path = layout.root / partial_value
         if not partial_path.exists():
             continue
-        manifest = seal_partial(partial_path, layout=layout, catalog=catalog)
+        manifest = seal_partial(
+            partial_path,
+            layout=layout,
+            catalog=catalog,
+            forced_flags=_derived_seal_flags(partial_path, catalog),
+        )
         actions.append(
             RecoveryAction(
                 partial_value,

@@ -13,7 +13,11 @@ import pytest
 import zstandard
 from websockets.exceptions import ConnectionClosedError
 
-from binance_market_data_recorder.binance.spot.websocket import ReconnectBackoff
+from binance_market_data_recorder.binance.spot.schema import SpotStream
+from binance_market_data_recorder.binance.spot.websocket import (
+    ReconnectBackoff,
+    SpotStreamCollector,
+)
 from binance_market_data_recorder.binance.usdm.schema import UsdMStream
 from binance_market_data_recorder.binance.usdm.websocket import (
     UsdMStreamCollector,
@@ -23,6 +27,7 @@ from binance_market_data_recorder.spool.format import (
     FRAME_PREFIX,
     decode_chunk_header,
     decode_envelope,
+    encode_frame,
 )
 from binance_market_data_recorder.spool.recovery import recover_storage
 from binance_market_data_recorder.spool.seal import (
@@ -32,7 +37,7 @@ from binance_market_data_recorder.spool.seal import (
 )
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
-from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 
@@ -986,3 +991,981 @@ def test_legacy_multiconnection_partial_recovers_as_forced_incomplete(
     assert manifest["complete"] is False
     assert manifest["gap"] is True
     assert RECONNECT_GAP_FLAG in manifest["capture_flags"]
+
+
+class CrashDuringSealSpool(StreamSpool):
+    """Enter Catalog SEALING and crash before any sealed artifact exists."""
+
+    def close_and_seal(
+        self, forced_flags: frozenset[str] = frozenset()
+    ) -> dict[str, object] | None:
+        self.drain_all()
+        writer = self._writer
+        if writer is None:
+            return None
+        writer.close()
+        self.catalog.transition(
+            str(writer.header.chunk_id),
+            ChunkState.SEALING,
+            idempotency_key=f"sealing:{writer.header.chunk_id}",
+            evidence={"verified_frames": writer.record_count},
+        )
+        raise OSError("injected crash during generation seal")
+
+
+class FailBeforeSyncOnGapFrameWriter(RawChunkWriter):
+    """Append the first-new sequence_gap frame, then crash before Raw sync."""
+
+    def append(self, envelope: Any) -> int:
+        if "sequence_gap" in envelope.capture_flags:
+            frame = encode_frame(
+                envelope, max_frame_bytes=self.header.max_frame_bytes
+            )
+            self._write_all(frame)
+            self._record_count += 1
+            raise OSError("injected crash before Raw sync of first-new frame")
+        return super().append(envelope)
+
+
+def make_usdm_crash_runner(
+    root: Path,
+    *,
+    opener: Any,
+    stream: UsdMStream = UsdMStream.BOOK_TICKER,
+    spool_cls: type[StreamSpool] = CrashDuringSealSpool,
+    writer_factory: Any = None,
+) -> tuple[UsdMStreamCollector, Catalog]:
+    layout = ensure_storage_layout(root)
+    catalog = Catalog(layout.catalog)
+    spool = spool_cls(
+        layout=layout,
+        catalog=catalog,
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream=stream.value,
+        collector_instance_id="m21-4-11-crash",
+        collector_version="0.1.0+test",
+        queue_capacity=32,
+        rotation=RotationPolicy(seconds=60),
+        durability_interval_seconds=0,
+        max_frame_bytes=1024 * 1024,
+        **({"writer_factory": writer_factory} if writer_factory is not None else {}),
+    )
+    collector = UsdMStreamCollector(
+        stream=stream,
+        route="market" if stream == UsdMStream.AGG_TRADE else "public",
+        wire_name={
+            UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
+            UsdMStream.AGG_TRADE: "btcusdt@aggTrade",
+            UsdMStream.BOOK_TICKER: "btcusdt@bookTicker",
+        }[stream],
+        spool=spool,
+        collector_instance_id="m21-4-11-crash",
+        collector_version="0.1.0+test",
+        logger=logging.getLogger("test.m21-4-11-crash"),
+        receipt_queue_capacity=16,
+        planned_rotation_seconds=60,
+        backoff=ReconnectBackoff(
+            initial_seconds=0.001,
+            maximum_seconds=0.001,
+            jitter_ratio=0,
+        ),
+        opener=opener,
+    )
+    return collector, catalog
+
+
+@pytest.mark.parametrize(
+    ("stream", "frame_factory", "reason"),
+    [
+        (UsdMStream.BOOK_TICKER, book_ticker, "unexpected_disconnect"),
+        (UsdMStream.AGG_TRADE, agg_trade, "unexpected_disconnect"),
+    ],
+)
+def test_crash_during_seal_recovers_fail_closed_and_completes_same_gap(
+    tmp_path: Path,
+    stream: UsdMStream,
+    frame_factory: Any,
+    reason: str,
+) -> None:
+    """TEST-102: crash after Catalog SEALING but before the artifact/manifest.
+
+    The durable STARTED intent recorded before the seal must survive: startup
+    recovery seals the old partial with reconnect_gap (never complete=true),
+    and the same gap_id completes on the replacement generation.
+    """
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [frame_factory(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path, opener=opener, stream=stream
+        )
+        try:
+            with pytest.raises(OSError, match="crash during generation seal"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED"
+            ]
+            return cast(dict[str, Any], events[0]["evidence"])
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    assert len(manifests(tmp_path)) == 0
+    partials = list(layout.active.glob("*.bmdr.partial"))
+    assert len(partials) == 1
+
+    async def recover() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([frame_factory(2)], stop=asyncio.Event())
+
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+        documents = manifests(tmp_path)
+        assert len(documents) == 1
+        assert documents[0]["complete"] is False
+        assert documents[0]["gap"] is True
+        assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+        assert (
+            documents[0]["chunk_id"].replace("-", "")
+            == partials[0].name.split(".")[0]
+        )
+        stop = asyncio.Event()
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path,
+            opener=opener,
+            stream=stream,
+            spool_cls=StreamSpool,
+        )
+        try:
+            asyncio.get_running_loop().call_later(0.1, stop.set)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["new_generation"] == started["original_generation"] + 1
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    assert completed["historical_continuity_restored"] is False
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_crash_before_seal_recovers_open_gap_and_completes_same_gap_id(
+    tmp_path: Path,
+) -> None:
+    """TEST-101: crash after durable STARTED but before the old drain/seal."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = FailingSealSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = UsdMStreamCollector(
+            stream=UsdMStream.BOOK_TICKER,
+            route="public",
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-crash"),
+            opener=opener,
+        )
+        try:
+            with pytest.raises(OSError, match="injected seal failure"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED"
+            ]
+            assert len(
+                catalog.unclosed_stream_discontinuities(
+                    market="um_perpetual", stream="book_ticker"
+                )
+            ) == 1
+            return cast(dict[str, Any], events[0]["evidence"])
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    # The old partial was drained but never sealed: Raw is preserved, nothing
+    # falsely claims completeness.
+    partials = list(layout.active.glob("*.bmdr.partial"))
+    assert len(partials) == 1
+    assert len(manifests(tmp_path)) == 0
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 1
+    assert reopened[0]["complete"] is False
+    assert "sequence_gap" in reopened[0]["capture_flags"]
+
+
+def test_crash_after_artifact_before_manifest_recovers_with_forced_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-103: sealed .zst exists but the manifest write never happened."""
+    import binance_market_data_recorder.spool.seal as seal_module
+
+    def crash_manifest_write(path: Path, document: dict[str, object]) -> None:
+        raise OSError("injected crash before manifest write")
+
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        with monkeypatch.context() as context:
+            context.setattr(seal_module, "_atomic_json", crash_manifest_write)
+            collector, catalog = make_usdm_crash_runner(
+                tmp_path, opener=opener, spool_cls=StreamSpool
+            )
+            try:
+                with pytest.raises(OSError, match="before manifest write"):
+                    await asyncio.wait_for(
+                        collector.run(asyncio.Event()), timeout=3
+                    )
+                return cast(
+                    dict[str, Any], discontinuity_events(catalog)[0]["evidence"]
+                )
+            finally:
+                catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    sealed = list(layout.sealed.glob("*.bmdr.zst"))
+    assert len(sealed) == 1
+    assert len(list(layout.manifests.glob("*.json"))) == 0
+
+    async def recover() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=asyncio.Event())
+
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+        documents = manifests(tmp_path)
+        assert len(documents) == 1
+        assert documents[0]["complete"] is False
+        assert documents[0]["gap"] is True
+        assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+        stop = asyncio.Event()
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path, opener=opener, spool_cls=StreamSpool
+        )
+        try:
+            asyncio.get_running_loop().call_later(0.1, stop.set)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            completed = cast(dict[str, Any], events[-1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["historical_continuity_restored"] is False
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_crash_after_manifest_before_catalog_sealed_recovers_gap_semantics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-104: manifest exists but the Catalog SEALED transition is absent."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        original_transition = catalog.transition
+
+        def failing_transition(
+            chunk_id: str, to_state: ChunkState, **kwargs: Any
+        ) -> None:
+            if to_state is ChunkState.SEALED:
+                raise OSError("injected crash before Catalog SEALED")
+            original_transition(chunk_id, to_state, **kwargs)
+
+        monkeypatch.setattr(catalog, "transition", failing_transition)
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = UsdMStreamCollector(
+            stream=UsdMStream.BOOK_TICKER,
+            route="public",
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-crash"),
+            opener=opener,
+        )
+        try:
+            with pytest.raises(OSError, match="before Catalog SEALED"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            return cast(
+                dict[str, Any], discontinuity_events(catalog)[0]["evidence"]
+            )
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["complete"] is False
+    assert documents[0]["gap"] is True
+    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+
+    async def recover() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=asyncio.Event())
+
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+        with Catalog(layout.catalog, read_only=True) as catalog:
+            row = catalog.chunk(documents[0]["chunk_id"])
+            assert row is not None
+            assert ChunkState(str(row["state"])) is ChunkState.SEALED
+        stop = asyncio.Event()
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path, opener=opener, spool_cls=StreamSpool
+        )
+        try:
+            asyncio.get_running_loop().call_later(0.1, stop.set)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            completed = cast(dict[str, Any], events[-1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["historical_continuity_restored"] is False
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_crash_after_old_seal_before_replacement_connection_recovers_same_gap(
+    tmp_path: Path,
+) -> None:
+    """TEST-105: old generation fully sealed; crash before replacement opens."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise RuntimeError("injected crash before replacement connection")
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            with pytest.raises(RuntimeError, match="before replacement"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            return cast(
+                dict[str, Any], discontinuity_events(catalog)[0]["evidence"]
+            )
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["complete"] is False
+    assert documents[0]["gap"] is True
+    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            completed = cast(dict[str, Any], events[-1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_crash_before_first_new_raw_sync_stays_pending_and_recovers(
+    tmp_path: Path,
+) -> None:
+    """TEST-106: first-new Raw appended but not synced; restart stays pending."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            yield ScriptedSocket(
+                [book_ticker(2)], error=OSError("crash before Raw sync")
+            )
+
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path,
+            opener=opener,
+            spool_cls=StreamSpool,
+            writer_factory=FailBeforeSyncOnGapFrameWriter,
+        )
+        try:
+            with pytest.raises(OSError, match="before Raw sync"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED"
+            ]
+            assert len(
+                catalog.unclosed_stream_discontinuities(
+                    market="um_perpetual", stream="book_ticker"
+                )
+            ) == 1
+            return cast(dict[str, Any], events[0]["evidence"])
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["complete"] is False
+    assert documents[0]["gap"] is True
+    # The un-synced first-new partial is preserved, never falsely complete.
+    assert len(list(layout.active.glob("*.bmdr.partial"))) >= 1
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(3)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            completed = cast(dict[str, Any], events[-1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_restart_after_completed_gap_creates_no_duplicate_events(
+    tmp_path: Path,
+) -> None:
+    """TEST-107/108: COMPLETED persists; restart adds no duplicate evidence."""
+    async def exercise() -> list[dict[str, Any]]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("disconnect")
+                )
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            return events
+        finally:
+            catalog.close()
+
+    asyncio.run(exercise())
+
+    async def restart() -> None:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield ScriptedSocket([book_ticker(3)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+        finally:
+            catalog.close()
+
+    asyncio.run(restart())
+    persisted = envelopes(tmp_path)
+    marked = [item for item in persisted if "sequence_gap" in item.capture_flags]
+    assert len(marked) == 1
+    documents = manifests(tmp_path)
+    # The restarted generation sealed its own graceful chunk; no duplicate
+    # gap evidence was created.
+    assert len(documents) == 3
+    assert documents[2]["complete"] is True
+    assert documents[2]["gap"] is False
+
+
+def test_spot_crash_during_seal_recovers_fail_closed(tmp_path: Path) -> None:
+    """TEST-110: Spot crash-recovery across the reconnect-boundary seal."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = CrashDuringSealSpool(
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = SpotStreamCollector(
+            stream=SpotStream.BOOK_TICKER,
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-crash"),
+            opener=opener,
+        )
+        try:
+            with pytest.raises(OSError, match="crash during generation seal"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED"
+            ]
+            return cast(dict[str, Any], events[0]["evidence"])
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["complete"] is False
+    assert documents[0]["gap"] is True
+    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+    assert documents[0]["market"] == "spot"
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector = SpotStreamCollector(
+            stream=SpotStream.BOOK_TICKER,
+            wire_name="btcusdt@bookTicker",
+            spool=StreamSpool(
+                layout=layout,
+                catalog=Catalog(layout.catalog),
+                market="spot",
+                symbol="BTCUSDT",
+                stream="book_ticker",
+                collector_instance_id="m21-4-11-crash",
+                collector_version="0.1.0+test",
+                queue_capacity=32,
+                rotation=RotationPolicy(seconds=60),
+                durability_interval_seconds=0,
+                max_frame_bytes=1024 * 1024,
+            ),
+            collector_instance_id="m21-4-11-crash",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-crash"),
+            opener=opener,
+        )
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                events = discontinuity_events(catalog)
+                completed = cast(dict[str, Any], events[-1]["evidence"])
+                assert completed["gap_id"] == started["gap_id"]
+                return completed
+        finally:
+            pass
+
+    completed = asyncio.run(recover())
+    assert completed["historical_continuity_restored"] is False
+
+
+def test_diff_depth_crash_during_seal_recovers_and_retires_session(
+    tmp_path: Path,
+) -> None:
+    """TEST-111: diff_depth crash/restart keeps gap evidence; session retires."""
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [diff_depth(1)], error=OSError("crash boundary")
+                )
+            raise OSError("replacement never opens")
+
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path, opener=opener, stream=UsdMStream.DIFF_DEPTH
+        )
+        try:
+            with pytest.raises(OSError, match="crash during generation seal"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
+            return cast(
+                dict[str, Any], discontinuity_events(catalog)[0]["evidence"]
+            )
+        finally:
+            catalog.close()
+
+    started = asyncio.run(crash())
+    layout = ensure_storage_layout(tmp_path)
+    recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+    documents = manifests(tmp_path)
+    assert len(documents) == 1
+    assert documents[0]["complete"] is False
+    assert documents[0]["gap"] is True
+    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
+    assert documents[0]["stream"] == "diff_depth"
+
+    async def restart_session() -> dict[str, Any]:
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            yield ScriptedSocket([diff_depth(2)], stop=stop)
+
+        collector, catalog = make_usdm_crash_runner(
+            tmp_path, opener=opener, stream=UsdMStream.DIFF_DEPTH,
+            spool_cls=StreamSpool,
+        )
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                events = discontinuity_events(catalog)
+                completed = cast(dict[str, Any], events[-1]["evidence"])
+                assert completed["gap_id"] == started["gap_id"]
+                return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(restart_session())
+    assert completed["new_generation"] == started["original_generation"] + 1
+    assert completed["historical_continuity_restored"] is False
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 2
+    assert reopened[1]["complete"] is False
+    assert "sequence_gap" in reopened[1]["capture_flags"]
+
+
+def test_overlap_at_one_transition_never_exempts_unmarked_third(
+    tmp_path: Path,
+) -> None:
+    """TEST-601: A->B valid blue/green overlap, then B->C unmarked reconnect
+    in the same chunk: B->C cannot seal trusted complete."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="defense-overlap",
+            collector_version="0.1.0+test",
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+        )
+        from binance_market_data_recorder.binance.usdm.schema import (
+            envelope_from_websocket_frame,
+        )
+
+        def envelope(connection_id: str, update_id: int, flags: tuple[str, ...]) -> Any:
+            return envelope_from_websocket_frame(
+                raw_payload=book_ticker(update_id),
+                stream=UsdMStream.BOOK_TICKER,
+                connection_id=connection_id,
+                collector_instance_id="defense-overlap",
+                collector_version="0.1.0+test",
+                receive_time_utc_ns=9_000_000_000 + update_id,
+                receive_monotonic_ns=update_id,
+                additional_capture_flags=flags,
+            )
+
+        writer.append(
+            envelope("active-conn", 1, (OVERLAP_FLAG, "deployment_id=d"))
+        )
+        writer.append(
+            envelope("candidate-conn", 2, (OVERLAP_FLAG, "deployment_id=d"))
+        )
+        writer.append(envelope("third-conn", 3, ()))
+        writer.close()
+        manifest = cast(
+            dict[str, Any], seal_partial(writer.path, layout=layout, catalog=catalog)
+        )
+    assert manifest["complete"] is False
+    assert manifest["gap"] is True
+    assert RECONNECT_GAP_FLAG in manifest["capture_flags"]
+
+
+def test_seal_rejects_existing_manifest_that_contradicts_reconnect_intent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """REQ-107: an existing complete=true manifest must fail closed when the
+    durable reconnect intent requires gap=true/complete=false; it is never
+    silently adopted."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="defense-manifest",
+            collector_version="0.1.0+test",
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+        )
+        from binance_market_data_recorder.binance.usdm.schema import (
+            envelope_from_websocket_frame,
+        )
+
+        def envelope(connection_id: str, update_id: int) -> Any:
+            return envelope_from_websocket_frame(
+                raw_payload=book_ticker(update_id),
+                stream=UsdMStream.BOOK_TICKER,
+                connection_id=connection_id,
+                collector_instance_id="defense-manifest",
+                collector_version="0.1.0+test",
+                receive_time_utc_ns=9_000_000_000 + update_id,
+                receive_monotonic_ns=update_id,
+            )
+
+        writer.append(envelope("only-conn", 1))
+        writer.close()
+
+        original_transition = catalog.transition
+
+        def fail_sealed_transition(
+            chunk_id: str, to_state: ChunkState, **kwargs: Any
+        ) -> None:
+            if to_state is ChunkState.SEALED:
+                raise OSError("injected crash before Catalog SEALED")
+            original_transition(chunk_id, to_state, **kwargs)
+
+        monkeypatch.setattr(catalog, "transition", fail_sealed_transition)
+        with pytest.raises(OSError, match="before Catalog SEALED"):
+            seal_partial(
+                writer.path,
+                layout=layout,
+                catalog=catalog,
+                forced_flags=frozenset({RECONNECT_GAP_FLAG}),
+            )
+        monkeypatch.setattr(catalog, "transition", original_transition)
+
+        manifest_path = (
+            layout.manifests
+            / f"{writer.header.chunk_id.hex}.manifest.json"
+        )
+        legacy = json.loads(manifest_path.read_text(encoding="utf-8"))
+        legacy["capture_flags"] = []
+        legacy["gap"] = False
+        legacy["complete"] = True
+        manifest_path.write_text(
+            json.dumps(legacy, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        from binance_market_data_recorder.spool.seal import SealError
+
+        with pytest.raises(SealError, match="completeness semantics"):
+            seal_partial(
+                writer.path,
+                layout=layout,
+                catalog=catalog,
+                forced_flags=frozenset({RECONNECT_GAP_FLAG}),
+            )
