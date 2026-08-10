@@ -880,6 +880,39 @@ class UsdMStreamCollector:
                         raise
                 producer_done.set()
                 await writer_task
+                if (
+                    outcome in RECONNECT_REASONS
+                    and self._pending_gap is None
+                    and not gap_just_started
+                ):
+                    # The pre-seal intent decision above saw the pending gap's
+                    # first-new frame still in the writer queue, so it skipped
+                    # recording new intent; the drain then persisted that
+                    # frame and completed the gap (COMPLETED only after Raw
+                    # sync). This boundary therefore has no durable intent
+                    # yet: the replacement generation must not deliver frames
+                    # before STARTED is durable (INV-007/INV-009), so the
+                    # intent is recorded now, before the next connection
+                    # opens. There is no in-hand boundary frame for this
+                    # transition: the old connection's frames were already
+                    # drained with its generation.
+                    if (
+                        self._boundary_connection_id is None
+                        or self._boundary_detected_at_utc_ns is None
+                    ):
+                        raise RuntimeError(
+                            f"missing USD-M boundary identity for {outcome}"
+                        )
+                    await self._record_gap_started(
+                        None,
+                        outcome,
+                        started_at_utc_ns=self._boundary_detected_at_utc_ns,
+                        connection_id=self._boundary_connection_id,
+                    )
+                    gap_just_started = True
+                    self._generation += 1
+                    self._recovery_flag_pending = True
+                    self._recovery_marker_enqueued = False
             if outcome == "stopped":
                 return
             if outcome == "ingress_backpressure":

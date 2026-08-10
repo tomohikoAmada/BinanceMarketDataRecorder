@@ -71,6 +71,23 @@ contradicts freshly derived completeness semantics (e.g. `complete=true`
 while durable reconnect intent requires `gap=true`) is rejected, never
 silently adopted (`seal_partial._validate_existing_manifest`).
 
+The intent decision has two points, both before any replacement connection
+may deliver frames (M21.4.11-R1 review):
+
+1. before the old-generation drain/seal — the normal case: the pending gap
+   (if any) belongs to an earlier boundary and is not touched by this
+   generation's drain, so STARTED for the current boundary is recorded
+   first (INV-007);
+2. after the drain, only when the drain itself completed the pending gap —
+   the pending gap's first-new frame was still in the writer queue when the
+   boundary was detected, and persisting it during the drain recorded
+   COMPLETED for the earlier gap. In that interleaving the current boundary
+   would otherwise open its replacement with no durable intent and an
+   unmarked first frame (INV-009/INV-010), so STARTED is recorded
+   immediately after the drain, before the replacement connection opens.
+   There is no in-hand boundary frame for this transition; the old
+   connection's frames were already drained with its generation.
+
 Supporting rules:
 
 - A connection failing before its first frame extends the pending gap: one

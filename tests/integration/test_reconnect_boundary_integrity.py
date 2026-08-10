@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import logging
+import threading
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -1969,3 +1970,302 @@ def test_seal_rejects_existing_manifest_that_contradicts_reconnect_intent(
                 catalog=catalog,
                 forced_flags=frozenset({RECONNECT_GAP_FLAG}),
             )
+
+
+class DrainHoldSpool(StreamSpool):
+    """Hold the Raw writer drain once engaged, until the test releases it.
+
+    Drains pass through while ``engage`` is clear, so ordinary generation
+    seals are unaffected. When ``engage`` is set (before the held frame is
+    accepted), every drain blocks until ``release`` is set, forcing the
+    deterministic interleaving where the pending gap's first-new frame sits
+    in the writer queue while the reconnect boundary decision runs.
+    """
+
+    def __init__(
+        self,
+        engage: threading.Event,
+        release: threading.Event,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.engage = engage
+        self.release = release
+
+    def drain_all(self) -> int:
+        if self.engage.is_set() and not self.release.wait(timeout=10):
+            raise RuntimeError("test drain hold timed out")
+        return super().drain_all()
+
+
+class ErrorGateSocket(ScriptedSocket):
+    """Deliver messages, then raise the error only after an external event."""
+
+    def __init__(self, messages: list[bytes], error: Exception, gate: asyncio.Event) -> None:
+        super().__init__(messages, error=error)
+        self.gate = gate
+
+    async def recv(self, decode: bool | None = None) -> bytes:
+        try:
+            return next(self.messages)
+        except StopIteration:
+            await self.gate.wait()
+            raise (self.error or OSError("injected disconnect")) from None
+
+
+@pytest.mark.parametrize(
+    ("stream", "frame_factory"),
+    [
+        (UsdMStream.BOOK_TICKER, book_ticker),
+        (UsdMStream.AGG_TRADE, agg_trade),
+    ],
+)
+def test_drain_completing_gap_then_next_boundary_records_new_intent(
+    tmp_path: Path,
+    stream: UsdMStream,
+    frame_factory: Any,
+) -> None:
+    """TEST-101-race: a gap completed during the boundary drain must not
+    erase the next boundary's durable intent.
+
+    Interleaving under review (M21.4.11-R1): the pre-seal intent decision
+    sees the pending gap's first-new frame still in the writer queue and
+    skips a new STARTED; the boundary drain then persists that frame, the
+    COMPLETED pair fires, and the NEXT reconnect boundary would open a
+    replacement generation with no durable intent and an unmarked first
+    frame (INV-007/INV-009/INV-010). The drain is held until the boundary
+    decision has run, then released; the replacement connection's first
+    frame must still carry sequence_gap and a fresh STARTED/COMPLETED pair
+    must exist.
+    """
+    engage = threading.Event()
+    release = threading.Event()
+    gate = asyncio.Event()
+
+    async def scenario() -> dict[str, Any]:
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = DrainHoldSpool(
+            engage=engage,
+            release=release,
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream=stream.value,
+            collector_instance_id="m21-4-11-race",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [frame_factory(1)], error=OSError("boundary-1")
+                )
+            if attempts == 2:
+                engage.set()
+                yield ErrorGateSocket(
+                    [frame_factory(2)], OSError("boundary-2"), gate
+                )
+            yield ScriptedSocket(
+                [frame_factory(3)], stop=stop, block_on_exhaustion=True
+            )
+
+        collector = UsdMStreamCollector(
+            stream=stream,
+            route="market" if stream == UsdMStream.AGG_TRADE else "public",
+            wire_name={
+                UsdMStream.AGG_TRADE: "btcusdt@aggTrade",
+                UsdMStream.BOOK_TICKER: "btcusdt@bookTicker",
+            }[stream],
+            spool=spool,
+            collector_instance_id="m21-4-11-race",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-race"),
+            receipt_queue_capacity=16,
+            planned_rotation_seconds=60,
+            backoff=ReconnectBackoff(
+                initial_seconds=0.001,
+                maximum_seconds=0.001,
+                jitter_ratio=0,
+            ),
+            opener=opener,
+        )
+        run_task = asyncio.create_task(collector.run(stop))
+        try:
+            # The second generation's first (marked) frame is now held in the
+            # writer drain; the connection fails and the boundary decision
+            # must run while the gap is still pending (no awaits between the
+            # raise and the intent decision, so the hold release below always
+            # happens after the decision).
+            gate.set()
+            await asyncio.sleep(0.2)
+            release.set()
+            deadline = asyncio.get_running_loop().time() + 5
+            while asyncio.get_running_loop().time() < deadline:
+                if len(discontinuity_events(catalog)) >= 4:
+                    break
+                await asyncio.sleep(0.02)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            started = cast(dict[str, Any], events[0]["evidence"])
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            started_again = cast(dict[str, Any], events[2]["evidence"])
+            completed_again = cast(dict[str, Any], events[3]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            assert started_again["gap_id"] != started["gap_id"]
+            assert completed_again["gap_id"] == started_again["gap_id"]
+            assert started_again["reason"] == "unexpected_disconnect"
+            assert started_again["original_generation"] == (
+                started["original_generation"] + 1
+            )
+            assert completed_again["new_generation"] == (
+                started_again["original_generation"] + 1
+            )
+            return {
+                "started_again": started_again,
+                "completed_again": completed_again,
+            }
+        finally:
+            stop.set()
+            await asyncio.wait_for(run_task, timeout=5)
+            catalog.close()
+
+    evidence = asyncio.run(scenario())
+    documents = manifests(tmp_path)
+    assert len(documents) == 3
+    _old, mid, new = documents
+    assert mid["complete"] is False
+    assert mid["gap"] is True
+    assert RECONNECT_GAP_FLAG in mid["capture_flags"]
+    assert "sequence_gap" in mid["capture_flags"]
+    assert new["complete"] is False
+    assert new["gap"] is True
+    assert "sequence_gap" in new["capture_flags"]
+    assert evidence["started_again"]["original_connection_id"] == mid[
+        "connection_ids"
+    ][0]
+    assert evidence["completed_again"]["new_connection_id"] == new[
+        "connection_ids"
+    ][0]
+    assert evidence["completed_again"]["historical_continuity_restored"] is False
+    assert evidence["completed_again"]["raw_gap_marker"] == "sequence_gap"
+
+
+def test_spot_drain_completing_gap_then_next_boundary_records_new_intent(
+    tmp_path: Path,
+) -> None:
+    """Spot variant of the drain-completion race (TEST-110 companion)."""
+    engage = threading.Event()
+    release = threading.Event()
+    gate = asyncio.Event()
+
+    async def scenario() -> dict[str, Any]:
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = DrainHoldSpool(
+            engage=engage,
+            release=release,
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-race",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        stop = asyncio.Event()
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)], error=OSError("boundary-1")
+                )
+            if attempts == 2:
+                engage.set()
+                yield ErrorGateSocket(
+                    [book_ticker(2)], OSError("boundary-2"), gate
+                )
+            yield ScriptedSocket(
+                [book_ticker(3)], stop=stop, block_on_exhaustion=True
+            )
+
+        collector = SpotStreamCollector(
+            stream=SpotStream.BOOK_TICKER,
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-race",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-race"),
+            opener=opener,
+        )
+        run_task = asyncio.create_task(collector.run(stop))
+        try:
+            gate.set()
+            await asyncio.sleep(0.2)
+            release.set()
+            deadline = asyncio.get_running_loop().time() + 5
+            while asyncio.get_running_loop().time() < deadline:
+                if len(discontinuity_events(catalog)) >= 4:
+                    break
+                await asyncio.sleep(0.02)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            started = cast(dict[str, Any], events[0]["evidence"])
+            started_again = cast(dict[str, Any], events[2]["evidence"])
+            completed_again = cast(dict[str, Any], events[3]["evidence"])
+            assert started_again["gap_id"] != started["gap_id"]
+            assert completed_again["gap_id"] == started_again["gap_id"]
+            return {
+                "started_again": started_again,
+                "completed_again": completed_again,
+            }
+        finally:
+            stop.set()
+            await asyncio.wait_for(run_task, timeout=5)
+            catalog.close()
+
+    evidence = asyncio.run(scenario())
+    documents = manifests(tmp_path)
+    assert len(documents) == 3
+    _old, mid, new = documents
+    assert mid["complete"] is False
+    assert mid["gap"] is True
+    assert RECONNECT_GAP_FLAG in mid["capture_flags"]
+    assert "sequence_gap" in mid["capture_flags"]
+    assert new["complete"] is False
+    assert new["gap"] is True
+    assert "sequence_gap" in new["capture_flags"]
+    assert evidence["started_again"]["original_connection_id"] == mid[
+        "connection_ids"
+    ][0]
+    assert evidence["completed_again"]["new_connection_id"] == new[
+        "connection_ids"
+    ][0]
