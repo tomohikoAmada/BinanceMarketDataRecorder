@@ -521,7 +521,70 @@ class Catalog:
                 """,
                 (event_id, event_type, occurred_at_utc_ns, body),
             )
-        return cursor.rowcount == 1
+            inserted = cursor.rowcount == 1
+            if not inserted:
+                existing = self._connection.execute(
+                    """
+                    SELECT event_type, occurred_at_utc_ns, evidence_json
+                    FROM operational_events WHERE event_id = ?
+                    """,
+                    (event_id,),
+                ).fetchone()
+                if existing is None or (
+                    str(existing["event_type"]) != event_type
+                    or int(existing["occurred_at_utc_ns"]) != occurred_at_utc_ns
+                    or str(existing["evidence_json"]) != body
+                ):
+                    raise CatalogStateError(
+                        f"operational event identity conflict: {event_id}"
+                    )
+        return inserted
+
+    def ensure_operational_event(
+        self,
+        *,
+        event_id: str,
+        event_type: str,
+        occurred_at_utc_ns: int,
+        evidence: Mapping[str, object],
+    ) -> bool:
+        """Insert an event or prove an existing event is byte-semantically exact.
+
+        Reconnect lifecycle callers may treat idempotent replay as success only
+        after this check.  The explicit readback also protects recovery from a
+        false/ignored insert result supplied by a fault-injection wrapper: no
+        materialization action is reported unless the requested event is
+        actually durable with identical type, timestamp, and evidence.
+        """
+
+        inserted = self.record_operational_event(
+            event_id=event_id,
+            event_type=event_type,
+            occurred_at_utc_ns=occurred_at_utc_ns,
+            evidence=evidence,
+        )
+        if inserted:
+            return True
+        expected_body = json.dumps(
+            dict(evidence), sort_keys=True, separators=(",", ":")
+        )
+        with self._lock:
+            existing = self._connection.execute(
+                """
+                SELECT event_type, occurred_at_utc_ns, evidence_json
+                FROM operational_events WHERE event_id = ?
+                """,
+                (event_id,),
+            ).fetchone()
+        if existing is None or (
+            str(existing["event_type"]) != event_type
+            or int(existing["occurred_at_utc_ns"]) != occurred_at_utc_ns
+            or str(existing["evidence_json"]) != expected_body
+        ):
+            raise CatalogStateError(
+                f"operational event was not durably validated: {event_id}"
+            )
+        return False
 
     def operational_events(
         self, *, event_type: str | None = None
@@ -1780,6 +1843,101 @@ class Catalog:
                 """,
                 (chunk_id, ChunkState.ACTIVE, now, f"create:{chunk_id}"),
             )
+
+    def register_boundary_marker_sealing(
+        self,
+        *,
+        chunk_id: str,
+        partial_path: str,
+        created_at_utc_ns: int,
+        seal_intent: Mapping[str, object],
+    ) -> None:
+        """Atomically make an empty reconnect marker's seal intent durable.
+
+        The transaction publishes the marker identity directly as SEALING and
+        records both its logical ACTIVE creation and ACTIVE -> SEALING intent
+        transition.  Only after this method commits may StreamSpool create the
+        Raw v1 header.  A crash can therefore expose neither a marker partial
+        nor an ACTIVE marker row without the exact reconnect intent.
+        """
+
+        if not chunk_id or not partial_path or created_at_utc_ns < 0:
+            raise ValueError("invalid boundary marker identity")
+        now = time.time_ns()
+        sealing_evidence = json.dumps(
+            {"verified_frames": 0, "seal_intent": dict(seal_intent)},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        with self._transaction() as connection:
+            existing = connection.execute(
+                """
+                SELECT state, partial_path, created_at_utc_ns
+                FROM chunks WHERE chunk_id = ?
+                """,
+                (chunk_id,),
+            ).fetchone()
+            if existing is None:
+                connection.execute(
+                    """
+                    INSERT INTO chunks(
+                        chunk_id, state, partial_path,
+                        created_at_utc_ns, updated_at_utc_ns
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        chunk_id,
+                        ChunkState.SEALING,
+                        partial_path,
+                        created_at_utc_ns,
+                        now,
+                    ),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO chunk_transitions(
+                        chunk_id, from_state, to_state, occurred_at_utc_ns,
+                        evidence_json, idempotency_key
+                    ) VALUES (?, NULL, ?, ?, '{}', ?)
+                    """,
+                    (chunk_id, ChunkState.ACTIVE, now, f"create:{chunk_id}"),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO chunk_transitions(
+                        chunk_id, from_state, to_state, occurred_at_utc_ns,
+                        evidence_json, idempotency_key
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        chunk_id,
+                        ChunkState.ACTIVE,
+                        ChunkState.SEALING,
+                        now,
+                        sealing_evidence,
+                        f"sealing:{chunk_id}",
+                    ),
+                )
+                return
+            if (
+                ChunkState(str(existing["state"])) is not ChunkState.SEALING
+                or str(existing["partial_path"]) != partial_path
+                or int(existing["created_at_utc_ns"]) != created_at_utc_ns
+            ):
+                raise CatalogStateError(
+                    f"boundary marker identity conflict: {chunk_id}"
+                )
+            transition = connection.execute(
+                """
+                SELECT evidence_json FROM chunk_transitions
+                WHERE idempotency_key = ?
+                """,
+                (f"sealing:{chunk_id}",),
+            ).fetchone()
+            if transition is None or str(transition["evidence_json"]) != sealing_evidence:
+                raise CatalogStateError(
+                    f"boundary marker seal intent conflict: {chunk_id}"
+                )
 
     def state(self, chunk_id: str) -> ChunkState | None:
         with self._lock:

@@ -157,6 +157,7 @@ class Transition:
     catalog_matched_gap_id: str | None
     occurred_at_utc_ns: int
     collector_instance_id: str | None
+    intervening_manifests: list[dict[str, Any]] | None = None
     frame_detail_unavailable: bool = False
     connection_ids: list[str] | None = None
 
@@ -192,6 +193,8 @@ class Transition:
         }
         if self.connection_ids is not None:
             document["connection_ids"] = list(self.connection_ids)
+        if self.intervening_manifests:
+            document["intervening_manifests"] = list(self.intervening_manifests)
         return document
 
 
@@ -584,6 +587,30 @@ def _manifest_overlap_evidence(manifest: dict[str, Any]) -> bool:
     return "blue_green_overlap" in _manifest_flags(manifest)
 
 
+def _zero_record_chunk(chunk: ChunkScan) -> bool:
+    """Return whether a manifest proves this chunk contains no Raw frames.
+
+    ``record_count == 0`` remains authoritative when the sealed body has been
+    archived and is unavailable.  A contradictory locally scanned non-empty
+    body is never treated as an empty marker.
+    """
+
+    return chunk.manifest.get("record_count") == 0 and (
+        chunk.frames is None or len(chunk.frames) == 0
+    )
+
+
+def _intervening_manifest_info(chunk: ChunkScan) -> dict[str, Any]:
+    return {
+        "chunk_id": chunk.manifest.get("chunk_id"),
+        "record_count": chunk.manifest.get("record_count"),
+        "gap": chunk.manifest.get("gap"),
+        "complete": chunk.manifest.get("complete"),
+        "capture_flags": chunk.manifest.get("capture_flags"),
+        "frame_detail_unavailable": chunk.frames is None,
+    }
+
+
 def _classify_inter_chunk(
     old_chunk: ChunkScan,
     new_chunk: ChunkScan,
@@ -593,6 +620,7 @@ def _classify_inter_chunk(
     catalog_identity_kind: str,
     catalog_matched_gap_id: str | None,
     old_frames: list[FrameIdentity] | None,
+    intervening_chunks: list[ChunkScan],
 ) -> str:
     """Classify one exact old-chunk-end -> new-chunk-start transition.
 
@@ -633,6 +661,15 @@ def _classify_inter_chunk(
         # protocol: manifest-level reconnect_gap is boundary-specific for
         # exactly this transition.
         return EXPLICIT_SEQUENCE_GAP
+    if any(
+        _manifest_has(item.manifest, "reconnect_gap")
+        for item in intervening_chunks
+    ):
+        # A frame-less reconnect marker is ordered wholly between the nearest
+        # connection-bearing chunks.  It therefore documents this one logical
+        # boundary without fabricating a frame or being borrowed by another
+        # transition.
+        return EXPLICIT_SEQUENCE_GAP
     if catalog_identity_kind == EXACT_PAIR:
         # The Catalog documents this exact connection pair as a durable
         # discontinuity interval (matched_gap_id provenance).
@@ -646,7 +683,11 @@ def _classify_inter_chunk(
         # Catalog gap evidence exists for this stream at this boundary but
         # cannot be attributed to exactly this connection pair.
         return UNKNOWN
-    if _adjacent_unattributable_evidence(old_chunk.manifest, new_chunk.manifest):
+    if _adjacent_unattributable_evidence(
+        old_chunk.manifest,
+        new_chunk.manifest,
+        intervening_manifests=[item.manifest for item in intervening_chunks],
+    ):
         # Gap/overlap evidence exists on an adjacent manifest but cannot be
         # attributed to exactly this inter-chunk boundary (for example a
         # multi-connection old chunk sealed with reconnect_gap whose exact
@@ -657,13 +698,15 @@ def _classify_inter_chunk(
 
 
 def _adjacent_unattributable_evidence(
-    old_manifest: dict[str, Any], new_manifest: dict[str, Any]
+    old_manifest: dict[str, Any],
+    new_manifest: dict[str, Any],
+    *,
+    intervening_manifests: list[dict[str, Any]] | None = None,
 ) -> bool:
+    all_manifests = [old_manifest, new_manifest, *(intervening_manifests or [])]
     return bool(
-        _manifest_gap_evidence(old_manifest)
-        or _manifest_overlap_evidence(old_manifest)
-        or _manifest_gap_evidence(new_manifest)
-        or _manifest_overlap_evidence(new_manifest)
+        any(_manifest_gap_evidence(manifest) for manifest in all_manifests)
+        or any(_manifest_overlap_evidence(manifest) for manifest in all_manifests)
     )
 
 
@@ -718,6 +761,7 @@ def collect_transitions(
     transitions: list[Transition] = []
     summaries: dict[tuple[str, str], dict[str, int]] = {}
     previous_by_key: dict[tuple[str, str], ChunkScan] = {}
+    intervening_by_key: dict[tuple[str, str], list[ChunkScan]] = {}
     for chunk in chunks:
         market = str(chunk.manifest["market"])
         stream = str(chunk.manifest["stream"])
@@ -843,7 +887,15 @@ def collect_transitions(
                 )
                 transitions.append(transition)
                 _tally(summaries[key], transition.kind)
+        if _zero_record_chunk(chunk):
+            # Preserve the marker in the logical boundary chain but do not
+            # replace the last connection-bearing chunk.  Consecutive empty
+            # chunks still describe at most one observed A -> B transition.
+            if key in previous_by_key:
+                intervening_by_key.setdefault(key, []).append(chunk)
+            continue
         previous = previous_by_key.get(key)
+        intervening = intervening_by_key.pop(key, [])
         if previous is not None and (
             previous.manifest.get("stream") == stream
             and previous.manifest.get("market") == market
@@ -876,6 +928,7 @@ def collect_transitions(
                     catalog_identity_kind=identity_kind,
                     catalog_matched_gap_id=matched_gap_id,
                     old_frames=previous.frames,
+                    intervening_chunks=intervening,
                 )
                 transition = Transition(
                     kind=kind,
@@ -909,8 +962,14 @@ def collect_transitions(
                     catalog_matched_gap_id=matched_gap_id,
                     occurred_at_utc_ns=occurred_at,
                     collector_instance_id=_collector_id(chunk.manifest),
+                    intervening_manifests=[
+                        _intervening_manifest_info(item) for item in intervening
+                    ]
+                    or None,
                     frame_detail_unavailable=(
-                        previous.frames is None or chunk.frames is None
+                        previous.frames is None
+                        or chunk.frames is None
+                        or any(item.frames is None for item in intervening)
                     ),
                 )
                 transitions.append(transition)

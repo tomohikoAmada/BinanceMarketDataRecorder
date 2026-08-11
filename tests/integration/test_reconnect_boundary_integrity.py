@@ -43,7 +43,11 @@ from binance_market_data_recorder.spool.seal import (
 )
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
-from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
+from binance_market_data_recorder.storage.catalog import (
+    Catalog,
+    CatalogStateError,
+    ChunkState,
+)
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 
@@ -3825,3 +3829,385 @@ def test_no_active_writer_boundary_seal_persists_marker_chunk_with_intent(
         book_ticker(1),
         book_ticker(3),
     ]
+
+
+def test_no_writer_marker_crash_before_sealing_restores_exact_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-1001 / IR-001: the no-writer fallback must make its exact
+    reconnect intent durable before marker creation can expose durable state.
+
+    The reviewed R2.1 implementation constructs ``RawChunkWriter`` first.
+    Its fsynced header and Catalog ACTIVE registration therefore survive when
+    the process dies before ``seal_partial`` commits ACTIVE -> SEALING, while
+    the seal intent does not.  Fresh startup must nevertheless restore this
+    exact gap_id, mark the first replacement frame, and close one coherent
+    lifecycle only after Raw sync.
+    """
+    import binance_market_data_recorder.spool.stream as stream_module
+
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-ir-001",
+        reason="planned_rotation",
+        connection_id="conn-old",
+        generation=7,
+        started_at_utc_ns=1_000_000_000,
+    )
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2-2",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+
+        # First fault: STARTED did not commit.
+        fail_started_writes(catalog, monkeypatch)
+        with pytest.raises(OSError, match="injected STARTED write failure"):
+            catalog.record_operational_event(
+                event_id="stream-discontinuity-started:gap-ir-001",
+                event_type="STREAM_DISCONTINUITY_STARTED",
+                occurred_at_utc_ns=1_000_000_000,
+                evidence=_started_evidence(intent),
+            )
+        assert discontinuity_events(catalog) == []
+
+        # Second fault/crash point: marker construction has returned, but the
+        # seal operation has not yet been allowed to persist SEALING.
+        def crash_before_seal(*_args: Any, **_kwargs: Any) -> dict[str, object]:
+            raise OSError("injected crash before marker seal")
+
+        original_seal_partial = seal_partial
+        monkeypatch.setattr(stream_module, "seal_partial", crash_before_seal)
+        with pytest.raises(OSError, match="crash before marker seal"):
+            spool.close_and_seal(
+                forced_flags=frozenset({RECONNECT_GAP_FLAG}),
+                seal_intent=intent,
+            )
+        monkeypatch.setattr(stream_module, "seal_partial", original_seal_partial)
+
+    # A fresh startup object, not the failed process's in-memory state, owns
+    # recovery.  The same gap identity must be materialized.
+    with Catalog(layout.catalog) as recovered_catalog:
+        actions = recover_storage(layout=layout, catalog=recovered_catalog)
+        open_gaps = recovered_catalog.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        and action.detail == "gap-ir-001"
+        for action in actions
+    )
+    assert len(open_gaps) == 1
+    assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == "gap-ir-001"
+
+    async def recover_first_frame() -> None:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield ScriptedSocket([book_ticker(2)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            assert {
+                cast(dict[str, Any], event["evidence"])["gap_id"]
+                for event in events
+            } == {"gap-ir-001"}
+        finally:
+            catalog.close()
+
+    asyncio.run(recover_first_frame())
+    recovered_frames = envelopes(tmp_path)
+    assert [frame.raw_payload for frame in recovered_frames] == [book_ticker(2)]
+    assert "sequence_gap" in recovered_frames[0].capture_flags
+    marker_manifests = [
+        document for document in manifests(tmp_path) if document["record_count"] == 0
+    ]
+    assert len(marker_manifests) == 1
+    assert marker_manifests[0]["gap"] is True
+    assert marker_manifests[0]["complete"] is False
+
+
+def test_no_writer_crash_before_marker_intent_commit_publishes_nothing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-1002: a crash before the first fallback transaction commits
+    publishes neither a marker identity nor a partially invented gap."""
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-before-intent",
+        reason="unexpected_disconnect",
+        connection_id="conn-old",
+        generation=1,
+        started_at_utc_ns=1_000_000_100,
+    )
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2-2",
+            collector_version="0.1.0+test",
+            queue_capacity=8,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+
+        def crash_before_commit(**_kwargs: Any) -> None:
+            raise OSError("injected crash before marker intent commit")
+
+        monkeypatch.setattr(
+            catalog, "register_boundary_marker_sealing", crash_before_commit
+        )
+        with pytest.raises(OSError, match="before marker intent commit"):
+            spool.close_and_seal(seal_intent=intent)
+        assert catalog.sealing_transition_evidence() == []
+        assert catalog.operational_events() == []
+        assert catalog.chunks_in_states(ChunkState.ACTIVE, ChunkState.SEALING) == []
+        assert list(layout.active.glob("*.bmdr.partial")) == []
+
+    with Catalog(layout.catalog) as recovered:
+        assert recover_storage(layout=layout, catalog=recovered) == []
+        assert recovered.operational_events() == []
+
+
+def test_no_writer_crash_immediately_after_marker_intent_commit_restores_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-1003: Catalog intent authority alone restores the same gap_id
+    when the process dies before the Raw marker header is created."""
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-after-intent",
+        reason="planned_rotation",
+        connection_id="conn-old",
+        generation=2,
+        started_at_utc_ns=1_000_000_200,
+    )
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2-2",
+            collector_version="0.1.0+test",
+            queue_capacity=8,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+
+        def crash_before_header(**_kwargs: Any) -> RawChunkWriter:
+            raise OSError("injected crash before marker Raw header")
+
+        monkeypatch.setattr(spool, "_new_writer", crash_before_header)
+        with pytest.raises(OSError, match="before marker Raw header"):
+            spool.close_and_seal(seal_intent=intent)
+        sealing = catalog.sealing_transition_evidence()
+        assert len(sealing) == 1
+        assert cast(dict[str, Any], sealing[0][1]["seal_intent"])["gap_id"] == (
+            "gap-after-intent"
+        )
+        assert catalog.chunks_in_states(ChunkState.ACTIVE) == []
+        assert len(catalog.chunks_in_states(ChunkState.SEALING)) == 1
+        assert list(layout.active.glob("*.bmdr.partial")) == []
+
+    with Catalog(layout.catalog) as recovered:
+        actions = recover_storage(layout=layout, catalog=recovered)
+        open_gaps = recovered.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        and action.detail == "gap-after-intent"
+        for action in actions
+    )
+    assert [_gap_id(event) for event in open_gaps] == ["gap-after-intent"]
+
+
+def test_no_writer_crash_during_marker_raw_creation_restores_gap(
+    tmp_path: Path,
+) -> None:
+    """TEST-1004: every durable outcome during Raw marker construction keeps
+    the precommitted exact gap intent recoverable."""
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-during-marker-raw",
+        reason="unexpected_disconnect",
+        connection_id="conn-old",
+        generation=3,
+        started_at_utc_ns=1_000_000_300,
+    )
+
+    def crashing_writer_factory(**kwargs: Any) -> RawChunkWriter:
+        chunk_id = kwargs["chunk_id"]
+        partial = layout.active / f"{chunk_id.hex}.bmdr.partial"
+        partial.write_bytes(b"durable-truncated-header")
+        raise OSError("injected crash during marker Raw creation")
+
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2-2",
+            collector_version="0.1.0+test",
+            queue_capacity=8,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+            writer_factory=crashing_writer_factory,
+        )
+        with pytest.raises(OSError, match="during marker Raw creation"):
+            spool.close_and_seal(seal_intent=intent)
+        assert len(catalog.sealing_transition_evidence()) == 1
+
+    with Catalog(layout.catalog) as recovered:
+        actions = recover_storage(layout=layout, catalog=recovered)
+        open_gaps = recovered.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+    assert any(action.action == "quarantined" for action in actions)
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        and action.detail == "gap-during-marker-raw"
+        for action in actions
+    )
+    assert [_gap_id(event) for event in open_gaps] == ["gap-during-marker-raw"]
+
+
+def test_marker_is_fail_closed_and_keeps_header_collector_provenance(
+    tmp_path: Path,
+) -> None:
+    """REQ-300/302: an empty backpressure marker is incomplete regardless of
+    caller flags and retains only authentic Raw-header collector provenance."""
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-marker-hardening",
+        reason="ingress_backpressure",
+        connection_id="conn-old",
+        generation=4,
+        started_at_utc_ns=1_000_000_400,
+    )
+    intent["required_forced_flags"] = []
+    with Catalog(layout.catalog) as catalog:
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="marker-instance",
+            collector_version="marker-version",
+            queue_capacity=8,
+            rotation=RotationPolicy(seconds=60),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        marker = spool.close_and_seal(
+            forced_flags=frozenset(), seal_intent=intent
+        )
+        assert marker is not None
+        durable_intent = sealing_intent(catalog, str(marker["chunk_id"]))
+    assert marker["record_count"] == 0
+    assert marker["gap"] is True
+    assert marker["complete"] is False
+    assert marker["capture_flags"] == [RECONNECT_GAP_FLAG]
+    assert marker["collector_instance_ids"] == ["marker-instance"]
+    assert marker["collector_version"] == "marker-version"
+    assert marker["connection_ids"] == []
+    assert marker["receive_time_utc_range_ns"] == {"min": None, "max": None}
+    assert marker["sequence_ranges"] == {}
+    assert durable_intent["required_forced_flags"] == [RECONNECT_GAP_FLAG]
+
+
+def test_recovery_rejects_false_materialization_insert_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """REQ-301: recovery never reports materialization when INSERT returned
+    False and no byte-semantically exact STARTED event exists."""
+    layout = ensure_storage_layout(tmp_path)
+    intent = _durable_intent(
+        gap_id="gap-false-insert",
+        reason="planned_rotation",
+        connection_id="conn-old",
+        generation=5,
+        started_at_utc_ns=1_000_000_500,
+    )
+    with Catalog(layout.catalog) as catalog:
+        catalog.register_boundary_marker_sealing(
+            chunk_id=str(uuid.uuid4()),
+            partial_path="data/active/missing.bmdr.partial",
+            created_at_utc_ns=1_000_000_500,
+            seal_intent=intent,
+        )
+
+        def ignored_insert(**_kwargs: Any) -> bool:
+            return False
+
+        monkeypatch.setattr(catalog, "record_operational_event", ignored_insert)
+        with pytest.raises(
+            CatalogStateError, match="operational event was not durably validated"
+        ):
+            recover_storage(layout=layout, catalog=catalog)
+        assert catalog.operational_events() == []
+
+
+def test_reconnect_operational_event_idempotency_requires_exact_identity(
+    tmp_path: Path,
+) -> None:
+    """REQ-301: exact replay is legal; an event-id collision is not."""
+    layout = ensure_storage_layout(tmp_path)
+    evidence = {
+        "gap_id": "gap-idempotent",
+        "market": "um_perpetual",
+        "stream": "book_ticker",
+    }
+    with Catalog(layout.catalog) as catalog:
+        assert catalog.ensure_operational_event(
+            event_id="stream-discontinuity-started:gap-idempotent",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=123,
+            evidence=evidence,
+        )
+        assert not catalog.ensure_operational_event(
+            event_id="stream-discontinuity-started:gap-idempotent",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=123,
+            evidence=evidence,
+        )
+        with pytest.raises(
+            CatalogStateError, match="operational event identity conflict"
+        ):
+            catalog.ensure_operational_event(
+                event_id="stream-discontinuity-started:gap-idempotent",
+                event_type="STREAM_DISCONTINUITY_COMPLETED",
+                occurred_at_utc_ns=124,
+                evidence={**evidence, "new_connection_id": "conn-new"},
+            )

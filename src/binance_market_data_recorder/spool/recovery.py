@@ -572,7 +572,7 @@ def _materialize_started_if_absent(
             f"gap_id={gap_id} market={market} stream={stream} chunk={chunk_id} "
             "competing unmatched discontinuity exists"
         )
-    catalog.record_operational_event(
+    catalog.ensure_operational_event(
         event_id=f"stream-discontinuity-started:{gap_id}",
         event_type="STREAM_DISCONTINUITY_STARTED",
         occurred_at_utc_ns=int(cast(int, intent["gap_started_at_utc_ns"])),

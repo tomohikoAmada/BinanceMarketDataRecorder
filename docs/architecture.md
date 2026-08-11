@@ -216,10 +216,15 @@ could seal cross-connection Raw as `gap=false/complete=true`. The repair
 routes every transport boundary through one state machine in both Spot and
 USD-M collectors:
 
-- Old generation drains and seals (manifest-level `reconnect_gap` forced
-  incomplete when no unpersisted last-old frame exists) **before** Catalog
-  `STREAM_DISCONTINUITY_STARTED` and **before** `generation++`; the new
-  connection opens only after the old generation is sealed.
+- Catalog `STREAM_DISCONTINUITY_STARTED` is durable before old-generation
+  storage mutation in the normal path; the old generation then drains and
+  seals (manifest-level `reconnect_gap` forced incomplete when no unpersisted
+  last-old frame exists) before `generation++` and replacement open.
+- If STARTED fails with no active writer, an atomic Catalog transaction
+  publishes the preallocated zero-record marker directly as SEALING with the
+  exact `seal_intent` before its Raw header is created. Every later crash phase
+  restores the same gap_id; the marker is always fail-closed and retains Raw
+  header collector provenance without fabricating frame provenance.
 - The first new Raw frame carries `sequence_gap`; Raw sync precedes
   `STREAM_DISCONTINUITY_COMPLETED`; `historical_continuity_restored=false`.
 - A connection failing before its first frame extends the pending gap (one
@@ -240,6 +245,10 @@ USD-M collectors:
   deterministic canonical output with cutoff + manifest inventory) used to
   quantify the 4,680 unmarked historical boundaries; historical sealed
   evidence is never rewritten.
+- The audit retains consecutive zero-record manifests between the nearest
+  connection-bearing chunks and emits one logical transition, so
+  A -> empty... -> B cannot disappear from the denominator. Exact-pair Catalog
+  semantics remain unchanged.
 
 Full record: `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 

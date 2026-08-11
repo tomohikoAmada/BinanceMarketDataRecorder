@@ -1,7 +1,7 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
-  M21.4.11-R2.1)
+  M21.4.11-R2.1, M21.4.11-R2.2)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery)
@@ -209,6 +209,44 @@ discontinuity from its SEALING evidence so the replacement generation marks
 its first frame `sequence_gap` (INV-010). When a writer does exist the
 behavior is unchanged.
 
+### Catalog-first marker birth (M21.4.11-R2.2/IR-001)
+
+R2.1 created the zero-record writer before calling `seal_partial`. The writer
+made its Raw header, directory entry, and Catalog ACTIVE registration durable;
+only the later ACTIVE -> SEALING transition carried `seal_intent`. A crash
+between those operations left a clean orphan ACTIVE marker with no durable
+intent. `recover_partials` correctly retained that orphan, but could not
+restore the gap, recreating silent continuity.
+
+R2.2 retains the marker but reverses its durable birth order without changing
+Raw v1 or the Catalog schema:
+
+1. preallocate the marker `chunk_id`, Raw path, and creation time;
+2. in one SQLite transaction insert the chunk identity and both logical ACTIVE
+   and ACTIVE -> SEALING transitions, publishing the row directly as SEALING;
+   the SEALING evidence contains the exact reconnect `seal_intent`;
+3. only after that transaction commits, create and fsync the zero-record Raw
+   header and continue the ordinary idempotent seal.
+
+There is consequently no committed state equivalent to `marker ACTIVE + no
+intent`. A crash before the transaction publishes no fallback identity. A
+crash immediately after it, during Raw creation, after SEALING, after the
+artifact, or after the manifest always leaves the same `gap_id` recoverable
+from the SEALING transition. Missing or truncated marker Raw remains an
+explicit incomplete/quarantined artifact condition; it cannot erase the gap.
+
+Marker seal flags are independently fail-closed: `reconnect_gap` is added even
+when the caller's reason-specific forced flags are empty (notably USD-M
+`ingress_backpressure`). A zero-record manifest takes
+`collector_instance_id` and `collector_version` from its authentic Raw header;
+it keeps empty connection/time/sequence statistics and fabricates no frame.
+
+Reconnect STARTED, COMPLETED, and recovery materialization use an exact
+operational-event write/readback contract. `INSERT OR IGNORE` returning false
+is legal only when the existing event has the identical event type, timestamp,
+and canonical evidence. A missing or conflicting event fails closed; recovery
+never reports `pending_discontinuity_materialized` without that proof.
+
 ### Already-SEALING chunk with a later intent (M21.4.11-R2.1/AUDIT-002)
 
 `seal_partial()` called on a chunk already in `ChunkState.SEALING` with a new
@@ -249,6 +287,14 @@ UNMARKED_RECONNECT / UNKNOWN:
   gap interval whose connection pair matches exactly proves the boundary.
   Unattributable evidence is UNKNOWN; adjacent-manifest flags are never
   borrowed for an unrelated transition.
+- **Frame-less chunks (R2.2/IR-002).** A legal zero-record chunk never replaces
+  the most recent connection-bearing chunk. One or more consecutive empty
+  chunks are retained as `intervening_manifests`, and the next
+  connection-bearing chunk yields exactly one logical old -> new transition.
+  A `reconnect_gap` on an intervening zero-record boundary marker is exact for
+  that collapsed boundary; other unattributable evidence remains UNKNOWN.
+  `record_count=0` in the immutable manifest preserves this behavior when the
+  marker Raw body was archived. A -> empty -> A creates no transition.
 - **Exact Catalog boundary identity (R2/P1-B).** The transition identity is
   the pair `(old_connection_id, new_connection_id)`; the Catalog interval
   identity is `(original_connection_id, new_connection_id)`. The match is
@@ -299,6 +345,19 @@ UNMARKED_RECONNECT / UNKNOWN:
   failed operation without durable state cannot close the double fault.
   The seal intent is persisted as part of the SEALING transition evidence
   itself, before any artifact/manifest mutation (REQ-102).
+- **R2.2 Option A, remove markers and add a boundary-intent authority, was
+  rejected.** It adds another persistent lifecycle/event type (or sidecar)
+  solely for the no-writer case, and a second operational-event write shares
+  the original STARTED failure path unless it also introduces separate
+  durability machinery.
+- **R2.2 Option B, retain the marker with intent-first durability, is
+  selected.** The atomic Catalog ACTIVE+SEALING transaction reuses the
+  existing chunk lifecycle and recovery authority, requires no schema or Raw
+  format migration, and preserves an explicit immutable boundary artifact.
+- Retaining the R2.1 marker-first ordering is forbidden because it exposes the
+  reproduced ACTIVE-only window. A new mutable sidecar or historical manifest
+  repair was rejected as a larger persistent-state surface and would not be
+  compatible with immutable historical evidence.
 
 ## Consequences
 
@@ -324,6 +383,14 @@ UNMARKED_RECONNECT / UNKNOWN:
   taxonomy change does not alter the counts at this cutoff. The canonical
   payload SHA changed from `7143bc0c...` because every transition record
   now carries the identity-match provenance fields.
+- The R2.2 fixed-cutoff rerun on 2026-08-11 observed the same 161,817-manifest
+  inventory SHA-256
+  `ffaf34bdc29c016b0251f64252bc2c35edd43faba014c030b0834b9cc585dad3`
+  and the same 4,691 / 11 / 4,680 / 0 / 0 classifications. Canonical SHA-256
+  remained
+  `1122431c56ebd8367bbbed1a8fc0e30f1f020d7edfd9c34602c9988d89d4b35f`.
+  This is observed output, not a fixed expectation: the corpus contains no
+  R2.1 zero-record markers because that artifact was never deployed.
 - Consumers must treat the 4,680 unmarked intervals as unreliable until an
   additive correction ships.
 - M21.4.11 is a correction to the PR #10 implementation; the production

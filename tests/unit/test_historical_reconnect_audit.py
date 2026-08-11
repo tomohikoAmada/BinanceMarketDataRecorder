@@ -1184,3 +1184,133 @@ def test_multi_connection_old_chunk_with_overlap_is_unknown(
     assert len(b_to_c) == 1
     assert b_to_c[0]["kind"] == UNKNOWN
     assert "blue_green_overlap" in b_to_c[0]["old_manifest"]["capture_flags"]
+
+
+def test_zero_record_marker_does_not_hide_logical_transition(tmp_path: Path) -> None:
+    """TEST-1101 / IR-002: A -> empty marker -> B is one logical A -> B
+    transition, and the intervening boundary manifest remains evidence."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        old = seal_chunk(layout, catalog, [usdm_envelope("conn-a", 201)])
+        marker = seal_chunk(
+            layout,
+            catalog,
+            [],
+            forced_flags=frozenset({"reconnect_gap"}),
+        )
+        new = seal_chunk(layout, catalog, [usdm_envelope("conn-b", 202)])
+
+    document = audit_data_root(tmp_path)
+    transitions = inter_transitions(document)
+    assert len(transitions) == 1
+    transition = transitions[0]
+    assert transition["old_chunk_id"] == old["chunk_id"]
+    assert transition["new_chunk_id"] == new["chunk_id"]
+    assert transition["old_connection_id"] == "conn-a"
+    assert transition["new_connection_id"] == "conn-b"
+    assert transition["kind"] == EXPLICIT_SEQUENCE_GAP
+    assert [item["chunk_id"] for item in transition["intervening_manifests"]] == [
+        marker["chunk_id"]
+    ]
+    assert document["summary"]["transitions_total"] == 1
+
+
+def test_multiple_zero_record_chunks_produce_one_logical_transition(
+    tmp_path: Path,
+) -> None:
+    """TEST-1102: A -> empty1 -> empty2 -> B has one denominator entry."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 211)])
+        first = seal_chunk(layout, catalog, [])
+        second = seal_chunk(
+            layout,
+            catalog,
+            [],
+            forced_flags=frozenset({"reconnect_gap"}),
+        )
+        seal_chunk(layout, catalog, [usdm_envelope("conn-b", 212)])
+    transitions = inter_transitions(audit_data_root(tmp_path))
+    assert len(transitions) == 1
+    assert transitions[0]["kind"] == EXPLICIT_SEQUENCE_GAP
+    assert [
+        item["chunk_id"] for item in transitions[0]["intervening_manifests"]
+    ] == [first["chunk_id"], second["chunk_id"]]
+
+
+def test_empty_chunk_with_unrelated_catalog_gap_is_not_explicit(
+    tmp_path: Path,
+) -> None:
+    """TEST-1104: a nearby but different Catalog pair cannot prove A -> B."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 221)])
+        marker = seal_chunk(layout, catalog, [])
+        seal_chunk(layout, catalog, [usdm_envelope("conn-b", 222)])
+        record_gap_interval(
+            catalog,
+            gap_id="gap-unrelated-empty",
+            market="um_perpetual",
+            stream="book_ticker",
+            original_connection_id="conn-x",
+            new_connection_id="conn-y",
+            started_at_utc_ns=1_000_000_000,
+            ended_at_utc_ns=2_000_000_000,
+        )
+    transitions = inter_transitions(audit_data_root(tmp_path))
+    assert len(transitions) == 1
+    assert transitions[0]["kind"] != EXPLICIT_SEQUENCE_GAP
+    assert transitions[0]["catalog_identity_match_kind"] != "EXACT_PAIR"
+    assert transitions[0]["intervening_manifests"][0]["chunk_id"] == marker[
+        "chunk_id"
+    ]
+
+
+def test_archived_zero_record_marker_manifest_remains_in_denominator(
+    tmp_path: Path,
+) -> None:
+    """TEST-1105: missing marker Raw does not erase A -> B or its manifest
+    boundary evidence."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 231)])
+        marker = seal_chunk(
+            layout,
+            catalog,
+            [],
+            forced_flags=frozenset({"reconnect_gap"}),
+        )
+        seal_chunk(layout, catalog, [usdm_envelope("conn-b", 232)])
+    marker_artifact = layout.root / str(marker["relative_path"])
+    marker_artifact.unlink()
+    transitions = inter_transitions(audit_data_root(tmp_path))
+    assert len(transitions) == 1
+    assert transitions[0]["kind"] == EXPLICIT_SEQUENCE_GAP
+    assert transitions[0]["frame_detail_unavailable"] is True
+    assert transitions[0]["intervening_manifests"][0] == {
+        "chunk_id": marker["chunk_id"],
+        "record_count": 0,
+        "gap": True,
+        "complete": False,
+        "capture_flags": ["reconnect_gap"],
+        "frame_detail_unavailable": True,
+    }
+
+
+def test_zero_record_chunk_between_same_connection_invents_no_reconnect(
+    tmp_path: Path,
+) -> None:
+    """TEST-1106: A -> empty -> A carries evidence but no connection change."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 241)])
+        seal_chunk(
+            layout,
+            catalog,
+            [],
+            forced_flags=frozenset({"reconnect_gap"}),
+        )
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 242)])
+    document = audit_data_root(tmp_path)
+    assert inter_transitions(document) == []
+    assert document["summary"]["transitions_total"] == 0

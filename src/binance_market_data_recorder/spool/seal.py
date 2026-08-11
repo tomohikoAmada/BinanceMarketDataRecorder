@@ -221,7 +221,11 @@ def _manifest(
         "capture_flags": sorted(capture_flags),
         "chunk_id": str(scan.header.chunk_id),
         "chunk_schema_version": scan.header.chunk_schema_version,
-        "collector_instance_ids": sorted(statistics.collector_instance_ids),
+        # Zero-record boundary markers have no frame statistics, but their Raw
+        # v1 header still carries authentic collector provenance.  Preserve
+        # that header identity without fabricating connection/timestamp data.
+        "collector_instance_ids": sorted(statistics.collector_instance_ids)
+        or [scan.header.collector_instance_id],
         "collector_version": scan.header.collector_version,
         "complete": complete,
         "compression": {

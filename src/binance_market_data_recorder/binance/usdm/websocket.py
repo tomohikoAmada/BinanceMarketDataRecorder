@@ -414,7 +414,7 @@ class UsdMStreamCollector:
         if boundary_payload_sha256 is not None:
             evidence["boundary_payload_sha256"] = boundary_payload_sha256
         await _run_owned_blocking_call(
-            self.spool.catalog.record_operational_event,
+            self.spool.catalog.ensure_operational_event,
             event_id=f"stream-discontinuity-started:{gap_id}",
             event_type="STREAM_DISCONTINUITY_STARTED",
             occurred_at_utc_ns=started_at_utc_ns,
@@ -443,7 +443,7 @@ class UsdMStreamCollector:
         gap_id = str(gap["gap_id"])
         await _run_owned_blocking_call(self.spool.sync)
         await _run_owned_blocking_call(
-            self.spool.catalog.record_operational_event,
+            self.spool.catalog.ensure_operational_event,
             event_id=f"stream-discontinuity-completed:{gap_id}",
             event_type="STREAM_DISCONTINUITY_COMPLETED",
             occurred_at_utc_ns=completed_at,

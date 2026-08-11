@@ -598,8 +598,11 @@ from Raw after a corrected parser is available.
   defense, and the read-only audit tool; the M21.4.11-R1..R5 correction adds
   crash-durable STARTED-before-seal ordering, boundary-local audit
   classification, strictly read-only audit semantics, side-data fail-closed
-  terminal restart, and deterministic canonical audit output. It is under
-  review and NOT DEPLOYED.
+  terminal restart, and deterministic canonical audit output. R2/R2.1/R2.2
+  further add SEALING seal-intent recovery keyed by exact gap lifecycle,
+  Catalog-first zero-record marker durability, exact operational-event
+  idempotency, and logical audit transitions across frame-less chunks. It is
+  under review and NOT DEPLOYED.
   Full record:
   `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 

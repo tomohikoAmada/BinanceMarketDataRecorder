@@ -308,3 +308,11 @@ source, public smoke, and official changelogs are the recorded evidence. M7
 reproduced this challenge for the USD-M REST market-data catalog before
 selecting the matching official SDK generated sources. See R-028. No unofficial
 mirror or proxy is used.
+
+## M21.4.11-R2.2 source impact
+
+The R2.2 correction on 2026-08-11 changes only local crash ordering, Catalog
+idempotency validation, zero-record marker provenance, and the read-only
+historical audit. It changes no Binance endpoint, payload, sequence, timing,
+rate-limit, or SDK behavior. No new external source was required or retrieved;
+the existing official-source inventory and hashes remain authoritative.
