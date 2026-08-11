@@ -3,10 +3,14 @@
 > **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
 > **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
-> 正式 2 小时和 12 小时稳定性验收通过并完成独立证据复核。
-> 正式 24 小时验收通过，并完成纠错复核和 Backpressure 合同法证确认；
+> 正式 2 小时和 12 小时**进程稳定性**验收通过并完成独立证据复核。
+> 正式 24 小时**进程稳定性**验收通过，并完成纠错复核和 Backpressure 合同法证确认；
 > 正式窗口内 gen5 自然 Backpressure 恢复合同 PASS。
-> 72 小时和 168 小时验收尚未开始。
+> **正式 72 小时验收 FAIL（数据完整性合同失败）**：2026-08-07T14:08:24Z
+> USD-M book_ticker 意外断线及所有 planned rotation 边界均无 gap 证据
+> （gap=false/complete=true）。12h/24h 数据完整性验收被
+> SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING 取代。
+> M21.4.11 修复已实现并提交 PR 审查，**未部署**。168 小时验收未开始。
 >
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
@@ -17,12 +21,16 @@
 > This project does not use Binance logos or official visual identity.
 >
 > M21.4 (USD-M Backpressure repair) was merged through PR #7 and deployed to
-> production. Formal 2-hour and 12-hour stability validations passed with
-> independent evidence reviews. The formal 24-hour validation passed and was
-> confirmed by a corrective evidence review and a Backpressure contract
-> forensic review; the natural gen5 backpressure recovery cycle inside the
-> formal window passed its recovery contract. The 72-hour and 168-hour
-> validations have not yet started.
+> production. Formal 2-hour and 12-hour process-stability validations passed
+> with independent evidence reviews. The formal 24-hour process-stability
+> validation passed and was confirmed by a corrective evidence review and a
+> Backpressure contract forensic review; the natural gen5 backpressure
+> recovery cycle inside the formal window passed its recovery contract.
+> **The formal 72-hour validation FAILED on data integrity**: the
+> 2026-08-07T14:08:24Z USD-M book_ticker unexpected disconnect and every
+> planned rotation sealed their reconnect boundaries without gap evidence.
+> The M21.4.11 reconnect-boundary repair is implemented and under review;
+> it is NOT deployed. The 168-hour validation has not started.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
@@ -31,9 +39,14 @@
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 
-M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h稳定性验收通过。
+**72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见下文与
+`docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
+修复已实现并提交 PR 审查，未部署。
+
+M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h进程稳定性验收通过。
 正式24h结果经纠错复核和Backpressure合同法证确认；正式窗口内gen5自然
-Backpressure恢复合同PASS。72h和168h验收未开始。
+Backpressure恢复合同PASS。**正式72h验收FAIL（数据完整性）**：所有普通
+reconnect/planned rotation 边界均无 gap 证据。M21.4.11 修复已实现，未部署。
 不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
@@ -103,8 +116,8 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | 2h PASS, 12h PASS, 24h PASS (纠错复核+合同法证确认), 72h/168h 未开始 |
-| PR/部署 | PR #7 已合并 (Merge Commit cf1e749c...), 生产 Wheel 已部署 |
+| 长期验证 | 2h PASS（短窗口进程稳定性）；12h/24h 进程稳定性 PASS（数据完整性被 reconnect 发现取代）；**72h FAIL**；168h 未开始 |
+| PR/部署 | PR #7 已合并 (Merge Commit cf1e749c...), 生产 Wheel 已部署；M21.4.11 修复 PR 待审查，未部署 |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -390,6 +403,27 @@ Gap 触发 `RESYNC_REQUIRED`，offending update 保留为 `_buffer` 首项，
 非同步期间后续事件继续进入有界缓冲。`restart_bootstrap` 清除派生状态 →
 停止当前 capture session → 带 jitter 退避 → 新连接 + 新 Snapshot →
 重新桥接。
+
+### Reconnect Boundary 完整性（M21.4.11）
+
+任意 transport 边界（unexpected disconnect / planned rotation / server
+shutdown / session restart / backpressure）都会：
+
+1. 先持久化 Catalog `STREAM_DISCONTINUITY_STARTED`（crash-durable
+   reconnect intent，M21.4.11-R1：任何崩溃阶段后启动恢复都 fail closed）；
+2. drain 并 seal 旧 generation（无可用未持久化 boundary frame 时，manifest
+   级 `reconnect_gap` 强制 `gap=true`/`complete=false`；Raw 帧绝不改写）；
+3. `generation++`；打开新连接；首个新帧携带 `sequence_gap`；
+4. Raw sync 之后才提交 `STREAM_DISCONTINUITY_COMPLETED`；
+   `historical_continuity_restored=false`。
+
+close 与首个新帧之间的 exchange-side completeness 永远无法证明，
+planned rotation 不是豁免。diff_depth 永远不流内重连：边界即会话退休，
+必须先 fresh Snapshot + 正确桥接才能 READY。side-data WebSocket 任务
+（mark_price/liquidation）的终态完整性故障 fail closed，绝不无 durable
+boundary 地静默重连。历史审计工具边界局部、严格只读、确定性输出。
+详情：
+`docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
 
 R-034 仍为 Open：官方 Global Spot bootstrap 文辞与官方 toolbox 示例冲突。
 代码使用 `lastUpdateId + 1` 规则，不作官方纠正声明。

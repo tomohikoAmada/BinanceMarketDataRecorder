@@ -197,15 +197,60 @@ streams. The key architectural changes are:
   `complete=false` semantics are reused.
 
 M21.4 passed the 2h, 12h, and 24h formal windows with PID unchanged and
-NRestarts=0. The 24h PASS was confirmed by a corrective integrity review
-and a Backpressure contract forensic review. The formal 24h window's exact
-readiness record: Spot READY 280/280; USD-M READY 279/280 (one formal Soak
-sample observed USD-M transiently CONNECTING during gen5 stream recovery);
-both orderbooks synchronized 280/280; both markets READY at window end and
-in the post-window current state. Inside the formal 24h window, USD-M
-`book_ticker` naturally exercised backpressure once (gen5) and the full
-recovery contract passed (RECOVERY_CONTRACT_PASS). The formal 72h window is
-the next gate and is never started automatically.
+NRestarts=0. **The formal 72h window FAILED on data integrity**
+(M21.4.10/M21.4.11): the 2026-08-07T14:08:24Z USD-M `book_ticker`
+unexpected disconnect and every planned rotation sealed their reconnect
+boundaries without gap evidence. The 12h/24h data-integrity acceptance is
+SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING; their process-stability results
+stand. The 24h PASS's readiness record (Spot 280/280; USD-M 279/280, both
+orderbooks 280/280) and the gen5 RECOVERY_CONTRACT_PASS remain valid
+process/orderbook evidence. The M21.4.11 forward fix is implemented and
+under review; the 168h gate is never started automatically.
+
+### M21.4.11 Reconnect boundary integrity
+
+The 72h failure root cause: ordinary and planned reconnect paths
+(`unexpected_disconnect`, `planned_rotation`, `server_shutdown`,
+depth-driven `session_restart`) reused the same generation and writer and
+could seal cross-connection Raw as `gap=false/complete=true`. The repair
+routes every transport boundary through one state machine in both Spot and
+USD-M collectors:
+
+- Catalog `STREAM_DISCONTINUITY_STARTED` is durable before old-generation
+  storage mutation in the normal path; the old generation then drains and
+  seals (manifest-level `reconnect_gap` forced incomplete when no unpersisted
+  last-old frame exists) before `generation++` and replacement open.
+- If STARTED fails with no active writer, an atomic Catalog transaction
+  publishes the preallocated zero-record marker directly as SEALING with the
+  exact `seal_intent` before its Raw header is created. Every later crash phase
+  restores the same gap_id; the marker is always fail-closed and retains Raw
+  header collector provenance without fabricating frame provenance.
+- The first new Raw frame carries `sequence_gap`; Raw sync precedes
+  `STREAM_DISCONTINUITY_COMPLETED`; `historical_continuity_restored=false`.
+- A connection failing before its first frame extends the pending gap (one
+  gap_id, one STARTED, one generation transition); a unique unmatched
+  STARTED of any reason is recovered across restart; conflicts fail closed.
+- `diff_depth` never reconnects in place: any boundary retires the capture
+  session (fresh connection + fresh REST Snapshot + U/u/pu bridge before
+  READY); Raw gap evidence is independent of orderbook recovery.
+- Intentional close (planned rotation) is not an integrity exemption;
+  `server_shutdown` and `sequence_gap` evidence coexist.
+- Seal defense in depth: a chunk with multiple connection_ids whose
+  connection transitions lack boundary-local evidence fails closed to
+  `reconnect_gap` (`gap=true`, `complete=false`). Blue/green overlap is safe
+  only when it covers the exact transition.
+- `tools/audit_reconnect_boundaries.py` is a strictly read-only historical
+  scanner (classifications EXPLICIT_SEQUENCE_GAP / BLUE_GREEN_OVERLAP /
+  UNMARKED_RECONNECT / UNKNOWN, boundary-local per connection transition,
+  deterministic canonical output with cutoff + manifest inventory) used to
+  quantify the 4,680 unmarked historical boundaries; historical sealed
+  evidence is never rewritten.
+- The audit retains consecutive zero-record manifests between the nearest
+  connection-bearing chunks and emits one logical transition, so
+  A -> empty... -> B cannot disappear from the denominator. Exact-pair Catalog
+  semantics remain unchanged.
+
+Full record: `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 
 ### M21.4 backpressure timing semantics (24h evidence)
 

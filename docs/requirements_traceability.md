@@ -89,16 +89,19 @@ passed in-window. 72h/168h remain pending and have not started.
 | Deterministic tests | 603 pytest, stress, 1000-cycle, M0 contracts, Go golden | PASS |
 | Deployment identity | Wheel SHA 926615b09..., direct_url, Canonical Gate | CONFIRMED |
 | Stage D | stop/seal/install/readiness | PASS |
-| 2h preflight | PID continuity, both markets READY 100% | PASS (independent review) |
-| 12h observation | 141 soak samples, 0 core errors, planned rotation verified | PASS (EVIDENCE_INTEGRITY_PASS_WITH_LIMITATIONS) |
-| 24h window | Formal 24h PASS, eligible_for_72h=true | PASS (corrective + contract forensic reviews) |
+| 2h preflight | PID continuity, both markets READY 100% | PASS (short-window process stability; independent review) |
+| 12h observation | 141 soak samples, 0 core errors, planned rotation verified | PROCESS-STABILITY PASS; data-integrity SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING |
+| 24h window | Formal 24h PASS, eligible_for_72h=true | PROCESS-STABILITY PASS; data-integrity SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING |
 | 24h corrective review | Journal re-export with epoch-derived UTC bounds (journald microsecond resolution); gen2/3/4 reclassified PRE_WINDOW; gen5 found in-window | EVIDENCE_INTEGRITY_PASS_WITH_CORRECTED_REPORT |
 | 24h contract forensic review | gen5 RECOVERY_CONTRACT_PASS; gen6 timing CONSISTENT; contamination classification; evidence-source matrix | FORENSIC_CONTRACT_REVIEW |
 | gen5 contract proof | Catalog STARTED/COMPLETED paired; Raw first-new sequence_gap; manifests gap=true/complete=false; historical_continuity_restored=false | PASS |
-| 72h window | — | PENDING (not started) |
+| 72h window | Formal 72h core process stability PASS (PID/NRestarts/boot_id unchanged); data-integrity contract FAIL (14:08 book_ticker disconnect) | **FAIL** (FORMAL_72H_RESULT=FAIL, eligible_for_next_stage=false) |
+| 72h forensics | M21.4.10 unexpected-disconnect forensics: same-generation reconnect, no STARTED/COMPLETED, no sequence_gap, gap=false/complete=true | UNEXPECTED_DISCONNECT_CONTRACT_RESULT=FAIL |
+| Reconnect boundary repair | M21.4.11 PR `fix/m21-4-reconnect-boundary-integrity`: unified state machine, manifest-level `reconnect_gap`, seal defense, read-only audit tool; R1..R5/R2/R2.1/R2.2 corrections: crash-durable intent ordering, exact gap lifecycle, Catalog-first marker durability, exact operational-event idempotency, boundary-local/frame-less audit classification, side-data fail-closed restart, deterministic canonical output | Implemented; under review; NOT DEPLOYED |
+| Historical audit (corrected, authoritative) | R2.2 read-only rerun: 161,817 chunks scanned (cutoff `1786349202047196027`, inventory SHA `ffaf34bd...`); 4,691 transitions; 11 explicit (all Catalog-identity-proven); 4,680 unmarked; 0 unknown; 0 overlap; catalog matched_pairs=11/unmatched=0/0 | `tools/audit_reconnect_boundaries.py` + `/var/tmp/m21-4-11-r2-2-historical-audit.json`; canonical SHA-256 `1122431c56ebd8367bbbed1a8fc0e30f1f020d7edfd9c34602c9988d89d4b35f`; earlier manifest-level scanner retained as SUPERSEDED |
 | 168h window | — | PENDING (not started) |
-| Documentation | M21.4 acceptance, deployment evidence, 24h forensics | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-24h-validation-forensics.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md` |
-| Risk updates | R-004 (Monitoring, gen5 PASS), R-035 (Open, 72h/168h pending), R-044 (Monitoring, epoch-bound mitigations), R-045 (Monitoring, not recovered) | `docs/risk_register.md` |
+| Documentation | M21.4 acceptance, deployment evidence, 24h forensics, 72h failure | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-24h-validation-forensics.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`, `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md` |
+| Risk updates | R-004 (Monitoring, gen5 PASS; 72h FAIL), R-035 (Open, 72h FAIL), R-044 (Monitoring, epoch-bound mitigations), R-045 (Monitoring, not recovered), R-047 (Open, reconnect boundary integrity) | `docs/risk_register.md` |
 | Production Ready | Not claimed | — |
 
 ### M21.4 24h evidence paths (host-local)

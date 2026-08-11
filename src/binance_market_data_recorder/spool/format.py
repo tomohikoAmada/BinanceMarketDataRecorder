@@ -154,6 +154,15 @@ class ChunkStatistics:
         }
 
 
+#: One connection_id transition observed inside a chunk: the connection that
+#: held the previous frame, the connection that holds the following frame, and
+#: the per-frame capture flags of both boundary frames. Transition evidence is
+#: boundary-local: a flag on one transition never proves another transition.
+ConnectionTransition = tuple[
+    str, str, frozenset[str], frozenset[str]
+]
+
+
 @dataclass(frozen=True)
 class ScanResult:
     path: Path
@@ -164,6 +173,7 @@ class ScanResult:
     issue: ScanIssue
     detail: str | None
     uncompressed_sha256: str | None
+    connection_transitions: tuple[ConnectionTransition, ...] = ()
 
     @property
     def is_clean(self) -> bool:
@@ -352,6 +362,9 @@ def scan_chunk(path: Path) -> ScanResult:
     file_size = path.stat().st_size
     statistics = ChunkStatistics()
     digest = hashlib.sha256()
+    transitions: list[ConnectionTransition] = []
+    previous_connection_id: str | None = None
+    previous_flags: frozenset[str] = frozenset()
     try:
         with path.open("rb", buffering=0) as source:
             try:
@@ -381,6 +394,7 @@ def scan_chunk(path: Path) -> ScanResult:
                         ScanIssue.NONE,
                         None,
                         digest.hexdigest(),
+                        tuple(transitions),
                     )
                 if len(prefix) != FRAME_PREFIX.size:
                     return ScanResult(
@@ -469,6 +483,20 @@ def scan_chunk(path: Path) -> ScanResult:
                         None,
                     )
                 statistics.add(envelope)
+                if (
+                    previous_connection_id is not None
+                    and envelope.connection_id != previous_connection_id
+                ):
+                    transitions.append(
+                        (
+                            previous_connection_id,
+                            envelope.connection_id,
+                            previous_flags,
+                            frozenset(envelope.capture_flags),
+                        )
+                    )
+                previous_connection_id = envelope.connection_id
+                previous_flags = frozenset(envelope.capture_flags)
                 digest.update(prefix)
                 digest.update(body)
                 valid_end += len(prefix) + len(body)

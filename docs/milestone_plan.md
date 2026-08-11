@@ -572,25 +572,45 @@ from Raw after a corrected parser is available.
   `cf1e749c7a533e916dbfb685212e5549a38c70dd`. The production Wheel
   (SHA-256 `926615b09ef46130f49a87fe8ab20acb7cfa6313daa67af5b718931bd95ff329`)
   was deployed and passed Stage D plus the Canonical Installed Identity Gate.
-  Formal 2-hour and 12-hour stability windows passed with independent evidence
-  reviews. The formal 24-hour window passed
-  (formal_24h_result=PASS, eligible_for_72h_from_24h_evidence=true) and was
-  confirmed by a corrective integrity review and a Backpressure contract
-  forensic review; the natural gen5 backpressure recovery cycle inside the
-  formal window passed its recovery contract (RECOVERY_CONTRACT_PASS).
-  M21.4 does not change public data schemas or begin a new soak. See
+  Formal 2-hour and 12-hour process-stability windows passed with independent
+  evidence reviews. The formal 24-hour window passed on process stability
+  (corrective integrity review and Backpressure contract forensic review
+  confirmed; the natural gen5 backpressure recovery cycle passed its recovery
+  contract, RECOVERY_CONTRACT_PASS). M21.4 does not change public data
+  schemas or begin a new soak. See
   `docs/milestone_acceptance/M21.4.md`,
   `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`,
   `docs/milestone_evidence/M21.4-deployment-and-validation.md`, and
   `docs/milestone_evidence/M21.4-24h-validation-forensics.md`.
 
-  The validation sequence continues: 72h → 168h → final release
-  assessment. The 72-hour window is the next formal gate and is never started
-  automatically. The 168-hour window should extend the same production
-  artifact and process continuity after the 72-hour gate passes. Backpressure
-  recovery was naturally exercised in production inside the 24h window
-  (gen5 contract PASS; gen6 completed after Target as POST_WINDOW); repeated
-  cycles and long-run behavior remain 72h/168h observations.
+  **M21.4.9/10/11 — formal 72h FAIL and reconnect boundary repair.** The
+  formal 72-hour window's core process stability PASSED (PID 317289,
+  NRestarts=0), but its data-integrity contract FAILED: the
+  2026-08-07T14:08:24Z USD-M `book_ticker` unexpected disconnect reconnected
+  within the same generation with no gap evidence, and every planned rotation
+  seals `gap=false/complete=true`. FORMAL_72H_RESULT=FAIL,
+  eligible_for_next_stage=false. The 12h/24h data-integrity acceptance is
+  SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING (process stability stands). A
+  corrected boundary-local read-only audit found 4,680 unmarked reconnect
+  boundaries (11 explicit, 0 ambiguous). The M21.4.11
+  repair (`fix/m21-4-reconnect-boundary-integrity`) implements the unified
+  Reconnect Boundary state machine, manifest-level `reconnect_gap`, seal
+  defense, and the read-only audit tool; the M21.4.11-R1..R5 correction adds
+  crash-durable STARTED-before-seal ordering, boundary-local audit
+  classification, strictly read-only audit semantics, side-data fail-closed
+  terminal restart, and deterministic canonical audit output. R2/R2.1/R2.2
+  further add SEALING seal-intent recovery keyed by exact gap lifecycle,
+  Catalog-first zero-record marker durability, exact operational-event
+  idempotency, and logical audit transitions across frame-less chunks. It is
+  under review and NOT DEPLOYED.
+  Full record:
+  `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
+
+  The validation sequence continues: after the repair is reviewed, merged,
+  and separately authorized for deployment, the NEW artifact must re-execute
+  deployment canonical identity → readiness → 2h → 12h → 24h → 72h → 168h.
+  The old artifact's windows are historical reference only. The 168-hour
+  window is never started automatically.
 
 ## Future Work
 

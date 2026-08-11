@@ -92,7 +92,11 @@ def test_one_thousand_disconnect_reconnect_rotation_cycles_are_bounded(
         collector.logger.setLevel(logging.CRITICAL)
         collector.planned_rotation_seconds = 0.001
         try:
-            await asyncio.wait_for(collector.run(stop), timeout=20)
+            # Each of the 1,000 boundaries now seals its generation with
+            # persistent gap evidence (M21.4.11 reconnect-boundary contract);
+            # observed wall-clock is ~11-52s on this host including the
+            # post-run re-read of all 1,000 sealed chunks.
+            await asyncio.wait_for(collector.run(stop), timeout=90)
             return attempts, collector.receipt_queue_stats.high_watermark
         finally:
             catalog.close()

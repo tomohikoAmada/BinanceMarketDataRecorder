@@ -18,6 +18,14 @@ from .usdm_side_data import SideDataStats
 
 
 class SpotExchangeInfoPoller:
+    """Stateless REST poller: retryable by the supervisor (no transport).
+
+    Each request mints its own connection_id; there is no WebSocket
+    continuity to protect, so ``terminal_on_failure`` stays False.
+    """
+
+    terminal_on_failure = False
+
     def __init__(
         self,
         *,

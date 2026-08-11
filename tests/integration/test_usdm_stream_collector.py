@@ -7,7 +7,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import zstandard
 from websockets.asyncio.server import serve
@@ -110,8 +110,12 @@ def make_stream(root: Path, opener: Any) -> tuple[UsdMStreamCollector, Catalog]:
 
 def envelopes(root: Path) -> list[Any]:
     result: list[Any] = []
-    for manifest_path in (root / "data" / "manifests").glob("*.json"):
-        manifest = json.loads(manifest_path.read_text())
+    documents = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in (root / "data" / "manifests").glob("*.json")
+    ]
+    documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
+    for manifest in documents:
         raw = zstandard.ZstdDecompressor().decompress(
             (root / manifest["relative_path"]).read_bytes()
         )
@@ -124,7 +128,7 @@ def envelopes(root: Path) -> list[Any]:
 
 
 def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) -> None:
-    async def exercise() -> None:
+    async def exercise() -> list[dict[str, object]]:
         stop = asyncio.Event()
         attempts = 0
 
@@ -141,10 +145,27 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
 
         collector, catalog = make_stream(tmp_path, opener)
         try:
-            await collector.run(stop)
+            # DIFF_DEPTH never reconnects inside one capture session: the
+            # first unexpected disconnect seals the old generation with gap
+            # evidence and retires the session (fresh snapshot + bridge is
+            # required). The outer collector restarts the session, which is
+            # the second run() call below.
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            assert attempts == 2
+            events = catalog.operational_events()
+            assert [
+                event["event_type"] for event in events
+            ] == ["STREAM_DISCONTINUITY_STARTED", "STREAM_DISCONTINUITY_COMPLETED"]
+            started = cast(dict[str, Any], events[0]["evidence"])
+            assert started["reason"] == "unexpected_disconnect"
+            assert started["boundary_frame_persisted"] is False
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            assert completed["gap_id"] == started["gap_id"]
+            assert completed["historical_continuity_restored"] is False
+            return events
         finally:
             catalog.close()
-        assert attempts == 2
 
     asyncio.run(exercise())
     assert [event.raw_payload for event in envelopes(tmp_path)] == [
@@ -153,6 +174,16 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
         depth(8, 8, 7),
         depth(11, 11, 10),
     ]
+    documents = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in (tmp_path / "data" / "manifests").glob("*.json")
+    ]
+    documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
+    assert len(documents) == 2
+    assert documents[0]["gap"] is True and documents[0]["complete"] is False
+    assert documents[1]["gap"] is True and documents[1]["complete"] is False
+    assert "reconnect_gap" in documents[0]["capture_flags"]
+    assert "sequence_gap" in documents[1]["capture_flags"]
 
 
 def test_usdm_local_server_ping_is_ponged(tmp_path: Path) -> None:
@@ -198,10 +229,25 @@ def test_usdm_planned_rotation_replaces_connection_before_24_hours(tmp_path: Pat
         collector, catalog = make_stream(tmp_path, opener)
         collector.planned_rotation_seconds = 0.02
         try:
+            # DIFF_DEPTH retires its capture session at a reconnect boundary
+            # (fresh snapshot required); the first rotation closes the
+            # connection and seals the empty generation with gap evidence.
             await asyncio.wait_for(collector.run(stop), timeout=3)
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            assert len(sockets) == 2
+            assert sockets[0].close_reasons == ["planned 24-hour rotation"]
+            started = [
+                event
+                for event in catalog.operational_events()
+                if event["event_type"] == "STREAM_DISCONTINUITY_STARTED"
+            ]
+            assert len(started) == 1
+            assert cast(dict[str, Any], started[0]["evidence"])["reason"] == "planned_rotation"
+            assert (
+                cast(dict[str, Any], started[0]["evidence"])["boundary_frame_persisted"]
+                is False
+            )
         finally:
             catalog.close()
-        assert len(sockets) == 2
-        assert sockets[0].close_reasons == ["planned 24-hour rotation"]
 
     asyncio.run(exercise())

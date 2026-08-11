@@ -17,12 +17,13 @@ from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from threading import Lock
+from uuid import UUID, uuid4
 
 from ..domain.event import EventEnvelope
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout
 from .queue import BoundedEventQueue
-from .seal import seal_partial
+from .seal import RECONNECT_GAP_FLAG, seal_partial
 from .writer import RawChunkWriter, RotationPolicy
 
 
@@ -88,19 +89,31 @@ class StreamSpool:
     def enqueue(self, envelope: EventEnvelope) -> None:
         self.queue.put_nowait(envelope)
 
-    def _new_writer(self) -> RawChunkWriter:
+    def _new_writer(
+        self,
+        *,
+        chunk_id: UUID | None = None,
+        created_at_utc_ns: int | None = None,
+    ) -> RawChunkWriter:
+        writer_kwargs: dict[str, object] = {
+            "layout": self.layout,
+            "catalog": self.catalog,
+            "market": self.market,
+            "symbol": self.symbol,
+            "stream": self.stream,
+            "collector_instance_id": self.collector_instance_id,
+            "collector_version": self.collector_version,
+            "rotation": self.rotation,
+            "durability_interval_seconds": self.durability_interval_seconds,
+            "max_frame_bytes": self.max_frame_bytes,
+            "operation_observer": self._observe_writer_operation,
+        }
+        if chunk_id is not None:
+            writer_kwargs["chunk_id"] = chunk_id
+        if created_at_utc_ns is not None:
+            writer_kwargs["created_at_utc_ns"] = created_at_utc_ns
         return self._writer_factory(
-            layout=self.layout,
-            catalog=self.catalog,
-            market=self.market,
-            symbol=self.symbol,
-            stream=self.stream,
-            collector_instance_id=self.collector_instance_id,
-            collector_version=self.collector_version,
-            rotation=self.rotation,
-            durability_interval_seconds=self.durability_interval_seconds,
-            max_frame_bytes=self.max_frame_bytes,
-            operation_observer=self._observe_writer_operation,
+            **writer_kwargs,
         )
 
     def _observe_duration(self, name: str, duration_ns: int) -> None:
@@ -170,14 +183,70 @@ class StreamSpool:
         if self._writer is not None:
             self._writer.sync()
 
-    def _seal_current(self) -> dict[str, object] | None:
+    def _seal_current(
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
         if self._writer is None:
-            return None
+            if seal_intent is None:
+                return None
+            # M21.4.11-R2.2/IR-001: preallocate the marker identity and commit
+            # ACTIVE + SEALING seal-intent evidence atomically BEFORE Raw v1
+            # header creation.  There is no crash phase with a durable ACTIVE
+            # marker artifact but no recoverable reconnect identity.
+            intent_flags = seal_intent.get("required_forced_flags")
+            if not isinstance(intent_flags, list) or not all(
+                isinstance(flag, str) and flag for flag in intent_flags
+            ):
+                raise ValueError("boundary marker seal intent has invalid flags")
+            marker_flags = frozenset(
+                {*forced_flags, *intent_flags, RECONNECT_GAP_FLAG}
+            )
+            marker_intent = dict(seal_intent)
+            marker_intent["required_forced_flags"] = sorted(marker_flags)
+            marker_chunk_id = uuid4()
+            marker_created_at_utc_ns = time.time_ns()
+            marker_path = (
+                self.layout.active / f"{marker_chunk_id.hex}.bmdr.partial"
+            )
+            self.catalog.register_boundary_marker_sealing(
+                chunk_id=str(marker_chunk_id),
+                partial_path=self.layout.relative(marker_path),
+                created_at_utc_ns=marker_created_at_utc_ns,
+                seal_intent=marker_intent,
+            )
+            marker = self._new_writer(
+                chunk_id=marker_chunk_id,
+                created_at_utc_ns=marker_created_at_utc_ns,
+            )
+            try:
+                marker.close()
+                manifest = seal_partial(
+                    marker.path,
+                    layout=self.layout,
+                    catalog=self.catalog,
+                    forced_flags=marker_flags,
+                    seal_intent=marker_intent,
+                )
+            except BaseException:
+                with suppress(OSError):
+                    marker.abort()
+                raise
+            if self._seal_observer is not None:
+                self._seal_observer(manifest)
+            return manifest
         writer = self._writer
         seal_started = time.perf_counter_ns()
         try:
             writer.close()
-            manifest = seal_partial(writer.path, layout=self.layout, catalog=self.catalog)
+            manifest = seal_partial(
+                writer.path,
+                layout=self.layout,
+                catalog=self.catalog,
+                forced_flags=forced_flags,
+                seal_intent=seal_intent,
+            )
         except BaseException:
             with suppress(OSError):
                 writer.abort()
@@ -191,9 +260,13 @@ class StreamSpool:
             self._seal_observer(manifest)
         return manifest
 
-    def close_and_seal(self) -> dict[str, object] | None:
+    def close_and_seal(
+        self,
+        forced_flags: frozenset[str] = frozenset(),
+        seal_intent: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
         self.drain_all()
-        return self._seal_current()
+        return self._seal_current(forced_flags=forced_flags, seal_intent=seal_intent)
 
     def abort_writer(self) -> None:
         """Release a failed writer descriptor while retaining its recoverable partial."""

@@ -6,8 +6,14 @@ funding、open interest、exchange info 和六种 5 分钟统计的 REST 轮询)
 
 - 每个任务拥有自己的 StreamSpool,因此 REST 限流或 WebSocket 故障不会阻塞
   核心 L2 diff_depth/agg_trade/book_ticker。
-- SideDataSupervisor 以有上限的指数完全抖动回退重启失败任务,保留尝试计数和
-  连续失败计数。它永不设置核心 stop 事件,因此 side-data 故障不能终止核心采集。
+- SideDataSupervisor 以有上限的指数完全抖动回退重启失败的 REST 任务,保留
+  尝试计数和连续失败计数。它永不设置核心 stop 事件,因此 side-data 故障
+  不能终止核心采集。
+- WebSocket side 任务(mark_price/liquidation)的 transport-integrity 语义与
+  核心流一致(M21.4.11-R4):网络断连在 collector 内部通过 Reconnect
+  Boundary 状态机恢复;任何逃逸 collector 的终态完整性/存储故障都
+  fail closed —— 任务进入 FAILED 且绝不自动打开替代连接,直到服务重启
+  运行启动恢复。
 - RestSideDataPoller._catch_up_five_minute 为 M19 5 分钟统计实现有界追赶。
   它从 Cursor + 5 分钟查询到最后一个已关闭的 UTC 周期,以可配置批次进行。
   Raw 在 Cursor 推进前完成排空和 fsync。空响应不推进 Cursor 并创建
@@ -225,10 +231,49 @@ class SideDataStats:
 
 
 class SideDataExtension(Protocol):
+    """One side-data task owned by the supervisor.
+
+    ``terminal_on_failure`` marks transport-integrity extensions (WebSocket
+    collectors): an exception escaping such a task means the old writer and
+    connection cannot be proven safely reconciled, so the supervisor must
+    fail closed and never silently open a replacement connection (INV-015,
+    M21.4.11-R4). REST pollers are stateless per request and keep the
+    retryable default.
+    """
+
+    terminal_on_failure: bool = False
+
     async def run(self, stop: asyncio.Event) -> None: ...
 
 
+class SideWebSocketExtension:
+    """Fail-closed transport wrapper around ``UsdMStreamCollector``.
+
+    The collector handles its own network reconnect boundaries internally
+    with durable gap evidence. Any exception that escapes it is a terminal
+    integrity/storage failure: the supervisor must not restart the task,
+    because a replacement WebSocket could receive frames without a durable
+    reconnect boundary covering the old connection's storage state.
+    """
+
+    terminal_on_failure = True
+
+    def __init__(self, collector: UsdMStreamCollector) -> None:
+        self.collector = collector
+
+    async def run(self, stop: asyncio.Event) -> None:
+        await self.collector.run(stop)
+
+
 class RestSideDataPoller:
+    """Stateless REST poller: retryable by the supervisor (no transport).
+
+    Each request mints its own connection_id; there is no WebSocket
+    continuity to protect, so ``terminal_on_failure`` stays False.
+    """
+
+    terminal_on_failure = False
+
     def __init__(
         self,
         *,
@@ -482,8 +527,9 @@ class SideDataSupervisor:
             stats.attempts += 1
             stats.running = True
             stats.status = "RUNNING"
+            extension = factory()
             try:
-                await factory().run(stop)
+                await extension.run(stop)
                 if not stop.is_set():
                     raise RuntimeError("side-data task returned before service stop")
             except asyncio.CancelledError:
@@ -491,6 +537,26 @@ class SideDataSupervisor:
             except Exception as exc:
                 self.failures[name] = exc
                 stats.observe_failure(type(exc).__name__)
+                if getattr(extension, "terminal_on_failure", False):
+                    # Transport-integrity task: the old WebSocket and writer
+                    # cannot be proven safely reconciled, so a replacement
+                    # connection must not receive frames without a durable
+                    # reconnect boundary. Fail closed: the side stream stays
+                    # FAILED (recoverable only by a service restart that runs
+                    # startup recovery) while the core continues (INV-015).
+                    stats.status = "FAILED"
+                    log_event(
+                        self.logger,
+                        logging.CRITICAL,
+                        "usdm_side_task_terminal",
+                        "USD-M side-data transport task failed closed; "
+                        "no automatic reconnect without a durable boundary",
+                        stream=name,
+                        error_type=type(exc).__name__,
+                        attempts=stats.attempts,
+                        outcome="FAILED",
+                    )
+                    break
                 delay = min(
                     self.retry_maximum_seconds,
                     self.retry_initial_seconds
@@ -516,7 +582,8 @@ class SideDataSupervisor:
                     continue
             finally:
                 stats.running = False
-        stats.status = "STOPPED"
+        if stop.is_set():
+            stats.status = "STOPPED"
 
     async def run(self, stop: asyncio.Event) -> None:
         tasks = [
@@ -643,23 +710,27 @@ class UsdMSideDataManager:
                 stream_spec: UsdMSideStreamSpec = spec,
                 stats: SideDataStats = stream_stats,
             ) -> SideDataExtension:
-                return UsdMStreamCollector(
-                    stream=stream_spec.stream.value,
-                    route=stream_spec.route,
-                    wire_name=stream_spec.wire_name,
-                    spool=spool(stream_spec.stream.value),
-                    collector_instance_id=collector_instance_id,
-                    collector_version=collector_version,
-                    logger=logger,
-                    receipt_queue_capacity=receipt_queue_capacity,
-                    planned_rotation_seconds=planned_rotation_seconds,
-                    opener=websocket_opener,
-                    envelope_factory=partial(
-                        envelope_from_side_stream_frame, stream=stream_spec.stream
-                    ),
-                    envelope_observer=stats.observe_envelope,
-                    failure_observer=stats.observe_failure,
-                    lifecycle_observer=lifecycle_observer(stream_spec.stream.value),
+                return SideWebSocketExtension(
+                    UsdMStreamCollector(
+                        stream=stream_spec.stream.value,
+                        route=stream_spec.route,
+                        wire_name=stream_spec.wire_name,
+                        spool=spool(stream_spec.stream.value),
+                        collector_instance_id=collector_instance_id,
+                        collector_version=collector_version,
+                        logger=logger,
+                        receipt_queue_capacity=receipt_queue_capacity,
+                        planned_rotation_seconds=planned_rotation_seconds,
+                        opener=websocket_opener,
+                        envelope_factory=partial(
+                            envelope_from_side_stream_frame, stream=stream_spec.stream
+                        ),
+                        envelope_observer=stats.observe_envelope,
+                        failure_observer=stats.observe_failure,
+                        lifecycle_observer=lifecycle_observer(
+                            stream_spec.stream.value
+                        ),
+                    )
                 )
 
             factories[spec.stream.value] = stream_factory

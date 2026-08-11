@@ -18,8 +18,13 @@ seal_partial() 实现 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
 匹配的 sealed 文件被接受,无需重新压缩。
 
 当 capture_flags 包含 checksum_failure、mixed_sequence_type、orderbook_resync、
-recovered_tail、sequence_gap 中任一项时,manifest 中的 'complete' 标志为 False。
-不完整区间不能携带 complete=true。
+recovered_tail、sequence_gap、reconnect_gap 中任一项时,manifest 中的 'complete'
+标志为 False。不完整区间不能携带 complete=true。
+
+reconnect_gap 是 manifest 级强制不完整标志:它只能通过 forced_flags 或
+多连接无蓝绿重叠来源的防线产生,永远不写入 Raw 帧。一个 chunk 一旦包含多个
+connection_id 且无 sequence_gap/reconnect_gap/blue_green_overlap 证据,
+密封时 fail closed 为 gap=true/complete=false,绝不宣称跨连接完整。
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +47,37 @@ COMPRESSION_SCHEMA_VERSION = "zstd-frame.v1"
 MANIFEST_SCHEMA_VERSION = "raw-chunk-manifest.v1"
 ZSTD_LEVEL = 3
 READ_BUFFER_BYTES = 1024 * 1024
+
+#: Manifest-level evidence that a chunk ends at a transport reconnect boundary
+#: whose exchange-side completeness cannot be proven. The flag is written only
+#: to the manifest (and seal evidence), never to Raw frames: an already
+#: persisted last-old frame must not be mutated, and no exchange payload is
+#: fabricated. It forces gap=true and complete=false.
+RECONNECT_GAP_FLAG = "reconnect_gap"
+
+#: Explicit provenance that multiple connections in one chunk are an intended
+#: blue/green deployment overlap rather than an unmarked reconnect boundary.
+OVERLAP_FLAG = "blue_green_overlap"
+
+#: Flags that alone make a chunk interval unprovably incomplete.
+INCOMPLETE_FLAGS = frozenset(
+    {
+        "checksum_failure",
+        "mixed_sequence_type",
+        "orderbook_resync",
+        "recovered_tail",
+        "sequence_gap",
+        RECONNECT_GAP_FLAG,
+    }
+)
+
+#: Key of the durable seal-intent document inside the ChunkState.SEALING
+#: transition evidence (M21.4.11-R2). The seal intent is the crash fallback
+#: authority for reconnect-boundary semantics: it is persisted BEFORE any
+#: artifact/manifest mutation, so a restart can reconstruct the required
+#: forced flags and the pending discontinuity even when the Catalog
+#: STREAM_DISCONTINUITY_STARTED event itself failed to commit (P1-A).
+SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
 
 
 class SealError(RuntimeError):
@@ -107,12 +144,56 @@ def _decompressed_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _deployment_ids(flags: frozenset[str]) -> set[str]:
+    return {flag for flag in flags if flag.startswith("deployment_id=")}
+
+
+def _overlap_covers_transition(
+    old_flags: frozenset[str], new_flags: frozenset[str]
+) -> bool:
+    """True when a blue/green overlap provably covers this exact transition.
+
+    Both boundary frames must carry the overlap flag, and when a
+    ``deployment_id`` is present on either side the two sides must share at
+    least one deployment identity. A lone overlap flag elsewhere in the chunk
+    never exempts an unrelated connection transition.
+    """
+    if OVERLAP_FLAG not in old_flags or OVERLAP_FLAG not in new_flags:
+        return False
+    old_deployments = _deployment_ids(old_flags)
+    new_deployments = _deployment_ids(new_flags)
+    if not old_deployments and not new_deployments:
+        return True
+    return bool(old_deployments & new_deployments)
+
+
+def _boundary_local_evidence_safe(
+    transitions: tuple[
+        tuple[str, str, frozenset[str], frozenset[str]], ...
+    ],
+) -> bool:
+    """Every connection transition inside a chunk must carry boundary-local proof.
+
+    A transition is safe only when the exact boundary pair carries
+    ``sequence_gap`` on either side or a blue/green overlap that covers that
+    exact transition. Evidence from one transition never exempts another.
+    """
+    for _old, _new, old_flags, new_flags in transitions:
+        if "sequence_gap" in old_flags or "sequence_gap" in new_flags:
+            continue
+        if _overlap_covers_transition(old_flags, new_flags):
+            continue
+        return False
+    return True
+
+
 def _manifest(
     scan: ScanResult,
     layout: StorageLayout,
     sealed: Path,
     *,
     recovery: dict[str, object] | None,
+    forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     if scan.header is None or scan.uncompressed_sha256 is None:
         raise SealError("clean header and hash required")
@@ -122,20 +203,29 @@ def _manifest(
     capture_flags = set(statistics.capture_flags)
     if recovery is not None:
         capture_flags.add("recovered_tail")
-    incomplete_flags = {
-        "checksum_failure",
-        "mixed_sequence_type",
-        "orderbook_resync",
-        "recovered_tail",
-        "sequence_gap",
-    }
-    complete = not bool(capture_flags & incomplete_flags)
+    capture_flags.update(forced_flags)
+    if (
+        len(statistics.connection_ids) > 1
+        and not capture_flags & INCOMPLETE_FLAGS
+        and not _boundary_local_evidence_safe(scan.connection_transitions)
+    ):
+        # Defense in depth: a sealed chunk must never claim
+        # gap=false/complete=true across a connection transition that lacks
+        # boundary-local evidence. Blue/green overlap is safe only when it
+        # covers the exact transition; anything else fails closed to an
+        # incomplete interval.
+        capture_flags.add(RECONNECT_GAP_FLAG)
+    complete = not bool(capture_flags & INCOMPLETE_FLAGS)
     sealed_at = time.time_ns()
     return {
         "capture_flags": sorted(capture_flags),
         "chunk_id": str(scan.header.chunk_id),
         "chunk_schema_version": scan.header.chunk_schema_version,
-        "collector_instance_ids": sorted(statistics.collector_instance_ids),
+        # Zero-record boundary markers have no frame statistics, but their Raw
+        # v1 header still carries authentic collector provenance.  Preserve
+        # that header identity without fabricating connection/timestamp data.
+        "collector_instance_ids": sorted(statistics.collector_instance_ids)
+        or [scan.header.collector_instance_id],
         "collector_version": scan.header.collector_version,
         "complete": complete,
         "compression": {
@@ -154,7 +244,7 @@ def _manifest(
             for name, values in sorted(statistics.exchange_time_ranges.items())
         },
         "fsync_completed_at_utc_ns": sealed_at,
-        "gap": "sequence_gap" in capture_flags,
+        "gap": bool(capture_flags & {"sequence_gap", RECONNECT_GAP_FLAG}),
         "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
         "market": scan.header.market,
         "overlap": "overlap" in capture_flags,
@@ -197,10 +287,36 @@ def _validate_existing_manifest(path: Path, expected: dict[str, object]) -> None
     )
     if any(existing.get(name) != expected[name] for name in stable_fields):
         raise SealError("existing manifest does not identify the same verified chunk")
+    for name in ("gap", "complete"):
+        if existing.get(name) != expected[name]:
+            raise SealError(
+                "existing manifest contradicts freshly derived completeness "
+                f"semantics: expected {name}={expected[name]}"
+            )
 
 
-def seal_partial(path: Path, *, layout: StorageLayout, catalog: Catalog) -> dict[str, object]:
-    """Seal a closed partial idempotently; never delete it before Catalog commit."""
+def seal_partial(
+    path: Path,
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    forced_flags: frozenset[str] = frozenset(),
+    seal_intent: Mapping[str, object] | None = None,
+) -> dict[str, object]:
+    """Seal a closed partial idempotently; never delete it before Catalog commit.
+
+    ``forced_flags`` are manifest-level only (see ``_manifest``); they never
+    mutate Raw frames and therefore cannot fabricate exchange payloads.
+
+    ``seal_intent`` is the durable reconnect-boundary fallback (P1-A): when a
+    seal is requested with reconnect semantics, the intent document is
+    persisted into the ChunkState.SEALING transition evidence BEFORE any
+    artifact, manifest, or SEALED mutation. If the process then crashes and
+    the Catalog STREAM_DISCONTINUITY_STARTED event never committed, startup
+    recovery reconstructs the required forced flags and the pending
+    discontinuity from this evidence instead of sealing the partial
+    complete=true.
+    """
 
     scan = scan_chunk(path)
     if not scan.is_clean or scan.header is None or scan.uncompressed_sha256 is None:
@@ -215,12 +331,33 @@ def seal_partial(path: Path, *, layout: StorageLayout, catalog: Catalog) -> dict
         )
         current = ChunkState.ACTIVE
     if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
+        evidence: dict[str, object] = {
+            "verified_frames": scan.statistics.record_count,
+        }
+        if seal_intent is not None:
+            evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
         catalog.transition(
             chunk_id,
             ChunkState.SEALING,
             idempotency_key=f"sealing:{chunk_id}",
-            evidence={"verified_frames": scan.statistics.record_count},
+            evidence=evidence,
         )
+    elif current is ChunkState.SEALING and seal_intent is not None:
+        # A previous seal attempt already made this chunk durable SEALING
+        # evidence (possibly with a different intent). A conflicting intent
+        # on re-seal is a double-fault: fail closed rather than silently
+        # adopting a second boundary identity.
+        existing = catalog.latest_transition_evidence(
+            chunk_id, ChunkState.SEALING
+        ) or {}
+        prior = existing.get(SEAL_INTENT_EVIDENCE_KEY)
+        if prior is not None and (
+            not isinstance(prior, dict) or dict(prior) != dict(seal_intent)
+        ):
+            raise SealError(
+                "durable SEALING evidence conflicts with the requested "
+                "seal intent"
+            )
 
     sealed = layout.sealed / f"{scan.header.chunk_id.hex}.bmdr.zst"
     target_partial = sealed.with_suffix(sealed.suffix + ".partial")
@@ -244,6 +381,7 @@ def seal_partial(path: Path, *, layout: StorageLayout, catalog: Catalog) -> dict
         layout,
         sealed,
         recovery=recovery_evidence,
+        forced_flags=forced_flags,
     )
     manifest_path = layout.manifests / f"{scan.header.chunk_id.hex}.manifest.json"
     if manifest_path.exists():

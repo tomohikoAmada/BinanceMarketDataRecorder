@@ -169,6 +169,7 @@ class MetricsRecorder:
         counter = {
             "planned_rotation": "planned_reconnect",
             "unexpected_disconnect": "unexpected_disconnect",
+            "server_shutdown": "server_shutdown",
         }.get(event)
         if counter is None:
             raise ValueError("unsupported connection lifecycle metric")
