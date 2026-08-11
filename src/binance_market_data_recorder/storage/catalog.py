@@ -587,6 +587,54 @@ class Catalog:
             )
         ]
 
+    def stream_discontinuity_lifecycle(
+        self, *, market: str, stream: str, gap_id: str
+    ) -> str:
+        """Return the durable lifecycle of exactly one gap identifier.
+
+        One of:
+
+        - ``ABSENT``: no STARTED and no COMPLETED record for the gap.
+        - ``OPEN``: a STARTED record exists without a matching COMPLETED.
+        - ``CLOSED``: a COMPLETED record exists for the gap.
+
+        Startup recovery keys every seal-intent decision by this lifecycle
+        (M21.4.11-R2.1/REQ-100): a CLOSED gap is historical and never
+        conflicts with a later OPEN gap, while an OPEN gap must agree
+        exactly with its seal intent.
+        """
+        if not market or not stream or not gap_id:
+            raise ValueError("market, stream and gap_id must be non-empty")
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_type, evidence_json FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                """
+            ).fetchall()
+        started = False
+        completed = False
+        for row in rows:
+            evidence = json.loads(str(row["evidence_json"]))
+            if not isinstance(evidence, dict):
+                continue
+            if evidence.get("market") != market or evidence.get("stream") != stream:
+                continue
+            if evidence.get("gap_id") != gap_id:
+                continue
+            if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                completed = True
+            else:
+                started = True
+        if completed:
+            return "CLOSED"
+        if started:
+            return "OPEN"
+        return "ABSENT"
+
     def side_data_cursor(self, kind: str) -> dict[str, object] | None:
         if not kind:
             raise ValueError("side-data cursor kind must be non-empty")

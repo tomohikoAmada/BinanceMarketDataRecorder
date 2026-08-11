@@ -1,6 +1,7 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
-- Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2)
+- Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
+  M21.4.11-R2.1)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery)
@@ -166,6 +167,59 @@ The durable ordering table therefore gains one phase:
 | `NEW_GENERATION_AUTHORIZED` | STARTED + old manifest | first new frame carries `sequence_gap` |
 | `FIRST_NEW_RAW_SYNCED` | STARTED + first-new frame | pending gap restores; COMPLETED re-recorded idempotently |
 | `DISCONTINUITY_COMPLETED` | STARTED + COMPLETED | no duplicate events on restart |
+
+### Gap-lifecycle-keyed recovery (M21.4.11-R2.1)
+
+Every startup-recovery decision about a durable SEALING seal intent is keyed
+by the intent's own gap_id lifecycle, never by "some unmatched gap exists on
+this market/stream". `Catalog.stream_discontinuity_lifecycle` returns one of
+`ABSENT` (no STARTED and no COMPLETED record for the gap), `OPEN` (unmatched
+STARTED), or `CLOSED` (a COMPLETED record exists).
+
+- A CLOSED intent is historical: recovery neither re-materializes it, nor
+  reopens it, nor compares it against an unrelated currently-open gap, nor
+  changes its completed history (REQ-101, INV-002/INV-003). Historical
+  COMPLETED G1 therefore never conflicts merely because a later G2 is open
+  (RR-001: the pre-R2.1 code scanned every historical SEALING transition as a
+  current pending intent and falsely raised
+  `RECOVERY_SEAL_INTENT_STARTED_CONFLICT` on that exact legal history).
+- An OPEN intent and its same-gap unmatched STARTED must agree exactly on
+  gap_id, market, stream, reason, original_connection_id and
+  original_generation; a mismatch fails closed (REQ-102, INV-004).
+- An ABSENT intent with no other unmatched discontinuity on the
+  market/stream materializes STARTED with the SAME durable gap_id; never a
+  second gap_id (REQ-103, INV-001).
+- An ABSENT intent next to a genuinely different unmatched gap is a true
+  competing open gap and fails closed (REQ-104, INV-005); the fix does not
+  suppress conflicts. Repeated startup remains idempotent (REQ-107).
+
+### No-active-writer boundary marker chunk (M21.4.11-R2.1/AUDIT-001)
+
+When the last active chunk auto-rotated and sealed, no new frame created
+another writer, and the transport boundary arrives, `close_and_seal()` has no
+active chunk to carry the fallback SEALING seal intent. If the STARTED write
+also failed (P1-A double fault) the intent silently vanished and a later
+restart opened an unmarked first frame — the silent-gap class this ADR
+prohibits. `StreamSpool._seal_current` now seals an explicit zero-record
+boundary marker chunk carrying the intent and the forced flags when a seal
+intent is requested and no writer exists: no Raw frame is fabricated
+(INV-008), the marker manifest documents the boundary
+`gap=true`/`complete=false`, and startup recovery reconstructs the pending
+discontinuity from its SEALING evidence so the replacement generation marks
+its first frame `sequence_gap` (INV-010). When a writer does exist the
+behavior is unchanged.
+
+### Already-SEALING chunk with a later intent (M21.4.11-R2.1/AUDIT-002)
+
+`seal_partial()` called on a chunk already in `ChunkState.SEALING` with a new
+`seal_intent` does not persist the later intent when the prior SEALING
+evidence carries none. This state is unreachable by contract: every certified
+caller that passes a seal intent is `StreamSpool._seal_current`, which only
+seals a freshly created writer whose chunk was just registered ACTIVE;
+`drain_one` rotation seals never pass an intent; startup recovery re-seals
+without an intent; after a failed seal the spool releases the writer and the
+same chunk is never re-sealed in-process. The existing guard still fails
+closed (`SealError`) if a prior intent ever differs.
 
 ### Side-data transport tasks fail closed (M21.4.11-R4)
 

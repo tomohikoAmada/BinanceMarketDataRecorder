@@ -32,7 +32,10 @@ from binance_market_data_recorder.spool.format import (
     decode_envelope,
     encode_frame,
 )
-from binance_market_data_recorder.spool.recovery import recover_storage
+from binance_market_data_recorder.spool.recovery import (
+    RecoveryConflictError,
+    recover_storage,
+)
 from binance_market_data_recorder.spool.seal import (
     OVERLAP_FLAG,
     RECONNECT_GAP_FLAG,
@@ -3087,3 +3090,738 @@ def test_spot_writer_cancellation_owns_blocking_drain(
         action.action in {"unchanged", "catalog_unchanged", "seal_completed_after_crash"}
         for action in actions
     )
+
+
+# ---------------------------------------------------------------------------
+# M21.4.11-R2.1: gap-lifecycle keyed recovery (RR-001 regression tests).
+# Recovery decisions must be keyed by each seal intent's own gap_id lifecycle
+# (ABSENT / OPEN / CLOSED), never by "some unmatched gap exists on this
+# market/stream". Historical CLOSED intents are ignored/idempotently
+# validated; only the current open intent drives materialization.
+# ---------------------------------------------------------------------------
+
+
+def _durable_intent(
+    *,
+    gap_id: str,
+    reason: str,
+    connection_id: str,
+    generation: int,
+    started_at_utc_ns: int,
+    stream: str = "book_ticker",
+) -> dict[str, Any]:
+    return {
+        "required_forced_flags": [RECONNECT_GAP_FLAG],
+        "gap_id": gap_id,
+        "reason": reason,
+        "market": "um_perpetual",
+        "stream": stream,
+        "original_connection_id": connection_id,
+        "original_generation": generation,
+        "gap_started_at_utc_ns": started_at_utc_ns,
+        "boundary_kind": "no_last_frame_available",
+        "boundary_frame_persisted": False,
+    }
+
+
+def _started_evidence(intent: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "gap_id": intent["gap_id"],
+        "market": intent["market"],
+        "stream": intent["stream"],
+        "reason": intent["reason"],
+        "interval_classification": "UNRELIABLE",
+        "gap_started_at_utc_ns": intent["gap_started_at_utc_ns"],
+        "original_connection_id": intent["original_connection_id"],
+        "original_generation": intent["original_generation"],
+    }
+
+
+def _record_gap(
+    catalog: Catalog,
+    intent: dict[str, Any],
+    *,
+    completed: bool,
+    **extra: Any,
+) -> None:
+    event_type = (
+        "STREAM_DISCONTINUITY_COMPLETED" if completed else "STREAM_DISCONTINUITY_STARTED"
+    )
+    suffix = "completed" if completed else "started"
+    catalog.record_operational_event(
+        event_id=f"stream-discontinuity-{suffix}:{intent['gap_id']}",
+        event_type=event_type,
+        occurred_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
+        evidence={**_started_evidence(intent), **extra},
+    )
+
+
+def _seal_chunk_with_intent(
+    layout: Any,
+    catalog: Catalog,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    intent: dict[str, Any],
+    frame_payload: bytes,
+    crash_after_sealing: bool = False,
+    stream: UsdMStream = UsdMStream.BOOK_TICKER,
+) -> str:
+    """Seal one deterministic chunk whose SEALING evidence carries the intent.
+
+    With ``crash_after_sealing`` the seal fails immediately after the SEALING
+    transition commit (the certified P1-A double-fault shape): the chunk
+    remains in ChunkState.SEALING with its partial intact.
+    """
+    import binance_market_data_recorder.spool.seal as seal_module
+    from binance_market_data_recorder.binance.usdm.schema import (
+        envelope_from_websocket_frame,
+    )
+
+    writer = RawChunkWriter(
+        layout=layout,
+        catalog=catalog,
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream=str(intent["stream"]),
+        collector_instance_id="m21-4-11-r2-1",
+        collector_version="0.1.0+test",
+        rotation=RotationPolicy(seconds=60),
+        durability_interval_seconds=0,
+    )
+    writer.append(
+        envelope_from_websocket_frame(
+            raw_payload=frame_payload,
+            stream=stream,
+            connection_id=str(intent["original_connection_id"]),
+            collector_instance_id="m21-4-11-r2-1",
+            collector_version="0.1.0+test",
+            receive_time_utc_ns=int(intent["gap_started_at_utc_ns"]),
+            receive_monotonic_ns=1,
+        )
+    )
+    writer.close()
+    forced = frozenset(str(flag) for flag in intent["required_forced_flags"])
+    original_compress = seal_module._compress
+
+    def inject_crash_after_sealing(
+        source_path: Any, target_partial: Any, source_size: int
+    ) -> None:
+        raise OSError("injected crash after SEALING transition commit")
+
+    if crash_after_sealing:
+        monkeypatch.setattr(seal_module, "_compress", inject_crash_after_sealing)
+    try:
+        seal_partial(
+            writer.path,
+            layout=layout,
+            catalog=catalog,
+            forced_flags=forced,
+            seal_intent=intent,
+        )
+    except OSError as seal_error:
+        monkeypatch.setattr(seal_module, "_compress", original_compress)
+        if not crash_after_sealing or "SEALING transition commit" not in str(seal_error):
+            raise
+        return str(writer.header.chunk_id)
+    monkeypatch.setattr(seal_module, "_compress", original_compress)
+    return str(writer.header.chunk_id)
+
+
+def _started_events(catalog: Catalog) -> list[dict[str, Any]]:
+    return [
+        event
+        for event in discontinuity_events(catalog)
+        if event["event_type"] == "STREAM_DISCONTINUITY_STARTED"
+    ]
+
+
+def _gap_id(event: dict[str, Any]) -> Any:
+    evidence = event.get("evidence")
+    return evidence.get("gap_id") if isinstance(evidence, dict) else None
+
+
+def test_recovery_closed_historical_intent_never_conflicts_with_open_current_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-901 (exact RR-001 regression): one historical CLOSED intent (G1)
+    plus one legitimate current OPEN gap (G2) must recover cleanly.
+
+    Reviewed head a4309d6 scanned every historical SEALING intent as a
+    current pending intent: materializing G1 saw unmatched G2 and raised
+    RECOVERY_SEAL_INTENT_STARTED_CONFLICT. Recovery decisions must be keyed
+    by the intent's own gap_id lifecycle (REQ-101/REQ-105, INV-002/INV-003):
+    G1 CLOSED is historical and never conflicts with a later OPEN G2.
+    """
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        g1 = _durable_intent(
+            gap_id="g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-g1",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        g2 = _durable_intent(
+            gap_id="g2",
+            reason="planned_rotation",
+            connection_id="conn-g2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout, catalog, monkeypatch, intent=g1, frame_payload=book_ticker(1)
+        )
+        _record_gap(catalog, g1, completed=False)
+        _record_gap(
+            catalog,
+            g1,
+            completed=True,
+            new_connection_id="conn-g1b",
+            new_generation=1,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g2,
+            frame_payload=book_ticker(2),
+            crash_after_sealing=True,
+        )
+        _record_gap(catalog, g2, completed=False)
+
+    recovered = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+
+    assert not any(
+        action.action == "pending_discontinuity_materialized" for action in actions
+    )
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        started = _started_events(catalog)
+        assert [_gap_id(event) for event in started] == ["g1", "g2"]
+        open_gaps = catalog.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert [_gap_id(event) for event in open_gaps] == ["g2"]
+    documents = manifests(tmp_path)
+    assert len(documents) == 2
+    assert all(
+        document["gap"] is True and document["complete"] is False
+        for document in documents
+    )
+
+
+def test_recovery_multiple_closed_historical_intents_plus_open_current_gap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-902: three historical CLOSED intents plus one OPEN current gap:
+    recovery succeeds and the open gap alone remains pending (REQ-105)."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        for index in range(1, 4):
+            intent = _durable_intent(
+                gap_id=f"g{index}",
+                reason="unexpected_disconnect",
+                connection_id=f"conn-g{index}",
+                generation=index - 1,
+                started_at_utc_ns=index * 1_000_000_000,
+            )
+            _seal_chunk_with_intent(
+                layout,
+                catalog,
+                monkeypatch,
+                intent=intent,
+                frame_payload=book_ticker(index),
+            )
+            _record_gap(catalog, intent, completed=False)
+            _record_gap(
+                catalog,
+                intent,
+                completed=True,
+                new_connection_id=f"conn-g{index}b",
+                new_generation=index,
+            )
+        g4 = _durable_intent(
+            gap_id="g4",
+            reason="planned_rotation",
+            connection_id="conn-g4",
+            generation=3,
+            started_at_utc_ns=4_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g4,
+            frame_payload=book_ticker(4),
+            crash_after_sealing=True,
+        )
+        _record_gap(catalog, g4, completed=False)
+
+    recovered = Catalog(layout.catalog)
+    recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        open_gaps = catalog.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert [_gap_id(event) for event in open_gaps] == ["g4"]
+    assert len(manifests(tmp_path)) == 4
+
+
+def test_recovery_closed_historical_plus_intent_only_current_gap_same_id(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-903 (REQ-106): two CLOSED historical intents plus a current
+    seal-intent-only gap (STARTED absent because the original write failed).
+    Recovery materializes exactly one STARTED G3 with the SAME durable
+    gap_id; the historical G1/G2 intents must not interfere."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        for index in (1, 2):
+            intent = _durable_intent(
+                gap_id=f"g{index}",
+                reason="unexpected_disconnect",
+                connection_id=f"conn-g{index}",
+                generation=index - 1,
+                started_at_utc_ns=index * 1_000_000_000,
+            )
+            _seal_chunk_with_intent(
+                layout,
+                catalog,
+                monkeypatch,
+                intent=intent,
+                frame_payload=book_ticker(index),
+            )
+            _record_gap(catalog, intent, completed=False)
+            _record_gap(
+                catalog,
+                intent,
+                completed=True,
+                new_connection_id=f"conn-g{index}b",
+                new_generation=index,
+            )
+        g3 = _durable_intent(
+            gap_id="g3",
+            reason="planned_rotation",
+            connection_id="conn-g3",
+            generation=2,
+            started_at_utc_ns=3_000_000_000,
+        )
+        g3_chunk = _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g3,
+            frame_payload=book_ticker(3),
+            crash_after_sealing=True,
+        )
+
+    recovered = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        and action.detail == "g3"
+        and action.source == g3_chunk
+        for action in actions
+    )
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        started = _started_events(catalog)
+        assert [_gap_id(event) for event in started] == ["g1", "g2", "g3"]
+        assert started[-1]["evidence"]["gap_id"] == "g3"
+        assert started[-1]["evidence"]["original_connection_id"] == "conn-g3"
+        assert started[-1]["evidence"]["original_generation"] == 2
+        open_gaps = catalog.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert [_gap_id(event) for event in open_gaps] == ["g3"]
+    assert len(manifests(tmp_path)) == 3
+
+
+def test_recovery_same_gap_intent_and_started_agree_no_duplicate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-904 (REQ-102): a seal intent and its same-gap unmatched STARTED
+    with identical identity must pass; recovery must not duplicate STARTED."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        g2 = _durable_intent(
+            gap_id="g2",
+            reason="planned_rotation",
+            connection_id="conn-g2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g2,
+            frame_payload=book_ticker(2),
+            crash_after_sealing=True,
+        )
+        _record_gap(catalog, g2, completed=False)
+
+    recovered = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+
+    assert not any(
+        action.action == "pending_discontinuity_materialized" for action in actions
+    )
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        started = _started_events(catalog)
+        assert len(started) == 1
+        assert started[0]["evidence"]["gap_id"] == "g2"
+        open_gaps = catalog.unclosed_stream_discontinuities(
+            market="um_perpetual", stream="book_ticker"
+        )
+        assert [_gap_id(event) for event in open_gaps] == ["g2"]
+    assert len(manifests(tmp_path)) == 1
+    assert manifests(tmp_path)[0]["gap"] is True
+    assert manifests(tmp_path)[0]["complete"] is False
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda evidence: evidence.update({"reason": "server_shutdown"}),
+        lambda evidence: evidence.update({"original_connection_id": "other-conn"}),
+        lambda evidence: evidence.update({"original_generation": 99}),
+    ],
+    ids=["reason", "original_connection_id", "original_generation"],
+)
+def test_recovery_same_gap_identity_mismatch_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutator: Callable[[dict[str, Any]], None],
+) -> None:
+    """TEST-905 (REQ-102): the same gap_id but a conflicting identity field
+    (reason, original_connection_id, or original_generation) must fail closed
+    with the stable RECOVERY_SEAL_INTENT_STARTED_CONFLICT error."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        g2 = _durable_intent(
+            gap_id="g2",
+            reason="planned_rotation",
+            connection_id="conn-g2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g2,
+            frame_payload=book_ticker(2),
+            crash_after_sealing=True,
+        )
+        evidence = _started_evidence(g2)
+        mutator(evidence)
+        catalog.record_operational_event(
+            event_id="stream-discontinuity-started:g2",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=2_000_000_000,
+            evidence=evidence,
+        )
+
+    recovered = Catalog(layout.catalog)
+    with pytest.raises(
+        RecoveryConflictError, match="RECOVERY_SEAL_INTENT_STARTED_CONFLICT"
+    ):
+        recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+    # Fail closed: the old partial was NOT sealed complete.
+    assert list(layout.manifests.glob("*.json")) == []
+
+
+def test_recovery_true_competing_unmatched_gap_stays_hard_conflict(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-906 (REQ-104): a seal-intent-only current gap next to a genuinely
+    different unmatched gap for the same market/stream must remain a hard
+    fail-closed conflict. The fix must NOT simply suppress all conflicts."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        g2 = _durable_intent(
+            gap_id="g2",
+            reason="planned_rotation",
+            connection_id="conn-g2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g2,
+            frame_payload=book_ticker(2),
+            crash_after_sealing=True,
+        )
+        other = _durable_intent(
+            gap_id="g3",
+            reason="unexpected_disconnect",
+            connection_id="conn-g3",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, other, completed=False)
+
+    recovered = Catalog(layout.catalog)
+    with pytest.raises(
+        RecoveryConflictError, match="RECOVERY_SEAL_INTENT_STARTED_CONFLICT"
+    ):
+        recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+    # Fail closed: nothing was sealed complete and nothing was guessed.
+    assert list(layout.manifests.glob("*.json")) == []
+    assert len(list(layout.active.glob("*.bmdr.partial"))) == 1
+
+
+def test_recovery_repeated_startup_is_idempotent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """TEST-907 (REQ-107): running startup recovery twice against the same
+    recovered state must not duplicate STARTED/COMPLETED, reopen CLOSED
+    gaps, mint a new gap_id, or change manifests."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        g1 = _durable_intent(
+            gap_id="g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-g1",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout, catalog, monkeypatch, intent=g1, frame_payload=book_ticker(1)
+        )
+        _record_gap(catalog, g1, completed=False)
+        _record_gap(
+            catalog,
+            g1,
+            completed=True,
+            new_connection_id="conn-g1b",
+            new_generation=1,
+        )
+        g2 = _durable_intent(
+            gap_id="g2",
+            reason="planned_rotation",
+            connection_id="conn-g2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=g2,
+            frame_payload=book_ticker(2),
+            crash_after_sealing=True,
+        )
+        _record_gap(catalog, g2, completed=False)
+
+    with Catalog(layout.catalog) as catalog:
+        recover_storage(layout=layout, catalog=catalog)
+        manifest_before = sorted(
+            path.read_bytes() for path in (tmp_path / "data/manifests").glob("*.json")
+        )
+        first = {
+            "events": discontinuity_events(catalog),
+            "open": [
+                _gap_id(event)
+                for event in catalog.unclosed_stream_discontinuities(
+                    market="um_perpetual", stream="book_ticker"
+                )
+            ],
+        }
+        second_actions = recover_storage(layout=layout, catalog=catalog)
+        second = {
+            "events": discontinuity_events(catalog),
+            "open": [
+                _gap_id(event)
+                for event in catalog.unclosed_stream_discontinuities(
+                    market="um_perpetual", stream="book_ticker"
+                )
+            ],
+        }
+    assert first == second
+    assert first["open"] == ["g2"]
+    started = _started_events(Catalog(layout.catalog, read_only=True))
+    assert len(started) == 2
+    manifest_after = sorted(
+        path.read_bytes() for path in (tmp_path / "data/manifests").glob("*.json")
+    )
+    assert manifest_after == manifest_before
+    assert not any(
+        action.action == "pending_discontinuity_materialized"
+        for action in second_actions
+    )
+
+
+def test_no_active_writer_boundary_seal_persists_marker_chunk_with_intent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AUDIT-001 (M21.4.11-R2.1): a reconnect boundary detected when the
+    spool has NO active writer must not lose the durable seal intent.
+
+    Sequence under review: (1) the connection produced data; (2) its last
+    chunk auto-rotated and sealed; (3) no new frame created another writer;
+    (4) the transport boundary occurs; (5) the STARTED write fails (P1-A
+    double fault); (6) close_and_seal() has no active chunk to carry the
+    fallback seal_intent. On the reviewed head the intent silently vanished
+    and a later restart opened an unmarked first frame (the silent-gap class
+    ADR-0027 prohibits). The corrected spool seals an explicit zero-record
+    boundary marker chunk carrying the intent: gap=true/complete=false, no
+    Raw frame fabricated (INV-008), and startup recovery restores the
+    pending discontinuity with the same gap_id so the replacement first
+    frame carries sequence_gap (INV-010).
+    """
+
+    async def crash() -> dict[str, Any]:
+        attempts = 0
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                yield ScriptedSocket(
+                    [book_ticker(1)],
+                    block_on_exhaustion=True,
+                )
+            else:
+                raise OSError("replacement never opens")
+
+        layout = ensure_storage_layout(tmp_path)
+        catalog = Catalog(layout.catalog)
+        spool = StreamSpool(
+            layout=layout,
+            catalog=catalog,
+            market="um_perpetual",
+            symbol="BTCUSDT",
+            stream="book_ticker",
+            collector_instance_id="m21-4-11-r2-1",
+            collector_version="0.1.0+test",
+            queue_capacity=32,
+            rotation=RotationPolicy(seconds=0.5),
+            durability_interval_seconds=0,
+            max_frame_bytes=1024 * 1024,
+        )
+        collector = UsdMStreamCollector(
+            stream=UsdMStream.BOOK_TICKER,
+            route="public",
+            wire_name="btcusdt@bookTicker",
+            spool=spool,
+            collector_instance_id="m21-4-11-r2-1",
+            collector_version="0.1.0+test",
+            logger=logging.getLogger("test.m21-4-11-r2-1"),
+            receipt_queue_capacity=16,
+            planned_rotation_seconds=2.0,
+            backoff=ReconnectBackoff(
+                initial_seconds=0.001,
+                maximum_seconds=0.001,
+                jitter_ratio=0,
+            ),
+            opener=opener,
+        )
+        fail_started_writes(catalog, monkeypatch)
+        try:
+            with pytest.raises(OSError, match="injected STARTED write failure"):
+                await asyncio.wait_for(collector.run(asyncio.Event()), timeout=8)
+            assert attempts == 1
+            return {"catalog": catalog, "layout": layout}
+        finally:
+            catalog.close()
+
+    result = asyncio.run(crash())
+    layout = result["layout"]
+    documents = manifests(tmp_path)
+    assert len(documents) == 2
+    rotated, marker = documents
+    # The auto-rotated chunk is a single-connection interval: complete=true
+    # is legal for it. The boundary itself is documented by the marker chunk.
+    assert rotated["gap"] is False
+    assert rotated["complete"] is True
+    assert marker["gap"] is True
+    assert marker["complete"] is False
+    assert marker["record_count"] == 0
+    assert marker["connection_ids"] == []
+    assert RECONNECT_GAP_FLAG in marker["capture_flags"]
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        marker_chunk_id = str(marker["chunk_id"])
+        marker_intent = sealing_intent(catalog, marker_chunk_id)
+        assert marker_intent["gap_id"]
+        assert marker_intent["market"] == "um_perpetual"
+        assert marker_intent["stream"] == "book_ticker"
+        assert marker_intent["reason"] == "planned_rotation"
+        assert discontinuity_events(catalog) == []
+
+    # Restart with fresh recovery objects: the marker's durable intent must
+    # reconstruct the pending discontinuity with the SAME gap_id, and the
+    # replacement generation must mark its first frame sequence_gap and
+    # close exactly one coherent COMPLETED pair.
+    recovered_catalog = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered_catalog)
+    recovered_catalog.close()
+    assert any(
+        action.action == "pending_discontinuity_materialized"
+        and action.detail == marker_intent["gap_id"]
+        for action in actions
+    )
+
+    async def recover() -> dict[str, Any]:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield ScriptedSocket([book_ticker(3)], stop=stop)
+
+        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        try:
+            await asyncio.wait_for(collector.run(stop), timeout=3)
+            events = discontinuity_events(catalog)
+            assert [event["event_type"] for event in events] == [
+                "STREAM_DISCONTINUITY_STARTED",
+                "STREAM_DISCONTINUITY_COMPLETED",
+            ]
+            started = cast(dict[str, Any], events[0]["evidence"])
+            completed = cast(dict[str, Any], events[1]["evidence"])
+            assert started["gap_id"] == marker_intent["gap_id"]
+            assert started["original_connection_id"] == marker_intent[
+                "original_connection_id"
+            ]
+            assert started["original_generation"] == marker_intent[
+                "original_generation"
+            ]
+            assert completed["gap_id"] == marker_intent["gap_id"]
+            assert completed["raw_gap_marker"] == "sequence_gap"
+            return completed
+        finally:
+            catalog.close()
+
+    completed = asyncio.run(recover())
+    reopened = manifests(tmp_path)
+    assert len(reopened) == 3
+    assert reopened[-1]["complete"] is False
+    assert reopened[-1]["gap"] is True
+    assert "sequence_gap" in reopened[-1]["capture_flags"]
+    assert completed["new_connection_id"] == reopened[-1]["connection_ids"][0]
+    # INV-008: no Raw frame was fabricated; the marker chunk holds zero
+    # envelopes and the two real generations hold exactly their own frames.
+    persisted = envelopes(tmp_path)
+    assert [item.raw_payload for item in persisted] == [
+        book_ticker(1),
+        book_ticker(3),
+    ]

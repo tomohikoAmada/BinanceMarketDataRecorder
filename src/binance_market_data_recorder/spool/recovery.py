@@ -426,12 +426,21 @@ def _derived_seal_flags(
             if isinstance(flags, list)
             else frozenset()
         )
-        _materialize_started_if_absent(catalog, intent)
+        lifecycle = _materialize_started_if_absent(
+            catalog, intent, chunk_id=chunk_id
+        )
         open_gaps = catalog.unclosed_stream_discontinuities(
             market=header.market, stream=header.stream
         )
-        for gap in open_gaps:
-            _validate_intent_agreement(intent, gap, chunk_id)
+        if lifecycle != "closed" and len(open_gaps) > 1:
+            # Two genuinely simultaneous unmatched gaps on one market/stream
+            # are a multi-fault state; fail closed (INV-005). A historical
+            # CLOSED intent never conflicts merely because a later gap is
+            # OPEN (INV-003).
+            raise RecoveryConflictError(
+                "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
+                f"chunk={chunk_id} multiple simultaneously open gaps"
+            )
     if open_gaps:
         return required | frozenset({RECONNECT_GAP_FLAG})
     return required
@@ -511,31 +520,57 @@ def _validate_seal_intent(
 
 
 def _materialize_started_if_absent(
-    catalog: Catalog, intent: dict[str, object]
-) -> None:
-    """Re-record the pending discontinuity when the STARTED write failed.
+    catalog: Catalog, intent: dict[str, object], *, chunk_id: str
+) -> str:
+    """Reconcile a durable seal intent against its exact gap lifecycle.
+
+    Returns ``"closed"``, ``"open"``, or ``"materialized"``.
 
     P1-A double fault: the SEALING intent is durable but the Catalog
     STREAM_DISCONTINUITY_STARTED event never committed. The pending
     discontinuity is materialized with the same durable gap_id, so the
     replacement generation restores it, marks its first frame sequence_gap,
     and produces exactly one coherent COMPLETED event (INV-009/INV-010).
-    A different unmatched STARTED for the same market/stream is a genuine
-    multi-fault state: fail closed (REQ-107) instead of guessing which
-    boundary the durable intent belongs to.
+
+    Every decision is keyed by the intent's own gap_id lifecycle
+    (M21.4.11-R2.1/REQ-100), never by "some unmatched gap exists on this
+    market/stream":
+
+    - CLOSED (a COMPLETED record exists for the intent's gap_id): historical.
+      The intent is not re-materialized, not reopened, and never compared
+      against an unrelated currently-open gap (REQ-101, INV-002/INV-003).
+    - OPEN (an unmatched STARTED with the same gap_id): the two durable
+      authorities must agree exactly on gap_id, market, stream, reason,
+      original_connection_id and original_generation; a mismatch fails
+      closed (REQ-102, INV-004).
+    - ABSENT with no other unmatched discontinuity on the market/stream:
+      materialize STARTED with the SAME durable gap_id; never mint a second
+      gap_id (REQ-103, INV-001).
+    - ABSENT while a genuinely different unmatched gap exists: a true
+      competing open gap; fail closed instead of guessing (REQ-104, INV-005).
     """
     market = str(intent["market"])
     stream = str(intent["stream"])
     gap_id = str(intent["gap_id"])
-    for event in catalog.unclosed_stream_discontinuities(
+    lifecycle = catalog.stream_discontinuity_lifecycle(
+        market=market, stream=stream, gap_id=gap_id
+    )
+    if lifecycle == "CLOSED":
+        return "closed"
+    open_gaps = catalog.unclosed_stream_discontinuities(
         market=market, stream=stream
-    ):
+    )
+    for event in open_gaps:
         evidence = event.get("evidence")
-        if isinstance(evidence, dict) and evidence.get("gap_id") == gap_id:
-            return
+        if not isinstance(evidence, dict) or evidence.get("gap_id") != gap_id:
+            continue
+        _validate_intent_agreement(intent, event, chunk_id)
+        return "open"
+    if open_gaps:
         raise RecoveryConflictError(
             "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
-            f"gap_id={gap_id} market={market} stream={stream}"
+            f"gap_id={gap_id} market={market} stream={stream} chunk={chunk_id} "
+            "competing unmatched discontinuity exists"
         )
     catalog.record_operational_event(
         event_id=f"stream-discontinuity-started:{gap_id}",
@@ -561,6 +596,7 @@ def _materialize_started_if_absent(
             ),
         },
     )
+    return "materialized"
 
 
 def _validate_intent_agreement(
@@ -607,6 +643,12 @@ def _materialize_pending_discontinuities(
     observes the materialized STARTED, and it scans every historical SEALING
     transition (not only currently-SEALING chunks): a crash after the seal
     completed but before the STARTED write still leaves the intent durable.
+
+    Each intent is reconciled against its own gap_id lifecycle (REQ-100,
+    M21.4.11-R2.1): a historical CLOSED intent is ignored, an OPEN same-gap
+    STARTED is validated for exact identity agreement, and an intent-only gap
+    is materialized with the same gap_id unless a genuinely different
+    unmatched gap fails the recovery closed.
     """
     actions: list[RecoveryAction] = []
     for chunk_id, evidence in catalog.sealing_transition_evidence():
@@ -618,18 +660,10 @@ def _materialize_pending_discontinuities(
                 f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
             )
         _validate_seal_intent(intent, chunk_id)
-        before = len(
-            catalog.unclosed_stream_discontinuities(
-                market=str(intent["market"]), stream=str(intent["stream"])
-            )
-        )
-        _materialize_started_if_absent(catalog, intent)
-        after = len(
-            catalog.unclosed_stream_discontinuities(
-                market=str(intent["market"]), stream=str(intent["stream"])
-            )
-        )
-        if after > before:
+        if (
+            _materialize_started_if_absent(catalog, intent, chunk_id=chunk_id)
+            == "materialized"
+        ):
             actions.append(
                 RecoveryAction(
                     chunk_id,

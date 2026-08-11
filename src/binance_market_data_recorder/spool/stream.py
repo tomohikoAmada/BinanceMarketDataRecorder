@@ -176,7 +176,35 @@ class StreamSpool:
         seal_intent: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         if self._writer is None:
-            return None
+            if seal_intent is None:
+                return None
+            # AUDIT-001 (M21.4.11-R2.1): a reconnect boundary whose last
+            # chunk already rotated and sealed has no active writer to carry
+            # the durable SEALING seal intent. If the STARTED write also
+            # failed (P1-A double fault) and this intent silently vanished,
+            # a later restart would open an unmarked first frame — the
+            # silent-gap class ADR-0027 prohibits. Seal an explicit
+            # zero-record boundary marker chunk carrying the intent: no Raw
+            # frame is fabricated (INV-008), the boundary interval is
+            # documented gap=true/complete=false, and startup recovery
+            # restores the pending discontinuity from the SEALING evidence.
+            marker = self._new_writer()
+            try:
+                marker.close()
+                manifest = seal_partial(
+                    marker.path,
+                    layout=self.layout,
+                    catalog=self.catalog,
+                    forced_flags=forced_flags,
+                    seal_intent=seal_intent,
+                )
+            except BaseException:
+                with suppress(OSError):
+                    marker.abort()
+                raise
+            if self._seal_observer is not None:
+                self._seal_observer(manifest)
+            return manifest
         writer = self._writer
         seal_started = time.perf_counter_ns()
         try:
