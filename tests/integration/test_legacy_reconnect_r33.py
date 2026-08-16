@@ -161,11 +161,17 @@ def _record_malformed_lifecycle(
 
 
 def _report(root: Path) -> Any:
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LEGACY_CLASSIFICATION_FILENAME,
+    )
+
     layout = ensure_storage_layout(root)
     with Catalog(layout.catalog, read_only=True) as catalog:
         return evaluate_legacy_reconnect_decisions(
             catalog=catalog,
-            authority=LegacyClassificationAuthority.load(layout),
+            authority=LegacyClassificationAuthority.load(
+                layout.root / LEGACY_CLASSIFICATION_FILENAME
+            ),
         )
 
 
@@ -783,7 +789,13 @@ def test_v3_authority_rejects_old_v2_and_v1_schemas(tmp_path: Path) -> None:
             LegacyReconnectConflictError,
             match="RECOVERY_LEGACY_CLASSIFICATION_MALFORMED",
         ):
-            LegacyClassificationAuthority.load(layout)
+            from binance_market_data_recorder.spool.legacy_reconnect import (
+                LEGACY_CLASSIFICATION_FILENAME,
+            )
+
+            LegacyClassificationAuthority.load(
+                layout.root / LEGACY_CLASSIFICATION_FILENAME
+            )
 
 
 def test_authority_never_overrides_later_proven_context(
@@ -934,39 +946,95 @@ def test_versioned_legit_plus_legacy_ambiguous_blocks_all_then_resolves(
 
 
 def test_authority_permission_contract_matches_service_identity() -> None:
-    """R3.3-030 (REV-003): the documented authority ownership/mode must be
-    readable by the configured production service account (orangepi:
-    orangepi) and not writable by it, and the generated systemd unit must
-    render exactly that service identity."""
+    """R3.4-030 (REV-003-R3.3-001): the authority trust boundary must be
+    real at PATHNAME level, not only at file-mode level.
+
+    The documented production contract is validated against the systemd
+    service identity (User=orangepi Group=orangepi):
+
+    - FILE root:orangepi 0640: service can read, cannot write contents,
+      world cannot read;
+    - PARENT root:orangepi 0750: service can traverse, cannot write the
+      directory — a directory write bit is exactly what would allow the
+      service to unlink/rename/replace the authority pathname;
+    - the R3.3 location (authority inside the service-owned data root,
+      owner orangepi mode 0750) is shown to grant the service that
+      replace capability, which is why R3.4 moved the authority into the
+      root-controlled configuration namespace.
+    """
     from binance_market_data_recorder.service.systemd import SystemdManager
     from binance_market_data_recorder.spool.legacy_reconnect import (
         CLASSIFICATION_AUTHORITY_GROUP,
         CLASSIFICATION_AUTHORITY_MODE,
         CLASSIFICATION_AUTHORITY_OWNER,
+        CLASSIFICATION_AUTHORITY_PARENT_GROUP,
+        CLASSIFICATION_AUTHORITY_PARENT_MODE,
+        CLASSIFICATION_AUTHORITY_PARENT_OWNER,
         classification_authority_permissions,
+        directory_permissions,
     )
 
     assert CLASSIFICATION_AUTHORITY_OWNER == "root"
     assert CLASSIFICATION_AUTHORITY_GROUP == "orangepi"
     assert CLASSIFICATION_AUTHORITY_MODE == 0o640
+    assert CLASSIFICATION_AUTHORITY_PARENT_OWNER == "root"
+    assert CLASSIFICATION_AUTHORITY_PARENT_GROUP == "orangepi"
+    assert CLASSIFICATION_AUTHORITY_PARENT_MODE == 0o750
 
-    service_access = classification_authority_permissions(
+    file_access = classification_authority_permissions(
         owner=CLASSIFICATION_AUTHORITY_OWNER,
         group=CLASSIFICATION_AUTHORITY_GROUP,
         mode=CLASSIFICATION_AUTHORITY_MODE,
         user="orangepi",
         user_group="orangepi",
     )
-    assert service_access == {"readable": True, "writable": False}
+    assert file_access == {"readable": True, "writable": False}
 
-    world_access = classification_authority_permissions(
+    parent_access = directory_permissions(
+        owner=CLASSIFICATION_AUTHORITY_PARENT_OWNER,
+        group=CLASSIFICATION_AUTHORITY_PARENT_GROUP,
+        mode=CLASSIFICATION_AUTHORITY_PARENT_MODE,
+        user="orangepi",
+        user_group="orangepi",
+    )
+    assert parent_access["traversable"] is True
+    assert parent_access["writable"] is False
+    service_can_replace = parent_access["writable"]
+    assert service_can_replace is False
+
+    world_file = classification_authority_permissions(
         owner=CLASSIFICATION_AUTHORITY_OWNER,
         group=CLASSIFICATION_AUTHORITY_GROUP,
         mode=CLASSIFICATION_AUTHORITY_MODE,
         user="somebody-else",
         user_group="somebody-else",
     )
-    assert world_access == {"readable": False, "writable": False}
+    world_parent = directory_permissions(
+        owner=CLASSIFICATION_AUTHORITY_PARENT_OWNER,
+        group=CLASSIFICATION_AUTHORITY_PARENT_GROUP,
+        mode=CLASSIFICATION_AUTHORITY_PARENT_MODE,
+        user="somebody-else",
+        user_group="somebody-else",
+    )
+    assert world_file == {"readable": False, "writable": False}
+    assert world_parent == {
+        "readable": False,
+        "writable": False,
+        "traversable": False,
+    }
+
+    # Counter-contract: the R3.3 location put the authority inside the
+    # service-owned data root (owner orangepi, mode 0750).  The service
+    # principal therefore held the parent-directory write bit and could
+    # unlink/rename/replace the authority pathname despite file 0640.
+    data_root_parent = directory_permissions(
+        owner="orangepi",
+        group="orangepi",
+        mode=0o750,
+        user="orangepi",
+        user_group="orangepi",
+    )
+    assert data_root_parent["writable"] is True
 
     manager = SystemdManager(
         data_root=Path("/var/lib/binance-market-data-recorder"),

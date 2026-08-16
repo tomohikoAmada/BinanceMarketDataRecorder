@@ -54,6 +54,7 @@ from ..storage.catalog import (
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, decode_chunk_header, scan_chunk
 from .legacy_reconnect import (
+    LEGACY_CLASSIFICATION_FILENAME,
     LegacyClassificationAuthority,
     LegacyDecisionReport,
     LegacyReconnectConflictError,
@@ -536,18 +537,35 @@ def _apply_legacy_decisions(
     return actions
 
 
-def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
+def recover_storage(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    authority_path: Path | None = None,
+) -> list[RecoveryAction]:
     """Run the complete M3 startup reconciliation in a stable order.
 
-    M21.4.11-R3.2 Phase A: the shared legacy decision engine classifies
-    every historical SEALING reconnect intent and validates the operator
-    classification authority BEFORE any mutation.  If any unresolved
-    ambiguous, stale, unmatched, contradictory, or conflicting candidate
-    exists, startup fails closed with the full blocker list instead of
-    partially mutating lifecycle state.
+    M21.4.11-R3.2/R3.3 Phase A: the shared legacy decision engine
+    classifies every historical SEALING reconnect intent and validates
+    the operator classification authority BEFORE any mutation.  If any
+    unresolved ambiguous, stale, unmatched, contradictory, conflicting,
+    or degraded-authority blocker exists, startup fails closed with the
+    full blocker list instead of partially mutating lifecycle state.
+
+    ``authority_path`` selects the operator authority location.  The
+    system service passes the config-namespace path
+    (``config_file.parent / legacy_reconnect_classifications.json``),
+    which is root-controlled and NOT writable by the service principal
+    (M21.4.11-R3.4); the data-root fallback is only for config-less
+    interactive/test operation.
     """
+    selected_authority_path = (
+        Path(authority_path)
+        if authority_path is not None
+        else layout.root / LEGACY_CLASSIFICATION_FILENAME
+    )
     try:
-        authority = LegacyClassificationAuthority.load(layout)
+        authority = LegacyClassificationAuthority.load(selected_authority_path)
         report = evaluate_legacy_reconnect_decisions(
             catalog=catalog, authority=authority
         )

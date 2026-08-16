@@ -684,14 +684,32 @@ from Raw after a corrected parser is available.
   persistent evidence-contract revision, not a SQLite schema migration);
   ADDITIVE_COMPATIBILITY_AUTHORITY_REQUIRED=true and
   PRESTART_LEGACY_CLASSIFICATION_REQUIRED=true for the first corrected
-  production start. It is
+  production start. The R3.3 focused exact-head review accepted the core
+  algorithm but returned one P1 and two P2s. M21.4.11-R3.4 closes them
+  narrowly without touching the accepted algorithm:
+  REV-003-R3.3-001 (P1) — the authority file moved OUT of the
+  service-writable data root into the root-controlled configuration
+  namespace (`config_file.parent /
+  legacy_reconnect_classifications.json`; production
+  `/etc/binance-market-data-recorder/…`, parent root:orangepi 0750,
+  file root:orangepi 0640), so the service can read but can never
+  unlink/rename/replace the authority pathname (file mode 0640 alone
+  was insufficient because the service owns the data-root directory);
+  the permission-contract test now models both file and parent
+  directory; R3.3-SCHEMA-001 (P2) — an explicit `intent_schema: null`
+  (or any present-but-noncanonical value) now fails closed instead of
+  being treated like a missing legacy key; R3.3-DOC-001 (P2) — the
+  Ubuntu operations status now records that the deployed `f659895…`
+  PASSED the formal 72h observational gate and became NOT ELIGIBLE FOR
+  168H, while the corrected artifact is NOT DEPLOYED with validation
+  PENDING. It is
   under review and NOT DEPLOYED. Production validation for the corrected
   artifact is PENDING: after review, merge, and separately authorized
   deployment, the NEW artifact must re-execute the full staged chain
   (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
   See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
   Legacy extension-orphan recovery (M21.4.11-R3, corrected R3.1,
-  corrected R3.2, corrected R3.3)".
+  corrected R3.2, corrected R3.3, corrected R3.4)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute

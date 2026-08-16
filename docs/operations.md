@@ -158,8 +158,10 @@ approaches the hard reserve.
   `0` = eligible; `2` = ineligible (full JSON report still printed) or
   runtime error; automation must not ignore the exit code. Only
   AMBIGUOUS candidates are resolved by the operator-reviewed additive
-  file `legacy_reconnect_classifications.json` in the data root (schema
-  `legacy-reconnect-classification.v3`): entries bind the exact
+  file `legacy_reconnect_classifications.json` (schema
+  `legacy-reconnect-classification.v3`, located next to the loaded
+  config file — see the authority location rule below): entries bind
+  the exact
   persisted record (`gap_id`/`market`/`stream` + `chunk_id` +
   `classification_evidence_sha256`, the SHA-256 of the canonical JSON of
   `{"chunk_id", "seal_intent", "verified_frames"}`) with classification
@@ -174,20 +176,37 @@ approaches the hard reserve.
   `degraded_authority` blockers and makes the report ineligible; it is
   never silently skipped. The recorder never writes or edits the file.
 
+  **Authority location (M21.4.11-R3.4 trust boundary).** The authority
+  file resolves NEXT TO the loaded Recorder configuration file
+  (`config_file.parent / legacy_reconnect_classifications.json`), never
+  inside the service-writable data root: file mode 0640 denies content
+  writes but the service principal owns the data-root directory and
+  could otherwise unlink/rename/replace the authority pathname. Ubuntu
+  system service: `/etc/binance-market-data-recorder/
+  legacy_reconnect_classifications.json` (parent root:orangepi 0750,
+  the same directory that holds `recorder.toml`). Preflight and startup
+  use this exact same rule. Only a config-less interactive/test
+  operation falls back to the data root, whose owner is the same
+  interactive principal in that mode.
+
   **Authority installation contract.** Install the authority atomically
   with the exact documented owner/group/mode. Ubuntu system service
-  (production service `User=orangepi Group=orangepi`): owner `root`,
-  group `orangepi`, mode `0640` — root/operator writes, the service
-  group can read, everyone else cannot. macOS interactive (service and
-  CLI share the interactive account): owner `user`, group `staff`,
-  mode `0600`. Write a temporary file on the same filesystem
+  (production service `User=orangepi Group=orangepi`): parent directory
+  owner `root`, group `orangepi`, mode `0750` (root replaces the
+  pathname; the service group can only traverse — no directory write,
+  so the service can never unlink/rename/replace the authority); file
+  owner `root`, group `orangepi`, mode `0640` — root/operator writes,
+  the service group can read, everyone else cannot. macOS interactive
+  (service and CLI share the interactive account): authority next to
+  the interactive config file, owner `user`, group `staff`, mode
+  `0600`. Write a temporary file in the SAME directory/filesystem
   (`legacy_reconnect_classifications.json.partial`) with the FINAL
   owner/group/mode, fsync it, `mv`/rename it over the final path, then
-  fsync the data root directory. Never leave a post-rename window with
+  fsync the parent directory. Never leave a post-rename window with
   unsafe or unreadable permissions. Startup reads the final path only,
-  so a partial JSON can never be observed. The Ubuntu pre-start sequence
-  is mandatory for the first corrected restart: see
-  `ubuntu_rk3588_operations.md`.
+  so a partial JSON can never be observed. The recorder never creates
+  or edits the file. The Ubuntu pre-start sequence is mandatory for the
+  first corrected restart: see `ubuntu_rk3588_operations.md`.
 
 See [data and storage](data_and_storage.md) for artifact guarantees and
 [known limitations](known_limitations.md) before operating the preview.

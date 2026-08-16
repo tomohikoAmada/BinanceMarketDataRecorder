@@ -11,6 +11,7 @@ import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from functools import partial
+from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
 
@@ -192,6 +193,7 @@ class ServiceRuntime:
         *,
         config: RecorderConfig,
         logger: logging.Logger,
+        authority_path: Path | None = None,
         collector_factory: CollectorFactory = _collector_factory,
         sleep_observer_factory: SleepObserverFactory | None = None,
         power_assertion: CaffeinateAssertion | None = None,
@@ -200,6 +202,7 @@ class ServiceRuntime:
     ) -> None:
         self.config = config
         self.logger = logger
+        self.authority_path = authority_path
         self.collector_factory = collector_factory
         self.sleep_observer_factory = sleep_observer_factory or (
             MacSleepObserver if sys.platform == "darwin" else NoopSleepObserver
@@ -448,6 +451,7 @@ class ServiceRuntime:
                 recover_storage,
                 layout=self.layout,
                 catalog=self._catalog,
+                authority_path=self.authority_path,
             )
             self._recovery_action_count = len(recovery_actions)
             self._collectors = self.collector_factory(
@@ -550,5 +554,12 @@ class ServiceRuntime:
             self.process_lock.release()
 
 
-async def run_service(config: RecorderConfig, *, logger: logging.Logger) -> None:
-    await ServiceRuntime(config=config, logger=logger).run()
+async def run_service(
+    config: RecorderConfig,
+    *,
+    logger: logging.Logger,
+    authority_path: Path | None = None,
+) -> None:
+    await ServiceRuntime(
+        config=config, logger=logger, authority_path=authority_path
+    ).run()

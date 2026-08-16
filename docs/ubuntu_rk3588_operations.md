@@ -1,7 +1,13 @@
 # Ubuntu ARM64 / RK3588 operations
 
 Status: M20 Developer Preview / Soak Candidate. This is not Production Ready.
-The 72-hour and 168-hour soaks have not run.
+The deployed artifact `f659895…` completed the later FORMAL 72h observational
+gate (PASS: 27/27 explicit WS transitions, +0 unmarked, 0 false-complete,
+27/27 first-new Raw `sequence_gap`) but became NOT ELIGIBLE FOR 168H when the
+restart-only orphan-intent defect was discovered; the 168-hour soak has not
+run. The corrected M21.4.11-R3.x artifact (PR #11) is NOT DEPLOYED:
+production validation is PENDING and the full staged validation chain must
+reset after a separately authorized deployment.
 
 ## Fixed layout
 
@@ -171,7 +177,11 @@ reconnect-seal-intent.v2`) and materialize REQ-103 automatically.
    directory; a missing data root or Catalog is an error. Exit status
    `0` means eligible; exit `2` means ineligible or error — the JSON
    Boolean `first_corrected_startup_eligible` is printed in both cases
-   and automation must key on the exit code.
+   and automation must key on the exit code. The authority is resolved
+   NEXT TO the loaded config file
+   (`/etc/binance-market-data-recorder/legacy_reconnect_classifications.json`),
+   never inside the data root; preflight and startup use the exact same
+   rule (M21.4.11-R3.4).
 4. **Export the deterministic candidate inventory** to a recorded
    evidence file outside the data root; verify it byte-identical on a
    second run. Review every `degraded_authority` blocker (malformed
@@ -199,15 +209,24 @@ reconnect-seal-intent.v2`) and materialize REQ-103 automatically.
    and degraded counts must be zero.
 8. **Require `first_corrected_startup_eligible=true`** (exit code 0)
    before any further step.
-9. **Atomically install the authority file** into the data root
-   (`/var/lib/binance-market-data-recorder/legacy_reconnect_classifications.json`,
-   owner=root group=orangepi mode=0640 — root/operator writes, the
-   Recorder service group reads, everyone else cannot; the recorder
-   itself never writes the file): write the temporary file
-   (`…json.partial`) on the same filesystem WITH the final
-   owner/group/mode already applied, fsync it, `mv` it over the final
-   path, fsync the data root directory. Startup reads only the final
-   path. This step may run while the old service is still running.
+9. **Atomically install the authority file** into the ROOT-CONTROLLED
+   configuration namespace (M21.4.11-R3.4 trust boundary), NOT into the
+   service-writable data root:
+   `/etc/binance-market-data-recorder/legacy_reconnect_classifications.json`.
+   The parent directory is already owner=root group=orangepi mode=0750
+   (the same directory that holds `recorder.toml`); the file itself is
+   owner=root group=orangepi mode=0640 — root/operator writes AND
+   replaces the pathname, the Recorder service group can only read it,
+   everyone else has no access, and because the service principal does
+   NOT own the containing directory it cannot unlink/rename/replace the
+   authority pathname. The recorder itself never writes the file. Write
+   the temporary file (`…json.partial`) in the SAME directory/filesystem
+   WITH the final owner/group/mode already applied, fsync it, `mv` it
+   over the final path, fsync `/etc/binance-market-data-recorder`.
+   Startup and preflight resolve the authority as `config_file.parent /
+   legacy_reconnect_classifications.json`, so both read only this final
+   path. This step may run while the old service is still running. Do
+   not move or edit `recorder.toml`.
 10. **STOP the old service** (`systemd stop`), as part of the separately
     authorized deployment.
 11. **Run the FINAL read-only preflight against the frozen Catalog plus
@@ -285,13 +304,23 @@ M21 owns both runs:
 - 30-day operational observation: disk growth/forecast, journal retention,
   external disappearance/reinsertion, update/rollback drills, and alert review.
 
-The separate 72-hour gate must also be recorded. M21.4 2h and 12h windows
+The separate 72-hour gate must also be recorded. The M21.4 validation
+history: the original M21.4 production validation had a 72h integrity
+failure (see `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-
+integrity.md`), which is preserved as history. The subsequent corrected
+deployed artifact `f659895…` completed the later FORMAL 72h observational
+gate with PASS (27/27 explicit transitions, +0 unmarked, 0 false-complete,
+27/27 first-new Raw `sequence_gap`), but became NOT ELIGIBLE FOR 168H
+because the restart-only orphan-intent defect was discovered before the
+required 168h restart exercise. M21.4 2h and 12h windows
 passed with independent evidence reviews; the formal 24-hour window passed
 with corrective and contract forensic confirmation, and the natural gen5
 backpressure recovery contract passed inside the formal window.
-The 72-hour and 168-hour windows remain pending and are never started
-automatically. Until all long-run gates are completed the platform remains a
-Soak Candidate and must not be described as Production Ready or
+The 168-hour window remains pending and is never started
+automatically. The corrected M21.4.11-R3.x artifact is NOT DEPLOYED and
+must re-execute the full staged validation chain after a separately
+authorized deployment. Until all long-run gates are completed the platform
+remains a Soak Candidate and must not be described as Production Ready or
 zero-interruption.
 
 ### Formal evidence rules for 72h/168h (24h corrective lessons)

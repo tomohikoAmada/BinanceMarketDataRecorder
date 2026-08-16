@@ -2,7 +2,7 @@
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
   M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1,
-  M21.4.11-R3.2, M21.4.11-R3.3)
+  M21.4.11-R3.2, M21.4.11-R3.3, M21.4.11-R3.4)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery), ADR-0004 (clock and replay semantics)
@@ -421,7 +421,9 @@ earlier pass and stays idempotent (REQ-107).
 
 **Strongly bound authority (schema
 `legacy-reconnect-classification.v2`).** The additive operator file
-`legacy_reconnect_classifications.json` in the data root binds every
+`legacy_reconnect_classifications.json` in the data root (R3.2
+location, superseded by the R3.3/R3.4 config-namespace rule below)
+binds every
 entry to the exact immutable persisted intent:
 
 ```json
@@ -594,6 +596,52 @@ collector starts, so the accepted TOCTOU analysis (old service creating
 new candidates after an early exploratory preflight) stays safe. The
 authority may be created offline and installed before the stop; only the
 post-stop final coverage validation is mandatory.
+
+### Authority path trust boundary and P2 closures (M21.4.11-R3.4, PR #11 R3.3 closure review)
+
+The R3.3 core algorithm passed the focused exact-head review. R3.4 is a
+narrow closure of one P1 and two P2 findings without touching the
+accepted algorithm:
+
+- **REV-003-R3.3-001 (P1) — authority path trust boundary.** The R3.3
+  authority file lived inside the service-writable data root. File mode
+  0640 denied content writes, but the service principal owns the
+  data-root directory and could therefore unlink/rename/replace the
+  authority pathname — the trust boundary was not real at pathname
+  level. R3.4 resolves the authority NEXT TO the loaded Recorder
+  configuration file: `authority_path = config_file.parent /
+  legacy_reconnect_classifications.json`. Production:
+  `/etc/binance-market-data-recorder/legacy_reconnect_classifications.json`
+  with parent root:orangepi 0750 (the existing root-controlled config
+  namespace that already holds `recorder.toml`) and file root:orangepi
+  0640. The service can read and traverse but holds NO directory write
+  bit, so it cannot unlink/rename/replace the pathname. The rule is
+  explicit plumbing, not a new security subsystem: the CLI derives the
+  path from the loaded config and passes it to startup
+  (`recover_storage(authority_path=…)`); preflight and startup share
+  the identical rule. Only a config-less interactive/test operation
+  falls back to the data root, whose owner is the same interactive
+  principal. The recorder still never writes or edits the file. The
+  deterministic permission-contract test now models BOTH the file mode
+  (read=true, content write=false) AND the parent directory mode
+  (writable=false ⇒ pathname replace=false), and documents the
+  counterexample (the R3.3 data-root location granted the service the
+  parent write bit).
+- **R3.3-SCHEMA-001 (P2) — `intent_schema: null`.** Validation now keys
+  on key PRESENCE: a present `intent_schema` must be exactly
+  `reconnect-seal-intent.v2` (an explicit null, integer, empty string,
+  or unknown future value fails closed); only a MISSING key marks a
+  pre-R3 unversioned legacy intent. No additional arbitrary-corruption
+  recovery semantics were added.
+- **R3.3-DOC-001 (P2) — stale Ubuntu 72h status.** The operations
+  document now records both facts: the original M21.4 validation had a
+  72h integrity failure (history preserved), and the deployed
+  `f659895…` artifact subsequently PASSED the formal 72h observational
+  gate (27/27 explicit transitions, +0 unmarked, 0 false-complete,
+  27/27 first-new Raw `sequence_gap`) but became NOT ELIGIBLE FOR 168H
+  when the restart-only orphan-intent defect was discovered. The
+  R3.x-corrected artifact is NOT DEPLOYED; production validation is
+  PENDING and the full chain resets after deployment.
 
 ## Alternatives
 

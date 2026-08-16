@@ -56,6 +56,9 @@ from binance_market_data_recorder.binance.usdm.schema import UsdMStream
 from binance_market_data_recorder.binance.usdm.websocket import (
     WebSocketConnection,
 )
+from binance_market_data_recorder.spool.legacy_reconnect import (
+    LEGACY_CLASSIFICATION_FILENAME,
+)
 from binance_market_data_recorder.spool.recovery import (
     RecoveryConflictError,
     recover_storage,
@@ -1912,7 +1915,9 @@ def test_preflight_enumerates_all_legacy_candidates(
         )
 
     with Catalog(layout.catalog, read_only=True) as catalog:
-        authority = LegacyClassificationAuthority.load(layout)
+        authority = LegacyClassificationAuthority.load(
+            layout.root / LEGACY_CLASSIFICATION_FILENAME
+        )
         report = evaluate_legacy_reconnect_decisions(
             catalog=catalog, authority=authority
         )
@@ -1958,7 +1963,9 @@ def test_preflight_and_startup_share_one_decision_engine(
     with Catalog(layout.catalog, read_only=True) as catalog:
         report = evaluate_legacy_reconnect_decisions(
             catalog=catalog,
-            authority=LegacyClassificationAuthority.load(layout),
+            authority=LegacyClassificationAuthority.load(
+                layout.root / LEGACY_CLASSIFICATION_FILENAME
+            ),
         )
     assert report.first_corrected_startup_eligible is True
     finals = {
@@ -1993,7 +2000,9 @@ def test_preflight_is_read_only(tmp_path: Path) -> None:
     layout = ensure_storage_layout(tmp_path)
     before = (layout.catalog).read_bytes()
     with Catalog(layout.catalog, read_only=True) as catalog:
-        authority = LegacyClassificationAuthority.load(layout)
+        authority = LegacyClassificationAuthority.load(
+            layout.root / LEGACY_CLASSIFICATION_FILENAME
+        )
         report = evaluate_legacy_reconnect_decisions(
             catalog=catalog, authority=authority
         )
@@ -2227,7 +2236,9 @@ def test_preflight_complete_inventory_all_ten_shapes(
     with Catalog(layout.catalog, read_only=True) as catalog:
         report = evaluate_legacy_reconnect_decisions(
             catalog=catalog,
-            authority=LegacyClassificationAuthority.load(layout),
+            authority=LegacyClassificationAuthority.load(
+                layout.root / LEGACY_CLASSIFICATION_FILENAME
+            ),
         )
     public = report.public_dict()
     candidates = cast(list[dict[str, Any]], public["candidates"])

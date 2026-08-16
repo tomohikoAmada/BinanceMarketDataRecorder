@@ -37,6 +37,7 @@ from .soak.sample import soak_sample
 from .spool.legacy_reconnect import (
     LegacyClassificationAuthority,
     LegacyReconnectConflictError,
+    classification_authority_path,
     evaluate_legacy_reconnect_decisions,
 )
 from .status import service_status
@@ -437,7 +438,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "_service" and getattr(args, "service_command", None) == "run":
         logger = configure_logging(loaded.config.log_level)
         try:
-            asyncio.run(run_service(loaded.config, logger=logger))
+            asyncio.run(
+                run_service(
+                    loaded.config,
+                    logger=logger,
+                    authority_path=classification_authority_path(
+                        config_file=loaded.config_file,
+                        data_root=loaded.config.data_root,
+                    ),
+                )
+            )
         except ServiceAlreadyRunning as exc:
             log_event(
                 logger,
@@ -584,8 +594,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "RECOVERY_LEGACY_PREFLIGHT_LAYOUT_ERROR Catalog does "
                     f"not exist: {layout.catalog}"
                 )
+            authority_location = classification_authority_path(
+                config_file=loaded.config_file,
+                data_root=loaded.config.data_root,
+            )
             with Catalog(layout.catalog, read_only=True) as catalog:
-                authority = LegacyClassificationAuthority.load(layout)
+                authority = LegacyClassificationAuthority.load(
+                    authority_location
+                )
                 report = evaluate_legacy_reconnect_decisions(
                     catalog=catalog, authority=authority
                 )

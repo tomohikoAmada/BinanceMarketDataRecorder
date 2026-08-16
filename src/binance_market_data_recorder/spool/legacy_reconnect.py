@@ -70,14 +70,17 @@ import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from ..storage.catalog import Catalog, CatalogStateError
-from ..storage.layout import StorageLayout
 from .seal import RECONNECT_INTENT_SCHEMA_V2
 
-#: Operator-maintained additive legacy classification authority file inside
-#: the data root.  Recovery and preflight only read it; the recorder never
-#: writes it.
+#: Operator-maintained additive legacy classification authority file.
+#: Its LOCATION follows the config-namespace rule (see
+#: ``classification_authority_path``): next to the loaded Recorder
+#: configuration file in production, never inside the service-writable
+#: data root (M21.4.11-R3.4).  Recovery and preflight only read it; the
+#: recorder never writes it.
 LEGACY_CLASSIFICATION_FILENAME = "legacy_reconnect_classifications.json"
 LEGACY_CLASSIFICATION_SCHEMA_V3 = "legacy-reconnect-classification.v3"
 LEGACY_CLASSIFICATION_KINDS = frozenset(
@@ -88,16 +91,84 @@ _DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
 
 #: Production Ubuntu system-service authority installation contract
-#: (M21.4.11-R3.3 REV-003).  The authority file inside the data root is
-#: owned by root (operator/root writes), grouped to the Recorder service
-#: group (service can read), and unreadable by everyone else.  The recorder
-#: never writes or edits the file; deployment installs it atomically with
-#: these exact owner/group/mode before rename.  The deterministic
-#: permission-contract test asserts these constants against the systemd
-#: service identity (User=orangepi Group=orangepi).
+#: (M21.4.11-R3.4 REV-003-R3.3-001).  The authority file lives in the
+#: ROOT-CONTROLLED configuration namespace (alongside the loaded Recorder
+#: configuration file), never inside the service-writable data root: the
+#: service principal owns the data root directory and could otherwise
+#: unlink/rename/replace the authority pathname even though file mode
+#: 0640 denies content writes.  The parent directory contract is:
+#: owner=root group=orangepi mode=0750 (root/operator replace; service
+#: group traverse+read; no write).  The file contract is:
+#: owner=root group=orangepi mode=0640 (root/operator write; service
+#: group read; everyone else nothing).  The recorder never writes or
+#: edits the file; deployment installs it atomically with these exact
+#: owner/group/mode before rename.  The deterministic
+#: permission-contract test asserts these constants (file AND parent)
+#: against the systemd service identity (User=orangepi Group=orangepi).
 CLASSIFICATION_AUTHORITY_OWNER = "root"
 CLASSIFICATION_AUTHORITY_GROUP = "orangepi"
 CLASSIFICATION_AUTHORITY_MODE = 0o640
+CLASSIFICATION_AUTHORITY_PARENT_OWNER = "root"
+CLASSIFICATION_AUTHORITY_PARENT_GROUP = "orangepi"
+CLASSIFICATION_AUTHORITY_PARENT_MODE = 0o750
+
+
+def classification_authority_path(
+    *, config_file: Path | None, data_root: Path
+) -> Path:
+    """Resolve the classification authority location.
+
+    The authority lives alongside the loaded Recorder configuration
+    (``config_file.parent``), not alongside mutable service data: the
+    production config namespace ``/etc/binance-market-data-recorder`` is
+    root-controlled and not writable by the service principal, so the
+    service can read the authority but can never unlink/rename/replace
+    its pathname (M21.4.11-R3.4).  Interactive configs follow the same
+    rule next to their config file with their local ownership semantics.
+    Only when NO configuration file is loaded (interactive defaults,
+    test harnesses) does the authority fall back to the data root, whose
+    owner is the same interactive principal in that mode.
+    """
+    if config_file is not None:
+        return config_file.parent / LEGACY_CLASSIFICATION_FILENAME
+    return Path(data_root) / LEGACY_CLASSIFICATION_FILENAME
+
+
+def directory_permissions(
+    *,
+    owner: str,
+    group: str,
+    mode: int,
+    user: str,
+    user_group: str,
+) -> dict[str, bool]:
+    """Pure POSIX permission resolution for one DIRECTORY of the authority
+    installation contract.
+
+    Returns ``{"readable": bool, "writable": bool, "traversable": bool}``
+    for an account identified by its user name and primary group name.
+    Directory ``writable`` is the key trust-boundary bit: with it the
+    principal may create, unlink, and rename entries inside the
+    directory (i.e., replace a pathname), which is exactly the property
+    the service principal must NOT have over the authority parent.
+    """
+    if user == owner:
+        read_bits = 0o400
+        write_bits = 0o200
+        exec_bits = 0o100
+    elif user_group == group:
+        read_bits = 0o040
+        write_bits = 0o020
+        exec_bits = 0o010
+    else:
+        read_bits = 0o004
+        write_bits = 0o002
+        exec_bits = 0o001
+    return {
+        "readable": bool(mode & read_bits),
+        "writable": bool(mode & write_bits),
+        "traversable": bool(mode & exec_bits),
+    }
 
 
 def classification_authority_permissions(
@@ -108,13 +179,15 @@ def classification_authority_permissions(
     user: str,
     user_group: str,
 ) -> dict[str, bool]:
-    """Pure POSIX permission resolution for the authority installation contract.
+    """Pure POSIX permission resolution for the authority FILE contract.
 
     Returns ``{"readable": bool, "writable": bool}`` for an account
     identified by its user name and primary group name, given the
-    documented final owner/group/mode.  The deterministic contract test
-    fails when the documented values disagree with the configured service
-    identity.
+    documented final file owner/group/mode.  The deterministic contract
+    test combines this file model with ``directory_permissions`` for the
+    parent directory: content writes are governed by the file mode, but
+    pathname replacement (unlink/rename) is governed by the PARENT
+    directory's write bit (M21.4.11-R3.4).
     """
     if user == owner:
         read_bits = 0o400
@@ -225,8 +298,8 @@ class LegacyClassificationAuthority:
         self._entries = dict(entries)
 
     @classmethod
-    def load(cls, layout: StorageLayout) -> LegacyClassificationAuthority:
-        path = layout.root / LEGACY_CLASSIFICATION_FILENAME
+    def load(cls, authority_path: Path) -> LegacyClassificationAuthority:
+        path = Path(authority_path)
         if not path.exists():
             return cls({})
         try:
@@ -361,21 +434,22 @@ def validate_seal_intent(
     """Reject a malformed seal-intent document before classification.
 
     An optional ``intent_schema`` provenance field is validated strictly
-    (M21.4.11-R3.3): when present it must be exactly the current
-    ``reconnect-seal-intent.v2`` contract; an unknown future schema or a
-    non-text value fails closed.  An intent without the field is a pre-R3
-    unversioned legacy intent and follows the conservative legacy policy.
+    (M21.4.11-R3.3/R3.4): when the key is PRESENT its value must be
+    exactly the current ``reconnect-seal-intent.v2`` contract; an unknown
+    future schema, an empty string, a non-text value, or an explicit
+    ``null`` all fail closed (R3.3-SCHEMA-001).  Only a MISSING key marks
+    a pre-R3 unversioned legacy intent, which follows the conservative
+    legacy policy.
     """
 
-    schema = intent.get("intent_schema")
-    if schema is not None and (
-        not isinstance(schema, str) or schema != RECONNECT_INTENT_SCHEMA_V2
-    ):
-        raise LegacyReconnectConflictError(
-            "RECOVERY_SEAL_INTENT_UNSUPPORTED_SCHEMA "
-            f"chunk={chunk_id} schema={schema!r} expected "
-            f"{RECONNECT_INTENT_SCHEMA_V2!r}"
-        )
+    if "intent_schema" in intent:
+        schema = intent["intent_schema"]
+        if not isinstance(schema, str) or schema != RECONNECT_INTENT_SCHEMA_V2:
+            raise LegacyReconnectConflictError(
+                "RECOVERY_SEAL_INTENT_UNSUPPORTED_SCHEMA "
+                f"chunk={chunk_id} schema={schema!r} expected "
+                f"{RECONNECT_INTENT_SCHEMA_V2!r}"
+            )
     required_names = (
         "required_forced_flags",
         "gap_id",
