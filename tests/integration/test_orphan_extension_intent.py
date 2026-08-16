@@ -159,6 +159,7 @@ def test_usdm_session_restart_extension_reuses_pending_gap_identity(
     """TEST-001: a session_restart extension of an open pending gap must
     persist the canonical pending-gap identity in its marker intent."""
     attempts = 0
+    extension_socket_open = asyncio.Event()
 
     @asynccontextmanager
     async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -168,18 +169,21 @@ def test_usdm_session_restart_extension_reuses_pending_gap_identity(
             yield ScriptedSocket(
                 [book_ticker(1)], error=OSError("first disconnect")
             )
-        yield ScriptedSocket([], block_on_exhaustion=True)
+        else:
+            extension_socket_open.set()
+            yield ScriptedSocket([], block_on_exhaustion=True)
 
     async def extend() -> dict[str, Any]:
         stop = asyncio.Event()
         session_restart = asyncio.Event()
         collector, catalog, _spool = make_collector(tmp_path, opener=opener)
         try:
-            def trigger_restart() -> None:
+            async def trigger_restart() -> None:
+                await extension_socket_open.wait()
                 session_restart.set()
                 stop.set()
 
-            asyncio.get_running_loop().call_later(0.1, trigger_restart)
+            asyncio.get_running_loop().create_task(trigger_restart())
             await asyncio.wait_for(
                 collector.run(stop, session_restart), timeout=5
             )
@@ -300,6 +304,7 @@ def test_spot_session_restart_extension_reuses_pending_gap_identity(
 ) -> None:
     """TEST-002: the Spot path has the same extension-intent semantics."""
     attempts = 0
+    extension_socket_open = asyncio.Event()
 
     @asynccontextmanager
     async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -309,7 +314,9 @@ def test_spot_session_restart_extension_reuses_pending_gap_identity(
             yield ScriptedSocket(
                 [book_ticker(1)], error=OSError("first disconnect")
             )
-        yield ScriptedSocket([], block_on_exhaustion=True)
+        else:
+            extension_socket_open.set()
+            yield ScriptedSocket([], block_on_exhaustion=True)
 
     async def extend() -> dict[str, Any]:
         stop = asyncio.Event()
@@ -318,11 +325,12 @@ def test_spot_session_restart_extension_reuses_pending_gap_identity(
             tmp_path, opener=opener
         )
         try:
-            def trigger_restart() -> None:
+            async def trigger_restart() -> None:
+                await extension_socket_open.wait()
                 session_restart.set()
                 stop.set()
 
-            asyncio.get_running_loop().call_later(0.1, trigger_restart)
+            asyncio.get_running_loop().create_task(trigger_restart())
             await asyncio.wait_for(
                 collector.run(stop, session_restart), timeout=5
             )
@@ -448,6 +456,7 @@ def test_multiple_consecutive_session_restart_extensions_keep_one_gap(
         stop = asyncio.Event()
         session_restart = asyncio.Event()
         attempts = 0
+        extension_socket_open = asyncio.Event()
 
         @asynccontextmanager
         async def opener(
@@ -460,15 +469,17 @@ def test_multiple_consecutive_session_restart_extensions_keep_one_gap(
                     [book_ticker(1)], error=OSError("first disconnect")
                 )
             else:
+                extension_socket_open.set()
                 yield ScriptedSocket([], block_on_exhaustion=True)
 
         collector, catalog, _spool = make_collector(tmp_path, opener=opener)
         try:
-            def trigger_restart() -> None:
+            async def trigger_restart() -> None:
+                await extension_socket_open.wait()
                 session_restart.set()
                 stop.set()
 
-            asyncio.get_running_loop().call_later(0.1, trigger_restart)
+            asyncio.get_running_loop().create_task(trigger_restart())
             await asyncio.wait_for(
                 collector.run(stop, session_restart), timeout=5
             )
