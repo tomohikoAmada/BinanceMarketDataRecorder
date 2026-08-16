@@ -134,20 +134,39 @@ approaches the hard reserve.
   deletion of an unverified source.
 - A reinserted registered disk is resolved by volume UUID and marker, not by a
   fixed `/Volumes/<name>` assumption.
-- **Legacy reconnect classification (M21.4.11-R3.1).** UTC wall-clock
-  timestamps never prove causal order, so a historical SEALING seal intent
-  whose durable identity matches the pre-fix pending-gap extension shape
-  (parent generation, different connection, zero-record marker, wall
-  timestamp inside a closed parent interval) is ambiguous: startup recovery
-  fails closed with `RECOVERY_LEGACY_ORPHAN_AMBIGUOUS` instead of guessing.
-  The operator resolves it by adding a reviewed entry to the additive file
+- **Legacy reconnect classification (M21.4.11-R3.2).** UTC wall-clock
+  timestamps never prove causal order, so legacy reconnect decisions use
+  an exhaustive three-way partition: PROVEN_LEGITIMATE (materialize
+  REQ-103), PROVEN_EXTENSION (ignore lifecycle creation), and AMBIGUOUS
+  (fail closed). No UTC condition gates any of it. The read-only command
+
+  ```sh
+  binance-market-recorder recovery legacy-reconnect-preflight
+  ```
+
+  inventories every historical SEALING reconnect intent against the same
+  decision engine startup uses and emits deterministic counts plus
+  `first_corrected_startup_eligible`. Only AMBIGUOUS candidates are
+  resolved by the operator-reviewed additive file
   `legacy_reconnect_classifications.json` in the data root (schema
-  `legacy-reconnect-classification.v1`, entries keyed by
-  `gap_id`/`market`/`stream` with classification `extension_orphan` or
-  `legitimate_req103`). The recorder never writes or edits this file; a
-  malformed or duplicate authority fails recovery closed. Classify only
-  after reading ADR-0027 "Legacy extension-orphan recovery (M21.4.11-R3,
-  corrected M21.4.11-R3.1)".
+  `legacy-reconnect-classification.v2`): entries bind the exact persisted
+  record (`gap_id`/`market`/`stream` + `chunk_id` +
+  `seal_intent_sha256`, the SHA-256 of the canonical JSON of
+  `{"chunk_id", "seal_intent"}`) with classification `extension_orphan`
+  or `legitimate_req103`. The authority is consulted ONLY for AMBIGUOUS
+  candidates; an entry contradicting durable proofs fails closed
+  (`RECOVERY_LEGACY_AUTHORITY_CONTRADICTION`), and stale, duplicate,
+  unmatched, or schema-v1 authorities fail closed. The recorder never
+  writes or edits the file.
+
+  **Authority installation contract.** Install the authority atomically
+  with the same owner/group/mode as the data root (system service:
+  `root:root`, mode `0600`): write a temporary file on the same
+  filesystem (`legacy_reconnect_classifications.json.partial`), fsync it,
+  `mv`/rename it over the final path, then fsync the data root directory.
+  Startup reads the final path only, so a partial JSON can never be
+  observed. The Ubuntu pre-start sequence is mandatory for the first
+  corrected restart: see `ubuntu_rk3588_operations.md`.
 
 See [data and storage](data_and_storage.md) for artifact guarantees and
 [known limitations](known_limitations.md) before operating the preview.

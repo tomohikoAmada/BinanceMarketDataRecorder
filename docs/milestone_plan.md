@@ -631,15 +631,32 @@ from Raw after a corrected parser is available.
   (frame-bearing SEALING evidence, boundary connection equal to the
   parent's completing connection, generation identity), fail-closed
   ambiguity, and an explicit operator-reviewed additive classification
-  authority (`legacy_reconnect_classifications.json`, schema
-  `legacy-reconnect-classification.v1`); UTC is never silent-suppression
-  authority. It is
+  authority; UTC was removed as silent-suppression authority. A further
+  independent exact-head review (PR #11 R3.2) found three P1s in R3.1:
+  UTC containment still gated whether CLOSED-parent ambiguity engaged
+  (an orphan outside the parent's numeric interval could still become a
+  phantom STARTED, and inverted-wall pairs were dropped from the
+  interval universe); the classification authority was consulted before
+  stronger durable proofs and could therefore override them; and no
+  deterministic read-only production pre-start inventory existed.
+  M21.4.11-R3.2 corrects all three with the exhaustive three-way
+  partition (PROVEN_LEGITIMATE / PROVEN_EXTENSION / AMBIGUOUS, no
+  fourth default), the strongly-bound authority
+  (`legacy-reconnect-classification.v2`: chunk_id + canonical
+  seal-intent SHA-256, consulted only for AMBIGUOUS candidates, and
+  contradictions fail closed), the shared decision engine, the read-only
+  `recovery legacy-reconnect-preflight` command, the two-phase startup
+  (global pre-decision before any legacy lifecycle mutation), and the
+  mandatory pre-start classification sequence documented in
+  `docs/ubuntu_rk3588_operations.md`. UTC never gates classification.
+  It is
   under review and NOT DEPLOYED. Production validation for the corrected
   artifact is PENDING: after review, merge, and separately authorized
   deployment, the NEW artifact must re-execute the full staged chain
   (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
   See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
-  Legacy extension-orphan recovery (M21.4.11-R3, corrected M21.4.11-R3.1)".
+  Legacy extension-orphan recovery (M21.4.11-R3, corrected R3.1,
+  corrected R3.2)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute

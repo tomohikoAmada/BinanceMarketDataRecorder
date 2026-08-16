@@ -34,6 +34,11 @@ from .service.runtime import run_service
 from .service.soak_timer import SoakTimerManager, SystemdSoakError
 from .service.systemd import SystemdError, SystemdManager
 from .soak.sample import soak_sample
+from .spool.legacy_reconnect import (
+    LegacyClassificationAuthority,
+    LegacyReconnectConflictError,
+    evaluate_legacy_reconnect_decisions,
+)
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
 from .storage.forecast import StorageForecaster
@@ -118,6 +123,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
+    recovery_command = commands.add_parser(
+        "recovery", help="startup recovery diagnostics"
+    )
+    recovery_commands = recovery_command.add_subparsers(
+        dest="recovery_command",
+        required=True,
+        parser_class=_ArgumentParser,
+    )
+    recovery_commands.add_parser(
+        "legacy-reconnect-preflight",
+        help="read-only legacy reconnect classification inventory",
+    )
     normalize_command = commands.add_parser(
         "normalize", help="build or inspect versioned normalized Parquet"
     )
@@ -545,6 +562,29 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 2
         _write_json({"command": "report.daily", **document})
+        return 0
+    if command == "recovery" and (
+        getattr(args, "recovery_command", None) == "legacy-reconnect-preflight"
+    ):
+        layout = ensure_storage_layout(loaded.config.data_root)
+        try:
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                authority = LegacyClassificationAuthority.load(layout)
+                report = evaluate_legacy_reconnect_decisions(
+                    catalog=catalog, authority=authority
+                )
+        except LegacyReconnectConflictError as exc:
+            _write_json(
+                {"error": "legacy_reconnect_preflight_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
+        _write_json(
+            {
+                "command": "recovery.legacy-reconnect-preflight",
+                **report.public_dict(),
+            }
+        )
         return 0
     if command == "normalize":
         normalize_command = getattr(args, "normalize_command", None)

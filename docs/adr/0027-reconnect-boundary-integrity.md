@@ -1,7 +1,7 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
-  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1)
+  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1, M21.4.11-R3.2)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery), ADR-0004 (clock and replay semantics)
@@ -351,7 +351,7 @@ must not create a second recoverable logical identity:
   discontinuity and keeps its own freshly minted gap identity (intent
   decision point 2, INV-009/INV-010).
 
-### Legacy extension-orphan recovery (M21.4.11-R3, corrected M21.4.11-R3.1)
+### Legacy extension-orphan recovery (M21.4.11-R3, corrected R3.1, corrected R3.2)
 
 The pre-R3 runtime persisted extension intents with a freshly minted
 gap_id that never received a STARTED (production example: the
@@ -361,77 +361,116 @@ of gap `70ace625` persisted marker `7223d5ba` with orphan gap_id
 shapes without materializing phantom STARTED events, while REQ-103 must
 remain authoritative for genuine intent-only crashes.
 
-R3 originally classified a CLOSED-parent orphan by UTC containment
-(`closed.started_at < intent.gap_started_at < closed.ended_at`) plus
-generation equality. **That proof was unsound and is withdrawn.** UTC
-wall-clock timestamps are observational evidence, never causal-ordering
-authority (ADR-0004): the wall clock may step backwards, so a genuine
-boundary detected causally AFTER the parent completed can carry a
-timestamp numerically inside the closed interval. A real discontinuity
-was therefore silently suppressible, which is prohibited.
+R3 originally classified a CLOSED-parent orphan by UTC containment plus
+generation equality; **that proof was unsound and was withdrawn in
+R3.1.** R3.1 replaced it with sound identity proofs plus an operator
+authority, but kept UTC containment as an engagement gate for the
+ambiguity review and consulted the authority before durable proofs.
+**R3.2 withdraws both remaining UTC dependencies and the authority
+precedence**: UTC wall-clock timestamps are observational evidence,
+never causal-ordering authority (ADR-0004), and the wall clock may step
+backwards in either direction (a genuine post-completion boundary can
+carry a timestamp inside the closed interval; a true orphan can carry a
+timestamp outside it). UTC is retained only for logging, diagnostics,
+and human correlation.
 
-R3.1 replaces the clock-dependent discriminator with sound durable
-identity rules and an explicit operator authority:
+**R3.2 exhaustive three-way partition** (`spool/legacy_reconnect.py`,
+the single decision engine shared by startup recovery and the read-only
+preflight command):
 
-- **Sound legitimate proofs (materialize, REQ-103).** For an ABSENT
-  intent beside CLOSED intervals of the same market/stream:
-  - `verified_frames > 0` (a trustworthy integer from the SEALING
-    evidence) proves the boundary drained a frame-bearing generation; an
-    extension attempt delivered no frames and always seals a zero-record
-    marker, so the intent cannot be an extension.
-  - `original_connection_id == interval.new_connection_id` at the same
-    `original_generation` proves the boundary was detected on the exact
-    connection whose first frame completed the parent; an extension
-    attempt's connection closed before delivering that frame and can
-    never be the completing connection.
-  - Any other `original_generation` cannot be a legacy extension:
-    extensions always run at the parent's replacement generation.
-- **Ambiguity fails closed.** A candidate with a matching generation, a
-  different connection, zero frames, and a wall timestamp inside the
-  parent interval matches the legacy orphan shape but is
-  indistinguishable from a legitimate post-restart boundary that
-  numerically reused the generation (per-process generation counters
-  restart at zero). Recovery raises
-  `RecoveryConflictError (RECOVERY_LEGACY_ORPHAN_AMBIGUOUS)` and never
-  silently ignores or silently materializes it. Wall-clock containment
-  is used only as an engagement predicate that selects the ambiguity
-  review; it is never the reason lifecycle authority is discarded.
-- **Explicit operator-reviewed classification authority.** The
-  operator-maintained additive file
-  `legacy_reconnect_classifications.json` in the data root (schema
-  `legacy-reconnect-classification.v1`) carries proven classifications
-  keyed by `(gap_id, market, stream)`: `extension_orphan` (recovery
-  ignores the intent, never deletes or edits any Catalog row) or
-  `legitimate_req103` (recovery materializes exactly one STARTED). The
-  authority is honored before any interval heuristic, is
-  clock-independent, and is never written by the recorder. A malformed
-  or conflicting authority file fails recovery closed.
-- The OPEN-parent extension rule is unchanged: an ABSENT intent next to
-  exactly one OPEN gap with the extension shape (started after the
-  parent, generation equal to the parent's replacement generation, and
-  `verified_frames == 0` from trustworthy SEALING evidence) is ignored.
-  If wall rollback makes that predicate fail, the REQ-104 fail-closed
-  conflict remains — silent suppression of legitimate evidence is never
-  permitted. A frame-bearing SEALING evidence cannot be an extension:
-  the genuine ambiguity remains the REQ-104 hard conflict.
-- `verified_frames` must be a trustworthy integer: a missing, boolean,
-  non-integer, or negative value is never treated as zero.
-- Ignored orphans are reported as `extension_orphan_ignored` recovery
-  actions; they materialize nothing, are idempotent across repeated
-  startups, and are never deleted or edited.
-- CLOSED intervals are paired strictly by exact `gap_id`, loaded once
-  per startup recovery pass, and expose the full durable identity
-  (`original_connection_id`, `original_generation`,
-  `new_connection_id`, `new_generation`) plus the observational wall
-  timestamps.
+- **PROVEN_LEGITIMATE → materialize REQ-103.** Durable identity proves
+  the intent is a genuine intent-only crash:
+  - `verified_frames > 0` from trustworthy SEALING evidence (an
+    extension attempt always seals a zero-record marker);
+  - `original_connection_id == CLOSED.new_connection_id` at
+    `original_generation == CLOSED.new_generation` (the boundary was
+    detected on the exact connection whose first frame completed the
+    parent);
+  - **no possible parent** under a quantification over ALL historical
+    authority: no CLOSED lifecycle with a matching `new_generation`, no
+    degraded closed pair, no OPEN gap with `original_generation + 1 ==
+    candidate generation`, and no other persisted intent with
+    `original_generation + 1 == candidate generation`. Generation
+    values are supporting identity, never globally unique (they reset
+    per process), so generation mismatch against ONE interval is never
+    proof.
+- **PROVEN_EXTENSION → ignore lifecycle creation.** An ABSENT intent
+  next to exactly one OPEN parent with the durable extension shape:
+  trustworthy `verified_frames == 0`, generation equal to the parent's
+  replacement generation (`parent.original_generation + 1`), and no
+  wall-time predicate. A frame-bearing intent beside an OPEN parent
+  stays the REQ-104 hard conflict.
+- **AMBIGUOUS → fail closed unless resolved.** Everything else in the
+  legacy ambiguity universe (an ABSENT fresh-gap intent that durable
+  facts cannot prove legitimate) is AMBIGUOUS. Recovery never defaults
+  an ambiguous candidate to materialization or to ignore: startup fails
+  closed before ANY legacy lifecycle mutation
+  (`RECOVERY_LEGACY_PREDECISION_INELIGIBLE` with the full blocker
+  list), and only an exact operator classification resolves it.
+- Competing genuinely distinct OPEN authority remains REQ-104 fail
+  closed; positive proofs never bypass competing-gap invariants.
 
-The legitimate REQ-103 intent-only crash case is unchanged: an ABSENT
-intent with no competing open gap, no explicit orphan classification,
-and no engaged CLOSED interval still materializes exactly one STARTED
-with the same durable gap_id.
+**Authority ordering and contradiction rule.** The operator authority
+is consulted ONLY for candidates already classified AMBIGUOUS, and only
+after the exact same-gap lifecycle handling, durable proofs, and
+competing-gap invariants. If durable facts prove LEGITIMATE but the
+authority says `extension_orphan`, or durable facts prove EXTENSION but
+the authority says `legitimate_req103`, recovery fails closed
+(`RECOVERY_LEGACY_AUTHORITY_CONTRADICTION`). An entry whose candidate
+is now lifecycle-resolved (OPEN validated or CLOSED) was applied by an
+earlier pass and stays idempotent (REQ-107).
+
+**Strongly bound authority (schema
+`legacy-reconnect-classification.v2`).** The additive operator file
+`legacy_reconnect_classifications.json` in the data root binds every
+entry to the exact immutable persisted intent:
+
+```json
+{"gap_id": "...", "market": "...", "stream": "...",
+ "chunk_id": "...", "seal_intent_sha256": "...",
+ "classification": "extension_orphan" | "legitimate_req103",
+ "note": "..."}
+```
+
+`seal_intent_sha256 = sha256(canonical_json({"chunk_id": chunk_id,
+"seal_intent": intent}))` with sorted keys, compact separators, ASCII
+escaping — the exact immutable SEALING transition evidence value plus
+the chunk identity. No mutable/live fields are part of the digest. A
+stale digest, wrong chunk, copied authority, duplicate binding, unknown
+schema/classification, or malformed digest fails closed; an entry with
+no corresponding candidate makes startup ineligible. The recorder never
+writes or edits the file; schema v1 is rejected (it was never deployed,
+so no migration exists).
+
+**Read-only deterministic preflight and two-phase startup.** The CLI
+`binance-market-recorder recovery legacy-reconnect-preflight` runs the
+SAME decision engine against a read-only Catalog and emits a
+deterministic machine-readable inventory (schema
+`legacy-reconnect-preflight.v1`): every candidate with gap identity,
+chunk_id, intent digest, verified_frames, lifecycle state, automatic
+decision, authority state, final decision, and the global counts
+(proven_legitimate / proven_extension / ambiguous / classified /
+unclassified / stale / unmatched / contradiction / conflict) plus
+`first_corrected_startup_eligible`. Startup performs Phase A (the same
+read-only pre-decision) and only then Phase B (apply the proven-safe
+materializations and ignores, then the existing partial/seal/reconcile
+work): no legacy lifecycle mutation ever precedes the global
+pre-decision, so a later ambiguity can never follow a partial
+materialization. CLOSED intervals are paired strictly by exact
+`gap_id`, expose full durable identity, and are loaded once per pass;
+an inverted wall pair is flagged `NON_MONOTONIC` but never removed from
+the classification universe, and identity-degraded pairs are counted
+conservatively as possible-parent authority.
+
+The legitimate REQ-103 intent-only crash case is unchanged: a PROVEN
+legitimate intent materializes exactly one STARTED with the same
+durable gap_id, idempotently across repeated recovery.
 
 The corrected artifact has not passed production validation; production
 deployment, recovery, and the 168h gate remain separately authorized.
+The first corrected startup additionally requires the complete
+pre-start legacy classification sequence documented in
+`docs/operations.md` and `docs/ubuntu_rk3588_operations.md`.
 
 ## Alternatives
 

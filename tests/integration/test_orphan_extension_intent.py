@@ -1,4 +1,4 @@
-"""M21.4.11-R3 P1-001: orphan reconnect seal intents must not exist.
+"""M21.4.11-R3/R3.1/R3.2: orphan reconnect seal intents must not exist.
 
 A reconnect boundary that merely extends an already-open pending logical gap
 (a closing attempt that never delivered a reliable first-new frame) must not
@@ -15,11 +15,16 @@ Three properties are verified independently:
 PREVENTION: the corrected runtime reuses the canonical pending-gap identity
 for extension seal intents (with attempt-level metadata in ``extension``).
 LEGACY_RECOVERY: already-persisted old orphan shapes (closed or still-open
-parent gap) are resolved from durable identity evidence plus the explicit
-operator-reviewed classification authority (M21.4.11-R3.1); UTC wall-clock
-containment is never suppression authority, ambiguous shapes fail closed,
-and the legitimate intent-only crash case (REQ-103) is preserved exactly.
-COMPLEXITY: the CLOSED interval history is built once per recovery pass.
+parent gap) are resolved through the R3.2 exhaustive three-way partition
+(PROVEN_LEGITIMATE / PROVEN_EXTENSION / AMBIGUOUS, never a default
+materialization or ignore); UTC wall-clock ordering never gates
+classification; the operator authority (schema v2, strongly bound to the
+exact persisted intent) resolves ONLY ambiguous candidates and can never
+override durable proofs; startup performs the global pre-decision before
+any legacy lifecycle mutation.
+PREFLIGHT: the read-only ``recovery legacy-reconnect-preflight`` command
+enumerates every candidate deterministically through the same shared
+decision engine and reports first-corrected-startup eligibility.
 
 No production-specific UUIDs or timestamps are hard-coded anywhere.
 """
@@ -40,6 +45,7 @@ from binance_market_data_recorder.binance.spot.schema import SpotStream
 from binance_market_data_recorder.binance.spot.websocket import (
     SpotStreamCollector,
 )
+from binance_market_data_recorder.binance.usdm.schema import UsdMStream
 from binance_market_data_recorder.binance.usdm.websocket import (
     WebSocketConnection,
 )
@@ -597,13 +603,15 @@ def test_legitimate_intent_only_crash_materializes_exactly_once(
 
 def _legacy_orphan_fixture(
     root: Path,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], str, str]:
     """Persist the production legacy orphan SHAPE deterministically.
 
     Parent gap CLOSED (generation 0 -> 1, completing connection
     ``conn-parent-2``); orphan intent with a freshly minted gap identity,
     the failed attempt connection, the parent's replacement generation, and
     a wall timestamp strictly inside the parent interval.
+
+    Returns (parent, orphan, orphan_chunk_id, orphan_seal_intent_sha256).
     """
     layout = ensure_storage_layout(root)
     with Catalog(layout.catalog) as catalog:
@@ -630,22 +638,52 @@ def _legacy_orphan_fixture(
             generation=1,
             started_at_utc_ns=2_000_000_000,
         )
-        _seal_zero_record_marker(
+        orphan_chunk_id = _seal_zero_record_marker(
             root, catalog, orphan, stream=orphan["stream"]
         )
-    return parent, orphan
+        orphan_digest = _seal_intent_digest(catalog, orphan_chunk_id)
+    return parent, orphan, orphan_chunk_id, orphan_digest
+
+
+def _seal_intent_digest(catalog: Catalog, chunk_id: str) -> str:
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        canonical_seal_intent_digest,
+    )
+
+    return canonical_seal_intent_digest(
+        chunk_id=chunk_id, intent=sealing_intent(catalog, chunk_id)
+    )
 
 
 def _write_classification_authority(
     root: Path, entries: list[dict[str, Any]]
 ) -> None:
     document = {
-        "schema": "legacy-reconnect-classification.v1",
+        "schema": "legacy-reconnect-classification.v2",
         "classifications": entries,
     }
     (root / "legacy_reconnect_classifications.json").write_text(
         json.dumps(document, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def _orphan_classification_entry(
+    root: Path,
+    chunk_id: str,
+    *,
+    classification: str,
+) -> dict[str, Any]:
+    with Catalog(ensure_storage_layout(root).catalog, read_only=True) as catalog:
+        intent = sealing_intent(catalog, chunk_id)
+        return {
+            "gap_id": str(intent["gap_id"]),
+            "market": str(intent["market"]),
+            "stream": str(intent["stream"]),
+            "chunk_id": chunk_id,
+            "seal_intent_sha256": _seal_intent_digest(catalog, chunk_id),
+            "classification": classification,
+            "note": "test-reviewed classification",
+        }
 
 
 def test_legacy_orphan_with_closed_parent_never_materializes(
@@ -661,18 +699,19 @@ def test_legacy_orphan_with_closed_parent_never_materializes(
     the parent's completing connection, generation matches) cannot
     distinguish the legacy extension from a legitimate post-restart boundary
     with a reused generation, so unclassified recovery must fail closed
-    (R3.1)."""
-    _legacy_orphan_fixture(tmp_path)
+    (R3.1/R3.2). The authority entry is strongly bound to the exact
+    persisted intent (chunk_id + canonical seal-intent digest, schema v2)."""
+    _parent, _orphan, orphan_chunk_id, _orphan_digest = _legacy_orphan_fixture(
+        tmp_path
+    )
     _write_classification_authority(
         tmp_path,
         [
-            {
-                "gap_id": "orphan-g2",
-                "market": "um_perpetual",
-                "stream": "book_ticker",
-                "classification": "extension_orphan",
-                "note": "proven pre-fix extension of parent-g1",
-            }
+            _orphan_classification_entry(
+                tmp_path,
+                orphan_chunk_id,
+                classification="extension_orphan",
+            )
         ],
     )
 
@@ -871,19 +910,17 @@ def test_generation_reuse_after_restart_resolvable_via_authority(
             generation=1,
             started_at_utc_ns=2_000_000_000,
         )
-        _seal_zero_record_marker(
+        genuine_chunk_id = _seal_zero_record_marker(
             tmp_path, catalog, genuine, stream=genuine["stream"]
         )
     _write_classification_authority(
         tmp_path,
         [
-            {
-                "gap_id": "genuine-g2",
-                "market": "um_perpetual",
-                "stream": "book_ticker",
-                "classification": "legitimate_req103",
-                "note": "post-restart genuine boundary",
-            }
+            _orphan_classification_entry(
+                tmp_path,
+                genuine_chunk_id,
+                classification="legitimate_req103",
+            )
         ],
     )
 
@@ -992,13 +1029,48 @@ def test_classification_authority_malformed_fails_closed(
     authority.write_text(
         json.dumps(
             {
-                "schema": "legacy-reconnect-classification.v1",
+                "schema": "legacy-reconnect-classification.v2",
                 "classifications": [
                     {
                         "gap_id": "genuine-g1",
                         "market": "um_perpetual",
                         "stream": "book_ticker",
+                        "chunk_id": "unknown-chunk",
+                        "seal_intent_sha256": "a" * 64,
                         "classification": "unknown-kind",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(RecoveryConflictError, match="LEGACY_CLASSIFICATION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+    authority.write_text(
+        json.dumps(
+            {
+                "schema": "legacy-reconnect-classification.v1",
+                "classifications": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(RecoveryConflictError, match="LEGACY_CLASSIFICATION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+    authority.write_text(
+        json.dumps(
+            {
+                "schema": "legacy-reconnect-classification.v2",
+                "classifications": [
+                    {
+                        "gap_id": "genuine-g1",
+                        "market": "um_perpetual",
+                        "stream": "book_ticker",
+                        "chunk_id": "unknown-chunk",
+                        "seal_intent_sha256": "not-a-digest",
+                        "classification": "extension_orphan",
                     }
                 ],
             }
@@ -1019,6 +1091,7 @@ def test_closed_interval_history_loaded_once_per_pass(
     from binance_market_data_recorder.storage import catalog as catalog_module
 
     layout = ensure_storage_layout(tmp_path)
+    orphan_chunk_ids: list[str] = []
     with Catalog(layout.catalog) as catalog:
         parent = _durable_intent(
             gap_id="parent-g1",
@@ -1044,19 +1117,18 @@ def test_closed_interval_history_loaded_once_per_pass(
                 generation=1,
                 started_at_utc_ns=2_000_000_000,
             )
-            _seal_zero_record_marker(
+            orphan_chunk_id = _seal_zero_record_marker(
                 tmp_path, catalog, orphan, stream=orphan["stream"]
             )
+            orphan_chunk_ids.append(orphan_chunk_id)
     _write_classification_authority(
         tmp_path,
         [
-            {
-                "gap_id": f"orphan-g{index}",
-                "market": "um_perpetual",
-                "stream": "book_ticker",
-                "classification": "extension_orphan",
-                "note": "legacy extension of parent-g1",
-            }
+            _orphan_classification_entry(
+                tmp_path,
+                orphan_chunk_ids[index],
+                classification="extension_orphan",
+            )
             for index in range(3)
         ],
     )
@@ -1271,3 +1343,890 @@ def test_extension_orphan_generation_mismatch_still_materializes_legit_crash(
         and action.detail == "genuine-g2"
         for action in actions
     )
+
+
+# ---------------------------------------------------------------------------
+# M21.4.11-R3.2: exhaustive legacy partition, no UTC gate, strongly bound
+# authority, deterministic read-only preflight.
+# ---------------------------------------------------------------------------
+
+
+def test_orphan_outside_parent_wall_interval_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """R3.2-001 (P1-001): a true pre-R3 extension orphan whose wall
+    timestamp falls OUTSIDE the parent's numeric interval (wall clock
+    stepped backward before the extension) must never materialize a phantom
+    STARTED merely because no UTC-contained interval exists.
+
+    Without an explicit classification startup fails closed (AMBIGUOUS)."""
+    layout = ensure_storage_layout(tmp_path)
+    orphan_chunk_id = ""
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        orphan = _durable_intent(
+            gap_id="orphan-g2",
+            reason="session_restart",
+            connection_id="conn-attempt",
+            generation=1,
+            started_at_utc_ns=500_000_000,
+        )
+        orphan_chunk_id = _seal_zero_record_marker(
+            tmp_path, catalog, orphan, stream=orphan["stream"]
+        )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_ORPHAN_AMBIGUOUS"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path,
+                orphan_chunk_id,
+                classification="extension_orphan",
+            )
+        ],
+    )
+    recovered = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+    assert any(
+        action.action == "extension_orphan_ignored"
+        and action.detail == "orphan-g2"
+        for action in actions
+    )
+    assert not any(
+        action.action == "pending_discontinuity_materialized"
+        for action in actions
+    )
+
+
+def test_inverted_wall_clock_parent_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """R3.2-002 (P1-001): a CLOSED lifecycle pair whose COMPLETED wall
+    timestamp is not after its STARTED wall timestamp remains exact
+    lifecycle authority.  A zero-frame legacy candidate whose generation
+    matches that parent must stay AMBIGUOUS, never become automatically
+    materializable because an interval builder dropped the inverted pair."""
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=3_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=2_000_000_000,
+        )
+        orphan = _durable_intent(
+            gap_id="orphan-g2",
+            reason="session_restart",
+            connection_id="conn-attempt",
+            generation=1,
+            started_at_utc_ns=2_500_000_000,
+        )
+        _seal_zero_record_marker(
+            tmp_path, catalog, orphan, stream=orphan["stream"]
+        )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_ORPHAN_AMBIGUOUS"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+
+def test_authority_cannot_override_frame_bearing_legitimacy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R3.2-003 (P1-002 TEST-A): verified_frames > 0 is durable proof of a
+    legitimate boundary; an ``extension_orphan`` classification must never
+    override it.  Startup fails closed instead of ignoring."""
+    from tests.integration.test_reconnect_boundary_integrity import (
+        _seal_chunk_with_intent,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    chunk_id = ""
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        genuine = _durable_intent(
+            gap_id="genuine-g2",
+            reason="planned_rotation",
+            connection_id="conn-attempt",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        chunk_id = _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=genuine,
+            frame_payload=book_ticker(7),
+        )
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path, chunk_id, classification="extension_orphan"
+            )
+        ],
+    )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+
+def test_authority_cannot_override_completing_connection_legitimacy(
+    tmp_path: Path,
+) -> None:
+    """R3.2-004 (P1-002 TEST-B): the completing-connection identity proof
+    makes the intent legitimate; an ``extension_orphan`` classification
+    must never override it."""
+    layout = ensure_storage_layout(tmp_path)
+    chunk_id = ""
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        genuine = _durable_intent(
+            gap_id="genuine-g2",
+            reason="planned_rotation",
+            connection_id="conn-parent-2",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        chunk_id = _seal_zero_record_marker(
+            tmp_path, catalog, genuine, stream=genuine["stream"]
+        )
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path, chunk_id, classification="extension_orphan"
+            )
+        ],
+    )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+
+def test_authority_cannot_override_proven_open_parent_extension(
+    tmp_path: Path,
+) -> None:
+    """R3.2-005 (P1-002 TEST-C): the OPEN-parent extension shape is proven
+    from durable identity alone; a ``legitimate_req103`` classification must
+    never override it into a second STARTED."""
+    layout = ensure_storage_layout(tmp_path)
+    chunk_id = ""
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        orphan = _durable_intent(
+            gap_id="orphan-g2",
+            reason="session_restart",
+            connection_id="conn-attempt",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        chunk_id = _seal_zero_record_marker(
+            tmp_path, catalog, orphan, stream=orphan["stream"]
+        )
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path, chunk_id, classification="legitimate_req103"
+            )
+        ],
+    )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+
+def test_authority_binding_wrong_chunk_rejected(tmp_path: Path) -> None:
+    """R3.2-006: an authority entry whose chunk_id does not match the
+    persisted intent chunk is stale and fails closed."""
+    _parent, _orphan, _chunk_id, _digest = _legacy_orphan_fixture(tmp_path)
+    _write_classification_authority(
+        tmp_path,
+        [
+            {
+                "gap_id": "orphan-g2",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": "00000000-0000-0000-0000-000000000000",
+                "seal_intent_sha256": "a" * 64,
+                "classification": "extension_orphan",
+            }
+        ],
+    )
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(
+            layout=ensure_storage_layout(tmp_path),
+            catalog=Catalog(ensure_storage_layout(tmp_path).catalog),
+        )
+
+
+def test_authority_binding_wrong_digest_rejected(tmp_path: Path) -> None:
+    """R3.2-007: an authority entry whose digest does not match the exact
+    persisted seal intent is stale and fails closed."""
+    _parent, _orphan, chunk_id, _digest = _legacy_orphan_fixture(tmp_path)
+    _write_classification_authority(
+        tmp_path,
+        [
+            {
+                "gap_id": "orphan-g2",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": chunk_id,
+                "seal_intent_sha256": "b" * 64,
+                "classification": "extension_orphan",
+            }
+        ],
+    )
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(
+            layout=ensure_storage_layout(tmp_path),
+            catalog=Catalog(ensure_storage_layout(tmp_path).catalog),
+        )
+
+
+def test_authority_duplicate_binding_rejected(tmp_path: Path) -> None:
+    """R3.2-008: two entries binding the same intent (one with a different
+    digest) conflict and fail closed at authority load."""
+    _parent, _orphan, chunk_id, digest = _legacy_orphan_fixture(tmp_path)
+    _write_classification_authority(
+        tmp_path,
+        [
+            {
+                "gap_id": "orphan-g2",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": chunk_id,
+                "seal_intent_sha256": digest,
+                "classification": "extension_orphan",
+            },
+            {
+                "gap_id": "orphan-g2",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": chunk_id,
+                "seal_intent_sha256": "c" * 64,
+                "classification": "legitimate_req103",
+            },
+        ],
+    )
+    with pytest.raises(RecoveryConflictError, match="LEGACY_CLASSIFICATION"):
+        recover_storage(
+            layout=ensure_storage_layout(tmp_path),
+            catalog=Catalog(ensure_storage_layout(tmp_path).catalog),
+        )
+
+
+def test_authority_unmatched_entry_makes_startup_ineligible(
+    tmp_path: Path,
+) -> None:
+    """R3.2-009: an authority entry with no corresponding candidate (no such
+    intent exists) makes startup ineligible: authority must never silently
+    classify records it does not bind."""
+    _legacy_orphan_fixture(tmp_path)
+    layout = ensure_storage_layout(tmp_path)
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        canonical_seal_intent_digest,
+    )
+
+    unused_intent = _durable_intent(
+        gap_id="never-persisted-g1",
+        reason="planned_rotation",
+        connection_id="conn-nowhere",
+        generation=0,
+        started_at_utc_ns=1,
+    )
+    digest = canonical_seal_intent_digest(
+        chunk_id="11111111-2222-3333-4444-555555555555",
+        intent=unused_intent,
+    )
+    _write_classification_authority(
+        tmp_path,
+        [
+            {
+                "gap_id": "never-persisted-g1",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": "11111111-2222-3333-4444-555555555555",
+                "seal_intent_sha256": digest,
+                "classification": "extension_orphan",
+            }
+        ],
+    )
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+
+def test_startup_does_not_partially_mutate_before_ambiguity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R3.2-010 (P1-003): startup performs the full legacy pre-decision
+    before ANY legacy lifecycle mutation.  A proven-legitimate candidate A
+    plus an unresolved ambiguous candidate B must fail startup without
+    materializing A's STARTED."""
+    from tests.integration.test_reconnect_boundary_integrity import (
+        _seal_chunk_with_intent,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        legitimate = _durable_intent(
+            gap_id="legit-a",
+            reason="planned_rotation",
+            connection_id="conn-legit",
+            generation=7,
+            started_at_utc_ns=5_000_000_000,
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=legitimate,
+            frame_payload=book_ticker(7),
+        )
+        ambiguous = _durable_intent(
+            gap_id="ambig-b",
+            reason="session_restart",
+            connection_id="conn-attempt",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        _seal_zero_record_marker(
+            tmp_path, catalog, ambiguous, stream=ambiguous["stream"]
+        )
+
+    with pytest.raises(RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        started = _started_events(catalog)
+        assert [event["evidence"]["gap_id"] for event in started] == [
+            "parent-g1"
+        ]
+
+
+def test_preflight_enumerates_all_legacy_candidates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R3.2-011 (P1-003): the read-only preflight enumerates every legacy
+    candidate regardless of UTC shape and reports deterministic counts."""
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LegacyClassificationAuthority,
+        evaluate_legacy_reconnect_decisions,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    chunk_ids: dict[str, str] = {}
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        contained = _durable_intent(
+            gap_id="orphan-contained",
+            reason="session_restart",
+            connection_id="conn-attempt-1",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        chunk_ids["contained"] = _seal_zero_record_marker(
+            tmp_path, catalog, contained, stream=contained["stream"]
+        )
+        outside = _durable_intent(
+            gap_id="orphan-outside",
+            reason="session_restart",
+            connection_id="conn-attempt-2",
+            generation=1,
+            started_at_utc_ns=500_000_000,
+        )
+        chunk_ids["outside"] = _seal_zero_record_marker(
+            tmp_path, catalog, outside, stream=outside["stream"]
+        )
+        from tests.integration.test_reconnect_boundary_integrity import (
+            _seal_chunk_with_intent,
+        )
+
+        legit_frames = _durable_intent(
+            gap_id="legit-frames",
+            reason="planned_rotation",
+            connection_id="conn-legit-1",
+            generation=9,
+            started_at_utc_ns=5_000_000_000,
+            stream="agg_trade",
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=legit_frames,
+            frame_payload=book_ticker(7),
+            stream=UsdMStream.AGG_TRADE,
+        )
+        legit_completing = _durable_intent(
+            gap_id="legit-completing",
+            reason="planned_rotation",
+            connection_id="conn-parent-2",
+            generation=1,
+            started_at_utc_ns=2_500_000_000,
+        )
+        _seal_zero_record_marker(
+            tmp_path, catalog, legit_completing, stream=legit_completing["stream"]
+        )
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        authority = LegacyClassificationAuthority.load(layout)
+        report = evaluate_legacy_reconnect_decisions(
+            catalog=catalog, authority=authority
+        )
+    public = report.public_dict()
+    assert public["candidate_count"] == 4
+    assert public["proven_legitimate_count"] == 2
+    assert public["ambiguous_count"] == 2
+    assert public["unclassified_ambiguous_count"] == 2
+    assert public["first_corrected_startup_eligible"] is False
+    candidates = cast(list[dict[str, Any]], public["candidates"])
+    assert {item["gap_id"] for item in candidates} == {
+        "orphan-contained",
+        "orphan-outside",
+        "legit-frames",
+        "legit-completing",
+    }
+
+
+def test_preflight_and_startup_share_one_decision_engine(
+    tmp_path: Path,
+) -> None:
+    """R3.2-012: preflight and startup use the same decision engine.  A
+    fully classified fixture produces identical decisions in the read-only
+    report and in startup execution."""
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LegacyClassificationAuthority,
+        evaluate_legacy_reconnect_decisions,
+    )
+
+    _parent, _orphan, orphan_chunk_id, _digest = _legacy_orphan_fixture(tmp_path)
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path,
+                orphan_chunk_id,
+                classification="extension_orphan",
+            )
+        ],
+    )
+    layout = ensure_storage_layout(tmp_path)
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        report = evaluate_legacy_reconnect_decisions(
+            catalog=catalog,
+            authority=LegacyClassificationAuthority.load(layout),
+        )
+    assert report.first_corrected_startup_eligible is True
+    finals = {
+        decision.candidate.gap_id: decision.final
+        for decision in report.decisions
+    }
+    assert finals["orphan-g2"] == "classified_extension_orphan"
+
+    recovered = Catalog(layout.catalog)
+    actions = recover_storage(layout=layout, catalog=recovered)
+    recovered.close()
+    assert any(
+        action.action == "extension_orphan_ignored"
+        and action.detail == "orphan-g2"
+        for action in actions
+    )
+    assert not any(
+        action.action == "pending_discontinuity_materialized"
+        for action in actions
+    )
+
+
+def test_preflight_is_read_only(tmp_path: Path) -> None:
+    """R3.2-013: the preflight mutates neither the Catalog nor the authority
+    file nor any artifact."""
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LegacyClassificationAuthority,
+        evaluate_legacy_reconnect_decisions,
+    )
+
+    _legacy_orphan_fixture(tmp_path)
+    layout = ensure_storage_layout(tmp_path)
+    before = (layout.catalog).read_bytes()
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        authority = LegacyClassificationAuthority.load(layout)
+        report = evaluate_legacy_reconnect_decisions(
+            catalog=catalog, authority=authority
+        )
+    assert report.first_corrected_startup_eligible is False
+    assert (layout.catalog).read_bytes() == before
+    assert not (layout.root / "legacy_reconnect_classifications.json").exists()
+
+
+def test_preflight_cli_is_machine_readable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """R3.2-014: the CLI exposes the preflight as deterministic
+    machine-readable JSON and never mutates the data root."""
+    import binance_market_data_recorder.cli as cli_module
+
+    _parent, _orphan, orphan_chunk_id, _digest = _legacy_orphan_fixture(tmp_path)
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path,
+                orphan_chunk_id,
+                classification="extension_orphan",
+            )
+        ],
+    )
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path))
+    catalog_path = tmp_path / "state" / "catalog.sqlite"
+    before = catalog_path.read_bytes()
+
+    assert (
+        cli_module.main(
+            ["recovery", "legacy-reconnect-preflight"]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["schema_version"] == "legacy-reconnect-preflight.v1"
+    assert payload["first_corrected_startup_eligible"] is True
+    assert payload["candidate_count"] == 1
+    assert catalog_path.read_bytes() == before
+
+
+def test_preflight_complete_inventory_all_ten_shapes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R3.2-015 (P1-003): one fixture containing every required legacy
+    shape; the read-only preflight enumerates ALL of them with exact
+    deterministic counts.  No candidate may disappear because of its
+    wall-clock shape."""
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LegacyClassificationAuthority,
+        evaluate_legacy_reconnect_decisions,
+    )
+    from tests.integration.test_reconnect_boundary_integrity import (
+        _seal_chunk_with_intent,
+    )
+
+    layout = ensure_storage_layout(tmp_path)
+    chunk_ids: dict[str, str] = {}
+    with Catalog(layout.catalog) as catalog:
+        parent = _durable_intent(
+            gap_id="parent-g1",
+            reason="unexpected_disconnect",
+            connection_id="conn-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+        )
+        _record_gap(catalog, parent, completed=False)
+        _record_gap(
+            catalog,
+            parent,
+            completed=True,
+            new_connection_id="conn-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        inverted = _durable_intent(
+            gap_id="parent-inverted",
+            reason="unexpected_disconnect",
+            connection_id="conn-inv",
+            generation=0,
+            started_at_utc_ns=3_000_000_000,
+        )
+        _record_gap(catalog, inverted, completed=False)
+        _record_gap(
+            catalog,
+            inverted,
+            completed=True,
+            new_connection_id="conn-inv-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=2_000_000_000,
+        )
+        contained = _durable_intent(
+            gap_id="shape-contained-orphan",
+            reason="session_restart",
+            connection_id="conn-attempt-contained",
+            generation=1,
+            started_at_utc_ns=2_000_000_000,
+        )
+        chunk_ids["contained"] = _seal_zero_record_marker(
+            tmp_path, catalog, contained, stream=contained["stream"]
+        )
+        outside = _durable_intent(
+            gap_id="shape-outside-orphan",
+            reason="session_restart",
+            connection_id="conn-attempt-outside",
+            generation=1,
+            started_at_utc_ns=500_000_000,
+        )
+        chunk_ids["outside"] = _seal_zero_record_marker(
+            tmp_path, catalog, outside, stream=outside["stream"]
+        )
+        inverted_orphan = _durable_intent(
+            gap_id="shape-inverted-parent-orphan",
+            reason="session_restart",
+            connection_id="conn-attempt-inverted",
+            generation=1,
+            started_at_utc_ns=2_500_000_000,
+        )
+        _seal_zero_record_marker(
+            tmp_path, catalog, inverted_orphan, stream=inverted_orphan["stream"]
+        )
+        completing = _durable_intent(
+            gap_id="shape-completing-connection",
+            reason="planned_rotation",
+            connection_id="conn-parent-2",
+            generation=1,
+            started_at_utc_ns=2_500_000_000,
+        )
+        _seal_zero_record_marker(
+            tmp_path, catalog, completing, stream=completing["stream"]
+        )
+        reuse_parent = _durable_intent(
+            gap_id="reuse-parent",
+            reason="unexpected_disconnect",
+            connection_id="conn-reuse-parent",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+            stream="mark_price",
+        )
+        _record_gap(catalog, reuse_parent, completed=False)
+        _record_gap(
+            catalog,
+            reuse_parent,
+            completed=True,
+            new_connection_id="conn-reuse-parent-2",
+            new_generation=1,
+            gap_ended_at_utc_ns=3_000_000_000,
+        )
+        reuse = _durable_intent(
+            gap_id="shape-generation-reuse",
+            reason="planned_rotation",
+            connection_id="conn-new-process",
+            generation=1,
+            started_at_utc_ns=2_500_000_000,
+            stream="mark_price",
+        )
+        chunk_ids["reuse"] = _seal_zero_record_marker(
+            tmp_path, catalog, reuse, stream=reuse["stream"]
+        )
+        frames = _durable_intent(
+            gap_id="shape-frame-bearing",
+            reason="planned_rotation",
+            connection_id="conn-legit-frames",
+            generation=9,
+            started_at_utc_ns=5_000_000_000,
+            stream="agg_trade",
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=frames,
+            frame_payload=book_ticker(7),
+            stream=UsdMStream.AGG_TRADE,
+        )
+        open_parent = _durable_intent(
+            gap_id="shape-open-parent",
+            reason="unexpected_disconnect",
+            connection_id="conn-open",
+            generation=0,
+            started_at_utc_ns=1_000_000_000,
+            stream="diff_depth",
+        )
+        _record_gap(catalog, open_parent, completed=False)
+        competing = _durable_intent(
+            gap_id="shape-open-conflict",
+            reason="planned_rotation",
+            connection_id="conn-open-attempt",
+            generation=2,
+            started_at_utc_ns=2_000_000_000,
+            stream="diff_depth",
+        )
+        _seal_chunk_with_intent(
+            layout,
+            catalog,
+            monkeypatch,
+            intent=competing,
+            frame_payload=book_ticker(8),
+            stream=UsdMStream.DIFF_DEPTH,
+        )
+
+    _write_classification_authority(
+        tmp_path,
+        [
+            _orphan_classification_entry(
+                tmp_path,
+                chunk_ids["contained"],
+                classification="extension_orphan",
+            ),
+            _orphan_classification_entry(
+                tmp_path,
+                chunk_ids["reuse"],
+                classification="legitimate_req103",
+            ),
+            {
+                "gap_id": "shape-outside-orphan",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": chunk_ids["outside"],
+                "seal_intent_sha256": "d" * 64,
+                "classification": "extension_orphan",
+            },
+        ],
+    )
+
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        report = evaluate_legacy_reconnect_decisions(
+            catalog=catalog,
+            authority=LegacyClassificationAuthority.load(layout),
+        )
+    public = report.public_dict()
+    candidates = cast(list[dict[str, Any]], public["candidates"])
+    assert {item["gap_id"] for item in candidates} == {
+        "shape-contained-orphan",
+        "shape-outside-orphan",
+        "shape-inverted-parent-orphan",
+        "shape-generation-reuse",
+        "shape-completing-connection",
+        "shape-frame-bearing",
+        "shape-open-conflict",
+    }
+    assert public["candidate_count"] == 7
+    assert public["proven_legitimate_count"] == 2
+    assert public["proven_extension_count"] == 0
+    assert public["ambiguous_count"] == 4
+    assert public["classified_ambiguous_count"] == 2
+    assert public["unclassified_ambiguous_count"] == 2
+    assert public["stale_authority_count"] == 1
+    assert public["unmatched_authority_count"] == 0
+    assert public["contradiction_count"] == 0
+    assert public["conflict_count"] == 1
+    assert public["first_corrected_startup_eligible"] is False
+    decisions = {item["gap_id"]: item for item in candidates}
+    assert decisions["shape-contained-orphan"]["final_decision"] == (
+        "classified_extension_orphan"
+    )
+    assert decisions["shape-generation-reuse"]["final_decision"] == (
+        "classified_legitimate_req103"
+    )
+    assert decisions["shape-completing-connection"]["final_decision"] == (
+        "proven_legitimate"
+    )
+    assert decisions["shape-frame-bearing"]["final_decision"] == (
+        "proven_legitimate"
+    )
+    assert decisions["shape-inverted-parent-orphan"]["automatic_decision"] == (
+        "ambiguous"
+    )
+    assert decisions["shape-outside-orphan"]["automatic_decision"] == (
+        "ambiguous"
+    )
+    assert decisions["shape-outside-orphan"]["authority_state"] == "STALE"
+    assert decisions["shape-open-conflict"]["automatic_decision"] == "conflict"

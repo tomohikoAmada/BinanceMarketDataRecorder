@@ -1,0 +1,992 @@
+"""M21.4.11-R3.2: exhaustive legacy reconnect recovery partition.
+
+Startup recovery and the read-only ``recovery legacy-reconnect-preflight``
+command share this single decision engine.  The engine performs an
+EXHAUSTIVE three-way partition over every historical SEALING reconnect
+intent:
+
+A. ``PROVEN_LEGITIMATE`` — durable identity proves the intent is a genuine
+   REQ-103 intent-only crash: startup materializes exactly one STARTED.
+B. ``PROVEN_EXTENSION`` — durable identity proves the intent is a
+   pre-R3 pending-gap extension orphan: startup ignores lifecycle
+   materialization.
+C. ``AMBIGUOUS`` — durable identity cannot prove either direction: startup
+   fails closed unless an exact, strongly-bound operator classification
+   authority resolves it.
+
+There is no fourth outcome: uncertainty means AMBIGUOUS, never a default
+materialization and never a default ignore.
+
+UTC wall-clock timestamps are retained for operator diagnostics only.  UTC
+ordering NEVER determines whether a candidate is ambiguous, whether an
+interval participates in the classification universe, or whether an intent
+is materialized or suppressed.  CLOSED lifecycle pairs remain exact
+authority even when their wall timestamps are inverted (``NON_MONOTONIC``).
+
+Authority ordering (M21.4.11-R3.2):
+
+1. exact same-gap lifecycle CLOSED/OPEN handling;
+2. durable automatic proofs;
+3. competing-gap invariants (REQ-104);
+4. determine AMBIGUOUS;
+5. only then consult the operator authority.
+
+An authority entry resolves ONLY an AMBIGUOUS candidate.  An entry bound
+to a candidate whose durable facts already prove a decision is a
+CONTRADICTION and fails closed.  Entries must bind to the exact immutable
+persisted record (``chunk_id`` + canonical seal-intent digest); stale,
+duplicate, or unmatched entries fail closed.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
+
+from ..storage.catalog import Catalog, CatalogStateError
+from ..storage.layout import StorageLayout
+
+#: Operator-maintained additive legacy classification authority file inside
+#: the data root.  Recovery and preflight only read it; the recorder never
+#: writes it.
+LEGACY_CLASSIFICATION_FILENAME = "legacy_reconnect_classifications.json"
+LEGACY_CLASSIFICATION_SCHEMA_V2 = "legacy-reconnect-classification.v2"
+LEGACY_CLASSIFICATION_KINDS = frozenset(
+    {"extension_orphan", "legitimate_req103"}
+)
+PREFLIGHT_SCHEMA_VERSION = "legacy-reconnect-preflight.v1"
+_DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+_SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
+
+
+class LegacyReconnectConflictError(CatalogStateError):
+    """Raised when the legacy reconnect partition cannot proceed safely."""
+
+
+def _canonical_json(document: object) -> str:
+    return json.dumps(
+        document, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    )
+
+
+def canonical_seal_intent_digest(
+    *, chunk_id: str, intent: Mapping[str, object]
+) -> str:
+    """Deterministic binding digest of one immutable seal-intent record.
+
+    The digest is ``sha256(canonical_json({"chunk_id": chunk_id,
+    "seal_intent": intent}))`` where ``canonical_json`` uses sorted keys,
+    compact separators, and ASCII escaping.  It covers the exact persisted
+    seal-intent document (an immutable chunk-transition evidence value) and
+    the chunk identity; no mutable or live field is part of the binding.
+    A stored authority digest therefore proves that the same persisted
+    record was reviewed and detects any modification or copy to another
+    chunk.
+    """
+    payload = _canonical_json({"chunk_id": chunk_id, "seal_intent": dict(intent)})
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class LegacyClassificationEntry:
+    gap_id: str
+    market: str
+    stream: str
+    chunk_id: str
+    seal_intent_sha256: str
+    classification: str
+    note: str | None
+
+    @property
+    def binding(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.market,
+            self.stream,
+            self.gap_id,
+            self.chunk_id,
+            self.seal_intent_sha256,
+        )
+
+
+class LegacyClassificationAuthority:
+    """Operator-reviewed additive authority (schema v2, strongly bound).
+
+    Each entry binds the exact immutable persisted intent via
+    ``(market, stream, gap_id, chunk_id, seal_intent_sha256)``.  The
+    authority resolves ONLY candidates the decision engine classified
+    AMBIGUOUS.  Loading fails closed on malformed JSON, wrong schema
+    (including v1), unknown classification kinds, malformed digests,
+    missing identity fields, unknown keys, and duplicate bindings.
+    """
+
+    def __init__(
+        self, entries: dict[tuple[str, str, str], LegacyClassificationEntry]
+    ) -> None:
+        self._entries = dict(entries)
+
+    @classmethod
+    def load(cls, layout: StorageLayout) -> LegacyClassificationAuthority:
+        path = layout.root / LEGACY_CLASSIFICATION_FILENAME
+        if not path.exists():
+            return cls({})
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise LegacyReconnectConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: cannot parse authority document: {exc}"
+            ) from exc
+        if not isinstance(document, dict):
+            raise LegacyReconnectConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: authority must be a JSON object"
+            )
+        if set(document.keys()) != {"schema", "classifications"}:
+            raise LegacyReconnectConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: authority must contain exactly schema and "
+                "classifications"
+            )
+        schema = document["schema"]
+        if schema != LEGACY_CLASSIFICATION_SCHEMA_V2:
+            raise LegacyReconnectConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: unsupported authority schema {schema!r}; "
+                f"expected {LEGACY_CLASSIFICATION_SCHEMA_V2!r}"
+            )
+        entries = document["classifications"]
+        if not isinstance(entries, list):
+            raise LegacyReconnectConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: classifications must be a list"
+            )
+        loaded: dict[tuple[str, str, str], LegacyClassificationEntry] = {}
+        seen_bindings: set[tuple[str, str, str, str, str]] = set()
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} must be an object"
+                )
+            if set(entry.keys()) - {
+                "gap_id",
+                "market",
+                "stream",
+                "chunk_id",
+                "seal_intent_sha256",
+                "classification",
+                "note",
+            }:
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} carries unknown keys"
+                )
+            gap_id = entry.get("gap_id")
+            market = entry.get("market")
+            stream = entry.get("stream")
+            chunk_id = entry.get("chunk_id")
+            digest = entry.get("seal_intent_sha256")
+            classification = entry.get("classification")
+            note = entry.get("note")
+            if (
+                not isinstance(gap_id, str)
+                or not gap_id
+                or not isinstance(market, str)
+                or not market
+                or not isinstance(stream, str)
+                or not stream
+                or not isinstance(chunk_id, str)
+                or not chunk_id
+            ):
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} has invalid identity"
+                )
+            if not isinstance(digest, str) or not _DIGEST_PATTERN.fullmatch(
+                digest
+            ):
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} has an invalid "
+                    "seal_intent_sha256 (expected 64 lowercase hex chars)"
+                )
+            if classification not in LEGACY_CLASSIFICATION_KINDS:
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} has unknown classification "
+                    f"{classification!r}"
+                )
+            if note is not None and not isinstance(note, str):
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} note must be text"
+                )
+            identity = (market, stream, gap_id)
+            if identity in loaded:
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: duplicate classification for {gap_id}"
+                )
+            binding = (market, stream, gap_id, chunk_id, digest)
+            if binding in seen_bindings:
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: duplicate binding for {gap_id}"
+                )
+            seen_bindings.add(binding)
+            loaded[identity] = LegacyClassificationEntry(
+                gap_id=gap_id,
+                market=market,
+                stream=stream,
+                chunk_id=chunk_id,
+                seal_intent_sha256=digest,
+                classification=classification,
+                note=note,
+            )
+        return cls(loaded)
+
+    def entries(self) -> tuple[LegacyClassificationEntry, ...]:
+        return tuple(self._entries.values())
+
+    def lookup(
+        self, *, market: str, stream: str, gap_id: str
+    ) -> LegacyClassificationEntry | None:
+        return self._entries.get((market, stream, gap_id))
+
+
+def validate_seal_intent(
+    intent: Mapping[str, object], chunk_id: str
+) -> None:
+    """Reject a malformed seal-intent document before classification."""
+
+    required_names = (
+        "required_forced_flags",
+        "gap_id",
+        "reason",
+        "market",
+        "stream",
+        "original_connection_id",
+        "original_generation",
+        "gap_started_at_utc_ns",
+    )
+    for name in required_names:
+        if name not in intent:
+            raise LegacyReconnectConflictError(
+                f"RECOVERY_SEAL_INTENT_MISSING_FIELD {name} chunk={chunk_id}"
+            )
+    flags = intent["required_forced_flags"]
+    if not isinstance(flags, list) or not all(
+        isinstance(flag, str) and flag for flag in flags
+    ):
+        raise LegacyReconnectConflictError(
+            f"RECOVERY_SEAL_INTENT_INVALID_FLAGS chunk={chunk_id}"
+        )
+    gap_id = intent["gap_id"]
+    reason = intent["reason"]
+    market = intent["market"]
+    stream = intent["stream"]
+    connection_id = intent["original_connection_id"]
+    generation = intent["original_generation"]
+    started_at = intent["gap_started_at_utc_ns"]
+    if not all(
+        isinstance(value, str) and value
+        for value in (gap_id, reason, market, stream, connection_id)
+    ):
+        raise LegacyReconnectConflictError(
+            f"RECOVERY_SEAL_INTENT_INVALID_IDENTITY chunk={chunk_id}"
+        )
+    if (
+        isinstance(generation, bool)
+        or not isinstance(generation, int)
+        or generation < 0
+    ):
+        raise LegacyReconnectConflictError(
+            f"RECOVERY_SEAL_INTENT_INVALID_GENERATION chunk={chunk_id}"
+        )
+    if (
+        isinstance(started_at, bool)
+        or not isinstance(started_at, int)
+        or started_at < 0
+    ):
+        raise LegacyReconnectConflictError(
+            f"RECOVERY_SEAL_INTENT_INVALID_STARTED_AT chunk={chunk_id}"
+        )
+
+
+@dataclass(frozen=True)
+class LegacyReconnectCandidate:
+    """One historical SEALING reconnect intent under classification."""
+
+    chunk_id: str
+    market: str
+    stream: str
+    gap_id: str
+    reason: str
+    original_connection_id: str
+    original_generation: int
+    gap_started_at_utc_ns: int
+    seal_intent_sha256: str
+    verified_frames: object
+    intent: dict[str, object]
+
+    @property
+    def trusted_frames(self) -> int | None:
+        value = self.verified_frames
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            return None
+        return value
+
+
+@dataclass(frozen=True)
+class OpenGapRecord:
+    """One unmatched STARTED authority used by competing-gap invariants."""
+
+    gap_id: str
+    original_connection_id: str | None
+    original_generation: int | None
+    identity_valid: bool
+
+
+@dataclass(frozen=True)
+class ClosedLifecycle:
+    """One exactly-paired CLOSED lifecycle with full durable identity.
+
+    Wall timestamps are observational evidence only (``wall_time_order`` is
+    diagnostic metadata); connection and generation identity are the causal
+    authority.  Inverted wall timestamps never remove the pair from the
+    classification universe (M21.4.11-R3.2).
+    """
+
+    gap_id: str
+    started_at_utc_ns: int
+    ended_at_utc_ns: int
+    wall_time_order: str
+    original_connection_id: str
+    original_generation: int
+    new_connection_id: str
+    new_generation: int
+
+    @classmethod
+    def from_row(cls, row: dict[str, object]) -> ClosedLifecycle | None:
+        gap_id = row.get("gap_id")
+        started_at = row.get("started_at_utc_ns")
+        ended_at = row.get("ended_at_utc_ns")
+        original_connection = row.get("original_connection_id")
+        original_generation = row.get("original_generation")
+        new_connection = row.get("new_connection_id")
+        new_generation = row.get("new_generation")
+        if (
+            not isinstance(gap_id, str)
+            or not gap_id
+            or isinstance(started_at, bool)
+            or not isinstance(started_at, int)
+            or isinstance(ended_at, bool)
+            or not isinstance(ended_at, int)
+            or not isinstance(original_connection, str)
+            or not original_connection
+            or isinstance(original_generation, bool)
+            or not isinstance(original_generation, int)
+            or original_generation < 0
+            or not isinstance(new_connection, str)
+            or not new_connection
+            or isinstance(new_generation, bool)
+            or not isinstance(new_generation, int)
+            or new_generation < 0
+        ):
+            return None
+        return cls(
+            gap_id=gap_id,
+            started_at_utc_ns=started_at,
+            ended_at_utc_ns=ended_at,
+            wall_time_order=(
+                "NORMAL" if ended_at > started_at else "NON_MONOTONIC"
+            ),
+            original_connection_id=original_connection,
+            original_generation=original_generation,
+            new_connection_id=new_connection,
+            new_generation=new_generation,
+        )
+
+
+class ClosedLifecycleIndex:
+    """CLOSED lifecycle authority built once per decision pass.
+
+    One Catalog query per pass; never rebuilt per candidate.  Degraded
+    pairs (paired by exact gap_id but with malformed identity fields) are
+    tracked separately: they cannot prove legitimacy but still count as
+    possible-parent authority, keeping classification conservative.
+    """
+
+    def __init__(self, catalog: Catalog) -> None:
+        by_key: dict[
+            tuple[str, str], tuple[ClosedLifecycle, ...]
+        ] = {}
+        grouped = catalog.closed_stream_discontinuity_intervals_by_stream()
+        for (market, stream), rows in grouped.items():
+            intervals = tuple(
+                lifecycle
+                for row in rows
+                if (lifecycle := ClosedLifecycle.from_row(row)) is not None
+            )
+            if intervals:
+                by_key[(market, stream)] = intervals
+        self._by_key = by_key
+        self._degraded = catalog.degraded_closed_discontinuity_pairs()
+
+    def intervals(
+        self, *, market: str, stream: str
+    ) -> tuple[ClosedLifecycle, ...]:
+        return self._by_key.get((market, stream), ())
+
+    def degraded_pair_count(self, *, market: str, stream: str) -> int:
+        return self._degraded.get((market, stream), 0)
+
+
+@dataclass(frozen=True)
+class LegacyCandidateDecision:
+    candidate: LegacyReconnectCandidate
+    automatic: str
+    lifecycle_state: str
+    authority_state: str
+    classification: str | None
+    final: str
+    detail: str
+
+    def public_dict(self) -> dict[str, object]:
+        return {
+            "gap_id": self.candidate.gap_id,
+            "market": self.candidate.market,
+            "stream": self.candidate.stream,
+            "chunk_id": self.candidate.chunk_id,
+            "seal_intent_sha256": self.candidate.seal_intent_sha256,
+            "reason": self.candidate.reason,
+            "original_connection_id": self.candidate.original_connection_id,
+            "original_generation": self.candidate.original_generation,
+            "verified_frames": self.candidate.verified_frames,
+            "verified_frames_trusted": self.candidate.trusted_frames
+            is not None,
+            "lifecycle_state": self.lifecycle_state,
+            "automatic_decision": self.automatic,
+            "authority_state": self.authority_state,
+            "classification": self.classification,
+            "final_decision": self.final,
+            "detail": self.detail,
+        }
+
+
+_AUTHORITY_STATE_MISSING = "MISSING"
+_AUTHORITY_STATE_MATCHED = "MATCHED"
+_AUTHORITY_STATE_STALE = "STALE"
+_AUTHORITY_STATE_CONTRADICTORY = "CONTRADICTORY"
+
+
+class LegacyDecisionReport:
+    """Deterministic read-only outcome of one legacy decision pass."""
+
+    def __init__(
+        self,
+        decisions: tuple[LegacyCandidateDecision, ...],
+        *,
+        stale_authority_count: int,
+        unmatched_authority_count: int,
+        contradiction_count: int,
+        conflict_count: int,
+        candidate_count: int,
+        proven_legitimate_count: int,
+        proven_extension_count: int,
+        ambiguous_count: int,
+        classified_ambiguous_count: int,
+        unclassified_ambiguous_count: int,
+        blocker_lines: tuple[str, ...],
+    ) -> None:
+        self.decisions = decisions
+        self.stale_authority_count = stale_authority_count
+        self.unmatched_authority_count = unmatched_authority_count
+        self.contradiction_count = contradiction_count
+        self.conflict_count = conflict_count
+        self.candidate_count = candidate_count
+        self.proven_legitimate_count = proven_legitimate_count
+        self.proven_extension_count = proven_extension_count
+        self.ambiguous_count = ambiguous_count
+        self.classified_ambiguous_count = classified_ambiguous_count
+        self.unclassified_ambiguous_count = unclassified_ambiguous_count
+        self.blocker_lines = blocker_lines
+
+    @property
+    def first_corrected_startup_eligible(self) -> bool:
+        return (
+            self.unclassified_ambiguous_count == 0
+            and self.stale_authority_count == 0
+            and self.unmatched_authority_count == 0
+            and self.contradiction_count == 0
+            and self.conflict_count == 0
+        )
+
+    def blocker_summary(self) -> str:
+        if self.first_corrected_startup_eligible:
+            return ""
+        return "; ".join(self.blocker_lines)
+
+    def public_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": PREFLIGHT_SCHEMA_VERSION,
+            "first_corrected_startup_eligible": (
+                self.first_corrected_startup_eligible
+            ),
+            "candidate_count": self.candidate_count,
+            "proven_legitimate_count": self.proven_legitimate_count,
+            "proven_extension_count": self.proven_extension_count,
+            "ambiguous_count": self.ambiguous_count,
+            "classified_ambiguous_count": self.classified_ambiguous_count,
+            "unclassified_ambiguous_count": self.unclassified_ambiguous_count,
+            "stale_authority_count": self.stale_authority_count,
+            "unmatched_authority_count": self.unmatched_authority_count,
+            "contradiction_count": self.contradiction_count,
+            "conflict_count": self.conflict_count,
+            "candidates": [
+                decision.public_dict() for decision in self.decisions
+            ],
+        }
+
+
+def _inventory(catalog: Catalog) -> list[LegacyReconnectCandidate]:
+    """All historical SEALING reconnect intents in durable transition order."""
+
+    candidates: list[LegacyReconnectCandidate] = []
+    for chunk_id, evidence in catalog.sealing_transition_evidence():
+        intent = evidence.get(_SEAL_INTENT_EVIDENCE_KEY)
+        if intent is None:
+            continue
+        if not isinstance(intent, dict):
+            raise LegacyReconnectConflictError(
+                f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
+            )
+        validate_seal_intent(intent, chunk_id)
+        candidates.append(
+            LegacyReconnectCandidate(
+                chunk_id=chunk_id,
+                market=str(intent["market"]),
+                stream=str(intent["stream"]),
+                gap_id=str(intent["gap_id"]),
+                reason=str(intent["reason"]),
+                original_connection_id=str(
+                    intent["original_connection_id"]
+                ),
+                original_generation=int(intent["original_generation"]),
+                gap_started_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
+                seal_intent_sha256=canonical_seal_intent_digest(
+                    chunk_id=chunk_id, intent=intent
+                ),
+                verified_frames=evidence.get("verified_frames"),
+                intent=dict(intent),
+            )
+        )
+    return candidates
+
+
+def _open_gap_records(
+    grouped: dict[tuple[str, str], list[dict[str, object]]],
+    key: tuple[str, str],
+) -> list[OpenGapRecord]:
+    records: list[OpenGapRecord] = []
+    for event in grouped.get(key, []):
+        evidence = event.get("evidence")
+        if not isinstance(evidence, dict):
+            records.append(
+                OpenGapRecord(
+                    gap_id="",
+                    original_connection_id=None,
+                    original_generation=None,
+                    identity_valid=False,
+                )
+            )
+            continue
+        gap_id = evidence.get("gap_id")
+        connection = evidence.get("original_connection_id")
+        generation = evidence.get("original_generation")
+        identity_valid = (
+            isinstance(gap_id, str)
+            and bool(gap_id)
+            and isinstance(connection, str)
+            and bool(connection)
+            and not isinstance(generation, bool)
+            and isinstance(generation, int)
+            and generation >= 0
+        )
+        records.append(
+            OpenGapRecord(
+                gap_id=str(gap_id) if isinstance(gap_id, str) else "",
+                original_connection_id=(
+                    connection if isinstance(connection, str) else None
+                ),
+                original_generation=generation if identity_valid else None,
+                identity_valid=identity_valid,
+            )
+        )
+    return records
+
+
+def _open_event_for_gap(
+    events: list[dict[str, object]], gap_id: str
+) -> dict[str, object] | None:
+    for event in events:
+        evidence = event.get("evidence")
+        if isinstance(evidence, dict) and evidence.get("gap_id") == gap_id:
+            return event
+    return None
+
+
+def _intent_agreement_conflict(
+    intent: Mapping[str, object],
+    *,
+    gap_id: object,
+    market: object,
+    stream: object,
+    reason: object,
+    original_connection_id: object,
+    original_generation: object,
+    chunk_id: str,
+) -> str | None:
+    expected = {
+        "gap_id": intent.get("gap_id"),
+        "market": intent.get("market"),
+        "stream": intent.get("stream"),
+        "reason": intent.get("reason"),
+        "original_connection_id": intent.get("original_connection_id"),
+        "original_generation": intent.get("original_generation"),
+    }
+    actual = {
+        "gap_id": gap_id,
+        "market": market,
+        "stream": stream,
+        "reason": reason,
+        "original_connection_id": original_connection_id,
+        "original_generation": original_generation,
+    }
+    for name in expected:
+        if actual[name] != expected[name]:
+            return (
+                "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
+                f"chunk={chunk_id} field={name}"
+            )
+    return None
+
+
+def _classify_absent_candidate(
+    candidate: LegacyReconnectCandidate,
+    *,
+    closed_index: ClosedLifecycleIndex,
+    candidates_by_stream: dict[tuple[str, str], list[LegacyReconnectCandidate]],
+) -> str:
+    """Partition an ABSENT intent with no competing OPEN gap.
+
+    Sound positive legitimacy proofs only; everything else is AMBIGUOUS.
+    Generation values are supporting identity, never globally unique:
+    possible-parent quantification spans ALL historical lifecycle authority
+    (closed intervals, degraded pairs, and other persisted intents whose
+    pending STARTED could be materialized this pass).
+    """
+    if candidate.trusted_frames is not None and candidate.trusted_frames > 0:
+        return "proven_legitimate"
+    market = candidate.market
+    stream = candidate.stream
+    generation = candidate.original_generation
+    connection = candidate.original_connection_id
+    for lifecycle in closed_index.intervals(market=market, stream=stream):
+        if (
+            lifecycle.new_generation == generation
+            and lifecycle.new_connection_id == connection
+        ):
+            return "proven_legitimate"
+    possible_parent = False
+    for lifecycle in closed_index.intervals(market=market, stream=stream):
+        if lifecycle.new_generation == generation:
+            possible_parent = True
+            break
+    if closed_index.degraded_pair_count(market=market, stream=stream) > 0:
+        possible_parent = True
+    if not possible_parent:
+        for other in candidates_by_stream.get((market, stream), []):
+            if (
+                other.gap_id != candidate.gap_id
+                and other.original_generation + 1 == generation
+            ):
+                possible_parent = True
+                break
+    if not possible_parent:
+        return "proven_legitimate"
+    return "ambiguous"
+
+
+def evaluate_legacy_reconnect_decisions(
+    *,
+    catalog: Catalog,
+    authority: LegacyClassificationAuthority,
+) -> LegacyDecisionReport:
+    """Compute the exhaustive legacy partition for one read-only pass.
+
+    This is the single decision engine shared by startup recovery and the
+    preflight command.  It performs NO Catalog, Raw, manifest, or authority
+    mutation.  Candidates are processed in durable transition order; a
+    candidate decided to materialize is simulated as an OPEN gap for later
+    candidates so preflight and startup observe identical sequencing.
+    """
+    candidates = _inventory(catalog)
+    candidates_by_stream: dict[
+        tuple[str, str], list[LegacyReconnectCandidate]
+    ] = {}
+    by_identity: dict[
+        tuple[str, str, str], list[LegacyReconnectCandidate]
+    ] = {}
+    for candidate in candidates:
+        stream_key = (candidate.market, candidate.stream)
+        candidates_by_stream.setdefault(stream_key, []).append(candidate)
+        by_identity.setdefault(
+            (candidate.market, candidate.stream, candidate.gap_id), []
+        ).append(candidate)
+    open_grouped = catalog.unclosed_stream_discontinuities_by_stream()
+    open_sets: dict[tuple[str, str], list[OpenGapRecord]] = {
+        key: _open_gap_records(open_grouped, key)
+        for key in set(candidates_by_stream) | set(open_grouped)
+    }
+    closed_index = ClosedLifecycleIndex(catalog)
+    simulated_started: dict[
+        tuple[str, str, str], LegacyReconnectCandidate
+    ] = {}
+
+    decisions: list[LegacyCandidateDecision] = []
+    for candidate in candidates:
+        market = candidate.market
+        stream = candidate.stream
+        stream_key = (market, stream)
+        gap_key = (market, stream, candidate.gap_id)
+        lifecycle = catalog.stream_discontinuity_lifecycle(
+            market=market, stream=stream, gap_id=candidate.gap_id
+        )
+        automatic: str
+        lifecycle_state: str
+        detail = ""
+        if lifecycle == "CLOSED":
+            automatic = "historical_closed"
+            lifecycle_state = "CLOSED"
+        elif gap_key in simulated_started:
+            previous = simulated_started[gap_key]
+            conflict = _intent_agreement_conflict(
+                previous.intent,
+                gap_id=candidate.gap_id,
+                market=market,
+                stream=stream,
+                reason=candidate.reason,
+                original_connection_id=candidate.original_connection_id,
+                original_generation=candidate.original_generation,
+                chunk_id=candidate.chunk_id,
+            )
+            automatic = "open_validated" if conflict is None else "conflict"
+            lifecycle_state = "OPEN"
+            detail = conflict or ""
+        elif any(
+            record.identity_valid
+            and record.gap_id == candidate.gap_id
+            for record in open_sets.get(stream_key, [])
+        ):
+            record = next(
+                record
+                for record in open_sets.get(stream_key, [])
+                if record.identity_valid and record.gap_id == candidate.gap_id
+            )
+            event = _open_event_for_gap(
+                open_grouped.get(stream_key, []), candidate.gap_id
+            )
+            if event is None:
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
+                    f"chunk={candidate.chunk_id} malformed STARTED evidence"
+                )
+            evidence = event["evidence"]
+            if not isinstance(evidence, dict):
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
+                    f"chunk={candidate.chunk_id} malformed STARTED evidence"
+                )
+            conflict = _intent_agreement_conflict(
+                candidate.intent,
+                gap_id=record.gap_id,
+                market=market,
+                stream=stream,
+                reason=evidence.get("reason"),
+                original_connection_id=record.original_connection_id,
+                original_generation=record.original_generation,
+                chunk_id=candidate.chunk_id,
+            )
+            automatic = "open_validated" if conflict is None else "conflict"
+            lifecycle_state = "OPEN"
+            detail = conflict or ""
+        else:
+            lifecycle_state = "ABSENT"
+            competing = [
+                record
+                for record in open_sets.get(stream_key, [])
+                if record.gap_id != candidate.gap_id
+            ]
+            if competing:
+                if (
+                    len(competing) == 1
+                    and candidate.trusted_frames == 0
+                    and competing[0].identity_valid
+                    and competing[0].original_generation is not None
+                    and candidate.original_generation
+                    == competing[0].original_generation + 1
+                ):
+                    automatic = "proven_extension"
+                else:
+                    automatic = "conflict"
+                    detail = "competing unmatched discontinuity exists"
+            else:
+                automatic = _classify_absent_candidate(
+                    candidate,
+                    closed_index=closed_index,
+                    candidates_by_stream=candidates_by_stream,
+                )
+
+        authority_state = _AUTHORITY_STATE_MISSING
+        classification: str | None = None
+        final = automatic
+        if automatic == "ambiguous":
+            entry = authority.lookup(
+                market=market, stream=stream, gap_id=candidate.gap_id
+            )
+            if entry is not None:
+                if (
+                    entry.chunk_id == candidate.chunk_id
+                    and entry.seal_intent_sha256
+                    == candidate.seal_intent_sha256
+                ):
+                    authority_state = _AUTHORITY_STATE_MATCHED
+                    classification = entry.classification
+                    final = f"classified_{entry.classification}"
+                else:
+                    authority_state = _AUTHORITY_STATE_STALE
+        decisions.append(
+            LegacyCandidateDecision(
+                candidate=candidate,
+                automatic=automatic,
+                lifecycle_state=lifecycle_state,
+                authority_state=authority_state,
+                classification=classification,
+                final=final,
+                detail=detail,
+            )
+        )
+        if final in {"proven_legitimate", "classified_legitimate_req103"}:
+            simulated_started[gap_key] = candidate
+            open_sets.setdefault(stream_key, []).append(
+                OpenGapRecord(
+                    gap_id=candidate.gap_id,
+                    original_connection_id=candidate.original_connection_id,
+                    original_generation=candidate.original_generation,
+                    identity_valid=True,
+                )
+            )
+
+    stale_authority_count = 0
+    unmatched_authority_count = 0
+    contradiction_count = 0
+    blocker_lines: list[str] = []
+    decision_by_identity = {
+        (d.candidate.market, d.candidate.stream, d.candidate.gap_id): d
+        for d in decisions
+    }
+    seen_entry_identities: set[tuple[str, str, str]] = set()
+    for entry in authority.entries():
+        identity = (entry.market, entry.stream, entry.gap_id)
+        if identity in seen_entry_identities:  # pragma: no cover - loader guards
+            continue
+        seen_entry_identities.add(identity)
+        decision = decision_by_identity.get(identity)
+        if decision is None:
+            unmatched_authority_count += 1
+            blocker_lines.append(
+                f"unmatched_authority gap_id={entry.gap_id} "
+                f"market={entry.market} stream={entry.stream} "
+                "has no corresponding candidate"
+            )
+            continue
+        candidate = decision.candidate
+        if (
+            entry.chunk_id != candidate.chunk_id
+            or entry.seal_intent_sha256 != candidate.seal_intent_sha256
+        ):
+            stale_authority_count += 1
+            blocker_lines.append(
+                f"stale_authority gap_id={entry.gap_id} chunk={candidate.chunk_id} "
+                "authority digest does not match the persisted seal intent"
+            )
+            continue
+        if decision.automatic == "ambiguous":
+            continue
+        if decision.automatic in {"open_validated", "historical_closed"}:
+            # The entry already resolved this exact candidate in an earlier
+            # startup pass: the durable lifecycle now carries the decision
+            # and the intent agrees with it.  Repeated recovery stays
+            # idempotent (REQ-107) instead of failing closed on its own
+            # previously-applied authority.
+            continue
+        contradiction_count += 1
+        blocker_lines.append(
+            "contradictory_authority "
+            f"gap_id={entry.gap_id} chunk={candidate.chunk_id} "
+            f"classification={entry.classification} contradicts durable "
+            f"decision {decision.automatic} "
+            "(RECOVERY_LEGACY_AUTHORITY_CONTRADICTION)"
+        )
+
+    proven_legitimate_count = 0
+    proven_extension_count = 0
+    ambiguous_count = 0
+    classified_ambiguous_count = 0
+    unclassified_ambiguous_count = 0
+    conflict_count = 0
+    for decision in decisions:
+        if decision.automatic == "proven_legitimate":
+            proven_legitimate_count += 1
+        elif decision.automatic == "proven_extension":
+            proven_extension_count += 1
+        if decision.automatic == "ambiguous":
+            ambiguous_count += 1
+            if decision.authority_state == _AUTHORITY_STATE_MATCHED:
+                classified_ambiguous_count += 1
+            else:
+                unclassified_ambiguous_count += 1
+                blocker_lines.append(
+                    "unclassified_ambiguous "
+                    f"gap_id={decision.candidate.gap_id} "
+                    f"chunk={decision.candidate.chunk_id} "
+                    "durable identity matches the legacy ambiguity universe "
+                    "but cannot prove an independent discontinuity "
+                    "(RECOVERY_LEGACY_ORPHAN_AMBIGUOUS)"
+                )
+        elif decision.automatic == "conflict":
+            conflict_count += 1
+            blocker_lines.append(
+                f"conflict gap_id={decision.candidate.gap_id} "
+                f"chunk={decision.candidate.chunk_id} {decision.detail} "
+                "(RECOVERY_SEAL_INTENT_STARTED_CONFLICT)"
+            )
+
+    return LegacyDecisionReport(
+        decisions=tuple(decisions),
+        stale_authority_count=stale_authority_count,
+        unmatched_authority_count=unmatched_authority_count,
+        contradiction_count=contradiction_count,
+        conflict_count=conflict_count,
+        candidate_count=len(candidates),
+        proven_legitimate_count=proven_legitimate_count,
+        proven_extension_count=proven_extension_count,
+        ambiguous_count=ambiguous_count,
+        classified_ambiguous_count=classified_ambiguous_count,
+        unclassified_ambiguous_count=unclassified_ambiguous_count,
+        blocker_lines=tuple(blocker_lines),
+    )
