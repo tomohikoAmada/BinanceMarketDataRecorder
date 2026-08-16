@@ -23,6 +23,30 @@ class StorageLayout:
     def relative(self, path: Path) -> str:
         return path.resolve().relative_to(self.root.resolve()).as_posix()
 
+    @classmethod
+    def from_root(cls, root: Path) -> StorageLayout:
+        """Derive the internal layout WITHOUT any filesystem mutation.
+
+        Read-only tools (the legacy reconnect preflight) use this instead of
+        ``ensure_storage_layout``: they must never mkdir, touch, chmod, or
+        fsync-create a missing directory.  Callers validate required paths
+        explicitly.
+        """
+        root = root.resolve()
+        data = root / "data"
+        return cls(
+            root=root,
+            active=data / "active",
+            sealed=data / "sealed",
+            manifests=data / "manifests",
+            checkpoints=data / "checkpoints",
+            quarantine=data / "quarantine",
+            reports=data / "reports",
+            daily_reports=data / "reports" / "daily",
+            state=root / "state",
+            catalog=root / "state" / "catalog.sqlite",
+        )
+
 
 def _fsync_directory(path: Path) -> None:
     descriptor = os.open(path, os.O_RDONLY)
@@ -35,20 +59,8 @@ def _fsync_directory(path: Path) -> None:
 def ensure_storage_layout(root: Path) -> StorageLayout:
     """Create only the Recorder-owned internal directories below a selected root."""
 
-    root = root.resolve()
-    data = root / "data"
-    layout = StorageLayout(
-        root=root,
-        active=data / "active",
-        sealed=data / "sealed",
-        manifests=data / "manifests",
-        checkpoints=data / "checkpoints",
-        quarantine=data / "quarantine",
-        reports=data / "reports",
-        daily_reports=data / "reports" / "daily",
-        state=root / "state",
-        catalog=root / "state" / "catalog.sqlite",
-    )
+    layout = StorageLayout.from_root(root)
+    data = root.resolve() / "data"
     for directory in (
         layout.root,
         data,

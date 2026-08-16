@@ -1,4 +1,4 @@
-"""M21.4.11-R3/R3.1/R3.2: orphan reconnect seal intents must not exist.
+"""M21.4.11-R3/R3.1/R3.2/R3.3: orphan reconnect seal intents must not exist.
 
 A reconnect boundary that merely extends an already-open pending logical gap
 (a closing attempt that never delivered a reliable first-new frame) must not
@@ -13,18 +13,25 @@ such an orphan (REQ-103 shape), which would contaminate the next restart
 Three properties are verified independently:
 
 PREVENTION: the corrected runtime reuses the canonical pending-gap identity
-for extension seal intents (with attempt-level metadata in ``extension``).
+for extension seal intents (with attempt-level metadata in ``extension``),
+and every R3.3+ intent carries the durable ``intent_schema`` provenance
+(``reconnect-seal-intent.v2``).
 LEGACY_RECOVERY: already-persisted old orphan shapes (closed or still-open
-parent gap) are resolved through the R3.2 exhaustive three-way partition
+parent gap) are resolved through the R3.3 exhaustive three-way partition
 (PROVEN_LEGITIMATE / PROVEN_EXTENSION / AMBIGUOUS, never a default
 materialization or ignore); UTC wall-clock ordering never gates
-classification; the operator authority (schema v2, strongly bound to the
-exact persisted intent) resolves ONLY ambiguous candidates and can never
-override durable proofs; startup performs the global pre-decision before
-any legacy lifecycle mutation.
+classification; unversioned legacy intents NEVER use "no parent found" as
+positive proof; the operator authority (schema v3, strongly bound to the
+exact persisted classification evidence: chunk_id + seal intent +
+verified_frames) resolves ONLY ambiguous candidates and can never override
+durable proofs; startup performs the global pre-decision before any legacy
+lifecycle mutation; malformed lifecycle authority is surfaced as explicit
+degraded-authority blockers.
 PREFLIGHT: the read-only ``recovery legacy-reconnect-preflight`` command
 enumerates every candidate deterministically through the same shared
-decision engine and reports first-corrected-startup eligibility.
+decision engine, reports first-corrected-startup eligibility, is
+intrinsically read-only (it never creates storage layout), and exits
+nonzero when ineligible.
 
 No production-specific UUIDs or timestamps are hard-coded anywhere.
 """
@@ -56,7 +63,7 @@ from binance_market_data_recorder.spool.recovery import (
 from binance_market_data_recorder.spool.seal import RECONNECT_GAP_FLAG
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RotationPolicy
-from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.integration.test_reconnect_boundary_integrity import (
     ScriptedSocket,
@@ -556,9 +563,10 @@ def test_multiple_consecutive_session_restart_extensions_keep_one_gap(
 def test_legitimate_intent_only_crash_materializes_exactly_once(
     tmp_path: Path,
 ) -> None:
-    """TEST-005/006: the REQ-103 crash case stays intact: a genuine marker
-    intent with no lifecycle and no parent interval materializes exactly one
-    STARTED, and repeated recovery never duplicates it."""
+    """TEST-005/006: the REQ-103 crash case stays intact: a genuine
+    R3.3-versioned marker intent with no lifecycle and no parent interval
+    materializes exactly one STARTED, and repeated recovery never
+    duplicates it."""
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         intent = _durable_intent(
@@ -567,6 +575,7 @@ def test_legitimate_intent_only_crash_materializes_exactly_once(
             connection_id="conn-g1",
             generation=0,
             started_at_utc_ns=5_000_000_000,
+            intent_schema="reconnect-seal-intent.v2",
         )
         _seal_zero_record_marker(
             tmp_path, catalog, intent, stream=intent["stream"]
@@ -611,7 +620,7 @@ def _legacy_orphan_fixture(
     the failed attempt connection, the parent's replacement generation, and
     a wall timestamp strictly inside the parent interval.
 
-    Returns (parent, orphan, orphan_chunk_id, orphan_seal_intent_sha256).
+    Returns (parent, orphan, orphan_chunk_id, classification_evidence_sha256).
     """
     layout = ensure_storage_layout(root)
     with Catalog(layout.catalog) as catalog:
@@ -647,11 +656,17 @@ def _legacy_orphan_fixture(
 
 def _seal_intent_digest(catalog: Catalog, chunk_id: str) -> str:
     from binance_market_data_recorder.spool.legacy_reconnect import (
-        canonical_seal_intent_digest,
+        classification_evidence_sha256,
     )
 
-    return canonical_seal_intent_digest(
-        chunk_id=chunk_id, intent=sealing_intent(catalog, chunk_id)
+    evidence = catalog.latest_transition_evidence(
+        chunk_id, ChunkState.SEALING
+    )
+    assert evidence is not None
+    return classification_evidence_sha256(
+        chunk_id=chunk_id,
+        intent=sealing_intent(catalog, chunk_id),
+        verified_frames=evidence.get("verified_frames"),
     )
 
 
@@ -659,7 +674,7 @@ def _write_classification_authority(
     root: Path, entries: list[dict[str, Any]]
 ) -> None:
     document = {
-        "schema": "legacy-reconnect-classification.v2",
+        "schema": "legacy-reconnect-classification.v3",
         "classifications": entries,
     }
     (root / "legacy_reconnect_classifications.json").write_text(
@@ -680,7 +695,9 @@ def _orphan_classification_entry(
             "market": str(intent["market"]),
             "stream": str(intent["stream"]),
             "chunk_id": chunk_id,
-            "seal_intent_sha256": _seal_intent_digest(catalog, chunk_id),
+            "classification_evidence_sha256": _seal_intent_digest(
+                catalog, chunk_id
+            ),
             "classification": classification,
             "note": "test-reviewed classification",
         }
@@ -1037,6 +1054,27 @@ def test_classification_authority_malformed_fails_closed(
                         "stream": "book_ticker",
                         "chunk_id": "unknown-chunk",
                         "seal_intent_sha256": "a" * 64,
+                        "classification": "extension_orphan",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(RecoveryConflictError, match="LEGACY_CLASSIFICATION"):
+        recover_storage(layout=layout, catalog=Catalog(layout.catalog))
+
+    authority.write_text(
+        json.dumps(
+            {
+                "schema": "legacy-reconnect-classification.v3",
+                "classifications": [
+                    {
+                        "gap_id": "genuine-g1",
+                        "market": "um_perpetual",
+                        "stream": "book_ticker",
+                        "chunk_id": "unknown-chunk",
+                        "classification_evidence_sha256": "a" * 64,
                         "classification": "unknown-kind",
                     }
                 ],
@@ -1062,14 +1100,14 @@ def test_classification_authority_malformed_fails_closed(
     authority.write_text(
         json.dumps(
             {
-                "schema": "legacy-reconnect-classification.v2",
+                "schema": "legacy-reconnect-classification.v3",
                 "classifications": [
                     {
                         "gap_id": "genuine-g1",
                         "market": "um_perpetual",
                         "stream": "book_ticker",
                         "chunk_id": "unknown-chunk",
-                        "seal_intent_sha256": "not-a-digest",
+                        "classification_evidence_sha256": "not-a-digest",
                         "classification": "extension_orphan",
                     }
                 ],
@@ -1252,9 +1290,9 @@ def test_open_parent_with_frame_bearing_intent_still_fails_closed(
 def test_legitimate_marker_intent_after_closed_gap_still_materializes(
     tmp_path: Path,
 ) -> None:
-    """TEST-008c: a genuine intent-only crash whose timestamp follows (and is
-    not contained by) the stream's closed gap history must still materialize
-    exactly one STARTED."""
+    """TEST-008c: a genuine versioned (R3.3+) intent-only crash whose
+    timestamp follows (and is not contained by) the stream's closed gap
+    history must still materialize exactly one STARTED."""
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         older = _durable_intent(
@@ -1279,6 +1317,7 @@ def test_legitimate_marker_intent_after_closed_gap_still_materializes(
             connection_id="conn-genuine",
             generation=2,
             started_at_utc_ns=5_000_000_000,
+            intent_schema="reconnect-seal-intent.v2",
         )
         _seal_zero_record_marker(
             tmp_path, catalog, genuine, stream=genuine["stream"]
@@ -1304,8 +1343,9 @@ def test_extension_orphan_generation_mismatch_still_materializes_legit_crash(
     tmp_path: Path,
 ) -> None:
     """TEST-009b: the containment rule requires the orphan's generation to
-    equal the parent's replacement generation.  A genuine crash intent whose
-    generation does not match never risks being suppressed."""
+    equal the parent's replacement generation.  A genuine versioned R3.3+
+    crash intent whose generation does not match never risks being
+    suppressed."""
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog) as catalog:
         parent = _durable_intent(
@@ -1330,6 +1370,7 @@ def test_extension_orphan_generation_mismatch_still_materializes_legit_crash(
             connection_id="conn-genuine",
             generation=5,
             started_at_utc_ns=2_000_000_000,
+            intent_schema="reconnect-seal-intent.v2",
         )
         _seal_zero_record_marker(
             tmp_path, catalog, genuine, stream=genuine["stream"]
@@ -1615,7 +1656,7 @@ def test_authority_binding_wrong_chunk_rejected(tmp_path: Path) -> None:
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": "00000000-0000-0000-0000-000000000000",
-                "seal_intent_sha256": "a" * 64,
+                "classification_evidence_sha256": "a" * 64,
                 "classification": "extension_orphan",
             }
         ],
@@ -1639,7 +1680,7 @@ def test_authority_binding_wrong_digest_rejected(tmp_path: Path) -> None:
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": chunk_id,
-                "seal_intent_sha256": "b" * 64,
+                "classification_evidence_sha256": "b" * 64,
                 "classification": "extension_orphan",
             }
         ],
@@ -1663,7 +1704,7 @@ def test_authority_duplicate_binding_rejected(tmp_path: Path) -> None:
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": chunk_id,
-                "seal_intent_sha256": digest,
+                "classification_evidence_sha256": digest,
                 "classification": "extension_orphan",
             },
             {
@@ -1671,7 +1712,7 @@ def test_authority_duplicate_binding_rejected(tmp_path: Path) -> None:
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": chunk_id,
-                "seal_intent_sha256": "c" * 64,
+                "classification_evidence_sha256": "c" * 64,
                 "classification": "legitimate_req103",
             },
         ],
@@ -1692,7 +1733,7 @@ def test_authority_unmatched_entry_makes_startup_ineligible(
     _legacy_orphan_fixture(tmp_path)
     layout = ensure_storage_layout(tmp_path)
     from binance_market_data_recorder.spool.legacy_reconnect import (
-        canonical_seal_intent_digest,
+        classification_evidence_sha256,
     )
 
     unused_intent = _durable_intent(
@@ -1702,9 +1743,10 @@ def test_authority_unmatched_entry_makes_startup_ineligible(
         generation=0,
         started_at_utc_ns=1,
     )
-    digest = canonical_seal_intent_digest(
+    digest = classification_evidence_sha256(
         chunk_id="11111111-2222-3333-4444-555555555555",
         intent=unused_intent,
+        verified_frames=0,
     )
     _write_classification_authority(
         tmp_path,
@@ -1714,7 +1756,7 @@ def test_authority_unmatched_entry_makes_startup_ineligible(
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": "11111111-2222-3333-4444-555555555555",
-                "seal_intent_sha256": digest,
+                "classification_evidence_sha256": digest,
                 "classification": "extension_orphan",
             }
         ],
@@ -2176,7 +2218,7 @@ def test_preflight_complete_inventory_all_ten_shapes(
                 "market": "um_perpetual",
                 "stream": "book_ticker",
                 "chunk_id": chunk_ids["outside"],
-                "seal_intent_sha256": "d" * 64,
+                "classification_evidence_sha256": "d" * 64,
                 "classification": "extension_orphan",
             },
         ],

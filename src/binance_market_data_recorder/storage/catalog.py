@@ -666,7 +666,7 @@ class Catalog:
         ``wall_time_order == NON_MONOTONIC``: inverted wall clocks never
         remove exact lifecycle authority from the classification universe.
         Intervals lacking a well-formed identity field are omitted here and
-        counted by ``degraded_closed_discontinuity_pairs`` instead:
+        surfaced by ``degraded_closed_discontinuity_pairs`` instead:
         classification must never guess from partial evidence.
         """
         with self._lock:
@@ -751,14 +751,15 @@ class Catalog:
 
     def degraded_closed_discontinuity_pairs(
         self,
-    ) -> dict[tuple[str, str], int]:
-        """Count exactly-paired CLOSED lifecycles with malformed identity.
+    ) -> list[dict[str, object]]:
+        """Return exactly-paired CLOSED lifecycles with malformed identity.
 
         A STARTED/COMPLETED pair keyed by the same ``gap_id`` whose identity
         fields (connections, generations, timestamps) are not well-formed
-        cannot serve as positive-proof authority, but its existence still
-        means a legacy candidate has a possible parent: classification
-        remains conservative (M21.4.11-R3.2).
+        cannot serve as positive-proof authority.  R3.3 surfaces each such
+        pair as an explicit degraded-authority predecision blocker: malformed
+        evidence must widen uncertainty and can never reduce the possible
+        historical universe (M21.4.11-R3.3).
         """
         with self._lock:
             rows = self._connection.execute(
@@ -798,7 +799,7 @@ class Catalog:
                 completed_by_gap[key] = evidence
             else:
                 started_by_gap[key] = evidence
-        degraded: dict[tuple[str, str], int] = {}
+        degraded: list[dict[str, object]] = []
         for key in sorted(set(started_by_gap) & set(completed_by_gap)):
             started_evidence = started_by_gap[key]
             completed_evidence = completed_by_gap[key]
@@ -806,11 +807,71 @@ class Catalog:
                 started_evidence, completed_evidence
             ):
                 continue
-            market, stream, _gap_id = key
-            degraded[(market, stream)] = (
-                degraded.get((market, stream), 0) + 1
+            market, stream, gap_id = key
+            degraded.append(
+                {
+                    "market": market,
+                    "stream": stream,
+                    "gap_id": gap_id,
+                    "reason": "malformed_lifecycle_identity",
+                }
             )
         return degraded
+
+    def malformed_discontinuity_events(self) -> list[dict[str, object]]:
+        """Inventory every STARTED/COMPLETED row that cannot be keyed safely.
+
+        A lifecycle event whose evidence is not a JSON object, or whose
+        ``market``/``stream``/``gap_id`` identity is missing or not text,
+        cannot participate in exact gap_id pairing.  R3.3 surfaces each such
+        row as an explicit degraded-authority predecision blocker instead of
+        silently skipping it: malformed evidence must widen uncertainty and
+        can never shrink the searched parent universe
+        (M21.4.11-R3.3 REV-001).
+        """
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_id, event_type, evidence_json
+                FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY event_id
+                """
+            ).fetchall()
+        output: list[dict[str, object]] = []
+        for row in rows:
+            event_id = str(row["event_id"])
+            event_type = str(row["event_type"])
+            reason: str | None = None
+            try:
+                evidence = json.loads(str(row["evidence_json"]))
+            except (json.JSONDecodeError, TypeError):
+                reason = "evidence_not_json"
+            if reason is None and not isinstance(evidence, dict):
+                reason = "evidence_not_object"
+            if reason is None:
+                market = evidence.get("market")
+                stream = evidence.get("stream")
+                gap_id = evidence.get("gap_id")
+                if not isinstance(market, str) or not market:
+                    reason = "missing_market"
+                elif not isinstance(stream, str) or not stream:
+                    reason = "missing_stream"
+                elif not isinstance(gap_id, str) or not gap_id:
+                    reason = "missing_gap_id"
+            if reason is None:
+                continue
+            output.append(
+                {
+                    "event_id": event_id,
+                    "event_type": event_type,
+                    "reason": reason,
+                }
+            )
+        return output
 
     def unclosed_stream_discontinuities_by_stream(
         self,

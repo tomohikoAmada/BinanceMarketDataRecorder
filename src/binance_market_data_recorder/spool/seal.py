@@ -79,6 +79,21 @@ INCOMPLETE_FLAGS = frozenset(
 #: STREAM_DISCONTINUITY_STARTED event itself failed to commit (P1-A).
 SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
 
+#: Current durable reconnect-intent contract version (M21.4.11-R3.3).
+#:
+#: Every seal intent emitted by the R3.3+ runtime carries this exact string
+#: under ``intent_schema``.  The version is durable provenance for legacy
+#: recovery classification: under the versioned runtime prevention contract a
+#: pure extension can never mint an independent orphan gap identity (it
+#: reuses the pending gap's canonical identity) and decision-point-2 uses a
+#: fresh genuine logical gap, so a versioned ABSENT intent safely represents
+#: the REQ-103 intent-only crash shape.  Intents without ``intent_schema``
+#: are pre-R3 legacy intents and follow the conservative legacy policy.  An
+#: unknown future schema fails closed.  The field is persisted inside the
+#: immutable SEALING transition evidence; it is NOT a SQLite schema migration
+#: (SCHEMA_MIGRATION_REQUIRED=false).
+RECONNECT_INTENT_SCHEMA_V2 = "reconnect-seal-intent.v2"
+
 
 class SealError(RuntimeError):
     """Raised when a partial cannot be proven safe to seal."""

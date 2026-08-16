@@ -649,14 +649,49 @@ from Raw after a corrected parser is available.
   (global pre-decision before any legacy lifecycle mutation), and the
   mandatory pre-start classification sequence documented in
   `docs/ubuntu_rk3588_operations.md`. UTC never gates classification.
-  It is
+  A third independent exact-head review (PR #11 R3.2) rejected it:
+  REV-001 (P1) the "no possible parent → proven_legitimate" proof is
+  unsound because malformed/unkeyable historical lifecycle authority can
+  disappear from the searched universe; REV-002 (P1) the authority digest
+  bound only chunk_id + seal intent, not `verified_frames`, although
+  verified_frames drives classification; REV-003 (P1) the documented
+  `root:root 0600` authority mode is unreadable by the production
+  service (User=orangepi Group=orangepi); REV-004 (P2) the "read-only"
+  preflight called `ensure_storage_layout()` and could mkdir/fsync
+  missing directories. M21.4.11-R3.3 corrects all four: the legacy
+  no-parent absence proof is REMOVED (absence of a parent only widens
+  uncertainty; automatic legitimacy for legacy intents requires positive
+  proof — trustworthy `verified_frames > 0` or the exact
+  completing-connection proof — everything else is AMBIGUOUS); new
+  intents emitted by the corrected runtime carry the durable
+  `intent_schema: reconnect-seal-intent.v2` provenance (persisted inside
+  the immutable SEALING evidence; pure extensions reuse the pending gap
+  identity, decision-point-2 uses a fresh genuine gap, so a versioned
+  fresh ABSENT intent safely materializes REQ-103 without operator
+  classification; unknown future schemas fail closed); malformed
+  lifecycle authority is surfaced as explicit degraded-authority
+  predecision blockers instead of being silently skipped; the authority
+  is bumped to `legacy-reconnect-classification.v3` with
+  `classification_evidence_sha256 = sha256(canonical_json({chunk_id,
+  seal_intent, verified_frames}))` binding the COMPLETE immutable
+  decision evidence; the documented authority installation contract is
+  owner=root group=orangepi mode=0640 (service-readable, not
+  service-writable) enforced by a deterministic permission-contract
+  test; and the preflight is intrinsically read-only (layout derived
+  without mutation, exit 0 eligible / exit 2 ineligible with the full
+  JSON report). SCHEMA_MIGRATION_REQUIRED=false and
+  CATALOG_MUTATION_REQUIRED=false (the intent version field is a forward
+  persistent evidence-contract revision, not a SQLite schema migration);
+  ADDITIVE_COMPATIBILITY_AUTHORITY_REQUIRED=true and
+  PRESTART_LEGACY_CLASSIFICATION_REQUIRED=true for the first corrected
+  production start. It is
   under review and NOT DEPLOYED. Production validation for the corrected
   artifact is PENDING: after review, merge, and separately authorized
   deployment, the NEW artifact must re-execute the full staged chain
   (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
   See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
   Legacy extension-orphan recovery (M21.4.11-R3, corrected R3.1,
-  corrected R3.2)".
+  corrected R3.2, corrected R3.3)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute

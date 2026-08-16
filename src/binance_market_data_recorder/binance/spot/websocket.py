@@ -40,7 +40,7 @@ from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...network import WebSocketProxy
 from ...spool.queue import IngressGapStateConflict, IngressQueueFull
-from ...spool.seal import RECONNECT_GAP_FLAG
+from ...spool.seal import RECONNECT_GAP_FLAG, RECONNECT_INTENT_SCHEMA_V2
 from ...spool.stream import StreamSpool
 from ..websocket_common import (
     RECONNECT_REASONS,
@@ -548,6 +548,12 @@ class SpotStreamCollector:
         independent second gap (M21.4.11-R3 P1-001).  Current-attempt
         information stays observable under the separate ``extension`` key
         and never masquerades as the canonical logical-gap identity.
+
+        Every R3.3+ intent carries the durable ``intent_schema``
+        (``reconnect-seal-intent.v2``) provenance inside the immutable
+        SEALING evidence: under the versioned runtime prevention contract
+        a fresh ABSENT intent is safe REQ-103 materialization authority
+        for legacy recovery (M21.4.11-R3.3).
         """
         if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
             return None
@@ -555,6 +561,7 @@ class SpotStreamCollector:
             parent = self._pending_gap
             return {
                 "required_forced_flags": sorted(self._forced_seal_flags),
+                "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
                 "gap_id": str(parent["gap_id"]),
                 "reason": str(parent["reason"]),
                 "market": "spot",
@@ -579,6 +586,7 @@ class SpotStreamCollector:
             }
         intent: dict[str, object] = {
             "required_forced_flags": sorted(self._forced_seal_flags),
+            "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
             "gap_id": str(uuid4()),
             "reason": outcome,
             "market": "spot",

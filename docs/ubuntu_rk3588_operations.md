@@ -132,9 +132,9 @@ Rollback repeats the stop/seal sequence, installs the saved prior Wheel,
 refreshes the unit, and starts. Never delete or edit
 `/var/lib/binance-market-data-recorder`.
 
-### First corrected restart: mandatory legacy reconnect preflight (M21.4.11-R3.2)
+### First corrected restart: mandatory legacy reconnect preflight (M21.4.11-R3.3)
 
-The first deployment of the M21.4.11-R3.2-corrected artifact adds a
+The first deployment of the M21.4.11-R3.3-corrected artifact adds a
 MANDATORY pre-start compatibility sequence BEFORE the first controlled
 service restart. The OLD production service keeps running while the
 sequence executes; nothing below touches production data or the
@@ -143,15 +143,20 @@ deployment step. SCHEMA_MIGRATION_REQUIRED=false and
 CATALOG_MUTATION_REQUIRED=false, but
 ADDITIVE_COMPATIBILITY_AUTHORITY_REQUIRED=true and
 PRESTART_LEGACY_CLASSIFICATION_REQUIRED=true: this is a compatibility
-pre-start action, not a schema migration.
+pre-start action, not a schema migration. R3.3 removed the legacy
+"no possible parent" absence proof, so every AMBIGUOUS legacy candidate
+must receive an explicit authority classification; new intents emitted
+by the corrected runtime are versioned (`intent_schema:
+reconnect-seal-intent.v2`) and materialize REQ-103 automatically.
 
 1. **Keep the OLD service running.** Do not stop
-   `binance-market-data-recorder.service` during the preflight.
+   `binance-market-data-recorder.service` during the exploratory
+   preflight.
 2. **Build/review the corrected artifact separately** (no production
    venv modification): canonical Wheel identity verified per
    "Artifact identity" below.
-3. **Run the READ-ONLY preflight against current production data** with
-   the corrected artifact:
+3. **Run the READ-ONLY exploratory preflight against current production
+   data** with the corrected artifact:
 
    ```bash
    binance-market-recorder \
@@ -159,45 +164,68 @@ pre-start action, not a schema migration.
      recovery legacy-reconnect-preflight
    ```
 
-   The command opens the Catalog read-only, mutates no Catalog/Raw/
-   manifest/authority state, and prints the deterministic inventory
-   (schema `legacy-reconnect-preflight.v1`).
+   The command derives the layout without creating anything, opens the
+   Catalog read-only, mutates no Catalog/Raw/manifest/authority state,
+   and prints the deterministic inventory (schema
+   `legacy-reconnect-preflight.v1`). It never repairs a missing layout
+   directory; a missing data root or Catalog is an error. Exit status
+   `0` means eligible; exit `2` means ineligible or error — the JSON
+   Boolean `first_corrected_startup_eligible` is printed in both cases
+   and automation must key on the exit code.
 4. **Export the deterministic candidate inventory** to a recorded
    evidence file outside the data root; verify it byte-identical on a
-   second run.
+   second run. Review every `degraded_authority` blocker (malformed
+   lifecycle rows) with its event identity and reason: these block the
+   first corrected start until a separately documented operator
+   decision is applied; they are never silently skipped.
 5. **Independently review each AMBIGUOUS candidate** against
-   `docs/adr/0027-reconnect-boundary-integrity.md` (R3.2 rules): the
+   `docs/adr/0027-reconnect-boundary-integrity.md` (R3.3 rules): the
    production orphan shape (um_perpetual `book_ticker`, parent
    `70ace625…`, orphan `33e6420b…`, marker `7223d5ba…`) is an
    `extension_orphan`; only durable identity proofs may classify.
+   "No parent found" is NOT a classification reason.
 6. **Create the classification authority OFFLINE** (not while the
-   recorder runs): schema `legacy-reconnect-classification.v2`, entries
-   bound to `(gap_id, market, stream, chunk_id, seal_intent_sha256)`
-   computed from the exact persisted SEALING evidence (see
-   `operations.md` for the digest definition). Never hard-code
-   production UUIDs anywhere in the repository.
+   recorder runs): schema `legacy-reconnect-classification.v3`, entries
+   bound to `(gap_id, market, stream, chunk_id,
+   classification_evidence_sha256)` where
+   `classification_evidence_sha256 = sha256(canonical_json({"chunk_id",
+   "seal_intent", "verified_frames"}))` computed from the exact
+   persisted SEALING evidence (see `operations.md` for the digest
+   definition; the preflight output prints the digest for every
+   candidate). Never hard-code production UUIDs anywhere in the
+   repository.
 7. **Validate the authority with the read-only preflight**: every
    AMBIGUOUS candidate must be classified; stale/unmatched/contradictory
-   counts must be zero.
-8. **Require `first_corrected_startup_eligible=true`** before any
-   further step.
+   and degraded counts must be zero.
+8. **Require `first_corrected_startup_eligible=true`** (exit code 0)
+   before any further step.
 9. **Atomically install the authority file** into the data root
    (`/var/lib/binance-market-data-recorder/legacy_reconnect_classifications.json`,
-   owner/group/mode matching the data-root authority, system service:
-   `root:root 0600`): write `…json.partial`, fsync it, `mv` it over the
-   final path, fsync the data root directory. Startup reads only the
-   final path.
-10. **Only then**, as part of the separately authorized deployment:
-    stop the old service, install the corrected Wheel, run `doctor` and
-    the read-only preflight again.
-11. **Install/refresh the systemd unit** and start the corrected
-    service; startup executes the same decision engine (Phase A global
-    pre-decision, then Phase B mutations).
-12. **Verify recovery actions** in the startup logs: only
+   owner=root group=orangepi mode=0640 — root/operator writes, the
+   Recorder service group reads, everyone else cannot; the recorder
+   itself never writes the file): write the temporary file
+   (`…json.partial`) on the same filesystem WITH the final
+   owner/group/mode already applied, fsync it, `mv` it over the final
+   path, fsync the data root directory. Startup reads only the final
+   path. This step may run while the old service is still running.
+10. **STOP the old service** (`systemd stop`), as part of the separately
+    authorized deployment.
+11. **Run the FINAL read-only preflight against the frozen Catalog plus
+    the installed authority** (same command as step 3). This final
+    post-stop coverage validation is MANDATORY: it must exit `0` with
+    `first_corrected_startup_eligible=true`. Do not proceed on a
+    nonzero exit.
+12. **Install the corrected Wheel, refresh the systemd unit, and start**
+    only after step 11 passed. Corrected startup re-executes the ENTIRE
+    global predecision pass itself before any collector starts
+    (Phase A read-only pre-decision, then Phase B mutations only if the
+    decision set is safe), so no candidate-set race between the final
+    preflight and service start can bypass the gate.
+13. **Verify recovery actions** in the startup logs: only
     `pending_discontinuity_materialized` for PROVEN/classified
     legitimate candidates and `extension_orphan_ignored` for classified
     orphans; no `RECOVERY_LEGACY_PREDECISION_INELIGIBLE`.
-13. **Proceed to readiness** and reset the staged validation chain:
+14. **Proceed to readiness** and reset the staged validation chain:
     exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h.
 
 Do not execute this deployment as part of the code correction; it

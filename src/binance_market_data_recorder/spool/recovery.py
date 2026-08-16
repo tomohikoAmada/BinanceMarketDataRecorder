@@ -1,7 +1,7 @@
 """Raw artifact 的幂等启动恢复与隔离。
 
 recover_storage() 是 M3 启动协调,在任何 Collector 任务开始之前调用。
-M21.4.11-R3.2 将其分为两个阶段:
+M21.4.11-R3.2/R3.3 将其分为两个阶段:
 
 - Phase A(只读预决策):使用与只读 preflight 命令共享的决策引擎
   (spool/legacy_reconnect.py)对全部历史 SEALING reconnect intent 做

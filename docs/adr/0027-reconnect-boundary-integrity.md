@@ -1,7 +1,8 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
-  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1, M21.4.11-R3.2)
+  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1,
+  M21.4.11-R3.2, M21.4.11-R3.3)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery), ADR-0004 (clock and replay semantics)
@@ -386,14 +387,12 @@ preflight command):
     `original_generation == CLOSED.new_generation` (the boundary was
     detected on the exact connection whose first frame completed the
     parent);
-  - **no possible parent** under a quantification over ALL historical
-    authority: no CLOSED lifecycle with a matching `new_generation`, no
-    degraded closed pair, no OPEN gap with `original_generation + 1 ==
-    candidate generation`, and no other persisted intent with
-    `original_generation + 1 == candidate generation`. Generation
-    values are supporting identity, never globally unique (they reset
-    per process), so generation mismatch against ONE interval is never
-    proof.
+  - ~~no possible parent~~ **WITHDRAWN IN R3.3 (REV-001):** the R3.2
+    "no possible parent" quantification was unsound because the searched
+    historical universe is not provably complete (malformed lifecycle
+    authority can disappear from it). R3.3 replaces it with the
+    versioned intent contract for new intents and the conservative
+    legacy policy for unversioned intents (see the R3.3 section below).
 - **PROVEN_EXTENSION → ignore lifecycle creation.** An ABSENT intent
   next to exactly one OPEN parent with the durable extension shape:
   trustworthy `verified_frames == 0`, generation equal to the parent's
@@ -442,6 +441,15 @@ no corresponding candidate makes startup ineligible. The recorder never
 writes or edits the file; schema v1 is rejected (it was never deployed,
 so no migration exists).
 
+**SUPERSEDED IN R3.3 (REV-002/REV-003):** the v2 digest did not bind
+`verified_frames` although it drives classification, and the documented
+`root:root 0600` mode was unreadable by the production service. R3.3
+replaces this with authority schema
+`legacy-reconnect-classification.v3` whose
+`classification_evidence_sha256` binds `{chunk_id, seal_intent,
+verified_frames}` and the owner=root group=orangepi mode=0640
+installation contract (see the R3.3 section below).
+
 **Read-only deterministic preflight and two-phase startup.** The CLI
 `binance-market-recorder recovery legacy-reconnect-preflight` runs the
 SAME decision engine against a read-only Catalog and emits a
@@ -459,8 +467,9 @@ pre-decision, so a later ambiguity can never follow a partial
 materialization. CLOSED intervals are paired strictly by exact
 `gap_id`, expose full durable identity, and are loaded once per pass;
 an inverted wall pair is flagged `NON_MONOTONIC` but never removed from
-the classification universe, and identity-degraded pairs are counted
-conservatively as possible-parent authority.
+the classification universe, and identity-degraded pairs are surfaced
+as explicit degraded-authority blockers by R3.3 (never silently
+counted away as possible-parent evidence).
 
 The legitimate REQ-103 intent-only crash case is unchanged: a PROVEN
 legitimate intent materializes exactly one STARTED with the same
@@ -471,6 +480,120 @@ deployment, recovery, and the 168h gate remain separately authorized.
 The first corrected startup additionally requires the complete
 pre-start legacy classification sequence documented in
 `docs/operations.md` and `docs/ubuntu_rk3588_operations.md`.
+
+### Legacy recovery authority hardening (M21.4.11-R3.3, PR #11 R3.2 rejection correction)
+
+The independent exact-head review of R3.2 rejected it
+(CODE_REVIEW_VERDICT=REQUEST_CHANGES, P1=3, P2=1):
+
+- **REV-001 (P1):** historical parent authority can disappear from the
+  searched universe — malformed/unkeyable lifecycle rows were silently
+  skipped by Catalog helpers, so "no possible parent" could become a
+  false positive legitimacy proof.
+- **REV-002 (P1):** the authority digest bound only `chunk_id` +
+  `seal_intent`, while `verified_frames` (which drives the frame-bearing
+  legitimacy proof) lived outside the digest.
+- **REV-003 (P1):** the documented `root:root 0600` authority mode is
+  unreadable by the production service (`User=orangepi Group=orangepi`).
+- **REV-004 (P2):** the supposedly read-only preflight called
+  `ensure_storage_layout()`, which can mkdir/fsync missing directories.
+
+R3.3 corrects all four without regressing the R3.2 guarantees (no UTC
+ordering, exhaustive inventory, global pre-decision before mutation,
+shared engine, authority-only-resolves-AMBIGUOUS, contradictions fail
+closed, inverted wall-time lifecycle retention, exact lifecycle
+idempotence, OPEN-parent hard-conflict semantics).
+
+**Versioned reconnect-intent authority.** The legacy no-parent absence
+proof is REMOVED: absence of a possible parent is never positive
+legitimacy evidence because the historical universe is not provably
+complete. Instead, every reconnect intent emitted by the R3.3+ runtime
+(Spot and USD-M, fresh and pure-extension branches) carries the durable
+`intent_schema: "reconnect-seal-intent.v2"` provenance persisted inside
+the immutable SEALING transition evidence. Under the versioned runtime
+prevention contract a pure extension can never mint an independent
+orphan gap identity (it reuses the pending gap's canonical identity) and
+decision-point-2 uses a fresh genuine logical gap, so a versioned fresh
+ABSENT intent safely represents the legitimate REQ-103 intent-only
+crash shape: startup materializes it automatically, subject to the
+normal exact lifecycle/open-gap invariants. The version field is
+validated strictly: an unknown future schema or a malformed value fails
+closed; an intent without the field is a pre-R3 unversioned legacy
+intent. This is a forward persistent evidence-contract revision, NOT a
+SQLite schema migration (SCHEMA_MIGRATION_REQUIRED=false,
+CATALOG_MUTATION_REQUIRED=false).
+
+**Legacy unversioned policy.** An unversioned ABSENT candidate may be
+automatically PROVEN_LEGITIMATE only by independently-sound positive
+durable proof: trustworthy `verified_frames > 0`, or the exact
+completing-connection proof. "No parent found", generation mismatch
+against searched history, and well-ordered timestamps are NEVER positive
+proof. Everything else is AMBIGUOUS and fails closed unless an exact
+authority classification resolves it. This may increase one-time
+operator classification work; integrity correctness is more important
+than minimizing classification work.
+
+**Malformed historical lifecycle authority.** Unkeyable
+STARTED/COMPLETED rows (evidence not JSON/object, or missing/empty
+market, stream, or gap_id) and identity-degraded CLOSED pairs are no
+longer silently skipped or counted away: they are surfaced as explicit
+`degraded_authority` predecision blockers (event_id/event_type/reason,
+or market/stream/gap_id/reason, machine-readable in the preflight
+output) and make `first_corrected_startup_eligible=false`. Malformed
+evidence widens uncertainty; it is never paired with arbitrary other
+events — exact valid lifecycle pairing remains by gap_id.
+
+**Complete classification-evidence digest (authority schema
+`legacy-reconnect-classification.v3`).** The authority entry field is
+renamed to `classification_evidence_sha256 =
+sha256(canonical_json({"chunk_id", "seal_intent",
+"verified_frames"}))` — sorted keys, compact separators, ASCII
+escaping. It binds the exact immutable SEALING evidence values the
+operator reviewed and the decision engine consumes: the chunk identity,
+the full seal-intent document (including `intent_schema`), and the exact
+`verified_frames` value (`null` when absent). Changing ANY immutable
+candidate-side fact that can change classification invalidates the
+binding; reverse-direction staleness is tested both ways. No
+mutable/live field, path, time, or operator note is part of the digest.
+Historical lifecycle CONTEXT is deliberately not part of the candidate
+digest: startup always recomputes the automatic decision first, so a
+later context change that yields a PROVEN decision or HARD_CONFLICT
+fails closed as a contradiction instead of being overridden by an older
+authority (tested). The never-deployed v1/v2 schemas are rejected.
+
+**Service-readable authority installation contract.** The Ubuntu
+production authority file is installed as owner=root group=orangepi
+mode=0640: root/operator controls writes, the Recorder service group can
+read, everyone else cannot. The recorder never writes the file; the
+deployment procedure writes the temporary file with the FINAL
+owner/group/mode, fsyncs it, atomically renames it on the same
+filesystem, and fsyncs the parent directory, avoiding any post-rename
+window with unsafe permissions. A deterministic permission-contract
+test asserts the documented constants against the rendered systemd unit
+identity (`User=orangepi Group=orangepi`): readable=true,
+writable=false for the service account, unreadable for others. macOS
+interactive installs keep owner=user/mode 0600 (the CLI and the service
+share the interactive account).
+
+**Intrinsically read-only preflight.** The preflight derives the layout
+through `StorageLayout.from_root()` (pure path derivation, no mkdir,
+touch, chmod, or creation fsync) and explicitly validates only that the
+data root and Catalog already exist. A missing layout directory is
+never recreated; a missing required input is an error, never a repair.
+Exit status is now a gate: eligible → 0; ineligible → 2 with the full
+machine-readable JSON report (the `first_corrected_startup_eligible`
+Boolean remains); malformed/runtime errors → 2 with an error payload.
+Automation cannot accidentally ignore ineligibility.
+
+**Final post-stop preflight is mandatory.** The corrected deployment
+sequence requires, after stopping the old service and before starting
+the corrected artifact: a final read-only preflight against the frozen
+Catalog plus the installed authority, requiring eligible. Corrected
+startup then reruns the entire global predecision pass itself before any
+collector starts, so the accepted TOCTOU analysis (old service creating
+new candidates after an early exploratory preflight) stays safe. The
+authority may be created offline and installed before the stop; only the
+post-stop final coverage validation is mandatory.
 
 ## Alternatives
 
