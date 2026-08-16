@@ -41,7 +41,7 @@ from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
 from threading import RLock
-from typing import Any
+from typing import Any, cast
 
 
 class ChunkState(StrEnum):
@@ -649,6 +649,284 @@ class Catalog:
                 and event["evidence"].get("gap_id") in completed_gap_ids
             )
         ]
+
+    def closed_stream_discontinuity_intervals_by_stream(
+        self,
+    ) -> dict[tuple[str, str], list[dict[str, object]]]:
+        """Return paired (STARTED, COMPLETED) intervals grouped by (market, stream).
+
+        Each interval is exactly one logical reconnect discontinuity whose
+        lifecycle is CLOSED, paired strictly by exact ``gap_id``.  The
+        interval exposes the full durable identity evidence: the wall-clock
+        timestamps (observational only, never causal-ordering authority),
+        the STARTED-side original connection/generation, and the
+        COMPLETED-side replacement connection/generation
+        (M21.4.11-R3.2).  A pair whose COMPLETED wall timestamp is not
+        after its STARTED wall timestamp is still returned, flagged
+        ``wall_time_order == NON_MONOTONIC``: inverted wall clocks never
+        remove exact lifecycle authority from the classification universe.
+        Intervals lacking a well-formed identity field are omitted here and
+        surfaced by ``degraded_closed_discontinuity_pairs`` instead:
+        classification must never guess from partial evidence.
+        """
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_type, occurred_at_utc_ns, evidence_json
+                FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY occurred_at_utc_ns, event_id
+                """
+            ).fetchall()
+        started_by_gap: dict[
+            tuple[str, str, str], dict[str, object]
+        ] = {}
+        completed_by_gap: dict[
+            tuple[str, str, str], dict[str, object]
+        ] = {}
+        for row in rows:
+            evidence = json.loads(str(row["evidence_json"]))
+            if not isinstance(evidence, dict):
+                continue
+            market = evidence.get("market")
+            stream = evidence.get("stream")
+            gap_id = evidence.get("gap_id")
+            if (
+                not isinstance(market, str)
+                or not market
+                or not isinstance(stream, str)
+                or not stream
+                or not isinstance(gap_id, str)
+                or not gap_id
+            ):
+                continue
+            key = (market, stream, gap_id)
+            document = {
+                "occurred_at_utc_ns": int(row["occurred_at_utc_ns"]),
+                "evidence": evidence,
+            }
+            if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_by_gap[key] = document
+            else:
+                started_by_gap[key] = document
+        grouped: dict[tuple[str, str], list[dict[str, object]]] = {}
+        for (market, stream, gap_id), started in sorted(started_by_gap.items()):
+            completed = completed_by_gap.get((market, stream, gap_id))
+            if completed is None:
+                continue
+            started_evidence = started["evidence"]
+            completed_evidence = completed["evidence"]
+            if not isinstance(started_evidence, dict) or not isinstance(
+                completed_evidence, dict
+            ):
+                continue
+            if not _closed_lifecycle_identity_valid(
+                started_evidence, completed_evidence
+            ):
+                continue
+            started_at = cast(int, started_evidence["gap_started_at_utc_ns"])
+            ended_at = cast(int, completed_evidence["gap_ended_at_utc_ns"])
+            original_connection = started_evidence["original_connection_id"]
+            original_generation = started_evidence["original_generation"]
+            new_connection = completed_evidence["new_connection_id"]
+            new_generation = completed_evidence["new_generation"]
+            grouped.setdefault((market, stream), []).append(
+                {
+                    "gap_id": gap_id,
+                    "started_at_utc_ns": started_at,
+                    "ended_at_utc_ns": ended_at,
+                    "wall_time_order": (
+                        "NORMAL" if ended_at > started_at else "NON_MONOTONIC"
+                    ),
+                    "original_connection_id": original_connection,
+                    "original_generation": original_generation,
+                    "new_connection_id": new_connection,
+                    "new_generation": new_generation,
+                }
+            )
+        return grouped
+
+    def degraded_closed_discontinuity_pairs(
+        self,
+    ) -> list[dict[str, object]]:
+        """Return exactly-paired CLOSED lifecycles with malformed identity.
+
+        A STARTED/COMPLETED pair keyed by the same ``gap_id`` whose identity
+        fields (connections, generations, timestamps) are not well-formed
+        cannot serve as positive-proof authority.  R3.3 surfaces each such
+        pair as an explicit degraded-authority predecision blocker: malformed
+        evidence must widen uncertainty and can never reduce the possible
+        historical universe (M21.4.11-R3.3).
+        """
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_type, evidence_json
+                FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                """
+            ).fetchall()
+        started_by_gap: dict[
+            tuple[str, str, str], dict[str, object]
+        ] = {}
+        completed_by_gap: dict[
+            tuple[str, str, str], dict[str, object]
+        ] = {}
+        for row in rows:
+            evidence = json.loads(str(row["evidence_json"]))
+            if not isinstance(evidence, dict):
+                continue
+            market = evidence.get("market")
+            stream = evidence.get("stream")
+            gap_id = evidence.get("gap_id")
+            if (
+                not isinstance(market, str)
+                or not market
+                or not isinstance(stream, str)
+                or not stream
+                or not isinstance(gap_id, str)
+                or not gap_id
+            ):
+                continue
+            key = (market, stream, gap_id)
+            if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_by_gap[key] = evidence
+            else:
+                started_by_gap[key] = evidence
+        degraded: list[dict[str, object]] = []
+        for key in sorted(set(started_by_gap) & set(completed_by_gap)):
+            started_evidence = started_by_gap[key]
+            completed_evidence = completed_by_gap[key]
+            if _closed_lifecycle_identity_valid(
+                started_evidence, completed_evidence
+            ):
+                continue
+            market, stream, gap_id = key
+            degraded.append(
+                {
+                    "market": market,
+                    "stream": stream,
+                    "gap_id": gap_id,
+                    "reason": "malformed_lifecycle_identity",
+                }
+            )
+        return degraded
+
+    def malformed_discontinuity_events(self) -> list[dict[str, object]]:
+        """Inventory every STARTED/COMPLETED row that cannot be keyed safely.
+
+        A lifecycle event whose evidence is not a JSON object, or whose
+        ``market``/``stream``/``gap_id`` identity is missing or not text,
+        cannot participate in exact gap_id pairing.  R3.3 surfaces each such
+        row as an explicit degraded-authority predecision blocker instead of
+        silently skipping it: malformed evidence must widen uncertainty and
+        can never shrink the searched parent universe
+        (M21.4.11-R3.3 REV-001).
+        """
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_id, event_type, evidence_json
+                FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY event_id
+                """
+            ).fetchall()
+        output: list[dict[str, object]] = []
+        for row in rows:
+            event_id = str(row["event_id"])
+            event_type = str(row["event_type"])
+            reason: str | None = None
+            try:
+                evidence = json.loads(str(row["evidence_json"]))
+            except (json.JSONDecodeError, TypeError):
+                reason = "evidence_not_json"
+            if reason is None and not isinstance(evidence, dict):
+                reason = "evidence_not_object"
+            if reason is None:
+                market = evidence.get("market")
+                stream = evidence.get("stream")
+                gap_id = evidence.get("gap_id")
+                if not isinstance(market, str) or not market:
+                    reason = "missing_market"
+                elif not isinstance(stream, str) or not stream:
+                    reason = "missing_stream"
+                elif not isinstance(gap_id, str) or not gap_id:
+                    reason = "missing_gap_id"
+            if reason is None:
+                continue
+            output.append(
+                {
+                    "event_id": event_id,
+                    "event_type": event_type,
+                    "reason": reason,
+                }
+            )
+        return output
+
+    def unclosed_stream_discontinuities_by_stream(
+        self,
+    ) -> dict[tuple[str, str], list[dict[str, object]]]:
+        """Return STARTED events without a matching COMPLETED, grouped by
+        (market, stream), in one pass (M21.4.11-R3.2)."""
+
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY occurred_at_utc_ns, event_id
+                """
+            ).fetchall()
+        started: list[dict[str, object]] = []
+        completed_gap_ids: set[tuple[str, str, str]] = set()
+        for row in rows:
+            document = dict(row)
+            evidence_json = document.pop("evidence_json")
+            evidence = json.loads(str(evidence_json))
+            if not isinstance(evidence, dict):
+                continue
+            market = evidence.get("market")
+            stream = evidence.get("stream")
+            gap_id = evidence.get("gap_id")
+            if (
+                not isinstance(market, str)
+                or not market
+                or not isinstance(stream, str)
+                or not stream
+                or not isinstance(gap_id, str)
+                or not gap_id
+            ):
+                continue
+            document["evidence"] = evidence
+            if document["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_gap_ids.add((market, stream, gap_id))
+            else:
+                started.append(document)
+        grouped: dict[tuple[str, str], list[dict[str, object]]] = {}
+        for event in started:
+            evidence = event.get("evidence")
+            if not isinstance(evidence, dict):
+                continue
+            market = str(evidence.get("market"))
+            stream = str(evidence.get("stream"))
+            gap_id = str(evidence.get("gap_id"))
+            if (market, stream, gap_id) in completed_gap_ids:
+                continue
+            grouped.setdefault((market, stream), []).append(event)
+        return grouped
 
     def stream_discontinuity_lifecycle(
         self, *, market: str, stream: str, gap_id: str
@@ -2214,6 +2492,39 @@ class Catalog:
                 str(row["name"])
                 for row in self._connection.execute(f"PRAGMA table_info({table})")
             }
+
+
+def _closed_lifecycle_identity_valid(
+    started_evidence: dict[str, object],
+    completed_evidence: dict[str, object],
+) -> bool:
+    """True when a paired CLOSED lifecycle has well-formed identity fields.
+
+    Wall timestamps are NOT part of identity validity: an inverted or equal
+    wall pair is still exact lifecycle authority (M21.4.11-R3.2).
+    """
+    started_at = started_evidence.get("gap_started_at_utc_ns")
+    ended_at = completed_evidence.get("gap_ended_at_utc_ns")
+    original_connection = started_evidence.get("original_connection_id")
+    original_generation = started_evidence.get("original_generation")
+    new_connection = completed_evidence.get("new_connection_id")
+    new_generation = completed_evidence.get("new_generation")
+    return (
+        isinstance(started_at, int)
+        and not isinstance(started_at, bool)
+        and isinstance(ended_at, int)
+        and not isinstance(ended_at, bool)
+        and isinstance(original_connection, str)
+        and bool(original_connection)
+        and not isinstance(original_generation, bool)
+        and isinstance(original_generation, int)
+        and original_generation >= 0
+        and isinstance(new_connection, str)
+        and bool(new_connection)
+        and not isinstance(new_generation, bool)
+        and isinstance(new_generation, int)
+        and new_generation >= 0
+    )
 
 
 def _validate_relative_path(value: str) -> None:

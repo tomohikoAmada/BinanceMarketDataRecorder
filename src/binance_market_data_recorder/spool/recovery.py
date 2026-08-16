@@ -1,15 +1,24 @@
 """Raw artifact 的幂等启动恢复与隔离。
 
 recover_storage() 是 M3 启动协调,在任何 Collector 任务开始之前调用。
-它按固定顺序运行:
+M21.4.11-R3.2/R3.3 将其分为两个阶段:
+
+- Phase A(只读预决策):使用与只读 preflight 命令共享的决策引擎
+  (spool/legacy_reconnect.py)对全部历史 SEALING reconnect intent 做
+  穷尽三向划分(PROVEN_LEGITIMATE / PROVEN_EXTENSION / AMBIGUOUS),
+  并校验 operator 分类 authority 的强绑定。任何未解决的 ambiguous、
+  stale、unmatched、contradictory 或 conflict 状态都会在 BEFORE 任何
+  legacy 生命周期 mutation 之前失败关闭,避免部分物化后中断。
+- Phase B(执行):仅在全局决策集安全时执行:
 
 1. recover_partials():扫描 active/ 中的每个 .bmdr.partial。干净的 partial
    在 Catalog 中注册。可截尾 partial 被 ftruncate 到最后一个有效帧,
    重新扫描并标记为 RECOVERED。损坏的 partial(无效头、校验和失败、不支持的
    flags)被隔离并以 SHA-256 哈希保留用于取证。
-2. 断开连续性物化:每个 SEALING 转换证据中的 durable seal intent
-   (reconnect 语义)与未提交的 STREAM_DISCONTINUITY_STARTED 事件一起
-   重建 pending discontinuity(P1-A 双故障回退;见 _derived_seal_flags)。
+2. 断开连续性物化:按 Phase A 的决策,PROVEN_LEGITIMATE 与
+   classified_legitimate_req103 的 intent 以相同 gap_id 物化一个
+   STREAM_DISCONTINUITY_STARTED(P1-A 双故障回退);PROVEN_EXTENSION 与
+   classified_extension_orphan 被报告为 extension_orphan_ignored,不物化。
 3. SEALING 协调:任何处于 SEALING 状态且存在未删除 partial 的 chunk 被重新
    提交给 seal_partial()。这覆盖了压缩/重命名与 Catalog SEALED 提交之间的
    崩溃窗口,并从 durable authority(SEALING intent + 未关闭 STARTED)派生
@@ -44,6 +53,14 @@ from ..storage.catalog import (
 )
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, decode_chunk_header, scan_chunk
+from .legacy_reconnect import (
+    LEGACY_CLASSIFICATION_FILENAME,
+    LegacyClassificationAuthority,
+    LegacyDecisionReport,
+    LegacyReconnectConflictError,
+    evaluate_legacy_reconnect_decisions,
+    validate_seal_intent,
+)
 from .seal import (
     RECONNECT_GAP_FLAG,
     SEAL_INTENT_EVIDENCE_KEY,
@@ -389,197 +406,76 @@ def _derived_seal_flags(
 ) -> frozenset[str]:
     """Derive fail-closed seal flags from durable reconnect-boundary authority.
 
-    A clean partial scanned during startup has no in-memory forced flags: the
-    collector that crashed was the only holder of that memory. The required
-    forced flags are reconstructed from ALL applicable durable authority
-    (M21.4.11-R2 P1-A), in this priority:
+    Phase A of recover_storage() has already reconciled every durable SEALING
+    seal intent through the shared legacy decision engine, so the materialize
+    decisions are durably present as unclosed STARTED events by the time a
+    SEALING partial is re-sealed here.  Derivation therefore reduces to the
+    two durable authorities:
 
-    A. The durable SEALING seal intent: the ChunkState.SEALING transition
-       evidence records the seal semantics requested when the boundary was
-       sealed (required forced flags plus the reconnect boundary identity).
-       This survives the double fault where the Catalog
-       STREAM_DISCONTINUITY_STARTED event failed to commit but the SEALING
-       transition was persisted. When the intent exists without a matching
-       STARTED, recovery deterministically materializes the pending
-       discontinuity with the same gap_id.
+    A. The durable SEALING seal intent (required forced flags) recorded in
+       the ChunkState.SEALING transition evidence (M21.4.11-R2 P1-A).
     B. An unclosed Catalog STREAM_DISCONTINUITY_STARTED for the same
        market/stream (the pre-R2 authority).
 
-    When both authorities exist they must agree on the exact gap identity;
-    a mismatch fails closed (``RecoveryConflictError``) instead of guessing.
     A SEALING chunk with no reconnect intent at all is sealed with ordinary
     semantics: blanket "every SEALING chunk is a gap" forcing is prohibited
     (TEST-106).
     """
     with partial_path.open("rb", buffering=0) as source:
         header, _body = decode_chunk_header(source)
-    intent = _sealing_intent(catalog, chunk_id)
-    open_gaps = catalog.unclosed_stream_discontinuities(
-        market=header.market, stream=header.stream
+    evidence = _sealing_evidence(catalog, chunk_id)
+    intent = (
+        evidence.get(SEAL_INTENT_EVIDENCE_KEY) if evidence is not None else None
     )
+    if intent is not None and not isinstance(intent, dict):
+        raise RecoveryConflictError(
+            f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
+        )
     required: frozenset[str] = frozenset()
     if intent is not None:
-        _validate_seal_intent(intent, chunk_id)
+        validate_seal_intent(intent, chunk_id)
         flags = intent["required_forced_flags"]
         required = (
             frozenset(str(flag) for flag in flags)
             if isinstance(flags, list)
             else frozenset()
         )
-        lifecycle = _materialize_started_if_absent(
-            catalog, intent, chunk_id=chunk_id
+    open_gaps = catalog.unclosed_stream_discontinuities(
+        market=header.market, stream=header.stream
+    )
+    if len(open_gaps) > 1:
+        # Two genuinely simultaneous unmatched gaps on one market/stream are
+        # a multi-fault state; fail closed (INV-005).
+        raise RecoveryConflictError(
+            "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
+            f"chunk={chunk_id} multiple simultaneously open gaps"
         )
-        open_gaps = catalog.unclosed_stream_discontinuities(
-            market=header.market, stream=header.stream
-        )
-        if lifecycle != "closed" and len(open_gaps) > 1:
-            # Two genuinely simultaneous unmatched gaps on one market/stream
-            # are a multi-fault state; fail closed (INV-005). A historical
-            # CLOSED intent never conflicts merely because a later gap is
-            # OPEN (INV-003).
-            raise RecoveryConflictError(
-                "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
-                f"chunk={chunk_id} multiple simultaneously open gaps"
-            )
     if open_gaps:
         return required | frozenset({RECONNECT_GAP_FLAG})
     return required
 
 
-def _sealing_intent(
+def _sealing_evidence(
     catalog: Catalog, chunk_id: str
 ) -> dict[str, object] | None:
     evidence = catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING)
     if not evidence:
         return None
-    intent = evidence.get(SEAL_INTENT_EVIDENCE_KEY)
-    if intent is None:
-        return None
-    if not isinstance(intent, dict):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
-        )
-    return intent
+    return evidence
 
 
-def _validate_seal_intent(
-    intent: dict[str, object], chunk_id: str
-) -> None:
-    required_names = (
-        "required_forced_flags",
-        "gap_id",
-        "reason",
-        "market",
-        "stream",
-        "original_connection_id",
-        "original_generation",
-        "gap_started_at_utc_ns",
-    )
-    for name in required_names:
-        if name not in intent:
-            raise RecoveryConflictError(
-                f"RECOVERY_SEAL_INTENT_MISSING_FIELD {name} chunk={chunk_id}"
-            )
-    flags = intent["required_forced_flags"]
-    if not isinstance(flags, list) or not all(
-        isinstance(flag, str) and flag for flag in flags
-    ):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_INVALID_FLAGS chunk={chunk_id}"
-        )
-    gap_id = intent["gap_id"]
-    reason = intent["reason"]
-    market = intent["market"]
-    stream = intent["stream"]
-    connection_id = intent["original_connection_id"]
-    generation = intent["original_generation"]
-    started_at = intent["gap_started_at_utc_ns"]
-    if not all(
-        isinstance(value, str) and value
-        for value in (gap_id, reason, market, stream, connection_id)
-    ):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_INVALID_IDENTITY chunk={chunk_id}"
-        )
-    if (
-        isinstance(generation, bool)
-        or not isinstance(generation, int)
-        or generation < 0
-    ):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_INVALID_GENERATION chunk={chunk_id}"
-        )
-    if (
-        isinstance(started_at, bool)
-        or not isinstance(started_at, int)
-        or started_at < 0
-    ):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_INVALID_STARTED_AT chunk={chunk_id}"
-        )
-
-
-def _materialize_started_if_absent(
-    catalog: Catalog, intent: dict[str, object], *, chunk_id: str
+def _record_started_from_intent(
+    catalog: Catalog, intent: dict[str, object]
 ) -> str:
-    """Reconcile a durable seal intent against its exact gap lifecycle.
-
-    Returns ``"closed"``, ``"open"``, or ``"materialized"``.
-
-    P1-A double fault: the SEALING intent is durable but the Catalog
-    STREAM_DISCONTINUITY_STARTED event never committed. The pending
-    discontinuity is materialized with the same durable gap_id, so the
-    replacement generation restores it, marks its first frame sequence_gap,
-    and produces exactly one coherent COMPLETED event (INV-009/INV-010).
-
-    Every decision is keyed by the intent's own gap_id lifecycle
-    (M21.4.11-R2.1/REQ-100), never by "some unmatched gap exists on this
-    market/stream":
-
-    - CLOSED (a COMPLETED record exists for the intent's gap_id): historical.
-      The intent is not re-materialized, not reopened, and never compared
-      against an unrelated currently-open gap (REQ-101, INV-002/INV-003).
-    - OPEN (an unmatched STARTED with the same gap_id): the two durable
-      authorities must agree exactly on gap_id, market, stream, reason,
-      original_connection_id and original_generation; a mismatch fails
-      closed (REQ-102, INV-004).
-    - ABSENT with no other unmatched discontinuity on the market/stream:
-      materialize STARTED with the SAME durable gap_id; never mint a second
-      gap_id (REQ-103, INV-001).
-    - ABSENT while a genuinely different unmatched gap exists: a true
-      competing open gap; fail closed instead of guessing (REQ-104, INV-005).
-    """
-    market = str(intent["market"])
-    stream = str(intent["stream"])
     gap_id = str(intent["gap_id"])
-    lifecycle = catalog.stream_discontinuity_lifecycle(
-        market=market, stream=stream, gap_id=gap_id
-    )
-    if lifecycle == "CLOSED":
-        return "closed"
-    open_gaps = catalog.unclosed_stream_discontinuities(
-        market=market, stream=stream
-    )
-    for event in open_gaps:
-        evidence = event.get("evidence")
-        if not isinstance(evidence, dict) or evidence.get("gap_id") != gap_id:
-            continue
-        _validate_intent_agreement(intent, event, chunk_id)
-        return "open"
-    if open_gaps:
-        raise RecoveryConflictError(
-            "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
-            f"gap_id={gap_id} market={market} stream={stream} chunk={chunk_id} "
-            "competing unmatched discontinuity exists"
-        )
     catalog.ensure_operational_event(
         event_id=f"stream-discontinuity-started:{gap_id}",
         event_type="STREAM_DISCONTINUITY_STARTED",
         occurred_at_utc_ns=int(cast(int, intent["gap_started_at_utc_ns"])),
         evidence={
             "gap_id": gap_id,
-            "market": market,
-            "stream": stream,
+            "market": intent["market"],
+            "stream": intent["stream"],
             "reason": intent["reason"],
             "interval_classification": "UNRELIABLE",
             "gap_started_at_utc_ns": intent["gap_started_at_utc_ns"],
@@ -599,86 +495,89 @@ def _materialize_started_if_absent(
     return "materialized"
 
 
-def _validate_intent_agreement(
-    intent: dict[str, object],
-    gap: dict[str, object],
-    chunk_id: str,
-) -> None:
-    """REQ-107: the SEALING intent and an unclosed STARTED must agree exactly."""
-    evidence = gap.get("evidence")
-    if not isinstance(evidence, dict):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_CONFLICT chunk={chunk_id} malformed STARTED"
-        )
-    expected = {
-        "gap_id": intent["gap_id"],
-        "market": intent["market"],
-        "stream": intent["stream"],
-        "reason": intent["reason"],
-        "original_connection_id": intent["original_connection_id"],
-        "original_generation": intent["original_generation"],
-    }
-    actual = {
-        "gap_id": evidence.get("gap_id"),
-        "market": evidence.get("market"),
-        "stream": evidence.get("stream"),
-        "reason": evidence.get("reason"),
-        "original_connection_id": evidence.get("original_connection_id"),
-        "original_generation": evidence.get("original_generation"),
-    }
-    for name, expected_value in expected.items():
-        if actual.get(name) != expected_value:
-            raise RecoveryConflictError(
-                "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
-                f"chunk={chunk_id} field={name}"
-            )
-
-
-def _materialize_pending_discontinuities(
-    *, catalog: Catalog
+def _apply_legacy_decisions(
+    *, catalog: Catalog, report: LegacyDecisionReport
 ) -> list[RecoveryAction]:
-    """Reconstruct pending discontinuities from all durable SEALING intents.
+    """Execute the Phase A legacy decisions (Phase B of R3.2).
 
-    This runs before the SEALING re-seal loop so that ``_derived_seal_flags``
-    observes the materialized STARTED, and it scans every historical SEALING
-    transition (not only currently-SEALING chunks): a crash after the seal
-    completed but before the STARTED write still leaves the intent durable.
-
-    Each intent is reconciled against its own gap_id lifecycle (REQ-100,
-    M21.4.11-R2.1): a historical CLOSED intent is ignored, an OPEN same-gap
-    STARTED is validated for exact identity agreement, and an intent-only gap
-    is materialized with the same gap_id unless a genuinely different
-    unmatched gap fails the recovery closed.
+    Startup recovery and the read-only preflight share the same decision
+    engine; this function only applies decisions the engine already proved
+    safe.  A candidate decided PROVEN_LEGITIMATE or classified
+    ``legitimate_req103`` materializes exactly one STARTED with its same
+    durable gap_id; a candidate decided PROVEN_EXTENSION or classified
+    ``extension_orphan`` materializes nothing and is reported idempotently.
     """
     actions: list[RecoveryAction] = []
-    for chunk_id, evidence in catalog.sealing_transition_evidence():
-        intent = evidence.get(SEAL_INTENT_EVIDENCE_KEY)
-        if intent is None:
-            continue
-        if not isinstance(intent, dict):
-            raise RecoveryConflictError(
-                f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
+    for decision in report.decisions:
+        if decision.final in {
+            "proven_legitimate",
+            "classified_legitimate_req103",
+        }:
+            _record_started_from_intent(
+                catalog, decision.candidate.intent
             )
-        _validate_seal_intent(intent, chunk_id)
-        if (
-            _materialize_started_if_absent(catalog, intent, chunk_id=chunk_id)
-            == "materialized"
-        ):
             actions.append(
                 RecoveryAction(
-                    chunk_id,
+                    decision.candidate.chunk_id,
                     "pending_discontinuity_materialized",
-                    str(intent["gap_id"]),
+                    decision.candidate.gap_id,
+                )
+            )
+        elif decision.final in {
+            "proven_extension",
+            "classified_extension_orphan",
+        }:
+            actions.append(
+                RecoveryAction(
+                    decision.candidate.chunk_id,
+                    "extension_orphan_ignored",
+                    decision.candidate.gap_id,
                 )
             )
     return actions
 
 
-def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
-    """Run the complete M3 startup reconciliation in a stable order."""
+def recover_storage(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    authority_path: Path | None = None,
+) -> list[RecoveryAction]:
+    """Run the complete M3 startup reconciliation in a stable order.
 
+    M21.4.11-R3.2/R3.3 Phase A: the shared legacy decision engine
+    classifies every historical SEALING reconnect intent and validates
+    the operator classification authority BEFORE any mutation.  If any
+    unresolved ambiguous, stale, unmatched, contradictory, conflicting,
+    or degraded-authority blocker exists, startup fails closed with the
+    full blocker list instead of partially mutating lifecycle state.
+
+    ``authority_path`` selects the operator authority location.  The
+    system service passes the config-namespace path
+    (``config_file.parent / legacy_reconnect_classifications.json``),
+    which is root-controlled and NOT writable by the service principal
+    (M21.4.11-R3.4); the data-root fallback is only for config-less
+    interactive/test operation.
+    """
+    selected_authority_path = (
+        Path(authority_path)
+        if authority_path is not None
+        else layout.root / LEGACY_CLASSIFICATION_FILENAME
+    )
+    try:
+        authority = LegacyClassificationAuthority.load(selected_authority_path)
+        report = evaluate_legacy_reconnect_decisions(
+            catalog=catalog, authority=authority
+        )
+    except LegacyReconnectConflictError as exc:
+        raise RecoveryConflictError(str(exc)) from exc
+    if not report.first_corrected_startup_eligible:
+        raise RecoveryConflictError(
+            "RECOVERY_LEGACY_PREDECISION_INELIGIBLE "
+            + report.blocker_summary()
+        )
     actions = recover_partials(layout=layout, catalog=catalog)
-    actions.extend(_materialize_pending_discontinuities(catalog=catalog))
+    actions.extend(_apply_legacy_decisions(catalog=catalog, report=report))
     for row in catalog.chunks_in_states(ChunkState.SEALING):
         partial_value = row.get("partial_path")
         if not isinstance(partial_value, str) or not partial_value:

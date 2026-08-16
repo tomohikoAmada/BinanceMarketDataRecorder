@@ -598,13 +598,118 @@ from Raw after a corrected parser is available.
   defense, and the read-only audit tool; the M21.4.11-R1..R5 correction adds
   crash-durable STARTED-before-seal ordering, boundary-local audit
   classification, strictly read-only audit semantics, side-data fail-closed
-  terminal restart, and deterministic canonical audit output. R2/R2.1/R2.2
+  terminal restart, and deterministic canonical audit output.   R2/R2.1/R2.2
   further add SEALING seal-intent recovery keyed by exact gap lifecycle,
   Catalog-first zero-record marker durability, exact operational-event
   idempotency, and logical audit transitions across frame-less chunks. It is
   under review and NOT DEPLOYED.
   Full record:
   `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
+
+  **M21.4.11 formal 72h PASS and M21.4.11-R3 orphan extension-intent P1.**
+  The deployed artifact (`f659895…`) passed its independent formal 72h
+  observational window: process continuity, 27/27 explicit WS transitions,
+  +0 unmarked, 0 false-complete, 27/27 first-new Raw `sequence_gap`.
+  FORMAL_72H_RESULT=PASS. The same review found a latent P1: a reconnect
+  boundary that merely EXTENDS an open pending gap persisted a SEALING seal
+  intent with a freshly minted gap_id and no lifecycle; startup recovery
+  scans every historical SEALING intent and would materialize a phantom
+  `STREAM_DISCONTINUITY_STARTED` on the next service restart (production
+  example: um_perpetual `book_ticker` 2026-08-13T08:20:35Z, orphan gap_id
+  `33e6420b`, marker `7223d5ba`, parent `70ace625`). The 168h gate
+  requires a controlled service restart, so
+  ELIGIBLE_FOR_168H=false for `f659895…`. The M21.4.11-R3 correction makes
+  extension intents reuse the canonical pending-gap identity (attempt
+  metadata under a separate `extension` key) and teaches startup recovery
+  to recognize legacy orphan shapes from durable evidence without phantom
+  materialization; REQ-103 intent-only crash recovery is preserved. An
+  independent exact-head review (PR #11 R2) rejected the R3 closed-parent
+  legacy discriminator as P1-unsound because it used UTC wall-clock
+  containment plus generation equality as causal proof, which wall-clock
+  rollback can defeat for a genuine post-completion boundary.
+  M21.4.11-R3.1 corrects it with clock-independent durable identity rules
+  (frame-bearing SEALING evidence, boundary connection equal to the
+  parent's completing connection, generation identity), fail-closed
+  ambiguity, and an explicit operator-reviewed additive classification
+  authority; UTC was removed as silent-suppression authority. A further
+  independent exact-head review (PR #11 R3.2) found three P1s in R3.1:
+  UTC containment still gated whether CLOSED-parent ambiguity engaged
+  (an orphan outside the parent's numeric interval could still become a
+  phantom STARTED, and inverted-wall pairs were dropped from the
+  interval universe); the classification authority was consulted before
+  stronger durable proofs and could therefore override them; and no
+  deterministic read-only production pre-start inventory existed.
+  M21.4.11-R3.2 corrects all three with the exhaustive three-way
+  partition (PROVEN_LEGITIMATE / PROVEN_EXTENSION / AMBIGUOUS, no
+  fourth default), the strongly-bound authority
+  (`legacy-reconnect-classification.v2`: chunk_id + canonical
+  seal-intent SHA-256, consulted only for AMBIGUOUS candidates, and
+  contradictions fail closed), the shared decision engine, the read-only
+  `recovery legacy-reconnect-preflight` command, the two-phase startup
+  (global pre-decision before any legacy lifecycle mutation), and the
+  mandatory pre-start classification sequence documented in
+  `docs/ubuntu_rk3588_operations.md`. UTC never gates classification.
+  A third independent exact-head review (PR #11 R3.2) rejected it:
+  REV-001 (P1) the "no possible parent → proven_legitimate" proof is
+  unsound because malformed/unkeyable historical lifecycle authority can
+  disappear from the searched universe; REV-002 (P1) the authority digest
+  bound only chunk_id + seal intent, not `verified_frames`, although
+  verified_frames drives classification; REV-003 (P1) the documented
+  `root:root 0600` authority mode is unreadable by the production
+  service (User=orangepi Group=orangepi); REV-004 (P2) the "read-only"
+  preflight called `ensure_storage_layout()` and could mkdir/fsync
+  missing directories. M21.4.11-R3.3 corrects all four: the legacy
+  no-parent absence proof is REMOVED (absence of a parent only widens
+  uncertainty; automatic legitimacy for legacy intents requires positive
+  proof — trustworthy `verified_frames > 0` or the exact
+  completing-connection proof — everything else is AMBIGUOUS); new
+  intents emitted by the corrected runtime carry the durable
+  `intent_schema: reconnect-seal-intent.v2` provenance (persisted inside
+  the immutable SEALING evidence; pure extensions reuse the pending gap
+  identity, decision-point-2 uses a fresh genuine gap, so a versioned
+  fresh ABSENT intent safely materializes REQ-103 without operator
+  classification; unknown future schemas fail closed); malformed
+  lifecycle authority is surfaced as explicit degraded-authority
+  predecision blockers instead of being silently skipped; the authority
+  is bumped to `legacy-reconnect-classification.v3` with
+  `classification_evidence_sha256 = sha256(canonical_json({chunk_id,
+  seal_intent, verified_frames}))` binding the COMPLETE immutable
+  decision evidence; the documented authority installation contract is
+  owner=root group=orangepi mode=0640 (service-readable, not
+  service-writable) enforced by a deterministic permission-contract
+  test; and the preflight is intrinsically read-only (layout derived
+  without mutation, exit 0 eligible / exit 2 ineligible with the full
+  JSON report). SCHEMA_MIGRATION_REQUIRED=false and
+  CATALOG_MUTATION_REQUIRED=false (the intent version field is a forward
+  persistent evidence-contract revision, not a SQLite schema migration);
+  ADDITIVE_COMPATIBILITY_AUTHORITY_REQUIRED=true and
+  PRESTART_LEGACY_CLASSIFICATION_REQUIRED=true for the first corrected
+  production start. The R3.3 focused exact-head review accepted the core
+  algorithm but returned one P1 and two P2s. M21.4.11-R3.4 closes them
+  narrowly without touching the accepted algorithm:
+  REV-003-R3.3-001 (P1) — the authority file moved OUT of the
+  service-writable data root into the root-controlled configuration
+  namespace (`config_file.parent /
+  legacy_reconnect_classifications.json`; production
+  `/etc/binance-market-data-recorder/…`, parent root:orangepi 0750,
+  file root:orangepi 0640), so the service can read but can never
+  unlink/rename/replace the authority pathname (file mode 0640 alone
+  was insufficient because the service owns the data-root directory);
+  the permission-contract test now models both file and parent
+  directory; R3.3-SCHEMA-001 (P2) — an explicit `intent_schema: null`
+  (or any present-but-noncanonical value) now fails closed instead of
+  being treated like a missing legacy key; R3.3-DOC-001 (P2) — the
+  Ubuntu operations status now records that the deployed `f659895…`
+  PASSED the formal 72h observational gate and became NOT ELIGIBLE FOR
+  168H, while the corrected artifact is NOT DEPLOYED with validation
+  PENDING. It is
+  under review and NOT DEPLOYED. Production validation for the corrected
+  artifact is PENDING: after review, merge, and separately authorized
+  deployment, the NEW artifact must re-execute the full staged chain
+  (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
+  See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
+  Legacy extension-orphan recovery (M21.4.11-R3, corrected R3.1,
+  corrected R3.2, corrected R3.3, corrected R3.4)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute

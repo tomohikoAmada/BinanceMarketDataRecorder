@@ -34,10 +34,16 @@ from .service.runtime import run_service
 from .service.soak_timer import SoakTimerManager, SystemdSoakError
 from .service.systemd import SystemdError, SystemdManager
 from .soak.sample import soak_sample
+from .spool.legacy_reconnect import (
+    LegacyClassificationAuthority,
+    LegacyReconnectConflictError,
+    classification_authority_path,
+    evaluate_legacy_reconnect_decisions,
+)
 from .status import service_status
 from .storage.catalog import Catalog, CatalogStateError, ChunkState
 from .storage.forecast import StorageForecaster
-from .storage.layout import ensure_storage_layout
+from .storage.layout import StorageLayout, ensure_storage_layout
 from .storage.linux import LinuxVolumeAdapter
 from .storage.macos import (
     DiskArbitrationAdapter,
@@ -118,6 +124,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
+    recovery_command = commands.add_parser(
+        "recovery", help="startup recovery diagnostics"
+    )
+    recovery_commands = recovery_command.add_subparsers(
+        dest="recovery_command",
+        required=True,
+        parser_class=_ArgumentParser,
+    )
+    recovery_commands.add_parser(
+        "legacy-reconnect-preflight",
+        help="read-only legacy reconnect classification inventory",
+    )
     normalize_command = commands.add_parser(
         "normalize", help="build or inspect versioned normalized Parquet"
     )
@@ -420,7 +438,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "_service" and getattr(args, "service_command", None) == "run":
         logger = configure_logging(loaded.config.log_level)
         try:
-            asyncio.run(run_service(loaded.config, logger=logger))
+            asyncio.run(
+                run_service(
+                    loaded.config,
+                    logger=logger,
+                    authority_path=classification_authority_path(
+                        config_file=loaded.config_file,
+                        data_root=loaded.config.data_root,
+                    ),
+                )
+            )
         except ServiceAlreadyRunning as exc:
             log_event(
                 logger,
@@ -546,6 +573,51 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 2
         _write_json({"command": "report.daily", **document})
         return 0
+    if command == "recovery" and (
+        getattr(args, "recovery_command", None) == "legacy-reconnect-preflight"
+    ):
+        # M21.4.11-R3.3: the preflight is INTRINSICALLY read-only.  The
+        # layout is derived without any filesystem mutation (no mkdir,
+        # touch, chmod, or creation fsync); required existing paths are
+        # validated explicitly and a missing path is an error, never a
+        # repair.  Exit status: 0 = eligible, 2 = ineligible (full JSON
+        # report on stdout) or runtime error.
+        layout = StorageLayout.from_root(loaded.config.data_root)
+        try:
+            if not layout.root.is_dir():
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_PREFLIGHT_LAYOUT_ERROR data root does "
+                    f"not exist: {layout.root}"
+                )
+            if not layout.catalog.is_file():
+                raise LegacyReconnectConflictError(
+                    "RECOVERY_LEGACY_PREFLIGHT_LAYOUT_ERROR Catalog does "
+                    f"not exist: {layout.catalog}"
+                )
+            authority_location = classification_authority_path(
+                config_file=loaded.config_file,
+                data_root=loaded.config.data_root,
+            )
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                authority = LegacyClassificationAuthority.load(
+                    authority_location
+                )
+                report = evaluate_legacy_reconnect_decisions(
+                    catalog=catalog, authority=authority
+                )
+        except LegacyReconnectConflictError as exc:
+            _write_json(
+                {"error": "legacy_reconnect_preflight_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
+        _write_json(
+            {
+                "command": "recovery.legacy-reconnect-preflight",
+                **report.public_dict(),
+            }
+        )
+        return 0 if report.first_corrected_startup_eligible else 2
     if command == "normalize":
         normalize_command = getattr(args, "normalize_command", None)
         if normalize_command == "status":

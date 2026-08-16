@@ -338,6 +338,19 @@ def test_planned_rotation_book_ticker_gap_contract(tmp_path: Path) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # The contract needs exactly ONE planned rotation boundary.
+            # Disable the repeating rotation timer as soon as the
+            # replacement connection connects so a slow event loop (macOS
+            # CI) cannot fire a second rotation before stop propagates.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -348,7 +361,10 @@ def test_planned_rotation_book_ticker_gap_contract(tmp_path: Path) -> None:
             else:
                 yield ScriptedSocket([book_ticker(2)], stop=stop)
 
-        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        collector, catalog, _spool = make_collector(
+            tmp_path, opener=opener, lifecycle_observer=lifecycle
+        )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -371,6 +387,16 @@ def test_planned_rotation_agg_trade_gap_contract(tmp_path: Path) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # One-shot rotation; see the book_ticker contract test.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -382,8 +408,12 @@ def test_planned_rotation_agg_trade_gap_contract(tmp_path: Path) -> None:
                 yield ScriptedSocket([agg_trade(2)], stop=stop)
 
         collector, catalog, _spool = make_collector(
-            tmp_path, opener=opener, stream=UsdMStream.AGG_TRADE
+            tmp_path,
+            opener=opener,
+            stream=UsdMStream.AGG_TRADE,
+            lifecycle_observer=lifecycle,
         )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -466,6 +496,16 @@ def test_planned_rotation_diff_depth_seals_gap_and_retires_session(
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # One-shot rotation; see the book_ticker contract test.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -477,8 +517,12 @@ def test_planned_rotation_diff_depth_seals_gap_and_retires_session(
                 yield ScriptedSocket([diff_depth(2)], stop=stop)
 
         collector, catalog, _spool = make_collector(
-            tmp_path, opener=opener, stream=UsdMStream.DIFF_DEPTH
+            tmp_path,
+            opener=opener,
+            stream=UsdMStream.DIFF_DEPTH,
+            lifecycle_observer=lifecycle,
         )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -3113,8 +3157,9 @@ def _durable_intent(
     generation: int,
     started_at_utc_ns: int,
     stream: str = "book_ticker",
+    intent_schema: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    intent: dict[str, Any] = {
         "required_forced_flags": [RECONNECT_GAP_FLAG],
         "gap_id": gap_id,
         "reason": reason,
@@ -3126,6 +3171,9 @@ def _durable_intent(
         "boundary_kind": "no_last_frame_available",
         "boundary_frame_persisted": False,
     }
+    if intent_schema is not None:
+        intent["intent_schema"] = intent_schema
+    return intent
 
 
 def _started_evidence(intent: dict[str, Any]) -> dict[str, Any]:
@@ -3152,11 +3200,22 @@ def _record_gap(
         "STREAM_DISCONTINUITY_COMPLETED" if completed else "STREAM_DISCONTINUITY_STARTED"
     )
     suffix = "completed" if completed else "started"
+    evidence = _started_evidence(intent)
+    if completed:
+        # The runtime always persists gap_ended_at_utc_ns on COMPLETED;
+        # fixtures model that exact shape (a missing value would make the
+        # pair identity-degraded under R3.3's explicit malformed-authority
+        # policy).
+        evidence.setdefault(
+            "gap_ended_at_utc_ns",
+            int(intent["gap_started_at_utc_ns"]) + 1_000_000_000,
+        )
+    evidence.update(extra)
     catalog.record_operational_event(
         event_id=f"stream-discontinuity-{suffix}:{intent['gap_id']}",
         event_type=event_type,
         occurred_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
-        evidence={**_started_evidence(intent), **extra},
+        evidence=evidence,
     )
 
 
@@ -3854,6 +3913,7 @@ def test_no_writer_marker_crash_before_sealing_restores_exact_gap(
         connection_id="conn-old",
         generation=7,
         started_at_utc_ns=1_000_000_000,
+        intent_schema="reconnect-seal-intent.v2",
     )
     with Catalog(layout.catalog) as catalog:
         spool = StreamSpool(
@@ -4004,6 +4064,7 @@ def test_no_writer_crash_immediately_after_marker_intent_commit_restores_gap(
         connection_id="conn-old",
         generation=2,
         started_at_utc_ns=1_000_000_200,
+        intent_schema="reconnect-seal-intent.v2",
     )
     with Catalog(layout.catalog) as catalog:
         spool = StreamSpool(
@@ -4060,6 +4121,7 @@ def test_no_writer_crash_during_marker_raw_creation_restores_gap(
         connection_id="conn-old",
         generation=3,
         started_at_utc_ns=1_000_000_300,
+        intent_schema="reconnect-seal-intent.v2",
     )
 
     def crashing_writer_factory(**kwargs: Any) -> RawChunkWriter:
@@ -4159,6 +4221,7 @@ def test_recovery_rejects_false_materialization_insert_result(
         connection_id="conn-old",
         generation=5,
         started_at_utc_ns=1_000_000_500,
+        intent_schema="reconnect-seal-intent.v2",
     )
     with Catalog(layout.catalog) as catalog:
         catalog.register_boundary_marker_sealing(
