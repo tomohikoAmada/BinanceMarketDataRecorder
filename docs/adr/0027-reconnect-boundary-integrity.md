@@ -1,7 +1,7 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
-  M21.4.11-R2.1, M21.4.11-R2.2)
+  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
   terminal recovery)
@@ -326,6 +326,62 @@ UNMARKED_RECONNECT / UNKNOWN:
   `manifest_inventory_count`, and `manifest_inventory_sha256`.
 - Catalog summary counts use exact gap_id pairing: `matched_pairs`,
   `unmatched_started`, `unmatched_completed`; never count subtraction.
+
+### Pending-gap extensions and orphan seal-intent prevention (M21.4.11-R3)
+
+A reconnect boundary whose closing attempt delivered no reliable
+first-new frame EXTENDS the already-open pending logical gap: one gap_id,
+one STARTED, one generation transition, one COMPLETED. The extension itself
+must not create a second recoverable logical identity:
+
+- When the boundary is detected while `_pending_gap` is open and the
+  pending gap's first-new marker frame was never enqueued
+  (`_recovery_marker_enqueued` false), the seal intent built for the
+  boundary reuses the pending gap's canonical identity fields (gap_id,
+  reason, original_connection_id, original_generation,
+  gap_started_at_utc_ns). Current-attempt information is preserved as
+  separate observational metadata under the intent's `extension` key
+  (attempt connection, attempt generation, attempt reason, detection
+  time) and never masquerades as the canonical logical-gap identity.
+- Startup recovery therefore sees the marker intent with an OPEN (or
+  later CLOSED) parent lifecycle and never materializes a second STARTED.
+- A boundary detected while the pending gap's first-new marker frame IS
+  enqueued will have that frame persisted during the drain, which
+  completes the parent gap; the boundary is then a genuine new logical
+  discontinuity and keeps its own freshly minted gap identity (intent
+  decision point 2, INV-009/INV-010).
+
+### Legacy extension-orphan recovery (M21.4.11-R3)
+
+The pre-R3 runtime persisted extension intents with a freshly minted
+gap_id that never received a STARTED (production example: the
+2026-08-13T08:20:35Z um_perpetual `book_ticker` session_restart extension
+of gap `70ace625` persisted marker `7223d5ba` with orphan gap_id
+`33e6420b`). Startup recovery recognizes these historical orphan shapes
+from durable evidence alone and ignores them without mutating Catalog
+rows:
+
+- ABSENT intent whose `gap_started_at_utc_ns` lies strictly inside a
+  CLOSED interval of the same market/stream and whose
+  `original_generation` equals that interval's replacement
+  `new_generation` is an extension of the closed parent. A genuine new
+  logical boundary can only be detected after the previous gap completed,
+  so a legitimate intent-only crash timestamp can never satisfy
+  containment.
+- ABSENT intent next to exactly one OPEN gap of the same market/stream
+  with the extension shape (intent started after the parent, generation
+  equal to the parent's replacement generation, and the intent's own
+  SEALING evidence documenting a zero-record marker with
+  `verified_frames == 0`) is an extension of the still-open parent and is
+  ignored. A frame-bearing SEALING evidence cannot be an extension: the
+  genuine ambiguity remains the REQ-104 hard fail-closed conflict.
+- Ignored orphans are reported as `extension_orphan_ignored` recovery
+  actions; they materialize nothing, are idempotent across repeated
+  startups, and are never deleted or edited.
+
+The legitimate REQ-103 intent-only crash case is unchanged: an ABSENT
+intent with no competing open gap and no containing CLOSED interval still
+materializes exactly one STARTED with the same durable gap_id.
 
 ## Alternatives
 

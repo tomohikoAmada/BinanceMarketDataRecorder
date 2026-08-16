@@ -598,13 +598,37 @@ from Raw after a corrected parser is available.
   defense, and the read-only audit tool; the M21.4.11-R1..R5 correction adds
   crash-durable STARTED-before-seal ordering, boundary-local audit
   classification, strictly read-only audit semantics, side-data fail-closed
-  terminal restart, and deterministic canonical audit output. R2/R2.1/R2.2
+  terminal restart, and deterministic canonical audit output.   R2/R2.1/R2.2
   further add SEALING seal-intent recovery keyed by exact gap lifecycle,
   Catalog-first zero-record marker durability, exact operational-event
   idempotency, and logical audit transitions across frame-less chunks. It is
   under review and NOT DEPLOYED.
   Full record:
   `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
+
+  **M21.4.11 formal 72h PASS and M21.4.11-R3 orphan extension-intent P1.**
+  The deployed artifact (`f659895…`) passed its independent formal 72h
+  observational window: process continuity, 27/27 explicit WS transitions,
+  +0 unmarked, 0 false-complete, 27/27 first-new Raw `sequence_gap`.
+  FORMAL_72H_RESULT=PASS. The same review found a latent P1: a reconnect
+  boundary that merely EXTENDS an open pending gap persisted a SEALING seal
+  intent with a freshly minted gap_id and no lifecycle; startup recovery
+  scans every historical SEALING intent and would materialize a phantom
+  `STREAM_DISCONTINUITY_STARTED` on the next service restart (production
+  example: um_perpetual `book_ticker` 2026-08-13T08:20:35Z, orphan gap_id
+  `33e6420b`, marker `7223d5ba`, parent `70ace625`). The 168h gate
+  requires a controlled service restart, so
+  ELIGIBLE_FOR_168H=false for `f659895…`. The M21.4.11-R3 correction makes
+  extension intents reuse the canonical pending-gap identity (attempt
+  metadata under a separate `extension` key) and teaches startup recovery
+  to recognize legacy orphan shapes from durable evidence without phantom
+  materialization; REQ-103 intent-only crash recovery is preserved. It is
+  under review and NOT DEPLOYED. Production validation for the corrected
+  artifact is PENDING: after review, merge, and separately authorized
+  deployment, the NEW artifact must re-execute the full staged chain
+  (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
+  See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
+  Legacy extension-orphan recovery (M21.4.11-R3)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute

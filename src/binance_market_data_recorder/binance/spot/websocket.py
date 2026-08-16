@@ -30,7 +30,7 @@ import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from dataclasses import dataclass, replace
-from typing import Protocol
+from typing import Protocol, cast
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
@@ -539,9 +539,44 @@ class SpotStreamCollector:
         pending discontinuity from this evidence (P1-A, INV-005/INV-007). The
         gap_id is minted once per boundary and shared with the STARTED/
         COMPLETED pair (INV-010, REQ-106).
+
+        If the boundary merely EXTENDS an already-open pending logical gap
+        (the pending gap's first-new replacement frame was never even
+        enqueued), the intent reuses the pending gap's canonical identity
+        (gap_id, reason, original connection, original generation, start
+        time) so startup recovery can never interpret the extension as an
+        independent second gap (M21.4.11-R3 P1-001).  Current-attempt
+        information stays observable under the separate ``extension`` key
+        and never masquerades as the canonical logical-gap identity.
         """
         if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
             return None
+        if self._pending_gap is not None and not self._recovery_marker_enqueued:
+            parent = self._pending_gap
+            return {
+                "required_forced_flags": sorted(self._forced_seal_flags),
+                "gap_id": str(parent["gap_id"]),
+                "reason": str(parent["reason"]),
+                "market": "spot",
+                "stream": self.stream.value,
+                "original_connection_id": str(
+                    parent["original_connection_id"]
+                ),
+                "original_generation": int(
+                    cast(int, parent["original_generation"])
+                ),
+                "gap_started_at_utc_ns": int(
+                    cast(int, parent["gap_started_at_utc_ns"])
+                ),
+                "boundary_kind": "no_last_frame_available",
+                "boundary_frame_persisted": False,
+                "extension": {
+                    "attempt_connection_id": self._boundary_connection_id,
+                    "attempt_generation": self._generation,
+                    "attempt_reason": outcome,
+                    "detected_at_utc_ns": self._boundary_detected_at_utc_ns,
+                },
+            }
         intent: dict[str, object] = {
             "required_forced_flags": sorted(self._forced_seal_flags),
             "gap_id": str(uuid4()),

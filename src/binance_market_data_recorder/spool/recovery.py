@@ -413,7 +413,14 @@ def _derived_seal_flags(
     """
     with partial_path.open("rb", buffering=0) as source:
         header, _body = decode_chunk_header(source)
-    intent = _sealing_intent(catalog, chunk_id)
+    evidence = _sealing_evidence(catalog, chunk_id)
+    intent = (
+        evidence.get(SEAL_INTENT_EVIDENCE_KEY) if evidence is not None else None
+    )
+    if intent is not None and not isinstance(intent, dict):
+        raise RecoveryConflictError(
+            f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
+        )
     open_gaps = catalog.unclosed_stream_discontinuities(
         market=header.market, stream=header.stream
     )
@@ -427,7 +434,12 @@ def _derived_seal_flags(
             else frozenset()
         )
         lifecycle = _materialize_started_if_absent(
-            catalog, intent, chunk_id=chunk_id
+            catalog,
+            intent,
+            chunk_id=chunk_id,
+            verified_frames=(
+                evidence.get("verified_frames") if evidence is not None else None
+            ),
         )
         open_gaps = catalog.unclosed_stream_discontinuities(
             market=header.market, stream=header.stream
@@ -446,20 +458,13 @@ def _derived_seal_flags(
     return required
 
 
-def _sealing_intent(
+def _sealing_evidence(
     catalog: Catalog, chunk_id: str
 ) -> dict[str, object] | None:
     evidence = catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING)
     if not evidence:
         return None
-    intent = evidence.get(SEAL_INTENT_EVIDENCE_KEY)
-    if intent is None:
-        return None
-    if not isinstance(intent, dict):
-        raise RecoveryConflictError(
-            f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
-        )
-    return intent
+    return evidence
 
 
 def _validate_seal_intent(
@@ -520,7 +525,11 @@ def _validate_seal_intent(
 
 
 def _materialize_started_if_absent(
-    catalog: Catalog, intent: dict[str, object], *, chunk_id: str
+    catalog: Catalog,
+    intent: dict[str, object],
+    *,
+    chunk_id: str,
+    verified_frames: object = None,
 ) -> str:
     """Reconcile a durable seal intent against its exact gap lifecycle.
 
@@ -548,6 +557,15 @@ def _materialize_started_if_absent(
       gap_id (REQ-103, INV-001).
     - ABSENT while a genuinely different unmatched gap exists: a true
       competing open gap; fail closed instead of guessing (REQ-104, INV-005).
+
+    M21.4.11-R3 P1-001 adds one more ABSENT classification: an intent whose
+    timestamp lies strictly inside a CLOSED interval of the same stream with
+    a matching replacement generation, or whose zero-record marker extends a
+    still-OPEN parent gap with the exact extension shape, is a pending-gap
+    EXTENSION from the pre-fix runtime.  It never represented an independent
+    logical gap: startup recovery reports it as ``extension_orphan_ignored``
+    and materializes nothing, so the next service restart cannot create a
+    phantom discontinuity (INV-002/INV-006).
     """
     market = str(intent["market"])
     stream = str(intent["stream"])
@@ -567,11 +585,19 @@ def _materialize_started_if_absent(
         _validate_intent_agreement(intent, event, chunk_id)
         return "open"
     if open_gaps:
+        if _is_extension_orphan_of_open_gap(
+            intent,
+            open_gaps,
+            verified_frames=verified_frames,
+        ):
+            return "extension_orphan_ignored"
         raise RecoveryConflictError(
             "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
             f"gap_id={gap_id} market={market} stream={stream} chunk={chunk_id} "
             "competing unmatched discontinuity exists"
         )
+    if _is_extension_orphan_of_closed_interval(catalog, intent):
+        return "extension_orphan_ignored"
     catalog.ensure_operational_event(
         event_id=f"stream-discontinuity-started:{gap_id}",
         event_type="STREAM_DISCONTINUITY_STARTED",
@@ -597,6 +623,98 @@ def _materialize_started_if_absent(
         },
     )
     return "materialized"
+
+
+def _intent_extension_timestamps(
+    intent: dict[str, object],
+) -> tuple[int, int] | None:
+    started_at = intent["gap_started_at_utc_ns"]
+    generation = intent["original_generation"]
+    if (
+        isinstance(started_at, bool)
+        or not isinstance(started_at, int)
+        or isinstance(generation, bool)
+        or not isinstance(generation, int)
+    ):
+        return None
+    return started_at, generation
+
+
+def _is_extension_orphan_of_closed_interval(
+    catalog: Catalog, intent: dict[str, object]
+) -> bool:
+    """Recognize a pre-fix pending-gap extension intent next to its CLOSED parent.
+
+    The pre-fix runtime persisted a freshly minted gap identity whenever a
+    boundary extended an open pending gap.  The extension attempt runs at the
+    parent's replacement generation and is detected strictly between the
+    parent's STARTED and COMPLETED timestamps.  A genuine new logical
+    boundary can only be detected after the previous gap completed, so a
+    legitimate intent-only crash timestamp can never satisfy containment;
+    generation agreement additionally narrows the rule (M21.4.11-R3
+    P1-001).
+    """
+    timestamps = _intent_extension_timestamps(intent)
+    if timestamps is None:
+        return False
+    started_at, generation = timestamps
+    for interval in catalog.closed_stream_discontinuity_intervals(
+        market=str(intent["market"]), stream=str(intent["stream"])
+    ):
+        interval_started = int(cast(int, interval["started_at_utc_ns"]))
+        interval_ended = int(cast(int, interval["ended_at_utc_ns"]))
+        interval_generation = int(cast(int, interval["new_generation"]))
+        if (
+            interval_started < started_at < interval_ended
+            and interval_generation == generation
+        ):
+            return True
+    return False
+
+
+def _is_extension_orphan_of_open_gap(
+    intent: dict[str, object],
+    open_gaps: list[dict[str, object]],
+    *,
+    verified_frames: object,
+) -> bool:
+    """Recognize a pre-fix extension intent whose parent gap is still OPEN.
+
+    A crash inside the extension window leaves exactly one open parent gap
+    plus an orphan intent.  The extension shape is: the intent started after
+    the parent, its generation is the parent's replacement generation (no
+    bump for extensions), and the intent's own SEALING evidence documents a
+    zero-frame boundary marker (``verified_frames == 0``; an extension
+    attempt delivered no frames, so no writer existed and a zero-record
+    boundary marker carried the intent).  A frame-bearing SEALING evidence
+    cannot be an extension: the genuine ambiguity stays the REQ-104 hard
+    conflict instead of guessing.
+    """
+    if len(open_gaps) != 1:
+        return False
+    timestamps = _intent_extension_timestamps(intent)
+    if timestamps is None:
+        return False
+    started_at, generation = timestamps
+    evidence = open_gaps[0].get("evidence")
+    if not isinstance(evidence, dict):
+        return False
+    parent_started = evidence.get("gap_started_at_utc_ns")
+    parent_generation = evidence.get("original_generation")
+    if (
+        isinstance(parent_started, bool)
+        or not isinstance(parent_started, int)
+        or isinstance(parent_generation, bool)
+        or not isinstance(parent_generation, int)
+        or parent_started >= started_at
+        or generation != parent_generation + 1
+    ):
+        return False
+    return (
+        not isinstance(verified_frames, bool)
+        and isinstance(verified_frames, int)
+        and verified_frames == 0
+    )
 
 
 def _validate_intent_agreement(
@@ -660,14 +778,25 @@ def _materialize_pending_discontinuities(
                 f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
             )
         _validate_seal_intent(intent, chunk_id)
-        if (
-            _materialize_started_if_absent(catalog, intent, chunk_id=chunk_id)
-            == "materialized"
-        ):
+        lifecycle = _materialize_started_if_absent(
+            catalog,
+            intent,
+            chunk_id=chunk_id,
+            verified_frames=evidence.get("verified_frames"),
+        )
+        if lifecycle == "materialized":
             actions.append(
                 RecoveryAction(
                     chunk_id,
                     "pending_discontinuity_materialized",
+                    str(intent["gap_id"]),
+                )
+            )
+        elif lifecycle == "extension_orphan_ignored":
+            actions.append(
+                RecoveryAction(
+                    chunk_id,
+                    "extension_orphan_ignored",
                     str(intent["gap_id"]),
                 )
             )

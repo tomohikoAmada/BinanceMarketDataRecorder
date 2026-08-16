@@ -650,6 +650,87 @@ class Catalog:
             )
         ]
 
+    def closed_stream_discontinuity_intervals(
+        self, *, market: str, stream: str
+    ) -> list[dict[str, object]]:
+        """Return paired (STARTED, COMPLETED) intervals for one market/stream.
+
+        Each interval is exactly one logical reconnect discontinuity whose
+        lifecycle is CLOSED.  The caller keys extension-orphan recognition
+        on these intervals (M21.4.11-R3 P1-001): an ABSENT seal-intent whose
+        ``gap_started_at_utc_ns`` lies strictly inside a CLOSED interval of
+        the same stream and whose generation equals the interval's
+        replacement generation was a pending-gap extension, never an
+        independent logical gap.  Intervals lacking either timestamp or a
+        ``new_generation`` are omitted: recognition must never guess.
+        """
+        if not market or not stream:
+            raise ValueError("market and stream must be non-empty")
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT event_type, occurred_at_utc_ns, evidence_json
+                FROM operational_events
+                WHERE event_type IN (
+                    'STREAM_DISCONTINUITY_STARTED',
+                    'STREAM_DISCONTINUITY_COMPLETED'
+                )
+                ORDER BY occurred_at_utc_ns, event_id
+                """
+            ).fetchall()
+        started_by_gap: dict[str, dict[str, object]] = {}
+        completed_by_gap: dict[str, dict[str, object]] = {}
+        for row in rows:
+            evidence = json.loads(str(row["evidence_json"]))
+            if not isinstance(evidence, dict):
+                continue
+            if evidence.get("market") != market or evidence.get("stream") != stream:
+                continue
+            gap_id = evidence.get("gap_id")
+            if not isinstance(gap_id, str) or not gap_id:
+                continue
+            document = {
+                "occurred_at_utc_ns": int(row["occurred_at_utc_ns"]),
+                "evidence": evidence,
+            }
+            if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_by_gap[gap_id] = document
+            else:
+                started_by_gap[gap_id] = document
+        intervals: list[dict[str, object]] = []
+        for gap_id, started in sorted(started_by_gap.items()):
+            completed = completed_by_gap.get(gap_id)
+            if completed is None:
+                continue
+            started_evidence = started["evidence"]
+            completed_evidence = completed["evidence"]
+            if not isinstance(started_evidence, dict) or not isinstance(
+                completed_evidence, dict
+            ):
+                continue
+            started_at = started_evidence.get("gap_started_at_utc_ns")
+            ended_at = completed_evidence.get("gap_ended_at_utc_ns")
+            new_generation = completed_evidence.get("new_generation")
+            if (
+                not isinstance(started_at, int)
+                or isinstance(started_at, bool)
+                or not isinstance(ended_at, int)
+                or isinstance(ended_at, bool)
+                or not isinstance(new_generation, int)
+                or isinstance(new_generation, bool)
+                or ended_at <= started_at
+            ):
+                continue
+            intervals.append(
+                {
+                    "gap_id": gap_id,
+                    "started_at_utc_ns": started_at,
+                    "ended_at_utc_ns": ended_at,
+                    "new_generation": new_generation,
+                }
+            )
+        return intervals
+
     def stream_discontinuity_lifecycle(
         self, *, market: str, stream: str, gap_id: str
     ) -> str:
