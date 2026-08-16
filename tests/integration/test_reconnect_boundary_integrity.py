@@ -338,6 +338,19 @@ def test_planned_rotation_book_ticker_gap_contract(tmp_path: Path) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # The contract needs exactly ONE planned rotation boundary.
+            # Disable the repeating rotation timer as soon as the
+            # replacement connection connects so a slow event loop (macOS
+            # CI) cannot fire a second rotation before stop propagates.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -348,7 +361,10 @@ def test_planned_rotation_book_ticker_gap_contract(tmp_path: Path) -> None:
             else:
                 yield ScriptedSocket([book_ticker(2)], stop=stop)
 
-        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        collector, catalog, _spool = make_collector(
+            tmp_path, opener=opener, lifecycle_observer=lifecycle
+        )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -371,6 +387,16 @@ def test_planned_rotation_agg_trade_gap_contract(tmp_path: Path) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # One-shot rotation; see the book_ticker contract test.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -382,8 +408,12 @@ def test_planned_rotation_agg_trade_gap_contract(tmp_path: Path) -> None:
                 yield ScriptedSocket([agg_trade(2)], stop=stop)
 
         collector, catalog, _spool = make_collector(
-            tmp_path, opener=opener, stream=UsdMStream.AGG_TRADE
+            tmp_path,
+            opener=opener,
+            stream=UsdMStream.AGG_TRADE,
+            lifecycle_observer=lifecycle,
         )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -466,6 +496,16 @@ def test_planned_rotation_diff_depth_seals_gap_and_retires_session(
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
+        connections = 0
+        collector_ref: list[Any] = []
+
+        def lifecycle(event: str) -> None:
+            # One-shot rotation; see the book_ticker contract test.
+            nonlocal connections
+            if event == "connected":
+                connections += 1
+                if connections >= 2 and collector_ref:
+                    collector_ref[0].planned_rotation_seconds = 3600
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -477,8 +517,12 @@ def test_planned_rotation_diff_depth_seals_gap_and_retires_session(
                 yield ScriptedSocket([diff_depth(2)], stop=stop)
 
         collector, catalog, _spool = make_collector(
-            tmp_path, opener=opener, stream=UsdMStream.DIFF_DEPTH
+            tmp_path,
+            opener=opener,
+            stream=UsdMStream.DIFF_DEPTH,
+            lifecycle_observer=lifecycle,
         )
+        collector_ref.append(collector)
         collector.planned_rotation_seconds = 0.02
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
