@@ -134,6 +134,20 @@ approaches the hard reserve.
   deletion of an unverified source.
 - A reinserted registered disk is resolved by volume UUID and marker, not by a
   fixed `/Volumes/<name>` assumption.
+- **Legacy reconnect classification (M21.4.11-R3.1).** UTC wall-clock
+  timestamps never prove causal order, so a historical SEALING seal intent
+  whose durable identity matches the pre-fix pending-gap extension shape
+  (parent generation, different connection, zero-record marker, wall
+  timestamp inside a closed parent interval) is ambiguous: startup recovery
+  fails closed with `RECOVERY_LEGACY_ORPHAN_AMBIGUOUS` instead of guessing.
+  The operator resolves it by adding a reviewed entry to the additive file
+  `legacy_reconnect_classifications.json` in the data root (schema
+  `legacy-reconnect-classification.v1`, entries keyed by
+  `gap_id`/`market`/`stream` with classification `extension_orphan` or
+  `legitimate_req103`). The recorder never writes or edits this file; a
+  malformed or duplicate authority fails recovery closed. Classify only
+  after reading ADR-0027 "Legacy extension-orphan recovery (M21.4.11-R3,
+  corrected M21.4.11-R3.1)".
 
 See [data and storage](data_and_storage.md) for artifact guarantees and
 [known limitations](known_limitations.md) before operating the preview.

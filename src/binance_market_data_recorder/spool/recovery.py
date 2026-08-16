@@ -64,6 +64,239 @@ class RecoveryConflictError(CatalogStateError):
     """Raised when a manifest contradicts immutable Catalog identity."""
 
 
+#: Operator-maintained additive legacy classification authority file inside
+#: the data root. Recovery only reads it; the recorder never writes it.
+LEGACY_CLASSIFICATION_FILENAME = "legacy_reconnect_classifications.json"
+_LEGACY_CLASSIFICATION_SCHEMA = "legacy-reconnect-classification.v1"
+_LEGACY_CLASSIFICATION_KINDS = frozenset(
+    {"extension_orphan", "legitimate_req103"}
+)
+
+
+class LegacyClassificationAuthority:
+    """Operator-reviewed additive authority for legacy reconnect intents.
+
+    UTC wall-clock timestamps can never prove whether a historical ABSENT
+    seal intent was a pending-gap extension orphan or a legitimate
+    intent-only crash.  The one sound resolution for the ambiguous legacy
+    shape is an explicit, operator-reviewed classification persisted in
+    ``legacy_reconnect_classifications.json`` inside the data root:
+
+    - ``extension_orphan``: the operator proved the gap_id extends a parent
+      gap and never represented an independent discontinuity; recovery
+      ignores it without mutating Catalog rows.
+    - ``legitimate_req103``: the operator proved the gap_id is a genuine
+      intent-only crash; recovery materializes exactly one STARTED.
+
+    The authority is additive and clock-independent: it is honored before
+    any interval heuristic, it never depends on wall-time ordering, and
+    recovery never edits or deletes it.  A malformed or conflicting file
+    fails closed.
+    """
+
+    def __init__(
+        self, classifications: dict[tuple[str, str, str], str]
+    ) -> None:
+        self._classifications = dict(classifications)
+
+    @classmethod
+    def load(cls, layout: StorageLayout) -> LegacyClassificationAuthority:
+        path = layout.root / LEGACY_CLASSIFICATION_FILENAME
+        if not path.exists():
+            return cls({})
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: cannot parse authority document: {exc}"
+            ) from exc
+        if not isinstance(document, dict):
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: authority must be a JSON object"
+            )
+        if set(document.keys()) != {"schema", "classifications"}:
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: authority must contain exactly schema and "
+                "classifications"
+            )
+        if document["schema"] != _LEGACY_CLASSIFICATION_SCHEMA:
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: unsupported authority schema"
+            )
+        entries = document["classifications"]
+        if not isinstance(entries, list):
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                f"path={path}: classifications must be a list"
+            )
+        classified: dict[tuple[str, str, str], str] = {}
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} must be an object"
+                )
+            if set(entry.keys()) - {"gap_id", "market", "stream", "classification", "note"}:
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} carries unknown keys"
+                )
+            gap_id = entry.get("gap_id")
+            market = entry.get("market")
+            stream = entry.get("stream")
+            classification = entry.get("classification")
+            note = entry.get("note")
+            if (
+                not isinstance(gap_id, str)
+                or not gap_id
+                or not isinstance(market, str)
+                or not market
+                or not isinstance(stream, str)
+                or not stream
+            ):
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} has invalid identity"
+                )
+            if classification not in _LEGACY_CLASSIFICATION_KINDS:
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} has unknown classification "
+                    f"{classification!r}"
+                )
+            if note is not None and not isinstance(note, str):
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: entry {index} note must be text"
+                )
+            key = (gap_id, market, stream)
+            if key in classified:
+                raise RecoveryConflictError(
+                    "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
+                    f"path={path}: duplicate classification for {gap_id}"
+                )
+            classified[key] = classification
+        return cls(classified)
+
+    def lookup(
+        self, *, gap_id: str, market: str, stream: str
+    ) -> str | None:
+        return self._classifications.get((gap_id, market, stream))
+
+
+@dataclass(frozen=True)
+class ClosedDiscontinuityInterval:
+    """One exactly-paired CLOSED reconnect interval with full durable identity.
+
+    Wall timestamps are observational evidence only; connection and
+    generation identity are the causal authority (M21.4.11-R3.1).
+    """
+
+    gap_id: str
+    started_at_utc_ns: int
+    ended_at_utc_ns: int
+    original_connection_id: str
+    original_generation: int
+    new_connection_id: str
+    new_generation: int
+
+    @classmethod
+    def from_row(
+        cls, row: dict[str, object]
+    ) -> ClosedDiscontinuityInterval | None:
+        gap_id = row.get("gap_id")
+        started_at = row.get("started_at_utc_ns")
+        ended_at = row.get("ended_at_utc_ns")
+        original_connection = row.get("original_connection_id")
+        original_generation = row.get("original_generation")
+        new_connection = row.get("new_connection_id")
+        new_generation = row.get("new_generation")
+        if (
+            not isinstance(gap_id, str)
+            or not gap_id
+            or isinstance(started_at, bool)
+            or not isinstance(started_at, int)
+            or isinstance(ended_at, bool)
+            or not isinstance(ended_at, int)
+            or ended_at <= started_at
+            or not isinstance(original_connection, str)
+            or not original_connection
+            or isinstance(original_generation, bool)
+            or not isinstance(original_generation, int)
+            or original_generation < 0
+            or not isinstance(new_connection, str)
+            or not new_connection
+            or isinstance(new_generation, bool)
+            or not isinstance(new_generation, int)
+            or new_generation < 0
+        ):
+            return None
+        return cls(
+            gap_id=gap_id,
+            started_at_utc_ns=started_at,
+            ended_at_utc_ns=ended_at,
+            original_connection_id=original_connection,
+            original_generation=original_generation,
+            new_connection_id=new_connection,
+            new_generation=new_generation,
+        )
+
+
+class ClosedIntervalIndex:
+    """CLOSED-interval evidence built once per startup recovery pass.
+
+    Closed intervals are immutable during one recovery pass: recovery never
+    writes STREAM_DISCONTINUITY_COMPLETED, and a materialized STARTED alone
+    cannot close an interval.  A single Catalog query therefore serves every
+    candidate classification in the pass (no O(K x E) rebuild); the index is
+    never cached across passes.
+    """
+
+    def __init__(self, catalog: Catalog) -> None:
+        by_key: dict[
+            tuple[str, str], tuple[ClosedDiscontinuityInterval, ...]
+        ] = {}
+        grouped = catalog.closed_stream_discontinuity_intervals_by_stream()
+        for (market, stream), rows in grouped.items():
+            intervals = tuple(
+                interval
+                for row in rows
+                if (interval := ClosedDiscontinuityInterval.from_row(row))
+                is not None
+            )
+            if intervals:
+                by_key[(market, stream)] = intervals
+        self._by_key = by_key
+
+    def intervals(
+        self, *, market: str, stream: str
+    ) -> tuple[ClosedDiscontinuityInterval, ...]:
+        return self._by_key.get((market, stream), ())
+
+
+@dataclass(frozen=True)
+class RecoveryDecisionContext:
+    """Immutable per-pass decision inputs for startup recovery."""
+
+    catalog: Catalog
+    classifications: LegacyClassificationAuthority
+    intervals: ClosedIntervalIndex
+
+    @classmethod
+    def build(
+        cls, *, layout: StorageLayout, catalog: Catalog
+    ) -> RecoveryDecisionContext:
+        return cls(
+            catalog=catalog,
+            classifications=LegacyClassificationAuthority.load(layout),
+            intervals=ClosedIntervalIndex(catalog),
+        )
+
+
 _ARCHIVE_STATES = frozenset(ARCHIVE_CHUNK_STATES.values())
 _CHUNK_TO_ARCHIVE_STATE = {
     chunk_state: archive_state
@@ -386,6 +619,8 @@ def _derived_seal_flags(
     partial_path: Path,
     catalog: Catalog,
     chunk_id: str,
+    *,
+    context: RecoveryDecisionContext,
 ) -> frozenset[str]:
     """Derive fail-closed seal flags from durable reconnect-boundary authority.
 
@@ -440,6 +675,7 @@ def _derived_seal_flags(
             verified_frames=(
                 evidence.get("verified_frames") if evidence is not None else None
             ),
+            context=context,
         )
         open_gaps = catalog.unclosed_stream_discontinuities(
             market=header.market, stream=header.stream
@@ -530,10 +766,12 @@ def _materialize_started_if_absent(
     *,
     chunk_id: str,
     verified_frames: object = None,
+    context: RecoveryDecisionContext | None = None,
 ) -> str:
     """Reconcile a durable seal intent against its exact gap lifecycle.
 
-    Returns ``"closed"``, ``"open"``, or ``"materialized"``.
+    Returns ``"closed"``, ``"open"``, ``"materialized"``, or
+    ``"extension_orphan_ignored"``.
 
     P1-A double fault: the SEALING intent is durable but the Catalog
     STREAM_DISCONTINUITY_STARTED event never committed. The pending
@@ -558,14 +796,29 @@ def _materialize_started_if_absent(
     - ABSENT while a genuinely different unmatched gap exists: a true
       competing open gap; fail closed instead of guessing (REQ-104, INV-005).
 
-    M21.4.11-R3 P1-001 adds one more ABSENT classification: an intent whose
-    timestamp lies strictly inside a CLOSED interval of the same stream with
-    a matching replacement generation, or whose zero-record marker extends a
-    still-OPEN parent gap with the exact extension shape, is a pending-gap
-    EXTENSION from the pre-fix runtime.  It never represented an independent
-    logical gap: startup recovery reports it as ``extension_orphan_ignored``
-    and materializes nothing, so the next service restart cannot create a
-    phantom discontinuity (INV-002/INV-006).
+    M21.4.11-R3.1 replaces the earlier closed-parent legacy orphan
+    discriminator, which used UTC wall-clock containment plus generation
+    equality as causal proof.  UTC receive timestamps are observational
+    evidence, never causal-ordering authority (ADR-0004): wall time may
+    step backwards, so a legitimate post-completion boundary can carry a
+    timestamp inside a closed parent interval.  The corrected rules:
+
+    - An intent explicitly classified ``extension_orphan`` by the
+      operator-reviewed additive authority is ignored (clock-independent).
+    - Against CLOSED intervals, an intent is proven legitimate when its
+      ``verified_frames`` is a trustworthy integer greater than zero (an
+      extension attempt always seals a zero-record marker), or when its
+      ``original_connection_id`` equals the interval's
+      ``new_connection_id`` at the matching generation (an extension
+      attempt's connection closed without delivering the first-new frame
+      and can never be the connection that completed the parent).
+    - An intent with a matching generation, a different connection, zero
+      frames, and a wall timestamp inside the parent interval matches the
+      legacy orphan shape but cannot be proven an orphan: the same shape is
+      reachable by a legitimate post-restart boundary with a reused
+      generation.  Recovery fails closed and requires the explicit
+      classification instead of guessing.
+    - Wall-clock containment never silently discards lifecycle authority.
     """
     market = str(intent["market"])
     stream = str(intent["stream"])
@@ -575,6 +828,14 @@ def _materialize_started_if_absent(
     )
     if lifecycle == "CLOSED":
         return "closed"
+    if context is None:
+        raise RecoveryConflictError(
+            "RECOVERY_SEAL_INTENT_CONTEXT_MISSING "
+            f"chunk={chunk_id} gap_id={gap_id}"
+        )
+    classification = context.classifications.lookup(
+        gap_id=gap_id, market=market, stream=stream
+    )
     open_gaps = catalog.unclosed_stream_discontinuities(
         market=market, stream=stream
     )
@@ -584,6 +845,8 @@ def _materialize_started_if_absent(
             continue
         _validate_intent_agreement(intent, event, chunk_id)
         return "open"
+    if classification == "extension_orphan":
+        return "extension_orphan_ignored"
     if open_gaps:
         if _is_extension_orphan_of_open_gap(
             intent,
@@ -596,16 +859,31 @@ def _materialize_started_if_absent(
             f"gap_id={gap_id} market={market} stream={stream} chunk={chunk_id} "
             "competing unmatched discontinuity exists"
         )
-    if _is_extension_orphan_of_closed_interval(catalog, intent):
-        return "extension_orphan_ignored"
+    if classification == "legitimate_req103":
+        return _record_started_from_intent(catalog, intent)
+    _resolve_closed_parent(
+        intent,
+        context.intervals.intervals(market=market, stream=stream),
+        verified_frames=verified_frames,
+        chunk_id=chunk_id,
+        market=market,
+        stream=stream,
+    )
+    return _record_started_from_intent(catalog, intent)
+
+
+def _record_started_from_intent(
+    catalog: Catalog, intent: dict[str, object]
+) -> str:
+    gap_id = str(intent["gap_id"])
     catalog.ensure_operational_event(
         event_id=f"stream-discontinuity-started:{gap_id}",
         event_type="STREAM_DISCONTINUITY_STARTED",
         occurred_at_utc_ns=int(cast(int, intent["gap_started_at_utc_ns"])),
         evidence={
             "gap_id": gap_id,
-            "market": market,
-            "stream": stream,
+            "market": intent["market"],
+            "stream": intent["stream"],
             "reason": intent["reason"],
             "interval_classification": "UNRELIABLE",
             "gap_started_at_utc_ns": intent["gap_started_at_utc_ns"],
@@ -625,6 +903,84 @@ def _materialize_started_if_absent(
     return "materialized"
 
 
+def _trustworthy_verified_frames(value: object) -> int | None:
+    """Trustworthy ``verified_frames`` from SEALING evidence, or None.
+
+    A missing, non-integer, boolean, or negative value is NOT treated as
+    zero (M21.4.11-R3.1): malformed evidence can prove nothing and
+    classification must not treat it as a zero-record marker.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def _resolve_closed_parent(
+    intent: dict[str, object],
+    intervals: tuple[ClosedDiscontinuityInterval, ...],
+    *,
+    verified_frames: object,
+    chunk_id: str,
+    market: str,
+    stream: str,
+) -> None:
+    """Decide an ABSENT intent against CLOSED intervals of the same stream.
+
+    Returns normally when the intent is a legitimate REQ-103 boundary (the
+    caller materializes it); raises ``RecoveryConflictError`` when the
+    durable identity matches the legacy pending-gap extension shape but
+    cannot prove it is not an independent discontinuity.
+
+    Sound identity rules (M21.4.11-R3.1):
+
+    - ``verified_frames > 0``: the boundary drained a frame-bearing
+      generation.  An extension attempt delivered no frames and always
+      seals a zero-record marker, so the intent cannot be an extension.
+    - ``original_connection_id == interval.new_connection_id`` at the same
+      ``original_generation``: the boundary was detected on the exact
+      connection whose first frame completed the parent.  An extension
+      attempt's connection closed before delivering that frame and can
+      never be the completing connection.
+    - Any ``original_generation`` other than the interval's
+      ``new_generation`` cannot be a legacy extension: extensions always
+      run at the parent's replacement generation.
+
+    Wall-clock containment is an engagement predicate only, never
+    suppression authority: when the remaining candidate matches the orphan
+    shape (matching generation, different connection, zero frames) and its
+    wall timestamp lies inside the parent interval, a legitimate
+    post-restart boundary with a reused generation is indistinguishable
+    from the legacy orphan, so recovery fails closed and requires the
+    explicit operator classification instead of guessing.
+    """
+    generation = int(cast(int, intent["original_generation"]))
+    connection = str(intent["original_connection_id"])
+    started_at = int(cast(int, intent["gap_started_at_utc_ns"]))
+    frames = _trustworthy_verified_frames(verified_frames)
+    if frames is not None and frames > 0:
+        return
+    for interval in intervals:
+        if (
+            interval.new_generation == generation
+            and connection == interval.new_connection_id
+        ):
+            return
+    for interval in intervals:
+        if interval.new_generation != generation:
+            continue
+        if interval.started_at_utc_ns < started_at < interval.ended_at_utc_ns:
+            raise RecoveryConflictError(
+                "RECOVERY_LEGACY_ORPHAN_AMBIGUOUS "
+                f"gap_id={intent['gap_id']} market={market} stream={stream} "
+                f"chunk={chunk_id} parent_gap_id={interval.gap_id}: durable "
+                "identity matches the legacy pending-gap extension shape "
+                "but cannot prove the intent is not an independent "
+                "discontinuity; add an explicit operator-reviewed entry to "
+                f"{LEGACY_CLASSIFICATION_FILENAME} (extension_orphan or "
+                "legitimate_req103) instead of guessing"
+            )
+
+
 def _intent_extension_timestamps(
     intent: dict[str, object],
 ) -> tuple[int, int] | None:
@@ -638,38 +994,6 @@ def _intent_extension_timestamps(
     ):
         return None
     return started_at, generation
-
-
-def _is_extension_orphan_of_closed_interval(
-    catalog: Catalog, intent: dict[str, object]
-) -> bool:
-    """Recognize a pre-fix pending-gap extension intent next to its CLOSED parent.
-
-    The pre-fix runtime persisted a freshly minted gap identity whenever a
-    boundary extended an open pending gap.  The extension attempt runs at the
-    parent's replacement generation and is detected strictly between the
-    parent's STARTED and COMPLETED timestamps.  A genuine new logical
-    boundary can only be detected after the previous gap completed, so a
-    legitimate intent-only crash timestamp can never satisfy containment;
-    generation agreement additionally narrows the rule (M21.4.11-R3
-    P1-001).
-    """
-    timestamps = _intent_extension_timestamps(intent)
-    if timestamps is None:
-        return False
-    started_at, generation = timestamps
-    for interval in catalog.closed_stream_discontinuity_intervals(
-        market=str(intent["market"]), stream=str(intent["stream"])
-    ):
-        interval_started = int(cast(int, interval["started_at_utc_ns"]))
-        interval_ended = int(cast(int, interval["ended_at_utc_ns"]))
-        interval_generation = int(cast(int, interval["new_generation"]))
-        if (
-            interval_started < started_at < interval_ended
-            and interval_generation == generation
-        ):
-            return True
-    return False
 
 
 def _is_extension_orphan_of_open_gap(
@@ -753,7 +1077,7 @@ def _validate_intent_agreement(
 
 
 def _materialize_pending_discontinuities(
-    *, catalog: Catalog
+    *, catalog: Catalog, context: RecoveryDecisionContext
 ) -> list[RecoveryAction]:
     """Reconstruct pending discontinuities from all durable SEALING intents.
 
@@ -767,6 +1091,10 @@ def _materialize_pending_discontinuities(
     STARTED is validated for exact identity agreement, and an intent-only gap
     is materialized with the same gap_id unless a genuinely different
     unmatched gap fails the recovery closed.
+
+    The CLOSED interval index and the legacy classification authority are
+    shared across every candidate in the pass (M21.4.11-R3.1/P2): candidate
+    classification never rebuilds the full interval history.
     """
     actions: list[RecoveryAction] = []
     for chunk_id, evidence in catalog.sealing_transition_evidence():
@@ -783,6 +1111,7 @@ def _materialize_pending_discontinuities(
             intent,
             chunk_id=chunk_id,
             verified_frames=evidence.get("verified_frames"),
+            context=context,
         )
         if lifecycle == "materialized":
             actions.append(
@@ -806,8 +1135,11 @@ def _materialize_pending_discontinuities(
 def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
     """Run the complete M3 startup reconciliation in a stable order."""
 
+    context = RecoveryDecisionContext.build(layout=layout, catalog=catalog)
     actions = recover_partials(layout=layout, catalog=catalog)
-    actions.extend(_materialize_pending_discontinuities(catalog=catalog))
+    actions.extend(
+        _materialize_pending_discontinuities(catalog=catalog, context=context)
+    )
     for row in catalog.chunks_in_states(ChunkState.SEALING):
         partial_value = row.get("partial_path")
         if not isinstance(partial_value, str) or not partial_value:
@@ -820,7 +1152,9 @@ def recover_storage(*, layout: StorageLayout, catalog: Catalog) -> list[Recovery
             partial_path,
             layout=layout,
             catalog=catalog,
-            forced_flags=_derived_seal_flags(partial_path, catalog, chunk_id),
+            forced_flags=_derived_seal_flags(
+                partial_path, catalog, chunk_id, context=context
+            ),
         )
         actions.append(
             RecoveryAction(

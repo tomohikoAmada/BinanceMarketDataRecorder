@@ -1,10 +1,10 @@
 # ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence
 
 - Status: Accepted (M21.4.11), Corrected (M21.4.11-R1..R5, M21.4.11-R2,
-  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3)
+  M21.4.11-R2.1, M21.4.11-R2.2, M21.4.11-R3, M21.4.11-R3.1)
 - Date: 2026-08-10
 - Relates to: ADR-0009 (WebSocket transport), ADR-0023 (depth resync and
-  terminal recovery)
+  terminal recovery), ADR-0004 (clock and replay semantics)
 
 ## Context
 
@@ -351,37 +351,87 @@ must not create a second recoverable logical identity:
   discontinuity and keeps its own freshly minted gap identity (intent
   decision point 2, INV-009/INV-010).
 
-### Legacy extension-orphan recovery (M21.4.11-R3)
+### Legacy extension-orphan recovery (M21.4.11-R3, corrected M21.4.11-R3.1)
 
 The pre-R3 runtime persisted extension intents with a freshly minted
 gap_id that never received a STARTED (production example: the
 2026-08-13T08:20:35Z um_perpetual `book_ticker` session_restart extension
 of gap `70ace625` persisted marker `7223d5ba` with orphan gap_id
-`33e6420b`). Startup recovery recognizes these historical orphan shapes
-from durable evidence alone and ignores them without mutating Catalog
-rows:
+`33e6420b`). Startup recovery must recognize these historical orphan
+shapes without materializing phantom STARTED events, while REQ-103 must
+remain authoritative for genuine intent-only crashes.
 
-- ABSENT intent whose `gap_started_at_utc_ns` lies strictly inside a
-  CLOSED interval of the same market/stream and whose
-  `original_generation` equals that interval's replacement
-  `new_generation` is an extension of the closed parent. A genuine new
-  logical boundary can only be detected after the previous gap completed,
-  so a legitimate intent-only crash timestamp can never satisfy
-  containment.
-- ABSENT intent next to exactly one OPEN gap of the same market/stream
-  with the extension shape (intent started after the parent, generation
-  equal to the parent's replacement generation, and the intent's own
-  SEALING evidence documenting a zero-record marker with
-  `verified_frames == 0`) is an extension of the still-open parent and is
-  ignored. A frame-bearing SEALING evidence cannot be an extension: the
-  genuine ambiguity remains the REQ-104 hard fail-closed conflict.
+R3 originally classified a CLOSED-parent orphan by UTC containment
+(`closed.started_at < intent.gap_started_at < closed.ended_at`) plus
+generation equality. **That proof was unsound and is withdrawn.** UTC
+wall-clock timestamps are observational evidence, never causal-ordering
+authority (ADR-0004): the wall clock may step backwards, so a genuine
+boundary detected causally AFTER the parent completed can carry a
+timestamp numerically inside the closed interval. A real discontinuity
+was therefore silently suppressible, which is prohibited.
+
+R3.1 replaces the clock-dependent discriminator with sound durable
+identity rules and an explicit operator authority:
+
+- **Sound legitimate proofs (materialize, REQ-103).** For an ABSENT
+  intent beside CLOSED intervals of the same market/stream:
+  - `verified_frames > 0` (a trustworthy integer from the SEALING
+    evidence) proves the boundary drained a frame-bearing generation; an
+    extension attempt delivered no frames and always seals a zero-record
+    marker, so the intent cannot be an extension.
+  - `original_connection_id == interval.new_connection_id` at the same
+    `original_generation` proves the boundary was detected on the exact
+    connection whose first frame completed the parent; an extension
+    attempt's connection closed before delivering that frame and can
+    never be the completing connection.
+  - Any other `original_generation` cannot be a legacy extension:
+    extensions always run at the parent's replacement generation.
+- **Ambiguity fails closed.** A candidate with a matching generation, a
+  different connection, zero frames, and a wall timestamp inside the
+  parent interval matches the legacy orphan shape but is
+  indistinguishable from a legitimate post-restart boundary that
+  numerically reused the generation (per-process generation counters
+  restart at zero). Recovery raises
+  `RecoveryConflictError (RECOVERY_LEGACY_ORPHAN_AMBIGUOUS)` and never
+  silently ignores or silently materializes it. Wall-clock containment
+  is used only as an engagement predicate that selects the ambiguity
+  review; it is never the reason lifecycle authority is discarded.
+- **Explicit operator-reviewed classification authority.** The
+  operator-maintained additive file
+  `legacy_reconnect_classifications.json` in the data root (schema
+  `legacy-reconnect-classification.v1`) carries proven classifications
+  keyed by `(gap_id, market, stream)`: `extension_orphan` (recovery
+  ignores the intent, never deletes or edits any Catalog row) or
+  `legitimate_req103` (recovery materializes exactly one STARTED). The
+  authority is honored before any interval heuristic, is
+  clock-independent, and is never written by the recorder. A malformed
+  or conflicting authority file fails recovery closed.
+- The OPEN-parent extension rule is unchanged: an ABSENT intent next to
+  exactly one OPEN gap with the extension shape (started after the
+  parent, generation equal to the parent's replacement generation, and
+  `verified_frames == 0` from trustworthy SEALING evidence) is ignored.
+  If wall rollback makes that predicate fail, the REQ-104 fail-closed
+  conflict remains — silent suppression of legitimate evidence is never
+  permitted. A frame-bearing SEALING evidence cannot be an extension:
+  the genuine ambiguity remains the REQ-104 hard conflict.
+- `verified_frames` must be a trustworthy integer: a missing, boolean,
+  non-integer, or negative value is never treated as zero.
 - Ignored orphans are reported as `extension_orphan_ignored` recovery
   actions; they materialize nothing, are idempotent across repeated
   startups, and are never deleted or edited.
+- CLOSED intervals are paired strictly by exact `gap_id`, loaded once
+  per startup recovery pass, and expose the full durable identity
+  (`original_connection_id`, `original_generation`,
+  `new_connection_id`, `new_generation`) plus the observational wall
+  timestamps.
 
 The legitimate REQ-103 intent-only crash case is unchanged: an ABSENT
-intent with no competing open gap and no containing CLOSED interval still
-materializes exactly one STARTED with the same durable gap_id.
+intent with no competing open gap, no explicit orphan classification,
+and no engaged CLOSED interval still materializes exactly one STARTED
+with the same durable gap_id.
+
+The corrected artifact has not passed production validation; production
+deployment, recovery, and the 168h gate remain separately authorized.
 
 ## Alternatives
 

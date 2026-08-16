@@ -622,13 +622,24 @@ from Raw after a corrected parser is available.
   extension intents reuse the canonical pending-gap identity (attempt
   metadata under a separate `extension` key) and teaches startup recovery
   to recognize legacy orphan shapes from durable evidence without phantom
-  materialization; REQ-103 intent-only crash recovery is preserved. It is
+  materialization; REQ-103 intent-only crash recovery is preserved. An
+  independent exact-head review (PR #11 R2) rejected the R3 closed-parent
+  legacy discriminator as P1-unsound because it used UTC wall-clock
+  containment plus generation equality as causal proof, which wall-clock
+  rollback can defeat for a genuine post-completion boundary.
+  M21.4.11-R3.1 corrects it with clock-independent durable identity rules
+  (frame-bearing SEALING evidence, boundary connection equal to the
+  parent's completing connection, generation identity), fail-closed
+  ambiguity, and an explicit operator-reviewed additive classification
+  authority (`legacy_reconnect_classifications.json`, schema
+  `legacy-reconnect-classification.v1`); UTC is never silent-suppression
+  authority. It is
   under review and NOT DEPLOYED. Production validation for the corrected
   artifact is PENDING: after review, merge, and separately authorized
   deployment, the NEW artifact must re-execute the full staged chain
   (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
   See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
-  Legacy extension-orphan recovery (M21.4.11-R3)".
+  Legacy extension-orphan recovery (M21.4.11-R3, corrected M21.4.11-R3.1)".
 
   The validation sequence continues: after the repair is reviewed, merged,
   and separately authorized for deployment, the NEW artifact must re-execute
