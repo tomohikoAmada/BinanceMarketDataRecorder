@@ -10,6 +10,12 @@ Binance Market Data Recorder 是一个独立的、无 API 密钥的 Binance 公�
 和 REST 快照（depth snapshot、exchange info 等）持久化为不可变的原始数据（Raw），
 再派生为规范化的 Parquet 数据集和确定性重放（Replay）。
 
+批准的未来生产 profile 是 Ubuntu 24.04 LTS x86_64、Python 3.12、systemd
+和非 root Recorder 服务，运行于共享的 2 vCPU / 4 GiB / 40 GB-class VPS。
+macOS Apple Silicon 是开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
+Linux 验证和历史证据 profile。VPS 归档客户端、Archive Set 和 Offline
+Workspace 仍未实现。
+
 ## 2. 数据流全景
 
 ```text
@@ -116,6 +122,12 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 6. Catalog 提交 VERIFIED。
 7. 单独授权内部源删除：**仅在所有前面步骤成功后**。
 
+批准的未来拓扑由本地客户端通过 SSH 从 VPS 拉取。Durable 本地验证、Raw
+manifest/Archive Set/storage_id 身份、receipt 持久化、VPS receipt 校验和
+源重新验证都完成后，才可授权删除 VPS 源。SSH 成功不等于删除授权。
+`RemoteTransport` 是传输替换 seam；当前 `ArchiveManager` 尚未实现远程
+receipt 或 Archive Set。
+
 **kill -9 恢复：**
 - 每个 frame 有独立的 CRC32C。尾部截断到最后一个有效 frame（`ftruncate`），标记 `RECOVERED`。
 - 如果 chunk 处于 `SEALING` 状态且在 seal 期间崩溃，恢复过程重新执行 `seal_partial()`。
@@ -139,7 +151,7 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 | 核心 market 异常退出 | `MarketCollectorSupervisor` 设置子 stop 事件，`CoreMarketTerminalFailure` → launchd 重启 |
 | side-data 任务失败 | REST poller 由 `SideDataSupervisor` 独立重启，不设置核心 stop 事件；WebSocket side 任务（mark_price/liquidation）的终态完整性/存储故障 **fail closed**（FAILED，不自动重连，M21.4.11-R4），仅网络断连在 collector 内部走 reconnect-boundary 恢复 |
 | 外置 volume 消失 | `ArchiveManager` 记录 `DISAPPEARED_DURING_COPY`，保留内部源 |
-| 磁盘空间耗尽 | `DiskEmergencyCoordinator`：WARNING → CRITICAL → EMERGENCY → hard reserve seal+stop |
+| 磁盘空间耗尽 | VPS profile: 18/14/12/10 GiB + ETA；hard reserve seal+stop；永不删除未归档 Raw |
 | 网络断开 | WebSocket 自动重连 + snapshot resync |
 | 进程/操作系统崩溃或掉电 | Catalog 的 WAL + `synchronous=FULL` 用于事务一致性和持久性；真正的 SQLite 文件损坏不宣称可自动恢复 |
 
@@ -153,7 +165,7 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 | `spool` | Frame 追加、旋转、fsync、seal、崩溃恢复 | 外部挂载逻辑 |
 | `storage` | 路径、Catalog、manifest、持久状态转换 | 市场策略语义 |
 | `orderbook` | 官方序列验证、重建、gap/resync 证据 | 执行/队列填充 |
-| `archive` | 最旧密封 chunk 复制/验证/提交/删除交易 | 注册文件夹之外的写入 |
+| `archive` | 最旧密封 chunk 复制/验证/提交/删除交易；未来 receipt seam | 注册文件夹之外的写入或传输策略 |
 | `storage.macos` | Disk Arbitration 观察、UUID 解析、探针、弹出 | 格式化/修复/root 守护进程 |
 | `normalize` | 版本化 schema、确定性去重/分区、谱系 | Raw 的变异 |
 | `replay` | 确定性事件时钟、寻道、gap 策略 | 策略/回测行为 |
@@ -200,8 +212,12 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 - 无 Historical L2：data.binance.vision 不提供深度数据。
 - 无 Live raw trades/klines 流。
 - 仅支持 BTCUSDT。
-- macOS Apple Silicon 为唯一认证平台；Ubuntu 尚待 M20 适配和长期测试。
+- macOS Apple Silicon 为开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
+  验证 profile；VPS production profile 尚未部署或验收。
 - Live 和 Historical 数据集从不自动混合。
+- 未来 local-client pull、SSH `RemoteTransport`、Archive Set、receipt 和
+  Catalog post-session snapshot 尚未实现；它们不改变现有 Raw/EventEnvelope
+  语义。
 
 ## 13. Durable Cursor 与实际持久状态
 

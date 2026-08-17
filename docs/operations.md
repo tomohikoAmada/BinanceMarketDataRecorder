@@ -1,17 +1,27 @@
 # Operations
 
+Current implementation status and approved future architecture are distinct.
+macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
+implemented/local validation profiles. The primary future production target is
+Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
+[`vps_operations.md`](vps_operations.md). That VPS profile, remote archive
+client, and Catalog snapshot transfer are not yet deployed.
+
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
 [`ubuntu_rk3588_operations.md`](ubuntu_rk3588_operations.md). Ubuntu is an M20
-Developer Preview / Soak Candidate, not Production Ready.
+Developer Preview / Soak Candidate, not the primary production authority.
 
 ## Proxy status
 
 `config show`, `doctor`, and `status` expose only proxy mode, scheme, loopback,
 and port. They never expose the configured URL. `direct` ignores the shell,
 `environment` honors standard variables plus `no_proxy`, and `explicit` uses
-one credential-free HTTP(S) proxy for all production network exits. systemd
-production uses TOML `explicit`, never an SSH environment.
+one credential-free HTTP(S) proxy for all Recorder network exits when selected.
+The RK3588
+validation systemd profile uses TOML `explicit`, never an SSH environment. The
+future Germany VPS intends `direct` mode; local and LAN proxy modes remain
+testable.
 
 ## Side-data and backfill status
 
@@ -113,6 +123,14 @@ External absence does not stop internal capture.
 Linux M20 performs no automatic eject; it reports manual action without
 `SAFE_TO_REMOVE`.
 
+The future archive workflow is local-client pull over SSH. The local client
+must verify durability, readback, size, SHA-256, Raw manifest identity,
+Archive Set/storage identity, and a durable receipt before the VPS can authorize
+deletion. A transport success, file name, or size match alone is never enough.
+After each successful session the VPS creates a consistent SQLite-supported
+post-session Catalog snapshot; the local client retains at least `latest` and
+`previous`. See [`archive_transfer_contract.md`](archive_transfer_contract.md).
+
 ## Sleep and resource operation
 
 Laptop sleep is a known gap source. `prevent_sleep=true` uses a service-scoped
@@ -120,9 +138,12 @@ Laptop sleep is a known gap source. `prevent_sleep=true` uses a service-scoped
 promise closed-lid capture. Review daily reconnect, sequence-gap, resync,
 oldest-unarchived, queue, file-handle, memory, and disk/backlog metrics.
 
-The 40%, 15%, and emergency alerts are operational boundaries, not capacity
-targets. Attach and verify archive storage before the internal spool
-approaches the hard reserve.
+For the future VPS profile, capacity states are WARNING at 18 GiB (or ETA <= 7
+days), CRITICAL at 14 GiB (or ETA <= 72 hours), EMERGENCY at 12 GiB (or ETA <=
+24 hours), and HARD RESERVE at 10 GiB. The VPS preserves approximately 10 GiB
+for the OS and co-resident services. Never delete unarchived Raw. Existing
+local M11 percentage thresholds remain implementation history for local
+profiles, not universal VPS policy.
 
 ## Recovery
 
@@ -210,6 +231,11 @@ approaches the hard reserve.
 
 See [data and storage](data_and_storage.md) for artifact guarantees and
 [known limitations](known_limitations.md) before operating the preview.
+
+Future notifications may report archive pressure, degradation, stop, integrity,
+and transfer outcomes, but notification failure is never Recorder data
+authority. A future Web UI is separately authorized and must keep View, Health,
+and Control concerns separable from Raw and Recorder integrity decisions.
 
 ## M21.4 production deployment experience
 

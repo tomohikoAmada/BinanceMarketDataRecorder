@@ -1,7 +1,8 @@
 # Project Contract
 
-Status: frozen by M0, identity-corrected by ADR-0007/M0.2, and extended to
-Ubuntu ARM64 Developer Preview / Soak Candidate by M20 on 2026-07-27.
+Status: frozen by M0, identity-corrected by ADR-0007/M0.2, extended to Ubuntu
+ARM64 Developer Preview / Soak Candidate by M20, and prospectively extended to
+the VPS/offline architecture by ADR-0028/0029/0030 on 2026-08-17.
 Changes require a dedicated ADR and must retain traceability in
 `requirements_traceability.md`.
 
@@ -13,11 +14,11 @@ affiliated with, maintained by, sponsored by, or endorsed by Binance.
 It is a stateful infrastructure service specifically for Binance public market
 data. The name identifies the connected data source and APIs; it does not imply
 an official relationship. The project must not use Binance logos, official
-visual identity, or identifiers that suggest Binance ownership. Its first
-supported preview platforms are macOS Apple Silicon and Ubuntu ARM64 with
-Python 3.12. macOS uses a user `launchd` LaunchAgent while logged in; Ubuntu
-uses a non-root systemd service. Ubuntu/RK3588 remains a Soak Candidate until
-72-hour/168-hour evidence exists. Docker is not the production deployment.
+visual identity, or identifiers that suggest Binance ownership. The primary
+future production profile is Ubuntu 24.04 LTS x86_64 with Python 3.12,
+systemd, and a non-root service. macOS Apple Silicon remains a development/local
+profile; Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical
+evidence profile. Docker is not the production deployment.
 
 V1 records public BTCUSDT Binance market data:
 
@@ -39,6 +40,8 @@ The Recorder core owns:
 - crash recovery, gap/resync quality state, local spool, Catalog, and reports;
 - normalized/versioned datasets and deterministic replay;
 - registered external-directory discovery and verified archival;
+- future VPS-to-local archive transfer, receipt authorization, and Archive Set
+  custody as defined by ADR-0029/0030;
 - a generic, versioned, read-only consumer contract.
 
 Consumers own computation, factors, research, strategies, target generation,
@@ -88,14 +91,17 @@ that validation is optional and cannot define V1 completion.
   rename, and readback probes inside the registered directory.
 - Internal deletion is allowed only after target temp write, fsync, full
   readback, size/SHA-256 verification, atomic rename, external manifest commit,
-  and Catalog transaction. Failure is retryable/idempotent and retains source.
+  Catalog transaction, and (for the future VPS profile) durable local receipt
+  authorization plus source revalidation. Failure is retryable/idempotent and
+  retains source.
 - Deleting the internal copy may leave the external volume as the only copy;
   status and documentation must say so explicitly.
 
 ## Operations and safety
 
-- No GUI. Operability is CLI, structured JSON state, logs, and UTC daily
-  JSON/CSV reports.
+- No current GUI. Operability is CLI, structured JSON state, logs, and UTC daily
+  JSON/CSV reports. A future Web UI is separately authorized and must keep View,
+  Health, and Control concerns separate from Recorder core.
 - No API keys, account access, order endpoints, trading permissions, or real
   trading.
 - No root LaunchDaemon installation by default.
@@ -130,23 +136,23 @@ that validation is optional and cannot define V1 completion.
 
 ## Space policy
 
-Internal free-space severity is:
+The primary 40 GB-class VPS profile uses real filesystem free space and
+observed ingest/net-growth data:
 
-- WARNING at remaining space <= 40%;
-- CRITICAL at remaining space <= 15%;
-- EMERGENCY at remaining space <= `max(10 GiB, 5%)`.
+- NORMAL: free > 18 GiB;
+- WARNING: free <= 18 GiB or ETA to hard reserve <= 7 days;
+- CRITICAL: free <= 14 GiB or ETA <= 72 hours;
+- EMERGENCY: free <= 12 GiB or ETA <= 24 hours;
+- HARD RESERVE: free <= 10 GiB.
 
-Forecasts use at least 1 h, 6 h, 24 h, and 7 d net-growth windows and report
-UTC ETAs for all thresholds. Insufficient history yields `INSUFFICIENT_DATA`;
-non-positive growth yields `NOT_APPROACHING`. Emergency mode stops compactors
-and non-core derivation, prioritizes verified archive/delete, and never deletes
-unarchived raw data. At the hard reserve it seals active files, stops Collector,
-emits `DISK_EMERGENCY_STOP`, and records the gap start.
-
-ADR-0016 fixes the hard reserve at
-`max(5 GiB, 2% of capacity, 2 * configured Raw rotation bytes)`. This is
-separate from the earlier EMERGENCY alert so the system has an archive-first
-margin before graceful capture stop.
+WARNING continues capture and requests archive planning. CRITICAL continues
+integrity-critical work and strongly requests archive. EMERGENCY prioritizes
+capture, seal, Catalog, recovery, and archive-space-recovery work. At HARD
+RESERVE the Recorder drains/seals what can be proven, emits
+`DISK_EMERGENCY_STOP`, records the gap start, and stops accepting new capture;
+it never deletes unarchived Raw. Forecasts retain the 1 h, 6 h, 24 h, and 7 d
+observed-growth windows. These are initial VPS thresholds and require a new ADR
+to revise.
 
 ## Daily reporting contract
 
@@ -166,19 +172,29 @@ live in SQLite. SQLite does not store the market-event corpus.
 
 ## Explicit V1 exclusions
 
-Qt, web UI, FastAPI product API, trading UI, strategies, factors, backtest
+Qt, current web UI, FastAPI product API, trading UI, strategies, factors, backtest
 engine, orders, account connection, API-key management, live trading, maker
 queue simulation, other exchanges/additional symbols, Kafka, Kubernetes, cloud
 stateless capture, automatic disk formatting/repair, mandatory SMART support,
-and Windows certification are excluded. Ubuntu ARM64 long-run certification,
-zero-interruption claims, and Linux blue/green certification remain excluded
-from M20.
+and Windows certification are excluded from the current implementation. Ubuntu
+ARM64 long-run certification, zero-interruption claims, Linux blue/green
+certification, and VPS production acceptance remain separate gates. A future
+Web UI and notification system are deferred and separately authorized rather
+than prohibited forever.
 
 The design retains clean Binance Spot/USD-M modules, a Linux storage adapter,
 an API gateway boundary, and independent strategy, backtest,
 monitoring, or paper-trading consumers. Those consumers remain outside
 Recorder. Multi-exchange support is not a V1 design or acceptance goal; any
 future exchange requires its own architecture review.
+
+## Deployment and offline roles
+
+The VPS is responsible for the latency/integrity-critical live path. Normalize,
+heavy Replay/analytical scans, and Historical Backfill remain Recorder-owned
+capabilities but execute in local/offline profiles. This is one Recorder
+distribution with distinct execution roles, not a new repository or
+microservice. See `docs/vps_operations.md` and `docs/offline_workspace.md`.
 
 Future service, launchd, and package-publisher reverse-DNS identifiers must use
 a namespace owned or controlled by the project author. Binance-owned-looking

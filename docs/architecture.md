@@ -1,9 +1,13 @@
 # Architecture
 
-This document describes the `0.1.0a1` Mac Developer Preview and M20 Ubuntu
-ARM64/RK3588 Developer Preview / Soak Candidate. The implemented
-system remains subject to the deferred long-running reliability limitation in
-`docs/known_limitations.md`.
+This document describes the implemented Recorder and the approved future
+deployment topology. The primary future production profile is Ubuntu 24.04 LTS
+x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
+40 GB-class VPS. macOS Apple Silicon remains a development/local profile;
+Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
+profile. The VPS profile and remote archive client are not yet deployed or
+production validated. The implemented system remains subject to the deferred
+long-running reliability limitation in `docs/known_limitations.md`.
 
 ## M19 recovery boundary
 
@@ -26,6 +30,19 @@ market-data capture and storage provenance. Its current product boundary is
 Binance Spot and USD-M perpetual data. External consumers have different
 lifecycles and may include research, backtest, monitoring, or simulation
 systems. ADR-0001 and ADR-0007 freeze that separation.
+
+## Approved deployment roles
+
+The VPS owns the latency/integrity-critical live path: Binance public
+acquisition, Raw active/spool and sealing, Catalog, recovery, gap/provenance
+state, metrics/status, and support for local archive export. Normalize, heavy
+Replay/analytical scans, and Historical Backfill remain Recorder-owned
+capabilities but execute in local/offline profiles using the same distribution.
+This is an execution-role boundary, not a new repository or microservice.
+
+The local Offline Workspace contains the Cold Archive, derived Normalized
+Dataset, separate Historical Archive, Catalog backups, and rebuildable Archive
+Set discovery index. See `docs/offline_workspace.md`.
 
 ```text
 Binance public REST + WebSocket
@@ -59,7 +76,7 @@ Binance public REST + WebSocket
 | `spool` | framed append, rotation, fsync, seal, crash recovery | external mount logic |
 | `storage` | paths, Catalog, manifests, durable state transitions | market strategy semantics |
 | `orderbook` | official sequence validation, reconstruction, gap/resync evidence | execution/queue fills |
-| `archive` | oldest-sealed copy/verify/commit/delete transaction | writes outside registered folder |
+| `archive` | oldest-sealed copy/verify/commit/delete transaction and future receipt seam | writes outside registered folder or decides transport policy |
 | `storage.macos` | Disk Arbitration observation, UUID resolution, probes, eject | format/repair/root daemon |
 | `normalize` | versioned schemas, deterministic dedup/partitioning, lineage | mutation of Raw |
 | `replay` | deterministic event clocks, seeks, gap policy | strategy/backtest behavior |
@@ -204,8 +221,8 @@ boundaries without gap evidence. The 12h/24h data-integrity acceptance is
 SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING; their process-stability results
 stand. The 24h PASS's readiness record (Spot 280/280; USD-M 279/280, both
 orderbooks 280/280) and the gen5 RECOVERY_CONTRACT_PASS remain valid
-process/orderbook evidence. The M21.4.11 forward fix is implemented and
-under review; the 168h gate is never started automatically.
+process/orderbook evidence. The M21.4.11 forward fix is merged to `main`
+through PR #11 but not deployed; the 168h gate is never started automatically.
 
 ### M21.4.11 Reconnect boundary integrity
 
@@ -376,12 +393,20 @@ The code repository's `var/` is test-only and Git-ignored.
 
 ## External archival
 
-ADR-0003 defines an external target as a registered subdirectory, never a
-volume. UUID-based discovery resolves its current mountpoint. The archive
-transaction is copy-to-`.copying`, fsync, reopen/read/hash, size/hash compare,
-atomic rename, external manifest commit, Catalog commit, then local delete.
-Every crash boundary is reconciled idempotently. Disappearance changes storage
-state while the internal Collector continues.
+The current implementation follows ADR-0003/0015: an external target is a
+registered subdirectory, never a volume; UUID-based discovery resolves its
+current mountpoint; and the archive transaction is copy-to-`.copying`, fsync,
+reopen/read/hash, size/hash compare, atomic rename, external manifest commit,
+Catalog commit, then local delete. Every crash boundary is reconciled
+idempotently. Disappearance changes storage state while the internal Collector
+continues.
+
+The approved future topology uses a local archive client pulling immutable
+sealed Raw from the VPS over SSH through a transport-neutral seam. Durable
+local verification, Archive Set identity, a receipt, VPS source revalidation,
+and deletion authorization precede VPS deletion. See
+`docs/archive_transfer_contract.md` and ADR-0029. This future workflow is not
+implemented by the current local ArchiveManager.
 
 ## Deterministic time and replay
 
@@ -425,11 +450,14 @@ WebSocket, urllib, official-SDK REST, and Historical exit.
 macOS keeps its Application Support, NSWorkspace/caffeinate, LaunchAgent, and
 safe-eject behavior. Linux uses an XDG interactive path, a no-op native sleep
 observer plus clock-discontinuity detection, a non-root systemd unit, journald,
-and read-only discovery of already-mounted external filesystems. The production
-unit contains no proxy environment variables; redacted policy state is written
-to `service-state.v1`.
+and read-only discovery of already-mounted external filesystems. The future
+VPS production profile uses direct Binance connectivity by default; redacted
+proxy policy state is written to `service-state.v1` and local proxy modes remain
+testable.
 
 File/chunk/manifests use the unchanged language-neutral formats and UTC
 timestamps, so consumers do not depend on either platform adapter. This
-portability does not make multi-exchange support a current goal, and M20 does
-not certify Linux blue/green or long-run operation.
+portability does not make multi-exchange support a current goal. The future
+archive client targets macOS, Linux, and Windows, but those client
+implementations and certifications do not yet exist. M20 does not certify
+Linux blue/green, VPS deployment, or long-run operation.

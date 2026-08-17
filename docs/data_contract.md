@@ -4,6 +4,11 @@ Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
 the rebuildable `normalized-dataset.v1` contract under ADR-0020.
 
+The approved VPS/local archive topology changes physical custody and execution
+roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
+market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
+explicit gaps, and historical/live clock separation remain authoritative.
+
 ## M20 transport and platform compatibility
 
 M20 changes no EventEnvelope, Raw chunk, manifest, normalized, replay, or

@@ -29,6 +29,9 @@ Current and historical decisions:
 - [ADR-0025: Unified proxy transport policy](0025-proxy-transport-policy.md)
 - [ADR-0026: Ubuntu ARM64, systemd, and mounted storage](0026-linux-arm64-systemd.md)
 - [ADR-0027: Every WebSocket reconnect boundary carries persistent gap evidence](0027-reconnect-boundary-integrity.md)
+- [ADR-0028: VPS production deployment profile](0028-vps-production-deployment-profile.md)
+- [ADR-0029: Remote archive transfer and VPS source-deletion authorization](0029-remote-archive-transfer-and-deletion-authorization.md)
+- [ADR-0030: Archive Set and multi-removable-media model](0030-archive-set-and-multi-removable-media.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

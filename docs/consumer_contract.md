@@ -71,8 +71,10 @@ hashes, counts and time bounds. They do not expose absolute artifact paths,
 external mountpoints, archive transaction state or `storage_id`.
 
 Normalized artifacts remain under the internal application-data root even when
-their source Raw has been safely archived. A consumer therefore never decides
-whether Raw is internal or external.
+their source Raw has been safely archived or moved through the future VPS/local
+archive workflow. A consumer therefore never decides whether Raw is internal,
+VPS-resident, or external, and the deployment topology does not change this
+public data contract.
 
 ## Query
 

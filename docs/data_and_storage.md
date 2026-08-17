@@ -1,5 +1,11 @@
 # Data and Storage
 
+The current implementation writes and archives through local application-data
+roots. The approved future profile places the live root on an Ubuntu 24.04
+x86_64 VPS and moves verified sealed Raw to a local Offline Workspace through a
+pulling archive client. This topology changes custody and execution roles, not
+Raw/EventEnvelope semantics.
+
 ## Internal-first invariant
 
 Every live event is written to the internal data root first. An active Raw file
@@ -55,7 +61,12 @@ An archive transaction:
 7. commits the Catalog transaction;
 8. separately authorizes deletion of the internal source.
 
-Any failure before verified Catalog commit retains the internal source.
+Any failure before verified Catalog commit retains the internal source. In the
+future VPS profile, local durable receipt verification, Archive Set/storage
+identity, VPS receipt validation, and source revalidation are also required
+before VPS deletion. The V1 transport is SSH behind a replaceable
+`RemoteTransport` seam; SSH success alone is never deletion authority. See
+`archive_transfer_contract.md`.
 Recorder never follows a registered target outside its resolved directory,
 never writes elsewhere on the volume, and never formats or repairs a
 filesystem.
@@ -65,13 +76,21 @@ an independent backup and periodically run archive verification.
 
 ## Space policy
 
-Internal free-space severities are:
+For the future shared 40 GB-class VPS, the initial policy is based on real free
+bytes and observed net-growth:
 
-- warning at 40% remaining;
-- critical at 15% remaining;
-- emergency at `max(10 GiB, 5%)`.
+- NORMAL: free > 18 GiB;
+- WARNING: free <= 18 GiB or ETA to hard reserve <= 7 days;
+- CRITICAL: free <= 14 GiB or ETA <= 72 hours;
+- EMERGENCY: free <= 12 GiB or ETA <= 24 hours;
+- HARD RESERVE: free <= 10 GiB.
 
-Forecasts use 1-hour, 6-hour, 24-hour, and 7-day windows. The emergency path
-prioritizes verified archive, suspends non-core derived work, and finally seals
-and stops capture at the hard reserve. It never silently deletes unarchived
-Raw.
+The emergency path prioritizes live capture, seal, Catalog, recovery, and
+verified archive-space recovery. At hard reserve it drains/seals what can be
+proven, records `DISK_EMERGENCY_STOP` and an explicit gap, and stops accepting
+new capture. It never silently deletes unarchived Raw. Forecasts continue to
+use 1-hour, 6-hour, 24-hour, and 7-day observed-growth windows.
+
+The existing local implementation's M11 percentage/reserve calculation remains
+historical implementation behavior for current local profiles; it is not the
+future VPS policy.
