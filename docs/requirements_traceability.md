@@ -86,13 +86,16 @@ PR #7, deployed to production, and passed 2h and 12h formal validation
 windows with independent evidence reviews. The formal 24-hour window passed
 and was confirmed by a corrective integrity review and a Backpressure
 contract forensic review; the gen5 natural backpressure recovery contract
-passed in-window. The formal 72h window was executed: core process stability
-stood, but the data-integrity contract FAILED
-(FORMAL_72H_RESULT=FAIL, eligible_for_next_stage=false). The 168h window was
-not started. The M21.4.11 reconnect-boundary repair is merged to `main`
-through PR #11 but NOT deployed; a newly deployed corrected artifact must
-restart the complete staged acceptance chain
-(2h→12h→24h→72h→168h).
+passed in-window. The original M21.4 formal 72h window was executed: core
+process stability stood, but the data-integrity contract FAILED
+(FORMAL_72H_RESULT=FAIL, eligible_for_next_stage=false). A later deployed
+M21.4.11 artifact (`f659895…`) passed its independent formal 72h
+observational gate (PASS: 27/27 explicit WebSocket transitions, +0 unmarked,
+0 false-complete, 27/27 first-new Raw `sequence_gap`) but was then found to
+contain a restart-only orphan-intent defect, making ELIGIBLE_FOR_168H=false;
+the 168h window was not run. The further PR #11 corrected artifact is merged
+to `main` but NOT deployed; a newly deployed corrected artifact must restart
+the complete staged acceptance chain (2h→12h→24h→72h→168h).
 
 ### M21.4 traceability
 
@@ -113,6 +116,9 @@ restart the complete staged acceptance chain
 | 72h forensics | M21.4.10 unexpected-disconnect forensics: same-generation reconnect, no STARTED/COMPLETED, no sequence_gap, gap=false/complete=true | UNEXPECTED_DISCONNECT_CONTRACT_RESULT=FAIL |
 | Reconnect boundary repair | M21.4.11 PR `fix/m21-4-reconnect-boundary-integrity`: unified state machine, manifest-level `reconnect_gap`, seal defense, read-only audit tool; R1..R5/R2/R2.1/R2.2/R3.x corrections: crash-durable intent ordering, exact gap lifecycle, Catalog-first marker durability, exact operational-event idempotency, boundary-local/frame-less audit classification, side-data fail-closed restart, deterministic canonical output | Merged to main through PR #11; NOT DEPLOYED |
 | Historical audit (corrected, authoritative) | R2.2 read-only rerun: 161,817 chunks scanned (cutoff `1786349202047196027`, inventory SHA `ffaf34bd...`); 4,691 transitions; 11 explicit (all Catalog-identity-proven); 4,680 unmarked; 0 unknown; 0 overlap; catalog matched_pairs=11/unmatched=0/0 | `tools/audit_reconnect_boundaries.py` + `/var/tmp/m21-4-11-r2-2-historical-audit.json`; canonical SHA-256 `1122431c56ebd8367bbbed1a8fc0e30f1f020d7edfd9c34602c9988d89d4b35f`; earlier manifest-level scanner retained as SUPERSEDED |
+| Later 72h observational gate | Deployed M21.4.11 artifact `f659895…` passed its independent formal 72h observational window (27/27 explicit WS transitions, +0 unmarked, 0 false-complete, 27/27 first-new Raw `sequence_gap`) | FORMAL_72H_RESULT=PASS |
+| Orphan extension-intent P1 | Restart-only orphan-intent defect discovered in `f659895…`; the 168h gate requires a controlled service restart | ELIGIBLE_FOR_168H=false; 168h NOT RUN |
+| PR #11 corrected artifact | M21.4.11-R3.x orphan-intent corrections merged through PR #11 | MERGED; NOT DEPLOYED |
 | 168h window | — | PENDING (not started) |
 | Documentation | M21.4 acceptance, deployment evidence, 24h forensics, 72h failure | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-24h-validation-forensics.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`, `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md` |
 | Risk updates | R-004 (Monitoring, gen5 PASS; 72h FAIL), R-035 (Open, 72h FAIL), R-044 (Monitoring, epoch-bound mitigations), R-045 (Monitoring, not recovered), R-047 (Open, reconnect boundary integrity) | `docs/risk_register.md` |

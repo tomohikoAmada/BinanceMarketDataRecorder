@@ -11,11 +11,13 @@
 > 正式 2 小时和 12 小时**进程稳定性**验收通过并完成独立证据复核。
 > 正式 24 小时**进程稳定性**验收通过，并完成纠错复核和 Backpressure 合同法证确认；
 > 正式窗口内 gen5 自然 Backpressure 恢复合同 PASS。
-> **正式 72 小时验收 FAIL（数据完整性合同失败）**：2026-08-07T14:08:24Z
+> **原始 M21.4 正式 72 小时验收 FAIL（数据完整性合同失败）**：2026-08-07T14:08:24Z
 > USD-M book_ticker 意外断线及所有 planned rotation 边界均无 gap 证据
 > （gap=false/complete=true）。12h/24h 数据完整性验收被
 > SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING 取代。
-> M21.4.11 修复已合并到 `main`（PR #11），**未部署**。168 小时验收未开始。
+> **后续部署的 M21.4.11 工件 `f659895…` 通过独立正式 72 小时观测门（PASS）**，
+> 但因 restart-only orphan-intent 缺陷被判 `ELIGIBLE_FOR_168H=false`，168 小时
+> 验收未运行。进一步的 PR #11 修复已合并到 `main`，**未部署**。
 >
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
@@ -31,30 +33,39 @@
 > validation passed and was confirmed by a corrective evidence review and a
 > Backpressure contract forensic review; the natural gen5 backpressure
 > recovery cycle inside the formal window passed its recovery contract.
-> **The formal 72-hour validation FAILED on data integrity**: the
-> 2026-08-07T14:08:24Z USD-M book_ticker unexpected disconnect and every
+> **The original M21.4 formal 72-hour validation FAILED on data integrity**:
+> the 2026-08-07T14:08:24Z USD-M book_ticker unexpected disconnect and every
 > planned rotation sealed their reconnect boundaries without gap evidence.
-> The M21.4.11 reconnect-boundary repair is merged to `main` through PR #11 but
-> is NOT deployed. The 168-hour validation has not started.
+> A later deployed M21.4.11 artifact (`f659895…`) passed its independent
+> formal 72-hour observational gate (27/27 explicit WebSocket transitions,
+> 0 unmarked, 0 false-complete, 27/27 first-new Raw `sequence_gap`) but was
+> subsequently found ineligible for the 168-hour gate
+> (`ELIGIBLE_FOR_168H=false`) because of a restart-only orphan-intent defect,
+> so the 168-hour validation has not run. The further correction merged to
+> `main` through PR #11 is NOT deployed; the corrected artifact must restart
+> the full staged acceptance chain.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
 
-正式72小时长期运行验收已执行，但数据完整性合同结果为FAIL；168小时验收尚未执行。
-M21.4.11修复已合并到`main`（PR #11）但尚未部署；修复后的新工件必须从2h→12h→24h→72h→168h重新开始验收。
+原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
+该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
+PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
 
-**72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见下文与
+**原始M21.4正式72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
-修复已合并到 `main`（PR #11），未部署。
+随后部署的M21.4.11工件`f659895…`通过独立正式72小时观测门（PASS），但因
+restart-only orphan-intent缺陷`ELIGIBLE_FOR_168H=false`，168小时验收未运行。
 
 M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h进程稳定性验收通过。
 正式24h结果经纠错复核和Backpressure合同法证确认；正式窗口内gen5自然
-Backpressure恢复合同PASS。**正式72h验收FAIL（数据完整性）**：所有普通
-reconnect/planned rotation 边界均无 gap 证据。M21.4.11 修复已合并到 `main`，未部署。
-不代表 Production Ready。
+Backpressure恢复合同PASS。**原始正式72h验收FAIL（数据完整性）**：所有普通
+reconnect/planned rotation 边界均无 gap 证据。后续部署的M21.4.11工件
+`f659895…`正式72小时观测门PASS，但因restart-only orphan-intent缺陷不可进入
+168h。PR #11 的进一步修复已合并到 `main`，未部署。不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
 的本地录制、完整性验证、
@@ -103,7 +114,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 > **严重警告**
 >
 > - 本项目是 **Mac Developer Preview / Ubuntu ARM64 Soak Candidate**（`0.1.0a1`）。
-> - **72 小时和 168 小时长期运行验收尚未执行。**
+> - 后续部署的工件已完成72小时观测但不可进入168小时；168小时未运行；修复后的工件必须重新开始验收。
 >   静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 > - **不得用于真实资金交易。**
 > - 本项目**不包含 API Key、账户、订单或交易能力**。
@@ -125,7 +136,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | 2h PASS（短窗口进程稳定性）；12h/24h 进程稳定性 PASS（数据完整性被 reconnect 发现取代）；**72h FAIL**；168h 未开始 |
+| 长期验证 | 2h/12h/24h 进程稳定性 PASS；原始M21.4正式72h进程稳定性PASS但数据完整性FAIL；后续部署的M21.4.11工件`f659895…`正式72小时观测门PASS但`ELIGIBLE_FOR_168H=false`；168h未运行；新修复工件须从2h→12h→24h→72h→168h重新验收 |
 | PR/部署 | PR #7 production Wheel history retained; M21.4.11/R3.4 code merged through PR #11, not deployed; VPS not deployed |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
@@ -1052,7 +1063,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 
 - **R-034（Open）**：官方 Global Spot bootstrap 文辞与 toolbox 示例冲突。
   代码使用 `lastUpdateId + 1`，不作官方纠正声明。
-- **R-035（Open）**：72h/168h 长期运行验收尚未执行。
+- **R-035（Open）**：原始M21.4正式72h数据完整性FAIL；后续部署工件`f659895…`
+  72小时观测PASS但`ELIGIBLE_FOR_168H=false`；168h未运行。
   24 小时连接轮换未经过重复长期验证。
 - **R-036（Open）**：USD-M 5 分钟统计在 Recorder 离线期间可能错过，
   超出保留窗口即不可恢复。
@@ -1066,7 +1078,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   但无法恢复 Binance 不再提供的事件。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
 - 仅 BTCUSDT Spot 和 USD-M Perpetual。
-- Ubuntu ARM64/RK3588 已实现 M20 短期部署，但 72h/168h 尚未运行，因此仅为
+- Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
+  观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。
   Windows archive-client support is future work; the client is not implemented.
 - RK3588 实机配置使用有界 `ingress_queue_capacity = 262144` 并错开各流的
@@ -1232,4 +1245,4 @@ python3.12 examples/replay_consumer.py \
 - 本项目不使用 Binance 商标、Logo 或官方视觉识别。
 - **当前版本为 Mac Developer Preview / Ubuntu ARM64 Soak Candidate
   （0.1.0a1），不得用于真实资金交易。**
-- 72 小时和 168 小时长期运行验收尚未执行。
+- 后续部署的工件已完成72小时观测但不可进入168小时；168小时未运行；修复后的工件必须重新开始验收。

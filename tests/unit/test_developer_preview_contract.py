@@ -7,8 +7,11 @@ from binance_market_data_recorder.version import FALLBACK_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
 CURRENT_LONG_RUN_NOTICE = (
-    "正式72小时长期运行验收已执行，但数据完整性合同结果为FAIL；168小时验收尚未执行。\n"  # noqa: RUF001
-    "M21.4.11修复已合并到`main`（PR #11）但尚未部署；修复后的新工件必须从"  # noqa: RUF001
+    "原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；"  # noqa: RUF001
+    "随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。\n"
+    "该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，"  # noqa: RUF001
+    "因此168小时验收未运行。\n"
+    "PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从"  # noqa: RUF001
     "2h→12h→24h→72h→168h重新开始验收。\n"
     "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
     "当前版本为Mac Developer Preview;"
@@ -22,11 +25,16 @@ HISTORICAL_RELEASE_LONG_RUN_NOTICE = (
     "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"
     "不得用于真实资金交易。"
 )
-STALE_LONG_RUN_NOT_YET_EXECUTED_SENTENCE = "连续72小时和168小时长期运行验收尚未执行。"
+STALE_LONG_RUN_NOT_YET_EXECUTED_NORMALIZED = "72小时和168小时长期运行验收尚未执行"
 
 
 def _normalized(path: Path) -> str:
     return path.read_text(encoding="utf-8").replace("  \n", "\n")
+
+
+def _living_normalized(path: Path) -> str:
+    text = _normalized(path)
+    return "".join(text.replace("*", "").split())
 
 
 def test_developer_preview_identity_and_version_are_frozen() -> None:
@@ -56,7 +64,7 @@ def test_current_living_surfaces_no_longer_claim_72h_was_never_executed() -> Non
         "docs/known_limitations.md",
         "docs/risk_register.md",
     ):
-        assert STALE_LONG_RUN_NOT_YET_EXECUTED_SENTENCE not in _normalized(
+        assert STALE_LONG_RUN_NOT_YET_EXECUTED_NORMALIZED not in _living_normalized(
             ROOT / relative
         ), relative
 

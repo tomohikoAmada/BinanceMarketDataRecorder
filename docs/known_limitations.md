@@ -1,7 +1,8 @@
 # Known Limitations
 
-正式72小时长期运行验收已执行，但数据完整性合同结果为FAIL；168小时验收尚未执行。
-M21.4.11修复已合并到`main`（PR #11）但尚未部署；修复后的新工件必须从2h→12h→24h→72h→168h重新开始验收。
+原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
+该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
+PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
@@ -29,9 +30,14 @@ long-running proof.
 - 24h formal window: PROCESS-STABILITY PASS (corrective + contract forensic
   review confirmed); data-integrity
   SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING
-- **72h formal window: FAIL** (core process stability PASS; data integrity
-  FAIL; eligible_for_next_stage=false)
-- 168h window: PENDING (not started)
+- **Original M21.4 72h formal window: FAIL** (core process stability PASS;
+  data integrity FAIL; eligible_for_next_stage=false) — historical epoch
+- **Later deployed M21.4.11 artifact `f659895…`: independent formal 72h
+  observational gate PASS** (27/27 explicit WS transitions, +0 unmarked,
+  0 false-complete, 27/27 first-new Raw `sequence_gap`); then found to contain
+  a restart-only orphan-intent defect → ELIGIBLE_FOR_168H=false
+- 168h window: NOT RUN (blocked by the restart-only orphan-intent defect on
+  `f659895…`, not by the historical reconnect-boundary failure)
 - Planned rotation: **FAIL on Raw gap evidence** — all five observed
   rotations (12h/24h/72h windows and post-window) seal with
   gap=false/complete=true and no Catalog gap
@@ -82,7 +88,8 @@ long-running proof.
   deploys.**
 - Long-term memory, file-descriptor, bounded-queue, archive-backlog, growth
   forecast, and resource-leak behavior has been validated in 2h, 12h, and 24h
-  windows only; 72h/168h remain pending.
+  windows only; the later deployed artifact's 72h observational gate did not
+  cover these resource/backlog metrics; 168h has not run.
 - macOS sleep and closed lid interrupt user-session networking. The Recorder
   marks detected gaps but cannot recover events Binance no longer provides.
 - macOS Apple Silicon retains its logged-in-user LaunchAgent behavior. Ubuntu
@@ -109,16 +116,16 @@ part of M20; it is the M21 acceptance scope.
 ### Additional M21.4 known limitations
 
 - **Ordinary reconnect and planned rotation seal without gap evidence
-  (72h FAIL root cause)**: the deployed artifact reconnects
-  unexpected_disconnect/planned_rotation/server_shutdown/session-restart
-  boundaries in the same generation with no Catalog STARTED/COMPLETED, no
-  `sequence_gap`, and manifest `gap=false/complete=true`. The formal 72h
-  window FAILED on this contract (2026-08-07T14:08:24Z book_ticker
-  disconnect; receive gap ~1.73 s; u jump 56,294,564). The M21.4.11 forward
-  fix (unified Reconnect Boundary state machine, manifest-level
-  `reconnect_gap`, seal defense) is merged to `main` but NOT DEPLOYED; **until it
-  is deployed, any interval crossing a reconnect boundary produced by the
-  running artifact must not be trusted as complete.**
+  (original M21.4 72h FAIL root cause; historical)**: the original deployed
+  artifact reconnects unexpected_disconnect/planned_rotation/
+  server_shutdown/session-restart boundaries in the same generation with no
+  Catalog STARTED/COMPLETED, no `sequence_gap`, and manifest
+  `gap=false/complete=true`. The formal 72h window FAILED on this contract
+  (2026-08-07T14:08:24Z book_ticker disconnect; receive gap ~1.73 s; u jump
+  56,294,564). The M21.4.11 forward fix (unified Reconnect Boundary state
+  machine, manifest-level `reconnect_gap`, seal defense) was later deployed
+  as `f659895…`, which passed its own 72h observational gate; the further
+  orphan-intent correction is merged to `main` but NOT DEPLOYED.
 - **Historical silent gaps are immutable**: the corrected boundary-local
   read-only audit (M21.4.11-R2/R3/R5, cutoff `1786349202047196027`,
   inventory 161,817 manifests) found 4,680 unmarked reconnect boundaries
