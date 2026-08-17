@@ -1,6 +1,7 @@
 # macOS Quickstart
 
-This guide installs the `0.1.0a1` Mac Developer Preview. It uses only unsigned
+This guide installs the `0.1.0a1` Mac Developer Preview and local development
+profile. It uses only unsigned
 Binance public market-data endpoints. No API key or account is supported.
 
 ## Requirements
@@ -94,4 +95,7 @@ reports, Catalog, and logs remain in the configured data root.
 
 External archive registration and safe removal are covered in
 [operations](operations.md). Read [known limitations](known_limitations.md)
-before collecting data.
+before collecting data. The approved VPS production and future local pull
+archive architecture is documented separately in [VPS operations](vps_operations.md)
+and [Archive Transfer Contract](archive_transfer_contract.md); it is not
+implemented by this quickstart.

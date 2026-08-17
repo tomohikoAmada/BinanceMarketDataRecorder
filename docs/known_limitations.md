@@ -3,19 +3,20 @@
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
 
 > **72小时验收结果为 FAIL（数据完整性合同失败）**。72小时窗口的核心进程
 > 稳定性 PASS，但 2026-08-07T14:08:24Z USD-M `book_ticker` 意外断线及所有
 > planned rotation 边界均无 gap 证据（gap=false/complete=true）。修复
-> (M21.4.11) 已实现并提交 PR 审查，未部署。完整记录：
+> (M21.4.11) 已合并到 `main`（PR #11），但未部署。完整记录：
 > `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
 
 M21.4 was deployed and passed 2h, 12h, and 24h formal process-stability
 windows. **The formal 72h window FAILED on data integrity**: the
 2026-08-07T14:08:24Z USD-M `book_ticker` unexpected disconnect and every
 planned rotation sealed their reconnect boundaries without gap evidence
-(gap=false/complete=true). The M21.4.11 reconnect-boundary repair is
-implemented and under review; it is NOT deployed. Static review, unit
+(gap=false/complete=true). The M21.4.11 reconnect-boundary repair is merged to
+`main` through PR #11 but NOT deployed. Static review, unit
 tests, fault injection, and short online tests cannot substitute for
 long-running proof.
 
@@ -35,7 +36,7 @@ long-running proof.
   gap=false/complete=true and no Catalog gap
 - Reconnect boundary integrity: corrected boundary-local read-only audit
   found 4,680 historical unmarked transitions (11 explicit, 0 ambiguous);
-  forward fix implemented, NOT DEPLOYED
+  forward fix merged to `main`, NOT DEPLOYED
 - Backpressure natural exercise: gen5 PASS in formal 24h window
   (RECOVERY_CONTRACT_PASS); gen6 started in window, completed POST_WINDOW;
   Spot backpressure repair still absent
@@ -114,7 +115,7 @@ part of M20; it is the M21 acceptance scope.
   window FAILED on this contract (2026-08-07T14:08:24Z book_ticker
   disconnect; receive gap ~1.73 s; u jump 56,294,564). The M21.4.11 forward
   fix (unified Reconnect Boundary state machine, manifest-level
-  `reconnect_gap`, seal defense) is implemented and under review; **until it
+  `reconnect_gap`, seal defense) is merged to `main` but NOT DEPLOYED; **until it
   is deployed, any interval crossing a reconnect boundary produced by the
   running artifact must not be trusted as complete.**
 - **Historical silent gaps are immutable**: the corrected boundary-local
@@ -185,3 +186,16 @@ part of M20; it is the M21 acceptance scope.
 - **CLI --version CWD contamination**: The Git commit suffix in
   `--version` output may change when the CLI is invoked from a repository
   directory. Production identity must use immutable artifact properties.
+
+## Approved future architecture not yet implemented
+
+- The primary production target is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU,
+  4 GiB, 40 GB-class VPS. No VPS deployment or VPS staged acceptance exists.
+- The VPS live path and local Offline Workspace execution-role split is
+  approved, but heavy offline profiles are not yet separated operationally.
+- The local-client pull archive workflow, SSH transport seam, durable receipt,
+  source-deletion authorization, Archive Set, and Catalog snapshot transfer are
+  not implemented.
+- The future archive client targets macOS, Linux, and Windows; platform client
+  implementations/certifications do not yet exist.
+- Notifications and Web UI remain future, separately authorized extensions.

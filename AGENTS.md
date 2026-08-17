@@ -31,18 +31,23 @@ namespace in advance.
 ## Project goal
 
 Build a long-running, stateful Python 3.12 recorder specifically for Binance
-public market data on macOS Apple Silicon and Ubuntu ARM64. V1 captures BTCUSDT Spot and USD-M
+public market data. The primary future production profile is Ubuntu 24.04 LTS
+x86_64 with systemd and a non-root service. macOS Apple Silicon remains a
+development/local profile, and Ubuntu ARM64/RK3588 remains a distinct Linux
+validation and historical evidence profile. V1 captures BTCUSDT Spot and USD-M
 perpetual depth at 100 ms, aggregate trades, book ticker events, and public REST
 depth snapshots, followed by defined USD-M auxiliary data. It keeps recoverable
 immutable raw payloads, deterministic replay metadata, explicit gap evidence,
-and optional verified archival to a user-registered directory.
+and verified archival across the approved VPS/local Offline Workspace boundary.
 
 The authoritative scope is `docs/project_contract.md`. The delivery sequence and
 acceptance gates are in `docs/milestone_plan.md`.
 
 ## Non-goals
 
-- No GUI, web frontend, FastAPI product API, or trading interface.
+- No current GUI, web frontend, FastAPI product API, or trading interface. A
+  future Web UI is separately authorized and must not be forced into Recorder
+  core.
 - No factors, Alpha DSL, strategies, positions, backtests, account ledger, or
   live/simulated execution.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
@@ -51,6 +56,8 @@ acceptance gates are in `docs/milestone_plan.md`.
   stateless collection.
 - No automatic formatting, repair, repartitioning, or exclusive ownership of an
   external volume.
+- No exclusive ownership of the production VPS host or filesystem; unrelated
+  co-resident services remain outside Recorder control.
 - No production data under the repository, Desktop, Documents, iCloud Drive, or
   `/tmp`.
 
@@ -95,7 +102,7 @@ another exchange requires a separate future architecture review.
    complete. Recover to the last verified frame or quarantine it.
 6. Archive through a target temporary file, fsync, readback, size and SHA-256
    verification, atomic rename, external manifest, and Catalog transaction.
-   Delete the internal source only after all those steps succeed.
+   Delete the source only after all local/remote authorization steps succeed.
 7. Never silently delete unarchived raw data, even under disk pressure. At the
    hard reserve, seal gracefully, stop collection, emit
    `DISK_EMERGENCY_STOP`, and mark the gap start.
@@ -270,3 +277,8 @@ registered relative directory identified by volume UUID plus marker and
 `storage_id`. Do not change filesystem format, repair it, write outside that
 directory, or rely only on `/Volumes/<name>`. Never use the repository or its
 parent `/Users/amada/Documents/Development/Crypto` as a production data root.
+
+The future local archive client targets macOS, Linux, and Windows. Platform
+volume/eject adapters may differ, but archive verification, Archive Set
+identity, receipt binding, and deletion authorization remain portable. The
+current implementation does not yet provide that cross-platform remote client.

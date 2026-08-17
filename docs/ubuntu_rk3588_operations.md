@@ -1,13 +1,21 @@
 # Ubuntu ARM64 / RK3588 operations
 
-Status: M20 Developer Preview / Soak Candidate. This is not Production Ready.
+Status: M20 Ubuntu ARM64/RK3588 Developer Preview / Soak Candidate. This is
+not the primary production authority and is not Production Ready. The approved
+future production profile is Ubuntu 24.04 LTS x86_64 on a shared VPS; see
+`vps_operations.md` and `test_environment_matrix.md`.
 The deployed artifact `f659895…` completed the later FORMAL 72h observational
 gate (PASS: 27/27 explicit WS transitions, +0 unmarked, 0 false-complete,
 27/27 first-new Raw `sequence_gap`) but became NOT ELIGIBLE FOR 168H when the
 restart-only orphan-intent defect was discovered; the 168-hour soak has not
-run. The corrected M21.4.11-R3.x artifact (PR #11) is NOT DEPLOYED:
+run. The corrected M21.4.11-R3.x artifact is merged to `main` through PR #11
+but is NOT DEPLOYED:
 production validation is PENDING and the full staged validation chain must
 reset after a separately authorized deployment.
+
+This document remains specific to RK3588/LAN Linux. It must not be relabelled
+as VPS operations, and its historical production evidence must not be promoted
+to VPS evidence.
 
 ## Fixed layout
 

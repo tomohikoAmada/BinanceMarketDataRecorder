@@ -2,6 +2,11 @@
 
 > **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
+> **Approved future production profile:** Ubuntu 24.04 LTS x86_64, Python 3.12,
+> non-root systemd service on a shared 2 vCPU / 4 GiB / 40 GB-class VPS. The
+> VPS architecture and remote archive client are not deployed or production
+> validated.
+>
 > **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
 > 正式 2 小时和 12 小时**进程稳定性**验收通过并完成独立证据复核。
 > 正式 24 小时**进程稳定性**验收通过，并完成纠错复核和 Backpressure 合同法证确认；
@@ -10,7 +15,7 @@
 > USD-M book_ticker 意外断线及所有 planned rotation 边界均无 gap 证据
 > （gap=false/complete=true）。12h/24h 数据完整性验收被
 > SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING 取代。
-> M21.4.11 修复已实现并提交 PR 审查，**未部署**。168 小时验收未开始。
+> M21.4.11 修复已合并到 `main`（PR #11），**未部署**。168 小时验收未开始。
 >
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
@@ -29,8 +34,8 @@
 > **The formal 72-hour validation FAILED on data integrity**: the
 > 2026-08-07T14:08:24Z USD-M book_ticker unexpected disconnect and every
 > planned rotation sealed their reconnect boundaries without gap evidence.
-> The M21.4.11 reconnect-boundary repair is implemented and under review;
-> it is NOT deployed. The 168-hour validation has not started.
+> The M21.4.11 reconnect-boundary repair is merged to `main` through PR #11 but
+> is NOT deployed. The 168-hour validation has not started.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
@@ -38,15 +43,16 @@
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
 
 **72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见下文与
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
-修复已实现并提交 PR 审查，未部署。
+修复已合并到 `main`（PR #11），未部署。
 
 M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h进程稳定性验收通过。
 正式24h结果经纠错复核和Backpressure合同法证确认；正式窗口内gen5自然
 Backpressure恢复合同PASS。**正式72h验收FAIL（数据完整性）**：所有普通
-reconnect/planned rotation 边界均无 gap 证据。M21.4.11 修复已实现，未部署。
+reconnect/planned rotation 边界均无 gap 证据。M21.4.11 修复已合并到 `main`，未部署。
 不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
@@ -55,9 +61,11 @@ Binance Market Data Recorder 是 specifically for Binance public market data
 原始字节，持久化为不可变 Raw 数据，再派生为版本化 Parquet 数据集，供外部研究、
 回测、监控和模拟项目消费。
 
-macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持；Ubuntu
-ARM64/RK3588 增加非 root **systemd** 部署，平台状态为 Soak Candidate，
-尚未完成 72h/168h 认证。Windows 尚未实现。V1 仅支持 BTCUSDT Spot 和
+macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持并作为开发/本地
+profile；Ubuntu ARM64/RK3588 的非 root **systemd** 部署是独立的 Soak
+Candidate/LAN Linux profile。未来主生产 profile 是 Ubuntu 24.04 LTS x86_64
+共享 VPS，尚未部署或验收。Windows 尚未实现，但未来归档客户端要求支持
+macOS/Linux/Windows。V1 仅支持 BTCUSDT Spot 和
 BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
@@ -111,13 +119,13 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | CLI | `binance-market-recorder` |
 | 版本 | `0.1.0a1` |
 | Python | 3.12 (`>=3.12,<3.13`) |
-| 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate |
+| 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate; approved future production: Ubuntu 24.04 x86_64 VPS |
 | 部署方式 | logged-in-user LaunchAgent / non-root systemd |
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | 2h PASS（短窗口进程稳定性）；12h/24h 进程稳定性 PASS（数据完整性被 reconnect 发现取代）；**72h FAIL**；168h 未开始 |
-| PR/部署 | PR #7 已合并 (Merge Commit cf1e749c...), 生产 Wheel 已部署；M21.4.11 修复 PR 待审查，未部署 |
+| PR/部署 | PR #7 production Wheel history retained; M21.4.11/R3.4 code merged through PR #11, not deployed; VPS not deployed |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -148,7 +156,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | M20 已实现 | `systemd install` CLI | system unit + journald | Ubuntu ARM64 Soak Candidate |
+| systemd 服务 | M20 已实现（RK3588/LAN profile） | `systemd install` CLI | system unit + journald | approved VPS profile is future/not deployed |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
@@ -528,6 +536,12 @@ SEALED → ARCHIVE_COPYING → ARCHIVE_VERIFYING → ARCHIVED_VERIFIED
 每个步骤都是幂等和可重试的。外部介质消失 → `DISAPPEARED_DURING_COPY`，
 保留内部源。`LOCAL_DELETED` 后外部文件**可能是唯一副本**，归档不是独立备份策略。
 
+批准的未来 VPS 拓扑由本地 archive client 通过 SSH 拉取 VPS sealed Raw。
+本地 durable verification、Raw manifest/Archive Set/storage_id 身份、receipt
+持久化、VPS receipt 校验和源重新验证完成后才可删除 VPS 源。SSH 成功不等于
+删除授权。当前实现仍是 local ArchiveManager；远程 transfer、Archive Set 和
+Catalog post-session snapshot 尚未实现。
+
 ### 安全弹出
 
 - 立即请求与 archive reservation 互斥
@@ -562,6 +576,10 @@ Normalization 是**显式 CLI 触发**的派生过程，不在 Collector 或 cap
 15. 失败时**不发布**半成品 Build
 
 Normalizer **不会**自动随 Collector 持续运行。
+
+在批准的未来 VPS profile 中，Normalization、heavy Replay/analytical scans
+和 Historical Backfill 默认在 local Offline Workspace 执行；它们仍属于
+同一个 Recorder distribution 的能力，不拆成新的 repository/microservice。
 
 ## Replay 和 Consumer 能力
 
@@ -697,8 +715,9 @@ binance-market-recorder storage forecast
 
 - 独立追踪内部和外部存储
 - 1h / 6h / 24h / 7d 净增长窗口
-- 空间严重性：WARNING (≤40%) → CRITICAL (≤15%) → EMERGENCY (≤max(10 GiB, 5%))
-- Hard reserve：`max(5 GiB, 2% capacity, 2 × rotation_bytes)`
+- Future VPS 空间状态：WARNING/CRITICAL/EMERGENCY/HARD RESERVE at 18/14/12/10 GiB;
+  ETA triggers 7d/72h/24h
+- Future VPS hard reserve: 10 GiB protected for OS and co-resident services
 - Hard reserve 时：seal 活跃文件 → 停止 Collector → `DISK_EMERGENCY_STOP` → 记录 gap
 - **永不允许**删除未验证 Raw
 
@@ -847,8 +866,9 @@ binance-market-recorder storage forecast
 
 ## 安装和快速开始
 
-macOS Apple Silicon 为 Developer Preview；Ubuntu ARM64/RK3588 为 M20
-Developer Preview / Soak Candidate。Ubuntu 完整步骤见
+macOS Apple Silicon 为 Developer Preview/local profile；Ubuntu ARM64/RK3588 为
+M20 Developer Preview / Soak Candidate。批准的未来生产 profile 为 Ubuntu
+24.04 x86_64 shared VPS，尚未部署。Ubuntu ARM64/RK3588 完整步骤见
 [`docs/ubuntu_rk3588_operations.md`](docs/ubuntu_rk3588_operations.md)。
 
 ### A. 从 Developer Preview Wheel 安装
@@ -1046,7 +1066,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
 - 仅 BTCUSDT Spot 和 USD-M Perpetual。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署，但 72h/168h 尚未运行，因此仅为
-  Developer Preview / Soak Candidate；Windows 尚未实现。
+  Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。
+  Windows archive-client support is future work; the client is not implemented.
 - RK3588 实机配置使用有界 `ingress_queue_capacity = 262144` 并错开各流的
   Raw seal 相位；长期队列、RSS 与 eMMC seal 延迟仍属于 M21 soak 验证。
 - 无 Historical L2（data.binance.vision 不提供深度数据）。
@@ -1059,7 +1080,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 ### 非目标
 
 - **无 API Key、账户、订单、交易能力。**
-- **无 GUI、Web 前端、FastAPI 产品 API。**
+- **当前无 GUI、Web 前端、FastAPI 产品 API。** Future Web UI is separately
+  authorized and remains outside the current Recorder core.
 - **无 HTTP/gRPC/WebSocket 数据服务。**
 - **无策略引擎、因子、回测框架。**
 - **无多交易所、多 Symbol 支持。**
@@ -1180,6 +1202,10 @@ python3.12 examples/replay_consumer.py \
 - [中文代码维护者指南](docs/code_guide.zh-CN.md)
 - [macOS Quickstart](docs/quickstart_macos.md)
 - [Ubuntu ARM64 / RK3588 operations](docs/ubuntu_rk3588_operations.md)
+- [VPS operations](docs/vps_operations.md)
+- [Archive transfer contract](docs/archive_transfer_contract.md)
+- [Offline Workspace](docs/offline_workspace.md)
+- [Test environment matrix](docs/test_environment_matrix.md)
 - [Architecture](docs/architecture.md)
 - [Project Contract](docs/project_contract.md)
 - [Data Contract](docs/data_contract.md)

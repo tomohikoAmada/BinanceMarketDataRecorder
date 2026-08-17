@@ -16,6 +16,11 @@ Linux interactive: ~/.local/share/BinanceMarketDataRecorder/
 Linux systemd:     /var/lib/binance-market-data-recorder/
 ```
 
+The primary future production host is Ubuntu 24.04 LTS x86_64 on a shared
+2 vCPU/4 GiB/40 GB-class VPS. The interactive macOS and Linux roots above
+remain valid local profiles; the Ubuntu ARM64/RK3588 root is a distinct
+validation/historical profile, not the production authority.
+
 Forbidden defaults include the repository, its parent
 `/Users/amada/Documents/Development/Crypto`, Desktop, Documents, iCloud Drive,
 and `/tmp` for persistent data.
@@ -143,15 +148,24 @@ Capacity severity and archive eligibility are deliberately distinct:
 - `CRITICAL` and `EMERGENCY` targets report `LOW_SPACE`; Archive Drain starts
   no new transaction and exits successfully with `TARGET_LOW_SPACE`.
 
-The shared thresholds remain exactly 40% warning, 15% critical, and the
-existing emergency rule. This distinction changes neither archive verification
-nor the Catalog state machine.
+The current local storage implementation retains its M11 threshold behavior
+for existing local targets. That behavior is not the approved universal VPS
+policy: ADR-0028/0029 select the explicit free-byte and ETA thresholds below
+for the future production VPS. Neither policy changes archive verification or
+the Catalog state machine.
 
 M20 does not map Linux to the macOS eject transaction. Without a proven udisks
 capability, `storage eject` returns `MANUAL_ACTION_REQUIRED`,
 `safe_to_remove=false`, and performs no unmount/eject mutation. Only macOS
 Disk Arbitration's successful unmount plus eject callbacks may produce the
 existing `SAFE_TO_REMOVE` claim.
+
+The future Offline Workspace may contain several physical archive media. An
+`archive_set_id` identifies the logical collection and `storage_id` continues
+to identify one physical medium. A chunk remains whole on one medium. Existing
+UUID/marker/relative-directory identity remains the physical access boundary;
+Archive Set metadata and a rebuildable global index are additional future
+archive-client responsibilities, not a change to this storage state machine.
 
 ## Archive transaction
 
@@ -177,6 +191,14 @@ belong to an abandoned Recorder transaction.
 
 After local deletion, status must warn that the external target may be the only
 remaining copy. Recorder archival is not itself a multi-copy backup policy.
+
+For the approved future VPS topology, the local client pulls from the VPS over
+SSH through a transport-neutral `RemoteTransport` seam. Local durability,
+readback, size/SHA-256, Raw manifest identity, Archive Set/storage identity,
+durable receipt, VPS receipt validation, and source revalidation precede VPS
+source deletion. SSH success alone is never sufficient. The complete future
+transaction is defined in `docs/archive_transfer_contract.md`; it is not
+implemented by the current local ArchiveManager.
 
 ## Safe eject transaction
 
@@ -208,30 +230,36 @@ oldest item, `archive status` is local/read-only, and
 
 ## Space measurements and forecasts
 
-Measure internal and every registered external target independently. Severity:
+Measure internal and every registered external target independently. For the
+primary 40 GB-class VPS profile, the initial internal policy is:
 
-- `WARNING`: free percentage <= 40%;
-- `CRITICAL`: free percentage <= 15%;
-- `EMERGENCY`: free bytes <= `max(10 GiB, 5% of capacity)`.
+- `NORMAL`: free > 18 GiB;
+- `WARNING`: free <= 18 GiB or ETA to hard reserve <= 7 days;
+- `CRITICAL`: free <= 14 GiB or ETA <= 72 hours;
+- `EMERGENCY`: free <= 12 GiB or ETA <= 24 hours;
+- `HARD RESERVE`: free <= 10 GiB.
 
 The most severe applicable state wins. Growth history includes at least 1 h,
 6 h, 24 h, and 7 d windows with a documented robust median/EWMA method. Output
 net local growth, archive backlog and oldest age, UTC threshold ETAs,
 `INSUFFICIENT_DATA`, or `NOT_APPROACHING`; it never emits NaN/infinity as JSON.
-For an external archive target, WARNING remains `READY` and allows archival;
-CRITICAL and EMERGENCY map to `LOW_SPACE` and stop new archive transactions.
+For an external archive target, the existing target-readiness rules remain
+separate from the VPS internal policy. The VPS policy is based on actual free
+bytes, not Recorder ownership of the filesystem.
 
 Emergency order is: suspend compaction/non-core derivation; prioritize archive
 and deletion already authorized by verification; never delete unarchived raw;
 at hard reserve, gracefully seal, stop collectors, emit `DISK_EMERGENCY_STOP`,
 and open an explicit gap interval.
 
-M11 implements ADR-0016 with persisted per-scope capacity samples. Each window
+M11 currently implements ADR-0016 with persisted per-scope capacity samples.
+The future VPS profile preserves the observed-growth method while selecting the
+ADR-0028 thresholds. Each window
 uses the median of consecutive net-consumption slopes after at least 80% time
 coverage; the maximum available window median is the conservative operational
 rate. Internal and every `external:<storage_id>` scope remain independent.
-Severity changes are append-only alerts. The hard reserve is
-`max(5 GiB, 2% of capacity, 2 * rotation_bytes)`, below the earlier EMERGENCY
-threshold on normal disks so verified archive/delete can be prioritized first.
-At hard reserve, actions are ordered seal, Collector stop,
-`DISK_EMERGENCY_STOP`, and gap open. No emergency action deletes unarchived Raw.
+Severity changes are append-only alerts. Existing local M11 hard-reserve
+calculation remains historical implementation behavior; the future VPS hard
+reserve is the protected 10 GiB threshold. In both profiles, actions are
+ordered seal, Collector stop, `DISK_EMERGENCY_STOP`, and gap open. No emergency
+action deletes unarchived Raw.

@@ -2,8 +2,9 @@
 
 ## Deployment model
 
-The certified V1 service is a user LaunchAgent on macOS Apple Silicon, Python
-3.12, requiring the user to be logged in. Installation does not require root
+macOS Apple Silicon is the development/local profile, not the primary future
+production authority. The implemented service is a user LaunchAgent on macOS
+Apple Silicon, Python 3.12, requiring the user to be logged in. Installation does not require root
 and does not silently install a LaunchDaemon. Future launchd, service, log, and
 configuration identifiers derive from `BinanceMarketDataRecorder`, never a
 consumer name or a namespace implying Binance ownership. The final reverse-DNS
@@ -151,3 +152,7 @@ stderr under the internal `logs/` directory. `stop` bootouts the job for the
 current login session; `start` bootstraps or kickstarts it; `uninstall` removes
 only its selected plist and Recorder install metadata. Machine restart resumes
 only after the user logs in.
+
+The future local archive client is intended to run on macOS, Linux, and Windows.
+This document covers only the implemented macOS volume/eject adapter; it does
+not claim that the portable remote archive client exists.

@@ -321,6 +321,11 @@ self-referential commit hash.
 - Rollback: disable forecasts/alerts only after preserving conservative hard
   stop; revert algorithm and rebuild history-derived output.
 
+M11's 40%/15%/percentage-based thresholds remain the accepted historical
+local-profile implementation contract. ADR-0028 prospectively selects the
+explicit 18/14/12/10 GiB plus ETA policy for the future shared VPS; this does
+not rewrite M11 acceptance evidence.
+
 ## M12 — macOS safe eject
 
 - Scope: `binance-market-recorder storage eject <id>`; block new allocation;
@@ -602,7 +607,8 @@ from Raw after a corrected parser is available.
   further add SEALING seal-intent recovery keyed by exact gap lifecycle,
   Catalog-first zero-record marker durability, exact operational-event
   idempotency, and logical audit transitions across frame-less chunks. It is
-  under review and NOT DEPLOYED.
+  merged to `main` through PR #11, but NOT DEPLOYED. The merged code state is
+   distinct from deployed/production-validated state.
   Full record:
   `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`.
 
@@ -703,8 +709,8 @@ from Raw after a corrected parser is available.
   PASSED the formal 72h observational gate and became NOT ELIGIBLE FOR
   168H, while the corrected artifact is NOT DEPLOYED with validation
   PENDING. It is
-  under review and NOT DEPLOYED. Production validation for the corrected
-  artifact is PENDING: after review, merge, and separately authorized
+  merged to `main` through PR #11 and remains NOT DEPLOYED. Production validation for the corrected
+  artifact is PENDING: after review and separately authorized
   deployment, the NEW artifact must re-execute the full staged chain
   (exact artifact identity → readiness → 2h → 12h → 24h → 72h → 168h).
   See ADR-0027 "Pending-gap extensions and orphan seal-intent prevention /
@@ -717,11 +723,38 @@ from Raw after a corrected parser is available.
   The old artifact's windows are historical reference only. The 168-hour
   window is never started automatically.
 
+## D0/D1 — VPS and remote archive architecture freeze
+
+Status: **DOCUMENTATION-ONLY ARCHITECTURE FREEZE**. Approved by ADR-0028,
+ADR-0029, and ADR-0030; implementation and deployment are not included.
+
+- Primary production target: Ubuntu 24.04 LTS x86_64, Python 3.12, systemd,
+  non-root Recorder service, 2 vCPU/4 GiB/40 GB-class shared VPS.
+- Live VPS role: public acquisition, Raw spool/seal, Catalog, recovery,
+  integrity/gap/provenance state, metrics/status, and archive export support.
+- Offline role: local Normalize, heavy Replay/analysis, and Historical Backfill
+  using the same Recorder distribution and the Offline Workspace.
+- Archive direction: local client pulls from VPS over SSH through a replaceable
+  `RemoteTransport` seam; durable local verification and receipt authorization
+  precede immediate VPS source deletion.
+- Archive Set: `archive_set_id` is logical collection identity;
+  `storage_id` is one physical medium; chunks remain whole and media metadata
+  is self-describing/rebuildable.
+- VPS capacity policy: WARNING/CRITICAL/EMERGENCY/HARD RESERVE at 18/14/12/10
+  GiB, with ETA triggers at 7 days/72 hours/24 hours.
+- Acceptance roles: MacBook development, LAN Linux pre-production, and exact
+  VPS staged acceptance `2h -> 12h -> 24h -> 72h -> 168h` after identity and
+  readiness. LAN evidence does not substitute for VPS evidence.
+
+See `docs/vps_operations.md`, `docs/archive_transfer_contract.md`,
+`docs/offline_workspace.md`, and `docs/test_environment_matrix.md`.
+
 ## Future Work
 
-M21 is reserved for the deferred 72-hour/168-hour Ubuntu ARM64 soak and
-operational hardening. Other unscheduled future work may include repeated
-24-hour connection rotations, Windows portability,
-and a separately reviewed GUI. Future work has no milestone number, is not part
-of the current M0–M20 plan, and does not include strategy, backtest or trading
-implementation without a new human-approved project scope.
+M21 historical work contains the Ubuntu ARM64/RK3588 soak evidence and recovery
+hardening. Future work includes the separately authorized VPS deployment and
+staged acceptance, the portable macOS/Linux/Windows archive client, repeated
+connection rotations, notifications, and a separately reviewed Web UI. Future
+work has no production implementation in this documentation milestone and
+does not include strategy, backtest, or trading implementation without a new
+human-approved project scope.

@@ -38,7 +38,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | STO-07 | Archive temp/copy/fsync/readback/size+SHA/rename/manifest/Catalog then delete | storage contract, ADR-0003, ADR-0015 | M10 crash/fault/idempotence matrix passes |
 | STO-08 | Never delete active/unverified/unarchived; delete retry; unique-copy warning | storage contract, R-011 | M10 tests/CLI/docs; M18 handbook |
 | STO-09 | Only registered directory touched; residual temp cleanup bounded | storage contract, ADR-0015 | M9/M10 filesystem audit tests pass |
-| SPC-01 | 40% warning, 15% critical, emergency max(10 GiB,5%) | project/storage contracts, ADR-0016 | M11 exact-boundary and alert-transition tests pass |
+| SPC-01 | Historical local-profile 40%/15%/emergency thresholds; future VPS 18/14/12/10 GiB plus ETA triggers and protected reserve | ADR-0016, ADR-0028, storage/vps contracts | M11 local implementation tests; future exact-VPS measured validation |
 | SPC-02 | 1h/6h/24h/7d robust growth and ETAs; insufficient/nonpositive sentinels | storage contract, ADR-0016 | M11 synthetic multi-window/archive-on tests pass |
 | SPC-03 | Emergency suspends non-core, prioritizes verified archive, never deletes unarchived; seal/stop/gap | project/storage contracts, ADR-0016 | M11 real-spool emergency integration test passes |
 | MET-01 | UTC/market/stream daily input, quality, output and performance metrics | project/data contracts, ADR-0013 | M8 deterministic fixture, Collector reconciliation and midnight tests |
@@ -67,6 +67,14 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | LNX-02 | Non-root idempotent systemd lifecycle, journald, SIGTERM seal, TOML proxy, no data deletion | ADR-0026, operations guide | M20 static unit tests and RK3588 install/start/stop/restart/uninstall-retention evidence |
 | LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
 | FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
+| VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, shared 2 vCPU/4 GiB/40 GB-class VPS | ADR-0028 | Future exact-VPS artifact/readiness/2h/12h/24h/72h/168h acceptance; not deployed by D0/D1 |
+| VPS-02 | VPS owns live acquisition, Raw/seal, Catalog/recovery, gap/provenance, metrics/status; heavy offline work remains local | ADR-0028, offline workspace | Future live/offline execution profiles; one Recorder distribution; not implemented by D0/D1 |
+| ARC-01 | Local client pulls from VPS over SSH through replaceable transport seam | ADR-0029, archive transfer contract | Future archive-client transport and fault matrix; current ArchiveManager remains local |
+| ARC-02 | Durable local verification -> durable exact VPS pre-delete authorization (bound to receipt + source identity) -> source revalidation -> unlink/durability -> terminal state with restart reconciliation; one copy is not backup | ADR-0029, R-048 | Future remote transaction implementation and crash/restart deletion authorization tests |
+| ARC-03 | Archive Set logical identity, physical storage_id, whole-chunk placement, self-describing media, rebuildable index | ADR-0030, offline workspace | Future multi-media archive-client implementation and rebuild test |
+| ARC-04 | Post-session consistent Catalog snapshots with latest+previous retention; snapshots never replace Raw | ADR-0029, offline workspace, R-050 | Future SQLite-supported backup/snapshot implementation and transfer verification |
+| CAP-04 | VPS free-byte/ETA policy: 18/14/12/10 GiB and 7d/72h/24h, protected 10 GiB reserve | ADR-0028, vps_operations, R-049 | Future measured VPS validation; current local M11 behavior is historical profile behavior |
+| ENV-01 | MacBook, LAN Linux, and exact VPS have separate test and acceptance responsibilities | test environment matrix, ADR-0028 | Future platform matrix; LAN 72h never substitutes for exact VPS |
 
 ## Milestone coverage
 
@@ -97,7 +105,7 @@ passed in-window. 72h/168h remain pending and have not started.
 | gen5 contract proof | Catalog STARTED/COMPLETED paired; Raw first-new sequence_gap; manifests gap=true/complete=false; historical_continuity_restored=false | PASS |
 | 72h window | Formal 72h core process stability PASS (PID/NRestarts/boot_id unchanged); data-integrity contract FAIL (14:08 book_ticker disconnect) | **FAIL** (FORMAL_72H_RESULT=FAIL, eligible_for_next_stage=false) |
 | 72h forensics | M21.4.10 unexpected-disconnect forensics: same-generation reconnect, no STARTED/COMPLETED, no sequence_gap, gap=false/complete=true | UNEXPECTED_DISCONNECT_CONTRACT_RESULT=FAIL |
-| Reconnect boundary repair | M21.4.11 PR `fix/m21-4-reconnect-boundary-integrity`: unified state machine, manifest-level `reconnect_gap`, seal defense, read-only audit tool; R1..R5/R2/R2.1/R2.2 corrections: crash-durable intent ordering, exact gap lifecycle, Catalog-first marker durability, exact operational-event idempotency, boundary-local/frame-less audit classification, side-data fail-closed restart, deterministic canonical output | Implemented; under review; NOT DEPLOYED |
+| Reconnect boundary repair | M21.4.11 PR `fix/m21-4-reconnect-boundary-integrity`: unified state machine, manifest-level `reconnect_gap`, seal defense, read-only audit tool; R1..R5/R2/R2.1/R2.2/R3.x corrections: crash-durable intent ordering, exact gap lifecycle, Catalog-first marker durability, exact operational-event idempotency, boundary-local/frame-less audit classification, side-data fail-closed restart, deterministic canonical output | Merged to main through PR #11; NOT DEPLOYED |
 | Historical audit (corrected, authoritative) | R2.2 read-only rerun: 161,817 chunks scanned (cutoff `1786349202047196027`, inventory SHA `ffaf34bd...`); 4,691 transitions; 11 explicit (all Catalog-identity-proven); 4,680 unmarked; 0 unknown; 0 overlap; catalog matched_pairs=11/unmatched=0/0 | `tools/audit_reconnect_boundaries.py` + `/var/tmp/m21-4-11-r2-2-historical-audit.json`; canonical SHA-256 `1122431c56ebd8367bbbed1a8fc0e30f1f020d7edfd9c34602c9988d89d4b35f`; earlier manifest-level scanner retained as SUPERSEDED |
 | 168h window | — | PENDING (not started) |
 | Documentation | M21.4 acceptance, deployment evidence, 24h forensics, 72h failure | `docs/milestone_acceptance/M21.4.md`, `docs/milestone_evidence/M21.4-deployment-and-validation.md`, `docs/milestone_evidence/M21.4-24h-validation-forensics.md`, `docs/milestone_evidence/M21.4-ingress-overflow-analysis.md`, `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md` |
@@ -118,5 +126,7 @@ These paths are local to the RK3588 host. Only the documentation in this
 repository is published to GitHub; the run, review, and archive evidence
 themselves are not uploaded.
 
-This matrix should be updated whenever a requirement, ADR, or
-milestone acceptance changes.
+The current main includes the M21.4.11/R3.4 code through merged PR #11. That
+is merged code state only: the corrected artifact is not deployed and has no
+VPS production validation. This matrix should be updated whenever a
+requirement, ADR, or milestone acceptance changes.
