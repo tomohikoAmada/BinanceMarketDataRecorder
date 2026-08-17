@@ -2,8 +2,8 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前实现仍为 Mac Developer Preview / Ubuntu ARM64/RK3588 Soak Candidate。
-Ubuntu 24.04 x86_64 VPS 是批准的未来生产 profile，尚未部署或验收；不得
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收；不得
 将合并代码状态描述为生产验证。
 
 Severity: Critical / High / Medium / Low. Status is Open, Monitoring, Mitigated,

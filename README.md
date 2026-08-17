@@ -42,9 +42,8 @@
 
 连续72小时和168小时长期运行验收尚未执行。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前实现为 Mac Developer Preview / Ubuntu ARM64/RK3588 Developer Preview /
-Soak Candidate。Ubuntu 24.04 x86_64 VPS 是批准的未来生产 profile，尚未部署
-或验收；不得用于真实资金交易。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
 
 **72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见下文与
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
