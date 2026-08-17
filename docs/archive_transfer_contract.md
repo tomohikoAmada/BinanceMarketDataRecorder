@@ -40,10 +40,23 @@ VPS sealed Raw + manifest selected
   -> Archive Set + physical storage identity committed
   -> durable local archive receipt committed
   -> VPS validates exact receipt/authorization
+  -> VPS persists durable deletion-authorized/pending fact
+       bound to exact receipt + exact source identity
   -> VPS revalidates unchanged source identity
-  -> source deletion authorized
-  -> VPS Catalog records resulting state
+  -> unlink exact source
+  -> filesystem deletion durability (including parent directory)
+  -> VPS Catalog records terminal deletion state
 ```
+
+The durable VPS deletion-authorized/pending fact must exist before any source
+unlink. It binds the exact validated local archive receipt and the exact
+immutable VPS Raw/manifest source identity. Source revalidation remains
+immediately before the destructive mutation; the pending fact does not replace
+it. If revalidation fails after the pending fact is persisted, the source is
+not unlinked and the pending transaction is retained/reconciled as failed,
+stale, or retryable. This contract does not define an implementation-specific
+state machine; exact state names, persistence, and APIs are future
+implementation concerns.
 
 The target is written through a transaction-owned temporary artifact and is
 published atomically. A final artifact with the same name is accepted only
@@ -82,6 +95,18 @@ to another chunk, medium, set, target, or session.
   surface the failure.
 - VPS deletion failure after authorization: retain Catalog evidence and make
   the operation retryable without copying or deleting a different source.
+- Crash after unlink and required filesystem/directory deletion durability but
+  before the terminal Catalog deletion-state commit: restart reconciles
+  idempotently to the terminal deleted state only when a matching durable
+  pre-delete authorization/pending fact bound to the exact receipt and exact
+  source identity exists and all available durable identity/evidence
+  validates.
+- Source absent without a matching durable pre-delete authorization/pending
+  fact: unexplained source loss. Fail closed; never retroactively normalize it
+  into an authorized deletion merely because a local receipt exists.
+- Authorization identity, receipt identity, source identity, manifest
+  identity, or durable state disagreement: fail closed; never delete a
+  different source.
 - Post-session Catalog snapshot failure: do not undo verified Raw archival or
   deletion; surface the snapshot failure and retry it from the post-session
   state.

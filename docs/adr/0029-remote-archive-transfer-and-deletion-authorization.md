@@ -42,9 +42,14 @@ Raw manifest identity, commits the Artifact and Archive Set identity, and
 durably commits a local receipt. Only then may the client send a deletion
 authorization to the VPS.
 
-The VPS validates the exact receipt and revalidates that the source has not
-changed since selection. Only after successful validation does the VPS
-authorize source deletion and record the resulting Catalog state. A failed,
+The VPS validates the exact receipt, persists a durable VPS-side
+deletion-authorized/pending fact bound to the exact validated local archive
+receipt and the exact immutable VPS Raw/manifest source identity, and only
+then revalidates that the source has not changed since selection. Source
+revalidation remains immediately before the destructive mutation. Only after
+successful validation does the VPS unlink the source, commit the filesystem
+deletion including required parent-directory durability semantics, and record
+the resulting terminal Catalog deletion state separately afterward. A failed,
 ambiguous, stale, or mismatched receipt retains the VPS source.
 
 The receipt/authorization binding must contain sufficient immutable identity to
@@ -61,6 +66,81 @@ The receipt is evidence of a specific archive transaction, not a general
 permission to delete a path. The exact serialized receipt format remains an
 implementation concern of the future contract implementation; no new public
 market-data schema is introduced here.
+
+### Durable pre-unlink authorization ordering
+
+One additional correctness-critical ordering invariant is frozen: BEFORE the
+VPS mutates or unlinks the selected Raw source, a durable VPS-side
+deletion-authorized/pending fact must already exist, bound to:
+
+- the exact validated local archive receipt; and
+- the exact immutable VPS Raw/manifest source identity.
+
+The conceptual transaction order is:
+
+```text
+VPS sealed Raw + manifest selected
+->
+local transfer
+->
+local durable commit
+->
+local reopen/readback
+->
+size/hash verification
+->
+manifest identity verification
+->
+Archive Set + storage identity durable commit
+->
+durable local receipt
+->
+VPS validates exact receipt
+->
+VPS persists durable deletion-authorized/pending fact
+    bound to exact receipt + exact source identity
+->
+VPS immediately revalidates exact source identity
+->
+unlink exact source
+->
+durably commit filesystem deletion
+    including required parent-directory durability semantics
+->
+persist terminal/resulting Catalog deletion state
+```
+
+This preserves the ADR-0015 local semantic property: verified durable
+authority exists before source deletion, a durable pending deletion state
+exists before unlink, source identity is revalidated, unlink occurs, source
+directory durability is performed, and the terminal deleted state is recorded
+separately afterward. The future remote implementation is not required to
+reuse the local `LOCAL_DELETE_PENDING` name, enum, class, or ArchiveManager
+implementation; exact implementation/API/schema/state names are not frozen.
+
+The durable pending fact does NOT replace source revalidation. If source
+revalidation fails after the pending fact is persisted, the source must not be
+unlinked; the pending transaction is retained and reconciled as failed,
+stale, or retryable according to future implementation semantics.
+
+### Restart reconciliation semantics
+
+The normative contract requires the following restart cases:
+
+- **CASE A** — source exists and a matching durable pre-delete
+  authorization/pending fact exists: retry or revalidate the exact authorized
+  deletion transaction safely.
+- **CASE B** — source absent and a matching durable pre-delete
+  authorization/pending fact exists: restart may reconcile the
+  crash-interrupted authorized unlink idempotently to the terminal deleted
+  state, after validating all available durable identity/evidence.
+- **CASE C** — source absent and NO matching durable pre-delete
+  authorization/pending fact exists: unexplained source disappearance. FAIL
+  CLOSED. It must never be retroactively normalized into an authorized
+  deletion merely because a local receipt exists.
+- **CASE D** — authorization identity, receipt identity, source identity,
+  manifest identity, or durable state disagree: FAIL CLOSED. Never delete a
+  different source.
 
 After verified local archive and successful deletion authorization, the VPS Raw
 may be deleted immediately. No mandatory VPS grace period is required. One
@@ -82,8 +162,12 @@ operational recovery evidence, never Raw authority.
 - No source deletion follows from SSH success, file existence, name equality,
   or size equality alone.
 - Local durability, readback, size/hash verification, manifest identity,
-  Archive Set identity, receipt durability, VPS receipt validation, and source
-  revalidation precede deletion authorization.
+  Archive Set identity, receipt durability, VPS receipt validation, a durable
+  VPS-side deletion-authorized/pending fact, and source revalidation precede
+  any source unlink.
+- The durable VPS-side deletion-authorized/pending fact is bound to the exact
+  receipt and the exact source identity; source revalidation still immediately
+  precedes the unlink.
 - An unknown or incomplete transfer remains a gap/failure and never becomes
   `COMPLETE` by implication.
 - Receipt identity binds the source, destination, session, and verification
@@ -110,8 +194,13 @@ not decide verification, Archive Set identity, or deletion eligibility.
 ### VPS Recorder
 
 Exposes selected immutable sealed Raw and manifests, validates deletion
-authorizations against current source identity, performs authorized deletion,
-records resulting Catalog state, and creates post-session Catalog snapshots.
+authorizations against current source identity, persists the durable
+deletion-authorized/pending fact bound to the exact receipt and exact source
+identity before any unlink, revalidates the exact source immediately before
+the destructive mutation, performs authorized deletion with filesystem
+durability, records the terminal Catalog deletion state, reconciles
+crash-interrupted authorized deletions on restart, and creates post-session
+Catalog snapshots.
 
 ### Operator
 
@@ -163,6 +252,14 @@ implementation may make SSH command strings part of Raw or manifest identity.
   VPS restart, and Catalog snapshot failure.
 - Prove every failure retains the VPS source unless the complete authorization
   chain is durable and identity-exact.
+- Fault-inject a crash AFTER source unlink and required filesystem/directory
+  deletion durability but BEFORE the terminal Catalog deletion/result commit;
+  prove restart recognizes the durable pre-delete authorization/pending fact,
+  recognizes the already-absent exact source as an authorized
+  crash-interrupted deletion, and idempotently reconciles the terminal state.
+- Prove the adversarial control: source absent WITHOUT a matching durable
+  pre-delete authorization/pending fact fails closed as unexplained source
+  loss and is never normalized into an authorized deletion.
 - Prove receipt replay cannot delete a second chunk or a different storage
   target.
 - Verify `latest` and `previous` snapshots represent post-session state and
