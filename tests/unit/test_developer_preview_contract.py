@@ -6,13 +6,23 @@ from pathlib import Path
 from binance_market_data_recorder.version import FALLBACK_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
-LONG_RUN_NOTICE = (
+CURRENT_LONG_RUN_NOTICE = (
+    "正式72小时长期运行验收已执行，但数据完整性合同结果为FAIL；168小时验收尚未执行。\n"  # noqa: RUF001
+    "M21.4.11修复已合并到`main`（PR #11）但尚未部署；修复后的新工件必须从"  # noqa: RUF001
+    "2h→12h→24h→72h→168h重新开始验收。\n"
+    "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
+    "当前版本为Mac Developer Preview;"
+    "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"
+    "不得用于真实资金交易。"
+)
+HISTORICAL_RELEASE_LONG_RUN_NOTICE = (
     "连续72小时和168小时长期运行验收尚未执行。\n"
     "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
     "当前版本为Mac Developer Preview;"
     "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"
     "不得用于真实资金交易。"
 )
+STALE_LONG_RUN_NOT_YET_EXECUTED_SENTENCE = "连续72小时和168小时长期运行验收尚未执行。"
 
 
 def _normalized(path: Path) -> str:
@@ -31,14 +41,30 @@ def test_developer_preview_identity_and_version_are_frozen() -> None:
     assert FALLBACK_VERSION == "0.1.0a1"
 
 
-def test_required_preview_surfaces_carry_the_same_long_run_warning() -> None:
+def test_current_living_surfaces_carry_the_same_long_run_warning() -> None:
     for relative in (
         "README.md",
         "docs/known_limitations.md",
         "docs/risk_register.md",
-        "release/0.1.0a1/RELEASE_NOTES.md",
     ):
-        assert LONG_RUN_NOTICE in _normalized(ROOT / relative), relative
+        assert CURRENT_LONG_RUN_NOTICE in _normalized(ROOT / relative), relative
+
+
+def test_current_living_surfaces_no_longer_claim_72h_was_never_executed() -> None:
+    for relative in (
+        "README.md",
+        "docs/known_limitations.md",
+        "docs/risk_register.md",
+    ):
+        assert STALE_LONG_RUN_NOT_YET_EXECUTED_SENTENCE not in _normalized(
+            ROOT / relative
+        ), relative
+
+
+def test_historical_release_note_preserves_the_release_boundary_notice() -> None:
+    assert HISTORICAL_RELEASE_LONG_RUN_NOTICE in _normalized(
+        ROOT / "release/0.1.0a1/RELEASE_NOTES.md"
+    )
 
 
 def test_operator_document_set_exists_without_claiming_binance_affiliation() -> None:

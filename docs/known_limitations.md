@@ -1,6 +1,7 @@
 # Known Limitations
 
-连续72小时和168小时长期运行验收尚未执行。
+正式72小时长期运行验收已执行，但数据完整性合同结果为FAIL；168小时验收尚未执行。
+M21.4.11修复已合并到`main`（PR #11）但尚未部署；修复后的新工件必须从2h→12h→24h→72h→168h重新开始验收。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。

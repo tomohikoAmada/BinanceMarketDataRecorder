@@ -86,7 +86,13 @@ PR #7, deployed to production, and passed 2h and 12h formal validation
 windows with independent evidence reviews. The formal 24-hour window passed
 and was confirmed by a corrective integrity review and a Backpressure
 contract forensic review; the gen5 natural backpressure recovery contract
-passed in-window. 72h/168h remain pending and have not started.
+passed in-window. The formal 72h window was executed: core process stability
+stood, but the data-integrity contract FAILED
+(FORMAL_72H_RESULT=FAIL, eligible_for_next_stage=false). The 168h window was
+not started. The M21.4.11 reconnect-boundary repair is merged to `main`
+through PR #11 but NOT deployed; a newly deployed corrected artifact must
+restart the complete staged acceptance chain
+(2h→12h→24h→72h→168h).
 
 ### M21.4 traceability
 
