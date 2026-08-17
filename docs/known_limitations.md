@@ -7,20 +7,31 @@ PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件�
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
 
-> **72小时验收结果为 FAIL（数据完整性合同失败）**。72小时窗口的核心进程
-> 稳定性 PASS，但 2026-08-07T14:08:24Z USD-M `book_ticker` 意外断线及所有
-> planned rotation 边界均无 gap 证据（gap=false/complete=true）。修复
-> (M21.4.11) 已合并到 `main`（PR #11），但未部署。完整记录：
+> **原始 M21.4 正式72小时窗口结果为 FAIL（数据完整性合同失败）**：
+> 该历史窗口的核心进程稳定性 PASS，但
+> 2026-08-07T14:08:24Z USD-M `book_ticker` 意外断线及 planned rotation
+> 边界缺少 gap 证据。
+> 随后部署的 M21.4.11 工件 `f659895…` 已通过独立正式72小时观测门
+> （PASS），但之后发现 restart-only orphan-intent 缺陷，
+> `ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
+> PR #11 的进一步修复已合并到 `main`，但尚未部署。
+> 原始72小时失败记录见
 > `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
 
-M21.4 was deployed and passed 2h, 12h, and 24h formal process-stability
-windows. **The formal 72h window FAILED on data integrity**: the
-2026-08-07T14:08:24Z USD-M `book_ticker` unexpected disconnect and every
-planned rotation sealed their reconnect boundaries without gap evidence
-(gap=false/complete=true). The M21.4.11 reconnect-boundary repair is merged to
-`main` through PR #11 but NOT deployed. Static review, unit
-tests, fault injection, and short online tests cannot substitute for
-long-running proof.
+The original M21.4 formal 72h window FAILED on data integrity while core
+process stability passed: the 2026-08-07T14:08:24Z USD-M `book_ticker`
+unexpected disconnect and planned rotations lacked required gap evidence.
+
+A later deployed M21.4.11 artifact (`f659895…`) passed its independent formal
+72h observational gate, but a restart-only orphan-intent defect was
+subsequently discovered, making `ELIGIBLE_FOR_168H=false`; the 168h window did
+not run.
+
+The further correction merged through PR #11 is NOT DEPLOYED, and a newly
+deployed corrected artifact must restart the full staged validation chain.
+
+Static review, unit tests, fault injection, and short online tests cannot
+substitute for long-running proof.
 
 ## M21.4 validation status
 
