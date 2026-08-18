@@ -271,9 +271,7 @@ class RemoteSourceExporter:
         try:
             resolved = (self.layout.root / candidate).resolve()
             directory_resolved = directory.resolve()
-            if resolved == directory_resolved or not resolved.is_relative_to(
-                directory_resolved
-            ):
+            if resolved.parent != directory_resolved:
                 raise RemoteSourceError(
                     f"invalid {label}: path escapes its exact Recorder directory"
                 )

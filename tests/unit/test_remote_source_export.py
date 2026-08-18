@@ -365,6 +365,52 @@ def test_catalog_path_escape_fails_closed(tmp_path: Path, field: str) -> None:
             )
 
 
+def test_existing_nested_sealed_source_fails_path_authority(
+    tmp_path: Path,
+) -> None:
+    prepared = prepare_archive(tmp_path)
+    source = _source_path(prepared)
+    nested = prepared.layout.sealed / "nested" / source.name
+    nested.parent.mkdir()
+    source.rename(nested)
+    with Catalog(prepared.layout.catalog) as catalog:
+        with catalog._lock:
+            catalog._connection.execute(
+                "UPDATE chunks SET sealed_path = ? WHERE chunk_id = ?",
+                (
+                    str(nested.relative_to(prepared.layout.root)),
+                    prepared.chunk_ids[0],
+                ),
+            )
+        assert nested.is_file()
+        with pytest.raises(RemoteSourceError, match="exact Recorder directory"):
+            RemoteSourceExporter(layout=prepared.layout, catalog=catalog).select_chunk(
+                prepared.chunk_ids[0]
+            )
+
+
+def test_existing_nested_manifest_fails_path_authority(tmp_path: Path) -> None:
+    prepared = prepare_archive(tmp_path)
+    manifest = _manifest_path(prepared)
+    nested = prepared.layout.manifests / "nested" / manifest.name
+    nested.parent.mkdir()
+    manifest.rename(nested)
+    with Catalog(prepared.layout.catalog) as catalog:
+        with catalog._lock:
+            catalog._connection.execute(
+                "UPDATE chunks SET manifest_path = ? WHERE chunk_id = ?",
+                (
+                    str(nested.relative_to(prepared.layout.root)),
+                    prepared.chunk_ids[0],
+                ),
+            )
+        assert nested.is_file()
+        with pytest.raises(RemoteSourceError, match="exact Recorder directory"):
+            RemoteSourceExporter(layout=prepared.layout, catalog=catalog).select_chunk(
+                prepared.chunk_ids[0]
+            )
+
+
 def test_final_catalog_recheck_rejects_concurrent_state_change(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
