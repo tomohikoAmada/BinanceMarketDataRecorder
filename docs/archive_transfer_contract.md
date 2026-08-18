@@ -64,6 +64,20 @@ after full identity and hash verification; it is never overwritten on a
 mismatch. A local verification failure retains the VPS source and leaves
 retryable evidence.
 
+The local publication gate is stronger than a pre-rename file fsync. The
+transaction must establish, in order, durability of the temporary file,
+close/reopen full readback, stored-size and SHA-256 verification, Raw
+manifest/source identity verification, atomic publication, and durability of
+the final published artifact namespace, including required parent-directory
+metadata durability where the selected platform contract supports it. It must
+then durably commit Archive Set/physical-media metadata, durably commit the
+receipt, and durably commit the receipt's own namespace/containing metadata
+required for the receipt to survive a crash. Only after those facts are
+durable may the receipt participate in VPS deletion authorization. If the
+selected platform cannot establish the required final-namespace or receipt
+commit semantics, the workflow fails closed and does not create an
+authorization-capable receipt.
+
 ## Receipt binding
 
 The durable receipt and the deletion authorization refer to one immutable
@@ -131,6 +145,35 @@ fsync, path, and eject adapters may differ, but Archive Set identity,
 verification, receipt binding, and deletion authorization remain portable
 transaction semantics. SSH is replaceable by a future transport/authentication
 implementation without rewriting those semantics.
+
+## Same-host and remote source-lifecycle boundary
+
+The current same-host `ArchiveState` and `archive_transactions` semantics
+remain unchanged and continue to represent only the ADR-0015 local registered-
+directory transaction. Remote transfer itself does not mutate the VPS source
+lifecycle: a selected VPS Raw chunk remains `SEALED` while zero, one, or
+multiple remote copies may have occurred.
+
+The M22 remote source lifecycle is frozen separately as:
+
+```text
+SEALED -> REMOTE_DELETE_PENDING -> REMOTE_DELETED
+```
+
+`REMOTE_DELETE_PENDING` means that exact pre-delete authorization is durable;
+the source may still exist, or may be absent only in the authorized
+crash-after-unlink/pre-terminal-commit recovery window. It does not claim that
+deletion completed. `REMOTE_DELETED` means exact unlink and required deletion
+filesystem/parent-directory durability completed before the terminal Catalog
+fact was committed. Remote persistence is a separate projection and must not
+be added to `ARCHIVE_CHUNK_STATES`, `ArchiveState`, or
+`archive_transactions`; remote recovery therefore has its own semantic branch.
+Same-host and remote archival mutually exclude one another through the
+Catalog source-lifecycle transition from `SEALED`: if same-host archival first
+acquires `SEALED` as `ARCHIVE_COPYING`, remote authorization cannot acquire it;
+if remote authorization first acquires `SEALED` as
+`REMOTE_DELETE_PENDING`, same-host archival cannot acquire it. No second
+distributed locking system is introduced by this freeze.
 
 ## Current implementation boundary
 

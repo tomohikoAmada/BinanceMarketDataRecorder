@@ -749,6 +749,232 @@ ADR-0029, and ADR-0030; implementation and deployment are not included.
 See `docs/vps_operations.md`, `docs/archive_transfer_contract.md`,
 `docs/offline_workspace.md`, and `docs/test_environment_matrix.md`.
 
+## M22 — VPS / remote archive implementation sequence
+
+M22 is the implementation sequence for the approved D0/D1 architecture. It
+does not reopen ADR-0028, ADR-0029, or ADR-0030. Exactly one M22 milestone is
+executed per run and per local commit; later M22 milestones never begin
+automatically.
+
+### M22.0 — Implementation decomposition / acceptance freeze
+
+- **Status:** **ACCEPTED** as documentation-only by the acceptance record
+  `docs/milestone_acceptance/M22.0.md`.
+- **Scope:** Freeze M22.1 through M22.9, including the accepted durability,
+  state-boundary, Catalog-compatibility, M22.4 split, M22.7 split, and
+  M21-to-M22 validation corrections.
+- **Non-scope:** All production code, remote transport, Archive Set writes,
+  receipts, source deletion, schema migrations, deployment, and acceptance
+  windows. D0/D1 architecture is not redesigned.
+- **Dependencies:** Accepted ADR-0028, ADR-0029, ADR-0030 and the existing
+  same-host M10/M11 implementation and contracts.
+- **Acceptance:** The authoritative sequence below, its non-scopes and
+  gates, the final-artifact validation policy, and the compatibility boundary
+  are documented; targeted documentation checks pass; M22.1 remains not
+  started.
+- **Rollback:** Revert this documentation commit only. Preserve the approved
+  D0/D1 ADRs, existing same-host behavior, Raw data, and historical M21
+  evidence.
+
+### M22.1 — Read-only remote source identity / export kernel
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Select only immutable sealed Raw; produce a deterministic,
+  versioned source descriptor binding chunk, size/hash, manifest identity,
+  market/stream, source artifact/path, and required version identity; reject
+  partial, unsealed, quarantined, or mismatched sources; provide a
+  transport-neutral read-only surface.
+- **Non-scope:** Source-lifecycle mutation, SSH, Archive Set writes, receipts,
+  deletion authorization, and source unlink.
+- **Dependencies:** M22.0 acceptance and existing Raw/manifest/Catalog
+  contracts.
+- **Acceptance:** Deterministic descriptor fixtures and mismatch/eligibility
+  tests pass with no source or Catalog lifecycle mutation.
+- **Rollback:** Revert M22.1 implementation while preserving immutable Raw and
+  manifests; no source deletion is permitted.
+
+### M22.2 — Archive Set / physical-media durable identity
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Implement `archive_set_id` as logical collection identity and
+  `storage_id` as one physical medium; whole-chunk placement, self-identifying
+  media-local metadata, rebuildable global index, and explicit Archive !=
+  Backup semantics.
+- **Non-scope:** Striping, replication, RAID, backup guarantees, VPS source
+  deletion, and changes to Raw/public data schemas.
+- **Dependencies:** M22.1 read-only source identity and existing storage
+  registration boundaries.
+- **Acceptance:** Multi-medium identity, collision, detach, rebuild, and
+  whole-chunk tests pass; no VPS lifecycle mutation occurs.
+- **Rollback:** Revert only additive Archive Set metadata/index changes; media
+  artifacts and existing storage identities remain interpretable.
+
+### M22.3 — Local receive / verify / durable publish / receipt
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Initially use fake/in-process transport and source providers.
+  The publication gate is: transaction-owned temporary artifact; file
+  durability; close/reopen full readback; stored-size and SHA-256 verification;
+  Raw manifest/source identity verification; atomic publication; durability
+  of the final published artifact namespace, including required parent
+  directory metadata durability where supported; durable Archive Set and
+  physical-media metadata commit; durable receipt commit; and durability of
+  the receipt namespace/containing metadata required for crash survival.
+  Only after all gates may a receipt become capable of participating in VPS
+  deletion authorization.
+- **Non-scope:** VPS source deletion, SSH, deletion authorization, and any
+  claim that a pre-rename fsync alone proves final pathname durability.
+- **Dependencies:** M22.1 and M22.2 acceptance.
+- **Acceptance:** Kill-point and fault tests prove every failed or
+  unsupported durability property fails closed and produces no
+  deletion-capable receipt; successful artifacts and receipts are
+  independently revalidated.
+- **Rollback:** Retain VPS sources and local artifacts/metadata; revoke only
+  uncommitted or non-authorization-capable local transaction state.
+
+### M22.4A — Remote deletion persistence / Catalog compatibility / recovery model
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Non-destructive, additive remote persistence authority; exact
+  remote transitions `SEALED -> REMOTE_DELETE_PENDING -> REMOTE_DELETED`;
+  pre-M22 Catalog to new-binary compatibility; separate remote recovery
+  interpretation and CASE A/B/C/D decision engine; audit explicit
+  `ChunkState` consumers; capacity/backlog/source-presence semantics;
+  same-host/remote mutual exclusion; and idempotency. A separate remote
+  deletion persistence projection owns remote transaction/source/receipt,
+  Archive Set, storage, session, state, authorization, and recovery facts.
+- **Non-scope:** Source unlink, destructive filesystem mutation, parent
+  directory durability, and any reuse or extension of `ArchiveState`,
+  `ARCHIVE_CHUNK_STATES`, or `archive_transactions` for remote semantics.
+- **Dependencies:** M22.3 receipt authority and M22.0 state/compatibility
+  freeze.
+- **Acceptance:** Old Catalogs open under the new binary; remote states are
+  handled through the separate projection; old binaries are not claimed safe
+  after remote states persist; CASE A/B/C/D and mutual-exclusion tests pass;
+  no filesystem mutation occurs.
+- **Rollback:** Disable remote persistence/authorization paths and preserve
+  existing same-host rows and meanings; do not downgrade by relabeling remote
+  states as `LOCAL_DELETED`.
+
+### M22.4B — Remote source deletion / durability / kill-point recovery
+
+- **Status:** **NOT STARTED**.
+- **Scope:** First destructive remote milestone: exact immediate source
+  revalidation, exact unlink, parent-directory deletion durability, terminal
+  remote Catalog transition, and crash/kill recovery for CASE A/B/C/D.
+- **Non-scope:** Redesign of M22.4A persistence or state model; transport/SSH;
+  deletion without a matching durable pre-delete authorization; and treating
+  `REMOTE_DELETE_PENDING` as completed deletion.
+- **Dependencies:** Independently accepted M22.4A and M22.3.
+- **Acceptance:** Authorized deletion reaches `REMOTE_DELETED` only after
+  unlink and required filesystem durability; absent source without exact
+  durable authorization fails closed; crash-after-unlink recovery is
+  idempotent.
+- **Rollback:** Stop new remote deletion attempts, reconcile only through
+  durable M22.4A evidence, and retain any source not proven deleted.
+
+### M22.5 — RemoteTransport + SSH V1
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Add the transport-neutral `RemoteTransport` seam, then an
+  ordinary CLI SSH adapter that moves bytes/messages only.
+- **Non-scope:** SSH as deletion authority; subprocess logic inside hashing,
+  receipt correctness, eligibility, durable authorization, or recovery
+  decisions; custom SSH protocol, restricted account, or API server.
+- **Dependencies:** M22.1 through M22.4B acceptance.
+- **Acceptance:** Fake and SSH transport tests exercise identical integrity
+  semantics and transport failures retain the source.
+- **Rollback:** Disable the SSH adapter and use the accepted fake transport;
+  preserve local artifacts, receipts, and remote evidence.
+
+### M22.6 — Post-session Catalog DR snapshot
+
+- **Status:** **NOT STARTED**.
+- **Scope:** SQLite-supported consistent backup/snapshot after each successful
+  session, local transfer/verification, and retention of at least `latest` and
+  `previous` snapshots.
+- **Non-scope:** Raw replacement, raw-copying a live WAL database, or undoing
+  valid Raw archival/deletion when snapshot creation fails.
+- **Dependencies:** M22.5 and the M22 remote Catalog state model.
+- **Acceptance:** Snapshot identity and post-session state are verified;
+  failures are visible, retryable, and non-destructive.
+- **Rollback:** Retry or disable snapshot transfer while retaining valid Raw,
+  manifests, receipts, and deletion evidence.
+
+### M22.7A — Named VPS capacity / ETA profile
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Select the named VPS profile with 18/14/12/10 GiB states and
+  7-day/72-hour/24-hour ETA/action thresholds.
+- **Non-scope:** Redesigning generic ADR-0016 `threshold_bytes()` or
+  `space_severity()` behavior for macOS, RK3588, or local profiles.
+- **Dependencies:** M22.0 freeze and existing forecast/emergency behavior.
+- **Acceptance:** VPS-profile thresholds, ETA actions, shared-host semantics,
+  and historical generic behavior are independently tested and documented.
+- **Rollback:** Disable only the named VPS profile and retain generic/local
+  threshold behavior and fail-closed hard-reserve actions.
+
+### M22.7B — VPS systemd / readiness / exact deployable artifact identity
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd,
+  shared-host requirements, exact deployable artifact identity, readiness,
+  deployment, and rollback contract.
+- **Non-scope:** Capacity algorithm redesign, VPS provisioning ownership,
+  Docker/Kubernetes, and production acceptance windows.
+- **Dependencies:** M22.4B, M22.6, and M22.7A acceptance.
+- **Acceptance:** Artifact identity and readiness gates are exact and
+  deployable; service ownership/resource boundaries and rollback are proven
+  without claiming a staged production result.
+- **Rollback:** Stop the candidate, restore the prior immutable artifact/unit
+  and retain all data and Catalog state.
+
+### M22.8 — LAN Linux integrated failure acceptance
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Mac-to-LAN Linux integrated transfer, storage, receipt,
+  authorization, recovery, network, crash, snapshot, and storage-failure
+  evidence.
+- **Non-scope:** Exact VPS acceptance or relabeling LAN/RK3588 evidence as VPS
+  evidence.
+- **Dependencies:** M22.1 through M22.7B acceptance.
+- **Acceptance:** The integrated LAN failure matrix passes with separately
+  labelled evidence and no automatic production promotion.
+- **Rollback:** Stop the test deployment and preserve evidence/data; revert
+  only test-profile changes.
+
+### M22.9 — Exact VPS staged acceptance
+
+- **Status:** **NOT STARTED**.
+- **Scope:** Only the final integrated M22 artifact runs exact identity,
+  readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
+- **Non-scope:** Automatic stage advancement, transfer of M21 evidence,
+  historical f659895 acceptance, or acceptance of an intermediate artifact.
+- **Dependencies:** M22.8, exact M22 artifact, operator-authorized VPS
+  deployment, and readiness evidence.
+- **Acceptance:** Every stage has its own T0, target, evidence root, and
+  independent review; no stage begins automatically.
+- **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
+  return to the last approved artifact without deleting unarchived data.
+
+### M21 -> M22 validation policy
+
+The merged PR #11 reconnect correction remains **not deployed/production
+validated**. The previously deployed `f659895…` artifact passed its historical
+formal 72-hour observational gate but later became
+`ELIGIBLE_FOR_168H=false` because of the restart-only orphan-intent defect;
+that evidence remains historical. M22 intermediate artifacts are limited to
+development tests, CI, Mac, and LAN Linux as applicable and are **not
+Production Ready**. The final integrated M22 artifact, which includes the
+reconnect corrections, must independently execute:
+
+```text
+exact artifact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
+```
+
+No M21 evidence transfers to that artifact, and no 168-hour stage starts
+automatically. Historical M21 documents remain unchanged.
+
 ## Future Work
 
 M21 historical work contains the Ubuntu ARM64/RK3588 soak evidence and recovery
