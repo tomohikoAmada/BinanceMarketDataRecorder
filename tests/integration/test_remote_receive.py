@@ -28,6 +28,7 @@ from binance_market_data_recorder.archive import (
     generate_archive_set_id,
     revalidate_remote_archive_receipt,
 )
+from binance_market_data_recorder.archive import archive_set as archive_set_module
 from binance_market_data_recorder.archive import remote_receive as receive_module
 from binance_market_data_recorder.archive.remote_source import descriptor_sha256
 from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
@@ -519,6 +520,112 @@ def test_archive_set_entry_commit_failure_retains_artifact_and_manifest(
     assert _receipt_paths(fixture) == []
 
 
+def test_archive_set_entry_temp_fsync_failure_reconciles_on_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = _fixture(tmp_path)
+    before = _source_snapshot(fixture)
+    armed = False
+    failed = False
+    post_k8_fsync_calls = 0
+    actual_fsync = os.fsync
+
+    def hook(point: str, _path: Path | None) -> None:
+        nonlocal armed
+        if point == "k8_before_archive_set_entry_commit":
+            armed = True
+
+    def fail_entry_temp_fsync(descriptor: int) -> None:
+        nonlocal armed, failed, post_k8_fsync_calls
+        if armed:
+            post_k8_fsync_calls += 1
+            # commit_entry() fsyncs entries/, archive-set/, and the medium root
+            # before _atomic_publish() fsyncs the entry temporary file.
+            if post_k8_fsync_calls == 4:
+                armed = False
+                failed = True
+                raise OSError("injected Archive Set entry temp file fsync failure")
+        actual_fsync(descriptor)
+
+    # archive_set.os and remote_receive.os are the shared Python os module. The
+    # K8 arm and exact post-K8 ordering keep earlier Raw/manifest fsyncs out.
+    monkeypatch.setattr(os, "fsync", fail_entry_temp_fsync)
+
+    with pytest.raises(RemoteReceiveError, match="entry temp file fsync failure"):
+        _receive(fixture, fault_hook=hook)
+
+    assert failed
+    assert post_k8_fsync_calls == 4
+    assert _artifact_path(fixture).is_file()
+    assert _manifest_path(fixture).is_file()
+    assert not _entry_path(fixture).exists()
+    assert _receipt_paths(fixture) == []
+    assert _source_snapshot(fixture) == before
+
+    receipt = _receive(fixture)
+    assert revalidate_remote_archive_receipt(
+        selection=fixture.selection,
+        target=fixture.target,
+        receipt_id=receipt.receipt_id,
+    ) == receipt
+
+
+def test_archive_set_entries_parent_fsync_failure_reconciles_on_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = _fixture(tmp_path)
+    before = _source_snapshot(fixture)
+    entries_directory = fixture.target.root / "archive-set" / "entries"
+    armed = False
+    failed = False
+    entries_fsync_calls = 0
+    entry_visible_at_failure = False
+
+    def hook(point: str, _path: Path | None) -> None:
+        nonlocal armed, entries_fsync_calls
+        if point == "k8_before_archive_set_entry_commit" and not failed:
+            armed = True
+            entries_fsync_calls = 0
+
+    def fail_post_publication_entries_fsync(path: Path) -> None:
+        nonlocal armed, failed, entries_fsync_calls, entry_visible_at_failure
+        if armed and path == entries_directory:
+            entries_fsync_calls += 1
+            # _ensure_inventory_directories() is the first entries/ fsync;
+            # _atomic_publish() reaches this second one after publication.
+            if entries_fsync_calls == 2:
+                entry_visible_at_failure = _entry_path(fixture).is_file()
+                armed = False
+                failed = True
+                raise OSError("injected post-publication entries directory fsync failure")
+        actual_fsync_directory(path)
+
+    monkeypatch.setattr(
+        archive_set_module,
+        "fsync_directory",
+        fail_post_publication_entries_fsync,
+    )
+
+    with pytest.raises(
+        RemoteReceiveError, match="post-publication entries directory fsync failure"
+    ):
+        _receive(fixture, fault_hook=hook)
+
+    assert failed
+    assert entries_fsync_calls == 2
+    assert entry_visible_at_failure
+    assert _entry_path(fixture).is_file()
+    assert _receipt_paths(fixture) == []
+    assert _source_snapshot(fixture) == before
+
+    receipt = _receive(fixture)
+    assert revalidate_remote_archive_receipt(
+        selection=fixture.selection,
+        target=fixture.target,
+        receipt_id=receipt.receipt_id,
+    ) == receipt
+
+
 def test_conflicting_archive_set_entry_is_preserved(tmp_path: Path) -> None:
     fixture = _fixture(tmp_path)
 
@@ -692,6 +799,8 @@ def test_k0_through_k11_exception_never_returns_committed_receipt(
         ("k6_after_raw_rename_before_parent_fsync", "raw-dir"),
         ("k7_after_raw_durable", "file"),
         ("k7m_after_archive_manifest_rename_before_parent_fsync", "manifest-dir"),
+        # K9 follows the real Archive Set entry commit; the next file fsync is
+        # the receipt temporary-file fsync, not the entry temporary-file fsync.
         ("k9_after_archive_set_entry_durable", "file"),
         ("k11_after_receipt_rename_before_parent_fsync", "receipt-dir"),
     ],
