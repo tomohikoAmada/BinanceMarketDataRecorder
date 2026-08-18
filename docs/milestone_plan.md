@@ -778,18 +778,22 @@ automatically.
 
 ### M22.1 — Read-only remote source identity / export kernel
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED**; acceptance evidence is recorded in
+  `docs/milestone_acceptance/M22.1.md`.
 - **Scope:** Select only immutable sealed Raw; produce a deterministic,
   versioned source descriptor binding chunk, size/hash, manifest identity,
   market/stream, source artifact/path, and required version identity; reject
   partial, unsealed, quarantined, or mismatched sources; provide a
-  transport-neutral read-only surface.
+  transport-neutral read-only surface. The implementation validates the
+  exact manifest bytes, sealed artifact size and hashes, and a final Catalog
+  identity/state snapshot before returning the descriptor/export result.
 - **Non-scope:** Source-lifecycle mutation, SSH, Archive Set writes, receipts,
   deletion authorization, and source unlink.
 - **Dependencies:** M22.0 acceptance and existing Raw/manifest/Catalog
   contracts.
 - **Acceptance:** Deterministic descriptor fixtures and mismatch/eligibility
-  tests pass with no source or Catalog lifecycle mutation.
+  tests pass with no source or Catalog lifecycle mutation; the focused,
+  related, and full offline validation gates pass.
 - **Rollback:** Revert M22.1 implementation while preserving immutable Raw and
   manifests; no source deletion is permitted.
 

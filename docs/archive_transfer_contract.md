@@ -178,9 +178,13 @@ distributed locking system is introduced by this freeze.
 ## Current implementation boundary
 
 The current Recorder implements a local registered-directory archive
-transaction and Linux/macOS storage adapters. It does not implement this
-VPS-pull workflow, Archive Set support, remote receipts, or Catalog snapshot
-transfer. Existing Raw and public data contracts remain unchanged.
+transaction, Linux/macOS storage adapters, and a transport-neutral read-only
+sealed Raw source identity/export kernel. The M22.1 kernel selects and fully
+validates immutable `SEALED` sources and emits deterministic descriptor
+identity plus exact manifest bytes, but does not implement Archive Set support,
+local transfer clients, receipts, remote deletion authorization, SSH,
+`RemoteTransport`, or Catalog snapshot transfer. Existing Raw and public data
+contracts remain unchanged.
 
 ## Non-goals
 
