@@ -82,9 +82,15 @@ The current code has internal data roots, a local SQLite Catalog, local
 registered-directory archive transactions, normalized data, Replay,
 HistoricalImporter, the M22.1 read-only remote source kernel, and M22.2
 Archive Set physical-media metadata with an explicit-path rebuildable workspace
-index. The media-local metadata is the Archive Set authority; the workspace
-index is convenience discovery state and is never sufficient by itself.
+index. M22.3 adds local fake/in-process receive, durable Raw and
+`external-archive-manifest.v1` publication, Archive Set entry commit,
+`remote-archive-receipt.v1`, and independent receipt revalidation on supported
+Linux/macOS filesystems. The media-local Raw/manifest/entry/receipt chain is
+authority; the workspace index is convenience discovery state and is never
+sufficient by itself.
 
-The VPS pull client, verified receive/publication, remote receipt exchange,
-remote deletion, and post-session Catalog snapshot transfer are not
-implemented. Archive Set membership is not a backup or redundancy guarantee.
+Actual remote transport/SSH and receipt exchange, remote deletion
+authorization and states, VPS source deletion, and post-session Catalog
+snapshot transfer are not implemented. Windows end-to-end receipt durability
+is not yet supported. Archive Set membership is not a backup or redundancy
+guarantee.
