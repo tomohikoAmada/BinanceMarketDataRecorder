@@ -562,6 +562,12 @@ class ArchiveSetIndex:
     def _rows(
         self, query: str, parameters: tuple[object, ...] = ()
     ) -> list[dict[str, object]]:
+        if not self.path.exists():
+            return []
+        if _is_wal_mode_database(self.path):
+            raise ArchiveSetError(
+                "WAL-mode Archive Set indexes are unsupported for non-mutating queries"
+            )
         try:
             with sqlite3.connect(f"{self.path.as_uri()}?mode=ro", uri=True) as connection:
                 connection.row_factory = sqlite3.Row
@@ -586,6 +592,19 @@ def _registered_root(root: Path) -> Path:
     if not resolved.is_dir():
         raise ArchiveSetError("registered storage directory is unavailable")
     return resolved
+
+
+def _is_wal_mode_database(path: Path) -> bool:
+    try:
+        with path.open("rb") as database:
+            header = database.read(20)
+    except OSError:
+        return False
+    return (
+        len(header) >= 20
+        and header[:16] == b"SQLite format 3\x00"
+        and header[18:20] == b"\x02\x02"
+    )
 
 
 def _read_identity_file(path: Path) -> ArchiveMediumIdentity:

@@ -374,9 +374,12 @@ def test_29_index_queries_by_set_storage_and_chunk(tmp_path: Path) -> None:
     store.commit_entry(_entry(store))
     index = ArchiveSetIndex(tmp_path / "index.sqlite")
     index.rebuild([store.root])
+    before = _tree_snapshot(tmp_path)
     assert len(index.artifacts(archive_set_id=store.identity.archive_set_id)) == 1
     assert len(index.artifacts(storage_id=store.identity.storage_id)) == 1
     assert len(index.artifacts(chunk_id="chunk-001")) == 1
+    assert _tree_snapshot(tmp_path) == before
+    assert all(not path.exists() for path in _sqlite_paths(index.path)[1:])
 
 
 def test_30_index_has_no_live_catalog_tables_or_mountpoints(tmp_path: Path) -> None:
@@ -717,3 +720,48 @@ def test_47_query_does_not_initialize_malformed_existing_file(tmp_path: Path) ->
 
     with pytest.raises(sqlite3.DatabaseError):
         ArchiveSetIndex(index_path).archive_sets()
+
+
+@pytest.mark.parametrize(
+    ("relative_index", "use_alias"),
+    [
+        ("index.sqlite", False),
+        ("archive-set/index.sqlite", False),
+        ("archive-set/entries/index.sqlite", False),
+        ("workspace/index.sqlite", True),
+    ],
+)
+def test_48_wal_mode_query_rejects_without_media_mutation(
+    tmp_path: Path, relative_index: str, use_alias: bool
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    store.commit_entry(_entry(store))
+    source_index = ArchiveSetIndex(tmp_path / "source-index.sqlite")
+    source_index.rebuild([store.root])
+
+    with sqlite3.connect(source_index.path) as connection:
+        assert connection.execute("PRAGMA journal_mode=WAL").fetchone() == ("wal",)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        assert connection.execute(
+            "SELECT COUNT(*) FROM archive_artifacts"
+        ).fetchone() == (1,)
+    for sidecar in _sqlite_paths(source_index.path)[1:]:
+        sidecar.unlink(missing_ok=True)
+
+    if use_alias:
+        alias = tmp_path / "medium-alias"
+        alias.symlink_to(store.root, target_is_directory=True)
+        index_path = alias / relative_index
+    else:
+        index_path = store.root / relative_index
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_bytes(source_index.path.read_bytes())
+    for sidecar in _sqlite_paths(index_path)[1:]:
+        sidecar.unlink(missing_ok=True)
+    before = _tree_snapshot(store.root)
+
+    with pytest.raises(ArchiveSetError, match="WAL-mode"):
+        ArchiveSetIndex(index_path).archive_sets()
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path)[1:])
