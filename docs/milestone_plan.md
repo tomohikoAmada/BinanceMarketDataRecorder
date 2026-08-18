@@ -799,7 +799,8 @@ automatically.
 
 ### M22.2 — Archive Set / physical-media durable identity
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED**; acceptance evidence is recorded in
+  `docs/milestone_acceptance/M22.2.md`.
 - **Scope:** Implement `archive_set_id` as logical collection identity and
   `storage_id` as one physical medium; whole-chunk placement, self-identifying
   media-local metadata, rebuildable global index, and explicit Archive !=

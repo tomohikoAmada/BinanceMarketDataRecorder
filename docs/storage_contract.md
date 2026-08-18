@@ -164,8 +164,11 @@ The future Offline Workspace may contain several physical archive media. An
 `archive_set_id` identifies the logical collection and `storage_id` continues
 to identify one physical medium. A chunk remains whole on one medium. Existing
 UUID/marker/relative-directory identity remains the physical access boundary;
-Archive Set metadata and a rebuildable global index are additional future
-archive-client responsibilities, not a change to this storage state machine.
+Archive Set metadata and a rebuildable global index are additive archive-client
+metadata responsibilities, not a change to this storage state machine. M22.2
+stores the durable media-local identity and whole-chunk inventory inside the
+registered directory and rebuilds the separate workspace index from attached
+media; it does not change the registered-storage marker or Catalog schema.
 
 ## Archive transaction
 
