@@ -383,6 +383,11 @@ def test_30_index_has_no_live_catalog_tables_or_mountpoints(tmp_path: Path) -> N
     index = ArchiveSetIndex(tmp_path / "index.sqlite")
     assert not index.path.exists()
     assert index.archive_sets() == []
+    assert not index.path.exists()
+    assert not index.path.with_name("index.sqlite-journal").exists()
+    assert not index.path.with_name("index.sqlite-wal").exists()
+    assert not index.path.with_name("index.sqlite-shm").exists()
+    index.rebuild([])
     with sqlite3.connect(index.path) as connection:
         tables = {
             row[0]
@@ -550,7 +555,43 @@ def test_37_existing_unsafe_entry_paths_remain_rejected(
         store.commit_entry(_entry(store, **{field: unsafe}))
 
 
-def test_38_canonical_entry_and_registered_paths_remain_valid(tmp_path: Path) -> None:
+@pytest.mark.parametrize("field", [
+    "artifact_relative_path",
+    "archive_manifest_relative_path",
+])
+def test_38_standalone_dot_is_not_an_entry_file_path(
+    tmp_path: Path, field: str
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    with pytest.raises(ArchiveSetError, match="safe relative"):
+        store.commit_entry(_entry(store, **{field: "."}))
+
+
+def test_39_registered_root_dot_remains_valid(tmp_path: Path) -> None:
+    physical = {
+        "storage_id": "storage-root",
+        "marker_nonce": "nonce-root",
+        "volume_uuid": "volume-root",
+        "registered_relative_path": ".",
+    }
+    (tmp_path / MARKER_NAME).write_text(
+        json.dumps(
+            {"schema": MARKER_SCHEMA, **physical, "created_at_utc_ns": 1},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    store = ArchiveSetStore.bind(
+        tmp_path, archive_set_id="set", **physical
+    )
+
+    assert store.identity.registered_relative_path == "."
+
+
+def test_40_canonical_entry_and_registered_paths_remain_valid(tmp_path: Path) -> None:
     folder, physical = _medium(tmp_path, "registered/folder", archive_set_id="set")
     store = ArchiveSetStore.bind(folder, archive_set_id="set", **physical)
     entry = _entry(
@@ -571,7 +612,7 @@ def test_38_canonical_entry_and_registered_paths_remain_valid(tmp_path: Path) ->
         "archive-set/entries/index.sqlite",
     ],
 )
-def test_39_index_inside_medium_is_rejected_before_any_write(
+def test_41_index_inside_medium_is_rejected_before_any_write(
     tmp_path: Path, relative_index: str
 ) -> None:
     store, _ = _bind(tmp_path, "one", generate_archive_set_id())
@@ -589,7 +630,7 @@ def test_39_index_inside_medium_is_rejected_before_any_write(
     assert scan_archive_medium(store.root).entries == (store.read_entry("chunk-001"),)
 
 
-def test_40_wrapper_rejects_index_inside_medium_before_any_write(tmp_path: Path) -> None:
+def test_42_wrapper_rejects_index_inside_medium_before_any_write(tmp_path: Path) -> None:
     store, _ = _bind(tmp_path, "one", generate_archive_set_id())
     store.commit_entry(_entry(store))
     before = _tree_snapshot(store.root)
@@ -603,7 +644,7 @@ def test_40_wrapper_rejects_index_inside_medium_before_any_write(tmp_path: Path)
     assert scan_archive_medium(store.root).entries == (store.read_entry("chunk-001"),)
 
 
-def test_41_symlink_alias_index_inside_medium_is_rejected_before_write(
+def test_43_symlink_alias_index_inside_medium_is_rejected_before_write(
     tmp_path: Path,
 ) -> None:
     store, _ = _bind(tmp_path, "one", generate_archive_set_id())
@@ -618,3 +659,61 @@ def test_41_symlink_alias_index_inside_medium_is_rejected_before_write(
 
     assert _tree_snapshot(store.root) == before
     assert all(not path.exists() for path in _sqlite_paths(index_path))
+
+
+def test_44_absent_workspace_queries_do_not_create_index(tmp_path: Path) -> None:
+    index_path = tmp_path / "workspace" / "index.sqlite"
+    index = ArchiveSetIndex(index_path)
+
+    assert index.archive_sets() == []
+    assert index.media() == []
+    assert index.artifacts() == []
+
+    assert not index_path.exists()
+    assert not index_path.parent.exists()
+    assert all(not path.exists() for path in _sqlite_paths(index_path))
+
+
+@pytest.mark.parametrize("relative_index", [
+    "unbuilt.sqlite",
+    "archive-set/index.sqlite",
+    "archive-set/entries/index.sqlite",
+])
+def test_45_absent_media_queries_do_not_mutate_media(
+    tmp_path: Path, relative_index: str
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    before = _tree_snapshot(store.root)
+    index_path = store.root / relative_index
+
+    index = ArchiveSetIndex(index_path)
+    assert index.archive_sets() == []
+    assert index.media() == []
+    assert index.artifacts() == []
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path))
+
+
+def test_46_absent_symlink_alias_query_does_not_mutate_media(tmp_path: Path) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    alias = tmp_path / "medium-alias"
+    alias.symlink_to(store.root, target_is_directory=True)
+    index_path = alias / "workspace" / "index.sqlite"
+    before = _tree_snapshot(store.root)
+
+    index = ArchiveSetIndex(index_path)
+    assert index.archive_sets() == []
+    assert index.media() == []
+    assert index.artifacts() == []
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path))
+
+
+def test_47_query_does_not_initialize_malformed_existing_file(tmp_path: Path) -> None:
+    index_path = tmp_path / "index.sqlite"
+    index_path.write_bytes(b"not sqlite")
+
+    with pytest.raises(sqlite3.DatabaseError):
+        ArchiveSetIndex(index_path).archive_sets()

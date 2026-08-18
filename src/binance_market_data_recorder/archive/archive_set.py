@@ -143,8 +143,10 @@ class ArchiveSetEntry:
         _require_text(self.archive_set_id, "archive_set_id")
         _require_text(self.storage_id, "storage_id")
         _require_safe_segment(self.chunk_id, "chunk_id")
-        _require_relative_path(self.artifact_relative_path, "artifact_relative_path")
-        _require_relative_path(
+        _require_file_relative_path(
+            self.artifact_relative_path, "artifact_relative_path"
+        )
+        _require_file_relative_path(
             self.archive_manifest_relative_path, "archive_manifest_relative_path"
         )
         for field in (
@@ -560,10 +562,14 @@ class ArchiveSetIndex:
     def _rows(
         self, query: str, parameters: tuple[object, ...] = ()
     ) -> list[dict[str, object]]:
-        self._initialize()
-        with sqlite3.connect(self.path) as connection:
-            connection.row_factory = sqlite3.Row
-            return [dict(row) for row in connection.execute(query, parameters)]
+        try:
+            with sqlite3.connect(f"{self.path.as_uri()}?mode=ro", uri=True) as connection:
+                connection.row_factory = sqlite3.Row
+                return [dict(row) for row in connection.execute(query, parameters)]
+        except sqlite3.OperationalError:
+            if not self.path.exists():
+                return []
+            raise
 
 
 def rebuild_archive_set_index(path: Path, roots: Iterable[Path]) -> dict[str, int]:
@@ -738,6 +744,12 @@ def _require_relative_path(value: str, field: str) -> None:
         or any(part in {"", ".", ".."} for part in path.parts)
     ):
         raise ArchiveSetError(f"{field} must be a safe relative path")
+
+
+def _require_file_relative_path(value: str, field: str) -> None:
+    _require_relative_path(value, field)
+    if value == ".":
+        raise ArchiveSetError(f"{field} must be a safe relative file path")
 
 
 def _require_safe_segment(value: str, field: str) -> None:
