@@ -79,7 +79,12 @@ repositories or microservices.
 ## Current implementation boundary
 
 The current code has internal data roots, a local SQLite Catalog, local
-registered-directory archive transactions, normalized data, Replay, and
-HistoricalImporter. It does not yet implement the VPS pull client, Archive Set
-metadata/index, remote receipt exchange, or post-session Catalog snapshot
-transfer.
+registered-directory archive transactions, normalized data, Replay,
+HistoricalImporter, the M22.1 read-only remote source kernel, and M22.2
+Archive Set physical-media metadata with an explicit-path rebuildable workspace
+index. The media-local metadata is the Archive Set authority; the workspace
+index is convenience discovery state and is never sufficient by itself.
+
+The VPS pull client, verified receive/publication, remote receipt exchange,
+remote deletion, and post-session Catalog snapshot transfer are not
+implemented. Archive Set membership is not a backup or redundancy guarantee.

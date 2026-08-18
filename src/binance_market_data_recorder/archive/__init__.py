@@ -1,5 +1,23 @@
 """Verified internal-spool to registered-directory archival."""
 
+from .archive_set import (
+    ARCHIVE_SET_DIRECTORY,
+    ARCHIVE_SET_ENTRIES_DIRECTORY,
+    ARCHIVE_SET_ENTRY_SCHEMA,
+    ARCHIVE_SET_MEDIUM_FILENAME,
+    ARCHIVE_SET_MEDIUM_SCHEMA,
+    ArchiveMediumIdentity,
+    ArchiveSetEntry,
+    ArchiveSetError,
+    ArchiveSetIndex,
+    ArchiveSetMedium,
+    ArchiveSetScan,
+    ArchiveSetStore,
+    generate_archive_set_id,
+    read_archive_medium_identity,
+    rebuild_archive_set_index,
+    scan_archive_medium,
+)
 from .drain import archive_drain
 from .manager import (
     ArchiveError,
@@ -18,10 +36,22 @@ from .remote_source import (
 )
 
 __all__ = [
+    "ARCHIVE_SET_DIRECTORY",
+    "ARCHIVE_SET_ENTRIES_DIRECTORY",
+    "ARCHIVE_SET_ENTRY_SCHEMA",
+    "ARCHIVE_SET_MEDIUM_FILENAME",
+    "ARCHIVE_SET_MEDIUM_SCHEMA",
     "REMOTE_SOURCE_DESCRIPTOR_SCHEMA",
     "ArchiveError",
     "ArchiveManager",
+    "ArchiveMediumIdentity",
     "ArchiveResult",
+    "ArchiveSetEntry",
+    "ArchiveSetError",
+    "ArchiveSetIndex",
+    "ArchiveSetMedium",
+    "ArchiveSetScan",
+    "ArchiveSetStore",
     "ArchiveTarget",
     "RemoteSourceDescriptor",
     "RemoteSourceError",
@@ -30,4 +60,8 @@ __all__ = [
     "archive_drain",
     "canonical_descriptor_bytes",
     "descriptor_sha256",
+    "generate_archive_set_id",
+    "read_archive_medium_identity",
+    "rebuild_archive_set_index",
+    "scan_archive_medium",
 ]
