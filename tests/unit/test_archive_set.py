@@ -17,7 +17,12 @@ from binance_market_data_recorder.archive import (
     ArchiveSetStore,
     generate_archive_set_id,
     read_archive_medium_identity,
+    rebuild_archive_set_index,
     scan_archive_medium,
+)
+from binance_market_data_recorder.archive import archive_set as archive_set_module
+from binance_market_data_recorder.storage.layout import (
+    fsync_directory as actual_fsync_directory,
 )
 
 MARKER_NAME = ".binance-market-data-recorder-storage.json"
@@ -80,6 +85,19 @@ def _entry(
     }
     values.update(overrides)
     return ArchiveSetEntry(**values)  # type: ignore[arg-type]
+
+
+def _tree_snapshot(root: Path) -> dict[str, tuple[str, bytes]]:
+    return {
+        path.relative_to(root).as_posix(): (
+            ("file", path.read_bytes()) if path.is_file() else ("directory", b"")
+        )
+        for path in sorted(root.rglob("*"))
+    }
+
+
+def _sqlite_paths(path: Path) -> tuple[Path, ...]:
+    return (path, Path(f"{path}-journal"), Path(f"{path}-wal"), Path(f"{path}-shm"))
 
 
 def test_01_generate_valid_archive_set_id() -> None:
@@ -363,6 +381,8 @@ def test_29_index_queries_by_set_storage_and_chunk(tmp_path: Path) -> None:
 
 def test_30_index_has_no_live_catalog_tables_or_mountpoints(tmp_path: Path) -> None:
     index = ArchiveSetIndex(tmp_path / "index.sqlite")
+    assert not index.path.exists()
+    assert index.archive_sets() == []
     with sqlite3.connect(index.path) as connection:
         tables = {
             row[0]
@@ -375,3 +395,226 @@ def test_30_index_has_no_live_catalog_tables_or_mountpoints(tmp_path: Path) -> N
         column[1]
         for column in connection.execute("PRAGMA table_info(archive_media)")
     }
+
+
+def test_31_medium_conflict_in_publication_window_never_clobbers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder, physical = _medium(tmp_path, "one", archive_set_id="loser-set")
+    winner = ArchiveMediumIdentity(
+        archive_set_id="winner-set",
+        storage_id=physical["storage_id"],
+        volume_uuid=physical["volume_uuid"],
+        registered_relative_path=physical["registered_relative_path"],
+        marker_nonce=physical["marker_nonce"],
+    )
+    winner_bytes = winner.canonical_bytes()
+    original = archive_set_module._publish_no_clobber
+
+    def occupy_then_publish(source: Path, destination: Path) -> bool:
+        destination.write_bytes(winner_bytes)
+        return original(source, destination)
+
+    monkeypatch.setattr(
+        archive_set_module, "_publish_no_clobber", occupy_then_publish
+    )
+    with pytest.raises(ArchiveSetError, match="identity conflicts"):
+        ArchiveSetStore.bind(folder, archive_set_id="loser-set", **physical)
+
+    identity_path = folder / ARCHIVE_SET_MEDIUM_FILENAME
+    assert identity_path.read_bytes() == winner_bytes
+    assert read_archive_medium_identity(folder) == winner
+    assert list(folder.glob(f".{ARCHIVE_SET_MEDIUM_FILENAME}.*.partial")) == []
+
+
+def test_32_entry_conflict_in_publication_window_never_clobbers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    loser = _entry(store)
+    winner = _entry(store, stored_sha256=HASH_C)
+    winner_bytes = winner.canonical_bytes()
+    original = archive_set_module._publish_no_clobber
+
+    def occupy_then_publish(source: Path, destination: Path) -> bool:
+        destination.write_bytes(winner_bytes)
+        return original(source, destination)
+
+    monkeypatch.setattr(
+        archive_set_module, "_publish_no_clobber", occupy_then_publish
+    )
+    with pytest.raises(ArchiveSetError, match="entry conflicts"):
+        store.commit_entry(loser)
+
+    final = store.entries_directory / "chunk-001.json"
+    assert final.read_bytes() == winner_bytes
+    assert store.read_entry("chunk-001") == winner
+    assert list(store.entries_directory.glob(".chunk-001.json.*.partial")) == []
+
+
+def test_33_same_medium_identity_in_publication_window_is_idempotent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder, physical = _medium(tmp_path, "one", archive_set_id="same-set")
+    expected = ArchiveMediumIdentity(archive_set_id="same-set", **physical)
+    original = archive_set_module._publish_no_clobber
+
+    def occupy_then_publish(source: Path, destination: Path) -> bool:
+        destination.write_bytes(expected.canonical_bytes())
+        return original(source, destination)
+
+    monkeypatch.setattr(
+        archive_set_module, "_publish_no_clobber", occupy_then_publish
+    )
+    store = ArchiveSetStore.bind(folder, archive_set_id="same-set", **physical)
+
+    assert store.identity == expected
+    assert store.identity_path.read_bytes() == expected.canonical_bytes()
+    assert list(folder.glob(f".{ARCHIVE_SET_MEDIUM_FILENAME}.*.partial")) == []
+
+
+def test_34_same_entry_in_publication_window_is_idempotent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    entry = _entry(store)
+    original = archive_set_module._publish_no_clobber
+    fsynced: list[Path] = []
+
+    def occupy_then_publish(source: Path, destination: Path) -> bool:
+        destination.write_bytes(entry.canonical_bytes())
+        return original(source, destination)
+
+    def record_fsync(path: Path) -> None:
+        fsynced.append(path)
+        actual_fsync_directory(path)
+
+    monkeypatch.setattr(
+        archive_set_module, "_publish_no_clobber", occupy_then_publish
+    )
+    monkeypatch.setattr(archive_set_module, "fsync_directory", record_fsync)
+    assert store.commit_entry(entry) == entry
+    assert fsynced[-1] == store.entries_directory
+    assert list(store.entries_directory.glob(".chunk-001.json.*.partial")) == []
+
+
+def test_35_successful_publication_fsyncs_parent_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    folder, physical = _medium(tmp_path, "one", archive_set_id="set")
+    fsynced: list[Path] = []
+    monkeypatch.setattr(archive_set_module, "fsync_directory", fsynced.append)
+
+    ArchiveSetStore.bind(folder, archive_set_id="set", **physical)
+
+    assert fsynced[0] == folder.resolve()
+
+
+@pytest.mark.parametrize(
+    ("field", "alias"),
+    [
+        ("artifact_relative_path", "raw//x"),
+        ("artifact_relative_path", "raw/./x"),
+        ("artifact_relative_path", "raw/x/"),
+        ("artifact_relative_path", "./raw/x"),
+        ("archive_manifest_relative_path", "manifests//x"),
+        ("archive_manifest_relative_path", "manifests/./x"),
+        ("archive_manifest_relative_path", "manifests/x/"),
+        ("archive_manifest_relative_path", "./manifests/x"),
+    ],
+)
+def test_36_entry_paths_must_already_be_canonical(
+    tmp_path: Path, field: str, alias: str
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    with pytest.raises(ArchiveSetError, match="safe relative path"):
+        store.commit_entry(_entry(store, **{field: alias}))
+
+
+@pytest.mark.parametrize(
+    ("field", "unsafe"),
+    [
+        ("artifact_relative_path", "../escape"),
+        ("artifact_relative_path", "/raw/x"),
+        ("artifact_relative_path", "raw\\x"),
+        ("archive_manifest_relative_path", "../escape"),
+        ("archive_manifest_relative_path", "/manifests/x"),
+        ("archive_manifest_relative_path", "manifests\\x"),
+    ],
+)
+def test_37_existing_unsafe_entry_paths_remain_rejected(
+    tmp_path: Path, field: str, unsafe: str
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    with pytest.raises(ArchiveSetError, match="safe relative path"):
+        store.commit_entry(_entry(store, **{field: unsafe}))
+
+
+def test_38_canonical_entry_and_registered_paths_remain_valid(tmp_path: Path) -> None:
+    folder, physical = _medium(tmp_path, "registered/folder", archive_set_id="set")
+    store = ArchiveSetStore.bind(folder, archive_set_id="set", **physical)
+    entry = _entry(
+        store,
+        artifact_relative_path="raw/x",
+        archive_manifest_relative_path="manifests/x",
+    )
+    assert store.commit_entry(entry) == entry
+    assert store.identity.registered_relative_path == "registered/folder"
+
+
+@pytest.mark.parametrize(
+    "relative_index",
+    [
+        "index.sqlite",
+        "workspace/index.sqlite",
+        "archive-set/index.sqlite",
+        "archive-set/entries/index.sqlite",
+    ],
+)
+def test_39_index_inside_medium_is_rejected_before_any_write(
+    tmp_path: Path, relative_index: str
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    store.commit_entry(_entry(store))
+    before = _tree_snapshot(store.root)
+    index_path = store.root / relative_index
+    index = ArchiveSetIndex(index_path)
+    assert _tree_snapshot(store.root) == before
+
+    with pytest.raises(ArchiveSetError, match="inside archive media"):
+        index.rebuild([store.root])
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path))
+    assert scan_archive_medium(store.root).entries == (store.read_entry("chunk-001"),)
+
+
+def test_40_wrapper_rejects_index_inside_medium_before_any_write(tmp_path: Path) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    store.commit_entry(_entry(store))
+    before = _tree_snapshot(store.root)
+    index_path = store.entries_directory / "index.sqlite"
+
+    with pytest.raises(ArchiveSetError, match="inside archive media"):
+        rebuild_archive_set_index(index_path, (root for root in [store.root]))
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path))
+    assert scan_archive_medium(store.root).entries == (store.read_entry("chunk-001"),)
+
+
+def test_41_symlink_alias_index_inside_medium_is_rejected_before_write(
+    tmp_path: Path,
+) -> None:
+    store, _ = _bind(tmp_path, "one", generate_archive_set_id())
+    store.commit_entry(_entry(store))
+    alias = tmp_path / "medium-alias"
+    alias.symlink_to(store.root, target_is_directory=True)
+    index_path = alias / "workspace" / "index.sqlite"
+    before = _tree_snapshot(store.root)
+
+    with pytest.raises(ArchiveSetError, match="inside archive media"):
+        ArchiveSetIndex(index_path).rebuild([store.root])
+
+    assert _tree_snapshot(store.root) == before
+    assert all(not path.exists() for path in _sqlite_paths(index_path))

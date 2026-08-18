@@ -7,9 +7,12 @@ written here add logical Archive Set membership and whole-chunk inventory.
 
 from __future__ import annotations
 
+import ctypes
+import errno
 import json
 import os
 import sqlite3
+import sys
 import uuid
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
@@ -217,12 +220,16 @@ class ArchiveSetStore:
         identity_path = store.identity_path
         if identity_path.is_symlink():
             raise ArchiveSetError("Archive Set identity file is a symbolic link")
-        if identity_path.exists():
+        identity_existed = identity_path.exists()
+        if identity_existed:
             existing = store._read_identity_file()
-            if existing != identity:
-                raise ArchiveSetError("existing Archive Set identity conflicts")
         else:
-            _atomic_publish(identity_path, identity.canonical_bytes())
+            published = _atomic_publish(identity_path, identity.canonical_bytes())
+            existing = identity if published else store._read_identity_file()
+        if existing != identity:
+            raise ArchiveSetError("existing Archive Set identity conflicts")
+        if identity_existed:
+            fsync_directory(identity_path.parent)
         store._ensure_inventory_directories()
         return store
 
@@ -261,13 +268,17 @@ class ArchiveSetStore:
         final = self.entries_directory / f"{entry.chunk_id}.json"
         if final.is_symlink():
             raise ArchiveSetError("Archive Set entry is a symbolic link")
-        if final.exists():
+        entry_existed = final.exists()
+        if entry_existed:
             existing = _read_entry_file(final)
-            if existing == entry:
-                return existing
-            raise ArchiveSetError("existing Archive Set entry conflicts")
-        _atomic_publish(final, entry.canonical_bytes())
-        return entry
+        else:
+            published = _atomic_publish(final, entry.canonical_bytes())
+            existing = entry if published else _read_entry_file(final)
+        if existing == entry:
+            if entry_existed:
+                fsync_directory(final.parent)
+            return existing
+        raise ArchiveSetError("existing Archive Set entry conflicts")
 
     def read_entry(self, chunk_id: str) -> ArchiveSetEntry:
         _require_safe_segment(chunk_id, "chunk_id")
@@ -383,12 +394,13 @@ class ArchiveSetIndex:
     """Explicit-path convenience index rebuildable from media-local evidence."""
 
     def __init__(self, path: Path) -> None:
-        self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._initialize()
+        self.path = Path(path).expanduser().resolve()
 
     def rebuild(self, roots: Iterable[Path]) -> dict[str, int]:
-        scans = [scan_archive_medium(root) for root in roots]
+        supplied_roots = tuple(Path(root) for root in roots)
+        resolved_roots = tuple(_registered_root(root) for root in supplied_roots)
+        self._validate_index_outside_media(resolved_roots)
+        scans = [scan_archive_medium(root) for root in resolved_roots]
         media: dict[str, ArchiveMediumIdentity] = {}
         artifacts: dict[tuple[str, str], tuple[ArchiveMediumIdentity, ArchiveSetEntry]] = {}
         for scan in scans:
@@ -420,6 +432,8 @@ class ArchiveSetIndex:
                     raise ArchiveSetError("Archive Set chunk is claimed by multiple media")
                 artifacts[key] = (scan.identity, entry)
 
+        self._validate_index_outside_media(resolved_roots)
+        self._initialize()
         with sqlite3.connect(self.path) as connection:
             connection.execute("PRAGMA foreign_keys = ON")
             connection.execute("BEGIN")
@@ -504,6 +518,7 @@ class ArchiveSetIndex:
         return self._rows(query + " ORDER BY archive_set_id, chunk_id", tuple(parameters))
 
     def _initialize(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.path) as connection:
             connection.executescript(
                 """
@@ -534,9 +549,18 @@ class ArchiveSetIndex:
                 """
             )
 
+    def _validate_index_outside_media(self, roots: tuple[Path, ...]) -> None:
+        resolved_index = self.path.resolve()
+        if any(
+            resolved_index == root or resolved_index.is_relative_to(root)
+            for root in roots
+        ):
+            raise ArchiveSetError("workspace index path resolves inside archive media")
+
     def _rows(
         self, query: str, parameters: tuple[object, ...] = ()
     ) -> list[dict[str, object]]:
+        self._initialize()
         with sqlite3.connect(self.path) as connection:
             connection.row_factory = sqlite3.Row
             return [dict(row) for row in connection.execute(query, parameters)]
@@ -571,6 +595,8 @@ def _read_identity_file(path: Path) -> ArchiveMediumIdentity:
 
 
 def _read_entry_file(path: Path) -> ArchiveSetEntry:
+    if path.is_symlink():
+        raise ArchiveSetError("Archive Set entry is a symbolic link")
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
@@ -580,7 +606,7 @@ def _read_entry_file(path: Path) -> ArchiveSetEntry:
     return ArchiveSetEntry.from_dict(document)
 
 
-def _atomic_publish(path: Path, payload: bytes) -> None:
+def _atomic_publish(path: Path, payload: bytes) -> bool:
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.partial")
     try:
         descriptor = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -594,15 +620,80 @@ def _atomic_publish(path: Path, payload: bytes) -> None:
             os.fsync(descriptor)
         finally:
             os.close(descriptor)
-        if path.exists() or path.is_symlink():
-            raise ArchiveSetError("Archive Set metadata appeared during commit")
-        os.replace(temporary, path)
+        published = _publish_no_clobber(temporary, path)
         fsync_directory(path.parent)
+        return published
     except OSError as exc:
         raise ArchiveSetError(f"cannot commit Archive Set metadata: {exc}") from exc
     finally:
         with suppress(OSError):
             temporary.unlink(missing_ok=True)
+
+
+def _publish_no_clobber(source: Path, destination: Path) -> bool:
+    """Atomically rename *source* without replacing an existing destination."""
+
+    if source.parent != destination.parent:
+        raise ArchiveSetError("Archive Set metadata publication must stay in one directory")
+    if sys.platform == "linux":
+        return _posix_exclusive_rename(
+            source, destination, function_name="renameat2", flag=0x00000001
+        )
+    if sys.platform == "darwin":
+        return _posix_exclusive_rename(
+            source, destination, function_name="renameatx_np", flag=0x00000004
+        )
+    if os.name == "nt":
+        try:
+            os.rename(source, destination)
+        except FileExistsError:
+            return False
+        return True
+    raise ArchiveSetError(
+        f"atomic no-clobber publication is unsupported on platform {sys.platform!r}"
+    )
+
+
+def _posix_exclusive_rename(
+    source: Path,
+    destination: Path,
+    *,
+    function_name: str,
+    flag: int,
+) -> bool:
+    directory_descriptor = os.open(source.parent, os.O_RDONLY)
+    try:
+        library = ctypes.CDLL(None, use_errno=True)
+        try:
+            rename = getattr(library, function_name)
+        except AttributeError as exc:
+            raise ArchiveSetError(
+                f"atomic no-clobber publication primitive {function_name} is unavailable"
+            ) from exc
+        rename.argtypes = (
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_uint,
+        )
+        rename.restype = ctypes.c_int
+        ctypes.set_errno(0)
+        result = rename(
+            directory_descriptor,
+            os.fsencode(source.name),
+            directory_descriptor,
+            os.fsencode(destination.name),
+            flag,
+        )
+        if result == 0:
+            return True
+        error = ctypes.get_errno()
+        if error == errno.EEXIST:
+            return False
+        raise OSError(error, os.strerror(error), str(destination))
+    finally:
+        os.close(directory_descriptor)
 
 
 def _validate_direct_directory(path: Path, parent: Path, name: str) -> None:
@@ -640,7 +731,12 @@ def _require_text(value: object, field: str) -> None:
 def _require_relative_path(value: str, field: str) -> None:
     _require_text(value, field)
     path = PurePosixPath(value)
-    if path.is_absolute() or "\\" in value or any(part in {"", ".", ".."} for part in path.parts):
+    if (
+        value != path.as_posix()
+        or path.is_absolute()
+        or "\\" in value
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
         raise ArchiveSetError(f"{field} must be a safe relative path")
 
 
