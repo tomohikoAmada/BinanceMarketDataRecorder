@@ -44,7 +44,7 @@ from typing import Any, cast
 from ..metrics.model import MetricAggregate
 from ..metrics.recorder import utc_date_from_ns
 from ..spool.seal import SealError, validate_sealed_artifact
-from ..storage.catalog import ArchiveState, Catalog, ChunkState
+from ..storage.catalog import ArchiveState, Catalog
 from ..storage.layout import StorageLayout, fsync_directory
 from ..storage.macos import StorageRegistrationError, validate_registered_root
 
@@ -144,13 +144,7 @@ class ArchiveManager:
 
     def status(self) -> dict[str, object]:
         transactions = self.catalog.archive_transactions(storage_id=self.target.storage_id)
-        backlog = self.catalog.chunks_in_states(
-            ChunkState.SEALED,
-            ChunkState.ARCHIVE_COPYING,
-            ChunkState.ARCHIVE_VERIFYING,
-            ChunkState.ARCHIVED_VERIFIED,
-            ChunkState.LOCAL_DELETE_PENDING,
-        )
+        lifecycle = self.catalog.source_lifecycle_aggregate()
         return {
             "storage_id": self.target.storage_id,
             "status": (
@@ -163,8 +157,13 @@ class ArchiveManager:
             ),
             "transactions": transactions,
             "transaction_count": len(transactions),
-            "backlog_files": len(backlog),
-            "backlog_bytes": sum(_row_int(row, "stored_bytes", default=0) for row in backlog),
+            "backlog_files": lifecycle["unarchived_backlog_files"],
+            "backlog_bytes": lifecycle["unarchived_backlog_bytes"],
+            "remote_pending_files": lifecycle["remote_pending_files"],
+            "remote_pending_source_bytes": lifecycle[
+                "remote_pending_source_bytes"
+            ],
+            "remote_deleted_files": lifecycle["remote_deleted_files"],
             "unique_copy_warning": (
                 "After LOCAL_DELETED, the registered external artifact may be the only copy."
             ),
@@ -220,7 +219,7 @@ class ArchiveManager:
         )
         if transaction is not None:
             return transaction
-        chunk = self.catalog.oldest_chunk_in_states(ChunkState.SEALED)
+        chunk = self.catalog.oldest_unowned_sealed_chunk()
         if chunk is None:
             return None
         return self._reserve(chunk)

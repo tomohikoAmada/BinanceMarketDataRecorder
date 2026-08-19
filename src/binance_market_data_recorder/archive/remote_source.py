@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -124,10 +126,11 @@ class RemoteSourceExporter:
         row, archive = self.catalog.chunk_archive_snapshot(chunk_id)
         if row is None:
             raise RemoteSourceError(f"chunk missing: {chunk_id}")
-        return self._select_from_snapshot(chunk_id, row, archive)
+        remote = self.catalog.remote_archive_transaction_for_chunk(chunk_id)
+        return self._select_from_snapshot(chunk_id, row, archive, remote)
 
     def select_oldest(self) -> RemoteSourceSelection | None:
-        row = self.catalog.oldest_chunk_in_states(ChunkState.SEALED)
+        row = self.catalog.oldest_unowned_sealed_chunk()
         if row is None:
             return None
         chunk_id = row.get("chunk_id")
@@ -140,6 +143,9 @@ class RemoteSourceExporter:
         chunk_id: str,
         row: dict[str, object],
         archive: dict[str, object] | None,
+        remote: dict[str, object] | None,
+        *,
+        permitted_remote_receipt_id: str | None = None,
     ) -> RemoteSourceSelection:
         state = self._chunk_state(row)
         if state is not ChunkState.SEALED:
@@ -151,6 +157,11 @@ class RemoteSourceExporter:
                 "Catalog/archive-state contradiction: SEALED chunk has "
                 f"archive transaction {archive.get('transaction_id')}"
             )
+        if remote is not None and remote.get("receipt_id") != permitted_remote_receipt_id:
+            raise RemoteSourceError(
+                "source already has remote archive ownership: "
+                f"{remote.get('receipt_id')}"
+            )
 
         sealed_relative = self._required_catalog_text(row, "sealed_path")
         manifest_relative = self._required_catalog_text(row, "manifest_path")
@@ -160,14 +171,8 @@ class RemoteSourceExporter:
         manifest_path = self._resolve_recorder_path(
             manifest_relative, self.layout.manifests, "Catalog manifest_path"
         )
-        if not sealed_path.is_file():
-            raise RemoteSourceError(
-                f"source artifact missing: {sealed_relative}"
-            )
-        if not manifest_path.is_file():
-            raise RemoteSourceError(
-                f"manifest unreadable or missing: {manifest_relative}"
-            )
+        source_identity = _require_no_follow_regular(sealed_path, "source artifact")
+        _require_no_follow_regular(manifest_path, "source manifest")
 
         manifest_bytes = self._read_manifest(manifest_path)
         manifest = self._decode_manifest(manifest_bytes)
@@ -183,11 +188,20 @@ class RemoteSourceExporter:
             raise RemoteSourceError(
                 f"source artifact validation failure: {exc}"
             ) from exc
+        if _require_no_follow_regular(
+            sealed_path, "source artifact"
+        ) != source_identity:
+            raise RemoteSourceError("source artifact changed during validation")
 
         final_row, final_archive = self.catalog.chunk_archive_snapshot(chunk_id)
+        final_remote = self.catalog.remote_archive_transaction_for_chunk(chunk_id)
         if (
             final_row is None
             or final_archive is not None
+            or (
+                final_remote is not None
+                and final_remote.get("receipt_id") != permitted_remote_receipt_id
+            )
             or self._chunk_state(final_row) is not ChunkState.SEALED
             or self._source_identity(final_row) != self._source_identity(row)
         ):
@@ -269,20 +283,21 @@ class RemoteSourceExporter:
         if candidate.is_absolute():
             raise RemoteSourceError(f"invalid {label}: path must be Recorder-relative")
         try:
-            resolved = (self.layout.root / candidate).resolve()
+            lexical = self.layout.root / candidate
+            resolved = lexical.resolve()
             directory_resolved = directory.resolve()
-            if resolved.parent != directory_resolved:
+            if directory.is_symlink() or resolved.parent != directory_resolved:
                 raise RemoteSourceError(
                     f"invalid {label}: path escapes its exact Recorder directory"
                 )
         except OSError as exc:
             raise RemoteSourceError(f"invalid {label}: cannot resolve path") from exc
-        return resolved
+        return lexical
 
     @staticmethod
     def _read_manifest(path: Path) -> bytes:
         try:
-            return path.read_bytes()
+            return _read_no_follow_regular(path)
         except OSError as exc:
             raise RemoteSourceError(f"manifest unreadable: {path}") from exc
 
@@ -343,7 +358,7 @@ class RemoteSourceExporter:
             manifest_path = (self.layout.root / manifest_relative_path).resolve()
         except OSError as exc:
             raise RemoteSourceError("manifest relative_path cannot be resolved") from exc
-        if manifest_path != sealed_path:
+        if manifest_path != sealed_path.resolve():
             raise RemoteSourceError(
                 "manifest relative_path does not identify Catalog sealed_path"
             )
@@ -356,3 +371,114 @@ class RemoteSourceExporter:
             "envelope_schema_version",
         ):
             self._required_manifest_text(manifest, field)
+
+
+def revalidate_remote_source_selection(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    selection: RemoteSourceSelection,
+    permitted_remote_receipt_id: str | None = None,
+) -> RemoteSourceSelection:
+    """Re-run M22.1-strength validation and require the exact caller selection."""
+
+    chunk_id = selection.descriptor.chunk_id
+    row, archive, remote = catalog.source_lifecycle_snapshot(chunk_id)
+    if row is None:
+        raise RemoteSourceError(f"chunk missing: {chunk_id}")
+    current = RemoteSourceExporter(layout=layout, catalog=catalog)._select_from_snapshot(
+        chunk_id,
+        row,
+        archive,
+        remote,
+        permitted_remote_receipt_id=permitted_remote_receipt_id,
+    )
+    if current != selection:
+        raise RemoteSourceError("source selection no longer matches current exact source")
+    return current
+
+
+def descriptor_from_retained_manifest(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    row: Mapping[str, object],
+    manifest_bytes: bytes,
+) -> RemoteSourceDescriptor:
+    """Reconstruct the exact M22.1 descriptor without requiring Raw presence."""
+
+    chunk_id = RemoteSourceExporter._required_catalog_text(row, "chunk_id")
+    exporter = RemoteSourceExporter(layout=layout, catalog=catalog)
+    manifest = exporter._decode_manifest(manifest_bytes)
+    sealed_relative = exporter._required_catalog_text(row, "sealed_path")
+    manifest_relative = exporter._required_catalog_text(row, "manifest_path")
+    sealed_path = exporter._resolve_recorder_path(
+        sealed_relative, layout.sealed, "Catalog sealed_path"
+    )
+    exporter._validate_manifest_identity(
+        chunk_id=chunk_id, row=row, manifest=manifest, sealed_path=sealed_path
+    )
+    return RemoteSourceDescriptor(
+        descriptor_schema_version=REMOTE_SOURCE_DESCRIPTOR_SCHEMA,
+        chunk_id=chunk_id,
+        market=exporter._required_manifest_text(manifest, "market"),
+        stream=exporter._required_manifest_text(manifest, "stream"),
+        source_relative_path=sealed_relative,
+        stored_bytes=exporter._required_manifest_int(manifest, "stored_bytes"),
+        stored_sha256=exporter._required_manifest_text(manifest, "stored_sha256"),
+        source_manifest_relative_path=manifest_relative,
+        source_manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+        manifest_schema_version=exporter._required_manifest_text(
+            manifest, "manifest_schema_version"
+        ),
+        chunk_schema_version=exporter._required_manifest_text(
+            manifest, "chunk_schema_version"
+        ),
+        envelope_schema_version=exporter._required_manifest_text(
+            manifest, "envelope_schema_version"
+        ),
+    )
+
+
+def _read_no_follow_regular(path: Path) -> bytes:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    no_follow = getattr(os, "O_NOFOLLOW", None)
+    if no_follow is None:
+        raise OSError("safe no-follow file open is unavailable")
+    descriptor = os.open(path, flags | no_follow)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise OSError("filesystem object is not a regular file")
+        blocks: list[bytes] = []
+        while block := os.read(descriptor, 1024 * 1024):
+            blocks.append(block)
+        return b"".join(blocks)
+    finally:
+        os.close(descriptor)
+
+
+def _require_no_follow_regular(path: Path, label: str) -> tuple[int, int, int, int]:
+    try:
+        no_follow = getattr(os, "O_NOFOLLOW", None)
+        if no_follow is None:
+            raise OSError("safe no-follow file open is unavailable")
+        descriptor = os.open(
+            path,
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | no_follow,
+        )
+        try:
+            status = os.fstat(descriptor)
+            if not stat.S_ISREG(status.st_mode):
+                raise RemoteSourceError(f"{label} is not a regular file")
+            return (
+                status.st_dev,
+                status.st_ino,
+                status.st_size,
+                status.st_mtime_ns,
+            )
+        finally:
+            os.close(descriptor)
+    except (OSError, TypeError) as exc:
+        raise RemoteSourceError(f"{label} missing or unsafe: {path}") from exc

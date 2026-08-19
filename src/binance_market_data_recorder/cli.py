@@ -41,7 +41,7 @@ from .spool.legacy_reconnect import (
     evaluate_legacy_reconnect_decisions,
 )
 from .status import service_status
-from .storage.catalog import Catalog, CatalogStateError, ChunkState
+from .storage.catalog import Catalog, CatalogStateError
 from .storage.forecast import StorageForecaster
 from .storage.layout import StorageLayout, ensure_storage_layout
 from .storage.linux import LinuxVolumeAdapter
@@ -272,17 +272,11 @@ def _config_payload(loaded: LoadedConfig) -> dict[str, object]:
 
 def _archive_status(catalog: Catalog) -> dict[str, object]:
     transactions = catalog.archive_transactions()
+    lifecycle = catalog.source_lifecycle_aggregate()
     states: dict[str, int] = {}
     for transaction in transactions:
         state = str(transaction["state"])
         states[state] = states.get(state, 0) + 1
-    backlog = catalog.chunks_in_states(
-        ChunkState.SEALED,
-        ChunkState.ARCHIVE_COPYING,
-        ChunkState.ARCHIVE_VERIFYING,
-        ChunkState.ARCHIVED_VERIFIED,
-        ChunkState.LOCAL_DELETE_PENDING,
-    )
     return {
         "command": "archive.status",
         "status": (
@@ -295,13 +289,12 @@ def _archive_status(catalog: Catalog) -> dict[str, object]:
         ),
         "transaction_count": len(transactions),
         "transactions_by_state": dict(sorted(states.items())),
-        "backlog_files": len(backlog),
-        "backlog_bytes": sum(
-            value
-            for row in backlog
-            if isinstance((value := row.get("stored_bytes")), int)
-            and not isinstance(value, bool)
-        ),
+        "backlog_files": lifecycle["unarchived_backlog_files"],
+        "backlog_bytes": lifecycle["unarchived_backlog_bytes"],
+        "ordinary_sealed_files": lifecycle["ordinary_sealed_files"],
+        "remote_pending_files": lifecycle["remote_pending_files"],
+        "remote_pending_source_bytes": lifecycle["remote_pending_source_bytes"],
+        "remote_deleted_files": lifecycle["remote_deleted_files"],
         "transactions": transactions,
         "unique_copy_warning": (
             "After LOCAL_DELETED, the registered external artifact may be the only copy."

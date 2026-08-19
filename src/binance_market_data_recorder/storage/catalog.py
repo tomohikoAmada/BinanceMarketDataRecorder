@@ -34,9 +34,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import time
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from enum import StrEnum
 from pathlib import Path
@@ -63,6 +64,13 @@ class ArchiveState(StrEnum):
     VERIFIED = "VERIFIED"
     LOCAL_DELETE_PENDING = "LOCAL_DELETE_PENDING"
     LOCAL_DELETED = "LOCAL_DELETED"
+
+
+class RemoteArchiveState(StrEnum):
+    """Separate remote source lifecycle; physical ChunkState remains SEALED."""
+
+    REMOTE_DELETE_PENDING = "REMOTE_DELETE_PENDING"
+    REMOTE_DELETED = "REMOTE_DELETED"
 
 
 class StorageControlState(StrEnum):
@@ -130,6 +138,43 @@ DEPLOYMENT_TRANSITIONS = {
 }
 
 
+_REMOTE_TRANSACTION_COLUMNS = {
+    "receipt_id": ("TEXT", 0, 1),
+    "chunk_id": ("TEXT", 1, 0),
+    "state": ("TEXT", 1, 0),
+    "receipt_bytes": ("BLOB", 1, 0),
+    "receipt_schema_version": ("TEXT", 1, 0),
+    "session_id": ("TEXT", 1, 0),
+    "verification_version": ("TEXT", 1, 0),
+    "verification_outcome": ("TEXT", 1, 0),
+    "source_descriptor_schema_version": ("TEXT", 1, 0),
+    "source_descriptor_sha256": ("TEXT", 1, 0),
+    "market": ("TEXT", 1, 0),
+    "stream": ("TEXT", 1, 0),
+    "source_relative_path": ("TEXT", 1, 0),
+    "source_manifest_relative_path": ("TEXT", 1, 0),
+    "source_manifest_sha256": ("TEXT", 1, 0),
+    "stored_bytes": ("INTEGER", 1, 0),
+    "stored_sha256": ("TEXT", 1, 0),
+    "archive_set_id": ("TEXT", 1, 0),
+    "storage_id": ("TEXT", 1, 0),
+    "artifact_relative_path": ("TEXT", 1, 0),
+    "archive_set_entry_sha256": ("TEXT", 1, 0),
+    "created_at_utc_ns": ("INTEGER", 1, 0),
+    "updated_at_utc_ns": ("INTEGER", 1, 0),
+    "remote_deleted_at_utc_ns": ("INTEGER", 0, 0),
+}
+_REMOTE_EVENT_COLUMNS = {
+    "event_id": ("INTEGER", 0, 1),
+    "receipt_id": ("TEXT", 1, 0),
+    "from_state": ("TEXT", 0, 0),
+    "to_state": ("TEXT", 1, 0),
+    "occurred_at_utc_ns": ("INTEGER", 1, 0),
+    "evidence_json": ("TEXT", 1, 0),
+    "idempotency_key": ("TEXT", 1, 0),
+}
+
+
 class Catalog:
     def __init__(self, path: Path, *, read_only: bool = False) -> None:
         self.path = path
@@ -168,10 +213,22 @@ class Catalog:
         self._connection.execute("PRAGMA foreign_keys=ON")
         if read_only:
             self._connection.execute("PRAGMA query_only=ON")
+            try:
+                self._remote_schema_present = self._inspect_remote_schema(create=False)
+            except CatalogStateError:
+                raise
+            except sqlite3.Error as exc:
+                raise CatalogStateError("cannot inspect remote Catalog schema") from exc
         else:
             self._connection.execute("PRAGMA journal_mode=WAL")
             self._connection.execute("PRAGMA synchronous=FULL")
             self._initialize()
+            try:
+                self._remote_schema_present = self._inspect_remote_schema(create=True)
+            except CatalogStateError:
+                raise
+            except sqlite3.Error as exc:
+                raise CatalogStateError("cannot initialize remote Catalog schema") from exc
 
     def close(self) -> None:
         with self._lock:
@@ -371,6 +428,201 @@ class Catalog:
             );
             """
         )
+
+    def _inspect_remote_schema(self, *, create: bool) -> bool:
+        """Create/validate the additive M22.4A projection, or accept legacy absence."""
+
+        names = {
+            str(row["name"])
+            for row in self._connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' "
+                "AND name IN ('remote_archive_transactions', 'remote_archive_events')"
+            )
+        }
+        expected = {"remote_archive_transactions", "remote_archive_events"}
+        if names and names != expected:
+            raise CatalogStateError("partial remote archive schema")
+        if not names:
+            if not create:
+                return False
+            with self._transaction() as connection:
+                connection.execute(
+                    """
+                    CREATE TABLE remote_archive_transactions (
+                        receipt_id TEXT PRIMARY KEY,
+                        chunk_id TEXT NOT NULL UNIQUE REFERENCES chunks(chunk_id),
+                        state TEXT NOT NULL CHECK (state IN (
+                            'REMOTE_DELETE_PENDING', 'REMOTE_DELETED'
+                        )),
+                        receipt_bytes BLOB NOT NULL,
+                        receipt_schema_version TEXT NOT NULL,
+                        session_id TEXT NOT NULL,
+                        verification_version TEXT NOT NULL,
+                        verification_outcome TEXT NOT NULL,
+                        source_descriptor_schema_version TEXT NOT NULL,
+                        source_descriptor_sha256 TEXT NOT NULL,
+                        market TEXT NOT NULL,
+                        stream TEXT NOT NULL,
+                        source_relative_path TEXT NOT NULL,
+                        source_manifest_relative_path TEXT NOT NULL,
+                        source_manifest_sha256 TEXT NOT NULL,
+                        stored_bytes INTEGER NOT NULL,
+                        stored_sha256 TEXT NOT NULL,
+                        archive_set_id TEXT NOT NULL,
+                        storage_id TEXT NOT NULL,
+                        artifact_relative_path TEXT NOT NULL,
+                        archive_set_entry_sha256 TEXT NOT NULL,
+                        created_at_utc_ns INTEGER NOT NULL,
+                        updated_at_utc_ns INTEGER NOT NULL,
+                        remote_deleted_at_utc_ns INTEGER,
+                        CHECK (
+                            (state = 'REMOTE_DELETE_PENDING'
+                                AND remote_deleted_at_utc_ns IS NULL)
+                            OR (state = 'REMOTE_DELETED'
+                                AND remote_deleted_at_utc_ns IS NOT NULL)
+                        )
+                    )
+                    """
+                )
+                connection.execute(
+                    """
+                    CREATE INDEX remote_archive_transactions_by_state
+                    ON remote_archive_transactions(state, created_at_utc_ns, receipt_id)
+                    """
+                )
+                connection.execute(
+                    """
+                    CREATE TABLE remote_archive_events (
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        receipt_id TEXT NOT NULL
+                            REFERENCES remote_archive_transactions(receipt_id),
+                        from_state TEXT,
+                        to_state TEXT NOT NULL,
+                        occurred_at_utc_ns INTEGER NOT NULL,
+                        evidence_json TEXT NOT NULL,
+                        idempotency_key TEXT NOT NULL UNIQUE
+                    )
+                    """
+                )
+                connection.execute(
+                    """
+                    CREATE INDEX remote_archive_events_by_receipt
+                    ON remote_archive_events(receipt_id, event_id)
+                    """
+                )
+                self._validate_remote_schema()
+            return True
+        self._validate_remote_schema()
+        return True
+
+    def _validate_remote_schema(self) -> None:
+        self._validate_table_columns(
+            "remote_archive_transactions", _REMOTE_TRANSACTION_COLUMNS
+        )
+        self._validate_table_columns("remote_archive_events", _REMOTE_EVENT_COLUMNS)
+        self._validate_foreign_key(
+            "remote_archive_transactions", "chunk_id", "chunks", "chunk_id"
+        )
+        self._validate_foreign_key(
+            "remote_archive_events",
+            "receipt_id",
+            "remote_archive_transactions",
+            "receipt_id",
+        )
+        self._validate_unique_index("remote_archive_transactions", ("chunk_id",))
+        self._validate_unique_index("remote_archive_events", ("idempotency_key",))
+        self._validate_named_index(
+            "remote_archive_transactions_by_state",
+            "remote_archive_transactions",
+            ("state", "created_at_utc_ns", "receipt_id"),
+        )
+        self._validate_named_index(
+            "remote_archive_events_by_receipt",
+            "remote_archive_events",
+            ("receipt_id", "event_id"),
+        )
+        row = self._connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'remote_archive_transactions'"
+        ).fetchone()
+        compact = re.sub(r"\s+", "", str(row["sql"])).upper() if row else ""
+        required_fragments = (
+            "CHECK(STATEIN('REMOTE_DELETE_PENDING','REMOTE_DELETED'))",
+            "CHECK((STATE='REMOTE_DELETE_PENDING'ANDREMOTE_DELETED_AT_UTC_NSISNULL)OR"
+            "(STATE='REMOTE_DELETED'ANDREMOTE_DELETED_AT_UTC_NSISNOTNULL))",
+        )
+        if any(fragment not in compact for fragment in required_fragments):
+            raise CatalogStateError("malformed remote archive state constraints")
+
+    def _validate_table_columns(
+        self, table: str, expected: Mapping[str, tuple[str, int, int]]
+    ) -> None:
+        rows = self._connection.execute(f"PRAGMA table_info({table})").fetchall()
+        actual = {
+            str(row["name"]): (
+                str(row["type"]).upper(), int(row["notnull"]), int(row["pk"])
+            )
+            for row in rows
+        }
+        if actual != dict(expected):
+            raise CatalogStateError(f"malformed remote Catalog table: {table}")
+
+    def _validate_foreign_key(
+        self, table: str, source: str, target_table: str, target: str
+    ) -> None:
+        rows = self._connection.execute(f"PRAGMA foreign_key_list({table})").fetchall()
+        matches = [
+            row
+            for row in rows
+            if row["from"] == source and row["table"] == target_table and row["to"] == target
+        ]
+        if len(rows) != 1 or len(matches) != 1:
+            raise CatalogStateError(f"malformed remote Catalog foreign key: {table}")
+
+    def _validate_unique_index(self, table: str, columns: tuple[str, ...]) -> None:
+        for row in self._connection.execute(f"PRAGMA index_list({table})").fetchall():
+            if not int(row["unique"]) or int(row["partial"]):
+                continue
+            names = tuple(
+                str(item["name"])
+                for item in self._connection.execute(
+                    f"PRAGMA index_info({row['name']})"
+                ).fetchall()
+            )
+            if names == columns:
+                return
+        raise CatalogStateError(f"missing remote Catalog UNIQUE constraint: {table}")
+
+    def _validate_named_index(
+        self, name: str, table: str, columns: tuple[str, ...]
+    ) -> None:
+        row = self._connection.execute(
+            "SELECT tbl_name FROM sqlite_master WHERE type = 'index' AND name = ?",
+            (name,),
+        ).fetchone()
+        metadata = next(
+            (
+                item
+                for item in self._connection.execute(
+                    f"PRAGMA index_list({table})"
+                ).fetchall()
+                if item["name"] == name
+            ),
+            None,
+        )
+        actual = tuple(
+            str(item["name"])
+            for item in self._connection.execute(f"PRAGMA index_info({name})").fetchall()
+        )
+        if (
+            row is None
+            or row["tbl_name"] != table
+            or metadata is None
+            or int(metadata["unique"])
+            or int(metadata["partial"])
+            or actual != columns
+        ):
+            raise CatalogStateError(f"missing or malformed remote Catalog index: {name}")
 
     def record_space_sample(
         self,
@@ -1284,6 +1536,12 @@ class Catalog:
                 raise CatalogStateError(
                     f"storage target blocks new archive allocation: {control['state']}"
                 )
+            remote_owner = connection.execute(
+                "SELECT receipt_id FROM remote_archive_transactions WHERE chunk_id = ?",
+                (chunk_id,),
+            ).fetchone()
+            if remote_owner is not None:
+                raise CatalogStateError("remote archive ownership already exists")
             existing = connection.execute(
                 "SELECT * FROM archive_transactions WHERE chunk_id = ?",
                 (chunk_id,),
@@ -1538,6 +1796,331 @@ class Catalog:
             rows = self._connection.execute(query, parameters).fetchall()
         return [dict(row) for row in rows]
 
+    def remote_archive_transaction(
+        self, receipt_id: str
+    ) -> dict[str, object] | None:
+        if not self._remote_schema_present:
+            return None
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM remote_archive_transactions WHERE receipt_id = ?",
+                (receipt_id,),
+            ).fetchone()
+        return self._validated_remote_row(row) if row is not None else None
+
+    def remote_archive_transaction_for_chunk(
+        self, chunk_id: str
+    ) -> dict[str, object] | None:
+        if not self._remote_schema_present:
+            return None
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM remote_archive_transactions WHERE chunk_id = ?",
+                (chunk_id,),
+            ).fetchone()
+        return self._validated_remote_row(row) if row is not None else None
+
+    def remote_archive_transactions(self) -> list[dict[str, object]]:
+        if not self._remote_schema_present:
+            return []
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM remote_archive_transactions "
+                "ORDER BY created_at_utc_ns, receipt_id"
+            ).fetchall()
+        return [self._validated_remote_row(row) for row in rows]
+
+    def remote_authorizations_between(
+        self, start_utc_ns: int, end_utc_ns: int
+    ) -> list[dict[str, object]]:
+        if not self._remote_schema_present:
+            return []
+        if start_utc_ns < 0 or end_utc_ns <= start_utc_ns:
+            raise ValueError("invalid remote authorization time range")
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM remote_archive_transactions "
+                "WHERE created_at_utc_ns >= ? AND created_at_utc_ns < ? "
+                "ORDER BY created_at_utc_ns, receipt_id",
+                (start_utc_ns, end_utc_ns),
+            ).fetchall()
+        return [self._validated_remote_row(row) for row in rows]
+
+    def remote_archive_events(self, receipt_id: str) -> list[dict[str, object]]:
+        if not self._remote_schema_present:
+            return []
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM remote_archive_events WHERE receipt_id = ? "
+                "ORDER BY event_id",
+                (receipt_id,),
+            ).fetchall()
+        result: list[dict[str, object]] = []
+        for row in rows:
+            document = dict(row)
+            try:
+                document["to_state"] = RemoteArchiveState(
+                    str(document["to_state"])
+                ).value
+                from_state = document["from_state"]
+                if from_state is not None:
+                    document["from_state"] = RemoteArchiveState(
+                        str(from_state)
+                    ).value
+                evidence = json.loads(str(document.pop("evidence_json")))
+            except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                raise CatalogStateError("malformed remote archive event") from exc
+            if not isinstance(evidence, dict):
+                raise CatalogStateError("malformed remote archive event evidence")
+            document["evidence"] = evidence
+            result.append(document)
+        return result
+
+    def reserve_remote_archive_transaction(
+        self,
+        *,
+        receipt_bytes: bytes,
+        market: str,
+        stream: str,
+        expected_chunk: Mapping[str, object],
+        occurred_at_utc_ns: int | None = None,
+        fault_hook: Callable[[str], None] | None = None,
+    ) -> dict[str, object]:
+        """Persist the sole non-destructive remote pre-delete authority."""
+
+        self._require_writable()
+        if not self._remote_schema_present:
+            raise CatalogStateError("remote archive schema is unavailable")
+        receipt = _parse_remote_receipt(receipt_bytes)
+        if not market or not stream:
+            raise ValueError("remote source market/stream identity is invalid")
+        now = time.time_ns() if occurred_at_utc_ns is None else occurred_at_utc_ns
+        if not isinstance(now, int) or isinstance(now, bool) or now < 0:
+            raise ValueError("remote authorization timestamp is invalid")
+        required_chunk = {
+            "chunk_id": receipt.chunk_id,
+            "state": ChunkState.SEALED.value,
+            "sealed_path": receipt.source_relative_path,
+            "manifest_path": receipt.source_manifest_relative_path,
+            "stored_bytes": receipt.stored_bytes,
+            "stored_sha256": receipt.stored_sha256,
+        }
+        if any(expected_chunk.get(key) != value for key, value in required_chunk.items()):
+            raise CatalogStateError("remote authorization source snapshot mismatch")
+        row: sqlite3.Row | None = None
+        with self._transaction() as connection:
+            chunk = connection.execute(
+                "SELECT * FROM chunks WHERE chunk_id = ?", (receipt.chunk_id,)
+            ).fetchone()
+            if chunk is None or ChunkState(str(chunk["state"])) is not ChunkState.SEALED:
+                raise CatalogStateError("only a SEALED chunk may be remotely authorized")
+            if any(chunk[key] != value for key, value in required_chunk.items()):
+                raise CatalogStateError("remote authorization source changed")
+            same_host = connection.execute(
+                "SELECT transaction_id FROM archive_transactions WHERE chunk_id = ?",
+                (receipt.chunk_id,),
+            ).fetchone()
+            if same_host is not None:
+                raise CatalogStateError("same-host archive ownership already exists")
+            existing_rows = connection.execute(
+                "SELECT * FROM remote_archive_transactions "
+                "WHERE receipt_id = ? OR chunk_id = ?",
+                (receipt.receipt_id, receipt.chunk_id),
+            ).fetchall()
+            if existing_rows:
+                if len(existing_rows) != 1:
+                    raise CatalogStateError("conflicting remote archive ownership")
+                existing = self._validated_remote_row(existing_rows[0])
+                exact = {
+                    "receipt_id": receipt.receipt_id,
+                    "chunk_id": receipt.chunk_id,
+                    "state": RemoteArchiveState.REMOTE_DELETE_PENDING.value,
+                    "receipt_bytes": receipt_bytes,
+                    "market": market,
+                    "stream": stream,
+                }
+                if any(existing.get(key) != value for key, value in exact.items()):
+                    raise CatalogStateError("conflicting remote archive ownership")
+                row = existing_rows[0]
+            else:
+                connection.execute(
+                    """
+                    INSERT INTO remote_archive_transactions(
+                        receipt_id, chunk_id, state, receipt_bytes,
+                        receipt_schema_version, session_id,
+                        verification_version, verification_outcome,
+                        source_descriptor_schema_version,
+                        source_descriptor_sha256, market, stream,
+                        source_relative_path, source_manifest_relative_path,
+                        source_manifest_sha256, stored_bytes, stored_sha256,
+                        archive_set_id, storage_id, artifact_relative_path,
+                        archive_set_entry_sha256, created_at_utc_ns,
+                        updated_at_utc_ns, remote_deleted_at_utc_ns
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, NULL
+                    )
+                    """,
+                    (
+                        receipt.receipt_id,
+                        receipt.chunk_id,
+                        RemoteArchiveState.REMOTE_DELETE_PENDING,
+                        receipt_bytes,
+                        receipt.receipt_schema_version,
+                        receipt.session_id,
+                        receipt.verification_version,
+                        receipt.verification_outcome,
+                        receipt.source_descriptor_schema_version,
+                        receipt.source_descriptor_sha256,
+                        market,
+                        stream,
+                        receipt.source_relative_path,
+                        receipt.source_manifest_relative_path,
+                        receipt.source_manifest_sha256,
+                        receipt.stored_bytes,
+                        receipt.stored_sha256,
+                        receipt.archive_set_id,
+                        receipt.storage_id,
+                        receipt.artifact_relative_path,
+                        receipt.archive_set_entry_sha256,
+                        now,
+                        now,
+                    ),
+                )
+                evidence = json.dumps(
+                    {"chunk_id": receipt.chunk_id, "receipt_id": receipt.receipt_id},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO remote_archive_events(
+                        receipt_id, from_state, to_state, occurred_at_utc_ns,
+                        evidence_json, idempotency_key
+                    ) VALUES (?, NULL, ?, ?, ?, ?)
+                    """,
+                    (
+                        receipt.receipt_id,
+                        RemoteArchiveState.REMOTE_DELETE_PENDING,
+                        now,
+                        evidence,
+                        f"remote-authorize:{receipt.receipt_id}",
+                    ),
+                )
+                row = connection.execute(
+                    "SELECT * FROM remote_archive_transactions WHERE receipt_id = ?",
+                    (receipt.receipt_id,),
+                ).fetchone()
+            if fault_hook is not None:
+                fault_hook("before_remote_authorization_commit")
+        if fault_hook is not None:
+            fault_hook("after_remote_authorization_commit")
+        if row is None:
+            raise CatalogStateError("remote authorization was not persisted")
+        persisted = self.remote_archive_transaction(receipt.receipt_id)
+        if persisted is None:
+            raise CatalogStateError("remote authorization readback failed")
+        return persisted
+
+    def _validated_remote_row(self, row: sqlite3.Row) -> dict[str, object]:
+        document = dict(row)
+        try:
+            state = RemoteArchiveState(str(document["state"]))
+            deleted_at = document["remote_deleted_at_utc_ns"]
+            if (state is RemoteArchiveState.REMOTE_DELETE_PENDING) != (
+                deleted_at is None
+            ):
+                raise ValueError("remote state/timestamp invariant")
+            raw_bytes = document["receipt_bytes"]
+            if not isinstance(raw_bytes, bytes):
+                raise ValueError("receipt_bytes is not a BLOB")
+            receipt = _parse_remote_receipt(raw_bytes)
+            expected = {
+                "receipt_id": receipt.receipt_id,
+                "chunk_id": receipt.chunk_id,
+                "receipt_schema_version": receipt.receipt_schema_version,
+                "session_id": receipt.session_id,
+                "verification_version": receipt.verification_version,
+                "verification_outcome": receipt.verification_outcome,
+                "source_descriptor_schema_version": (
+                    receipt.source_descriptor_schema_version
+                ),
+                "source_descriptor_sha256": receipt.source_descriptor_sha256,
+                "source_relative_path": receipt.source_relative_path,
+                "source_manifest_relative_path": (
+                    receipt.source_manifest_relative_path
+                ),
+                "source_manifest_sha256": receipt.source_manifest_sha256,
+                "stored_bytes": receipt.stored_bytes,
+                "stored_sha256": receipt.stored_sha256,
+                "archive_set_id": receipt.archive_set_id,
+                "storage_id": receipt.storage_id,
+                "artifact_relative_path": receipt.artifact_relative_path,
+                "archive_set_entry_sha256": receipt.archive_set_entry_sha256,
+            }
+            if any(document.get(key) != value for key, value in expected.items()):
+                raise ValueError("receipt/row identity mismatch")
+            for key in (
+                "market",
+                "stream",
+                "source_relative_path",
+                "source_manifest_relative_path",
+                "artifact_relative_path",
+            ):
+                value = document.get(key)
+                if not isinstance(value, str) or not value:
+                    raise ValueError(f"invalid remote row {key}")
+            for key in (
+                "source_relative_path",
+                "source_manifest_relative_path",
+                "artifact_relative_path",
+            ):
+                _validate_relative_path(str(document[key]))
+            for key in ("created_at_utc_ns", "updated_at_utc_ns"):
+                value = document.get(key)
+                if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                    raise ValueError(f"invalid remote row {key}")
+            chunk = self._connection.execute(
+                "SELECT state, sealed_path, manifest_path, stored_bytes, stored_sha256 "
+                "FROM chunks WHERE chunk_id = ?",
+                (receipt.chunk_id,),
+            ).fetchone()
+            current_source = {
+                "state": ChunkState.SEALED.value,
+                "sealed_path": receipt.source_relative_path,
+                "manifest_path": receipt.source_manifest_relative_path,
+                "stored_bytes": receipt.stored_bytes,
+                "stored_sha256": receipt.stored_sha256,
+            }
+            if chunk is None or any(
+                chunk[key] != value for key, value in current_source.items()
+            ):
+                raise ValueError("remote row/current Catalog source mismatch")
+            initial = self._connection.execute(
+                "SELECT receipt_id, from_state, to_state, evidence_json "
+                "FROM remote_archive_events "
+                "WHERE idempotency_key = ?",
+                (f"remote-authorize:{receipt.receipt_id}",),
+            ).fetchone()
+            if (
+                initial is None
+                or initial["receipt_id"] != receipt.receipt_id
+                or initial["from_state"] is not None
+                or initial["to_state"]
+                != RemoteArchiveState.REMOTE_DELETE_PENDING.value
+            ):
+                raise ValueError("remote authorization event is missing or malformed")
+            evidence = json.loads(str(initial["evidence_json"]))
+            if evidence != {
+                "chunk_id": receipt.chunk_id,
+                "receipt_id": receipt.receipt_id,
+            }:
+                raise ValueError("remote authorization event evidence mismatch")
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise CatalogStateError("malformed persisted remote authorization") from exc
+        document["state"] = state.value
+        return document
+
     def begin_storage_eject(
         self,
         *,
@@ -1738,6 +2321,155 @@ class Catalog:
             ).fetchone()
         return dict(row) if row else None
 
+    def oldest_unowned_sealed_chunk(self) -> dict[str, object] | None:
+        remote_exclusion = (
+            "AND NOT EXISTS (SELECT 1 FROM remote_archive_transactions AS remote "
+            "WHERE remote.chunk_id = chunks.chunk_id)"
+            if self._remote_schema_present
+            else ""
+        )
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                if self._remote_schema_present:
+                    self._validate_remote_rows_in_snapshot()
+                row = self._connection.execute(
+                    f"""
+                    SELECT * FROM chunks
+                    WHERE state = ?
+                      AND NOT EXISTS (
+                          SELECT 1 FROM archive_transactions AS local
+                          WHERE local.chunk_id = chunks.chunk_id
+                      )
+                      {remote_exclusion}
+                    ORDER BY created_at_utc_ns, chunk_id LIMIT 1
+                    """,
+                    (ChunkState.SEALED,),
+                ).fetchone()
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
+        return dict(row) if row else None
+
+    def _validate_remote_rows_in_snapshot(self) -> list[dict[str, object]]:
+        """Validate remote rows before a read snapshot uses their presence."""
+
+        rows = self._connection.execute(
+            "SELECT * FROM remote_archive_transactions "
+            "ORDER BY created_at_utc_ns, receipt_id"
+        ).fetchall()
+        return [self._validated_remote_row(row) for row in rows]
+
+    def source_lifecycle_snapshot(
+        self, chunk_id: str
+    ) -> tuple[
+        dict[str, object] | None,
+        dict[str, object] | None,
+        dict[str, object] | None,
+    ]:
+        """Read physical, same-host, and remote ownership in one snapshot."""
+
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                chunk = self._connection.execute(
+                    "SELECT * FROM chunks WHERE chunk_id = ?", (chunk_id,)
+                ).fetchone()
+                local = self._connection.execute(
+                    "SELECT * FROM archive_transactions WHERE chunk_id = ?",
+                    (chunk_id,),
+                ).fetchone()
+                remote = (
+                    self._connection.execute(
+                        "SELECT * FROM remote_archive_transactions WHERE chunk_id = ?",
+                        (chunk_id,),
+                    ).fetchone()
+                    if self._remote_schema_present
+                    else None
+                )
+                validated_remote = (
+                    self._validate_remote_rows_in_snapshot()
+                    if self._remote_schema_present
+                    else []
+                )
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
+        return (
+            dict(chunk) if chunk is not None else None,
+            dict(local) if local is not None else None,
+            next(
+                (row for row in validated_remote if row["chunk_id"] == chunk_id),
+                None,
+            )
+            if remote is not None
+            else None,
+        )
+
+    def source_lifecycle_aggregate(self) -> dict[str, object]:
+        """Return global archive backlog and retained remote-source categories."""
+
+        remote_pending_files = 0
+        remote_pending_bytes = 0
+        remote_deleted_files = 0
+        if self._remote_schema_present:
+            remote_rows = self.remote_archive_transactions()
+            remote_pending = [
+                row
+                for row in remote_rows
+                if row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+            ]
+            remote_deleted = [
+                row
+                for row in remote_rows
+                if row["state"] == RemoteArchiveState.REMOTE_DELETED.value
+            ]
+            remote_pending_files = len(remote_pending)
+            remote_pending_bytes = sum(
+                cast(int, row["stored_bytes"]) for row in remote_pending
+            )
+            remote_deleted_files = len(remote_deleted)
+        remote_exclusion = (
+            "AND NOT EXISTS (SELECT 1 FROM remote_archive_transactions AS remote "
+            "WHERE remote.chunk_id = chunks.chunk_id)"
+            if self._remote_schema_present
+            else ""
+        )
+        with self._lock:
+            row = self._connection.execute(
+                f"""
+                SELECT COUNT(*) AS files,
+                       COALESCE(SUM(stored_bytes), 0) AS bytes,
+                       MIN(created_at_utc_ns) AS oldest,
+                       SUM(CASE WHEN state = ? THEN 1 ELSE 0 END)
+                           AS ordinary_sealed_files
+                FROM chunks
+                WHERE state IN (?, ?, ?, ?, ?)
+                  {remote_exclusion}
+                """,
+                (
+                    ChunkState.SEALED,
+                    ChunkState.SEALED,
+                    ChunkState.ARCHIVE_COPYING,
+                    ChunkState.ARCHIVE_VERIFYING,
+                    ChunkState.ARCHIVED_VERIFIED,
+                    ChunkState.LOCAL_DELETE_PENDING,
+                ),
+            ).fetchone()
+        return {
+            "unarchived_backlog_files": int(row["files"]),
+            "unarchived_backlog_bytes": int(row["bytes"]),
+            "oldest_unarchived_at_utc_ns": row["oldest"],
+            "ordinary_sealed_files": int(row["ordinary_sealed_files"] or 0),
+            "remote_pending_files": remote_pending_files,
+            "remote_pending_source_bytes": remote_pending_bytes,
+            "remote_deleted_files": remote_deleted_files,
+        }
+
     def oldest_incomplete_archive_transaction(
         self, storage_id: str
     ) -> dict[str, object] | None:
@@ -1771,9 +2503,17 @@ class Catalog:
         populations.
         """
 
+        remote_exclusion = (
+            "AND NOT EXISTS (SELECT 1 FROM remote_archive_transactions AS remote "
+            "WHERE remote.chunk_id = c.chunk_id)"
+            if self._remote_schema_present
+            else ""
+        )
         with self._lock:
             self._connection.execute("BEGIN")
             try:
+                if self._remote_schema_present:
+                    self._validate_remote_rows_in_snapshot()
                 state_counts = self._connection.execute(
                     """
                     SELECT state, COUNT(*) AS cnt
@@ -1784,7 +2524,7 @@ class Catalog:
                     (storage_id,),
                 ).fetchall()
                 aggregate_row = self._connection.execute(
-                    """
+                    f"""
                     WITH
                     unassigned AS (
                         SELECT c.stored_bytes
@@ -1795,6 +2535,7 @@ class Catalog:
                               FROM archive_transactions AS assigned
                               WHERE assigned.chunk_id = c.chunk_id
                           )
+                          {remote_exclusion}
                     ),
                     target_inflight AS (
                         SELECT stored_bytes
@@ -1860,6 +2601,27 @@ class Catalog:
                     """,
                     (storage_id,),
                 ).fetchone()
+                remote_row = (
+                    self._connection.execute(
+                        """
+                        SELECT
+                            SUM(CASE WHEN state = ? THEN 1 ELSE 0 END)
+                                AS pending_files,
+                            COALESCE(SUM(CASE WHEN state = ? THEN stored_bytes ELSE 0 END), 0)
+                                AS pending_bytes,
+                            SUM(CASE WHEN state = ? THEN 1 ELSE 0 END)
+                                AS deleted_files
+                        FROM remote_archive_transactions
+                        """,
+                        (
+                            RemoteArchiveState.REMOTE_DELETE_PENDING,
+                            RemoteArchiveState.REMOTE_DELETE_PENDING,
+                            RemoteArchiveState.REMOTE_DELETED,
+                        ),
+                    ).fetchone()
+                    if self._remote_schema_present
+                    else None
+                )
             except Exception:
                 self._connection.execute("ROLLBACK")
                 raise
@@ -1915,6 +2677,15 @@ class Catalog:
             "last_verified_at_utc_ns": last_verified_at_utc_ns,
             "latest_error_type": latest_error_type,
             "latest_error_at_utc_ns": latest_error_at_utc_ns,
+            "remote_pending_files": (
+                int(remote_row["pending_files"] or 0) if remote_row is not None else 0
+            ),
+            "remote_pending_source_bytes": (
+                int(remote_row["pending_bytes"] or 0) if remote_row is not None else 0
+            ),
+            "remote_deleted_files": (
+                int(remote_row["deleted_files"] or 0) if remote_row is not None else 0
+            ),
         }
 
     def register_storage_target(
@@ -2485,6 +3256,8 @@ class Catalog:
             "storage_alert_state",
             "storage_alert_events",
             "operational_events",
+            "remote_archive_transactions",
+            "remote_archive_events",
         }:
             raise ValueError("unknown Catalog table")
         with self._lock:
@@ -2536,3 +3309,14 @@ def _validate_relative_path(value: str) -> None:
         or ".." in path.parts
     ):
         raise ValueError(f"unsafe relative path: {value!r}")
+
+
+def _parse_remote_receipt(body: bytes) -> Any:
+    """Use the single M22.3 parser without an import cycle at module load."""
+
+    from ..archive.remote_receive import RemoteArchiveReceipt, RemoteReceiveError
+
+    try:
+        return RemoteArchiveReceipt.from_bytes(body)
+    except RemoteReceiveError as exc:
+        raise CatalogStateError("invalid persisted remote archive receipt") from exc
