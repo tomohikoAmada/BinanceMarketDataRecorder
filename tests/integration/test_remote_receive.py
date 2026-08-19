@@ -23,6 +23,7 @@ from binance_market_data_recorder.archive import (
     RemoteReceiver,
     RemoteReceiveTarget,
     RemoteSourceExporter,
+    RemoteSourceIdentity,
     RemoteSourceSelection,
     canonical_descriptor_bytes,
     generate_archive_set_id,
@@ -39,7 +40,9 @@ from tests.archive_support import PreparedArchive, prepare_archive
 
 
 class SourceFileProvider:
-    def open_stored_bytes(self, selection: RemoteSourceSelection) -> BinaryIO:
+    def open_stored_bytes(self, selection: RemoteSourceIdentity) -> BinaryIO:
+        if not isinstance(selection, RemoteSourceSelection):
+            raise OSError("test source file provider requires VPS-local selection")
         return selection.sealed_path.open("rb", buffering=0)
 
 

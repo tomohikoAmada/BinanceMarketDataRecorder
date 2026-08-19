@@ -93,7 +93,12 @@ M22.4A implements the non-transport VPS-side receipt/source-bound pending
 authorization in the existing Catalog. M22.4B implements exact Raw-only source
 deletion, same-parent-descriptor deletion durability, terminal row/event
 commit, and CASE-B crash reconciliation while retaining the source manifest
-and all receipt/Catalog evidence. Actual remote transport/SSH and receipt
-exchange and post-session Catalog snapshot transfer are not implemented.
+and all receipt/Catalog evidence. M22.5 implements one-source receipt exchange
+through a byte/message-only transport, with in-process and ordinary OpenSSH
+adapters. The OpenSSH adapter stores no credentials, changes no SSH
+configuration, and exposes no arbitrary path/command API. Its executable shim
+and local `ssh -V` evidence do not claim real sshd, LAN transfer, or deployment;
+authenticated integration remains M22.8. Post-session Catalog snapshot transfer
+remains M22.6 and is not implemented.
 Windows end-to-end receipt/deletion durability is not yet supported. Archive
 Set membership is not a backup or redundancy guarantee.

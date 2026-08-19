@@ -195,13 +195,15 @@ belong to an abandoned Recorder transaction.
 After local deletion, status must warn that the external target may be the only
 remaining copy. Recorder archival is not itself a multi-copy backup policy.
 
-For the approved future VPS topology, the local client pulls from the VPS over
-SSH through a transport-neutral `RemoteTransport` seam. Local durability,
+For the approved VPS topology, M22.5 lets the local client pull from the VPS
+through a transport-neutral `RemoteTransport` seam and ordinary OpenSSH CLI
+adapter. Local durability,
 readback, size/SHA-256, Raw manifest identity, Archive Set/storage identity,
 durable receipt, VPS receipt validation, and source revalidation precede VPS
 source deletion. SSH success alone is never sufficient. The complete future
-transaction is defined in `docs/archive_transfer_contract.md`; it is not
-implemented by the current local ArchiveManager.
+transaction is defined in `docs/archive_transfer_contract.md`; it remains
+separate from the current same-host ArchiveManager. M22.5 supplies one explicit
+source session only, not a daemon, drain loop, deployment, or M22.6 snapshot.
 
 M22.3 implements only the local receive side with an in-process byte provider.
 On a selected registered medium it uses `raw/`, `manifests/`,

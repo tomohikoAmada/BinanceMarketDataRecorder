@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import stat
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +23,20 @@ from ..storage.catalog import Catalog, ChunkState
 from ..storage.layout import StorageLayout
 
 REMOTE_SOURCE_DESCRIPTOR_SCHEMA = "remote-source-descriptor.v1"
+_DESCRIPTOR_FIELDS = (
+    "descriptor_schema_version",
+    "chunk_id",
+    "market",
+    "stream",
+    "source_relative_path",
+    "stored_bytes",
+    "stored_sha256",
+    "source_manifest_relative_path",
+    "source_manifest_sha256",
+    "manifest_schema_version",
+    "chunk_schema_version",
+    "envelope_schema_version",
+)
 _SOURCE_IDENTITY_FIELDS = (
     "chunk_id",
     "sealed_path",
@@ -73,13 +88,19 @@ class RemoteSourceDescriptor:
 
 
 @dataclass(frozen=True, slots=True)
-class RemoteSourceSelection:
-    """Validated source handles and immutable identity material."""
+class RemoteSourceIdentity:
+    """Portable immutable identity material with no VPS-local path handles."""
 
     descriptor: RemoteSourceDescriptor
     descriptor_bytes: bytes
     descriptor_sha256: str
     manifest_bytes: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class RemoteSourceSelection(RemoteSourceIdentity):
+    """VPS-local extension of portable source identity with validated paths."""
+
     manifest_path: Path
     sealed_path: Path
 
@@ -111,6 +132,85 @@ def descriptor_sha256(descriptor_bytes: bytes) -> str:
     """Return the digest of exact canonical descriptor bytes."""
 
     return hashlib.sha256(descriptor_bytes).hexdigest()
+
+
+def remote_source_descriptor_from_bytes(body: bytes) -> RemoteSourceDescriptor:
+    """Parse only exact canonical ``remote-source-descriptor.v1`` bytes."""
+
+    if not isinstance(body, bytes):
+        raise RemoteSourceError("source descriptor must be bytes")
+    try:
+        decoded = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RemoteSourceError("source descriptor is not valid UTF-8 JSON") from exc
+    if not isinstance(decoded, dict) or set(decoded) != set(_DESCRIPTOR_FIELDS):
+        raise RemoteSourceError("source descriptor fields are not exact")
+    document = cast(dict[str, object], decoded)
+    for field in _DESCRIPTOR_FIELDS:
+        value = document[field]
+        if field == "stored_bytes":
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise RemoteSourceError("source descriptor stored_bytes is invalid")
+        elif not isinstance(value, str) or not value:
+            raise RemoteSourceError(f"source descriptor {field} is invalid")
+    try:
+        descriptor = RemoteSourceDescriptor(**document)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise RemoteSourceError("source descriptor fields are invalid") from exc
+    if descriptor.descriptor_schema_version != REMOTE_SOURCE_DESCRIPTOR_SCHEMA:
+        raise RemoteSourceError("unsupported source descriptor schema")
+    if canonical_descriptor_bytes(descriptor) != body:
+        raise RemoteSourceError("source descriptor is not canonical")
+    _require_canonical_uuid(descriptor.chunk_id, "chunk_id")
+    _require_sha256(descriptor.stored_sha256, "stored_sha256")
+    _require_sha256(descriptor.source_manifest_sha256, "source_manifest_sha256")
+    _require_relative_path(descriptor.source_relative_path, "source_relative_path")
+    _require_relative_path(
+        descriptor.source_manifest_relative_path,
+        "source_manifest_relative_path",
+    )
+    return descriptor
+
+
+def validate_remote_source_identity(identity: RemoteSourceIdentity) -> None:
+    """Validate portable descriptor, digest, and exact retained manifest bytes."""
+
+    descriptor = remote_source_descriptor_from_bytes(identity.descriptor_bytes)
+    if descriptor != identity.descriptor:
+        raise RemoteSourceError("source descriptor object/bytes mismatch")
+    if descriptor_sha256(identity.descriptor_bytes) != identity.descriptor_sha256:
+        raise RemoteSourceError("source descriptor digest mismatch")
+    if hashlib.sha256(identity.manifest_bytes).hexdigest() != (
+        descriptor.source_manifest_sha256
+    ):
+        raise RemoteSourceError("source manifest digest mismatch")
+    manifest = RemoteSourceExporter._decode_manifest(identity.manifest_bytes)
+    expected = {
+        "manifest_schema_version": descriptor.manifest_schema_version,
+        "chunk_id": descriptor.chunk_id,
+        "market": descriptor.market,
+        "stream": descriptor.stream,
+        "relative_path": descriptor.source_relative_path,
+        "stored_bytes": descriptor.stored_bytes,
+        "stored_sha256": descriptor.stored_sha256,
+        "chunk_schema_version": descriptor.chunk_schema_version,
+        "envelope_schema_version": descriptor.envelope_schema_version,
+    }
+    if any(manifest.get(field) != value for field, value in expected.items()):
+        raise RemoteSourceError("source descriptor/manifest identity mismatch")
+
+
+def portable_source_identity(selection: RemoteSourceSelection) -> RemoteSourceIdentity:
+    """Project a validated VPS-local selection to its portable identity."""
+
+    identity = RemoteSourceIdentity(
+        descriptor=selection.descriptor,
+        descriptor_bytes=selection.descriptor_bytes,
+        descriptor_sha256=selection.descriptor_sha256,
+        manifest_bytes=selection.manifest_bytes,
+    )
+    validate_remote_source_identity(identity)
+    return identity
 
 
 class RemoteSourceExporter:
@@ -482,3 +582,29 @@ def _require_no_follow_regular(path: Path, label: str) -> tuple[int, int, int, i
             os.close(descriptor)
     except (OSError, TypeError) as exc:
         raise RemoteSourceError(f"{label} missing or unsafe: {path}") from exc
+
+
+def _require_canonical_uuid(value: str, field: str) -> None:
+    try:
+        parsed = uuid.UUID(value)
+    except ValueError as exc:
+        raise RemoteSourceError(f"{field} must be a canonical UUID") from exc
+    if str(parsed) != value:
+        raise RemoteSourceError(f"{field} must be a canonical UUID")
+
+
+def _require_sha256(value: str, field: str) -> None:
+    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+        raise RemoteSourceError(f"{field} must be a lowercase SHA-256 digest")
+
+
+def _require_relative_path(value: str, field: str) -> None:
+    candidate = Path(value)
+    if (
+        candidate.is_absolute()
+        or "\\" in value
+        or "//" in value
+        or any(part in {"", ".", ".."} for part in candidate.parts)
+        or candidate.as_posix() != value
+    ):
+        raise RemoteSourceError(f"{field} must be a canonical relative path")

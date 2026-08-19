@@ -53,14 +53,32 @@ from .remote_receive import (
     receive_transaction_id,
     revalidate_remote_archive_receipt,
 )
+from .remote_session import (
+    RemoteArchiveSession,
+    RemoteArchiveSessionError,
+    RemoteArchiveSessionResult,
+)
 from .remote_source import (
     REMOTE_SOURCE_DESCRIPTOR_SCHEMA,
     RemoteSourceDescriptor,
     RemoteSourceError,
     RemoteSourceExporter,
+    RemoteSourceIdentity,
     RemoteSourceSelection,
     canonical_descriptor_bytes,
     descriptor_sha256,
+    portable_source_identity,
+    remote_source_descriptor_from_bytes,
+    validate_remote_source_identity,
+)
+from .remote_transport import (
+    InProcessRemoteTransport,
+    OpenSSHRemoteTransport,
+    RemoteAuthorityStatus,
+    RemoteTransport,
+    RemoteTransportError,
+    RemoteTransportProcessError,
+    RemoteTransportTimeout,
 )
 
 __all__ = [
@@ -84,7 +102,13 @@ __all__ = [
     "ArchiveSetScan",
     "ArchiveSetStore",
     "ArchiveTarget",
+    "InProcessRemoteTransport",
+    "OpenSSHRemoteTransport",
     "RemoteArchiveReceipt",
+    "RemoteArchiveSession",
+    "RemoteArchiveSessionError",
+    "RemoteArchiveSessionResult",
+    "RemoteAuthorityStatus",
     "RemoteAuthorizationError",
     "RemoteAuthorizer",
     "RemoteDeleteResult",
@@ -99,8 +123,13 @@ __all__ = [
     "RemoteSourceDescriptor",
     "RemoteSourceError",
     "RemoteSourceExporter",
+    "RemoteSourceIdentity",
     "RemoteSourceObservation",
     "RemoteSourceSelection",
+    "RemoteTransport",
+    "RemoteTransportError",
+    "RemoteTransportProcessError",
+    "RemoteTransportTimeout",
     "StoredByteProvider",
     "archive_drain",
     "canonical_descriptor_bytes",
@@ -109,9 +138,12 @@ __all__ = [
     "generate_archive_session_id",
     "generate_archive_set_id",
     "observe_remote_source",
+    "portable_source_identity",
     "read_archive_medium_identity",
     "rebuild_archive_set_index",
     "receive_transaction_id",
+    "remote_source_descriptor_from_bytes",
     "revalidate_remote_archive_receipt",
     "scan_archive_medium",
+    "validate_remote_source_identity",
 ]

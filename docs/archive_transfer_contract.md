@@ -1,8 +1,9 @@
 # Archive Transfer Contract
 
 Status: approved architecture; M22.3 local receive/receipt, M22.4A durable
-remote pending authority, and M22.4B exact Raw-only deletion/durability/recovery
-are implemented. Remote transport and snapshots remain future work.
+remote pending authority, M22.4B exact Raw-only deletion/durability/recovery,
+and M22.5 byte/message-only RemoteTransport plus OpenSSH V1 are implemented.
+Post-session Catalog snapshots remain future M22.6 work.
 
 This document defines the integrity transaction for a local archive client
 pulling immutable Raw from the production VPS. It deliberately does not define
@@ -129,6 +130,24 @@ to another chunk, medium, set, target, or session.
 Unknown continuity or incomplete evidence remains an explicit gap/failure. No
 failure path may label an interval complete merely because a transport exited
 successfully.
+
+## M22.5 transport boundary
+
+M22.5 implements a portable `RemoteSourceIdentity` without VPS path handles,
+an in-process reference adapter, an ordinary OpenSSH subprocess adapter, and a
+one-source session. OpenSSH runs with `shell=False`, `BatchMode=yes`, the normal
+host-key policy, and no Recorder-owned credentials or free-form SSH arguments.
+Fixed hidden CLI verbs accept only canonical chunk/digest/receipt identities;
+receipt bytes travel unchanged on stdin. Raw stdout is owned by a process-aware
+stream: EOF is successful only after the child exits zero, and premature close
+terminates and reaps the child.
+
+SSH process status is transport evidence only. Authorization and deletion
+results are authoritative only after validated Catalog readback. A lost
+authorization or deletion response is reconciled against the same receipt ID;
+no retry selects another source or constructs another receipt. This milestone
+does not implement post-session snapshots, a daemon, sshd provisioning, or a
+production deployment.
 
 ## Catalog snapshots
 
