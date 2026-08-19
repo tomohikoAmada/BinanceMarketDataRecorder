@@ -938,7 +938,7 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.7A — Named VPS capacity / ETA profile
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED** in the M22.7A acceptance record.
 - **Scope:** Select the named VPS profile with 18/14/12/10 GiB states and
   7-day/72-hour/24-hour ETA/action thresholds.
 - **Non-scope:** Redesigning generic ADR-0016 `threshold_bytes()` or

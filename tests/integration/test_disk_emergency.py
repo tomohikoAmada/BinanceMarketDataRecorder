@@ -5,6 +5,10 @@ from typing import cast
 
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RotationPolicy
+from binance_market_data_recorder.storage.capacity import (
+    VPS_PRODUCTION_V1,
+    evaluate_capacity,
+)
 from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.emergency import (
     DiskEmergencyCoordinator,
@@ -78,7 +82,22 @@ def test_hard_reserve_seals_stops_emits_event_and_opens_gap(tmp_path: Path) -> N
             free_bytes=3 * GIB,
             observed_at_utc_ns=124,
         )
-        assert cast(list[str], repeated["actions"])[-1] == "ALREADY_STOPPED"
+        assert cast(list[str], repeated["actions"])[-3:] == [
+            "SEAL_ACTIVE",
+            "STOP_COLLECTORS",
+            "ALREADY_STOPPED",
+        ]
+        assert calls == [
+            "suspend",
+            "archive",
+            "seal",
+            "stop",
+            "gap",
+            "suspend",
+            "archive",
+            "seal",
+            "stop",
+        ]
         assert len(catalog.operational_events(event_type="DISK_EMERGENCY_STOP")) == 1
 
 
@@ -107,3 +126,97 @@ def test_emergency_above_hard_reserve_prioritizes_without_stopping(
         assert result["collector_stop"] is False
         assert calls == ["suspend", "archive"]
         assert not catalog.operational_events(event_type="DISK_EMERGENCY_STOP")
+
+
+def test_vps_eta_emergency_does_not_stop_above_actual_hard_reserve(
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        coordinator = DiskEmergencyCoordinator(
+            catalog=catalog,
+            actions=EmergencyActions(
+                suspend_non_core=lambda: calls.append("suspend"),
+                prioritize_verified_archive=lambda: calls.append("archive"),
+                seal_active=lambda: calls.append("seal"),
+                stop_collectors=lambda: calls.append("stop"),
+                open_gap=lambda _at: calls.append("gap"),
+            ),
+            rotation_bytes=128 * 1024**2,
+        )
+        derived = evaluate_capacity(
+            profile=VPS_PRODUCTION_V1,
+            scope_id="internal",
+            total_bytes=40 * GIB,
+            free_bytes=15 * GIB,
+            hard_reserve_eta={
+                "status": "FORECAST",
+                "utc_ns": 24 * 3_600_000_000_000,
+            },
+            now_utc_ns=0,
+        )
+        result = coordinator.apply(
+            total_bytes=40 * GIB,
+            free_bytes=15 * GIB,
+            observed_at_utc_ns=123,
+            capacity_decision=derived,
+        )
+
+        assert result["capacity_state"] == "EMERGENCY"
+        assert calls == ["suspend", "archive"]
+        assert result["collector_stop"] is False
+        assert not catalog.operational_events(event_type="DISK_EMERGENCY_STOP")
+
+
+def test_vps_actual_hard_reserve_repeats_safety_callbacks_without_duplicate_event(
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    gaps: list[int] = []
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        coordinator = DiskEmergencyCoordinator(
+            catalog=catalog,
+            actions=EmergencyActions(
+                suspend_non_core=lambda: calls.append("suspend"),
+                prioritize_verified_archive=lambda: calls.append("archive"),
+                seal_active=lambda: calls.append("seal"),
+                stop_collectors=lambda: calls.append("stop"),
+                open_gap=lambda at: gaps.append(at),
+            ),
+            rotation_bytes=128 * 1024**2,
+        )
+        for observed_at in (123, 124):
+            derived = evaluate_capacity(
+                profile=VPS_PRODUCTION_V1,
+                scope_id="internal",
+                total_bytes=40 * GIB,
+                free_bytes=10 * GIB,
+                hard_reserve_eta={"status": "NOT_APPROACHING"},
+                now_utc_ns=observed_at,
+            )
+            result = coordinator.apply(
+                total_bytes=40 * GIB,
+                free_bytes=10 * GIB,
+                observed_at_utc_ns=observed_at,
+                capacity_decision=derived,
+            )
+            if observed_at == 123:
+                assert cast(list[str], result["actions"])[-2:] == [
+                    "DISK_EMERGENCY_STOP",
+                    "OPEN_GAP",
+                ]
+            else:
+                assert cast(list[str], result["actions"])[-1] == "ALREADY_STOPPED"
+
+        assert calls == [
+            "suspend",
+            "archive",
+            "seal",
+            "stop",
+            "suspend",
+            "archive",
+            "seal",
+            "stop",
+        ]
+        assert gaps == [123]
+        assert len(catalog.operational_events(event_type="DISK_EMERGENCY_STOP")) == 1

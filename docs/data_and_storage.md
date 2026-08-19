@@ -91,6 +91,9 @@ proven, records `DISK_EMERGENCY_STOP` and an explicit gap, and stops accepting
 new capture. It never silently deletes unarchived Raw. Forecasts continue to
 use 1-hour, 6-hour, 24-hour, and 7-day observed-growth windows.
 
-The existing local implementation's M11 percentage/reserve calculation remains
-historical implementation behavior for current local profiles; it is not the
-future VPS policy.
+The explicitly selected internal-only `vps-production-v1` profile uses these
+absolute thresholds and one fixed 10 GiB ETA target. M22.7A does not select it
+in production runtime and does not change Catalog samples or generic M11 alert
+authority. The existing local implementation's M11 percentage/reserve
+calculation remains historical behavior for current local profiles; it is not
+the VPS policy.
