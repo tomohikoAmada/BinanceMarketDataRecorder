@@ -548,8 +548,8 @@ class Catalog:
         compact = re.sub(r"\s+", "", str(row["sql"])).upper() if row else ""
         required_fragments = (
             "CHECK(STATEIN('REMOTE_DELETE_PENDING','REMOTE_DELETED'))",
-            "STATE='REMOTE_DELETE_PENDING'ANDREMOTE_DELETED_AT_UTC_NSISNULL",
-            "STATE='REMOTE_DELETED'ANDREMOTE_DELETED_AT_UTC_NSISNOTNULL",
+            "CHECK((STATE='REMOTE_DELETE_PENDING'ANDREMOTE_DELETED_AT_UTC_NSISNULL)OR"
+            "(STATE='REMOTE_DELETED'ANDREMOTE_DELETED_AT_UTC_NSISNOTNULL))",
         )
         if any(fragment not in compact for fragment in required_fragments):
             raise CatalogStateError("malformed remote archive state constraints")
@@ -581,7 +581,7 @@ class Catalog:
 
     def _validate_unique_index(self, table: str, columns: tuple[str, ...]) -> None:
         for row in self._connection.execute(f"PRAGMA index_list({table})").fetchall():
-            if not int(row["unique"]):
+            if not int(row["unique"]) or int(row["partial"]):
                 continue
             names = tuple(
                 str(item["name"])
@@ -600,11 +600,28 @@ class Catalog:
             "SELECT tbl_name FROM sqlite_master WHERE type = 'index' AND name = ?",
             (name,),
         ).fetchone()
+        metadata = next(
+            (
+                item
+                for item in self._connection.execute(
+                    f"PRAGMA index_list({table})"
+                ).fetchall()
+                if item["name"] == name
+            ),
+            None,
+        )
         actual = tuple(
             str(item["name"])
             for item in self._connection.execute(f"PRAGMA index_info({name})").fetchall()
         )
-        if row is None or row["tbl_name"] != table or actual != columns:
+        if (
+            row is None
+            or row["tbl_name"] != table
+            or metadata is None
+            or int(metadata["unique"])
+            or int(metadata["partial"])
+            or actual != columns
+        ):
             raise CatalogStateError(f"missing or malformed remote Catalog index: {name}")
 
     def record_space_sample(
@@ -2080,12 +2097,14 @@ class Catalog:
             ):
                 raise ValueError("remote row/current Catalog source mismatch")
             initial = self._connection.execute(
-                "SELECT from_state, to_state, evidence_json FROM remote_archive_events "
+                "SELECT receipt_id, from_state, to_state, evidence_json "
+                "FROM remote_archive_events "
                 "WHERE idempotency_key = ?",
                 (f"remote-authorize:{receipt.receipt_id}",),
             ).fetchone()
             if (
                 initial is None
+                or initial["receipt_id"] != receipt.receipt_id
                 or initial["from_state"] is not None
                 or initial["to_state"]
                 != RemoteArchiveState.REMOTE_DELETE_PENDING.value
@@ -2310,20 +2329,38 @@ class Catalog:
             else ""
         )
         with self._lock:
-            row = self._connection.execute(
-                f"""
-                SELECT * FROM chunks
-                WHERE state = ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM archive_transactions AS local
-                      WHERE local.chunk_id = chunks.chunk_id
-                  )
-                  {remote_exclusion}
-                ORDER BY created_at_utc_ns, chunk_id LIMIT 1
-                """,
-                (ChunkState.SEALED,),
-            ).fetchone()
+            self._connection.execute("BEGIN")
+            try:
+                if self._remote_schema_present:
+                    self._validate_remote_rows_in_snapshot()
+                row = self._connection.execute(
+                    f"""
+                    SELECT * FROM chunks
+                    WHERE state = ?
+                      AND NOT EXISTS (
+                          SELECT 1 FROM archive_transactions AS local
+                          WHERE local.chunk_id = chunks.chunk_id
+                      )
+                      {remote_exclusion}
+                    ORDER BY created_at_utc_ns, chunk_id LIMIT 1
+                    """,
+                    (ChunkState.SEALED,),
+                ).fetchone()
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
         return dict(row) if row else None
+
+    def _validate_remote_rows_in_snapshot(self) -> list[dict[str, object]]:
+        """Validate remote rows before a read snapshot uses their presence."""
+
+        rows = self._connection.execute(
+            "SELECT * FROM remote_archive_transactions "
+            "ORDER BY created_at_utc_ns, receipt_id"
+        ).fetchall()
+        return [self._validated_remote_row(row) for row in rows]
 
     def source_lifecycle_snapshot(
         self, chunk_id: str
@@ -2352,6 +2389,11 @@ class Catalog:
                     if self._remote_schema_present
                     else None
                 )
+                validated_remote = (
+                    self._validate_remote_rows_in_snapshot()
+                    if self._remote_schema_present
+                    else []
+                )
             except Exception:
                 self._connection.execute("ROLLBACK")
                 raise
@@ -2360,7 +2402,12 @@ class Catalog:
         return (
             dict(chunk) if chunk is not None else None,
             dict(local) if local is not None else None,
-            self._validated_remote_row(remote) if remote is not None else None,
+            next(
+                (row for row in validated_remote if row["chunk_id"] == chunk_id),
+                None,
+            )
+            if remote is not None
+            else None,
         )
 
     def source_lifecycle_aggregate(self) -> dict[str, object]:
@@ -2465,6 +2512,8 @@ class Catalog:
         with self._lock:
             self._connection.execute("BEGIN")
             try:
+                if self._remote_schema_present:
+                    self._validate_remote_rows_in_snapshot()
                 state_counts = self._connection.execute(
                     """
                     SELECT state, COUNT(*) AS cnt

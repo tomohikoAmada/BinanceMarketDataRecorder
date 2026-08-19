@@ -229,6 +229,49 @@ def test_partial_remote_schema_fails_closed(tmp_path: Path, present: str) -> Non
             ),
             REMOTE_EVENTS,
         ),
+        (
+            REMOTE_TRANSACTIONS.replace(
+                "chunk_id TEXT NOT NULL UNIQUE", "chunk_id TEXT NOT NULL"
+            )
+            + "CREATE UNIQUE INDEX remote_transactions_partial_chunk "
+            "ON remote_archive_transactions(chunk_id) "
+            "WHERE state = 'REMOTE_DELETE_PENDING';",
+            REMOTE_EVENTS,
+        ),
+        (
+            REMOTE_TRANSACTIONS,
+            REMOTE_EVENTS.replace(
+                "idempotency_key TEXT NOT NULL UNIQUE",
+                "idempotency_key TEXT NOT NULL",
+            )
+            + "CREATE UNIQUE INDEX remote_events_partial_idempotency "
+            "ON remote_archive_events(idempotency_key) "
+            "WHERE to_state = 'REMOTE_DELETE_PENDING';",
+        ),
+        (
+            REMOTE_TRANSACTIONS.replace(
+                "ON remote_archive_transactions(state, created_at_utc_ns, receipt_id);",
+                "ON remote_archive_transactions(state, created_at_utc_ns, receipt_id) "
+                "WHERE state = 'REMOTE_DELETE_PENDING';",
+            ),
+            REMOTE_EVENTS,
+        ),
+        (
+            REMOTE_TRANSACTIONS,
+            REMOTE_EVENTS.replace(
+                "ON remote_archive_events(receipt_id, event_id);",
+                "ON remote_archive_events(receipt_id, event_id) "
+                "WHERE to_state = 'REMOTE_DELETE_PENDING';",
+            ),
+        ),
+        (
+            REMOTE_TRANSACTIONS.replace(
+                "        OR (state = 'REMOTE_DELETED' AND remote_deleted_at_utc_ns IS NOT NULL))",
+                "        OR (state = 'REMOTE_DELETED' AND remote_deleted_at_utc_ns IS NOT NULL) "
+                "OR 1=1)",
+            ),
+            REMOTE_EVENTS,
+        ),
     ],
 )
 def test_malformed_remote_schema_fails_closed(
@@ -396,6 +439,53 @@ def test_remote_projection_changes_backlog_classification_only(tmp_path: Path) -
         assert terminal["remote_pending_files"] == 0
         assert terminal["remote_pending_source_bytes"] == 0
         assert terminal["remote_deleted_files"] == 1
+
+
+@pytest.mark.parametrize("corruption", ["receipt", "event"])
+def test_corrupt_remote_authority_fails_closed_for_selection_and_aggregate(
+    tmp_path: Path, corruption: str
+) -> None:
+    fixture = prepare_remote_authorization(tmp_path)
+    receipt = build_receipt(fixture)
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        RemoteAuthorizer(layout=fixture.prepared.layout, catalog=catalog).authorize(
+            receipt.canonical_bytes(), fixture.selections[0]
+        )
+        if corruption == "receipt":
+            catalog._connection.execute(
+                "UPDATE remote_archive_transactions SET receipt_bytes = ?",
+                (b"corrupt",),
+            )
+        else:
+            catalog._connection.execute(
+                "UPDATE remote_archive_events SET evidence_json = ? "
+                "WHERE idempotency_key = ?",
+                ('{"chunk_id":"wrong","receipt_id":"wrong"}',
+                 f"remote-authorize:{receipt.receipt_id}"),
+            )
+        with pytest.raises(CatalogStateError):
+            catalog.oldest_unowned_sealed_chunk()
+        with pytest.raises(CatalogStateError):
+            catalog.archive_aggregate(fixture.prepared.target.storage_id)
+
+
+def test_initial_event_receipt_rebinding_fails_closed(tmp_path: Path) -> None:
+    fixture = prepare_remote_authorization(tmp_path, chunk_count=2)
+    first = build_receipt(fixture, ordinal=0)
+    second = build_receipt(fixture, ordinal=1)
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        authorizer = RemoteAuthorizer(
+            layout=fixture.prepared.layout, catalog=catalog
+        )
+        authorizer.authorize(first.canonical_bytes(), fixture.selections[0])
+        authorizer.authorize(second.canonical_bytes(), fixture.selections[1])
+        catalog._connection.execute(
+            "UPDATE remote_archive_events SET receipt_id = ? "
+            "WHERE idempotency_key = ?",
+            (second.receipt_id, f"remote-authorize:{first.receipt_id}"),
+        )
+        with pytest.raises(CatalogStateError):
+            catalog.remote_archive_transaction(first.receipt_id)
 
 
 def test_remote_owned_source_is_ineligible_and_does_not_block_later_work(

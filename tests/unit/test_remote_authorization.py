@@ -16,6 +16,7 @@ from binance_market_data_recorder.archive.remote_authorization import (
 from binance_market_data_recorder.metrics.report import DailyReporter
 from binance_market_data_recorder.storage.catalog import (
     Catalog,
+    CatalogStateError,
     ChunkState,
     RemoteArchiveState,
 )
@@ -194,3 +195,29 @@ def test_daily_report_accounts_remote_authorization_by_authorization_day(
     assert stream["market"] == "spot"
     assert output["archived_files"] == 1
     assert output["archived_bytes"] == receipt.stored_bytes
+
+
+@pytest.mark.parametrize("field", ["market", "stream"])
+def test_daily_report_rejects_persisted_descriptor_identity_relabel(
+    tmp_path: Path, field: str
+) -> None:
+    fixture = prepare_remote_authorization(tmp_path)
+    receipt = build_receipt(fixture)
+    occurred = int(
+        datetime(2026, 8, 19, 12, tzinfo=UTC).timestamp() * 1_000_000_000
+    )
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        RemoteAuthorizer(
+            layout=fixture.prepared.layout,
+            catalog=catalog,
+            utc_clock_ns=lambda: occurred,
+        ).authorize(receipt.canonical_bytes(), fixture.selections[0])
+        catalog._connection.execute(
+            f"UPDATE remote_archive_transactions SET {field} = ?",
+            ("relabelled",),
+        )
+        with pytest.raises(CatalogStateError):
+            DailyReporter(
+                catalog=catalog,
+                daily_directory=fixture.prepared.layout.daily_reports,
+            ).build("2026-08-19", generated_at_utc_ns=occurred + 1)

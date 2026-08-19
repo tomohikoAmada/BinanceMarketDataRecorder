@@ -14,7 +14,7 @@ from threading import RLock
 from typing import cast
 
 from ..storage.catalog import Catalog
-from ..storage.layout import fsync_directory
+from ..storage.layout import StorageLayout, fsync_directory
 from .model import (
     INPUT_COUNTERS,
     OUTPUT_COUNTERS,
@@ -154,13 +154,19 @@ class DailyReporter:
         *,
         catalog: Catalog,
         daily_directory: Path,
+        layout: StorageLayout | None = None,
         utc_clock_ns: Callable[[], int] = time.time_ns,
     ) -> None:
         self.catalog = catalog
         self.daily_directory = daily_directory
+        self.layout = layout or StorageLayout.from_root(catalog.path.parent.parent)
         self.utc_clock_ns = utc_clock_ns
 
     def build(self, utc_date: str, *, generated_at_utc_ns: int | None = None) -> dict[str, object]:
+        from ..archive.remote_authorization import (
+            validated_remote_authorizations_between,
+        )
+
         selected_date = _validate_date(utc_date)
         start_utc_ns, end_utc_ns = _utc_date_bounds(selected_date)
         generated_at = self.utc_clock_ns() if generated_at_utc_ns is None else generated_at_utc_ns
@@ -187,8 +193,11 @@ class DailyReporter:
                 raise ValueError("invalid historical metric row identity")
             aggregate = historical.setdefault((market, stream), MetricAggregate())
             aggregate.merge(MetricAggregate.from_document(row["aggregate"]))
-        for row in self.catalog.remote_authorizations_between(
-            start_utc_ns, end_utc_ns
+        for row in validated_remote_authorizations_between(
+            layout=self.layout,
+            catalog=self.catalog,
+            start_utc_ns=start_utc_ns,
+            end_utc_ns=end_utc_ns,
         ):
             key = (str(row["market"]), str(row["stream"]))
             aggregate = aggregates.setdefault(key, MetricAggregate())
@@ -207,7 +216,12 @@ class DailyReporter:
                 if aggregate.last_event_time_utc_ns is not None
                 else occurred,
             )
-        for row in self.catalog.remote_authorizations_between(0, end_utc_ns):
+        for row in validated_remote_authorizations_between(
+            layout=self.layout,
+            catalog=self.catalog,
+            start_utc_ns=0,
+            end_utc_ns=end_utc_ns,
+        ):
             key = (str(row["market"]), str(row["stream"]))
             aggregate = historical.setdefault(key, MetricAggregate())
             aggregate.increment("archived_files")

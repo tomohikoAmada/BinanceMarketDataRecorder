@@ -144,6 +144,40 @@ class RemoteAuthorizer:
             ) from exc
 
 
+def validated_remote_authorizations_between(
+    *, layout: StorageLayout, catalog: Catalog, start_utc_ns: int, end_utc_ns: int
+) -> list[dict[str, object]]:
+    """Return report rows after retained-manifest descriptor revalidation."""
+
+    try:
+        rows = catalog.remote_authorizations_between(start_utc_ns, end_utc_ns)
+        validated: list[dict[str, object]] = []
+        for row in rows:
+            chunk = catalog.chunk(str(row["chunk_id"]))
+            if chunk is None:
+                raise CatalogStateError("remote report source chunk is missing")
+            manifest_bytes = _read_retained_manifest(layout=layout, chunk=chunk)
+            descriptor = descriptor_from_retained_manifest(
+                layout=layout,
+                catalog=catalog,
+                row=chunk,
+                manifest_bytes=manifest_bytes,
+            )
+            _require_remote_descriptor_binding(row, descriptor)
+            validated.append(row)
+        return validated
+    except CatalogStateError:
+        raise
+    except (
+        OSError,
+        RemoteAuthorizationError,
+        RemoteReceiveError,
+        RemoteSourceError,
+        ValueError,
+    ) as exc:
+        raise CatalogStateError("remote report authority validation failed") from exc
+
+
 def classify_remote_recovery(
     *, layout: StorageLayout, catalog: Catalog, chunk_id: str
 ) -> RemoteRecoveryDecision:
