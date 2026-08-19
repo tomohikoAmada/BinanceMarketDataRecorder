@@ -917,15 +917,22 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.6 — Post-session Catalog DR snapshot
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED** on the dedicated feature branch; acceptance
+  evidence is recorded in `docs/milestone_acceptance/M22.6.md`.
 - **Scope:** SQLite-supported consistent backup/snapshot after each successful
   session, local transfer/verification, and retention of at least `latest` and
   `previous` snapshots.
 - **Non-scope:** Raw replacement, raw-copying a live WAL database, or undoing
   valid Raw archival/deletion when snapshot creation fails.
 - **Dependencies:** M22.5 and the M22 remote Catalog state model.
-- **Acceptance:** Snapshot identity and post-session state are verified;
-  failures are visible, retryable, and non-destructive.
+- **Acceptance:** A live non-immutable read-only Catalog is copied only through
+  SQLite Online Backup; the remote staging database and transferred standalone
+  database independently validate the exact receipt and its pending/deleted
+  lower bound. Process-aware EOF, reopened local size/hash, SQLite/Catalog
+  validation, immutable generation publication, and mirrored crash-recoverable
+  latest/previous retention all gate success. Snapshot failure reports that the
+  archive session is already committed and retries only the same receipt's
+  snapshot operation.
 - **Rollback:** Retry or disable snapshot transfer while retaining valid Raw,
   manifests, receipts, and deletion evidence.
 

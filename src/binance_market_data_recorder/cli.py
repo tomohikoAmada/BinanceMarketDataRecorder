@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
+from .archive.catalog_snapshot import CatalogSnapshotExporter
 from .archive.drain import archive_drain
 from .archive.remote_authorization import RemoteAuthorizer
 from .archive.remote_delete import RemoteDeleter
@@ -50,7 +51,7 @@ from .spool.legacy_reconnect import (
     evaluate_legacy_reconnect_decisions,
 )
 from .status import service_status
-from .storage.catalog import Catalog, CatalogStateError
+from .storage.catalog import Catalog, CatalogStateError, RemoteArchiveState
 from .storage.forecast import StorageForecaster
 from .storage.layout import StorageLayout, ensure_storage_layout
 from .storage.linux import LinuxVolumeAdapter
@@ -278,6 +279,15 @@ def build_parser() -> argparse.ArgumentParser:
     for action in ("authority", "delete"):
         remote = remote_commands.add_parser(action, help=argparse.SUPPRESS)
         remote.add_argument("receipt_id")
+    snapshot = remote_commands.add_parser("catalog-snapshot", help=argparse.SUPPRESS)
+    snapshot.add_argument("receipt_id")
+    snapshot.add_argument(
+        "required_state",
+        choices=(
+            RemoteArchiveState.REMOTE_DELETE_PENDING.value,
+            RemoteArchiveState.REMOTE_DELETED.value,
+        ),
+    )
     return parser
 
 
@@ -393,6 +403,17 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
     try:
         if not layout.catalog.is_file():
             raise CatalogStateError("remote Catalog does not exist")
+        if action == "catalog-snapshot":
+            receipt_id = str(args.receipt_id)
+            require_receipt_id(receipt_id)
+            required_state = RemoteArchiveState(str(args.required_state))
+            with CatalogSnapshotExporter(layout=layout).open_catalog_snapshot(
+                receipt_id, required_state
+            ) as snapshot:
+                while block := snapshot.read(1024 * 1024):
+                    sys.stdout.buffer.write(block)
+                sys.stdout.buffer.flush()
+            return 0
         if action in {"select-oldest", "manifest", "raw", "authority"}:
             with Catalog(layout.catalog, read_only=True) as catalog:
                 if action == "select-oldest":

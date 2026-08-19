@@ -176,9 +176,14 @@ _REMOTE_EVENT_COLUMNS = {
 
 
 class Catalog:
-    def __init__(self, path: Path, *, read_only: bool = False) -> None:
+    def __init__(
+        self, path: Path, *, read_only: bool = False, _live_read_only: bool = False
+    ) -> None:
+        if _live_read_only and not read_only:
+            raise CatalogStateError("live read-only mode requires read_only=True")
         self.path = path
         self.read_only = read_only
+        self.live_read_only = _live_read_only
         self._lock = RLock()
         if read_only:
             if not self.path.is_file():
@@ -191,7 +196,7 @@ class Catalog:
             # exists, retain normal ``mode=ro`` so the observer sees committed
             # WAL content and participates in SQLite's read locking.
             wal_path = self.path.with_name(f"{self.path.name}-wal")
-            if not wal_path.exists():
+            if not _live_read_only and not wal_path.exists():
                 uri += "&immutable=1"
             try:
                 self._connection = sqlite3.connect(
@@ -229,6 +234,34 @@ class Catalog:
                 raise
             except sqlite3.Error as exc:
                 raise CatalogStateError("cannot initialize remote Catalog schema") from exc
+
+    @classmethod
+    def open_live_read_only(cls, path: Path) -> Catalog:
+        """Open a live WAL-capable source for SQLite Online Backup.
+
+        Unlike the existing static read-only observer, this mode never appends
+        ``immutable=1``.  Normal SQLite locking remains active so commits made
+        after open can be observed when the backup transaction begins.
+        """
+
+        return cls(path, read_only=True, _live_read_only=True)
+
+    def backup_to(self, destination: sqlite3.Connection) -> None:
+        """Create one SQLite-consistent committed state in *destination*."""
+
+        if not self.live_read_only:
+            raise CatalogStateError("Catalog backup source must be live read-only")
+        if not isinstance(destination, sqlite3.Connection):
+            raise TypeError("backup destination must be sqlite3.Connection")
+        with self._lock:
+            self._connection.backup(destination)
+
+    def integrity_check(self) -> tuple[str, ...]:
+        """Return the complete SQLite integrity-check result."""
+
+        with self._lock:
+            rows = self._connection.execute("PRAGMA integrity_check").fetchall()
+        return tuple(str(row[0]) for row in rows)
 
     def close(self) -> None:
         with self._lock:

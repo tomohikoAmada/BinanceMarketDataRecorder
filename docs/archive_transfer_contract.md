@@ -2,8 +2,8 @@
 
 Status: approved architecture; M22.3 local receive/receipt, M22.4A durable
 remote pending authority, M22.4B exact Raw-only deletion/durability/recovery,
-and M22.5 byte/message-only RemoteTransport plus OpenSSH V1 are implemented.
-Post-session Catalog snapshots remain future M22.6 work.
+M22.5 byte/message-only RemoteTransport plus OpenSSH V1, and M22.6
+post-session Catalog DR snapshots are implemented.
 
 This document defines the integrity transaction for a local archive client
 pulling immutable Raw from the production VPS. It deliberately does not define
@@ -151,12 +151,43 @@ production deployment.
 
 ## Catalog snapshots
 
-After a successful archive session, the VPS creates a consistent SQLite backup
-representing the resulting post-session state, including source deletion and
-Catalog transitions. A raw filesystem copy of a live WAL database is not a
-valid snapshot method. The local client verifies the snapshot and keeps at
-least `latest` and `previous` snapshots. Snapshots are operational recovery
-evidence; Raw and manifests remain the market-event authority.
+After every one-source session that returns a receipt and validated
+`REMOTE_DELETE_PENDING` or `REMOTE_DELETED` authority, a separate wrapper asks
+the VPS for one Catalog snapshot. The live source opens through SQLite
+`mode=ro`, `query_only=ON`, normal locking, a 30-second busy timeout, and no
+`immutable=1`; generation uses `sqlite3.Connection.backup()` without a source
+checkpoint or main/WAL/SHM filesystem copy. The resulting database is one
+SQLite-consistent committed state, not an exact wall-clock cut, and may include
+later legitimate Catalog commits.
+
+Each remote invocation owns one UUID4 directory below
+`state/catalog-snapshot-staging/`, a strict ownership marker, and a kernel-held
+active lock. It creates and closes a fresh `catalog.sqlite`, then reopens that
+backup itself for exact `PRAGMA integrity_check`, Catalog structure, receipt,
+initial/terminal-event, and required-state validation before streaming only
+that file. The fixed hidden command accepts only a lowercase receipt SHA-256
+and `REMOTE_DELETE_PENDING` or `REMOTE_DELETED`; stdout is SQLite bytes only.
+The same process-aware EOF/exit/reaping rule used for Raw applies, so complete
+bytes followed by nonzero exit still fail. Later cleanup removes only direct,
+canonical UUID4, exactly marked, inactive staging children.
+
+The local Offline Workspace stores immutable UUID4 generations below
+`catalog-backups/snapshots/`. It streams into a unique `.staging` generation,
+fsyncs and closes the file, reopens and fully hashes it, independently repeats
+SQLite/Catalog/receipt/state validation against the transferred database, and
+durably publishes exact `catalog-snapshot-manifest.v1` provenance. Two mirrored
+`catalog-snapshot-retention.v1` slots select the highest valid monotonically
+numbered state and retain distinct `latest` and `previous` generation IDs.
+An explicit initialization marker distinguishes true first use from loss or
+corruption of both retention slots. Old generations are removed only after
+both new slots are durable; cleanup failure is nonfatal.
+
+Pending as a required lower bound accepts a validated deleted successor;
+deleted accepts only deleted. Snapshot failure never replays source selection,
+Raw receive, receipt creation, authorization, or deletion and never undoes the
+already committed archive session. Snapshots are operational recovery evidence;
+Raw and manifests remain the market-event authority. M22.6 adds no restore,
+public retry CLI, backup daemon, cloud backend, or persistent VPS registry.
 
 ## Portability and transport seam
 
@@ -267,6 +298,13 @@ New binaries accept a legitimate pre-M22
 Catalog with an empty remote projection and writable opens add both remote
 tables atomically. A pre-M22 binary after remote state persists is not claimed
 or generally supported; there is no downgrade relabeling.
+
+M22.6 adds the post-session wrapper without changing `run_one()`. Its
+snapshot-only API takes the exact existing receipt ID, the committed-state
+lower bound, a domain-specific transport operation, and an explicit local
+Offline Workspace root. Linux and macOS are supported when file and directory
+fsync plus POSIX lock primitives succeed. Complete Windows durability fails
+closed. The live Catalog schema and remote lifecycle are unchanged.
 
 ## Non-goals
 
