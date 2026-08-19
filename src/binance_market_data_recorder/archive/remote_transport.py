@@ -74,6 +74,10 @@ class RemoteTransport(Protocol):
 
     def delete_authorized(self, receipt_id: str) -> RemoteAuthorityStatus: ...
 
+    def open_catalog_snapshot(
+        self, receipt_id: str, required_state: RemoteArchiveState
+    ) -> BinaryIO: ...
+
 
 class RemoteAuthorityStatus:
     """Non-persisted validated view of existing remote Catalog authority."""
@@ -243,6 +247,15 @@ class InProcessRemoteTransport:
             raise RemoteTransportError("delete completed without authoritative readback")
         return status
 
+    def open_catalog_snapshot(
+        self, receipt_id: str, required_state: RemoteArchiveState
+    ) -> BinaryIO:
+        from .catalog_snapshot import CatalogSnapshotExporter
+
+        return CatalogSnapshotExporter(layout=self.layout).open_catalog_snapshot(
+            receipt_id, required_state
+        )
+
 
 class OpenSSHRemoteTransport:
     """Ordinary system OpenSSH subprocess adapter with fixed remote verbs."""
@@ -333,6 +346,42 @@ class OpenSSHRemoteTransport:
             raise RemoteTransportError("OpenSSH Raw transport lacks stdout")
         stream = _ProcessBackedStream(
             process,
+            operation="raw",
+            cleanup_timeout_seconds=self.cleanup_timeout_seconds,
+            on_close=self._streams.discard,
+        )
+        self._streams.add(stream)
+        return cast(BinaryIO, stream)
+
+    def open_catalog_snapshot(
+        self, receipt_id: str, required_state: RemoteArchiveState
+    ) -> BinaryIO:
+        require_receipt_id(receipt_id)
+        if required_state not in {
+            RemoteArchiveState.REMOTE_DELETE_PENDING,
+            RemoteArchiveState.REMOTE_DELETED,
+        }:
+            raise RemoteTransportError("required snapshot state is invalid")
+        command = self._remote_command(
+            "catalog-snapshot", receipt_id, required_state.value
+        )
+        try:
+            process = subprocess.Popen(
+                self._argv(command),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=None,
+                shell=False,
+            )
+        except OSError as exc:
+            raise RemoteTransportError("cannot start OpenSSH snapshot transport") from exc
+        if process.stdout is None:
+            process.kill()
+            process.wait()
+            raise RemoteTransportError("OpenSSH snapshot transport lacks stdout")
+        stream = _ProcessBackedStream(
+            process,
+            operation="catalog-snapshot",
             cleanup_timeout_seconds=self.cleanup_timeout_seconds,
             on_close=self._streams.discard,
         )
@@ -407,6 +456,19 @@ class OpenSSHRemoteTransport:
             if len(identities) != 1:
                 raise RemoteTransportError("receipt-bound remote command is malformed")
             require_receipt_id(identities[0])
+        elif verb == "catalog-snapshot":
+            if len(identities) != 2:
+                raise RemoteTransportError("snapshot remote command is malformed")
+            require_receipt_id(identities[0])
+            try:
+                required_state = RemoteArchiveState(identities[1])
+            except ValueError as exc:
+                raise RemoteTransportError("required snapshot state is invalid") from exc
+            if required_state not in {
+                RemoteArchiveState.REMOTE_DELETE_PENDING,
+                RemoteArchiveState.REMOTE_DELETED,
+            }:
+                raise RemoteTransportError("required snapshot state is invalid")
         elif verb == "select-oldest":
             if identities:
                 raise RemoteTransportError("selection command takes no identity")
@@ -437,6 +499,7 @@ class _ProcessBackedStream(io.RawIOBase):
         self,
         process: subprocess.Popen[bytes],
         *,
+        operation: str,
         cleanup_timeout_seconds: float,
         on_close: Callable[[_ProcessBackedStream], object],
     ) -> None:
@@ -445,6 +508,7 @@ class _ProcessBackedStream(io.RawIOBase):
             raise RemoteTransportError("process-backed stream requires stdout")
         self._process = process
         self._stdout = process.stdout
+        self._operation = operation
         self._cleanup_timeout_seconds = cleanup_timeout_seconds
         self._on_close = on_close
         self._finished = False
@@ -474,11 +538,13 @@ class _ProcessBackedStream(io.RawIOBase):
             returncode = self._process.wait(timeout=self._cleanup_timeout_seconds)
         except subprocess.TimeoutExpired as exc:
             self._terminate_and_reap()
-            raise RemoteTransportTimeout("Raw child did not exit after stdout EOF") from exc
+            raise RemoteTransportTimeout(
+                f"{self._operation} child did not exit after stdout EOF"
+            ) from exc
         self._finished = True
         if returncode != 0:
             raise RemoteTransportProcessError(
-                f"remote raw exited {returncode} after stdout EOF"
+                f"remote {self._operation} exited {returncode} after stdout EOF"
             )
 
     def _terminate_and_reap(self) -> None:

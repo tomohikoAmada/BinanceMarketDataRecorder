@@ -203,7 +203,20 @@ durable receipt, VPS receipt validation, and source revalidation precede VPS
 source deletion. SSH success alone is never sufficient. The complete future
 transaction is defined in `docs/archive_transfer_contract.md`; it remains
 separate from the current same-host ArchiveManager. M22.5 supplies one explicit
-source session only, not a daemon, drain loop, deployment, or M22.6 snapshot.
+source session only, not a daemon, drain loop, or deployment.
+
+M22.6 stores global control-plane recovery evidence under an explicit Offline
+Workspace root at `catalog-backups/`, never on the Archive Set medium selected
+by the Raw receipt. The remote active area is fixed at
+`state/catalog-snapshot-staging/`; only canonical UUID4 children with an exact
+Recorder marker and an acquirable inactive lock are cleanup candidates. The
+local store uses owned `.staging/<uuid>/` work, immutable
+`snapshots/<uuid>/catalog.sqlite` plus its exact manifest, and two mirrored
+retention slots. Unknown files are preserved. Live `catalog.sqlite`, its WAL/
+SHM, Raw, manifests, and unrelated state are never cleanup targets. Snapshot
+identity is UUID4; SHA-256 is content identity, so equal bytes remain distinct
+retention generations. Linux/macOS require successful file and directory fsync;
+Windows complete M22.6 durability fails closed.
 
 M22.3 implements only the local receive side with an in-process byte provider.
 On a selected registered medium it uses `raw/`, `manifests/`,

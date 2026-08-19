@@ -7,6 +7,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 
 
 def main() -> int:
@@ -35,6 +36,26 @@ def main() -> int:
             return 255
     remote_environment = os.environ.copy()
     remote_environment.pop("BINANCE_MARKET_RECORDER_DATA_ROOT", None)
+    if mode == "catalog_snapshot_kill" and operation == "catalog-snapshot":
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=remote_environment,
+        )
+        stage_root = os.environ.get("BMDR_SSH_SHIM_REMOTE_STAGE_ROOT")
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and process.poll() is None:
+            if stage_root and os.path.isdir(stage_root) and os.listdir(stage_root):
+                process.kill()
+                break
+            time.sleep(0.001)
+        stdout, stderr = process.communicate(input=stdin_bytes)
+        sys.stdout.buffer.write(stdout)
+        sys.stdout.buffer.flush()
+        sys.stderr.buffer.write(stderr)
+        return process.returncode
     completed = subprocess.run(
         command,
         input=stdin_bytes,
@@ -57,6 +78,19 @@ def main() -> int:
             completed = subprocess.CompletedProcess(command, 57, b"", completed.stderr)
         elif mode == "raw_stderr_pressure":
             sys.stderr.buffer.write(b"e" * (2 * 1024 * 1024))
+            sys.stderr.buffer.flush()
+        sys.stdout.buffer.write(body)
+        sys.stdout.buffer.flush()
+        sys.stderr.buffer.write(completed.stderr)
+        return completed.returncode
+    if operation == "catalog-snapshot":
+        body = completed.stdout
+        if mode == "catalog_snapshot_partial":
+            body = body[: max(1, len(body) // 2)]
+        elif mode == "catalog_snapshot_full_nonzero":
+            completed = subprocess.CompletedProcess(command, 58, body, completed.stderr)
+        elif mode == "catalog_snapshot_stderr_pressure":
+            sys.stderr.buffer.write(b"s" * (2 * 1024 * 1024))
             sys.stderr.buffer.flush()
         sys.stdout.buffer.write(body)
         sys.stdout.buffer.flush()

@@ -1,7 +1,7 @@
 # Offline Workspace
 
-Status: approved future architecture; not implemented as a dedicated daemon or
-physical disk.
+Status: approved architecture. M22.6 implements the Catalog Backup portion as
+an explicit library workflow; no dedicated daemon or physical disk is implied.
 
 The Offline Workspace is a local logical boundary for archive custody, derived
 data, historical imports, Catalog recovery evidence, and discovery metadata.
@@ -50,11 +50,37 @@ available.
 
 ## Catalog Backups
 
-The VPS has one live Catalog. After a successful archive session, a
-SQLite-supported consistent post-session snapshot is transferred to the local
-workspace and verified. V1 retains at least `latest` and `previous`; unbounded
-retention and automatic daily offsite snapshots are not required. A snapshot
-failure is retryable and does not undo verified Raw archival or deletion.
+The VPS has one live Catalog. After a successful archive session, SQLite Online
+Backup creates one consistent committed state from a live, non-immutable,
+query-only source. One fixed transport operation streams the same remotely
+self-validated standalone database into
+`<workspace>/catalog-backups/.staging/<snapshot_id>/`. The local side fsyncs,
+closes, fully reopens/hashes, checks exact SQLite integrity and existing Catalog
+authority for the triggering receipt, then publishes the immutable generation
+below `catalog-backups/snapshots/`.
+
+`catalog-snapshot-manifest.v1` records the UUID4 generation identity, triggering
+receipt/chunk, required and observed remote states, byte count, SHA-256, verifier
+version, and verification time. Mirrored `retention-0.json` and
+`retention-1.json` files use `catalog-snapshot-retention.v1` and a monotonically
+increasing generation to retain distinct `latest` and `previous` snapshots.
+No mtime or mountpoint is authority. A durable initialization marker makes both
+missing/corrupt slots fail closed after first use. Unreferenced cleanup begins
+only after both slots hold the new durable state.
+
+One Recorder-owned, fixed
+`<workspace>/.catalog-snapshot-writer.lock` serializes local snapshot writers
+for that exact Offline Workspace. A blocking kernel `flock` covers first-use
+store initialization and, for each snapshot, retention read through remote
+transfer, local publication, both retention slots, readback, and obsolete
+cleanup. The mode-0600 regular lock file remains in place; its existence is not
+authority, while kernel ownership is released on close, exception, crash, or
+process death. Read-only authority remains the two mirrored retention files.
+
+A snapshot failure is retryable with only the exact receipt and required state;
+it does not undo verified Raw archival/deletion or rerun the archive session.
+V1 does not provide public restore, scheduled/offsite backup, or unbounded
+retention.
 
 Catalog backups preserve operational state such as lifecycle, archive, gap,
 and recovery evidence that may not be reconstructable from Raw alone. They do
@@ -98,7 +124,9 @@ through a byte/message-only transport, with in-process and ordinary OpenSSH
 adapters. The OpenSSH adapter stores no credentials, changes no SSH
 configuration, and exposes no arbitrary path/command API. Its executable shim
 and local `ssh -V` evidence do not claim real sshd, LAN transfer, or deployment;
-authenticated integration remains M22.8. Post-session Catalog snapshot transfer
-remains M22.6 and is not implemented.
+authenticated integration remains M22.8. M22.6 adds explicit-root Catalog DR
+snapshot storage with locally verified immutable generations and mirrored
+latest/previous retention. It is not part of an Archive Set medium and does not
+add a daemon, restore command, cloud backend, or deployment surface.
 Windows end-to-end receipt/deletion durability is not yet supported. Archive
 Set membership is not a backup or redundancy guarantee.
