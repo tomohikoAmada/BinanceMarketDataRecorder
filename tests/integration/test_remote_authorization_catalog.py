@@ -26,6 +26,7 @@ from binance_market_data_recorder.storage.forecast import StorageForecaster
 from tests.remote_authorization_support import (
     RemoteAuthorizationFixture,
     build_receipt,
+    force_valid_terminal_fixture,
     prepare_remote_authorization,
 )
 
@@ -430,9 +431,8 @@ def test_remote_projection_changes_backlog_classification_only(tmp_path: Path) -
             observed_at_utc_ns=10,
         )
         assert catalog.space_samples("internal")[-1]["archive_backlog_bytes"] == 0
-        catalog._connection.execute(
-            "UPDATE remote_archive_transactions SET state = 'REMOTE_DELETED', "
-            "remote_deleted_at_utc_ns = 9, updated_at_utc_ns = 9"
+        force_valid_terminal_fixture(
+            catalog, receipt.receipt_id, occurred_at_utc_ns=9
         )
         terminal = catalog.source_lifecycle_aggregate()
         assert terminal["unarchived_backlog_files"] == 0

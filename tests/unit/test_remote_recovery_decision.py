@@ -21,6 +21,7 @@ from binance_market_data_recorder.storage.catalog import Catalog
 from tests.remote_authorization_support import (
     RemoteAuthorizationFixture,
     build_receipt,
+    force_valid_terminal_fixture,
     prepare_remote_authorization,
     source_snapshot,
 )
@@ -132,10 +133,7 @@ def test_terminal_absence_presence_and_impossible_overlap(tmp_path: Path) -> Non
     absent, receipt = _authorize(tmp_path / "terminal-absent")
     _make_raw_absent(absent, tmp_path / "terminal-raw-held")
     with Catalog(absent.prepared.layout.catalog) as catalog:
-        catalog._connection.execute(
-            "UPDATE remote_archive_transactions SET state = 'REMOTE_DELETED', "
-            "remote_deleted_at_utc_ns = 5, updated_at_utc_ns = 5"
-        )
+        force_valid_terminal_fixture(catalog, receipt.receipt_id)
         decision = classify_remote_recovery(
             layout=absent.prepared.layout,
             catalog=catalog,
@@ -145,10 +143,7 @@ def test_terminal_absence_presence_and_impossible_overlap(tmp_path: Path) -> Non
 
     present, receipt = _authorize(tmp_path / "terminal-present")
     with Catalog(present.prepared.layout.catalog) as catalog:
-        catalog._connection.execute(
-            "UPDATE remote_archive_transactions SET state = 'REMOTE_DELETED', "
-            "remote_deleted_at_utc_ns = 5, updated_at_utc_ns = 5"
-        )
+        force_valid_terminal_fixture(catalog, receipt.receipt_id)
         decision = classify_remote_recovery(
             layout=present.prepared.layout,
             catalog=catalog,
@@ -261,16 +256,15 @@ def test_spool_recovery_routes_remote_projection_without_chunkstate_reuse(
     with Catalog(interrupted.prepared.layout.catalog) as catalog:
         actions = reconcile_sealed(layout=interrupted.prepared.layout, catalog=catalog)
         assert any(
-            action.action == "remote_lifecycle_preserved"
-            and action.detail == RemoteRecoveryCase.CASE_B.value
+            action.action == "remote_absent_reconciled"
+            and action.detail == "REMOTE_DELETED"
             for action in actions
         )
+        row = catalog.remote_archive_transaction(_receipt.receipt_id)
+        assert row is not None and row["state"] == "REMOTE_DELETED"
 
     terminal, _receipt = _authorize(tmp_path / "terminal-recovery")
     with Catalog(terminal.prepared.layout.catalog) as catalog:
-        catalog._connection.execute(
-            "UPDATE remote_archive_transactions SET state = 'REMOTE_DELETED', "
-            "remote_deleted_at_utc_ns = 5, updated_at_utc_ns = 5"
-        )
+        force_valid_terminal_fixture(catalog, _receipt.receipt_id)
         with pytest.raises(RecoveryConflictError, match="TERMINAL_PRESENT"):
             reconcile_sealed(layout=terminal.prepared.layout, catalog=catalog)

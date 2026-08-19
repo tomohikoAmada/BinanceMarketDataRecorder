@@ -35,6 +35,11 @@ from .remote_authorization import (
     classify_remote_recovery,
     observe_remote_source,
 )
+from .remote_delete import (
+    RemoteDeleter,
+    RemoteDeleteResult,
+    RemoteDeletionError,
+)
 from .remote_receive import (
     REMOTE_ARCHIVE_RECEIPT_SCHEMA,
     REMOTE_RECEIVE_VERIFICATION_OUTCOME,
@@ -82,6 +87,9 @@ __all__ = [
     "RemoteArchiveReceipt",
     "RemoteAuthorizationError",
     "RemoteAuthorizer",
+    "RemoteDeleteResult",
+    "RemoteDeleter",
+    "RemoteDeletionError",
     "RemotePendingAuthorization",
     "RemoteReceiveError",
     "RemoteReceiveTarget",

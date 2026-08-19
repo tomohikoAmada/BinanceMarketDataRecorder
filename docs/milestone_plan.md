@@ -876,7 +876,8 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.4B — Remote source deletion / durability / kill-point recovery
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED** on the dedicated feature branch; acceptance
+  evidence is recorded in `docs/milestone_acceptance/M22.4B.md`.
 - **Scope:** First destructive remote milestone: exact immediate source
   revalidation, exact unlink, parent-directory deletion durability, terminal
   remote Catalog transition, and crash/kill recovery for CASE A/B/C/D.
@@ -884,10 +885,14 @@ mutation exists; those remain exclusively M22.4B scope.
   deletion without a matching durable pre-delete authorization; and treating
   `REMOTE_DELETE_PENDING` as completed deletion.
 - **Dependencies:** Independently accepted M22.4A and M22.3.
-- **Acceptance:** Authorized deletion reaches `REMOTE_DELETED` only after
-  unlink and required filesystem durability; absent source without exact
-  durable authorization fails closed; crash-after-unlink recovery is
-  idempotent.
+- **Acceptance:** Authorized deletion reaches `REMOTE_DELETED` only after the
+  held exact Raw file object passes full stored/decompressed validation, the
+  exact direct leaf is unlinked relative to an anchored parent descriptor, and
+  that same parent descriptor is fsynced with post-fsync absence verified.
+  CASE B performs recovery-only absence reconciliation; absent source without
+  exact durable authorization fails closed; real K1-K5 process-death and
+  same-receipt concurrency tests converge idempotently. The Raw manifest and
+  all Catalog/receipt/event evidence remain retained.
 - **Rollback:** Stop new remote deletion attempts, reconcile only through
   durable M22.4A evidence, and retain any source not proven deleted.
 
