@@ -220,7 +220,15 @@ physical chunk `SEALED`. Pending/deleted remote-owned chunks are not ordinary
 archive backlog or fresh export candidates; pending Raw bytes remain
 separately visible because they still consume internal disk. M22.4A performs
 no source filesystem mutation and exposes no production terminal write.
-M22.4B remains required before any remote source deletion.
+M22.4B now deletes only the exact authorized sealed Raw direct child after
+receipt/initial-event/descriptor/manifest/current-Catalog revalidation and
+fresh full stored/decompressed verification on a held no-follow Raw descriptor.
+It unlinks relative to one anchored `sealed/` directory descriptor, fsyncs
+that same descriptor, verifies absence again, and only then atomically commits
+the terminal remote row/event. The internal Raw manifest, chunk row, exact
+receipt bytes, remote transaction, and both events remain immutable evidence.
+Startup can automatically reconcile only CASE B (already-absent authorized
+Raw); it never initiates CASE-A deletion.
 
 ## Safe eject transaction
 

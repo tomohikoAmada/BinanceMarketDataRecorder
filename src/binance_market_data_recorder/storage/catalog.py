@@ -38,7 +38,7 @@ import re
 import sqlite3
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import StrEnum
 from pathlib import Path
 from threading import RLock
@@ -2022,6 +2022,170 @@ class Catalog:
             raise CatalogStateError("remote authorization readback failed")
         return persisted
 
+    def commit_remote_deleted(
+        self,
+        *,
+        receipt_id: str,
+        expected_chunk_id: str,
+        expected_source_descriptor_sha256: str,
+        expected_source_relative_path: str,
+        expected_source_manifest_sha256: str,
+        expected_stored_bytes: int,
+        expected_stored_sha256: str,
+        occurred_at_utc_ns: int,
+        fault_hook: Callable[[str], None] | None = None,
+    ) -> dict[str, object]:
+        """Atomically commit the exact durable remote-deletion terminal fact.
+
+        Filesystem deletion and parent-directory durability are deliberately
+        outside this API. The caller supplies only equality guards for the
+        already-persisted authority; this transaction cannot create or rebind
+        receipt/source identity.
+        """
+
+        self._require_writable()
+        if not self._remote_schema_present:
+            raise CatalogStateError("remote archive schema is unavailable")
+        if not _is_lower_sha256(receipt_id):
+            raise ValueError("remote deletion receipt_id is invalid")
+        if not expected_chunk_id:
+            raise ValueError("remote deletion chunk_id is invalid")
+        for value, label in (
+            (expected_source_descriptor_sha256, "source descriptor digest"),
+            (expected_source_manifest_sha256, "source manifest digest"),
+            (expected_stored_sha256, "stored digest"),
+        ):
+            if not _is_lower_sha256(value):
+                raise ValueError(f"remote deletion {label} is invalid")
+        _validate_relative_path(expected_source_relative_path)
+        if (
+            not isinstance(expected_stored_bytes, int)
+            or isinstance(expected_stored_bytes, bool)
+            or expected_stored_bytes < 0
+        ):
+            raise ValueError("remote deletion stored byte count is invalid")
+        if (
+            not isinstance(occurred_at_utc_ns, int)
+            or isinstance(occurred_at_utc_ns, bool)
+            or occurred_at_utc_ns < 0
+        ):
+            raise ValueError("remote deletion terminal timestamp is invalid")
+
+        evidence = {
+            "chunk_id": expected_chunk_id,
+            "receipt_id": receipt_id,
+            "source_absent": True,
+            "source_descriptor_sha256": expected_source_descriptor_sha256,
+            "source_manifest_sha256": expected_source_manifest_sha256,
+            "source_parent_fsync": True,
+            "source_relative_path": expected_source_relative_path,
+            "stored_bytes": expected_stored_bytes,
+            "stored_sha256": expected_stored_sha256,
+        }
+        evidence_json = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
+        with self._lock:
+            transaction_started = False
+            try:
+                if fault_hook is not None:
+                    fault_hook("before_remote_deleted_begin")
+                self._connection.execute("BEGIN IMMEDIATE")
+                transaction_started = True
+                row = self._connection.execute(
+                    "SELECT * FROM remote_archive_transactions WHERE receipt_id = ?",
+                    (receipt_id,),
+                ).fetchone()
+                if row is None:
+                    raise CatalogStateError("remote deletion authority is missing")
+                current = self._validated_remote_row(row)
+                expected = {
+                    "receipt_id": receipt_id,
+                    "chunk_id": expected_chunk_id,
+                    "state": RemoteArchiveState.REMOTE_DELETE_PENDING.value,
+                    "source_descriptor_sha256": expected_source_descriptor_sha256,
+                    "source_relative_path": expected_source_relative_path,
+                    "source_manifest_sha256": expected_source_manifest_sha256,
+                    "stored_bytes": expected_stored_bytes,
+                    "stored_sha256": expected_stored_sha256,
+                }
+                if any(current.get(key) != value for key, value in expected.items()):
+                    raise CatalogStateError(
+                        "remote deletion pending authority does not match expected source"
+                    )
+                chunk = self._connection.execute(
+                    "SELECT state, sealed_path, manifest_path, stored_bytes, "
+                    "stored_sha256 FROM chunks WHERE chunk_id = ?",
+                    (expected_chunk_id,),
+                ).fetchone()
+                required_chunk = {
+                    "state": ChunkState.SEALED.value,
+                    "sealed_path": expected_source_relative_path,
+                    "manifest_path": current["source_manifest_relative_path"],
+                    "stored_bytes": expected_stored_bytes,
+                    "stored_sha256": expected_stored_sha256,
+                }
+                if chunk is None or any(
+                    chunk[key] != value for key, value in required_chunk.items()
+                ):
+                    raise CatalogStateError(
+                        "remote deletion chunk/source authority changed"
+                    )
+                same_host = self._connection.execute(
+                    "SELECT transaction_id FROM archive_transactions WHERE chunk_id = ?",
+                    (expected_chunk_id,),
+                ).fetchone()
+                if same_host is not None:
+                    raise CatalogStateError(
+                        "same-host and remote deletion ownership overlap"
+                    )
+                cursor = self._connection.execute(
+                    "UPDATE remote_archive_transactions SET state = ?, "
+                    "updated_at_utc_ns = ?, remote_deleted_at_utc_ns = ? "
+                    "WHERE receipt_id = ? AND state = ?",
+                    (
+                        RemoteArchiveState.REMOTE_DELETED,
+                        occurred_at_utc_ns,
+                        occurred_at_utc_ns,
+                        receipt_id,
+                        RemoteArchiveState.REMOTE_DELETE_PENDING,
+                    ),
+                )
+                if cursor.rowcount != 1:
+                    raise CatalogStateError("remote deletion terminal update lost authority")
+                if fault_hook is not None:
+                    fault_hook("before_remote_deleted_event")
+                self._connection.execute(
+                    """
+                    INSERT INTO remote_archive_events(
+                        receipt_id, from_state, to_state, occurred_at_utc_ns,
+                        evidence_json, idempotency_key
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        receipt_id,
+                        RemoteArchiveState.REMOTE_DELETE_PENDING,
+                        RemoteArchiveState.REMOTE_DELETED,
+                        occurred_at_utc_ns,
+                        evidence_json,
+                        f"remote-deleted:{receipt_id}",
+                    ),
+                )
+                if fault_hook is not None:
+                    fault_hook("k4_after_remote_deleted_update_event_before_commit")
+                    fault_hook("before_remote_deleted_commit")
+                self._connection.execute("COMMIT")
+                transaction_started = False
+                if fault_hook is not None:
+                    fault_hook("after_remote_deleted_commit")
+            except BaseException:
+                if transaction_started and self._connection.in_transaction:
+                    with suppress(sqlite3.Error):
+                        self._connection.execute("ROLLBACK")
+                raise
+        persisted = self.remote_archive_transaction(receipt_id)
+        if persisted is None:
+            raise CatalogStateError("remote deletion terminal readback failed")
+        return persisted
+
     def _validated_remote_row(self, row: sqlite3.Row) -> dict[str, object]:
         document = dict(row)
         try:
@@ -2080,6 +2244,16 @@ class Catalog:
                 value = document.get(key)
                 if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                     raise ValueError(f"invalid remote row {key}")
+            if state is RemoteArchiveState.REMOTE_DELETE_PENDING:
+                if document["updated_at_utc_ns"] != document["created_at_utc_ns"]:
+                    raise ValueError("pending remote row timestamp changed")
+            elif (
+                not isinstance(deleted_at, int)
+                or isinstance(deleted_at, bool)
+                or deleted_at < 0
+                or document["updated_at_utc_ns"] != deleted_at
+            ):
+                raise ValueError("terminal remote row timestamp invariant")
             chunk = self._connection.execute(
                 "SELECT state, sealed_path, manifest_path, stored_bytes, stored_sha256 "
                 "FROM chunks WHERE chunk_id = ?",
@@ -2096,26 +2270,78 @@ class Catalog:
                 chunk[key] != value for key, value in current_source.items()
             ):
                 raise ValueError("remote row/current Catalog source mismatch")
-            initial = self._connection.execute(
-                "SELECT receipt_id, from_state, to_state, evidence_json "
-                "FROM remote_archive_events "
-                "WHERE idempotency_key = ?",
+            events = self._connection.execute(
+                "SELECT * FROM remote_archive_events WHERE receipt_id = ? "
+                "ORDER BY event_id",
+                (receipt.receipt_id,),
+            ).fetchall()
+            initial_by_key = self._connection.execute(
+                "SELECT * FROM remote_archive_events WHERE idempotency_key = ?",
                 (f"remote-authorize:{receipt.receipt_id}",),
             ).fetchone()
+            if not events or initial_by_key is None or events[0]["event_id"] != (
+                initial_by_key["event_id"]
+            ):
+                raise ValueError("remote authorization event is missing or rebound")
+            initial = events[0]
+            initial_evidence = {
+                "chunk_id": receipt.chunk_id,
+                "receipt_id": receipt.receipt_id,
+            }
+            initial_evidence_json = json.dumps(
+                initial_evidence, sort_keys=True, separators=(",", ":")
+            )
             if (
-                initial is None
-                or initial["receipt_id"] != receipt.receipt_id
+                initial["receipt_id"] != receipt.receipt_id
                 or initial["from_state"] is not None
                 or initial["to_state"]
                 != RemoteArchiveState.REMOTE_DELETE_PENDING.value
+                or initial["occurred_at_utc_ns"] != document["created_at_utc_ns"]
+                or initial["idempotency_key"]
+                != f"remote-authorize:{receipt.receipt_id}"
+                or initial["evidence_json"] != initial_evidence_json
             ):
-                raise ValueError("remote authorization event is missing or malformed")
-            evidence = json.loads(str(initial["evidence_json"]))
-            if evidence != {
-                "chunk_id": receipt.chunk_id,
-                "receipt_id": receipt.receipt_id,
-            }:
                 raise ValueError("remote authorization event evidence mismatch")
+            if state is RemoteArchiveState.REMOTE_DELETE_PENDING:
+                if len(events) != 1:
+                    raise ValueError("pending remote row has terminal/extra events")
+            else:
+                if len(events) != 2:
+                    raise ValueError("terminal remote row event count mismatch")
+                terminal = events[1]
+                terminal_by_key = self._connection.execute(
+                    "SELECT event_id FROM remote_archive_events "
+                    "WHERE idempotency_key = ?",
+                    (f"remote-deleted:{receipt.receipt_id}",),
+                ).fetchone()
+                terminal_evidence = {
+                    "chunk_id": receipt.chunk_id,
+                    "receipt_id": receipt.receipt_id,
+                    "source_absent": True,
+                    "source_descriptor_sha256": receipt.source_descriptor_sha256,
+                    "source_manifest_sha256": receipt.source_manifest_sha256,
+                    "source_parent_fsync": True,
+                    "source_relative_path": receipt.source_relative_path,
+                    "stored_bytes": receipt.stored_bytes,
+                    "stored_sha256": receipt.stored_sha256,
+                }
+                terminal_evidence_json = json.dumps(
+                    terminal_evidence, sort_keys=True, separators=(",", ":")
+                )
+                if (
+                    terminal_by_key is None
+                    or terminal_by_key["event_id"] != terminal["event_id"]
+                    or terminal["receipt_id"] != receipt.receipt_id
+                    or terminal["from_state"]
+                    != RemoteArchiveState.REMOTE_DELETE_PENDING.value
+                    or terminal["to_state"]
+                    != RemoteArchiveState.REMOTE_DELETED.value
+                    or terminal["occurred_at_utc_ns"] != deleted_at
+                    or terminal["idempotency_key"]
+                    != f"remote-deleted:{receipt.receipt_id}"
+                    or terminal["evidence_json"] != terminal_evidence_json
+                ):
+                    raise ValueError("remote deletion terminal event mismatch")
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise CatalogStateError("malformed persisted remote authorization") from exc
         document["state"] = state.value
@@ -3309,6 +3535,14 @@ def _validate_relative_path(value: str) -> None:
         or ".." in path.parts
     ):
         raise ValueError(f"unsafe relative path: {value!r}")
+
+
+def _is_lower_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def _parse_remote_receipt(body: bytes) -> Any:

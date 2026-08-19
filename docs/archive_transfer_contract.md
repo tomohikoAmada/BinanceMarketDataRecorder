@@ -1,9 +1,8 @@
 # Archive Transfer Contract
 
-Status: approved architecture; M22.3 local receive/receipt and M22.4A
-non-destructive remote pending authorization/recovery interpretation are
-implemented. Remote source deletion, transport, and snapshots remain future
-work.
+Status: approved architecture; M22.3 local receive/receipt, M22.4A durable
+remote pending authority, and M22.4B exact Raw-only deletion/durability/recovery
+are implemented. Remote transport and snapshots remain future work.
 
 This document defines the integrity transaction for a local archive client
 pulling immutable Raw from the production VPS. It deliberately does not define
@@ -57,8 +56,8 @@ immutable VPS Raw/manifest source identity. Source revalidation remains
 immediately before the destructive mutation; the pending fact does not replace
 it. If revalidation fails after the pending fact is persisted, the source is
 not unlinked and the pending transaction is retained for fail-closed recovery.
-The implemented non-destructive projection and its exact state names are
-defined below; destructive retry/terminal APIs remain M22.4B concerns.
+The implemented projection and its exact state names are defined below;
+M22.4B now supplies the bounded destructive retry and terminal APIs.
 
 The target is written through a transaction-owned temporary artifact and is
 published atomically. A final artifact with the same name is accepted only
@@ -219,8 +218,33 @@ NORMAL/CASE A/B/C/D and terminal interpretation with explicit
 Pending remote sources are excluded from unarchived archive backlog while
 their retained VPS bytes remain visible. It performs no source unlink,
 delete-rename, deletion-parent durability operation, SSH, `RemoteTransport`,
-or production transition to `REMOTE_DELETED`; M22.4B remains required for all
-destructive and terminal behavior. New binaries accept a legitimate pre-M22
+or production transition to `REMOTE_DELETED`.
+
+M22.4B adds a receipt-ID-only `RemoteDeleter`. It reloads the exact persisted
+receipt, initial authorization event, current `SEALED` chunk/no-same-host
+ownership, retained manifest, reconstructed M22.1 descriptor, and remote row.
+For CASE A it anchors `layout.sealed` with a no-follow directory descriptor,
+opens the exact direct Raw leaf relative to that descriptor with no-follow
+flags, keeps the Raw descriptor open, and freshly verifies stored size,
+stored SHA-256, decompressed byte count, and decompressed SHA-256. After a
+final lifecycle recheck and held-fd/parent-relative leaf identity match it
+performs the one exact Raw `unlink`, proves absence, fsyncs the same anchored
+parent descriptor, and proves post-fsync absence before the terminal Catalog
+transaction. The `raw-chunk-manifest.v1` file is never deleted or rewritten.
+
+CASE B requires the same exact retained pending authority and manifest but can
+only observe an already-absent leaf; it repeats parent fsync/absence proof and
+terminalizes without unlink. Startup calls only this recovery-only CASE-B
+entry. CASE A remains explicit operator/workflow retry and ordinary startup
+never initiates a new deletion. Terminal state requires one canonical
+`REMOTE_DELETE_PENDING -> REMOTE_DELETED` event atomically committed with the
+row. K1-K5 real process-death recovery, the real post-unlink parent-fsync
+failure, ambiguous SQLite commit readback, and concurrent same-receipt callers
+are exercised using test-owned temporary Recorder roots. Linux and macOS are
+supported only when all required POSIX primitives succeed; Windows fails
+closed before unlink.
+
+New binaries accept a legitimate pre-M22
 Catalog with an empty remote projection and writable opens add both remote
 tables atomically. A pre-M22 binary after remote state persists is not claimed
 or generally supported; there is no downgrade relabeling.

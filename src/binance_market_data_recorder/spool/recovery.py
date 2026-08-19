@@ -345,6 +345,10 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
                             RemoteRecoveryCase,
                             classify_remote_recovery,
                         )
+                        from ..archive.remote_delete import (
+                            RemoteDeleter,
+                            RemoteDeletionError,
+                        )
 
                         decision = classify_remote_recovery(
                             layout=layout, catalog=catalog, chunk_id=chunk_id
@@ -358,6 +362,27 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
                                 f"RECOVERY_REMOTE_{decision.case.value}: "
                                 f"{decision.detail}"
                             )
+                        if decision.case is RemoteRecoveryCase.CASE_B:
+                            try:
+                                result = RemoteDeleter(
+                                    layout=layout,
+                                    catalog=catalog,
+                                ).reconcile_absent_authorized(
+                                    str(remote["receipt_id"])
+                                )
+                            except RemoteDeletionError as exc:
+                                raise RecoveryConflictError(
+                                    "RECOVERY_REMOTE_CASE_B_RECONCILE_FAILED: "
+                                    f"{exc}"
+                                ) from exc
+                            actions.append(
+                                RecoveryAction(
+                                    layout.relative(manifest_path),
+                                    "remote_absent_reconciled",
+                                    result.state.value,
+                                )
+                            )
+                            break
                         actions.append(
                             RecoveryAction(
                                 layout.relative(manifest_path),
