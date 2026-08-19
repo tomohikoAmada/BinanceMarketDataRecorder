@@ -20,7 +20,11 @@ from binance_market_data_recorder.archive.remote_source import (
 )
 from binance_market_data_recorder.cli import _archive_status
 from binance_market_data_recorder.metrics.report import DailyReporter
-from binance_market_data_recorder.spool.recovery import reconcile_sealed
+from binance_market_data_recorder.spool.recovery import (
+    RecoveryConflictError,
+    reconcile_sealed,
+    recover_storage,
+)
 from binance_market_data_recorder.storage.catalog import (
     Catalog,
     CatalogStateError,
@@ -52,6 +56,178 @@ def _authorized(
             ),
         ).authorize(receipt.canonical_bytes(), fixture.selections[0])
     return fixture, receipt.receipt_id
+
+
+def test_normal_startup_discovers_missing_manifest_before_remote_recovery(
+    tmp_path: Path,
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    source = fixture.selections[0].sealed_path
+    manifest = fixture.selections[0].manifest_path
+    os.replace(source, tmp_path / "held-raw")
+    os.replace(manifest, tmp_path / "held-manifest")
+
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        with pytest.raises(
+            RecoveryConflictError,
+            match="RECOVERY_REMOTE_RETAINED_MANIFEST_MISSING",
+        ):
+            recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 1
+    assert not source.exists()
+    assert not manifest.exists()
+    assert (tmp_path / "held-raw").is_file()
+    assert (tmp_path / "held-manifest").is_file()
+
+
+def test_case_a_startup_with_missing_manifest_fails_closed_without_unlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    manifest = fixture.selections[0].manifest_path
+    os.replace(manifest, tmp_path / "held-manifest")
+    unlink_called = False
+    actual_unlink = os.unlink
+
+    def observe_unlink(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *,
+        dir_fd: int | None = None,
+    ) -> None:
+        nonlocal unlink_called
+        unlink_called = True
+        actual_unlink(path, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "unlink", observe_unlink)
+    monkeypatch.setattr(
+        os, "supports_dir_fd", os.supports_dir_fd | {observe_unlink}
+    )
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        with pytest.raises(
+            RecoveryConflictError,
+            match="RECOVERY_REMOTE_RETAINED_MANIFEST_MISSING",
+        ):
+            recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 1
+    assert not unlink_called
+    assert fixture.selections[0].sealed_path.is_file()
+
+
+def test_mutated_manifest_startup_still_fails_closed(
+    tmp_path: Path,
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    manifest = fixture.selections[0].manifest_path
+    document = json.loads(manifest.read_bytes())
+    document["stored_sha256"] = "0" * 64
+    manifest.write_text(json.dumps(document), encoding="utf-8")
+    os.replace(fixture.selections[0].sealed_path, tmp_path / "held-raw")
+
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        with pytest.raises(RecoveryConflictError):
+            recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 1
+    assert (tmp_path / "held-raw").is_file()
+
+
+def test_valid_case_b_startup_uses_absence_only_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    os.replace(fixture.selections[0].sealed_path, tmp_path / "held-raw")
+    actual_unlink = os.unlink
+    unlink_called = False
+
+    def observe_unlink(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *,
+        dir_fd: int | None = None,
+    ) -> None:
+        nonlocal unlink_called
+        unlink_called = True
+        actual_unlink(path, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "unlink", observe_unlink)
+    monkeypatch.setattr(
+        os, "supports_dir_fd", os.supports_dir_fd | {observe_unlink}
+    )
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        actions = recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        assert any(action.action == "remote_absent_reconciled" for action in actions)
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETED.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 2
+    assert not unlink_called
+    assert (tmp_path / "held-raw").is_file()
+
+
+def test_case_a_startup_preserves_pending_without_unlink(tmp_path: Path) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        actions = recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        assert any(
+            action.action == "remote_lifecycle_preserved" for action in actions
+        )
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 1
+    assert fixture.selections[0].sealed_path.is_file()
+
+
+def test_terminal_absent_startup_preserves_valid_terminal_authority(
+    tmp_path: Path,
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    os.replace(fixture.selections[0].sealed_path, tmp_path / "held-raw")
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        RemoteDeleter(
+            layout=fixture.prepared.layout, catalog=catalog
+        ).delete_authorized(receipt_id)
+        before = catalog.remote_archive_events(receipt_id)
+        actions = recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        assert any(
+            action.action == "remote_lifecycle_preserved"
+            and action.detail == "TERMINAL_ABSENT"
+            for action in actions
+        )
+        assert catalog.remote_archive_events(receipt_id) == before
+
+
+def test_terminal_absent_with_missing_manifest_fails_closed(
+    tmp_path: Path,
+) -> None:
+    fixture, receipt_id = _authorized(tmp_path)
+    os.replace(fixture.selections[0].sealed_path, tmp_path / "held-raw")
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        RemoteDeleter(
+            layout=fixture.prepared.layout, catalog=catalog
+        ).reconcile_absent_authorized(receipt_id)
+    os.replace(fixture.selections[0].manifest_path, tmp_path / "held-manifest")
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        with pytest.raises(RecoveryConflictError):
+            recover_storage(layout=fixture.prepared.layout, catalog=catalog)
+        row = catalog.remote_archive_transaction(receipt_id)
+        assert row is not None
+        assert row["state"] == RemoteArchiveState.REMOTE_DELETED.value
+        assert len(catalog.remote_archive_events(receipt_id)) == 2
+
+
+def test_startup_without_remote_transactions_remains_valid(tmp_path: Path) -> None:
+    fixture = prepare_remote_authorization(tmp_path)
+    with Catalog(fixture.prepared.layout.catalog) as catalog:
+        assert catalog.remote_archive_transactions() == []
+        recover_storage(layout=fixture.prepared.layout, catalog=catalog)
 
 
 def test_actual_unlink_failure_preserves_raw_pending_and_manifest(

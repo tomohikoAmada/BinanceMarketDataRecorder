@@ -40,6 +40,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -50,6 +51,7 @@ from ..storage.catalog import (
     Catalog,
     CatalogStateError,
     ChunkState,
+    RemoteArchiveState,
 )
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, decode_chunk_header, scan_chunk
@@ -457,6 +459,92 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
     return actions
 
 
+def _remote_retained_manifest_path(
+    *, layout: StorageLayout, relative: object
+) -> Path:
+    """Resolve one persisted remote manifest only inside ``data/manifests``."""
+
+    if not isinstance(relative, str) or not relative:
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_RETAINED_MANIFEST_PATH_INVALID"
+        )
+    candidate = Path(relative)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_RETAINED_MANIFEST_PATH_INVALID"
+        )
+    path = layout.root / candidate
+    try:
+        if (
+            layout.manifests.is_symlink()
+            or path.parent.resolve() != layout.manifests.resolve()
+        ):
+            raise RecoveryConflictError(
+                "RECOVERY_REMOTE_RETAINED_MANIFEST_PATH_INVALID"
+            )
+        status = os.lstat(path)
+    except FileNotFoundError as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_RETAINED_MANIFEST_MISSING"
+        ) from exc
+    except OSError as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_RETAINED_MANIFEST_UNAVAILABLE"
+        ) from exc
+    if stat.S_ISLNK(status.st_mode) or not stat.S_ISREG(status.st_mode):
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_RETAINED_MANIFEST_NOT_REGULAR"
+        )
+    return path
+
+
+def _validate_remote_recovery_coverage(
+    *, layout: StorageLayout, catalog: Catalog
+) -> None:
+    """Discover every durable remote row before manifest-driven recovery.
+
+    The retained manifest is required authority for both pending and terminal
+    remote rows. This preflight deliberately checks coverage only; semantic
+    manifest/descriptor validation and CASE-A/CASE-B decisions remain in
+    ``reconcile_sealed`` and ``RemoteDeleter``.
+    """
+
+    try:
+        transactions = catalog.remote_archive_transactions()
+    except CatalogStateError as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_REMOTE_AUTHORITY_INVALID"
+        ) from exc
+    for transaction in transactions:
+        try:
+            receipt_id = transaction["receipt_id"]
+            chunk_id = transaction["chunk_id"]
+            state = RemoteArchiveState(str(transaction["state"]))
+            relative = transaction["source_manifest_relative_path"]
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RecoveryConflictError(
+                "RECOVERY_REMOTE_AUTHORITY_INVALID"
+            ) from exc
+        if not isinstance(receipt_id, str) or not receipt_id:
+            raise RecoveryConflictError("RECOVERY_REMOTE_AUTHORITY_INVALID")
+        if not isinstance(chunk_id, str) or not chunk_id:
+            raise RecoveryConflictError("RECOVERY_REMOTE_AUTHORITY_INVALID")
+        if state not in {
+            RemoteArchiveState.REMOTE_DELETE_PENDING,
+            RemoteArchiveState.REMOTE_DELETED,
+        }:
+            raise RecoveryConflictError("RECOVERY_REMOTE_AUTHORITY_INVALID")
+        try:
+            _remote_retained_manifest_path(layout=layout, relative=relative)
+        except RecoveryConflictError as exc:
+            if exc.args and exc.args[0] == "RECOVERY_REMOTE_RETAINED_MANIFEST_MISSING":
+                raise RecoveryConflictError(
+                    "RECOVERY_REMOTE_RETAINED_MANIFEST_MISSING "
+                    f"receipt_id={receipt_id} chunk_id={chunk_id}"
+                ) from exc
+            raise
+
+
 def _derived_seal_flags(
     partial_path: Path,
     catalog: Catalog,
@@ -634,6 +722,7 @@ def recover_storage(
             "RECOVERY_LEGACY_PREDECISION_INELIGIBLE "
             + report.blocker_summary()
         )
+    _validate_remote_recovery_coverage(layout=layout, catalog=catalog)
     actions = recover_partials(layout=layout, catalog=catalog)
     actions.extend(_apply_legacy_decisions(catalog=catalog, report=report))
     for row in catalog.chunks_in_states(ChunkState.SEALING):
