@@ -9,11 +9,12 @@ import json
 import os
 import re
 import sqlite3
+import stat
 import sys
 import time
 import uuid
-from collections.abc import Callable, Mapping
-from contextlib import suppress
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -35,6 +36,7 @@ _REMOTE_OWNER_FILENAME = ".catalog-snapshot-owner.json"
 _REMOTE_LOCK_FILENAME = ".active.lock"
 _LOCAL_OWNER_FILENAME = ".catalog-snapshot-generation.json"
 _INITIALIZED_FILENAME = ".initialized"
+_WORKSPACE_WRITER_LOCK_FILENAME = ".catalog-snapshot-writer.lock"
 _RETENTION_FILENAMES = ("retention-0.json", "retention-1.json")
 _REMOTE_OWNER_SCHEMA = "catalog-snapshot-staging-owner.v1"
 _LOCAL_OWNER_SCHEMA = "catalog-snapshot-generation-owner.v1"
@@ -381,11 +383,18 @@ class CatalogSnapshotStore:
         if not workspace_root.is_absolute():
             raise CatalogSnapshotError("Offline Workspace root must be absolute")
         self.workspace_root = workspace_root.resolve()
+        self._writer_lock_path = (
+            self.workspace_root / _WORKSPACE_WRITER_LOCK_FILENAME
+        )
         self.root = self.workspace_root / CATALOG_SNAPSHOT_DIRECTORY
         self.snapshots = self.root / "snapshots"
         self.staging = self.root / ".staging"
         self.fault_hook = fault_hook
-        self._initialize_or_validate()
+        self._ensure_workspace_root()
+        with self._workspace_writer_lock(
+            fault_point="after_workspace_initialization_lock_acquired"
+        ):
+            self._initialize_or_validate()
 
     def snapshot_post_session(
         self,
@@ -396,6 +405,22 @@ class CatalogSnapshotStore:
     ) -> CatalogSnapshotResult:
         _require_sha256(receipt_id, "receipt_id")
         required_state = _required_state(required_state)
+        with self._workspace_writer_lock(
+            fault_point="after_workspace_writer_lock_acquired"
+        ):
+            return self._snapshot_post_session_locked(
+                transport=transport,
+                receipt_id=receipt_id,
+                required_state=required_state,
+            )
+
+    def _snapshot_post_session_locked(
+        self,
+        *,
+        transport: CatalogSnapshotTransport,
+        receipt_id: str,
+        required_state: RemoteArchiveState,
+    ) -> CatalogSnapshotResult:
         retention, slots = self._read_retention()
         snapshot_id = str(uuid.uuid4())
         stage = self.staging / snapshot_id
@@ -488,12 +513,55 @@ class CatalogSnapshotStore:
     def current_retention(self) -> CatalogSnapshotRetention:
         return self._read_retention()[0]
 
-    def _initialize_or_validate(self) -> None:
+    def _ensure_workspace_root(self) -> None:
         if self.workspace_root.exists() and (
             self.workspace_root.is_symlink() or not self.workspace_root.is_dir()
         ):
             raise CatalogSnapshotError("Offline Workspace root is unsafe")
         self.workspace_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if self.workspace_root.is_symlink() or not self.workspace_root.is_dir():
+            raise CatalogSnapshotError("Offline Workspace root is unsafe")
+
+    @contextmanager
+    def _workspace_writer_lock(self, *, fault_point: str) -> Iterator[None]:
+        locking = _fcntl_module()
+        flags = os.O_CREAT | os.O_RDWR
+        flags |= getattr(os, "O_CLOEXEC", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(self._writer_lock_path, flags, 0o600)
+        except OSError as exc:
+            raise CatalogSnapshotError("workspace snapshot writer lock is unsafe") from exc
+        try:
+            descriptor_stat = os.fstat(descriptor)
+            path_stat = os.lstat(self._writer_lock_path)
+            if (
+                not stat.S_ISREG(descriptor_stat.st_mode)
+                or not stat.S_ISREG(path_stat.st_mode)
+                or descriptor_stat.st_dev != path_stat.st_dev
+                or descriptor_stat.st_ino != path_stat.st_ino
+            ):
+                raise CatalogSnapshotError("workspace snapshot writer lock is unsafe")
+            os.fchmod(descriptor, 0o600)
+            locking.flock(descriptor, locking.LOCK_EX)
+        except CatalogSnapshotError:
+            with suppress(OSError):
+                os.close(descriptor)
+            raise
+        except OSError as exc:
+            with suppress(OSError):
+                os.close(descriptor)
+            raise CatalogSnapshotError("workspace snapshot writer lock failed") from exc
+        try:
+            self._fault(fault_point)
+            yield
+        finally:
+            with suppress(OSError):
+                locking.flock(descriptor, locking.LOCK_UN)
+            with suppress(OSError):
+                os.close(descriptor)
+
+    def _initialize_or_validate(self) -> None:
         if not self.root.exists():
             self.root.mkdir(mode=0o700)
             self.snapshots.mkdir(mode=0o700)

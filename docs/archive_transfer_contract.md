@@ -182,6 +182,16 @@ An explicit initialization marker distinguishes true first use from loss or
 corruption of both retention slots. Old generations are removed only after
 both new slots are durable; cleanup failure is nonfatal.
 
+Local mutation has one exclusive writer domain per exact Offline Workspace.
+The Recorder keeps a fixed mode-0600 regular
+`.catalog-snapshot-writer.lock` at the workspace root and takes a blocking
+kernel `flock` before first-use initialization or before reading retention for
+a snapshot transaction. The snapshot lock remains held through remote
+transfer, staging, immutable generation publication, both mirrored slot
+updates, retention readback, and obsolete cleanup. Process death releases
+kernel ownership; the persistent lock inode is operational synchronization,
+not retention or snapshot authority, and is never unlinked per operation.
+
 Pending as a required lower bound accepts a validated deleted successor;
 deleted accepts only deleted. Snapshot failure never replays source selection,
 Raw receive, receipt creation, authorization, or deletion and never undoes the

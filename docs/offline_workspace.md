@@ -68,6 +68,15 @@ No mtime or mountpoint is authority. A durable initialization marker makes both
 missing/corrupt slots fail closed after first use. Unreferenced cleanup begins
 only after both slots hold the new durable state.
 
+One Recorder-owned, fixed
+`<workspace>/.catalog-snapshot-writer.lock` serializes local snapshot writers
+for that exact Offline Workspace. A blocking kernel `flock` covers first-use
+store initialization and, for each snapshot, retention read through remote
+transfer, local publication, both retention slots, readback, and obsolete
+cleanup. The mode-0600 regular lock file remains in place; its existence is not
+authority, while kernel ownership is released on close, exception, crash, or
+process death. Read-only authority remains the two mirrored retention files.
+
 A snapshot failure is retryable with only the exact receipt and required state;
 it does not undo verified Raw archival/deletion or rerun the archive session.
 V1 does not provide public restore, scheduled/offsite backup, or unbounded
