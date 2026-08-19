@@ -898,15 +898,20 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.5 — RemoteTransport + SSH V1
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED** on the dedicated feature branch; acceptance
+  evidence is recorded in `docs/milestone_acceptance/M22.5.md`.
 - **Scope:** Add the transport-neutral `RemoteTransport` seam, then an
   ordinary CLI SSH adapter that moves bytes/messages only.
 - **Non-scope:** SSH as deletion authority; subprocess logic inside hashing,
   receipt correctness, eligibility, durable authorization, or recovery
   decisions; custom SSH protocol, restricted account, or API server.
 - **Dependencies:** M22.1 through M22.4B acceptance.
-- **Acceptance:** Fake and SSH transport tests exercise identical integrity
-  semantics and transport failures retain the source.
+- **Acceptance:** In-process and executable SSH-shim tests exercise the same
+  M22.1/M22.3/M22.4A/M22.4B integrity semantics. Exact descriptor, manifest,
+  Raw, and receipt bytes cross only fixed hidden CLI verbs; process-aware Raw
+  EOF requires child exit zero; ambiguous control responses are reconciled by
+  the same receipt ID. The side-effect-free system OpenSSH client probe is not
+  real sshd, network-transfer, deployment, or production evidence.
 - **Rollback:** Disable the SSH adapter and use the accepted fake transport;
   preserve local artifacts, receipts, and remote evidence.
 

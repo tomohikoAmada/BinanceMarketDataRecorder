@@ -16,6 +16,15 @@ from typing import Any, NoReturn, TextIO
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
 from .archive.drain import archive_drain
+from .archive.remote_authorization import RemoteAuthorizer
+from .archive.remote_delete import RemoteDeleter
+from .archive.remote_source import RemoteSourceExporter
+from .archive.remote_transport import (
+    authority_status_from_catalog,
+    require_chunk_id,
+    require_receipt_id,
+    require_sha256,
+)
 from .backfill import HistoricalImporter, build_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
@@ -257,6 +266,18 @@ def build_parser() -> argparse.ArgumentParser:
         dest="service_command", required=True, parser_class=_ArgumentParser
     )
     private_commands.add_parser("run", help=argparse.SUPPRESS)
+    private_remote = commands.add_parser("_remote", help=argparse.SUPPRESS)
+    remote_commands = private_remote.add_subparsers(
+        dest="remote_command", required=True, parser_class=_ArgumentParser
+    )
+    remote_commands.add_parser("select-oldest", help=argparse.SUPPRESS)
+    for action in ("manifest", "raw", "authorize"):
+        remote = remote_commands.add_parser(action, help=argparse.SUPPRESS)
+        remote.add_argument("chunk_id")
+        remote.add_argument("descriptor_sha256")
+    for action in ("authority", "delete"):
+        remote = remote_commands.add_parser(action, help=argparse.SUPPRESS)
+        remote.add_argument("receipt_id")
     return parser
 
 
@@ -364,6 +385,94 @@ def _select_archive_target(
     )
 
 
+def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
+    """Run one fixed transport verb with payload-only stdout."""
+
+    action = str(args.remote_command)
+    layout = StorageLayout.from_root(loaded.config.data_root)
+    try:
+        if not layout.catalog.is_file():
+            raise CatalogStateError("remote Catalog does not exist")
+        if action in {"select-oldest", "manifest", "raw", "authority"}:
+            with Catalog(layout.catalog, read_only=True) as catalog:
+                if action == "select-oldest":
+                    selection = RemoteSourceExporter(
+                        layout=layout, catalog=catalog
+                    ).select_oldest()
+                    if selection is not None:
+                        sys.stdout.buffer.write(selection.descriptor_bytes)
+                        sys.stdout.buffer.flush()
+                    return 0
+                if action == "authority":
+                    receipt_id = str(args.receipt_id)
+                    require_receipt_id(receipt_id)
+                    status = authority_status_from_catalog(catalog, receipt_id)
+                    sys.stdout.buffer.write(
+                        b"null\n" if status is None else status.canonical_bytes()
+                    )
+                    sys.stdout.buffer.flush()
+                    return 0
+                chunk_id = str(args.chunk_id)
+                expected_digest = str(args.descriptor_sha256)
+                require_chunk_id(chunk_id)
+                require_sha256(expected_digest, "descriptor_sha256")
+                selection = RemoteSourceExporter(
+                    layout=layout, catalog=catalog
+                ).select_chunk(chunk_id)
+                if selection.descriptor_sha256 != expected_digest:
+                    raise ValueError("selected source descriptor identity changed")
+                if action == "manifest":
+                    sys.stdout.buffer.write(selection.manifest_bytes)
+                    sys.stdout.buffer.flush()
+                    return 0
+                with selection.sealed_path.open("rb", buffering=0) as source:
+                    while block := source.read(1024 * 1024):
+                        sys.stdout.buffer.write(block)
+                    sys.stdout.buffer.flush()
+                return 0
+        if action == "authorize":
+            chunk_id = str(args.chunk_id)
+            expected_digest = str(args.descriptor_sha256)
+            require_chunk_id(chunk_id)
+            require_sha256(expected_digest, "descriptor_sha256")
+            receipt_bytes = sys.stdin.buffer.read()
+            with Catalog(layout.catalog) as catalog:
+                selection = RemoteSourceExporter(
+                    layout=layout, catalog=catalog
+                ).select_chunk(chunk_id)
+                if selection.descriptor_sha256 != expected_digest:
+                    raise ValueError("selected source descriptor identity changed")
+                authorization = RemoteAuthorizer(
+                    layout=layout, catalog=catalog
+                ).authorize(receipt_bytes, selection)
+                status = authority_status_from_catalog(catalog, authorization.receipt_id)
+                if status is None:
+                    raise CatalogStateError("authorization readback is absent")
+                sys.stdout.buffer.write(status.canonical_bytes())
+                sys.stdout.buffer.flush()
+            return 0
+        if action == "delete":
+            receipt_id = str(args.receipt_id)
+            require_receipt_id(receipt_id)
+            with Catalog(layout.catalog) as catalog:
+                deletion = RemoteDeleter(
+                    layout=layout, catalog=catalog
+                ).delete_authorized(receipt_id)
+                status = authority_status_from_catalog(catalog, deletion.receipt_id)
+                if status is None:
+                    raise CatalogStateError("delete readback is absent")
+                sys.stdout.buffer.write(status.canonical_bytes())
+                sys.stdout.buffer.flush()
+            return 0
+        raise ValueError(f"unsupported fixed remote command: {action}")
+    except Exception as exc:
+        _write_json(
+            {"error": "remote_transport_error", "message": str(exc)},
+            stream=sys.stderr,
+        )
+        return 2
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -381,6 +490,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     command = getattr(args, "command", None)
+    if command == "_remote":
+        return _run_remote_command(args, loaded)
     if command == "config" and getattr(args, "config_command", None) == "show":
         _write_json(_config_payload(loaded))
         return 0

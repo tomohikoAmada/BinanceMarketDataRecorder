@@ -36,7 +36,7 @@ from .archive_set import (
 from .manager import ARCHIVE_MANIFEST_SCHEMA
 from .remote_source import (
     REMOTE_SOURCE_DESCRIPTOR_SCHEMA,
-    RemoteSourceSelection,
+    RemoteSourceIdentity,
     canonical_descriptor_bytes,
     descriptor_sha256,
 )
@@ -93,7 +93,7 @@ class RemoteReceiveError(RuntimeError):
 class StoredByteProvider(Protocol):
     """Minimal M22.3 source of stored Raw bytes; it has no deletion semantics."""
 
-    def open_stored_bytes(self, selection: RemoteSourceSelection) -> BinaryIO:
+    def open_stored_bytes(self, selection: RemoteSourceIdentity) -> BinaryIO:
         """Open the stored byte stream associated with ``selection``."""
 
 
@@ -213,7 +213,7 @@ class RemoteArchiveReceipt:
     def build(
         cls,
         *,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         target: RemoteReceiveTarget,
         session_id: str,
         artifact_relative_path: str,
@@ -264,7 +264,7 @@ def generate_archive_session_id() -> str:
 
 
 def receive_transaction_id(
-    selection: RemoteSourceSelection,
+    selection: RemoteSourceIdentity,
     target: RemoteReceiveTarget,
     *,
     artifact_relative_path: str | None = None,
@@ -302,7 +302,7 @@ class RemoteReceiver:
 
     def receive(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         *,
         session_id: str,
     ) -> RemoteArchiveReceipt:
@@ -317,7 +317,7 @@ class RemoteReceiver:
 
     def _receive(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         *,
         session_id: str,
     ) -> RemoteArchiveReceipt:
@@ -421,7 +421,7 @@ class RemoteReceiver:
 
     def _commit_raw(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         store: ArchiveSetStore,
         raw_directory: Path,
         final: Path,
@@ -484,7 +484,7 @@ class RemoteReceiver:
 
     def _stream_exact(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         destination_descriptor: int,
         temporary: Path,
     ) -> None:
@@ -515,7 +515,7 @@ class RemoteReceiver:
 
     def _commit_archive_manifest(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         store: ArchiveSetStore,
         manifests_directory: Path,
         final: Path,
@@ -620,7 +620,7 @@ class RemoteReceiver:
 
     def _commit_receipt(
         self,
-        selection: RemoteSourceSelection,
+        selection: RemoteSourceIdentity,
         receipt: RemoteArchiveReceipt,
         final: Path,
         receipts_directory: Path,
@@ -684,7 +684,7 @@ class RemoteReceiver:
 
 def revalidate_remote_archive_receipt(
     *,
-    selection: RemoteSourceSelection,
+    selection: RemoteSourceIdentity,
     target: RemoteReceiveTarget,
     receipt_id: str,
 ) -> RemoteArchiveReceipt:
@@ -823,7 +823,7 @@ def _target_identity(target: RemoteReceiveTarget) -> ArchiveMediumIdentity:
     )
 
 
-def _validate_selection(selection: RemoteSourceSelection) -> dict[str, object]:
+def _validate_selection(selection: RemoteSourceIdentity) -> dict[str, object]:
     descriptor = selection.descriptor
     canonical = canonical_descriptor_bytes(descriptor)
     if canonical != selection.descriptor_bytes:
@@ -872,7 +872,7 @@ def _validate_selection(selection: RemoteSourceSelection) -> dict[str, object]:
     return manifest
 
 
-def _artifact_relative_path(selection: RemoteSourceSelection) -> str:
+def _artifact_relative_path(selection: RemoteSourceIdentity) -> str:
     source = PurePosixPath(selection.descriptor.source_relative_path)
     name = source.name
     _require_safe_segment(name, "source sealed basename")
@@ -882,7 +882,7 @@ def _artifact_relative_path(selection: RemoteSourceSelection) -> str:
 
 
 def _archive_manifest_expected(
-    selection: RemoteSourceSelection,
+    selection: RemoteSourceIdentity,
     target: RemoteReceiveTarget,
     *,
     transaction_id: str,
