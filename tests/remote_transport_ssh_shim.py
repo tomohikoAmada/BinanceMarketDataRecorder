@@ -33,11 +33,14 @@ def main() -> int:
             with open(once_path, "xb"):
                 pass
             return 255
+    remote_environment = os.environ.copy()
+    remote_environment.pop("BINANCE_MARKET_RECORDER_DATA_ROOT", None)
     completed = subprocess.run(
         command,
         input=stdin_bytes,
         capture_output=True,
         check=False,
+        env=remote_environment,
     )
     if operation == "raw":
         body = completed.stdout
