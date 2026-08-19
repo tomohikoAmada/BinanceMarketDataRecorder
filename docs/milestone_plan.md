@@ -840,7 +840,8 @@ automatically.
 
 ### M22.4A — Remote deletion persistence / Catalog compatibility / recovery model
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED** on the dedicated feature branch; acceptance
+  evidence is recorded in `docs/milestone_acceptance/M22.4A.md`.
 - **Scope:** Non-destructive, additive remote persistence authority; exact
   remote transitions `SEALED -> REMOTE_DELETE_PENDING -> REMOTE_DELETED`;
   pre-M22 Catalog to new-binary compatibility; separate remote recovery
@@ -861,6 +862,13 @@ automatically.
 - **Rollback:** Disable remote persistence/authorization paths and preserve
   existing same-host rows and meanings; do not downgrade by relabeling remote
   states as `LOCAL_DELETED`.
+
+The implementation uses two additive tables in the existing Catalog SQLite
+database. `chunks.state` remains `SEALED`; neither `ChunkState`, `ArchiveState`,
+`ARCHIVE_CHUNK_STATES`, nor same-host transition meaning changes. M22.4A can
+persist only `REMOTE_DELETE_PENDING`. The schema can represent
+`REMOTE_DELETED`, but no production terminal write API or source filesystem
+mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.4B — Remote source deletion / durability / kill-point recovery
 

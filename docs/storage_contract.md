@@ -213,9 +213,14 @@ readback, and parent-directory durability. Unknown temporary files are never
 swept by filename pattern. Every later authority boundary revalidates UUID,
 registered relative path, storage marker nonce, `storage_id`, and
 `archive_set_id`. Linux and macOS are supported when their required primitives
-succeed; Windows fails closed before returning a committed receipt. This local
-receipt is only structurally eligible for future M22.4 validation and is not
-deletion authorization. M22.3 performs no source or Catalog mutation.
+succeed; Windows fails closed before returning a committed receipt. M22.4A now
+consumes those exact receipt bytes and the exact M22.1 selection to persist a
+separate same-Catalog `REMOTE_DELETE_PENDING` authority while leaving the
+physical chunk `SEALED`. Pending/deleted remote-owned chunks are not ordinary
+archive backlog or fresh export candidates; pending Raw bytes remain
+separately visible because they still consume internal disk. M22.4A performs
+no source filesystem mutation and exposes no production terminal write.
+M22.4B remains required before any remote source deletion.
 
 ## Safe eject transaction
 

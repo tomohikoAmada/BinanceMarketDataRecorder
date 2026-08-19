@@ -1,8 +1,9 @@
 # Archive Transfer Contract
 
-Status: approved architecture; the M22.3 local receive/receipt portion is
-implemented. Remote authorization, deletion, transport, and snapshots remain
-future work.
+Status: approved architecture; M22.3 local receive/receipt and M22.4A
+non-destructive remote pending authorization/recovery interpretation are
+implemented. Remote source deletion, transport, and snapshots remain future
+work.
 
 This document defines the integrity transaction for a local archive client
 pulling immutable Raw from the production VPS. It deliberately does not define
@@ -55,10 +56,9 @@ unlink. It binds the exact validated local archive receipt and the exact
 immutable VPS Raw/manifest source identity. Source revalidation remains
 immediately before the destructive mutation; the pending fact does not replace
 it. If revalidation fails after the pending fact is persisted, the source is
-not unlinked and the pending transaction is retained/reconciled as failed,
-stale, or retryable. This contract does not define an implementation-specific
-state machine; exact state names, persistence, and APIs are future
-implementation concerns.
+not unlinked and the pending transaction is retained for fail-closed recovery.
+The implemented non-destructive projection and its exact state names are
+defined below; destructive retry/terminal APIs remain M22.4B concerns.
 
 The target is written through a transaction-owned temporary artifact and is
 published atomically. A final artifact with the same name is accepted only
@@ -203,10 +203,27 @@ archive manifest and embedded source manifest, and full Raw size/hash chain.
 The workspace index is not authority. Windows end-to-end receipt durability
 fails closed as unsupported.
 
-M22.3 does not create deletion authorization. Remote states, VPS source
-deletion, SSH, `RemoteTransport`, and Catalog snapshot transfer remain
-unimplemented. Existing Raw, Catalog, same-host archive, and public data
-contracts remain unchanged.
+M22.4A stores the VPS pre-delete authority in the existing Catalog SQLite
+database using separate additive `remote_archive_transactions` and
+`remote_archive_events` tables. The exact canonical M22.3 receipt bytes are
+retained; `receipt_id` is the remote transaction identity; authoritative reads
+reparse the receipt and rederive the M22.1 descriptor digest from current
+Catalog identity plus the exact retained source manifest. Physical
+`chunks.state` remains `SEALED`. Same-host reservation and remote authorization
+serialize through one `BEGIN IMMEDIATE` authority boundary, so only one can
+own a chunk.
+
+M22.4A creates only `REMOTE_DELETE_PENDING` and implements read-only
+NORMAL/CASE A/B/C/D and terminal interpretation with explicit
+`PRESENT_MATCHING`, `PRESENT_MISMATCH`, `ABSENT`, and `UNKNOWN` observations.
+Pending remote sources are excluded from unarchived archive backlog while
+their retained VPS bytes remain visible. It performs no source unlink,
+delete-rename, deletion-parent durability operation, SSH, `RemoteTransport`,
+or production transition to `REMOTE_DELETED`; M22.4B remains required for all
+destructive and terminal behavior. New binaries accept a legitimate pre-M22
+Catalog with an empty remote projection and writable opens add both remote
+tables atomically. A pre-M22 binary after remote state persists is not claimed
+or generally supported; there is no downgrade relabeling.
 
 ## Non-goals
 

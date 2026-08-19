@@ -89,8 +89,9 @@ Linux/macOS filesystems. The media-local Raw/manifest/entry/receipt chain is
 authority; the workspace index is convenience discovery state and is never
 sufficient by itself.
 
-Actual remote transport/SSH and receipt exchange, remote deletion
-authorization and states, VPS source deletion, and post-session Catalog
-snapshot transfer are not implemented. Windows end-to-end receipt durability
-is not yet supported. Archive Set membership is not a backup or redundancy
-guarantee.
+M22.4A implements the non-transport VPS-side receipt/source-bound pending
+authorization and read-only recovery interpretation in the existing Catalog.
+Actual remote transport/SSH and receipt exchange, VPS source deletion,
+production terminal transition, and post-session Catalog snapshot transfer
+are not implemented. Windows end-to-end receipt durability is not yet
+supported. Archive Set membership is not a backup or redundancy guarantee.

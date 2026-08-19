@@ -11,9 +11,9 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from itertools import pairwise
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from .catalog import Catalog, ChunkState
+from .catalog import Catalog
 
 GIB = 1024**3
 WINDOWS_SECONDS = {
@@ -234,24 +234,10 @@ class StorageForecaster:
         backlog_bytes = 0
         oldest: int | None = None
         if scope_id == "internal":
-            rows = self.catalog.chunks_in_states(
-                ChunkState.SEALED,
-                ChunkState.ARCHIVE_COPYING,
-                ChunkState.ARCHIVE_VERIFYING,
-            )
-            backlog_bytes = sum(
-                value
-                for row in rows
-                if isinstance((value := row.get("stored_bytes")), int)
-                and not isinstance(value, bool)
-            )
-            created = [
-                value
-                for row in rows
-                if isinstance((value := row.get("created_at_utc_ns")), int)
-                and not isinstance(value, bool)
-            ]
-            oldest = min(created, default=None)
+            lifecycle = self.catalog.source_lifecycle_aggregate()
+            backlog_bytes = cast(int, lifecycle["unarchived_backlog_bytes"])
+            oldest_value = lifecycle["oldest_unarchived_at_utc_ns"]
+            oldest = int(oldest_value) if isinstance(oldest_value, int) else None
         severity = space_severity(total_bytes, free_bytes)
         return self.catalog.record_space_sample(
             sample_id=f"space:{scope_id}:{observed_at_utc_ns}",

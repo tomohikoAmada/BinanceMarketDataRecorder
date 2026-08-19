@@ -112,6 +112,7 @@ def service_status(
     }
     if catalog_path.is_file():
         with Catalog(catalog_path) as catalog:
+            lifecycle = catalog.source_lifecycle_aggregate()
             catalog_summary = {
                 "available": True,
                 "active_chunks": len(
@@ -120,6 +121,12 @@ def service_status(
                     )
                 ),
                 "sealed_chunks": len(catalog.chunks_in_states(ChunkState.SEALED)),
+                "ordinary_sealed_chunks": lifecycle["ordinary_sealed_files"],
+                "remote_delete_pending_chunks": lifecycle["remote_pending_files"],
+                "remote_deleted_chunks": lifecycle["remote_deleted_files"],
+                "remote_pending_source_bytes": lifecycle[
+                    "remote_pending_source_bytes"
+                ],
             }
             try:
                 targets = StorageRegistry(

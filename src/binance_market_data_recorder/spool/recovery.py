@@ -294,7 +294,7 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
             artifact_validated = False
             catalog_changed = False
             while True:
-                row, transaction = catalog.chunk_archive_snapshot(chunk_id)
+                row, transaction, remote = catalog.source_lifecycle_snapshot(chunk_id)
                 if row is None:
                     if not artifact_validated:
                         validate_sealed_artifact(sealed, manifest)
@@ -311,6 +311,10 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
 
                 current = ChunkState(str(row["state"]))
                 if current in _ARCHIVE_STATES:
+                    if remote is not None:
+                        raise RecoveryConflictError(
+                            "RECOVERY_SAME_HOST_REMOTE_OVERLAP"
+                        )
                     _validate_archive_identity(
                         row=row,
                         transaction=transaction,
@@ -330,15 +334,41 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
                     raise RecoveryConflictError(
                         "RECOVERY_QUARANTINED_CHUNK_CONFLICT"
                     )
-                if not artifact_validated:
-                    validate_sealed_artifact(sealed, manifest)
-                    artifact_validated = True
                 if current is ChunkState.SEALED:
                     _validate_catalog_identity(row, expected_fields)
                     if transaction is not None:
                         raise RecoveryConflictError(
                             "RECOVERY_SEALED_ARCHIVE_TRANSACTION_CONFLICT"
                         )
+                    if remote is not None:
+                        from ..archive.remote_authorization import (
+                            RemoteRecoveryCase,
+                            classify_remote_recovery,
+                        )
+
+                        decision = classify_remote_recovery(
+                            layout=layout, catalog=catalog, chunk_id=chunk_id
+                        )
+                        if decision.case not in {
+                            RemoteRecoveryCase.CASE_A,
+                            RemoteRecoveryCase.CASE_B,
+                            RemoteRecoveryCase.TERMINAL_ABSENT,
+                        }:
+                            raise RecoveryConflictError(
+                                f"RECOVERY_REMOTE_{decision.case.value}: "
+                                f"{decision.detail}"
+                            )
+                        actions.append(
+                            RecoveryAction(
+                                layout.relative(manifest_path),
+                                "remote_lifecycle_preserved",
+                                decision.case.value,
+                            )
+                        )
+                        break
+                    if not artifact_validated:
+                        validate_sealed_artifact(sealed, manifest)
+                        artifact_validated = True
                     actions.append(
                         RecoveryAction(
                             layout.relative(manifest_path),
@@ -351,6 +381,9 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
                         )
                     )
                     break
+                if not artifact_validated:
+                    validate_sealed_artifact(sealed, manifest)
+                    artifact_validated = True
                 if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
                     target = ChunkState.SEALING
                     idempotency_key = f"reconcile-sealing:{chunk_id}"

@@ -8,9 +8,10 @@ import json
 import os
 import time
 from collections.abc import Callable
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from threading import RLock
+from typing import cast
 
 from ..storage.catalog import Catalog
 from ..storage.layout import fsync_directory
@@ -34,6 +35,15 @@ def _validate_date(value: str) -> str:
     if parsed.isoformat() != value:
         raise ValueError("UTC date must be canonical YYYY-MM-DD")
     return value
+
+
+def _utc_date_bounds(value: str) -> tuple[int, int]:
+    selected = date.fromisoformat(value)
+    start = datetime.combine(selected, datetime.min.time(), tzinfo=UTC)
+    end = start + timedelta(days=1)
+    return int(start.timestamp() * 1_000_000_000), int(
+        end.timestamp() * 1_000_000_000
+    )
 
 
 def _percentiles(aggregate: MetricAggregate, name: str) -> dict[str, object]:
@@ -152,6 +162,7 @@ class DailyReporter:
 
     def build(self, utc_date: str, *, generated_at_utc_ns: int | None = None) -> dict[str, object]:
         selected_date = _validate_date(utc_date)
+        start_utc_ns, end_utc_ns = _utc_date_bounds(selected_date)
         generated_at = self.utc_clock_ns() if generated_at_utc_ns is None else generated_at_utc_ns
         aggregates: dict[tuple[str, str], MetricAggregate] = {}
         historical: dict[tuple[str, str], MetricAggregate] = {}
@@ -176,6 +187,31 @@ class DailyReporter:
                 raise ValueError("invalid historical metric row identity")
             aggregate = historical.setdefault((market, stream), MetricAggregate())
             aggregate.merge(MetricAggregate.from_document(row["aggregate"]))
+        for row in self.catalog.remote_authorizations_between(
+            start_utc_ns, end_utc_ns
+        ):
+            key = (str(row["market"]), str(row["stream"]))
+            aggregate = aggregates.setdefault(key, MetricAggregate())
+            aggregate.increment("archived_files")
+            aggregate.increment("archived_bytes", cast(int, row["stored_bytes"]))
+            occurred = cast(int, row["created_at_utc_ns"])
+            aggregate.first_event_time_utc_ns = min(
+                occurred,
+                aggregate.first_event_time_utc_ns
+                if aggregate.first_event_time_utc_ns is not None
+                else occurred,
+            )
+            aggregate.last_event_time_utc_ns = max(
+                occurred,
+                aggregate.last_event_time_utc_ns
+                if aggregate.last_event_time_utc_ns is not None
+                else occurred,
+            )
+        for row in self.catalog.remote_authorizations_between(0, end_utc_ns):
+            key = (str(row["market"]), str(row["stream"]))
+            aggregate = historical.setdefault(key, MetricAggregate())
+            aggregate.increment("archived_files")
+            aggregate.increment("archived_bytes", cast(int, row["stored_bytes"]))
         streams = []
         for (market, stream), aggregate in sorted(aggregates.items()):
             lifetime = historical[(market, stream)]
