@@ -203,6 +203,20 @@ source deletion. SSH success alone is never sufficient. The complete future
 transaction is defined in `docs/archive_transfer_contract.md`; it is not
 implemented by the current local ArchiveManager.
 
+M22.3 implements only the local receive side with an in-process byte provider.
+On a selected registered medium it uses `raw/`, `manifests/`,
+`archive-set/entries/`, and `archive-set/receipts/`. Raw, the distinct existing
+`external-archive-manifest.v1`, the unchanged `archive-set-entry.v1`, and the
+new `remote-archive-receipt.v1` are published in that order with exclusive
+same-directory temporaries, no-clobber final publication, full required
+readback, and parent-directory durability. Unknown temporary files are never
+swept by filename pattern. Every later authority boundary revalidates UUID,
+registered relative path, storage marker nonce, `storage_id`, and
+`archive_set_id`. Linux and macOS are supported when their required primitives
+succeed; Windows fails closed before returning a committed receipt. This local
+receipt is only structurally eligible for future M22.4 validation and is not
+deletion authorization. M22.3 performs no source or Catalog mutation.
+
 ## Safe eject transaction
 
 An immediate eject request is mutually exclusive with archive reservation in

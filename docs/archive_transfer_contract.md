@@ -1,6 +1,8 @@
 # Archive Transfer Contract
 
-Status: approved future architecture; not implemented.
+Status: approved architecture; the M22.3 local receive/receipt portion is
+implemented. Remote authorization, deletion, transport, and snapshots remain
+future work.
 
 This document defines the integrity transaction for a local archive client
 pulling immutable Raw from the production VPS. It deliberately does not define
@@ -183,9 +185,27 @@ sealed Raw source identity/export kernel. The M22.1 kernel selects and fully
 validates immutable `SEALED` sources and emits deterministic descriptor
 identity plus exact manifest bytes. M22.2 adds media-local Archive Set
 identity/inventory and a rebuildable explicit-path workspace index without
-changing the live Catalog or existing external manifest schema. Local transfer
-clients, receipts, remote deletion authorization, SSH, `RemoteTransport`, and
-Catalog snapshot transfer remain unimplemented. Existing Raw and public data
+changing the live Catalog or existing external manifest schema.
+
+M22.3 implements local fake/in-process stored-byte receive on Linux and macOS.
+It streams to an exclusive same-directory temporary, requires exact length,
+file fsync, close/reopen full readback, size and stored-SHA-256 verification,
+exclusive no-clobber publication, parent-directory fsync, and final Raw
+revalidation. It then commits a distinct `external-archive-manifest.v1`, the
+unchanged M22.2 Archive Set entry, and an exact-field
+`remote-archive-receipt.v1`. The archive manifest embeds the exact source
+`raw-chunk-manifest.v1` bytes; `archive_manifest_sha256` and
+`source_manifest_sha256` are separate authorities. Its deterministic receive
+transaction ID is source/set/storage/path bound and independent of the UUID4
+receipt session. Receipt revalidation starts from the exact M22.1 descriptor
+material and re-establishes the physical marker, Archive Set medium and entry,
+archive manifest and embedded source manifest, and full Raw size/hash chain.
+The workspace index is not authority. Windows end-to-end receipt durability
+fails closed as unsupported.
+
+M22.3 does not create deletion authorization. Remote states, VPS source
+deletion, SSH, `RemoteTransport`, and Catalog snapshot transfer remain
+unimplemented. Existing Raw, Catalog, same-host archive, and public data
 contracts remain unchanged.
 
 ## Non-goals

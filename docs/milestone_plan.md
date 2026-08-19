@@ -816,7 +816,8 @@ automatically.
 
 ### M22.3 — Local receive / verify / durable publish / receipt
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED**; implementation-branch acceptance evidence is
+  recorded in `docs/milestone_acceptance/M22.3.md`.
 - **Scope:** Initially use fake/in-process transport and source providers.
   The publication gate is: transaction-owned temporary artifact; file
   durability; close/reopen full readback; stored-size and SHA-256 verification;
