@@ -3,11 +3,101 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
+import stat
 import subprocess
 import sys
 import time
+import uuid
+
+_REMOTE_OWNER_FILENAME = ".catalog-snapshot-owner.json"
+_REMOTE_LOCK_FILENAME = ".active.lock"
+_REMOTE_OWNER_SCHEMA = "catalog-snapshot-staging-owner.v1"
+
+
+def _canonical_uuid4(value: str) -> bool:
+    try:
+        parsed = uuid.UUID(value)
+    except (ValueError, AttributeError):
+        return False
+    return parsed.version == 4 and str(parsed) == value
+
+
+def _read_regular_file(path: str) -> bytes | None:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, flags)
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            return None
+        return os.read(descriptor, 4096)
+    except OSError:
+        return None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _exporter_holds_lock(path: str) -> bool:
+    try:
+        import fcntl
+    except ImportError:
+        return False
+    flags = os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, flags)
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            return False
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        except OSError:
+            return False
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        except OSError:
+            return False
+        return False
+    except OSError:
+        return False
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _owned_active_stage(stage_root: str) -> bool:
+    try:
+        with os.scandir(stage_root) as entries:
+            candidates = tuple(entries)
+    except OSError:
+        return False
+    for entry in candidates:
+        try:
+            if entry.is_symlink() or not entry.is_dir(follow_symlinks=False):
+                continue
+            if not _canonical_uuid4(entry.name):
+                continue
+            owner_path = os.path.join(entry.path, _REMOTE_OWNER_FILENAME)
+            expected_owner = (
+                json.dumps(
+                    {"schema": _REMOTE_OWNER_SCHEMA, "stage_id": entry.name},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            ).encode()
+            if _read_regular_file(owner_path) != expected_owner:
+                continue
+            lock_path = os.path.join(entry.path, _REMOTE_LOCK_FILENAME)
+            if _exporter_holds_lock(lock_path):
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def main() -> int:
@@ -47,7 +137,7 @@ def main() -> int:
         stage_root = os.environ.get("BMDR_SSH_SHIM_REMOTE_STAGE_ROOT")
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline and process.poll() is None:
-            if stage_root and os.path.isdir(stage_root) and os.listdir(stage_root):
+            if stage_root and _owned_active_stage(stage_root):
                 process.kill()
                 break
             time.sleep(0.001)
