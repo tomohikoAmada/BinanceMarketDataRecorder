@@ -231,3 +231,26 @@ def test_shared_host_free_space_decline_is_selected_without_cause_attribution(
     net = cast(dict[str, object], result["net_growth"])
     assert net["selected_bytes_per_second"] == round(2 * GIB / 86_400, 6)
     assert "cause" not in net
+
+
+def test_shared_host_release_changes_later_observation_without_cause_attribution(
+    tmp_path: Path,
+) -> None:
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        forecaster = StorageForecaster(catalog=catalog, data_root=tmp_path)
+        for ordinal, free_gib in enumerate((30, 26, 22, 25, 28, 32, 36, 40)):
+            forecaster.observe(
+                scope_id="internal",
+                storage_id=None,
+                total_bytes=100 * GIB,
+                free_bytes=free_gib * GIB,
+                observed_at_utc_ns=ordinal * 24 * HOUR_NS,
+            )
+        result = forecaster.forecast("internal", now_utc_ns=7 * 24 * HOUR_NS)
+
+    net = cast(dict[str, object], result["net_growth"])
+    assert cast(float, net["selected_bytes_per_second"]) < 0
+    assert net["status"] == "NOT_APPROACHING"
+    eta = cast(dict[str, dict[str, object]], result["eta"])
+    assert eta["exhausted"]["status"] == "NOT_APPROACHING"
+    assert "cause" not in net

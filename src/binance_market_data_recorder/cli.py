@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import grp
 import json
 import logging
+import os
 import sys
 import time
 from collections.abc import Sequence
@@ -34,12 +36,26 @@ from .metrics.report import DailyReporter
 from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
 from .service.archive_timer import ArchiveTimerManager, SystemdArchiveError
+from .service.deployment_identity import (
+    DeploymentIdentityError,
+    create_deployment_identity,
+    deployment_identity_path,
+    enforce_vps_paths,
+    load_deployment_identity,
+    rollback_compatibility,
+    runtime_deployment_identity,
+    verify_identity_files,
+    verify_retained_rollback_artifacts,
+    verify_vps_identity_permissions,
+    write_deployment_identity,
+)
 from .service.launchd import (
     LaunchAgentError,
     LaunchAgentManager,
     installed_service_label,
 )
 from .service.lock import ServiceAlreadyRunning
+from .service.readiness import VpsReadinessEvaluator, wait_for_readiness
 from .service.runtime import run_service
 from .service.soak_timer import SoakTimerManager, SystemdSoakError
 from .service.systemd import SystemdError, SystemdManager
@@ -51,6 +67,7 @@ from .spool.legacy_reconnect import (
     evaluate_legacy_reconnect_decisions,
 )
 from .status import service_status
+from .storage.capacity import selected_capacity_profile
 from .storage.catalog import Catalog, CatalogStateError, RemoteArchiveState
 from .storage.forecast import StorageForecaster
 from .storage.layout import StorageLayout, ensure_storage_layout
@@ -262,6 +279,28 @@ def build_parser() -> argparse.ArgumentParser:
     systemd_install.add_argument("--group", required=True)
     for action in ("uninstall", "start", "stop", "restart", "status"):
         systemd_commands.add_parser(action, help=f"{action} the Linux system service")
+    deployment_command = commands.add_parser(
+        "deployment", help="manage exact VPS deployment evidence"
+    )
+    deployment_commands = deployment_command.add_subparsers(
+        dest="deployment_command", required=True, parser_class=_ArgumentParser
+    )
+    identity_create = deployment_commands.add_parser(
+        "identity-create", help="create root-controlled exact deployment identity"
+    )
+    identity_create.add_argument("--source-git-sha", required=True)
+    identity_create.add_argument("--wheel", type=Path, required=True)
+    identity_create.add_argument("--dependency-lock", type=Path, required=True)
+    deployment_commands.add_parser(
+        "verify", help="verify installed files and effective systemd authority"
+    )
+    deployment_commands.add_parser(
+        "readiness", help="wait up to 300 seconds for exact deployment readiness"
+    )
+    rollback = deployment_commands.add_parser(
+        "rollback-check", help="fail closed unless a preserved target understands Catalog state"
+    )
+    rollback.add_argument("--target-identity", type=Path, required=True)
     private_service = commands.add_parser("_service", help=argparse.SUPPRESS)
     private_commands = private_service.add_subparsers(
         dest="service_command", required=True, parser_class=_ArgumentParser
@@ -299,6 +338,26 @@ def _config_payload(loaded: LoadedConfig) -> dict[str, object]:
         "sources": dict(loaded.sources),
         "contains_credentials": False,
     }
+
+
+def _identity_systemd_manager(
+    loaded: LoadedConfig,
+    *,
+    identity_user: object,
+    identity_group: object,
+) -> SystemdManager:
+    if loaded.config_file is None:
+        raise DeploymentIdentityError("VPS deployment requires an explicit config file")
+    if not isinstance(identity_user, str) or not isinstance(identity_group, str):
+        raise DeploymentIdentityError("deployment service principal is malformed")
+    return SystemdManager(
+        data_root=loaded.config.data_root,
+        config_file=loaded.config_file,
+        user=identity_user,
+        group=identity_group,
+        python_executable=Path(sys.executable),
+        capacity_profile_id=loaded.config.capacity_profile,
+    )
 
 
 def _archive_status(catalog: Catalog) -> dict[str, object]:
@@ -563,6 +622,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "_service" and getattr(args, "service_command", None) == "run":
         logger = configure_logging(loaded.config.log_level)
         try:
+            runtime_identity = None
+            if loaded.config.capacity_profile == "vps-production-v1":
+                if loaded.config_file is None:
+                    raise DeploymentIdentityError(
+                        "vps-production-v1 requires an explicit config file"
+                    )
+                identity_path = deployment_identity_path(loaded.config_file)
+                identity = load_deployment_identity(identity_path)
+                enforce_vps_paths(identity)
+                verify_vps_identity_permissions(
+                    identity_path,
+                    expected_group=str(identity.systemd_effective.get("group", "")),
+                )
+                verify_identity_files(
+                    identity,
+                    expected_config_path=loaded.config_file,
+                    expected_profile_id=loaded.config.capacity_profile,
+                    require_root_controlled=True,
+                )
+                runtime_identity = runtime_deployment_identity(identity)
             asyncio.run(
                 run_service(
                     loaded.config,
@@ -571,6 +650,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         config_file=loaded.config_file,
                         data_root=loaded.config.data_root,
                     ),
+                    deployment_identity=runtime_identity,
                 )
             )
         except ServiceAlreadyRunning as exc:
@@ -606,6 +686,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             user=str(getattr(args, "user", "")),
             group=str(getattr(args, "group", "")),
             git_commit=current_git_commit(),
+            capacity_profile_id=loaded.config.capacity_profile,
         )
         try:
             if systemd_command == "install":
@@ -627,6 +708,164 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, SystemdError, ValueError) as exc:
             _write_json(
                 {"error": "systemd_error", "message": str(exc)},
+                stream=sys.stderr,
+            )
+            return 2
+    if command == "deployment":
+        action = getattr(args, "deployment_command", None)
+        try:
+            if loaded.config.capacity_profile != "vps-production-v1":
+                raise DeploymentIdentityError(
+                    "deployment commands require capacity_profile=vps-production-v1"
+                )
+            if loaded.config_file is None:
+                raise DeploymentIdentityError(
+                    "VPS deployment requires an explicit --config file"
+                )
+            identity_path = deployment_identity_path(loaded.config_file)
+            if action == "identity-create":
+                probe = SystemdManager(
+                    data_root=loaded.config.data_root,
+                    config_file=loaded.config_file,
+                    user="",
+                    group="",
+                    python_executable=Path(sys.executable),
+                    capacity_profile_id=loaded.config.capacity_profile,
+                )
+                user, group = probe.observed_service_principal()
+                systemd_identity_manager = _identity_systemd_manager(
+                    loaded, identity_user=user, identity_group=group
+                )
+                install_contract = (
+                    systemd_identity_manager.verify_install_contract()
+                )
+                effective = systemd_identity_manager.verify_effective_properties()
+                deployment_identity = create_deployment_identity(
+                    source_git_sha=str(args.source_git_sha),
+                    wheel_path=Path(args.wheel),
+                    dependency_lock_path=Path(args.dependency_lock),
+                    config_path=loaded.config_file,
+                    systemd_unit_path=systemd_identity_manager.unit_path,
+                    capacity_profile_id=loaded.config.capacity_profile,
+                    startup_sidecar_path=classification_authority_path(
+                        config_file=loaded.config_file,
+                        data_root=loaded.config.data_root,
+                    ),
+                    systemd_effective=effective,
+                )
+                enforce_vps_paths(deployment_identity)
+                evidence = verify_identity_files(
+                    deployment_identity,
+                    expected_config_path=loaded.config_file,
+                    expected_profile_id=loaded.config.capacity_profile,
+                    require_root_controlled=True,
+                )
+                if os.geteuid() != 0:
+                    raise DeploymentIdentityError(
+                        "deployment identity creation must run as root"
+                    )
+                group_id = grp.getgrnam(group).gr_gid
+                write_deployment_identity(
+                    identity_path,
+                    deployment_identity,
+                    owner_uid=0,
+                    group_gid=group_id,
+                )
+                if load_deployment_identity(identity_path) != deployment_identity:
+                    raise DeploymentIdentityError(
+                        "deployment identity readback mismatch"
+                    )
+                identity_permissions = verify_vps_identity_permissions(
+                    identity_path, expected_group=group
+                )
+                result = {
+                    "status": "CREATED",
+                    "identity_path": str(identity_path),
+                    "install_contract": install_contract,
+                    "identity_permissions": identity_permissions,
+                    **evidence,
+                }
+            elif action in {"verify", "readiness"}:
+                deployment_identity = load_deployment_identity(identity_path)
+                enforce_vps_paths(deployment_identity)
+                systemd_identity_manager = _identity_systemd_manager(
+                    loaded,
+                    identity_user=deployment_identity.systemd_effective.get("user"),
+                    identity_group=deployment_identity.systemd_effective.get("group"),
+                )
+                identity_permissions = verify_vps_identity_permissions(
+                    identity_path,
+                    expected_group=str(
+                        deployment_identity.systemd_effective.get("group", "")
+                    ),
+                )
+                if action == "verify":
+                    result = {
+                        "status": "VERIFIED",
+                        "install_contract": (
+                            systemd_identity_manager.verify_install_contract()
+                        ),
+                        "identity_permissions": identity_permissions,
+                        **verify_identity_files(
+                            deployment_identity,
+                            expected_config_path=loaded.config_file,
+                            expected_profile_id=loaded.config.capacity_profile,
+                            require_root_controlled=True,
+                        ),
+                        "systemd_effective": systemd_identity_manager.verify_effective_properties(
+                            expected=dict(deployment_identity.systemd_effective)
+                        ),
+                    }
+                else:
+                    readiness = wait_for_readiness(
+                        VpsReadinessEvaluator(
+                            data_root=loaded.config.data_root,
+                            identity=deployment_identity,
+                            systemd_manager=systemd_identity_manager,
+                        )
+                    )
+                    _write_json(
+                        {"command": "deployment.readiness", **readiness.public_dict()}
+                    )
+                    return 0 if readiness.state == "READY" else 2
+            elif action == "rollback-check":
+                rollback_target_identity = load_deployment_identity(
+                    Path(args.target_identity)
+                )
+                enforce_vps_paths(rollback_target_identity)
+                target_permissions = verify_vps_identity_permissions(
+                    Path(args.target_identity),
+                    expected_group=str(
+                        rollback_target_identity.systemd_effective.get("group", "")
+                    ),
+                )
+                retained_artifacts = verify_retained_rollback_artifacts(
+                    rollback_target_identity
+                )
+                with Catalog(
+                    loaded.config.data_root / "state" / "catalog.sqlite",
+                    read_only=True,
+                ) as catalog:
+                    result = {
+                        "status": "COMPATIBLE",
+                        "target_identity_sha256": rollback_target_identity.identity_sha256,
+                        "target_identity_permissions": target_permissions,
+                        "retained_artifacts": retained_artifacts,
+                        **rollback_compatibility(rollback_target_identity, catalog),
+                    }
+            else:
+                parser.error(f"unsupported deployment command: {action}")
+            _write_json({"command": f"deployment.{action}", **result})
+            return 0
+        except (
+            DeploymentIdentityError,
+            KeyError,
+            OSError,
+            SystemdError,
+            ValueError,
+        ) as exc:
+            _write_json(
+                {"error": "deployment_error", "message": str(exc)},
                 stream=sys.stderr,
             )
             return 2
@@ -905,7 +1144,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 observed_at_utc_ns=observed_at,
                             )
                     document = forecaster.document(
-                        scope_ids, now_utc_ns=observed_at
+                        scope_ids,
+                        now_utc_ns=observed_at,
+                        capacity_profile=selected_capacity_profile(
+                            loaded.config.capacity_profile
+                        ),
                     )
                     _write_json(
                         {

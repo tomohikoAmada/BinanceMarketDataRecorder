@@ -87,12 +87,60 @@ def test_invalid_command_has_machine_readable_error(
     assert payload["error"] == "argument_error"
 
 
+def test_capacity_profile_has_no_cli_selection_surface(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as raised:
+        main(["--capacity-profile", "vps-production-v1", "status"])
+    assert raised.value.code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error"] == "argument_error"
+
+
 def test_invalid_configuration_returns_two(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("BINANCE_MARKET_RECORDER_API_KEY", "not-supported")
     assert main(["status"]) == 2
     assert json.loads(capsys.readouterr().err)["error"] == "configuration_error"
+
+
+def test_private_service_cli_returns_zero_after_hard_reserve_safety_stop(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = tmp_path / "recorder.toml"
+    data_root = tmp_path / "data"
+    config.write_text(f'[recorder]\ndata_root = "{data_root}"\n', encoding="utf-8")
+    observed = {"returned": False}
+
+    async def hard_reserve_safety_stop(*_args: object, **_kwargs: object) -> None:
+        observed["returned"] = True
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.run_service", hard_reserve_safety_stop
+    )
+
+    assert main(["--config", str(config), "_service", "run"]) == 0
+    assert observed["returned"] is True
+
+
+def test_private_service_cli_returns_nonzero_after_unexpected_core_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = tmp_path / "recorder.toml"
+    data_root = tmp_path / "data"
+    config.write_text(f'[recorder]\ndata_root = "{data_root}"\n', encoding="utf-8")
+
+    async def unexpected_core_failure(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("injected core failure")
+
+    monkeypatch.setattr(
+        "binance_market_data_recorder.cli.run_service", unexpected_core_failure
+    )
+
+    assert main(["--config", str(config), "_service", "run"]) == 1
 
 
 def test_unsafe_data_root_returns_two(

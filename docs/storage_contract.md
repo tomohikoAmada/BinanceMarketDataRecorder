@@ -317,3 +317,27 @@ M22.7A; runtime/configuration/CLI selection belongs to M22.7B. The
 `eta`, and `net_growth`, and additively exposes `capacity_profile`,
 `capacity_state`, and `hard_reserve_eta`. No Catalog schema or generic alert
 authority is changed.
+
+M22.7B adds the sole production selection surface:
+`[recorder].capacity_profile = "vps-production-v1"` in the explicitly loaded
+TOML file. Omission retains generic M11 behavior and any other literal fails
+configuration loading. No CLI flag, environment setting, systemd property,
+host/platform inspection, path, or capacity observation can select the
+profile. The certified VPS configuration rejects every
+`BINANCE_MARKET_RECORDER_*` environment setting so the bound `recorder.toml`
+SHA-256 is the Recorder configuration authority. That profile also requires
+`network_proxy_mode = "direct"`; the installed unit explicitly empties the
+upper- and lowercase standard proxy variables, effective systemd verification
+rejects environment files/pass-through authority, and readiness independently
+checks the live service process environment. Thus a manager or inherited proxy
+setting cannot silently change the certified routing authority.
+
+The VPS runtime opens the Catalog and finishes existing storage recovery before
+its immediate actual-filesystem observation and before constructing any
+Collector. An actual free-byte observation at or below 10 GiB opens durable
+core-stream discontinuity evidence, records `DISK_EMERGENCY_STOP`, and returns
+through `HARD_RESERVE_SAFETY_STOP` only after active Collector tasks stop and
+seal normally. That intentional path exits successfully; forecast ETA alone
+never stops the process. Runtime failures remain failures. No capacity state or
+filesystem release authorizes Raw deletion, remote deletion, or automatic
+service restart.

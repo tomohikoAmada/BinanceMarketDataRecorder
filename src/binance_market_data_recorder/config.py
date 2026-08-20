@@ -40,6 +40,7 @@ ALLOWED_ENV_SETTINGS = {
     f"{ENV_PREFIX}NETWORK_PROXY_URL",
 }
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+CapacityProfileId = Literal["vps-production-v1"]
 
 
 class ConfigurationError(ValueError):
@@ -54,6 +55,7 @@ class RecorderConfig(BaseModel):
     )
 
     data_root: Path
+    capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel = "INFO"
     network_proxy_mode: ProxyMode = "direct"
     network_proxy_url: str | None = None
@@ -113,6 +115,13 @@ class RecorderConfig(BaseModel):
             ProxyPolicy(self.network_proxy_mode, self.network_proxy_url)
         except ProxyConfigurationError as exc:
             raise ValueError(str(exc)) from exc
+        if (
+            self.capacity_profile == "vps-production-v1"
+            and self.network_proxy_mode != "direct"
+        ):
+            raise ValueError(
+                "vps-production-v1 requires direct network proxy mode"
+            )
         return self
 
     def proxy_policy(
@@ -129,6 +138,7 @@ class RecorderConfig(BaseModel):
 
         return {
             "data_root": str(self.data_root),
+            "capacity_profile": self.capacity_profile,
             "log_level": self.log_level,
             "network_proxy_mode": self.network_proxy_mode,
             **self.proxy_policy().status().public_dict(),
@@ -154,6 +164,7 @@ class _RecorderOverrides(BaseModel):
     )
 
     data_root: Path | None = None
+    capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel | None = None
     network_proxy_mode: ProxyMode | None = None
     network_proxy_url: str | None = None
@@ -269,6 +280,7 @@ def load_config(
 
     values: dict[str, object] = {
         "data_root": default_data_root(home=home),
+        "capacity_profile": None,
         "log_level": "INFO",
         "network_proxy_mode": "direct",
         "network_proxy_url": None,
@@ -315,6 +327,9 @@ def load_config(
         if overrides.data_root is not None:
             values["data_root"] = overrides.data_root
             sources["data_root"] = "config_file"
+        if overrides.capacity_profile is not None:
+            values["capacity_profile"] = overrides.capacity_profile
+            sources["capacity_profile"] = "config_file"
         if overrides.log_level is not None:
             values["log_level"] = overrides.log_level
             sources["log_level"] = "config_file"
@@ -365,6 +380,16 @@ def load_config(
             if value is not None:
                 values[name] = value
                 sources[name] = "config_file"
+
+    if values["capacity_profile"] == "vps-production-v1":
+        operational_overrides = sorted(
+            key for key in environment if key.startswith(ENV_PREFIX)
+        )
+        if operational_overrides:
+            raise ConfigurationError(
+                "vps-production-v1 rejects BINANCE_MARKET_RECORDER_* "
+                "environment settings: " + ", ".join(operational_overrides)
+            )
 
     data_root_env = environment.get(f"{ENV_PREFIX}DATA_ROOT")
     if data_root_env is not None:

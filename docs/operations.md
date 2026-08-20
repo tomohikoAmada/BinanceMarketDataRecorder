@@ -2,10 +2,11 @@
 
 Current implementation status and approved future architecture are distinct.
 macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
-implemented/local validation profiles. The primary future production target is
-Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
+implemented/local validation profiles. The primary production deployment
+profile is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
 [`vps_operations.md`](vps_operations.md). That VPS profile, remote archive
-client, and Catalog snapshot transfer are not yet deployed.
+client, and Catalog snapshot transfer are not production deployed or
+host-validated by M22.7B.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -20,8 +21,10 @@ and port. They never expose the configured URL. `direct` ignores the shell,
 one credential-free HTTP(S) proxy for all Recorder network exits when selected.
 The RK3588
 validation systemd profile uses TOML `explicit`, never an SSH environment. The
-future Germany VPS intends `direct` mode; local and LAN proxy modes remain
-testable.
+certified Germany VPS profile requires `direct` mode. Its unit neutralizes the
+upper- and lowercase standard proxy variables, and readiness rejects any
+nonempty proxy authority in the live service process. Local and LAN proxy modes
+remain testable outside `vps-production-v1`.
 
 ## Side-data and backfill status
 
@@ -143,9 +146,33 @@ states are WARNING at 18 GiB (or ETA <= 7
 days), CRITICAL at 14 GiB (or ETA <= 72 hours), EMERGENCY at 12 GiB (or ETA <=
 24 hours), and HARD RESERVE at 10 GiB. All ETA calculations target only the
 10 GiB reserve. The VPS preserves approximately 10 GiB for the OS and
-co-resident services. Never delete unarchived Raw. The profile is not selected
-by the current runtime or CLI; existing local M11 percentage thresholds remain
-implementation history for local profiles, not universal VPS policy.
+co-resident services. Never delete unarchived Raw. M22.7B selects the profile
+only through the literal `capacity_profile = "vps-production-v1"` in the
+explicitly loaded TOML file. There is intentionally no CLI or environment
+profile selector, and the certified VPS rejects Recorder operational
+environment overrides. Omission retains existing local M11 percentage
+behavior. At actual free space <=10 GiB, the VPS service drains/seals, records
+stop and gap evidence, and exits zero so `Restart=on-failure` does not loop.
+Free space later released by a co-resident process is visible to the next
+observation but never restarts Recorder; an operator must explicitly start it
+after verifying free space is above 10 GiB.
+
+Exact VPS static verification and the 300-second recovery-first readiness gate
+are exposed as:
+
+```bash
+sudo /opt/binance-market-data-recorder/venv/bin/python \
+  -m binance_market_data_recorder \
+  --config /etc/binance-market-data-recorder/recorder.toml \
+  deployment verify
+sudo /opt/binance-market-data-recorder/venv/bin/python \
+  -m binance_market_data_recorder \
+  --config /etc/binance-market-data-recorder/recorder.toml \
+  deployment readiness
+```
+
+`systemctl is-active` and process existence are not readiness. See the stopped
+deploy, upgrade, and rollback procedures in `vps_operations.md`.
 
 ## Recovery
 
