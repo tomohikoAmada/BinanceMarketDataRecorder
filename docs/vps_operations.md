@@ -1,7 +1,7 @@
 # VPS Operations
 
-Status: approved future production profile; not deployed or production
-validated.
+Status: M22.7B deployable substrate implemented and validated offline; real
+Ubuntu systemd lifecycle and production validation are not run.
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -26,18 +26,22 @@ managed or inspected by Recorder.
 
 ## Network profile
 
-Direct Binance connectivity is the intended production default for the Germany
-VPS. `environment` and `explicit` proxy modes remain available for local
-development, fault injection, and LAN testing. Proxy URLs and credentials do
-not enter Raw, manifests, Catalog event bodies, status, or logs.
+Direct Binance connectivity is mandatory for the certified Germany VPS
+profile. `environment` and `explicit` proxy modes remain available only outside
+`vps-production-v1` for local development, fault injection, and LAN testing.
+Proxy URLs and credentials do not enter Raw, manifests, Catalog event bodies,
+status, or logs.
 
 ## Capacity states
 
 Forecasting uses observed filesystem free bytes and measured ingest/net-growth
 rates. It does not assume that Recorder owns the filesystem or the host.
 M22.7A names this derived internal-only policy `vps-production-v1`. Selection
-is explicit; no hostname, platform, filesystem-size, cloud-metadata, systemd,
-environment-variable, TOML, CLI, or runtime auto-detection selects it.
+is explicit only when the loaded `recorder.toml` contains
+`capacity_profile = "vps-production-v1"`. No hostname, platform,
+filesystem-size, cloud-metadata, systemd, environment variable, CLI flag, or
+runtime inference selects it. Omission retains generic M11 behavior and an
+unknown literal fails configuration loading.
 
 | State | Entry condition | Action |
 | --- | --- | --- |
@@ -77,21 +81,197 @@ and retried independently; it does not undo Raw integrity.
 See [`archive_transfer_contract.md`](archive_transfer_contract.md) and
 [`offline_workspace.md`](offline_workspace.md).
 
-## Deployment and acceptance
+## Certified service and filesystem boundary
 
-Future implementation and deployment must use an immutable artifact identity,
-then execute this exact sequence on the production VPS:
+The certified unit is
+`/etc/systemd/system/binance-market-data-recorder.service`. It runs an
+operator-supplied, pre-existing dedicated `User=` and `Group=` and never
+provisions an account. Its fixed invocation is:
+
+```text
+/opt/binance-market-data-recorder/venv/bin/python
+-m binance_market_data_recorder
+--config /etc/binance-market-data-recorder/recorder.toml
+_service run
+```
+
+The unit wants and starts after only `network-online.target`; it has no Mihomo
+dependency. It freezes `Restart=on-failure`, `RestartSec=10s`,
+`TimeoutStopSec=90s`, `UMask=0027`, `NoNewPrivileges=true`, and journald output.
+It has no `EnvironmentFile`, `PassEnvironment`, or
+`BINANCE_MARKET_RECORDER_*` setting. It explicitly sets the upper- and
+lowercase standard proxy variables to empty so manager defaults cannot alter
+direct routing. Effective verification queries the fragment, drop-ins, exact
+structured argv, principal, working directory, restart/delay/stop timeout,
+UMask, NoNewPrivileges, Wants/Requires/After, environment authorities, service
+type, signal, and journal outputs after daemon reload. It requires the intended
+`network-online.target` relationship and rejects an effective Mihomo dependency
+even when introduced outside the unit fragment. Readiness also reads the
+bounded live `/proc/<MainPID>/environ` evidence and rejects nonempty proxy or
+Recorder operational variables.
+
+The operator establishes and audits this ownership boundary before install:
+
+| Path | Required authority |
+| --- | --- |
+| `/opt/binance-market-data-recorder/` | root/operator owned; service principal cannot write artifacts or executable environment |
+| `/etc/binance-market-data-recorder/` | root-controlled and not group/other writable |
+| `recorder.toml` and `deployment-identity.json` | `root:<service-group>` mode `0640`; service read-only |
+| optional `legacy_reconnect_classifications.json` | root-controlled startup authority, `root:<service-group>` mode `0640` |
+| `/var/lib/binance-market-data-recorder/` | `<service-user>:<service-group>` mode `0750` |
+| installed systemd unit | root-owned system unit bytes |
+
+The service user may mutate only its data root. M22.7B does not own the host,
+other files on the filesystem, OS account provisioning, mount management, or
+filesystem repair.
+
+## Exact identity and static gate
+
+`deployment-identity.json` is canonical `deployment-identity.v1` evidence. It
+binds the full source Git SHA, retained Wheel path/SHA-256, distribution
+version, exact Python executable and `sys.version`, retained hashed-lock
+path/SHA-256, config path/SHA-256, installed unit path/SHA-256, selected
+profile, effective systemd identity, and the actually consumed legacy
+classification sidecar as either `PRESENT` with SHA-256 or explicit `ABSENT`.
+
+Static verification rejects a missing or changed retained file; any missing,
+wrong-version, or unexpected installed runtime distribution compared with the
+normalized lock set; editable runtime content; Recorder non-Wheel installation;
+`direct_url.json`, module/dist-info, package/Python/venv, or installed `RECORD`
+disagreement; noncanonical JSON; operational environment override;
+effective-property mismatch; or drop-in. Recorder Wheel authority remains
+separate from the third-party lock. The `/opt/...` release and venv namespace,
+installed package roots, executable, Wheel, and lock must be root-owned,
+symlink-free at controlling directories, and non-writable by the actual service
+principal. Git `HEAD` and `--version` are display evidence, not deployed
+identity.
+
+## Initial stopped deployment
+
+Use a clean source checkout at one frozen full SHA. Build exactly one final
+Wheel, calculate its SHA-256, and copy that same immutable Wheel plus
+`requirements/linux-x86_64-python312.lock` into a root-controlled release
+directory beneath `/opt/binance-market-data-recorder/`. Never rebuild after
+acceptance and assume equivalence.
+
+With `SERVICE_USER` and `SERVICE_GROUP` set to already-existing dedicated
+principals, the operator performs this stopped sequence:
+
+1. Confirm the Recorder is stopped and there is no running/active mutation.
+2. Create `/var/lib/binance-market-data-recorder` as
+   `$SERVICE_USER:$SERVICE_GROUP` mode `0750`; install the config directory and
+   artifact tree root-controlled.
+3. Install `recorder.toml` as `root:$SERVICE_GROUP` mode `0640`. It must contain
+   `data_root = "/var/lib/binance-market-data-recorder"`,
+   `capacity_profile = "vps-production-v1"`, and the frozen `direct` network
+   policy. Do not export any `BINANCE_MARKET_RECORDER_*` variable.
+4. Create a fresh staging venv with Python 3.12 using `python -m venv --copies`
+   so the certified interpreter is an ordinary file in the venv. Install the retained lock with
+   `pip install --require-hashes -r <exact-lock>`, then install the retained
+   Wheel non-editably with `pip install --no-deps <exact-wheel>`. Run
+   `pip check`. Only `pip` may remain as the explicit non-runtime bootstrap
+   distribution; no other extra distribution is accepted. Do not incrementally
+   mutate an old or running venv.
+5. Publish the completed root-controlled venv at the fixed `venv` path while
+   stopped. Preserve the exact Wheel, lock, config, unit, and eventual identity
+   in the release bundle.
+6. Render/install the unit, verify its exact bytes and effective properties,
+   then create the root-controlled identity:
+
+   ```bash
+   sudo /opt/binance-market-data-recorder/venv/bin/python \
+     -m binance_market_data_recorder \
+     --config /etc/binance-market-data-recorder/recorder.toml \
+     systemd install --user "$SERVICE_USER" --group "$SERVICE_GROUP"
+   sudo /opt/binance-market-data-recorder/venv/bin/python \
+     -m binance_market_data_recorder \
+     --config /etc/binance-market-data-recorder/recorder.toml \
+     deployment identity-create --source-git-sha "$SOURCE_SHA" \
+     --wheel "$EXACT_WHEEL" --dependency-lock "$EXACT_LOCK"
+   sudo /opt/binance-market-data-recorder/venv/bin/python \
+     -m binance_market_data_recorder \
+     --config /etc/binance-market-data-recorder/recorder.toml \
+     deployment verify
+   ```
+
+7. Explicitly start. Startup opens the Catalog, completes recovery, and takes
+   an immediate actual capacity observation before Collector construction. If
+   free space is <=10 GiB it records stop/gap evidence and exits cleanly without
+   starting collectors.
+8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
+   Preserve the JSON identity, verification, systemd-show, status, readiness,
+   ownership, and journal evidence. A non-READY result rejects deployment.
+
+Readiness requires active systemd, matching live MainPID/state PID and fresh
+heartbeat, exact artifact/config/unit/profile/installed-dependency identity,
+the protected venv/release control chain, the effective direct process
+environment, an open valid Catalog, completed recovery, the existing full Spot
+and USD-M core readiness (all three streams persisted and connected plus
+snapshot and order-book sync), a current internal capacity observation, and
+actual free bytes above 10 GiB. Capacity
+WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
+safe observation may remain READY while exposing the degraded evidence.
+Process existence or `systemctl is-active` alone is never READY.
+
+## Stopped upgrade
+
+Before mutation, preserve the old exact release bundle and identity. Verify
+the new source SHA/Wheel/lock/config/unit inputs and perform compatibility
+preflight. Gracefully stop the unit, require service state `STOPPED`, and verify
+that active Raw has sealed. Preserve Raw, Catalog, receipts, remote lifecycle,
+and service-state evidence unchanged.
+
+Recreate a clean staging venv and repeat the exact dependency/Wheel, config,
+unit, identity, static verification, start, recovery, capacity, and readiness
+steps above. The upgrade is accepted only after READY. There is no blue/green
+or mutation of a running environment.
+
+## Compatible rollback
+
+Rollback never rolls data back. First stop the failed candidate and run the
+fail-closed compatibility check against the preserved canonical old identity:
+
+```bash
+sudo /opt/binance-market-data-recorder/venv/bin/python \
+  -m binance_market_data_recorder \
+  --config /etc/binance-market-data-recorder/recorder.toml \
+  deployment rollback-check --target-identity "$OLD_IDENTITY"
+```
+
+The target must be an exact preserved M22 identity and its Wheel and lock must
+still match. It must declare every durable remote lifecycle state present in
+the current Catalog. A pre-M22 target or any unproved state compatibility is
+refused. If compatible, recreate the fixed venv from the old exact lock/Wheel,
+restore the old exact config/unit/identity and any matching startup authority,
+daemon-reload, statically verify, explicitly start, and require recovery,
+capacity, and readiness again. Never delete/modify Raw, Catalog rows, receipts,
+or relabel remote states to make rollback pass.
+
+## Safety termination and later restart
+
+Actual observed free space <=10 GiB produces intentional
+`HARD_RESERVE_SAFETY_STOP`: recovery completes first, active collectors drain
+and seal, `DISK_EMERGENCY_STOP` and core-stream gap evidence persist, and the
+process exits zero. Therefore `Restart=on-failure` does not make a low-space
+restart loop. A crash/core failure remains nonzero and restart-eligible.
+
+Space consumed or released by any co-resident process affects later actual
+filesystem observations; Recorder makes no cause attribution. Space release
+after a safety stop never auto-starts Recorder. The operator verifies free
+space is above 10 GiB and explicitly starts it, causing the complete recovery,
+capacity, and readiness sequence to run again.
+
+## Acceptance boundary
+
+After an operator-authorized exact host deployment, acceptance still follows:
 
 ```text
 exact artifact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
 ```
 
-Each stage has an independent T0, target, and evidence root. A stage result is
-not inferred from the previous stage. LAN Linux 72h evidence does not
-substitute for the VPS 72h gate.
-
-This architecture freeze does not provision a VPS, install systemd units,
-change a production configuration, or claim any stage has passed.
+M22.7B starts none of those windows. Each future stage has an independent T0,
+target, and evidence root. LAN Linux evidence does not substitute for VPS
+evidence, and no stage starts automatically.
 
 ## Operations and recovery
 

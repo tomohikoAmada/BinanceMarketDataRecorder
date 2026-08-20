@@ -951,16 +951,22 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.7B — VPS systemd / readiness / exact deployable artifact identity
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED LOCALLY**; offline/static acceptance is recorded in
+  `docs/milestone_acceptance/M22.7B.md`. Exact host-specific Ubuntu systemd
+  validation remains pending and no production deployment is claimed.
 - **Scope:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd,
   shared-host requirements, exact deployable artifact identity, readiness,
   deployment, and rollback contract.
 - **Non-scope:** Capacity algorithm redesign, VPS provisioning ownership,
   Docker/Kubernetes, and production acceptance windows.
 - **Dependencies:** M22.4B, M22.6, and M22.7A acceptance.
-- **Acceptance:** Artifact identity and readiness gates are exact and
-  deployable; service ownership/resource boundaries and rollback are proven
-  without claiming a staged production result.
+- **Acceptance:** Artifact identity, the exact installed lock distribution set,
+  protected venv/release control chain, effective systemd properties, closed
+  direct-network process environment, and readiness gates are exact and
+  deployable; service ownership/resource boundaries, hard-reserve clean exit,
+  and fail-closed rollback compatibility are proven offline without claiming a
+  staged production result. Real unit lifecycle, ownership, journald, restart,
+  upgrade, and rollback remain host-specific gates.
 - **Rollback:** Stop the candidate, restore the prior immutable artifact/unit
   and retain all data and Catalog state.
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import shutil
 import signal
 import sys
 import time
@@ -12,7 +13,7 @@ from collections.abc import Callable, Mapping
 from contextlib import suppress
 from functools import partial
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from ..binance.spot.exchange_info import create_spot_exchange_info_api
@@ -32,10 +33,13 @@ from ..collector.usdm_side_data import UsdMSideDataSettings
 from ..config import RecorderConfig
 from ..logging import log_event
 from ..spool import recover_storage
+from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
 from ..storage.catalog import Catalog
+from ..storage.forecast import StorageForecaster
 from ..storage.layout import StorageLayout, ensure_storage_layout
-from ..supervisor.readiness import ReadinessSnapshot
+from ..supervisor.readiness import CORE_STREAMS, ReadinessSnapshot
 from ..version import git_commit, package_version
+from .deployment_identity import RuntimeDeploymentIdentity
 from .lock import ServiceProcessLock
 from .power import (
     CaffeinateAssertion,
@@ -199,6 +203,9 @@ class ServiceRuntime:
         power_assertion: CaffeinateAssertion | None = None,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
+        deployment_identity: RuntimeDeploymentIdentity | None = None,
+        disk_usage: Callable[[Path], Any] = shutil.disk_usage,
+        capacity_poll_seconds: float | None = None,
     ) -> None:
         self.config = config
         self.logger = logger
@@ -209,6 +216,20 @@ class ServiceRuntime:
         )
         self.utc_clock_ns = utc_clock_ns
         self.monotonic_clock_ns = monotonic_clock_ns
+        self.deployment_identity = deployment_identity
+        if config.capacity_profile == VPS_PRODUCTION_V1.profile_id and (
+            deployment_identity is None
+            or deployment_identity.capacity_profile_id != config.capacity_profile
+        ):
+            raise ValueError("VPS runtime requires validated deployment identity")
+        self.disk_usage = disk_usage
+        self.capacity_poll_seconds = (
+            config.heartbeat_seconds
+            if capacity_poll_seconds is None
+            else capacity_poll_seconds
+        )
+        if self.capacity_poll_seconds <= 0:
+            raise ValueError("capacity poll interval must be positive")
         self.layout: StorageLayout = ensure_storage_layout(config.data_root)
         self.state_store = ServiceStateStore(
             self.layout.state / "service_state.json"
@@ -237,6 +258,9 @@ class ServiceRuntime:
             threshold_seconds=config.sleep_gap_threshold_seconds
         )
         self._recovery_action_count = 0
+        self._catalog_open = False
+        self._startup_recovery_complete = False
+        self._capacity_evidence: dict[str, object] | None = None
         self._state_write_lock = asyncio.Lock()
 
     def request_stop(self, reason: str) -> None:
@@ -328,6 +352,7 @@ class ServiceRuntime:
                 "collector_version": readiness.collector_version,
                 "connected_streams": sorted(readiness.connected_streams),
                 "persisted_streams": sorted(readiness.persisted_streams),
+                "snapshot_persisted": readiness.snapshot_persisted,
                 "orderbook_synchronized": readiness.orderbook_synchronized,
                 "last_receive_time_utc_ns": readiness.last_receive_time_utc_ns,
                 "failure": (
@@ -386,6 +411,26 @@ class ServiceRuntime:
                 else None
             ),
             "recovery_action_count": self._recovery_action_count,
+            "catalog_open": self._catalog_open,
+            "startup_recovery_complete": self._startup_recovery_complete,
+            "capacity_profile_id": self.config.capacity_profile,
+            "capacity": self._capacity_evidence,
+            "deployment_identity": (
+                {
+                    "identity_sha256": self.deployment_identity.identity_sha256,
+                    "source_git_sha": self.deployment_identity.source_git_sha,
+                    "wheel_sha256": self.deployment_identity.wheel_sha256,
+                    "config_sha256": self.deployment_identity.config_sha256,
+                    "systemd_unit_sha256": (
+                        self.deployment_identity.systemd_unit_sha256
+                    ),
+                    "capacity_profile_id": (
+                        self.deployment_identity.capacity_profile_id
+                    ),
+                }
+                if self.deployment_identity is not None
+                else None
+            ),
             "runtime_metrics": {
                 "process_cpu_seconds": time.process_time(),
                 "current_rss_bytes": current_rss_bytes(),
@@ -412,6 +457,137 @@ class ServiceRuntime:
                 )
             except TimeoutError:
                 continue
+
+    def _observe_vps_capacity(self) -> dict[str, object]:
+        profile = selected_capacity_profile(self.config.capacity_profile)
+        if profile is None:
+            raise RuntimeError("VPS capacity observation requires an explicit profile")
+        if self._catalog is None:
+            raise RuntimeError("VPS capacity observation requires an open Catalog")
+        observed_at = self.utc_clock_ns()
+        forecaster = StorageForecaster(
+            catalog=self._catalog,
+            data_root=self.config.data_root,
+            utc_clock_ns=self.utc_clock_ns,
+            disk_usage=self.disk_usage,
+        )
+        forecaster.observe_internal(observed_at_utc_ns=observed_at)
+        forecast = forecaster.forecast(
+            "internal",
+            now_utc_ns=observed_at,
+            capacity_profile=profile,
+        )
+        required = {
+            "observed_at_utc_ns",
+            "total_bytes",
+            "free_bytes",
+            "capacity_profile",
+            "capacity_state",
+            "hard_reserve_eta",
+        }
+        if not required <= set(forecast):
+            raise RuntimeError("current VPS capacity evidence is incomplete")
+        if forecast["capacity_profile"] != profile.profile_id:
+            raise RuntimeError("current VPS capacity profile evidence mismatches")
+        total = forecast["total_bytes"]
+        free = forecast["free_bytes"]
+        if (
+            not isinstance(total, int)
+            or isinstance(total, bool)
+            or not isinstance(free, int)
+            or isinstance(free, bool)
+            or total <= 0
+            or free < 0
+            or free > total
+        ):
+            raise RuntimeError("current VPS capacity observation is invalid")
+        evidence = {
+            "observed_at_utc_ns": forecast["observed_at_utc_ns"],
+            "total_bytes": total,
+            "free_bytes": free,
+            "capacity_profile": forecast["capacity_profile"],
+            "capacity_state": forecast["capacity_state"],
+            "hard_reserve_eta": forecast["hard_reserve_eta"],
+            "actual_hard_reserve_reached": free <= profile.hard_reserve_bytes,
+        }
+        self._capacity_evidence = evidence
+        return evidence
+
+    async def _capacity_monitor(
+        self, stop: asyncio.Event
+    ) -> dict[str, object] | None:
+        while not stop.is_set():
+            try:
+                await asyncio.wait_for(
+                    stop.wait(), timeout=self.capacity_poll_seconds
+                )
+            except TimeoutError:
+                evidence = await asyncio.to_thread(self._observe_vps_capacity)
+                await self._write_state()
+                if evidence["actual_hard_reserve_reached"] is True:
+                    return evidence
+        return None
+
+    def _record_hard_reserve_stop(self, evidence: Mapping[str, object]) -> None:
+        if self._catalog is None:
+            raise RuntimeError("hard-reserve stop requires an open Catalog")
+        observed_at = evidence.get("observed_at_utc_ns")
+        if not isinstance(observed_at, int) or isinstance(observed_at, bool):
+            raise RuntimeError("hard-reserve stop timestamp is invalid")
+        existing_stops = self._catalog.operational_events(
+            event_type="DISK_EMERGENCY_STOP"
+        )
+        if not existing_stops:
+            inserted = self._catalog.record_operational_event(
+                event_id=f"disk-emergency-stop:{self.service_instance_id}",
+                event_type="DISK_EMERGENCY_STOP",
+                occurred_at_utc_ns=observed_at,
+                evidence={
+                    "service_instance_id": self.service_instance_id,
+                    "capacity_profile": self.config.capacity_profile,
+                    "capacity_state": evidence.get("capacity_state"),
+                    "free_bytes": evidence.get("free_bytes"),
+                    "total_bytes": evidence.get("total_bytes"),
+                    "hard_reserve_bytes": VPS_PRODUCTION_V1.hard_reserve_bytes,
+                    "gap_start_at_utc_ns": observed_at,
+                    "unarchived_raw_deleted": False,
+                    "termination": "HARD_RESERVE_SAFETY_STOP",
+                },
+            )
+            if not inserted:
+                raise RuntimeError("hard-reserve stop event identity collision")
+        for market in ("spot", "um_perpetual"):
+            for stream in sorted(CORE_STREAMS):
+                if self._catalog.unclosed_stream_discontinuities(
+                    market=market, stream=stream
+                ):
+                    continue
+                gap_id = (
+                    f"hard-reserve:{self.service_instance_id}:{market}:{stream}"
+                )
+                self._catalog.ensure_operational_event(
+                    event_id=f"stream-discontinuity-started:{gap_id}",
+                    event_type="STREAM_DISCONTINUITY_STARTED",
+                    occurred_at_utc_ns=observed_at,
+                    evidence={
+                        "gap_id": gap_id,
+                        "market": market,
+                        "stream": stream,
+                        "reason": "session_restart",
+                        "interval_classification": "UNRELIABLE",
+                        "gap_started_at_utc_ns": observed_at,
+                        "original_connection_id": (
+                            f"hard-reserve-safety-stop:{self.service_instance_id}"
+                        ),
+                        "original_generation": 0,
+                        "boundary_kind": "no_last_frame_available",
+                        "boundary_frame_persisted": False,
+                        "boundary_precision": (
+                            "actual hard-reserve safety termination; no future "
+                            "capture continuity is assumed"
+                        ),
+                    },
+                )
 
     def _install_signal_handlers(self, loop: asyncio.AbstractEventLoop) -> list[signal.Signals]:
         installed: list[signal.Signals] = []
@@ -446,10 +622,13 @@ class ServiceRuntime:
         )
         heartbeat_task: asyncio.Task[None] | None = None
         supervisor_task: asyncio.Task[None] | None = None
+        capacity_task: asyncio.Task[dict[str, object] | None] | None = None
         failure: BaseException | None = None
         try:
             self.started_at_utc_ns = self.utc_clock_ns()
             self._catalog = Catalog(self.layout.catalog)
+            self._catalog_open = True
+            await self._write_state()
             recovery_actions = await asyncio.to_thread(
                 recover_storage,
                 layout=self.layout,
@@ -457,6 +636,14 @@ class ServiceRuntime:
                 authority_path=self.authority_path,
             )
             self._recovery_action_count = len(recovery_actions)
+            self._startup_recovery_complete = True
+            if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
+                capacity = await asyncio.to_thread(self._observe_vps_capacity)
+                if capacity["actual_hard_reserve_reached"] is True:
+                    self.shutdown_reason = "HARD_RESERVE_SAFETY_STOP"
+                    self._status = "STOPPING"
+                    self._record_hard_reserve_stop(capacity)
+                    return
             self._collectors = self.collector_factory(
                 self.config,
                 self.logger,
@@ -504,7 +691,22 @@ class ServiceRuntime:
             await asyncio.sleep(0)
             await self._write_state()
             heartbeat_task = asyncio.create_task(self._heartbeat(stop))
-            await supervisor_task
+            if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
+                capacity_task = asyncio.create_task(self._capacity_monitor(stop))
+                done, _pending = await asyncio.wait(
+                    {supervisor_task, capacity_task},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if supervisor_task in done:
+                    await supervisor_task
+                else:
+                    runtime_capacity = capacity_task.result()
+                    if runtime_capacity is not None:
+                        self.request_stop("HARD_RESERVE_SAFETY_STOP")
+                        await supervisor_task
+                        self._record_hard_reserve_stop(runtime_capacity)
+            else:
+                await supervisor_task
         except BaseException as exc:
             failure = exc
             self._status = "FAILED"
@@ -524,6 +726,10 @@ class ServiceRuntime:
             stop.set()
             if heartbeat_task is not None:
                 await asyncio.gather(heartbeat_task, return_exceptions=True)
+            if capacity_task is not None:
+                if not capacity_task.done():
+                    capacity_task.cancel()
+                await asyncio.gather(capacity_task, return_exceptions=True)
             if supervisor_task is not None and not supervisor_task.done():
                 await asyncio.gather(supervisor_task, return_exceptions=True)
             try:
@@ -547,6 +753,7 @@ class ServiceRuntime:
                         occurred_at_utc_ns=stopped_at,
                         evidence={"reason": self.shutdown_reason or "completed"},
                     )
+                self._catalog_open = False
                 await self._write_state()
             if self._catalog is not None:
                 self._catalog.close()
@@ -562,7 +769,11 @@ async def run_service(
     *,
     logger: logging.Logger,
     authority_path: Path | None = None,
+    deployment_identity: RuntimeDeploymentIdentity | None = None,
 ) -> None:
     await ServiceRuntime(
-        config=config, logger=logger, authority_path=authority_path
+        config=config,
+        logger=logger,
+        authority_path=authority_path,
+        deployment_identity=deployment_identity,
     ).run()

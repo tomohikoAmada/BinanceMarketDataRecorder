@@ -6,6 +6,7 @@ import logging
 import threading
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -13,6 +14,9 @@ import pytest
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import Market
 from binance_market_data_recorder.logging import configure_logging
+from binance_market_data_recorder.service.deployment_identity import (
+    RuntimeDeploymentIdentity,
+)
 from binance_market_data_recorder.service.lock import (
     ServiceAlreadyRunning,
     ServiceProcessLock,
@@ -25,6 +29,7 @@ from binance_market_data_recorder.service.runtime import (
 )
 from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.status import service_status
+from binance_market_data_recorder.storage.capacity import HARD_RESERVE_BYTES
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
 
@@ -130,6 +135,17 @@ def _config(tmp_path: Path) -> RecorderConfig:
     )
 
 
+def _vps_identity() -> RuntimeDeploymentIdentity:
+    return RuntimeDeploymentIdentity(
+        identity_sha256="a" * 64,
+        source_git_sha="b" * 40,
+        wheel_sha256="c" * 64,
+        config_sha256="d" * 64,
+        systemd_unit_sha256="e" * 64,
+        capacity_profile_id="vps-production-v1",
+    )
+
+
 def test_process_lock_rejects_a_second_service(tmp_path: Path) -> None:
     first = ServiceProcessLock(tmp_path / "service.lock")
     second = ServiceProcessLock(tmp_path / "service.lock")
@@ -204,6 +220,159 @@ def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
         assert len(gaps) == 1
         evidence = cast(dict[str, object], gaps[0]["evidence"])
         assert evidence["gap_marked"] is True
+
+
+def test_vps_startup_hard_reserve_recovers_then_stops_cleanly_without_collectors(
+    tmp_path: Path,
+) -> None:
+    usage = SimpleNamespace(
+        total=40 * 1024**3,
+        used=30 * 1024**3,
+        free=HARD_RESERVE_BYTES,
+    )
+    factory_called = False
+
+    def factory(
+        _config: RecorderConfig,
+        _logger: logging.Logger,
+        _version: str,
+        _instance_id: str,
+    ) -> Mapping[str, RuntimeCollector]:
+        nonlocal factory_called
+        factory_called = True
+        return {}
+
+    runtime = ServiceRuntime(
+        config=RecorderConfig(
+            data_root=tmp_path,
+            capacity_profile="vps-production-v1",
+            heartbeat_seconds=1.0,
+        ),
+        logger=configure_logging(stream=io.StringIO()),
+        collector_factory=factory,
+        sleep_observer_factory=FakeSleepObserver,
+        power_assertion=FakePowerAssertion(),
+        deployment_identity=_vps_identity(),
+        disk_usage=lambda _path: usage,
+    )
+
+    asyncio.run(runtime.run())
+
+    assert factory_called is False
+    final = runtime.state_store.read()
+    assert final is not None
+    assert final["status"] == "STOPPED"
+    assert final["shutdown_reason"] == "HARD_RESERVE_SAFETY_STOP"
+    assert final["startup_recovery_complete"] is True
+    capacity = cast(dict[str, object], final["capacity"])
+    assert capacity["actual_hard_reserve_reached"] is True
+    with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+        events = catalog.operational_events(event_type="DISK_EMERGENCY_STOP")
+        open_gaps = catalog.unclosed_stream_discontinuities_by_stream()
+    assert len(events) == 1
+    evidence = cast(dict[str, object], events[0]["evidence"])
+    assert evidence["gap_start_at_utc_ns"] == events[0]["occurred_at_utc_ns"]
+    assert evidence["unarchived_raw_deleted"] is False
+    assert evidence["termination"] == "HARD_RESERVE_SAFETY_STOP"
+    assert set(open_gaps) == {
+        (market, stream)
+        for market in ("spot", "um_perpetual")
+        for stream in ("agg_trade", "book_ticker", "diff_depth")
+    }
+    assert all(
+        cast(dict[str, object], rows[0]["evidence"])["reason"]
+        == "session_restart"
+        for rows in open_gaps.values()
+    )
+
+    repeated = ServiceRuntime(
+        config=RecorderConfig(
+            data_root=tmp_path,
+            capacity_profile="vps-production-v1",
+            heartbeat_seconds=1.0,
+        ),
+        logger=configure_logging(stream=io.StringIO()),
+        collector_factory=factory,
+        sleep_observer_factory=FakeSleepObserver,
+        power_assertion=FakePowerAssertion(),
+        deployment_identity=_vps_identity(),
+        disk_usage=lambda _path: usage,
+    )
+    asyncio.run(repeated.run())
+    assert factory_called is False
+    with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+        assert len(catalog.operational_events(event_type="DISK_EMERGENCY_STOP")) == 1
+        repeated_gaps = catalog.unclosed_stream_discontinuities_by_stream()
+    assert all(len(rows) == 1 for rows in repeated_gaps.values())
+
+
+def test_vps_runtime_hard_reserve_seals_via_graceful_stop_and_exits_cleanly(
+    tmp_path: Path,
+) -> None:
+    observations = [
+        SimpleNamespace(
+            total=40 * 1024**3,
+            used=29 * 1024**3,
+            free=11 * 1024**3,
+        ),
+        SimpleNamespace(
+            total=40 * 1024**3,
+            used=30 * 1024**3,
+            free=HARD_RESERVE_BYTES,
+        ),
+    ]
+
+    def disk_usage(_path: Path) -> object:
+        return observations.pop(0) if len(observations) > 1 else observations[0]
+
+    async def exercise() -> None:
+        collectors = {
+            "spot": FakeCollector("spot", "service-spot"),
+            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+        }
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            assert runtime._startup_recovery_complete is True
+            return collectors
+
+        runtime = ServiceRuntime(
+            config=RecorderConfig(
+                data_root=tmp_path,
+                capacity_profile="vps-production-v1",
+                heartbeat_seconds=1.0,
+            ),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+            deployment_identity=_vps_identity(),
+            disk_usage=disk_usage,
+            capacity_poll_seconds=0.01,
+        )
+        await runtime.run()
+
+        assert all(
+            collector.started and collector.stopped
+            for collector in collectors.values()
+        )
+        final = runtime.state_store.read()
+        assert final is not None
+        assert final["status"] == "STOPPED"
+        assert final["shutdown_reason"] == "HARD_RESERVE_SAFETY_STOP"
+
+    asyncio.run(exercise())
+    with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+        assert len(catalog.operational_events(event_type="DISK_EMERGENCY_STOP")) == 1
+        stopped = catalog.operational_events(event_type="SERVICE_STOPPED")
+    assert len(stopped) == 1
+    assert cast(dict[str, object], stopped[0]["evidence"])["reason"] == (
+        "HARD_RESERVE_SAFETY_STOP"
+    )
 
 
 def test_all_market_failures_make_service_failed_for_launchd_restart(

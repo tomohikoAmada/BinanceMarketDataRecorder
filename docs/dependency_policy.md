@@ -9,6 +9,35 @@ Linux `/proc` adapter point, so `psutil` was unnecessary. Historical
 normalization reuses pinned `pyarrow==25.0.0`; HTTPS downloads use the standard
 library. Official modular Spot and USD-M SDK pins remain unchanged.
 
+## M22.7B production resolution
+
+M22.7B adds `requirements/linux-x86_64-python312.lock` as the production
+Ubuntu 24.04 x86_64/Python 3.12 resolution. It is generated, not hand-edited,
+with pip-tools 7.5.1 in a Linux amd64 Python 3.12.13 environment:
+
+```bash
+python -m piptools compile --generate-hashes --strip-extras \
+  --output-file=requirements/linux-x86_64-python312.lock pyproject.toml
+```
+
+Production creates a fresh stopped venv and installs this exact retained file
+with `python -m pip install --require-hashes -r <retained-lock>`. CI performs
+the same hash-enforced install on Ubuntu 24.04. The lock SHA-256 is part of
+`deployment-identity.v1`; an incremental `pip install latest`, editable install,
+unhashed fallback, or mutation of a running environment is not an accepted
+deployment. The exact Wheel is installed separately with `--no-deps` after the
+locked runtime dependencies and is retained at the identity-bound path.
+
+Static deployment verification also parses that retained lock and compares its
+complete normalized `(distribution name, exact version)` set with the actual
+venv metadata. Missing, wrong-version, and unexpected distributions fail
+closed. The Recorder distribution is excluded from that comparison and is
+verified separately through its retained Wheel, `direct_url.json`, installed
+location, and `RECORD`. Only `pip` is a narrow bootstrap exception; it is not a
+runtime dependency, is never imported by Recorder, and no other build or
+bootstrap distribution is allowed to remain in the certified venv. All locked
+and Recorder installs must be non-editable and remain in the protected venv.
+
 ## Principles
 
 - Runtime dependencies must solve an immediate accepted milestone requirement.

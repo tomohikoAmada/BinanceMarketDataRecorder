@@ -60,7 +60,8 @@ jobs:
         with:
           go-version: "1.24.x"
           cache: false
-      - run: python -m pip install -r requirements/linux-python312.lock
+      - name: Install exact x86_64 production runtime lock
+        run: python -m pip install --require-hashes -r requirements/linux-x86_64-python312.lock
       - run: python -m pip install -r requirements/ci-linux-python312.lock
       - run: python -m pip install --no-deps -e .
       - run: python -m pytest -q
@@ -69,6 +70,13 @@ jobs:
       - run: python tests/verify_m0_contracts.py
       - run: go run tools/verify_raw_chunk_golden.go
       - run: python -m build --no-isolation
+      - name: Exact production dependency environment identity
+        run: |
+          python -m venv --copies "$RUNNER_TEMP/production-venv"
+          "$RUNNER_TEMP/production-venv/bin/pip" install --require-hashes -r requirements/linux-x86_64-python312.lock
+          "$RUNNER_TEMP/production-venv/bin/pip" install --no-deps dist/*.whl
+          "$RUNNER_TEMP/production-venv/bin/pip" check
+          "$RUNNER_TEMP/production-venv/bin/python" -c 'from pathlib import Path; from binance_market_data_recorder.service.deployment_identity import verify_installed_dependencies; evidence = verify_installed_dependencies(Path("requirements/linux-x86_64-python312.lock")); assert evidence["exact_match"] is True and evidence["recorder_distribution_separate"] is True; print(evidence)'
       - name: Clean wheel install and CLI smoke
         run: |
           python -m venv "$RUNNER_TEMP/wheel-venv"

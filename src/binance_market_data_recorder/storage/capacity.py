@@ -123,6 +123,16 @@ VPS_PRODUCTION_V1: Final = CapacityProfile(
 )
 
 
+def selected_capacity_profile(profile_id: str | None) -> CapacityProfile | None:
+    """Resolve only an already validated explicit configuration value."""
+
+    if profile_id is None:
+        return None
+    if profile_id == VPS_PRODUCTION_V1.profile_id:
+        return VPS_PRODUCTION_V1
+    raise ValueError(f"unknown capacity profile: {profile_id!r}")
+
+
 @dataclass(frozen=True, slots=True)
 class CapacityDecision:
     """A pure result of applying one selected capacity profile."""
@@ -268,4 +278,5 @@ __all__ = [
     "classify_absolute_state",
     "classify_eta_state",
     "evaluate_capacity",
+    "selected_capacity_profile",
 ]

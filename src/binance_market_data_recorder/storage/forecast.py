@@ -380,7 +380,13 @@ class StorageForecaster:
         now = self.utc_clock_ns() if now_utc_ns is None else now_utc_ns
         targets = [
             self.forecast(
-                scope, now_utc_ns=now, capacity_profile=capacity_profile
+                scope,
+                now_utc_ns=now,
+                capacity_profile=(
+                    capacity_profile
+                    if capacity_profile is not None and scope == capacity_profile.scope
+                    else None
+                ),
             )
             for scope in scope_ids
         ]
