@@ -6,7 +6,7 @@ import logging
 import threading
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -295,15 +295,15 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
         running_contention_started = threading.Event()
         release_running = threading.Event()
         permit_collector_return = asyncio.Event()
-        collector_returned = asyncio.Event()
+        failed_store_write_started = asyncio.Event()
         published_statuses: list[str] = []
         published_statuses_lock = threading.Lock()
+        loop = asyncio.get_running_loop()
 
         class SignalingCollector(FakeCollector):
             async def run(self, stop: asyncio.Event) -> None:
                 self.started = True
                 await permit_collector_return.wait()
-                collector_returned.set()
 
         class ControlledStateStore(ServiceStateStore):
             def __init__(self, delegate: ServiceStateStore) -> None:
@@ -320,6 +320,8 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
                         running_contention_started.set()
                         if not release_running.wait(timeout=5):
                             raise AssertionError("running write was not released")
+                    elif status == "FAILED":
+                        loop.call_soon_threadsafe(failed_store_write_started.set)
                     self.delegate.write(document)
                 with published_statuses_lock:
                     published_statuses.append(status)
@@ -343,11 +345,45 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
             power_assertion=FakePowerAssertion(),
         )
         runtime.state_store = ControlledStateStore(runtime.state_store)
+
+        class ObservedStateWriteLock:
+            def __init__(self) -> None:
+                self._lock = asyncio.Lock()
+                self.failed_waiter_seen = asyncio.Event()
+
+            async def __aenter__(self) -> ObservedStateWriteLock:
+                if self._lock.locked() and runtime._status == "FAILED":
+                    self.failed_waiter_seen.set()
+                await self._lock.acquire()
+                return self
+
+            async def __aexit__(self, *args: object) -> None:
+                self._lock.release()
+
+        observed_lock = ObservedStateWriteLock()
+        runtime._state_write_lock = cast(Any, observed_lock)
         task = asyncio.create_task(runtime.run())
         assert await asyncio.to_thread(running_contention_started.wait, 5)
         assert initial_running_published.is_set()
         permit_collector_return.set()
-        await collector_returned.wait()
+
+        failed_waiter_task = asyncio.create_task(observed_lock.failed_waiter_seen.wait())
+        failed_store_task = asyncio.create_task(failed_store_write_started.wait())
+        done, pending = await asyncio.wait(
+            {failed_waiter_task, failed_store_task},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for pending_task in pending:
+            pending_task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+        if failed_store_task in done:
+            raise AssertionError(
+                "FAILED publication reached the store before serialized contention"
+            )
+        assert failed_waiter_task in done
+        assert failed_waiter_task.result()
+        assert not failed_store_write_started.is_set()
+
         release_running.set()
         with pytest.raises(RuntimeError, match="core market Collector terminated"):
             await task
