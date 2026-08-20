@@ -5,9 +5,12 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
+from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
+from binance_market_data_recorder.service import state as state_module
 from binance_market_data_recorder.service.state import (
     SERVICE_STATE_SCHEMA,
     ServiceStateStore,
@@ -21,6 +24,28 @@ def _document(writer: str, sequence: int) -> dict[str, object]:
         "writer": writer,
         "sequence": sequence,
     }
+
+
+def test_eexist_does_not_remove_another_writers_temp_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = ServiceStateStore(tmp_path / "service_state.json")
+    collision_hex = "0123456789abcdef0123456789abcdef"
+    collision_path = tmp_path / f".service_state.json.{collision_hex}.partial"
+    sentinel = b"owned by another writer"
+    collision_path.write_bytes(sentinel)
+    monkeypatch.setattr(
+        cast(Any, state_module),
+        "uuid4",
+        lambda: SimpleNamespace(hex=collision_hex),
+    )
+
+    with pytest.raises(FileExistsError):
+        store.write(_document("collision", 0))
+
+    assert collision_path.read_bytes() == sentinel
+    assert not store.path.exists()
 
 
 def test_concurrent_writes_publish_complete_documents_from_unique_temps(

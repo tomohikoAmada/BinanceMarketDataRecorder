@@ -39,11 +39,13 @@ class ServiceStateStore:
         ).encode("utf-8")
         temporary = self.path.with_name(f".{self.path.name}.{uuid4().hex}.partial")
         descriptor = -1
+        temporary_owned = False
         published = False
         try:
             flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
             flags |= getattr(os, "O_NOFOLLOW", 0)
             descriptor = os.open(temporary, flags, 0o600)
+            temporary_owned = True
             try:
                 os.fchmod(descriptor, 0o600)
                 view = memoryview(encoded)
@@ -62,7 +64,7 @@ class ServiceStateStore:
             os.chmod(self.path, 0o600)
             fsync_directory(self.path.parent)
         finally:
-            if not published:
+            if temporary_owned and not published:
                 with suppress(OSError):
                     temporary.unlink(missing_ok=True)
 

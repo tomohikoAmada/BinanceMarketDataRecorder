@@ -291,8 +291,10 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
     tmp_path: Path,
 ) -> None:
     async def exercise() -> None:
-        heartbeat_started = threading.Event()
-        release_heartbeat = threading.Event()
+        initial_running_published = threading.Event()
+        running_contention_started = threading.Event()
+        release_running = threading.Event()
+        permit_collector_return = asyncio.Event()
         collector_returned = asyncio.Event()
         published_statuses: list[str] = []
         published_statuses_lock = threading.Lock()
@@ -300,25 +302,25 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
         class SignalingCollector(FakeCollector):
             async def run(self, stop: asyncio.Event) -> None:
                 self.started = True
+                await permit_collector_return.wait()
                 collector_returned.set()
 
         class ControlledStateStore(ServiceStateStore):
             def __init__(self, delegate: ServiceStateStore) -> None:
                 super().__init__(delegate.path)
                 self.delegate = delegate
-                self.write_count = 0
-                self.write_count_lock = threading.Lock()
 
             def write(self, document: Mapping[str, object]) -> None:
-                with self.write_count_lock:
-                    self.write_count += 1
-                    write_number = self.write_count
                 status = str(document["status"])
-                if write_number == 2:
-                    heartbeat_started.set()
-                    if not release_heartbeat.wait(timeout=5):
-                        raise AssertionError("heartbeat write was not released")
-                self.delegate.write(document)
+                if status == "RUNNING" and not initial_running_published.is_set():
+                    self.delegate.write(document)
+                    initial_running_published.set()
+                else:
+                    if status == "RUNNING":
+                        running_contention_started.set()
+                        if not release_running.wait(timeout=5):
+                            raise AssertionError("running write was not released")
+                    self.delegate.write(document)
                 with published_statuses_lock:
                     published_statuses.append(status)
 
@@ -342,9 +344,11 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
         )
         runtime.state_store = ControlledStateStore(runtime.state_store)
         task = asyncio.create_task(runtime.run())
-        assert await asyncio.to_thread(heartbeat_started.wait, 5)
+        assert await asyncio.to_thread(running_contention_started.wait, 5)
+        assert initial_running_published.is_set()
+        permit_collector_return.set()
         await collector_returned.wait()
-        release_heartbeat.set()
+        release_running.set()
         with pytest.raises(RuntimeError, match="core market Collector terminated"):
             await task
 
@@ -353,9 +357,8 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
         assert state is not None and state["status"] == "FAILED"
         with published_statuses_lock:
             statuses = list(published_statuses)
-        failure_index = max(
-            index for index, status in enumerate(statuses) if status == "FAILED"
-        )
+        assert statuses.count("RUNNING") == 2
+        failure_index = statuses.index("FAILED")
         assert all(status != "RUNNING" for status in statuses[failure_index + 1 :])
 
     asyncio.run(exercise())
