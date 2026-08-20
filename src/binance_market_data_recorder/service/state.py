@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Mapping
+from contextlib import suppress
 from pathlib import Path
+from uuid import uuid4
 
 from ..storage.layout import fsync_directory
 
@@ -20,7 +22,6 @@ class ServiceStateError(ValueError):
 class ServiceStateStore:
     def __init__(self, path: Path) -> None:
         self.path = path
-        self.partial_path = path.with_name(f"{path.name}.partial")
 
     def write(self, document: Mapping[str, object]) -> None:
         body = dict(document)
@@ -36,22 +37,36 @@ class ServiceStateStore:
             separators=(",", ":"),
             ensure_ascii=False,
         ).encode("utf-8")
-        descriptor = os.open(
-            self.partial_path,
-            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-            0o600,
-        )
+        temporary = self.path.with_name(f".{self.path.name}.{uuid4().hex}.partial")
+        descriptor = -1
+        temporary_owned = False
+        published = False
         try:
-            os.fchmod(descriptor, 0o600)
-            with os.fdopen(descriptor, "wb", closefd=False) as handle:
-                handle.write(encoded)
-                handle.flush()
-            os.fsync(descriptor)
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(temporary, flags, 0o600)
+            temporary_owned = True
+            try:
+                os.fchmod(descriptor, 0o600)
+                view = memoryview(encoded)
+                while view:
+                    written = os.write(descriptor, view)
+                    if written <= 0:
+                        raise OSError("service state write returned no progress")
+                    view = view[written:]
+                os.fsync(descriptor)
+            finally:
+                if descriptor >= 0:
+                    os.close(descriptor)
+                    descriptor = -1
+            os.replace(temporary, self.path)
+            published = True
+            os.chmod(self.path, 0o600)
+            fsync_directory(self.path.parent)
         finally:
-            os.close(descriptor)
-        os.replace(self.partial_path, self.path)
-        os.chmod(self.path, 0o600)
-        fsync_directory(self.path.parent)
+            if temporary_owned and not published:
+                with suppress(OSError):
+                    temporary.unlink(missing_ok=True)
 
     def read(self) -> dict[str, object] | None:
         if not self.path.is_file():

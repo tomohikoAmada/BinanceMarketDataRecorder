@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import threading
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -22,6 +23,7 @@ from binance_market_data_recorder.service.runtime import (
     ServiceRuntime,
     _collector_factory,
 )
+from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
@@ -283,3 +285,116 @@ def test_normally_returning_core_marks_service_failed_and_stops_peer(
         evidence = cast(dict[str, object], failures[0]["evidence"])
         assert evidence["market"] == "spot"
         assert evidence["error_type"] == "RuntimeError"
+
+
+def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        initial_running_published = threading.Event()
+        running_contention_started = threading.Event()
+        release_running = threading.Event()
+        permit_collector_return = asyncio.Event()
+        failed_store_write_started = asyncio.Event()
+        published_statuses: list[str] = []
+        published_statuses_lock = threading.Lock()
+        loop = asyncio.get_running_loop()
+
+        class SignalingCollector(FakeCollector):
+            async def run(self, stop: asyncio.Event) -> None:
+                self.started = True
+                await permit_collector_return.wait()
+
+        class ControlledStateStore(ServiceStateStore):
+            def __init__(self, delegate: ServiceStateStore) -> None:
+                super().__init__(delegate.path)
+                self.delegate = delegate
+
+            def write(self, document: Mapping[str, object]) -> None:
+                status = str(document["status"])
+                if status == "RUNNING" and not initial_running_published.is_set():
+                    self.delegate.write(document)
+                    initial_running_published.set()
+                else:
+                    if status == "RUNNING":
+                        running_contention_started.set()
+                        if not release_running.wait(timeout=5):
+                            raise AssertionError("running write was not released")
+                    elif status == "FAILED":
+                        loop.call_soon_threadsafe(failed_store_write_started.set)
+                    self.delegate.write(document)
+                with published_statuses_lock:
+                    published_statuses.append(status)
+
+        returning = SignalingCollector("spot", "returning-spot")
+        healthy = FakeCollector("um_perpetual", "healthy-um")
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            return {"spot": returning, "um_perpetual": healthy}
+
+        runtime = ServiceRuntime(
+            config=_config(tmp_path),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+        )
+        runtime.state_store = ControlledStateStore(runtime.state_store)
+
+        class ObservedStateWriteLock:
+            def __init__(self) -> None:
+                self._lock = asyncio.Lock()
+                self.failed_waiter_seen = asyncio.Event()
+
+            async def __aenter__(self) -> ObservedStateWriteLock:
+                if self._lock.locked() and runtime._status == "FAILED":
+                    self.failed_waiter_seen.set()
+                await self._lock.acquire()
+                return self
+
+            async def __aexit__(self, *args: object) -> None:
+                self._lock.release()
+
+        observed_lock = ObservedStateWriteLock()
+        runtime._state_write_lock = cast(Any, observed_lock)
+        task = asyncio.create_task(runtime.run())
+        assert await asyncio.to_thread(running_contention_started.wait, 5)
+        assert initial_running_published.is_set()
+        permit_collector_return.set()
+
+        failed_waiter_task = asyncio.create_task(observed_lock.failed_waiter_seen.wait())
+        failed_store_task = asyncio.create_task(failed_store_write_started.wait())
+        done, pending = await asyncio.wait(
+            {failed_waiter_task, failed_store_task},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for pending_task in pending:
+            pending_task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+        if failed_store_task in done:
+            raise AssertionError(
+                "FAILED publication reached the store before serialized contention"
+            )
+        assert failed_waiter_task in done
+        assert failed_waiter_task.result()
+        assert not failed_store_write_started.is_set()
+
+        release_running.set()
+        with pytest.raises(RuntimeError, match="core market Collector terminated"):
+            await task
+
+        assert healthy.stopped
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        with published_statuses_lock:
+            statuses = list(published_statuses)
+        assert statuses.count("RUNNING") == 2
+        failure_index = statuses.index("FAILED")
+        assert all(status != "RUNNING" for status in statuses[failure_index + 1 :])
+
+    asyncio.run(exercise())

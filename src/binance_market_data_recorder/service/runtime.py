@@ -237,6 +237,7 @@ class ServiceRuntime:
             threshold_seconds=config.sleep_gap_threshold_seconds
         )
         self._recovery_action_count = 0
+        self._state_write_lock = asyncio.Lock()
 
     def request_stop(self, reason: str) -> None:
         if not reason:
@@ -393,7 +394,9 @@ class ServiceRuntime:
         }
 
     async def _write_state(self) -> None:
-        await asyncio.to_thread(self.state_store.write, self._state_document())
+        async with self._state_write_lock:
+            document = self._state_document()
+            await asyncio.to_thread(self.state_store.write, document)
 
     async def _heartbeat(self, stop: asyncio.Event) -> None:
         while not stop.is_set():
