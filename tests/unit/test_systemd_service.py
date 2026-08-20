@@ -55,12 +55,35 @@ class ShowSystemctl(FakeSystemctl):
     def __init__(self) -> None:
         super().__init__()
         self.properties: dict[str, str] = {}
+        self.dbus_get_unit_output = (
+            'o "/org/freedesktop/systemd1/unit/'
+            "binance_2dmarket_2ddata_2drecorder_2eservice"
+            '"\n'
+        )
+        self.dbus_property_output = "a(sb) 0\n"
+        self.dbus_returncode = 0
+        self.dbus_property_returncode = 0
+        self.dbus_stderr = ""
 
     def __call__(
         self,
         arguments: Sequence[str],
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(arguments)
+        if len(call) > 1 and call[0] == "/usr/bin/busctl":
+            self.calls.append(call)
+            if call[1] == "call":
+                return subprocess.CompletedProcess(
+                    call, self.dbus_returncode, self.dbus_get_unit_output, self.dbus_stderr
+                )
+            if call[1] == "get-property":
+                return subprocess.CompletedProcess(
+                    call,
+                    self.dbus_property_returncode,
+                    self.dbus_property_output,
+                    self.dbus_stderr,
+                )
+            raise AssertionError(f"unexpected busctl action: {call[1]}")
         if len(call) > 1 and call[1] == "show":
             self.calls.append(call)
             body = "\n".join(
@@ -228,6 +251,131 @@ def test_vps_effective_properties_are_verified_and_dropins_fail_closed(
         manager.verify_effective_properties()
 
 
+def test_vps_environment_files_uses_direct_dbus_evidence_when_systemctl_omits_it(
+    tmp_path: Path,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    del runner.properties["EnvironmentFiles"]
+
+    assert manager.verify_effective_properties() == manager.expected_effective_identity()
+
+    show_call = next(call for call in runner.calls if call[1] == "show")
+    assert "--all" not in show_call
+    assert any(call[1] == "call" for call in runner.calls)
+    assert any(call[1] == "get-property" for call in runner.calls)
+
+
+def test_vps_environment_files_systemctl_line_is_not_authority(
+    tmp_path: Path,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.properties["EnvironmentFiles"] = "/not/authoritative"
+
+    assert manager.verify_effective_properties() == manager.expected_effective_identity()
+
+
+@pytest.mark.parametrize(
+    "property_output",
+    [
+        "a(sb) 1 \"/etc/default/recorder\" true",
+        "a(sb) 1",
+    ],
+)
+def test_vps_nonempty_dbus_environment_files_fail_closed(
+    tmp_path: Path,
+    property_output: str,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.dbus_property_output = property_output
+
+    with pytest.raises(SystemdError, match="EnvironmentFile"):
+        manager.verify_effective_properties()
+
+
+def test_vps_dbus_environment_files_query_failure_fails_closed(
+    tmp_path: Path,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.dbus_returncode = 1
+    runner.dbus_stderr = "org.freedesktop.DBus.Error.Failed"
+
+    with pytest.raises(SystemdError, match="busctl call"):
+        manager.verify_effective_properties()
+
+
+def test_vps_dbus_environment_files_property_failure_fails_closed(
+    tmp_path: Path,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.dbus_property_returncode = 1
+    runner.dbus_stderr = "org.freedesktop.DBus.Error.UnknownProperty"
+
+    with pytest.raises(SystemdError, match="busctl get-property"):
+        manager.verify_effective_properties()
+
+
+@pytest.mark.parametrize(
+    "property_output",
+    ["s 0", "a(sb)", "a(sb) nope", "a(sb) -1", "a(sb) 0 extra"],
+)
+def test_vps_malformed_dbus_environment_files_evidence_fails_closed(
+    tmp_path: Path,
+    property_output: str,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.dbus_property_output = property_output
+
+    with pytest.raises(SystemdError):
+        manager.verify_effective_properties()
+
+
+@pytest.mark.parametrize(
+    "unit_output",
+    [
+        "",
+        's "/org/freedesktop/systemd1/unit/not-a-unit"',
+        'o "/org/freedesktop/systemd1/other/value"',
+        'o "/org/freedesktop/systemd1/unit/valid" trailing',
+    ],
+)
+def test_vps_malformed_dbus_unit_lookup_fails_closed(
+    tmp_path: Path,
+    unit_output: str,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    runner.dbus_get_unit_output = unit_output
+
+    with pytest.raises(SystemdError):
+        manager.verify_effective_properties()
+
+
+def test_vps_missing_systemctl_and_dbus_environment_files_evidence_fails_closed(
+    tmp_path: Path,
+) -> None:
+    runner = ShowSystemctl()
+    manager = _vps_manager(tmp_path, runner)
+    runner.properties = _effective_properties(manager)
+    del runner.properties["EnvironmentFiles"]
+    runner.dbus_returncode = 1
+
+    with pytest.raises(SystemdError):
+        manager.verify_effective_properties()
+
+
 def test_vps_effective_operational_environment_override_fails_closed(
     tmp_path: Path,
 ) -> None:
@@ -262,7 +410,6 @@ def test_vps_effective_proxy_environment_must_be_empty(
 @pytest.mark.parametrize(
     ("property_name", "value", "message"),
     [
-        ("EnvironmentFiles", "/etc/default/recorder", "EnvironmentFile"),
         ("PassEnvironment", "HTTP_PROXY", "PassEnvironment"),
         ("RestartUSec", "11s", "restart_sec_usec"),
         ("TimeoutStopUSec", "91s", "timeout_stop_sec_usec"),
