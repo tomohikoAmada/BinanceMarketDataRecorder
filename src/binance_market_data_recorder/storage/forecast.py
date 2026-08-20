@@ -13,6 +13,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any, cast
 
+from .capacity import CapacityProfile, evaluate_capacity
 from .catalog import Catalog
 
 GIB = 1024**3
@@ -252,8 +253,14 @@ class StorageForecaster:
         )
 
     def forecast(
-        self, scope_id: str, *, now_utc_ns: int | None = None
+        self,
+        scope_id: str,
+        *,
+        now_utc_ns: int | None = None,
+        capacity_profile: CapacityProfile | None = None,
     ) -> dict[str, object]:
+        if capacity_profile is not None:
+            capacity_profile.validate_scope(scope_id)
         now = self.utc_clock_ns() if now_utc_ns is None else now_utc_ns
         samples = self.catalog.space_samples(scope_id)
         if not samples:
@@ -299,7 +306,7 @@ class StorageForecaster:
         )
         thresholds = threshold_bytes(total)
         oldest_unarchived = current.get("oldest_unarchived_at_utc_ns")
-        return {
+        result: dict[str, object] = {
             "scope_id": scope_id,
             "storage_id": current.get("storage_id"),
             "status": space_severity(total, free),
@@ -338,12 +345,45 @@ class StorageForecaster:
             ),
             "sample_count": len(samples),
         }
+        if capacity_profile is not None:
+            hard_reserve_eta = _eta(
+                now_utc_ns=now,
+                free_bytes=free,
+                threshold=capacity_profile.hard_reserve_bytes,
+                rate_bytes_per_second=selected_rate,
+                rate_status=rate_status,
+            )
+            decision = evaluate_capacity(
+                profile=capacity_profile,
+                scope_id=scope_id,
+                total_bytes=total,
+                free_bytes=free,
+                hard_reserve_eta=hard_reserve_eta,
+                now_utc_ns=now,
+            )
+            result.update(
+                {
+                    "capacity_profile": decision.profile_id,
+                    "capacity_state": decision.state.value,
+                    "hard_reserve_eta": hard_reserve_eta,
+                }
+            )
+        return result
 
     def document(
-        self, scope_ids: Sequence[str], *, now_utc_ns: int | None = None
+        self,
+        scope_ids: Sequence[str],
+        *,
+        now_utc_ns: int | None = None,
+        capacity_profile: CapacityProfile | None = None,
     ) -> dict[str, object]:
         now = self.utc_clock_ns() if now_utc_ns is None else now_utc_ns
-        targets = [self.forecast(scope, now_utc_ns=now) for scope in scope_ids]
+        targets = [
+            self.forecast(
+                scope, now_utc_ns=now, capacity_profile=capacity_profile
+            )
+            for scope in scope_ids
+        ]
         return {
             "schema_version": FORECAST_SCHEMA_VERSION,
             "generated_at_utc_ns": now,

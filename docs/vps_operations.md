@@ -35,6 +35,9 @@ not enter Raw, manifests, Catalog event bodies, status, or logs.
 
 Forecasting uses observed filesystem free bytes and measured ingest/net-growth
 rates. It does not assume that Recorder owns the filesystem or the host.
+M22.7A names this derived internal-only policy `vps-production-v1`. Selection
+is explicit; no hostname, platform, filesystem-size, cloud-metadata, systemd,
+environment-variable, TOML, CLI, or runtime auto-detection selects it.
 
 | State | Entry condition | Action |
 | --- | --- | --- |
@@ -44,11 +47,15 @@ rates. It does not assume that Recorder owns the filesystem or the host.
 | EMERGENCY | free <= 12 GiB or ETA <= 24 hours | Prioritize capture/seal/Catalog/recovery and archive space recovery |
 | HARD RESERVE | free <= 10 GiB | Do not intentionally consume protected reserve; drain/seal, record stop/gap, stop accepting new capture |
 
-The 10 GiB reserve protects the OS and co-resident services. At or near the
+All ETA evidence targets the fixed 10 GiB reserve; there are no separate ETA
+targets at 18, 14, or 12 GiB. The 10 GiB reserve protects the OS and co-resident
+services. At or near the
 reserve, the fail-closed rule remains: never delete unarchived Raw, safely
 drain and seal what can be proven, persist `DISK_EMERGENCY_STOP` and the gap
 start, and stop before writing the filesystem to zero. Forecast ETAs continue
-to use observed 1h, 6h, 24h, and 7d evidence where available.
+to use observed 1h, 6h, 24h, and 7d evidence where available. ETA alone may
+trigger the emergency pre-actions but never a Collector stop; only an actual
+observation at or below 10 GiB authorizes the hard stop.
 
 These are initial VPS-profile thresholds. Changes require another explicit
 architecture decision and measured evidence.

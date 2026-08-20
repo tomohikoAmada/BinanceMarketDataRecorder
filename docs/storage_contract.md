@@ -298,8 +298,12 @@ at hard reserve, gracefully seal, stop collectors, emit `DISK_EMERGENCY_STOP`,
 and open an explicit gap interval.
 
 M11 currently implements ADR-0016 with persisted per-scope capacity samples.
-The future VPS profile preserves the observed-growth method while selecting the
-ADR-0028 thresholds. Each window
+M22.7A adds the explicitly selected internal-only `vps-production-v1` profile
+as a derived evaluation. It preserves the observed-growth method while
+selecting the ADR-0028 thresholds: absolute WARNING/CRITICAL/EMERGENCY/HARD
+RESERVE at 18/14/12/10 GiB. Every profile ETA targets only the fixed 10 GiB
+hard reserve and classifies integer UTC nanoseconds at 7 days, 72 hours, and
+24 hours. Each window
 uses the median of consecutive net-consumption slopes after at least 80% time
 coverage; the maximum available window median is the conservative operational
 rate. Internal and every `external:<storage_id>` scope remain independent.
@@ -307,4 +311,9 @@ Severity changes are append-only alerts. Existing local M11 hard-reserve
 calculation remains historical implementation behavior; the future VPS hard
 reserve is the protected 10 GiB threshold. In both profiles, actions are
 ordered seal, Collector stop, `DISK_EMERGENCY_STOP`, and gap open. No emergency
-action deletes unarchived Raw.
+action deletes unarchived Raw. Profile selection is explicit and library-only in
+M22.7A; runtime/configuration/CLI selection belongs to M22.7B. The
+`storage-forecast.v1` output retains generic M11 `status`, `threshold_bytes`,
+`eta`, and `net_growth`, and additively exposes `capacity_profile`,
+`capacity_state`, and `hard_reserve_eta`. No Catalog schema or generic alert
+authority is changed.

@@ -138,12 +138,14 @@ Laptop sleep is a known gap source. `prevent_sleep=true` uses a service-scoped
 promise closed-lid capture. Review daily reconnect, sequence-gap, resync,
 oldest-unarchived, queue, file-handle, memory, and disk/backlog metrics.
 
-For the future VPS profile, capacity states are WARNING at 18 GiB (or ETA <= 7
+For the explicitly selected future VPS profile `vps-production-v1`, capacity
+states are WARNING at 18 GiB (or ETA <= 7
 days), CRITICAL at 14 GiB (or ETA <= 72 hours), EMERGENCY at 12 GiB (or ETA <=
-24 hours), and HARD RESERVE at 10 GiB. The VPS preserves approximately 10 GiB
-for the OS and co-resident services. Never delete unarchived Raw. Existing
-local M11 percentage thresholds remain implementation history for local
-profiles, not universal VPS policy.
+24 hours), and HARD RESERVE at 10 GiB. All ETA calculations target only the
+10 GiB reserve. The VPS preserves approximately 10 GiB for the OS and
+co-resident services. Never delete unarchived Raw. The profile is not selected
+by the current runtime or CLI; existing local M11 percentage thresholds remain
+implementation history for local profiles, not universal VPS policy.
 
 ## Recovery
 
