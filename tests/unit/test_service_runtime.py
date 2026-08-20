@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import threading
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import cast
@@ -22,6 +23,7 @@ from binance_market_data_recorder.service.runtime import (
     ServiceRuntime,
     _collector_factory,
 )
+from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
@@ -283,3 +285,77 @@ def test_normally_returning_core_marks_service_failed_and_stops_peer(
         evidence = cast(dict[str, object], failures[0]["evidence"])
         assert evidence["market"] == "spot"
         assert evidence["error_type"] == "RuntimeError"
+
+
+def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        heartbeat_started = threading.Event()
+        release_heartbeat = threading.Event()
+        collector_returned = asyncio.Event()
+        published_statuses: list[str] = []
+        published_statuses_lock = threading.Lock()
+
+        class SignalingCollector(FakeCollector):
+            async def run(self, stop: asyncio.Event) -> None:
+                self.started = True
+                collector_returned.set()
+
+        class ControlledStateStore(ServiceStateStore):
+            def __init__(self, delegate: ServiceStateStore) -> None:
+                super().__init__(delegate.path)
+                self.delegate = delegate
+                self.write_count = 0
+                self.write_count_lock = threading.Lock()
+
+            def write(self, document: Mapping[str, object]) -> None:
+                with self.write_count_lock:
+                    self.write_count += 1
+                    write_number = self.write_count
+                status = str(document["status"])
+                if write_number == 2:
+                    heartbeat_started.set()
+                    if not release_heartbeat.wait(timeout=5):
+                        raise AssertionError("heartbeat write was not released")
+                self.delegate.write(document)
+                with published_statuses_lock:
+                    published_statuses.append(status)
+
+        returning = SignalingCollector("spot", "returning-spot")
+        healthy = FakeCollector("um_perpetual", "healthy-um")
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            return {"spot": returning, "um_perpetual": healthy}
+
+        runtime = ServiceRuntime(
+            config=_config(tmp_path),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+        )
+        runtime.state_store = ControlledStateStore(runtime.state_store)
+        task = asyncio.create_task(runtime.run())
+        assert await asyncio.to_thread(heartbeat_started.wait, 5)
+        await collector_returned.wait()
+        release_heartbeat.set()
+        with pytest.raises(RuntimeError, match="core market Collector terminated"):
+            await task
+
+        assert healthy.stopped
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        with published_statuses_lock:
+            statuses = list(published_statuses)
+        failure_index = max(
+            index for index, status in enumerate(statuses) if status == "FAILED"
+        )
+        assert all(status != "RUNNING" for status in statuses[failure_index + 1 :])
+
+    asyncio.run(exercise())
