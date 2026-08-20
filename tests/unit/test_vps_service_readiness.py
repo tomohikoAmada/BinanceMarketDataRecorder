@@ -401,6 +401,16 @@ def test_full_ready_invokes_real_file_identity_and_effective_systemd_seams(
     }
 
     def show_runner(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
+        if arguments[0] == "/usr/bin/busctl":
+            if arguments[1] == "call":
+                return subprocess.CompletedProcess(
+                    list(arguments),
+                    0,
+                    'o "/org/freedesktop/systemd1/unit/recorder_2eservice"\n',
+                    "",
+                )
+            if arguments[1] == "get-property":
+                return subprocess.CompletedProcess(list(arguments), 0, "a(sb) 0\n", "")
         assert arguments[1] == "show"
         body = "\n".join(f"{name}={value}" for name, value in properties.items())
         return subprocess.CompletedProcess(list(arguments), 0, body + "\n", "")
@@ -613,6 +623,16 @@ def test_full_ready_invokes_complete_real_installed_identity_chain(
     }
 
     def show_runner(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
+        if arguments[0] == "/usr/bin/busctl":
+            if arguments[1] == "call":
+                return subprocess.CompletedProcess(
+                    list(arguments),
+                    0,
+                    'o "/org/freedesktop/systemd1/unit/recorder_2eservice"\n',
+                    "",
+                )
+            if arguments[1] == "get-property":
+                return subprocess.CompletedProcess(list(arguments), 0, "a(sb) 0\n", "")
         body = "\n".join(f"{name}={value}" for name, value in properties.items())
         return subprocess.CompletedProcess(list(arguments), 0, body + "\n", "")
 

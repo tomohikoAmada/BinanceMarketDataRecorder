@@ -29,6 +29,7 @@ _GIT_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{7,64}$")
 _SYSTEMD_DURATION = re.compile(
     r"(?P<value>[0-9]+(?:\.[0-9]+)?)(?P<unit>us|ms|s|min|h)"
 )
+_SYSTEMD_UNIT_OBJECT_PATH_PREFIX = "/org/freedesktop/systemd1/unit/"
 _VPS_DIRECT_ENVIRONMENT = (
     "ALL_PROXY=",
     "HTTPS_PROXY=",
@@ -433,9 +434,66 @@ class SystemdManager:
             if name in output:
                 raise SystemdError("systemctl show returned duplicate evidence")
             output[name] = value
-        if set(output) != set(names):
+        required_names = set(names) - {"EnvironmentFiles"}
+        if not required_names.issubset(output) or set(output) - set(names):
             raise SystemdError("systemctl show omitted required evidence")
         return output
+
+    def _environment_files_from_dbus(self) -> list[str]:
+        unit_result = self._run(
+            "/usr/bin/busctl",
+            "call",
+            "org.freedesktop.systemd1",
+            "/org/freedesktop/systemd1",
+            "org.freedesktop.systemd1.Manager",
+            "GetUnit",
+            "s",
+            SYSTEMD_SERVICE_NAME,
+        )
+        unit_output = unit_result.stdout.strip()
+        unit_parts = unit_output.split(maxsplit=1)
+        if len(unit_parts) != 2 or unit_parts[0] != "o":
+            raise SystemdError("systemd GetUnit returned malformed object path evidence")
+        quoted_path = unit_parts[1].strip()
+        if (
+            len(quoted_path) < 2
+            or not quoted_path.startswith('"')
+            or not quoted_path.endswith('"')
+        ):
+            raise SystemdError("systemd GetUnit returned malformed object path evidence")
+        object_path = quoted_path[1:-1]
+        if (
+            not object_path.startswith(_SYSTEMD_UNIT_OBJECT_PATH_PREFIX)
+            or not object_path[len(_SYSTEMD_UNIT_OBJECT_PATH_PREFIX) :]
+            or "/" in object_path[len(_SYSTEMD_UNIT_OBJECT_PATH_PREFIX) :]
+            or '"' in object_path
+        ):
+            raise SystemdError("systemd GetUnit returned unexpected object path")
+
+        property_result = self._run(
+            "/usr/bin/busctl",
+            "get-property",
+            "org.freedesktop.systemd1",
+            object_path,
+            "org.freedesktop.systemd1.Service",
+            "EnvironmentFiles",
+        )
+        property_parts = property_result.stdout.strip().split()
+        if len(property_parts) < 2 or property_parts[0] != "a(sb)":
+            raise SystemdError("systemd EnvironmentFiles D-Bus signature is invalid")
+        try:
+            element_count = int(property_parts[1])
+        except ValueError as exc:
+            raise SystemdError(
+                "systemd EnvironmentFiles D-Bus count is malformed"
+            ) from exc
+        if element_count < 0:
+            raise SystemdError("systemd EnvironmentFiles D-Bus count is malformed")
+        if element_count == 0:
+            if len(property_parts) != 2:
+                raise SystemdError("systemd EnvironmentFiles D-Bus value is malformed")
+            return []
+        raise SystemdError("systemd EnvironmentFile authority is forbidden")
 
     def expected_effective_identity(self) -> dict[str, object]:
         return {
@@ -502,9 +560,7 @@ class SystemdManager:
             "requires": _systemd_words(properties["Requires"], field="Requires"),
             "after": _systemd_words(properties["After"], field="After"),
             "environment": _effective_environment(properties["Environment"]),
-            "environment_files": _systemd_words(
-                properties["EnvironmentFiles"], field="EnvironmentFiles"
-            ),
+            "environment_files": self._environment_files_from_dbus(),
             "pass_environment": _systemd_words(
                 properties["PassEnvironment"], field="PassEnvironment"
             ),
