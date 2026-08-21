@@ -535,20 +535,49 @@ def test_sustained_overload_rotates_generation_with_persistent_gap(
     assert high_watermark == 2
     assert sockets[1].close_reasons == ["bounded ingress backpressure"]
     # The first connection's injected disconnect is now itself a reconnect
-    # boundary (unexpected_disconnect), so all three connections are isolated
-    # in their own sealed generation chunk.
-    assert len({tuple(document["connection_ids"]) for document in manifests}) == 3
+    # boundary (unexpected_disconnect).  Transport generations are isolated,
+    # but a generation may also have a valid zero-record reconnect marker when
+    # its Raw writer has already auto-rotated before the boundary is sealed.
+    non_empty_manifests = [
+        document for document in manifests if document["connection_ids"]
+    ]
+    non_empty_connection_ids = {
+        connection_id
+        for document in non_empty_manifests
+        for connection_id in document["connection_ids"]
+    }
+    persisted_connection_ids = {str(envelope.connection_id) for envelope in envelopes}
+    assert non_empty_connection_ids == persisted_connection_ids
+    assert len(non_empty_connection_ids) == 3
+    assert all(
+        len(document["connection_ids"]) == 1
+        for document in non_empty_manifests
+    )
+
+    marker_manifests = [
+        document for document in manifests if not document["connection_ids"]
+    ]
+    assert all(document["record_count"] == 0 for document in marker_manifests)
+    assert all(document["gap"] is True for document in marker_manifests)
+    assert all(document["complete"] is False for document in marker_manifests)
+    assert all(
+        "reconnect_gap" in document["capture_flags"]
+        for document in marker_manifests
+    )
+
     gap_manifests = [document for document in manifests if document["gap"]]
-    assert len(gap_manifests) == 3
     assert all(document["complete"] is False for document in gap_manifests)
-    assert gap_manifests[0]["capture_flags"] == ["reconnect_gap"]
+    non_empty_gap_manifests = [
+        document for document in gap_manifests if document["connection_ids"]
+    ]
+    assert non_empty_gap_manifests[0]["capture_flags"] == ["reconnect_gap"]
     assert all(
         document["capture_flags"] == ["sequence_gap"]
-        for document in gap_manifests[1:]
+        for document in non_empty_gap_manifests[1:]
     )
-    assert len(gap_manifests[-1]["connection_ids"]) == 1
-    assert set(gap_manifests[0]["connection_ids"]).isdisjoint(
-        gap_manifests[-1]["connection_ids"]
+    assert len(non_empty_gap_manifests[-1]["connection_ids"]) == 1
+    assert set(non_empty_gap_manifests[0]["connection_ids"]).isdisjoint(
+        non_empty_gap_manifests[-1]["connection_ids"]
     )
 
     with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
