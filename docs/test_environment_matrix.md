@@ -2,8 +2,8 @@
 
 Status: M22.8 remote Linux integrated failure acceptance is accepted for the
 fixed isolated run recorded in `docs/milestone_acceptance/M22.8.md`. This does
-not claim that the exact production VPS profile or its staged windows have
-been executed.
+not claim that the M22.9 exact production staged acceptance or any of its
+`2h -> 12h -> 24h -> 72h -> 168h` windows has been executed.
 
 | Environment | Primary role | Required evidence | Not a substitute for |
 | --- | --- | --- | --- |
