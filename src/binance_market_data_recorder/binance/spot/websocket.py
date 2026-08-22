@@ -4,8 +4,9 @@ SpotStreamCollector 管理一条 websocket 连接的生命周期,遵循以下不
 
 - 接收时间(UTC 墙上时钟 + monotonic)在 recv(decode=False) 之后、JSON 解析或
   CBOR 编码之前立即记录。这确保解析异常、畸变负载和编码失败不影响计时记录。
-- 有界接收队列(BoundedEventQueue,receipt_queue_capacity)防止背压下无限内存
-  增长。若队列已满,抛出 IngressQueueFull 作为可见故障;事件永不静默丢弃。
+- 有界接收队列(BoundedAsyncQueue,receipt_queue_capacity)防止背压下无限内存
+  增长。短暂饱和等待有界 Writer 空间;持续饱和关闭连接并为已接收边界帧
+  提供独立的有限交接机会,事件永不静默丢弃。
 - 连接在 planned_rotation_seconds(默认 23h50m)时轮换,早于 Binance 文档规定的
   24 小时断开。server_shutdown 事件触发立即重连。
 - 每个流使用自己的 raw 端点和连接 ID。这即使对畸变 JSON 也能保留流身份,
@@ -16,8 +17,8 @@ SpotStreamCollector 管理一条 websocket 连接的生命周期,遵循以下不
   -> Catalog STREAM_DISCONTINUITY_STARTED durable -> generation++ ->
   新连接 -> 首个新帧携带 sequence_gap -> Raw sync -> COMPLETED。
   exchange-side completeness 在 close 与首个新帧之间永远无法证明;
-  intentional close 不是完整性豁免。Spot 的 IngressQueueFull 溢出仍保持
-  进程级致命(不属于本修复范围)。
+  intentional close 不是完整性豁免。Spot ingress backpressure 使用同一
+  持久化断点语义; Writer/Catalog/Raw 完整性失败仍保持进程级致命。
 """
 
 from __future__ import annotations
@@ -39,7 +40,13 @@ from websockets.exceptions import WebSocketException
 from ...domain.event import EventEnvelope
 from ...logging import log_event
 from ...network import WebSocketProxy
-from ...spool.queue import IngressGapStateConflict, IngressQueueFull
+from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
+from ...spool.queue import (
+    IngressBackpressureTimeout,
+    IngressGapStateConflict,
+    IngressPostCloseHandoffTimeout,
+    IngressStopRequested,
+)
 from ...spool.seal import RECONNECT_GAP_FLAG, RECONNECT_INTENT_SCHEMA_V2
 from ...spool.stream import StreamSpool
 from ..websocket_common import (
@@ -134,11 +141,16 @@ class SpotStreamCollector:
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
         lifecycle_observer: LifecycleObserver | None = None,
         envelope_observer: EnvelopeObserver | None = None,
+        backpressure_put_timeout_seconds: float = 1.0,
+        backpressure_saturation_timeout_seconds: float = 30.0,
+        post_close_handoff_timeout_seconds: float = 5.0,
     ) -> None:
         if receipt_queue_capacity < 1:
             raise ValueError("receipt queue capacity must be positive")
         if not 0 < planned_rotation_seconds < 24 * 60 * 60:
             raise ValueError("planned rotation must occur before the 24-hour limit")
+        if post_close_handoff_timeout_seconds <= 0:
+            raise ValueError("post-close handoff timeout must be positive")
         self.stream = stream
         self.wire_name = wire_name
         self.spool = spool
@@ -154,10 +166,14 @@ class SpotStreamCollector:
         self.lifecycle_observer = lifecycle_observer
         self.envelope_observer = envelope_observer
         self._capture_flags: tuple[str, ...] = ()
-        self._receipts: asyncio.Queue[ReceivedFrame] = asyncio.Queue(
-            maxsize=receipt_queue_capacity
+        self._receipts = BoundedAsyncQueue[ReceivedFrame](
+            receipt_queue_capacity,
+            put_timeout_seconds=backpressure_put_timeout_seconds,
+            saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
         )
+        self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
         self._server_shutdown = asyncio.Event()
+        self._backpressure_active = False
         self._generation = 0
         self._recovery_flag_pending = False
         self._recovery_marker_enqueued = False
@@ -167,6 +183,11 @@ class SpotStreamCollector:
         self._boundary_connection_id: str | None = None
         self._boundary_detected_at_utc_ns: int | None = None
         self._connection_receipt_count = 0
+        self._last_writer_batch_size = 0
+        self._last_writer_drain_ns = 0
+        self._max_writer_drain_ns = 0
+        self._backpressure_boundary: ReceivedFrame | None = None
+        self._backpressure_boundary_handoff_succeeded: bool | None = None
         self._active_connection_id: str | None = None
         self._restore_open_gap()
 
@@ -176,6 +197,10 @@ class SpotStreamCollector:
 
     def set_capture_flags(self, flags: tuple[str, ...]) -> None:
         self._capture_flags = flags
+
+    @property
+    def receipt_queue_stats(self) -> AsyncQueueStats:
+        return self._receipts.snapshot()
 
     def _restore_open_gap(self) -> None:
         open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
@@ -261,17 +286,80 @@ class SpotStreamCollector:
             ),
         )
 
-    def _accept(self, receipt: ReceivedFrame) -> None:
+    async def _accept(
+        self,
+        receipt: ReceivedFrame,
+        writer_task: asyncio.Task[None],
+        stop: asyncio.Event,
+    ) -> None:
+        if self._receipts.depth >= self._receipts.capacity and not self._backpressure_active:
+            self._backpressure_active = True
+            self._log_ingress_state(
+                logging.WARNING,
+                "spot_ingress_backpressure_started",
+                "bounded Spot receipt queue started applying producer backpressure",
+                connection_id=receipt.connection_id,
+                outcome="WAITING",
+            )
         marker = self._with_recovery_marker(receipt)
-        if marker is not receipt:
+        reserved = marker is not receipt
+        if reserved:
             self._recovery_marker_enqueued = True
         try:
-            self._receipts.put_nowait(marker)
-        except asyncio.QueueFull as exc:
-            if marker is not receipt and self._pending_gap is not None:
+            await self._receipts.put(marker, writer_task=writer_task, stop=stop)
+        except BaseException:
+            if reserved and self._pending_gap is not None:
                 self._recovery_marker_enqueued = False
-            raise IngressQueueFull("WebSocket receipt queue is full") from exc
+            raise
         self._connection_receipt_count += 1
+
+    def _queue_fields(self) -> dict[str, object]:
+        stats = self._receipts.snapshot()
+        operations = self.spool.operation_stats()
+        return {
+            "receipt_queue_capacity": stats.capacity,
+            "receipt_queue_depth": stats.depth,
+            "receipt_queue_high_watermark": stats.high_watermark,
+            "queue_wait_count": stats.wait_count,
+            "queue_wait_total_ns": stats.wait_total_ns,
+            "queue_wait_max_ns": stats.wait_max_ns,
+            "queue_wait_p50_ns": stats.wait_p50_ns,
+            "queue_wait_p95_ns": stats.wait_p95_ns,
+            "queue_wait_p99_ns": stats.wait_p99_ns,
+            "saturation_seconds": stats.saturation_seconds,
+            "writer_batch_size": self._last_writer_batch_size,
+            "writer_drain_ns": self._last_writer_drain_ns,
+            "writer_drain_max_ns": self._max_writer_drain_ns,
+            "writer_append_ns": operations.append_last_ns,
+            "writer_append_max_ns": operations.append_max_ns,
+            "writer_write_ns": operations.write_last_ns,
+            "writer_write_max_ns": operations.write_max_ns,
+            "writer_fsync_ns": operations.fsync_last_ns,
+            "writer_fsync_max_ns": operations.fsync_max_ns,
+            "writer_seal_ns": operations.seal_last_ns,
+            "writer_seal_max_ns": operations.seal_max_ns,
+        }
+
+    def _log_ingress_state(
+        self,
+        level: int,
+        event: str,
+        message: str,
+        *,
+        connection_id: str,
+        outcome: str,
+    ) -> None:
+        log_event(
+            self.logger,
+            level,
+            event,
+            message,
+            stream=self.stream.value,
+            connection_id=connection_id,
+            generation=self._generation,
+            outcome=outcome,
+            **self._queue_fields(),
+        )
 
     async def _record_gap_started(
         self,
@@ -281,6 +369,7 @@ class SpotStreamCollector:
         gap_id: str,
         started_at_utc_ns: int,
         connection_id: str,
+        boundary_frame_persisted: bool | None = None,
     ) -> None:
         if reason not in RECONNECT_REASONS:
             raise ValueError(f"unknown Spot reconnect reason: {reason}")
@@ -291,6 +380,8 @@ class SpotStreamCollector:
                 f"Spot {self.stream.value} cannot start a second discontinuity "
                 "while an earlier gap remains open"
             )
+        if boundary_frame_persisted is None:
+            boundary_frame_persisted = boundary is not None
         evidence: dict[str, object] = {
             "gap_id": gap_id,
             "market": "spot",
@@ -305,10 +396,19 @@ class SpotStreamCollector:
                 if boundary is not None
                 else "no_last_frame_available"
             ),
-            "boundary_frame_persisted": boundary is not None,
+            "boundary_frame_persisted": boundary_frame_persisted,
             "boundary_precision": (
-                "connection closed after the last Recorder-received frame; "
-                "unread WebSocket/TCP buffers are indeterminate"
+                (
+                    "connection closed after the last Recorder-received frame; "
+                    "the boundary frame was admitted to the bounded Raw-writer "
+                    "handoff and unread WebSocket/TCP buffers are indeterminate"
+                )
+                if boundary_frame_persisted
+                else (
+                    "connection closed after the last Recorder-received frame; "
+                    "the boundary frame could not enter the Raw-writer handoff "
+                    "and unread WebSocket/TCP buffers are indeterminate"
+                )
                 if boundary is not None
                 else (
                     "no unpersisted last-old frame exists at the boundary; "
@@ -433,12 +533,29 @@ class SpotStreamCollector:
                 if "server_shutdown" in envelope.capture_flags:
                     self._server_shutdown.set()
                 self._receipts.task_done()
-            await run_owned_blocking_call(self.spool.drain_all)
+            drain_started = time.perf_counter_ns()
+            drained = await run_owned_blocking_call(self.spool.drain_all)
+            drain_duration = time.perf_counter_ns() - drain_started
+            self._last_writer_batch_size = len(batch)
+            self._last_writer_drain_ns = drain_duration
+            self._max_writer_drain_ns = max(self._max_writer_drain_ns, drain_duration)
+            if drained != len(batch):
+                raise RuntimeError("Spot Raw spool did not drain the complete writer batch")
             for envelope in persisted:
                 await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
+            if self._receipts.note_consumer_progress() and self._backpressure_active:
+                self._backpressure_active = False
+                connection_id = persisted[-1].connection_id if persisted else "unknown"
+                self._log_ingress_state(
+                    logging.INFO,
+                    "spot_ingress_backpressure_recovered",
+                    "Spot receipt queue recovered below its low watermark",
+                    connection_id=connection_id,
+                    outcome="RECOVERED",
+                )
         await run_owned_blocking_call(
             self.spool.close_and_seal,
             forced_flags=self._forced_seal_flags,
@@ -495,6 +612,61 @@ class SpotStreamCollector:
             if receive_task in done:
                 try:
                     receipt = receive_task.result()
+                    await self._accept(receipt, writer_task, stop)
+                except IngressBackpressureTimeout:
+                    self._log_ingress_state(
+                        logging.ERROR,
+                        "spot_ingress_backpressure_timeout",
+                        "Spot receipt queue exceeded its bounded saturation budget",
+                        connection_id=connection_id,
+                        outcome="ROTATE_CONNECTION",
+                    )
+                    await websocket.close(
+                        code=1013,
+                        reason="bounded ingress backpressure",
+                    )
+                    boundary = replace(
+                        receipt,
+                        capture_flags=tuple(
+                            dict.fromkeys((*receipt.capture_flags, "sequence_gap"))
+                        ),
+                    )
+                    try:
+                        await self._receipts.put_after_connection_close(
+                            boundary,
+                            writer_task=writer_task,
+                            timeout_seconds=self.post_close_handoff_timeout_seconds,
+                        )
+                    except IngressPostCloseHandoffTimeout:
+                        self._backpressure_boundary = boundary
+                        self._backpressure_boundary_handoff_succeeded = False
+                        self._remember_boundary(connection_id)
+                        self._log_ingress_state(
+                            logging.CRITICAL,
+                            "spot_ingress_post_close_handoff_timeout",
+                            "received Spot boundary frame couldn't enter its Raw writer queue",
+                            connection_id=connection_id,
+                            outcome="FATAL",
+                        )
+                        raise
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
+                    self._backpressure_boundary = boundary
+                    self._backpressure_boundary_handoff_succeeded = True
+                    return "ingress_backpressure"
+                except IngressStopRequested:
+                    await websocket.close(code=1000, reason="collector shutdown")
+                    receipt = self._with_recovery_marker(receipt)
+                    await self._receipts.put_after_connection_close(
+                        receipt,
+                        writer_task=writer_task,
+                        timeout_seconds=self.post_close_handoff_timeout_seconds,
+                    )
+                    if self._recovery_flag_pending:
+                        self._recovery_marker_enqueued = True
+                    if self._is_session_restart(session_restart):
+                        return "session_restart"
+                    return "graceful_shutdown"
                 except (WebSocketException, OSError, TimeoutError):
                     if self._is_session_restart(session_restart):
                         await websocket.close(code=1000, reason="collector shutdown")
@@ -503,7 +675,6 @@ class SpotStreamCollector:
                         await websocket.close(code=1000, reason="collector shutdown")
                         return "graceful_shutdown"
                     raise
-                self._accept(receipt)
                 continue
             if stop_task in done and stop_task.result():
                 receive_task.cancel()
@@ -557,6 +728,16 @@ class SpotStreamCollector:
         """
         if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
             return None
+        boundary_persisted = (
+            self._backpressure_boundary_handoff_succeeded
+            if outcome == "ingress_backpressure"
+            else boundary is not None
+        )
+        boundary_started_at = (
+            boundary.receive_time_utc_ns
+            if boundary is not None
+            else self._boundary_detected_at_utc_ns
+        )
         if self._pending_gap is not None and not self._recovery_marker_enqueued:
             parent = self._pending_gap
             return {
@@ -593,13 +774,13 @@ class SpotStreamCollector:
             "stream": self.stream.value,
             "original_connection_id": self._boundary_connection_id,
             "original_generation": self._generation,
-            "gap_started_at_utc_ns": self._boundary_detected_at_utc_ns,
+            "gap_started_at_utc_ns": boundary_started_at,
             "boundary_kind": (
                 "last_frame_in_hand"
                 if boundary is not None
                 else "no_last_frame_available"
             ),
-            "boundary_frame_persisted": boundary is not None,
+            "boundary_frame_persisted": boundary_persisted,
         }
         if boundary is not None:
             intent["boundary_payload_sha256"] = hashlib.sha256(
@@ -675,21 +856,14 @@ class SpotStreamCollector:
                     continue
                 self._remember_boundary(connection_id)
                 return "unexpected_disconnect"
-            except IngressQueueFull:
-                log_event(
-                    self.logger,
-                    logging.CRITICAL,
-                    "spot_ingress_overflow",
-                    "bounded Spot receipt queue is full; capture continuity is lost",
-                    stream=self.stream.value,
-                    connection_id=connection_id,
-                )
-                raise
             finally:
                 if was_connected and self.lifecycle_observer is not None:
                     self.lifecycle_observer("disconnected")
             if reason in RECONNECT_REASONS:
-                if reason == "planned_rotation":
+                if reason == "ingress_backpressure":
+                    if self.lifecycle_observer is not None:
+                        self.lifecycle_observer("ingress_backpressure")
+                elif reason == "planned_rotation":
                     failures = 0
                     if self.lifecycle_observer is not None:
                         self.lifecycle_observer("planned_rotation")
@@ -740,18 +914,40 @@ class SpotStreamCollector:
                 outcome = await self._connection_loop(
                     stop, writer_task, session_restart=session_restart
                 )
+            except IngressPostCloseHandoffTimeout:
+                # Keep the failed handoff on the fatal path while allowing
+                # the finally block to durably record STARTED and seal the
+                # old generation gap before the original error propagates.
+                outcome = "ingress_backpressure"
+                raise
             finally:
-                if outcome in RECONNECT_REASONS:
-                    # No unpersisted last-old frame exists on the Spot path;
-                    # the sealed tail chunk gets the manifest-level
-                    # reconnect_gap flag. Persisted Raw frames stay untouched.
+                if outcome == "ingress_backpressure":
+                    # The boundary frame itself carries sequence_gap and is
+                    # handed to the old generation after the socket closes.
+                    # A failed handoff instead forces the old manifest
+                    # incomplete while retaining the received-frame hash in
+                    # the durable boundary evidence.
+                    self._forced_seal_flags = (
+                        frozenset()
+                        if self._backpressure_boundary_handoff_succeeded
+                        else frozenset({RECONNECT_GAP_FLAG})
+                    )
+                elif outcome in RECONNECT_REASONS:
+                    # No unpersisted last-old frame exists on ordinary Spot
+                    # reconnects; the sealed tail chunk gets reconnect_gap.
                     self._forced_seal_flags = frozenset({RECONNECT_GAP_FLAG})
+                if outcome in RECONNECT_REASONS:
                     # Build the durable seal intent BEFORE any storage
                     # mutation whose crash recovery depends on it (INV-007,
                     # P1-A): the SEALING transition evidence preserves the
                     # required flags and boundary identity even if the
                     # STARTED event below fails to commit.
-                    self._seal_intent = self._build_seal_intent(outcome, None)
+                    boundary = (
+                        self._backpressure_boundary
+                        if outcome == "ingress_backpressure"
+                        else None
+                    )
+                    self._seal_intent = self._build_seal_intent(outcome, boundary)
                     if self._pending_gap is None:
                         # Persist the reconnect intent BEFORE the seal below
                         # (INV-007): a crash during the seal must not let
@@ -766,11 +962,20 @@ class SpotStreamCollector:
                                     f"missing Spot boundary identity for {outcome}"
                                 )
                             await self._record_gap_started(
-                                None,
+                                boundary,
                                 outcome,
                                 gap_id=str(self._seal_intent["gap_id"]),
-                                started_at_utc_ns=self._boundary_detected_at_utc_ns,
+                                started_at_utc_ns=(
+                                    boundary.receive_time_utc_ns
+                                    if boundary is not None
+                                    else self._boundary_detected_at_utc_ns
+                                ),
                                 connection_id=self._boundary_connection_id,
+                                boundary_frame_persisted=(
+                                    self._backpressure_boundary_handoff_succeeded
+                                    if outcome == "ingress_backpressure"
+                                    else None
+                                ),
                             )
                             gap_just_started = True
                             self._generation += 1
@@ -825,7 +1030,14 @@ class SpotStreamCollector:
                     self._recovery_marker_enqueued = False
             if outcome == "stopped":
                 return
-            if outcome not in RECONNECT_REASONS:
+            if outcome == "ingress_backpressure":
+                boundary = self._backpressure_boundary
+                self._backpressure_boundary = None
+                if boundary is None:
+                    raise RuntimeError("missing Spot backpressure generation boundary")
+            elif outcome in RECONNECT_REASONS:
+                boundary = None
+            else:
                 raise RuntimeError(f"unknown Spot connection outcome: {outcome}")
             if self._pending_gap is not None and not gap_just_started:
                 # A pending gap already covers this boundary; it continues
@@ -845,6 +1057,8 @@ class SpotStreamCollector:
                 if self.stream == SpotStream.DIFF_DEPTH:
                     return
                 continue
+            self._backpressure_active = False
+            self._receipts.note_consumer_progress()
             log_event(
                 self.logger,
                 logging.WARNING,
