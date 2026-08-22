@@ -4,9 +4,10 @@ Current implementation status and approved future architecture are distinct.
 macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
 implemented/local validation profiles. The primary production deployment
 profile is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
-[`vps_operations.md`](vps_operations.md). That VPS profile, remote archive
+[`vps_operations.md`](vps_operations.md). The M22.7B deployment/readiness host
+gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
 client, and Catalog snapshot transfer are not production deployed or
-host-validated by M22.7B.
+Production Ready.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
