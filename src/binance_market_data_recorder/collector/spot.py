@@ -192,6 +192,7 @@ class SpotCollector:
                     market="spot", stream=stream, event=event
                 )
                 if stream == "diff_depth" and event in {
+                    "ingress_backpressure",
                     "unexpected_disconnect",
                     "planned_rotation",
                     "server_shutdown",

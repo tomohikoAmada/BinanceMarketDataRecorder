@@ -56,7 +56,12 @@ def _depth_event(
 )
 @pytest.mark.parametrize(
     "reason",
-    ["planned_rotation", "unexpected_disconnect", "server_shutdown"],
+    [
+        "ingress_backpressure",
+        "planned_rotation",
+        "unexpected_disconnect",
+        "server_shutdown",
+    ],
 )
 def test_diff_depth_lifecycle_requests_market_local_resync(
     tmp_path: Path, collector_kind: str, market: Market, reason: str
