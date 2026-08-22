@@ -74,7 +74,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | ARC-03 | Archive Set logical identity, physical storage_id, whole-chunk placement, self-describing media, rebuildable index | ADR-0030, offline workspace | Future multi-media archive-client implementation and rebuild test |
 | ARC-04 | Post-session consistent Catalog snapshots with latest+previous retention; snapshots never replace Raw | ADR-0029, offline workspace, R-050 | Future SQLite-supported backup/snapshot implementation and transfer verification |
 | CAP-04 | VPS free-byte/ETA policy: 18/14/12/10 GiB and 7d/72h/24h, protected 10 GiB reserve | ADR-0028, vps_operations, R-049 | Future measured VPS validation; current local M11 behavior is historical profile behavior |
-| ENV-01 | MacBook, LAN Linux, and exact VPS have separate test and acceptance responsibilities | test environment matrix, ADR-0028 | Future platform matrix; LAN 72h never substitutes for exact VPS |
+| ENV-01 | MacBook, remote Linux, and exact VPS have separate test and acceptance responsibilities | test environment matrix, ADR-0028/0029 | M22.8 isolated remote-source/archive failure matrix; M22.9 exact VPS stages; LAN/RK3588 evidence never substitutes for the exact VPS chain |
 
 ## Milestone coverage
 
