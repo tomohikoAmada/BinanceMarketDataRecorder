@@ -67,6 +67,16 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-045 | USD-M side-data REST rate-limit/error accumulates lifetime failures | Medium | taker_buy_sell_volume_5m continued to fail inside the formal 24h window (RuntimeError, not recovered); other side-data streams show intermittent RateLimitBanError/TooManyRequestsError with recovery. Core markets unaffected; side-data gaps may grow. Not fully recovered. Proven traceability for the cumulative 232 (lifetime counter, not a window delta): evidence file `RUN_ROOT/corrective-integrity-review-20260806T152159Z/journals/recorder.log`; per-line JSON event `usdm_side_rest_failed` with `fields.failures` (int), `fields.stream="taker_buy_sell_volume_5m"`, `fields.error_type="RuntimeError"`, `timestamp_utc`; the export holds a contiguous series failures=88..232 (145 events, no gaps); first observed 88 at 2026-08-05T15:10:37.615037Z (61 s after T0); last observed 232 at 2026-08-06T15:02:28.961437Z (last failure event inside the window; the exact value at T0 is not captured by this export, 12h boundary value was 56); delta within the exported span = 144 failure events (232−88). Corroborated by corrective review `report.md` ("窗口结束时累计232") and `review.json` ("cumulative 232 at window end"). | M21.4 | Monitoring |
 | R-046 | Permanently hung kernel I/O cannot be cancelled even with owned-worker protection | High | M21.4.2 shields asyncio ownership through blocking calls, but an OS write/fsync/compression/sqlite operation already executing cannot be deadline-interrupted. The owner waits rather than closing descriptors out from under the worker. | M21.4 | Accepted |
 
+## M22.8 closure note
+
+The accepted fixed M22.8 run validated the real Mac/OpenSSH/VPS boundary for
+receipt binding, wrong-identity rejection, crash and retry recovery, delete
+response-loss reconciliation, and snapshot-only retry without production
+mutation. R-048 and R-050 remain bounded by their documented contracts; exact
+production VPS staged acceptance remains M22.9. Two evidence-packaging P2
+findings are recorded in `docs/milestone_acceptance/M22.8.md` and do not block
+M22.8 or become M22.9 prerequisites.
+
 ## M0 open questions assigned to milestones
 
 - Exact live Spot/USD-M stream endpoints, `@100ms` payload fixtures, ping/pong
