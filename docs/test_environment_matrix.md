@@ -1,7 +1,9 @@
 # Test Environment Matrix
 
-Status: approved future acceptance architecture; this document does not claim
-that the VPS profile or its staged windows have been executed.
+Status: M22.8 remote Linux integrated failure acceptance is accepted for the
+fixed isolated run recorded in `docs/milestone_acceptance/M22.8.md`. This does
+not claim that the M22.9 exact production staged acceptance or any of its
+`2h -> 12h -> 24h -> 72h -> 168h` windows has been executed.
 
 | Environment | Primary role | Required evidence | Not a substitute for |
 | --- | --- | --- | --- |
@@ -32,7 +34,11 @@ The LAN Linux host remains a separate real-Linux validation profile. RK3588
 evidence remains historical and platform-specific within that role; it is never
 relabeled as VPS evidence. Any LAN run used for M22.8 must still satisfy the
 same isolated remote-source/archive semantics, but physical LAN topology is
-not required. No M22.8 result advances the M22.9 VPS acceptance chain.
+not required. The accepted run was `m22.8-20260822T041913Z-23f1fcc7` on
+`vps-b5bfe3f8` at exact main `f699b6dc0e3e9e2d193eb9fd25321c59526995cd`;
+all nine scenarios and cross-machine failure gates passed. No M22.8 result
+promotes the test workspace or advances a duration window in the M22.9 VPS
+acceptance chain.
 
 ## Exact production VPS
 

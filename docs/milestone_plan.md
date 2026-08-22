@@ -978,7 +978,9 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.8 — Remote Linux Integrated Failure Acceptance
 
-- **Status:** **NOT STARTED**.
+- **Status:** **IMPLEMENTED / REAL CROSS-MACHINE FAILURE VALIDATED / ACCEPTED**;
+  the fixed-run evidence and final audit are recorded in
+  `docs/milestone_acceptance/M22.8.md`.
 - **Scope:** Mac/local archive-operator integration across a real
   SSH/network boundary to a remote Linux source environment: remote source
   identity, archive transfer, receiver storage and verification, durable
@@ -1003,9 +1005,11 @@ mutation exists; those remain exclusively M22.4B scope.
   evidence as VPS or M22.9 evidence.
 - **Dependencies:** M22.1 through M22.7B acceptance.
 - **Acceptance:** The integrated cross-machine remote-source/archive failure
-  matrix passes with separately labelled isolated-workspace evidence and no
-  automatic production promotion. M22.8 evidence never counts as M22.9
-  duration evidence, even when the same physical VPS is used.
+  matrix passed in fixed run `m22.8-20260822T041913Z-23f1fcc7` at exact main
+  `f699b6dc0e3e9e2d193eb9fd25321c59526995cd`: 9/9 scenarios passed, all
+  milestone-wide gates passed, and production remained untouched. Two
+  evidence-packaging P2 findings remain nonblocking. M22.8 evidence never
+  counts as M22.9 duration evidence, even when the same physical VPS is used.
 - **Rollback:** Stop the test deployment and preserve evidence/data; revert
   only test-profile changes.
 
@@ -1016,7 +1020,7 @@ mutation exists; those remain exclusively M22.4B scope.
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,
   historical f659895 acceptance, or acceptance of an intermediate artifact.
-- **Dependencies:** M22.8, exact M22 artifact, operator-authorized VPS
+- **Dependencies:** Accepted M22.8, exact M22 artifact, operator-authorized VPS
   deployment, and readiness evidence.
 - **Acceptance:** Every stage has its own T0, target, evidence root, and
   independent review; no stage begins automatically.

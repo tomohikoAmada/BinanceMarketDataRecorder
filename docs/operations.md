@@ -314,6 +314,22 @@ merged to `main` after the production deployment do not change the production
 Wheel, collector version, or running code. Do not conflate a documentation
 merge commit with a production code change.
 
+### M22.8 remote failure acceptance boundary
+
+The fixed M22.8 run `m22.8-20260822T041913Z-23f1fcc7` was accepted at exact
+main `f699b6dc0e3e9e2d193eb9fd25321c59526995cd` over the real MacBook ->
+OpenSSH -> Germany VPS boundary. All nine isolated scenarios passed, including
+same-receipt delete-response-loss reconciliation, snapshot-only retry, local
+receiver storage failure, and remote source read failure. The accepted result
+proves the remote archive lifecycle and failure handling in a disposable test
+workspace; it is not a production deployment or long-run qualification.
+
+The final audit retained safe test Raw with authority `ABSENT` for M8-02,
+M8-03, and M8-08, and retained the run workspace and evidence for forensics.
+Cleanup must not authorize or delete these objects merely for cosmetic
+cleanup. M22.9 remains a separate exact-VPS staged acceptance with runtime
+credit zero.
+
 ### 2h/12h/24h/72h/168h T0 independence
 
 Each validation window has its own T0, Target, and evidence root. A prior
