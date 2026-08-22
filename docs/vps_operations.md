@@ -1,7 +1,8 @@
 # VPS Operations
 
-Status: M22.7B deployable substrate implemented and validated offline; real
-Ubuntu systemd lifecycle and production validation are not run.
+Status: M22.7B deployable substrate implemented and real-host validated on the
+recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. Production deployment
+and staged production validation are not claimed.
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -263,7 +264,10 @@ capacity, and readiness sequence to run again.
 
 ## Acceptance boundary
 
-After an operator-authorized exact host deployment, acceptance still follows:
+M22.7B's exact host gate passed the recorded artifact identity and readiness
+validation, including real systemd lifecycle, ownership, journald, restart,
+and rollback compatibility preflight. Actual artifact rollback was not
+exercised. Recorder production acceptance still follows:
 
 ```text
 exact artifact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
@@ -271,7 +275,8 @@ exact artifact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
 
 M22.7B starts none of those windows. Each future stage has an independent T0,
 target, and evidence root. LAN Linux evidence does not substitute for VPS
-evidence, and no stage starts automatically.
+evidence, and no stage starts automatically. M22.8 remains NOT STARTED; its
+dependency gate is satisfied.
 
 ## Operations and recovery
 

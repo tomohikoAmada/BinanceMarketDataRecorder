@@ -951,9 +951,11 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.7B — VPS systemd / readiness / exact deployable artifact identity
 
-- **Status:** **IMPLEMENTED LOCALLY**; offline/static acceptance is recorded in
-  `docs/milestone_acceptance/M22.7B.md`. Exact host-specific Ubuntu systemd
-  validation remains pending and no production deployment is claimed.
+- **Status:** **IMPLEMENTED / REAL-HOST VALIDATED / ACCEPTED**; the offline,
+  static, and corrected real Ubuntu host evidence is recorded in
+  `docs/milestone_acceptance/M22.7B.md`. M22.7B acceptance is the deployment/
+  readiness host gate only; no production deployment or Production Ready claim
+  is made.
 - **Scope:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd,
   shared-host requirements, exact deployable artifact identity, readiness,
   deployment, and rollback contract.
@@ -962,11 +964,12 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Dependencies:** M22.4B, M22.6, and M22.7A acceptance.
 - **Acceptance:** Artifact identity, the exact installed lock distribution set,
   protected venv/release control chain, effective systemd properties, closed
-  direct-network process environment, and readiness gates are exact and
-  deployable; service ownership/resource boundaries, hard-reserve clean exit,
-  and fail-closed rollback compatibility are proven offline without claiming a
-  staged production result. Real unit lifecycle, ownership, journald, restart,
-  upgrade, and rollback remain host-specific gates.
+  direct-network process environment, readiness gates, service ownership and
+  resource boundaries, hard-reserve clean exit, real unit lifecycle,
+  journald, restart, and fail-closed rollback compatibility preflight are
+  accepted on the recorded Ubuntu host. Actual artifact rollback and all
+  staged production windows remain unrun. M22.7B acceptance is not Recorder
+  Production Ready.
 - **Rollback:** Stop the candidate, restore the prior immutable artifact/unit
   and retain all data and Catalog state.
 
