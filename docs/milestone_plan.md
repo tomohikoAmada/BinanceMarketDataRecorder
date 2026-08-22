@@ -742,9 +742,12 @@ ADR-0029, and ADR-0030; implementation and deployment are not included.
   is self-describing/rebuildable.
 - VPS capacity policy: WARNING/CRITICAL/EMERGENCY/HARD RESERVE at 18/14/12/10
   GiB, with ETA triggers at 7 days/72 hours/24 hours.
-- Acceptance roles: MacBook development, LAN Linux pre-production, and exact
-  VPS staged acceptance `2h -> 12h -> 24h -> 72h -> 168h` after identity and
-  readiness. LAN evidence does not substitute for VPS evidence.
+- Acceptance roles: MacBook development, remote Linux integrated failure
+  acceptance, and exact VPS staged acceptance `2h -> 12h -> 24h -> 72h ->
+  168h`. The preferred current M22.8 topology is Mac/local archive operator
+  -> Internet/SSH -> the Germany Ubuntu VPS -> an isolated disposable M22.8
+  test workspace. LAN Linux remains a valid separate Linux validation profile,
+  but physical LAN topology is not an M22.8 acceptance invariant.
 
 See `docs/vps_operations.md`, `docs/archive_transfer_contract.md`,
 `docs/offline_workspace.md`, and `docs/test_environment_matrix.md`.
@@ -973,17 +976,36 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Rollback:** Stop the candidate, restore the prior immutable artifact/unit
   and retain all data and Catalog state.
 
-### M22.8 — LAN Linux integrated failure acceptance
+### M22.8 — Remote Linux Integrated Failure Acceptance
 
 - **Status:** **NOT STARTED**.
-- **Scope:** Mac-to-LAN Linux integrated transfer, storage, receipt,
-  authorization, recovery, network, crash, snapshot, and storage-failure
-  evidence.
-- **Non-scope:** Exact VPS acceptance or relabeling LAN/RK3588 evidence as VPS
-  evidence.
+- **Scope:** Mac/local archive-operator integration across a real
+  SSH/network boundary to a remote Linux source environment: remote source
+  identity, archive transfer, receiver storage and verification, durable
+  receipt, deletion authorization, authorized remote deletion, response-loss
+  recovery, process-crash recovery, network/SSH interruption, retry and
+  idempotency, Catalog DR snapshot, and storage-failure evidence.
+- **Preferred execution topology:** Mac/local archive operator ->
+  Internet/SSH -> the Germany Ubuntu VPS -> an isolated disposable M22.8 test
+  workspace. The physical network being a LAN is not an acceptance invariant;
+  a real remote Linux environment is.
+- **Isolation:** The M22.8 workspace may share the physical VPS with the
+  production-target environment only when its filesystem, workspace, config,
+  and test identities/state are independently identifiable and disposable.
+  Failure injection must not operate on production Raw, production Catalog,
+  production receipts, production deletion authorization, production remote
+  ownership state, or accepted M22.7B deployment evidence. The test domain
+  independently identifies its Raw, Catalog, source descriptor, Archive Set,
+  receipt, deletion, and snapshot state.
+- **Non-scope:** M22.9 exact VPS staged production acceptance, its duration
+  windows, production promotion, LAN bandwidth/latency or home-router
+  behavior as standalone requirements, and relabeling historical RK3588/LAN
+  evidence as VPS or M22.9 evidence.
 - **Dependencies:** M22.1 through M22.7B acceptance.
-- **Acceptance:** The integrated LAN failure matrix passes with separately
-  labelled evidence and no automatic production promotion.
+- **Acceptance:** The integrated cross-machine remote-source/archive failure
+  matrix passes with separately labelled isolated-workspace evidence and no
+  automatic production promotion. M22.8 evidence never counts as M22.9
+  duration evidence, even when the same physical VPS is used.
 - **Rollback:** Stop the test deployment and preserve evidence/data; revert
   only test-profile changes.
 

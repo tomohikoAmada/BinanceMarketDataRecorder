@@ -123,8 +123,9 @@ and all receipt/Catalog evidence. M22.5 implements one-source receipt exchange
 through a byte/message-only transport, with in-process and ordinary OpenSSH
 adapters. The OpenSSH adapter stores no credentials, changes no SSH
 configuration, and exposes no arbitrary path/command API. Its executable shim
-and local `ssh -V` evidence do not claim real sshd, LAN transfer, or deployment;
-authenticated integration remains M22.8. M22.6 adds explicit-root Catalog DR
+and local `ssh -V` evidence do not claim real sshd, remote network transfer, or
+deployment; authenticated cross-machine integration remains M22.8. M22.6 adds
+explicit-root Catalog DR
 snapshot storage with locally verified immutable generations and mirrored
 latest/previous retention. It is not part of an Archive Set medium and does not
 add a daemon, restore command, cloud backend, or deployment surface.

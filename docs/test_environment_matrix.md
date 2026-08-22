@@ -5,8 +5,9 @@ that the VPS profile or its staged windows have been executed.
 
 | Environment | Primary role | Required evidence | Not a substitute for |
 | --- | --- | --- | --- |
-| MacBook / macOS Apple Silicon | Development, unit/integration/fault tests, short online smoke, local archive-client development | Offline deterministic tests, local filesystem/Catalog faults, short public-data smoke | LAN Linux or production VPS acceptance |
-| LAN Linux host | Real Linux pre-production validation | systemd/non-root behavior, Linux storage discovery, archive transfer faults, 24h/72h operational tests, resource and recovery evidence | Exact production VPS long-run acceptance |
+| MacBook / macOS Apple Silicon | Development, unit/integration/fault tests, short online smoke, local archive-client development and M22.8 operator side | Offline deterministic tests, local filesystem/Catalog faults, short public-data smoke | Remote Linux integrated acceptance or production VPS staged acceptance |
+| Remote Linux test host (preferred: Germany Ubuntu VPS) | M22.8 cross-machine remote-source/archive failure acceptance in an isolated disposable workspace | SSH/network, transfer, receiver storage, receipt, authorization/deletion, response-loss, crash, retry/idempotency, Catalog snapshot, and storage-failure evidence | M22.9 exact VPS staged production acceptance |
+| LAN Linux host | Separate real-Linux pre-production validation profile | systemd/non-root behavior, Linux storage discovery, and optionally isolated remote archive faults | M22.9 exact VPS staged production acceptance |
 | Exact production VPS | Production-specific acceptance | Immutable artifact identity, readiness, 2h, 12h, 24h, 72h, and 168h stages; live-path resource/capacity/archive evidence | No other environment |
 
 ## MacBook
@@ -16,13 +17,22 @@ and Disk Arbitration behavior where available, local Catalog and Raw recovery,
 fault injection, short online public endpoints, and future cross-platform
 archive-client portability tests. It must not be treated as production.
 
-## LAN Linux
+## Remote Linux and LAN Linux
 
-The LAN Linux host exercises the non-root systemd and already-mounted storage
-adapter on real Linux. RK3588 evidence remains historical and platform-specific
-within this role; it is never relabeled as VPS evidence. LAN runs may include
-24h and 72h operational/fault windows, but a passing LAN 72h window does not
-advance the VPS acceptance chain.
+M22.8 exercises the integrated cross-machine archive lifecycle against a real
+remote Linux environment. The preferred current topology is Mac ->
+Internet/SSH -> the Germany Ubuntu VPS -> an isolated disposable M22.8 test
+workspace. The same physical VPS may host the production-target environment,
+but M22.8 failure injection must use separate filesystem/workspace/config and
+test identities/state; it must never touch production Raw, Catalog, receipts,
+deletion authorization, remote ownership, or M22.7B evidence. M22.8 is not a
+LAN bandwidth, latency, router, or RK3588 hardware acceptance.
+
+The LAN Linux host remains a separate real-Linux validation profile. RK3588
+evidence remains historical and platform-specific within that role; it is never
+relabeled as VPS evidence. Any LAN run used for M22.8 must still satisfy the
+same isolated remote-source/archive semantics, but physical LAN topology is
+not required. No M22.8 result advances the M22.9 VPS acceptance chain.
 
 ## Exact production VPS
 
