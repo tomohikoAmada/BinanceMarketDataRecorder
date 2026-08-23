@@ -23,7 +23,6 @@ strategy, backtest, or trading interface.
 - structured status, daily reports, space alerts, and storage forecasts
 - routed USD-M `st=1`/depth `ps=BTCUSDT` identity validation with exact Raw
   retention on malformed or non-UM payloads
-- read-only Catalog access for service, storage, and archive status commands
 
 ## Acceptance boundary
 
