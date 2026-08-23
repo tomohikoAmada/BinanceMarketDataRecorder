@@ -216,6 +216,7 @@ def book_ticker(update_id: int) -> bytes:
             "A": "2.0",
             "T": update_id,
             "E": update_id,
+            "st": 1,
         },
         separators=(",", ":"),
     ).encode()
@@ -234,6 +235,7 @@ def agg_trade(update_id: int) -> bytes:
             "f": update_id,
             "l": update_id,
             "m": True,
+            "st": 1,
         },
         separators=(",", ":"),
     ).encode()
@@ -251,6 +253,8 @@ def diff_depth(update_id: int) -> bytes:
             "pu": max(0, update_id - 1),
             "b": [],
             "a": [],
+            "ps": "BTCUSDT",
+            "st": 1,
         },
         separators=(",", ":"),
     ).encode()
