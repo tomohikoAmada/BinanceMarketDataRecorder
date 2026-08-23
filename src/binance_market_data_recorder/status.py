@@ -111,7 +111,7 @@ def service_status(
         "targets": [],
     }
     if catalog_path.is_file():
-        with Catalog(catalog_path) as catalog:
+        with Catalog(catalog_path, read_only=True) as catalog:
             lifecycle = catalog.source_lifecycle_aggregate()
             catalog_summary = {
                 "available": True,
@@ -131,7 +131,7 @@ def service_status(
             try:
                 targets = StorageRegistry(
                     catalog=catalog, volumes=volume_adapter()
-                ).statuses()
+                ).observe_statuses()
                 external_storage = {
                     "status": (
                         "LOW_SPACE"

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
 
 from binance_market_data_recorder.cli import main
 from binance_market_data_recorder.metrics.model import MetricAggregate
+from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from binance_market_data_recorder.storage.macos import PlatformEjectResult, VolumeInfo
@@ -75,6 +77,78 @@ def test_status_does_not_invent_a_running_collector(capsys: pytest.CaptureFixtur
     assert payload["network_connected"] is False
     assert payload["service_implemented"] is True
     assert payload["runtime_metrics"]["process_cpu_seconds"]["status"] == "NOT_RUNNING"
+
+
+def _remove_remote_schema(catalog_path: Path) -> None:
+    with sqlite3.connect(catalog_path) as connection:
+        connection.execute("PRAGMA foreign_keys=OFF")
+        connection.execute("DROP TABLE remote_archive_events")
+        connection.execute("DROP TABLE remote_archive_transactions")
+
+
+def _catalog_signature(catalog_path: Path) -> tuple[set[str], tuple[bool, bool]]:
+    with sqlite3.connect(catalog_path) as connection:
+        names = {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+    return names, (
+        catalog_path.with_name(f"{catalog_path.name}-wal").exists(),
+        catalog_path.with_name(f"{catalog_path.name}-shm").exists(),
+    )
+
+
+def test_service_status_does_not_migrate_legacy_catalog_or_create_sidecars(
+    tmp_path: Path,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog):
+        pass
+    _remove_remote_schema(layout.catalog)
+    before = _catalog_signature(layout.catalog)
+
+    result = service_status(tmp_path)
+
+    assert result["catalog"]["available"] is True
+    after = _catalog_signature(layout.catalog)
+    assert after == before
+    assert "remote_archive_events" not in after[0]
+    assert "remote_archive_transactions" not in after[0]
+
+
+@pytest.mark.parametrize(
+    ("command", "subcommand"),
+    [("storage", "status"), ("archive", "status")],
+)
+def test_cli_read_only_status_does_not_migrate_legacy_catalog(
+    command: str,
+    subcommand: str,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog):
+        pass
+    _remove_remote_schema(layout.catalog)
+    before = _catalog_signature(layout.catalog)
+    monkeypatch.setenv("BINANCE_MARKET_RECORDER_DATA_ROOT", str(tmp_path))
+
+    if command == "storage":
+        class NoExternalVolumes:
+            def inventory(self) -> list[VolumeInfo]:
+                return []
+
+        monkeypatch.setattr(
+            "binance_market_data_recorder.cli.DiskArbitrationAdapter",
+            NoExternalVolumes,
+        )
+
+    assert main([command, subcommand]) == 0
+    capsys.readouterr()
+    assert _catalog_signature(layout.catalog) == before
 
 
 def test_invalid_command_has_machine_readable_error(

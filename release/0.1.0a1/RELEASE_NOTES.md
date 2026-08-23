@@ -21,6 +21,8 @@ strategy, backtest, or trading interface.
 - rootless logged-in-user macOS LaunchAgent lifecycle
 - non-root Ubuntu ARM64 systemd lifecycle and unified proxy transport policy
 - structured status, daily reports, space alerts, and storage forecasts
+- status, storage status, and archive status use read-only Catalog observation;
+  storage mutation commands retain writable Catalog access
 
 ## Acceptance boundary
 
