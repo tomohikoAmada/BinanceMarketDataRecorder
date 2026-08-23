@@ -19,6 +19,12 @@ listed_in_index = true
 expected_terms = ["24 hours", "/public", "/market"]
 
 [[documents]]
+id = "cm-um-integration-notice"
+url = "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md"
+listed_in_index = true
+expected_terms = ["Streams that gain a new `st` field on each payload", "<symbol>@depth<levels>", "<symbol>@aggTrade", "<symbol>@bookTicker", "UM-side single-symbol streams add a `ps` (pair symbol) field"]
+
+[[documents]]
 id = "usdm-websocket-route-change"
 url = "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice.md"
 listed_in_index = false

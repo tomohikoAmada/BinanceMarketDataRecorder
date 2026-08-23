@@ -20,6 +20,35 @@ project is independent and unofficial: it is not affiliated with, maintained
 by, sponsored by, or endorsed by Binance. Official Binance sources establish
 API behavior only; they do not make this Recorder an official Binance product.
 
+## CM/UM integration notice refresh — 2026-08-23T07:08:24.249743+00:00
+
+The repository-owned updater ran a minimal selection containing the current
+Agent Native index and its listed CM/UM integration notice. It wrote response
+bodies and `manifest.json` only under `/private/tmp`; no downloaded body was
+committed or executed. Both entries below share the updater retrieval time and
+are the exact response bytes recorded in that manifest.
+
+| Source | URL | SHA-256 | Bytes |
+| --- | --- | --- | ---: |
+| Agent Native index | `https://developers.binance.com/en/docs/llms.txt` | `c5decbaaef780287cec46d394b34451e1bc56ffe6681ca74e2f38819fda4a12a` | 167471 |
+| CM/UM integration notice | `https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md` | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | 12109 |
+
+The notice's D.4 explicitly defines `st` as symbol type (`1 = UM`, `2 = CM`)
+and lists `<symbol>@depth<levels>`, `<symbol>@aggTrade`, and
+`<symbol>@bookTicker` among streams whose payloads gain `st`. D.5 separately
+lists `<symbol>@depth<levels>`, `!bookTicker`, and `<symbol>@bookTicker` as
+UM-side streams that gain `ps` (pair symbol), while omitting aggTrade. The
+Recorder therefore requires strict `st == 1` for all three USD-M core streams,
+requires `ps == BTCUSDT` for depth and individual bookTicker, and does not
+invent a `ps` requirement for aggTrade. This source establishes the
+stream-specific distinction; it is not evidence that a CM payload may be
+stored under the USD-M identity.
+
+The current catalog public/market pages were not used for these hashes: their
+direct responses were blocked by an HTTP 202 CloudFront WAF challenge during
+the same verification effort. The challenge response and generic `.md` portal
+shell were deliberately not recorded as page bodies.
+
 ## M19 refresh — 2026-07-26T08:06:37.425492+00:00
 
 The allowlisted updater fetched 20 sources, did not load `llms-full.txt`, and

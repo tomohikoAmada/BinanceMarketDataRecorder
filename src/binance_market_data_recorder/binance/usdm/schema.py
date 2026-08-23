@@ -49,6 +49,21 @@ def _text(payload: dict[str, Any], name: str) -> str:
     return value
 
 
+def _require_usdm_symbol_type(payload: dict[str, Any]) -> None:
+    """Require Binance's post-CM-migration UM discriminator."""
+
+    value = payload.get("st")
+    if not isinstance(value, int) or isinstance(value, bool) or value != 1:
+        raise ValueError("payload is not USD-M")
+
+
+def _require_usdm_pair(payload: dict[str, Any]) -> None:
+    """Require the pair field on streams whose official schema defines it."""
+
+    if _text(payload, "ps") != "BTCUSDT":
+        raise ValueError("unexpected pair")
+
+
 def _levels(payload: dict[str, Any], name: str) -> None:
     value = payload.get(name)
     if not isinstance(value, list):
@@ -74,6 +89,7 @@ def _parse_metadata(
             raise ValueError(f"unexpected event type for {stream}")
         if _text(decoded, "s") != "BTCUSDT":
             raise ValueError("unexpected symbol")
+        _require_usdm_symbol_type(decoded)
         event_time = _integer(decoded, "E")
         transaction_time = _integer(decoded, "T")
 
@@ -85,6 +101,7 @@ def _parse_metadata(
                 raise ValueError("depth U exceeds u")
             _levels(decoded, "b")
             _levels(decoded, "a")
+            _require_usdm_pair(decoded)
             return event_time, transaction_time, {"U": first, "u": last, "pu": previous}, ()
         if stream is UsdMStream.AGG_TRADE:
             aggregate = _integer(decoded, "a")
@@ -104,6 +121,7 @@ def _parse_metadata(
             )
 
         update_id = _integer(decoded, "u")
+        _require_usdm_pair(decoded)
         for name in ("b", "B", "a", "A"):
             _text(decoded, name)
         return event_time, transaction_time, {"u": update_id}, ()
