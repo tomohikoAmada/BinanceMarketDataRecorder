@@ -272,6 +272,9 @@ time. The internal Raw manifest is retained after local artifact deletion as
 provenance, not as another copy of the event data. `archive retry` advances one
 oldest item, `archive status` is local/read-only, and
 `archive verify <storage-id>` re-reads every committed artifact and manifest.
+Read-only status commands open the existing Catalog without schema migration,
+WAL/SHM creation, or storage-control writes; mutation commands retain the
+writable Catalog path.
 
 ## Space measurements and forecasts
 
