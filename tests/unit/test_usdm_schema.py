@@ -67,3 +67,72 @@ def test_usdm_depth_requires_and_preserves_previous_final_update_id() -> None:
     assert envelope.raw_payload == malformed
     assert envelope.capture_flags == ("malformed",)
     assert envelope.source_sequence == {}
+
+
+@pytest.mark.parametrize(
+    ("stream", "payload"),
+    [
+        (
+            UsdMStream.AGG_TRADE,
+            b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,"p":"1","q":"1","f":1,"l":1,"m":true,"st":2}',
+        ),
+        (
+            UsdMStream.AGG_TRADE,
+            b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,"p":"1","q":"1","f":1,"l":1,"m":true}',
+        ),
+        (
+            UsdMStream.BOOK_TICKER,
+            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":true}',
+        ),
+        (
+            UsdMStream.BOOK_TICKER,
+            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":1}',
+        ),
+        (
+            UsdMStream.BOOK_TICKER,
+            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":1,"ps":"BTCUSD"}',
+        ),
+        (
+            UsdMStream.DIFF_DEPTH,
+            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":2,"pu":0,"b":[],"a":[],"st":1}',
+        ),
+        (
+            UsdMStream.DIFF_DEPTH,
+            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":2,"pu":0,"b":[],"a":[],"ps":"BTCUSD","st":1}',
+        ),
+    ],
+)
+def test_usdm_identity_fields_fail_closed_without_losing_raw_bytes(
+    stream: UsdMStream, payload: bytes
+) -> None:
+    envelope = envelope_from_websocket_frame(
+        raw_payload=payload,
+        stream=stream,
+        connection_id="connection-1",
+        collector_instance_id="collector-1",
+        collector_version="test",
+        receive_time_utc_ns=1,
+        receive_monotonic_ns=2,
+    )
+    assert envelope.raw_payload == payload
+    assert envelope.capture_flags == ("malformed",)
+    assert envelope.source_sequence == {}
+
+
+def test_usdm_agg_trade_does_not_require_undocumented_pair_field() -> None:
+    payload = (
+        b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,'
+        b'"p":"1","q":"1","f":1,"l":1,"m":true,"st":1,'
+        b'"ps":"NOT_REQUIRED_BY_AGG_TRADE_SCHEMA"}'
+    )
+    envelope = envelope_from_websocket_frame(
+        raw_payload=payload,
+        stream=UsdMStream.AGG_TRADE,
+        connection_id="connection-1",
+        collector_instance_id="collector-1",
+        collector_version="test",
+        receive_time_utc_ns=1,
+        receive_monotonic_ns=2,
+    )
+    assert envelope.capture_flags == ()
+    assert envelope.source_sequence == {"a": 1, "f": 1, "l": 1}
