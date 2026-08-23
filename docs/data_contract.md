@@ -137,9 +137,9 @@ M5 USD-M mappings are:
 | `/public/ws/btcusdt@bookTicker` | `E` as event time; `T` as transaction time | `u` |
 
 After Binance's CM migration, the core USD-M WebSocket schemas also require
-the documented `st` discriminator to be integer `1` (UM). The routed depth
-stream additionally requires its documented `ps` pair field to be `BTCUSDT`;
-aggTrade and individual bookTicker do not require an undocumented `ps` field.
+the documented `st` discriminator to be integer `1` (UM). Public depth and
+individual bookTicker additionally require their documented `ps` pair field to
+be `BTCUSDT`; aggTrade does not require an undocumented `ps` field.
 Payloads failing these identity checks are retained as exact Raw bytes and
 marked malformed, never admitted under the `um_perpetual/BTCUSDT` identity.
 

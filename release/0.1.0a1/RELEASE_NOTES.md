@@ -21,7 +21,7 @@ strategy, backtest, or trading interface.
 - rootless logged-in-user macOS LaunchAgent lifecycle
 - non-root Ubuntu ARM64 systemd lifecycle and unified proxy transport policy
 - structured status, daily reports, space alerts, and storage forecasts
-- routed USD-M `st=1`/depth `ps=BTCUSDT` identity validation with exact Raw
+- routed USD-M `st=1`/public depth and bookTicker `ps=BTCUSDT` identity validation with exact Raw
   retention on malformed or non-UM payloads
 
 ## Acceptance boundary

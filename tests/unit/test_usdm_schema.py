@@ -85,6 +85,14 @@ def test_usdm_depth_requires_and_preserves_previous_final_update_id() -> None:
             b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":true}',
         ),
         (
+            UsdMStream.BOOK_TICKER,
+            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":1}',
+        ),
+        (
+            UsdMStream.BOOK_TICKER,
+            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1","st":1,"ps":"BTCUSD"}',
+        ),
+        (
             UsdMStream.DIFF_DEPTH,
             b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":2,"pu":0,"b":[],"a":[],"st":1}',
         ),

@@ -121,6 +121,7 @@ def _parse_metadata(
             )
 
         update_id = _integer(decoded, "u")
+        _require_usdm_pair(decoded)
         for name in ("b", "B", "a", "A"):
             _text(decoded, name)
         return event_time, transaction_time, {"u": update_id}, ()

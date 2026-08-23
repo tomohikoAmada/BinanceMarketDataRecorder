@@ -217,6 +217,7 @@ def book_ticker(update_id: int) -> bytes:
             "T": update_id,
             "E": update_id,
             "st": 1,
+            "ps": "BTCUSDT",
         },
         separators=(",", ":"),
     ).encode()
