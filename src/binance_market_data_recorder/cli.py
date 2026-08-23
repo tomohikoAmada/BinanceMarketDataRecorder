@@ -1064,7 +1064,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     }
                 )
                 return 0
-            with Catalog(catalog_path) as catalog:
+            with Catalog(catalog_path, read_only=storage_command == "status") as catalog:
                 registry = StorageRegistry(catalog=catalog, volumes=adapter)
                 if storage_command == "register":
                     result = registry.register(args.folder_path)
@@ -1075,7 +1075,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     _write_json({"command": "storage.unregister", **result})
                     return 0
                 if storage_command == "status":
-                    targets = registry.statuses()
+                    targets = registry.observe_statuses()
                     _write_json(
                         {
                             "command": "storage.status",
@@ -1225,7 +1225,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 0
         try:
-            with Catalog(catalog_path) as catalog:
+            with Catalog(catalog_path, read_only=archive_command == "status") as catalog:
                 if archive_command == "status":
                     _write_json(_archive_status(catalog))
                     return 0
