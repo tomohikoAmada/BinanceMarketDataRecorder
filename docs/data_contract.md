@@ -136,6 +136,13 @@ M5 USD-M mappings are:
 | `/market/ws/btcusdt@aggTrade` | `E` as event time; `T` as trade time | `a`, `f`, `l` |
 | `/public/ws/btcusdt@bookTicker` | `E` as event time; `T` as transaction time | `u` |
 
+After Binance's CM migration, the core USD-M WebSocket schemas also require
+the documented `st` discriminator to be integer `1` (UM). The routed depth
+stream additionally requires its documented `ps` pair field to be `BTCUSDT`;
+aggTrade and individual bookTicker do not require an undocumented `ps` field.
+Payloads failing these identity checks are retained as exact Raw bytes and
+marked malformed, never admitted under the `um_perpetual/BTCUSDT` identity.
+
 Schema-invalid messages are retained byte-for-byte with `malformed`; duplicates
 and out-of-order source IDs remain in Raw. `serverShutdown` is retained with its
 `E` and a `server_shutdown` capture flag before reconnect.
