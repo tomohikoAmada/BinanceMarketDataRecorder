@@ -1015,7 +1015,16 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **NOT STARTED**.
+- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / LOCAL CONTINUITY
+  CORRECTIONS IMPLEMENTED, NOT DEPLOYED**. The exact artifact at incident
+  authority `ddb730962247ff374ae614f4386508598b71d423` exposed a production Raw
+  continuity defect when a bounded backpressure timeout was followed by a
+  post-close handoff timeout. Independent review of the first corrective
+  commit then found the adjacent Spot/USD-M session-restart timeout origin and
+  stale per-generation handoff state; the follow-up correction distinguishes
+  session restart from true global stop and resets ephemeral boundary state.
+  The 24h result remains INCOMPLETE and no later stage is eligible. See
+  `docs/milestone_acceptance/M22.9.md`.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,
@@ -1023,14 +1032,19 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Dependencies:** Accepted M22.8, exact M22 artifact, operator-authorized VPS
   deployment, and readiness evidence.
 - **Acceptance:** Every stage has its own T0, target, evidence root, and
-  independent review; no stage begins automatically.
+  independent review; no stage begins automatically. Because Recorder code
+  changed, the corrected artifact receives zero duration credit from the old
+  artifact and must restart exact identity -> readiness -> 2h -> 12h -> 24h
+  -> 72h -> 168h after a separately authorized deployment.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
 
 ### M21 -> M22 validation policy
 
-The merged PR #11 reconnect correction remains **not deployed/production
-validated**. The previously deployed `f659895…` artifact passed its historical
+At the M21 handoff the merged PR #11 reconnect correction was not deployed.
+It was later included in the M22.9 incident artifact but did not prevent the
+fatal post-close-handoff defect recorded above. The previously deployed
+`f659895…` artifact passed its historical
 formal 72-hour observational gate but later became
 `ELIGIBLE_FOR_168H=false` because of the restart-only orphan-intent defect;
 that evidence remains historical. M22 intermediate artifacts are limited to
@@ -1042,8 +1056,9 @@ reconnect corrections, must independently execute:
 exact artifact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
 ```
 
-No M21 evidence transfers to that artifact, and no 168-hour stage starts
-automatically. Historical M21 documents remain unchanged.
+No M21 or failed M22.9 duration evidence transfers to the newly corrected
+artifact, and no stage starts automatically. Historical M21 and M22.9 evidence
+remain unchanged.
 
 ## Future Work
 

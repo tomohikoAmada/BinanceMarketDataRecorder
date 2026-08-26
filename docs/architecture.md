@@ -1,13 +1,15 @@
 # Architecture
 
 This document describes the implemented Recorder and the approved future
-deployment topology. The primary future production profile is Ubuntu 24.04 LTS
+deployment topology. The primary production target is Ubuntu 24.04 LTS
 x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
 40 GB-class VPS. macOS Apple Silicon remains a development/local profile;
 Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
-profile. The VPS profile and remote archive client are not yet deployed or
-production validated. The implemented system remains subject to the deferred
-long-running reliability limitation in `docs/known_limitations.md`.
+profile. Exact-VPS staged acceptance began, but the M22.9 24-hour result is
+INCOMPLETE after a confirmed Raw continuity defect; the local correction is not
+deployed and the VPS is not production validated. The implemented system
+remains subject to the deferred long-running reliability limitation in
+`docs/known_limitations.md`.
 
 ## M19 recovery boundary
 
@@ -221,8 +223,9 @@ boundaries without gap evidence. The 12h/24h data-integrity acceptance is
 SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING; their process-stability results
 stand. The 24h PASS's readiness record (Spot 280/280; USD-M 279/280, both
 orderbooks 280/280) and the gen5 RECOVERY_CONTRACT_PASS remain valid
-process/orderbook evidence. The M21.4.11 forward fix is merged to `main`
-through PR #11 but not deployed; the 168h gate is never started automatically.
+process/orderbook evidence. The M21.4.11 forward fix later entered the M22.9
+incident artifact; the additional R-054 continuity correction is local-only,
+and the staged chain must restart after a separate deployment.
 
 ### M21.4.11 Reconnect boundary integrity
 

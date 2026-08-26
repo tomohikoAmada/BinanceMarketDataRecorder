@@ -11,8 +11,12 @@ CURRENT_LONG_RUN_NOTICE = (
     "随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。\n"
     "该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，"  # noqa: RUF001
     "因此168小时验收未运行。\n"
-    "PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从"  # noqa: RUF001
+    "PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复\n"  # noqa: RUF001
+    "尚未部署，新的修复工件必须从"  # noqa: RUF001
     "2h→12h→24h→72h→168h重新开始验收。\n"
+    "M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close\n"  # noqa: RUF001
+    "handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；"  # noqa: RUF001
+    "72小时不具备资格。\n"
     "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
     "当前版本为Mac Developer Preview;"
     "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"

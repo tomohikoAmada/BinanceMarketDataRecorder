@@ -2,10 +2,14 @@
 
 原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
 该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
-PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复
+尚未部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
+handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
-Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
+Ubuntu 24.04 LTS x86_64 VPS staged acceptance 已开始但未通过；不得描述为
+Production Ready。
 
 > **原始 M21.4 正式72小时窗口结果为 FAIL（数据完整性合同失败）**：
 > 该历史窗口的核心进程稳定性 PASS，但
@@ -27,8 +31,26 @@ A later deployed M21.4.11 artifact (`f659895…`) passed its independent formal
 subsequently discovered, making `ELIGIBLE_FOR_168H=false`; the 168h window did
 not run.
 
-The further correction merged through PR #11 is NOT DEPLOYED, and a newly
-deployed corrected artifact must restart the full staged validation chain.
+The correction merged through PR #11 was later included in the M22.9 incident
+artifact. This task's additional continuity correction is NOT DEPLOYED, and a
+newly deployed corrected artifact must restart the full staged validation
+chain.
+
+## M22.9 exact-VPS continuity status
+
+- `M22_9_24H_RESULT=INCOMPLETE`
+- `ELIGIBLE_FOR_72H=NO`
+- `PRODUCTION_READY=NO`
+- The incident artifact allowed fatal USD-M post-close handoff timeout to
+  escape before durable gap intent, producing false-complete historical tails
+  and an unmarked first post-restart frame.
+- The local corrections preserve queue bounds and fail-fast behavior, mark
+  the unpersisted boundary honestly, distinguish session restart from true
+  global stop, reset ephemeral boundary state per generation, and restore the
+  same gap lifecycle on startup. They are not deployed and have no duration
+  credit.
+- A future corrected artifact must restart exact identity -> readiness -> 2h
+  -> 12h -> 24h -> 72h -> 168h. No stage starts automatically.
 
 Static review, unit tests, fault injection, and short online tests cannot
 substitute for long-running proof.
@@ -136,7 +158,8 @@ part of M20; it is the M21 acceptance scope.
   56,294,564). The M21.4.11 forward fix (unified Reconnect Boundary state
   machine, manifest-level `reconnect_gap`, seal defense) was later deployed
   as `f659895…`, which passed its own 72h observational gate; the further
-  orphan-intent correction is merged to `main` but NOT DEPLOYED.
+  orphan-intent correction later entered the M22.9 incident artifact. The
+  additional R-054 continuity correction is local-only and NOT DEPLOYED.
 - **Historical silent gaps are immutable**: the corrected boundary-local
   read-only audit (M21.4.11-R2/R3/R5, cutoff `1786349202047196027`,
   inventory 161,817 manifests) found 4,680 unmarked reconnect boundaries

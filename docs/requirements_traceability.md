@@ -55,7 +55,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | consumer/data contracts, ADR-0004/0021 | M16 half-open range, equal-time order, missing-clock/gap, manifest corruption and checkpoint-seek tests pass |
 | CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0007/0021, architecture | M16 public descriptors omit paths; independent example imports only replay API; named-consumer validation remains optional |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |
-| FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | Deferred; explicitly not satisfied by M17/M18 |
+| FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | Not satisfied: M22.9 24h result INCOMPLETE; corrected artifact must restart the full chain |
 | FAI-03 | Depth lifecycle/gap resync, fail-fast core terminal recovery and restartable side data | ADR-0023 | M19 deterministic lifecycle/overflow/terminal/retry tests |
 | DAT-10 | Critical Spot rules/USD-M 5m statistics plus revisioned official archive import without clock fabrication | ADR-0024, data coverage | M19 schema/checksum/404/revision/timestamp/idempotency tests |
 | DAT-11 | Market-specific normalized schemas for M19 Live data; one row per 5m period; exchange-timestamp identity; explicit empty response; deterministic duplicate/conflict treatment | data contract, ADR-0020, data coverage | M19.2 parser/schema and Raw-to-Parquet regressions |
@@ -67,6 +67,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | LNX-02 | Non-root idempotent systemd lifecycle, journald, SIGTERM seal, TOML proxy, no data deletion | ADR-0026, operations guide | M20 static unit tests and RK3588 install/start/stop/restart/uninstall-retention evidence |
 | LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
 | FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
+| FAI-05 | A fatal bounded post-close handoff failure cannot seal the old tail complete or restart without same-gap/first-new Raw evidence | ADR-0027, Risk R-054 | M22.9 Spot/USD-M backpressure/session-restart origin and stale-generation regressions, global-stop negative cases, plus existing R1/R2/R2.1/R2.2 crash matrix; local fixes not deployed |
 | VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, shared 2 vCPU/4 GiB/40 GB-class VPS | ADR-0028 | Future exact-VPS artifact/readiness/2h/12h/24h/72h/168h acceptance; not deployed by D0/D1 |
 | VPS-02 | VPS owns live acquisition, Raw/seal, Catalog/recovery, gap/provenance, metrics/status; heavy offline work remains local | ADR-0028, offline workspace | Future live/offline execution profiles; one Recorder distribution; not implemented by D0/D1 |
 | ARC-01 | Local client pulls from VPS over SSH through replaceable transport seam | ADR-0029, archive transfer contract | Future archive-client transport and fault matrix; current ArchiveManager remains local |
@@ -138,7 +139,10 @@ These paths are local to the RK3588 host. Only the documentation in this
 repository is published to GitHub; the run, review, and archive evidence
 themselves are not uploaded.
 
-The current main includes the M21.4.11/R3.4 code through merged PR #11. That
-is merged code state only: the corrected artifact is not deployed and has no
-VPS production validation. This matrix should be updated whenever a
-requirement, ADR, or milestone acceptance changes.
+The later exact-VPS M22.9 artifact at incident authority `ddb7309…` entered
+staged acceptance, but its 24h result is INCOMPLETE after the fatal
+post-close-handoff continuity defect. The local correction and deterministic
+regressions are recorded in `docs/milestone_acceptance/M22.9.md`; the corrected
+artifact is not deployed, receives no old duration credit, and must restart the
+full staged chain. This matrix should be updated whenever a requirement, ADR,
+or milestone acceptance changes.

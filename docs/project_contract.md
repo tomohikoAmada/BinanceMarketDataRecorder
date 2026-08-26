@@ -15,7 +15,7 @@ It is a stateful infrastructure service specifically for Binance public market
 data. The name identifies the connected data source and APIs; it does not imply
 an official relationship. The project must not use Binance logos, official
 visual identity, or identifiers that suggest Binance ownership. The primary
-future production profile is Ubuntu 24.04 LTS x86_64 with Python 3.12,
+production target is Ubuntu 24.04 LTS x86_64 with Python 3.12,
 systemd, and a non-root service. macOS Apple Silicon remains a development/local
 profile; Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical
 evidence profile. Docker is not the production deployment.

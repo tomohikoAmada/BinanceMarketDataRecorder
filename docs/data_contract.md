@@ -444,8 +444,12 @@ confirmed the following contract semantics on production evidence:
 
 - **Potential loss across reconnect must remain `gap=true`/`complete=false`**:
   after a backpressure-driven reconnect, the last-old boundary frame and the
-  first-new frame both carry `sequence_gap`; both old and new manifests stay
-  incomplete. No layer may relabel such an interval complete.
+  first-new frame both carry `sequence_gap` when the post-close boundary
+  handoff succeeds; both old and new manifests stay incomplete. If that
+  handoff times out, the unpersisted boundary payload remains absent from Raw,
+  its digest and `boundary_frame_persisted=false` document the missing edge,
+  and manifest-level `reconnect_gap` keeps the old tail incomplete. No layer
+  may relabel either interval complete.
 
 - **`historical_continuity_restored=false`**: `book_ticker` and `agg_trade`
   cannot reconstruct missed events from a Snapshot; the persisted gap remains
@@ -484,7 +488,14 @@ in Spot and USD-M:
   frames are never mutated and no exchange payload is fabricated. Catalog
   evidence states `boundary_frame_persisted=false`,
   `boundary_kind=no_last_frame_available`, and records the disconnect
-  transport time rather than a payload hash.
+  transport time rather than a payload hash. A session restart whose stop
+  interrupts queue admission can instead retain an authentic received
+  boundary frame in memory; if its post-close handoff times out, the frame is
+  not written to Raw, its hash is retained with
+  `boundary_kind=last_frame_in_hand` and
+  `boundary_frame_persisted=false`, and the old manifest still receives
+  `reconnect_gap`. A true global stop authorizes no replacement connection and
+  does not fabricate a reconnect discontinuity from the same queue exception.
 - **Ordering**: detect boundary and mint one gap identity -> Catalog
   `STREAM_DISCONTINUITY_STARTED` durable -> drain/seal old generation (forced
   gap) -> `generation++` -> open new connection -> first new frame

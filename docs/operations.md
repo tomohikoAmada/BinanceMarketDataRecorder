@@ -327,8 +327,9 @@ workspace; it is not a production deployment or long-run qualification.
 The final audit retained safe test Raw with authority `ABSENT` for M8-02,
 M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
-cleanup. M22.9 remains a separate exact-VPS staged acceptance with runtime
-credit zero.
+cleanup. M22.9 remained a separate exact-VPS staged acceptance. It later began,
+but the 24h result is INCOMPLETE after the R-054 Raw continuity defect; 72h is
+not eligible, and the locally corrected artifact has runtime credit zero.
 
 ### 2h/12h/24h/72h/168h T0 independence
 
