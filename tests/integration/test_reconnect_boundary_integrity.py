@@ -142,6 +142,8 @@ def make_collector(
     opener: Any,
     stream: UsdMStream = UsdMStream.BOOK_TICKER,
     lifecycle_observer: Callable[[str], None] | None = None,
+    event_observer: Callable[[Any, int, int], None] | None = None,
+    operation_observer: Callable[[str, int], None] | None = None,
 ) -> tuple[UsdMStreamCollector, Catalog, StreamSpool]:
     layout = ensure_storage_layout(root)
     catalog = Catalog(layout.catalog)
@@ -157,6 +159,8 @@ def make_collector(
         rotation=RotationPolicy(seconds=60),
         durability_interval_seconds=0,
         max_frame_bytes=1024 * 1024,
+        event_observer=event_observer,
+        operation_observer=operation_observer,
     )
     collector = UsdMStreamCollector(
         stream=stream,
@@ -213,6 +217,20 @@ def discontinuity_events(catalog: Catalog) -> list[dict[str, Any]]:
         if str(event["event_type"]).startswith("STREAM_DISCONTINUITY")
     ]
 
+
+def manifest_envelopes(root: Path, manifest: dict[str, Any]) -> list[Any]:
+    raw = zstandard.ZstdDecompressor().decompress(
+        (root / manifest["relative_path"]).read_bytes()
+    )
+    source = io.BytesIO(raw)
+    decode_chunk_header(source)
+    result: list[Any] = []
+    while prefix := source.read(FRAME_PREFIX.size):
+        length, _flags, _reserved, _checksum = FRAME_PREFIX.unpack(prefix)
+        result.append(decode_envelope(source.read(length)))
+    return result
+
+
 def assert_boundary_contract(
     root: Path,
     catalog: Catalog,
@@ -221,29 +239,8 @@ def assert_boundary_contract(
     old_frame_payloads: list[bytes],
     new_frame_payloads: list[bytes],
 ) -> None:
-    """Shared A/B/C/D contract: generation isolation, forced gap, evidence."""
+    """Shared reconnect contract, independent of physical chunk rotation."""
     documents = manifests(root)
-    assert len(documents) == 2
-    old_manifest, new_manifest = documents
-    assert old_manifest["complete"] is False
-    assert old_manifest["gap"] is True
-    assert new_manifest["complete"] is False
-    assert new_manifest["gap"] is True
-    assert RECONNECT_GAP_FLAG in old_manifest["capture_flags"]
-    assert "sequence_gap" in new_manifest["capture_flags"]
-    assert set(old_manifest["connection_ids"]).isdisjoint(
-        set(new_manifest["connection_ids"])
-    )
-    persisted = envelopes(root)
-    assert [item.raw_payload for item in persisted] == [
-        *old_frame_payloads,
-        *new_frame_payloads,
-    ]
-    boundary = [item for item in persisted if "sequence_gap" in item.capture_flags]
-    assert len(boundary) == 1
-    assert boundary[0].raw_payload == new_frame_payloads[0]
-    assert boundary[0].connection_id == new_manifest["connection_ids"][0]
-
     events = discontinuity_events(catalog)
     assert [event["event_type"] for event in events] == [
         "STREAM_DISCONTINUITY_STARTED",
@@ -256,13 +253,92 @@ def assert_boundary_contract(
     assert started["boundary_kind"] == "no_last_frame_available"
     assert started["boundary_frame_persisted"] is False
     assert "boundary_payload_sha256" not in started
-    assert started["original_connection_id"] == old_manifest["connection_ids"][0]
     assert completed["gap_id"] == started["gap_id"]
     assert completed["reason"] == reason
-    assert completed["new_connection_id"] == new_manifest["connection_ids"][0]
     assert completed["new_generation"] == started["original_generation"] + 1
     assert completed["raw_gap_marker"] == "sequence_gap"
     assert completed["historical_continuity_restored"] is False
+
+    reconnect_manifests = [
+        document
+        for document in documents
+        if RECONNECT_GAP_FLAG in document["capture_flags"]
+    ]
+    recovery_manifests = [
+        document
+        for document in documents
+        if "sequence_gap" in document["capture_flags"]
+    ]
+    assert len(reconnect_manifests) == 1
+    assert len(recovery_manifests) == 1
+    reconnect_manifest = reconnect_manifests[0]
+    recovery_manifest = recovery_manifests[0]
+
+    assert reconnect_manifest["gap"] is True
+    assert reconnect_manifest["complete"] is False
+    assert recovery_manifest["gap"] is True
+    assert recovery_manifest["complete"] is False
+
+    reconnect_frames = manifest_envelopes(root, reconnect_manifest)
+    recovery_frames = manifest_envelopes(root, recovery_manifest)
+    old_connection_id = str(started["original_connection_id"])
+    new_connection_id = str(completed["new_connection_id"])
+    assert old_connection_id != new_connection_id
+    assert started["original_generation"] < completed["new_generation"]
+    assert old_connection_id not in set(recovery_manifest["connection_ids"])
+    assert new_connection_id in set(recovery_manifest["connection_ids"])
+    assert completed["new_connection_id"] == recovery_manifest["connection_ids"][0]
+
+    # A boundary marker is allowed to be empty. If the old chunk was still
+    # active, its authentic frames remain on the old/boundary side instead.
+    assert all(frame.raw_payload in old_frame_payloads for frame in reconnect_frames)
+    if reconnect_manifest["record_count"] == 0:
+        assert reconnect_frames == []
+        assert reconnect_manifest["connection_ids"] == []
+    else:
+        assert reconnect_frames
+        assert set(reconnect_manifest["connection_ids"]) == {old_connection_id}
+    assert all(frame.raw_payload in new_frame_payloads for frame in recovery_frames)
+    sequence_frames = [
+        frame for frame in recovery_frames if "sequence_gap" in frame.capture_flags
+    ]
+    assert len(sequence_frames) == 1
+    assert sequence_frames[0].raw_payload == new_frame_payloads[0]
+    assert sequence_frames[0].connection_id == new_connection_id
+
+    # The only possible additional artifact is a completely sealed ordinary
+    # old-generation chunk that rotated before the discontinuity. It must not
+    # be mistaken for a false complete interval crossing the boundary.
+    ordinary_manifests = [
+        document
+        for document in documents
+        if document not in (reconnect_manifest, recovery_manifest)
+    ]
+    assert len(ordinary_manifests) <= 1
+    for ordinary_manifest in ordinary_manifests:
+        ordinary_flags = set(ordinary_manifest["capture_flags"])
+        assert RECONNECT_GAP_FLAG not in ordinary_flags
+        assert "sequence_gap" not in ordinary_flags
+        assert ordinary_manifest["gap"] is False
+        assert ordinary_manifest["complete"] is True
+        ordinary_frames = manifest_envelopes(root, ordinary_manifest)
+        assert ordinary_frames
+        assert all(frame.raw_payload in old_frame_payloads for frame in ordinary_frames)
+        assert set(ordinary_manifest["connection_ids"]) == {old_connection_id}
+
+    persisted = envelopes(root)
+    assert [item.raw_payload for item in persisted] == [
+        *old_frame_payloads,
+        *new_frame_payloads,
+    ]
+    assert old_connection_id in {
+        *reconnect_manifest["connection_ids"],
+        *[
+            connection_id
+            for document in ordinary_manifests
+            for connection_id in document["connection_ids"]
+        ],
+    }
 
 
 def test_unexpected_disconnect_book_ticker_gap_contract(tmp_path: Path) -> None:
@@ -475,12 +551,14 @@ def test_unexpected_disconnect_diff_depth_seals_gap_and_retires_session(
 
     lifecycle, evidence = asyncio.run(exercise())
     assert "unexpected_disconnect" in lifecycle
-    documents = manifests(tmp_path)
-    assert len(documents) == 2
-    assert documents[0]["complete"] is False and documents[0]["gap"] is True
-    assert documents[1]["complete"] is False and documents[1]["gap"] is True
-    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
-    assert "sequence_gap" in documents[1]["capture_flags"]
+    with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
+        assert_boundary_contract(
+            tmp_path,
+            catalog,
+            reason="unexpected_disconnect",
+            old_frame_payloads=[diff_depth(1)],
+            new_frame_payloads=[diff_depth(2)],
+        )
     assert evidence["started"]["reason"] == "unexpected_disconnect"
     assert evidence["started"]["boundary_frame_persisted"] is False
     assert evidence["completed"]["gap_id"] == evidence["started"]["gap_id"]
@@ -568,12 +646,13 @@ def test_repeated_connect_failures_before_first_new_frame_keep_one_gap(
         completed = cast(dict[str, Any], events[1]["evidence"])
         assert completed["gap_id"] == started["gap_id"]
         assert completed["new_generation"] == started["original_generation"] + 1
-    documents = manifests(tmp_path)
-    assert len(documents) == 2
-    assert set(documents[0]["connection_ids"]).isdisjoint(
-        set(documents[1]["connection_ids"])
-    )
-    assert "sequence_gap" in documents[1]["capture_flags"]
+        assert_boundary_contract(
+            tmp_path,
+            catalog,
+            reason="unexpected_disconnect",
+            old_frame_payloads=[book_ticker(1)],
+            new_frame_payloads=[book_ticker(4)],
+        )
 
 
 def test_crash_after_started_before_first_new_recovers_without_false_complete(
@@ -853,11 +932,21 @@ def test_session_restart_boundary_is_not_a_false_gap_on_global_stop(
 
 def test_session_restart_boundary_records_gap_for_restarted_streams(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         session_restart = asyncio.Event()
         attempts = 0
+        trace: list[str] = []
+
+        def observe_event(envelope: Any, _raw_bytes: int, _queue_depth: int) -> None:
+            if "sequence_gap" in envelope.capture_flags:
+                trace.append("first-new-raw")
+
+        def observe_operation(name: str, _duration_ns: int) -> None:
+            if name == "fsync_latency_ns":
+                trace.append("raw-sync")
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -868,7 +957,31 @@ def test_session_restart_boundary_records_gap_for_restarted_streams(
             else:
                 yield ScriptedSocket([book_ticker(2)], stop=stop)
 
-        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        collector, catalog, _spool = make_collector(
+            tmp_path,
+            opener=opener,
+            event_observer=observe_event,
+            operation_observer=observe_operation,
+        )
+        original_ensure = catalog.ensure_operational_event
+
+        def observe_catalog_event(
+            *,
+            event_id: str,
+            event_type: str,
+            occurred_at_utc_ns: int,
+            evidence: Any,
+        ) -> bool:
+            if event_type == "STREAM_DISCONTINUITY_COMPLETED":
+                trace.append("completed")
+            return original_ensure(
+                event_id=event_id,
+                event_type=event_type,
+                occurred_at_utc_ns=occurred_at_utc_ns,
+                evidence=evidence,
+            )
+
+        monkeypatch.setattr(catalog, "ensure_operational_event", observe_catalog_event)
         try:
             def trigger_restart() -> None:
                 session_restart.set()
@@ -895,18 +1008,25 @@ def test_session_restart_boundary_records_gap_for_restarted_streams(
                 "STREAM_DISCONTINUITY_STARTED",
                 "STREAM_DISCONTINUITY_COMPLETED",
             ]
+            first_new = trace.index("first-new-raw")
+            raw_sync = next(
+                index
+                for index, item in enumerate(trace)
+                if index > first_new and item == "raw-sync"
+            )
+            assert first_new < raw_sync < trace.index("completed")
         finally:
             catalog.close()
 
     asyncio.run(exercise())
-    documents = manifests(tmp_path)
-    assert len(documents) == 2
-    assert documents[0]["complete"] is False
-    assert documents[0]["gap"] is True
-    assert documents[1]["complete"] is False
-    assert documents[1]["gap"] is True
-    assert RECONNECT_GAP_FLAG in documents[0]["capture_flags"]
-    assert "sequence_gap" in documents[1]["capture_flags"]
+    with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
+        assert_boundary_contract(
+            tmp_path,
+            catalog,
+            reason="session_restart",
+            old_frame_payloads=[book_ticker(1)],
+            new_frame_payloads=[book_ticker(2)],
+        )
 
 
 def test_blue_green_overlap_chunk_is_not_forced_incomplete(tmp_path: Path) -> None:

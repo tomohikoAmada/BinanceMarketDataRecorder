@@ -179,11 +179,37 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
         for path in (tmp_path / "data" / "manifests").glob("*.json")
     ]
     documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
-    assert len(documents) == 2
-    assert documents[0]["gap"] is True and documents[0]["complete"] is False
-    assert documents[1]["gap"] is True and documents[1]["complete"] is False
-    assert "reconnect_gap" in documents[0]["capture_flags"]
-    assert "sequence_gap" in documents[1]["capture_flags"]
+    reconnect = [
+        document
+        for document in documents
+        if "reconnect_gap" in document["capture_flags"]
+    ]
+    recovery = [
+        document
+        for document in documents
+        if "sequence_gap" in document["capture_flags"]
+    ]
+    assert len(reconnect) == 1
+    assert len(recovery) == 1
+    assert reconnect[0]["gap"] is True and reconnect[0]["complete"] is False
+    assert recovery[0]["gap"] is True and recovery[0]["complete"] is False
+    assert set(reconnect[0]["connection_ids"]).isdisjoint(
+        set(recovery[0]["connection_ids"])
+    )
+    ordinary = [
+        document
+        for document in documents
+        if document not in (reconnect[0], recovery[0])
+    ]
+    assert len(ordinary) <= 1
+    assert all(
+        "reconnect_gap" not in document["capture_flags"]
+        and "sequence_gap" not in document["capture_flags"]
+        and document["gap"] is False
+        and document["complete"] is True
+        for document in documents
+        if document in ordinary
+    )
 
 
 def test_usdm_local_server_ping_is_ponged(tmp_path: Path) -> None:
