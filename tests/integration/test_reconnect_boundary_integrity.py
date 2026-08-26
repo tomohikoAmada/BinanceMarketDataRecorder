@@ -273,6 +273,7 @@ def assert_boundary_contract(
     assert len(recovery_manifests) == 1
     reconnect_manifest = reconnect_manifests[0]
     recovery_manifest = recovery_manifests[0]
+    assert reconnect_manifest is not recovery_manifest
 
     assert reconnect_manifest["gap"] is True
     assert reconnect_manifest["complete"] is False
@@ -281,24 +282,34 @@ def assert_boundary_contract(
 
     reconnect_frames = manifest_envelopes(root, reconnect_manifest)
     recovery_frames = manifest_envelopes(root, recovery_manifest)
+    assert reconnect_manifest["record_count"] == len(reconnect_frames)
+    assert recovery_manifest["record_count"] == len(recovery_frames)
     old_connection_id = str(started["original_connection_id"])
     new_connection_id = str(completed["new_connection_id"])
     assert old_connection_id != new_connection_id
     assert started["original_generation"] < completed["new_generation"]
     assert old_connection_id not in set(recovery_manifest["connection_ids"])
     assert new_connection_id in set(recovery_manifest["connection_ids"])
+    assert set(recovery_manifest["connection_ids"]) == {new_connection_id}
     assert completed["new_connection_id"] == recovery_manifest["connection_ids"][0]
 
-    # A boundary marker is allowed to be empty. If the old chunk was still
-    # active, its authentic frames remain on the old/boundary side instead.
+    # Layout A keeps the authentic old-generation frames in the reconnect
+    # artifact. Layout B has one already-rotated ordinary old-generation
+    # artifact, followed by a zero-record reconnect boundary marker.
     assert all(frame.raw_payload in old_frame_payloads for frame in reconnect_frames)
     if reconnect_manifest["record_count"] == 0:
         assert reconnect_frames == []
         assert reconnect_manifest["connection_ids"] == []
     else:
-        assert reconnect_frames
+        assert reconnect_manifest["record_count"] > 0
+        assert [frame.raw_payload for frame in reconnect_frames] == old_frame_payloads
+        assert all(frame.connection_id == old_connection_id for frame in reconnect_frames)
         assert set(reconnect_manifest["connection_ids"]) == {old_connection_id}
-    assert all(frame.raw_payload in new_frame_payloads for frame in recovery_frames)
+    assert all(
+        frame.connection_id == new_connection_id
+        and frame.raw_payload in new_frame_payloads
+        for frame in recovery_frames
+    )
     sequence_frames = [
         frame for frame in recovery_frames if "sequence_gap" in frame.capture_flags
     ]
@@ -315,16 +326,33 @@ def assert_boundary_contract(
         if document not in (reconnect_manifest, recovery_manifest)
     ]
     assert len(ordinary_manifests) <= 1
+    if ordinary_manifests:
+        # An ordinary chunk is legal only when rotation already sealed the
+        # old generation before the reconnect boundary. In that layout the
+        # reconnect artifact must be the empty durable marker above.
+        assert reconnect_manifest["record_count"] == 0
+        assert reconnect_frames == []
+        assert reconnect_manifest["connection_ids"] == []
+    else:
+        # Without an ordinary artifact, an empty reconnect marker would lose
+        # the authentic old side of these old-frame scenarios.
+        assert reconnect_manifest["record_count"] > 0
+        assert reconnect_frames
     for ordinary_manifest in ordinary_manifests:
         ordinary_flags = set(ordinary_manifest["capture_flags"])
+        assert ordinary_manifest["record_count"] > 0
         assert RECONNECT_GAP_FLAG not in ordinary_flags
         assert "sequence_gap" not in ordinary_flags
         assert ordinary_manifest["gap"] is False
         assert ordinary_manifest["complete"] is True
         ordinary_frames = manifest_envelopes(root, ordinary_manifest)
-        assert ordinary_frames
+        assert ordinary_manifest["record_count"] == len(ordinary_frames)
+        assert [frame.raw_payload for frame in ordinary_frames] == old_frame_payloads
         assert all(frame.raw_payload in old_frame_payloads for frame in ordinary_frames)
+        assert all(frame.connection_id == old_connection_id for frame in ordinary_frames)
         assert set(ordinary_manifest["connection_ids"]) == {old_connection_id}
+        if "generation" in ordinary_manifest:
+            assert ordinary_manifest["generation"] == started["original_generation"]
 
     persisted = envelopes(root)
     assert [item.raw_payload for item in persisted] == [
