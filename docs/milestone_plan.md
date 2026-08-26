@@ -1016,11 +1016,15 @@ mutation exists; those remain exclusively M22.4B scope.
 ### M22.9 — Exact VPS staged acceptance
 
 - **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / LOCAL CONTINUITY
-  CORRECTION IMPLEMENTED, NOT DEPLOYED**. The exact artifact at incident
+  CORRECTIONS IMPLEMENTED, NOT DEPLOYED**. The exact artifact at incident
   authority `ddb730962247ff374ae614f4386508598b71d423` exposed a production Raw
   continuity defect when a bounded backpressure timeout was followed by a
-  post-close handoff timeout. The 24h result remains INCOMPLETE and no later
-  stage is eligible. See `docs/milestone_acceptance/M22.9.md`.
+  post-close handoff timeout. Independent review of the first corrective
+  commit then found the adjacent Spot/USD-M session-restart timeout origin and
+  stale per-generation handoff state; the follow-up correction distinguishes
+  session restart from true global stop and resets ephemeral boundary state.
+  The 24h result remains INCOMPLETE and no later stage is eligible. See
+  `docs/milestone_acceptance/M22.9.md`.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,

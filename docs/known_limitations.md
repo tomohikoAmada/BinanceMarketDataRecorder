@@ -44,9 +44,11 @@ chain.
 - The incident artifact allowed fatal USD-M post-close handoff timeout to
   escape before durable gap intent, producing false-complete historical tails
   and an unmarked first post-restart frame.
-- The local correction preserves queue bounds and fail-fast behavior, marks
-  the unpersisted boundary honestly, and restores the same gap lifecycle on
-  startup. It is not deployed and has no duration credit.
+- The local corrections preserve queue bounds and fail-fast behavior, mark
+  the unpersisted boundary honestly, distinguish session restart from true
+  global stop, reset ephemeral boundary state per generation, and restore the
+  same gap lifecycle on startup. They are not deployed and have no duration
+  credit.
 - A future corrected artifact must restart exact identity -> readiness -> 2h
   -> 12h -> 24h -> 72h -> 168h. No stage starts automatically.
 

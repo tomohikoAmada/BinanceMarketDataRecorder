@@ -188,6 +188,7 @@ class SpotStreamCollector:
         self._max_writer_drain_ns = 0
         self._backpressure_boundary: ReceivedFrame | None = None
         self._backpressure_boundary_handoff_succeeded: bool | None = None
+        self._post_close_handoff_outcome: str | None = None
         self._active_connection_id: str | None = None
         self._restore_open_gap()
 
@@ -640,6 +641,7 @@ class SpotStreamCollector:
                     except IngressPostCloseHandoffTimeout:
                         self._backpressure_boundary = boundary
                         self._backpressure_boundary_handoff_succeeded = False
+                        self._post_close_handoff_outcome = "ingress_backpressure"
                         self._remember_boundary(connection_id)
                         self._log_ingress_state(
                             logging.CRITICAL,
@@ -655,16 +657,32 @@ class SpotStreamCollector:
                     self._backpressure_boundary_handoff_succeeded = True
                     return "ingress_backpressure"
                 except IngressStopRequested:
+                    post_close_outcome = (
+                        "session_restart"
+                        if self._is_session_restart(session_restart)
+                        else "stopped"
+                    )
                     await websocket.close(code=1000, reason="collector shutdown")
                     receipt = self._with_recovery_marker(receipt)
-                    await self._receipts.put_after_connection_close(
-                        receipt,
-                        writer_task=writer_task,
-                        timeout_seconds=self.post_close_handoff_timeout_seconds,
-                    )
+                    try:
+                        await self._receipts.put_after_connection_close(
+                            receipt,
+                            writer_task=writer_task,
+                            timeout_seconds=self.post_close_handoff_timeout_seconds,
+                        )
+                    except IngressPostCloseHandoffTimeout:
+                        # Preserve the actual stop origin before the exception
+                        # reaches run(). A session retirement opens replacement
+                        # connections and is therefore an ADR-0027 boundary;
+                        # a true global stop is not.
+                        self._backpressure_boundary = receipt
+                        self._backpressure_boundary_handoff_succeeded = False
+                        self._post_close_handoff_outcome = post_close_outcome
+                        self._remember_boundary(connection_id)
+                        raise
                     if self._recovery_flag_pending:
                         self._recovery_marker_enqueued = True
-                    if self._is_session_restart(session_restart):
+                    if post_close_outcome == "session_restart":
                         return "session_restart"
                     return "graceful_shutdown"
                 except (WebSocketException, OSError, TimeoutError):
@@ -730,8 +748,8 @@ class SpotStreamCollector:
             return None
         boundary_persisted = (
             self._backpressure_boundary_handoff_succeeded
-            if outcome == "ingress_backpressure"
-            else boundary is not None
+            if boundary is not None
+            else False
         )
         boundary_started_at = (
             boundary.receive_time_utc_ns
@@ -907,6 +925,10 @@ class SpotStreamCollector:
             self._seal_intent = None
             self._boundary_connection_id = None
             self._boundary_detected_at_utc_ns = None
+            self._backpressure_boundary = None
+            self._backpressure_boundary_handoff_succeeded = None
+            self._post_close_handoff_outcome = None
+            self._active_connection_id = None
             writer_task = asyncio.create_task(self._writer_loop(producer_done))
             outcome = "stopped"
             gap_just_started = False
@@ -914,11 +936,19 @@ class SpotStreamCollector:
                 outcome = await self._connection_loop(
                     stop, writer_task, session_restart=session_restart
                 )
-            except IngressPostCloseHandoffTimeout:
-                # Keep the failed handoff on the fatal path while allowing
-                # the finally block to durably record STARTED and seal the
-                # old generation gap before the original error propagates.
-                outcome = "ingress_backpressure"
+            except IngressPostCloseHandoffTimeout as handoff_error:
+                # The exception class is shared by distinct post-close call
+                # sites. Only their preserved call-site context decides
+                # whether this is a reconnect boundary or a true global stop.
+                handoff_outcome = self._post_close_handoff_outcome
+                if handoff_outcome is None or (
+                    handoff_outcome != "stopped"
+                    and handoff_outcome not in RECONNECT_REASONS
+                ):
+                    raise RuntimeError(
+                        "Spot post-close handoff timeout lost its boundary context"
+                    ) from handoff_error
+                outcome = handoff_outcome
                 raise
             finally:
                 if outcome == "ingress_backpressure":
@@ -944,7 +974,7 @@ class SpotStreamCollector:
                     # STARTED event below fails to commit.
                     boundary = (
                         self._backpressure_boundary
-                        if outcome == "ingress_backpressure"
+                        if self._backpressure_boundary_handoff_succeeded is not None
                         else None
                     )
                     self._seal_intent = self._build_seal_intent(outcome, boundary)
@@ -973,7 +1003,7 @@ class SpotStreamCollector:
                                 connection_id=self._boundary_connection_id,
                                 boundary_frame_persisted=(
                                     self._backpressure_boundary_handoff_succeeded
-                                    if outcome == "ingress_backpressure"
+                                    if boundary is not None
                                     else None
                                 ),
                             )
@@ -1018,11 +1048,20 @@ class SpotStreamCollector:
                             f"missing Spot boundary identity for {outcome}"
                         )
                     await self._record_gap_started(
-                        None,
+                        boundary,
                         outcome,
                         gap_id=str(self._seal_intent["gap_id"]),
-                        started_at_utc_ns=self._boundary_detected_at_utc_ns,
+                        started_at_utc_ns=(
+                            boundary.receive_time_utc_ns
+                            if boundary is not None
+                            else self._boundary_detected_at_utc_ns
+                        ),
                         connection_id=self._boundary_connection_id,
+                        boundary_frame_persisted=(
+                            self._backpressure_boundary_handoff_succeeded
+                            if boundary is not None
+                            else None
+                        ),
                     )
                     gap_just_started = True
                     self._generation += 1
