@@ -13,8 +13,8 @@ SpotStreamCollector 管理一条 websocket 连接的生命周期,遵循以下不
   并避免组合流包装的歧义。
 - M21.4.11: 任意 transport 边界(unexpected disconnect / planned rotation /
   server_shutdown / session restart)都走统一 reconnect-boundary 状态机:
-  旧 generation drain + seal(必要时 manifest 级 reconnect_gap 强制不完整)
-  -> Catalog STREAM_DISCONTINUITY_STARTED durable -> generation++ ->
+  Catalog STREAM_DISCONTINUITY_STARTED durable -> 旧 generation drain +
+  seal(必要时 manifest 级 reconnect_gap 强制不完整) -> generation++ ->
   新连接 -> 首个新帧携带 sequence_gap -> Raw sync -> COMPLETED。
   exchange-side completeness 在 close 与首个新帧之间永远无法证明;
   intentional close 不是完整性豁免。Spot ingress backpressure 使用同一

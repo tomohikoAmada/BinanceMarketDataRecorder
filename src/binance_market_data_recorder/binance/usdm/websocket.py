@@ -6,9 +6,9 @@ routed through one reconnect-boundary state machine (M21.4.11):
     CONNECTED(generation N)
         -> boundary detected (backpressure / unexpected disconnect /
            planned rotation / server shutdown / session restart)
+        -> Catalog STREAM_DISCONTINUITY_STARTED durable
         -> drain old generation
         -> seal old generation (forced manifest gap when no in-hand frame)
-        -> Catalog STREAM_DISCONTINUITY_STARTED durable
         -> generation N + 1
         -> open new connection
         -> first new frame carries sequence_gap
@@ -176,6 +176,7 @@ class UsdMStreamCollector:
         self._recovery_marker_enqueued = False
         self._pending_gap: dict[str, object] | None = None
         self._backpressure_boundary: ReceivedFrame | None = None
+        self._backpressure_boundary_handoff_succeeded: bool | None = None
         self._forced_seal_flags: frozenset[str] = frozenset()
         self._seal_intent: dict[str, object] | None = None
         self._boundary_connection_id: str | None = None
@@ -370,6 +371,7 @@ class UsdMStreamCollector:
         gap_id: str,
         started_at_utc_ns: int,
         connection_id: str,
+        boundary_frame_persisted: bool | None = None,
     ) -> None:
         if reason not in RECONNECT_REASONS:
             raise ValueError(f"unknown USD-M reconnect reason: {reason}")
@@ -380,8 +382,9 @@ class UsdMStreamCollector:
                 f"USD-M {self.stream_name} cannot start a second discontinuity "
                 "while an earlier gap remains open"
             )
+        if boundary_frame_persisted is None:
+            boundary_frame_persisted = boundary is not None
         if boundary is not None:
-            boundary_frame_persisted = True
             boundary_payload_sha256 = hashlib.sha256(boundary.raw_payload).hexdigest()
             boundary_kind = "last_frame_in_hand"
         else:
@@ -400,8 +403,17 @@ class UsdMStreamCollector:
             "boundary_kind": boundary_kind,
             "boundary_frame_persisted": boundary_frame_persisted,
             "boundary_precision": (
-                "connection closed after the last Recorder-received frame; "
-                "unread WebSocket/TCP buffers are indeterminate"
+                (
+                    "connection closed after the last Recorder-received frame; "
+                    "the boundary frame was admitted to the bounded Raw-writer "
+                    "handoff and unread WebSocket/TCP buffers are indeterminate"
+                )
+                if boundary_frame_persisted
+                else (
+                    "connection closed after the last Recorder-received frame; "
+                    "the boundary frame could not enter the Raw-writer handoff "
+                    "and unread WebSocket/TCP buffers are indeterminate"
+                )
                 if boundary is not None
                 else (
                     "no unpersisted last-old frame exists at the boundary; "
@@ -497,6 +509,11 @@ class UsdMStreamCollector:
         """
         if self._boundary_connection_id is None or self._boundary_detected_at_utc_ns is None:
             return None
+        boundary_persisted = (
+            self._backpressure_boundary_handoff_succeeded
+            if outcome == "ingress_backpressure"
+            else boundary is not None
+        )
         started_at = (
             boundary.receive_time_utc_ns
             if boundary is not None
@@ -544,7 +561,7 @@ class UsdMStreamCollector:
                 if boundary is not None
                 else "no_last_frame_available"
             ),
-            "boundary_frame_persisted": boundary is not None,
+            "boundary_frame_persisted": boundary_persisted,
         }
         if boundary is not None:
             intent["boundary_payload_sha256"] = hashlib.sha256(
@@ -743,6 +760,9 @@ class UsdMStreamCollector:
                             timeout_seconds=self.post_close_handoff_timeout_seconds,
                         )
                     except IngressPostCloseHandoffTimeout:
+                        self._backpressure_boundary = boundary
+                        self._backpressure_boundary_handoff_succeeded = False
+                        self._remember_boundary(connection_id)
                         self._log_ingress_state(
                             logging.CRITICAL,
                             "usdm_ingress_post_close_handoff_timeout",
@@ -754,6 +774,7 @@ class UsdMStreamCollector:
                     if self._recovery_flag_pending:
                         self._recovery_marker_enqueued = True
                     self._backpressure_boundary = boundary
+                    self._backpressure_boundary_handoff_succeeded = True
                     return "ingress_backpressure"
                 except IngressStopRequested:
                     await websocket.close(code=1000, reason="collector shutdown")
@@ -912,11 +933,23 @@ class UsdMStreamCollector:
                 outcome = await self._connection_loop(
                     stop, writer_task, session_restart=session_restart
                 )
+            except IngressPostCloseHandoffTimeout:
+                # The received boundary frame was not admitted to the Raw
+                # handoff. Keep the fatal exception, but classify the boundary
+                # before writer release so STARTED/seal-intent durability and
+                # fail-closed old-tail sealing happen before terminal exit.
+                outcome = "ingress_backpressure"
+                raise
             finally:
                 if outcome == "ingress_backpressure":
-                    # The boundary frame itself carries a persisted
-                    # sequence_gap marker; no manifest-level forcing is needed.
-                    self._forced_seal_flags = frozenset()
+                    # A successful handoff persists the in-frame sequence_gap.
+                    # A failed handoff must not claim that frame was persisted;
+                    # force only manifest-level reconnect_gap instead.
+                    self._forced_seal_flags = (
+                        frozenset()
+                        if self._backpressure_boundary_handoff_succeeded
+                        else frozenset({RECONNECT_GAP_FLAG})
+                    )
                 elif outcome in RECONNECT_REASONS:
                     # No unpersisted last-old frame exists to carry the
                     # marker; the sealed tail chunk gets the manifest-level
@@ -962,6 +995,11 @@ class UsdMStreamCollector:
                                 else self._boundary_detected_at_utc_ns
                             ),
                             connection_id=self._boundary_connection_id,
+                            boundary_frame_persisted=(
+                                self._backpressure_boundary_handoff_succeeded
+                                if outcome == "ingress_backpressure"
+                                else None
+                            ),
                         )
                         gap_just_started = True
                         self._generation += 1

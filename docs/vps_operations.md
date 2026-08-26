@@ -278,8 +278,10 @@ target, and evidence root. LAN Linux evidence does not substitute for VPS
 evidence, and no stage starts automatically. M22.8 is accepted only as
 isolated cross-machine failure evidence for fixed run
 `m22.8-20260822T041913Z-23f1fcc7` on `vps-b5bfe3f8`; its nine scenarios passed
-without touching production. M22.9 remains NOT STARTED and its dependency gate
-is satisfied.
+without touching production. M22.9 later began on the exact production domain,
+but its 24h result is INCOMPLETE after the R-054 Raw continuity defect; it is
+not eligible for 72h. The local correction is not deployed and receives no
+duration credit.
 
 ## Operations and recovery
 

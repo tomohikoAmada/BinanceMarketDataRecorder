@@ -2,9 +2,10 @@
 
 > **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
-> **Approved future production profile:** Ubuntu 24.04 LTS x86_64, Python 3.12,
-> non-root systemd service on a shared 2 vCPU / 4 GiB / 40 GB-class VPS. The
-> VPS architecture and remote archive client are not deployed or production
+> **Production target:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd
+> service on a shared 2 vCPU / 4 GiB / 40 GB-class VPS. Exact-VPS M22.9 staged
+> acceptance began, but its 24h result is INCOMPLETE after a confirmed Raw
+> continuity defect. The local correction is not deployed or production
 > validated.
 >
 > **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
@@ -17,7 +18,8 @@
 > SUPERSEDED_BY_RECONNECT_INTEGRITY_FINDING 取代。
 > **后续部署的 M21.4.11 工件 `f659895…` 通过独立正式 72 小时观测门（PASS）**，
 > 但因 restart-only orphan-intent 缺陷被判 `ELIGIBLE_FOR_168H=false`，168 小时
-> 验收未运行。进一步的 PR #11 修复已合并到 `main`，**未部署**。
+> 验收未运行。进一步的 PR #11 修复后来进入 M22.9 incident artifact；该工件的
+> 24h结果为INCOMPLETE。本任务的后续 continuity 修复仅本地提交，尚未部署。
 >
 > **本项目为独立、非官方项目。与 Binance 不存在隶属、维护、赞助、背书或合作
 > 关系。** 项目名称仅标识其连接的公开数据源和 API。本项目不使用 Binance
@@ -41,19 +43,23 @@
 > 0 unmarked, 0 false-complete, 27/27 first-new Raw `sequence_gap`) but was
 > subsequently found ineligible for the 168-hour gate
 > (`ELIGIBLE_FOR_168H=false`) because of a restart-only orphan-intent defect,
-> so the 168-hour validation has not run. The further correction merged to
-> `main` through PR #11 is NOT deployed; the corrected artifact must restart
-> the full staged acceptance chain.
+> so the 168-hour validation has not run. The PR #11 correction was later
+> included in the M22.9 incident artifact; that artifact's 24h result is
+> INCOMPLETE. This task's additional continuity correction is local-only and
+> must restart the full staged acceptance chain after a separate deployment.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
 
 原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
 该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
-PR #11的进一步修复已合并到`main`但尚未部署；新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复
+尚未部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
+handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
-Ubuntu 24.04 LTS x86_64 VPS 是批准的未来生产 profile，尚未部署或验收。
+Ubuntu 24.04 LTS x86_64 VPS M22.9 staged acceptance已开始但24h结果INCOMPLETE。
 
 **原始M21.4正式72小时窗口验收结果为 FAIL（数据完整性合同失败）**：详见
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`。
@@ -65,7 +71,8 @@ M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h进程稳
 Backpressure恢复合同PASS。**原始正式72h验收FAIL（数据完整性）**：所有普通
 reconnect/planned rotation 边界均无 gap 证据。后续部署的M21.4.11工件
 `f659895…`正式72小时观测门PASS，但因restart-only orphan-intent缺陷不可进入
-168h。PR #11 的进一步修复已合并到 `main`，未部署。不代表 Production Ready。
+168h。PR #11 修复后来进入M22.9 incident artifact；本地continuity修复未部署。
+不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
 的本地录制、完整性验证、
@@ -75,8 +82,8 @@ Binance Market Data Recorder 是 specifically for Binance public market data
 
 macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持并作为开发/本地
 profile；Ubuntu ARM64/RK3588 的非 root **systemd** 部署是独立的 Soak
-Candidate/LAN Linux profile。未来主生产 profile 是 Ubuntu 24.04 LTS x86_64
-共享 VPS，尚未部署或验收。Windows 尚未实现，但未来归档客户端要求支持
+Candidate/LAN Linux profile。主生产目标是 Ubuntu 24.04 LTS x86_64
+共享 VPS；M22.9 24h结果INCOMPLETE且本地修复未部署。Windows 尚未实现，但未来归档客户端要求支持
 macOS/Linux/Windows。V1 仅支持 BTCUSDT Spot 和
 BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
@@ -131,13 +138,13 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | CLI | `binance-market-recorder` |
 | 版本 | `0.1.0a1` |
 | Python | 3.12 (`>=3.12,<3.13`) |
-| 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate; approved future production: Ubuntu 24.04 x86_64 VPS |
+| 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate; production target: Ubuntu 24.04 x86_64 VPS |
 | 部署方式 | logged-in-user LaunchAgent / non-root systemd |
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | 2h/12h/24h 进程稳定性 PASS；原始M21.4正式72h进程稳定性PASS但数据完整性FAIL；后续部署的M21.4.11工件`f659895…`正式72小时观测门PASS但`ELIGIBLE_FOR_168H=false`；168h未运行；新修复工件须从2h→12h→24h→72h→168h重新验收 |
-| PR/部署 | PR #7 production Wheel history retained; M21.4.11/R3.4 code merged through PR #11, not deployed; VPS not deployed |
+| 长期验证 | M22.9 exact-VPS 24h结果INCOMPLETE、72h不具备资格；本地修复未部署且须从 exact identity/readiness/2h→12h→24h→72h→168h 重新验收；历史M21结果保持原记录 |
+| PR/部署 | incident artifact authority `ddb7309…`; continuity correction committed locally only, not deployed; Production Ready=NO |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -168,7 +175,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | M20 已实现（RK3588/LAN profile） | `systemd install` CLI | system unit + journald | approved VPS profile is future/not deployed |
+| systemd 服务 | M20 已实现；M22.7B real-host gate通过 | `systemd install` CLI | system unit + journald | M22.9 24h INCOMPLETE；修复未部署 |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |

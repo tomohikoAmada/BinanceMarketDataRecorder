@@ -26,6 +26,7 @@ from binance_market_data_recorder.spool.format import (
     decode_envelope,
 )
 from binance_market_data_recorder.spool.queue import IngressPostCloseHandoffTimeout
+from binance_market_data_recorder.spool.recovery import recover_storage
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -450,15 +451,17 @@ def test_graceful_stop_without_overload_creates_no_false_gap(tmp_path: Path) -> 
         assert discontinuities(catalog) == []
 
 
-def test_boundary_handoff_timeout_is_fatal_and_seals_gap_evidence(
+def test_boundary_handoff_timeout_recovers_same_gap_without_fabricating_frame(
     tmp_path: Path,
 ) -> None:
+    source_payloads = [book_ticker(value) for value in range(500)]
+
     async def exercise() -> None:
         stop = asyncio.Event()
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
-            yield BurstSocket([book_ticker(value) for value in range(500)])
+            yield BurstSocket(source_payloads)
 
         collector, catalog = make_collector(
             tmp_path,
@@ -477,13 +480,84 @@ def test_boundary_handoff_timeout_is_fatal_and_seals_gap_evidence(
             catalog.close()
 
     asyncio.run(exercise())
-    _envelopes, manifests = captured(tmp_path)
-    assert manifests
-    assert any(document["gap"] and not document["complete"] for document in manifests)
-    with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
+    old_envelopes, old_manifests = captured(tmp_path)
+    assert len(old_manifests) == 1
+    assert old_manifests[0]["gap"] is True
+    assert old_manifests[0]["complete"] is False
+    assert "reconnect_gap" in old_manifests[0]["capture_flags"]
+    assert old_envelopes
+    assert all("sequence_gap" not in envelope.capture_flags for envelope in old_envelopes)
+    old_payloads = [envelope.raw_payload for envelope in old_envelopes]
+    assert old_payloads == source_payloads[: len(old_payloads)]
+
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog, read_only=True) as catalog:
         events = discontinuities(catalog)
     assert len(events) == 1
     evidence = cast(dict[str, Any], events[0]["evidence"])
+    gap_id = str(evidence["gap_id"])
     assert evidence["reason"] == "ingress_backpressure"
+    assert evidence["boundary_kind"] == "last_frame_in_hand"
     assert evidence["boundary_frame_persisted"] is False
-    assert "boundary_payload_sha256" in evidence
+    boundary_index = next(
+        index
+        for index, payload in enumerate(source_payloads)
+        if hashlib.sha256(payload).hexdigest()
+        == evidence["boundary_payload_sha256"]
+    )
+    assert boundary_index == len(old_payloads)
+    assert source_payloads[boundary_index] not in old_payloads
+
+    with Catalog(layout.catalog) as recovery_catalog:
+        recover_storage(layout=layout, catalog=recovery_catalog)
+        open_gaps = recovery_catalog.unclosed_stream_discontinuities(
+            market="spot", stream="book_ticker"
+        )
+    assert len(open_gaps) == 1
+    assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
+
+    replacement_payload = book_ticker(10_000)
+
+    async def restart() -> None:
+        stop = asyncio.Event()
+
+        @asynccontextmanager
+        async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+            yield BurstSocket([replacement_payload], stop=stop)
+
+        collector, catalog = make_collector(
+            tmp_path,
+            opener=opener,
+            stream=SpotStream.BOOK_TICKER,
+            capacity=2,
+            drain_delay_seconds=0,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+        )
+        try:
+            assert collector._pending_gap is not None
+            assert collector._pending_gap["gap_id"] == gap_id
+            await asyncio.wait_for(collector.run(stop), timeout=5)
+        finally:
+            catalog.close()
+
+    asyncio.run(restart())
+
+    all_envelopes, all_manifests = captured(tmp_path)
+    assert [envelope.raw_payload for envelope in all_envelopes] == [
+        *old_payloads,
+        replacement_payload,
+    ]
+    assert all_envelopes[-1].capture_flags == ("sequence_gap",)
+    assert all_manifests[-1]["gap"] is True
+    assert all_manifests[-1]["complete"] is False
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        lifecycle = discontinuities(catalog)
+    assert [event["event_type"] for event in lifecycle] == [
+        "STREAM_DISCONTINUITY_STARTED",
+        "STREAM_DISCONTINUITY_COMPLETED",
+    ]
+    completed = cast(dict[str, Any], lifecycle[1]["evidence"])
+    assert completed["gap_id"] == gap_id
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    assert completed["historical_continuity_restored"] is False

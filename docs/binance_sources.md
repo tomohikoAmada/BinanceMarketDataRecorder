@@ -345,3 +345,12 @@ idempotency validation, zero-record marker provenance, and the read-only
 historical audit. It changes no Binance endpoint, payload, sequence, timing,
 rate-limit, or SDK behavior. No new external source was required or retrieved;
 the existing official-source inventory and hashes remain authoritative.
+
+## M22.9 post-close continuity correction source impact
+
+The M22.9 correction changes only local bounded-handoff failure ordering,
+manifest completeness forcing, and reuse of the existing ADR-0027 durable
+gap/recovery authority. It changes no Binance endpoint, payload, sequence,
+timing, rate-limit, or SDK behavior. No new external source was required or
+retrieved; the existing official-source inventory and hashes remain
+authoritative.
