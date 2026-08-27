@@ -285,6 +285,18 @@ duration credit.
 
 ## Operations and recovery
 
+### M22.9 repository-owned observer
+
+The installed `binance-market-recorder deployment acceptance` commands are
+read-only observers. Operators provide an evidence directory outside
+`/var/lib/binance-market-data-recorder`, `/opt/binance-market-data-recorder`,
+and `/etc/binance-market-data-recorder`; the tool rejects lexical and symlink
+escapes into those trees. Identity and readiness are explicit gates. A stage
+must be invoked explicitly with its eligible predecessor and has an independent
+T0; `--resume` preserves the original T0 and published sample chain. The
+observer never starts, stops, restarts, deploys, promotes, or claims Production
+Ready, and it does not persist capacity observations.
+
 The future service must remain non-root, bounded, and recovery-first:
 
 1. start with Raw/Catalog recovery before network capture;

@@ -26,9 +26,7 @@ VPS_UNIT_PATH = Path("/etc/systemd/system") / SYSTEMD_SERVICE_NAME
 _UNIT_MARKER = "# Managed by BinanceMarketDataRecorder"
 _UNIT_MARKER_BYTES = _UNIT_MARKER.encode()
 _GIT_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{7,64}$")
-_SYSTEMD_DURATION = re.compile(
-    r"(?P<value>[0-9]+(?:\.[0-9]+)?)(?P<unit>us|ms|s|min|h)"
-)
+_SYSTEMD_DURATION = re.compile(r"(?P<value>[0-9]+(?:\.[0-9]+)?)(?P<unit>us|ms|s|min|h)")
 _SYSTEMD_UNIT_OBJECT_PATH_PREFIX = "/org/freedesktop/systemd1/unit/"
 _VPS_DIRECT_ENVIRONMENT = (
     "ALL_PROXY=",
@@ -225,9 +223,7 @@ class SystemdManager:
         result = self.command_runner(arguments)
         if result.returncode != 0 and not allow_failure:
             detail = (result.stderr or result.stdout).strip()
-            raise SystemdError(
-                f"{' '.join(arguments[:2])} failed ({result.returncode}): {detail}"
-            )
+            raise SystemdError(f"{' '.join(arguments[:2])} failed ({result.returncode}): {detail}")
         return result
 
     def _assert_install_inputs(self) -> None:
@@ -284,13 +280,9 @@ class SystemdManager:
             try:
                 observed = directory.lstat()
             except OSError as exc:
-                raise SystemdError(
-                    f"cannot inspect VPS controlling directory {directory}"
-                ) from exc
+                raise SystemdError(f"cannot inspect VPS controlling directory {directory}") from exc
             if not stat.S_ISDIR(observed.st_mode) or stat.S_ISLNK(observed.st_mode):
-                raise SystemdError(
-                    "VPS controlling deployment path must be an actual directory"
-                )
+                raise SystemdError("VPS controlling deployment path must be an actual directory")
             if observed.st_uid != 0 or observed.st_mode & 0o022:
                 raise SystemdError(
                     "VPS controlling deployment directory must not be service-writable"
@@ -370,8 +362,7 @@ class SystemdManager:
             )
         if self.git_commit is not None and not self.is_vps_profile:
             service_lines.append(
-                "Environment="
-                + _quote(f"BINANCE_MARKET_RECORDER_GIT_COMMIT={self.git_commit}")
+                "Environment=" + _quote(f"BINANCE_MARKET_RECORDER_GIT_COMMIT={self.git_commit}")
             )
         service_lines.extend(
             (
@@ -390,6 +381,32 @@ class SystemdManager:
             )
         )
         return "\n".join(service_lines)
+
+    def _show_properties_for(
+        self, names: Sequence[str], *, optional: frozenset[str] = frozenset()
+    ) -> dict[str, str]:
+        requested = tuple(names)
+        if not requested or len(set(requested)) != len(requested):
+            raise SystemdError("systemd property request is malformed")
+        result = self._run(
+            "/usr/bin/systemctl",
+            "show",
+            SYSTEMD_SERVICE_NAME,
+            "--no-pager",
+            *(f"--property={name}" for name in requested),
+        )
+        output: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            if "=" not in line:
+                raise SystemdError("systemctl show returned malformed evidence")
+            name, value = line.split("=", 1)
+            if name in output:
+                raise SystemdError("systemctl show returned duplicate evidence")
+            output[name] = value
+        required = set(requested) - optional
+        if not required.issubset(output) or set(output) - set(requested):
+            raise SystemdError("systemctl show omitted required evidence")
+        return output
 
     def _show_properties(self) -> dict[str, str]:
         names = (
@@ -419,24 +436,10 @@ class SystemdManager:
             "MainPID",
             "Result",
         )
-        result = self._run(
-            "/usr/bin/systemctl",
-            "show",
-            SYSTEMD_SERVICE_NAME,
-            "--no-pager",
-            *(f"--property={name}" for name in names),
-        )
-        output: dict[str, str] = {}
-        for line in result.stdout.splitlines():
-            if "=" not in line:
-                raise SystemdError("systemctl show returned malformed evidence")
-            name, value = line.split("=", 1)
-            if name in output:
-                raise SystemdError("systemctl show returned duplicate evidence")
-            output[name] = value
-        required_names = set(names) - {"EnvironmentFiles"}
-        if not required_names.issubset(output) or set(output) - set(names):
-            raise SystemdError("systemctl show omitted required evidence")
+        output = self._show_properties_for(names, optional=frozenset({"EnvironmentFiles"}))
+        # EnvironmentFiles is obtained through the strict D-Bus API below;
+        # retaining this omission keeps the pre-existing effective-property
+        # contract unchanged.
         return output
 
     def _environment_files_from_dbus(self) -> list[str]:
@@ -455,11 +458,7 @@ class SystemdManager:
         if len(unit_parts) != 2 or unit_parts[0] != "o":
             raise SystemdError("systemd GetUnit returned malformed object path evidence")
         quoted_path = unit_parts[1].strip()
-        if (
-            len(quoted_path) < 2
-            or not quoted_path.startswith('"')
-            or not quoted_path.endswith('"')
-        ):
+        if len(quoted_path) < 2 or not quoted_path.startswith('"') or not quoted_path.endswith('"'):
             raise SystemdError("systemd GetUnit returned malformed object path evidence")
         object_path = quoted_path[1:-1]
         if (
@@ -484,9 +483,7 @@ class SystemdManager:
         try:
             element_count = int(property_parts[1])
         except ValueError as exc:
-            raise SystemdError(
-                "systemd EnvironmentFiles D-Bus count is malformed"
-            ) from exc
+            raise SystemdError("systemd EnvironmentFiles D-Bus count is malformed") from exc
         if element_count < 0:
             raise SystemdError("systemd EnvironmentFiles D-Bus count is malformed")
         if element_count == 0:
@@ -539,9 +536,7 @@ class SystemdManager:
             kill_signal = "SIGTERM"
         observed: dict[str, object] = {
             "fragment_path": properties["FragmentPath"],
-            "drop_in_paths": _systemd_words(
-                properties["DropInPaths"], field="DropInPaths"
-            ),
+            "drop_in_paths": _systemd_words(properties["DropInPaths"], field="DropInPaths"),
             "exec_start": _effective_exec_start(properties["ExecStart"]),
             "user": properties["User"],
             "group": properties["Group"],
@@ -553,8 +548,7 @@ class SystemdManager:
                 properties["TimeoutStopUSec"], field="TimeoutStopUSec"
             ),
             "umask": properties["UMask"],
-            "no_new_privileges": properties["NoNewPrivileges"].casefold()
-            in {"yes", "true", "1"},
+            "no_new_privileges": properties["NoNewPrivileges"].casefold() in {"yes", "true", "1"},
             "working_directory": properties["WorkingDirectory"],
             "wants": _systemd_words(properties["Wants"], field="Wants"),
             "requires": _systemd_words(properties["Requires"], field="Requires"),
@@ -612,6 +606,55 @@ class SystemdManager:
             "main_pid": main_pid,
             "result": properties["Result"],
         }
+
+    def process_incarnation(self) -> dict[str, object]:
+        """Read the strict systemd process-incarnation evidence set.
+
+        This is deliberately separate from :meth:`runtime_properties`, whose
+        four-field result is retained for the existing status/readiness API.
+        Acceptance windows need the additional monotonic activation and
+        invocation identity fields to distinguish a restarted or PID-reused
+        process from the process frozen at T0.
+        """
+
+        names = (
+            "ActiveState",
+            "SubState",
+            "MainPID",
+            "Result",
+            "NRestarts",
+            "ActiveEnterTimestampMonotonic",
+            "InvocationID",
+        )
+        properties = self._show_properties_for(names)
+        try:
+            main_pid = int(properties["MainPID"])
+            n_restarts = int(properties["NRestarts"])
+            active_enter = int(properties["ActiveEnterTimestampMonotonic"])
+        except (KeyError, ValueError) as exc:
+            raise SystemdError("systemd process-incarnation integer evidence is malformed") from exc
+        invocation_id = properties["InvocationID"]
+        if main_pid <= 0 or n_restarts < 0 or active_enter < 0:
+            raise SystemdError("systemd process-incarnation integer evidence is invalid")
+        if not re.fullmatch(r"[0-9a-fA-F-]{32,64}", invocation_id):
+            raise SystemdError("systemd InvocationID is malformed")
+        active_state = properties["ActiveState"]
+        sub_state = properties["SubState"]
+        result = properties["Result"]
+        if not active_state or not sub_state or not result:
+            raise SystemdError("systemd process-incarnation state evidence is empty")
+        return {
+            "active_state": active_state,
+            "sub_state": sub_state,
+            "main_pid": main_pid,
+            "result": result,
+            "n_restarts": n_restarts,
+            "active_enter_timestamp_monotonic": active_enter,
+            "invocation_id": invocation_id.lower(),
+        }
+
+    # Descriptive alias for callers whose terminology follows systemd's API.
+    runtime_process_incarnation = process_incarnation
 
     def install(self) -> dict[str, object]:
         self._assert_install_inputs()

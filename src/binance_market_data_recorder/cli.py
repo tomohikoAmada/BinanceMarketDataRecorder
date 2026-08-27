@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -35,6 +36,15 @@ from .logging import configure_logging, log_event
 from .metrics.report import DailyReporter
 from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
+from .service.acceptance import (
+    STAGE_DURATION_NS,
+    AcceptanceError,
+    AcceptanceObserver,
+    create_identity_evidence,
+    create_readiness_evidence,
+    resume_observer,
+    verify_prior_stage,
+)
 from .service.archive_timer import ArchiveTimerManager, SystemdArchiveError
 from .service.deployment_identity import (
     DeploymentIdentityError,
@@ -133,9 +143,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="backfill_command", required=True, parser_class=_ArgumentParser
     )
     for action in ("plan", "run"):
-        command = backfill_commands.add_parser(
-            action, help=f"{action} a historical archive import"
-        )
+        command = backfill_commands.add_parser(action, help=f"{action} a historical archive import")
         command.add_argument(
             "--profile",
             choices=("baseline-bars", "microstructure-trades"),
@@ -151,9 +159,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
-    recovery_command = commands.add_parser(
-        "recovery", help="startup recovery diagnostics"
-    )
+    recovery_command = commands.add_parser("recovery", help="startup recovery diagnostics")
     recovery_commands = recovery_command.add_subparsers(
         dest="recovery_command",
         required=True,
@@ -185,9 +191,7 @@ def build_parser() -> argparse.ArgumentParser:
     unregister = storage_commands.add_parser("unregister", help="stop using a registered folder")
     unregister.add_argument("storage_id")
     storage_commands.add_parser("status", help="resolve and probe registered folders")
-    eject = storage_commands.add_parser(
-        "eject", help="request non-forced system unmount and eject"
-    )
+    eject = storage_commands.add_parser("eject", help="request non-forced system unmount and eject")
     eject.add_argument("storage_id")
     eject.add_argument("--timeout-seconds", type=float, default=30.0)
     storage_commands.add_parser("forecast", help="sample capacity and forecast thresholds")
@@ -230,9 +234,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     soak_sample_cmd.add_argument("--storage-id", required=True)
     soak_sample_cmd.add_argument("--output", type=Path, required=True)
-    soak_timer = soak_commands.add_parser(
-        "timer", help="manage the soak sampling systemd timer"
-    )
+    soak_timer = soak_commands.add_parser("timer", help="manage the soak sampling systemd timer")
     soak_timer_commands = soak_timer.add_subparsers(
         dest="soak_timer_command", required=True, parser_class=_ArgumentParser
     )
@@ -246,9 +248,7 @@ def build_parser() -> argparse.ArgumentParser:
     soak_timer_install.add_argument("--output", type=Path, required=True)
     for action in ("start", "stop", "restart", "status", "uninstall"):
         soak_timer_commands.add_parser(action, help=f"{action} the soak timer")
-    launchd_command = commands.add_parser(
-        "launchd", help="manage the user LaunchAgent"
-    )
+    launchd_command = commands.add_parser("launchd", help="manage the user LaunchAgent")
     launchd_commands = launchd_command.add_subparsers(
         dest="launchd_command", required=True, parser_class=_ArgumentParser
     )
@@ -262,13 +262,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="confirm the reverse-DNS label namespace is author-controlled",
     )
     for action in ("uninstall", "start", "stop", "status"):
-        command = launchd_commands.add_parser(
-            action, help=f"{action} the user LaunchAgent"
-        )
+        command = launchd_commands.add_parser(action, help=f"{action} the user LaunchAgent")
         command.add_argument("--label")
-    systemd_command = commands.add_parser(
-        "systemd", help="manage the Linux system service"
-    )
+    systemd_command = commands.add_parser("systemd", help="manage the Linux system service")
     systemd_commands = systemd_command.add_subparsers(
         dest="systemd_command", required=True, parser_class=_ArgumentParser
     )
@@ -297,6 +293,30 @@ def build_parser() -> argparse.ArgumentParser:
     deployment_commands.add_parser(
         "readiness", help="wait up to 300 seconds for exact deployment readiness"
     )
+    acceptance = deployment_commands.add_parser(
+        "acceptance", help="produce read-only M22.9 acceptance evidence"
+    )
+    acceptance_commands = acceptance.add_subparsers(
+        dest="acceptance_command", required=True, parser_class=_ArgumentParser
+    )
+    identity_acceptance = acceptance_commands.add_parser(
+        "identity", help="verify and publish exact artifact identity"
+    )
+    identity_acceptance.add_argument("--expected-source-git-sha", required=True)
+    identity_acceptance.add_argument("--evidence-root", type=Path, required=True)
+    readiness_acceptance = acceptance_commands.add_parser(
+        "readiness", help="verify and publish exact deployment readiness"
+    )
+    readiness_acceptance.add_argument("--identity-evidence", type=Path, required=True)
+    readiness_acceptance.add_argument("--evidence-root", type=Path, required=True)
+    stage_acceptance = acceptance_commands.add_parser(
+        "stage", help="observe one independent duration stage"
+    )
+    stage_mode = stage_acceptance.add_mutually_exclusive_group(required=True)
+    stage_mode.add_argument("--stage", choices=("2h", "12h", "24h", "72h", "168h"))
+    stage_mode.add_argument("--resume", type=Path)
+    stage_acceptance.add_argument("--previous-evidence", type=Path)
+    stage_acceptance.add_argument("--evidence-root", type=Path)
     rollback = deployment_commands.add_parser(
         "rollback-check", help="fail closed unless a preserved target understands Catalog state"
     )
@@ -371,10 +391,7 @@ def _archive_status(catalog: Catalog) -> dict[str, object]:
         "command": "archive.status",
         "status": (
             "DISAPPEARED_DURING_COPY"
-            if any(
-                "DISAPPEARED_DURING_COPY" in str(row.get("last_error"))
-                for row in transactions
-            )
+            if any("DISAPPEARED_DURING_COPY" in str(row.get("last_error")) for row in transactions)
             else "OK"
         ),
         "transaction_count": len(transactions),
@@ -399,20 +416,12 @@ def _launchd_environment(loaded: LoadedConfig) -> dict[str, str]:
         f"{ENV_PREFIX}LOG_LEVEL": config.log_level,
         f"{ENV_PREFIX}ROTATION_SECONDS": str(config.rotation_seconds),
         f"{ENV_PREFIX}ROTATION_BYTES": str(config.rotation_bytes),
-        f"{ENV_PREFIX}DURABILITY_INTERVAL_SECONDS": str(
-            config.durability_interval_seconds
-        ),
-        f"{ENV_PREFIX}INGRESS_QUEUE_CAPACITY": str(
-            config.ingress_queue_capacity
-        ),
+        f"{ENV_PREFIX}DURABILITY_INTERVAL_SECONDS": str(config.durability_interval_seconds),
+        f"{ENV_PREFIX}INGRESS_QUEUE_CAPACITY": str(config.ingress_queue_capacity),
         f"{ENV_PREFIX}MAX_FRAME_BYTES": str(config.max_frame_bytes),
         f"{ENV_PREFIX}HEARTBEAT_SECONDS": str(config.heartbeat_seconds),
-        f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS": str(
-            config.sleep_gap_threshold_seconds
-        ),
-        f"{ENV_PREFIX}PREVENT_SLEEP": (
-            "true" if config.prevent_sleep else "false"
-        ),
+        f"{ENV_PREFIX}SLEEP_GAP_THRESHOLD_SECONDS": str(config.sleep_gap_threshold_seconds),
+        f"{ENV_PREFIX}PREVENT_SLEEP": ("true" if config.prevent_sleep else "false"),
     }
 
 
@@ -437,9 +446,7 @@ def _select_archive_target(
     if storage_id is None and len(ready) != 1:
         raise ArchiveError("multiple READY targets; specify --storage-id")
     status = ready[0]
-    target_rows = {
-        str(row["storage_id"]): row for row in catalog.storage_targets()
-    }
+    target_rows = {str(row["storage_id"]): row for row in catalog.storage_targets()}
     target_id = str(status["storage_id"])
     row = target_rows[target_id]
     resolved_path = status.get("resolved_path")
@@ -476,9 +483,7 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
         if action in {"select-oldest", "manifest", "raw", "authority"}:
             with Catalog(layout.catalog, read_only=True) as catalog:
                 if action == "select-oldest":
-                    selection = RemoteSourceExporter(
-                        layout=layout, catalog=catalog
-                    ).select_oldest()
+                    selection = RemoteSourceExporter(layout=layout, catalog=catalog).select_oldest()
                     if selection is not None:
                         sys.stdout.buffer.write(selection.descriptor_bytes)
                         sys.stdout.buffer.flush()
@@ -496,9 +501,9 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
                 expected_digest = str(args.descriptor_sha256)
                 require_chunk_id(chunk_id)
                 require_sha256(expected_digest, "descriptor_sha256")
-                selection = RemoteSourceExporter(
-                    layout=layout, catalog=catalog
-                ).select_chunk(chunk_id)
+                selection = RemoteSourceExporter(layout=layout, catalog=catalog).select_chunk(
+                    chunk_id
+                )
                 if selection.descriptor_sha256 != expected_digest:
                     raise ValueError("selected source descriptor identity changed")
                 if action == "manifest":
@@ -517,14 +522,14 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
             require_sha256(expected_digest, "descriptor_sha256")
             receipt_bytes = sys.stdin.buffer.read()
             with Catalog(layout.catalog) as catalog:
-                selection = RemoteSourceExporter(
-                    layout=layout, catalog=catalog
-                ).select_chunk(chunk_id)
+                selection = RemoteSourceExporter(layout=layout, catalog=catalog).select_chunk(
+                    chunk_id
+                )
                 if selection.descriptor_sha256 != expected_digest:
                     raise ValueError("selected source descriptor identity changed")
-                authorization = RemoteAuthorizer(
-                    layout=layout, catalog=catalog
-                ).authorize(receipt_bytes, selection)
+                authorization = RemoteAuthorizer(layout=layout, catalog=catalog).authorize(
+                    receipt_bytes, selection
+                )
                 status = authority_status_from_catalog(catalog, authorization.receipt_id)
                 if status is None:
                     raise CatalogStateError("authorization readback is absent")
@@ -535,9 +540,9 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
             receipt_id = str(args.receipt_id)
             require_receipt_id(receipt_id)
             with Catalog(layout.catalog) as catalog:
-                deletion = RemoteDeleter(
-                    layout=layout, catalog=catalog
-                ).delete_authorized(receipt_id)
+                deletion = RemoteDeleter(layout=layout, catalog=catalog).delete_authorized(
+                    receipt_id
+                )
                 status = authority_status_from_catalog(catalog, deletion.receipt_id)
                 if status is None:
                     raise CatalogStateError("delete readback is absent")
@@ -583,9 +588,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         _write_json(
             service_status(
                 loaded.config.data_root,
-                configured_proxy_status=(
-                    loaded.config.proxy_policy().status().public_dict()
-                ),
+                configured_proxy_status=(loaded.config.proxy_policy().status().public_dict()),
             )
         )
         return 0
@@ -602,9 +605,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     datetime.strptime(str(args.start), "%Y-%m-%d").date(),
                     datetime.strptime(str(args.end), "%Y-%m-%d").date(),
                 )
-                result = (
-                    plan.public_dict() if action == "plan" else importer.run(plan)
-                )
+                result = plan.public_dict() if action == "plan" else importer.run(plan)
             elif action == "status":
                 result = importer.status()
             elif action == "verify":
@@ -719,10 +720,135 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "deployment commands require capacity_profile=vps-production-v1"
                 )
             if loaded.config_file is None:
-                raise DeploymentIdentityError(
-                    "VPS deployment requires an explicit --config file"
-                )
+                raise DeploymentIdentityError("VPS deployment requires an explicit --config file")
             identity_path = deployment_identity_path(loaded.config_file)
+            if action == "acceptance":
+                acceptance_action = str(args.acceptance_command)
+                identity = load_deployment_identity(identity_path)
+                enforce_vps_paths(identity)
+                acceptance_manager = _identity_systemd_manager(
+                    loaded,
+                    identity_user=identity.systemd_effective.get("user"),
+                    identity_group=identity.systemd_effective.get("group"),
+                )
+                if acceptance_action == "identity":
+                    path, digest, document = create_identity_evidence(
+                        config_file=loaded.config_file,
+                        expected_source_git_sha=str(args.expected_source_git_sha),
+                        evidence_root=args.evidence_root,
+                        data_root=loaded.config.data_root,
+                        identity=identity,
+                        manager=acceptance_manager,
+                    )
+                    _write_json(
+                        {
+                            "command": "deployment.acceptance.identity",
+                            "path": str(path),
+                            "evidence_sha256": digest,
+                            **document,
+                        }
+                    )
+                    return 0
+                evaluator = VpsReadinessEvaluator(
+                    data_root=loaded.config.data_root,
+                    identity=identity,
+                    systemd_manager=acceptance_manager,
+                )
+                if acceptance_action == "readiness":
+                    path, digest, document = create_readiness_evidence(
+                        identity_evidence_path=args.identity_evidence,
+                        identity=identity,
+                        manager=acceptance_manager,
+                        evaluator=evaluator,
+                        evidence_root=args.evidence_root,
+                        data_root=loaded.config.data_root,
+                    )
+                    _write_json(
+                        {
+                            "command": "deployment.acceptance.readiness",
+                            "path": str(path),
+                            "evidence_sha256": digest,
+                            **document,
+                        }
+                    )
+                    return 0 if document["result"] == "PASS_CANDIDATE" else 2
+                if acceptance_action == "stage":
+                    if args.resume is not None:
+                        observer = resume_observer(
+                            args.resume,
+                            data_root=loaded.config.data_root,
+                            identity=identity,
+                            manager=acceptance_manager,
+                            evaluator=evaluator,
+                        )
+                    else:
+                        if args.previous_evidence is None or args.evidence_root is None:
+                            raise AcceptanceError(
+                                "new stage requires --previous-evidence and --evidence-root"
+                            )
+                        stage = str(args.stage)
+                        _prior, prior_sha = verify_prior_stage(
+                            args.previous_evidence, identity, stage
+                        )
+                        stage_root = args.evidence_root / f"{stage}-{uuid.uuid4().hex}"
+                        observer = AcceptanceObserver(
+                            stage=stage,
+                            run_id=uuid.uuid4().hex,
+                            data_root=loaded.config.data_root,
+                            evidence_root=stage_root,
+                            identity=identity,
+                            prior_stage_sha256=prior_sha,
+                            manager=acceptance_manager,
+                            evaluator=evaluator,
+                        )
+                        path, digest, start_document = observer.start()
+                        _write_json(
+                            {
+                                "command": "deployment.acceptance.stage",
+                                "status": "STARTED",
+                                "path": str(path),
+                                "evidence_sha256": digest,
+                            }
+                        )
+                        if start_document["result"] != "PASS_CANDIDATE":
+                            return 1
+                    try:
+                        if observer.stage_start_sha256 is None:
+                            observer.start()
+                        while (
+                            observer.last_sample_boottime_ns is None
+                            or int(observer.last_sample_boottime_ns)
+                            - int(observer.t0_boottime_ns or 0)
+                            < STAGE_DURATION_NS[observer.stage]
+                        ):
+                            _path, _digest, _sample = observer.sample()
+                            remaining = STAGE_DURATION_NS[observer.stage] - (
+                                (observer.last_sample_boottime_ns or 0)
+                                - (observer.t0_boottime_ns or 0)
+                            )
+                            if remaining <= 0:
+                                break
+                            time.sleep(min(300.0, remaining / 1_000_000_000))
+                        path, digest, document = observer.finalize()
+                    except KeyboardInterrupt:
+                        _write_json(
+                            {
+                                "command": "deployment.acceptance.stage",
+                                "status": "INCOMPLETE",
+                                "reason": "observer_interrupted",
+                            }
+                        )
+                        return 2
+                    _write_json(
+                        {
+                            "command": "deployment.acceptance.stage",
+                            "path": str(path),
+                            "evidence_sha256": digest,
+                            **document,
+                        }
+                    )
+                    return 0 if document["result"] == "PASS_CANDIDATE" else 1
+                raise AcceptanceError(f"unsupported acceptance command: {acceptance_action}")
             if action == "identity-create":
                 probe = SystemdManager(
                     data_root=loaded.config.data_root,
@@ -736,9 +862,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 systemd_identity_manager = _identity_systemd_manager(
                     loaded, identity_user=user, identity_group=group
                 )
-                install_contract = (
-                    systemd_identity_manager.verify_install_contract()
-                )
+                install_contract = systemd_identity_manager.verify_install_contract()
                 effective = systemd_identity_manager.verify_effective_properties()
                 deployment_identity = create_deployment_identity(
                     source_git_sha=str(args.source_git_sha),
@@ -761,9 +885,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     require_root_controlled=True,
                 )
                 if os.geteuid() != 0:
-                    raise DeploymentIdentityError(
-                        "deployment identity creation must run as root"
-                    )
+                    raise DeploymentIdentityError("deployment identity creation must run as root")
                 group_id = grp.getgrnam(group).gr_gid
                 write_deployment_identity(
                     identity_path,
@@ -772,9 +894,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     group_gid=group_id,
                 )
                 if load_deployment_identity(identity_path) != deployment_identity:
-                    raise DeploymentIdentityError(
-                        "deployment identity readback mismatch"
-                    )
+                    raise DeploymentIdentityError("deployment identity readback mismatch")
                 identity_permissions = verify_vps_identity_permissions(
                     identity_path, expected_group=group
                 )
@@ -795,16 +915,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 identity_permissions = verify_vps_identity_permissions(
                     identity_path,
-                    expected_group=str(
-                        deployment_identity.systemd_effective.get("group", "")
-                    ),
+                    expected_group=str(deployment_identity.systemd_effective.get("group", "")),
                 )
                 if action == "verify":
                     result = {
                         "status": "VERIFIED",
-                        "install_contract": (
-                            systemd_identity_manager.verify_install_contract()
-                        ),
+                        "install_contract": (systemd_identity_manager.verify_install_contract()),
                         "identity_permissions": identity_permissions,
                         **verify_identity_files(
                             deployment_identity,
@@ -824,24 +940,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                             systemd_manager=systemd_identity_manager,
                         )
                     )
-                    _write_json(
-                        {"command": "deployment.readiness", **readiness.public_dict()}
-                    )
+                    _write_json({"command": "deployment.readiness", **readiness.public_dict()})
                     return 0 if readiness.state == "READY" else 2
             elif action == "rollback-check":
-                rollback_target_identity = load_deployment_identity(
-                    Path(args.target_identity)
-                )
+                rollback_target_identity = load_deployment_identity(Path(args.target_identity))
                 enforce_vps_paths(rollback_target_identity)
                 target_permissions = verify_vps_identity_permissions(
                     Path(args.target_identity),
-                    expected_group=str(
-                        rollback_target_identity.systemd_effective.get("group", "")
-                    ),
+                    expected_group=str(rollback_target_identity.systemd_effective.get("group", "")),
                 )
-                retained_artifacts = verify_retained_rollback_artifacts(
-                    rollback_target_identity
-                )
+                retained_artifacts = verify_retained_rollback_artifacts(rollback_target_identity)
                 with Catalog(
                     loaded.config.data_root / "state" / "catalog.sqlite",
                     read_only=True,
@@ -859,6 +967,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         except (
             DeploymentIdentityError,
+            AcceptanceError,
             KeyError,
             OSError,
             SystemdError,
@@ -876,9 +985,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if launchd_command != "install" and label is None:
                 label = installed_service_label(loaded.config.data_root)
             if label is None:
-                raise LaunchAgentError(
-                    "no installed LaunchAgent metadata; specify --label"
-                )
+                raise LaunchAgentError("no installed LaunchAgent metadata; specify --label")
             launchd_manager = LaunchAgentManager(
                 data_root=loaded.config.data_root,
                 label=label,
@@ -931,9 +1038,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 document = reporter.write(selected_date)
         except ValueError as exc:
-            _write_json(
-                {"error": "report_error", "message": str(exc)}, stream=sys.stderr
-            )
+            _write_json({"error": "report_error", "message": str(exc)}, stream=sys.stderr)
             return 2
         _write_json({"command": "report.daily", **document})
         return 0
@@ -963,12 +1068,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 data_root=loaded.config.data_root,
             )
             with Catalog(layout.catalog, read_only=True) as catalog:
-                authority = LegacyClassificationAuthority.load(
-                    authority_location
-                )
-                report = evaluate_legacy_reconnect_decisions(
-                    catalog=catalog, authority=authority
-                )
+                authority = LegacyClassificationAuthority.load(authority_location)
+                report = evaluate_legacy_reconnect_decisions(catalog=catalog, authority=authority)
         except LegacyReconnectConflictError as exc:
             _write_json(
                 {"error": "legacy_reconnect_preflight_error", "message": str(exc)},
@@ -1026,9 +1127,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 stream=sys.stderr,
             )
             return 2
-        _write_json(
-            {"command": "normalize.run", **normalization_result.public_dict()}
-        )
+        _write_json({"command": "normalize.run", **normalization_result.public_dict()})
         return 0
     if command == "storage":
         adapter = _volume_adapter()
@@ -1107,9 +1206,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         args.storage_id,
                         timeout_seconds=args.timeout_seconds,
                     )
-                    _write_json(
-                        {"command": "storage.eject", **eject_result.public_dict()}
-                    )
+                    _write_json({"command": "storage.eject", **eject_result.public_dict()})
                     return 0 if eject_result.safe_to_remove else 1
                 if storage_command == "forecast":
                     observed_at = time.time_ns()
@@ -1119,9 +1216,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         data_root=loaded.config.data_root,
                         utc_clock_ns=lambda: observed_at,
                     )
-                    forecaster.observe_internal(
-                        observed_at_utc_ns=observed_at
-                    )
+                    forecaster.observe_internal(observed_at_utc_ns=observed_at)
                     target_statuses = registry.statuses()
                     scope_ids = ["internal"]
                     for target_status in target_statuses:
@@ -1146,9 +1241,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     document = forecaster.document(
                         scope_ids,
                         now_utc_ns=observed_at,
-                        capacity_profile=selected_capacity_profile(
-                            loaded.config.capacity_profile
-                        ),
+                        capacity_profile=selected_capacity_profile(loaded.config.capacity_profile),
                     )
                     _write_json(
                         {
@@ -1167,9 +1260,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             StorageRegistrationError,
             ValueError,
         ) as exc:
-            _write_json(
-                {"error": "storage_error", "message": str(exc)}, stream=sys.stderr
-            )
+            _write_json({"error": "storage_error", "message": str(exc)}, stream=sys.stderr)
             return 2
     if command == "archive":
         archive_command = getattr(args, "archive_command", None)
@@ -1177,8 +1268,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             timer_command = getattr(args, "archive_timer_command", None)
             if loaded.config_file is None:
                 _write_json(
-                    {"error": "archive_timer_error",
-                     "message": "archive timer requires an explicit --config file"},
+                    {
+                        "error": "archive_timer_error",
+                        "message": "archive timer requires an explicit --config file",
+                    },
                     stream=sys.stderr,
                 )
                 return 2
@@ -1241,20 +1334,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                     return (
                         0
                         if drain_result.get("exit_reason")
-                        in ("BACKLOG_EMPTY", "MAX_FILES", "DEADLINE",
-                            "ALREADY_RUNNING", "INTERRUPTED",
-                            "TARGET_ABSENT", "TARGET_NOT_READY",
-                            "TARGET_LOW_SPACE")
+                        in (
+                            "BACKLOG_EMPTY",
+                            "MAX_FILES",
+                            "DEADLINE",
+                            "ALREADY_RUNNING",
+                            "INTERRUPTED",
+                            "TARGET_ABSENT",
+                            "TARGET_NOT_READY",
+                            "TARGET_LOW_SPACE",
+                        )
                         else 1
                     )
-                registry = StorageRegistry(
-                    catalog=catalog, volumes=_volume_adapter()
-                )
-                requested = (
-                    args.storage_id
-                    if archive_command in {"retry", "verify"}
-                    else None
-                )
+                registry = StorageRegistry(catalog=catalog, volumes=_volume_adapter())
+                requested = args.storage_id if archive_command in {"retry", "verify"} else None
                 target = _select_archive_target(
                     catalog,
                     registry,
@@ -1287,9 +1380,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             StorageRegistrationError,
             ValueError,
         ) as exc:
-            _write_json(
-                {"error": "archive_error", "message": str(exc)}, stream=sys.stderr
-            )
+            _write_json({"error": "archive_error", "message": str(exc)}, stream=sys.stderr)
             return 2
     if command == "soak":
         soak_command = getattr(args, "soak_command", None)
@@ -1297,8 +1388,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             timer_command = getattr(args, "soak_timer_command", None)
             if loaded.config_file is None:
                 _write_json(
-                    {"error": "soak_timer_error",
-                     "message": "soak timer requires an explicit --config file"},
+                    {
+                        "error": "soak_timer_error",
+                        "message": "soak timer requires an explicit --config file",
+                    },
                     stream=sys.stderr,
                 )
                 return 2
@@ -1309,9 +1402,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 storage_id=str(getattr(args, "storage_id", "")),
                 interval_seconds=int(getattr(args, "interval_seconds", 300)),
                 output_path=Path(str(getattr(args, "output", ""))).resolve()
-                if getattr(args, "output", None) else Path(
-                    "/var/lib/binance-market-data-recorder/operations/soak/samples.jsonl"
-                ),
+                if getattr(args, "output", None)
+                else Path("/var/lib/binance-market-data-recorder/operations/soak/samples.jsonl"),
             )
             try:
                 if timer_command == "install":

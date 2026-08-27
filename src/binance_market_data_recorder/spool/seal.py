@@ -32,6 +32,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import time
 from collections.abc import Mapping
 from pathlib import Path
@@ -99,6 +100,44 @@ class SealError(RuntimeError):
     """Raised when a partial cannot be proven safe to seal."""
 
 
+MANIFEST_REQUIRED_FIELDS = frozenset(
+    {
+        "capture_flags",
+        "chunk_id",
+        "chunk_schema_version",
+        "collector_instance_ids",
+        "collector_version",
+        "complete",
+        "compression",
+        "connection_ids",
+        "created_at_utc_ns",
+        "envelope_schema_version",
+        "exchange_time_ranges",
+        "fsync_completed_at_utc_ns",
+        "gap",
+        "manifest_schema_version",
+        "market",
+        "overlap",
+        "receive_monotonic_range_ns",
+        "receive_time_utc_range_ns",
+        "record_count",
+        "recovered",
+        "recovery",
+        "relative_path",
+        "resync",
+        "sealed_at_utc_ns",
+        "sequence_ranges",
+        "stored_bytes",
+        "stored_sha256",
+        "stream",
+        "symbol",
+        "uncompressed_bytes",
+        "uncompressed_sha256",
+    }
+)
+_HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb", buffering=0) as source:
@@ -135,9 +174,10 @@ def _compress(source_path: Path, target_partial: Path, source_size: int) -> None
     )
     descriptor = os.open(target_partial, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
-        with source_path.open("rb", buffering=0) as source, os.fdopen(
-            descriptor, "wb", buffering=0, closefd=False
-        ) as target:
+        with (
+            source_path.open("rb", buffering=0) as source,
+            os.fdopen(descriptor, "wb", buffering=0, closefd=False) as target,
+        ):
             compressor.copy_stream(source, target, size=source_size)
             target.flush()
         os.fsync(descriptor)
@@ -149,9 +189,10 @@ def _decompressed_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     decompressor = zstandard.ZstdDecompressor()
     try:
-        with path.open("rb", buffering=0) as compressed, decompressor.stream_reader(
-            compressed
-        ) as reader:
+        with (
+            path.open("rb", buffering=0) as compressed,
+            decompressor.stream_reader(compressed) as reader,
+        ):
             while block := reader.read(READ_BUFFER_BYTES):
                 digest.update(block)
     except (OSError, zstandard.ZstdError) as exc:
@@ -163,9 +204,7 @@ def _deployment_ids(flags: frozenset[str]) -> set[str]:
     return {flag for flag in flags if flag.startswith("deployment_id=")}
 
 
-def _overlap_covers_transition(
-    old_flags: frozenset[str], new_flags: frozenset[str]
-) -> bool:
+def _overlap_covers_transition(old_flags: frozenset[str], new_flags: frozenset[str]) -> bool:
     """True when a blue/green overlap provably covers this exact transition.
 
     Both boundary frames must carry the overlap flag, and when a
@@ -183,9 +222,7 @@ def _overlap_covers_transition(
 
 
 def _boundary_local_evidence_safe(
-    transitions: tuple[
-        tuple[str, str, frozenset[str], frozenset[str]], ...
-    ],
+    transitions: tuple[tuple[str, str, frozenset[str], frozenset[str]], ...],
 ) -> bool:
     """Every connection transition inside a chunk must carry boundary-local proof.
 
@@ -362,17 +399,10 @@ def seal_partial(
         # evidence (possibly with a different intent). A conflicting intent
         # on re-seal is a double-fault: fail closed rather than silently
         # adopting a second boundary identity.
-        existing = catalog.latest_transition_evidence(
-            chunk_id, ChunkState.SEALING
-        ) or {}
+        existing = catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING) or {}
         prior = existing.get(SEAL_INTENT_EVIDENCE_KEY)
-        if prior is not None and (
-            not isinstance(prior, dict) or dict(prior) != dict(seal_intent)
-        ):
-            raise SealError(
-                "durable SEALING evidence conflicts with the requested "
-                "seal intent"
-            )
+        if prior is not None and (not isinstance(prior, dict) or dict(prior) != dict(seal_intent)):
+            raise SealError("durable SEALING evidence conflicts with the requested seal intent")
 
     sealed = layout.sealed / f"{scan.header.chunk_id.hex}.bmdr.zst"
     target_partial = sealed.with_suffix(sealed.suffix + ".partial")
@@ -388,9 +418,7 @@ def seal_partial(
         os.replace(target_partial, sealed)
         fsync_directory(layout.sealed)
 
-    recovery_evidence = catalog.latest_transition_evidence(
-        chunk_id, ChunkState.RECOVERED
-    )
+    recovery_evidence = catalog.latest_transition_evidence(chunk_id, ChunkState.RECOVERED)
     manifest_document = _manifest(
         scan,
         layout,
@@ -428,6 +456,79 @@ def seal_partial(
         path.unlink()
         fsync_directory(layout.active)
     return manifest_document
+
+
+def read_strict_manifest(path: Path, *, recorder_root: Path | None = None) -> dict[str, object]:
+    """Read one Raw manifest without accepting partial or approximate evidence.
+
+    Sealing and archive validation already define the manifest fields.  This
+    read-only helper exposes that same interpretation to acceptance tooling;
+    it intentionally raises on every malformed, unsupported, or contradictory
+    document so an inventory can never shrink by skipping a bad file.
+    """
+
+    try:
+        raw = path.read_bytes()
+        document: Any = json.loads(raw)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SealError(f"cannot read Raw manifest {path}: {type(exc).__name__}") from exc
+    if not isinstance(document, dict):
+        raise SealError(f"Raw manifest {path} is not an object")
+    if document.get("manifest_schema_version") != MANIFEST_SCHEMA_VERSION:
+        raise SealError(f"unsupported Raw manifest schema in {path}")
+    missing = MANIFEST_REQUIRED_FIELDS - set(document)
+    if missing:
+        raise SealError(f"Raw manifest {path} is missing fields: {sorted(missing)}")
+    if set(document) != MANIFEST_REQUIRED_FIELDS:
+        raise SealError(f"Raw manifest {path} has malformed fields")
+    text_fields = (
+        "chunk_id",
+        "chunk_schema_version",
+        "collector_version",
+        "market",
+        "stream",
+        "symbol",
+        "relative_path",
+    )
+    for field in text_fields:
+        if not isinstance(document[field], str) or not document[field]:
+            raise SealError(f"Raw manifest {path} has invalid {field}")
+    for field in ("stored_sha256", "uncompressed_sha256"):
+        value = document[field]
+        if not isinstance(value, str) or _HEX_SHA256.fullmatch(value) is None:
+            raise SealError(f"Raw manifest {path} has invalid {field}")
+    integer_fields = (
+        "created_at_utc_ns",
+        "fsync_completed_at_utc_ns",
+        "record_count",
+        "sealed_at_utc_ns",
+        "stored_bytes",
+        "uncompressed_bytes",
+    )
+    for field in integer_fields:
+        value = document[field]
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise SealError(f"Raw manifest {path} has invalid {field}")
+    for field in ("complete", "gap", "overlap", "recovered", "resync"):
+        if not isinstance(document[field], bool):
+            raise SealError(f"Raw manifest {path} has invalid {field}")
+    flags = document["capture_flags"]
+    if not isinstance(flags, list) or any(not isinstance(value, str) for value in flags):
+        raise SealError(f"Raw manifest {path} has invalid capture_flags")
+    if document["gap"] != bool(set(flags) & {"sequence_gap", RECONNECT_GAP_FLAG}):
+        raise SealError(f"Raw manifest {path} contradicts gap flags")
+    if document["complete"] and set(flags) & INCOMPLETE_FLAGS:
+        raise SealError(f"Raw manifest {path} contradicts completeness flags")
+    relative = Path(str(document["relative_path"]))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise SealError(f"Raw manifest {path} has unsafe relative_path")
+    if recorder_root is not None:
+        root = recorder_root.resolve()
+        try:
+            (root / relative).resolve().relative_to(root)
+        except ValueError as exc:
+            raise SealError(f"Raw manifest {path} escapes recorder root") from exc
+    return {str(key): value for key, value in document.items()}
 
 
 def validate_sealed_artifact(sealed: Path, manifest: dict[str, object]) -> None:
