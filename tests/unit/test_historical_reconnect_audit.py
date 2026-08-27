@@ -14,7 +14,7 @@ from binance_market_data_recorder.binance.usdm.schema import (
     UsdMStream,
     envelope_from_websocket_frame,
 )
-from binance_market_data_recorder.spool.seal import OVERLAP_FLAG, seal_partial
+from binance_market_data_recorder.spool.seal import OVERLAP_FLAG, SealError, seal_partial
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
@@ -329,13 +329,13 @@ def test_audit_missing_sealed_file_reports_manifest_level_transition(
     assert transition["last_old_frame"] is None
 
 
-def test_audit_ignores_malformed_manifest_files(tmp_path: Path) -> None:
+def test_audit_rejects_malformed_manifest_files(tmp_path: Path) -> None:
     build_fixture(tmp_path)
     manifest_dir = tmp_path / "data" / "manifests"
     corrupt = manifest_dir / "corrupt.manifest.json"
     corrupt.write_text("{not valid json", encoding="utf-8")
-    document = audit_data_root(tmp_path)
-    assert sum(stream["summary"]["chunks_scanned"] for stream in document["streams"]) == 4
+    with pytest.raises(SealError, match="strict historical manifest load failed"):
+        audit_data_root(tmp_path)
 
 
 def test_audit_stream_and_market_filters_are_exclusive(tmp_path: Path) -> None:

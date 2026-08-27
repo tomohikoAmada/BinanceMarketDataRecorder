@@ -5,8 +5,9 @@
 > **Production target:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd
 > service on a shared 2 vCPU / 4 GiB / 40 GB-class VPS. Exact-VPS M22.9 staged
 > acceptance began, but its 24h result is INCOMPLETE after a confirmed Raw
-> continuity defect. The local correction is not deployed or production
-> validated.
+> continuity defect. The continuity correction and repository-owned acceptance
+> tooling are implemented; Draft PR #38 is independently reviewed, but is not
+> merged to main, built/deployed, or production accepted.
 >
 > **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
 > 正式 2 小时和 12 小时**进程稳定性**验收通过并完成独立证据复核。
@@ -144,7 +145,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | M22.9 exact-VPS 24h结果INCOMPLETE、72h不具备资格；本地修复未部署且须从 exact identity/readiness/2h→12h→24h→72h→168h 重新验收；历史M21结果保持原记录 |
-| PR/部署 | incident artifact authority `ddb7309…`; continuity correction committed locally only, not deployed; Production Ready=NO |
+| PR/部署 | PR #38 acceptance-tooling candidate independently reviewed; not merged, built, deployed, or production accepted; next step requires merge/build/deployment authorization; Production Ready=NO |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
