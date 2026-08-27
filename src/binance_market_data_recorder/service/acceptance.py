@@ -379,7 +379,11 @@ def read_identity_evidence(
     document, digest = _read_published(path)
     if document.get("evidence_kind") != "identity-result" or document.get("stage") != "identity":
         raise AcceptanceError("identity evidence kind is invalid")
-    if document.get("result") != "PASS_CANDIDATE" or not _same_identity(document, identity):
+    if (
+        document.get("result") != "PASS_CANDIDATE"
+        or not _same_identity(document, identity)
+        or document.get("identity") != identity.document()
+    ):
         raise AcceptanceError("identity evidence is not eligible for this artifact")
     return document, digest
 
@@ -484,6 +488,7 @@ class AcceptanceObserver:
     last_sample_utc_ns: int | None = None
     last_sample_boottime_ns: int | None = None
     reconnect_continuation: dict[str, object] | None = None
+    t0_manifest_members: dict[str, str] | None = None
     next_sample_ordinal: int = 0
     ever_blocking_findings: set[str] = field(default_factory=set)
 
@@ -576,6 +581,18 @@ class AcceptanceObserver:
         continuation = audit.get("continuation")
         if not isinstance(continuation, dict):
             raise AcceptanceError("Raw audit continuation is malformed")
+        continuation_members = continuation.get("manifest_members")
+        if not isinstance(continuation_members, dict):
+            raise AcceptanceError("Raw audit manifest membership is malformed")
+        current_members = {
+            str(path): _digest(digest, "Raw manifest member digest")
+            for path, digest in continuation_members.items()
+            if isinstance(path, str)
+        }
+        if len(current_members) != len(continuation_members):
+            raise AcceptanceError("Raw audit manifest membership is malformed")
+        if self.t0_manifest_members is None:
+            self.t0_manifest_members = dict(current_members)
         self.reconnect_continuation = continuation
         summary = audit.get("summary")
         if not isinstance(summary, dict):
@@ -588,12 +605,59 @@ class AcceptanceObserver:
             for item in cast(list[object], stream_item.get("transitions", []))
             if isinstance(item, dict)
         ]
-        baseline_history = [
-            item
-            for item in transitions
-            if _integer(item.get("occurred_at_utc_ns"), "boundary timestamp")
-            < cast(int, self.t0_utc_ns)
-        ]
+        inventory = audit.get("manifest_inventory")
+        inventory_members = inventory.get("members") if isinstance(inventory, dict) else None
+        if not isinstance(inventory_members, list):
+            raise AcceptanceError("Raw audit manifest inventory is malformed")
+        members_by_chunk: dict[str, tuple[str, str]] = {}
+        for member in inventory_members:
+            if (
+                not isinstance(member, dict)
+                or not isinstance(member.get("chunk_id"), str)
+                or not isinstance(member.get("path"), str)
+            ):
+                raise AcceptanceError("Raw audit manifest inventory member is malformed")
+            chunk_id = str(member["chunk_id"])
+            if chunk_id in members_by_chunk:
+                raise AcceptanceError("Raw audit manifest inventory has duplicate chunk IDs")
+            members_by_chunk[chunk_id] = (
+                str(member["path"]),
+                _digest(member.get("sha256"), "Raw manifest inventory digest"),
+            )
+
+        def baseline_bound(transition: dict[str, object]) -> bool:
+            required_chunk_ids: list[str] = []
+            for field_name in ("old_chunk_id", "new_chunk_id"):
+                chunk_id = transition.get(field_name)
+                if not isinstance(chunk_id, str):
+                    return False
+                if chunk_id not in required_chunk_ids:
+                    required_chunk_ids.append(chunk_id)
+            intervening = transition.get("intervening_manifests")
+            if intervening is not None:
+                if not isinstance(intervening, list):
+                    return False
+                for manifest in intervening:
+                    if not isinstance(manifest, dict) or not isinstance(
+                        manifest.get("chunk_id"), str
+                    ):
+                        return False
+                    chunk_id = str(manifest["chunk_id"])
+                    if chunk_id not in required_chunk_ids:
+                        required_chunk_ids.append(chunk_id)
+            for chunk_id in required_chunk_ids:
+                member = members_by_chunk.get(chunk_id)
+                if member is None:
+                    return False
+                path, digest = member
+                if self.t0_manifest_members is None or self.t0_manifest_members.get(path) != digest:
+                    return False
+            return (
+                _integer(transition.get("occurred_at_utc_ns"), "boundary timestamp")
+                < cast(int, self.t0_utc_ns)
+            )
+
+        baseline_history = [item for item in transitions if baseline_bound(item)]
         current_transitions = [item for item in transitions if item not in baseline_history]
         if any(item.get("kind") == UNMARKED_RECONNECT for item in current_transitions):
             findings.append("UNMARKED_RECONNECT")
@@ -608,7 +672,6 @@ class AcceptanceObserver:
         if not isinstance(catalog_findings, list):
             raise AcceptanceError("Raw audit Catalog findings are malformed")
         findings.extend(str(item) for item in catalog_findings)
-        inventory = audit.get("manifest_inventory", {})
         members = inventory.get("members", []) if isinstance(inventory, dict) else []
         member_paths = {
             str(item.get("path"))
@@ -1085,7 +1148,86 @@ def verify_completed_stage(
     )
     if final != expected_final:
         raise AcceptanceError("stage-final does not reference the actual last sample")
+    _resolve_stage_predecessor(
+        stage_root,
+        identity=identity,
+        stage=stage,
+        prior_digest=prior_digest,
+    )
     return final, final_sha
+
+
+def _verify_readiness_predecessor(
+    path: Path,
+    identity: DeploymentIdentity,
+    *,
+    expected_digest: str | None = None,
+) -> tuple[dict[str, object], str]:
+    if path.name != "readiness-result.json":
+        raise AcceptanceError("readiness predecessor must be canonical readiness-result.json")
+    document, digest = _read_published(path)
+    if expected_digest is not None and digest != expected_digest:
+        raise AcceptanceError("readiness predecessor digest does not match")
+    readiness = document.get("readiness")
+    reasons = readiness.get("reasons") if isinstance(readiness, dict) else None
+    if (
+        document.get("evidence_kind") != "readiness-result"
+        or document.get("stage") != "readiness"
+        or document.get("result") != "PASS_CANDIDATE"
+        or not _same_identity(document, identity)
+        or not isinstance(readiness, dict)
+        or readiness.get("schema_version") != "deployment-readiness.v1"
+        or readiness.get("state") != "READY"
+        or reasons != []
+        or not isinstance(readiness.get("evidence"), dict)
+    ):
+        raise AcceptanceError("readiness is not an actual READY predecessor")
+    prior_identity_digest = _digest(
+        document.get("prior_stage_evidence_sha256"),
+        "readiness identity predecessor digest",
+    )
+    identity_path = path.parent / "identity-result.json"
+    _identity_document, identity_digest = read_identity_evidence(identity_path, identity)
+    if identity_digest != prior_identity_digest:
+        raise AcceptanceError("readiness identity predecessor digest does not match")
+    return document, digest
+
+
+def _resolve_stage_predecessor(
+    stage_root: Path,
+    *,
+    identity: DeploymentIdentity,
+    stage: str,
+    prior_digest: str,
+) -> tuple[dict[str, object], str]:
+    """Resolve the actual predecessor beneath this operator evidence root."""
+
+    if stage == "2h":
+        return _verify_readiness_predecessor(
+            stage_root.parent / "readiness-result.json",
+            identity,
+            expected_digest=prior_digest,
+        )
+
+    previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
+    evidence_root = stage_root.parent
+    candidates = sorted(evidence_root.glob(f"{previous_stage}-*/stage-final.json"))
+    matches: list[tuple[dict[str, object], str]] = []
+    for candidate in candidates:
+        _document, digest = _read_published(candidate)
+        if digest != prior_digest:
+            continue
+        verified, verified_digest = verify_completed_stage(
+            candidate.parent,
+            identity,
+            expected_stage=previous_stage,
+        )
+        if verified_digest != digest:
+            raise AcceptanceError("duration predecessor digest changed during verification")
+        matches.append((verified, verified_digest))
+    if len(matches) != 1:
+        raise AcceptanceError("duration predecessor authority is absent or ambiguous")
+    return matches[0]
 
 
 def verify_prior_stage(
@@ -1093,15 +1235,7 @@ def verify_prior_stage(
 ) -> tuple[dict[str, object], str]:
     _validate_stage(stage)
     if stage == "2h":
-        document, digest = _read_published(path)
-        if (
-            document.get("evidence_kind") != "readiness-result"
-            or document.get("stage") != "readiness"
-            or document.get("result") != "PASS_CANDIDATE"
-            or not _same_identity(document, identity)
-        ):
-            raise AcceptanceError("readiness is not an eligible predecessor")
-        return document, digest
+        return _verify_readiness_predecessor(path, identity)
     previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
     if path.name != "stage-final.json":
         raise AcceptanceError("duration predecessor must be canonical stage-final.json")
@@ -1183,6 +1317,9 @@ def resume_observer(
         frozen_process=start_process,
         frozen_service_instance_id=str(start.get("service_instance_id") or ""),
         stage_start_sha256=start_sha,
+        t0_manifest_members=dict(
+            cast(dict[str, str], continuation["manifest_members"])
+        ),
         ever_blocking_findings={str(item) for item in start_findings},
         reconnect_continuation=continuation,
         next_sample_ordinal=len(samples),

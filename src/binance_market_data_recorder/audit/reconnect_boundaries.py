@@ -303,11 +303,9 @@ def load_manifest_chunks(
         return chunks
     for path in sorted(manifest_dir.glob("*.manifest.json")):
         try:
-            document = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            continue
-        if not isinstance(document, dict):
-            continue
+            document = read_strict_manifest(path, recorder_root=layout.root)
+        except (OSError, SealError) as exc:
+            raise SealError(f"strict historical manifest load failed for {path}") from exc
         if market is not None and document.get("market") != market:
             continue
         if stream is not None and document.get("stream") != stream:

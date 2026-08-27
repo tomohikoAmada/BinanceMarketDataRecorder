@@ -12,6 +12,7 @@ from binance_market_data_recorder.service.acceptance import (
     STAGE_DURATION_NS,
     AcceptanceError,
     AcceptanceObserver,
+    _empty_common,
     _publish,
     _safe_evidence_root,
     canonical_json,
@@ -21,7 +22,8 @@ from binance_market_data_recorder.service.acceptance import (
 )
 from binance_market_data_recorder.service.readiness import DeploymentReadinessResult
 from binance_market_data_recorder.service.state import ServiceStateStore
-from binance_market_data_recorder.spool.seal import validate_sealed_artifact
+from binance_market_data_recorder.spool.seal import seal_partial, validate_sealed_artifact
+from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.unit.test_deployment_identity import _identity
@@ -96,7 +98,7 @@ def _observer(tmp_path: Path) -> tuple[AcceptanceObserver, FakeClock, FakeManage
         stage="2h",
         run_id="run-a",
         data_root=data_root,
-        evidence_root=tmp_path / "evidence",
+        evidence_root=tmp_path / "evidence" / "2h-run-a",
         identity=identity,
         prior_stage_sha256="a" * 64,
         manager=manager,  # type: ignore[arg-type]
@@ -106,6 +108,55 @@ def _observer(tmp_path: Path) -> tuple[AcceptanceObserver, FakeClock, FakeManage
         disk_usage=lambda _path: SimpleNamespace(total=100 * 1024**3, free=50 * 1024**3),
     )
     return observer, clock, manager
+
+
+def _publish_valid_identity_and_readiness(observer: AcceptanceObserver) -> str:
+    root = observer.evidence_root.parent
+    identity_document = _empty_common(
+        kind="identity-result",
+        stage="identity",
+        run_id="identity-run",
+        identity=observer.identity,
+        now_utc=10,
+        now_boot=10,
+        boot_id="boot-a",
+    )
+    identity_document.update(
+        {
+            "identity": observer.identity.document(),
+            "identity_static_verification": {},
+            "observer_status": "COMPLETE",
+            "result": "PASS_CANDIDATE",
+        }
+    )
+    _identity_path, identity_sha = _publish(root, "identity-result.json", identity_document)
+    readiness_document = _empty_common(
+        kind="readiness-result",
+        stage="readiness",
+        run_id="readiness-run",
+        identity=observer.identity,
+        now_utc=11,
+        now_boot=11,
+        boot_id="boot-a",
+    )
+    readiness_document.update(
+        {
+            "prior_stage_evidence_sha256": identity_sha,
+            "readiness": {
+                "schema_version": "deployment-readiness.v1",
+                "state": "READY",
+                "reasons": [],
+                "evidence": {},
+            },
+            "systemd_process_incarnation": observer.manager.process_incarnation(),
+            "observer_status": "COMPLETE",
+            "result": "PASS_CANDIDATE",
+        }
+    )
+    _readiness_path, readiness_sha = _publish(
+        root, "readiness-result.json", readiness_document
+    )
+    return readiness_sha
 
 
 def test_clean_interval_uses_boottime_and_publishes_immutable_chain(tmp_path: Path) -> None:
@@ -163,6 +214,7 @@ def test_resume_keeps_original_t0_and_rejects_published_collision(tmp_path: Path
     )
     assert resumed.t0_boottime_ns == original_t0
     assert resumed.prior_stage_sha256 == "a" * 64
+    assert resumed.t0_manifest_members == observer.t0_manifest_members
     with pytest.raises(AcceptanceError, match="collision"):
         _publish(observer.evidence_root, "stage-start.json", {"x": 1})
 
@@ -233,6 +285,7 @@ def _complete_2h_stage(
     tmp_path: Path,
 ) -> tuple[AcceptanceObserver, Path, dict[str, object]]:
     observer, clock, _manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
     _start_path, _start_sha, start = observer.start()
     for _ in range(24):
         clock.utc += 300 * 1_000_000_000
@@ -252,7 +305,7 @@ def test_stage_start_binds_exact_predecessor_and_valid_chain_is_accepted(
     tmp_path: Path,
 ) -> None:
     observer, final_path, start = _complete_2h_stage(tmp_path)
-    assert start["prior_stage_evidence_sha256"] == "a" * 64
+    assert start["prior_stage_evidence_sha256"] != "a" * 64
     verified, digest = verify_completed_stage(
         observer.evidence_root, observer.identity, expected_stage="2h"
     )
@@ -261,6 +314,111 @@ def test_stage_start_binds_exact_predecessor_and_valid_chain_is_accepted(
     prior, prior_digest = verify_prior_stage(final_path, observer.identity, "12h")
     assert prior == verified
     assert prior_digest == digest
+
+
+def test_completed_stage_rejects_nonexistent_readiness_predecessor(
+    tmp_path: Path,
+) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = "a" * 64
+    observer.start()
+    for _ in range(24):
+        cast(FakeClock, observer.clock).utc += 300 * 1_000_000_000
+        cast(FakeClock, observer.clock).boot += 300 * 1_000_000_000
+        observer.sample()
+    observer.finalize()
+    with pytest.raises(AcceptanceError, match="readiness"):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
+def test_readiness_predecessor_requires_actual_identity_object(tmp_path: Path) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    _publish_valid_identity_and_readiness(observer)
+    (observer.evidence_root.parent / "identity-result.json").unlink()
+    with pytest.raises(AcceptanceError, match="published evidence"):
+        verify_prior_stage(
+            observer.evidence_root.parent / "readiness-result.json",
+            observer.identity,
+            "2h",
+        )
+
+
+def test_forged_not_ready_readiness_is_rejected(tmp_path: Path) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    _publish_valid_identity_and_readiness(observer)
+    readiness_path = observer.evidence_root.parent / "readiness-result.json"
+    readiness = json.loads(readiness_path.read_text(encoding="utf-8"))
+    cast(dict[str, object], readiness["readiness"])["state"] = "NOT_READY"
+    readiness_path.write_bytes(canonical_json(readiness))
+    with pytest.raises(AcceptanceError, match="actual READY"):
+        verify_prior_stage(readiness_path, observer.identity, "2h")
+
+
+def test_readiness_identity_digest_mismatch_is_rejected(tmp_path: Path) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    _publish_valid_identity_and_readiness(observer)
+    readiness_path = observer.evidence_root.parent / "readiness-result.json"
+    readiness = json.loads(readiness_path.read_text(encoding="utf-8"))
+    readiness["prior_stage_evidence_sha256"] = "b" * 64
+    readiness_path.write_bytes(canonical_json(readiness))
+    with pytest.raises(AcceptanceError, match="identity predecessor digest"):
+        verify_prior_stage(readiness_path, observer.identity, "2h")
+
+
+def _complete_12h_chain(
+    tmp_path: Path,
+) -> tuple[AcceptanceObserver, AcceptanceObserver, Path]:
+    stage_2h, clock, manager = _observer(tmp_path)
+    readiness_sha = _publish_valid_identity_and_readiness(stage_2h)
+    stage_2h.prior_stage_sha256 = readiness_sha
+    _start, _start_sha, _start_document = stage_2h.start()
+    for _ in range(24):
+        clock.utc += 300 * 1_000_000_000
+        clock.boot += 300 * 1_000_000_000
+        stage_2h.sample()
+    stage_2h.finalize()
+    stage_2h_sha = __import__("hashlib").sha256(
+        (stage_2h.evidence_root / "stage-final.json").read_bytes()
+    ).hexdigest()
+    stage_12h = AcceptanceObserver(
+        stage="12h",
+        run_id="run-12h",
+        data_root=stage_2h.data_root,
+        evidence_root=stage_2h.evidence_root.parent / "12h-run-b",
+        identity=stage_2h.identity,
+        prior_stage_sha256=stage_2h_sha,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=stage_2h.evaluator,
+        clock=clock,
+        identity_verifier=stage_2h.identity_verifier,
+        disk_usage=stage_2h.disk_usage,
+    )
+    stage_12h.start()
+    for _ in range(144):
+        clock.utc += 300 * 1_000_000_000
+        clock.boot += 300 * 1_000_000_000
+        stage_12h.sample()
+    final_path, _final_sha, _final = stage_12h.finalize()
+    return stage_2h, stage_12h, final_path
+
+
+def test_valid_identity_readiness_2h_12h_chain_is_accepted(tmp_path: Path) -> None:
+    stage_2h, stage_12h, final_path = _complete_12h_chain(tmp_path)
+    verified_2h, _digest_2h = verify_completed_stage(
+        stage_2h.evidence_root, stage_2h.identity, expected_stage="2h"
+    )
+    assert verified_2h["result"] == "PASS_CANDIDATE"
+    verified_12h, _digest_12h = verify_prior_stage(
+        final_path, stage_12h.identity, "24h"
+    )
+    assert verified_12h["stage"] == "12h"
+
+
+def test_corrupted_older_predecessor_rejects_later_stage(tmp_path: Path) -> None:
+    stage_2h, stage_12h, final_path = _complete_12h_chain(tmp_path)
+    _rewrite(stage_2h.evidence_root / "stage-final.json", result="FAIL")
+    with pytest.raises(AcceptanceError, match="predecessor authority"):
+        verify_prior_stage(final_path, stage_12h.identity, "24h")
 
 
 @pytest.mark.parametrize(
@@ -408,6 +566,38 @@ def test_new_post_t0_unmarked_boundary_blocks(tmp_path: Path) -> None:
     assert start["result"] == "PASS_CANDIDATE", start["blocking_findings"]
     with Catalog(layout.catalog) as catalog:
         seal_chunk(layout, catalog, [usdm_envelope("conn-b", 10)])
+    clock.utc += 300 * 1_000_000_000
+    clock.boot += 300 * 1_000_000_000
+    _path, _sha, sample = observer.sample()
+    assert sample["result"] == "FAIL"
+    assert "UNMARKED_RECONNECT" in cast(list[object], sample["blocking_findings"])
+
+
+def test_pre_t0_reconnect_sealed_after_t0_is_current_and_blocking(tmp_path: Path) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    writer = RawChunkWriter(
+        layout=layout,
+        catalog=Catalog(layout.catalog),
+        market="um_perpetual",
+        symbol="BTCUSDT",
+        stream="book_ticker",
+        collector_instance_id="audit-test",
+        collector_version="0.1.0+test",
+        rotation=RotationPolicy(seconds=60),
+        durability_interval_seconds=0,
+    )
+    writer.append(usdm_envelope("conn-before", 1))
+    writer.append(usdm_envelope("conn-after", 2))
+    writer.close()
+    catalog = writer.catalog
+    assert not list(layout.manifests.glob("*.manifest.json"))
+    clock.utc = 2_000_000_000
+    observer.start()
+    assert observer.reconnect_continuation is not None
+    assert observer.reconnect_continuation["manifest_members"] == {}
+    with catalog:
+        seal_partial(writer.path, layout=layout, catalog=catalog)
     clock.utc += 300 * 1_000_000_000
     clock.boot += 300 * 1_000_000_000
     _path, _sha, sample = observer.sample()
