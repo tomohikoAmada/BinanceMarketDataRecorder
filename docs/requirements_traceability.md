@@ -68,14 +68,15 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
 | FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
 | FAI-05 | A fatal bounded post-close handoff failure cannot seal the old tail complete or restart without same-gap/first-new Raw evidence | ADR-0027, Risk R-054 | M22.9 Spot/USD-M backpressure/session-restart origin and stale-generation regressions, global-stop negative cases, plus existing R1/R2/R2.1/R2.2 crash matrix; local fixes not deployed |
-| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055 | Repository-owned `m22.9-acceptance-evidence.v1` observer implemented and independently reviewed with no P0/P1 findings; deterministic regressions cover baseline membership/T0 freeze, process incarnation, predecessor lineage, incremental Raw audit, strict manifest/Catalog, no-clobber publication, and resume; production window not started and no VPS acceptance evidence exists |
-| VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, shared 2 vCPU/4 GiB/40 GB-class VPS | ADR-0028 | Future exact-VPS artifact/readiness/2h/12h/24h/72h/168h acceptance; not deployed by D0/D1 |
-| VPS-02 | VPS owns live acquisition, Raw/seal, Catalog/recovery, gap/provenance, metrics/status; heavy offline work remains local | ADR-0028, offline workspace | Future live/offline execution profiles; one Recorder distribution; not implemented by D0/D1 |
+| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055 | Repository-owned `m22.9-acceptance-evidence.v1` observer was implemented and independently reviewed for its prior scope; the historical `553cb345…`/`e55dd1ac…` deployment failed readiness and its 24h result is INCOMPLETE. The local startup correction `2e8525f…` is not independently reviewed, merged, built, deployed, or accepted; no duration stage has restarted. |
+| FAI-07 | Startup recovery remains live and stoppable without false completion | Risk R-056, M22.9 current-state record | Local focused/full offline evidence passes heartbeat, stable-sealed fast path, unstable validation, and cancel/resume coverage; production verification and acceptance remain pending |
+| VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, historical shared 2 vCPU/4 GiB/40 GB-class VPS | ADR-0028 | Historical target profile only; current service is STOPPED / NOT CAPTURING and future acceptance requires a new exact artifact. Larger VPS options remain planning, not accepted architecture |
+| VPS-02 | VPS owns live acquisition, compressed Raw/seal/manifests, Catalog/recovery, gap/provenance, order-book/checkpoint state, metrics/status/capacity; heavy offline work remains local | ADR-0028, offline workspace | Role boundary documented; `normalize run`, heavy Replay/analytical scans, and Historical Backfill are explicit offline operations, not Collector callbacks; no current acceptance claim |
 | ARC-01 | Local client pulls from VPS over SSH through replaceable transport seam | ADR-0029, archive transfer contract | Future archive-client transport and fault matrix; current ArchiveManager remains local |
 | ARC-02 | Durable local verification -> durable exact VPS pre-delete authorization (bound to receipt + source identity) -> source revalidation -> unlink/durability -> terminal state with restart reconciliation; one copy is not backup | ADR-0029, R-048 | Future remote transaction implementation and crash/restart deletion authorization tests |
 | ARC-03 | Archive Set logical identity, physical storage_id, whole-chunk placement, self-describing media, rebuildable index | ADR-0030, offline workspace | Future multi-media archive-client implementation and rebuild test |
 | ARC-04 | Post-session consistent Catalog snapshots with latest+previous retention; snapshots never replace Raw | ADR-0029, offline workspace, R-050 | Future SQLite-supported backup/snapshot implementation and transfer verification |
-| CAP-04 | VPS free-byte/ETA policy: 18/14/12/10 GiB and 7d/72h/24h, protected 10 GiB reserve | ADR-0028, vps_operations, R-049 | Future measured VPS validation; current local M11 behavior is historical profile behavior |
+| CAP-04 | VPS free-byte/ETA policy: 18/14/12/10 GiB and 7d/72h/24h, protected 10 GiB reserve | ADR-0028, vps_operations, R-049 | Existing thresholds are unchanged. Production forensic observation is EMERGENCY with approximately 12.02h to reserve; the 278h chain needs approximately 140.63 GB above reserve or 149.22 GB above NORMAL. These are planning estimates, not hardcoded policy; capacity must be resolved before acceptance |
 | ENV-01 | MacBook, remote Linux, and exact VPS have separate test and acceptance responsibilities | test environment matrix, ADR-0028/0029 | M22.8 isolated remote-source/archive failure matrix; M22.9 exact VPS stages; LAN/RK3588 evidence never substitutes for the exact VPS chain |
 
 ## Milestone coverage
@@ -140,10 +141,12 @@ These paths are local to the RK3588 host. Only the documentation in this
 repository is published to GitHub; the run, review, and archive evidence
 themselves are not uploaded.
 
-The later exact-VPS M22.9 artifact at incident authority `ddb7309…` entered
-staged acceptance, but its 24h result is INCOMPLETE after the fatal
-post-close-handoff continuity defect. The local correction and deterministic
-regressions are recorded in `docs/milestone_acceptance/M22.9.md`; the corrected
-artifact is not deployed, receives no old duration credit, and must restart the
-full staged chain. This matrix should be updated whenever a requirement, ADR,
-or milestone acceptance changes.
+The historical exact-VPS M22.9 candidate was built from source `553cb345…`
+with Wheel `e55dd1ac…`; its 24h result is INCOMPLETE after readiness failed
+during long startup recovery. The earlier post-close-handoff continuity
+correction is historical merged-source context. The new startup-liveness
+correction is local commit `2e8525f…`, not independently reviewed, merged,
+built, deployed, or credited with duration. The current service is STOPPED /
+NOT CAPTURING. See `docs/CURRENT_PRODUCTION_STATE.md` and
+`docs/milestone_acceptance/M22.9.md`. This matrix should be updated whenever a
+requirement, ADR, or milestone acceptance changes.

@@ -1015,15 +1015,15 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / CONTINUITY CORRECTIONS
-  IMPLEMENTED AND INDEPENDENTLY REVIEWED, NOT DEPLOYED**. The exact artifact at incident
-  authority `ddb730962247ff374ae614f4386508598b71d423` exposed a production Raw
-  continuity defect when a bounded backpressure timeout was followed by a
-  post-close handoff timeout. Independent review of the first corrective
-  commit then found the adjacent Spot/USD-M session-restart timeout origin and
-  stale per-generation handoff state; the follow-up correction distinguishes
-  session restart from true global stop and resets ephemeral boundary state.
-  The 24h result remains INCOMPLETE and no later stage is eligible. See
+- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / PRODUCTION STOPPED /
+  NOT CAPTURING / PRODUCTION READY NO**. The historical candidate was built
+  from source `553cb345…` and frozen Wheel `e55dd1ac…`. Exact transfer and
+  static deployment identity passed, but operational readiness failed during
+  long startup recovery because the heartbeat became stale. The earlier Raw
+  continuity correction and acceptance tooling are historical merged-source
+  context. The new startup-liveness correction is local commit `2e8525f…`:
+  not independently reviewed, merged, built, deployed, or accepted. See
+  `docs/CURRENT_PRODUCTION_STATE.md` and
   `docs/milestone_acceptance/M22.9.md`.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
@@ -1032,10 +1032,11 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Dependencies:** Accepted M22.8, exact M22 artifact, operator-authorized VPS
   deployment, and readiness evidence.
 - **Acceptance:** Every stage has its own T0, target, evidence root, and
-  independent review; no stage begins automatically. Because Recorder code
-  changed, the corrected artifact receives zero duration credit from the old
-  artifact and must restart exact identity -> readiness -> 2h -> 12h -> 24h
-  -> 72h -> 168h after a separately authorized deployment.
+  independent review; no stage begins automatically. A future artifact built
+  after the local startup correction receives zero duration credit from the
+  historical attempt and must restart exact identity -> readiness -> 2h ->
+  12h -> 24h -> 72h -> 168h after a separately authorized deployment. The
+  independent full chain totals 278 hours; capacity must be resolved first.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
 

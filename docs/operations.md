@@ -9,6 +9,12 @@ gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
 client, and Catalog snapshot transfer are not production deployed or
 Production Ready.
 
+The current M22.9 state is consolidated in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
+24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
+Production Ready is NO. The local startup-liveness correction is not reviewed,
+merged, built into a new artifact, or deployed.
+
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
 [`ubuntu_rk3588_operations.md`](ubuntu_rk3588_operations.md). Ubuntu is an M20
@@ -173,6 +179,17 @@ stop and gap evidence, and exits zero so `Restart=on-failure` does not loop.
 Free space later released by a co-resident process is visible to the next
 observation but never restarts Recorder; an operator must explicitly start it
 after verifying free space is above 10 GiB.
+
+Current production forensic evidence places the stopped host in EMERGENCY:
+free bytes `17,091,108,864`, approximately 6.35 GB above the 10 GiB reserve,
+and observed net growth of roughly 145–147 kB/s, implying about 12.02 hours to
+the reserve if capture resumes. These are observations/planning estimates, not
+threshold or policy changes. The full 278-hour staged chain needs about
+140.63 GB additional usable capacity to finish just above reserve, or about
+149.22 GB to finish above the 18 GiB NORMAL threshold; +50 GB and +100 GB are
+insufficient, +150 GB is a near mathematical minimum, and approximately
++200 GB usable is the preferred planning recommendation. See the consolidated
+state document for derivation and deletion authority.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:
@@ -344,8 +361,9 @@ The final audit retained safe test Raw with authority `ABSENT` for M8-02,
 M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
 cleanup. M22.9 remained a separate exact-VPS staged acceptance. It later began,
-but the 24h result is INCOMPLETE after the R-054 Raw continuity defect; 72h is
-not eligible, and the locally corrected artifact has runtime credit zero.
+but the 24h result is INCOMPLETE after startup readiness failed; 72h is not
+eligible, and any artifact built from the local startup-liveness correction has
+runtime credit zero.
 
 ### 2h/12h/24h/72h/168h T0 independence
 

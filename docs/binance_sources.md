@@ -354,3 +354,8 @@ gap/recovery authority. It changes no Binance endpoint, payload, sequence,
 timing, rate-limit, or SDK behavior. No new external source was required or
 retrieved; the existing official-source inventory and hashes remain
 authoritative.
+
+The later startup-liveness correction at local commit `2e8525f…` likewise
+changes only local recovery scheduling, stable-sealed reconciliation, heartbeat
+liveness, and cooperative shutdown. It changes no Binance API semantics and
+requires no new official-source retrieval.

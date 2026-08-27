@@ -1,8 +1,10 @@
 # VPS Operations
 
 Status: M22.7B deployable substrate implemented and real-host validated on the
-recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. Production deployment
-and staged production validation are not claimed.
+recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. A successful production
+deployment and staged production validation are not claimed. The current M22.9 production
+service is STOPPED / NOT CAPTURING; see
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md).
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -15,15 +17,27 @@ The VPS runs only the integrity-critical live path:
 
 - Binance public Spot/USD-M acquisition;
 - Raw active/spool, sealing, and compression;
+- already-compressed Zstandard Raw (`.bmdr.zst`) and Raw manifests;
 - one live Catalog and startup/crash recovery;
 - gap, completeness, and provenance state;
-- metrics and structured status; and
+- order-book/checkpoint live derived state, metrics, capacity, and structured
+  status; and
 - support for local-client archive export.
 
 Full Normalize jobs, heavy Replay/analytical scans, and Historical Backfill run
 locally through offline execution profiles. They remain Recorder-owned
 capabilities in the same distribution. A co-resident unrelated service is not
 managed or inspected by Recorder.
+
+`normalize run` is explicit and offline/non-core; Collector callbacks do not
+run it. DuckDB is only a development interoperability verifier for published
+Parquet/Hive partitions, not the persistent Recorder database. SQLite Catalog
+is the Recorder metadata authority and does not store Raw market-event
+payloads. A larger VPS could technically host explicit offline work, but
+co-running it with the live path requires a separate topology/resource-
+isolation decision and does not change the accepted profile or ADRs. A future
+Gateway may coexist only as an independent service/process; it is not embedded,
+deployed, or production-ready.
 
 ## Network profile
 
@@ -222,6 +236,13 @@ Process existence or `systemctl is-active` alone is never READY.
 The startup-liveness correction requires a newly frozen artifact and controlled
 deployment after merge. It does not itself complete M22.9 acceptance or transfer
 duration credit from any historical attempt.
+
+Capacity planning for the next acceptance is separate from the hardcoded
+capacity policy. At the observed production growth rate, the independent full
+2h+12h+24h+72h+168h chain (278 hours) needs approximately 140.63 GB above the
+reserve, or 149.22 GB to remain above the NORMAL threshold. +50 GB and +100 GB
+are insufficient; +150 GB leaves almost no margin; approximately +200 GB
+usable is preferred if reasonable. No unarchived Raw may be manually deleted.
 
 ## Stopped upgrade
 

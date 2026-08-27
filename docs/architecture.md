@@ -7,9 +7,12 @@ x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
 Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
 profile. Exact-VPS staged acceptance began, but the M22.9 24-hour result is
 INCOMPLETE after a confirmed Raw continuity defect; the local correction is not
-deployed and the VPS is not production validated. The implemented system
+deployed and the VPS is currently STOPPED / NOT CAPTURING. A separate local
+startup-liveness correction is not independently reviewed, merged, or deployed.
+The implemented system
 remains subject to the deferred long-running reliability limitation in
-`docs/known_limitations.md`.
+`docs/known_limitations.md`. See the consolidated snapshot in
+`docs/CURRENT_PRODUCTION_STATE.md`.
 
 ## M19 recovery boundary
 
