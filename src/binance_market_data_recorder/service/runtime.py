@@ -653,6 +653,8 @@ class ServiceRuntime:
             self._startup_recovery_complete = True
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
                 capacity = await asyncio.to_thread(self._observe_vps_capacity)
+                if recovery_stop.is_set():
+                    return
                 if capacity["actual_hard_reserve_reached"] is True:
                     self.shutdown_reason = "HARD_RESERVE_SAFETY_STOP"
                     self._status = "STOPPING"

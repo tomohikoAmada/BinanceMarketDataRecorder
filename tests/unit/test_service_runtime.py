@@ -382,6 +382,123 @@ def test_recovery_completion_observes_capacity_before_collectors_and_reuses_hear
     asyncio.run(exercise())
 
 
+def test_stop_during_startup_capacity_observation_prevents_promotion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        recovery_complete = threading.Event()
+        capacity_entered = threading.Event()
+        capacity_returned = threading.Event()
+        release_capacity = threading.Event()
+        factory_called = False
+        sleep_observer: FakeSleepObserver | None = None
+        collectors = {
+            "spot": FakeCollector("spot", "service-spot"),
+            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+        }
+
+        def completed_recovery(
+            *,
+            layout: StorageLayout,
+            catalog: Catalog,
+            authority_path: Path | None,
+            stop_requested: Callable[[], bool] | None,
+        ) -> list[RecoveryAction]:
+            del layout, catalog, authority_path, stop_requested
+            recovery_complete.set()
+            return []
+
+        def blocked_capacity() -> dict[str, object]:
+            evidence = {
+                "observed_at_utc_ns": 1,
+                "total_bytes": 40 * 1024**3,
+                "free_bytes": 20 * 1024**3,
+                "capacity_profile": "vps-production-v1",
+                "capacity_state": "NORMAL",
+                "hard_reserve_eta": {"status": "NOT_APPROACHING"},
+                "actual_hard_reserve_reached": False,
+            }
+            capacity_entered.set()
+            if not release_capacity.wait(timeout=2):
+                raise AssertionError("capacity observation was not released")
+            capacity_returned.set()
+            runtime._capacity_evidence = evidence
+            return evidence
+
+        def sleep_factory(callback: Callable[[str, int], None]) -> FakeSleepObserver:
+            nonlocal sleep_observer
+            sleep_observer = FakeSleepObserver(callback)
+            return sleep_observer
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            nonlocal factory_called
+            factory_called = True
+            return collectors
+
+        monkeypatch.setattr(runtime_module, "recover_storage", completed_recovery)
+        runtime = ServiceRuntime(
+            config=RecorderConfig(
+                data_root=tmp_path,
+                capacity_profile="vps-production-v1",
+                heartbeat_seconds=1.0,
+            ),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=sleep_factory,
+            power_assertion=FakePowerAssertion(),
+            deployment_identity=_vps_identity(),
+        )
+        monkeypatch.setattr(runtime, "_observe_vps_capacity", blocked_capacity)
+
+        task = asyncio.create_task(runtime.run())
+        assert await asyncio.to_thread(recovery_complete.wait, 2)
+        assert await asyncio.to_thread(capacity_entered.wait, 2)
+        assert not capacity_returned.is_set()
+        assert runtime._startup_recovery_complete is True
+        assert not task.done()
+
+        runtime.request_stop("SIGTERM")
+        assert runtime._status == "STOPPING"
+        assert runtime.shutdown_reason == "SIGTERM"
+        assert runtime._stop is not None and runtime._stop.is_set()
+        assert runtime._recovery_stop is not None and runtime._recovery_stop.is_set()
+
+        release_capacity.set()
+        await asyncio.wait_for(task, timeout=2)
+
+        assert capacity_returned.is_set()
+        assert factory_called is False
+        assert runtime._supervisor is None
+        assert all(not collector.started for collector in collectors.values())
+        power = runtime.power_assertion
+        assert isinstance(power, FakePowerAssertion)
+        assert power.started is False
+        assert sleep_observer is not None
+        assert sleep_observer.started is False
+        final = runtime.state_store.read()
+        assert final is not None
+        assert final["status"] == "STOPPED"
+        assert final["shutdown_reason"] == "SIGTERM"
+        assert final["markets"] == {}
+
+        with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+            assert catalog.operational_events(event_type="SERVICE_STARTED") == []
+            assert catalog.operational_events(event_type="SERVICE_FAILED") == []
+            stopped = catalog.operational_events(event_type="SERVICE_STOPPED")
+        assert len(stopped) == 1
+        assert cast(dict[str, object], stopped[0]["evidence"])["reason"] == (
+            "SIGTERM"
+        )
+
+    asyncio.run(exercise())
+
+
 def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
     tmp_path: Path,
 ) -> None:
