@@ -7,9 +7,11 @@
 > its 24h result is INCOMPLETE, 72h is not eligible, the VPS is currently
 > STOPPED / NOT CAPTURING, and Production Ready is NO. The historical
 > `553cb345…`/`e55dd1ac…` deployment evidence is not the final candidate. The
-> startup-liveness correction at `2e8525f…` was independently targeted-reviewed
-> with `REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`). No PR exists; it is
-> not merged, no new artifact is built, and it is not deployed.
+> The technical startup-liveness candidate is `9c1df233…` (`fix: prevent startup
+> promotion after stop`). A fresh independent targeted re-review approved PR
+> creation with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P2 remains nonblocking and
+> deferred. No new artifact is built, no readiness has run on this candidate,
+> and it is not deployed.
 >
 > **M21.4 USD-M Backpressure 修复已通过 PR #7 合并并部署到生产环境。**
 > 正式 2 小时和 12 小时**进程稳定性**验收通过并完成独立证据复核。
@@ -50,18 +52,20 @@
 > included in the M22.9 incident artifact; that artifact's 24h result is
 > INCOMPLETE. This task's additional startup-liveness correction is pushed to
 > `origin/fix/m22-9-startup-recovery-liveness` and independently targeted-reviewed
-> with `REQUEST_CHANGES`; one P1 blocker remains. No PR exists, it is not merged,
-> no new artifact is built, and it is not deployed; it must restart the full
-> staged acceptance chain after a separate deployment.
+> with `APPROVED_FOR_PR_CREATION` (`P0=0`, `P1=0`, `P2=1`, `P3=0`). The P1 is
+> closed and the known P2 remains nonblocking and deferred. No new artifact is
+> built, no readiness has run on this candidate, and it is not deployed; it
+> must restart the full staged acceptance chain after a separate deployment.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
 
 原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
 该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
-PR #11的进一步修复后来进入M22.9 incident artifact；当前 startup-liveness
-修复已完成独立 targeted review，但结果为 REQUEST_CHANGES，仍有一个 P1，
-尚未合并、构建新工件或部署；新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+PR #11的进一步修复后来进入M22.9 incident artifact；startup-liveness 技术候选
+为 `9c1df233…`，fresh targeted review 结果为 APPROVED_FOR_PR_CREATION
+（P0=0、P1=0、P2=1、P3=0），P1 已关闭，P2 保持非阻塞并延期；尚未构建新工件、运行新候选
+的 readiness 或部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
 M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
 handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
@@ -78,8 +82,8 @@ M21.4 USD-M Backpressure修复已合并和部署，正式2h、12h和24h进程稳
 Backpressure恢复合同PASS。**原始正式72h验收FAIL（数据完整性）**：所有普通
 reconnect/planned rotation 边界均无 gap 证据。后续部署的M21.4.11工件
 `f659895…`正式72小时观测门PASS，但因restart-only orphan-intent缺陷不可进入
-168h。PR #11 修复后来进入M22.9 incident artifact；startup-liveness 修复的
-targeted review 结果为 REQUEST_CHANGES，尚未合并、构建新工件或部署。
+168h。PR #11 修复后来进入M22.9 incident artifact；startup-liveness 技术候选
+`9c1df233…` 已完成 fresh targeted review，P1 已关闭，尚未构建新工件或部署。
 不代表 Production Ready。
 
 Binance Market Data Recorder 是 specifically for Binance public market data
@@ -154,7 +158,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | M22.9 exact-VPS 24h结果INCOMPLETE、72h不具备资格；本地修复未部署且须从 exact identity/readiness/2h→12h→24h→72h→168h 重新验收；历史M21结果保持原记录 |
 | 当前生产状态 | M22.9 24h INCOMPLETE; 72h不具备资格; VPS STOPPED/NOT CAPTURING; Production Ready=NO; 详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | Historical continuity tooling was merged/reviewed through PR #38; startup-liveness source `2e8525f…` is pushed to `origin/fix/m22-9-startup-recovery-liveness` and targeted-reviewed with REQUEST_CHANGES (P1=1, P2=1); no PR exists, it is not merged, no new artifact is built, and it is not deployed; new freeze and full staged chain required |
+| PR/部署 | Historical continuity tooling was merged/reviewed through PR #38; startup-liveness technical candidate `9c1df233…` is on `origin/fix/m22-9-startup-recovery-liveness` and fresh targeted-reviewed with APPROVED_FOR_PR_CREATION (P0=0, P1=0, P2=1, P3=0); no new artifact is built, no readiness has run on this candidate, and it is not deployed; new freeze and full staged chain required |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、

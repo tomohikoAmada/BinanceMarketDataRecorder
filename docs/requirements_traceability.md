@@ -68,8 +68,8 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
 | FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
 | FAI-05 | A fatal bounded post-close handoff failure cannot seal the old tail complete or restart without same-gap/first-new Raw evidence | ADR-0027, Risk R-054 | M22.9 Spot/USD-M backpressure/session-restart origin and stale-generation regressions, global-stop negative cases, plus existing R1/R2/R2.1/R2.2 crash matrix; local fixes not deployed |
-| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055 | Repository-owned `m22.9-acceptance-evidence.v1` observer was implemented and independently reviewed for its prior scope; the historical `553cb345…`/`e55dd1ac…` deployment failed readiness and its 24h result is INCOMPLETE. The startup correction at feature head `7f1e71f…` was independently targeted-reviewed with `REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`), but is not merged, built, deployed, or accepted; no duration stage has restarted. |
-| FAI-07 | Startup recovery remains live and stoppable without false completion | Risk R-056, M22.9 current-state record | Review confirms the recovery heartbeat/fast path/unstable validation/cancel-resume properties, but a pre-existing P1 remains during post-recovery capacity observation: SIGTERM can be followed by `RUNNING` and Collector creation. Cooperative `recover_storage()` stop is implemented/tested; the full startup-stop contract and production verification remain pending |
+| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055 | Repository-owned `m22.9-acceptance-evidence.v1` observer was implemented and independently reviewed for its prior scope; the historical `553cb345…`/`e55dd1ac…` deployment failed readiness and its 24h result is INCOMPLETE. The current startup-liveness technical candidate is `9c1df233…`; fresh targeted re-review recorded `P0=0`, `P1=0`, `P2=1`, `P3=0` and approved PR creation. It is not built, deployed, or accepted; no duration stage has restarted. |
+| FAI-07 | Startup recovery remains live and stoppable without false completion | Risk R-056, M22.9 current-state record | The current technical candidate closes the post-recovery capacity-observation stop race while preserving the recovery heartbeat/fast path/unstable validation/cancel-resume properties. Fresh targeted re-review recorded `TARGETED_P1_CLOSED=YES`; cooperative `recover_storage()` stop remains implemented/tested, and production verification remains pending |
 | VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, historical shared 2 vCPU/4 GiB/40 GB-class VPS | ADR-0028 | Historical target profile only; current service is STOPPED / NOT CAPTURING and future acceptance requires a new exact artifact. Larger VPS options remain planning, not accepted architecture |
 | VPS-02 | VPS owns live acquisition, compressed Raw/seal/manifests, Catalog/recovery, gap/provenance, order-book/checkpoint state, metrics/status/capacity; heavy offline work remains local | ADR-0028, offline workspace | Role boundary documented; `normalize run`, heavy Replay/analytical scans, and Historical Backfill are explicit offline operations, not Collector callbacks; no current acceptance claim |
 | ARC-01 | Local client pulls from VPS over SSH through replaceable transport seam | ADR-0029, archive transfer contract | Future archive-client transport and fault matrix; current ArchiveManager remains local |
@@ -145,9 +145,10 @@ The historical exact-VPS M22.9 candidate was built from source `553cb345…`
 with Wheel `e55dd1ac…`; its 24h result is INCOMPLETE after readiness failed
 during long startup recovery. The earlier post-close-handoff continuity
 correction is historical merged-source context. The new startup-liveness
-correction is feature head `7f1e71f…`, independently targeted-reviewed with
-`REQUEST_CHANGES` (`P1=1`, `P2=1`), but not merged, built, deployed, or credited
-with duration. The current service is STOPPED / NOT CAPTURING. See
+correction is technical candidate `9c1df233…`, fresh targeted-reviewed with
+`P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed, but it is not built,
+deployed, or credited with duration. The current service is STOPPED / NOT
+CAPTURING. See
 `docs/CURRENT_PRODUCTION_STATE.md` and
 `docs/milestone_acceptance/M22.9.md`. This matrix should be updated whenever a
 requirement, ADR, or milestone acceptance changes.

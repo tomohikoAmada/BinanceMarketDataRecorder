@@ -17,17 +17,20 @@ SERVICE=STOPPED / NOT CAPTURING
 FORMAL_ACCEPTANCE=NOT_RESTARTED
 ```
 
-The implementation is on branch `fix/m22-9-startup-recovery-liveness`, whose
-feature head is `7f1e71fdf1f6f73a8b8ca35d202216745f90d02c`, pushed to
-`origin/fix/m22-9-startup-recovery-liveness`. No PR exists yet; the
-implementation was independently targeted-reviewed with
-`FINAL_VERDICT=REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`). It is not
-merged, not built into a new artifact, and not deployed.
+The reviewed executable/test candidate is commit
+`9c1df2333c911eb830a0f9a698ed5e42a1b78740`, titled
+`fix: prevent startup promotion after stop`, on branch
+`fix/m22-9-startup-recovery-liveness`. This technical candidate is followed by
+documentation-only alignment and does not change the reviewed executable/test
+candidate. A fresh independent targeted re-review approved PR creation with
+`FINAL_VERDICT=APPROVED_FOR_PR_CREATION` (`P0=0`, `P1=0`, `P2=1`, `P3=0`).
+No new artifact has been built, no readiness has been run on this candidate,
+and no deployment or acceptance window has started.
 
-The review found the fast-path architecture sound, but `SAFE_TO_CREATE_PR=NO`
-and `SAFE_TO_MERGE_WITHOUT_CHANGES=NO` because one P1 lifecycle blocker remains.
+## Historical first targeted review
 
-## Independent targeted review
+The following review authority and findings are historical and are not the
+current branch or review state.
 
 Review authority:
 
@@ -86,6 +89,28 @@ startup failure. This is pre-existing, concerns post-commit external loss or
 filesystem corruption, and is not part of the crash-recovery authority fix. It
 is not promoted to P1 here.
 
+## Current technical candidate and fresh targeted re-review
+
+The latest technical correction is:
+
+```text
+TECHNICAL_CANDIDATE_HEAD=9c1df2333c911eb830a0f9a698ed5e42a1b78740
+LATEST_TECHNICAL_CORRECTION=fix: prevent startup promotion after stop
+P0_COUNT=0
+P1_COUNT=0
+P2_COUNT=1
+P3_COUNT=0
+TARGETED_P1_CLOSED=YES
+SAFE_TO_CREATE_PR=YES
+FINAL_VERDICT=APPROVED_FOR_PR_CREATION
+```
+
+The fresh review confirmed the post-capacity startup-promotion barrier,
+preserved the single heartbeat owner, recovery fast path, crash-unstable full
+validation, normal startup, and startup hard-reserve behavior. The known P2
+about missing or size-mismatched stable local `SEALED` artifacts remains
+nonblocking and intentionally deferred.
+
 The acceptance chain remains independent and has no historical duration credit:
 
 ```text
@@ -121,8 +146,9 @@ final production candidate for M22.9 because the startup-liveness defect was
 proven and corrected in new local source. Do not deploy `e55dd1ac…` to begin
 final M22.9 acceptance.
 
-The new source correction is commit `2e8525f5df27a1b017890c172eae80db340cb901`,
- titled `fix: bound startup recovery liveness`. No new Wheel, freeze record,
+The initial source correction was commit
+`2e8525f5df27a1b017890c172eae80db340cb901`, titled
+`fix: bound startup recovery liveness`. No new Wheel, freeze record,
 or production artifact has been created from it yet.
 
 ## Historical VPS deployment incident and rollback
@@ -228,18 +254,17 @@ The implementation commit claims/results remain:
 - cancel/resume, long-recovery heartbeat, stable-sealed fast-path, and
   unstable-validation tests pass.
 
-Local validation recorded for this correction is focused `97 passed`; full
-suite `1361 passed, 24 skipped, 4 deselected`; Ruff, MyPy, M0 contracts, and
-Go Raw golden verification passed. Independent targeted review completed with
-`REQUEST_CHANGES`, one P1, and one P2. These are implementation/review results,
-not production acceptance. The commit has not been merged, has no new artifact,
-and has no deployment or duration credit.
+Local validation for the original implementation was focused `97 passed`; full
+suite `1361 passed, 24 skipped, 4 deselected`; Ruff, MyPy, M0 contracts, and Go
+Raw golden verification passed. The latest P1 correction adds focused evidence
+of `40 passed`, Ruff PASS, MyPy PASS, and `git diff --check` PASS. The fresh
+targeted re-review closed the capacity-observation stop race with no P1
+findings. These are implementation/review results, not production acceptance.
 
-The reviewed P1 means the implementation is not ready for PR creation. During
-the later VPS capacity-observation window, SIGTERM can still be followed by a
-capacity result that overwrites `STOPPING` with `RUNNING` and creates Collector
-tasks. The next code correction must close that race without broadening the
-historical fast-path scope.
+The technical candidate has no new artifact, deployment, readiness result, or
+duration credit. The next sequence is PR creation, exact-head CI, merge,
+post-merge source authority, a new artifact/freeze, controlled VPS deployment,
+readiness, and then the M22.9 staged acceptance chain.
 
 No Catalog schema, capacity policy, readiness threshold, or systemd timeout
 changed.
@@ -408,11 +433,7 @@ Resolve capacity before starting the formal duration chain. The immediate
 engineering sequence is:
 
 ```text
-fix the targeted-review P1 STARTING/capacity stop race
- -> focused validation
- -> push correction
- -> fresh targeted re-review
- -> only when P0=0 and P1=0: create PR
+PR
  -> exact-head CI
  -> merge
  -> post-merge authority

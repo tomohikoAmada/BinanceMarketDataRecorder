@@ -1019,13 +1019,14 @@ mutation exists; those remain exclusively M22.4B scope.
   NOT CAPTURING / PRODUCTION READY NO**. The historical candidate was built
   from source `553cb345…` and frozen Wheel `e55dd1ac…`. Exact transfer and
   static deployment identity passed, but operational readiness failed during
-  long startup recovery because the heartbeat became stale. The startup-
-  liveness correction at feature head `7f1e71f…` was independently targeted-
-  reviewed with `REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`). The
-  pre-existing P1 is the `STARTING` capacity-observation stop race; no PR
-  exists, the fix is not merged, no new artifact is built, and it is not
-  deployed or accepted. See `docs/CURRENT_PRODUCTION_STATE.md` and
-  `docs/milestone_acceptance/M22.9.md`.
+  long startup recovery because the heartbeat became stale. The current
+  technical candidate is `9c1df233…`, titled `fix: prevent startup promotion
+  after stop`; its fresh targeted re-review recorded `P0=0`, `P1=0`, `P2=1`,
+  `P3=0`, `TARGETED_P1_CLOSED=YES`, and
+  `FINAL_VERDICT=APPROVED_FOR_PR_CREATION`. The known P2 remains nonblocking
+  and deferred. No new artifact is built, no readiness has run on this
+  candidate, and no deployment or acceptance window has started. See
+  `docs/CURRENT_PRODUCTION_STATE.md` and `docs/milestone_acceptance/M22.9.md`.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,

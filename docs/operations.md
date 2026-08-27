@@ -12,9 +12,10 @@ Production Ready.
 The current M22.9 state is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
 24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
-Production Ready is NO. The startup-liveness correction was independently
-targeted-reviewed with REQUEST_CHANGES (`P1=1`, `P2=1`); it is not merged,
-built into a new artifact, or deployed.
+Production Ready is NO. The technical candidate `9c1df233…` passed fresh
+targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
+the known P2 remains nonblocking and deferred. No new artifact, candidate
+readiness run, or deployment exists.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
