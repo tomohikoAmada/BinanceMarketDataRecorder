@@ -20,7 +20,12 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 from uuid import uuid4
 
-from ..audit.reconnect_boundaries import audit_data_root
+from ..audit.reconnect_boundaries import (
+    UNKNOWN,
+    UNMARKED_RECONNECT,
+    incremental_audit_data_root,
+    validate_incremental_continuation,
+)
 from ..spool.seal import SealError
 from ..storage.capacity import VpsCapacityState, evaluate_capacity, selected_capacity_profile
 from ..storage.catalog import Catalog, CatalogStateError, ChunkState, RemoteArchiveState
@@ -89,6 +94,16 @@ _EXTRA_FIELDS = frozenset(
 def _integer(value: object, field: str) -> int:
     if not isinstance(value, int) or isinstance(value, bool):
         raise AcceptanceError(f"{field} is not an integer")
+    return value
+
+
+def _digest(value: object, field: str) -> str:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(char not in _HEX64 for char in value)
+    ):
+        raise AcceptanceError(f"{field} is not a lowercase SHA-256 digest")
     return value
 
 
@@ -468,11 +483,13 @@ class AcceptanceObserver:
     last_sample_sha256: str | None = None
     last_sample_utc_ns: int | None = None
     last_sample_boottime_ns: int | None = None
-    initial_manifest_members: dict[str, str] = field(default_factory=dict)
+    reconnect_continuation: dict[str, object] | None = None
+    next_sample_ordinal: int = 0
     ever_blocking_findings: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         _validate_stage(self.stage)
+        _digest(self.prior_stage_sha256, "prior-stage evidence digest")
         self.evidence_root = _safe_evidence_root(self.evidence_root, self.data_root)
 
     def _catalog_evidence(self, t0: int) -> tuple[dict[str, object], list[str]]:
@@ -495,6 +512,38 @@ class AcceptanceObserver:
                 and str(event.get("event_type"))
                 in {"SERVICE_FAILED", "SERVICE_STOPPED", "CORE_MARKET_TERMINAL_FAILURE"}
             ]
+            baseline_history: list[dict[str, object]] = []
+            current_intervals: list[dict[str, object]] = []
+            for intervals in closed.values():
+                for interval in intervals:
+                    started_at = _integer(interval.get("started_at_utc_ns"), "gap start")
+                    ended_at = _integer(interval.get("ended_at_utc_ns"), "gap end")
+                    item = {
+                        "gap_id": interval.get("gap_id"),
+                        "started_at_utc_ns": started_at,
+                        "ended_at_utc_ns": ended_at,
+                    }
+                    if ended_at < t0:
+                        baseline_history.append(item)
+                    else:
+                        item["timing"] = (
+                            "CROSSES_T0" if started_at < t0 <= ended_at else "CURRENT_STAGE"
+                        )
+                        current_intervals.append(item)
+            open_intervals: list[dict[str, object]] = []
+            for events_for_stream in unclosed.values():
+                for event in events_for_stream:
+                    evidence = event.get("evidence")
+                    if not isinstance(evidence, dict):
+                        continue
+                    started_at = _integer(evidence.get("gap_started_at_utc_ns"), "gap start")
+                    open_intervals.append(
+                        {
+                            "gap_id": evidence.get("gap_id"),
+                            "started_at_utc_ns": started_at,
+                            "timing": "OPEN_AT_T0" if started_at <= t0 else "OPENED_IN_STAGE",
+                        }
+                    )
             discontinuity = {
                 "malformed_events": malformed,
                 "degraded_pairs": degraded,
@@ -502,36 +551,10 @@ class AcceptanceObserver:
                     f"{market}:{stream}": items for (market, stream), items in unclosed.items()
                 },
                 "terminal_events": terminal,
-                "timing": [
-                    {
-                        "gap_id": interval.get("gap_id"),
-                        "timing": (
-                            "PRE_WINDOW_TO_IN_WINDOW"
-                            if _integer(interval.get("started_at_utc_ns"), "gap start") < t0
-                            and _integer(interval.get("ended_at_utc_ns"), "gap end") >= t0
-                            else (
-                                "CROSS_TARGET"
-                                if _integer(interval.get("started_at_utc_ns"), "gap start")
-                                < t0 + STAGE_DURATION_NS[self.stage]
-                                <= _integer(interval.get("ended_at_utc_ns"), "gap end")
-                                else "IN_WINDOW_COMPLETE"
-                            )
-                        ),
-                        "open_at_target": False,
-                    }
-                    for intervals in closed.values()
-                    for interval in intervals
-                ],
-                "open_at_target": any(
-                    isinstance(event.get("evidence"), dict)
-                    and _integer(
-                        cast(dict[str, object], event["evidence"]).get("gap_started_at_utc_ns"),
-                        "gap start",
-                    )
-                    <= t0 + STAGE_DURATION_NS[self.stage]
-                    for events in unclosed.values()
-                    for event in events
-                ),
+                "baseline_history": baseline_history,
+                "current_intervals": current_intervals,
+                "open_intervals": open_intervals,
+                "open_at_t0": any(item["timing"] == "OPEN_AT_T0" for item in open_intervals),
             }
         findings: list[str] = []
         if malformed or degraded:
@@ -544,18 +567,44 @@ class AcceptanceObserver:
 
     def _raw_evidence(self) -> tuple[dict[str, object], list[str]]:
         try:
-            audit = audit_data_root(self.data_root)
+            audit = incremental_audit_data_root(
+                self.data_root,
+                continuation=self.reconnect_continuation,
+            )
         except (OSError, SealError, CatalogStateError, ValueError, RuntimeError) as exc:
             raise AcceptanceError(f"strict Raw/manifest audit failed: {exc}") from exc
+        continuation = audit.get("continuation")
+        if not isinstance(continuation, dict):
+            raise AcceptanceError("Raw audit continuation is malformed")
+        self.reconnect_continuation = continuation
         summary = audit.get("summary")
         if not isinstance(summary, dict):
             raise AcceptanceError("Raw audit summary is malformed")
         findings: list[str] = []
-        if _integer(summary.get("unmarked_reconnect", 0), "unmarked reconnect count"):
+        transitions = [
+            item
+            for stream_item in cast(list[object], audit.get("streams", []))
+            if isinstance(stream_item, dict)
+            for item in cast(list[object], stream_item.get("transitions", []))
+            if isinstance(item, dict)
+        ]
+        baseline_history = [
+            item
+            for item in transitions
+            if _integer(item.get("occurred_at_utc_ns"), "boundary timestamp")
+            < cast(int, self.t0_utc_ns)
+        ]
+        current_transitions = [item for item in transitions if item not in baseline_history]
+        if any(item.get("kind") == UNMARKED_RECONNECT for item in current_transitions):
             findings.append("UNMARKED_RECONNECT")
-        if _integer(summary.get("unknown", 0), "unknown reconnect count"):
+        if any(item.get("kind") == UNKNOWN for item in current_transitions):
             findings.append("UNKNOWN_RECONNECT_BOUNDARY")
-        catalog_findings = audit.get("catalog_findings", [])
+        integrity_findings = audit.get("integrity_findings")
+        if not isinstance(integrity_findings, list):
+            raise AcceptanceError("Raw audit integrity findings are malformed")
+        if integrity_findings:
+            findings.append("manifest_byte_mutation_or_loss")
+        catalog_findings = audit.get("catalog_findings")
         if not isinstance(catalog_findings, list):
             raise AcceptanceError("Raw audit Catalog findings are malformed")
         findings.extend(str(item) for item in catalog_findings)
@@ -594,8 +643,6 @@ class AcceptanceObserver:
                     findings.append("unexplained_raw_absence")
                 elif classification == "UNKNOWN":
                     findings.append("unknown_raw_absence")
-                if absence.get("has_sequence_gap_marker") == "true":
-                    findings.append("missing_first_new_raw_proof")
             for row in catalog.chunks_in_states(*tuple(ChunkState)):
                 manifest_path = row.get("manifest_path")
                 if not isinstance(manifest_path, str) or manifest_path in member_paths:
@@ -612,7 +659,14 @@ class AcceptanceObserver:
                     findings.append("unexplained_raw_absence")
                 elif classification == "UNKNOWN":
                     findings.append("unknown_raw_absence")
-        return {"audit": audit, "inventory": inventory, "raw_loss": loss}, findings
+        return {
+            "audit": audit,
+            "inventory": inventory,
+            "raw_loss": loss,
+            "baseline_history": baseline_history,
+            "current_transitions": current_transitions,
+            "continuation": continuation,
+        }, findings
 
     def _observation(self) -> tuple[dict[str, object], list[str]]:
         if (
@@ -714,24 +768,17 @@ class AcceptanceObserver:
             or current_process.get("result") != "success"
         ):
             findings.append("service_process_not_running")
-        current_inventory = raw.get("inventory", {}) if isinstance(raw, dict) else {}
-        current_members = (
-            current_inventory.get("members", []) if isinstance(current_inventory, dict) else []
-        )
-        current_member_map = {
-            str(item.get("path")): str(item.get("sha256"))
-            for item in current_members
-            if isinstance(item, dict) and isinstance(item.get("path"), str)
-        }
-        if any(
-            current_member_map.get(path) != digest
-            for path, digest in self.initial_manifest_members.items()
-        ):
-            findings.append("manifest_byte_mutation_or_loss")
         self.ever_blocking_findings.update(findings)
         all_findings = sorted(self.ever_blocking_findings)
+        soft_findings = {
+            "acceptance_observation_gap",
+            "readiness_not_ready",
+            "unsafe_wall_clock_backward",
+        }
+        fatal = any(item not in soft_findings for item in all_findings)
         document.update(
             {
+                "prior_stage_evidence_sha256": self.prior_stage_sha256,
                 "stage_start_evidence_sha256": self.stage_start_sha256,
                 "previous_sample_sha256": self.last_sample_sha256,
                 "systemd_process_incarnation": current_process,
@@ -747,23 +794,7 @@ class AcceptanceObserver:
                 "blocking_findings": all_findings,
                 "observer_status": "COMPLETE",
                 "result": "FAIL"
-                if any(
-                    item in findings
-                    for item in (
-                        "process_incarnation_changed",
-                        "boot_id_changed",
-                        "hard_reserve_violation",
-                        "readiness_failed",
-                        "UNMARKED_RECONNECT",
-                        "terminal_service_or_core_failure",
-                        "unexplained_raw_absence",
-                        "manifest_byte_mutation_or_loss",
-                        "runtime_deployment_identity_mismatch",
-                        "service_instance_id_changed",
-                        "service_process_not_running",
-                    )
-                )
-                or any(item.startswith("catalog_manifest_disagreement") for item in all_findings)
+                if fatal
                 else ("INCOMPLETE" if all_findings else "PASS_CANDIDATE"),
             }
         )
@@ -785,14 +816,6 @@ class AcceptanceObserver:
         document["stage_start_evidence_sha256"] = None
         path, digest = _publish(self.evidence_root, "stage-start.json", document)
         self.stage_start_sha256 = digest
-        inventory = document.get("manifest_inventory")
-        if isinstance(inventory, dict):
-            members = inventory.get("members", [])
-            self.initial_manifest_members = {
-                str(item.get("path")): str(item.get("sha256"))
-                for item in members
-                if isinstance(item, dict) and isinstance(item.get("path"), str)
-            }
         # The published T0 record cannot be rewritten.  The hash is bound by
         # all later samples and the final record; its own null field is part of
         # the immutable T0 representation.
@@ -800,9 +823,9 @@ class AcceptanceObserver:
 
     def sample(self) -> tuple[Path, str, dict[str, object]]:
         document, _findings = self._observation()
-        ordinal = len(list(self.evidence_root.glob("sample-*.json")))
-        filename = f"sample-{ordinal:08d}.json"
+        filename = f"sample-{self.next_sample_ordinal:08d}.json"
         path, digest = _publish(self.evidence_root, filename, document)
+        self.next_sample_ordinal += 1
         self.last_sample_sha256 = digest
         self.last_sample_utc_ns = _integer(document["observed_at_utc_ns"], "sample UTC timestamp")
         self.last_sample_boottime_ns = _integer(
@@ -843,22 +866,246 @@ class AcceptanceObserver:
         return path, digest, final
 
 
+def _chain_identity(
+    document: Mapping[str, object],
+    *,
+    identity: DeploymentIdentity,
+    stage: str,
+    run_id: str,
+) -> None:
+    if (
+        document.get("stage") != stage
+        or document.get("run_id") != run_id
+        or not _same_identity(document, identity)
+    ):
+        raise AcceptanceError("stage evidence identity chain is invalid")
+
+
+def _continuation_from(document: Mapping[str, object]) -> dict[str, object]:
+    reconnect = document.get("reconnect_summary")
+    continuation = reconnect.get("continuation") if isinstance(reconnect, dict) else None
+    if not isinstance(continuation, dict):
+        raise AcceptanceError("reconnect continuation evidence is absent")
+    try:
+        validate_incremental_continuation(continuation)
+    except SealError as exc:
+        raise AcceptanceError("reconnect continuation evidence is invalid") from exc
+    members = cast(dict[str, str], continuation["manifest_members"])
+    inventory = document.get("manifest_inventory")
+    inventory_members = inventory.get("members") if isinstance(inventory, dict) else None
+    if not isinstance(inventory_members, list):
+        raise AcceptanceError("manifest inventory evidence is malformed")
+    observed_members: dict[str, str] = {}
+    for item in inventory_members:
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("sha256"), str)
+            or not isinstance(item.get("chunk_id"), str)
+            or str(item["path"]) in observed_members
+        ):
+            raise AcceptanceError("manifest inventory member is malformed")
+        observed_members[str(item["path"])] = _digest(
+            item["sha256"], "manifest inventory digest"
+        )
+    if observed_members != members:
+        raise AcceptanceError("reconnect continuation does not bind manifest inventory")
+    return continuation
+
+
+def _sample_chain(
+    stage_root: Path,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    identity: DeploymentIdentity,
+    require_eligible: bool,
+) -> tuple[list[dict[str, object]], str | None, dict[str, object]]:
+    stage = str(start["stage"])
+    run_id = str(start["run_id"])
+    expected_previous: str | None = None
+    samples: list[dict[str, object]] = []
+    last_continuation = _continuation_from(start)
+    previous_members = cast(dict[str, str], last_continuation["manifest_members"])
+    start_findings = start.get("blocking_findings")
+    if not isinstance(start_findings, list) or any(
+        not isinstance(item, str) for item in start_findings
+    ):
+        raise AcceptanceError("stage-start blocking findings are malformed")
+    known_findings = set(start_findings)
+    previous_boottime = _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    paths = sorted(stage_root.glob("sample-*.json"))
+    for ordinal, sample_path in enumerate(paths):
+        if sample_path.name != f"sample-{ordinal:08d}.json":
+            raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
+        sample, sample_sha = _read_published(sample_path)
+        if sample.get("evidence_kind") != "stage-sample":
+            raise AcceptanceError("sample evidence kind is invalid")
+        _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
+        if sample.get("stage_start_evidence_sha256") != start_sha:
+            raise AcceptanceError("sample stage-start digest is invalid")
+        if sample.get("prior_stage_evidence_sha256") != start.get(
+            "prior_stage_evidence_sha256"
+        ):
+            raise AcceptanceError("sample predecessor digest is invalid")
+        if sample.get("previous_sample_sha256") != expected_previous:
+            raise AcceptanceError("sample hash chain is invalid")
+        if (
+            sample.get("boot_id") != start.get("boot_id")
+            or sample.get("systemd_process_incarnation")
+            != start.get("systemd_process_incarnation")
+            or sample.get("service_instance_id") != start.get("service_instance_id")
+        ):
+            raise AcceptanceError("sample process/service authority is mixed")
+        boottime = _integer(
+            sample.get("observed_at_boottime_ns"), "sample BOOTTIME timestamp"
+        )
+        if boottime < previous_boottime:
+            raise AcceptanceError("sample BOOTTIME chain is non-monotonic")
+        if boottime - previous_boottime > MAX_EVIDENCE_GAP_NS:
+            raise AcceptanceError("sample observation chain has an excessive gap")
+        previous_boottime = boottime
+        findings = sample.get("blocking_findings")
+        if not isinstance(findings, list) or any(
+            not isinstance(item, str) for item in findings
+        ):
+            raise AcceptanceError("sample blocking findings are malformed")
+        sample_findings = set(findings)
+        if not known_findings <= sample_findings:
+            raise AcceptanceError("sample blocking findings are not monotonic")
+        known_findings = sample_findings
+        if require_eligible and findings:
+            raise AcceptanceError("completed stage contains ineligible sample findings")
+        if sample.get("observer_status") != "COMPLETE":
+            raise AcceptanceError("sample observer status is invalid")
+        if require_eligible and sample.get("result") != "PASS_CANDIDATE":
+            raise AcceptanceError("completed stage contains an ineligible sample result")
+        last_continuation = _continuation_from(sample)
+        current_members = cast(dict[str, str], last_continuation["manifest_members"])
+        lost_manifest_authority = any(
+            current_members.get(path) != digest
+            for path, digest in previous_members.items()
+        )
+        if (
+            lost_manifest_authority
+            and "manifest_byte_mutation_or_loss" not in sample_findings
+        ):
+            raise AcceptanceError("sample continuation lost manifest authority")
+        previous_members = current_members
+        samples.append(sample)
+        expected_previous = sample_sha
+    return samples, expected_previous, last_continuation
+
+
+def verify_completed_stage(
+    stage_root: Path,
+    identity: DeploymentIdentity,
+    *,
+    expected_stage: str | None = None,
+) -> tuple[dict[str, object], str]:
+    """Verify the complete immutable authority for one duration stage."""
+
+    start, start_sha = _read_published(stage_root / "stage-start.json")
+    stage = start.get("stage")
+    run_id = start.get("run_id")
+    if (
+        start.get("evidence_kind") != "stage-start"
+        or not isinstance(stage, str)
+        or stage not in STAGE_NAMES
+        or (expected_stage is not None and stage != expected_stage)
+        or not isinstance(run_id, str)
+        or not run_id
+    ):
+        raise AcceptanceError("stage-start evidence is invalid")
+    _chain_identity(start, identity=identity, stage=stage, run_id=run_id)
+    prior_digest = _digest(
+        start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
+    )
+    if (
+        start.get("stage_start_evidence_sha256") is not None
+        or start.get("previous_sample_sha256") is not None
+        or start.get("result") != "PASS_CANDIDATE"
+        or start.get("blocking_findings") != []
+        or not isinstance(start.get("systemd_process_incarnation"), dict)
+        or not isinstance(start.get("service_instance_id"), str)
+        or not start.get("service_instance_id")
+    ):
+        raise AcceptanceError("stage-start is not eligible")
+    _continuation_from(start)
+    samples, last_sample_sha, _continuation = _sample_chain(
+        stage_root,
+        start=start,
+        start_sha=start_sha,
+        identity=identity,
+        require_eligible=True,
+    )
+    if not samples or last_sample_sha is None:
+        raise AcceptanceError("completed stage has no canonical samples")
+    final_path = stage_root / "stage-final.json"
+    final, final_sha = _read_published(final_path)
+    if final.get("evidence_kind") != "stage-final":
+        raise AcceptanceError("stage-final evidence kind is invalid")
+    _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
+    if (
+        final.get("stage_start_evidence_sha256") != start_sha
+        or final.get("previous_sample_sha256") != last_sample_sha
+        or final.get("prior_stage_evidence_sha256") != prior_digest
+        or final.get("boot_id") != start.get("boot_id")
+        or final.get("systemd_process_incarnation")
+        != start.get("systemd_process_incarnation")
+        or final.get("service_instance_id") != start.get("service_instance_id")
+        or final.get("blocking_findings") != []
+        or final.get("result") != "PASS_CANDIDATE"
+        or final.get("observer_status") != "FINALIZED"
+    ):
+        raise AcceptanceError("stage-final is not an eligible chain terminus")
+    required = _integer(final.get("required_duration_ns"), "required duration")
+    elapsed = _integer(final.get("elapsed_boottime_ns"), "elapsed duration")
+    expected_required = STAGE_DURATION_NS[stage]
+    expected_elapsed = _integer(
+        final.get("observed_at_boottime_ns"), "final BOOTTIME timestamp"
+    ) - _integer(start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp")
+    if required != expected_required or elapsed != expected_elapsed or elapsed < required:
+        raise AcceptanceError("stage duration authority is invalid")
+    last_sample = samples[-1]
+    expected_final = dict(last_sample)
+    expected_final.update(
+        {
+            "evidence_kind": "stage-final",
+            "stage_start_evidence_sha256": start_sha,
+            "previous_sample_sha256": last_sample_sha,
+            "prior_stage_evidence_sha256": prior_digest,
+            "elapsed_boottime_ns": elapsed,
+            "required_duration_ns": required,
+            "result": "PASS_CANDIDATE",
+            "observer_status": "FINALIZED",
+        }
+    )
+    if final != expected_final:
+        raise AcceptanceError("stage-final does not reference the actual last sample")
+    return final, final_sha
+
+
 def verify_prior_stage(
     path: Path, identity: DeploymentIdentity, stage: str
 ) -> tuple[dict[str, object], str]:
-    document, digest = _read_published(path)
-    expected_kind = "readiness-result" if stage == "2h" else "stage-final"
-    if document.get("evidence_kind") != expected_kind or document.get("result") != "PASS_CANDIDATE":
-        raise AcceptanceError("prior evidence is not an eligible predecessor")
-    if not _same_identity(document, identity):
-        raise AcceptanceError("prior-stage deployment identity mismatch")
-    if expected_kind == "stage-final":
-        previous_stage = document.get("stage")
-        if not isinstance(previous_stage, str) or STAGE_NAMES.index(
-            previous_stage
-        ) + 1 != STAGE_NAMES.index(stage):
-            raise AcceptanceError("prior-stage order is invalid")
-    return document, digest
+    _validate_stage(stage)
+    if stage == "2h":
+        document, digest = _read_published(path)
+        if (
+            document.get("evidence_kind") != "readiness-result"
+            or document.get("stage") != "readiness"
+            or document.get("result") != "PASS_CANDIDATE"
+            or not _same_identity(document, identity)
+        ):
+            raise AcceptanceError("readiness is not an eligible predecessor")
+        return document, digest
+    previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
+    if path.name != "stage-final.json":
+        raise AcceptanceError("duration predecessor must be canonical stage-final.json")
+    return verify_completed_stage(path.parent, identity, expected_stage=previous_stage)
 
 
 def resume_observer(
@@ -872,31 +1119,60 @@ def resume_observer(
     disk_usage: Callable[[Path], Any] = shutil.disk_usage,
 ) -> AcceptanceObserver:
     selected_clock = LinuxClock() if clock is None else clock
+    if (stage_root / "stage-final.json").exists():
+        raise AcceptanceError("stage is already finalized")
     start, start_sha = _read_published(stage_root / "stage-start.json")
     if (
         start.get("evidence_kind") != "stage-start"
         or start.get("stage") not in STAGE_NAMES
         or not _same_identity(start, identity)
+        or start.get("stage_start_evidence_sha256") is not None
+        or start.get("previous_sample_sha256") is not None
+        or start.get("result") != "PASS_CANDIDATE"
     ):
         raise AcceptanceError("stage-start evidence is invalid")
     stage = str(start["stage"])
+    run_id = start.get("run_id")
+    if not isinstance(run_id, str) or not run_id:
+        raise AcceptanceError("stage-start run_id is invalid")
+    _chain_identity(start, identity=identity, stage=stage, run_id=run_id)
+    prior_digest = _digest(
+        start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
+    )
     start_process = start.get("systemd_process_incarnation")
     if not isinstance(start_process, dict):
         raise AcceptanceError("stage-start process-incarnation evidence is malformed")
-    start_inventory = start.get("manifest_inventory")
-    start_members = start_inventory.get("members", []) if isinstance(start_inventory, dict) else []
-    if not isinstance(start_members, list):
-        raise AcceptanceError("stage-start manifest inventory is malformed")
     start_findings = start.get("blocking_findings")
     if not isinstance(start_findings, list):
         raise AcceptanceError("stage-start findings are malformed")
+    samples, last_sample_sha, continuation = _sample_chain(
+        stage_root,
+        start=start,
+        start_sha=start_sha,
+        identity=identity,
+        require_eligible=False,
+    )
+    if selected_clock.boot_id() != start.get("boot_id"):
+        raise AcceptanceError("resume boot identity changed")
+    if selected_clock.boottime_ns() < _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    ):
+        raise AcceptanceError("resume BOOTTIME is before stage T0")
+    try:
+        if manager.process_incarnation() != start_process:
+            raise AcceptanceError("resume process incarnation changed")
+    except SystemdError as exc:
+        raise AcceptanceError("resume process incarnation is unavailable") from exc
+    _current_state, current_instance = _state_instance(data_root)
+    if current_instance != start.get("service_instance_id"):
+        raise AcceptanceError("resume service instance changed")
     observer = AcceptanceObserver(
         stage=stage,
-        run_id=str(start["run_id"]),
+        run_id=run_id,
         data_root=data_root,
         evidence_root=stage_root,
         identity=identity,
-        prior_stage_sha256=str(start.get("prior_stage_evidence_sha256") or ""),
+        prior_stage_sha256=prior_digest,
         manager=manager,
         evaluator=evaluator,
         clock=selected_clock,
@@ -907,35 +1183,21 @@ def resume_observer(
         frozen_process=start_process,
         frozen_service_instance_id=str(start.get("service_instance_id") or ""),
         stage_start_sha256=start_sha,
-        initial_manifest_members={
-            str(item.get("path")): str(item.get("sha256"))
-            for item in start_members
-            if isinstance(item, dict) and isinstance(item.get("path"), str)
-        },
         ever_blocking_findings={str(item) for item in start_findings},
+        reconnect_continuation=continuation,
+        next_sample_ordinal=len(samples),
     )
-    samples = sorted(stage_root.glob("sample-*.json"))
     if samples:
-        previous_sha: str | None = None
-        sample: dict[str, object] = {}
-        sample_sha = ""
-        for sample_path in samples:
-            sample, sample_sha = _read_published(sample_path)
-            if sample.get("previous_sample_sha256") != previous_sha:
-                raise AcceptanceError("sample hash chain is invalid")
-            if sample.get("run_id") != observer.run_id or not _same_identity(sample, identity):
-                raise AcceptanceError("sample identity chain is invalid")
-            findings = sample.get("blocking_findings")
+        sample = samples[-1]
+        for existing_sample in samples:
+            findings = existing_sample.get("blocking_findings")
             if isinstance(findings, list):
                 observer.ever_blocking_findings.update(str(item) for item in findings)
-            previous_sha = sample_sha
-        observer.last_sample_sha256 = sample_sha
+        observer.last_sample_sha256 = last_sample_sha
         observer.last_sample_utc_ns = _integer(sample["observed_at_utc_ns"], "sample UTC timestamp")
         observer.last_sample_boottime_ns = _integer(
             sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp"
         )
-    if (stage_root / "stage-final.json").exists():
-        raise AcceptanceError("stage is already finalized")
     return observer
 
 
@@ -954,5 +1216,6 @@ __all__ = [
     "read_identity_evidence",
     "resume_observer",
     "sha256_bytes",
+    "verify_completed_stage",
     "verify_prior_stage",
 ]
