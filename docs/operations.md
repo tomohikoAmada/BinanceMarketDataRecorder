@@ -351,8 +351,13 @@ production acceptance records. It writes only immutable canonical
 `m22.9-acceptance-evidence.v1` files under an explicit operator-owned evidence
 root, uses the existing deployment/readiness/Catalog/Raw/manifest authorities,
 and records both UTC nanoseconds and Linux CLOCK_BOOTTIME nanoseconds with the
-boot ID. It is not a service controller or automatic stage runner. Historical
-M21/M22 evidence was collected before this observer and remains unchanged.
+boot ID. Baseline manifest membership is frozen before T0; BOOTTIME is the
+elapsed-duration authority; and each stage requires exact, transitively
+verified predecessor lineage. One shared reconnect engine supplies reconnect
+analysis, and expensive Raw audit work is incremental. It is not a service
+controller or automatic stage runner: production observation is read-only and
+no stage advances automatically. Historical M21/M22 evidence was collected
+before this observer and remains unchanged.
 
 The 24h corrective review and Backpressure contract forensic review
 established binding rules for every future formal window:

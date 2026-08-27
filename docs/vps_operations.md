@@ -283,12 +283,25 @@ but its 24h result is INCOMPLETE after the R-054 Raw continuity defect; it is
 not eligible for 72h. The local correction is not deployed and receives no
 duration credit.
 
+The operator sequence is explicit and ordered:
+
+```text
+exact artifact identity -> readiness -> explicit duration stage
+                         -> next stage only after eligible predecessor
+```
+
+The corrected future artifact must therefore run `2h -> 12h -> 24h -> 72h ->
+168h`; no command promotes or starts the next stage. `--resume <stage-root>`
+continues the same stage authority and reuses that stage's original T0 and
+published evidence chain; it does not create a new duration window.
+
 ## Operations and recovery
 
 ### M22.9 repository-owned observer
 
 The installed `binance-market-recorder deployment acceptance` commands are
-read-only observers. Operators provide an evidence directory outside
+read-only observers. Operators provide an operator-owned evidence directory
+outside
 `/var/lib/binance-market-data-recorder`, `/opt/binance-market-data-recorder`,
 and `/etc/binance-market-data-recorder`; the tool rejects lexical and symlink
 escapes into those trees. Identity and readiness are explicit gates. A stage

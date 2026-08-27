@@ -1015,8 +1015,8 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / LOCAL CONTINUITY
-  CORRECTIONS IMPLEMENTED, NOT DEPLOYED**. The exact artifact at incident
+- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / CONTINUITY CORRECTIONS
+  IMPLEMENTED AND INDEPENDENTLY REVIEWED, NOT DEPLOYED**. The exact artifact at incident
   authority `ddb730962247ff374ae614f4386508598b71d423` exposed a production Raw
   continuity defect when a bounded backpressure timeout was followed by a
   post-close handoff timeout. Independent review of the first corrective
