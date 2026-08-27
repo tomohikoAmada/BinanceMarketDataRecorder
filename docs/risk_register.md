@@ -4,8 +4,9 @@ Current M22.9 state: `M22_9_24H_RESULT=INCOMPLETE`,
 `ELIGIBLE_FOR_72H=NO`, `PRODUCTION_READY=NO`. The production service is
 STOPPED / NOT CAPTURING. The historical `553cb345…` source and
 `e55dd1ac…` Wheel are incident evidence, not the final candidate. The new
-startup-liveness correction is local-only at `2e8525f…`: not independently
-reviewed, merged, built into a new artifact, or deployed. See
+startup-liveness correction is pushed to
+`origin/fix/m22-9-startup-recovery-liveness`: no PR exists yet, and it is not
+independently reviewed, merged, built into a new artifact, or deployed. See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md).
 
 Severity: Critical / High / Medium / Low. Status is Open, Monitoring, Mitigated,

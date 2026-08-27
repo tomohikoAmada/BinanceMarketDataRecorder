@@ -16,9 +16,11 @@ SERVICE=STOPPED / NOT CAPTURING
 FORMAL_ACCEPTANCE=NOT_RESTARTED
 ```
 
-The current local implementation head is `2e8525f5df27a1b017890c172eae80db340cb901`
-on branch `fix/m22-9-startup-recovery-liveness`. It is local only: not pushed,
-not in a PR, not independently reviewed, not merged, and not deployed.
+The current implementation head is `2e8525f5df27a1b017890c172eae80db340cb901`
+on branch `fix/m22-9-startup-recovery-liveness`, pushed to
+`origin/fix/m22-9-startup-recovery-liveness`. No PR exists yet; the
+implementation is not independently reviewed, not merged, not built into a new
+artifact, and not deployed.
 
 The acceptance chain remains independent and has no historical duration credit:
 

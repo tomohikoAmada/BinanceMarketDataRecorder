@@ -47,8 +47,10 @@
 > (`ELIGIBLE_FOR_168H=false`) because of a restart-only orphan-intent defect,
 > so the 168-hour validation has not run. The PR #11 correction was later
 > included in the M22.9 incident artifact; that artifact's 24h result is
-> INCOMPLETE. This task's additional startup-liveness correction is local-only and
-> must restart the full staged acceptance chain after a separate deployment.
+> INCOMPLETE. This task's additional startup-liveness correction is pushed to
+> `origin/fix/m22-9-startup-recovery-liveness`, but is not independently reviewed,
+> in a PR, merged, built into a new artifact, or deployed; it must restart the
+> full staged acceptance chain after a separate deployment.
 >
 > 本项目只采集 Binance 公共市场数据。它**没有** API Key 配置、账户接口、
 > 订单提交、策略引擎、回测框架或交易能力。它不是一个交易机器人。
@@ -148,7 +150,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | M22.9 exact-VPS 24h结果INCOMPLETE、72h不具备资格；本地修复未部署且须从 exact identity/readiness/2h→12h→24h→72h→168h 重新验收；历史M21结果保持原记录 |
 | 当前生产状态 | M22.9 24h INCOMPLETE; 72h不具备资格; VPS STOPPED/NOT CAPTURING; Production Ready=NO; 详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | Historical continuity tooling was merged/reviewed through PR #38; new startup-liveness source `2e8525f…` is local-only, not independently reviewed/merged/built/deployed; new freeze and full staged chain required |
+| PR/部署 | Historical continuity tooling was merged/reviewed through PR #38; startup-liveness source `2e8525f…` is pushed to `origin/fix/m22-9-startup-recovery-liveness`, but no PR exists, it is not independently reviewed or merged, no new artifact is built, and it is not deployed; new freeze and full staged chain required |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
