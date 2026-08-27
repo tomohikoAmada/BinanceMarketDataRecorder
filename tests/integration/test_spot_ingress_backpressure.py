@@ -176,6 +176,19 @@ def make_collector(
     return collector, catalog
 
 
+def manifest_envelopes(root: Path, manifest: dict[str, Any]) -> list[Any]:
+    raw = zstandard.ZstdDecompressor().decompress(
+        (root / manifest["relative_path"]).read_bytes()
+    )
+    source = io.BytesIO(raw)
+    decode_chunk_header(source)
+    envelopes: list[Any] = []
+    while prefix := source.read(FRAME_PREFIX.size):
+        length, _flags, _reserved, _checksum = FRAME_PREFIX.unpack(prefix)
+        envelopes.append(decode_envelope(source.read(length)))
+    return envelopes
+
+
 def captured(root: Path) -> tuple[list[Any], list[dict[str, Any]]]:
     documents = [
         json.loads(path.read_text(encoding="utf-8"))
@@ -184,15 +197,86 @@ def captured(root: Path) -> tuple[list[Any], list[dict[str, Any]]]:
     documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
     envelopes: list[Any] = []
     for document in documents:
-        raw = zstandard.ZstdDecompressor().decompress(
-            (root / document["relative_path"]).read_bytes()
-        )
-        source = io.BytesIO(raw)
-        decode_chunk_header(source)
-        while prefix := source.read(FRAME_PREFIX.size):
-            length, _flags, _reserved, _checksum = FRAME_PREFIX.unpack(prefix)
-            envelopes.append(decode_envelope(source.read(length)))
+        envelopes.extend(manifest_envelopes(root, document))
     return envelopes, documents
+
+
+def assert_old_ingress_boundary_layout(
+    root: Path,
+    manifests: list[dict[str, Any]],
+    *,
+    source_payloads: list[bytes],
+    original_connection_id: str,
+) -> list[bytes]:
+    reconnect_manifests = [
+        document
+        for document in manifests
+        if "reconnect_gap" in document["capture_flags"]
+    ]
+    assert len(reconnect_manifests) == 1
+    reconnect_manifest = reconnect_manifests[0]
+    reconnect_frames = manifest_envelopes(root, reconnect_manifest)
+    assert reconnect_manifest["record_count"] == len(reconnect_frames)
+    assert reconnect_manifest["gap"] is True
+    assert reconnect_manifest["complete"] is False
+    assert reconnect_manifest["record_count"] == 0 or reconnect_frames
+    if reconnect_frames:
+        assert all(
+            frame.connection_id == original_connection_id
+            for frame in reconnect_frames
+        )
+        assert set(reconnect_manifest["connection_ids"]) == {
+            original_connection_id
+        }
+    else:
+        assert reconnect_manifest["record_count"] == 0
+        assert reconnect_manifest["connection_ids"] == []
+
+    ordinary_manifests = [
+        document for document in manifests if document is not reconnect_manifest
+    ]
+    assert len(ordinary_manifests) <= 1
+    assert all(
+        "sequence_gap" not in document["capture_flags"] for document in manifests
+    )
+    if ordinary_manifests:
+        ordinary_manifest = ordinary_manifests[0]
+        ordinary_index = next(
+            index
+            for index, document in enumerate(manifests)
+            if document is ordinary_manifest
+        )
+        reconnect_index = next(
+            index
+            for index, document in enumerate(manifests)
+            if document is reconnect_manifest
+        )
+        assert ordinary_index < reconnect_index
+        ordinary_frames = manifest_envelopes(root, ordinary_manifest)
+        assert ordinary_manifest["record_count"] == len(ordinary_frames)
+        assert ordinary_manifest["record_count"] > 0
+        assert "reconnect_gap" not in ordinary_manifest["capture_flags"]
+        assert "sequence_gap" not in ordinary_manifest["capture_flags"]
+        assert ordinary_manifest["gap"] is False
+        assert ordinary_manifest["complete"] is True
+        assert all(
+            frame.connection_id == original_connection_id
+            for frame in ordinary_frames
+        )
+        assert set(ordinary_manifest["connection_ids"]) == {
+            original_connection_id
+        }
+
+    ordered_frames: list[Any] = []
+    for document in manifests:
+        frames = manifest_envelopes(root, document)
+        assert document["record_count"] == len(frames)
+        assert all("sequence_gap" not in frame.capture_flags for frame in frames)
+        ordered_frames.extend(frames)
+    old_payloads = [frame.raw_payload for frame in ordered_frames]
+    assert old_payloads
+    assert old_payloads == source_payloads[: len(old_payloads)]
+    return old_payloads
 
 
 def discontinuities(catalog: Catalog) -> list[dict[str, Any]]:
@@ -488,15 +572,6 @@ def test_boundary_handoff_timeout_recovers_same_gap_without_fabricating_frame(
 
     asyncio.run(exercise())
     old_envelopes, old_manifests = captured(tmp_path)
-    assert len(old_manifests) == 1
-    assert old_manifests[0]["gap"] is True
-    assert old_manifests[0]["complete"] is False
-    assert "reconnect_gap" in old_manifests[0]["capture_flags"]
-    assert old_envelopes
-    assert all("sequence_gap" not in envelope.capture_flags for envelope in old_envelopes)
-    old_payloads = [envelope.raw_payload for envelope in old_envelopes]
-    assert old_payloads == source_payloads[: len(old_payloads)]
-
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog, read_only=True) as catalog:
         events = discontinuities(catalog)
@@ -506,6 +581,14 @@ def test_boundary_handoff_timeout_recovers_same_gap_without_fabricating_frame(
     assert evidence["reason"] == "ingress_backpressure"
     assert evidence["boundary_kind"] == "last_frame_in_hand"
     assert evidence["boundary_frame_persisted"] is False
+    old_payloads = assert_old_ingress_boundary_layout(
+        tmp_path,
+        old_manifests,
+        source_payloads=source_payloads,
+        original_connection_id=str(evidence["original_connection_id"]),
+    )
+    assert [envelope.raw_payload for envelope in old_envelopes] == old_payloads
+    assert all("sequence_gap" not in envelope.capture_flags for envelope in old_envelopes)
     boundary_index = next(
         index
         for index, payload in enumerate(source_payloads)
