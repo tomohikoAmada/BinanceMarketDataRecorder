@@ -195,10 +195,15 @@ principals, the operator performs this stopped sequence:
      deployment verify
    ```
 
-7. Explicitly start. Startup opens the Catalog, completes recovery, and takes
-   an immediate actual capacity observation before Collector construction. If
-   free space is <=10 GiB it records stop/gap evidence and exits cleanly without
-   starting collectors.
+7. Explicitly start. Startup opens the Catalog, publishes `STARTING`, and keeps
+   one heartbeat active while recovery runs. Ordinary local `SEALED` chunks
+   whose manifest and Catalog immutable identity already match take the
+   metadata-only startup path; crash-unstable states still require full payload
+   validation before lifecycle advancement. Collectors remain absent until
+   recovery completes and an immediate actual capacity observation succeeds.
+   If free space is <=10 GiB it records stop/gap evidence and exits cleanly
+   without starting collectors. A stop requested during recovery is honored
+   between atomic recovery units and does not claim recovery completion.
 8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
    Preserve the JSON identity, verification, systemd-show, status, readiness,
    ownership, and journal evidence. A non-READY result rejects deployment.
@@ -213,6 +218,10 @@ actual free bytes above 10 GiB. Capacity
 WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
 safe observation may remain READY while exposing the degraded evidence.
 Process existence or `systemctl is-active` alone is never READY.
+
+The startup-liveness correction requires a newly frozen artifact and controlled
+deployment after merge. It does not itself complete M22.9 acceptance or transfer
+duration credit from any historical attempt.
 
 ## Stopped upgrade
 

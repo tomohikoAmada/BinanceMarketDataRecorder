@@ -257,6 +257,27 @@ def test_recovery_incomplete_is_not_ready(tmp_path: Path) -> None:
     assert "startup_recovery_incomplete" in result.reasons
 
 
+def test_fresh_starting_heartbeat_remains_not_ready_after_thirty_seconds(
+    tmp_path: Path,
+) -> None:
+    identity = _identity(tmp_path)
+    state = _state(identity)
+    state.update(
+        {
+            "status": "STARTING",
+            "started_at_utc_ns": NOW - 31_000_000_000,
+            "heartbeat_at_utc_ns": NOW,
+            "startup_recovery_complete": False,
+            "capacity": None,
+            "markets": {},
+        }
+    )
+    result = _evaluate(tmp_path, state)
+    assert result.state == "NOT_READY"
+    assert result.reasons == ("runtime_status_starting",)
+    assert "service_heartbeat_stale" not in result.reasons
+
+
 @pytest.mark.parametrize("market_name", ["spot", "um_perpetual"])
 def test_each_core_market_must_reuse_existing_full_readiness(
     tmp_path: Path,

@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import pytest
 
+import binance_market_data_recorder.service.runtime as runtime_module
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import Market
 from binance_market_data_recorder.logging import configure_logging
@@ -28,9 +29,11 @@ from binance_market_data_recorder.service.runtime import (
     _collector_factory,
 )
 from binance_market_data_recorder.service.state import ServiceStateStore
+from binance_market_data_recorder.spool.recovery import RecoveryAction
 from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.capacity import HARD_RESERVE_BYTES
 from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.storage.layout import StorageLayout
 from binance_market_data_recorder.supervisor import ReadinessSnapshot
 
 
@@ -127,6 +130,36 @@ class FakePowerAssertion(CaffeinateAssertion):
         self.stopped = True
 
 
+class ControlledHeartbeatRuntime(ServiceRuntime):
+    heartbeat_ticks: asyncio.Queue[None]
+    heartbeat_owner_count: int
+
+    async def _heartbeat(self, stop: asyncio.Event) -> None:
+        self.heartbeat_owner_count += 1
+        await super()._heartbeat(stop)
+
+    async def _wait_for_heartbeat_interval(self, stop: asyncio.Event) -> None:
+        tick = asyncio.create_task(self.heartbeat_ticks.get())
+        stopping = asyncio.create_task(stop.wait())
+        _done, pending = await asyncio.wait(
+            {tick, stopping}, return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+
+class AdvancingClock:
+    def __init__(self, value: int = 1_000_000_000_000) -> None:
+        self.value = value
+
+    def __call__(self) -> int:
+        return self.value
+
+    def advance(self, seconds: int) -> None:
+        self.value += seconds * 1_000_000_000
+
+
 def _config(tmp_path: Path) -> RecorderConfig:
     return RecorderConfig(
         data_root=tmp_path,
@@ -157,6 +190,196 @@ def test_process_lock_rejects_a_second_service(tmp_path: Path) -> None:
         first.release()
     second.acquire()
     second.release()
+
+
+def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        entered = threading.Event()
+        pause = threading.Event()
+        clock = AdvancingClock()
+        factory_called = False
+
+        def blocked_recovery(
+            *,
+            layout: StorageLayout,
+            catalog: Catalog,
+            authority_path: Path | None,
+            stop_requested: Callable[[], bool] | None,
+        ) -> list[RecoveryAction]:
+            del layout, catalog, authority_path
+            entered.set()
+            if stop_requested is None:
+                raise AssertionError("service recovery did not receive stop authority")
+            while not stop_requested():
+                pause.wait(0.001)
+            return []
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            nonlocal factory_called
+            factory_called = True
+            return {}
+
+        monkeypatch.setattr(runtime_module, "recover_storage", blocked_recovery)
+        runtime = ControlledHeartbeatRuntime(
+            config=_config(tmp_path),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+            utc_clock_ns=clock,
+        )
+        runtime.heartbeat_ticks = asyncio.Queue()
+        runtime.heartbeat_owner_count = 0
+
+        task = asyncio.create_task(runtime.run())
+        assert await asyncio.to_thread(entered.wait, 2)
+        for _ in range(100):
+            state = runtime.state_store.read()
+            if state is not None and state["status"] == "STARTING":
+                break
+            await asyncio.sleep(0)
+        else:
+            pytest.fail("STARTING state was not published")
+        assert state["startup_recovery_complete"] is False
+        assert state["capacity"] is None
+        assert state["markets"] == {}
+        initial_heartbeat = cast(int, state["heartbeat_at_utc_ns"])
+        started_at = cast(int, state["started_at_utc_ns"])
+
+        clock.advance(31)
+        runtime.heartbeat_ticks.put_nowait(None)
+        for _ in range(100):
+            await asyncio.sleep(0)
+            state = runtime.state_store.read()
+            if (
+                state is not None
+                and cast(int, state["heartbeat_at_utc_ns"]) > initial_heartbeat
+            ):
+                break
+        else:
+            pytest.fail("heartbeat did not advance during blocked recovery")
+        assert cast(int, state["heartbeat_at_utc_ns"]) == clock.value
+        assert clock.value - started_at > 30_000_000_000
+        assert state["status"] == "STARTING"
+        assert state["startup_recovery_complete"] is False
+        assert factory_called is False
+        assert runtime.heartbeat_owner_count == 1
+
+        runtime.request_stop("SIGTERM")
+        await asyncio.wait_for(task, timeout=2)
+        final = runtime.state_store.read()
+        assert final is not None
+        assert final["status"] == "STOPPED"
+        assert final["startup_recovery_complete"] is False
+        assert factory_called is False
+        assert runtime._catalog is None
+
+    asyncio.run(exercise())
+    probe = ServiceProcessLock(tmp_path / "state" / "service.lock")
+    probe.acquire()
+    probe.release()
+    with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
+        assert catalog.operational_events(event_type="SERVICE_FAILED") == []
+        assert len(catalog.operational_events(event_type="SERVICE_STOPPED")) == 1
+
+
+def test_recovery_completion_observes_capacity_before_collectors_and_reuses_heartbeat(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        entered = threading.Event()
+        release = threading.Event()
+        order: list[str] = []
+        collectors = {
+            "spot": FakeCollector("spot", "service-spot"),
+            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+        }
+
+        def slow_recovery(
+            *,
+            layout: StorageLayout,
+            catalog: Catalog,
+            authority_path: Path | None,
+            stop_requested: Callable[[], bool] | None,
+        ) -> list[RecoveryAction]:
+            del layout, catalog, authority_path
+            entered.set()
+            if not release.wait(timeout=2):
+                raise AssertionError("recovery completion was not released")
+            assert stop_requested is not None and not stop_requested()
+            order.append("recovery")
+            return []
+
+        def disk_usage(_path: Path) -> object:
+            order.append("capacity")
+            return SimpleNamespace(
+                total=40 * 1024**3,
+                used=20 * 1024**3,
+                free=20 * 1024**3,
+            )
+
+        def factory(
+            _config: RecorderConfig,
+            _logger: logging.Logger,
+            _version: str,
+            _instance_id: str,
+        ) -> Mapping[str, RuntimeCollector]:
+            assert runtime._startup_recovery_complete is True
+            assert runtime._capacity_evidence is not None
+            order.append("collectors")
+            return collectors
+
+        monkeypatch.setattr(runtime_module, "recover_storage", slow_recovery)
+        runtime = ControlledHeartbeatRuntime(
+            config=RecorderConfig(
+                data_root=tmp_path,
+                capacity_profile="vps-production-v1",
+                heartbeat_seconds=1.0,
+            ),
+            logger=configure_logging(stream=io.StringIO()),
+            collector_factory=factory,
+            sleep_observer_factory=FakeSleepObserver,
+            power_assertion=FakePowerAssertion(),
+            deployment_identity=_vps_identity(),
+            disk_usage=disk_usage,
+            capacity_poll_seconds=60.0,
+        )
+        runtime.heartbeat_ticks = asyncio.Queue()
+        runtime.heartbeat_owner_count = 0
+
+        task = asyncio.create_task(runtime.run())
+        assert await asyncio.to_thread(entered.wait, 2)
+        state = runtime.state_store.read()
+        assert state is not None
+        assert state["status"] == "STARTING"
+        assert state["startup_recovery_complete"] is False
+        release.set()
+        for _ in range(200):
+            await asyncio.sleep(0.005)
+            state = runtime.state_store.read()
+            if state is not None and state["status"] == "RUNNING":
+                break
+        else:
+            pytest.fail("runtime did not become RUNNING after recovery")
+
+        assert state["startup_recovery_complete"] is True
+        assert isinstance(state["capacity"], dict)
+        assert all(collector.started for collector in collectors.values())
+        assert order[:3] == ["recovery", "capacity", "collectors"]
+        assert runtime.heartbeat_owner_count == 1
+        runtime.request_stop("SIGTERM")
+        await asyncio.wait_for(task, timeout=2)
+
+    asyncio.run(exercise())
 
 
 def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(

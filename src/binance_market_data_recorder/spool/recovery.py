@@ -23,10 +23,13 @@ M21.4.11-R3.2/R3.3 将其分为两个阶段:
    提交给 seal_partial()。这覆盖了压缩/重命名与 Catalog SEALED 提交之间的
    崩溃窗口,并从 durable authority(SEALING intent + 未关闭 STARTED)派生
    fail-closed forced flags。
-4. reconcile_sealed():manifests/ 中的每个 manifest.json 与 sealed artifact
-   (大小、存储哈希、解压哈希)进行交叉验证。若 Catalog 仍显示 ACTIVE 或
-   RECOVERED,chunk 被幂等推进到 SEALED。这覆盖了 manifest 写入后但 Catalog
-   提交前的崩溃窗口。
+4. reconcile_sealed():manifests/ 中的每个 manifest.json 与 Catalog
+   生命周期元数据交叉验证。已稳定提交的本地 SEALED chunk 只校验
+   manifest/Catalog 不可变身份和 artifact 存在/大小,避免每次启动将
+   全历史 Raw 隐式重做 bit-rot audit。若 Catalog 行缺失或仍显示
+   ACTIVE、RECOVERED、SEALING,则仍完整校验 artifact 大小、存储哈希和
+   解压哈希,再幂等推进到 SEALED。这覆盖了 manifest 写入后但
+   Catalog 提交前的崩溃窗口。
 
 恢复顺序很重要:partial 必须在 sealed manifest 之前协调,因为 SEALING chunk
 可能需要先完成压缩,其 manifest 才能被协调。恢复可安全重复运行;所有 Catalog
@@ -41,6 +44,7 @@ import hashlib
 import json
 import os
 import stat
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -88,6 +92,12 @@ _CHUNK_TO_ARCHIVE_STATE = {
     chunk_state: archive_state
     for archive_state, chunk_state in ARCHIVE_CHUNK_STATES.items()
 }
+
+RecoveryStopPredicate = Callable[[], bool]
+
+
+def _stop_requested(stop_requested: RecoveryStopPredicate | None) -> bool:
+    return stop_requested is not None and stop_requested()
 
 
 def _sha256_file(path: Path) -> str:
@@ -204,11 +214,18 @@ def _quarantine(
     return RecoveryAction(layout.relative(path), "quarantined", reason)
 
 
-def recover_partials(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
+def recover_partials(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    stop_requested: RecoveryStopPredicate | None = None,
+) -> list[RecoveryAction]:
     """Recover truncated tails and quarantine corruption; safe on repeated startup."""
 
     actions: list[RecoveryAction] = []
     for path in sorted(layout.active.glob("*.bmdr.partial")):
+        if _stop_requested(stop_requested):
+            break
         scan = scan_chunk(path)
         if scan.header is None:
             actions.append(
@@ -276,11 +293,18 @@ def recover_partials(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
     return actions
 
 
-def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[RecoveryAction]:
-    """Reconcile verified manifests/artifacts after a crash before Catalog commit."""
+def reconcile_sealed(
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    stop_requested: RecoveryStopPredicate | None = None,
+) -> list[RecoveryAction]:
+    """Reconcile manifests with Catalog, fully validating crash-unstable artifacts."""
 
     actions: list[RecoveryAction] = []
     for manifest_path in sorted(layout.manifests.glob("*.manifest.json")):
+        if _stop_requested(stop_requested):
+            break
         try:
             manifest_bytes = manifest_path.read_bytes()
             manifest = json.loads(manifest_bytes)
@@ -393,9 +417,8 @@ def reconcile_sealed(*, layout: StorageLayout, catalog: Catalog) -> list[Recover
                             )
                         )
                         break
-                    if not artifact_validated:
-                        validate_sealed_artifact(sealed, manifest)
-                        artifact_validated = True
+                    if sealed.stat().st_size != expected_fields["stored_bytes"]:
+                        raise SealError("sealed size mismatch")
                     actions.append(
                         RecoveryAction(
                             layout.relative(manifest_path),
@@ -499,7 +522,10 @@ def _remote_retained_manifest_path(
 
 
 def _validate_remote_recovery_coverage(
-    *, layout: StorageLayout, catalog: Catalog
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    stop_requested: RecoveryStopPredicate | None = None,
 ) -> None:
     """Discover every durable remote row before manifest-driven recovery.
 
@@ -516,6 +542,8 @@ def _validate_remote_recovery_coverage(
             "RECOVERY_REMOTE_AUTHORITY_INVALID"
         ) from exc
     for transaction in transactions:
+        if _stop_requested(stop_requested):
+            return
         try:
             receipt_id = transaction["receipt_id"]
             chunk_id = transaction["chunk_id"]
@@ -642,7 +670,10 @@ def _record_started_from_intent(
 
 
 def _apply_legacy_decisions(
-    *, catalog: Catalog, report: LegacyDecisionReport
+    *,
+    catalog: Catalog,
+    report: LegacyDecisionReport,
+    stop_requested: RecoveryStopPredicate | None = None,
 ) -> list[RecoveryAction]:
     """Execute the Phase A legacy decisions (Phase B of R3.2).
 
@@ -655,6 +686,8 @@ def _apply_legacy_decisions(
     """
     actions: list[RecoveryAction] = []
     for decision in report.decisions:
+        if _stop_requested(stop_requested):
+            break
         if decision.final in {
             "proven_legitimate",
             "classified_legitimate_req103",
@@ -688,6 +721,7 @@ def recover_storage(
     layout: StorageLayout,
     catalog: Catalog,
     authority_path: Path | None = None,
+    stop_requested: RecoveryStopPredicate | None = None,
 ) -> list[RecoveryAction]:
     """Run the complete M3 startup reconciliation in a stable order.
 
@@ -705,6 +739,8 @@ def recover_storage(
     (M21.4.11-R3.4); the data-root fallback is only for config-less
     interactive/test operation.
     """
+    if _stop_requested(stop_requested):
+        return []
     selected_authority_path = (
         Path(authority_path)
         if authority_path is not None
@@ -717,15 +753,39 @@ def recover_storage(
         )
     except LegacyReconnectConflictError as exc:
         raise RecoveryConflictError(str(exc)) from exc
+    if _stop_requested(stop_requested):
+        return []
     if not report.first_corrected_startup_eligible:
         raise RecoveryConflictError(
             "RECOVERY_LEGACY_PREDECISION_INELIGIBLE "
             + report.blocker_summary()
         )
-    _validate_remote_recovery_coverage(layout=layout, catalog=catalog)
-    actions = recover_partials(layout=layout, catalog=catalog)
-    actions.extend(_apply_legacy_decisions(catalog=catalog, report=report))
+    _validate_remote_recovery_coverage(
+        layout=layout,
+        catalog=catalog,
+        stop_requested=stop_requested,
+    )
+    if _stop_requested(stop_requested):
+        return []
+    actions = recover_partials(
+        layout=layout,
+        catalog=catalog,
+        stop_requested=stop_requested,
+    )
+    if _stop_requested(stop_requested):
+        return actions
+    actions.extend(
+        _apply_legacy_decisions(
+            catalog=catalog,
+            report=report,
+            stop_requested=stop_requested,
+        )
+    )
+    if _stop_requested(stop_requested):
+        return actions
     for row in catalog.chunks_in_states(ChunkState.SEALING):
+        if _stop_requested(stop_requested):
+            return actions
         partial_value = row.get("partial_path")
         if not isinstance(partial_value, str) or not partial_value:
             continue
@@ -746,5 +806,13 @@ def recover_storage(
                 str(manifest["chunk_id"]),
             )
         )
-    actions.extend(reconcile_sealed(layout=layout, catalog=catalog))
+    if _stop_requested(stop_requested):
+        return actions
+    actions.extend(
+        reconcile_sealed(
+            layout=layout,
+            catalog=catalog,
+            stop_requested=stop_requested,
+        )
+    )
     return actions

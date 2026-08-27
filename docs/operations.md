@@ -101,6 +101,22 @@ binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml
 Stop/restart/uninstall are idempotent. SIGTERM drains/seals; uninstall retains
 configuration and all data. Logs are in journald.
 
+Startup publishes `STARTING` after the Catalog opens and keeps one periodic
+heartbeat active through recovery and the later `RUNNING` phase. Collectors are
+still constructed only after recovery completes. Recovery performs full
+payload validation for crash-unstable lifecycle states before advancing them,
+but a retained manifest whose exact immutable identity already matches an
+ordinary local `SEALED` Catalog row uses metadata reconciliation instead of
+rehashing and decompressing all historical Raw on every restart. SIGTERM during
+startup is cooperatively observed between recovery units; the current unit
+finishes atomically, recovery remains incomplete, and shutdown finalizes as
+`STOPPED` without starting collectors.
+
+This startup-liveness correction does not close M22.9 acceptance. Merge must be
+followed by a new exact artifact build and controlled deployment before any new
+acceptance window can begin; historical failed-deployment evidence remains
+historical.
+
 ## External storage
 
 Only an explicit project subdirectory may be registered:
