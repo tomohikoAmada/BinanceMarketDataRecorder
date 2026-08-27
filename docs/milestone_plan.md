@@ -1019,11 +1019,12 @@ mutation exists; those remain exclusively M22.4B scope.
   NOT CAPTURING / PRODUCTION READY NO**. The historical candidate was built
   from source `553cb345…` and frozen Wheel `e55dd1ac…`. Exact transfer and
   static deployment identity passed, but operational readiness failed during
-  long startup recovery because the heartbeat became stale. The earlier Raw
-  continuity correction and acceptance tooling are historical merged-source
-  context. The new startup-liveness correction is local commit `2e8525f…`:
-  not independently reviewed, merged, built, deployed, or accepted. See
-  `docs/CURRENT_PRODUCTION_STATE.md` and
+  long startup recovery because the heartbeat became stale. The startup-
+  liveness correction at feature head `7f1e71f…` was independently targeted-
+  reviewed with `REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`). The
+  pre-existing P1 is the `STARTING` capacity-observation stop race; no PR
+  exists, the fix is not merged, no new artifact is built, and it is not
+  deployed or accepted. See `docs/CURRENT_PRODUCTION_STATE.md` and
   `docs/milestone_acceptance/M22.9.md`.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
@@ -1039,6 +1040,23 @@ mutation exists; those remain exclusively M22.4B scope.
   independent full chain totals 278 hours; capacity must be resolved first.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
+
+### M23 — Recorder Resource & Throughput Hardening (future)
+
+- **Status:** **PLANNED / AFTER M22.9**. M23 must not begin before active M22.9
+  correctness, deployment, and acceptance work is closed unless separately
+  authorized.
+- **Planning sequence:** M23.0 baseline profiling; M23.1 low-risk hot-path
+  batching/write and instrumentation reduction; M23.2 allocation optimization;
+  M23.3 bounded seal pipeline only if needed; M23.4 clean-seal incremental
+  stats/hash with differential/fuzz/crash proof; M23.5 narrow C++ Raw-engine
+  decision gate only if Python remains the measured bottleneck; M23.6 much
+  later Go v2 decision gate. A full C++ rewrite is not recommended.
+- **Evidence philosophy:** optimize algorithms/complexity before language
+  rewrites; use production-equivalent profiling and require unchanged Raw v1,
+  ordering, gap, and crash semantics. Future research may target sustained
+  capacity at least 2x maximum observed production rate, but this is not an
+  M22.9 acceptance contract.
 
 ### M21 -> M22 validation policy
 

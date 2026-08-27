@@ -12,8 +12,9 @@ Production Ready.
 The current M22.9 state is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
 24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
-Production Ready is NO. The local startup-liveness correction is not reviewed,
-merged, built into a new artifact, or deployed.
+Production Ready is NO. The startup-liveness correction was independently
+targeted-reviewed with REQUEST_CHANGES (`P1=1`, `P2=1`); it is not merged,
+built into a new artifact, or deployed.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -114,9 +115,12 @@ payload validation for crash-unstable lifecycle states before advancing them,
 but a retained manifest whose exact immutable identity already matches an
 ordinary local `SEALED` Catalog row uses metadata reconciliation instead of
 rehashing and decompressing all historical Raw on every restart. SIGTERM during
-startup is cooperatively observed between recovery units; the current unit
-finishes atomically, recovery remains incomplete, and shutdown finalizes as
-`STOPPED` without starting collectors.
+`recover_storage()` is cooperatively observed between recovery units; the
+current unit finishes atomically and recovery remains incomplete. However,
+SIGTERM during the subsequent `STARTING` capacity observation still has a
+targeted-review P1: the returning `asyncio.to_thread()` observation can allow
+`STOPPING` to be overwritten by `RUNNING` and Collector construction. The full
+startup-stop contract is therefore not closed.
 
 This startup-liveness correction does not close M22.9 acceptance. Merge must be
 followed by a new exact artifact build and controlled deployment before any new

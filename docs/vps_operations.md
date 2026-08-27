@@ -39,6 +39,42 @@ isolation decision and does not change the accepted profile or ADRs. A future
 Gateway may coexist only as an independent service/process; it is not embedded,
 deployed, or production-ready.
 
+## Recorder-only VPS planning
+
+The preferred future direction is to run Recorder on its own VPS. Recorder is
+a durable system-of-record/data-capture service and does not require Gateway's
+latency profile. Separate hosts reduce workload coupling and permit a cheaper
+Recorder-optimized profile, while Gateway/Projection can use a separate
+realtime-latency profile:
+
+```text
+Host A: BinanceMarketDataRecorder
+Host B: BinanceMarketDataGateway -> embedded Projection -> gRPC
+```
+
+Recorder and Gateway remain independent services and failure domains; this is
+planning only and creates no runtime dependency. Current un-certified
+Recorder-only candidates are:
+
+- **4 vCPU / 8 GB RAM / 200 GB total NVMe:** preferred benchmark/deployment
+  candidate, if measurements support the envelope.
+- **2 vCPU / 4 GB RAM / 200 GB total NVMe:** lower-cost conditional target;
+  suitability requires profiling, optimization, benchmarking, and long-running
+  acceptance. It is not certified.
+
+The existing OVH VPS has approximately one month already paid. Use it for
+near-term controlled deployment/testing work while evaluating lower-cost
+dedicated Recorder providers. Compare price, CPU quality, RAM, NVMe
+capacity/performance, network, reliability, and upgrade flexibility. No
+provider migration is selected and no OVH upgrade has occurred; if no
+materially better option is found, retaining and expanding OVH remains the
+fallback. Any migration is a separate controlled procedure.
+
+`200 GB total NVMe` must not be confused with the earlier `approximately +200
+GB additional usable capacity` recommendation. Measure exact usable capacity
+after migration or resize and rerun the capacity forecast before formal
+acceptance T0. Do not start acceptance without sufficient measured runway.
+
 ## Network profile
 
 Direct Binance connectivity is mandatory for the certified Germany VPS
@@ -213,11 +249,14 @@ principals, the operator performs this stopped sequence:
    one heartbeat active while recovery runs. Ordinary local `SEALED` chunks
    whose manifest and Catalog immutable identity already match take the
    metadata-only startup path; crash-unstable states still require full payload
-   validation before lifecycle advancement. Collectors remain absent until
-   recovery completes and an immediate actual capacity observation succeeds.
+   validation before lifecycle advancement. The intended sequence keeps
+   Collectors after recovery and capacity observation, but the subsequent
+   `STARTING` capacity-observation window still has the reviewed P1 race in
+   which a stop can be overwritten by `RUNNING` before Collector construction.
    If free space is <=10 GiB it records stop/gap evidence and exits cleanly
-   without starting collectors. A stop requested during recovery is honored
-   between atomic recovery units and does not claim recovery completion.
+   without starting collectors. A stop requested during `recover_storage()` is
+   honored between atomic recovery units and does not claim recovery completion.
+   This returning-observation race must be corrected before PR creation.
 8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
    Preserve the JSON identity, verification, systemd-show, status, readiness,
    ownership, and journal evidence. A non-READY result rejects deployment.

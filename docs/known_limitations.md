@@ -2,8 +2,9 @@
 
 M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；72小时不具备资格。
 历史 `553cb345…`/`e55dd1ac…` 部署证据保留，当前服务为 STOPPED / NOT
-CAPTURING。新的 startup-liveness 修复为本地 `2e8525f…`，尚未独立审查、
-合并、构建新工件或部署。完整事实见
+CAPTURING。新的 startup-liveness 修复 `2e8525f…` 已完成独立 targeted
+review，但结果为 REQUEST_CHANGES（P1=1、P2=1）；尚未合并、构建新工件或
+部署。完整事实见
 [`docs/CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md)。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
@@ -46,8 +47,15 @@ restart the full staged validation chain.
   30-second stale-heartbeat allowance; SIGTERM also left the `to_thread`
   recovery worker outstanding until systemd SIGKILL.
 - Local `2e8525f…` keeps one heartbeat active, preserves not-ready STARTING,
-  retains full validation for unstable states, and adds cooperative stop. It is
-  not independently reviewed, merged, built, deployed, or acceptance-tested.
+  retains full validation for unstable states, and adds cooperative stop during
+  `recover_storage()`. Its targeted review returned REQUEST_CHANGES because a
+  pre-existing P1 can still allow a stop during the later capacity observation
+  to become RUNNING and create Collector tasks. It is not merged, built,
+  deployed, or acceptance-tested.
+- P2 (nonblocking): a missing or size-mismatched already-stable local `SEALED`
+  artifact becomes `reconcile_failed` rather than forcing startup failure.
+  This is pre-existing post-commit external-loss/filesystem-corruption
+  behavior, not a crash-recovery-authority defect, and is not promoted to P1.
 - The incident artifact allowed fatal USD-M post-close handoff timeout to
   escape before durable gap intent, producing false-complete historical tails
   and an unmarked first post-restart frame.

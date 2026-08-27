@@ -1,8 +1,9 @@
 # Current Production State
 
 This is the consolidated current-state handoff for M22.9. It records the
-historical production incident, the current local source correction, the VPS
-state, capacity evidence, and the exact path to a future acceptance run. It is
+historical production incident, the current source correction and review,
+infrastructure planning, VPS state, capacity evidence, and the exact path to a
+future acceptance run. It is
 documentation authority only; it does not authorize deployment, acceptance,
 or data deletion.
 
@@ -16,11 +17,74 @@ SERVICE=STOPPED / NOT CAPTURING
 FORMAL_ACCEPTANCE=NOT_RESTARTED
 ```
 
-The current implementation head is `2e8525f5df27a1b017890c172eae80db340cb901`
-on branch `fix/m22-9-startup-recovery-liveness`, pushed to
+The implementation is on branch `fix/m22-9-startup-recovery-liveness`, whose
+feature head is `7f1e71fdf1f6f73a8b8ca35d202216745f90d02c`, pushed to
 `origin/fix/m22-9-startup-recovery-liveness`. No PR exists yet; the
-implementation is not independently reviewed, not merged, not built into a new
-artifact, and not deployed.
+implementation was independently targeted-reviewed with
+`FINAL_VERDICT=REQUEST_CHANGES` (`P0=0`, `P1=1`, `P2=1`, `P3=0`). It is not
+merged, not built into a new artifact, and not deployed.
+
+The review found the fast-path architecture sound, but `SAFE_TO_CREATE_PR=NO`
+and `SAFE_TO_MERGE_WITHOUT_CHANGES=NO` because one P1 lifecycle blocker remains.
+
+## Independent targeted review
+
+Review authority:
+
+```text
+MAIN_SHA=553cb345466bdb2e2444d7162dea337a480b1b17
+FEATURE_BRANCH_HEAD=7f1e71fdf1f6f73a8b8ca35d202216745f90d02c
+IMPLEMENTATION_COMMIT=2e8525f5df27a1b017890c172eae80db340cb901
+PR_EXISTS=NO
+P0_COUNT=0
+P1_COUNT=1
+P2_COUNT=1
+P3_COUNT=0
+FINAL_VERDICT=REQUEST_CHANGES
+SAFE_TO_CREATE_PR=NO
+SAFE_TO_MERGE_WITHOUT_CHANGES=NO
+```
+
+The review positively established:
+
+- `SINGLE_HEARTBEAT_OWNER_PROVEN=YES`;
+- `STABLE_SEALED_FAST_PATH_SAFE=YES`;
+- `STABLE_SEALED_DURABLE_AUTHORITY_SUFFICIENT=YES`;
+- `CRASH_UNSTABLE_FULL_VALIDATION_PRESERVED=YES`;
+- `CANCEL_RESUME_IDEMPOTENCE_PROVEN=YES`;
+- `NEW_CROSS_THREAD_CATALOG_RACE=NO`;
+- `READINESS_SEMANTICS_PRESERVED=YES`;
+- `STARTUP_COST_NO_LONGER_O_TOTAL_PAYLOAD=YES`;
+- `300S_ARCHITECTURALLY_PLAUSIBLE=YES`, but
+  `300S_PRODUCTION_TIMING_PROVEN=NO`.
+
+The review did not reject the stable-sealed fast-path architecture. The merge
+blocker is the following pre-existing-in-`553cb345` P1:
+
+```text
+recover_storage completes
+ -> startup_recovery_complete=true
+ -> await VPS capacity observation in asyncio.to_thread()
+ -> SIGTERM/request_stop sets STOPPING and stop authorities
+ -> capacity observation returns without a stop re-check
+ -> collector_factory and supervisor creation
+ -> status can become RUNNING and SERVICE_STARTED can be emitted
+ -> Collector tasks can be created before eventual stop
+```
+
+This violates both `STOPPING must not transition back to RUNNING` and
+`Collectors must not start after an operator stop request during STARTING`.
+It was not introduced by `2e8525f`. The cooperative stop contract during
+`recover_storage()` itself remains implemented and tested, but the full
+startup-stop contract is not closed until this post-recovery capacity-window
+race is corrected and re-reviewed.
+
+The review also recorded one P2, nonblocking for the current startup-liveness
+architecture: a missing or size-mismatched already-stable local `SEALED`
+artifact becomes a `reconcile_failed` RecoveryAction rather than forcing
+startup failure. This is pre-existing, concerns post-commit external loss or
+filesystem corruption, and is not part of the crash-recovery authority fix. It
+is not promoted to P1 here.
 
 The acceptance chain remains independent and has no historical duration credit:
 
@@ -151,24 +215,31 @@ process exceeded canonical `TimeoutStopSec=90s` and systemd used SIGKILL. This
 was application-level inability to finish while a recovery worker remained
 outstanding; it was not Linux D-state or kernel-uninterruptible I/O.
 
-## Local startup-liveness correction
+## Startup-liveness correction status
 
-The local commit claims/results are:
+The implementation commit claims/results remain:
 
 - one periodic heartbeat remains active during `STARTING` recovery;
 - `STARTING` remains not-ready and collectors do not start before recovery;
 - stable exact `SEALED` Catalog+manifest identity uses metadata-only startup
   reconciliation, while crash-unstable states retain full validation;
-- recovery shutdown is cooperative and does not mark incomplete recovery as
-  complete or require SIGKILL;
+- recovery shutdown during `recover_storage()` is cooperative and does not mark
+  incomplete recovery as complete or require SIGKILL;
 - cancel/resume, long-recovery heartbeat, stable-sealed fast-path, and
   unstable-validation tests pass.
 
 Local validation recorded for this correction is focused `97 passed`; full
 suite `1361 passed, 24 skipped, 4 deselected`; Ruff, MyPy, M0 contracts, and
-Go Raw golden verification passed. These are local implementation evidence,
-not production acceptance. The commit has not received independent review,
-has not been merged, and has no deployment or duration credit.
+Go Raw golden verification passed. Independent targeted review completed with
+`REQUEST_CHANGES`, one P1, and one P2. These are implementation/review results,
+not production acceptance. The commit has not been merged, has no new artifact,
+and has no deployment or duration credit.
+
+The reviewed P1 means the implementation is not ready for PR creation. During
+the later VPS capacity-observation window, SIGTERM can still be followed by a
+capacity result that overwrites `STOPPING` with `RUNNING` and creates Collector
+tasks. The next code correction must close that race without broadening the
+historical fast-path scope.
 
 No Catalog schema, capacity policy, readiness threshold, or systemd timeout
 changed.
@@ -223,26 +294,125 @@ only a development interoperability verifier for published Parquet/Hive
 partitions, not Recorder's persistent database. SQLite Catalog is the Recorder
 metadata authority and does not store Raw market-event payloads.
 
-The operator is considering, as planning only, a larger shared VPS such as
-4 vCores/8 GB or 6 vCores/12 GB with expanded storage. Such a host could
-technically execute explicit normalization/replay/backfill, but co-running
-heavy offline work with the integrity-critical live path requires a separate
-topology/resource-isolation decision. This does not change the accepted
-deployment profile or ADRs. A future Gateway may coexist as a separate
-service/process, but must not be embedded into Recorder; it is not currently
-deployed or production-ready. During formal Recorder acceptance, unrelated
-co-resident workload should not be changed mid-chain because it would make the
-operational evidence harder to interpret.
+## Recorder infrastructure planning
+
+The preferred future direction is a dedicated Recorder VPS. Recorder is a
+durable system-of-record/data-capture service and does not need the same latency
+profile as Gateway. Separating the services reduces workload coupling and
+allows a cheaper Recorder-optimized host, while Gateway/Projection can later
+use a separate realtime-latency profile.
+
+```text
+Host A: BinanceMarketDataRecorder
+Host B: BinanceMarketDataGateway
+        -> Projection embedded
+        -> gRPC
+```
+
+Recorder and Gateway remain independent services and failure domains. This is
+infrastructure planning only and creates no runtime dependency or repository
+boundary change.
+
+Current candidate configurations are not production-certified:
+
+| Candidate | Current planning status |
+| --- | --- |
+| 4 vCPU / 8 GB RAM / 200 GB total NVMe | Preferred benchmark/deployment candidate; provides a more comfortable envelope if measurements support it |
+| 2 vCPU / 4 GB RAM / 200 GB total NVMe | Lower-cost conditional target; suitability must be proven by profiling, benchmarking, optimization, and long-running acceptance |
+
+The goal is to make `2c/4GB` potentially viable with sufficient headroom while
+keeping `4c/8GB` as the more comfortable option when evidence supports it. No
+CPU/RAM conclusion is stronger than measured evidence.
+
+The existing OVH VPS has approximately one month already paid. The near-term
+plan is therefore to use it for controlled deployment/testing work rather than
+waste the paid period, while evaluating lower-cost or better Recorder-only
+providers. Compare price, CPU quality, RAM, NVMe capacity/performance,
+network, reliability, and upgrade flexibility. A later migration, if chosen,
+must use a separately controlled procedure. If no materially better option is
+found, retain OVH and upgrade/expand it. No provider migration has been
+selected, and no OVH upgrade has occurred.
+
+### Storage sizing clarification
+
+`200 GB total NVMe` is not equivalent to the earlier planning recommendation
+of `approximately +200 GB additional usable capacity`. Exact usable capacity
+after migration or resize must be measured, and the capacity forecast must be
+rerun before any formal acceptance T0. Formal acceptance must not start unless
+the measured runway is sufficient.
+
+The existing forensic observations remain `FREE_BYTES=17,091,108,864`, a 10 GiB
+hard reserve, 146,864.466862 bytes/second over the selected six-hour sample,
+145,413.612664 bytes/second over 24 hours, and `EMERGENCY`, with approximately
+12 hours before reserve after capture resumes. The independent chain remains
+278 hours. Prior estimates remain approximately 140.63 GB additional usable
+capacity above reserve, 149.22 GB above the 18 GiB NORMAL threshold, and a
+conservative preference of approximately +200 GB additional usable capacity.
+
+## Future resource optimization
+
+Resource optimization is future work and is not part of the active M22.9
+corrective scope. Do not rewrite the Recorder speculatively. The evidence-driven
+order is:
+
+1. Correct algorithms and complexity.
+2. Production-equivalent profiling.
+3. Batch Raw encoding and writes.
+4. Reduce per-event Python allocation/object overhead.
+5. Measure and reduce unnecessary per-event instrumentation overhead.
+6. Investigate queue handoff only if profiling proves it significant.
+7. Add a bounded seal pipeline only if simpler hot-path improvements are insufficient.
+8. Consider clean-seal incremental stats/hash only with differential, fuzz, and
+   crash proof.
+9. Evaluate a narrow C++ native Raw data plane only if Python remains the
+   measured dominant bottleneck.
+10. Consider a full Go Recorder v2 only at a much later evidence gate.
+11. A full C++ Recorder rewrite is not recommended.
+
+Historical production evidence included approximately 338–675 USD-M
+`book_ticker` events/second, 195–261 Raw-writer events/second, approximately
+108% Recorder CPU, and significant receipt-queue accumulation. This shows
+insufficient headroom under at least one condition, not that Python is
+inherently incapable. The startup incident demonstrated that algorithmic
+complexity can dominate language choice: at least 221 GB of old startup
+processing over 66,354 chunks versus metadata-scale stable-`SEALED` recovery
+after the fast path. Optimize algorithms before considering a language rewrite.
+
+### M23 — Recorder Resource & Throughput Hardening
+
+`M23` is **PLANNED / AFTER M22.9** and must not begin before M22.9
+correctness/deployment/acceptance is closed unless separately authorized:
+
+- `M23.0` Baseline Profiling.
+- `M23.1` Low-risk hot-path optimization (`append_many`, batch encoding,
+  `writev`/bounded aggregate writes, duplicate metrics/timing reduction).
+- `M23.2` Allocation optimization only where profiling demonstrates value.
+- `M23.3` Bounded seal pipeline only if prior work lacks headroom, with heavier
+  crash/recovery review.
+- `M23.4` Clean-seal incremental writer stats/hash; crash-recovered partials
+  still receive full scan plus differential/fuzz/crash proof.
+- `M23.5` Native Raw engine decision gate; narrow C++ data plane only if the
+  measured Python bottleneck remains, preserving Raw v1 compatibility.
+- `M23.6` Go v2 decision only if Python orchestration remains materially
+  limiting and the hybrid design no longer justifies its complexity.
+
+Future M23 research targets are sustained capacity at least 2x the maximum
+observed production rate, non-monotonic receipt backlog, burst drain,
+zero-silent-loss and unchanged ordering/Raw/gap/crash semantics, meaningful
+CPU headroom, bounded memory, and no persistent ingest deficit during sealing.
+These are research targets, not M22.9 acceptance contracts.
 
 ## Exact next engineering sequence
 
-Resolve capacity before starting the formal duration chain. Then follow:
+Resolve capacity before starting the formal duration chain. The immediate
+engineering sequence is:
 
 ```text
-2e8525f local correction
- -> independent targeted review
- -> corrections if needed
- -> push / PR
+fix the targeted-review P1 STARTING/capacity stop race
+ -> focused validation
+ -> push correction
+ -> fresh targeted re-review
+ -> only when P0=0 and P1=0: create PR
  -> exact-head CI
  -> merge
  -> post-merge authority
