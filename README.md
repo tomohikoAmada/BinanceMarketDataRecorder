@@ -62,10 +62,8 @@
 
 原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
 该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
-PR #11的进一步修复后来进入M22.9 incident artifact；startup-liveness 技术候选
-为 `9c1df233…`，fresh targeted review 结果为 APPROVED_FOR_PR_CREATION
-（P0=0、P1=0、P2=1、P3=0），P1 已关闭，P2 保持非阻塞并延期；尚未构建新工件、运行新候选
-的 readiness 或部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复
+尚未部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
 M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
 handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。

@@ -117,11 +117,12 @@ but a retained manifest whose exact immutable identity already matches an
 ordinary local `SEALED` Catalog row uses metadata reconciliation instead of
 rehashing and decompressing all historical Raw on every restart. SIGTERM during
 `recover_storage()` is cooperatively observed between recovery units; the
-current unit finishes atomically and recovery remains incomplete. However,
-SIGTERM during the subsequent `STARTING` capacity observation still has a
-targeted-review P1: the returning `asyncio.to_thread()` observation can allow
-`STOPPING` to be overwritten by `RUNNING` and Collector construction. The full
-startup-stop contract is therefore not closed.
+current unit finishes atomically and recovery remains incomplete. After the
+VPS capacity observation returns, the `9c1df233` startup-promotion barrier
+re-checks the existing stop authority. A stop requested while capacity
+observation is outstanding cannot continue into Collector construction,
+`RUNNING`, or `SERVICE_STARTED`; the fresh targeted re-review closed this P1.
+This does not make M22.9 complete or Production Ready.
 
 This startup-liveness correction does not close M22.9 acceptance. Merge must be
 followed by a new exact artifact build and controlled deployment before any new
