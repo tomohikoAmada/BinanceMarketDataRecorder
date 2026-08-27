@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -48,6 +48,12 @@ class FakeClock:
 
     def boot_id(self) -> str:
         return self.boot_value
+
+
+class AdvancingClock(FakeClock):
+    def boottime_ns(self) -> int:
+        self.boot += 1
+        return self.boot
 
 
 class FakeManager:
@@ -217,6 +223,61 @@ def test_resume_keeps_original_t0_and_rejects_published_collision(tmp_path: Path
     assert resumed.t0_manifest_members == observer.t0_manifest_members
     with pytest.raises(AcceptanceError, match="collision"):
         _publish(observer.evidence_root, "stage-start.json", {"x": 1})
+
+
+def test_resume_restores_the_published_pre_t0_baseline_membership(tmp_path: Path) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-a", 1)])
+    observer.start()
+    baseline = dict(observer.t0_manifest_members or {})
+    reconnect = cast(dict[str, object], json.loads(
+        (observer.evidence_root / "stage-start.json").read_text(encoding="utf-8")
+    )["reconnect_summary"])
+    assert reconnect["baseline_manifest_members"] == baseline
+    clock.boot += 1
+    observer.sample()
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=observer.disk_usage,
+    )
+    assert resumed.t0_manifest_members == baseline
+
+
+def test_post_t0_seal_with_pre_t0_event_is_current_after_baseline_freeze(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    clock.utc = 2_000_000_000
+    sealed = False
+    original = observer._observation
+
+    def hooked(*args: Any, **kwargs: Any) -> tuple[dict[str, object], list[str]]:
+        nonlocal sealed
+        if not sealed:
+            with Catalog(layout.catalog) as catalog:
+                seal_chunk(
+                    layout,
+                    catalog,
+                    [usdm_envelope("conn-before", 1), usdm_envelope("conn-after", 2)],
+                )
+            sealed = True
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(observer, "_observation", hooked)
+    _path, _sha, start = observer.start()
+    assert observer.t0_manifest_members == {}
+    reconnect = cast(dict[str, object], start["reconnect_summary"])
+    assert reconnect["baseline_manifest_members"] == {}
+    assert start["result"] == "FAIL"
+    assert "UNMARKED_RECONNECT" in cast(list[object], start["blocking_findings"])
 
 
 def test_resume_rejects_continuation_not_bound_to_sample_inventory(tmp_path: Path) -> None:
@@ -603,6 +664,53 @@ def test_pre_t0_reconnect_sealed_after_t0_is_current_and_blocking(tmp_path: Path
     _path, _sha, sample = observer.sample()
     assert sample["result"] == "FAIL"
     assert "UNMARKED_RECONNECT" in cast(list[object], sample["blocking_findings"])
+
+
+def test_post_t0_intervening_manifest_prevents_historical_grandfathering(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("conn-before", 1)])
+    observer.start()
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [])
+        seal_chunk(layout, catalog, [usdm_envelope("conn-after", 2)])
+    clock.utc += 300 * 1_000_000_000
+    clock.boot += 300 * 1_000_000_000
+    _path, _sha, sample = observer.sample()
+    assert sample["result"] == "FAIL"
+    assert "UNMARKED_RECONNECT" in cast(list[object], sample["blocking_findings"])
+
+
+def test_advancing_boottime_generates_a_self_verifying_duration_chain(
+    tmp_path: Path,
+) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    clock = AdvancingClock()
+    observer.clock = clock
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+    _start_path, start_sha, start = observer.start()
+    assert start["observed_at_boottime_ns"] == observer.t0_boottime_ns
+    assert start["observed_at_utc_ns"] == observer.t0_utc_ns
+    for _ in range(24):
+        clock.utc += 300 * 1_000_000_000
+        clock.boot += 300 * 1_000_000_000
+        observer.sample()
+    clock.utc += 1
+    clock.boot += 1
+    final_path, _final_sha, final = observer.finalize()
+    assert final["result"] == "PASS_CANDIDATE"
+    assert final["stage_start_evidence_sha256"] == start_sha
+    verified, verified_sha = verify_completed_stage(
+        observer.evidence_root, observer.identity, expected_stage="2h"
+    )
+    assert verified["result"] == "PASS_CANDIDATE"
+    assert verified_sha == __import__("hashlib").sha256(final_path.read_bytes()).hexdigest()
+    prior, prior_sha = verify_prior_stage(final_path, observer.identity, "12h")
+    assert prior == verified
+    assert prior_sha == verified_sha
 
 
 def test_historical_manifest_byte_change_after_baseline_fails_closed(tmp_path: Path) -> None:

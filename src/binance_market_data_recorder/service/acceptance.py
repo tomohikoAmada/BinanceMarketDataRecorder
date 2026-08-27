@@ -24,6 +24,7 @@ from ..audit.reconnect_boundaries import (
     UNKNOWN,
     UNMARKED_RECONNECT,
     incremental_audit_data_root,
+    strict_manifest_inventory,
     validate_incremental_continuation,
 )
 from ..spool.seal import SealError
@@ -465,6 +466,38 @@ def _capacity(
     }
 
 
+def _manifest_members_from_inventory(inventory: object) -> dict[str, str]:
+    if not isinstance(inventory, dict):
+        raise AcceptanceError("Raw audit manifest inventory is malformed")
+    members = inventory.get("members")
+    if not isinstance(members, list):
+        raise AcceptanceError("Raw audit manifest inventory is malformed")
+    result: dict[str, str] = {}
+    for member in members:
+        if (
+            not isinstance(member, dict)
+            or not isinstance(member.get("path"), str)
+            or not isinstance(member.get("chunk_id"), str)
+            or member["path"] in result
+        ):
+            raise AcceptanceError("Raw audit manifest inventory member is malformed")
+        result[str(member["path"])] = _digest(
+            member.get("sha256"), "Raw manifest inventory digest"
+        )
+    return result
+
+
+def _manifest_members_from_evidence(value: object) -> dict[str, str]:
+    if not isinstance(value, dict):
+        raise AcceptanceError("stage baseline manifest membership is malformed")
+    result: dict[str, str] = {}
+    for path, digest in value.items():
+        if not isinstance(path, str) or path in result:
+            raise AcceptanceError("stage baseline manifest membership is malformed")
+        result[path] = _digest(digest, "stage baseline manifest digest")
+    return result
+
+
 @dataclass
 class AcceptanceObserver:
     stage: str
@@ -496,6 +529,13 @@ class AcceptanceObserver:
         _validate_stage(self.stage)
         _digest(self.prior_stage_sha256, "prior-stage evidence digest")
         self.evidence_root = _safe_evidence_root(self.evidence_root, self.data_root)
+
+    def _freeze_manifest_membership(self) -> dict[str, str]:
+        try:
+            _chunks, inventory = strict_manifest_inventory(self.data_root, deep_scan=False)
+        except (OSError, SealError, CatalogStateError, ValueError, RuntimeError) as exc:
+            raise AcceptanceError(f"strict Raw/manifest baseline inventory failed: {exc}") from exc
+        return _manifest_members_from_inventory(inventory)
 
     def _catalog_evidence(self, t0: int) -> tuple[dict[str, object], list[str]]:
         path = self.data_root / "state" / "catalog.sqlite"
@@ -592,7 +632,7 @@ class AcceptanceObserver:
         if len(current_members) != len(continuation_members):
             raise AcceptanceError("Raw audit manifest membership is malformed")
         if self.t0_manifest_members is None:
-            self.t0_manifest_members = dict(current_members)
+            raise AcceptanceError("baseline manifest membership is not frozen")
         self.reconnect_continuation = continuation
         summary = audit.get("summary")
         if not isinstance(summary, dict):
@@ -606,23 +646,20 @@ class AcceptanceObserver:
             if isinstance(item, dict)
         ]
         inventory = audit.get("manifest_inventory")
-        inventory_members = inventory.get("members") if isinstance(inventory, dict) else None
-        if not isinstance(inventory_members, list):
-            raise AcceptanceError("Raw audit manifest inventory is malformed")
+        inventory_members = _manifest_members_from_inventory(inventory)
         members_by_chunk: dict[str, tuple[str, str]] = {}
-        for member in inventory_members:
-            if (
-                not isinstance(member, dict)
-                or not isinstance(member.get("chunk_id"), str)
-                or not isinstance(member.get("path"), str)
-            ):
+        raw_inventory_members = inventory.get("members") if isinstance(inventory, dict) else None
+        if not isinstance(raw_inventory_members, list):
+            raise AcceptanceError("Raw audit manifest inventory is malformed")
+        for member in raw_inventory_members:
+            if not isinstance(member, dict) or not isinstance(member.get("chunk_id"), str):
                 raise AcceptanceError("Raw audit manifest inventory member is malformed")
             chunk_id = str(member["chunk_id"])
             if chunk_id in members_by_chunk:
                 raise AcceptanceError("Raw audit manifest inventory has duplicate chunk IDs")
             members_by_chunk[chunk_id] = (
                 str(member["path"]),
-                _digest(member.get("sha256"), "Raw manifest inventory digest"),
+                inventory_members[str(member["path"])],
             )
 
         def baseline_bound(transition: dict[str, object]) -> bool:
@@ -729,9 +766,16 @@ class AcceptanceObserver:
             "baseline_history": baseline_history,
             "current_transitions": current_transitions,
             "continuation": continuation,
+            "baseline_manifest_members": dict(self.t0_manifest_members or {}),
         }, findings
 
-    def _observation(self) -> tuple[dict[str, object], list[str]]:
+    def _observation(
+        self,
+        *,
+        observed_at_utc_ns: int | None = None,
+        observed_at_boottime_ns: int | None = None,
+        observed_boot_id: str | None = None,
+    ) -> tuple[dict[str, object], list[str]]:
         if (
             self.t0_utc_ns is None
             or self.t0_boottime_ns is None
@@ -740,9 +784,13 @@ class AcceptanceObserver:
             or self.frozen_service_instance_id is None
         ):
             raise AcceptanceError("stage T0 is not initialized")
-        now_utc = self.clock.utc_ns()
-        now_boot = self.clock.boottime_ns()
-        boot_id = self.clock.boot_id()
+        now_utc = self.clock.utc_ns() if observed_at_utc_ns is None else observed_at_utc_ns
+        now_boot = (
+            self.clock.boottime_ns()
+            if observed_at_boottime_ns is None
+            else observed_at_boottime_ns
+        )
+        boot_id = self.clock.boot_id() if observed_boot_id is None else observed_boot_id
         document = _empty_common(
             kind="stage-sample",
             stage=self.stage,
@@ -868,13 +916,21 @@ class AcceptanceObserver:
     def start(self) -> tuple[Path, str, dict[str, object]]:
         if self.t0_boottime_ns is not None:
             raise AcceptanceError("stage T0 is already initialized")
-        self.t0_utc_ns = self.clock.utc_ns()
-        self.t0_boottime_ns = self.clock.boottime_ns()
-        self.t0_boot_id = self.clock.boot_id()
+        self.t0_manifest_members = self._freeze_manifest_membership()
+        t0_utc_ns = self.clock.utc_ns()
+        t0_boottime_ns = self.clock.boottime_ns()
+        t0_boot_id = self.clock.boot_id()
+        self.t0_utc_ns = t0_utc_ns
+        self.t0_boottime_ns = t0_boottime_ns
+        self.t0_boot_id = t0_boot_id
         self.frozen_process = self.manager.process_incarnation()
         _state, self.frozen_service_instance_id = _state_instance(self.data_root)
         self.run_id = self.run_id or uuid4().hex
-        document, _ = self._observation()
+        document, _ = self._observation(
+            observed_at_utc_ns=t0_utc_ns,
+            observed_at_boottime_ns=t0_boottime_ns,
+            observed_boot_id=t0_boot_id,
+        )
         document["evidence_kind"] = "stage-start"
         document["stage_start_evidence_sha256"] = None
         path, digest = _publish(self.evidence_root, "stage-start.json", document)
@@ -990,6 +1046,11 @@ def _sample_chain(
     samples: list[dict[str, object]] = []
     last_continuation = _continuation_from(start)
     previous_members = cast(dict[str, str], last_continuation["manifest_members"])
+    baseline_members = _manifest_members_from_evidence(
+        cast(dict[str, object], start.get("reconnect_summary", {})).get(
+            "baseline_manifest_members"
+        )
+    )
     start_findings = start.get("blocking_findings")
     if not isinstance(start_findings, list) or any(
         not isinstance(item, str) for item in start_findings
@@ -1015,6 +1076,14 @@ def _sample_chain(
             raise AcceptanceError("sample predecessor digest is invalid")
         if sample.get("previous_sample_sha256") != expected_previous:
             raise AcceptanceError("sample hash chain is invalid")
+        sample_reconnect = sample.get("reconnect_summary")
+        sample_baseline = _manifest_members_from_evidence(
+            cast(dict[str, object], sample_reconnect).get("baseline_manifest_members")
+            if isinstance(sample_reconnect, dict)
+            else None
+        )
+        if sample_baseline != baseline_members:
+            raise AcceptanceError("sample baseline manifest membership changed")
         if (
             sample.get("boot_id") != start.get("boot_id")
             or sample.get("systemd_process_incarnation")
@@ -1273,6 +1342,11 @@ def resume_observer(
     prior_digest = _digest(
         start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
     )
+    baseline_members = _manifest_members_from_evidence(
+        cast(dict[str, object], start.get("reconnect_summary", {})).get(
+            "baseline_manifest_members"
+        )
+    )
     start_process = start.get("systemd_process_incarnation")
     if not isinstance(start_process, dict):
         raise AcceptanceError("stage-start process-incarnation evidence is malformed")
@@ -1317,9 +1391,7 @@ def resume_observer(
         frozen_process=start_process,
         frozen_service_instance_id=str(start.get("service_instance_id") or ""),
         stage_start_sha256=start_sha,
-        t0_manifest_members=dict(
-            cast(dict[str, str], continuation["manifest_members"])
-        ),
+        t0_manifest_members=baseline_members,
         ever_blocking_findings={str(item) for item in start_findings},
         reconnect_continuation=continuation,
         next_sample_ordinal=len(samples),
