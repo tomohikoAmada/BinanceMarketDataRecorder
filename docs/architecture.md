@@ -361,6 +361,19 @@ uncompressed `.partial` files are recoverable by forward scan. Compression is
 never applied in place. ADR-0010 freezes the exact byte layout, canonical CBOR
 profile, file names, checksum coverage, compression parameters, and fsync order.
 
+M23.4 removes only the redundant semantic scan for a normal live-owned clean
+writer. Before encoding, the writer copies all Raw semantics (including the
+mutable caller-owned `source_sequence`) into one private immutable snapshot;
+the exact canonical frame bytes and incremental statistics/transition delta
+come from that same snapshot. Exact bytes enter the SHA/verified-byte authority
+only after a complete write. Any write, evidence-commit, fsync, close, or
+post-write invariant failure permanently poisons that writer's clean evidence.
+After final fsync and close, one-shot memory-only evidence enters the same
+durable seal implementation, whose compression read consumes the source and
+whose decompressed byte count and SHA-256 must equal the evidence. General
+`seal_partial()` and every restart/recovery/unknown-partial path still perform a
+full Raw scan; no durable clean-evidence format or second seal protocol exists.
+
 ### State plane
 
 SQLite holds Catalog objects, state transitions, archive transactions,

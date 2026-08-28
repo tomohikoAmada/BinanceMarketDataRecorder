@@ -23,7 +23,9 @@ M21.4.11-R3.2/R3.3 将其分为两个阶段:
    提交给 seal_partial()。这覆盖了压缩/重命名与 Catalog SEALED 提交之间的
    崩溃窗口,并从 durable authority(SEALING intent + 未关闭 STARTED)派生
    fail-closed forced flags。
-4. reconcile_sealed():manifests/ 中的每个 manifest.json 与 Catalog
+4. SEALED source cleanup:若 Catalog SEALED 已提交但 source unlink 前崩溃,
+   retained active partial 重新通过 seal_partial() 全扫描并幂等完成删除。
+5. reconcile_sealed():manifests/ 中的每个 manifest.json 与 Catalog
    生命周期元数据交叉验证。已稳定提交的本地 SEALED chunk 只校验
    manifest/Catalog 不可变身份和 artifact 存在/大小,避免每次启动将
    全历史 Raw 隐式重做 bit-rot audit。若 Catalog 行缺失或仍显示
@@ -802,6 +804,31 @@ def recover_storage(
         actions.append(
             RecoveryAction(
                 partial_value,
+                "seal_completed_after_crash",
+                str(manifest["chunk_id"]),
+            )
+        )
+    # A SEALED row with a retained source is the sole crash boundary after the
+    # terminal Catalog commit but before unlink. Usually active/ is empty, so
+    # discover this from the small active set rather than walking all historical
+    # SEALED rows. Re-entering seal_partial remains full-scan and idempotent.
+    for partial_path in sorted(layout.active.glob("*.bmdr.partial")):
+        if _stop_requested(stop_requested):
+            return actions
+        with partial_path.open("rb", buffering=0) as source:
+            header, _header_bytes = decode_chunk_header(source)
+        chunk_id = str(header.chunk_id)
+        if catalog.state(chunk_id) is not ChunkState.SEALED:
+            continue
+        manifest = seal_partial(
+            partial_path,
+            layout=layout,
+            catalog=catalog,
+            forced_flags=_derived_seal_flags(partial_path, catalog, chunk_id),
+        )
+        actions.append(
+            RecoveryAction(
+                layout.relative(partial_path),
                 "seal_completed_after_crash",
                 str(manifest["chunk_id"]),
             )

@@ -1042,11 +1042,15 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
 
-### M23 — Recorder Resource & Throughput Hardening (future)
+### M23 — Recorder Resource & Throughput Hardening
 
-- **Status:** **PLANNED / AFTER M22.9**. M23 must not begin before active M22.9
-  correctness, deployment, and acceptance work is closed unless separately
-  authorized.
+- **Status:** **M23.4 IMPLEMENTED / READY FOR INDEPENDENT REVIEW UNDER SEPARATE
+  AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**. M23 ordinarily follows
+  M22.9, but M23.0/M23.0F production-equivalent profiling and an independent
+  architecture review separately authorized the M23.4 execution-order
+  override. M23.1 and M23.2 speculative work was skipped; M23.3 was not
+  required before M23.4. No deployment, VPS A/B test, or formal M22.9 stage is
+  part of this implementation milestone.
 - **Planning sequence:** M23.0 baseline profiling; M23.1 low-risk hot-path
   batching/write and instrumentation reduction; M23.2 allocation optimization;
   M23.3 bounded seal pipeline only if needed; M23.4 clean-seal incremental
@@ -1058,6 +1062,32 @@ mutation exists; those remain exclusively M22.4B scope.
   ordering, gap, and crash semantics. Future research may target sustained
   capacity at least 2x maximum observed production rate, but this is not an
   M22.9 acceptance contract.
+
+#### M23.4 — Incremental clean-seal evidence
+
+- **Scope:** A normal live-owned `RawChunkWriter` derives Raw SHA-256, verified
+  byte count, `ChunkStatistics`, and connection transitions from the same
+  private immutable semantic snapshot used to encode each exact frame. Only a
+  successfully written, final-fsynced, closed, non-poisoned writer can transfer
+  one-shot memory-only evidence into the shared durable seal implementation.
+  Compression consumption count plus decompressed byte count/SHA-256 remains
+  the post-close byte-integrity gate.
+- **Non-scope:** Raw/schema changes, Catalog migration, persisted clean
+  evidence, recovery redesign, asynchronous or concurrent sealing, queue/
+  compression tuning, M23.1/M23.2/M23.3, native code, deployment, VPS A/B, and
+  M22.9 acceptance.
+- **Compatibility:** `seal_partial()` always full-scans arbitrary partials;
+  startup/crash/recovered/poisoned/unknown partials retain scan authority. The
+  zero-record reconnect marker remains on `seal_partial()`. Raw v1, manifest,
+  Catalog schema, completeness/gap semantics, and the durable
+  ACTIVE/RECOVERED -> SEALING -> SEALED protocol are unchanged.
+- **Evidence:** Differential, bounded randomized, alias-mutation, header-parity,
+  poison/fault, source-corruption, scan-routing, reconnect, Raw golden, and
+  M22.9 regressions are recorded in
+  `docs/milestone_evidence/M23.4-incremental-clean-seal.md`.
+- **Rollback:** Revert the M23.4 implementation commit. Existing Raw partials,
+  sealed artifacts, manifests, and Catalog rows remain compatible and
+  recoverable by the unchanged scan-based authority.
 
 ### M21 -> M22 validation policy
 

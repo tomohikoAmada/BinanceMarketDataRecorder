@@ -1,9 +1,10 @@
 """Raw chunk 的经验证不可变密封与 manifest 提交。
 
-seal_partial() 实现 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
+seal_partial() 与 live clean-writer 入口共享 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
 按以下顺序执行:
 
-1. scan:验证所有帧,计算统计信息和解压 SHA-256。
+1. authority:任意/恢复 partial 由 scan 验证所有帧;正常 live-owned writer 使用
+   同一批已写 Raw 字节增量派生的一次性内存证据。
 2. SEALING 转换:在 Catalog 中记录意图(幂等键防重放)。
 3. compress:Zstd level 3 带 content-size 和 checksum,写入 sealed 目录中的
    .partial 文件,然后 fsync。
@@ -14,7 +15,7 @@ seal_partial() 实现 ACTIVE/RECOVERED -> SEALING -> SEALED 转换,
 7. SEALED 转换:提交到 Catalog,然后删除原始 .partial 并 fsync active 目录。
 
 仅在 Catalog SEALED 提交后删除 partial 源。此前的所有步骤是幂等的:
-若任何步骤失败且进程重启,恢复重新扫描 partial 并重试。已存在且解压哈希
+若任何步骤失败且进程重启,恢复重新扫描 partial 并重试。已存在且解压大小/哈希
 匹配的 sealed 文件被接受,无需重新压缩。
 
 当 capture_flags 包含 checksum_failure、mixed_sequence_type、orderbook_resync、
@@ -36,13 +37,17 @@ import re
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import zstandard
 
 from ..storage.catalog import Catalog, ChunkState
 from ..storage.layout import StorageLayout, fsync_directory
-from .format import ScanResult, scan_chunk
+from .evidence import _VerifiedChunkEvidence
+from .format import scan_chunk
+
+if TYPE_CHECKING:
+    from .writer import RawChunkWriter
 
 COMPRESSION_SCHEMA_VERSION = "zstd-frame.v1"
 MANIFEST_SCHEMA_VERSION = "raw-chunk-manifest.v1"
@@ -164,7 +169,7 @@ def _atomic_json(path: Path, document: dict[str, object]) -> None:
     fsync_directory(path.parent)
 
 
-def _compress(source_path: Path, target_partial: Path, source_size: int) -> None:
+def _compress(source_path: Path, target_partial: Path, source_size: int) -> tuple[int, int]:
     compressor = zstandard.ZstdCompressor(
         level=ZSTD_LEVEL,
         write_checksum=True,
@@ -178,15 +183,32 @@ def _compress(source_path: Path, target_partial: Path, source_size: int) -> None
             source_path.open("rb", buffering=0) as source,
             os.fdopen(descriptor, "wb", buffering=0, closefd=False) as target,
         ):
-            compressor.copy_stream(source, target, size=source_size)
+            try:
+                copied = compressor.copy_stream(source, target, size=source_size)
+            except zstandard.ZstdError as exc:
+                raise SealError(
+                    f"compressor source byte count/identity mismatch: {exc}"
+                ) from exc
             target.flush()
         os.fsync(descriptor)
+        stored_size = os.fstat(descriptor).st_size
     finally:
         os.close(descriptor)
+    if (
+        not isinstance(copied, tuple)
+        or len(copied) != 2
+        or not all(isinstance(value, int) for value in copied)
+    ):
+        raise SealError("compressor did not report byte counts")
+    source_bytes, stored_bytes = copied
+    if stored_bytes != stored_size:
+        raise SealError("compressor stored byte count mismatch")
+    return source_bytes, stored_bytes
 
 
-def _decompressed_sha256(path: Path) -> str:
+def _decompressed_identity(path: Path) -> tuple[int, str]:
     digest = hashlib.sha256()
+    byte_count = 0
     decompressor = zstandard.ZstdDecompressor()
     try:
         with (
@@ -195,9 +217,10 @@ def _decompressed_sha256(path: Path) -> str:
         ):
             while block := reader.read(READ_BUFFER_BYTES):
                 digest.update(block)
+                byte_count += len(block)
     except (OSError, zstandard.ZstdError) as exc:
         raise SealError(f"cannot validate compressed artifact {path}: {exc}") from exc
-    return digest.hexdigest()
+    return byte_count, digest.hexdigest()
 
 
 def _deployment_ids(flags: frozenset[str]) -> set[str]:
@@ -240,16 +263,14 @@ def _boundary_local_evidence_safe(
 
 
 def _manifest(
-    scan: ScanResult,
+    evidence: _VerifiedChunkEvidence,
     layout: StorageLayout,
     sealed: Path,
     *,
     recovery: dict[str, object] | None,
     forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
-    if scan.header is None or scan.uncompressed_sha256 is None:
-        raise SealError("clean header and hash required")
-    statistics = scan.statistics
+    statistics = evidence.statistics.mutable_copy()
     stored_sha256 = _sha256_file(sealed)
     stored_bytes = sealed.stat().st_size
     capture_flags = set(statistics.capture_flags)
@@ -259,7 +280,7 @@ def _manifest(
     if (
         len(statistics.connection_ids) > 1
         and not capture_flags & INCOMPLETE_FLAGS
-        and not _boundary_local_evidence_safe(scan.connection_transitions)
+        and not _boundary_local_evidence_safe(evidence.connection_transitions)
     ):
         # Defense in depth: a sealed chunk must never claim
         # gap=false/complete=true across a connection transition that lacks
@@ -271,14 +292,14 @@ def _manifest(
     sealed_at = time.time_ns()
     return {
         "capture_flags": sorted(capture_flags),
-        "chunk_id": str(scan.header.chunk_id),
-        "chunk_schema_version": scan.header.chunk_schema_version,
+        "chunk_id": str(evidence.header.chunk_id),
+        "chunk_schema_version": evidence.header.chunk_schema_version,
         # Zero-record boundary markers have no frame statistics, but their Raw
         # v1 header still carries authentic collector provenance.  Preserve
         # that header identity without fabricating connection/timestamp data.
         "collector_instance_ids": sorted(statistics.collector_instance_ids)
-        or [scan.header.collector_instance_id],
-        "collector_version": scan.header.collector_version,
+        or [evidence.header.collector_instance_id],
+        "collector_version": evidence.header.collector_version,
         "complete": complete,
         "compression": {
             "checksum": True,
@@ -289,8 +310,8 @@ def _manifest(
             "threads": 0,
         },
         "connection_ids": sorted(statistics.connection_ids),
-        "created_at_utc_ns": scan.header.created_at_utc_ns,
-        "envelope_schema_version": scan.header.envelope_schema_version,
+        "created_at_utc_ns": evidence.header.created_at_utc_ns,
+        "envelope_schema_version": evidence.header.envelope_schema_version,
         "exchange_time_ranges": {
             name: {"min": values[0], "max": values[1]}
             for name, values in sorted(statistics.exchange_time_ranges.items())
@@ -298,7 +319,7 @@ def _manifest(
         "fsync_completed_at_utc_ns": sealed_at,
         "gap": bool(capture_flags & {"sequence_gap", RECONNECT_GAP_FLAG}),
         "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
-        "market": scan.header.market,
+        "market": evidence.header.market,
         "overlap": "overlap" in capture_flags,
         "receive_monotonic_range_ns": {
             "min": statistics.receive_monotonic_min_ns,
@@ -317,10 +338,10 @@ def _manifest(
         "sequence_ranges": statistics.sequence_ranges(),
         "stored_bytes": stored_bytes,
         "stored_sha256": stored_sha256,
-        "stream": scan.header.stream,
-        "symbol": scan.header.symbol,
-        "uncompressed_bytes": scan.file_size,
-        "uncompressed_sha256": scan.uncompressed_sha256,
+        "stream": evidence.header.stream,
+        "symbol": evidence.header.symbol,
+        "uncompressed_bytes": evidence.file_size,
+        "uncompressed_sha256": evidence.uncompressed_sha256,
     }
 
 
@@ -368,31 +389,77 @@ def seal_partial(
     recovery reconstructs the required forced flags and the pending
     discontinuity from this evidence instead of sealing the partial
     complete=true.
+
+    This general/recovery entry always scans. Live-owned clean writers use the
+    private writer-bound entry below; callers cannot inject optional evidence
+    into this API.
     """
 
     scan = scan_chunk(path)
     if not scan.is_clean or scan.header is None or scan.uncompressed_sha256 is None:
         raise SealError(f"partial is not clean: {scan.issue}: {scan.detail}")
-    chunk_id = str(scan.header.chunk_id)
+    return _seal_verified(
+        _VerifiedChunkEvidence.from_scan(scan),
+        layout=layout,
+        catalog=catalog,
+        forced_flags=forced_flags,
+        seal_intent=seal_intent,
+    )
+
+
+def _seal_clean_writer(
+    writer: RawChunkWriter,
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    forced_flags: frozenset[str] = frozenset(),
+    seal_intent: Mapping[str, object] | None = None,
+) -> dict[str, object]:
+    """Consume one live writer's clean evidence and use the shared seal protocol."""
+
+    if writer.layout != layout or writer.catalog is not catalog:
+        raise ValueError("clean writer is not bound to this layout and Catalog")
+    verified = writer._take_clean_seal_evidence()
+    return _seal_verified(
+        verified,
+        layout=layout,
+        catalog=catalog,
+        forced_flags=forced_flags,
+        seal_intent=seal_intent,
+    )
+
+
+def _seal_verified(
+    verified: _VerifiedChunkEvidence,
+    *,
+    layout: StorageLayout,
+    catalog: Catalog,
+    forced_flags: frozenset[str],
+    seal_intent: Mapping[str, object] | None,
+) -> dict[str, object]:
+    """The one durable ACTIVE/RECOVERED -> SEALING -> SEALED protocol."""
+
+    path = verified.path
+    chunk_id = str(verified.header.chunk_id)
     current = catalog.state(chunk_id)
     if current is None:
         catalog.register_active(
             chunk_id=chunk_id,
             partial_path=layout.relative(path),
-            created_at_utc_ns=scan.header.created_at_utc_ns,
+            created_at_utc_ns=verified.header.created_at_utc_ns,
         )
         current = ChunkState.ACTIVE
     if current in {ChunkState.ACTIVE, ChunkState.RECOVERED}:
-        evidence: dict[str, object] = {
-            "verified_frames": scan.statistics.record_count,
+        transition_evidence: dict[str, object] = {
+            "verified_frames": verified.statistics.record_count,
         }
         if seal_intent is not None:
-            evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
+            transition_evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
         catalog.transition(
             chunk_id,
             ChunkState.SEALING,
             idempotency_key=f"sealing:{chunk_id}",
-            evidence=evidence,
+            evidence=transition_evidence,
         )
     elif current is ChunkState.SEALING and seal_intent is not None:
         # A previous seal attempt already made this chunk durable SEALING
@@ -404,29 +471,40 @@ def seal_partial(
         if prior is not None and (not isinstance(prior, dict) or dict(prior) != dict(seal_intent)):
             raise SealError("durable SEALING evidence conflicts with the requested seal intent")
 
-    sealed = layout.sealed / f"{scan.header.chunk_id.hex}.bmdr.zst"
+    sealed = layout.sealed / f"{verified.header.chunk_id.hex}.bmdr.zst"
     target_partial = sealed.with_suffix(sealed.suffix + ".partial")
     if sealed.exists():
-        if _decompressed_sha256(sealed) != scan.uncompressed_sha256:
+        decompressed_bytes, decompressed_sha256 = _decompressed_identity(sealed)
+        if (
+            decompressed_bytes != verified.file_size
+            or decompressed_sha256 != verified.uncompressed_sha256
+        ):
             raise SealError("existing sealed artifact does not match partial")
     else:
         if target_partial.exists():
             target_partial.unlink()
-        _compress(path, target_partial, scan.file_size)
-        if _decompressed_sha256(target_partial) != scan.uncompressed_sha256:
+        consumed_bytes, _stored_bytes = _compress(
+            path, target_partial, verified.file_size
+        )
+        if consumed_bytes != verified.file_size:
+            raise SealError("compressor source byte count mismatch")
+        decompressed_bytes, decompressed_sha256 = _decompressed_identity(target_partial)
+        if decompressed_bytes != verified.file_size:
+            raise SealError("compressed readback size mismatch")
+        if decompressed_sha256 != verified.uncompressed_sha256:
             raise SealError("compressed readback hash mismatch")
         os.replace(target_partial, sealed)
         fsync_directory(layout.sealed)
 
     recovery_evidence = catalog.latest_transition_evidence(chunk_id, ChunkState.RECOVERED)
     manifest_document = _manifest(
-        scan,
+        verified,
         layout,
         sealed,
         recovery=recovery_evidence,
         forced_flags=forced_flags,
     )
-    manifest_path = layout.manifests / f"{scan.header.chunk_id.hex}.manifest.json"
+    manifest_path = layout.manifests / f"{verified.header.chunk_id.hex}.manifest.json"
     if manifest_path.exists():
         _validate_existing_manifest(manifest_path, manifest_document)
         manifest_document = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -444,12 +522,12 @@ def seal_partial(
         fields={
             "manifest_path": layout.relative(manifest_path),
             "partial_path": None,
-            "record_count": scan.statistics.record_count,
+            "record_count": verified.statistics.record_count,
             "sealed_path": layout.relative(sealed),
             "stored_bytes": manifest_document["stored_bytes"],
             "stored_sha256": manifest_document["stored_sha256"],
-            "uncompressed_bytes": scan.file_size,
-            "uncompressed_sha256": scan.uncompressed_sha256,
+            "uncompressed_bytes": verified.file_size,
+            "uncompressed_sha256": verified.uncompressed_sha256,
         },
     )
     if path.exists():
@@ -532,11 +610,14 @@ def read_strict_manifest(path: Path, *, recorder_root: Path | None = None) -> di
 
 
 def validate_sealed_artifact(sealed: Path, manifest: dict[str, object]) -> None:
-    """Validate stored size/hash and decompressed logical Raw hash."""
+    """Validate stored and decompressed Raw byte identities."""
 
     if sealed.stat().st_size != manifest["stored_bytes"]:
         raise SealError("sealed size mismatch")
     if _sha256_file(sealed) != manifest["stored_sha256"]:
         raise SealError("sealed SHA-256 mismatch")
-    if _decompressed_sha256(sealed) != manifest["uncompressed_sha256"]:
+    decompressed_bytes, decompressed_sha256 = _decompressed_identity(sealed)
+    if decompressed_bytes != manifest["uncompressed_bytes"]:
+        raise SealError("sealed decompressed size mismatch")
+    if decompressed_sha256 != manifest["uncompressed_sha256"]:
         raise SealError("sealed decompressed SHA-256 mismatch")
