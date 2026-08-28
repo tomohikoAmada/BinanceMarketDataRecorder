@@ -63,6 +63,11 @@ memory-only and one-shot. Compression must consume the expected source byte
 count, and decompressed byte count/SHA-256 must match before publication.
 Poisoned, restarted, recovered, unknown, or otherwise non-live-owned partials
 always return to the Raw v1 full-scan authority.
+An ordinary `SEALED` Catalog row cannot by itself authorize deletion of a
+retained active Raw source: the sealed artifact must exist and pass full stored
+and decompressed identity validation, or recovery retains the active Raw and
+fails closed. Same-host archive successor cleanup remains bound to its exact
+transaction and never reverses archive lifecycle.
 
 M6 checkpoints are derived files below `data/checkpoints/`. They are written to
 an in-directory `.partial`, flushed and fsynced, atomically renamed, and then

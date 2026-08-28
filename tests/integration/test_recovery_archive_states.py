@@ -22,7 +22,10 @@ from binance_market_data_recorder.spool.recovery import (
     reconcile_sealed,
     recover_storage,
 )
-from binance_market_data_recorder.spool.seal import _seal_clean_writer
+from binance_market_data_recorder.spool.seal import (
+    _seal_clean_writer,
+    validate_sealed_artifact,
+)
 from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import (
     ArchiveState,
@@ -214,6 +217,95 @@ def _prepare_retained_active_source(
     return PreparedArchive(layout, target, (chunk_id,)), writer.path
 
 
+def test_sealed_missing_artifact_preserves_last_retained_raw(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    with Catalog(prepared.layout.catalog) as catalog:
+        row = catalog.chunk(chunk_id)
+        assert row is not None
+        sealed = prepared.layout.root / str(row["sealed_path"])
+        sealed.unlink()
+
+        with pytest.raises(
+            RecoveryConflictError,
+            match="RECOVERY_RETAINED_SOURCE_SEALED_ARTIFACT_MISSING",
+        ):
+            recover_storage(layout=prepared.layout, catalog=catalog)
+
+        assert retained.exists()
+        assert not sealed.exists()
+        assert catalog.state(chunk_id) is ChunkState.SEALED
+        assert catalog.archive_transaction_for_chunk(chunk_id) is None
+        assert catalog.remote_archive_transaction_for_chunk(chunk_id) is None
+
+
+def test_sealed_artifact_is_fully_validated_before_retained_source_delete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    with Catalog(prepared.layout.catalog) as catalog:
+        row = catalog.chunk(chunk_id)
+        assert row is not None
+        sealed = prepared.layout.root / str(row["sealed_path"])
+        operations: list[str] = []
+        real_validate = validate_sealed_artifact
+        real_unlink = Path.unlink
+
+        def tracked_validate(
+            selected: Path, manifest: dict[str, object]
+        ) -> None:
+            real_validate(selected, manifest)
+            if selected == sealed:
+                operations.append("sealed_validated")
+
+        def tracked_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+            if path == retained:
+                operations.append("retained_unlinked")
+            real_unlink(path, *args, **kwargs)
+
+        monkeypatch.setattr(
+            recovery_module, "validate_sealed_artifact", tracked_validate
+        )
+        monkeypatch.setattr(Path, "unlink", tracked_unlink)
+
+        actions = recover_storage(layout=prepared.layout, catalog=catalog)
+
+        assert operations == ["sealed_validated", "retained_unlinked"]
+        assert not retained.exists()
+        assert sealed.exists()
+        assert catalog.state(chunk_id) is ChunkState.SEALED
+        assert any(
+            action.action == "seal_completed_after_crash" for action in actions
+        )
+
+
+def test_sealed_corrupt_artifact_preserves_retained_raw(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    with Catalog(prepared.layout.catalog) as catalog:
+        row = catalog.chunk(chunk_id)
+        assert row is not None
+        sealed = prepared.layout.root / str(row["sealed_path"])
+        sealed.write_bytes(b"corrupt-sealed-artifact")
+
+        with pytest.raises(
+            RecoveryConflictError,
+            match="RECOVERY_RETAINED_SOURCE_SEALED_ARTIFACT_INVALID",
+        ):
+            recover_storage(layout=prepared.layout, catalog=catalog)
+
+        assert retained.exists()
+        assert sealed.exists()
+        assert catalog.state(chunk_id) is ChunkState.SEALED
+        assert catalog.archive_transaction_for_chunk(chunk_id) is None
+        assert catalog.remote_archive_transaction_for_chunk(chunk_id) is None
+
+
 def test_archive_copying_retained_active_source_converges_without_lifecycle_change(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -340,6 +432,8 @@ def test_retained_source_cleanup_rereads_archive_reservation_race(
         )
         original_snapshot = catalog.source_lifecycle_snapshot
         reserved = False
+        reserved_transaction: dict[str, object] | None = None
+        transition_count = catalog.transition_count(chunk_id)
 
         def racing_snapshot(
             selected_chunk_id: str,
@@ -348,7 +442,7 @@ def test_retained_source_cleanup_rereads_archive_reservation_race(
             dict[str, object] | None,
             dict[str, object] | None,
         ]:
-            nonlocal reserved
+            nonlocal reserved, reserved_transaction
             snapshot = original_snapshot(selected_chunk_id)
             row, transaction, remote = snapshot
             if (
@@ -360,19 +454,35 @@ def test_retained_source_cleanup_rereads_archive_reservation_race(
                 and remote is None
             ):
                 reserved = True
-                manager._reserve(row)
+                reserved_transaction = manager._reserve(row)
             return snapshot
 
         monkeypatch.setattr(catalog, "source_lifecycle_snapshot", racing_snapshot)
+        monkeypatch.setattr(
+            recovery_module,
+            "seal_partial",
+            lambda *args, **kwargs: pytest.fail(
+                "archive reservation must not re-enter the seal protocol"
+            ),
+        )
         actions = recover_storage(layout=prepared.layout, catalog=catalog)
         assert reserved is True
+        assert reserved_transaction is not None
         assert not retained.exists()
         assert any(
             action.action == "archive_retained_source_removed"
             for action in actions
         )
+        assert not any(
+            action.action == "seal_completed_after_crash" for action in actions
+        )
         assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        assert (
+            catalog.archive_transaction_for_chunk(chunk_id)
+            == reserved_transaction
+        )
         assert len(catalog.archive_transactions()) == 1
+        assert catalog.transition_count(chunk_id) == transition_count + 1
 
 
 def test_archive_successor_retained_source_requires_exact_raw_identity(

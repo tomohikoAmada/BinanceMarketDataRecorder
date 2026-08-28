@@ -353,7 +353,23 @@ def _cleanup_retained_source(
         else:
             return None
 
-        if current in _ARCHIVE_STATES_REQUIRING_SEALED_SOURCE or sealed.exists():
+        if current is ChunkState.SEALED:
+            # Catalog SEALED metadata does not replace the durable Raw artifact.
+            # Do not delete the retained source unless the ordinary local sealed
+            # artifact still exists and passes the complete stored/decompressed
+            # identity validation. Re-sealing here would race ArchiveManager's
+            # independent SEALED reservation and could attempt lifecycle reversal.
+            try:
+                validate_sealed_artifact(sealed, manifest)
+            except FileNotFoundError as exc:
+                raise RecoveryConflictError(
+                    "RECOVERY_RETAINED_SOURCE_SEALED_ARTIFACT_MISSING"
+                ) from exc
+            except (OSError, SealError) as exc:
+                raise RecoveryConflictError(
+                    "RECOVERY_RETAINED_SOURCE_SEALED_ARTIFACT_INVALID"
+                ) from exc
+        elif current in _ARCHIVE_STATES_REQUIRING_SEALED_SOURCE or sealed.exists():
             validate_sealed_artifact(sealed, manifest)
 
         latest_row, latest_transaction, latest_remote = (

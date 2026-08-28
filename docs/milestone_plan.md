@@ -1044,15 +1044,19 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-- **Status:** **M23.4 TWO P2 CORRECTIONS READY FOR TARGETED REREVIEW UNDER
-  SEPARATE AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**. Independent
-  review approved the core M23.4 architecture with `P0=0`, `P1=0`, `P2=2`,
-  and `P3=0`; both narrow P2 findings are corrected. M23 ordinarily follows
-  M22.9, but M23.0/M23.0F production-equivalent profiling and an independent
-  architecture review separately authorized the M23.4 execution-order
-  override. M23.1 and M23.2 speculative work was skipped; M23.3 was not
-  required before M23.4. No deployment, VPS A/B test, or formal M22.9 stage is
-  part of this implementation milestone.
+- **Status:** **M23.4 RETAINED-RAW P1 CORRECTION READY FOR TARGETED REREVIEW
+  UNDER SEPARATE AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**.
+  Targeted rereview confirmed both prior P2 corrections closed, then found one
+  new P1 in ordinary-`SEALED` retained-source cleanup: metadata could authorize
+  unlink after the sealed artifact disappeared. The narrow correction now
+  requires full sealed-artifact validation before that unlink and otherwise
+  retains the Raw source fail closed. Archive-successor convergence remains
+  unchanged. M23 ordinarily follows M22.9, but M23.0/M23.0F
+  production-equivalent profiling and an independent architecture review
+  separately authorized the M23.4 execution-order override. M23.1 and M23.2
+  speculative work was skipped; M23.3 was not required before M23.4. No
+  deployment, VPS A/B test, or formal M22.9 stage is part of this implementation
+  milestone.
 - **Planning sequence:** M23.0 baseline profiling; M23.1 low-risk hot-path
   batching/write and instrumentation reduction; M23.2 allocation optimization;
   M23.3 bounded seal pipeline only if needed; M23.4 clean-seal incremental
