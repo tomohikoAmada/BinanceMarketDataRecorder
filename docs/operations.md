@@ -9,6 +9,14 @@ gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
 client, and Catalog snapshot transfer are not production deployed or
 Production Ready.
 
+The current M22.9 state is consolidated in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
+24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
+Production Ready is NO. The technical candidate `9c1df233…` passed fresh
+targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
+the known P2 remains nonblocking and deferred. No new artifact, candidate
+readiness run, or deployment exists.
+
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
 [`ubuntu_rk3588_operations.md`](ubuntu_rk3588_operations.md). Ubuntu is an M20
@@ -101,6 +109,26 @@ binance-market-recorder --config /etc/binance-market-data-recorder/recorder.toml
 Stop/restart/uninstall are idempotent. SIGTERM drains/seals; uninstall retains
 configuration and all data. Logs are in journald.
 
+Startup publishes `STARTING` after the Catalog opens and keeps one periodic
+heartbeat active through recovery and the later `RUNNING` phase. Collectors are
+still constructed only after recovery completes. Recovery performs full
+payload validation for crash-unstable lifecycle states before advancing them,
+but a retained manifest whose exact immutable identity already matches an
+ordinary local `SEALED` Catalog row uses metadata reconciliation instead of
+rehashing and decompressing all historical Raw on every restart. SIGTERM during
+`recover_storage()` is cooperatively observed between recovery units; the
+current unit finishes atomically and recovery remains incomplete. After the
+VPS capacity observation returns, the `9c1df233` startup-promotion barrier
+re-checks the existing stop authority. A stop requested while capacity
+observation is outstanding cannot continue into Collector construction,
+`RUNNING`, or `SERVICE_STARTED`; the fresh targeted re-review closed this P1.
+This does not make M22.9 complete or Production Ready.
+
+This startup-liveness correction does not close M22.9 acceptance. Merge must be
+followed by a new exact artifact build and controlled deployment before any new
+acceptance window can begin; historical failed-deployment evidence remains
+historical.
+
 ## External storage
 
 Only an explicit project subdirectory may be registered:
@@ -157,6 +185,17 @@ stop and gap evidence, and exits zero so `Restart=on-failure` does not loop.
 Free space later released by a co-resident process is visible to the next
 observation but never restarts Recorder; an operator must explicitly start it
 after verifying free space is above 10 GiB.
+
+Current production forensic evidence places the stopped host in EMERGENCY:
+free bytes `17,091,108,864`, approximately 6.35 GB above the 10 GiB reserve,
+and observed net growth of roughly 145–147 kB/s, implying about 12.02 hours to
+the reserve if capture resumes. These are observations/planning estimates, not
+threshold or policy changes. The full 278-hour staged chain needs about
+140.63 GB additional usable capacity to finish just above reserve, or about
+149.22 GB to finish above the 18 GiB NORMAL threshold; +50 GB and +100 GB are
+insufficient, +150 GB is a near mathematical minimum, and approximately
++200 GB usable is the preferred planning recommendation. See the consolidated
+state document for derivation and deletion authority.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:
@@ -328,8 +367,9 @@ The final audit retained safe test Raw with authority `ABSENT` for M8-02,
 M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
 cleanup. M22.9 remained a separate exact-VPS staged acceptance. It later began,
-but the 24h result is INCOMPLETE after the R-054 Raw continuity defect; 72h is
-not eligible, and the locally corrected artifact has runtime credit zero.
+but the 24h result is INCOMPLETE after startup readiness failed; 72h is not
+eligible, and any artifact built from the local startup-liveness correction has
+runtime credit zero.
 
 ### 2h/12h/24h/72h/168h T0 independence
 

@@ -1,8 +1,10 @@
 # VPS Operations
 
 Status: M22.7B deployable substrate implemented and real-host validated on the
-recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. Production deployment
-and staged production validation are not claimed.
+recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. A successful production
+deployment and staged production validation are not claimed. The current M22.9 production
+service is STOPPED / NOT CAPTURING; see
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md).
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -15,15 +17,63 @@ The VPS runs only the integrity-critical live path:
 
 - Binance public Spot/USD-M acquisition;
 - Raw active/spool, sealing, and compression;
+- already-compressed Zstandard Raw (`.bmdr.zst`) and Raw manifests;
 - one live Catalog and startup/crash recovery;
 - gap, completeness, and provenance state;
-- metrics and structured status; and
+- order-book/checkpoint live derived state, metrics, capacity, and structured
+  status; and
 - support for local-client archive export.
 
 Full Normalize jobs, heavy Replay/analytical scans, and Historical Backfill run
 locally through offline execution profiles. They remain Recorder-owned
 capabilities in the same distribution. A co-resident unrelated service is not
 managed or inspected by Recorder.
+
+`normalize run` is explicit and offline/non-core; Collector callbacks do not
+run it. DuckDB is only a development interoperability verifier for published
+Parquet/Hive partitions, not the persistent Recorder database. SQLite Catalog
+is the Recorder metadata authority and does not store Raw market-event
+payloads. A larger VPS could technically host explicit offline work, but
+co-running it with the live path requires a separate topology/resource-
+isolation decision and does not change the accepted profile or ADRs. A future
+Gateway may coexist only as an independent service/process; it is not embedded,
+deployed, or production-ready.
+
+## Recorder-only VPS planning
+
+The preferred future direction is to run Recorder on its own VPS. Recorder is
+a durable system-of-record/data-capture service and does not require Gateway's
+latency profile. Separate hosts reduce workload coupling and permit a cheaper
+Recorder-optimized profile, while Gateway/Projection can use a separate
+realtime-latency profile:
+
+```text
+Host A: BinanceMarketDataRecorder
+Host B: BinanceMarketDataGateway -> embedded Projection -> gRPC
+```
+
+Recorder and Gateway remain independent services and failure domains; this is
+planning only and creates no runtime dependency. Current un-certified
+Recorder-only candidates are:
+
+- **4 vCPU / 8 GB RAM / 200 GB total NVMe:** preferred benchmark/deployment
+  candidate, if measurements support the envelope.
+- **2 vCPU / 4 GB RAM / 200 GB total NVMe:** lower-cost conditional target;
+  suitability requires profiling, optimization, benchmarking, and long-running
+  acceptance. It is not certified.
+
+The existing OVH VPS has approximately one month already paid. Use it for
+near-term controlled deployment/testing work while evaluating lower-cost
+dedicated Recorder providers. Compare price, CPU quality, RAM, NVMe
+capacity/performance, network, reliability, and upgrade flexibility. No
+provider migration is selected and no OVH upgrade has occurred; if no
+materially better option is found, retaining and expanding OVH remains the
+fallback. Any migration is a separate controlled procedure.
+
+`200 GB total NVMe` must not be confused with the earlier `approximately +200
+GB additional usable capacity` recommendation. Measure exact usable capacity
+after migration or resize and rerun the capacity forecast before formal
+acceptance T0. Do not start acceptance without sufficient measured runway.
 
 ## Network profile
 
@@ -195,10 +245,18 @@ principals, the operator performs this stopped sequence:
      deployment verify
    ```
 
-7. Explicitly start. Startup opens the Catalog, completes recovery, and takes
-   an immediate actual capacity observation before Collector construction. If
-   free space is <=10 GiB it records stop/gap evidence and exits cleanly without
-   starting collectors.
+7. Explicitly start. Startup opens the Catalog, publishes `STARTING`, and keeps
+   one heartbeat active while recovery runs. Ordinary local `SEALED` chunks
+   whose manifest and Catalog immutable identity already match take the
+   metadata-only startup path; crash-unstable states still require full payload
+   validation before lifecycle advancement. The intended sequence keeps
+   Collectors after recovery and capacity observation, but the subsequent
+   `STARTING` capacity-observation window still has the reviewed P1 race in
+   which a stop can be overwritten by `RUNNING` before Collector construction.
+   If free space is <=10 GiB it records stop/gap evidence and exits cleanly
+   without starting collectors. A stop requested during `recover_storage()` is
+   honored between atomic recovery units and does not claim recovery completion.
+   This returning-observation race must be corrected before PR creation.
 8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
    Preserve the JSON identity, verification, systemd-show, status, readiness,
    ownership, and journal evidence. A non-READY result rejects deployment.
@@ -213,6 +271,17 @@ actual free bytes above 10 GiB. Capacity
 WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
 safe observation may remain READY while exposing the degraded evidence.
 Process existence or `systemctl is-active` alone is never READY.
+
+The startup-liveness correction requires a newly frozen artifact and controlled
+deployment after merge. It does not itself complete M22.9 acceptance or transfer
+duration credit from any historical attempt.
+
+Capacity planning for the next acceptance is separate from the hardcoded
+capacity policy. At the observed production growth rate, the independent full
+2h+12h+24h+72h+168h chain (278 hours) needs approximately 140.63 GB above the
+reserve, or 149.22 GB to remain above the NORMAL threshold. +50 GB and +100 GB
+are insufficient; +150 GB leaves almost no margin; approximately +200 GB
+usable is preferred if reasonable. No unarchived Raw may be manually deleted.
 
 ## Stopped upgrade
 

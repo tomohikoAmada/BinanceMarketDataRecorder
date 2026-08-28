@@ -8,6 +8,16 @@ M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
 handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+
+M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；72小时不具备资格。
+历史 `553cb345…`/`e55dd1ac…` 部署证据保留，当前服务为 STOPPED / NOT
+CAPTURING。startup-liveness 技术候选 `9c1df233…` 已完成 fresh targeted
+re-review，结果为 APPROVED_FOR_PR_CREATION（P0=0、P1=0、P2=1、P3=0）；P1
+已关闭，P2 保持非阻塞并延期。尚未构建新工件、运行新候选的 readiness 或
+部署。完整事实见
+[`docs/CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md)。
+静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
 Ubuntu 24.04 LTS x86_64 VPS staged acceptance 已开始但未通过；不得描述为
 Production Ready。
 
@@ -31,16 +41,31 @@ A later deployed M21.4.11 artifact (`f659895…`) passed its independent formal
 subsequently discovered, making `ELIGIBLE_FOR_168H=false`; the 168h window did
 not run.
 
-The correction merged through PR #11 was later included in the M22.9 incident
-artifact. This task's additional continuity correction is NOT DEPLOYED, and a
-newly deployed corrected artifact must restart the full staged validation
-chain.
+The correction merged through PR #11 was later included in the historical
+M22.9 incident artifact. The separate startup-liveness technical candidate at
+`9c1df233…` is NOT DEPLOYED, and a newly built/deployed artifact must restart
+the full staged validation chain.
 
 ## M22.9 exact-VPS continuity status
 
 - `M22_9_24H_RESULT=INCOMPLETE`
 - `ELIGIBLE_FOR_72H=NO`
 - `PRODUCTION_READY=NO`
+- Current service state: STOPPED / NOT CAPTURING; `MainPID=0`, zero production
+  writers, and zero active partials after rollback.
+- Root cause: a healthy approximately 17m50s startup recovery had only a
+  30-second stale-heartbeat allowance; SIGTERM also left the `to_thread`
+  recovery worker outstanding until systemd SIGKILL.
+- Technical candidate `9c1df233…` keeps one heartbeat active, preserves
+  not-ready STARTING, retains full validation for unstable states, adds
+  cooperative stop during `recover_storage()`, and prevents startup promotion
+  after a stop during the later capacity observation. Its fresh targeted
+  re-review closed the P1 with no P1 findings. It is not built, deployed, or
+  acceptance-tested.
+- P2 (nonblocking): a missing or size-mismatched already-stable local `SEALED`
+  artifact becomes `reconcile_failed` rather than forcing startup failure.
+  This is pre-existing post-commit external-loss/filesystem-corruption
+  behavior, not a crash-recovery-authority defect, and is not promoted to P1.
 - The incident artifact allowed fatal USD-M post-close handoff timeout to
   escape before durable gap intent, producing false-complete historical tails
   and an unmarked first post-restart frame.
@@ -232,7 +257,9 @@ part of M20; it is the M21 acceptance scope.
 ## Approved future architecture not yet implemented
 
 - The primary production target is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU,
-  4 GiB, 40 GB-class VPS. No VPS deployment or VPS staged acceptance exists.
+  4 GiB, 40 GB-class VPS. A historical M22.9 candidate deployment was
+  attempted and rolled back after readiness failure; the service is currently
+  stopped, and no current capture or restarted acceptance exists.
 - The VPS live path and local Offline Workspace execution-role split is
   approved, but heavy offline profiles are not yet separated operationally.
 - The local-client pull archive workflow, SSH transport seam, durable receipt,

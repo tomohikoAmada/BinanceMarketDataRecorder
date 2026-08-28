@@ -8,6 +8,7 @@ import os
 import shutil
 import signal
 import sys
+import threading
 import time
 from collections.abc import Callable, Mapping
 from contextlib import suppress
@@ -249,6 +250,7 @@ class ServiceRuntime:
         self.shutdown_reason: str | None = None
         self._status = "STARTING"
         self._stop: asyncio.Event | None = None
+        self._recovery_stop: threading.Event | None = None
         self._catalog: Catalog | None = None
         self._supervisor: MarketCollectorSupervisor | None = None
         self._collectors: Mapping[str, RuntimeCollector] = {}
@@ -270,6 +272,8 @@ class ServiceRuntime:
         self._status = "STOPPING"
         if self._stop is not None:
             self._stop.set()
+        if self._recovery_stop is not None:
+            self._recovery_stop.set()
         log_event(
             self.logger,
             logging.INFO,
@@ -451,12 +455,13 @@ class ServiceRuntime:
             if gap is not None:
                 self._record_sleep_gap(gap)
             await self._write_state()
-            try:
-                await asyncio.wait_for(
-                    stop.wait(), timeout=self.config.heartbeat_seconds
-                )
-            except TimeoutError:
-                continue
+            await self._wait_for_heartbeat_interval(stop)
+
+    async def _wait_for_heartbeat_interval(self, stop: asyncio.Event) -> None:
+        with suppress(TimeoutError):
+            await asyncio.wait_for(
+                stop.wait(), timeout=self.config.heartbeat_seconds
+            )
 
     def _observe_vps_capacity(self) -> dict[str, object]:
         profile = selected_capacity_profile(self.config.capacity_profile)
@@ -606,7 +611,9 @@ class ServiceRuntime:
     async def run(self) -> None:
         self.process_lock.acquire()
         stop = asyncio.Event()
+        recovery_stop = threading.Event()
         self._stop = stop
+        self._recovery_stop = recovery_stop
         loop = asyncio.get_running_loop()
         installed_signals = self._install_signal_handlers(loop)
 
@@ -629,16 +636,25 @@ class ServiceRuntime:
             self._catalog = Catalog(self.layout.catalog)
             self._catalog_open = True
             await self._write_state()
+            heartbeat_task = asyncio.create_task(self._heartbeat(stop))
+            await asyncio.sleep(0)
+            if recovery_stop.is_set():
+                return
             recovery_actions = await asyncio.to_thread(
                 recover_storage,
                 layout=self.layout,
                 catalog=self._catalog,
                 authority_path=self.authority_path,
+                stop_requested=recovery_stop.is_set,
             )
             self._recovery_action_count = len(recovery_actions)
+            if recovery_stop.is_set():
+                return
             self._startup_recovery_complete = True
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
                 capacity = await asyncio.to_thread(self._observe_vps_capacity)
+                if recovery_stop.is_set():
+                    return
                 if capacity["actual_hard_reserve_reached"] is True:
                     self.shutdown_reason = "HARD_RESERVE_SAFETY_STOP"
                     self._status = "STOPPING"
@@ -690,7 +706,6 @@ class ServiceRuntime:
             supervisor_task = asyncio.create_task(self._supervisor.run(stop))
             await asyncio.sleep(0)
             await self._write_state()
-            heartbeat_task = asyncio.create_task(self._heartbeat(stop))
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
                 capacity_task = asyncio.create_task(self._capacity_monitor(stop))
                 done, _pending = await asyncio.wait(
@@ -761,6 +776,7 @@ class ServiceRuntime:
             for selected in installed_signals:
                 loop.remove_signal_handler(selected)
             self._stop = None
+            self._recovery_stop = None
             self.process_lock.release()
 
 

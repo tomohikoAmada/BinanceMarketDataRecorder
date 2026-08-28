@@ -6,10 +6,15 @@ x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
 40 GB-class VPS. macOS Apple Silicon remains a development/local profile;
 Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
 profile. Exact-VPS staged acceptance began, but the M22.9 24-hour result is
-INCOMPLETE after a confirmed Raw continuity defect; the local correction is not
-deployed and the VPS is not production validated. The implemented system
+INCOMPLETE after a confirmed Raw continuity defect; the current service is
+STOPPED / NOT CAPTURING. Technical candidate `9c1df233…` passed fresh
+targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
+the known P2 remains nonblocking and deferred. No new artifact, candidate
+readiness run, or deployment exists.
+The implemented system
 remains subject to the deferred long-running reliability limitation in
-`docs/known_limitations.md`.
+`docs/known_limitations.md`. See the consolidated snapshot in
+`docs/CURRENT_PRODUCTION_STATE.md`.
 
 ## M19 recovery boundary
 
@@ -41,6 +46,13 @@ state, metrics/status, and support for local archive export. Normalize, heavy
 Replay/analytical scans, and Historical Backfill remain Recorder-owned
 capabilities but execute in local/offline profiles using the same distribution.
 This is an execution-role boundary, not a new repository or microservice.
+
+The preferred future infrastructure direction is a dedicated Recorder VPS,
+separate from a Gateway/Projection host. Recorder and Gateway remain
+independent services and failure domains: Recorder is optimized for durable
+capture, while Gateway may use a separate realtime-latency profile. This is
+planning only and does not create a runtime dependency or change the software
+boundary.
 
 The local Offline Workspace contains the Cold Archive, derived Normalized
 Dataset, separate Historical Archive, Catalog backups, and rebuildable Archive
