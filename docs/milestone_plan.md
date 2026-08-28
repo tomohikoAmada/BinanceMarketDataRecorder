@@ -1044,8 +1044,10 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-- **Status:** **M23.4 IMPLEMENTED / READY FOR INDEPENDENT REVIEW UNDER SEPARATE
-  AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**. M23 ordinarily follows
+- **Status:** **M23.4 TWO P2 CORRECTIONS READY FOR TARGETED REREVIEW UNDER
+  SEPARATE AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**. Independent
+  review approved the core M23.4 architecture with `P0=0`, `P1=0`, `P2=2`,
+  and `P3=0`; both narrow P2 findings are corrected. M23 ordinarily follows
   M22.9, but M23.0/M23.0F production-equivalent profiling and an independent
   architecture review separately authorized the M23.4 execution-order
   override. M23.1 and M23.2 speculative work was skipped; M23.3 was not

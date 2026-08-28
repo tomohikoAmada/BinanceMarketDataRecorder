@@ -23,8 +23,10 @@ M21.4.11-R3.2/R3.3 将其分为两个阶段:
    提交给 seal_partial()。这覆盖了压缩/重命名与 Catalog SEALED 提交之间的
    崩溃窗口,并从 durable authority(SEALING intent + 未关闭 STARTED)派生
    fail-closed forced flags。
-4. SEALED source cleanup:若 Catalog SEALED 已提交但 source unlink 前崩溃,
-   retained active partial 重新通过 seal_partial() 全扫描并幂等完成删除。
+4. retained source cleanup:若 Catalog SEALED 已提交但 source unlink 前崩溃,
+   retained active partial 仍完整扫描并与 Raw manifest、Catalog、sealed artifact
+   及任何已推进的 same-host archive transaction 做精确身份校验,然后只删除冗余
+   active source。Archive 生命周期不回退。
 5. reconcile_sealed():manifests/ 中的每个 manifest.json 与 Catalog
    生命周期元数据交叉验证。已稳定提交的本地 SEALED chunk 只校验
    manifest/Catalog 不可变身份和 artifact 存在/大小,避免每次启动将
@@ -60,7 +62,7 @@ from ..storage.catalog import (
     RemoteArchiveState,
 )
 from ..storage.layout import StorageLayout, fsync_directory
-from .format import ScanIssue, decode_chunk_header, scan_chunk
+from .format import ScanIssue, ScanResult, decode_chunk_header, scan_chunk
 from .legacy_reconnect import (
     LEGACY_CLASSIFICATION_FILENAME,
     LegacyClassificationAuthority,
@@ -94,6 +96,13 @@ _CHUNK_TO_ARCHIVE_STATE = {
     chunk_state: archive_state
     for archive_state, chunk_state in ARCHIVE_CHUNK_STATES.items()
 }
+_ARCHIVE_STATES_REQUIRING_SEALED_SOURCE = frozenset(
+    {
+        ChunkState.ARCHIVE_COPYING,
+        ChunkState.ARCHIVE_VERIFYING,
+        ChunkState.ARCHIVED_VERIFIED,
+    }
+)
 
 RecoveryStopPredicate = Callable[[], bool]
 
@@ -192,6 +201,191 @@ def _validate_archive_identity(
         raise RecoveryConflictError(
             "RECOVERY_ARCHIVE_TRANSACTION_IDENTITY_CONFLICT"
         )
+
+
+def _retained_source_sealed_path(
+    *, layout: StorageLayout, manifest: dict[str, object]
+) -> Path:
+    relative = Path(_required_text(manifest, "relative_path"))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_SEALED_PATH_INVALID")
+    sealed = layout.root / relative
+    if sealed.parent.resolve() != layout.sealed.resolve():
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_SEALED_PATH_INVALID")
+    return sealed
+
+
+def _validate_retained_source_file(
+    path: Path, scan: ScanResult
+) -> os.stat_result:
+    try:
+        status = os.lstat(path)
+    except OSError as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_RETAINED_SOURCE_UNAVAILABLE"
+        ) from exc
+    if not stat.S_ISREG(status.st_mode):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_NOT_REGULAR")
+    if status.st_size != scan.file_size:
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_SIZE_CHANGED")
+    if scan.uncompressed_sha256 is None or _sha256_file(path) != scan.uncompressed_sha256:
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_SHA256_CHANGED")
+    verified = os.lstat(path)
+    if (
+        verified.st_dev,
+        verified.st_ino,
+        verified.st_size,
+        verified.st_mtime_ns,
+    ) != (
+        status.st_dev,
+        status.st_ino,
+        status.st_size,
+        status.st_mtime_ns,
+    ):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_CHANGED_DURING_PROOF")
+    return verified
+
+
+def _archive_cleanup_authority(
+    transaction: dict[str, object] | None,
+) -> tuple[object, ...] | None:
+    if transaction is None:
+        return None
+    return tuple(
+        transaction.get(name)
+        for name in (
+            "transaction_id",
+            "chunk_id",
+            "state",
+            "market",
+            "stream",
+            "source_relative_path",
+            "source_manifest_relative_path",
+            "source_manifest_sha256",
+            "stored_bytes",
+            "stored_sha256",
+        )
+    )
+
+
+def _cleanup_retained_source(
+    *,
+    path: Path,
+    layout: StorageLayout,
+    catalog: Catalog,
+) -> ChunkState | None:
+    """Remove only an exact Raw duplicate already represented by durable authority.
+
+    The active source is freshly full-scanned. Raw size/SHA, header identity,
+    manifest, Catalog, sealed artifact (while required), and same-host archive
+    transaction must all agree. Catalog/archive state is read-only here; a
+    concurrent archive transition may advance but is never reversed.
+
+    ``None`` leaves the existing remote-owned SEALED path to its separate
+    recovery authority.
+    """
+
+    scan = scan_chunk(path)
+    if not scan.is_clean or scan.header is None or scan.uncompressed_sha256 is None:
+        raise RecoveryConflictError(
+            f"RECOVERY_RETAINED_SOURCE_NOT_CLEAN: {scan.issue}: {scan.detail}"
+        )
+    verified_status = _validate_retained_source_file(path, scan)
+    chunk_id = str(scan.header.chunk_id)
+    manifest_path = layout.manifests / f"{scan.header.chunk_id.hex}.manifest.json"
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RecoveryConflictError(
+            "RECOVERY_RETAINED_SOURCE_MANIFEST_UNAVAILABLE"
+        ) from exc
+    if not isinstance(manifest, dict):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_MANIFEST_INVALID")
+    if _required_text(manifest, "chunk_id") != chunk_id:
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_CHUNK_ID_CONFLICT")
+    expected_fields = _manifest_catalog_fields(
+        layout=layout,
+        manifest_path=manifest_path,
+        manifest=manifest,
+    )
+    if (
+        scan.file_size != expected_fields["uncompressed_bytes"]
+        or scan.uncompressed_sha256 != expected_fields["uncompressed_sha256"]
+    ):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_RAW_IDENTITY_CONFLICT")
+    header_identity = {
+        "chunk_schema_version": scan.header.chunk_schema_version,
+        "collector_version": scan.header.collector_version,
+        "created_at_utc_ns": scan.header.created_at_utc_ns,
+        "envelope_schema_version": scan.header.envelope_schema_version,
+        "market": scan.header.market,
+        "stream": scan.header.stream,
+        "symbol": scan.header.symbol,
+    }
+    if any(manifest.get(name) != value for name, value in header_identity.items()):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_HEADER_IDENTITY_CONFLICT")
+    sealed = _retained_source_sealed_path(layout=layout, manifest=manifest)
+
+    while True:
+        row, transaction, remote = catalog.source_lifecycle_snapshot(chunk_id)
+        if row is None:
+            return None
+        current = ChunkState(str(row["state"]))
+        if current is ChunkState.SEALED:
+            if transaction is not None:
+                raise RecoveryConflictError(
+                    "RECOVERY_SEALED_ARCHIVE_TRANSACTION_CONFLICT"
+                )
+            if remote is not None:
+                return None
+            _validate_catalog_identity(row, expected_fields)
+        elif current in _ARCHIVE_STATES:
+            if remote is not None:
+                raise RecoveryConflictError("RECOVERY_SAME_HOST_REMOTE_OVERLAP")
+            _validate_archive_identity(
+                row=row,
+                transaction=transaction,
+                manifest=manifest,
+                manifest_bytes=manifest_bytes,
+                expected_fields=expected_fields,
+            )
+        else:
+            return None
+
+        if current in _ARCHIVE_STATES_REQUIRING_SEALED_SOURCE or sealed.exists():
+            validate_sealed_artifact(sealed, manifest)
+
+        latest_row, latest_transaction, latest_remote = (
+            catalog.source_lifecycle_snapshot(chunk_id)
+        )
+        if latest_row is None:
+            raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_CATALOG_MISSING")
+        latest = ChunkState(str(latest_row["state"]))
+        if (
+            latest is current
+            and _archive_cleanup_authority(latest_transaction)
+            == _archive_cleanup_authority(transaction)
+            and latest_remote == remote
+        ):
+            break
+
+    final_status = _validate_retained_source_file(path, scan)
+    if (
+        final_status.st_dev,
+        final_status.st_ino,
+        final_status.st_size,
+        final_status.st_mtime_ns,
+    ) != (
+        verified_status.st_dev,
+        verified_status.st_ino,
+        verified_status.st_size,
+        verified_status.st_mtime_ns,
+    ):
+        raise RecoveryConflictError("RECOVERY_RETAINED_SOURCE_CHANGED_DURING_PROOF")
+    path.unlink()
+    fsync_directory(layout.active)
+    return current
 
 
 def _quarantine(
@@ -808,29 +1002,52 @@ def recover_storage(
                 str(manifest["chunk_id"]),
             )
         )
-    # A SEALED row with a retained source is the sole crash boundary after the
-    # terminal Catalog commit but before unlink. Usually active/ is empty, so
-    # discover this from the small active set rather than walking all historical
-    # SEALED rows. Re-entering seal_partial remains full-scan and idempotent.
+    # A retained source after the terminal SEALED commit is a physical duplicate,
+    # even when the independently running ArchiveManager has already advanced the
+    # chunk. Discover only from the small active set, then freshly full-scan and
+    # prove exact Raw/manifest/Catalog/artifact/archive identity before unlink.
+    # This cleanup never mutates the chunk or archive lifecycle.
     for partial_path in sorted(layout.active.glob("*.bmdr.partial")):
         if _stop_requested(stop_requested):
             return actions
         with partial_path.open("rb", buffering=0) as source:
             header, _header_bytes = decode_chunk_header(source)
         chunk_id = str(header.chunk_id)
-        if catalog.state(chunk_id) is not ChunkState.SEALED:
+        current = catalog.state(chunk_id)
+        if current is not ChunkState.SEALED and current not in _ARCHIVE_STATES:
             continue
-        manifest = seal_partial(
-            partial_path,
+        removed_from = _cleanup_retained_source(
+            path=partial_path,
             layout=layout,
             catalog=catalog,
-            forced_flags=_derived_seal_flags(partial_path, catalog, chunk_id),
         )
+        if removed_from is None:
+            # Remote ownership keeps physical ChunkState.SEALED and has a
+            # separate recovery model. Preserve the pre-existing path through
+            # the general full-scan seal authority rather than interpreting it
+            # as a same-host archive successor.
+            if catalog.state(chunk_id) is not ChunkState.SEALED:
+                continue
+            manifest = seal_partial(
+                partial_path,
+                layout=layout,
+                catalog=catalog,
+                forced_flags=_derived_seal_flags(partial_path, catalog, chunk_id),
+            )
+            detail = str(manifest["chunk_id"])
+            action = "seal_completed_after_crash"
+        else:
+            detail = chunk_id
+            action = (
+                "seal_completed_after_crash"
+                if removed_from is ChunkState.SEALED
+                else "archive_retained_source_removed"
+            )
         actions.append(
             RecoveryAction(
                 layout.relative(partial_path),
-                "seal_completed_after_crash",
-                str(manifest["chunk_id"]),
+                action,
+                detail,
             )
         )
     if _stop_requested(stop_requested):

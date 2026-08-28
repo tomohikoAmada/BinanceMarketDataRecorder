@@ -44,6 +44,7 @@ BYTE_ORDER_MARKER: Final = 0xFEFF
 CHUNK_SCHEMA_VERSION: Final = "raw-chunk.v1"
 ENVELOPE_SCHEMA_VERSION: Final = "event-envelope.v1"
 DEFAULT_MAX_FRAME_BYTES: Final = 16 * 1024 * 1024
+MAX_HEADER_BODY_BYTES: Final = 64 * 1024
 FIXED_HEADER = struct.Struct(">8sBBHIII")
 FRAME_PREFIX_WITHOUT_CRC = struct.Struct(">IHH")
 FRAME_PREFIX = struct.Struct(">IHHI")
@@ -318,6 +319,8 @@ def validate_chunk_header(header: ChunkHeader) -> None:
 def encode_chunk_header(header: ChunkHeader) -> bytes:
     validate_chunk_header(header)
     body = _canonical_cbor(header.canonical_mapping())
+    if len(body) > MAX_HEADER_BODY_BYTES:
+        raise ChunkFormatError("header exceeds 64 KiB")
     fixed_without_crc = struct.pack(
         ">8sBBHII",
         MAGIC,
@@ -344,7 +347,7 @@ def decode_chunk_header(source: BinaryIO) -> tuple[ChunkHeader, bytes]:
         raise ChunkFormatError("invalid byte-order marker")
     if flags != 0:
         raise ChunkFormatError("unsupported chunk flags")
-    if body_length > 64 * 1024:
+    if body_length > MAX_HEADER_BODY_BYTES:
         raise ChunkFormatError("header exceeds 64 KiB")
     body = _read_up_to(source, body_length)
     if len(body) != body_length:

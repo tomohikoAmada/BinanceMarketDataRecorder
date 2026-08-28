@@ -4,22 +4,35 @@ import hashlib
 import json
 import multiprocessing
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+from uuid import UUID
 
 import pytest
 
-from binance_market_data_recorder.archive import ArchiveError, ArchiveManager
+import binance_market_data_recorder.spool.recovery as recovery_module
+from binance_market_data_recorder.archive import (
+    ArchiveError,
+    ArchiveManager,
+    ArchiveTarget,
+)
 from binance_market_data_recorder.spool.recovery import (
     RecoveryConflictError,
     reconcile_sealed,
+    recover_storage,
 )
+from binance_market_data_recorder.spool.seal import _seal_clean_writer
+from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import (
     ArchiveState,
     Catalog,
     ChunkState,
 )
-from tests.archive_support import PreparedArchive, prepare_archive
+from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.macos import StorageRegistry, VolumeInfo
+from tests.archive_support import FixedVolumes, PreparedArchive, prepare_archive
+from tests.factories import event
 
 _FAULT_POINT = {
     ChunkState.ARCHIVE_COPYING: "after_reserve",
@@ -132,6 +145,273 @@ def _tree_bytes(root: Path) -> dict[str, bytes]:
         for path in sorted(root.rglob("*"))
         if path.is_file()
     }
+
+
+def _prepare_retained_active_source(
+    root: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[PreparedArchive, Path]:
+    layout = ensure_storage_layout(root / "internal")
+    mountpoint = root / "external-volume"
+    target_root = mountpoint / "QuantData" / "BinanceRecorder"
+    target_root.mkdir(parents=True)
+    volume = VolumeInfo(
+        disk_id="disk9s1",
+        volume_uuid="AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+        name="Test Archive",
+        filesystem_type="apfs",
+        mountpoint=mountpoint,
+        writable=True,
+        internal=False,
+        removable=True,
+        total_bytes=100 * 1024**3,
+        free_bytes=90 * 1024**3,
+        observed_at_utc_ns=1,
+    )
+    with Catalog(layout.catalog) as catalog:
+        registration = StorageRegistry(
+            catalog=catalog, volumes=FixedVolumes(volume)
+        ).register(target_root)
+        target_row = catalog.storage_targets()[0]
+        writer = RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            collector_instance_id="archive-retained-source-fixture",
+            collector_version="0.1.0+test",
+            durability_interval_seconds=0,
+            created_at_utc_ns=1_700_000_000_000_000_000,
+        )
+        writer.append(event(1, payload=b"retained-active-source"))
+        writer.close()
+        original_unlink = Path.unlink
+        injected = False
+
+        def fail_active_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+            nonlocal injected
+            if path == writer.path and not injected:
+                injected = True
+                raise OSError("injected retained active source")
+            original_unlink(path, *args, **kwargs)
+
+        with monkeypatch.context() as fault:
+            fault.setattr(Path, "unlink", fail_active_unlink)
+            with pytest.raises(OSError, match="injected retained active source"):
+                _seal_clean_writer(writer, layout=layout, catalog=catalog)
+        chunk_id = str(writer.header.chunk_id)
+        assert injected is True
+        assert catalog.state(chunk_id) is ChunkState.SEALED
+        assert writer.path.exists()
+
+    target = ArchiveTarget(
+        storage_id=str(registration["storage_id"]),
+        volume_uuid=volume.volume_uuid,
+        registered_relative_path=str(target_row["relative_path"]),
+        marker_nonce=str(target_row["marker_nonce"]),
+        root=target_root,
+    )
+    return PreparedArchive(layout, target, (chunk_id,)), writer.path
+
+
+def test_archive_copying_retained_active_source_converges_without_lifecycle_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    with Catalog(prepared.layout.catalog) as catalog:
+        manager = ArchiveManager(
+            layout=prepared.layout,
+            catalog=catalog,
+            target=prepared.target,
+        )
+
+        def stop_after_reserve(point: str, _path: Path | None) -> None:
+            if point == "after_reserve":
+                raise RuntimeError("reserved before retained-source recovery")
+
+        manager.fault_hook = stop_after_reserve
+        with pytest.raises(RuntimeError, match="reserved before"):
+            manager.run_once()
+        assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        transaction_before = catalog.archive_transaction_for_chunk(chunk_id)
+        assert transaction_before is not None
+        transaction_count = len(catalog.archive_transactions())
+        transition_count = catalog.transition_count(chunk_id)
+        sealed_before = _tree_bytes(prepared.layout.sealed)
+        manifests_before = _tree_bytes(prepared.layout.manifests)
+        external_before = _tree_bytes(prepared.target.root)
+
+        scans = 0
+        real_scan = cast(
+            Callable[[Path], Any],
+            recovery_module.__dict__["scan_chunk"],
+        )
+
+        def counted_scan(path: Path) -> Any:
+            nonlocal scans
+            if path == retained:
+                scans += 1
+            return real_scan(path)
+
+        monkeypatch.setattr(recovery_module, "scan_chunk", counted_scan)
+        first = recover_storage(layout=prepared.layout, catalog=catalog)
+        assert scans >= 2
+        assert not retained.exists()
+        assert any(
+            action.action == "archive_retained_source_removed"
+            for action in first
+        )
+        assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        assert catalog.archive_transaction_for_chunk(chunk_id) == transaction_before
+        assert len(catalog.archive_transactions()) == transaction_count
+        assert catalog.transition_count(chunk_id) == transition_count
+        assert _tree_bytes(prepared.layout.sealed) == sealed_before
+        assert _tree_bytes(prepared.layout.manifests) == manifests_before
+        assert _tree_bytes(prepared.target.root) == external_before
+
+        second = recover_storage(layout=prepared.layout, catalog=catalog)
+        assert not any(
+            action.action == "archive_retained_source_removed"
+            for action in second
+        )
+        assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        assert catalog.archive_transaction_for_chunk(chunk_id) == transaction_before
+        assert len(catalog.archive_transactions()) == transaction_count
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        ChunkState.ARCHIVE_VERIFYING,
+        ChunkState.ARCHIVED_VERIFIED,
+        ChunkState.LOCAL_DELETE_PENDING,
+        ChunkState.LOCAL_DELETED,
+    ],
+)
+def test_later_archive_states_remove_only_proven_retained_active_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    state: ChunkState,
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    _advance_to(prepared, state)
+    chunk_id = prepared.chunk_ids[0]
+    sealed_before = _tree_bytes(prepared.layout.sealed)
+    manifests_before = _tree_bytes(prepared.layout.manifests)
+    external_before = _tree_bytes(prepared.target.root)
+
+    with Catalog(prepared.layout.catalog) as catalog:
+        transaction_before = catalog.archive_transaction_for_chunk(chunk_id)
+        assert transaction_before is not None
+        transaction_count = len(catalog.archive_transactions())
+        transition_count = catalog.transition_count(chunk_id)
+        actions = recover_storage(layout=prepared.layout, catalog=catalog)
+        assert not retained.exists()
+        assert any(
+            action.action == "archive_retained_source_removed"
+            for action in actions
+        )
+        assert catalog.state(chunk_id) is state
+        assert catalog.archive_transaction_for_chunk(chunk_id) == transaction_before
+        assert len(catalog.archive_transactions()) == transaction_count
+        assert catalog.transition_count(chunk_id) == transition_count
+
+        recover_storage(layout=prepared.layout, catalog=catalog)
+        assert catalog.state(chunk_id) is state
+        assert catalog.archive_transaction_for_chunk(chunk_id) == transaction_before
+        assert len(catalog.archive_transactions()) == transaction_count
+
+    assert _tree_bytes(prepared.layout.sealed) == sealed_before
+    assert _tree_bytes(prepared.layout.manifests) == manifests_before
+    assert _tree_bytes(prepared.target.root) == external_before
+
+
+def test_retained_source_cleanup_rereads_archive_reservation_race(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    with Catalog(prepared.layout.catalog) as catalog:
+        manager = ArchiveManager(
+            layout=prepared.layout,
+            catalog=catalog,
+            target=prepared.target,
+        )
+        original_snapshot = catalog.source_lifecycle_snapshot
+        reserved = False
+
+        def racing_snapshot(
+            selected_chunk_id: str,
+        ) -> tuple[
+            dict[str, object] | None,
+            dict[str, object] | None,
+            dict[str, object] | None,
+        ]:
+            nonlocal reserved
+            snapshot = original_snapshot(selected_chunk_id)
+            row, transaction, remote = snapshot
+            if (
+                selected_chunk_id == chunk_id
+                and not reserved
+                and row is not None
+                and ChunkState(str(row["state"])) is ChunkState.SEALED
+                and transaction is None
+                and remote is None
+            ):
+                reserved = True
+                manager._reserve(row)
+            return snapshot
+
+        monkeypatch.setattr(catalog, "source_lifecycle_snapshot", racing_snapshot)
+        actions = recover_storage(layout=prepared.layout, catalog=catalog)
+        assert reserved is True
+        assert not retained.exists()
+        assert any(
+            action.action == "archive_retained_source_removed"
+            for action in actions
+        )
+        assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        assert len(catalog.archive_transactions()) == 1
+
+
+def test_archive_successor_retained_source_requires_exact_raw_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared, retained = _prepare_retained_active_source(tmp_path, monkeypatch)
+    chunk_id = prepared.chunk_ids[0]
+    _advance_to(prepared, ChunkState.ARCHIVE_COPYING)
+
+    alternate_layout = ensure_storage_layout(tmp_path / "alternate")
+    with Catalog(alternate_layout.catalog) as alternate_catalog:
+        alternate = RawChunkWriter(
+            layout=alternate_layout,
+            catalog=alternate_catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            collector_instance_id="archive-retained-source-fixture",
+            collector_version="0.1.0+test",
+            durability_interval_seconds=0,
+            chunk_id=UUID(chunk_id),
+            created_at_utc_ns=1_700_000_000_000_000_000,
+        )
+        alternate.append(event(2, payload=b"different-valid-raw-source"))
+        alternate.close()
+        retained.write_bytes(alternate.path.read_bytes())
+
+    with Catalog(prepared.layout.catalog) as catalog:
+        transaction_before = catalog.archive_transaction_for_chunk(chunk_id)
+        assert transaction_before is not None
+        with pytest.raises(
+            RecoveryConflictError,
+            match="RECOVERY_RETAINED_SOURCE_RAW_IDENTITY_CONFLICT",
+        ):
+            recover_storage(layout=prepared.layout, catalog=catalog)
+        assert retained.exists()
+        assert catalog.state(chunk_id) is ChunkState.ARCHIVE_COPYING
+        assert catalog.archive_transaction_for_chunk(chunk_id) == transaction_before
+        assert len(catalog.archive_transactions()) == 1
 
 
 @pytest.mark.parametrize(

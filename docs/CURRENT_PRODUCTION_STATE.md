@@ -377,8 +377,11 @@ conservative preference of approximately +200 GB additional usable capacity.
 ## Future resource optimization
 
 M23.4 clean-seal evidence is implemented locally under the separately
-authorized M23.0/M23.0F execution-order override and is ready for independent
-review. It is not deployed and is not part of formal M22.9 acceptance. Other
+authorized M23.0/M23.0F execution-order override. Independent review approved
+the core architecture with `P0=0`, `P1=0`, `P2=2`, and `P3=0`; the two narrow
+P2 corrections (Raw header 64-KiB parity and retained active-source convergence
+after same-host archive advance) are ready for targeted rereview. It is not
+deployed and is not part of formal M22.9 acceptance. Other
 resource optimization remains future work; do not rewrite the Recorder
 speculatively. The evidence-driven order is:
 
@@ -407,9 +410,10 @@ after the fast path. Optimize algorithms before considering a language rewrite.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-`M23.4` is **IMPLEMENTED LOCALLY / READY FOR INDEPENDENT REVIEW** under separate
-authorization. M23.1/M23.2 were skipped and M23.3 was not required first. The
-remaining M23 sequence ordinarily follows M22.9 unless separately authorized:
+`M23.4` is **IMPLEMENTED LOCALLY / TWO P2 CORRECTIONS READY FOR TARGETED
+REREVIEW** under separate authorization. M23.1/M23.2 were skipped and M23.3
+was not required first. The remaining M23 sequence ordinarily follows M22.9
+unless separately authorized:
 
 - `M23.0` Baseline Profiling.
 - `M23.1` Low-risk hot-path optimization (`append_many`, batch encoding,

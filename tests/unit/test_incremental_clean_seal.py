@@ -24,6 +24,7 @@ from binance_market_data_recorder.spool.format import (
     FORMAT_MINOR,
     FRAME_PREFIX,
     MAGIC,
+    MAX_HEADER_BODY_BYTES,
     ChunkFormatError,
     ChunkHeader,
     decode_chunk_header,
@@ -352,6 +353,66 @@ def test_header_supported_frame_bounds_have_encode_decode_parity(
     decoded, encoded = decode_chunk_header(io.BytesIO(encode_chunk_header(header)))
     assert decoded == header
     assert encoded == encode_chunk_header(header)
+
+
+def test_header_body_limit_is_one_exact_encode_decode_authority() -> None:
+    assert MAX_HEADER_BODY_BYTES == 64 * 1024
+    ordinary = ChunkHeader(
+        chunk_id=uuid4(),
+        created_at_utc_ns=1,
+        collector_instance_id="collector",
+        collector_version="version",
+        market="spot",
+        symbol="BTCUSDT",
+        stream="diff_depth",
+        max_frame_bytes=1024,
+    )
+    encoded = encode_chunk_header(ordinary)
+    decoded, decoded_bytes = decode_chunk_header(io.BytesIO(encoded))
+    assert decoded == ordinary
+    assert decoded_bytes == encoded
+
+    oversized = ChunkHeader(
+        **{
+            **ordinary.__dict__,
+            "collector_version": "v" * MAX_HEADER_BODY_BYTES,
+        }
+    )
+    assert (
+        len(cbor2.dumps(oversized.canonical_mapping(), canonical=True))
+        > MAX_HEADER_BODY_BYTES
+    )
+    with pytest.raises(ChunkFormatError, match="header exceeds 64 KiB"):
+        encode_chunk_header(oversized)
+
+    oversized_declaration = FIXED_HEADER.pack(
+        MAGIC,
+        FORMAT_MAJOR,
+        FORMAT_MINOR,
+        BYTE_ORDER_MARKER,
+        0,
+        MAX_HEADER_BODY_BYTES + 1,
+        0,
+    )
+    with pytest.raises(ChunkFormatError, match="header exceeds 64 KiB"):
+        decode_chunk_header(io.BytesIO(oversized_declaration))
+
+
+def test_oversized_header_cannot_create_clean_writer_evidence(tmp_path: Path) -> None:
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog, pytest.raises(
+        ChunkFormatError, match="header exceeds 64 KiB"
+    ):
+        RawChunkWriter(
+            layout=layout,
+            catalog=catalog,
+            market="spot",
+            symbol="BTCUSDT",
+            stream="diff_depth",
+            collector_instance_id="collector",
+            collector_version="v" * MAX_HEADER_BODY_BYTES,
+        )
+    assert list(layout.active.iterdir()) == []
 
 
 @pytest.mark.parametrize("failure", ["partial", "zero", "exception"])
