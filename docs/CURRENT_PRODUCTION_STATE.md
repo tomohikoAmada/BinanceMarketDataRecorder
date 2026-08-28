@@ -376,9 +376,17 @@ conservative preference of approximately +200 GB additional usable capacity.
 
 ## Future resource optimization
 
-Resource optimization is future work and is not part of the active M22.9
-corrective scope. Do not rewrite the Recorder speculatively. The evidence-driven
-order is:
+M23.4 clean-seal evidence is implemented locally under the separately
+authorized M23.0/M23.0F execution-order override. Independent review approved
+the core architecture with `P0=0`, `P1=0`, `P2=2`, and `P3=0`; the two narrow
+P2 corrections (Raw header 64-KiB parity and retained active-source convergence
+after same-host archive advance) were confirmed closed by targeted rereview.
+That rereview found one new ordinary-`SEALED` last-copy deletion P1 introduced
+by the first correction; the narrow fail-closed correction is ready for
+targeted rereview. It is not deployed and is not part of formal M22.9
+acceptance. Other
+resource optimization remains future work; do not rewrite the Recorder
+speculatively. The evidence-driven order is:
 
 1. Correct algorithms and complexity.
 2. Production-equivalent profiling.
@@ -405,8 +413,12 @@ after the fast path. Optimize algorithms before considering a language rewrite.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-`M23` is **PLANNED / AFTER M22.9** and must not begin before M22.9
-correctness/deployment/acceptance is closed unless separately authorized:
+`M23.4` is **IMPLEMENTED LOCALLY / RETAINED-RAW P1 CORRECTION READY FOR
+TARGETED REREVIEW** under separate authorization. Both prior P2 corrections
+were confirmed closed; ordinary `SEALED` cleanup now retains Raw unless the
+actual sealed artifact passes full validation. M23.1/M23.2 were skipped and
+M23.3 was not required first. The remaining M23 sequence ordinarily follows
+M22.9 unless separately authorized:
 
 - `M23.0` Baseline Profiling.
 - `M23.1` Low-risk hot-path optimization (`append_many`, batch encoding,
@@ -414,8 +426,9 @@ correctness/deployment/acceptance is closed unless separately authorized:
 - `M23.2` Allocation optimization only where profiling demonstrates value.
 - `M23.3` Bounded seal pipeline only if prior work lacks headroom, with heavier
   crash/recovery review.
-- `M23.4` Clean-seal incremental writer stats/hash; crash-recovered partials
-  still receive full scan plus differential/fuzz/crash proof.
+- `M23.4` Implemented: clean-seal incremental writer stats/hash; crash-recovered
+  partials still receive full scan, with differential/bounded-random/crash
+  proof. VPS A/B remains a separate future task.
 - `M23.5` Native Raw engine decision gate; narrow C++ data plane only if the
   measured Python bottleneck remains, preserving Raw v1 compatibility.
 - `M23.6` Go v2 decision only if Python orchestration remains materially

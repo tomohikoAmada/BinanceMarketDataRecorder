@@ -54,6 +54,21 @@ for the internal Raw lifecycle. M10 implements all archive states through
 Catalog paths are relative to the selected internal root, and SQLite stores
 chunk lifecycle metadata/transitions only—not market-event bodies.
 
+M23.4 does not change these states or their durable transition order. A normal
+live-owned writer may avoid a second full semantic scan only when its exact
+frame bytes, statistics, transitions, SHA-256, and verified byte count were
+incrementally committed from one private immutable snapshot per completely
+written frame, followed by successful final fsync and close. The evidence is
+memory-only and one-shot. Compression must consume the expected source byte
+count, and decompressed byte count/SHA-256 must match before publication.
+Poisoned, restarted, recovered, unknown, or otherwise non-live-owned partials
+always return to the Raw v1 full-scan authority.
+An ordinary `SEALED` Catalog row cannot by itself authorize deletion of a
+retained active Raw source: the sealed artifact must exist and pass full stored
+and decompressed identity validation, or recovery retains the active Raw and
+fails closed. Same-host archive successor cleanup remains bound to its exact
+transaction and never reverses archive lifecycle.
+
 M6 checkpoints are derived files below `data/checkpoints/`. They are written to
 an in-directory `.partial`, flushed and fsynced, atomically renamed, and then
 registered as metadata in Catalog. A checkpoint includes source Raw chunk

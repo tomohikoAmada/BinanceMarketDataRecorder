@@ -1353,7 +1353,7 @@ def test_actual_seal_failure_closes_writer_and_retains_recoverable_partial(
         def fail_seal(*_args: object, **_kwargs: object) -> Any:
             raise OSError("injected actual seal failure")
 
-        monkeypatch.setattr(stream_module, "seal_partial", fail_seal)
+        monkeypatch.setattr(stream_module, "_seal_clean_writer", fail_seal)
         try:
             with pytest.raises(OSError, match="actual seal"):
                 await collector.run(stop)

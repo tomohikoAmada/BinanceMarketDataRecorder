@@ -24,10 +24,11 @@ from __future__ import annotations
 import hashlib
 import io
 import struct
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Final
+from typing import BinaryIO, Final, Protocol
 from uuid import UUID
 
 import cbor2
@@ -43,6 +44,7 @@ BYTE_ORDER_MARKER: Final = 0xFEFF
 CHUNK_SCHEMA_VERSION: Final = "raw-chunk.v1"
 ENVELOPE_SCHEMA_VERSION: Final = "event-envelope.v1"
 DEFAULT_MAX_FRAME_BYTES: Final = 16 * 1024 * 1024
+MAX_HEADER_BODY_BYTES: Final = 64 * 1024
 FIXED_HEADER = struct.Struct(">8sBBHIII")
 FRAME_PREFIX_WITHOUT_CRC = struct.Struct(">IHH")
 FRAME_PREFIX = struct.Struct(">IHHI")
@@ -91,6 +93,42 @@ class ChunkHeader:
         }
 
 
+class _EnvelopeSemantics(Protocol):
+    """Read-only semantic surface shared by decoded and writer-owned envelopes."""
+
+    @property
+    def receive_time_utc_ns(self) -> int: ...
+
+    @property
+    def receive_monotonic_ns(self) -> int: ...
+
+    @property
+    def exchange_event_time(self) -> int | None: ...
+
+    @property
+    def exchange_transaction_time(self) -> int | None: ...
+
+    @property
+    def exchange_trade_time(self) -> int | None: ...
+
+    @property
+    def source_sequence(self) -> Mapping[str, int | str]: ...
+
+    @property
+    def connection_id(self) -> str: ...
+
+    @property
+    def collector_instance_id(self) -> str: ...
+
+    @property
+    def capture_flags(self) -> tuple[str, ...]: ...
+
+    @property
+    def raw_payload(self) -> bytes: ...
+
+    def canonical_mapping(self) -> dict[str, object]: ...
+
+
 @dataclass
 class ChunkStatistics:
     record_count: int = 0
@@ -104,7 +142,7 @@ class ChunkStatistics:
     collector_instance_ids: set[str] = field(default_factory=set)
     capture_flags: set[str] = field(default_factory=set)
 
-    def add(self, envelope: EventEnvelope) -> None:
+    def add(self, envelope: _EnvelopeSemantics) -> None:
         self.record_count += 1
         self.receive_time_utc_min_ns = _minimum(
             self.receive_time_utc_min_ns, envelope.receive_time_utc_ns
@@ -228,7 +266,7 @@ def _read_up_to(source: BinaryIO, length: int) -> bytes:
     return b"".join(blocks)
 
 
-def encode_envelope(envelope: EventEnvelope) -> bytes:
+def encode_envelope(envelope: _EnvelopeSemantics) -> bytes:
     return _canonical_cbor(envelope.canonical_mapping())
 
 
@@ -245,8 +283,44 @@ def decode_envelope(body: bytes) -> EventEnvelope:
         raise ChunkFormatError(f"invalid EventEnvelope: {exc}") from exc
 
 
+def validate_chunk_header(header: ChunkHeader) -> None:
+    """Validate the semantic Raw v1 header contract used by encoder and decoder."""
+
+    if not isinstance(header.chunk_id, UUID):
+        raise ChunkFormatError("chunk_id must be a UUID")
+    if header.chunk_schema_version != CHUNK_SCHEMA_VERSION:
+        raise ChunkFormatError("unsupported chunk schema")
+    if header.envelope_schema_version != ENVELOPE_SCHEMA_VERSION:
+        raise ChunkFormatError("unsupported envelope schema")
+    if (
+        not isinstance(header.created_at_utc_ns, int)
+        or isinstance(header.created_at_utc_ns, bool)
+        or header.created_at_utc_ns < 0
+    ):
+        raise ChunkFormatError("invalid created_at_utc_ns")
+    for name in (
+        "collector_instance_id",
+        "collector_version",
+        "market",
+        "stream",
+        "symbol",
+    ):
+        value = getattr(header, name)
+        if not isinstance(value, str) or not value:
+            raise ChunkFormatError(f"invalid {name}")
+    if (
+        not isinstance(header.max_frame_bytes, int)
+        or isinstance(header.max_frame_bytes, bool)
+        or not 1024 <= header.max_frame_bytes <= 64 * 1024 * 1024
+    ):
+        raise ChunkFormatError("max frame bytes outside supported bounds")
+
+
 def encode_chunk_header(header: ChunkHeader) -> bytes:
+    validate_chunk_header(header)
     body = _canonical_cbor(header.canonical_mapping())
+    if len(body) > MAX_HEADER_BODY_BYTES:
+        raise ChunkFormatError("header exceeds 64 KiB")
     fixed_without_crc = struct.pack(
         ">8sBBHII",
         MAGIC,
@@ -273,7 +347,7 @@ def decode_chunk_header(source: BinaryIO) -> tuple[ChunkHeader, bytes]:
         raise ChunkFormatError("invalid byte-order marker")
     if flags != 0:
         raise ChunkFormatError("unsupported chunk flags")
-    if body_length > 64 * 1024:
+    if body_length > MAX_HEADER_BODY_BYTES:
         raise ChunkFormatError("header exceeds 64 KiB")
     body = _read_up_to(source, body_length)
     if len(body) != body_length:
@@ -309,39 +383,25 @@ def decode_chunk_header(source: BinaryIO) -> tuple[ChunkHeader, bytes]:
         chunk_id_bytes = value["chunk_id"]
         if not isinstance(chunk_id_bytes, bytes) or len(chunk_id_bytes) != 16:
             raise ChunkFormatError("chunk_id must contain 16 UUID bytes")
-        created_at = value["created_at_utc_ns"]
-        if not isinstance(created_at, int) or isinstance(created_at, bool) or created_at < 0:
-            raise ChunkFormatError("invalid created_at_utc_ns")
-        for text_field in (
-            "collector_instance_id",
-            "collector_version",
-            "market",
-            "stream",
-            "symbol",
-        ):
-            if not isinstance(value[text_field], str) or not value[text_field]:
-                raise ChunkFormatError(f"invalid {text_field}")
-        max_frame_bytes = value["max_frame_bytes"]
-        if not isinstance(max_frame_bytes, int) or isinstance(max_frame_bytes, bool):
-            raise ChunkFormatError("invalid max_frame_bytes")
-        if not 1024 <= max_frame_bytes <= 64 * 1024 * 1024:
-            raise ChunkFormatError("max_frame_bytes outside supported bounds")
         header = ChunkHeader(
             chunk_id=UUID(bytes=chunk_id_bytes),
-            created_at_utc_ns=created_at,
+            created_at_utc_ns=value["created_at_utc_ns"],
             collector_instance_id=value["collector_instance_id"],
             collector_version=value["collector_version"],
             market=value["market"],
             symbol=value["symbol"],
             stream=value["stream"],
-            max_frame_bytes=max_frame_bytes,
+            max_frame_bytes=value["max_frame_bytes"],
+            chunk_schema_version=value["chunk_schema_version"],
+            envelope_schema_version=value["envelope_schema_version"],
         )
+        validate_chunk_header(header)
     except (KeyError, TypeError, ValueError, cbor2.CBORDecodeError) as exc:
         raise ChunkFormatError(f"invalid chunk header: {exc}") from exc
     return header, fixed + body
 
 
-def encode_frame(envelope: EventEnvelope, *, max_frame_bytes: int) -> bytes:
+def encode_frame(envelope: _EnvelopeSemantics, *, max_frame_bytes: int) -> bytes:
     if len(envelope.raw_payload) > max_frame_bytes:
         raise ChunkFormatError(
             f"raw payload {len(envelope.raw_payload)} exceeds maximum {max_frame_bytes}"
