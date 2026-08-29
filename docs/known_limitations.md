@@ -15,6 +15,29 @@ historical cut, not the current candidate. Static review, unit tests, fault
 injection, and short online tests still do not substitute for long-running
 proof.
 
+### Frozen historical long-run notice
+
+The following notice is preserved verbatim because the Developer Preview
+documentation contract requires the same historical cut on all living
+surfaces. Its words such as “当前”, “尚未部署”, and its old staged-validation
+requirements describe that historical cut only. They are not current project or
+runtime authority.
+
+```text
+原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
+该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
+PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复
+尚未部署，新的修复工件必须从2h→12h→24h→72h→168h重新开始验收。
+M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
+handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
+静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
+当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+```
+
+The frozen notice above does not override the current authority in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+
 > **原始 M21.4 正式72小时窗口结果为 FAIL（数据完整性合同失败）**：
 > 该历史窗口的核心进程稳定性 PASS，但
 > 2026-08-07T14:08:24Z USD-M `book_ticker` 意外断线及 planned rotation
