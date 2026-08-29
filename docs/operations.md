@@ -9,13 +9,12 @@ gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
 client, and Catalog snapshot transfer are not production deployed or
 Production Ready.
 
-The current M22.9 state is consolidated in
-[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
-24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
-Production Ready is NO. The technical candidate `9c1df233…` passed fresh
-targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
-the known P2 remains nonblocking and deferred. No new artifact, candidate
-readiness run, or deployment exists.
+Current operational authority is consolidated in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
+context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Source `e074d41a…` is
+deployed and passed the two-hour non-formal M23.4 validation. The next planned
+test is a four-hour non-formal burn-in. Formal M22.9 has not started for this
+candidate, and Production Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -186,16 +185,23 @@ Free space later released by a co-resident process is visible to the next
 observation but never restarts Recorder; an operator must explicitly start it
 after verifying free space is above 10 GiB.
 
-Current production forensic evidence places the stopped host in EMERGENCY:
-free bytes `17,091,108,864`, approximately 6.35 GB above the 10 GiB reserve,
-and observed net growth of roughly 145–147 kB/s, implying about 12.02 hours to
-the reserve if capture resumes. These are observations/planning estimates, not
-threshold or policy changes. The full 278-hour staged chain needs about
-140.63 GB additional usable capacity to finish just above reserve, or about
-149.22 GB to finish above the 18 GiB NORMAL threshold; +50 GB and +100 GB are
-insufficient, +150 GB is a near mathematical minimum, and approximately
-+200 GB usable is the preferred planning recommendation. See the consolidated
-state document for derivation and deletion authority.
+### Historical M22.9 stopped-host capacity snapshot
+
+At the historical M22.9 stopped-host incident cut, forensic evidence placed
+that host in EMERGENCY: free bytes were `17,091,108,864`, approximately 6.35 GB
+above the 10 GiB reserve, and observed net growth of roughly 145–147 kB/s
+implied about 12.02 hours to reserve if capture resumed. Planning at that cut
+estimated that the full 278-hour staged chain needed about 140.63 GB additional
+usable capacity to finish just above reserve, or about 149.22 GB to finish
+above the 18 GiB NORMAL threshold. These values are historical observations
+and planning estimates, not current runtime authority or policy constants.
+
+Capacity is a measured live property. Consult
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
+current capacity-precondition tooling before any formal M22.9 T0. Later
+measurements are also point-in-time evidence, not permanent runway. The current
+project next action remains the 4h non-formal burn-in, not the 278-hour formal
+chain or a capacity expansion action.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:
@@ -366,12 +372,13 @@ workspace; it is not a production deployment or long-run qualification.
 The final audit retained safe test Raw with authority `ABSENT` for M8-02,
 M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
-cleanup. M22.9 remained a separate exact-VPS staged acceptance. It later began,
-but the 24h result is INCOMPLETE after startup readiness failed; 72h is not
-eligible, and any artifact built from the local startup-liveness correction has
-runtime credit zero.
+cleanup. M22.9 remained a separate exact-VPS staged acceptance. A historical
+artifact later produced an incomplete 24h attempt after startup readiness
+failed. For current source `e074d41a…`, formal M22.9 has not started: a
+capacity precondition stopped before T0, so historical and non-formal runs have
+formal runtime credit zero.
 
-### 2h/12h/24h/72h/168h T0 independence
+### Formal 2h/12h/24h/72h/168h T0 independence
 
 Each validation window has its own T0, Target, and evidence root. A prior
 window's PASS does not automatically start the next window. Each window
@@ -380,9 +387,10 @@ The 24h window passed on process stability with corrective and contract
 forensic confirmation; **the formal 72h window FAILED on data integrity
 (reconnect boundaries seal without gap evidence; see
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`)**.
-The 168h window remains pending and is never started automatically. A new
-artifact must restart the full chain (2h→12h→24h→72h→168h) after review and
-deployment.
+The 168h window remains pending and is never started automatically. Current
+source is already deployed, but it must start a fresh formal chain
+(2h→12h→24h→72h→168h) only after complete-chain capacity is established.
+These stages are distinct from the current non-formal 4h/12h/24h/72h campaign.
 
 ### Formal evidence collection rules (24h corrective lessons, mandatory for 72h/168h)
 

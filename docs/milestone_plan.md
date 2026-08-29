@@ -1015,18 +1015,14 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **24H INCOMPLETE / NOT ELIGIBLE FOR 72H / PRODUCTION STOPPED /
-  NOT CAPTURING / PRODUCTION READY NO**. The historical candidate was built
-  from source `553cb345…` and frozen Wheel `e55dd1ac…`. Exact transfer and
-  static deployment identity passed, but operational readiness failed during
-  long startup recovery because the heartbeat became stale. The current
-  technical candidate is `9c1df233…`, titled `fix: prevent startup promotion
-  after stop`; its fresh targeted re-review recorded `P0=0`, `P1=0`, `P2=1`,
-  `P3=0`, `TARGETED_P1_CLOSED=YES`, and
-  `FINAL_VERDICT=APPROVED_FOR_PR_CREATION`. The known P2 remains nonblocking
-  and deferred. No new artifact is built, no readiness has run on this
-  candidate, and no deployment or acceptance window has started. See
-  `docs/CURRENT_PRODUCTION_STATE.md` and `docs/milestone_acceptance/M22.9.md`.
+- **Status:** **NOT STARTED FOR THE CURRENT CANDIDATE / PRODUCTION READY NO**.
+  Historical M22.9 incident and incomplete-stage evidence remains unchanged in
+  `docs/milestone_acceptance/M22.9.md`. The current deployed source is
+  `e074d41a…`. A precondition-only inspection found healthy service and durable
+  state but approximately `32.523064 h` of runway, insufficient for the
+  complete approximately 278-hour formal chain. It therefore stopped before
+  T0 with `INSUFFICIENT_MEASURED_CAPACITY_RUNWAY`; no formal root or acceptance
+  ID was created. This is not a formal-run failure.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,
@@ -1034,29 +1030,24 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Dependencies:** Accepted M22.8, exact M22 artifact, operator-authorized VPS
   deployment, and readiness evidence.
 - **Acceptance:** Every stage has its own T0, target, evidence root, and
-  independent review; no stage begins automatically. A future artifact built
-  after the local startup correction receives zero duration credit from the
-  historical attempt and must restart exact identity -> readiness -> 2h ->
-  12h -> 24h -> 72h -> 168h after a separately authorized deployment. The
-  independent full chain totals 278 hours; capacity must be resolved first.
+  independent review; no stage begins automatically. The current candidate
+  receives zero formal duration credit from historical or non-formal runs and
+  must execute exact identity -> readiness -> 2h -> 12h -> 24h -> 72h -> 168h
+  in a capacity-complete environment. The independent chain totals about
+  278 hours; capacity must be resolved before T0.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-- **Status:** **M23.4 RETAINED-RAW P1 CORRECTION READY FOR TARGETED REREVIEW
-  UNDER SEPARATE AUTHORIZATION; M22.9 FORMAL ACCEPTANCE NOT STARTED**.
-  Targeted rereview confirmed both prior P2 corrections closed, then found one
-  new P1 in ordinary-`SEALED` retained-source cleanup: metadata could authorize
-  unlink after the sealed artifact disappeared. The narrow correction now
-  requires full sealed-artifact validation before that unlink and otherwise
-  retains the Raw source fail closed. Archive-successor convergence remains
-  unchanged. M23 ordinarily follows M22.9, but M23.0/M23.0F
-  production-equivalent profiling and an independent architecture review
-  separately authorized the M23.4 execution-order override. M23.1 and M23.2
-  speculative work was skipped; M23.3 was not required before M23.4. No
-  deployment, VPS A/B test, or formal M22.9 stage is part of this implementation
-  milestone.
+- **Status:** **M23.4 COMPLETE / MERGED / DEPLOYED / 2H NON-FORMAL
+  POST-MERGE PASS; M22.9 NOT STARTED**. M23.0/M23.0F profiling and independent
+  architecture review authorized the execution-order override. Final M23.4
+  correctness review recorded P0/P1/P2/P3 all zero; PR #41 merged as
+  `e074d41a…`; post-merge CI passed; the two-hour production-equivalent VPS A/B
+  proved structural scan removal, runtime integrity, and material seal-latency
+  improvement. M23.1/M23.2 were skipped as speculative, and M23.3 was not
+  required before M23.4.
 - **Planning sequence:** M23.0 baseline profiling; M23.1 low-risk hot-path
   batching/write and instrumentation reduction; M23.2 allocation optimization;
   M23.3 bounded seal pipeline only if needed; M23.4 clean-seal incremental
@@ -1080,8 +1071,7 @@ mutation exists; those remain exclusively M22.4B scope.
   the post-close byte-integrity gate.
 - **Non-scope:** Raw/schema changes, Catalog migration, persisted clean
   evidence, recovery redesign, asynchronous or concurrent sealing, queue/
-  compression tuning, M23.1/M23.2/M23.3, native code, deployment, VPS A/B, and
-  M22.9 acceptance.
+  compression tuning, M23.1/M23.2/M23.3, native code, and M22.9 acceptance.
 - **Compatibility:** `seal_partial()` always full-scans arbitrary partials;
   startup/crash/recovered/poisoned/unknown partials retain scan authority. The
   zero-record reconnect marker remains on `seal_partial()`. Raw v1, manifest,
@@ -1089,11 +1079,30 @@ mutation exists; those remain exclusively M22.4B scope.
   ACTIVE/RECOVERED -> SEALING -> SEALED protocol are unchanged.
 - **Evidence:** Differential, bounded randomized, alias-mutation, header-parity,
   poison/fault, source-corruption, scan-routing, reconnect, Raw golden, and
-  M22.9 regressions are recorded in
+  M22.9 regressions plus post-merge two-hour VPS results are recorded in
   `docs/milestone_evidence/M23.4-incremental-clean-seal.md`.
 - **Rollback:** Revert the M23.4 implementation commit. Existing Raw partials,
   sealed artifacts, manifests, and Catalog rows remain compatible and
   recoverable by the unchanged scan-based authority.
+
+### Current progressive non-formal VPS validation
+
+- **Classification:** engineering validation/burn-in, not formal M22.9.
+- **Current checkpoint:** M23.4 two-hour post-merge run COMPLETE/PASS.
+- **Next:** four-hour non-formal burn-in on the same validated candidate unless
+  live health or identity has changed.
+- **Later approximate checkpoints:** 12h -> 24h -> 72h. Durations may change
+  when measurements justify it.
+- **Between independent runs:** freeze/hash evidence, analyze, optimize only on
+  measured need, then use a separately authorized consistency-safe retirement
+  or reset for disposable test data if space must be reclaimed. Never delete
+  Raw while Catalog/manifests still reference it.
+- **Decision after 72h:** use evidence to choose a longer burn-in, a measured
+  fix, or preparation of a capacity-complete formal M22.9 environment.
+
+The approximately 278-hour formal requirement is not the current next test.
+M23.5 is not next and remains an explicit native-code gate only if Python is
+again a measured bottleneck.
 
 ### M21 -> M22 validation policy
 

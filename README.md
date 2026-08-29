@@ -1,5 +1,23 @@
 # Binance Market Data Recorder
 
+> **Current authority (2026-08-29):** GitHub main
+> `e074d41a979af92b50bee880d6d55295ca65413d`; M23.4 is complete, merged,
+> deployed, and passed its two-hour non-formal post-merge VPS validation. The
+> current phase is progressive non-formal validation (4h next, then
+> approximately 12h/24h/72h). Formal M22.9 has not started, Production Ready is
+> NO, 278h is not the next test, and M23.5 is not authorized. Start with
+> [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md) and
+> [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md).
+
+## Historical status narrative (superseded as current authority)
+
+The status narrative below is retained to preserve the M21/M22.9 incident
+handoff as it was documented. It is historical, not current operational
+authority. Its claims that the VPS is stopped, corrections are local-only, or
+M23.4 is undeployed were superseded by the current authority above. Original
+evidence remains in `docs/milestone_evidence/` and
+`docs/milestone_acceptance/`.
+
 > **Mac Developer Preview / Ubuntu ARM64 Soak Candidate — `0.1.0a1`**
 >
 > **Production target:** Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd
@@ -101,6 +119,7 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 ## 目录
 
 - [安全声明](#安全声明)
+- [项目交接与当前权威](docs/PROJECT_HANDOFF.md)
 - [当前生产状态](docs/CURRENT_PRODUCTION_STATE.md)
 - [当前实现状态](#当前实现状态)
 - [已实现功能总览](#已实现功能总览)
@@ -154,9 +173,9 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | M22.9 exact-VPS 24h结果INCOMPLETE、72h不具备资格；本地修复未部署且须从 exact identity/readiness/2h→12h→24h→72h→168h 重新验收；历史M21结果保持原记录 |
-| 当前生产状态 | M22.9 24h INCOMPLETE; 72h不具备资格; VPS STOPPED/NOT CAPTURING; Production Ready=NO; 详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | Historical continuity tooling was merged/reviewed through PR #38; startup-liveness technical candidate `9c1df233…` is on `origin/fix/m22-9-startup-recovery-liveness` and fresh targeted-reviewed with APPROVED_FOR_PR_CREATION (P0=0, P1=0, P2=1, P3=0); no new artifact is built, no readiness has run on this candidate, and it is not deployed; new freeze and full staged chain required |
+| 长期验证 | M23.4 2h 非正式 post-merge VPS 验证 PASS；下一步 4h 非正式 burn-in，之后约 12h→24h→72h；正式 M22.9 尚未开始 |
+| 当前生产状态 | source `e074d41a…` 已部署并完成 2h 非正式验证；Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | M23.4 经 PR #41 合并，最终独立审查 P0/P1/P2/P3 全零，post-merge CI run `33174563501` 成功；正式 M22.9 T0 未开始 |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -187,7 +206,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | M20 已实现；M22.7B real-host gate通过 | `systemd install` CLI | system unit + journald | M22.9 24h INCOMPLETE；修复未部署 |
+| systemd 服务 | 已实现并运行当前候选 | `systemd install` CLI | system unit + journald | M23.4 2h 非正式验证 PASS；正式 M22.9 未开始 |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
@@ -1074,6 +1093,9 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - 在线测试是**显式 opt-in**，默认 CI 不依赖 Binance 网络。
 - Stress 测试从默认 suite 排除。
 - CI 使用 GitHub Actions (`offline-ci`)。
+- 当前工程验证按非正式 `2h（已通过）→ 4h（下一步）→ 约
+  12h → 24h → 72h` 渐进；每次先冻结证据，再按单独授权安全回收测试数据。
+- 正式 M22.9 的约 278h 完整链是后续容量门，不是当前下一项测试。
 
 ## 已知限制和非目标
 
@@ -1082,9 +1104,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 
 - **R-034（Open）**：官方 Global Spot bootstrap 文辞与 toolbox 示例冲突。
   代码使用 `lastUpdateId + 1`，不作官方纠正声明。
-- **R-035（Open）**：原始M21.4正式72h数据完整性FAIL；后续部署工件`f659895…`
-  72小时观测PASS但`ELIGIBLE_FOR_168H=false`；168h未运行。
-  24 小时连接轮换未经过重复长期验证。
+- **R-035（Open）**：当前候选仅完成 2h 非正式验证；4h/12h/24h/72h
+  渐进验证与正式 M22.9 均未完成，Production Ready 未授权。
 - **R-036（Open）**：USD-M 5 分钟统计在 Recorder 离线期间可能错过，
   超出保留窗口即不可恢复。
 

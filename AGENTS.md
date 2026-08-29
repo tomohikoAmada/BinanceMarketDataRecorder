@@ -40,8 +40,11 @@ depth snapshots, followed by defined USD-M auxiliary data. It keeps recoverable
 immutable raw payloads, deterministic replay metadata, explicit gap evidence,
 and verified archival across the approved VPS/local Offline Workspace boundary.
 
-The authoritative scope is `docs/project_contract.md`. The delivery sequence and
-acceptance gates are in `docs/milestone_plan.md`.
+The authoritative scope is `docs/project_contract.md`. Before current-state or
+milestone work, read `docs/PROJECT_HANDOFF.md` and
+`docs/CURRENT_PRODUCTION_STATE.md`; the delivery sequence and acceptance gates
+are in `docs/milestone_plan.md`. Historical evidence files preserve their own
+time-local status and must not be treated as current operational authority.
 
 ## Non-goals
 

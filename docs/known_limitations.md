@@ -1,5 +1,29 @@
 # Known Limitations
 
+Current source `e074d41a…` is deployed and M23.4 passed its two-hour
+non-formal post-merge VPS validation. The current limitation is duration:
+4h/12h/24h/72h progressive engineering validation remains, formal M22.9 has
+not started for this candidate, and Production Ready is NO. The M22.9
+precondition measured about 32.523 hours of runway, insufficient for the later
+approximately 278-hour complete formal chain. Current authority is in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+
+The M21/M22.9 narrative below is historical incident evidence. Claims within
+that narrative that a correction was local-only or undeployed describe that
+historical cut, not the current candidate. Static review, unit tests, fault
+injection, and short online tests still do not substitute for long-running
+proof.
+
+### Frozen historical long-run notice
+
+The following notice is preserved verbatim because the Developer Preview
+documentation contract requires the same historical cut on all living
+surfaces. Its words such as “当前”, “尚未部署”, and its old staged-validation
+requirements describe that historical cut only. They are not current project or
+runtime authority.
+
+```text
 原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。
 该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，因此168小时验收未运行。
 PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复
@@ -8,18 +32,11 @@ M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close
 handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；72小时不具备资格。
 静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
 当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
+```
 
-M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；72小时不具备资格。
-历史 `553cb345…`/`e55dd1ac…` 部署证据保留，当前服务为 STOPPED / NOT
-CAPTURING。startup-liveness 技术候选 `9c1df233…` 已完成 fresh targeted
-re-review，结果为 APPROVED_FOR_PR_CREATION（P0=0、P1=0、P2=1、P3=0）；P1
-已关闭，P2 保持非阻塞并延期。尚未构建新工件、运行新候选的 readiness 或
-部署。完整事实见
-[`docs/CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md)。
-静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。
-当前版本为Mac Developer Preview;Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;不得用于真实资金交易。
-Ubuntu 24.04 LTS x86_64 VPS staged acceptance 已开始但未通过；不得描述为
-Production Ready。
+The frozen notice above does not override the current authority in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
 > **原始 M21.4 正式72小时窗口结果为 FAIL（数据完整性合同失败）**：
 > 该历史窗口的核心进程稳定性 PASS，但
@@ -46,12 +63,12 @@ M22.9 incident artifact. The separate startup-liveness technical candidate at
 `9c1df233…` is NOT DEPLOYED, and a newly built/deployed artifact must restart
 the full staged validation chain.
 
-## M22.9 exact-VPS continuity status
+## Historical M22.9 exact-VPS continuity incident status
 
 - `M22_9_24H_RESULT=INCOMPLETE`
 - `ELIGIBLE_FOR_72H=NO`
 - `PRODUCTION_READY=NO`
-- Current service state: STOPPED / NOT CAPTURING; `MainPID=0`, zero production
+- Historical incident final state: STOPPED / NOT CAPTURING; `MainPID=0`, zero production
   writers, and zero active partials after rollback.
 - Root cause: a healthy approximately 17m50s startup recovery had only a
   30-second stale-heartbeat allowance; SIGTERM also left the `to_thread`
@@ -166,10 +183,9 @@ substitute for long-running proof.
 - No GUI, account API, API-key storage, order submission, strategy, factor,
   backtest, or trading engine exists.
 
-Before simulated or live trading work, complete a frozen-commit 168-hour run
-whose first 72 hours pass the stability gate, including repeated connection
-rotation and resource/backlog evidence. Such work is Future Work and is not
-part of M20; it is the M21 acceptance scope.
+Formal M22.9 and any later use decision still require the repository-owned full
+staged chain on a capacity-complete environment. The current next test is the
+4h non-formal burn-in, not the 278h chain.
 
 ### Additional M21.4 known limitations
 
@@ -184,7 +200,8 @@ part of M20; it is the M21 acceptance scope.
   machine, manifest-level `reconnect_gap`, seal defense) was later deployed
   as `f659895…`, which passed its own 72h observational gate; the further
   orphan-intent correction later entered the M22.9 incident artifact. The
-  additional R-054 continuity correction is local-only and NOT DEPLOYED.
+  additional R-054 continuity correction is now included in deployed current
+  source `e074d41a…`; longer non-formal and formal proof remains pending.
 - **Historical silent gaps are immutable**: the corrected boundary-local
   read-only audit (M21.4.11-R2/R3/R5, cutoff `1786349202047196027`,
   inventory 161,817 manifests) found 4,680 unmarked reconnect boundaries
@@ -257,9 +274,11 @@ part of M20; it is the M21 acceptance scope.
 ## Approved future architecture not yet implemented
 
 - The primary production target is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU,
-  4 GiB, 40 GB-class VPS. A historical M22.9 candidate deployment was
-  attempted and rolled back after readiness failure; the service is currently
-  stopped, and no current capture or restarted acceptance exists.
+  4 GiB, 40 GB-class VPS. At the historical M22.9 incident cut, that candidate
+  had been rolled back after readiness failure and the service was stopped.
+  This is incident provenance, not current runtime authority; see
+  [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+  [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md) for current project state.
 - The VPS live path and local Offline Workspace execution-role split is
   approved, but heavy offline profiles are not yet separated operationally.
 - The local-client pull archive workflow, SSH transport seam, durable receipt,

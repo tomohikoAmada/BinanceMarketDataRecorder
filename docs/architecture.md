@@ -5,15 +5,12 @@ deployment topology. The primary production target is Ubuntu 24.04 LTS
 x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
 40 GB-class VPS. macOS Apple Silicon remains a development/local profile;
 Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
-profile. Exact-VPS staged acceptance began, but the M22.9 24-hour result is
-INCOMPLETE after a confirmed Raw continuity defect; the current service is
-STOPPED / NOT CAPTURING. Technical candidate `9c1df233…` passed fresh
-targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
-the known P2 remains nonblocking and deferred. No new artifact, candidate
-readiness run, or deployment exists.
-The implemented system
-remains subject to the deferred long-running reliability limitation in
-`docs/known_limitations.md`. See the consolidated snapshot in
+profile. Current main `e074d41a…` is deployed on the VPS; M23.4 is complete and
+its two-hour non-formal post-merge validation passed. The project is now in
+progressive non-formal VPS validation, with 4h next. Formal M22.9 has not
+started for this candidate and Production Ready is not authorized. The
+implemented system remains subject to the deferred long-running reliability
+limits in `docs/known_limitations.md`. See `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`.
 
 ## M19 recovery boundary

@@ -1,10 +1,11 @@
 # VPS Operations
 
-Status: M22.7B deployable substrate implemented and real-host validated on the
-recorded Ubuntu 24.04.4 LTS x86_64/systemd 255.4 host. A successful production
-deployment and staged production validation are not claimed. The current M22.9 production
-service is STOPPED / NOT CAPTURING; see
-[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md).
+Status: M22.7B substrate is implemented and real-host validated. Current source
+`e074d41a…` is deployed and its two-hour non-formal M23.4 validation passed.
+The project is in progressive non-formal VPS validation (4h next); formal M22.9
+has not started for this candidate and Production Ready is not claimed. See
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -249,14 +250,14 @@ principals, the operator performs this stopped sequence:
    one heartbeat active while recovery runs. Ordinary local `SEALED` chunks
    whose manifest and Catalog immutable identity already match take the
    metadata-only startup path; crash-unstable states still require full payload
-   validation before lifecycle advancement. The intended sequence keeps
-   Collectors after recovery and capacity observation, but the subsequent
-   `STARTING` capacity-observation window still has the reviewed P1 race in
-   which a stop can be overwritten by `RUNNING` before Collector construction.
+   validation before lifecycle advancement. Collectors remain gated until
+   recovery and capacity observation complete. After capacity observation
+   returns, startup rechecks the existing stop/shutdown authority. A stop that
+   became authoritative while observation was outstanding must not be
+   overwritten by Collector construction or a later `RUNNING`/READY promotion.
    If free space is <=10 GiB it records stop/gap evidence and exits cleanly
    without starting collectors. A stop requested during `recover_storage()` is
    honored between atomic recovery units and does not claim recovery completion.
-   This returning-observation race must be corrected before PR creation.
 8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
    Preserve the JSON identity, verification, systemd-show, status, readiness,
    ownership, and journal evidence. A non-READY result rejects deployment.
@@ -272,16 +273,20 @@ WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
 safe observation may remain READY while exposing the degraded evidence.
 Process existence or `systemctl is-active` alone is never READY.
 
-The startup-liveness correction requires a newly frozen artifact and controlled
-deployment after merge. It does not itself complete M22.9 acceptance or transfer
-duration credit from any historical attempt.
+The historical returning-observation startup-liveness race is fixed. Its
+correction and the later M23.4 changes are included in current deployed source
+`e074d41a…`. Deployment and non-formal duration do not complete M22.9 or
+transfer formal duration credit from any historical attempt.
 
-Capacity planning for the next acceptance is separate from the hardcoded
-capacity policy. At the observed production growth rate, the independent full
-2h+12h+24h+72h+168h chain (278 hours) needs approximately 140.63 GB above the
-reserve, or 149.22 GB to remain above the NORMAL threshold. +50 GB and +100 GB
-are insufficient; +150 GB leaves almost no margin; approximately +200 GB
-usable is preferred if reasonable. No unarchived Raw may be manually deleted.
+Capacity planning for formal acceptance is separate from the hardcoded policy
+and from the current non-formal campaign. A later point-in-time precondition
+measurement found approximately 32.523 hours of runway, insufficient for the
+independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
+did not start.
+This is not the next test: 4h, then approximately 12h/24h/72h non-formal stages
+come first. Between independent non-formal runs, disposable test data may be
+retired only by a separately authorized consistency-safe procedure after
+evidence is frozen. No referenced or unarchived Raw may be manually deleted.
 
 ## Stopped upgrade
 
@@ -347,10 +352,11 @@ target, and evidence root. LAN Linux evidence does not substitute for VPS
 evidence, and no stage starts automatically. M22.8 is accepted only as
 isolated cross-machine failure evidence for fixed run
 `m22.8-20260822T041913Z-23f1fcc7` on `vps-b5bfe3f8`; its nine scenarios passed
-without touching production. M22.9 later began on the exact production domain,
-but its 24h result is INCOMPLETE after the R-054 Raw continuity defect; it is
-not eligible for 72h. The local correction is not deployed and receives no
-duration credit.
+without touching production. Historical M22.9 incident evidence includes an
+incomplete 24h attempt on an older artifact. For current source `e074d41a…`,
+formal M22.9 has not started: a precondition-only capacity check stopped before
+T0, created no acceptance root, and assigned no acceptance ID. Historical and
+non-formal runs provide no formal duration credit.
 
 The operator sequence is explicit and ordered:
 
