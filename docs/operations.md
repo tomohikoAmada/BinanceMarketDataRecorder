@@ -185,16 +185,23 @@ Free space later released by a co-resident process is visible to the next
 observation but never restarts Recorder; an operator must explicitly start it
 after verifying free space is above 10 GiB.
 
-Current production forensic evidence places the stopped host in EMERGENCY:
-free bytes `17,091,108,864`, approximately 6.35 GB above the 10 GiB reserve,
-and observed net growth of roughly 145–147 kB/s, implying about 12.02 hours to
-the reserve if capture resumes. These are observations/planning estimates, not
-threshold or policy changes. The full 278-hour staged chain needs about
-140.63 GB additional usable capacity to finish just above reserve, or about
-149.22 GB to finish above the 18 GiB NORMAL threshold; +50 GB and +100 GB are
-insufficient, +150 GB is a near mathematical minimum, and approximately
-+200 GB usable is the preferred planning recommendation. See the consolidated
-state document for derivation and deletion authority.
+### Historical M22.9 stopped-host capacity snapshot
+
+At the historical M22.9 stopped-host incident cut, forensic evidence placed
+that host in EMERGENCY: free bytes were `17,091,108,864`, approximately 6.35 GB
+above the 10 GiB reserve, and observed net growth of roughly 145–147 kB/s
+implied about 12.02 hours to reserve if capture resumed. Planning at that cut
+estimated that the full 278-hour staged chain needed about 140.63 GB additional
+usable capacity to finish just above reserve, or about 149.22 GB to finish
+above the 18 GiB NORMAL threshold. These values are historical observations
+and planning estimates, not current runtime authority or policy constants.
+
+Capacity is a measured live property. Consult
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
+current capacity-precondition tooling before any formal M22.9 T0. Later
+measurements are also point-in-time evidence, not permanent runway. The current
+project next action remains the 4h non-formal burn-in, not the 278-hour formal
+chain or a capacity expansion action.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:

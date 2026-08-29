@@ -251,9 +251,11 @@ staged chain on a capacity-complete environment. The current next test is the
 ## Approved future architecture not yet implemented
 
 - The primary production target is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU,
-  4 GiB, 40 GB-class VPS. A historical M22.9 candidate deployment was
-  attempted and rolled back after readiness failure; the service is currently
-  stopped, and no current capture or restarted acceptance exists.
+  4 GiB, 40 GB-class VPS. At the historical M22.9 incident cut, that candidate
+  had been rolled back after readiness failure and the service was stopped.
+  This is incident provenance, not current runtime authority; see
+  [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
+  [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md) for current project state.
 - The VPS live path and local Offline Workspace execution-role split is
   approved, but heavy offline profiles are not yet separated operationally.
 - The local-client pull archive workflow, SSH transport seam, durable receipt,

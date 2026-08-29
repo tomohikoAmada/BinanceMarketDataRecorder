@@ -250,14 +250,14 @@ principals, the operator performs this stopped sequence:
    one heartbeat active while recovery runs. Ordinary local `SEALED` chunks
    whose manifest and Catalog immutable identity already match take the
    metadata-only startup path; crash-unstable states still require full payload
-   validation before lifecycle advancement. The intended sequence keeps
-   Collectors after recovery and capacity observation, but the subsequent
-   `STARTING` capacity-observation window still has the reviewed P1 race in
-   which a stop can be overwritten by `RUNNING` before Collector construction.
+   validation before lifecycle advancement. Collectors remain gated until
+   recovery and capacity observation complete. After capacity observation
+   returns, startup rechecks the existing stop/shutdown authority. A stop that
+   became authoritative while observation was outstanding must not be
+   overwritten by Collector construction or a later `RUNNING`/READY promotion.
    If free space is <=10 GiB it records stop/gap evidence and exits cleanly
    without starting collectors. A stop requested during `recover_storage()` is
    honored between atomic recovery units and does not claim recovery completion.
-   This returning-observation race must be corrected before PR creation.
 8. Run `deployment readiness`; its fixed external deadline is 300 seconds.
    Preserve the JSON identity, verification, systemd-show, status, readiness,
    ownership, and journal evidence. A non-READY result rejects deployment.
@@ -273,14 +273,16 @@ WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
 safe observation may remain READY while exposing the degraded evidence.
 Process existence or `systemctl is-active` alone is never READY.
 
-The startup-liveness and later M23.4 corrections are included in the current
-deployed artifact. Deployment and non-formal duration do not complete M22.9 or
+The historical returning-observation startup-liveness race is fixed. Its
+correction and the later M23.4 changes are included in current deployed source
+`e074d41a…`. Deployment and non-formal duration do not complete M22.9 or
 transfer formal duration credit from any historical attempt.
 
 Capacity planning for formal acceptance is separate from the hardcoded policy
-and from the current non-formal campaign. A current precondition measurement
-found approximately 32.523 hours of runway, insufficient for the independent
-2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0 did not start.
+and from the current non-formal campaign. A later point-in-time precondition
+measurement found approximately 32.523 hours of runway, insufficient for the
+independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
+did not start.
 This is not the next test: 4h, then approximately 12h/24h/72h non-formal stages
 come first. Between independent non-formal runs, disposable test data may be
 retired only by a separately authorized consistency-safe procedure after
