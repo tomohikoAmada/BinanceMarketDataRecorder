@@ -9,13 +9,12 @@ gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
 client, and Catalog snapshot transfer are not production deployed or
 Production Ready.
 
-The current M22.9 state is consolidated in
-[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md): the historical
-24h result is INCOMPLETE, the service is STOPPED / NOT CAPTURING, and
-Production Ready is NO. The technical candidate `9c1df233…` passed fresh
-targeted re-review with `P0=0`, `P1=0`, `P2=1`, `P3=0`; the P1 is closed and
-the known P2 remains nonblocking and deferred. No new artifact, candidate
-readiness run, or deployment exists.
+Current operational authority is consolidated in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
+context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Source `e074d41a…` is
+deployed and passed the two-hour non-formal M23.4 validation. The next planned
+test is a four-hour non-formal burn-in. Formal M22.9 has not started for this
+candidate, and Production Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -366,12 +365,13 @@ workspace; it is not a production deployment or long-run qualification.
 The final audit retained safe test Raw with authority `ABSENT` for M8-02,
 M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
-cleanup. M22.9 remained a separate exact-VPS staged acceptance. It later began,
-but the 24h result is INCOMPLETE after startup readiness failed; 72h is not
-eligible, and any artifact built from the local startup-liveness correction has
-runtime credit zero.
+cleanup. M22.9 remained a separate exact-VPS staged acceptance. A historical
+artifact later produced an incomplete 24h attempt after startup readiness
+failed. For current source `e074d41a…`, formal M22.9 has not started: a
+capacity precondition stopped before T0, so historical and non-formal runs have
+formal runtime credit zero.
 
-### 2h/12h/24h/72h/168h T0 independence
+### Formal 2h/12h/24h/72h/168h T0 independence
 
 Each validation window has its own T0, Target, and evidence root. A prior
 window's PASS does not automatically start the next window. Each window
@@ -380,9 +380,10 @@ The 24h window passed on process stability with corrective and contract
 forensic confirmation; **the formal 72h window FAILED on data integrity
 (reconnect boundaries seal without gap evidence; see
 `docs/milestone_evidence/M21.4-72h-failure-and-reconnect-integrity.md`)**.
-The 168h window remains pending and is never started automatically. A new
-artifact must restart the full chain (2h→12h→24h→72h→168h) after review and
-deployment.
+The 168h window remains pending and is never started automatically. Current
+source is already deployed, but it must start a fresh formal chain
+(2h→12h→24h→72h→168h) only after complete-chain capacity is established.
+These stages are distinct from the current non-formal 4h/12h/24h/72h campaign.
 
 ### Formal evidence collection rules (24h corrective lessons, mandatory for 72h/168h)
 

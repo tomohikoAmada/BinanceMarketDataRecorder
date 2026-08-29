@@ -1,463 +1,170 @@
 # Current Production State
 
-This is the consolidated current-state handoff for M22.9. It records the
-historical production incident, the current source correction and review,
-infrastructure planning, VPS state, capacity evidence, and the exact path to a
-future acceptance run. It is
-documentation authority only; it does not authorize deployment, acceptance,
-or data deletion.
+This file is the concise operational authority for the current repository and
+VPS candidate. For project history, evidence boundaries, and takeover guidance,
+see [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Historical acceptance and
+incident records remain unchanged in `docs/milestone_acceptance/` and
+`docs/milestone_evidence/`.
 
 ## Status at a glance
 
 ```text
-M22_9_24H_RESULT=INCOMPLETE
-ELIGIBLE_FOR_72H=NO
+MAIN=e074d41a979af92b50bee880d6d55295ca65413d
+M23_4=COMPLETE
+M23_4_2H_POST_MERGE=PASS
+CURRENT_PHASE=PROGRESSIVE_NON_FORMAL_VPS_VALIDATION
+CURRENT_COMPLETED_DURATION=2h
+NEXT=4h_NON_FORMAL_BURN_IN
+FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-SERVICE=STOPPED / NOT CAPTURING
-FORMAL_ACCEPTANCE=NOT_RESTARTED
+M23_5=NOT_AUTHORIZED
 ```
 
-The reviewed executable/test candidate is commit
-`9c1df2333c911eb830a0f9a698ed5e42a1b78740`, titled
-`fix: prevent startup promotion after stop`, on branch
-`fix/m22-9-startup-recovery-liveness`. This technical candidate is followed by
-documentation-only alignment and does not change the reviewed executable/test
-candidate. A fresh independent targeted re-review approved PR creation with
-`FINAL_VERDICT=APPROVED_FOR_PR_CREATION` (`P0=0`, `P1=0`, `P2=1`, `P3=0`).
-No new artifact has been built, no readiness has been run on this candidate,
-and no deployment or acceptance window has started.
+This state was consolidated on 2026-08-29. It is documentation authority only:
+it does not authorize deployment, service restart, formal acceptance, profiling,
+or data retirement.
 
-## Historical first targeted review
+## Source, review, and deployment authority
 
-The following review authority and findings are historical and are not the
-current branch or review state.
-
-Review authority:
-
-```text
-MAIN_SHA=553cb345466bdb2e2444d7162dea337a480b1b17
-FEATURE_BRANCH_HEAD=7f1e71fdf1f6f73a8b8ca35d202216745f90d02c
-IMPLEMENTATION_COMMIT=2e8525f5df27a1b017890c172eae80db340cb901
-PR_EXISTS=NO
-P0_COUNT=0
-P1_COUNT=1
-P2_COUNT=1
-P3_COUNT=0
-FINAL_VERDICT=REQUEST_CHANGES
-SAFE_TO_CREATE_PR=NO
-SAFE_TO_MERGE_WITHOUT_CHANGES=NO
-```
-
-The review positively established:
-
-- `SINGLE_HEARTBEAT_OWNER_PROVEN=YES`;
-- `STABLE_SEALED_FAST_PATH_SAFE=YES`;
-- `STABLE_SEALED_DURABLE_AUTHORITY_SUFFICIENT=YES`;
-- `CRASH_UNSTABLE_FULL_VALIDATION_PRESERVED=YES`;
-- `CANCEL_RESUME_IDEMPOTENCE_PROVEN=YES`;
-- `NEW_CROSS_THREAD_CATALOG_RACE=NO`;
-- `READINESS_SEMANTICS_PRESERVED=YES`;
-- `STARTUP_COST_NO_LONGER_O_TOTAL_PAYLOAD=YES`;
-- `300S_ARCHITECTURALLY_PLAUSIBLE=YES`, but
-  `300S_PRODUCTION_TIMING_PROVEN=NO`.
-
-The review did not reject the stable-sealed fast-path architecture. The merge
-blocker is the following pre-existing-in-`553cb345` P1:
-
-```text
-recover_storage completes
- -> startup_recovery_complete=true
- -> await VPS capacity observation in asyncio.to_thread()
- -> SIGTERM/request_stop sets STOPPING and stop authorities
- -> capacity observation returns without a stop re-check
- -> collector_factory and supervisor creation
- -> status can become RUNNING and SERVICE_STARTED can be emitted
- -> Collector tasks can be created before eventual stop
-```
-
-This violates both `STOPPING must not transition back to RUNNING` and
-`Collectors must not start after an operator stop request during STARTING`.
-It was not introduced by `2e8525f`. The cooperative stop contract during
-`recover_storage()` itself remains implemented and tested, but the full
-startup-stop contract is not closed until this post-recovery capacity-window
-race is corrected and re-reviewed.
-
-The review also recorded one P2, nonblocking for the current startup-liveness
-architecture: a missing or size-mismatched already-stable local `SEALED`
-artifact becomes a `reconcile_failed` RecoveryAction rather than forcing
-startup failure. This is pre-existing, concerns post-commit external loss or
-filesystem corruption, and is not part of the crash-recovery authority fix. It
-is not promoted to P1 here.
-
-## Current technical candidate and fresh targeted re-review
-
-The latest technical correction is:
-
-```text
-TECHNICAL_CANDIDATE_HEAD=9c1df2333c911eb830a0f9a698ed5e42a1b78740
-LATEST_TECHNICAL_CORRECTION=fix: prevent startup promotion after stop
-P0_COUNT=0
-P1_COUNT=0
-P2_COUNT=1
-P3_COUNT=0
-TARGETED_P1_CLOSED=YES
-SAFE_TO_CREATE_PR=YES
-FINAL_VERDICT=APPROVED_FOR_PR_CREATION
-```
-
-The fresh review confirmed the post-capacity startup-promotion barrier,
-preserved the single heartbeat owner, recovery fast path, crash-unstable full
-validation, normal startup, and startup hard-reserve behavior. The known P2
-about missing or size-mismatched stable local `SEALED` artifacts remains
-nonblocking and intentionally deferred.
-
-The acceptance chain remains independent and has no historical duration credit:
-
-```text
-new exact source/artifact
- -> deployment
- -> exact deployment identity
- -> operational readiness
- -> formal acceptance identity
- -> formal acceptance readiness
- -> 2h -> 12h -> 24h -> 72h -> 168h
-```
-
-If all stages run independently, the staged duration total is **278 hours**.
-The historical M22.9 attempt does not restart or partially satisfy this chain.
-
-## Historical source and artifact freeze
-
-The final merged source before the newly discovered startup-liveness correction
-is historical incident evidence:
-
-| Item | Value |
+| Item | Current authority |
 | --- | --- |
-| Source Git SHA | `553cb345466bdb2e2444d7162dea337a480b1b17` |
-| Source tree SHA | `de131c02680be1fe1db04ef6a160b2ea1e62c593` |
-| CI run | `33059152748` — completed/success |
-| Frozen Wheel | `binance_market_data_recorder-0.1.0a1-py3-none-any.whl` |
-| Wheel SHA-256 | `e55dd1ac387390102b81adb0f24d16d225e6697bf5ecdf6edceac46e26a30f9c` |
+| GitHub `main` | `e074d41a979af92b50bee880d6d55295ca65413d` |
+| M23.4 merge | PR #41, merge commit above |
+| Post-merge CI | `offline-ci` run `33174563501`, completed/success |
+| M23.4 independent final review | approved; `P0=0`, `P1=0`, `P2=0`, `P3=0` |
+| Deployed source | `e074d41a979af92b50bee880d6d55295ca65413d` |
+| Deployed Wheel SHA-256 | `7dfef238514dbb3fc1ceb56e1b395eefbb8a85516bd4ffcf784daaf1260634a1` |
 | Production lock SHA-256 | `44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335` |
-| Freeze record SHA-256 | `5671e21dd8ac263abb0b51766863f74e13ab6e182c855b04d663118cda2c16aa` |
+| Production config SHA-256 | `5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb` |
+| systemd unit SHA-256 | `69f3c4c2c77a3e6fc4ee397d26ecb2927a741a6165024b2f6656727d0b398b83` |
+| Deployment identity | `ed1b108c33cf31ad8faceddbd66814804e1411cdbc6250eef1526365c52dece2` |
+| Service at close of the M23.4 window | ACTIVE / READY, zero restarts |
 
-This Wheel and source remain valid historical evidence, but they are not the
-final production candidate for M22.9 because the startup-liveness defect was
-proven and corrected in new local source. Do not deploy `e55dd1ac…` to begin
-final M22.9 acceptance.
+The service observation is historical evidence at the end of the validated
+window, not a durable claim about a PID or future live state. Verify service,
+artifact, host, boot, and process-incarnation authority before every new run.
+The deployed candidate is not thereby Production Ready.
 
-The initial source correction was commit
-`2e8525f5df27a1b017890c172eae80db340cb901`, titled
-`fix: bound startup recovery liveness`. No new Wheel, freeze record,
-or production artifact has been created from it yet.
+## M23.4 status
 
-## Historical VPS deployment incident and rollback
+M23.4, Incremental Clean-Seal Evidence, is implemented, independently approved,
+merged, deployed, post-merge CI-clean, and validated by a two-hour non-formal
+production-equivalent VPS A/B run.
 
-The controlled stopped upgrade targeted:
+Normal live-owned clean rotation now seals with writer-owned incremental
+verified evidence and no redundant second full semantic scan. General
+`seal_partial()`, startup/recovery, unknown/recovered/poisoned partials, and the
+zero-record reconnect-marker path where applicable retain full `scan_chunk`
+authority. Raw v1 and the durable storage protocol are unchanged.
 
-```text
-VPS_HOST=vps-b5bfe3f8
-OS=Ubuntu 24.04.4 LTS
-ARCH=x86_64
-Python=3.12.3
-Service principal=binance-recorder:binance-recorder
-```
+The two-hour result was:
 
-The historical candidate used source `553cb345…`. Wheel transfer and retained
-VPS hash chains were exact: Wheel `e55dd1ac…` and production lock
-`44cd3733…` matched from local source through temporary and final retained VPS
-paths. Fresh venv creation, `--require-hashes` dependency installation,
-Wheel `--no-deps` installation, `pip check`, `direct_url.json` checks, and
-systemd installation/effective-property verification passed. The candidate
-deployment identity was:
+- runtime integrity: **PASS**;
+- structural performance: **PASS** — normal clean-seal `scan_chunk` was not
+  observed;
+- measured performance: **PASS** — conservative maximum seal latency fell from
+  `11.532059644 s` to `2.043359872 s` (82.2811% reduction), with zero
+  backpressure episodes/timeouts in B;
+- no restart, SIGKILL, OOM, resync, or terminal failure in B.
 
-```text
-SOURCE_SHA=553cb345466bdb2e2444d7162dea337a480b1b17
-IDENTITY_SHA256=e47efa85719badefacc5658811243d6664a71888862d651dcb56d342a14ad7e5
-STATIC_VERIFY=PASS
-PID=328413
-InvocationID=59829e72ffab41bf85047b9a9de12b15
-```
+Raw average CPU was higher in B (`85.6172%` versus `41.8757%`) under a workload
+that sealed about 3.1404 times as many records. It is not a like-for-like CPU
+regression. Frozen evidence gives CPU seconds per million sealed records of
+`1000.389` for A and `651.306` for B, a 34.8947% improvement.
 
-Operational readiness then failed: `service_heartbeat_stale`, status remained
-`STARTING`, `startup_recovery_complete=false`, and capacity and markets were
-unavailable. This was a readiness failure, not a successful production
-deployment.
+Detailed implementation and validation authority is in
+[`milestone_evidence/M23.4-incremental-clean-seal.md`](milestone_evidence/M23.4-incremental-clean-seal.md).
 
-Rollback restored the old deployment authority and passed its checks:
+## Current validation phase
+
+The current phase is progressive **NON-FORMAL** engineering validation on the
+temporary approximately one-month VPS rental:
 
 ```text
-OLD_SOURCE_GIT_SHA=650bc8f81446af5255d1eee8cfb6ab8b2ade5ccb
-OLD_WHEEL_SHA256=ba6811097dbe008fd0c4c6a2aded47f48d192f1b942aa5dd11606df2deec9179
-OLD_LOCK_SHA256=44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335
-rollback-check=PASS
-old static deployment verify=PASS
+2h COMPLETE/PASS -> 4h NEXT -> approximately 12h -> 24h -> 72h
 ```
 
-The old runtime encountered the same operational-readiness failure. Therefore
-the failure was not specific to the new `553cb345…` artifact. The final host
-state after the incident was service failed/stopped, `MainPID=0`, zero
-production writers, zero active partials, and `OLD_RESTORED` deployment
-authority.
+These are independent engineering burn-ins, not M22.9 stages. After each run:
 
-## Confirmed startup root cause
+1. freeze and hash evidence;
+2. analyze integrity, performance, memory, backpressure, reconnect behavior,
+   and operations;
+3. optimize only if measurements justify it;
+4. perform a separately authorized, consistency-safe retirement/reset of
+   disposable non-formal test data if space must be reclaimed;
+5. proceed to the next duration only when the evidence justifies it.
 
-The independent forensic verdict is
-`ROOT_CAUSE_CONFIRMED_LONG_RECOVERY_HEARTBEAT_GAP`. Both old and candidate
-source shared the relevant startup implementation. The production corpus had:
+Safe retirement must occur only after evidence is frozen. It must never be an
+arbitrary recursive deletion, Catalog surgery, or deletion of Raw still
+referenced by Catalog/manifests.
 
-| Forensic measure | Observed value |
-| --- | ---: |
-| Sealed chunks | 66,354 |
-| Other chunk states | 0 |
-| Unarchived chunks | 66,354 |
-| Archived/remote-deleted chunks | 0 |
-| Compressed retained Raw | 12,331,419,711 bytes |
-| Logical uncompressed Raw | 196,899,977,168 bytes |
-| Manifest content | 98,722,391 bytes |
-| Catalog | 85,217,280 bytes |
-| Catalog WAL | 0 |
+The exact later sequence can change in response to measurements. M23.1/M23.2
+remain measurement-gated, M23.3 remains a bounded-pipeline option only if
+cheaper work is insufficient, M23.5 native C++ remains unauthorized unless
+Python is again proven to be the bottleneck, and M23.6 is a later explicit
+redesign gate.
 
-Historically, startup opened the Catalog, published one `STARTING` heartbeat,
-ran synchronous `recover_storage()` through `asyncio.to_thread()`, fully
-revalidated all normal historical `SEALED` Raw, then checked capacity,
-started collectors, entered `RUNNING`, and only then resumed the periodic
-heartbeat. Recovery took approximately 17 minutes 50 seconds and produced
-64,174 recovery actions. With a 5-second heartbeat interval and a stale
-threshold of `max(30 seconds, heartbeat * 3) = 30 seconds`, a healthy long
-recovery became a stale-heartbeat failure. Confirmed minimum old startup
-processing was `>=221,661,538,981` bytes because stable sealed payloads were
-read, decompressed, and re-hashed unnecessarily on every restart.
+## Formal M22.9 status
 
-No pathological artifact, Catalog corruption, filesystem fault, OOM, clock
-fault, or recovery hang was identified.
+Formal M22.9 **has not started** for this candidate. A read-only precondition
+inspection found ACTIVE/READY service continuity, zero systemd restarts,
+Catalog integrity PASS, zero missing files, zero size mismatches, no open local
+or remote archive transactions, and no open stream discontinuities. It did not
+create an acceptance root, assign an acceptance ID, or start T0.
 
-### Shutdown-liveness aspect
+The same inspection measured only approximately `32.523064 h` of free-space
+runway. Repository-owned formal M22.9 authority requires capacity for the full
+independent `2h -> 12h -> 24h -> 72h -> 168h` chain, approximately 278 hours.
+The precondition therefore correctly stopped at
+`INSUFFICIENT_MEASURED_CAPACITY_RUNWAY` before T0.
 
-When automation stopped the `STARTING` process after readiness failed, SIGTERM
-was received while `recover_storage()` was still running in
-`asyncio.to_thread()`. The recovery worker did not cooperatively stop, so the
-process exceeded canonical `TimeoutStopSec=90s` and systemd used SIGKILL. This
-was application-level inability to finish while a recovery worker remained
-outstanding; it was not Linux D-state or kernel-uninterruptible I/O.
+This means:
 
-## Startup-liveness correction status
+- M22.9 did not fail after execution; it did not start;
+- 278 hours is a later formal capacity gate, not the current next test;
+- Production Ready is not authorized;
+- the capacity blocker does not prevent independent non-formal stages because
+  their disposable data may be retired safely between runs.
 
-The implementation commit claims/results remain:
+## Disconnect and operator context
 
-- one periodic heartbeat remains active during `STARTING` recovery;
-- `STARTING` remains not-ready and collectors do not start before recovery;
-- stable exact `SEALED` Catalog+manifest identity uses metadata-only startup
-  reconciliation, while crash-unstable states retain full validation;
-- recovery shutdown during `recover_storage()` is cooperative and does not mark
-  incomplete recovery as complete or require SIGKILL;
-- cancel/resume, long-recovery heartbeat, stable-sealed fast-path, and
-  unstable-validation tests pass.
+The M23.4 B window observed 17 external disconnect intervals: 17 STARTED,
+17 COMPLETED, and 0 OPEN. The subsequent precondition inspection classified
+them as `CLOSED_HISTORICAL_BASELINE`. They are neither zero disconnects nor
+17 unresolved gaps, and they did not require a new formal starting cut.
 
-Local validation for the original implementation was focused `97 passed`; full
-suite `1361 passed, 24 skipped, 4 deselected`; Ruff, MyPy, M0 contracts, and Go
-Raw golden verification passed. The latest P1 correction adds focused evidence
-of `40 passed`, Ruff PASS, MyPy PASS, and `git diff --check` PASS. The fresh
-targeted re-review closed the capacity-observation stop race with no P1
-findings. These are implementation/review results, not production acceptance.
+Two disclosed operator incidents occurred around that work: `/dev/null` was
+briefly replaced during an operator check and immediately restored; after the
+completed measurement window, an optional unbounded full-history audit used
+excessive RAM and was terminated. Neither restarted, SIGKILLed, or OOM-killed
+the Recorder, changed its durable state, or invalidated the completed window.
+The unbounded audit must not be repeated on this small VPS; use only bounded,
+project-owned validation mechanisms.
 
-The technical candidate has no new artifact, deployment, readiness result, or
-duration credit. The next sequence is PR creation, exact-head CI, merge,
-post-merge source authority, a new artifact/freeze, controlled VPS deployment,
-readiness, and then the M22.9 staged acceptance chain.
+## Evidence locations
 
-No Catalog schema, capacity policy, readiness threshold, or systemd timeout
-changed.
+Repository evidence:
 
-## Current capacity and deletion authority
+- [`milestone_evidence/M23.4-incremental-clean-seal.md`](milestone_evidence/M23.4-incremental-clean-seal.md)
+- [`milestone_acceptance/M22.9.md`](milestone_acceptance/M22.9.md) — historical
+  incident/acceptance authority, not a current pass
+- [`milestone_plan.md`](milestone_plan.md)
 
-The following are production forensic observations and planning estimates, not
-new hardcoded Recorder policy:
+VPS non-formal evidence (not committed to GitHub):
 
 ```text
-FREE_BYTES=17,091,108,864
-HARD_RESERVE=10 GiB = 10,737,418,240 bytes
-usable headroom above reserve ≈ 6.35 GB
-observed selected 6h net growth = 146,864.466862 bytes/s
-observed 24h rate = 145,413.612664 bytes/s
-capacity state = EMERGENCY (ETA to reserve <24h)
-approximate runtime at current rate before reserve ≈ 12.02h
+/opt/binance-market-data-recorder/m23-profiling/M23.4-POST-MERGE-20260828T143255Z
+/opt/binance-market-data-recorder/m23-profiling/M23.4-POST-MERGE-20260828T143255Z.tar.gz
+bundle SHA-256: cb3c2998090545778dd5a0dc2d1cec333d08729120fb8a097de053a63fddb1a2
 ```
 
-The Recorder is stopped, so the estimate applies once capture resumes. At the
-observed 6-hour rate, a single uninterrupted 168-hour stage needs about
-82.47 GB additional usable capacity to end just above the 10 GiB reserve, or
-about 91.06 GB to end above the repository's 18 GiB NORMAL threshold. For the
-independent full 278-hour chain, the corresponding estimates are about
-140.63 GB and 149.22 GB.
+Do not alter or overwrite the evidence. The M23.4 package is non-formal support
+evidence and does not substitute for a future M22.9 chain.
 
-Consequently, +50 GB is insufficient, +100 GB is insufficient for the full
-278-hour chain, and +150 GB is only approximately the mathematical minimum
-with almost no growth-rate or host-usage margin. Prefer approximately +200 GB
-usable capacity if economically reasonable. This is operational planning, not
-a code requirement or threshold change.
+## Next action
 
-All 66,354 Raw chunks are unarchived. No Raw is currently in the verified
-archive/authorized-delete class. Do not manually delete Raw to solve capacity;
-preserve Raw, manifests, Catalog history, historical M22 evidence, and incident
-evidence. Obsolete staging or failed-venv scratch may be reviewed separately,
-but it is not the main capacity solution.
-
-## Execution-role architecture
-
-The live VPS path owns Binance public acquisition, active Raw framing/spooling,
-seal and Zstandard compression, Raw manifests, SQLite Catalog metadata/state,
-recovery, gap/provenance evidence, order-book/checkpoint live derived state,
-metrics/status/capacity, and archive-export support. VPS Raw `.bmdr.zst` is
-already compressed; it is not merely unprocessed or uncompressed Raw storage.
-
-`binance-market-recorder normalize run` is an explicit offline/non-core
-operation. It verifies Raw and produces content-addressed Zstandard Parquet;
-Collector callbacks do not run it. Heavy Replay/analytical scans and Historical
-Backfill are likewise assigned to local/offline execution profiles. DuckDB is
-only a development interoperability verifier for published Parquet/Hive
-partitions, not Recorder's persistent database. SQLite Catalog is the Recorder
-metadata authority and does not store Raw market-event payloads.
-
-## Recorder infrastructure planning
-
-The preferred future direction is a dedicated Recorder VPS. Recorder is a
-durable system-of-record/data-capture service and does not need the same latency
-profile as Gateway. Separating the services reduces workload coupling and
-allows a cheaper Recorder-optimized host, while Gateway/Projection can later
-use a separate realtime-latency profile.
-
-```text
-Host A: BinanceMarketDataRecorder
-Host B: BinanceMarketDataGateway
-        -> Projection embedded
-        -> gRPC
-```
-
-Recorder and Gateway remain independent services and failure domains. This is
-infrastructure planning only and creates no runtime dependency or repository
-boundary change.
-
-Current candidate configurations are not production-certified:
-
-| Candidate | Current planning status |
-| --- | --- |
-| 4 vCPU / 8 GB RAM / 200 GB total NVMe | Preferred benchmark/deployment candidate; provides a more comfortable envelope if measurements support it |
-| 2 vCPU / 4 GB RAM / 200 GB total NVMe | Lower-cost conditional target; suitability must be proven by profiling, benchmarking, optimization, and long-running acceptance |
-
-The goal is to make `2c/4GB` potentially viable with sufficient headroom while
-keeping `4c/8GB` as the more comfortable option when evidence supports it. No
-CPU/RAM conclusion is stronger than measured evidence.
-
-The existing OVH VPS has approximately one month already paid. The near-term
-plan is therefore to use it for controlled deployment/testing work rather than
-waste the paid period, while evaluating lower-cost or better Recorder-only
-providers. Compare price, CPU quality, RAM, NVMe capacity/performance,
-network, reliability, and upgrade flexibility. A later migration, if chosen,
-must use a separately controlled procedure. If no materially better option is
-found, retain OVH and upgrade/expand it. No provider migration has been
-selected, and no OVH upgrade has occurred.
-
-### Storage sizing clarification
-
-`200 GB total NVMe` is not equivalent to the earlier planning recommendation
-of `approximately +200 GB additional usable capacity`. Exact usable capacity
-after migration or resize must be measured, and the capacity forecast must be
-rerun before any formal acceptance T0. Formal acceptance must not start unless
-the measured runway is sufficient.
-
-The existing forensic observations remain `FREE_BYTES=17,091,108,864`, a 10 GiB
-hard reserve, 146,864.466862 bytes/second over the selected six-hour sample,
-145,413.612664 bytes/second over 24 hours, and `EMERGENCY`, with approximately
-12 hours before reserve after capture resumes. The independent chain remains
-278 hours. Prior estimates remain approximately 140.63 GB additional usable
-capacity above reserve, 149.22 GB above the 18 GiB NORMAL threshold, and a
-conservative preference of approximately +200 GB additional usable capacity.
-
-## Future resource optimization
-
-M23.4 clean-seal evidence is implemented locally under the separately
-authorized M23.0/M23.0F execution-order override. Independent review approved
-the core architecture with `P0=0`, `P1=0`, `P2=2`, and `P3=0`; the two narrow
-P2 corrections (Raw header 64-KiB parity and retained active-source convergence
-after same-host archive advance) were confirmed closed by targeted rereview.
-That rereview found one new ordinary-`SEALED` last-copy deletion P1 introduced
-by the first correction; the narrow fail-closed correction is ready for
-targeted rereview. It is not deployed and is not part of formal M22.9
-acceptance. Other
-resource optimization remains future work; do not rewrite the Recorder
-speculatively. The evidence-driven order is:
-
-1. Correct algorithms and complexity.
-2. Production-equivalent profiling.
-3. Batch Raw encoding and writes.
-4. Reduce per-event Python allocation/object overhead.
-5. Measure and reduce unnecessary per-event instrumentation overhead.
-6. Investigate queue handoff only if profiling proves it significant.
-7. Add a bounded seal pipeline only if simpler hot-path improvements are insufficient.
-8. Consider clean-seal incremental stats/hash only with differential, fuzz, and
-   crash proof.
-9. Evaluate a narrow C++ native Raw data plane only if Python remains the
-   measured dominant bottleneck.
-10. Consider a full Go Recorder v2 only at a much later evidence gate.
-11. A full C++ Recorder rewrite is not recommended.
-
-Historical production evidence included approximately 338–675 USD-M
-`book_ticker` events/second, 195–261 Raw-writer events/second, approximately
-108% Recorder CPU, and significant receipt-queue accumulation. This shows
-insufficient headroom under at least one condition, not that Python is
-inherently incapable. The startup incident demonstrated that algorithmic
-complexity can dominate language choice: at least 221 GB of old startup
-processing over 66,354 chunks versus metadata-scale stable-`SEALED` recovery
-after the fast path. Optimize algorithms before considering a language rewrite.
-
-### M23 — Recorder Resource & Throughput Hardening
-
-`M23.4` is **IMPLEMENTED LOCALLY / RETAINED-RAW P1 CORRECTION READY FOR
-TARGETED REREVIEW** under separate authorization. Both prior P2 corrections
-were confirmed closed; ordinary `SEALED` cleanup now retains Raw unless the
-actual sealed artifact passes full validation. M23.1/M23.2 were skipped and
-M23.3 was not required first. The remaining M23 sequence ordinarily follows
-M22.9 unless separately authorized:
-
-- `M23.0` Baseline Profiling.
-- `M23.1` Low-risk hot-path optimization (`append_many`, batch encoding,
-  `writev`/bounded aggregate writes, duplicate metrics/timing reduction).
-- `M23.2` Allocation optimization only where profiling demonstrates value.
-- `M23.3` Bounded seal pipeline only if prior work lacks headroom, with heavier
-  crash/recovery review.
-- `M23.4` Implemented: clean-seal incremental writer stats/hash; crash-recovered
-  partials still receive full scan, with differential/bounded-random/crash
-  proof. VPS A/B remains a separate future task.
-- `M23.5` Native Raw engine decision gate; narrow C++ data plane only if the
-  measured Python bottleneck remains, preserving Raw v1 compatibility.
-- `M23.6` Go v2 decision only if Python orchestration remains materially
-  limiting and the hybrid design no longer justifies its complexity.
-
-Future M23 research targets are sustained capacity at least 2x the maximum
-observed production rate, non-monotonic receipt backlog, burst drain,
-zero-silent-loss and unchanged ordering/Raw/gap/crash semantics, meaningful
-CPU headroom, bounded memory, and no persistent ingest deficit during sealing.
-These are research targets, not M22.9 acceptance contracts.
-
-## Exact next engineering sequence
-
-Resolve capacity before starting the formal duration chain. The immediate
-engineering sequence is:
-
-```text
-PR
- -> exact-head CI
- -> merge
- -> post-merge authority
- -> NEW source/artifact freeze
- -> NEW exact Wheel
- -> controlled VPS deployment
- -> static deployment verify
- -> operational readiness
- -> formal acceptance identity/readiness
- -> 2h -> 12h -> 24h -> 72h -> 168h
-```
-
-Do not restart acceptance on the historical `e55dd1ac…` Wheel. Do not infer
-live capture from static verification or from historical PASS evidence.
+Prepare and execute the next **4-hour NON-FORMAL burn-in** on the existing
+validated candidate, unless live health or identity authority has changed.
+Freeze evidence before any separately authorized test-data retirement. Do not
+start formal M22.9, a 278-hour chain, or speculative M23.5 work as the next
+action.
