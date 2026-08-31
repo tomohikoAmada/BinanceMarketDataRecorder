@@ -10,19 +10,19 @@ state.
 
 | Area | Status | Authority |
 | --- | --- | --- |
-| GitHub main | Current | `e074d41a979af92b50bee880d6d55295ca65413d` |
-| Latest merged milestone | M23.4 complete | PR #41; merge commit is current main |
+| GitHub main | Verify live; documentation commit is newer than pre-doc `main` | `697e9900b6017844cbfcba01d9815308523a053e` was the pre-doc authority |
+| Latest merged milestone | M23.4 complete | PR #41; merge commit `e074d41a…` precedes this documentation commit |
 | Post-merge CI | Passed | `offline-ci` run `33174563501`, same head SHA |
 | M23.4 correctness | Independently approved | `P0=0`, `P1=0`, `P2=0`, `P3=0` |
-| VPS candidate | Deployed and 2h non-formally validated | identities below |
-| Current phase | Progressive non-formal VPS validation | 2h pass; 4h next |
+| VPS candidate | Deployed and non-formally validated through 12h | identities and frozen evidence below |
+| Current phase | CPU hardening after 12h new-host validation | 24h paused/not started; exact-head CPU profiling next |
 | Formal M22.9 | Not started | precondition stopped before T0 on capacity |
 | Production Ready | No | formal terminal chain not complete |
 | M23.5 | Deferred/evidence-gated | not authorized and not next |
 
-At the close of the 2026-08-28 M23.4 evidence window, the candidate was ACTIVE
-and READY with zero restarts. This dated observation is not a durable PID
-guarantee. Recheck the live service and incarnation before a new operation.
+At the close of the 2026-08-30 12-hour non-formal window, the candidate was
+ACTIVE and READY with zero restarts. This dated observation is not a durable
+PID guarantee. Recheck the live service and incarnation before a new operation.
 
 ## 2. What is complete
 
@@ -61,11 +61,18 @@ records are not rewritten as if the current candidate existed at their T0.
 | --- | --- |
 | Source SHA | `e074d41a979af92b50bee880d6d55295ca65413d` |
 | Wheel | `binance_market_data_recorder-0.1.0a1-py3-none-any.whl` |
-| Wheel SHA-256 | `7dfef238514dbb3fc1ceb56e1b395eefbb8a85516bd4ffcf784daaf1260634a1` |
+| Retained Wheel path | `/opt/binance-market-data-recorder/release-e074d41/binance_market_data_recorder-0.1.0a1-py3-none-any.whl` |
+| Current Wheel SHA-256 | `48784824f9d7501ddb5f56a210fcf6b846ae1dd8b46e3cc3dd71f96652c53d0c` |
+| Historical unavailable Wheel SHA-256 | `7dfef238514dbb3fc1ceb56e1b395eefbb8a85516bd4ffcf784daaf1260634a1` (historical only) |
 | Production lock SHA-256 | `44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335` |
 | Production config SHA-256 | `5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb` |
 | systemd unit SHA-256 | `69f3c4c2c77a3e6fc4ee397d26ecb2927a741a6165024b2f6656727d0b398b83` |
-| Deployment identity | `ed1b108c33cf31ad8faceddbd66814804e1411cdbc6250eef1526365c52dece2` |
+| Current deployment identity | `6856d07f54bb27f2b375443f4e96abf8f551babd530bafda94c167242aaaac24` |
+| Service principal | `bmdr:bmdr` |
+| Internal data root | `/var/lib/binance-market-data-recorder` on `/dev/vda1` |
+| Registered archive target | `/srv/recorder-data/recorder-archive` on `/dev/vdb1` |
+| Storage ID | `ef852751-721c-4145-9083-f6fd48718480` |
+| vdb UUID | `95a2ce20-bf7a-4fae-98e8-d208517ae318` |
 | VPS role | temporary engineering validation host |
 
 This is the validated deployed candidate, not formal M22.9 acceptance or a
@@ -149,17 +156,54 @@ The B run had 17 external disconnect intervals: 17 STARTED, 17 COMPLETED,
 
 ## 5. Current project phase
 
-The project is using the approximately one-month VPS rental for progressive
-**NON-FORMAL** engineering validation:
+The project is in **CPU HARDENING AFTER 12H NEW-HOST VALIDATION**. The frozen
+non-formal sequence is:
 
 ```text
-2h COMPLETE/PASS -> 4h NEXT -> approximately 12h -> 24h -> 72h
+30m PASS -> 2h PASS -> 4h PASS -> 12h PASS -> 24h PAUSED/NOT_STARTED
 ```
 
-At each checkpoint, freeze/hash evidence, analyze integrity and resources,
-optimize only if measurements justify it, then use a separately authorized
-consistency-safe test-data retirement/reset if space must be reclaimed. These
-are adjustable engineering checkpoints, not formal M22.9 stages.
+The 12-hour evidence root is
+`/root/NEW-HOST-12H-NONFORMAL-20260830T055931Z` with SHA-256
+`da424835ad2e697ece123f6979c18454856978683a816b3e039978d3ef5c691b`.
+The 12-hour window ran for `43200` canonical seconds from
+`2026-08-30T06:09:09.842465860Z`, with zero systemd restarts, 634 successful
+archive timer runs, zero archive-worker failures, final eligible backlog zero,
+and one recoverable USD-M sequence-gap event represented by an explicit
+unreliable marker. Optional `taker_buy_sell_volume_5m` side data recorded 72
+accepted and 72 recoverable RuntimeError failures without core impact.
+
+The current GreenCloud ordinary KVM policy is an operational constraint, not a
+Recorder benchmark. The official [Terms of Service](https://greencloudvps.com/terms-of-service.php),
+checked 2026-08-31, states that KVM CPU cores are shared except VDS, average
+usage should not exceed 30%, and bursts to 100% are permitted for 10 minutes
+every 24 hours. The operator observed approximately 20% in the provider panel
+during recent Recorder operation; classify this only as an **OPERATOR /
+PROVIDER-PANEL OBSERVATION**. Longer non-formal burn-ins are paused because
+the deployment has limited CPU headroom under that policy.
+
+The next sequence is exact-head profiling, selection of one measured hot path,
+one narrow correctness-preserving Python optimization, deterministic
+same-workload A/B, live production-equivalent A/B if justified, review, and
+only then another optimization. Provider-panel CPU% alone is not an
+optimization benchmark; collect normalized CPU seconds, workload volume/event
+rate, queue/high-watermark, backpressure, latency, RSS, FD/thread,
+reconnect/resync, and Raw/manifest/Catalog correctness evidence.
+
+CPU work must preserve Raw v1, exact payload bytes, receive timestamps,
+canonical CBOR, CRC32C, SHA-256, bounded ingress, durability/fsync,
+seal/manifest/Catalog ordering, reconnect/discontinuity evidence, gap/resync,
+crash/recovery, deterministic replay, and Spot/USD-M sequence semantics. Do
+not use longer fsync intervals, remove CRC/SHA, substitute floats for exact
+numeric semantics, silently delete metrics/gaps, or merge streams without
+review.
+
+The RSS trend remains **WATCH / NOT YET PROVEN LEAK**: approximately
+`244400128` bytes at 2h, `260460544` at 4h, and `286740480` at 12h. The 12-hour
+report found stepwise growth without swap, OOM, restart, or clear exhaustion.
+Continue observing it during later profiling and new-artifact validation.
+
+These are adjustable engineering checkpoints, not formal M22.9 stages.
 
 ## 6. Formal M22.9 status
 
@@ -176,13 +220,16 @@ evidence is frozen.
 
 ## 7. Open work / not yet done
 
-- The 4h, approximately 12h, 24h, and 72h non-formal checkpoints are incomplete.
-- A longer burn-in after those checkpoints has not been selected.
+- The 24h checkpoint is paused/not started; 72h and 168h are not started.
+- Exact-head CPU profiling is the next engineering action; no profiling has
+  started in this documentation update.
+- M23.1/M23.2 remain fresh-profiling decisions, and no group of optimizations
+  is authorized together.
 - Formal M22.9 has not started; its capacity-complete environment is not ready.
 - Production Ready is not authorized.
-- M23.1/M23.2/M23.3 remain conditional rather than mandatory.
-- M23.5 native C++ and M23.6 Go/v2 or other redesign are not authorized; they
-  require explicit evidence and review.
+- M23.5 native C++ remains unauthorized unless Python remains a measured
+  bottleneck after cheaper algorithmic work. Full C++ and Go rewrites remain
+  unauthorized.
 - Other open/monitoring items remain in [`risk_register.md`](risk_register.md)
   and [`known_limitations.md`](known_limitations.md); M23.4 does not implicitly
   close them.
@@ -193,6 +240,10 @@ evidence is frozen.
 - An optional unbounded full-history audit consumed excessive RAM after the 2h
   window and was terminated. Do not repeat it on this small VPS; use bounded,
   project-owned mechanisms.
+- If CPU optimization changes production code, build a new immutable Wheel and
+  deployment identity. The completed 30m/2h/4h/12h duration does not transfer;
+  a new candidate must begin a separately selected short qualification and
+  progressive validation sequence.
 - Non-formal data may be disposable, but cleanup must be separately authorized
   and keep Catalog, Raw, manifests, and archive authority consistent.
 - Traffic variance makes raw CPU percentages misleading; include record/byte
@@ -205,9 +256,9 @@ evidence is frozen.
 
 ## 9. Next operator/developer action
 
-Prepare and execute the next **4-hour NON-FORMAL burn-in** on the existing
-validated candidate, unless live health or authority has changed. Do not start
-the 278-hour formal chain or M23.5 as the next action.
+Design and execute **EXACT-HEAD CPU PROFILING** against the deployed source
+`e074d41a979af92b50bee880d6d55295ca65413d` after separate authorization. Do not
+start the paused 24-hour burn-in, formal M22.9, or M23.5 as the next action.
 
 ## 10. Rules for the next researcher/developer
 

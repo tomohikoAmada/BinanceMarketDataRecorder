@@ -1040,14 +1040,15 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M23 — Recorder Resource & Throughput Hardening
 
-- **Status:** **M23.4 COMPLETE / MERGED / DEPLOYED / 2H NON-FORMAL
-  POST-MERGE PASS; M22.9 NOT STARTED**. M23.0/M23.0F profiling and independent
+- **Status:** **M23.4 COMPLETE / MERGED / DEPLOYED / 12H NON-FORMAL
+  NEW-HOST PASS; M22.9 NOT STARTED**. M23.0/M23.0F profiling and independent
   architecture review authorized the execution-order override. Final M23.4
   correctness review recorded P0/P1/P2/P3 all zero; PR #41 merged as
   `e074d41a…`; post-merge CI passed; the two-hour production-equivalent VPS A/B
   proved structural scan removal, runtime integrity, and material seal-latency
-  improvement. M23.1/M23.2 were skipped as speculative, and M23.3 was not
-  required before M23.4.
+  improvement. The subsequent new-host substrate, 30-minute, 2-hour, 4-hour,
+  and 12-hour non-formal stages all passed. M23.1/M23.2 were skipped as
+  speculative, and M23.3 was not required before M23.4.
 - **Planning sequence:** M23.0 baseline profiling; M23.1 low-risk hot-path
   batching/write and instrumentation reduction; M23.2 allocation optimization;
   M23.3 bounded seal pipeline only if needed; M23.4 clean-seal incremental
@@ -1088,21 +1089,41 @@ mutation exists; those remain exclusively M22.4B scope.
 ### Current progressive non-formal VPS validation
 
 - **Classification:** engineering validation/burn-in, not formal M22.9.
-- **Current checkpoint:** M23.4 two-hour post-merge run COMPLETE/PASS.
-- **Next:** four-hour non-formal burn-in on the same validated candidate unless
-  live health or identity has changed.
-- **Later approximate checkpoints:** 12h -> 24h -> 72h. Durations may change
-  when measurements justify it.
+- **Completed checkpoints:** 2h PASS, 4h PASS, and 12h PASS on the new host;
+  the 30-minute qualification and substrate gates also passed.
+- **Current checkpoint:** 24h PAUSED / NOT STARTED.
+- **Reason for pause:** the current GreenCloud ordinary KVM policy limits
+  average CPU usage to 30% (shared cores except VDS; limited 100% bursts are
+  permitted), while the operator's provider-panel observation was
+  approximately 20% during Recorder operation. This is an operational
+  constraint and an operator/provider-panel observation, not a normalized
+  Recorder CPU benchmark. The current host has limited CPU headroom for longer
+  burn-ins.
+- **Next:** exact-head CPU profiling, then one measured hot-path optimization
+  at a time with deterministic same-workload A/B and review.
+- **Later checkpoints:** 24h, 72h, and 168h remain unstarted or paused pending
+  the profiling/optimization decision. Durations may change when measurements
+  justify it.
 - **Between independent runs:** freeze/hash evidence, analyze, optimize only on
   measured need, then use a separately authorized consistency-safe retirement
   or reset for disposable test data if space must be reclaimed. Never delete
   Raw while Catalog/manifests still reference it.
-- **Decision after 72h:** use evidence to choose a longer burn-in, a measured
-  fix, or preparation of a capacity-complete formal M22.9 environment.
+- **Artifact rule:** if CPU optimization changes production code, build a new
+  immutable Wheel and deployment identity. The completed 30m/2h/4h/12h
+  duration does not transfer; a new candidate starts a separately selected
+  short qualification/progressive sequence. Formal M22.9 receives no duration
+  credit.
+- **Correctness rule:** CPU work must preserve Raw v1 and exact payload bytes,
+  receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded ingress,
+  durability/fsync, seal/manifest/Catalog ordering, reconnect/discontinuity
+  evidence, gap/resync semantics, crash/recovery, deterministic replay, and
+  Spot/USD-M sequence semantics. Longer fsync intervals, CRC/SHA removal,
+  float substitution, silent metrics/gap deletion, and unreviewed stream
+  merging are not authorized.
 
 The approximately 278-hour formal requirement is not the current next test.
-M23.5 is not next and remains an explicit native-code gate only if Python is
-again a measured bottleneck.
+M23.5 is **NOT AUTHORIZED / NOT NEXT** and remains an explicit native-code gate
+only if Python is still a measured bottleneck after cheaper algorithmic work.
 
 ### M21 -> M22 validation policy
 

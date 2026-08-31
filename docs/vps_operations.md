@@ -1,9 +1,11 @@
 # VPS Operations
 
 Status: M22.7B substrate is implemented and real-host validated. Current source
-`e074d41a…` is deployed and its two-hour non-formal M23.4 validation passed.
-The project is in progressive non-formal VPS validation (4h next); formal M22.9
-has not started for this candidate and Production Ready is not claimed. See
+`e074d41a…` is deployed and the new-host substrate, 30-minute, 2-hour,
+4-hour, and 12-hour non-formal validation stages passed. The 24-hour stage is
+paused/not started for CPU hardening; exact-head CPU profiling is next. Formal
+M22.9 has not started for this candidate and Production Ready is not claimed.
+See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
@@ -283,10 +285,12 @@ and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
-This is not the next test: 4h, then approximately 12h/24h/72h non-formal stages
-come first. Between independent non-formal runs, disposable test data may be
-retired only by a separately authorized consistency-safe procedure after
-evidence is frozen. No referenced or unarchived Raw may be manually deleted.
+This is not the next test. Exact-head CPU profiling is the current next action;
+the paused 24h and later non-formal stages do not begin until the profiling /
+optimization decision is complete. Between independent non-formal runs,
+disposable test data may be retired only by a separately authorized
+consistency-safe procedure after evidence is frozen. No referenced or
+unarchived Raw may be manually deleted.
 
 ## Stopped upgrade
 

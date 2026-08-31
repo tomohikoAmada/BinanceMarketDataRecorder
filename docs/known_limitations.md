@@ -1,13 +1,50 @@
 # Known Limitations
 
 Current source `e074d41a…` is deployed and M23.4 passed its two-hour
-non-formal post-merge VPS validation. The current limitation is duration:
-4h/12h/24h/72h progressive engineering validation remains, formal M22.9 has
-not started for this candidate, and Production Ready is NO. The M22.9
-precondition measured about 32.523 hours of runway, insufficient for the later
-approximately 278-hour complete formal chain. Current authority is in
+non-formal post-merge VPS validation. The new-host substrate, 30-minute, 2-hour,
+4-hour, and 12-hour non-formal stages also passed. The 24-hour stage is paused
+and not started while exact-head CPU profiling is selected; 72h and 168h are
+not started. Formal M22.9 has not started for this candidate, Production Ready
+is NO, and the M22.9 precondition measured about 32.523 hours of runway,
+insufficient for the later approximately 278-hour complete formal chain.
+Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+
+### Current new-host limitations and decision boundary
+
+The current GreenCloud ordinary KVM service has shared CPU cores except VDS;
+the official [Terms of Service](https://greencloudvps.com/terms-of-service.php),
+checked 2026-08-31, states that average CPU usage should not exceed 30% and
+permits bursts to 100% for 10 minutes every 24 hours. The operator observed
+approximately 20% in the provider panel during recent Recorder operation.
+This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
+CPU benchmark. Because CPU headroom is limited under the current provider
+policy, the 24h/72h/168h non-formal burn-ins are paused or not started.
+
+The next action is exact-head CPU profiling, followed by one measured hot-path
+Python optimization at a time, deterministic same-workload A/B, live
+production-equivalent A/B if justified, and review. Provider-panel CPU% alone
+does not select an optimization. CPU changes must preserve Raw v1, exact
+payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
+ingress, durability/fsync, seal/manifest/Catalog ordering, reconnect/
+discontinuity and gap/resync evidence, crash/recovery, deterministic replay,
+and Spot/USD-M sequence semantics. Longer fsync intervals, CRC/SHA removal,
+float substitution, silent metrics/gap deletion, and unreviewed stream merging
+are not authorized.
+
+The RSS trend remains **WATCH / NOT YET PROVEN LEAK**. Frozen maxima were
+approximately `244400128` bytes at 2h, `260460544` at 4h, and `286740480` at
+12h, with no swap, OOM, systemd restart, or clear resource exhaustion. Keep
+observing RSS during profiling and new-artifact validation.
+
+The current deployed candidate is source `e074d41a…`, retained Wheel
+`48784824f9d7501ddb5f56a210fcf6b846ae1dd8b46e3cc3dd71f96652c53d0c`, and
+deployment identity
+`6856d07f54bb27f2b375443f4e96abf8f551babd530bafda94c167242aaaac24`. If CPU
+optimization changes production code, build a new immutable Wheel and identity;
+the completed 30m/2h/4h/12h duration does not transfer, and a new candidate
+must begin a separately selected short qualification/progressive sequence.
 
 The M21/M22.9 narrative below is historical incident evidence. Claims within
 that narrative that a correction was local-only or undeployed describe that
@@ -184,8 +221,8 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. The current next test is the
-4h non-formal burn-in, not the 278h chain.
+staged chain on a capacity-complete environment. The current next action is
+exact-head CPU profiling, not the 278h chain or a longer burn-in.
 
 ### Additional M21.4 known limitations
 
