@@ -1841,6 +1841,74 @@ class Catalog:
             ).fetchone()
         return self._validated_remote_row(row) if row is not None else None
 
+    def remote_delete_authority_snapshot(
+        self, receipt_id: str
+    ) -> tuple[
+        dict[str, object] | None,
+        dict[str, object] | None,
+        dict[str, object] | None,
+        dict[str, object] | None,
+    ]:
+        """Read remote-delete authority from one SQLite read snapshot.
+
+        The remote transaction row is selected and fully validated before the
+        corresponding physical chunk, same-host ownership, and remote
+        lifecycle rows are copied.  The deferred transaction is intentionally
+        read-only: it pins one WAL snapshot without serializing a concurrent
+        terminal transition.
+        """
+
+        if not self._remote_schema_present:
+            return None, None, None, None
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                remote_row = self._connection.execute(
+                    "SELECT * FROM remote_archive_transactions WHERE receipt_id = ?",
+                    (receipt_id,),
+                ).fetchone()
+                if remote_row is None:
+                    result: tuple[
+                        dict[str, object] | None,
+                        dict[str, object] | None,
+                        dict[str, object] | None,
+                        dict[str, object] | None,
+                    ] = (None, None, None, None)
+                else:
+                    validated_row = self._validated_remote_row(remote_row)
+                    chunk = self._connection.execute(
+                        "SELECT * FROM chunks WHERE chunk_id = ?",
+                        (remote_row["chunk_id"],),
+                    ).fetchone()
+                    same_host = self._connection.execute(
+                        "SELECT * FROM archive_transactions WHERE chunk_id = ?",
+                        (remote_row["chunk_id"],),
+                    ).fetchone()
+                    lifecycle_row = self._connection.execute(
+                        "SELECT * FROM remote_archive_transactions "
+                        "WHERE chunk_id = ?",
+                        (remote_row["chunk_id"],),
+                    ).fetchone()
+                    validated_lifecycle = (
+                        self._validated_remote_row(lifecycle_row)
+                        if lifecycle_row is not None
+                        else None
+                    )
+                    result = (
+                        validated_row,
+                        dict(chunk) if chunk is not None else None,
+                        dict(same_host) if same_host is not None else None,
+                        validated_lifecycle,
+                    )
+            except BaseException:
+                if self._connection.in_transaction:
+                    with suppress(sqlite3.Error):
+                        self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
+        return result
+
     def remote_archive_transaction_for_chunk(
         self, chunk_id: str
     ) -> dict[str, object] | None:

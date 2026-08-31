@@ -58,6 +58,84 @@ def _authorized(
     return fixture, receipt.receipt_id
 
 
+def test_authority_load_cannot_mix_remote_lifecycle_generations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A writer commit after the first row read cannot split one authority load."""
+
+    fixture, receipt_id = _authorized(tmp_path)
+    selection = fixture.selections[0]
+    selection.sealed_path.unlink()
+    reader = Catalog(fixture.prepared.layout.catalog)
+    writer = Catalog(fixture.prepared.layout.catalog)
+    receipt = build_receipt(fixture)
+    terminalized = False
+
+    def terminalize() -> None:
+        nonlocal terminalized
+        if terminalized:
+            return
+        writer.commit_remote_deleted(
+            receipt_id=receipt_id,
+            expected_chunk_id=receipt.chunk_id,
+            expected_source_descriptor_sha256=receipt.source_descriptor_sha256,
+            expected_source_relative_path=receipt.source_relative_path,
+            expected_source_manifest_sha256=receipt.source_manifest_sha256,
+            expected_stored_bytes=receipt.stored_bytes,
+            expected_stored_sha256=receipt.stored_sha256,
+            occurred_at_utc_ns=1_900_000_000_000_000_000,
+        )
+        terminalized = True
+
+    actual_remote_read = reader.remote_archive_transaction
+    old_split_read_active = False
+
+    def split_read_control(receipt_key: str) -> dict[str, object] | None:
+        nonlocal old_split_read_active
+        old_split_read_active = True
+        try:
+            row = actual_remote_read(receipt_key)
+        finally:
+            old_split_read_active = False
+        terminalize()
+        return row
+
+    # This control is used by the pre-fix split-read implementation.  The
+    # progress callback exercises the same interleaving against the fixed
+    # transaction: the remote SELECT has started, but the reader snapshot is
+    # already pinned before the writer commits.
+    monkeypatch.setattr(reader, "remote_archive_transaction", split_read_control)
+    exact_select_started = False
+
+    def trace(statement: str) -> None:
+        nonlocal exact_select_started
+        if statement.startswith(
+            "SELECT * FROM remote_archive_transactions WHERE receipt_id ="
+        ):
+            exact_select_started = True
+
+    def progress() -> int:
+        if exact_select_started and not old_split_read_active:
+            terminalize()
+            reader._connection.set_progress_handler(None, 0)
+        return 0
+
+    reader._connection.set_trace_callback(trace)
+    reader._connection.set_progress_handler(progress, 1)
+    try:
+        authority = RemoteDeleter(
+            layout=fixture.prepared.layout, catalog=reader
+        )._load_authority(receipt_id)
+    finally:
+        reader._connection.set_progress_handler(None, 0)
+        reader._connection.set_trace_callback(None)
+        reader.close()
+        writer.close()
+
+    assert terminalized
+    assert authority.row["state"] == RemoteArchiveState.REMOTE_DELETE_PENDING.value
+
+
 def test_normal_startup_discovers_missing_manifest_before_remote_recovery(
     tmp_path: Path,
 ) -> None:
