@@ -40,6 +40,7 @@ from binance_market_data_recorder.spool.seal import (
     OVERLAP_FLAG,
     RECONNECT_GAP_FLAG,
     seal_partial,
+    validate_sealed_artifact,
 )
 from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
@@ -3273,19 +3274,88 @@ def test_spot_writer_cancellation_owns_blocking_drain(
         pass
     assert spool.drain_calls == drains_at_completion
 
-    # TEST-402: the partial/descriptor state stays recoverable and no
-    # replacement transport was opened.
+    # TEST-402: no replacement transport was opened and every admitted frame
+    # remains in exactly one valid durable representation. Rotation uses a
+    # stable phase, so the owned drain may legitimately cross its deadline
+    # after release and seal the writer before cancellation reaches
+    # abort_writer.
     layout = ensure_storage_layout(tmp_path)
+    expected_payloads = [book_ticker(1), book_ticker(2)]
     partials = list(layout.active.glob("*.bmdr.partial"))
-    assert len(partials) == 1
+    documents = manifests(tmp_path)
+    sealed = list(layout.sealed.glob("*.bmdr.zst"))
+    assert list(layout.quarantine.glob("*")) == []
+    assert list(layout.manifests.glob("*.partial")) == []
+    assert list(layout.sealed.glob("*.partial")) == []
+
+    if partials:
+        # Cancellation reached abort_writer before the stable-phase rotation
+        # deadline. The closed active partial is the sole durable authority.
+        assert len(partials) == 1
+        assert documents == []
+        assert sealed == []
+        source = io.BytesIO(partials[0].read_bytes())
+        decode_chunk_header(source)
+        persisted = []
+        while prefix := source.read(FRAME_PREFIX.size):
+            length, _flags, _reserved, _checksum = FRAME_PREFIX.unpack(prefix)
+            persisted.append(decode_envelope(source.read(length)))
+        assert [frame.raw_payload for frame in persisted] == expected_payloads
+        assert all(not frame.capture_flags for frame in persisted)
+        chunk_id = str(uuid.UUID(partials[0].name.split(".")[0]))
+        expected_state = ChunkState.ACTIVE
+        durable_path = partials[0]
+        with Catalog(layout.catalog, read_only=True) as catalog:
+            row = catalog.chunk(chunk_id)
+            assert row is not None
+            assert ChunkState(str(row["state"])) is expected_state
+            assert row["partial_path"] == layout.relative(durable_path)
+            assert row["sealed_path"] is None
+            assert row["manifest_path"] is None
+    else:
+        # The released drain crossed the stable-phase deadline and completed
+        # an ordinary clean rotation before cancellation propagated.
+        assert len(documents) == 1
+        assert len(sealed) == 1
+        document = documents[0]
+        assert document["record_count"] == len(expected_payloads)
+        assert document["complete"] is True
+        assert document["gap"] is False
+        assert document["capture_flags"] == []
+        assert RECONNECT_GAP_FLAG not in document["capture_flags"]
+        assert "sequence_gap" not in document["capture_flags"]
+        persisted = manifest_envelopes(tmp_path, document)
+        assert [frame.raw_payload for frame in persisted] == expected_payloads
+        assert all(not frame.capture_flags for frame in persisted)
+        durable_path = tmp_path / str(document["relative_path"])
+        assert sealed == [durable_path]
+        validate_sealed_artifact(durable_path, document)
+        chunk_id = str(document["chunk_id"])
+        expected_state = ChunkState.SEALED
+        manifest_path = layout.manifests / f"{uuid.UUID(chunk_id).hex}.manifest.json"
+        with Catalog(layout.catalog, read_only=True) as catalog:
+            row = catalog.chunk(chunk_id)
+            assert row is not None
+            assert ChunkState(str(row["state"])) is expected_state
+            assert row["partial_path"] is None
+            assert row["sealed_path"] == document["relative_path"]
+            assert row["manifest_path"] == layout.relative(manifest_path)
+            assert row["record_count"] == len(expected_payloads)
+            assert row["stored_bytes"] == document["stored_bytes"]
+            assert row["stored_sha256"] == document["stored_sha256"]
+            assert row["uncompressed_bytes"] == document["uncompressed_bytes"]
+            assert row["uncompressed_sha256"] == document["uncompressed_sha256"]
+
     recovered_catalog = Catalog(layout.catalog)
     actions = recover_storage(layout=layout, catalog=recovered_catalog)
     recovered_catalog.close()
-    assert partials[0].exists()
+    assert durable_path.exists()
     assert all(
         action.action in {"unchanged", "catalog_unchanged", "seal_completed_after_crash"}
         for action in actions
     )
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        assert catalog.state(chunk_id) is expected_state
 
 
 # ---------------------------------------------------------------------------
