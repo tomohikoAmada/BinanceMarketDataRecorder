@@ -16,12 +16,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 from binance_common.errors import Error as BinanceSdkError
+from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
 from ..binance.spot.websocket import ReconnectBackoff
 from ..binance.usdm.rest import (
@@ -45,7 +45,11 @@ from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CollectorReadiness, ReadinessSnapshot
 from .resync import DepthResyncCoordinator
-from .usdm_side_data import UsdMSideDataManager, UsdMSideDataSettings
+from .usdm_side_data import (
+    UsdMRestCooldown,
+    UsdMSideDataManager,
+    UsdMSideDataSettings,
+)
 
 
 @dataclass(frozen=True)
@@ -88,6 +92,8 @@ class UsdMCollector:
         self.settings = settings
         self.logger = logger
         self.rest_api = rest_api
+        self.public_rest_request_lock = asyncio.Lock()
+        self.public_rest_cooldown = UsdMRestCooldown()
         self.snapshot_backoff = ReconnectBackoff(
             initial_seconds=settings.snapshot_retry_initial_seconds,
             maximum_seconds=settings.snapshot_retry_maximum_seconds,
@@ -231,54 +237,71 @@ class UsdMCollector:
                 rest_api=side_rest_api,
                 websocket_opener=websocket_opener,
                 metrics=self.metrics,
+                request_lock=self.public_rest_request_lock,
+                cooldown=self.public_rest_cooldown,
             )
 
     async def _capture_snapshot(self, stop: asyncio.Event) -> None:
         failures = 0
         while not stop.is_set():
-            request_task = asyncio.create_task(
-                asyncio.to_thread(
-                    capture_depth_snapshot,
-                    rest_api=self.rest_api,
-                    collector_instance_id=self.settings.collector_instance_id,
-                    collector_version=self.settings.collector_version,
-                    limit=self.settings.snapshot_limit,
-                    timeout_ms=self.settings.snapshot_timeout_ms,
-                    additional_capture_flags=self._capture_flags,
-                )
-            )
             try:
-                envelope = await asyncio.shield(request_task)
-            except asyncio.CancelledError:
-                # asyncio cannot cancel an SDK call already running in a
-                # worker thread. Keep ownership of the Task until the call
-                # finishes, retrieve its outcome, then preserve cancellation.
-                await asyncio.gather(request_task, return_exceptions=True)
-                raise
+                await self.public_rest_cooldown.wait(stop)
+                if stop.is_set():
+                    return
+                async with self.public_rest_request_lock:
+                    await self.public_rest_cooldown.wait(stop)
+                    if stop.is_set():
+                        return
+                    request_task = asyncio.create_task(
+                        asyncio.to_thread(
+                            capture_depth_snapshot,
+                            rest_api=self.rest_api,
+                            collector_instance_id=self.settings.collector_instance_id,
+                            collector_version=self.settings.collector_version,
+                            limit=self.settings.snapshot_limit,
+                            timeout_ms=self.settings.snapshot_timeout_ms,
+                            additional_capture_flags=self._capture_flags,
+                        )
+                    )
+                    try:
+                        envelope = await asyncio.shield(request_task)
+                    except asyncio.CancelledError:
+                        # asyncio cannot cancel an SDK call already running in a
+                        # worker thread. Keep ownership of the Task until the call
+                        # finishes, retrieve its outcome, then preserve cancellation.
+                        await asyncio.gather(request_task, return_exceptions=True)
+                        raise
             except UsdMSnapshotHttpError as exc:
                 if not exc.rate_limited and not 500 <= exc.status < 600:
                     raise
                 failures += 1
-                if exc.rate_limited and exc.retry_at_utc_ns is not None:
-                    delay = max(
-                        0.0,
-                        (exc.retry_at_utc_ns - time.time_ns()) / 1_000_000_000,
+                if exc.rate_limited:
+                    _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
+                        status=exc.status,
+                        retry_after_seconds=exc.retry_after_seconds,
+                        retry_at_utc_ns=exc.retry_at_utc_ns,
                     )
-                else:
-                    delay = self.snapshot_backoff.delay(failures)
+                    log_event(
+                        self.logger,
+                        logging.WARNING,
+                        "usdm_snapshot_rate_limited",
+                        "USD-M public REST is rate limited; shared cooldown installed",
+                        http_status=exc.status,
+                        retry_at_utc_ns=retry_at_utc_ns,
+                        response_headers=exc.headers,
+                        reason_source=reason,
+                        retry=failures,
+                    )
+                    await self.public_rest_cooldown.wait(stop)
+                    if stop.is_set():
+                        return
+                    continue
+                delay = self.snapshot_backoff.delay(failures)
                 log_event(
                     self.logger,
                     logging.WARNING,
-                    (
-                        "usdm_snapshot_rate_limited"
-                        if exc.rate_limited
-                        else "usdm_snapshot_server_error"
-                    ),
-                    (
-                        "USD-M public REST is rate limited; retry remains bounded"
-                        if exc.rate_limited
-                        else "USD-M public depth snapshot returned a transient server error"
-                    ),
+                    "usdm_snapshot_server_error",
+                    "USD-M public depth snapshot returned a transient server error",
                     http_status=exc.status,
                     retry_at_utc_ns=exc.retry_at_utc_ns,
                     response_headers=exc.headers,
@@ -289,6 +312,46 @@ class UsdMCollector:
                 except TimeoutError:
                     continue
                 return
+            except RateLimitBanError:
+                failures += 1
+                _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
+                    status=418
+                )
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    "usdm_snapshot_rate_limited",
+                    "USD-M public REST is rate limited; shared cooldown installed",
+                    http_status=418,
+                    retry_at_utc_ns=retry_at_utc_ns,
+                    reason_source=reason,
+                    error_type="RateLimitBanError",
+                    retry=failures,
+                )
+                await self.public_rest_cooldown.wait(stop)
+                if stop.is_set():
+                    return
+                continue
+            except TooManyRequestsError:
+                failures += 1
+                _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
+                    status=429
+                )
+                log_event(
+                    self.logger,
+                    logging.WARNING,
+                    "usdm_snapshot_rate_limited",
+                    "USD-M public REST is rate limited; shared cooldown installed",
+                    http_status=429,
+                    retry_at_utc_ns=retry_at_utc_ns,
+                    reason_source=reason,
+                    error_type="TooManyRequestsError",
+                    retry=failures,
+                )
+                await self.public_rest_cooldown.wait(stop)
+                if stop.is_set():
+                    return
+                continue
             except UsdMSnapshotResponseError:
                 raise
             except (BinanceSdkError, RuntimeError) as exc:
@@ -313,6 +376,7 @@ class UsdMCollector:
                 # session was retired. Its snapshot belongs to the old stream
                 # generation and must not participate in a new diff bridge.
                 return
+            self.public_rest_cooldown.observe_success()
             self.snapshot_spool.enqueue(envelope)
             await asyncio.to_thread(self.snapshot_spool.drain_all)
             result = self.readiness.observe_snapshot_persisted(envelope)
