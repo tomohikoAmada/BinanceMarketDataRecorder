@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -268,30 +268,22 @@ class UsdMCollector:
                     except asyncio.CancelledError:
                         # asyncio cannot cancel an SDK call already running in a
                         # worker thread. Keep ownership of the Task until the call
-                        # finishes, retrieve its outcome, then preserve cancellation.
-                        await asyncio.gather(request_task, return_exceptions=True)
+                        # finishes, preserve any process-level rate-limit evidence,
+                        # then preserve cancellation. This remains inside the
+                        # shared lock so queued requests cannot pass the evidence.
+                        worker_outcome = await self._await_snapshot_worker_outcome(
+                            request_task
+                        )
+                        if isinstance(worker_outcome, BaseException):
+                            self._observe_public_rest_rate_limit(
+                                worker_outcome, cancelled_worker=True
+                            )
                         raise
             except UsdMSnapshotHttpError as exc:
                 if not exc.rate_limited and not 500 <= exc.status < 600:
                     raise
                 failures += 1
-                if exc.rate_limited:
-                    _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
-                        status=exc.status,
-                        retry_after_seconds=exc.retry_after_seconds,
-                        retry_at_utc_ns=exc.retry_at_utc_ns,
-                    )
-                    log_event(
-                        self.logger,
-                        logging.WARNING,
-                        "usdm_snapshot_rate_limited",
-                        "USD-M public REST is rate limited; shared cooldown installed",
-                        http_status=exc.status,
-                        retry_at_utc_ns=retry_at_utc_ns,
-                        response_headers=exc.headers,
-                        reason_source=reason,
-                        retry=failures,
-                    )
+                if self._observe_public_rest_rate_limit(exc, retry=failures):
                     await self.public_rest_cooldown.wait(stop)
                     if stop.is_set():
                         return
@@ -312,42 +304,16 @@ class UsdMCollector:
                 except TimeoutError:
                     continue
                 return
-            except RateLimitBanError:
+            except RateLimitBanError as exc:
                 failures += 1
-                _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
-                    status=418
-                )
-                log_event(
-                    self.logger,
-                    logging.WARNING,
-                    "usdm_snapshot_rate_limited",
-                    "USD-M public REST is rate limited; shared cooldown installed",
-                    http_status=418,
-                    retry_at_utc_ns=retry_at_utc_ns,
-                    reason_source=reason,
-                    error_type="RateLimitBanError",
-                    retry=failures,
-                )
+                self._observe_public_rest_rate_limit(exc, retry=failures)
                 await self.public_rest_cooldown.wait(stop)
                 if stop.is_set():
                     return
                 continue
-            except TooManyRequestsError:
+            except TooManyRequestsError as exc:
                 failures += 1
-                _, retry_at_utc_ns, reason = self.public_rest_cooldown.install(
-                    status=429
-                )
-                log_event(
-                    self.logger,
-                    logging.WARNING,
-                    "usdm_snapshot_rate_limited",
-                    "USD-M public REST is rate limited; shared cooldown installed",
-                    http_status=429,
-                    retry_at_utc_ns=retry_at_utc_ns,
-                    reason_source=reason,
-                    error_type="TooManyRequestsError",
-                    retry=failures,
-                )
+                self._observe_public_rest_rate_limit(exc, retry=failures)
                 await self.public_rest_cooldown.wait(stop)
                 if stop.is_set():
                     return
@@ -411,6 +377,82 @@ class UsdMCollector:
         # diff bridge. Global shutdown follows the same cleanup path. Genuine
         # REST/response/integrity failures still escape above.
         return
+
+    async def _await_snapshot_worker_outcome(
+        self, request_task: asyncio.Task[EventEnvelope]
+    ) -> EventEnvelope | BaseException:
+        """Collect a shielded snapshot worker despite repeated owner cancellation."""
+
+        while True:
+            try:
+                return await asyncio.shield(request_task)
+            except asyncio.CancelledError:
+                if not request_task.done():
+                    continue
+                if request_task.cancelled():
+                    return asyncio.CancelledError()
+                try:
+                    return request_task.result()
+                except BaseException as exc:
+                    return exc
+            except BaseException as exc:
+                return exc
+
+    def _observe_public_rest_rate_limit(
+        self,
+        exc: BaseException,
+        *,
+        retry: int | None = None,
+        cancelled_worker: bool = False,
+    ) -> bool:
+        """Install one shared cooldown for a classified USD-M rate-limit outcome."""
+
+        if isinstance(exc, UsdMSnapshotHttpError):
+            if not exc.rate_limited:
+                return False
+            status = exc.status
+            retry_after_seconds = exc.retry_after_seconds
+            retry_at_utc_ns = exc.retry_at_utc_ns
+            response_headers: Mapping[str, object] | None = exc.headers
+        elif isinstance(exc, RateLimitBanError):
+            status = 418
+            retry_after_seconds = None
+            retry_at_utc_ns = None
+            response_headers = None
+        elif isinstance(exc, TooManyRequestsError):
+            status = 429
+            retry_after_seconds = None
+            retry_at_utc_ns = None
+            response_headers = None
+        else:
+            return False
+
+        _, installed_retry_at_utc_ns, reason = self.public_rest_cooldown.install(
+            status=status,
+            retry_after_seconds=retry_after_seconds,
+            retry_at_utc_ns=retry_at_utc_ns,
+        )
+        fields: dict[str, object] = {
+            "http_status": status,
+            "retry_at_utc_ns": installed_retry_at_utc_ns,
+            "reason_source": reason,
+        }
+        if response_headers is not None:
+            fields["response_headers"] = response_headers
+        else:
+            fields["error_type"] = type(exc).__name__
+        if retry is not None:
+            fields["retry"] = retry
+        if cancelled_worker:
+            fields["cancelled_worker"] = True
+        log_event(
+            self.logger,
+            logging.WARNING,
+            "usdm_snapshot_rate_limited",
+            "USD-M public REST is rate limited; shared cooldown installed",
+            **fields,
+        )
+        return True
 
     async def _run_capture_session(self, external_stop: asyncio.Event) -> None:
         session_stop = asyncio.Event()
