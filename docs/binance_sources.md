@@ -20,6 +20,25 @@ project is independent and unofficial: it is not affiliated with, maintained
 by, sponsored by, or endorsed by Binance. Official Binance sources establish
 API behavior only; they do not make this Recorder an official Binance product.
 
+## USD-M shared REST cooldown verification — 2026-08-31
+
+The current Binance General Info rate-limit guidance was rechecked before the
+USD-M side-data cooldown correction. It states that HTTP 429 means a request
+rate-limit violation; after 429 clients must back off; repeated violations can
+produce an automated IP-wide HTTP 418 ban; bans scale from 2 minutes to 3 days;
+and the limits are based on IP rather than API key. It also states that
+`Retry-After` gives the wait in seconds for 429 or the ban end for 418. IP
+weight 0 on an individual route does not remove the IP-wide policy. Retrieval
+was text-only and no online rate limit was induced.
+
+| Source | URL | Retrieval | SHA-256 | Conclusion |
+|---|---|---|---|---|
+| USD-M General Info / rate limits | `https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info` | 2026-08-31T02:32:22Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 429 backoff, IP-wide 418 bans, 2-minute–3-day escalation, IP basis, and Retry-After semantics |
+
+The pinned runtime source was also inspected locally: `binance-common==4.0.3`
+raises `TooManyRequestsError` and `RateLimitBanError` with `status_code` and
+`error_message`, but does not reliably preserve complete response headers.
+
 ## CM/UM integration notice refresh — 2026-08-23T07:08:24.249743+00:00
 
 The repository-owned updater ran a minimal selection containing the current

@@ -20,6 +20,7 @@ from binance_market_data_recorder.collector.usdm_side_data import (
     RestSideDataPoller,
     SideDataStats,
     SideDataSupervisor,
+    UsdMRestCooldown,
     UsdMSideDataSettings,
 )
 from binance_market_data_recorder.domain.event import EventEnvelope
@@ -455,6 +456,84 @@ def test_empty_five_minute_response_uses_bounded_retry_delay(
         return wait_timeouts
 
     assert asyncio.run(exercise())[0] == 5.0
+
+
+def test_usdm_rest_cooldown_deadlines_are_shared_and_only_extend() -> None:
+    mono = [100.0]
+    utc = [1_000_000_000_000]
+    cooldown = UsdMRestCooldown(
+        monotonic_clock=lambda: mono[0], utc_clock_ns=lambda: utc[0]
+    )
+    first = cooldown.install(status=429, retry_after_seconds=60)
+    assert first[0] == 160.0
+    assert first[1] == 1_060_000_000_000
+    shorter = cooldown.install(status=429, retry_after_seconds=5)
+    assert shorter[:2] == first[:2]
+    ban = cooldown.install(status=418)
+    assert ban[0] == 86_500.0
+    assert ban[1] == 87_400_000_000_000
+
+
+def test_usdm_rest_request_rechecks_cooldown_after_request_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def exercise() -> int:
+        kind = RestSideDataKind.BASIS
+        catalog = Catalog(tmp_path / "race.sqlite")
+        spool = CursorSpool()
+        mono = [10.0]
+        cooldown = UsdMRestCooldown(monotonic_clock=lambda: mono[0])
+        lock = asyncio.Lock()
+        poller = _cursor_poller(
+            kind=kind,
+            tmp_path=tmp_path,
+            catalog=catalog,
+            api=CursorApi(kind),
+            spool=spool,
+            now_ms=50 * 24 * 60 * 60 * 1000 + 1,
+        )
+        poller.request_lock = lock
+        poller.cooldown = cooldown
+        calls = 0
+
+        def transport(**_: object) -> object:
+            nonlocal calls
+            calls += 1
+            return object()
+
+        monkeypatch.setattr(
+            "binance_market_data_recorder.collector.usdm_side_data.capture_rest_side_data",
+            transport,
+        )
+        stop = asyncio.Event()
+        poller._active_stop = stop
+        await lock.acquire()
+        request = asyncio.create_task(poller._request())
+        await asyncio.sleep(0)
+        cooldown.install(status=418, retry_after_seconds=20)
+        lock.release()
+        await asyncio.sleep(0)
+        assert calls == 0
+        mono[0] = 31.0
+        cooldown._changed.set()
+        await asyncio.wait_for(request, timeout=1)
+        catalog.close()
+        return calls
+
+    assert asyncio.run(exercise()) == 1
+
+
+def test_usdm_rest_cooldown_wait_is_stop_aware_for_ban_fallback() -> None:
+    async def exercise() -> None:
+        cooldown = UsdMRestCooldown(monotonic_clock=lambda: 0.0)
+        cooldown.install(status=418)
+        stop = asyncio.Event()
+        waiter = asyncio.create_task(cooldown.wait(stop))
+        await asyncio.sleep(0)
+        stop.set()
+        await asyncio.wait_for(waiter, timeout=0.2)
+
+    asyncio.run(exercise())
 
 
 def test_cursor_records_unrecoverable_retention_gap_before_catchup(
