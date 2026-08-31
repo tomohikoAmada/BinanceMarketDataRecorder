@@ -5,6 +5,7 @@ import io
 import logging
 import threading
 from collections.abc import Callable, Mapping
+from contextlib import suppress
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -133,6 +134,21 @@ class FakePowerAssertion(CaffeinateAssertion):
 class ControlledHeartbeatRuntime(ServiceRuntime):
     heartbeat_ticks: asyncio.Queue[None]
     heartbeat_owner_count: int
+    heartbeat_write_complete: asyncio.Event | None = None
+    heartbeat_write_target: int | None = None
+
+    async def _write_state(self) -> None:
+        await super()._write_state()
+        if (
+            self.heartbeat_write_complete is not None
+            and self.heartbeat_write_target is not None
+        ):
+            state = self.state_store.read()
+            if (
+                state is not None
+                and state["heartbeat_at_utc_ns"] == self.heartbeat_write_target
+            ):
+                self.heartbeat_write_complete.set()
 
     async def _heartbeat(self, stop: asyncio.Event) -> None:
         self.heartbeat_owner_count += 1
@@ -238,43 +254,41 @@ def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(
         )
         runtime.heartbeat_ticks = asyncio.Queue()
         runtime.heartbeat_owner_count = 0
+        runtime.heartbeat_write_complete = asyncio.Event()
 
         task = asyncio.create_task(runtime.run())
-        assert await asyncio.to_thread(entered.wait, 2)
-        for _ in range(100):
+        try:
+            assert await asyncio.to_thread(entered.wait, 2)
             state = runtime.state_store.read()
-            if state is not None and state["status"] == "STARTING":
-                break
-            await asyncio.sleep(0)
-        else:
-            pytest.fail("STARTING state was not published")
-        assert state["startup_recovery_complete"] is False
-        assert state["capacity"] is None
-        assert state["markets"] == {}
-        initial_heartbeat = cast(int, state["heartbeat_at_utc_ns"])
-        started_at = cast(int, state["started_at_utc_ns"])
+            assert state is not None
+            assert state["status"] == "STARTING"
+            assert state["startup_recovery_complete"] is False
+            assert state["capacity"] is None
+            assert state["markets"] == {}
+            initial_heartbeat = cast(int, state["heartbeat_at_utc_ns"])
+            started_at = cast(int, state["started_at_utc_ns"])
 
-        clock.advance(31)
-        runtime.heartbeat_ticks.put_nowait(None)
-        for _ in range(100):
-            await asyncio.sleep(0)
+            clock.advance(31)
+            runtime.heartbeat_write_target = clock.value
+            runtime.heartbeat_ticks.put_nowait(None)
+            await asyncio.wait_for(
+                runtime.heartbeat_write_complete.wait(), timeout=2
+            )
             state = runtime.state_store.read()
-            if (
-                state is not None
-                and cast(int, state["heartbeat_at_utc_ns"]) > initial_heartbeat
-            ):
-                break
-        else:
-            pytest.fail("heartbeat did not advance during blocked recovery")
-        assert cast(int, state["heartbeat_at_utc_ns"]) == clock.value
-        assert clock.value - started_at > 30_000_000_000
-        assert state["status"] == "STARTING"
-        assert state["startup_recovery_complete"] is False
-        assert factory_called is False
-        assert runtime.heartbeat_owner_count == 1
+            assert state is not None
+            assert cast(int, state["heartbeat_at_utc_ns"]) > initial_heartbeat
+            assert cast(int, state["heartbeat_at_utc_ns"]) == clock.value
+            assert clock.value - started_at > 30_000_000_000
+            assert state["status"] == "STARTING"
+            assert state["startup_recovery_complete"] is False
+            assert factory_called is False
+            assert runtime.heartbeat_owner_count == 1
+        finally:
+            runtime.request_stop("SIGTERM")
+            pause.set()
+            with suppress(BaseException):
+                await asyncio.wait_for(task, timeout=2)
 
-        runtime.request_stop("SIGTERM")
-        await asyncio.wait_for(task, timeout=2)
         final = runtime.state_store.read()
         assert final is not None
         assert final["status"] == "STOPPED"
