@@ -423,6 +423,40 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
     asyncio.run(exercise())
 
 
+def test_empty_five_minute_response_uses_bounded_retry_delay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def exercise() -> list[float]:
+        kind = RestSideDataKind.TAKER_BUY_SELL_VOLUME
+        now_ms = 50 * 24 * 60 * 60 * 1000 + 1
+        catalog = Catalog(tmp_path / "empty-retry.sqlite")
+        api = CursorApi(kind, empty=True)
+        poller = _cursor_poller(
+            kind=kind,
+            tmp_path=tmp_path,
+            catalog=catalog,
+            api=api,
+            spool=CursorSpool(),
+            now_ms=now_ms,
+        )
+        stop = asyncio.Event()
+        wait_timeouts: list[float] = []
+
+        async def immediate_timeout(awaitable: Any, timeout: float) -> None:
+            wait_timeouts.append(timeout)
+            awaitable.close()
+            if len(wait_timeouts) >= 2:
+                stop.set()
+            raise TimeoutError
+
+        monkeypatch.setattr(asyncio, "wait_for", immediate_timeout)
+        await poller.run(stop)
+        catalog.close()
+        return wait_timeouts
+
+    assert asyncio.run(exercise())[0] == 5.0
+
+
 def test_cursor_records_unrecoverable_retention_gap_before_catchup(
     tmp_path: Path,
 ) -> None:

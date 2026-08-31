@@ -323,6 +323,7 @@ class RestSideDataPoller:
                     else:
                         await self._capture_and_persist()
                 except (BinanceSdkError, RuntimeError, OSError, TimeoutError, ValueError) as exc:
+                    caught_up = False
                     self.stats.observe_failure(type(exc).__name__)
                     log_event(
                         self.logger,
