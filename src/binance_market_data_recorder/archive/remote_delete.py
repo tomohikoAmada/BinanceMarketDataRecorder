@@ -322,7 +322,9 @@ class RemoteDeleter:
     def _load_authority(self, receipt_id: str) -> _Authority:
         _require_receipt_id(receipt_id)
         self._require_exact_layout()
-        row = self.catalog.remote_archive_transaction(receipt_id)
+        row, chunk, same_host, remote = self.catalog.remote_delete_authority_snapshot(
+            receipt_id
+        )
         if row is None:
             raise RemoteDeletionError(
                 "exact durable remote pending/terminal authority is missing"
@@ -333,9 +335,6 @@ class RemoteDeleter:
         receipt = RemoteArchiveReceipt.from_bytes(receipt_bytes)
         if receipt.receipt_id != receipt_id:
             raise RemoteDeletionError("receipt_id does not match persisted receipt")
-        chunk, same_host, remote = self.catalog.source_lifecycle_snapshot(
-            receipt.chunk_id
-        )
         if chunk is None or remote is None:
             raise RemoteDeletionError("remote lifecycle authority is incomplete")
         if same_host is not None:
