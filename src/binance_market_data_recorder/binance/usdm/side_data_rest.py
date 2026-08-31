@@ -28,7 +28,12 @@ from binance_sdk_derivatives_trading_usds_futures.rest_api.models.enums import (
 
 from ...domain.event import EventEnvelope
 from ...network import ProxyPolicy
-from .rest import USDM_REST_BASE_URL, USDM_SDK_DISTRIBUTION, safe_provenance_headers
+from .rest import (
+    USDM_REST_BASE_URL,
+    USDM_SDK_DISTRIBUTION,
+    retry_boundary,
+    safe_provenance_headers,
+)
 
 
 class RestSideDataKind(StrEnum):
@@ -269,6 +274,25 @@ def create_usdm_side_rest_api(
 
 class SideDataSchemaError(RuntimeError):
     """Raised when a public response cannot satisfy its official schema."""
+
+
+class UsdMSideDataHttpError(RuntimeError):
+    """A public USD-M side-data HTTP response that cannot produce an event."""
+
+    def __init__(
+        self,
+        *,
+        status: int,
+        headers: Mapping[str, object],
+        retry_after_seconds: float | None,
+        retry_at_utc_ns: int | None,
+    ) -> None:
+        super().__init__(f"USD-M side-data returned HTTP {status}")
+        self.status = status
+        self.headers = safe_provenance_headers(headers)
+        self.rate_limited = status in {418, 429}
+        self.retry_after_seconds = retry_after_seconds
+        self.retry_at_utc_ns = retry_at_utc_ns
 
 
 def _text(value: dict[str, Any], name: str) -> str:
@@ -603,7 +627,15 @@ def capture_rest_side_data(
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
-        raise RuntimeError(f"USD-M {kind.value} returned HTTP {response.status}")
+        retry_after_seconds, retry_at_utc_ns = retry_boundary(
+            response, receive_utc_ns=receive_utc_ns
+        )
+        raise UsdMSideDataHttpError(
+            status=response.status,
+            headers=response.headers,
+            retry_after_seconds=retry_after_seconds,
+            retry_at_utc_ns=retry_at_utc_ns,
+        )
     model = _sdk_model_value(response.data())
     source_sequence: dict[str, int | str] = _validate_model(kind, model)
     if kind in FIVE_MINUTE_KINDS:

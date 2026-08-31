@@ -50,6 +50,14 @@ class DepthResponse(Protocol):
     def data(self) -> DepthModel: ...
 
 
+class RateLimitResponse(Protocol):
+    @property
+    def status(self) -> int: ...
+
+    @property
+    def headers(self) -> Mapping[str, object]: ...
+
+
 class UsdMRestApi(Protocol):
     def order_book(self, symbol: str, limit: int) -> DepthResponse: ...
 
@@ -115,8 +123,8 @@ def _non_negative_seconds(value: object) -> float | None:
     return seconds
 
 
-def _retry_boundary(
-    response: DepthResponse,
+def retry_boundary(
+    response: RateLimitResponse,
     *,
     receive_utc_ns: int,
 ) -> tuple[float | None, int | None]:
@@ -158,6 +166,10 @@ def _retry_boundary(
         if seconds is not None:
             return seconds, receive_utc_ns + int(seconds * 1_000_000_000)
     return None, None
+
+
+# Kept as a private compatibility alias for the snapshot implementation.
+_retry_boundary = retry_boundary
 
 
 def capture_depth_snapshot(

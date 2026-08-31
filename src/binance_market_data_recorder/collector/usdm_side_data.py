@@ -37,6 +37,7 @@ from functools import partial
 from typing import Protocol
 
 from binance_common.errors import Error as BinanceSdkError
+from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
 from ..binance.usdm.side_data_rest import (
     FIVE_MINUTE_KINDS,
@@ -44,6 +45,7 @@ from ..binance.usdm.side_data_rest import (
     FIVE_MINUTE_RETENTION,
     REST_SIDE_DATA_SPECS,
     RestSideDataKind,
+    UsdMSideDataHttpError,
     UsdMSideRestApi,
     capture_rest_side_data,
 )
@@ -230,6 +232,115 @@ class SideDataStats:
         }
 
 
+class UsdMRestCooldown:
+    """One process-local no-request gate for USD-M side-data REST."""
+
+    FALLBACK_429_SECONDS = 60.0
+    FALLBACK_418_SECONDS = 24.0 * 60.0 * 60.0
+    MAX_418_SECONDS = 3.0 * 24.0 * 60.0 * 60.0
+
+    def __init__(
+        self,
+        *,
+        utc_clock_ns: Callable[[], int] = time.time_ns,
+        monotonic_clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._utc_clock_ns = utc_clock_ns
+        self._monotonic_clock = monotonic_clock
+        self._until_monotonic = 0.0
+        self._until_utc_ns: int | None = None
+        self._reason: str | None = None
+        self._status: int | None = None
+        self._strikes_418 = 0
+        self._changed = asyncio.Event()
+
+    @property
+    def retry_at_utc_ns(self) -> int | None:
+        return self._until_utc_ns
+
+    @property
+    def status(self) -> int | None:
+        return self._status
+
+    @property
+    def reason(self) -> str | None:
+        return self._reason
+
+    def _deadline(self) -> float:
+        return self._until_monotonic
+
+    def install(
+        self,
+        *,
+        status: int,
+        retry_after_seconds: float | None = None,
+        retry_at_utc_ns: int | None = None,
+    ) -> tuple[float, int, str]:
+        now_mono = self._monotonic_clock()
+        now_utc = self._utc_clock_ns()
+        if status == 418:
+            self._strikes_418 += 1
+            fallback = min(
+                self.MAX_418_SECONDS,
+                self.FALLBACK_418_SECONDS * (2 ** min(self._strikes_418 - 1, 2)),
+            )
+        else:
+            self._strikes_418 = 0
+            fallback = self.FALLBACK_429_SECONDS
+        if retry_at_utc_ns is not None:
+            duration = max(0.0, (retry_at_utc_ns - now_utc) / 1_000_000_000)
+            reason = "retry_after"
+        elif retry_after_seconds is not None and retry_after_seconds >= 0:
+            duration = retry_after_seconds
+            reason = "retry_after"
+        else:
+            duration = fallback
+            reason = "fallback"
+        candidate_mono = now_mono + duration
+        candidate_utc = now_utc + int(duration * 1_000_000_000)
+        if candidate_mono >= self._until_monotonic:
+            self._until_monotonic = candidate_mono
+            self._until_utc_ns = max(self._until_utc_ns or 0, candidate_utc)
+            self._reason = reason
+            self._status = status
+        else:
+            candidate_mono = self._until_monotonic
+            candidate_utc = self._until_utc_ns or candidate_utc
+        self._changed.set()
+        return candidate_mono, candidate_utc, reason
+
+    def observe_success(self) -> None:
+        if self._monotonic_clock() >= self._until_monotonic:
+            self._strikes_418 = 0
+            self._until_utc_ns = None
+            self._reason = None
+            self._status = 200
+
+    async def wait(self, stop: asyncio.Event) -> None:
+        while True:
+            delay = self._deadline() - self._monotonic_clock()
+            if delay <= 0:
+                return
+            stop_task = asyncio.create_task(stop.wait())
+            changed_task = asyncio.create_task(self._changed.wait())
+            try:
+                done, _ = await asyncio.wait(
+                    (stop_task, changed_task),
+                    timeout=delay,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not done:
+                    return
+                if stop_task in done and stop.is_set():
+                    return
+                self._changed.clear()
+            finally:
+                for task in (stop_task, changed_task):
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(stop_task, changed_task, return_exceptions=True)
+
+
 class SideDataExtension(Protocol):
     """One side-data task owned by the supervisor.
 
@@ -288,6 +399,7 @@ class RestSideDataPoller:
         rest_api: UsdMSideRestApi | None = None,
         timeout_ms: int = 10_000,
         request_lock: asyncio.Lock | None = None,
+        cooldown: UsdMRestCooldown | None = None,
         catchup_batch_limit: int = 500,
         catchup_batches_per_attempt: int = 2,
         utc_clock_ns: Callable[[], int] = time.time_ns,
@@ -304,6 +416,7 @@ class RestSideDataPoller:
         self.rest_api = rest_api
         self.timeout_ms = timeout_ms
         self.request_lock = request_lock or asyncio.Lock()
+        self.cooldown = cooldown or UsdMRestCooldown(utc_clock_ns=utc_clock_ns)
         if not 1 <= catchup_batch_limit <= 500:
             raise ValueError("USD-M catch-up batch limit must be between 1 and 500")
         if catchup_batches_per_attempt < 1:
@@ -314,6 +427,7 @@ class RestSideDataPoller:
         self.cursor_observer = cursor_observer
 
     async def run(self, stop: asyncio.Event) -> None:
+        self._active_stop = stop
         try:
             while not stop.is_set():
                 caught_up = True
@@ -323,7 +437,26 @@ class RestSideDataPoller:
                     else:
                         await self._capture_and_persist()
                 except (BinanceSdkError, RuntimeError, OSError, TimeoutError, ValueError) as exc:
+                    caught_up = False
                     self.stats.observe_failure(type(exc).__name__)
+                    rate_limit = self._rate_limit_details(exc)
+                    if rate_limit is not None:
+                        _, retry_at_utc_ns, reason = self.cooldown.install(
+                            status=rate_limit[0],
+                            retry_after_seconds=rate_limit[1],
+                            retry_at_utc_ns=rate_limit[2],
+                        )
+                        self.stats.next_retry_at_utc_ns = retry_at_utc_ns
+                        log_event(
+                            self.logger,
+                            logging.WARNING,
+                            "usdm_rest_shared_cooldown",
+                            "USD-M REST shared rate-limit cooldown entered or extended",
+                            stream=self.kind.value,
+                            status=rate_limit[0],
+                            cooldown_deadline_utc_ns=retry_at_utc_ns,
+                            reason_source=reason,
+                        )
                     log_event(
                         self.logger,
                         logging.WARNING,
@@ -339,6 +472,12 @@ class RestSideDataPoller:
                         if caught_up
                         else min(self.interval_seconds, 5.0)
                     )
+                    if self.cooldown.retry_at_utc_ns is not None:
+                        delay = max(
+                            delay,
+                            (self.cooldown.retry_at_utc_ns - time.time_ns())
+                            / 1_000_000_000,
+                        )
                     await asyncio.wait_for(stop.wait(), timeout=delay)
                 except TimeoutError:
                     continue
@@ -346,7 +485,42 @@ class RestSideDataPoller:
             await asyncio.to_thread(self.spool.close_and_seal)
 
     async def _capture_and_persist(self) -> EventEnvelope:
+        envelope = await self._request()
+        await self._persist(envelope)
+        self.stats.accepted += 1
+        self.stats.observe_success()
+        self.cooldown.observe_success()
+        return envelope
+
+    @staticmethod
+    def _rate_limit_details(
+        exc: BaseException,
+    ) -> tuple[int, float | None, int | None] | None:
+        if isinstance(exc, UsdMSideDataHttpError) and exc.rate_limited:
+            return exc.status, exc.retry_after_seconds, exc.retry_at_utc_ns
+        if isinstance(exc, RateLimitBanError):
+            return 418, None, None
+        if isinstance(exc, TooManyRequestsError):
+            return 429, None, None
+        return None
+
+    async def _request(
+        self,
+        *,
+        period_start_ms: int | None = None,
+        period_end_ms: int | None = None,
+        period_limit: int = 1,
+    ) -> EventEnvelope:
+        stop = getattr(self, "_active_stop", None)
+        if stop is None:
+            stop = asyncio.Event()
+        await self.cooldown.wait(stop)
+        if stop.is_set():
+            raise asyncio.CancelledError
         async with self.request_lock:
+            await self.cooldown.wait(stop)
+            if stop.is_set():
+                raise asyncio.CancelledError
             envelope = await asyncio.to_thread(
                 capture_rest_side_data,
                 kind=self.kind,
@@ -354,10 +528,10 @@ class RestSideDataPoller:
                 collector_instance_id=self.collector_instance_id,
                 collector_version=self.collector_version,
                 timeout_ms=self.timeout_ms,
+                period_start_ms=period_start_ms,
+                period_end_ms=period_end_ms,
+                period_limit=period_limit,
             )
-        await self._persist(envelope)
-        self.stats.accepted += 1
-        self.stats.observe_success()
         return envelope
 
     async def _persist(self, envelope: EventEnvelope) -> None:
@@ -436,18 +610,11 @@ class RestSideDataPoller:
                 + requested_count * FIVE_MINUTE_PERIOD_MS
                 - 1
             )
-            async with self.request_lock:
-                envelope = await asyncio.to_thread(
-                    capture_rest_side_data,
-                    kind=self.kind,
-                    rest_api=self.rest_api,
-                    collector_instance_id=self.collector_instance_id,
-                    collector_version=self.collector_version,
-                    timeout_ms=self.timeout_ms,
-                    period_start_ms=next_period,
-                    period_end_ms=request_end,
-                    period_limit=requested_count,
-                )
+            envelope = await self._request(
+                period_start_ms=next_period,
+                period_end_ms=request_end,
+                period_limit=requested_count,
+            )
             await self._persist(envelope)
             record_count = int(envelope.source_sequence["requestedRecordCount"])
             if record_count == 0:
@@ -489,6 +656,7 @@ class RestSideDataPoller:
                 )
             self.stats.accepted += 1
             self.stats.observe_success()
+            self.cooldown.observe_success()
             next_period = last_timestamp + FIVE_MINUTE_PERIOD_MS
         return next_period > last_closed
 
@@ -701,6 +869,7 @@ class UsdMSideDataManager:
 
         factories: dict[str, Callable[[], SideDataExtension]] = {}
         rest_request_lock = asyncio.Lock()
+        rest_cooldown = UsdMRestCooldown()
         for spec in USDM_SIDE_STREAMS:
             if not settings.stream_enabled(spec.stream):
                 continue
@@ -753,6 +922,7 @@ class UsdMSideDataManager:
                     rest_api=rest_api,
                     timeout_ms=rest_timeout_ms,
                     request_lock=rest_request_lock,
+                    cooldown=rest_cooldown,
                     cursor_observer=observe_cursor,
                 )
 

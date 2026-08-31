@@ -181,11 +181,9 @@ class OrderBook:
 
     @property
     def is_crossed(self) -> bool:
-        return (
-            self.best_bid is not None
-            and self.best_ask is not None
-            and self.best_bid[0] >= self.best_ask[0]
-        )
+        best_bid = self.best_bid
+        best_ask = self.best_ask
+        return best_bid is not None and best_ask is not None and best_bid[0] >= best_ask[0]
 
     def canonical_mapping(self) -> dict[str, object]:
         return {

@@ -11,6 +11,7 @@ from binance_market_data_recorder.binance.usdm.side_data_rest import (
     PublicResponse,
     RestSideDataKind,
     SideDataSchemaError,
+    UsdMSideDataHttpError,
     capture_rest_side_data,
 )
 
@@ -39,6 +40,11 @@ class Response:
         if isinstance(self.value, list):
             return [Model(item) for item in self.value]
         return Model(self.value)
+
+
+class RateLimitedResponse(Response):
+    status = 429
+    headers: ClassVar[dict[str, object]] = {"Retry-After": "17"}
 
 
 class Api:
@@ -166,6 +172,24 @@ def test_invalid_side_data_schema_is_not_silently_accepted() -> None:
             collector_instance_id="collector-1",
             collector_version="test",
         )
+
+
+def test_http_rate_limit_preserves_retry_after_boundary() -> None:
+    api = Api("open_interest.json")
+    response = RateLimitedResponse({})
+    api._response = lambda name, *args: response  # type: ignore[method-assign]
+    with pytest.raises(UsdMSideDataHttpError) as raised:
+        capture_rest_side_data(
+            kind=RestSideDataKind.OPEN_INTEREST,
+            rest_api=api,
+            collector_instance_id="collector-1",
+            collector_version="test",
+            utc_clock_ns=iter([1_000_000_000, 2_000_000_000]).__next__,
+            monotonic_clock_ns=iter([1, 2]).__next__,
+        )
+    assert raised.value.status == 429
+    assert raised.value.retry_after_seconds == 17
+    assert raised.value.retry_at_utc_ns == 19_000_000_000
 
 
 @pytest.mark.parametrize(

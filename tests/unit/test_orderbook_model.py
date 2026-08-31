@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from binance_market_data_recorder.orderbook.model import (
     BookSnapshot,
     DepthUpdate,
@@ -45,6 +47,43 @@ def test_empty_and_crossed_properties() -> None:
     assert crossed.is_crossed
     assert not crossed.is_empty
     assert empty.is_empty
+
+
+@pytest.mark.parametrize(
+    ("bids", "asks", "expected"),
+    [
+        ((), (), False),
+        ((), (("100", "1"),), False),
+        ((("99", "1"),), (), False),
+        ((("99", "1"),), (("100", "1"),), False),
+        ((("100", "1"),), (("100", "1"),), True),
+        ((("101", "1"),), (("100", "1"),), True),
+    ],
+)
+def test_is_crossed_evaluates_each_best_side_once(
+    bids: tuple[tuple[str, str], ...],
+    asks: tuple[tuple[str, str], ...],
+    expected: bool,
+) -> None:
+    class CountingOrderBook(OrderBook):
+        best_bid_accesses = 0
+        best_ask_accesses = 0
+
+        @property
+        def best_bid(self) -> tuple[Decimal, Decimal] | None:
+            self.best_bid_accesses += 1
+            return super().best_bid
+
+        @property
+        def best_ask(self) -> tuple[Decimal, Decimal] | None:
+            self.best_ask_accesses += 1
+            return super().best_ask
+
+    book = CountingOrderBook(BookSnapshot("spot", "BTCUSDT", 1, bids, asks))
+
+    assert book.is_crossed is expected
+    assert book.best_bid_accesses == 1
+    assert book.best_ask_accesses == 1
 
 
 def test_decimal_canonicalization_does_not_round_to_process_context_precision() -> None:
