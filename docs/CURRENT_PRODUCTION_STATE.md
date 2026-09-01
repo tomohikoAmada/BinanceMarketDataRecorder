@@ -1,48 +1,53 @@
 # Current Production State
 
 This file is the concise operational authority for the current repository and
-VPS candidate. For project history, evidence boundaries, and takeover guidance,
-see [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Historical acceptance and
-incident records remain unchanged in `docs/milestone_acceptance/` and
+VPS candidate. It separates current GitHub engineering source, the older
+deployed VPS artifact, and historical validation evidence. For project history,
+evidence boundaries, and takeover guidance, see
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Historical acceptance and incident
+records remain unchanged in `docs/milestone_acceptance/` and
 `docs/milestone_evidence/`.
 
 ## Status at a glance
 
 ```text
-PRE_DOC_MAIN=697e9900b6017844cbfcba01d9815308523a053e
+PRE_DOC_MAIN=c7d7900830e39d17470059f670ab2e5005e57103
 MAIN=VERIFY_LIVE_GITHUB_MAIN; DOCUMENTATION_COMMIT_NEWER_THAN_PRE_DOC_MAIN
-M23_4=COMPLETE
-NEW_HOST_SUBSTRATE=PASS
-NEW_HOST_30MIN=PASS
-NEW_HOST_2H=PASS
-NEW_HOST_4H=PASS
-NEW_HOST_12H=PASS
-NEW_HOST_24H=PAUSED_NOT_STARTED
-NEW_HOST_72H=NOT_STARTED
-NEW_HOST_168H=NOT_STARTED
-CURRENT_PHASE=CPU_HARDENING_AFTER_12H_NEW_HOST_VALIDATION
-LONG_BURNIN_STATUS=PAUSED
-NEXT=EXACT_HEAD_CPU_PROFILING
+RECORDER_HARDENING_PHASE=CLOSED
+REMOTE_DELETE_MIXED_GENERATION_P1=CLOSED
+ORIGINAL_CORE_SIDE_SHARED_GATE_P2=CLOSED
+PR45_HARDENING_INTEGRATED=YES
+PR46_REMOTE_DELETE_FIX_INTEGRATED=YES
+PR47_SHARED_GATE_INTEGRATED=YES
+POST_MERGE_CI_RUN=33456832048; MACOS=SUCCESS; UBUNTU=SUCCESS
+GITHUB_MAIN_IS_NEWER_THAN_DEPLOYED_SOURCE=YES
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_HAS_NO_LONG_BURNIN_DURATION_CREDIT=YES
+24H_NONFORMAL=PAUSED_NOT_STARTED
+72H_NONFORMAL=NOT_STARTED
+168H_NONFORMAL=NOT_STARTED
+CURRENT_PHASE=HARDENING_HANDOFF_CLOSED
+NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 M23_5=NOT_AUTHORIZED
 ```
 
-This state was consolidated on 2026-08-31. Verify live GitHub `main`; this
-documentation commit is newer than pre-documentation `main`
-`697e9900b6017844cbfcba01d9815308523a053e`. It is documentation authority only:
-it does not authorize deployment, service restart, formal acceptance, profiling,
-or data retirement.
+This state follows the exact pre-documentation GitHub `main`
+`c7d7900830e39d17470059f670ab2e5005e57103`. Verify live GitHub `main`; the
+documentation commit created from that head is newer than `PRE_DOC_MAIN`. This
+file is documentation authority only: it does not authorize deployment,
+service restart, formal acceptance, profiling, or data retirement.
 
 ## Source, review, and deployment authority
 
 | Item | Current authority |
 | --- | --- |
-| GitHub `main` | Verify live; this documentation commit is newer than pre-doc `main` `697e9900b6017844cbfcba01d9815308523a053e` |
-| M23.4 merge | PR #41, merge commit `e074d41a…`; this documentation commit follows it |
-| Post-merge CI | `offline-ci` run `33174563501`, completed/success |
-| M23.4 independent final review | approved; `P0=0`, `P1=0`, `P2=0`, `P3=0` |
-| Deployed source | `e074d41a979af92b50bee880d6d55295ca65413d` |
+| GitHub `main` | Verify live; pre-doc authority `c7d7900830e39d17470059f670ab2e5005e57103`; this documentation commit is newer than it |
+| Recent closed engineering integration | PR #45 BBO/taker/initial side-data hardening; PR #46 remote-delete single SQLite snapshot correction; PR #47 shared process-local USD-M public REST gate |
+| Hardening phase | CLOSED; PR #45/46/47 integrated |
+| Post-merge CI for PR #47 | `offline-ci` run `33456832048`, completed/success on macOS and Ubuntu |
+| Deployed source | `e074d41a979af92b50bee880d6d55295ca65413d` (older VPS artifact) |
 | Retained deployed Wheel | `/opt/binance-market-data-recorder/release-e074d41/binance_market_data_recorder-0.1.0a1-py3-none-any.whl` |
 | Current deployed Wheel SHA-256 | `48784824f9d7501ddb5f56a210fcf6b846ae1dd8b46e3cc3dd71f96652c53d0c` |
 | Historical unavailable Wheel SHA-256 | `7dfef238514dbb3fc1ceb56e1b395eefbb8a85516bd4ffcf784daaf1260634a1` (historical only) |
@@ -50,18 +55,39 @@ or data retirement.
 | Production config SHA-256 | `5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb` |
 | systemd unit SHA-256 | `69f3c4c2c77a3e6fc4ee397d26ecb2927a741a6165024b2f6656727d0b398b83` |
 | Current new-host deployment identity | `6856d07f54bb27f2b375443f4e96abf8f551babd530bafda94c167242aaaac24` |
-| Service at close of the M23.4 window | ACTIVE / READY, zero restarts |
+| Current main deployed | NO; no current-main deployment identity exists |
+| Service at close of the older M23.4 window | ACTIVE / READY, zero restarts; historical observation |
 
-The service observation is historical evidence at the end of the validated
-window, not a durable claim about a PID or future live state. Verify service,
-artifact, host, boot, and process-incarnation authority before every new run.
-The deployed candidate is not thereby Production Ready.
+The service observation and every Wheel/config/systemd identity in this section
+belong to the older deployed source `e074d41a…`, not current GitHub `main`.
+GitHub main is newer and has no deployment or long-burn-in duration credit.
+Verify service, artifact, host, boot, and process-incarnation authority before
+every new run. The deployed candidate is not thereby Production Ready.
+
+## Recent closed GitHub engineering hardening
+
+The following engineering changes are merged into current GitHub `main` but are
+not thereby deployed or validated on the VPS:
+
+1. BBO duplicate best-price scan removal;
+2. USD-M taker retry/cursor correction;
+3. side-data REST rate-limit cooldown coordination;
+4. remote-delete mixed-generation SQLite authority correction;
+5. one `UsdMCollector`-owned USD-M public REST cooldown and request lock shared
+   by core depth snapshots and enabled side-data REST;
+6. cancellation cleanup preserving a completed 418/429 observation before the
+   shared request lock is released.
+
+PR #45, PR #46, and PR #47 are the integration authority for this closed
+hardening phase. The final PR #47 CI was run `33456832048`, with macOS and
+Ubuntu successful.
 
 ## M23.4 status
 
 M23.4, Incremental Clean-Seal Evidence, is implemented, independently approved,
 merged, deployed, post-merge CI-clean, and validated by a two-hour non-formal
-production-equivalent VPS A/B run.
+production-equivalent VPS A/B run for the older `e074d41a…` candidate. This is
+historical artifact-specific evidence, not current-main validation.
 
 Normal live-owned clean rotation now seals with writer-owned incremental
 verified evidence and no redundant second full semantic scan. General
@@ -122,12 +148,22 @@ RSS is a watch item, not a proven leak: the observed maxima were approximately
 The 12-hour report classifies the trend as upward but inconclusive; there was
 no swap, OOM, systemd restart, or clear resource exhaustion.
 
-## Current validation phase
+## Current project status and validation boundary
 
-The current phase is **CPU HARDENING AFTER 12H NEW-HOST VALIDATION**. The
-completed 30-minute, 2-hour, 4-hour, and 12-hour windows are frozen as
-non-formal engineering evidence. The 24-hour window is paused and not started;
-72-hour and 168-hour windows are not started:
+The GitHub hardening phase is closed. The older deployed VPS candidate has
+frozen non-formal evidence through 12 hours, but that evidence belongs only to
+source `e074d41a…` and its recorded Wheel/deployment identity. Current GitHub
+`main` has no deployment or long-burn-in duration credit. The status remains:
+
+```text
+PRODUCTION_READY=NO
+FORMAL_M22_9=NOT_STARTED
+24H_NONFORMAL=PAUSED_NOT_STARTED
+72H_NONFORMAL=NOT_STARTED
+168H_NONFORMAL=NOT_STARTED
+```
+
+The historical/deployed sequence was:
 
 ```text
 30m PASS -> 2h PASS -> 4h PASS -> 12h PASS -> 24h PAUSED/NOT_STARTED
@@ -143,15 +179,20 @@ was approximately 20% during Recorder operation. This is an
 benchmark. The current deployment therefore has limited CPU headroom under the
 provider policy, and longer burn-ins are paused pending exact-head profiling.
 
-The next engineering sequence is deliberately narrow:
+The next phase requires separate authorization. Before performance work or any
+long validation, verify live `main` and choose one explicit path:
 
 ```text
-exact-head profiling -> select one measured hot path
-                     -> correctness-preserving Python optimization
-                     -> deterministic same-workload A/B
-                     -> live production-equivalent A/B if justified
-                     -> review -> select another optimization only then
+A. fresh profiling/development against exact current GitHub main
+B. build a new immutable artifact from current main and begin a separately
+   authorized short deployment qualification
 ```
+
+If current main is deployed, build a new immutable Wheel, record new
+source/Wheel/deployment identity, do not inherit the older 30m/2h/4h/12h
+duration credit, and select a fresh short qualification before longer runs.
+Do not automatically authorize 24h burn-in, formal M22.9, M23.5, or a C++/Go
+rewrite.
 
 Provider-panel CPU% alone is not an optimization benchmark. Future evidence
 should prefer process CPU seconds, CPU seconds per million Raw events or per
@@ -258,8 +299,20 @@ evidence and does not substitute for a future M22.9 chain.
 
 ## Next action
 
-Design and execute **EXACT-HEAD CPU PROFILING** against the deployed source
-`e074d41a979af92b50bee880d6d55295ca65413d` only after separate authorization.
-Do not start the 24-hour burn-in, formal M22.9, a 278-hour chain, or M23.5 as
-the next action. If a measured optimization is later selected, build a new
-immutable artifact and restart validation without transferring duration credit.
+`NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION`. First verify live GitHub `main`
+and choose fresh current-main profiling or a separately authorized new-artifact
+short deployment qualification. The older `e074d41a…` deployment evidence is
+not current-main evidence. Do not start 24h burn-in, formal M22.9, M23.5, or a
+rewrite automatically.
+
+## Remaining nonblocking backlog
+
+These items do not reopen the closed shared-gate P2 or remote-delete P1:
+
+- repeated-cancellation supplemental regression test-strength P3;
+- cooldown state remains process-memory only across restart;
+- conservative typed/no-header 418 fallback can over-delay recovery;
+- documentation/source-provenance item, if still genuinely unresolved;
+- RSS remains WATCH / not a proven leak;
+- R-034 Spot bootstrap official-wording conflict remains open;
+- formal capacity runway remains unresolved.

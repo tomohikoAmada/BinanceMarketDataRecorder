@@ -1,21 +1,37 @@
 # BinanceMarketDataRecorder — Project Handoff
 
 This document lets a new researcher, reviewer, or developer resume work without
-chat history. It separates current authority, frozen historical evidence, and
-future plans. Verify live authority before acting: documentation does not
-replace checking GitHub, the installed artifact, service identity, or durable
-state.
+chat history. It separates current GitHub engineering source, the older
+deployed VPS artifact, frozen historical evidence, and future plans. Verify live
+authority before acting: documentation does not replace checking GitHub, the
+installed artifact, service identity, or durable state.
+
+## Start here — takeover checklist
+
+1. Verify live GitHub `main`; the pre-documentation authority for this refresh
+   is `c7d7900830e39d17470059f670ab2e5005e57103`.
+2. Treat current GitHub `main` and the deployed source as different identities:
+   `main` is newer; the VPS artifact remains
+   `e074d41a979af92b50bee880d6d55295ca65413d`.
+3. Confirm PR #45, PR #46, and PR #47 are merged and that PR #47 post-merge
+   CI run `33456832048` succeeded on macOS and Ubuntu.
+4. Keep `PRODUCTION_READY=NO`, formal M22.9 `NOT_STARTED`, and the non-formal
+   24h/72h/168h status as paused/not started below.
+5. Before profiling or validation, obtain separate authorization and choose
+   current-main development profiling or a new immutable artifact plus fresh
+   short deployment qualification. Do not inherit old duration credit.
 
 ## 1. Current authoritative state
 
 | Area | Status | Authority |
 | --- | --- | --- |
-| GitHub main | Verify live; documentation commit is newer than pre-doc `main` | `697e9900b6017844cbfcba01d9815308523a053e` was the pre-doc authority |
-| Latest merged milestone | M23.4 complete | PR #41; merge commit `e074d41a…` precedes this documentation commit |
-| Post-merge CI | Passed | `offline-ci` run `33174563501`, same head SHA |
-| M23.4 correctness | Independently approved | `P0=0`, `P1=0`, `P2=0`, `P3=0` |
-| VPS candidate | Deployed and non-formally validated through 12h | identities and frozen evidence below |
-| Current phase | CPU hardening after 12h new-host validation | 24h paused/not started; exact-head CPU profiling next |
+| GitHub main | Verify live; pre-doc authority `c7d7900830e39d17470059f670ab2e5005e57103`; this documentation commit is newer | current engineering source |
+| Recent closed engineering work | PR #45 BBO/taker/side-data hardening; PR #46 remote-delete SQLite snapshot; PR #47 shared USD-M public REST gate | all integrated into main |
+| Hardening phase | CLOSED | PR #45/46/47 integrated |
+| PR #47 post-merge CI | Passed | `offline-ci` run `33456832048`, macOS and Ubuntu |
+| VPS candidate | Older source deployed and non-formally validated through 12h | identities and frozen evidence below; not current main |
+| Current main deployed | NO | no duration credit transfers from the VPS candidate |
+| Current phase | Handoff / next phase requires separate authorization | 24h paused/not started; 72h/168h not started |
 | Formal M22.9 | Not started | precondition stopped before T0 on capacity |
 | Production Ready | No | formal terminal chain not complete |
 | M23.5 | Deferred/evidence-gated | not authorized and not next |
@@ -50,7 +66,8 @@ Meaningful closed workstreams recorded by the milestone plan and evidence are:
 - M23.0/M23.0F: production-equivalent profiling that identified the redundant
   synchronous seal scan;
 - M23.4: incremental clean-seal evidence, independently approved, merged,
-  deployed, and passed in a two-hour non-formal VPS validation.
+  deployed, and passed in a two-hour non-formal VPS validation on its older
+  candidate; this remains historical artifact-specific evidence.
 
 Historical milestone results remain historical. Old M21 and M22.9 incident
 records are not rewritten as if the current candidate existed at their T0.
@@ -221,8 +238,8 @@ evidence is frozen.
 ## 7. Open work / not yet done
 
 - The 24h checkpoint is paused/not started; 72h and 168h are not started.
-- Exact-head CPU profiling is the next engineering action; no profiling has
-  started in this documentation update.
+- No next engineering action is automatically authorized; the next phase
+  requires separate authorization and an explicit current-main path.
 - M23.1/M23.2 remain fresh-profiling decisions, and no group of optimizations
   is authorized together.
 - Formal M22.9 has not started; its capacity-complete environment is not ready.
@@ -256,11 +273,36 @@ evidence is frozen.
 
 ## 9. Next operator/developer action
 
-Design and execute **EXACT-HEAD CPU PROFILING** against the deployed source
-`e074d41a979af92b50bee880d6d55295ca65413d` after separate authorization. Do not
-start the paused 24-hour burn-in, formal M22.9, or M23.5 as the next action.
+`NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION`. Verify live main, then choose
+either fresh profiling/development against exact current GitHub main or a new
+immutable artifact from current main followed by a separately authorized short
+deployment qualification. Build a new Wheel and identity if deploying; do not
+inherit the older 30m/2h/4h/12h duration credit. Do not automatically start
+24h burn-in, formal M22.9, M23.5, or a C++/Go rewrite.
 
-## 10. Rules for the next researcher/developer
+## 10. Recent closed engineering hardening
+
+PR #45 removed the BBO duplicate best-price scan and corrected USD-M taker
+retry/cursor and initial side-data rate-limit behavior. PR #46 corrected
+remote-delete mixed-generation authority by using one SQLite read snapshot. PR
+#47 introduced one collector-owned USD-M public REST cooldown/request lock for
+core depth snapshots and side-data REST, including cancellation preservation of
+completed 418/429 observations before lock release. These are current GitHub
+engineering facts, not VPS deployment or long-run validation evidence.
+
+## 11. Remaining nonblocking backlog
+
+The following do not reopen the closed shared-gate P2 or remote-delete P1:
+
+- repeated-cancellation supplemental regression test-strength P3;
+- process-memory-only cooldown state across restart;
+- conservative typed/no-header 418 fallback over-delay risk;
+- documentation/source-provenance item if still genuinely unresolved;
+- RSS WATCH / not a proven leak;
+- R-034 Spot bootstrap official-wording conflict;
+- unresolved formal capacity runway.
+
+## 12. Rules for the next researcher/developer
 
 - Verify live GitHub, artifact, host/boot/process incarnation, service health,
   and durable-state authority first.
