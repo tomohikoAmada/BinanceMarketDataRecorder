@@ -233,7 +233,7 @@ class SideDataStats:
 
 
 class UsdMRestCooldown:
-    """One process-local no-request gate for USD-M side-data REST."""
+    """One process-local no-request gate for USD-M public REST."""
 
     FALLBACK_429_SECONDS = 60.0
     FALLBACK_418_SECONDS = 24.0 * 60.0 * 60.0
@@ -415,8 +415,14 @@ class RestSideDataPoller:
         self.catalog = catalog
         self.rest_api = rest_api
         self.timeout_ms = timeout_ms
-        self.request_lock = request_lock or asyncio.Lock()
-        self.cooldown = cooldown or UsdMRestCooldown(utc_clock_ns=utc_clock_ns)
+        self.request_lock = (
+            request_lock if request_lock is not None else asyncio.Lock()
+        )
+        self.cooldown = (
+            cooldown
+            if cooldown is not None
+            else UsdMRestCooldown(utc_clock_ns=utc_clock_ns)
+        )
         if not 1 <= catchup_batch_limit <= 500:
             raise ValueError("USD-M catch-up batch limit must be between 1 and 500")
         if catchup_batches_per_attempt < 1:
@@ -786,6 +792,8 @@ class UsdMSideDataManager:
         rest_api: UsdMSideRestApi | None,
         websocket_opener: ConnectionOpener,
         metrics: MetricsRecorder | None = None,
+        request_lock: asyncio.Lock | None = None,
+        cooldown: UsdMRestCooldown | None = None,
     ) -> None:
         enabled = {
             **{kind.value: settings.rest_enabled(kind) for kind in REST_SIDE_DATA_SPECS},
@@ -868,8 +876,12 @@ class UsdMSideDataManager:
             return observe
 
         factories: dict[str, Callable[[], SideDataExtension]] = {}
-        rest_request_lock = asyncio.Lock()
-        rest_cooldown = UsdMRestCooldown()
+        self.rest_request_lock = (
+            request_lock if request_lock is not None else asyncio.Lock()
+        )
+        self.rest_cooldown = (
+            cooldown if cooldown is not None else UsdMRestCooldown()
+        )
         for spec in USDM_SIDE_STREAMS:
             if not settings.stream_enabled(spec.stream):
                 continue
@@ -921,8 +933,8 @@ class UsdMSideDataManager:
                     catalog=catalog,
                     rest_api=rest_api,
                     timeout_ms=rest_timeout_ms,
-                    request_lock=rest_request_lock,
-                    cooldown=rest_cooldown,
+                    request_lock=self.rest_request_lock,
+                    cooldown=self.rest_cooldown,
                     cursor_observer=observe_cursor,
                 )
 
