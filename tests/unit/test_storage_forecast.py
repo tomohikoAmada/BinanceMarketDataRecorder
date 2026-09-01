@@ -722,7 +722,9 @@ def test_forecast_rate_input_is_mechanically_bounded(tmp_path: Path) -> None:
             free_bytes=899 * GIB,
         )
         probe = NoFullHistoryCatalog(catalog)
-        result = StorageForecaster(catalog=probe, data_root=tmp_path).forecast(
+        result = StorageForecaster(
+            catalog=cast(Catalog, probe), data_root=tmp_path
+        ).forecast(
             "internal", now_utc_ns=now
         )
         expected_cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
@@ -800,7 +802,9 @@ def test_forecast_read_set_pins_snapshot_and_allows_writer_commit(
         writer_thread.start()
         try:
             probe = NoFullHistoryCatalog(reader)
-            result = StorageForecaster(catalog=probe, data_root=tmp_path).forecast(
+            result = StorageForecaster(
+                catalog=cast(Catalog, probe), data_root=tmp_path
+            ).forecast(
                 "internal", now_utc_ns=now
             )
         finally:
