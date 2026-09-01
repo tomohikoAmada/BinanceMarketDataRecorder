@@ -264,15 +264,16 @@ class StorageForecaster:
         now = self.utc_clock_ns() if now_utc_ns is None else now_utc_ns
         max_window_seconds = max(WINDOWS_SECONDS.values())
         max_cutoff = now - max_window_seconds * 1_000_000_000
-        samples = self.catalog.space_samples_between(
+        (
+            samples,
+            predecessor,
+            current,
+            sample_count,
+        ) = self.catalog.space_forecast_read_set(
             scope_id,
             start_exclusive_utc_ns=max_cutoff,
             end_inclusive_utc_ns=now,
         )
-        predecessor = self.catalog.latest_predecessor_space_sample_at_or_before(
-            scope_id, max_cutoff
-        )
-        current = self.catalog.latest_space_sample_at_or_before(scope_id, now)
         if current is None:
             return {
                 "scope_id": scope_id,
@@ -339,7 +340,7 @@ class StorageForecaster:
                 and not isinstance(oldest_unarchived, bool)
                 else None
             ),
-            "sample_count": self.catalog.space_sample_count(scope_id),
+            "sample_count": sample_count,
         }
         if capacity_profile is not None:
             hard_reserve_eta = _eta(

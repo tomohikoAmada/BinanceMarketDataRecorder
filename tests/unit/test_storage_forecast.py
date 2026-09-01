@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+import threading
 from pathlib import Path
 from typing import Any, cast
+
+import pytest
 
 from binance_market_data_recorder.archive import ArchiveManager
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -33,8 +37,8 @@ def record_sample(
     total_bytes: int = 1_000 * GIB,
     archive_backlog_bytes: int = 0,
     oldest_unarchived_at_utc_ns: int | None = None,
-) -> None:
-    catalog.record_space_sample(
+) -> bool:
+    return catalog.record_space_sample(
         sample_id=sample_id,
         scope_id="internal",
         storage_id=storage_id,
@@ -665,46 +669,40 @@ class NoFullHistoryCatalog:
         self.catalog = catalog
         self.range_arguments: tuple[int, int] | None = None
         self.materialized_rows = 0
+        self.read_set: tuple[
+            list[dict[str, object]],
+            dict[str, object] | None,
+            dict[str, object] | None,
+            int,
+        ] | None = None
 
     def space_samples(self, _scope_id: str) -> list[dict[str, object]]:
         raise AssertionError("unbounded space_samples() was called")
 
-    def space_samples_between(
+    def space_forecast_read_set(
         self,
         scope_id: str,
         *,
         start_exclusive_utc_ns: int,
         end_inclusive_utc_ns: int,
-    ) -> list[dict[str, object]]:
+    ) -> tuple[
+        list[dict[str, object]],
+        dict[str, object] | None,
+        dict[str, object] | None,
+        int,
+    ]:
         self.range_arguments = (start_exclusive_utc_ns, end_inclusive_utc_ns)
-        rows = self.catalog.space_samples_between(
+        read_set = self.catalog.space_forecast_read_set(
             scope_id,
             start_exclusive_utc_ns=start_exclusive_utc_ns,
             end_inclusive_utc_ns=end_inclusive_utc_ns,
         )
-        self.materialized_rows += len(rows)
-        return rows
-
-    def latest_space_sample_at_or_before(
-        self, scope_id: str, observed_at_utc_ns: int
-    ) -> dict[str, object] | None:
-        row = self.catalog.latest_space_sample_at_or_before(
-            scope_id, observed_at_utc_ns
-        )
-        self.materialized_rows += int(row is not None)
-        return row
-
-    def latest_predecessor_space_sample_at_or_before(
-        self, scope_id: str, observed_at_utc_ns: int
-    ) -> dict[str, object] | None:
-        row = self.catalog.latest_predecessor_space_sample_at_or_before(
-            scope_id, observed_at_utc_ns
-        )
-        self.materialized_rows += int(row is not None)
-        return row
-
-    def space_sample_count(self, scope_id: str) -> int:
-        return self.catalog.space_sample_count(scope_id)
+        self.read_set = read_set
+        samples, predecessor, current, _ = read_set
+        self.materialized_rows += len(samples)
+        self.materialized_rows += int(predecessor is not None)
+        self.materialized_rows += int(current is not None)
+        return read_set
 
 
 def test_forecast_rate_input_is_mechanically_bounded(tmp_path: Path) -> None:
@@ -733,3 +731,172 @@ def test_forecast_rate_input_is_mechanically_bounded(tmp_path: Path) -> None:
     assert probe.range_arguments == (expected_cutoff, now)
     assert probe.materialized_rows == 3
     assert probe.materialized_rows < total_count
+
+
+def test_forecast_read_set_pins_snapshot_and_allows_writer_commit(
+    tmp_path: Path,
+) -> None:
+    now = 10 * DAY_NS
+    cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
+    path = tmp_path / "snapshot.sqlite"
+    with Catalog(path) as seed:
+        record_sample(
+            seed,
+            sample_id="generation-g-predecessor",
+            observed_at_utc_ns=cutoff,
+            free_bytes=900 * GIB,
+        )
+        record_sample(
+            seed,
+            sample_id="generation-g-current",
+            observed_at_utc_ns=now,
+            free_bytes=899 * GIB,
+        )
+
+    reader = Catalog(path)
+    writer = Catalog(path)
+    try:
+        pre_write = legacy_full_history_forecast(
+            reader, scope_id="internal", now_utc_ns=now
+        )
+        trace: list[str] = []
+        reader_paused_before_predecessor = threading.Event()
+        writer_commit_completed = threading.Event()
+        writer_commit_seen_by_reader = threading.Event()
+        writer_inserted: list[bool] = []
+        writer_errors: list[BaseException] = []
+
+        def writer_task() -> None:
+            if not reader_paused_before_predecessor.wait(timeout=5):
+                writer_errors.append(
+                    AssertionError("reader did not reach predecessor SELECT")
+                )
+                writer_commit_completed.set()
+                return
+            try:
+                writer_inserted.append(
+                    record_sample(
+                        writer,
+                        sample_id="generation-g-plus-one",
+                        observed_at_utc_ns=now - HOUR_NS,
+                        free_bytes=100 * GIB,
+                    )
+                )
+            except BaseException as exc:
+                writer_errors.append(exc)
+            finally:
+                writer_commit_completed.set()
+
+        def trace_callback(statement: str) -> None:
+            normalized = " ".join(statement.split()).upper()
+            trace.append(normalized)
+            if "ORDER BY OBSERVED_AT_UTC_NS DESC, SAMPLE_ID DESC" in normalized:
+                reader_paused_before_predecessor.set()
+                if writer_commit_completed.wait(timeout=5):
+                    writer_commit_seen_by_reader.set()
+
+        reader._connection.set_trace_callback(trace_callback)
+        writer_thread = threading.Thread(target=writer_task)
+        writer_thread.start()
+        try:
+            probe = NoFullHistoryCatalog(reader)
+            result = StorageForecaster(catalog=probe, data_root=tmp_path).forecast(
+                "internal", now_utc_ns=now
+            )
+        finally:
+            reader._connection.set_trace_callback(None)
+            writer_thread.join(timeout=5)
+
+        assert not writer_thread.is_alive()
+        assert writer_inserted == [True]
+        assert not writer_errors
+        assert writer_commit_seen_by_reader.is_set()
+        assert reader_paused_before_predecessor.is_set()
+        assert result == pre_write
+        assert probe.materialized_rows == 1 + 1 + 1
+        assert probe.range_arguments == (cutoff, now)
+
+        assert probe.read_set is not None
+        read_set = probe.read_set
+        bounded, predecessor, current, sample_count = read_set
+        assert [row["sample_id"] for row in bounded] == [
+            "generation-g-current"
+        ]
+        assert predecessor is not None
+        assert predecessor["sample_id"] == "generation-g-predecessor"
+        assert current is not None
+        assert current["sample_id"] == "generation-g-current"
+        assert sample_count == 2
+
+        post_write = legacy_full_history_forecast(
+            reader, scope_id="internal", now_utc_ns=now
+        )
+        assert post_write["sample_count"] == 3
+        assert post_write != pre_write
+        pre_write_net = cast(dict[str, object], pre_write["net_growth"])
+        post_write_net = cast(dict[str, object], post_write["net_growth"])
+        assert pre_write_net["selected_bytes_per_second"] != post_write_net[
+            "selected_bytes_per_second"
+        ]
+
+        assert not reader._connection.in_transaction
+        assert trace[0] == "BEGIN"
+        assert trace[-1] == "COMMIT"
+        selects = [statement for statement in trace if statement.startswith("SELECT")]
+        assert len(selects) == 4
+        assert "OBSERVED_AT_UTC_NS >" in selects[0]
+        assert "OBSERVED_AT_UTC_NS <=" in selects[0]
+        assert "ORDER BY OBSERVED_AT_UTC_NS, SAMPLE_ID" in selects[0]
+        assert "DESC" not in selects[0]
+        assert "ORDER BY OBSERVED_AT_UTC_NS DESC, SAMPLE_ID DESC" in selects[1]
+        assert "ORDER BY OBSERVED_AT_UTC_NS DESC, SAMPLE_ID ASC" in selects[2]
+        assert selects[3].startswith("SELECT COUNT(*) AS SAMPLE_COUNT")
+        assert all("BEGIN IMMEDIATE" not in statement for statement in trace)
+    finally:
+        reader.close()
+        writer.close()
+
+
+def test_forecast_read_set_rolls_back_after_read_failure(tmp_path: Path) -> None:
+    path = tmp_path / "rollback.sqlite"
+    now = 10 * DAY_NS
+    cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
+    with Catalog(path) as catalog:
+        record_sample(
+            catalog,
+            sample_id="rollback-seed",
+            observed_at_utc_ns=now,
+            free_bytes=900 * GIB,
+        )
+        trace: list[str] = []
+
+        def trace_callback(statement: str) -> None:
+            trace.append(" ".join(statement.split()).upper())
+
+        def deny_space_sample_reads(
+            action: int,
+            arg1: str | None,
+            _arg2: str | None,
+            _database: str | None,
+            _source: str | None,
+        ) -> int:
+            if action == sqlite3.SQLITE_READ and arg1 == "storage_space_samples":
+                return sqlite3.SQLITE_DENY
+            return sqlite3.SQLITE_OK
+
+        catalog._connection.set_trace_callback(trace_callback)
+        catalog._connection.set_authorizer(deny_space_sample_reads)
+        try:
+            with pytest.raises(sqlite3.DatabaseError):
+                catalog.space_forecast_read_set(
+                    "internal",
+                    start_exclusive_utc_ns=cutoff,
+                    end_inclusive_utc_ns=now,
+                )
+        finally:
+            catalog._connection.set_authorizer(None)
+            catalog._connection.set_trace_callback(None)
+
+        assert trace[0] == "BEGIN"
+        assert "ROLLBACK" in trace
+        assert not catalog._connection.in_transaction
