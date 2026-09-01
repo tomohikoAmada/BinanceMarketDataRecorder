@@ -262,33 +262,29 @@ class StorageForecaster:
         if capacity_profile is not None:
             capacity_profile.validate_scope(scope_id)
         now = self.utc_clock_ns() if now_utc_ns is None else now_utc_ns
-        samples = self.catalog.space_samples(scope_id)
-        if not samples:
-            return {
-                "scope_id": scope_id,
-                "status": "INSUFFICIENT_DATA",
-                "sample_count": 0,
-            }
-        current = max(
-            (
-                row
-                for row in samples
-                if _sample_int(row, "observed_at_utc_ns") <= now
-            ),
-            key=lambda row: _sample_int(row, "observed_at_utc_ns"),
-            default=None,
+        max_window_seconds = max(WINDOWS_SECONDS.values())
+        max_cutoff = now - max_window_seconds * 1_000_000_000
+        samples = self.catalog.space_samples_between(
+            scope_id,
+            start_exclusive_utc_ns=max_cutoff,
+            end_inclusive_utc_ns=now,
         )
+        predecessor = self.catalog.latest_predecessor_space_sample_at_or_before(
+            scope_id, max_cutoff
+        )
+        current = self.catalog.latest_space_sample_at_or_before(scope_id, now)
         if current is None:
             return {
                 "scope_id": scope_id,
                 "status": "INSUFFICIENT_DATA",
                 "sample_count": 0,
             }
+        rate_samples = ([predecessor] if predecessor is not None else []) + samples
         total = _sample_int(current, "total_bytes")
         free = _sample_int(current, "free_bytes")
         windows = {
             name: _window_rate(
-                samples, now_utc_ns=now, window_seconds=window_seconds
+                rate_samples, now_utc_ns=now, window_seconds=window_seconds
             )
             for name, window_seconds in WINDOWS_SECONDS.items()
         }
@@ -343,7 +339,7 @@ class StorageForecaster:
                 and not isinstance(oldest_unarchived, bool)
                 else None
             ),
-            "sample_count": len(samples),
+            "sample_count": self.catalog.space_sample_count(scope_id),
         }
         if capacity_profile is not None:
             hard_reserve_eta = _eta(

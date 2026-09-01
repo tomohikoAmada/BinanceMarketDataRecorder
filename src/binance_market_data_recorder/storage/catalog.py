@@ -766,6 +766,78 @@ class Catalog:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def space_samples_between(
+        self,
+        scope_id: str,
+        *,
+        start_exclusive_utc_ns: int,
+        end_inclusive_utc_ns: int,
+    ) -> list[dict[str, object]]:
+        """Return ordered space samples in one explicit bounded time range."""
+
+        with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT * FROM storage_space_samples
+                WHERE scope_id = ?
+                  AND observed_at_utc_ns > ?
+                  AND observed_at_utc_ns <= ?
+                ORDER BY observed_at_utc_ns, sample_id
+                """,
+                (scope_id, start_exclusive_utc_ns, end_inclusive_utc_ns),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def latest_space_sample_at_or_before(
+        self, scope_id: str, observed_at_utc_ns: int
+    ) -> dict[str, object] | None:
+        """Return the current-sample winner at or before a timestamp."""
+
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT * FROM storage_space_samples
+                WHERE scope_id = ? AND observed_at_utc_ns <= ?
+                ORDER BY observed_at_utc_ns DESC, sample_id ASC
+                LIMIT 1
+                """,
+                (scope_id, observed_at_utc_ns),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def latest_predecessor_space_sample_at_or_before(
+        self, scope_id: str, observed_at_utc_ns: int
+    ) -> dict[str, object] | None:
+        """Return the old window-anchor winner at or before a timestamp."""
+
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT * FROM storage_space_samples
+                WHERE scope_id = ? AND observed_at_utc_ns <= ?
+                ORDER BY observed_at_utc_ns DESC, sample_id DESC
+                LIMIT 1
+                """,
+                (scope_id, observed_at_utc_ns),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def space_sample_count(self, scope_id: str) -> int:
+        """Return the exact historical sample count for one scope."""
+
+        with self._lock:
+            row = self._connection.execute(
+                """
+                SELECT COUNT(*) AS sample_count
+                FROM storage_space_samples
+                WHERE scope_id = ?
+                """,
+                (scope_id,),
+            ).fetchone()
+        if row is None:
+            raise CatalogStateError("storage space sample count is unavailable")
+        return int(row["sample_count"])
+
     def storage_alert_events(
         self, *, scope_id: str | None = None
     ) -> list[dict[str, object]]:

@@ -8,7 +8,11 @@ from binance_market_data_recorder.archive import ArchiveManager
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.forecast import (
     GIB,
+    WINDOWS_SECONDS,
     StorageForecaster,
+    _eta,
+    _sample_int,
+    _window_rate,
     hard_reserve_bytes,
     space_severity,
     threshold_bytes,
@@ -16,6 +20,115 @@ from binance_market_data_recorder.storage.forecast import (
 from tests.archive_support import prepare_archive
 
 HOUR_NS = 3_600_000_000_000
+DAY_NS = 24 * HOUR_NS
+
+
+def record_sample(
+    catalog: Catalog,
+    *,
+    sample_id: str,
+    observed_at_utc_ns: int,
+    free_bytes: int,
+    storage_id: str | None = None,
+    total_bytes: int = 1_000 * GIB,
+    archive_backlog_bytes: int = 0,
+    oldest_unarchived_at_utc_ns: int | None = None,
+) -> None:
+    catalog.record_space_sample(
+        sample_id=sample_id,
+        scope_id="internal",
+        storage_id=storage_id,
+        observed_at_utc_ns=observed_at_utc_ns,
+        total_bytes=total_bytes,
+        free_bytes=free_bytes,
+        archive_backlog_bytes=archive_backlog_bytes,
+        oldest_unarchived_at_utc_ns=oldest_unarchived_at_utc_ns,
+        severity=space_severity(total_bytes, free_bytes),
+    )
+
+
+def legacy_full_history_forecast(
+    catalog: Catalog, *, scope_id: str, now_utc_ns: int
+) -> dict[str, object]:
+    """Reference the pre-optimization full-history forecast acquisition."""
+
+    samples = catalog.space_samples(scope_id)
+    current = max(
+        (
+            row
+            for row in samples
+            if _sample_int(row, "observed_at_utc_ns") <= now_utc_ns
+        ),
+        key=lambda row: _sample_int(row, "observed_at_utc_ns"),
+        default=None,
+    )
+    if current is None:
+        return {
+            "scope_id": scope_id,
+            "status": "INSUFFICIENT_DATA",
+            "sample_count": 0,
+        }
+    total = _sample_int(current, "total_bytes")
+    free = _sample_int(current, "free_bytes")
+    windows = {
+        name: _window_rate(
+            samples, now_utc_ns=now_utc_ns, window_seconds=window_seconds
+        )
+        for name, window_seconds in WINDOWS_SECONDS.items()
+    }
+    available_rates = [
+        float(value["bytes_per_second"])
+        for value in windows.values()
+        if value["status"] == "AVAILABLE"
+        and isinstance(value["bytes_per_second"], (int, float))
+    ]
+    selected_rate = max(available_rates) if available_rates else None
+    rate_status = (
+        "INSUFFICIENT_DATA"
+        if selected_rate is None
+        else ("NOT_APPROACHING" if selected_rate <= 0 else "AVAILABLE")
+    )
+    thresholds = threshold_bytes(total)
+    oldest_unarchived = current.get("oldest_unarchived_at_utc_ns")
+    return {
+        "scope_id": scope_id,
+        "storage_id": current.get("storage_id"),
+        "status": space_severity(total, free),
+        "observed_at_utc_ns": _sample_int(current, "observed_at_utc_ns"),
+        "total_bytes": total,
+        "free_bytes": free,
+        "free_percent": round(free / total * 100, 6),
+        "threshold_bytes": thresholds,
+        "net_growth": {
+            "status": rate_status,
+            "selected_bytes_per_second": (
+                None if selected_rate is None else round(selected_rate, 6)
+            ),
+            "selection": "MAX_AVAILABLE_WINDOW_MEDIAN",
+            "windows": windows,
+        },
+        "eta": {
+            name: _eta(
+                now_utc_ns=now_utc_ns,
+                free_bytes=free,
+                threshold=threshold,
+                rate_bytes_per_second=selected_rate,
+                rate_status=rate_status,
+            )
+            for name, threshold in thresholds.items()
+        },
+        "archive_backlog_bytes": _sample_int(
+            current, "archive_backlog_bytes"
+        ),
+        "oldest_unarchived_at_utc_ns": oldest_unarchived,
+        "oldest_unarchived_age_ns": (
+            max(0, now_utc_ns - oldest_unarchived)
+            if isinstance(oldest_unarchived, int)
+            and not isinstance(oldest_unarchived, bool)
+            else None
+        ),
+        "sample_count": len(samples),
+    }
 
 
 def observe_series(
@@ -252,3 +365,371 @@ def test_backlog_and_oldest_age_follow_verified_archive(tmp_path: Path) -> None:
             int, before["archive_backlog_bytes"]
         )
         assert after["oldest_unarchived_at_utc_ns"] == 1_700_000_000_000_000_001
+
+
+def test_bounded_forecast_matches_full_history_reference_at_multiple_times(
+    tmp_path: Path,
+) -> None:
+    now_values = (15 * DAY_NS, 31 * DAY_NS, 40 * DAY_NS)
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        total = 1_000 * GIB
+        for ordinal in range(0, 41 * 4 + 1):
+            observed = ordinal * 6 * HOUR_NS
+            record_sample(
+                catalog,
+                sample_id=f"history-{ordinal:04d}",
+                observed_at_utc_ns=observed,
+                free_bytes=900 * GIB - ordinal * GIB,
+                total_bytes=total,
+            )
+        record_sample(
+            catalog,
+            sample_id="future",
+            observed_at_utc_ns=45 * DAY_NS,
+            free_bytes=123 * GIB,
+            total_bytes=total,
+        )
+        forecaster = StorageForecaster(catalog=catalog, data_root=tmp_path)
+        for now in now_values:
+            assert forecaster.forecast("internal", now_utc_ns=now) == (
+                legacy_full_history_forecast(
+                    catalog, scope_id="internal", now_utc_ns=now
+                )
+            )
+
+
+def test_exact_seven_day_cutoff_is_the_predecessor_side(tmp_path: Path) -> None:
+    now = 10 * DAY_NS
+    cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        record_sample(
+            catalog,
+            sample_id="cutoff",
+            observed_at_utc_ns=cutoff,
+            free_bytes=900 * GIB,
+        )
+        record_sample(
+            catalog,
+            sample_id="inside",
+            observed_at_utc_ns=cutoff + DAY_NS,
+            free_bytes=899 * GIB,
+        )
+        record_sample(
+            catalog,
+            sample_id="current",
+            observed_at_utc_ns=now,
+            free_bytes=898 * GIB,
+        )
+        assert catalog.space_samples_between(
+            "internal",
+            start_exclusive_utc_ns=cutoff,
+            end_inclusive_utc_ns=now,
+        )[0]["sample_id"] == "inside"
+        assert catalog.latest_space_sample_at_or_before("internal", cutoff) is not None
+        result = StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+            "internal", now_utc_ns=now
+        )
+    windows = cast(
+        dict[str, dict[str, object]],
+        cast(dict[str, object], result["net_growth"])["windows"],
+    )
+    assert windows["7d"]["status"] == "AVAILABLE"
+    assert windows["7d"]["sample_count"] == 3
+
+
+def test_seven_day_predecessor_tolerance_boundary_is_inclusive(tmp_path: Path) -> None:
+    now = 20 * DAY_NS
+    window_seconds = WINDOWS_SECONDS["7d"]
+    cutoff = now - window_seconds * 1_000_000_000
+    tolerance = int(window_seconds * 0.2 * 1_000_000_000)
+    counts: list[int] = []
+    for ordinal, predecessor_at in enumerate(
+        (cutoff - tolerance, cutoff - tolerance - 1)
+    ):
+        path = tmp_path / f"boundary-{ordinal}.sqlite"
+        with Catalog(path) as catalog:
+            record_sample(
+                catalog,
+                sample_id="predecessor",
+                observed_at_utc_ns=predecessor_at,
+                free_bytes=900 * GIB,
+            )
+            record_sample(
+                catalog,
+                sample_id="inside",
+                observed_at_utc_ns=cutoff + DAY_NS,
+                free_bytes=899 * GIB,
+            )
+            record_sample(
+                catalog,
+                sample_id="current",
+                observed_at_utc_ns=now,
+                free_bytes=898 * GIB,
+            )
+            result = StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+                "internal", now_utc_ns=now
+            )
+            windows = cast(
+                dict[str, dict[str, object]],
+                cast(dict[str, object], result["net_growth"])["windows"],
+            )
+            counts.append(cast(int, windows["7d"]["sample_count"]))
+    assert counts == [3, 2]
+
+
+def test_short_window_predecessors_remain_inside_bounded_read_set(
+    tmp_path: Path,
+) -> None:
+    now = 10 * DAY_NS
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        for name, seconds, ordinal in (
+            ("1h", WINDOWS_SECONDS["1h"], 1),
+            ("6h", WINDOWS_SECONDS["6h"], 6),
+            ("24h", WINDOWS_SECONDS["24h"], 24),
+        ):
+            record_sample(
+                catalog,
+                sample_id=f"{name}-predecessor",
+                observed_at_utc_ns=now - seconds * 1_000_000_000,
+                free_bytes=900 * GIB - ordinal * GIB,
+            )
+        record_sample(
+            catalog,
+            sample_id="current",
+            observed_at_utc_ns=now,
+            free_bytes=899 * GIB,
+        )
+        result = StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+            "internal", now_utc_ns=now
+        )
+    windows = cast(
+        dict[str, dict[str, object]],
+        cast(dict[str, object], result["net_growth"])["windows"],
+    )
+    assert all(windows[name]["status"] == "AVAILABLE" for name in ("1h", "6h", "24h"))
+
+
+def test_future_rows_preserve_current_forecast_and_historical_count(
+    tmp_path: Path,
+) -> None:
+    now = 8 * DAY_NS
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        record_sample(
+            catalog,
+            sample_id="past",
+            observed_at_utc_ns=now - DAY_NS,
+            free_bytes=900 * GIB,
+            storage_id="archive-a",
+        )
+        record_sample(
+            catalog,
+            sample_id="current",
+            observed_at_utc_ns=now,
+            free_bytes=899 * GIB,
+            storage_id="archive-a",
+        )
+        record_sample(
+            catalog,
+            sample_id="future",
+            observed_at_utc_ns=now + DAY_NS,
+            free_bytes=100 * GIB,
+            storage_id="future-storage",
+        )
+        forecaster = StorageForecaster(catalog=catalog, data_root=tmp_path)
+        candidate = forecaster.forecast("internal", now_utc_ns=now)
+        reference = legacy_full_history_forecast(
+            catalog, scope_id="internal", now_utc_ns=now
+        )
+    assert candidate == reference
+    assert candidate["sample_count"] == 3
+    assert candidate["storage_id"] == "archive-a"
+
+
+def test_all_future_rows_remain_insufficient_with_zero_count(tmp_path: Path) -> None:
+    now = 8 * DAY_NS
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        record_sample(
+            catalog,
+            sample_id="future",
+            observed_at_utc_ns=now + DAY_NS,
+            free_bytes=900 * GIB,
+        )
+        result = StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+            "internal", now_utc_ns=now
+        )
+    assert result == {
+        "scope_id": "internal",
+        "status": "INSUFFICIENT_DATA",
+        "sample_count": 0,
+    }
+
+
+def test_ancient_free_space_perturbation_cannot_change_forecast(
+    tmp_path: Path,
+) -> None:
+    now = 30 * DAY_NS
+    results: list[dict[str, object]] = []
+    for ordinal, ancient_free in enumerate((100 * GIB, 900 * GIB)):
+        with Catalog(tmp_path / f"ancient-{ordinal}.sqlite") as catalog:
+            record_sample(
+                catalog,
+                sample_id="ancient",
+                observed_at_utc_ns=0,
+                free_bytes=ancient_free,
+            )
+            record_sample(
+                catalog,
+                sample_id="recent-predecessor",
+                observed_at_utc_ns=now - 6 * DAY_NS,
+                free_bytes=800 * GIB,
+            )
+            record_sample(
+                catalog,
+                sample_id="current",
+                observed_at_utc_ns=now,
+                free_bytes=799 * GIB,
+            )
+            results.append(
+                StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+                    "internal", now_utc_ns=now
+                )
+            )
+    assert results[0] == results[1]
+
+
+def test_same_timestamp_current_and_predecessor_ties_match_ordered_history(
+    tmp_path: Path,
+) -> None:
+    now = 10 * DAY_NS
+    cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        record_sample(
+            catalog,
+            sample_id="z-predecessor",
+            observed_at_utc_ns=cutoff,
+            free_bytes=700 * GIB,
+            storage_id="z-storage",
+        )
+        record_sample(
+            catalog,
+            sample_id="a-predecessor",
+            observed_at_utc_ns=cutoff,
+            free_bytes=800 * GIB,
+            storage_id="a-storage",
+        )
+        record_sample(
+            catalog,
+            sample_id="z-current",
+            observed_at_utc_ns=now,
+            free_bytes=500 * GIB,
+            storage_id="z-current-storage",
+            archive_backlog_bytes=99,
+            oldest_unarchived_at_utc_ns=456,
+        )
+        record_sample(
+            catalog,
+            sample_id="a-current",
+            observed_at_utc_ns=now,
+            free_bytes=600 * GIB,
+            storage_id="a-current-storage",
+            archive_backlog_bytes=11,
+            oldest_unarchived_at_utc_ns=123,
+        )
+        current_at_cutoff = catalog.latest_space_sample_at_or_before(
+            "internal", cutoff
+        )
+        predecessor_at_cutoff = (
+            catalog.latest_predecessor_space_sample_at_or_before(
+                "internal", cutoff
+            )
+        )
+        assert current_at_cutoff is not None
+        assert predecessor_at_cutoff is not None
+        assert current_at_cutoff["sample_id"] == "a-predecessor"
+        assert predecessor_at_cutoff["sample_id"] == "z-predecessor"
+        result = StorageForecaster(catalog=catalog, data_root=tmp_path).forecast(
+            "internal", now_utc_ns=now
+        )
+        reference = legacy_full_history_forecast(
+            catalog, scope_id="internal", now_utc_ns=now
+        )
+    assert result == reference
+    assert result["storage_id"] == "a-current-storage"
+    assert result["free_bytes"] == 600 * GIB
+    assert result["archive_backlog_bytes"] == 11
+    assert result["oldest_unarchived_at_utc_ns"] == 123
+
+
+class NoFullHistoryCatalog:
+    def __init__(self, catalog: Catalog) -> None:
+        self.catalog = catalog
+        self.range_arguments: tuple[int, int] | None = None
+        self.materialized_rows = 0
+
+    def space_samples(self, _scope_id: str) -> list[dict[str, object]]:
+        raise AssertionError("unbounded space_samples() was called")
+
+    def space_samples_between(
+        self,
+        scope_id: str,
+        *,
+        start_exclusive_utc_ns: int,
+        end_inclusive_utc_ns: int,
+    ) -> list[dict[str, object]]:
+        self.range_arguments = (start_exclusive_utc_ns, end_inclusive_utc_ns)
+        rows = self.catalog.space_samples_between(
+            scope_id,
+            start_exclusive_utc_ns=start_exclusive_utc_ns,
+            end_inclusive_utc_ns=end_inclusive_utc_ns,
+        )
+        self.materialized_rows += len(rows)
+        return rows
+
+    def latest_space_sample_at_or_before(
+        self, scope_id: str, observed_at_utc_ns: int
+    ) -> dict[str, object] | None:
+        row = self.catalog.latest_space_sample_at_or_before(
+            scope_id, observed_at_utc_ns
+        )
+        self.materialized_rows += int(row is not None)
+        return row
+
+    def latest_predecessor_space_sample_at_or_before(
+        self, scope_id: str, observed_at_utc_ns: int
+    ) -> dict[str, object] | None:
+        row = self.catalog.latest_predecessor_space_sample_at_or_before(
+            scope_id, observed_at_utc_ns
+        )
+        self.materialized_rows += int(row is not None)
+        return row
+
+    def space_sample_count(self, scope_id: str) -> int:
+        return self.catalog.space_sample_count(scope_id)
+
+
+def test_forecast_rate_input_is_mechanically_bounded(tmp_path: Path) -> None:
+    now = 30 * DAY_NS
+    with Catalog(tmp_path / "catalog.sqlite") as catalog:
+        for ordinal in range(200):
+            record_sample(
+                catalog,
+                sample_id=f"ancient-{ordinal:03d}",
+                observed_at_utc_ns=ordinal,
+                free_bytes=900 * GIB,
+            )
+        record_sample(
+            catalog,
+            sample_id="recent",
+            observed_at_utc_ns=now,
+            free_bytes=899 * GIB,
+        )
+        probe = NoFullHistoryCatalog(catalog)
+        result = StorageForecaster(catalog=probe, data_root=tmp_path).forecast(
+            "internal", now_utc_ns=now
+        )
+        expected_cutoff = now - WINDOWS_SECONDS["7d"] * 1_000_000_000
+        total_count = catalog.space_sample_count("internal")
+    assert result["sample_count"] == total_count
+    assert probe.range_arguments == (expected_cutoff, now)
+    assert probe.materialized_rows == 3
+    assert probe.materialized_rows < total_count
