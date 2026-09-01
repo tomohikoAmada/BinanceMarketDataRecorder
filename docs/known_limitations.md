@@ -1,12 +1,16 @@
 # Known Limitations
 
-Current source `e074d41a…` is deployed and M23.4 passed its two-hour
-non-formal post-merge VPS validation. The new-host substrate, 30-minute, 2-hour,
-4-hour, and 12-hour non-formal stages also passed. The 24-hour stage is paused
-and not started while exact-head CPU profiling is selected; 72h and 168h are
-not started. Formal M22.9 has not started for this candidate, Production Ready
-is NO, and the M22.9 precondition measured about 32.523 hours of runway,
-insufficient for the later approximately 278-hour complete formal chain.
+Current GitHub `main` is `c7d7900830e39d17470059f670ab2e5005e57103`; it is
+newer than the deployed source `e074d41a…` and is not deployed. PR #45, PR #46,
+and PR #47 are integrated; the hardening phase is closed and PR #47 post-merge
+CI run `33456832048` passed on macOS and Ubuntu. The older deployed candidate's
+new-host substrate, 30-minute, 2-hour, 4-hour, and 12-hour non-formal stages
+passed, but that evidence belongs only to its exact source/Wheel/deployment
+identity. Current main has no long-burn-in duration credit. The 24-hour stage is
+paused/not started; 72h and 168h are not started. Formal M22.9 has not started,
+Production Ready is NO, and the M22.9 precondition measured about 32.523 hours
+of runway, insufficient for the later approximately 278-hour complete formal
+chain.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
@@ -22,10 +26,11 @@ This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
 CPU benchmark. Because CPU headroom is limited under the current provider
 policy, the 24h/72h/168h non-formal burn-ins are paused or not started.
 
-The next action is exact-head CPU profiling, followed by one measured hot-path
-Python optimization at a time, deterministic same-workload A/B, live
-production-equivalent A/B if justified, and review. Provider-panel CPU% alone
-does not select an optimization. CPU changes must preserve Raw v1, exact
+The next phase requires separate authorization. After verifying live main,
+choose either fresh profiling/development against exact current GitHub main or
+build a new immutable artifact from current main and begin a separately
+authorized short deployment qualification. Provider-panel CPU% alone does not
+select an optimization. CPU changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
 ingress, durability/fsync, seal/manifest/Catalog ordering, reconnect/
 discontinuity and gap/resync evidence, crash/recovery, deterministic replay,
@@ -38,7 +43,7 @@ approximately `244400128` bytes at 2h, `260460544` at 4h, and `286740480` at
 12h, with no swap, OOM, systemd restart, or clear resource exhaustion. Keep
 observing RSS during profiling and new-artifact validation.
 
-The current deployed candidate is source `e074d41a…`, retained Wheel
+The older deployed candidate is source `e074d41a…`, retained Wheel
 `48784824f9d7501ddb5f56a210fcf6b846ae1dd8b46e3cc3dd71f96652c53d0c`, and
 deployment identity
 `6856d07f54bb27f2b375443f4e96abf8f551babd530bafda94c167242aaaac24`. If CPU
@@ -221,8 +226,24 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. The current next action is
-exact-head CPU profiling, not the 278h chain or a longer burn-in.
+staged chain on a capacity-complete environment. No burn-in or profiling is the
+automatic next action; `NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION`.
+
+### Current GitHub main limitations and decision boundary
+
+- Current main is newer than the deployed VPS artifact and has no deployment or
+  duration credit from the older 30m/2h/4h/12h evidence.
+- Production Ready remains NO; formal M22.9 is NOT_STARTED; 24h is
+  PAUSED_NOT_STARTED; 72h and 168h are NOT_STARTED.
+- If current main is deployed, build and identify a new immutable Wheel and
+  select a fresh short qualification. Do not automatically authorize 24h,
+  formal M22.9, M23.5, or a C++/Go rewrite.
+- The remaining nonblocking backlog is the repeated-cancellation supplemental
+  test-strength P3, process-memory-only cooldown across restart, conservative
+  typed/no-header 418 fallback, any genuinely unresolved documentation/source
+  provenance item, RSS WATCH/not proven leak, open R-034, and unresolved formal
+  capacity runway. These do not reopen the closed shared-gate P2 or remote-delete
+  P1.
 
 ### Additional M21.4 known limitations
 

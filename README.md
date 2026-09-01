@@ -1,11 +1,16 @@
 # Binance Market Data Recorder
 
-> **Current authority (2026-08-29):** GitHub main
-> `e074d41a979af92b50bee880d6d55295ca65413d`; M23.4 is complete, merged,
-> deployed, and passed its two-hour non-formal post-merge VPS validation. The
-> current phase is progressive non-formal validation (4h next, then
-> approximately 12h/24h/72h). Formal M22.9 has not started, Production Ready is
-> NO, 278h is not the next test, and M23.5 is not authorized. Start with
+> **Current authority (2026-09-01):** verify live GitHub `main`; the pre-doc
+> authority for this refresh is `c7d7900830e39d17470059f670ab2e5005e57103`, and
+> this documentation commit is newer than it. The deployed VPS source remains
+> the older `e074d41a979af92b50bee880d6d55295ca65413d`; current main is newer and
+> is not deployed. PR #45, PR #46, and PR #47 are integrated; the Recorder
+> hardening phase is CLOSED, and PR #47 post-merge CI run `33456832048` passed on
+> macOS and Ubuntu. Production Ready is NO; formal M22.9 is NOT_STARTED; 24h is
+> PAUSED_NOT_STARTED; 72h and 168h are NOT_STARTED. Current main has no
+> long-burn-in duration credit. The next phase requires separate authorization:
+> choose fresh current-main profiling or a new immutable artifact plus fresh
+> short deployment qualification. Start with
 > [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md) and
 > [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md).
 
@@ -173,9 +178,9 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | M23.4 2h 非正式 post-merge VPS 验证 PASS；下一步 4h 非正式 burn-in，之后约 12h→24h→72h；正式 M22.9 尚未开始 |
-| 当前生产状态 | source `e074d41a…` 已部署并完成 2h 非正式验证；Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | M23.4 经 PR #41 合并，最终独立审查 P0/P1/P2/P3 全零，post-merge CI run `33174563501` 成功；正式 M22.9 T0 未开始 |
+| 长期验证 | older deployed candidate: 30m/2h/4h/12h non-formal evidence PASS; current main has no duration credit; 24h PAUSED_NOT_STARTED, 72h/168h NOT_STARTED |
+| 当前生产状态 | current GitHub main is newer than deployed source `e074d41a…` and is not deployed; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | PR #45/#46/#47 integrated; PR #47 post-merge CI run `33456832048` passed on macOS/Ubuntu; no current-main deployment |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -206,7 +211,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | 已实现并运行当前候选 | `systemd install` CLI | system unit + journald | M23.4 2h 非正式验证 PASS；正式 M22.9 未开始 |
+| systemd 服务 | 已实现；运行中的 VPS 是 older deployed candidate | `systemd install` CLI | system unit + journald | older M23.4 2h 非正式验证 PASS；正式 M22.9 未开始 |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
