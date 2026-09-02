@@ -145,6 +145,8 @@ class OrderBook:
         self.asks: dict[Decimal, Decimal] = {}
         self._replace(self.bids, snapshot.bids)
         self._replace(self.asks, snapshot.asks)
+        self._best_bid_price = self._recompute_best_price(self.bids, is_bid=True)
+        self._best_ask_price = self._recompute_best_price(self.asks, is_bid=False)
 
     @staticmethod
     def _replace(side: dict[Decimal, Decimal], levels: tuple[Level, ...]) -> None:
@@ -154,26 +156,67 @@ class OrderBook:
             else:
                 side[price] = quantity
 
+    @staticmethod
+    def _recompute_best_price(
+        side: dict[Decimal, Decimal], *, is_bid: bool
+    ) -> Decimal | None:
+        if not side:
+            return None
+        return max(side) if is_bid else min(side)
+
+    def _apply_side(
+        self,
+        side: dict[Decimal, Decimal],
+        levels: tuple[Level, ...],
+        best_price: Decimal | None,
+        *,
+        is_bid: bool,
+    ) -> Decimal | None:
+        best_was_deleted = False
+        for price, quantity in validated_levels(levels):
+            if quantity == 0:
+                side.pop(price, None)
+                if best_price is not None and price == best_price:
+                    best_was_deleted = True
+            else:
+                side[price] = quantity
+                if best_price is None or (
+                    is_bid and price > best_price
+                ) or (
+                    not is_bid and price < best_price
+                ):
+                    best_price = price
+
+        if best_was_deleted:
+            return self._recompute_best_price(side, is_bid=is_bid)
+        if not side:
+            return None
+        if best_price is None or best_price not in side:
+            return self._recompute_best_price(side, is_bid=is_bid)
+        return best_price
+
     def apply(self, update: DepthUpdate) -> None:
         if update.market != self.market or update.symbol != self.symbol:
             raise OrderBookDataError("cannot apply a different market or symbol")
-        self._replace(self.bids, update.bids)
-        self._replace(self.asks, update.asks)
+        self._best_bid_price = self._apply_side(
+            self.bids, update.bids, self._best_bid_price, is_bid=True
+        )
+        self._best_ask_price = self._apply_side(
+            self.asks, update.asks, self._best_ask_price, is_bid=False
+        )
         self.update_id = update.final_update_id
 
     @property
     def best_bid(self) -> tuple[Decimal, Decimal] | None:
-        if not self.bids:
+        if self._best_bid_price is None:
             return None
-        price = max(self.bids)
-        return price, self.bids[price]
+        return self._best_bid_price, self.bids[self._best_bid_price]
 
     @property
     def best_ask(self) -> tuple[Decimal, Decimal] | None:
-        if not self.asks:
+        if self._best_ask_price is None:
             return None
-        price = min(self.asks)
-        return price, self.asks[price]
+        return self._best_ask_price, self.asks[self._best_ask_price]
 
     @property
     def is_empty(self) -> bool:
