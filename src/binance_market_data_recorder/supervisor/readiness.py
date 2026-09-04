@@ -82,7 +82,7 @@ class CollectorReadiness:
         market: Market,
         collector_instance_id: str,
         collector_version: str,
-        symbol: str = "BTCUSDT",
+        symbol: str,
         audit_observer: Callable[[QualityAudit, int | None], None] | None = None,
         bootstrap_buffer_capacity: int = 8192,
         bootstrap_overflow_observer: Callable[[], None] | None = None,

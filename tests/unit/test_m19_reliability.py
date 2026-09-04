@@ -255,6 +255,7 @@ def test_resync_completion_records_applied_local_book_update_id(
     catalog = Catalog(tmp_path / "catalog.sqlite")
     readiness = CollectorReadiness(
         market="spot",
+        symbol="BTCUSDT",
         collector_instance_id=instance,
         collector_version="test",
     )

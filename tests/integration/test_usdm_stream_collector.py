@@ -96,6 +96,7 @@ def make_stream(root: Path, opener: Any) -> tuple[UsdMStreamCollector, Catalog]:
     )
     return UsdMStreamCollector(
         stream=UsdMStream.DIFF_DEPTH,
+        symbol="BTCUSDT",
         route="public",
         wire_name="btcusdt@depth@100ms",
         spool=spool,

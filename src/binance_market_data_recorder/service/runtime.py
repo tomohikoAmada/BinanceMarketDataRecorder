@@ -35,7 +35,7 @@ from ..config import RecorderConfig
 from ..logging import log_event
 from ..spool import recover_storage
 from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
-from ..storage.catalog import Catalog
+from ..storage.catalog import Catalog, stream_discontinuity_event_id
 from ..storage.forecast import StorageForecaster
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CORE_STREAMS, ReadinessSnapshot
@@ -563,20 +563,28 @@ class ServiceRuntime:
                 raise RuntimeError("hard-reserve stop event identity collision")
         for market in ("spot", "um_perpetual"):
             for stream in sorted(CORE_STREAMS):
+                symbol = "BTCUSDT"
                 if self._catalog.unclosed_stream_discontinuities(
-                    market=market, stream=stream
+                    market=market, symbol=symbol, stream=stream
                 ):
                     continue
                 gap_id = (
                     f"hard-reserve:{self.service_instance_id}:{market}:{stream}"
                 )
                 self._catalog.ensure_operational_event(
-                    event_id=f"stream-discontinuity-started:{gap_id}",
+                    event_id=stream_discontinuity_event_id(
+                        event_type="STREAM_DISCONTINUITY_STARTED",
+                        market=market,
+                        symbol=symbol,
+                        stream=stream,
+                        gap_id=gap_id,
+                    ),
                     event_type="STREAM_DISCONTINUITY_STARTED",
                     occurred_at_utc_ns=observed_at,
                     evidence={
                         "gap_id": gap_id,
                         "market": market,
+                        "symbol": symbol,
                         "stream": stream,
                         "reason": "session_restart",
                         "interval_classification": "UNRELIABLE",
@@ -592,6 +600,7 @@ class ServiceRuntime:
                             "capture continuity is assumed"
                         ),
                     },
+                    symbol=symbol,
                 )
 
     def _install_signal_handlers(self, loop: asyncio.AbstractEventLoop) -> list[signal.Signals]:

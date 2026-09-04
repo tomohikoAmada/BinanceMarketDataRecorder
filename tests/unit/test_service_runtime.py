@@ -629,7 +629,7 @@ def test_vps_startup_hard_reserve_recovers_then_stops_cleanly_without_collectors
     assert evidence["unarchived_raw_deleted"] is False
     assert evidence["termination"] == "HARD_RESERVE_SAFETY_STOP"
     assert set(open_gaps) == {
-        (market, stream)
+        (market, "BTCUSDT", stream)
         for market in ("spot", "um_perpetual")
         for stream in ("agg_trade", "book_ticker", "diff_depth")
     }

@@ -103,6 +103,7 @@ def _make_spot_collector(
     )
     collector = SpotStreamCollector(
         stream=SpotStream.BOOK_TICKER,
+        symbol="BTCUSDT",
         wire_name="btcusdt@bookTicker",
         spool=spool,
         collector_instance_id="m21-4-11-r3-test",
@@ -757,6 +758,7 @@ def test_legacy_orphan_with_closed_parent_never_materializes(
         assert (
             catalog.stream_discontinuity_lifecycle(
                 market="um_perpetual",
+                symbol="BTCUSDT",
                 stream="book_ticker",
                 gap_id="orphan-g2",
             )
@@ -1179,7 +1181,7 @@ def test_closed_interval_history_loaded_once_per_pass(
 
     def counting(
         catalog_self: Any, **kwargs: Any
-    ) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    ) -> dict[tuple[str, str, str], list[dict[str, object]]]:
         nonlocal calls
         calls += 1
         return original(catalog_self, **kwargs)
@@ -1242,7 +1244,7 @@ def test_legacy_orphan_with_open_parent_is_ignored_not_conflict(
             "parent-g1"
         ]
         open_gaps = catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert [
             cast(dict[str, Any], event["evidence"])["gap_id"]

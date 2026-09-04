@@ -212,6 +212,7 @@ class CursorApi:
 
 class CursorSpool:
     def __init__(self, *, fail_sync: bool = False) -> None:
+        self.symbol = "BTCUSDT"
         self.envelopes: list[EventEnvelope] = []
         self.fail_sync = fail_sync
         self.closed = False
@@ -243,6 +244,7 @@ def _cursor_poller(
 ) -> RestSideDataPoller:
     return RestSideDataPoller(
         kind=kind,
+        symbol="BTCUSDT",
         interval_seconds=300,
         spool=cast(Any, spool),
         stats=SideDataStats(True),
@@ -311,7 +313,7 @@ def test_each_five_minute_kind_uses_independent_durable_bounded_cursor(
                 api_limit,
             ),
         ]
-        cursor = catalog.side_data_cursor(kind.value)
+        cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
         assert cursor is not None
         assert cursor["last_persisted_period_timestamp"] == (
             earliest + 3 * FIVE_MINUTE_PERIOD_MS
@@ -341,7 +343,7 @@ def test_five_minute_cursor_resumes_without_skipping_after_restart(
             batches=1,
         )
         await first._catch_up_five_minute(asyncio.Event())
-        cursor = catalog.side_data_cursor(kind.value)
+        cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
         assert cursor is not None
         expected_next = (
             cast(int, cursor["last_persisted_period_timestamp"])
@@ -382,10 +384,10 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
         )
         with pytest.raises(RuntimeError, match="request failure"):
             await failing_request._catch_up_five_minute(asyncio.Event())
-        assert request_catalog.side_data_cursor(kind.value) is None
+        assert request_catalog.side_data_cursor(kind.value, "BTCUSDT") is None
         await failing_request._catch_up_five_minute(asyncio.Event())
         assert request_api.calls[0][0] == request_api.calls[1][0]
-        assert request_catalog.side_data_cursor(kind.value) is not None
+        assert request_catalog.side_data_cursor(kind.value, "BTCUSDT") is not None
         request_catalog.close()
 
         empty_catalog = Catalog(tmp_path / "empty.sqlite")
@@ -401,7 +403,7 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
         with pytest.raises(RuntimeError, match="EMPTY_RESPONSE"):
             await empty._catch_up_five_minute(asyncio.Event())
         assert len(empty_spool.envelopes) == 1
-        assert empty_catalog.side_data_cursor(kind.value) is None
+        assert empty_catalog.side_data_cursor(kind.value, "BTCUSDT") is None
         assert len(
             empty_catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")
         ) == 1
@@ -418,7 +420,7 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
         )
         with pytest.raises(OSError, match="fsync"):
             await fsync_failure._catch_up_five_minute(asyncio.Event())
-        assert fsync_catalog.side_data_cursor(kind.value) is None
+        assert fsync_catalog.side_data_cursor(kind.value, "BTCUSDT") is None
         fsync_catalog.close()
 
     asyncio.run(exercise())
@@ -545,6 +547,7 @@ def test_cursor_records_unrecoverable_retention_gap_before_catchup(
         catalog = Catalog(tmp_path / "gap.sqlite")
         catalog.advance_side_data_cursor(
             kind=kind.value,
+            symbol="BTCUSDT",
             last_persisted_period_timestamp=0,
             updated_at_utc_ns=1,
             source_retention_window="latest_30_days",

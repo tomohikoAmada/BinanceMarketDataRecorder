@@ -269,6 +269,7 @@ async def _run_scenario(scenario: Scenario, root: Path) -> dict[str, Any]:
 
     collector = UsdMStreamCollector(
         stream=UsdMStream.BOOK_TICKER,
+        symbol="BTCUSDT",
         route="public",
         wire_name="btcusdt@bookTicker",
         spool=spool,

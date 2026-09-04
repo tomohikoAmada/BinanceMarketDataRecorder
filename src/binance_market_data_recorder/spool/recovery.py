@@ -60,6 +60,7 @@ from ..storage.catalog import (
     CatalogStateError,
     ChunkState,
     RemoteArchiveState,
+    stream_discontinuity_event_id,
 )
 from ..storage.layout import StorageLayout, fsync_directory
 from .format import ScanIssue, ScanResult, decode_chunk_header, scan_chunk
@@ -801,7 +802,7 @@ def _derived_seal_flags(
     A. The durable SEALING seal intent (required forced flags) recorded in
        the ChunkState.SEALING transition evidence (M21.4.11-R2 P1-A).
     B. An unclosed Catalog STREAM_DISCONTINUITY_STARTED for the same
-       market/stream (the pre-R2 authority).
+       market/symbol/stream (the pre-R2 authority).
 
     A SEALING chunk with no reconnect intent at all is sealed with ordinary
     semantics: blanket "every SEALING chunk is a gap" forcing is prohibited
@@ -827,10 +828,10 @@ def _derived_seal_flags(
             else frozenset()
         )
     open_gaps = catalog.unclosed_stream_discontinuities(
-        market=header.market, stream=header.stream
+        market=header.market, symbol=header.symbol, stream=header.stream
     )
     if len(open_gaps) > 1:
-        # Two genuinely simultaneous unmatched gaps on one market/stream are
+        # Two genuinely simultaneous unmatched gaps on one market/symbol/stream are
         # a multi-fault state; fail closed (INV-005).
         raise RecoveryConflictError(
             "RECOVERY_SEAL_INTENT_STARTED_CONFLICT "
@@ -854,14 +855,24 @@ def _record_started_from_intent(
     catalog: Catalog, intent: dict[str, object]
 ) -> str:
     gap_id = str(intent["gap_id"])
+    market = str(intent["market"])
+    symbol = str(intent["symbol"])
+    stream = str(intent["stream"])
     catalog.ensure_operational_event(
-        event_id=f"stream-discontinuity-started:{gap_id}",
+        event_id=stream_discontinuity_event_id(
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            market=market,
+            symbol=symbol,
+            stream=stream,
+            gap_id=gap_id,
+        ),
         event_type="STREAM_DISCONTINUITY_STARTED",
         occurred_at_utc_ns=int(cast(int, intent["gap_started_at_utc_ns"])),
         evidence={
             "gap_id": gap_id,
-            "market": intent["market"],
-            "stream": intent["stream"],
+            "market": market,
+            "symbol": symbol,
+            "stream": stream,
             "reason": intent["reason"],
             "interval_classification": "UNRELIABLE",
             "gap_started_at_utc_ns": intent["gap_started_at_utc_ns"],
@@ -877,6 +888,7 @@ def _record_started_from_intent(
                 "exchange payload is fabricated"
             ),
         },
+        symbol=symbol,
     )
     return "materialized"
 

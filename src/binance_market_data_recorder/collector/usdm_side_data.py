@@ -389,6 +389,7 @@ class RestSideDataPoller:
         self,
         *,
         kind: RestSideDataKind,
+        symbol: str,
         interval_seconds: float,
         spool: StreamSpool,
         stats: SideDataStats,
@@ -405,7 +406,10 @@ class RestSideDataPoller:
         utc_clock_ns: Callable[[], int] = time.time_ns,
         cursor_observer: Callable[[str, dict[str, object]], None] | None = None,
     ) -> None:
+        if not symbol or spool.symbol != symbol:
+            raise ValueError("USD-M side-data symbol must match its spool")
         self.kind = kind
+        self.symbol = symbol
         self.interval_seconds = interval_seconds
         self.spool = spool
         self.stats = stats
@@ -530,6 +534,7 @@ class RestSideDataPoller:
             envelope = await asyncio.to_thread(
                 capture_rest_side_data,
                 kind=self.kind,
+                symbol=self.symbol,
                 rest_api=self.rest_api,
                 collector_instance_id=self.collector_instance_id,
                 collector_version=self.collector_version,
@@ -561,7 +566,7 @@ class RestSideDataPoller:
         earliest_recoverable = max(
             0, last_closed - retention_ms + 2 * FIVE_MINUTE_PERIOD_MS
         )
-        cursor = self.catalog.side_data_cursor(self.kind.value)
+        cursor = self.catalog.side_data_cursor(self.kind.value, self.symbol)
         if cursor is not None:
             persisted_value = cursor["last_persisted_period_timestamp"]
             if not isinstance(persisted_value, int):
@@ -576,6 +581,7 @@ class RestSideDataPoller:
                 if (
                     isinstance((evidence := event.get("evidence")), dict)
                     and evidence.get("kind") == self.kind.value
+                    and evidence.get("symbol") == self.symbol
                     and isinstance(
                         evidence.get("requested_start_timestamp"), int
                     )
@@ -591,18 +597,20 @@ class RestSideDataPoller:
             self.catalog.record_operational_event(
                 event_id=(
                     f"side-data-unrecoverable-gap:{self.kind.value}:"
-                    f"{next_period}:{gap_end}"
+                    f"{self.symbol}:{next_period}:{gap_end}"
                 ),
                 event_type="SIDE_DATA_UNRECOVERABLE_GAP",
                 occurred_at_utc_ns=self.utc_clock_ns(),
-                evidence={
-                    "kind": self.kind.value,
-                    "gap_start_timestamp": next_period,
-                    "gap_end_timestamp": gap_end,
-                    "source_retention_window": retention_name,
-                    "retention_window_ms": retention_ms,
-                },
-            )
+                    evidence={
+                        "kind": self.kind.value,
+                        "symbol": self.symbol,
+                        "gap_start_timestamp": next_period,
+                        "gap_end_timestamp": gap_end,
+                        "source_retention_window": retention_name,
+                        "retention_window_ms": retention_ms,
+                    },
+                    symbol=self.symbol,
+                )
             next_period = earliest_recoverable
         for _batch in range(self.catchup_batches_per_attempt):
             if stop.is_set() or next_period > last_closed:
@@ -626,16 +634,19 @@ class RestSideDataPoller:
             if record_count == 0:
                 self.catalog.record_operational_event(
                     event_id=(
-                        f"side-data-empty-response:{self.kind.value}:{next_period}"
+                        f"side-data-empty-response:{self.kind.value}:"
+                        f"{self.symbol}:{next_period}"
                     ),
                     event_type="SIDE_DATA_EMPTY_RESPONSE",
                     occurred_at_utc_ns=envelope.receive_time_utc_ns,
                     evidence={
                         "kind": self.kind.value,
+                        "symbol": self.symbol,
                         "requested_start_timestamp": next_period,
                         "requested_end_timestamp": request_end,
                         "source_retention_window": retention_name,
                     },
+                    symbol=self.symbol,
                 )
                 raise RuntimeError("EMPTY_RESPONSE")
             last_timestamp = int(
@@ -644,6 +655,7 @@ class RestSideDataPoller:
             updated_at_utc_ns = envelope.receive_time_utc_ns
             self.catalog.advance_side_data_cursor(
                 kind=self.kind.value,
+                symbol=self.symbol,
                 last_persisted_period_timestamp=last_timestamp,
                 updated_at_utc_ns=updated_at_utc_ns,
                 source_retention_window=retention_name,
@@ -654,6 +666,7 @@ class RestSideDataPoller:
                     self.kind.value,
                     {
                         "kind": self.kind.value,
+                        "symbol": self.symbol,
                         "last_persisted_period_timestamp": last_timestamp,
                         "updated_at_utc_ns": updated_at_utc_ns,
                         "source_retention_window": retention_name,
@@ -777,6 +790,7 @@ class UsdMSideDataManager:
         self,
         *,
         settings: UsdMSideDataSettings,
+        symbol: str,
         layout: StorageLayout,
         catalog: Catalog,
         collector_instance_id: str,
@@ -795,6 +809,8 @@ class UsdMSideDataManager:
         request_lock: asyncio.Lock | None = None,
         cooldown: UsdMRestCooldown | None = None,
     ) -> None:
+        if not symbol:
+            raise ValueError("USD-M side-data symbol must be non-empty")
         enabled = {
             **{kind.value: settings.rest_enabled(kind) for kind in REST_SIDE_DATA_SPECS},
             **{
@@ -816,7 +832,7 @@ class UsdMSideDataManager:
         self.degraded_after_seconds = settings.degraded_after_seconds
         self.catalog = catalog
         self.cursor_state = {
-            kind.value: catalog.side_data_cursor(kind.value)
+            kind.value: catalog.side_data_cursor(kind.value, symbol)
             for kind in FIVE_MINUTE_KINDS
         }
 
@@ -849,7 +865,7 @@ class UsdMSideDataManager:
                 layout=layout,
                 catalog=catalog,
                 market="um_perpetual",
-                symbol="BTCUSDT",
+                symbol=symbol,
                 stream=stream,
                 collector_instance_id=collector_instance_id,
                 collector_version=collector_version,
@@ -894,6 +910,7 @@ class UsdMSideDataManager:
                 return SideWebSocketExtension(
                     UsdMStreamCollector(
                         stream=stream_spec.stream.value,
+                        symbol=symbol,
                         route=stream_spec.route,
                         wire_name=stream_spec.wire_name,
                         spool=spool(stream_spec.stream.value),
@@ -924,6 +941,7 @@ class UsdMSideDataManager:
             ) -> SideDataExtension:
                 return RestSideDataPoller(
                     kind=rest_kind,
+                    symbol=symbol,
                     interval_seconds=settings.rest_interval(rest_kind),
                     spool=spool(rest_kind.value),
                     stats=self.stats[rest_kind.value],

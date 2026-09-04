@@ -165,6 +165,7 @@ def make_collector(
     )
     collector = UsdMStreamCollector(
         stream=stream,
+        symbol="BTCUSDT",
         route="market" if stream == UsdMStream.AGG_TRADE else "public",
         wire_name={
             UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
@@ -710,7 +711,7 @@ def test_crash_after_started_before_first_new_recovers_without_false_complete(
             ]
             assert len(
                 catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ) == 1
         finally:
@@ -772,7 +773,12 @@ def test_completed_write_failure_after_first_new_is_fatal_and_recoverable(
         original_record = catalog.record_operational_event
 
         def failing_record(
-            *, event_id: str, event_type: str, occurred_at_utc_ns: int, evidence: Any
+            *,
+            event_id: str,
+            event_type: str,
+            occurred_at_utc_ns: int,
+            evidence: Any,
+            symbol: str | None = None,
         ) -> bool:
             if event_type == "STREAM_DISCONTINUITY_COMPLETED":
                 raise OSError("injected COMPLETED write failure")
@@ -781,6 +787,7 @@ def test_completed_write_failure_after_first_new_is_fatal_and_recoverable(
                 event_type=event_type,
                 occurred_at_utc_ns=occurred_at_utc_ns,
                 evidence=evidence,
+                symbol=symbol,
             )
 
         monkeypatch.setattr(catalog, "record_operational_event", failing_record)
@@ -792,7 +799,7 @@ def test_completed_write_failure_after_first_new_is_fatal_and_recoverable(
                 "STREAM_DISCONTINUITY_STARTED"
             ]
             assert len(catalog.unclosed_stream_discontinuities(
-                market="um_perpetual", stream="book_ticker"
+                market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
             )) == 1
             return cast(dict[str, Any], events[0]["evidence"])
         finally:
@@ -888,6 +895,7 @@ def test_writer_seal_failure_during_generation_is_fatal_and_opens_no_connection(
         )
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -1000,6 +1008,7 @@ def test_session_restart_boundary_records_gap_for_restarted_streams(
             event_type: str,
             occurred_at_utc_ns: int,
             evidence: Any,
+            symbol: str | None = None,
         ) -> bool:
             if event_type == "STREAM_DISCONTINUITY_COMPLETED":
                 trace.append("completed")
@@ -1008,6 +1017,7 @@ def test_session_restart_boundary_records_gap_for_restarted_streams(
                 event_type=event_type,
                 occurred_at_utc_ns=occurred_at_utc_ns,
                 evidence=evidence,
+                symbol=symbol,
             )
 
         monkeypatch.setattr(catalog, "ensure_operational_event", observe_catalog_event)
@@ -1260,6 +1270,7 @@ def make_usdm_crash_runner(
     )
     collector = UsdMStreamCollector(
         stream=stream,
+        symbol="BTCUSDT",
         route="market" if stream == UsdMStream.AGG_TRADE else "public",
         wire_name={
             UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
@@ -1418,6 +1429,7 @@ def test_crash_before_seal_recovers_open_gap_and_completes_same_gap_id(
         )
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -1435,7 +1447,7 @@ def test_crash_before_seal_recovers_open_gap_and_completes_same_gap_id(
             ]
             assert len(
                 catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ) == 1
             return cast(dict[str, Any], events[0]["evidence"])
@@ -1609,6 +1621,7 @@ def test_crash_after_manifest_before_catalog_sealed_recovers_gap_semantics(
         )
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -1766,7 +1779,7 @@ def test_crash_before_first_new_raw_sync_stays_pending_and_recovers(
             ]
             assert len(
                 catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ) == 1
             return cast(dict[str, Any], events[0]["evidence"])
@@ -1904,6 +1917,7 @@ def test_spot_crash_during_seal_recovers_fail_closed(tmp_path: Path) -> None:
         )
         collector = SpotStreamCollector(
             stream=SpotStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             wire_name="btcusdt@bookTicker",
             spool=spool,
             collector_instance_id="m21-4-11-crash",
@@ -1944,6 +1958,7 @@ def test_spot_crash_during_seal_recovers_fail_closed(tmp_path: Path) -> None:
 
         collector = SpotStreamCollector(
             stream=SpotStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             wire_name="btcusdt@bookTicker",
             spool=StreamSpool(
                 layout=layout,
@@ -2288,6 +2303,7 @@ def test_drain_completing_gap_then_next_boundary_records_new_intent(
 
         collector = UsdMStreamCollector(
             stream=stream,
+            symbol="BTCUSDT",
             route="market" if stream == UsdMStream.AGG_TRADE else "public",
             wire_name={
                 UsdMStream.AGG_TRADE: "btcusdt@aggTrade",
@@ -2420,6 +2436,7 @@ def test_spot_drain_completing_gap_then_next_boundary_records_new_intent(
 
         collector = SpotStreamCollector(
             stream=SpotStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             wire_name="btcusdt@bookTicker",
             spool=spool,
             collector_instance_id="m21-4-11-race",
@@ -2509,6 +2526,7 @@ class IntentFailureCollector:
         )
         collector = UsdMStreamCollector(
             stream=stream,
+            symbol="BTCUSDT",
             route="market" if stream == UsdMStream.AGG_TRADE else "public",
             wire_name={
                 UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
@@ -2539,7 +2557,12 @@ def fail_started_writes(
     original_record = catalog.record_operational_event
 
     def failing_record(
-        *, event_id: str, event_type: str, occurred_at_utc_ns: int, evidence: Any
+        *,
+        event_id: str,
+        event_type: str,
+        occurred_at_utc_ns: int,
+        evidence: Any,
+        symbol: str | None = None,
     ) -> bool:
         if event_type == "STREAM_DISCONTINUITY_STARTED":
             raise OSError("injected STARTED write failure")
@@ -2548,6 +2571,7 @@ def fail_started_writes(
             event_type=event_type,
             occurred_at_utc_ns=occurred_at_utc_ns,
             evidence=evidence,
+            symbol=symbol,
         )
 
     monkeypatch.setattr(catalog, "record_operational_event", failing_record)
@@ -2847,6 +2871,7 @@ def test_intent_failure_then_manifest_before_catalog_sealed_restart(
         )
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -2935,6 +2960,7 @@ def test_intent_failure_with_conflicting_existing_started_fails_closed(
             evidence={
                 "gap_id": "other-gap",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "reason": "planned_rotation",
                 "interval_classification": "UNRELIABLE",
@@ -2942,6 +2968,7 @@ def test_intent_failure_with_conflicting_existing_started_fails_closed(
                 "original_connection_id": "some-other-connection",
                 "original_generation": 0,
             },
+            symbol="BTCUSDT",
         )
         with pytest.raises(
             RecoveryConflictError, match="RECOVERY_SEAL_INTENT_STARTED_CONFLICT"
@@ -3209,6 +3236,7 @@ def test_spot_writer_cancellation_owns_blocking_drain(
 
         collector = SpotStreamCollector(
             stream=SpotStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             wire_name="btcusdt@bookTicker",
             spool=spool,
             collector_instance_id="m21-4-11-r2",
@@ -3382,6 +3410,7 @@ def _durable_intent(
         "gap_id": gap_id,
         "reason": reason,
         "market": "um_perpetual",
+        "symbol": "BTCUSDT",
         "stream": stream,
         "original_connection_id": connection_id,
         "original_generation": generation,
@@ -3398,6 +3427,7 @@ def _started_evidence(intent: dict[str, Any]) -> dict[str, Any]:
     return {
         "gap_id": intent["gap_id"],
         "market": intent["market"],
+        "symbol": intent["symbol"],
         "stream": intent["stream"],
         "reason": intent["reason"],
         "interval_classification": "UNRELIABLE",
@@ -3434,6 +3464,7 @@ def _record_gap(
         event_type=event_type,
         occurred_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
         evidence=evidence,
+        symbol=str(intent["symbol"]),
     )
 
 
@@ -3582,7 +3613,7 @@ def test_recovery_closed_historical_intent_never_conflicts_with_open_current_gap
         started = _started_events(catalog)
         assert [_gap_id(event) for event in started] == ["g1", "g2"]
         open_gaps = catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert [_gap_id(event) for event in open_gaps] == ["g2"]
     documents = manifests(tmp_path)
@@ -3647,7 +3678,7 @@ def test_recovery_multiple_closed_historical_intents_plus_open_current_gap(
 
     with Catalog(layout.catalog, read_only=True) as catalog:
         open_gaps = catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert [_gap_id(event) for event in open_gaps] == ["g4"]
     assert len(manifests(tmp_path)) == 4
@@ -3719,7 +3750,7 @@ def test_recovery_closed_historical_plus_intent_only_current_gap_same_id(
         assert started[-1]["evidence"]["original_connection_id"] == "conn-g3"
         assert started[-1]["evidence"]["original_generation"] == 2
         open_gaps = catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert [_gap_id(event) for event in open_gaps] == ["g3"]
     assert len(manifests(tmp_path)) == 3
@@ -3762,7 +3793,7 @@ def test_recovery_same_gap_intent_and_started_agree_no_duplicate(
         assert len(started) == 1
         assert started[0]["evidence"]["gap_id"] == "g2"
         open_gaps = catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert [_gap_id(event) for event in open_gaps] == ["g2"]
     assert len(manifests(tmp_path)) == 1
@@ -3811,6 +3842,7 @@ def test_recovery_same_gap_identity_mismatch_fails_closed(
             event_type="STREAM_DISCONTINUITY_STARTED",
             occurred_at_utc_ns=2_000_000_000,
             evidence=evidence,
+            symbol="BTCUSDT",
         )
 
     recovered = Catalog(layout.catalog)
@@ -3921,7 +3953,7 @@ def test_recovery_repeated_startup_is_idempotent(
             "open": [
                 _gap_id(event)
                 for event in catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ],
         }
@@ -3931,7 +3963,7 @@ def test_recovery_repeated_startup_is_idempotent(
             "open": [
                 _gap_id(event)
                 for event in catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ],
         }
@@ -4001,6 +4033,7 @@ def test_no_active_writer_boundary_seal_persists_marker_chunk_with_intent(
         )
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -4156,6 +4189,7 @@ def test_no_writer_marker_crash_before_sealing_restores_exact_gap(
                 event_type="STREAM_DISCONTINUITY_STARTED",
                 occurred_at_utc_ns=1_000_000_000,
                 evidence=_started_evidence(intent),
+                symbol="BTCUSDT",
             )
         assert discontinuity_events(catalog) == []
 
@@ -4178,7 +4212,7 @@ def test_no_writer_marker_crash_before_sealing_restores_exact_gap(
     with Catalog(layout.catalog) as recovered_catalog:
         actions = recover_storage(layout=layout, catalog=recovered_catalog)
         open_gaps = recovered_catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
     assert any(
         action.action == "pending_discontinuity_materialized"
@@ -4317,7 +4351,7 @@ def test_no_writer_crash_immediately_after_marker_intent_commit_restores_gap(
     with Catalog(layout.catalog) as recovered:
         actions = recover_storage(layout=layout, catalog=recovered)
         open_gaps = recovered.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
     assert any(
         action.action == "pending_discontinuity_materialized"
@@ -4370,7 +4404,7 @@ def test_no_writer_crash_during_marker_raw_creation_restores_gap(
     with Catalog(layout.catalog) as recovered:
         actions = recover_storage(layout=layout, catalog=recovered)
         open_gaps = recovered.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
     assert any(action.action == "quarantined" for action in actions)
     assert any(
@@ -4468,6 +4502,7 @@ def test_reconnect_operational_event_idempotency_requires_exact_identity(
     evidence = {
         "gap_id": "gap-idempotent",
         "market": "um_perpetual",
+        "symbol": "BTCUSDT",
         "stream": "book_ticker",
     }
     with Catalog(layout.catalog) as catalog:
@@ -4476,12 +4511,14 @@ def test_reconnect_operational_event_idempotency_requires_exact_identity(
             event_type="STREAM_DISCONTINUITY_STARTED",
             occurred_at_utc_ns=123,
             evidence=evidence,
+            symbol="BTCUSDT",
         )
         assert not catalog.ensure_operational_event(
             event_id="stream-discontinuity-started:gap-idempotent",
             event_type="STREAM_DISCONTINUITY_STARTED",
             occurred_at_utc_ns=123,
             evidence=evidence,
+            symbol="BTCUSDT",
         )
         with pytest.raises(
             CatalogStateError, match="operational event identity conflict"
@@ -4491,4 +4528,5 @@ def test_reconnect_operational_event_idempotency_requires_exact_identity(
                 event_type="STREAM_DISCONTINUITY_COMPLETED",
                 occurred_at_utc_ns=124,
                 evidence={**evidence, "new_connection_id": "conn-new"},
+                symbol="BTCUSDT",
             )

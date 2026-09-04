@@ -174,6 +174,66 @@ _REMOTE_EVENT_COLUMNS = {
     "idempotency_key": ("TEXT", 1, 0),
 }
 
+# MS1 durable-identity schema.  The old Catalog schema pre-dates symbol-aware
+# discontinuities and cursors; it is deliberately kept explicit here so the
+# one-time migration can distinguish a complete legacy schema from a partial
+# or interrupted rewrite.
+LEGACY_SINGLE_SYMBOL = "BTCUSDT"
+_DISCONTINUITY_EVENT_TYPES = (
+    "STREAM_DISCONTINUITY_STARTED",
+    "STREAM_DISCONTINUITY_COMPLETED",
+)
+_SYMBOL_SPECIFIC_SIDE_DATA_EVENT_TYPES = (
+    "SIDE_DATA_EMPTY_RESPONSE",
+    "SIDE_DATA_UNRECOVERABLE_GAP",
+)
+_LEGACY_OPERATIONAL_EVENT_COLUMNS = {
+    "event_id": ("TEXT", 0, 1),
+    "event_type": ("TEXT", 1, 0),
+    "occurred_at_utc_ns": ("INTEGER", 1, 0),
+    "evidence_json": ("TEXT", 1, 0),
+}
+_CURRENT_OPERATIONAL_EVENT_COLUMNS = {
+    **_LEGACY_OPERATIONAL_EVENT_COLUMNS,
+    "market": ("TEXT", 0, 0),
+    "symbol": ("TEXT", 0, 0),
+    "stream": ("TEXT", 0, 0),
+    "gap_id": ("TEXT", 0, 0),
+}
+_LEGACY_SIDE_DATA_CURSOR_COLUMNS = {
+    "kind": ("TEXT", 0, 1),
+    "last_persisted_period_timestamp": ("INTEGER", 1, 0),
+    "updated_at_utc_ns": ("INTEGER", 1, 0),
+    "source_retention_window": ("TEXT", 1, 0),
+    "retention_window_ms": ("INTEGER", 1, 0),
+}
+_CURRENT_SIDE_DATA_CURSOR_COLUMNS = {
+    "kind": ("TEXT", 1, 1),
+    "symbol": ("TEXT", 1, 2),
+    "last_persisted_period_timestamp": ("INTEGER", 1, 0),
+    "updated_at_utc_ns": ("INTEGER", 1, 0),
+    "source_retention_window": ("TEXT", 1, 0),
+    "retention_window_ms": ("INTEGER", 1, 0),
+}
+_DISCONTINUITY_IDENTITY_INDEX = "operational_events_discontinuity_identity"
+
+
+def stream_discontinuity_event_id(
+    *, event_type: str, market: str, symbol: str, stream: str, gap_id: str
+) -> str:
+    """Build the idempotency key for one symbol-aware lifecycle event."""
+
+    if event_type not in _DISCONTINUITY_EVENT_TYPES:
+        raise ValueError(f"unsupported discontinuity event type: {event_type}")
+    if not all(isinstance(value, str) and value for value in (market, symbol, stream, gap_id)):
+        raise ValueError("discontinuity event identity must be non-empty text")
+    suffix = (
+        "started"
+        if event_type == "STREAM_DISCONTINUITY_STARTED"
+        else "completed"
+    )
+    return f"stream-discontinuity-{suffix}:{market}:{symbol}:{stream}:{gap_id}"
+
 
 class Catalog:
     def __init__(
@@ -184,6 +244,8 @@ class Catalog:
         self.path = path
         self.read_only = read_only
         self.live_read_only = _live_read_only
+        self._legacy_identity_schema = False
+        self._identity_schema_fresh = False
         self._lock = RLock()
         if read_only:
             if not self.path.is_file():
@@ -219,15 +281,25 @@ class Catalog:
         if read_only:
             self._connection.execute("PRAGMA query_only=ON")
             try:
+                self._validate_symbol_identity_schema(allow_legacy=True)
                 self._remote_schema_present = self._inspect_remote_schema(create=False)
             except CatalogStateError:
                 raise
             except sqlite3.Error as exc:
                 raise CatalogStateError("cannot inspect remote Catalog schema") from exc
         else:
+            self._identity_schema_fresh = (
+                self._connection.execute(
+                    "SELECT COUNT(*) AS count FROM sqlite_master "
+                    "WHERE type = 'table' AND name IN "
+                    "('operational_events', 'side_data_cursors')"
+                ).fetchone()["count"]
+                == 0
+            )
             self._connection.execute("PRAGMA journal_mode=WAL")
             self._connection.execute("PRAGMA synchronous=FULL")
             self._initialize()
+            self._migrate_symbol_identity_schema()
             try:
                 self._remote_schema_present = self._inspect_remote_schema(create=True)
             except CatalogStateError:
@@ -245,6 +317,12 @@ class Catalog:
         """
 
         return cls(path, read_only=True, _live_read_only=True)
+
+    @property
+    def legacy_identity_schema(self) -> bool:
+        """Whether this Catalog still exposes the pre-MS1 identity schema."""
+
+        return self._legacy_identity_schema
 
     def backup_to(self, destination: sqlite3.Connection) -> None:
         """Create one SQLite-consistent committed state in *destination*."""
@@ -424,14 +502,27 @@ class Catalog:
                 event_id TEXT PRIMARY KEY,
                 event_type TEXT NOT NULL,
                 occurred_at_utc_ns INTEGER NOT NULL,
-                evidence_json TEXT NOT NULL
+                evidence_json TEXT NOT NULL,
+                market TEXT,
+                symbol TEXT,
+                stream TEXT,
+                gap_id TEXT,
+                CHECK (
+                    event_type NOT IN (
+                        'STREAM_DISCONTINUITY_STARTED',
+                        'STREAM_DISCONTINUITY_COMPLETED'
+                    )
+                    OR symbol IS NOT NULL
+                )
             );
             CREATE TABLE IF NOT EXISTS side_data_cursors (
-                kind TEXT PRIMARY KEY,
+                kind TEXT NOT NULL,
+                symbol TEXT NOT NULL,
                 last_persisted_period_timestamp INTEGER NOT NULL,
                 updated_at_utc_ns INTEGER NOT NULL,
                 source_retention_window TEXT NOT NULL,
-                retention_window_ms INTEGER NOT NULL
+                retention_window_ms INTEGER NOT NULL,
+                PRIMARY KEY(kind, symbol)
             );
             CREATE TABLE IF NOT EXISTS deployment_sessions (
                 deployment_id TEXT PRIMARY KEY,
@@ -461,6 +552,418 @@ class Catalog:
             );
             """
         )
+
+    def _identity_schema_state(self, table: str) -> str:
+        columns = {
+            str(row["name"]): (
+                str(row["type"]).upper(),
+                int(row["notnull"]),
+                int(row["pk"]),
+            )
+            for row in self._connection.execute(f"PRAGMA table_info({table})")
+        }
+        if columns == _LEGACY_OPERATIONAL_EVENT_COLUMNS and table == "operational_events":
+            return "legacy"
+        if columns == _CURRENT_OPERATIONAL_EVENT_COLUMNS and table == "operational_events":
+            return "current"
+        if columns == _LEGACY_SIDE_DATA_CURSOR_COLUMNS and table == "side_data_cursors":
+            return "legacy"
+        if columns == _CURRENT_SIDE_DATA_CURSOR_COLUMNS and table == "side_data_cursors":
+            return "current"
+        raise CatalogStateError(f"partial symbol identity schema: {table}")
+
+    def _validate_symbol_identity_schema(self, *, allow_legacy: bool) -> None:
+        self._reject_identity_migration_artifacts()
+        operational_state = self._identity_schema_state("operational_events")
+        cursor_state = self._identity_schema_state("side_data_cursors")
+        if operational_state != cursor_state:
+            raise CatalogStateError("partial symbol identity migration")
+        if operational_state == "legacy":
+            if not allow_legacy:
+                raise CatalogStateError("Catalog requires symbol identity migration")
+            self._legacy_identity_schema = True
+            return
+        self._validate_discontinuity_identity_index()
+        table_row = self._connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'operational_events'"
+        ).fetchone()
+        compact = re.sub(r"\s+", "", str(table_row["sql"])).upper() if table_row else ""
+        if (
+            "CHECK(" not in compact
+            or "STREAM_DISCONTINUITY_STARTED" not in compact
+            or "STREAM_DISCONTINUITY_COMPLETED" not in compact
+            or "SYMBOLISNOTNULL" not in compact
+        ):
+            raise CatalogStateError("malformed operational discontinuity constraint")
+        self._validate_symbol_identity_rows()
+        self._legacy_identity_schema = False
+
+    def _reject_identity_migration_artifacts(self) -> None:
+        artifacts = self._connection.execute(
+            "SELECT name FROM sqlite_master WHERE name IN (?, ?)",
+            (
+                "operational_events__ms1_legacy",
+                "side_data_cursors__ms1_legacy",
+            ),
+        ).fetchall()
+        if artifacts:
+            raise CatalogStateError("partial symbol identity migration artifacts present")
+
+    def _validate_discontinuity_identity_index(self) -> None:
+        metadata = next(
+            (
+                row
+                for row in self._connection.execute(
+                    "PRAGMA index_list(operational_events)"
+                ).fetchall()
+                if row["name"] == _DISCONTINUITY_IDENTITY_INDEX
+            ),
+            None,
+        )
+        if metadata is None or int(metadata["unique"]) or int(metadata["partial"]):
+            raise CatalogStateError("missing or malformed discontinuity identity index")
+        columns = tuple(
+            str(row["name"])
+            for row in self._connection.execute(
+                f"PRAGMA index_info({_DISCONTINUITY_IDENTITY_INDEX})"
+            ).fetchall()
+        )
+        if columns != ("event_type", "market", "symbol", "stream", "gap_id"):
+            raise CatalogStateError("malformed discontinuity identity index")
+
+    def _validate_symbol_identity_rows(self) -> None:
+        rows = self._connection.execute(
+            "SELECT event_type, evidence_json, market, symbol, stream, gap_id "
+            "FROM operational_events"
+        ).fetchall()
+        for row in rows:
+            event_type = str(row["event_type"])
+            if event_type in _SYMBOL_SPECIFIC_SIDE_DATA_EVENT_TYPES:
+                try:
+                    side_evidence = json.loads(str(row["evidence_json"]))
+                except (TypeError, json.JSONDecodeError) as exc:
+                    raise CatalogStateError(
+                        "malformed symbol-specific side-data evidence"
+                    ) from exc
+                if (
+                    not isinstance(side_evidence, dict)
+                    or not isinstance(side_evidence.get("symbol"), str)
+                    or not side_evidence["symbol"]
+                ):
+                    raise CatalogStateError(
+                        "malformed symbol-specific side-data identity"
+                    )
+                if any(
+                    row[name] is not None
+                    for name in ("market", "symbol", "stream", "gap_id")
+                ):
+                    raise CatalogStateError(
+                        "side-data event carries stream identity columns"
+                    )
+                continue
+            if event_type not in _DISCONTINUITY_EVENT_TYPES:
+                if any(row[name] is not None for name in ("market", "symbol", "stream", "gap_id")):
+                    raise CatalogStateError("non-discontinuity event carries stream identity")
+                continue
+            try:
+                evidence = json.loads(str(row["evidence_json"]))
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise CatalogStateError("malformed discontinuity evidence") from exc
+            if not isinstance(evidence, dict):
+                raise CatalogStateError("malformed discontinuity evidence")
+            evidence_symbol = evidence.get("symbol")
+            if (
+                not isinstance(row["symbol"], str)
+                or not row["symbol"]
+                or evidence_symbol != row["symbol"]
+            ):
+                raise CatalogStateError("malformed symbol-aware discontinuity evidence")
+            identity = _discontinuity_identity(evidence, allow_legacy_symbol=False)
+            expected: tuple[str | None, str | None, str | None, str | None]
+            if identity is not None:
+                expected = identity
+            else:
+                expected = (
+                    _optional_identity_text(evidence.get("market")),
+                    str(row["symbol"]),
+                    _optional_identity_text(evidence.get("stream")),
+                    _optional_identity_text(evidence.get("gap_id")),
+                )
+            if expected != (
+                row["market"],
+                row["symbol"],
+                row["stream"],
+                row["gap_id"],
+            ):
+                raise CatalogStateError("discontinuity identity column mismatch")
+
+    def _migrate_symbol_identity_schema(self) -> None:
+        """Atomically migrate the historical single-symbol Catalog schema."""
+
+        self._reject_identity_migration_artifacts()
+        operational_state = self._identity_schema_state("operational_events")
+        cursor_state = self._identity_schema_state("side_data_cursors")
+        if operational_state != cursor_state:
+            raise CatalogStateError("partial symbol identity migration")
+        if operational_state == "current":
+            if self._identity_schema_fresh:
+                with self._transaction() as connection:
+                    connection.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS
+                        operational_events_discontinuity_identity
+                        ON operational_events(
+                            event_type, market, symbol, stream, gap_id
+                        )
+                        """
+                    )
+            self._validate_symbol_identity_schema(allow_legacy=False)
+            return
+
+        with self._transaction() as connection:
+            for temporary_name in (
+                "operational_events__ms1_legacy",
+                "side_data_cursors__ms1_legacy",
+            ):
+                if connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE name = ?", (temporary_name,)
+                ).fetchone():
+                    raise CatalogStateError(
+                        "partial symbol identity migration artifacts present"
+                    )
+
+            event_rows = connection.execute(
+                "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
+                "FROM operational_events ORDER BY event_id"
+            ).fetchall()
+            event_updates: dict[str, tuple[str, str, str, str, str]] = {}
+            event_bodies: dict[str, str] = {}
+            for row in event_rows:
+                event_type = str(row["event_type"])
+                if event_type in _SYMBOL_SPECIFIC_SIDE_DATA_EVENT_TYPES:
+                    try:
+                        side_evidence = json.loads(str(row["evidence_json"]))
+                    except (TypeError, json.JSONDecodeError) as exc:
+                        raise CatalogStateError(
+                            "malformed symbol-specific side-data evidence during migration"
+                        ) from exc
+                    if not isinstance(side_evidence, dict):
+                        raise CatalogStateError(
+                            "symbol-specific side-data evidence must be an object"
+                        )
+                    side_symbol = side_evidence.get("symbol")
+                    if "symbol" not in side_evidence:
+                        side_evidence = {
+                            **side_evidence,
+                            "symbol": LEGACY_SINGLE_SYMBOL,
+                        }
+                    elif not isinstance(side_symbol, str) or not side_symbol:
+                        raise CatalogStateError(
+                            "malformed symbol-specific side-data symbol during migration"
+                        )
+                    event_bodies[str(row["event_id"])] = json.dumps(
+                        side_evidence, sort_keys=True, separators=(",", ":")
+                    )
+                    continue
+                if event_type not in _DISCONTINUITY_EVENT_TYPES:
+                    continue
+                try:
+                    evidence = json.loads(str(row["evidence_json"]))
+                except (TypeError, json.JSONDecodeError) as exc:
+                    raise CatalogStateError(
+                        "malformed discontinuity evidence during migration"
+                    ) from exc
+                event_identity = _discontinuity_identity(
+                    evidence, allow_legacy_symbol=True
+                )
+                if event_identity is None:
+                    raise CatalogStateError(
+                        "malformed discontinuity identity during migration"
+                    )
+                market, symbol, stream, gap_id = event_identity
+                if "symbol" not in evidence:
+                    evidence = {**evidence, "symbol": symbol}
+                body = json.dumps(
+                    evidence, sort_keys=True, separators=(",", ":")
+                )
+                event_updates[str(row["event_id"])] = (
+                    body,
+                    market,
+                    symbol,
+                    stream,
+                    gap_id,
+                )
+                event_bodies[str(row["event_id"])] = body
+
+            cursor_rows = connection.execute(
+                "SELECT kind, last_persisted_period_timestamp, "
+                "updated_at_utc_ns, source_retention_window, retention_window_ms "
+                "FROM side_data_cursors ORDER BY kind"
+            ).fetchall()
+            for row in cursor_rows:
+                if (
+                    not isinstance(row["kind"], str)
+                    or not str(row["kind"])
+                    or isinstance(row["last_persisted_period_timestamp"], bool)
+                    or not isinstance(row["last_persisted_period_timestamp"], int)
+                    or int(row["last_persisted_period_timestamp"]) < 0
+                    or isinstance(row["updated_at_utc_ns"], bool)
+                    or not isinstance(row["updated_at_utc_ns"], int)
+                    or int(row["updated_at_utc_ns"]) < 0
+                    or not isinstance(row["source_retention_window"], str)
+                    or not str(row["source_retention_window"])
+                    or isinstance(row["retention_window_ms"], bool)
+                    or not isinstance(row["retention_window_ms"], int)
+                    or int(row["retention_window_ms"]) <= 0
+                ):
+                    raise CatalogStateError(
+                        "malformed side-data cursor during migration"
+                    )
+
+            transition_updates: dict[int, str] = {}
+            for row in connection.execute(
+                "SELECT transition_id, to_state, evidence_json "
+                "FROM chunk_transitions WHERE to_state = 'SEALING' "
+                "ORDER BY transition_id"
+            ).fetchall():
+                try:
+                    transition_evidence = json.loads(str(row["evidence_json"]))
+                except (TypeError, json.JSONDecodeError) as exc:
+                    raise CatalogStateError(
+                        "malformed SEALING evidence during migration"
+                    ) from exc
+                if not isinstance(transition_evidence, dict):
+                    raise CatalogStateError(
+                        "SEALING evidence must be an object during migration"
+                    )
+                intent = transition_evidence.get("seal_intent")
+                if intent is None:
+                    continue
+                if not isinstance(intent, dict):
+                    raise CatalogStateError(
+                        "malformed seal intent during migration"
+                    )
+                if not all(
+                    isinstance(intent.get(name), str) and bool(intent.get(name))
+                    for name in ("market", "stream", "gap_id")
+                ):
+                    raise CatalogStateError(
+                        "malformed seal intent identity during migration"
+                    )
+                if "symbol" in intent:
+                    if not isinstance(intent["symbol"], str) or not intent["symbol"]:
+                        raise CatalogStateError(
+                            "malformed seal intent symbol during migration"
+                        )
+                    migrated_intent = intent
+                else:
+                    migrated_intent = {**intent, "symbol": LEGACY_SINGLE_SYMBOL}
+                transition_updates[int(row["transition_id"])] = json.dumps(
+                    {**transition_evidence, "seal_intent": migrated_intent},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+
+            connection.execute(
+                "ALTER TABLE operational_events RENAME TO "
+                "operational_events__ms1_legacy"
+            )
+            connection.execute(
+                """
+                CREATE TABLE operational_events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    occurred_at_utc_ns INTEGER NOT NULL,
+                    evidence_json TEXT NOT NULL,
+                    market TEXT,
+                    symbol TEXT,
+                    stream TEXT,
+                    gap_id TEXT,
+                    CHECK (
+                        event_type NOT IN (
+                            'STREAM_DISCONTINUITY_STARTED',
+                            'STREAM_DISCONTINUITY_COMPLETED'
+                        )
+                        OR symbol IS NOT NULL
+                    )
+                )
+                """
+            )
+            for row in event_rows:
+                identity = event_updates.get(str(row["event_id"]))
+                connection.execute(
+                    """
+                    INSERT INTO operational_events(
+                        event_id, event_type, occurred_at_utc_ns, evidence_json,
+                        market, symbol, stream, gap_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(row["event_id"]),
+                        str(row["event_type"]),
+                        int(row["occurred_at_utc_ns"]),
+                        event_bodies.get(
+                            str(row["event_id"]),
+                            str(row["evidence_json"]),
+                        ),
+                        identity[1] if identity is not None else None,
+                        identity[2] if identity is not None else None,
+                        identity[3] if identity is not None else None,
+                        identity[4] if identity is not None else None,
+                    ),
+                )
+            connection.execute("DROP TABLE operational_events__ms1_legacy")
+            connection.execute(
+                """
+                CREATE INDEX operational_events_discontinuity_identity
+                ON operational_events(event_type, market, symbol, stream, gap_id)
+                """
+            )
+
+            connection.execute(
+                "ALTER TABLE side_data_cursors RENAME TO side_data_cursors__ms1_legacy"
+            )
+            connection.execute(
+                """
+                CREATE TABLE side_data_cursors (
+                    kind TEXT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    last_persisted_period_timestamp INTEGER NOT NULL,
+                    updated_at_utc_ns INTEGER NOT NULL,
+                    source_retention_window TEXT NOT NULL,
+                    retention_window_ms INTEGER NOT NULL,
+                    PRIMARY KEY(kind, symbol)
+                )
+                """
+            )
+            for row in cursor_rows:
+                connection.execute(
+                    """
+                    INSERT INTO side_data_cursors(
+                        kind, symbol, last_persisted_period_timestamp,
+                        updated_at_utc_ns, source_retention_window,
+                        retention_window_ms
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(row["kind"]),
+                        LEGACY_SINGLE_SYMBOL,
+                        int(row["last_persisted_period_timestamp"]),
+                        int(row["updated_at_utc_ns"]),
+                        str(row["source_retention_window"]),
+                        int(row["retention_window_ms"]),
+                    ),
+                )
+            connection.execute("DROP TABLE side_data_cursors__ms1_legacy")
+
+            for transition_id, body in transition_updates.items():
+                connection.execute(
+                    "UPDATE chunk_transitions SET evidence_json = ? "
+                    "WHERE transition_id = ?",
+                    (body, transition_id),
+                )
+            self._validate_symbol_identity_schema(allow_legacy=False)
 
     def _inspect_remote_schema(self, *, create: bool) -> bool:
         """Create/validate the additive M22.4A projection, or accept legacy absence."""
@@ -941,20 +1444,67 @@ class Catalog:
         event_type: str,
         occurred_at_utc_ns: int,
         evidence: Mapping[str, object],
+        symbol: str | None = None,
     ) -> bool:
         self._require_writable()
         if not event_id or not event_type or occurred_at_utc_ns < 0:
             raise ValueError("invalid operational event")
-        body = json.dumps(dict(evidence), sort_keys=True, separators=(",", ":"))
+        evidence_document = dict(evidence)
+        identity_values: tuple[str | None, str | None, str | None, str | None]
+        if event_type in (
+            *_DISCONTINUITY_EVENT_TYPES,
+            *_SYMBOL_SPECIFIC_SIDE_DATA_EVENT_TYPES,
+        ):
+            if not isinstance(symbol, str) or not symbol:
+                raise ValueError(
+                    "symbol must be explicit for symbol-specific events"
+                )
+            evidence_symbol = evidence_document.get("symbol")
+            if evidence_symbol is not None and (
+                not isinstance(evidence_symbol, str)
+                or not evidence_symbol
+                or evidence_symbol != symbol
+            ):
+                raise ValueError("symbol-specific event evidence symbol is invalid")
+            evidence_document["symbol"] = symbol
+            if event_type in _DISCONTINUITY_EVENT_TYPES:
+                identity_values = (
+                    _optional_identity_text(evidence_document.get("market")),
+                    symbol,
+                    _optional_identity_text(evidence_document.get("stream")),
+                    _optional_identity_text(evidence_document.get("gap_id")),
+                )
+            else:
+                identity_values = (None, None, None, None)
+        else:
+            identity_values = (None, None, None, None)
+        body = json.dumps(
+            evidence_document, sort_keys=True, separators=(",", ":")
+        )
         with self._lock:
-            cursor = self._connection.execute(
-                """
-                INSERT OR IGNORE INTO operational_events(
-                    event_id, event_type, occurred_at_utc_ns, evidence_json
-                ) VALUES (?, ?, ?, ?)
-                """,
-                (event_id, event_type, occurred_at_utc_ns, body),
-            )
+            try:
+                cursor = self._connection.execute(
+                    """
+                    INSERT OR IGNORE INTO operational_events(
+                        event_id, event_type, occurred_at_utc_ns, evidence_json,
+                        market, symbol, stream, gap_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        event_id,
+                        event_type,
+                        occurred_at_utc_ns,
+                        body,
+                        identity_values[0],
+                        identity_values[1],
+                        identity_values[2],
+                        identity_values[3],
+                    ),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise CatalogStateError(
+                    f"operational event identity is not valid: {event_id}"
+                ) from exc
             inserted = cursor.rowcount == 1
             if not inserted:
                 existing = self._connection.execute(
@@ -981,6 +1531,7 @@ class Catalog:
         event_type: str,
         occurred_at_utc_ns: int,
         evidence: Mapping[str, object],
+        symbol: str | None = None,
     ) -> bool:
         """Insert an event or prove an existing event is byte-semantically exact.
 
@@ -996,11 +1547,21 @@ class Catalog:
             event_type=event_type,
             occurred_at_utc_ns=occurred_at_utc_ns,
             evidence=evidence,
+            symbol=symbol,
         )
         if inserted:
             return True
+        expected_evidence = dict(evidence)
+        if event_type in (
+            *_DISCONTINUITY_EVENT_TYPES,
+            *_SYMBOL_SPECIFIC_SIDE_DATA_EVENT_TYPES,
+        ):
+            # Match record_operational_event's explicit-symbol normalization on
+            # idempotent replay, including callers that omitted the redundant
+            # evidence field while supplying the required API argument.
+            expected_evidence["symbol"] = symbol
         expected_body = json.dumps(
-            dict(evidence), sort_keys=True, separators=(",", ":")
+            expected_evidence, sort_keys=True, separators=(",", ":")
         )
         with self._lock:
             existing = self._connection.execute(
@@ -1023,7 +1584,10 @@ class Catalog:
     def operational_events(
         self, *, event_type: str | None = None
     ) -> list[dict[str, object]]:
-        query = "SELECT * FROM operational_events"
+        query = (
+            "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
+            "FROM operational_events"
+        )
         parameters: tuple[object, ...] = ()
         if event_type is not None:
             query += " WHERE event_type = ?"
@@ -1040,12 +1604,12 @@ class Catalog:
         return output
 
     def unclosed_stream_discontinuities(
-        self, *, market: str, stream: str
+        self, *, market: str, symbol: str, stream: str
     ) -> list[dict[str, object]]:
-        """Return STARTED evidence without a matching COMPLETED gap identifier."""
+        """Return STARTED evidence for one symbol without a matching completion."""
 
-        if not market or not stream:
-            raise ValueError("market and stream must be non-empty")
+        if not market or not symbol or not stream:
+            raise ValueError("market, symbol and stream must be non-empty")
         with self._lock:
             rows = self._connection.execute(
                 """
@@ -1058,20 +1622,24 @@ class Catalog:
                 """
             ).fetchall()
         started: list[dict[str, object]] = []
-        completed_gap_ids: set[str] = set()
+        completed_gap_ids: set[tuple[str, str, str, str]] = set()
         for row in rows:
             document = dict(row)
             evidence_json = document.pop("evidence_json")
-            evidence = json.loads(str(evidence_json))
+            try:
+                evidence = json.loads(str(evidence_json))
+            except (TypeError, json.JSONDecodeError):
+                continue
             if not isinstance(evidence, dict):
                 continue
-            if evidence.get("market") != market or evidence.get("stream") != stream:
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity is None or identity[:3] != (market, symbol, stream):
                 continue
             document["evidence"] = evidence
-            gap_id = evidence.get("gap_id")
             if document["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
-                if isinstance(gap_id, str) and gap_id:
-                    completed_gap_ids.add(gap_id)
+                completed_gap_ids.add(identity)
             else:
                 started.append(document)
         return [
@@ -1079,15 +1647,18 @@ class Catalog:
             for event in started
             if not (
                 isinstance(event["evidence"], dict)
-                and isinstance(event["evidence"].get("gap_id"), str)
-                and event["evidence"].get("gap_id") in completed_gap_ids
+                and _discontinuity_identity(
+                    event["evidence"],
+                    allow_legacy_symbol=self._legacy_identity_schema,
+                )
+                in completed_gap_ids
             )
         ]
 
     def closed_stream_discontinuity_intervals_by_stream(
         self,
-    ) -> dict[tuple[str, str], list[dict[str, object]]]:
-        """Return paired (STARTED, COMPLETED) intervals grouped by (market, stream).
+    ) -> dict[tuple[str, str, str], list[dict[str, object]]]:
+        """Return paired intervals grouped by (market, symbol, stream).
 
         Each interval is exactly one logical reconnect discontinuity whose
         lifecycle is CLOSED, paired strictly by exact ``gap_id``.  The
@@ -1116,39 +1687,34 @@ class Catalog:
                 """
             ).fetchall()
         started_by_gap: dict[
-            tuple[str, str, str], dict[str, object]
+            tuple[str, str, str, str], dict[str, object]
         ] = {}
         completed_by_gap: dict[
-            tuple[str, str, str], dict[str, object]
+            tuple[str, str, str, str], dict[str, object]
         ] = {}
         for row in rows:
             evidence = json.loads(str(row["evidence_json"]))
             if not isinstance(evidence, dict):
                 continue
-            market = evidence.get("market")
-            stream = evidence.get("stream")
-            gap_id = evidence.get("gap_id")
-            if (
-                not isinstance(market, str)
-                or not market
-                or not isinstance(stream, str)
-                or not stream
-                or not isinstance(gap_id, str)
-                or not gap_id
-            ):
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity is None:
                 continue
-            key = (market, stream, gap_id)
+            market, symbol, stream, _gap_id = identity
             document = {
                 "occurred_at_utc_ns": int(row["occurred_at_utc_ns"]),
                 "evidence": evidence,
             }
             if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
-                completed_by_gap[key] = document
+                completed_by_gap[identity] = document
             else:
-                started_by_gap[key] = document
-        grouped: dict[tuple[str, str], list[dict[str, object]]] = {}
-        for (market, stream, gap_id), started in sorted(started_by_gap.items()):
-            completed = completed_by_gap.get((market, stream, gap_id))
+                started_by_gap[identity] = document
+        grouped: dict[tuple[str, str, str], list[dict[str, object]]] = {}
+        for (market, symbol, stream, gap_id), started in sorted(
+            started_by_gap.items()
+        ):
+            completed = completed_by_gap.get((market, symbol, stream, gap_id))
             if completed is None:
                 continue
             started_evidence = started["evidence"]
@@ -1167,8 +1733,11 @@ class Catalog:
             original_generation = started_evidence["original_generation"]
             new_connection = completed_evidence["new_connection_id"]
             new_generation = completed_evidence["new_generation"]
-            grouped.setdefault((market, stream), []).append(
+            grouped.setdefault((market, symbol, stream), []).append(
                 {
+                    "market": market,
+                    "symbol": symbol,
+                    "stream": stream,
                     "gap_id": gap_id,
                     "started_at_utc_ns": started_at,
                     "ended_at_utc_ns": ended_at,
@@ -1207,32 +1776,24 @@ class Catalog:
                 """
             ).fetchall()
         started_by_gap: dict[
-            tuple[str, str, str], dict[str, object]
+            tuple[str, str, str, str], dict[str, object]
         ] = {}
         completed_by_gap: dict[
-            tuple[str, str, str], dict[str, object]
+            tuple[str, str, str, str], dict[str, object]
         ] = {}
         for row in rows:
             evidence = json.loads(str(row["evidence_json"]))
             if not isinstance(evidence, dict):
                 continue
-            market = evidence.get("market")
-            stream = evidence.get("stream")
-            gap_id = evidence.get("gap_id")
-            if (
-                not isinstance(market, str)
-                or not market
-                or not isinstance(stream, str)
-                or not stream
-                or not isinstance(gap_id, str)
-                or not gap_id
-            ):
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity is None:
                 continue
-            key = (market, stream, gap_id)
             if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
-                completed_by_gap[key] = evidence
+                completed_by_gap[identity] = evidence
             else:
-                started_by_gap[key] = evidence
+                started_by_gap[identity] = evidence
         degraded: list[dict[str, object]] = []
         for key in sorted(set(started_by_gap) & set(completed_by_gap)):
             started_evidence = started_by_gap[key]
@@ -1241,10 +1802,11 @@ class Catalog:
                 started_evidence, completed_evidence
             ):
                 continue
-            market, stream, gap_id = key
+            market, symbol, stream, gap_id = key
             degraded.append(
                 {
                     "market": market,
+                    "symbol": symbol,
                     "stream": stream,
                     "gap_id": gap_id,
                     "reason": "malformed_lifecycle_identity",
@@ -1256,7 +1818,7 @@ class Catalog:
         """Inventory every STARTED/COMPLETED row that cannot be keyed safely.
 
         A lifecycle event whose evidence is not a JSON object, or whose
-        ``market``/``stream``/``gap_id`` identity is missing or not text,
+        ``market``/``symbol``/``stream``/``gap_id`` identity is missing or not text,
         cannot participate in exact gap_id pairing.  R3.3 surfaces each such
         row as an explicit degraded-authority predecision blocker instead of
         silently skipping it: malformed evidence must widen uncertainty and
@@ -1288,10 +1850,17 @@ class Catalog:
                 reason = "evidence_not_object"
             if reason is None:
                 market = evidence.get("market")
+                symbol = evidence.get("symbol")
                 stream = evidence.get("stream")
                 gap_id = evidence.get("gap_id")
                 if not isinstance(market, str) or not market:
                     reason = "missing_market"
+                elif (
+                    not isinstance(symbol, str)
+                    or not symbol
+                ):
+                    if not (self._legacy_identity_schema and "symbol" not in evidence):
+                        reason = "missing_symbol"
                 elif not isinstance(stream, str) or not stream:
                     reason = "missing_stream"
                 elif not isinstance(gap_id, str) or not gap_id:
@@ -1309,9 +1878,9 @@ class Catalog:
 
     def unclosed_stream_discontinuities_by_stream(
         self,
-    ) -> dict[tuple[str, str], list[dict[str, object]]]:
+    ) -> dict[tuple[str, str, str], list[dict[str, object]]]:
         """Return STARTED events without a matching COMPLETED, grouped by
-        (market, stream), in one pass (M21.4.11-R3.2)."""
+        (market, symbol, stream), in one pass (M21.4.11-R3.2)."""
 
         with self._lock:
             rows = self._connection.execute(
@@ -1325,45 +1894,44 @@ class Catalog:
                 """
             ).fetchall()
         started: list[dict[str, object]] = []
-        completed_gap_ids: set[tuple[str, str, str]] = set()
+        completed_gap_ids: set[tuple[str, str, str, str]] = set()
         for row in rows:
             document = dict(row)
             evidence_json = document.pop("evidence_json")
-            evidence = json.loads(str(evidence_json))
+            try:
+                evidence = json.loads(str(evidence_json))
+            except (TypeError, json.JSONDecodeError):
+                continue
             if not isinstance(evidence, dict):
                 continue
-            market = evidence.get("market")
-            stream = evidence.get("stream")
-            gap_id = evidence.get("gap_id")
-            if (
-                not isinstance(market, str)
-                or not market
-                or not isinstance(stream, str)
-                or not stream
-                or not isinstance(gap_id, str)
-                or not gap_id
-            ):
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity is None:
                 continue
             document["evidence"] = evidence
             if document["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
-                completed_gap_ids.add((market, stream, gap_id))
+                completed_gap_ids.add(identity)
             else:
                 started.append(document)
-        grouped: dict[tuple[str, str], list[dict[str, object]]] = {}
+        grouped: dict[tuple[str, str, str], list[dict[str, object]]] = {}
         for event in started:
             evidence = event.get("evidence")
             if not isinstance(evidence, dict):
                 continue
-            market = str(evidence.get("market"))
-            stream = str(evidence.get("stream"))
-            gap_id = str(evidence.get("gap_id"))
-            if (market, stream, gap_id) in completed_gap_ids:
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity is None:
                 continue
-            grouped.setdefault((market, stream), []).append(event)
+            market, symbol, stream, _gap_id = identity
+            if identity in completed_gap_ids:
+                continue
+            grouped.setdefault((market, symbol, stream), []).append(event)
         return grouped
 
     def stream_discontinuity_lifecycle(
-        self, *, market: str, stream: str, gap_id: str
+        self, *, market: str, symbol: str, stream: str, gap_id: str
     ) -> str:
         """Return the durable lifecycle of exactly one gap identifier.
 
@@ -1378,8 +1946,8 @@ class Catalog:
         conflicts with a later OPEN gap, while an OPEN gap must agree
         exactly with its seal intent.
         """
-        if not market or not stream or not gap_id:
-            raise ValueError("market, stream and gap_id must be non-empty")
+        if not market or not symbol or not stream or not gap_id:
+            raise ValueError("market, symbol, stream and gap_id must be non-empty")
         with self._lock:
             rows = self._connection.execute(
                 """
@@ -1393,12 +1961,16 @@ class Catalog:
         started = False
         completed = False
         for row in rows:
-            evidence = json.loads(str(row["evidence_json"]))
+            try:
+                evidence = json.loads(str(row["evidence_json"]))
+            except (TypeError, json.JSONDecodeError):
+                continue
             if not isinstance(evidence, dict):
                 continue
-            if evidence.get("market") != market or evidence.get("stream") != stream:
-                continue
-            if evidence.get("gap_id") != gap_id:
+            identity = _discontinuity_identity(
+                evidence, allow_legacy_symbol=self._legacy_identity_schema
+            )
+            if identity != (market, symbol, stream, gap_id):
                 continue
             if str(row["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
                 completed = True
@@ -1410,19 +1982,31 @@ class Catalog:
             return "OPEN"
         return "ABSENT"
 
-    def side_data_cursor(self, kind: str) -> dict[str, object] | None:
-        if not kind:
-            raise ValueError("side-data cursor kind must be non-empty")
+    def side_data_cursor(self, kind: str, symbol: str) -> dict[str, object] | None:
+        if not kind or not symbol:
+            raise ValueError("side-data cursor kind and symbol must be non-empty")
         with self._lock:
-            row = self._connection.execute(
-                "SELECT * FROM side_data_cursors WHERE kind = ?", (kind,)
-            ).fetchone()
+            if self._legacy_identity_schema:
+                if symbol != LEGACY_SINGLE_SYMBOL:
+                    return None
+                row = self._connection.execute(
+                    "SELECT kind, ? AS symbol, last_persisted_period_timestamp, "
+                    "updated_at_utc_ns, source_retention_window, retention_window_ms "
+                    "FROM side_data_cursors WHERE kind = ?",
+                    (LEGACY_SINGLE_SYMBOL, kind),
+                ).fetchone()
+            else:
+                row = self._connection.execute(
+                    "SELECT * FROM side_data_cursors WHERE kind = ? AND symbol = ?",
+                    (kind, symbol),
+                ).fetchone()
         return dict(row) if row is not None else None
 
     def advance_side_data_cursor(
         self,
         *,
         kind: str,
+        symbol: str,
         last_persisted_period_timestamp: int,
         updated_at_utc_ns: int,
         source_retention_window: str,
@@ -1430,6 +2014,7 @@ class Catalog:
     ) -> bool:
         if (
             not kind
+            or not symbol
             or last_persisted_period_timestamp < 0
             or updated_at_utc_ns < 0
             or not source_retention_window
@@ -1438,7 +2023,8 @@ class Catalog:
             raise ValueError("invalid side-data cursor")
         with self._transaction() as connection:
             existing = connection.execute(
-                "SELECT * FROM side_data_cursors WHERE kind = ?", (kind,)
+                "SELECT * FROM side_data_cursors WHERE kind = ? AND symbol = ?",
+                (kind, symbol),
             ).fetchone()
             if existing is not None:
                 current = int(existing["last_persisted_period_timestamp"])
@@ -1449,10 +2035,10 @@ class Catalog:
             connection.execute(
                 """
                 INSERT INTO side_data_cursors(
-                    kind, last_persisted_period_timestamp, updated_at_utc_ns,
-                    source_retention_window, retention_window_ms
-                ) VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(kind) DO UPDATE SET
+                    kind, symbol, last_persisted_period_timestamp,
+                    updated_at_utc_ns, source_retention_window, retention_window_ms
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(kind, symbol) DO UPDATE SET
                     last_persisted_period_timestamp =
                         excluded.last_persisted_period_timestamp,
                     updated_at_utc_ns = excluded.updated_at_utc_ns,
@@ -1461,6 +2047,7 @@ class Catalog:
                 """,
                 (
                     kind,
+                    symbol,
                     last_persisted_period_timestamp,
                     updated_at_utc_ns,
                     source_retention_window,
@@ -3715,6 +4302,16 @@ class Catalog:
         for row in rows:
             evidence = json.loads(row["evidence_json"])
             if isinstance(evidence, dict):
+                if self._legacy_identity_schema:
+                    intent = evidence.get("seal_intent")
+                    if isinstance(intent, dict) and "symbol" not in intent:
+                        evidence = {
+                            **evidence,
+                            "seal_intent": {
+                                **intent,
+                                "symbol": LEGACY_SINGLE_SYMBOL,
+                            },
+                        }
                 output.append((str(row["chunk_id"]), evidence))
         return output
 
@@ -3732,6 +4329,9 @@ class Catalog:
             "storage_alert_state",
             "storage_alert_events",
             "operational_events",
+            "side_data_cursors",
+            "deployment_sessions",
+            "deployment_events",
             "remote_archive_transactions",
             "remote_archive_events",
         }:
@@ -3774,6 +4374,36 @@ def _closed_lifecycle_identity_valid(
         and isinstance(new_generation, int)
         and new_generation >= 0
     )
+
+
+def _discontinuity_identity(
+    evidence: object, *, allow_legacy_symbol: bool
+) -> tuple[str, str, str, str] | None:
+    """Extract the complete lifecycle key from one event evidence object."""
+
+    if not isinstance(evidence, dict):
+        return None
+    market = evidence.get("market")
+    stream = evidence.get("stream")
+    gap_id = evidence.get("gap_id")
+    if "symbol" not in evidence:
+        symbol: object = LEGACY_SINGLE_SYMBOL if allow_legacy_symbol else None
+    else:
+        symbol = evidence.get("symbol")
+    if not all(
+        isinstance(value, str) and bool(value)
+        for value in (market, symbol, stream, gap_id)
+    ):
+        return None
+    return cast(tuple[str, str, str, str], (market, symbol, stream, gap_id))
+
+
+def _optional_identity_text(value: object) -> str | None:
+    """Return one valid identity field without rewriting malformed evidence."""
+
+    if isinstance(value, str) and value:
+        return value
+    return None
 
 
 def _validate_relative_path(value: str) -> None:

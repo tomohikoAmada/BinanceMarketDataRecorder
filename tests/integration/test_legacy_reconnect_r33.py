@@ -140,6 +140,7 @@ def _record_malformed_lifecycle(
 ) -> None:
     evidence: dict[str, Any] = {
         "market": market,
+        "symbol": "BTCUSDT",
         "stream": stream,
         "gap_id": gap_id,
         "reason": "unexpected_disconnect",
@@ -157,6 +158,7 @@ def _record_malformed_lifecycle(
         event_type=event_type,
         occurred_at_utc_ns=1_000_000_000,
         evidence=evidence,
+        symbol="BTCUSDT",
     )
 
 

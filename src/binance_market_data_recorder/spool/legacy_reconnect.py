@@ -72,7 +72,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..storage.catalog import Catalog, CatalogStateError
+from ..storage.catalog import LEGACY_SINGLE_SYMBOL, Catalog, CatalogStateError
 from .seal import RECONNECT_INTENT_SCHEMA_V2
 
 #: Operator-maintained additive legacy classification authority file.
@@ -261,6 +261,7 @@ def classification_evidence_sha256(
 class LegacyClassificationEntry:
     gap_id: str
     market: str
+    symbol: str
     stream: str
     chunk_id: str
     classification_evidence_sha256: str
@@ -268,9 +269,10 @@ class LegacyClassificationEntry:
     note: str | None
 
     @property
-    def binding(self) -> tuple[str, str, str, str, str]:
+    def binding(self) -> tuple[str, str, str, str, str, str]:
         return (
             self.market,
+            self.symbol,
             self.stream,
             self.gap_id,
             self.chunk_id,
@@ -282,7 +284,7 @@ class LegacyClassificationAuthority:
     """Operator-reviewed additive authority (schema v3, strongly bound).
 
     Each entry binds the exact immutable persisted classification evidence
-    via ``(market, stream, gap_id, chunk_id,
+    via ``(market, symbol, stream, gap_id, chunk_id,
     classification_evidence_sha256)`` where the digest covers chunk_id +
     the exact seal intent + the exact ``verified_frames`` SEALING value.
     The authority resolves ONLY candidates the decision engine classified
@@ -293,7 +295,7 @@ class LegacyClassificationAuthority:
     """
 
     def __init__(
-        self, entries: dict[tuple[str, str, str], LegacyClassificationEntry]
+        self, entries: dict[tuple[str, str, str, str], LegacyClassificationEntry]
     ) -> None:
         self._entries = dict(entries)
 
@@ -333,8 +335,8 @@ class LegacyClassificationAuthority:
                 "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
                 f"path={path}: classifications must be a list"
             )
-        loaded: dict[tuple[str, str, str], LegacyClassificationEntry] = {}
-        seen_bindings: set[tuple[str, str, str, str, str]] = set()
+        loaded: dict[tuple[str, str, str, str], LegacyClassificationEntry] = {}
+        seen_bindings: set[tuple[str, str, str, str, str, str]] = set()
         for index, entry in enumerate(entries):
             if not isinstance(entry, dict):
                 raise LegacyReconnectConflictError(
@@ -344,6 +346,7 @@ class LegacyClassificationAuthority:
             if set(entry.keys()) - {
                 "gap_id",
                 "market",
+                "symbol",
                 "stream",
                 "chunk_id",
                 "classification_evidence_sha256",
@@ -356,6 +359,7 @@ class LegacyClassificationAuthority:
                 )
             gap_id = entry.get("gap_id")
             market = entry.get("market")
+            symbol = entry.get("symbol", LEGACY_SINGLE_SYMBOL)
             stream = entry.get("stream")
             chunk_id = entry.get("chunk_id")
             digest = entry.get("classification_evidence_sha256")
@@ -366,6 +370,8 @@ class LegacyClassificationAuthority:
                 or not gap_id
                 or not isinstance(market, str)
                 or not market
+                or not isinstance(symbol, str)
+                or not symbol
                 or not isinstance(stream, str)
                 or not stream
                 or not isinstance(chunk_id, str)
@@ -395,13 +401,13 @@ class LegacyClassificationAuthority:
                     "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
                     f"path={path}: entry {index} note must be text"
                 )
-            identity = (market, stream, gap_id)
+            identity = (market, symbol, stream, gap_id)
             if identity in loaded:
                 raise LegacyReconnectConflictError(
                     "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
                     f"path={path}: duplicate classification for {gap_id}"
                 )
-            binding = (market, stream, gap_id, chunk_id, digest)
+            binding = (market, symbol, stream, gap_id, chunk_id, digest)
             if binding in seen_bindings:
                 raise LegacyReconnectConflictError(
                     "RECOVERY_LEGACY_CLASSIFICATION_MALFORMED "
@@ -411,6 +417,7 @@ class LegacyClassificationAuthority:
             loaded[identity] = LegacyClassificationEntry(
                 gap_id=gap_id,
                 market=market,
+                symbol=symbol,
                 stream=stream,
                 chunk_id=chunk_id,
                 classification_evidence_sha256=digest,
@@ -423,9 +430,9 @@ class LegacyClassificationAuthority:
         return tuple(self._entries.values())
 
     def lookup(
-        self, *, market: str, stream: str, gap_id: str
+        self, *, market: str, symbol: str, stream: str, gap_id: str
     ) -> LegacyClassificationEntry | None:
-        return self._entries.get((market, stream, gap_id))
+        return self._entries.get((market, symbol, stream, gap_id))
 
 
 def validate_seal_intent(
@@ -455,6 +462,7 @@ def validate_seal_intent(
         "gap_id",
         "reason",
         "market",
+        "symbol",
         "stream",
         "original_connection_id",
         "original_generation",
@@ -475,13 +483,14 @@ def validate_seal_intent(
     gap_id = intent["gap_id"]
     reason = intent["reason"]
     market = intent["market"]
+    symbol = intent["symbol"]
     stream = intent["stream"]
     connection_id = intent["original_connection_id"]
     generation = intent["original_generation"]
     started_at = intent["gap_started_at_utc_ns"]
     if not all(
         isinstance(value, str) and value
-        for value in (gap_id, reason, market, stream, connection_id)
+        for value in (gap_id, reason, market, symbol, stream, connection_id)
     ):
         raise LegacyReconnectConflictError(
             f"RECOVERY_SEAL_INTENT_INVALID_IDENTITY chunk={chunk_id}"
@@ -510,6 +519,7 @@ class LegacyReconnectCandidate:
 
     chunk_id: str
     market: str
+    symbol: str
     stream: str
     gap_id: str
     reason: str
@@ -613,24 +623,24 @@ class ClosedLifecycleIndex:
 
     def __init__(self, catalog: Catalog) -> None:
         by_key: dict[
-            tuple[str, str], tuple[ClosedLifecycle, ...]
+            tuple[str, str, str], tuple[ClosedLifecycle, ...]
         ] = {}
         grouped = catalog.closed_stream_discontinuity_intervals_by_stream()
-        for (market, stream), rows in grouped.items():
+        for (market, symbol, stream), rows in grouped.items():
             intervals = tuple(
                 lifecycle
                 for row in rows
                 if (lifecycle := ClosedLifecycle.from_row(row)) is not None
             )
             if intervals:
-                by_key[(market, stream)] = intervals
+                by_key[(market, symbol, stream)] = intervals
         self._by_key = by_key
         self._degraded_pairs = catalog.degraded_closed_discontinuity_pairs()
 
     def intervals(
-        self, *, market: str, stream: str
+        self, *, market: str, symbol: str, stream: str
     ) -> tuple[ClosedLifecycle, ...]:
-        return self._by_key.get((market, stream), ())
+        return self._by_key.get((market, symbol, stream), ())
 
     def degraded_pairs(self) -> list[dict[str, object]]:
         return list(self._degraded_pairs)
@@ -650,6 +660,7 @@ class LegacyCandidateDecision:
         return {
             "gap_id": self.candidate.gap_id,
             "market": self.candidate.market,
+            "symbol": self.candidate.symbol,
             "stream": self.candidate.stream,
             "chunk_id": self.candidate.chunk_id,
             "classification_evidence_sha256": (
@@ -777,6 +788,7 @@ def _inventory(catalog: Catalog) -> list[LegacyReconnectCandidate]:
             LegacyReconnectCandidate(
                 chunk_id=chunk_id,
                 market=str(intent["market"]),
+                symbol=str(intent["symbol"]),
                 stream=str(intent["stream"]),
                 gap_id=str(intent["gap_id"]),
                 reason=str(intent["reason"]),
@@ -803,8 +815,8 @@ def _inventory(catalog: Catalog) -> list[LegacyReconnectCandidate]:
 
 
 def _open_gap_records(
-    grouped: dict[tuple[str, str], list[dict[str, object]]],
-    key: tuple[str, str],
+    grouped: dict[tuple[str, str, str], list[dict[str, object]]],
+    key: tuple[str, str, str],
 ) -> list[OpenGapRecord]:
     records: list[OpenGapRecord] = []
     for event in grouped.get(key, []):
@@ -859,6 +871,7 @@ def _intent_agreement_conflict(
     *,
     gap_id: object,
     market: object,
+    symbol: object,
     stream: object,
     reason: object,
     original_connection_id: object,
@@ -868,6 +881,7 @@ def _intent_agreement_conflict(
     expected = {
         "gap_id": intent.get("gap_id"),
         "market": intent.get("market"),
+        "symbol": intent.get("symbol"),
         "stream": intent.get("stream"),
         "reason": intent.get("reason"),
         "original_connection_id": intent.get("original_connection_id"),
@@ -876,6 +890,7 @@ def _intent_agreement_conflict(
     actual = {
         "gap_id": gap_id,
         "market": market,
+        "symbol": symbol,
         "stream": stream,
         "reason": reason,
         "original_connection_id": original_connection_id,
@@ -918,10 +933,13 @@ def _classify_absent_candidate(
     if candidate.intent_schema == RECONNECT_INTENT_SCHEMA_V2:
         return "proven_legitimate"
     market = candidate.market
+    symbol = candidate.symbol
     stream = candidate.stream
     generation = candidate.original_generation
     connection = candidate.original_connection_id
-    for lifecycle in closed_index.intervals(market=market, stream=stream):
+    for lifecycle in closed_index.intervals(
+        market=market, symbol=symbol, stream=stream
+    ):
         if (
             lifecycle.new_generation == generation
             and lifecycle.new_connection_id == connection
@@ -945,35 +963,39 @@ def evaluate_legacy_reconnect_decisions(
     """
     candidates = _inventory(catalog)
     candidates_by_stream: dict[
-        tuple[str, str], list[LegacyReconnectCandidate]
-    ] = {}
-    by_identity: dict[
         tuple[str, str, str], list[LegacyReconnectCandidate]
     ] = {}
+    by_identity: dict[
+        tuple[str, str, str, str], list[LegacyReconnectCandidate]
+    ] = {}
     for candidate in candidates:
-        stream_key = (candidate.market, candidate.stream)
+        stream_key = (candidate.market, candidate.symbol, candidate.stream)
         candidates_by_stream.setdefault(stream_key, []).append(candidate)
         by_identity.setdefault(
-            (candidate.market, candidate.stream, candidate.gap_id), []
+            (candidate.market, candidate.symbol, candidate.stream, candidate.gap_id), []
         ).append(candidate)
     open_grouped = catalog.unclosed_stream_discontinuities_by_stream()
-    open_sets: dict[tuple[str, str], list[OpenGapRecord]] = {
+    open_sets: dict[tuple[str, str, str], list[OpenGapRecord]] = {
         key: _open_gap_records(open_grouped, key)
         for key in set(candidates_by_stream) | set(open_grouped)
     }
     closed_index = ClosedLifecycleIndex(catalog)
     simulated_started: dict[
-        tuple[str, str, str], LegacyReconnectCandidate
+        tuple[str, str, str, str], LegacyReconnectCandidate
     ] = {}
 
     decisions: list[LegacyCandidateDecision] = []
     for candidate in candidates:
         market = candidate.market
+        symbol = candidate.symbol
         stream = candidate.stream
-        stream_key = (market, stream)
-        gap_key = (market, stream, candidate.gap_id)
+        stream_key = (market, symbol, stream)
+        gap_key = (market, symbol, stream, candidate.gap_id)
         lifecycle = catalog.stream_discontinuity_lifecycle(
-            market=market, stream=stream, gap_id=candidate.gap_id
+            market=market,
+            symbol=symbol,
+            stream=stream,
+            gap_id=candidate.gap_id,
         )
         automatic: str
         lifecycle_state: str
@@ -987,6 +1009,7 @@ def evaluate_legacy_reconnect_decisions(
                 previous.intent,
                 gap_id=candidate.gap_id,
                 market=market,
+                symbol=symbol,
                 stream=stream,
                 reason=candidate.reason,
                 original_connection_id=candidate.original_connection_id,
@@ -1024,6 +1047,7 @@ def evaluate_legacy_reconnect_decisions(
                 candidate.intent,
                 gap_id=record.gap_id,
                 market=market,
+                symbol=symbol,
                 stream=stream,
                 reason=evidence.get("reason"),
                 original_connection_id=record.original_connection_id,
@@ -1064,7 +1088,10 @@ def evaluate_legacy_reconnect_decisions(
         final = automatic
         if automatic == "ambiguous":
             entry = authority.lookup(
-                market=market, stream=stream, gap_id=candidate.gap_id
+                market=market,
+                symbol=symbol,
+                stream=stream,
+                gap_id=candidate.gap_id,
             )
             if entry is not None:
                 if (
@@ -1104,12 +1131,17 @@ def evaluate_legacy_reconnect_decisions(
     contradiction_count = 0
     blocker_lines: list[str] = []
     decision_by_identity = {
-        (d.candidate.market, d.candidate.stream, d.candidate.gap_id): d
+        (
+            d.candidate.market,
+            d.candidate.symbol,
+            d.candidate.stream,
+            d.candidate.gap_id,
+        ): d
         for d in decisions
     }
-    seen_entry_identities: set[tuple[str, str, str]] = set()
+    seen_entry_identities: set[tuple[str, str, str, str]] = set()
     for entry in authority.entries():
-        identity = (entry.market, entry.stream, entry.gap_id)
+        identity = (entry.market, entry.symbol, entry.stream, entry.gap_id)
         if identity in seen_entry_identities:  # pragma: no cover - loader guards
             continue
         seen_entry_identities.add(identity)
@@ -1118,7 +1150,7 @@ def evaluate_legacy_reconnect_decisions(
             unmatched_authority_count += 1
             blocker_lines.append(
                 f"unmatched_authority gap_id={entry.gap_id} "
-                f"market={entry.market} stream={entry.stream} "
+                f"market={entry.market} symbol={entry.symbol} stream={entry.stream} "
                 "has no corresponding candidate"
             )
             continue
