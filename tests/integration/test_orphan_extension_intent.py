@@ -41,6 +41,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import sqlite3
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -705,6 +706,226 @@ def _orphan_classification_entry(
             "classification": classification,
             "note": "test-reviewed classification",
         }
+
+
+def _downgrade_identity_to_pre_ms1(root: Path) -> tuple[str, dict[str, Any], object]:
+    """Recreate the exact c421 identity tables and symbol-less intent era."""
+
+    catalog_path = ensure_storage_layout(root).catalog
+    connection = sqlite3.connect(catalog_path)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "DROP INDEX operational_events_discontinuity_identity"
+        )
+        connection.execute(
+            "ALTER TABLE operational_events RENAME TO operational_events__current"
+        )
+        connection.execute(
+            """
+            CREATE TABLE operational_events (
+                event_id TEXT PRIMARY KEY,
+                event_type TEXT NOT NULL,
+                occurred_at_utc_ns INTEGER NOT NULL,
+                evidence_json TEXT NOT NULL
+            )
+            """
+        )
+        for event_id, event_type, occurred_at, evidence_json in connection.execute(
+            "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
+            "FROM operational_events__current ORDER BY event_id"
+        ).fetchall():
+            evidence = json.loads(str(evidence_json))
+            if isinstance(evidence, dict):
+                evidence.pop("symbol", None)
+            connection.execute(
+                "INSERT INTO operational_events VALUES (?, ?, ?, ?)",
+                (
+                    str(event_id),
+                    str(event_type),
+                    int(occurred_at),
+                    json.dumps(evidence, sort_keys=True, separators=(",", ":")),
+                ),
+            )
+        connection.execute("DROP TABLE operational_events__current")
+
+        connection.execute("DROP TABLE side_data_cursors")
+        connection.execute(
+            """
+            CREATE TABLE side_data_cursors (
+                kind TEXT PRIMARY KEY,
+                last_persisted_period_timestamp INTEGER NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL,
+                source_retention_window TEXT NOT NULL,
+                retention_window_ms INTEGER NOT NULL
+            )
+            """
+        )
+
+        row = connection.execute(
+            "SELECT transition_id, evidence_json FROM chunk_transitions "
+            "WHERE to_state = 'SEALING' ORDER BY transition_id DESC LIMIT 1"
+        ).fetchone()
+        assert row is not None
+        transition_id, evidence_json = row
+        evidence = json.loads(str(evidence_json))
+        assert isinstance(evidence, dict)
+        intent = evidence.get("seal_intent")
+        assert isinstance(intent, dict)
+        intent.pop("symbol", None)
+        persisted_body = json.dumps(
+            evidence, sort_keys=True, separators=(",", ":")
+        )
+        connection.execute(
+            "UPDATE chunk_transitions SET evidence_json = ? "
+            "WHERE transition_id = ?",
+            (persisted_body, int(transition_id)),
+        )
+        verified_frames = evidence.get("verified_frames")
+        connection.execute("COMMIT")
+        return persisted_body, cast(dict[str, Any], intent), verified_frames
+    except Exception:
+        connection.execute("ROLLBACK")
+        raise
+    finally:
+        connection.close()
+
+
+def _pre_ms1_authority_fixture(
+    root: Path, *, valid_digest: bool
+) -> tuple[str, str, str]:
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        classification_evidence_sha256,
+    )
+
+    _parent, _orphan, chunk_id, _candidate_digest = _legacy_orphan_fixture(root)
+    persisted_body, persisted_intent, verified_frames = (
+        _downgrade_identity_to_pre_ms1(root)
+    )
+    digest = classification_evidence_sha256(
+        chunk_id=chunk_id,
+        intent=persisted_intent,
+        verified_frames=verified_frames,
+    )
+    authority_digest = digest if valid_digest else ("0" * 64)
+    assert authority_digest != digest or valid_digest
+    _write_classification_authority(
+        root,
+        [
+            {
+                "gap_id": "orphan-g2",
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "chunk_id": chunk_id,
+                "classification_evidence_sha256": authority_digest,
+                "classification": "extension_orphan",
+                "note": "pre-MS1 operator-reviewed classification",
+            }
+        ],
+    )
+    return chunk_id, digest, persisted_body
+
+
+def _preflight_report(root: Path) -> dict[str, object]:
+    from binance_market_data_recorder.spool.legacy_reconnect import (
+        LegacyClassificationAuthority,
+        evaluate_legacy_reconnect_decisions,
+    )
+
+    layout = ensure_storage_layout(root)
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        return evaluate_legacy_reconnect_decisions(
+            catalog=catalog,
+            authority=LegacyClassificationAuthority.load(
+                root / LEGACY_CLASSIFICATION_FILENAME
+            ),
+        ).public_dict()
+
+
+def _persisted_sealing_body(root: Path, chunk_id: str) -> str:
+    connection = sqlite3.connect(ensure_storage_layout(root).catalog)
+    try:
+        row = connection.execute(
+            "SELECT evidence_json FROM chunk_transitions "
+            "WHERE chunk_id = ? AND to_state = 'SEALING' "
+            "ORDER BY transition_id DESC LIMIT 1",
+            (chunk_id,),
+        ).fetchone()
+        assert row is not None
+        return str(row[0])
+    finally:
+        connection.close()
+
+
+def test_pre_ms1_valid_v3_authority_survives_identity_migration(
+    tmp_path: Path,
+) -> None:
+    chunk_id, digest, persisted_body = _pre_ms1_authority_fixture(
+        tmp_path, valid_digest=True
+    )
+    layout = ensure_storage_layout(tmp_path)
+
+    with Catalog(layout.catalog) as migrated:
+        assert migrated.integrity_check() == ("ok",)
+    assert _persisted_sealing_body(tmp_path, chunk_id) == persisted_body
+
+    first_report = _preflight_report(tmp_path)
+    assert first_report["first_corrected_startup_eligible"] is True
+    assert first_report["stale_authority_count"] == 0
+    decisions = cast(list[dict[str, object]], first_report["candidates"])
+    assert decisions[0]["symbol"] == "BTCUSDT"
+    assert decisions[0]["classification_evidence_sha256"] == digest
+    assert decisions[0]["authority_state"] == "MATCHED"
+    assert decisions[0]["final_decision"] == "classified_extension_orphan"
+
+    with Catalog(layout.catalog) as recovered:
+        actions = recover_storage(layout=layout, catalog=recovered)
+    assert any(
+        action.action == "extension_orphan_ignored"
+        and action.detail == "orphan-g2"
+        for action in actions
+    )
+    assert _persisted_sealing_body(tmp_path, chunk_id) == persisted_body
+
+    second_report = _preflight_report(tmp_path)
+    assert second_report == first_report
+    with Catalog(layout.catalog) as reopened:
+        repeated_actions = recover_storage(layout=layout, catalog=reopened)
+    assert any(
+        action.action == "extension_orphan_ignored"
+        and action.detail == "orphan-g2"
+        for action in repeated_actions
+    )
+    assert _persisted_sealing_body(tmp_path, chunk_id) == persisted_body
+
+
+def test_pre_ms1_invalid_v3_digest_still_fails_closed_after_migration(
+    tmp_path: Path,
+) -> None:
+    chunk_id, _digest, persisted_body = _pre_ms1_authority_fixture(
+        tmp_path, valid_digest=False
+    )
+    layout = ensure_storage_layout(tmp_path)
+
+    with Catalog(layout.catalog) as migrated:
+        assert migrated.integrity_check() == ("ok",)
+    first_report = _preflight_report(tmp_path)
+    assert first_report["first_corrected_startup_eligible"] is False
+    assert first_report["stale_authority_count"] == 1
+    decisions = cast(list[dict[str, object]], first_report["candidates"])
+    assert decisions[0]["authority_state"] == "STALE"
+    with Catalog(layout.catalog) as catalog, pytest.raises(
+        RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"
+    ):
+        recover_storage(layout=layout, catalog=catalog)
+    assert _persisted_sealing_body(tmp_path, chunk_id) == persisted_body
+
+    assert _preflight_report(tmp_path) == first_report
+    with Catalog(layout.catalog) as reopened, pytest.raises(
+        RecoveryConflictError, match="RECOVERY_LEGACY_PREDECISION"
+    ):
+        recover_storage(layout=layout, catalog=reopened)
+    assert _persisted_sealing_body(tmp_path, chunk_id) == persisted_body
 
 
 def test_legacy_orphan_with_closed_parent_never_materializes(

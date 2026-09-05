@@ -71,6 +71,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from ..storage.catalog import LEGACY_SINGLE_SYMBOL, Catalog, CatalogStateError
 from .seal import RECONNECT_INTENT_SCHEMA_V2
@@ -255,6 +256,23 @@ def classification_evidence_sha256(
         }
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def legacy_seal_intent_for_read(
+    intent: Mapping[str, object],
+) -> dict[str, object]:
+    """Return the in-memory identity for a persisted pre-MS1 seal intent.
+
+    The compatibility default is deliberately confined to historical recovery
+    reads.  The persisted intent remains byte-for-byte unchanged and therefore
+    remains the authority-v3 digest input.  New runtime intent producers still
+    have to persist an explicit symbol.
+    """
+
+    persisted = dict(intent)
+    if "symbol" not in persisted:
+        return {**persisted, "symbol": LEGACY_SINGLE_SYMBOL}
+    return persisted
 
 
 @dataclass(frozen=True)
@@ -775,13 +793,14 @@ def _inventory(catalog: Catalog) -> list[LegacyReconnectCandidate]:
 
     candidates: list[LegacyReconnectCandidate] = []
     for chunk_id, evidence in catalog.sealing_transition_evidence():
-        intent = evidence.get(_SEAL_INTENT_EVIDENCE_KEY)
-        if intent is None:
+        persisted_intent = evidence.get(_SEAL_INTENT_EVIDENCE_KEY)
+        if persisted_intent is None:
             continue
-        if not isinstance(intent, dict):
+        if not isinstance(persisted_intent, dict):
             raise LegacyReconnectConflictError(
                 f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
             )
+        intent = legacy_seal_intent_for_read(persisted_intent)
         validate_seal_intent(intent, chunk_id)
         schema_value = intent.get("intent_schema")
         candidates.append(
@@ -795,11 +814,15 @@ def _inventory(catalog: Catalog) -> list[LegacyReconnectCandidate]:
                 original_connection_id=str(
                     intent["original_connection_id"]
                 ),
-                original_generation=int(intent["original_generation"]),
-                gap_started_at_utc_ns=int(intent["gap_started_at_utc_ns"]),
+                original_generation=int(
+                    cast(int, intent["original_generation"])
+                ),
+                gap_started_at_utc_ns=int(
+                    cast(int, intent["gap_started_at_utc_ns"])
+                ),
                 classification_evidence_sha256=classification_evidence_sha256(
                     chunk_id=chunk_id,
-                    intent=intent,
+                    intent=persisted_intent,
                     verified_frames=evidence.get("verified_frames"),
                 ),
                 verified_frames=evidence.get("verified_frames"),

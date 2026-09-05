@@ -216,6 +216,16 @@ _CURRENT_SIDE_DATA_CURSOR_COLUMNS = {
     "retention_window_ms": ("INTEGER", 1, 0),
 }
 _DISCONTINUITY_IDENTITY_INDEX = "operational_events_discontinuity_identity"
+_MS1_MIGRATION_FAULT_PHASES = frozenset(
+    {
+        "after_rename",
+        "mid_copy",
+        "after_drop",
+        "before_index",
+        "after_index",
+        "before_commit",
+    }
+)
 
 
 def stream_discontinuity_event_id(
@@ -237,15 +247,24 @@ def stream_discontinuity_event_id(
 
 class Catalog:
     def __init__(
-        self, path: Path, *, read_only: bool = False, _live_read_only: bool = False
+        self,
+        path: Path,
+        *,
+        read_only: bool = False,
+        _live_read_only: bool = False,
+        _migration_fault_phase: str | None = None,
     ) -> None:
         if _live_read_only and not read_only:
             raise CatalogStateError("live read-only mode requires read_only=True")
+        if _migration_fault_phase not in {None, *_MS1_MIGRATION_FAULT_PHASES}:
+            raise ValueError("unknown MS1 migration fault phase")
+        if read_only and _migration_fault_phase is not None:
+            raise ValueError("cannot inject migration failure in read-only mode")
         self.path = path
         self.read_only = read_only
         self.live_read_only = _live_read_only
         self._legacy_identity_schema = False
-        self._identity_schema_fresh = False
+        self._migration_fault_phase = _migration_fault_phase
         self._lock = RLock()
         if read_only:
             if not self.path.is_file():
@@ -288,18 +307,25 @@ class Catalog:
             except sqlite3.Error as exc:
                 raise CatalogStateError("cannot inspect remote Catalog schema") from exc
         else:
-            self._identity_schema_fresh = (
-                self._connection.execute(
-                    "SELECT COUNT(*) AS count FROM sqlite_master "
-                    "WHERE type = 'table' AND name IN "
-                    "('operational_events', 'side_data_cursors')"
-                ).fetchone()["count"]
-                == 0
-            )
             self._connection.execute("PRAGMA journal_mode=WAL")
             self._connection.execute("PRAGMA synchronous=FULL")
+            identity_decision = self._identity_schema_decision()
+            if identity_decision in {"legacy_pre_m19", "legacy_c421"}:
+                self._migrate_symbol_identity_schema(identity_decision)
+            elif identity_decision == "current":
+                self._validate_symbol_identity_schema(allow_legacy=False)
             self._initialize()
-            self._migrate_symbol_identity_schema()
+            if identity_decision == "fresh":
+                with self._transaction() as connection:
+                    connection.execute(
+                        """
+                        CREATE INDEX operational_events_discontinuity_identity
+                        ON operational_events(
+                            event_type, market, symbol, stream, gap_id
+                        )
+                        """
+                    )
+            self._validate_symbol_identity_schema(allow_legacy=False)
             try:
                 self._remote_schema_present = self._inspect_remote_schema(create=True)
             except CatalogStateError:
@@ -554,6 +580,13 @@ class Catalog:
         )
 
     def _identity_schema_state(self, table: str) -> str:
+        table_row = self._connection.execute(
+            "SELECT type FROM sqlite_master WHERE name = ?", (table,)
+        ).fetchone()
+        if table_row is None:
+            return "absent"
+        if str(table_row["type"]) != "table":
+            raise CatalogStateError(f"partial symbol identity schema: {table}")
         columns = {
             str(row["name"]): (
                 str(row["type"]).upper(),
@@ -572,17 +605,32 @@ class Catalog:
             return "current"
         raise CatalogStateError(f"partial symbol identity schema: {table}")
 
-    def _validate_symbol_identity_schema(self, *, allow_legacy: bool) -> None:
+    def _identity_schema_decision(self) -> str:
+        """Classify only repository-supported identity-schema histories."""
+
         self._reject_identity_migration_artifacts()
         operational_state = self._identity_schema_state("operational_events")
         cursor_state = self._identity_schema_state("side_data_cursors")
-        if operational_state != cursor_state:
-            raise CatalogStateError("partial symbol identity migration")
-        if operational_state == "legacy":
+        states = (operational_state, cursor_state)
+        if states == ("absent", "absent"):
+            return "fresh"
+        if states == ("legacy", "absent"):
+            return "legacy_pre_m19"
+        if states == ("legacy", "legacy"):
+            return "legacy_c421"
+        if states == ("current", "current"):
+            return "current"
+        raise CatalogStateError("partial symbol identity migration")
+
+    def _validate_symbol_identity_schema(self, *, allow_legacy: bool) -> None:
+        decision = self._identity_schema_decision()
+        if decision in {"legacy_pre_m19", "legacy_c421"}:
             if not allow_legacy:
                 raise CatalogStateError("Catalog requires symbol identity migration")
             self._legacy_identity_schema = True
             return
+        if decision == "fresh":
+            raise CatalogStateError("Catalog identity schema is absent")
         self._validate_discontinuity_identity_index()
         table_row = self._connection.execute(
             "SELECT sql FROM sqlite_master WHERE type = 'table' "
@@ -698,40 +746,21 @@ class Catalog:
             ):
                 raise CatalogStateError("discontinuity identity column mismatch")
 
-    def _migrate_symbol_identity_schema(self) -> None:
+    def _migration_checkpoint(self, phase: str) -> None:
+        """Private deterministic rollback seam for MS1 migration tests."""
+
+        if self._migration_fault_phase == phase:
+            raise RuntimeError(f"injected MS1 migration failure: {phase}")
+
+    def _migrate_symbol_identity_schema(self, expected_decision: str) -> None:
         """Atomically migrate the historical single-symbol Catalog schema."""
 
-        self._reject_identity_migration_artifacts()
-        operational_state = self._identity_schema_state("operational_events")
-        cursor_state = self._identity_schema_state("side_data_cursors")
-        if operational_state != cursor_state:
-            raise CatalogStateError("partial symbol identity migration")
-        if operational_state == "current":
-            if self._identity_schema_fresh:
-                with self._transaction() as connection:
-                    connection.execute(
-                        """
-                        CREATE INDEX IF NOT EXISTS
-                        operational_events_discontinuity_identity
-                        ON operational_events(
-                            event_type, market, symbol, stream, gap_id
-                        )
-                        """
-                    )
-            self._validate_symbol_identity_schema(allow_legacy=False)
-            return
+        if expected_decision not in {"legacy_pre_m19", "legacy_c421"}:
+            raise CatalogStateError("unsupported symbol identity migration decision")
 
         with self._transaction() as connection:
-            for temporary_name in (
-                "operational_events__ms1_legacy",
-                "side_data_cursors__ms1_legacy",
-            ):
-                if connection.execute(
-                    "SELECT 1 FROM sqlite_master WHERE name = ?", (temporary_name,)
-                ).fetchone():
-                    raise CatalogStateError(
-                        "partial symbol identity migration artifacts present"
-                    )
+            if self._identity_schema_decision() != expected_decision:
+                raise CatalogStateError("symbol identity schema changed before migration")
 
             event_rows = connection.execute(
                 "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
@@ -796,11 +825,15 @@ class Catalog:
                 )
                 event_bodies[str(row["event_id"])] = body
 
-            cursor_rows = connection.execute(
-                "SELECT kind, last_persisted_period_timestamp, "
-                "updated_at_utc_ns, source_retention_window, retention_window_ms "
-                "FROM side_data_cursors ORDER BY kind"
-            ).fetchall()
+            cursor_rows = (
+                connection.execute(
+                    "SELECT kind, last_persisted_period_timestamp, "
+                    "updated_at_utc_ns, source_retention_window, retention_window_ms "
+                    "FROM side_data_cursors ORDER BY kind"
+                ).fetchall()
+                if expected_decision == "legacy_c421"
+                else []
+            )
             for row in cursor_rows:
                 if (
                     not isinstance(row["kind"], str)
@@ -821,54 +854,11 @@ class Catalog:
                         "malformed side-data cursor during migration"
                     )
 
-            transition_updates: dict[int, str] = {}
-            for row in connection.execute(
-                "SELECT transition_id, to_state, evidence_json "
-                "FROM chunk_transitions WHERE to_state = 'SEALING' "
-                "ORDER BY transition_id"
-            ).fetchall():
-                try:
-                    transition_evidence = json.loads(str(row["evidence_json"]))
-                except (TypeError, json.JSONDecodeError) as exc:
-                    raise CatalogStateError(
-                        "malformed SEALING evidence during migration"
-                    ) from exc
-                if not isinstance(transition_evidence, dict):
-                    raise CatalogStateError(
-                        "SEALING evidence must be an object during migration"
-                    )
-                intent = transition_evidence.get("seal_intent")
-                if intent is None:
-                    continue
-                if not isinstance(intent, dict):
-                    raise CatalogStateError(
-                        "malformed seal intent during migration"
-                    )
-                if not all(
-                    isinstance(intent.get(name), str) and bool(intent.get(name))
-                    for name in ("market", "stream", "gap_id")
-                ):
-                    raise CatalogStateError(
-                        "malformed seal intent identity during migration"
-                    )
-                if "symbol" in intent:
-                    if not isinstance(intent["symbol"], str) or not intent["symbol"]:
-                        raise CatalogStateError(
-                            "malformed seal intent symbol during migration"
-                        )
-                    migrated_intent = intent
-                else:
-                    migrated_intent = {**intent, "symbol": LEGACY_SINGLE_SYMBOL}
-                transition_updates[int(row["transition_id"])] = json.dumps(
-                    {**transition_evidence, "seal_intent": migrated_intent},
-                    sort_keys=True,
-                    separators=(",", ":"),
-                )
-
             connection.execute(
                 "ALTER TABLE operational_events RENAME TO "
                 "operational_events__ms1_legacy"
             )
+            self._migration_checkpoint("after_rename")
             connection.execute(
                 """
                 CREATE TABLE operational_events (
@@ -890,6 +880,7 @@ class Catalog:
                 )
                 """
             )
+            copied_event = False
             for row in event_rows:
                 identity = event_updates.get(str(row["event_id"]))
                 connection.execute(
@@ -913,17 +904,17 @@ class Catalog:
                         identity[4] if identity is not None else None,
                     ),
                 )
-            connection.execute("DROP TABLE operational_events__ms1_legacy")
-            connection.execute(
-                """
-                CREATE INDEX operational_events_discontinuity_identity
-                ON operational_events(event_type, market, symbol, stream, gap_id)
-                """
-            )
+                if not copied_event:
+                    copied_event = True
+                    self._migration_checkpoint("mid_copy")
+            if not copied_event:
+                self._migration_checkpoint("mid_copy")
 
-            connection.execute(
-                "ALTER TABLE side_data_cursors RENAME TO side_data_cursors__ms1_legacy"
-            )
+            if expected_decision == "legacy_c421":
+                connection.execute(
+                    "ALTER TABLE side_data_cursors RENAME TO "
+                    "side_data_cursors__ms1_legacy"
+                )
             connection.execute(
                 """
                 CREATE TABLE side_data_cursors (
@@ -955,15 +946,20 @@ class Catalog:
                         int(row["retention_window_ms"]),
                     ),
                 )
-            connection.execute("DROP TABLE side_data_cursors__ms1_legacy")
-
-            for transition_id, body in transition_updates.items():
-                connection.execute(
-                    "UPDATE chunk_transitions SET evidence_json = ? "
-                    "WHERE transition_id = ?",
-                    (body, transition_id),
-                )
+            connection.execute("DROP TABLE operational_events__ms1_legacy")
+            if expected_decision == "legacy_c421":
+                connection.execute("DROP TABLE side_data_cursors__ms1_legacy")
+            self._migration_checkpoint("after_drop")
+            self._migration_checkpoint("before_index")
+            connection.execute(
+                """
+                CREATE INDEX operational_events_discontinuity_identity
+                ON operational_events(event_type, market, symbol, stream, gap_id)
+                """
+            )
+            self._migration_checkpoint("after_index")
             self._validate_symbol_identity_schema(allow_legacy=False)
+            self._migration_checkpoint("before_commit")
 
     def _inspect_remote_schema(self, *, create: bool) -> bool:
         """Create/validate the additive M22.4A projection, or accept legacy absence."""
@@ -4302,16 +4298,6 @@ class Catalog:
         for row in rows:
             evidence = json.loads(row["evidence_json"])
             if isinstance(evidence, dict):
-                if self._legacy_identity_schema:
-                    intent = evidence.get("seal_intent")
-                    if isinstance(intent, dict) and "symbol" not in intent:
-                        evidence = {
-                            **evidence,
-                            "seal_intent": {
-                                **intent,
-                                "symbol": LEGACY_SINGLE_SYMBOL,
-                            },
-                        }
                 output.append((str(row["chunk_id"]), evidence))
         return output
 

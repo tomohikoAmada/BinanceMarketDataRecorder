@@ -33,10 +33,13 @@ def _seed_legacy_catalog(
     market: str = "spot",
     malformed: str | None = None,
     partial: bool = False,
+    cursor_present: bool = True,
 ) -> None:
     connection = sqlite3.connect(path)
     try:
         connection.executescript(LEGACY_SCHEMA.read_text(encoding="utf-8"))
+        if not cursor_present:
+            connection.execute("DROP TABLE side_data_cursors")
         started = {
             "gap_id": "legacy-gap-1",
             "market": market,
@@ -106,12 +109,20 @@ def _seed_legacy_catalog(
             "occurred_at_utc_ns, evidence_json) VALUES (?, ?, ?, ?)",
             events,
         )
-        connection.execute(
-            "INSERT INTO side_data_cursors(kind, last_persisted_period_timestamp, "
-            "updated_at_utc_ns, source_retention_window, retention_window_ms) "
-            "VALUES (?, ?, ?, ?, ?)",
-            ("basis_5m", 123_000, 456_000, "latest_30_days", 30 * 24 * 60 * 60 * 1000),
-        )
+        if cursor_present:
+            connection.execute(
+                "INSERT INTO side_data_cursors(kind, "
+                "last_persisted_period_timestamp, updated_at_utc_ns, "
+                "source_retention_window, retention_window_ms) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    "basis_5m",
+                    123_000,
+                    456_000,
+                    "latest_30_days",
+                    30 * 24 * 60 * 60 * 1000,
+                ),
+            )
         intent = {
             "required_forced_flags": ["reconnect_gap"],
             "gap_id": "legacy-gap-2",
@@ -145,6 +156,10 @@ def _seed_legacy_catalog(
 def _snapshot(path: Path) -> dict[str, list[tuple[object, ...]]]:
     connection = sqlite3.connect(path)
     try:
+        cursor_present = connection.execute(
+            "SELECT 1 FROM sqlite_master "
+            "WHERE type = 'table' AND name = 'side_data_cursors'"
+        ).fetchone()
         cursor_columns = {
             str(row[1])
             for row in connection.execute("PRAGMA table_info(side_data_cursors)")
@@ -155,16 +170,58 @@ def _snapshot(path: Path) -> dict[str, list[tuple[object, ...]]]:
                 "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
                 "FROM operational_events ORDER BY event_id"
             ).fetchall(),
-            "cursors": connection.execute(
-                f"SELECT kind, {cursor_symbol}, last_persisted_period_timestamp, "
-                "updated_at_utc_ns, source_retention_window, retention_window_ms "
-                "FROM side_data_cursors ORDER BY kind"
-            ).fetchall(),
+            "cursors": (
+                connection.execute(
+                    f"SELECT kind, {cursor_symbol}, "
+                    "last_persisted_period_timestamp, updated_at_utc_ns, "
+                    "source_retention_window, retention_window_ms "
+                    "FROM side_data_cursors ORDER BY kind"
+                ).fetchall()
+                if cursor_present is not None
+                else []
+            ),
             "transitions": connection.execute(
                 "SELECT transition_id, evidence_json FROM chunk_transitions "
                 "ORDER BY transition_id"
             ).fetchall(),
         }
+    finally:
+        connection.close()
+
+
+def _identity_snapshot(path: Path) -> tuple[object, ...]:
+    connection = sqlite3.connect(path)
+    try:
+        schema = connection.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master "
+            "WHERE name IN ("
+            "'operational_events', 'side_data_cursors', "
+            "'operational_events_discontinuity_identity', "
+            "'operational_events__ms1_legacy', "
+            "'side_data_cursors__ms1_legacy'"
+            ") ORDER BY type, name"
+        ).fetchall()
+        events = connection.execute(
+            "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
+            "FROM operational_events ORDER BY event_id"
+        ).fetchall()
+        cursor_present = connection.execute(
+            "SELECT 1 FROM sqlite_master "
+            "WHERE type = 'table' AND name = 'side_data_cursors'"
+        ).fetchone()
+        cursors = (
+            connection.execute(
+                "SELECT * FROM side_data_cursors ORDER BY kind"
+            ).fetchall()
+            if cursor_present is not None
+            else []
+        )
+        transitions = connection.execute(
+            "SELECT transition_id, chunk_id, from_state, to_state, "
+            "occurred_at_utc_ns, evidence_json, idempotency_key "
+            "FROM chunk_transitions ORDER BY transition_id"
+        ).fetchall()
+        return (schema, events, cursors, transitions)
     finally:
         connection.close()
 
@@ -228,16 +285,132 @@ def test_legacy_catalog_migrates_to_btc_and_is_idempotent(
         row[:3] for row in before["events"]
     ]
     assert [row[0] for row in first_migration["cursors"]] == ["basis_5m"]
-    assert first_migration["transitions"][0][1] != before["transitions"][0][1]
-    migrated_intent = json.loads(str(first_migration["transitions"][0][1]))[
+    assert first_migration["transitions"] == before["transitions"]
+    persisted_intent = json.loads(str(first_migration["transitions"][0][1]))[
         "seal_intent"
     ]
-    assert migrated_intent["symbol"] == "BTCUSDT"
+    assert "symbol" not in persisted_intent
 
     with Catalog(path) as reopened:
         assert reopened.side_data_cursor("basis_5m", "BTCUSDT") is not None
         assert reopened.side_data_cursor("basis_5m", "ETHUSDT") is None
     assert _snapshot(path) == first_migration
+
+
+@pytest.mark.parametrize("market", ["spot", "um_perpetual"])
+def test_pre_m19_operational_events_only_migrates_atomically_and_reopens(
+    tmp_path: Path, market: str
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    _seed_legacy_catalog(path, market=market, cursor_present=False)
+    before = _snapshot(path)
+    before_identity = _identity_snapshot(path)
+
+    with Catalog(path) as catalog:
+        assert catalog.integrity_check() == ("ok",)
+        assert catalog.side_data_cursor("basis_5m", "BTCUSDT") is None
+        assert catalog.table_columns("side_data_cursors") == {
+            "kind",
+            "symbol",
+            "last_persisted_period_timestamp",
+            "updated_at_utc_ns",
+            "source_retention_window",
+            "retention_window_ms",
+        }
+        migrated = {
+            str(event["event_id"]): event for event in catalog.operational_events()
+        }
+        evidence = cast(
+            dict[str, object], migrated["legacy-started-1"]["evidence"]
+        )
+        assert evidence["symbol"] == "BTCUSDT"
+        assert catalog.unclosed_stream_discontinuities(
+            market=market, symbol="BTCUSDT", stream="depth"
+        )[0]["event_id"] == "legacy-started-2"
+
+    first_migration = _identity_snapshot(path)
+    assert first_migration != before_identity
+    after = _snapshot(path)
+    assert [row[:3] for row in after["events"]] == [
+        row[:3] for row in before["events"]
+    ]
+    assert after["cursors"] == []
+    assert after["transitions"] == before["transitions"]
+
+    with Catalog(path) as reopened:
+        assert reopened.integrity_check() == ("ok",)
+        assert reopened.side_data_cursor("basis_5m", "BTCUSDT") is None
+    assert _identity_snapshot(path) == first_migration
+
+
+@pytest.mark.parametrize(
+    "phase",
+    [
+        "after_rename",
+        "mid_copy",
+        "after_drop",
+        "before_index",
+        "after_index",
+        "before_commit",
+    ],
+)
+@pytest.mark.parametrize(
+    "cursor_present", [False, True], ids=["pre_m19", "exact_c421"]
+)
+def test_legacy_identity_migration_faults_roll_back_and_retry(
+    tmp_path: Path, phase: str, cursor_present: bool
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    _seed_legacy_catalog(path, cursor_present=cursor_present)
+    before = _identity_snapshot(path)
+
+    with pytest.raises(RuntimeError, match=f"migration failure: {phase}"):
+        Catalog(path, _migration_fault_phase=phase)
+
+    assert _identity_snapshot(path) == before
+    connection = sqlite3.connect(path)
+    try:
+        assert connection.execute(
+            "SELECT name FROM sqlite_master WHERE name LIKE '%__ms1_legacy'"
+        ).fetchall() == []
+        assert connection.execute("PRAGMA integrity_check").fetchall() == [("ok",)]
+    finally:
+        connection.close()
+
+    with Catalog(path) as migrated:
+        assert migrated.integrity_check() == ("ok",)
+        expected_cursor = migrated.side_data_cursor("basis_5m", "BTCUSDT")
+        assert (expected_cursor is not None) is cursor_present
+    with Catalog(path) as reopened:
+        assert reopened.integrity_check() == ("ok",)
+
+
+def test_fresh_and_current_identity_schema_reopen_is_idempotent(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as fresh:
+        assert fresh.integrity_check() == ("ok",)
+        assert fresh.table_columns("operational_events") >= {
+            "market",
+            "symbol",
+            "stream",
+            "gap_id",
+        }
+        assert fresh.advance_side_data_cursor(
+            kind="basis_5m",
+            symbol="ETHUSDT",
+            last_persisted_period_timestamp=1,
+            updated_at_utc_ns=2,
+            source_retention_window="latest_30_days",
+            retention_window_ms=30 * 24 * 60 * 60 * 1000,
+        )
+    current = _identity_snapshot(path)
+
+    with Catalog(path) as reopened:
+        assert reopened.integrity_check() == ("ok",)
+        assert reopened.side_data_cursor("basis_5m", "ETHUSDT") is not None
+    assert _identity_snapshot(path) == current
 
 
 @pytest.mark.parametrize(
@@ -284,6 +457,37 @@ def test_partial_identity_schema_fails_closed(tmp_path: Path) -> None:
         ).fetchone() == (1,)
     finally:
         connection.close()
+
+
+def test_legacy_current_mixed_identity_schema_fails_closed_without_mutation(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    _seed_legacy_catalog(path, cursor_present=False)
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            CREATE TABLE side_data_cursors (
+                kind TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                last_persisted_period_timestamp INTEGER NOT NULL,
+                updated_at_utc_ns INTEGER NOT NULL,
+                source_retention_window TEXT NOT NULL,
+                retention_window_ms INTEGER NOT NULL,
+                PRIMARY KEY(kind, symbol)
+            )
+            """
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    mixed = _identity_snapshot(path)
+
+    with pytest.raises(CatalogStateError, match="partial symbol identity migration"):
+        Catalog(path)
+
+    assert _identity_snapshot(path) == mixed
 
 
 def _record_lifecycle_event(

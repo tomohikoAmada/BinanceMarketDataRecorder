@@ -70,6 +70,7 @@ from .legacy_reconnect import (
     LegacyDecisionReport,
     LegacyReconnectConflictError,
     evaluate_legacy_reconnect_decisions,
+    legacy_seal_intent_for_read,
     validate_seal_intent,
 )
 from .seal import (
@@ -820,6 +821,7 @@ def _derived_seal_flags(
         )
     required: frozenset[str] = frozenset()
     if intent is not None:
+        intent = legacy_seal_intent_for_read(intent)
         validate_seal_intent(intent, chunk_id)
         flags = intent["required_forced_flags"]
         required = (
