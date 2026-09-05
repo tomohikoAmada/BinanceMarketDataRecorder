@@ -226,6 +226,35 @@ def _identity_snapshot(path: Path) -> tuple[object, ...]:
         connection.close()
 
 
+def _schema_snapshot(path: Path) -> list[tuple[object, ...]]:
+    connection = sqlite3.connect(path)
+    try:
+        return connection.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master "
+            "ORDER BY type, name"
+        ).fetchall()
+    finally:
+        connection.close()
+
+
+def _identity_object_names(path: Path) -> set[str]:
+    connection = sqlite3.connect(path)
+    try:
+        return {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE name IN ("
+                "'operational_events', 'side_data_cursors', "
+                "'operational_events_discontinuity_identity', "
+                "'operational_events__ms1_legacy', "
+                "'side_data_cursors__ms1_legacy'"
+                ")"
+            )
+        }
+    finally:
+        connection.close()
+
+
 def _cursor_timestamp(catalog: Catalog, symbol: str) -> int:
     cursor = catalog.side_data_cursor("basis_5m", symbol)
     assert cursor is not None
@@ -414,6 +443,103 @@ def test_fresh_and_current_identity_schema_reopen_is_idempotent(
 
 
 @pytest.mark.parametrize(
+    "phase",
+    [
+        "after_operational_events",
+        "after_cursor_table",
+        "before_index",
+        "after_index",
+    ],
+)
+def test_fresh_identity_initialization_faults_roll_back_and_retry(
+    tmp_path: Path, phase: str
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+
+    with pytest.raises(RuntimeError, match=f"fresh initialization failure: {phase}"):
+        Catalog(path, _migration_fault_phase=phase)
+
+    assert _identity_object_names(path) == set()
+    assert _schema_snapshot(path) == []
+    connection = sqlite3.connect(path)
+    try:
+        assert connection.execute("PRAGMA table_info(operational_events)").fetchall() == []
+        assert connection.execute("PRAGMA table_info(side_data_cursors)").fetchall() == []
+        assert connection.execute("PRAGMA integrity_check").fetchall() == [("ok",)]
+    finally:
+        connection.close()
+
+    with Catalog(path) as retried:
+        assert retried.integrity_check() == ("ok",)
+        assert retried._identity_schema_decision() == "current"
+    assert _identity_object_names(path) == {
+        "operational_events",
+        "side_data_cursors",
+        "operational_events_discontinuity_identity",
+    }
+
+
+def test_fresh_identity_commit_precedes_restartable_ordinary_initialization(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+
+    with pytest.raises(
+        RuntimeError,
+        match="fresh initialization failure: after_fresh_identity_commit",
+    ):
+        Catalog(path, _migration_fault_phase="after_fresh_identity_commit")
+
+    assert _identity_object_names(path) == {
+        "operational_events",
+        "side_data_cursors",
+        "operational_events_discontinuity_identity",
+    }
+    connection = sqlite3.connect(path)
+    try:
+        assert connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'chunks'"
+        ).fetchone() is None
+        assert {str(row[1]) for row in connection.execute(
+            "PRAGMA table_info(operational_events)"
+        )} == {
+            "event_id",
+            "event_type",
+            "occurred_at_utc_ns",
+            "evidence_json",
+            "market",
+            "symbol",
+            "stream",
+            "gap_id",
+        }
+        assert {str(row[1]) for row in connection.execute(
+            "PRAGMA table_info(side_data_cursors)"
+        )} == {
+            "kind",
+            "symbol",
+            "last_persisted_period_timestamp",
+            "updated_at_utc_ns",
+            "source_retention_window",
+            "retention_window_ms",
+        }
+        assert connection.execute("PRAGMA integrity_check").fetchall() == [("ok",)]
+    finally:
+        connection.close()
+
+    with Catalog(path) as restarted:
+        assert restarted._identity_schema_decision() == "current"
+        assert restarted.integrity_check() == ("ok",)
+        assert restarted.table_columns("chunks")
+
+
+def test_identity_fault_seam_rejects_unknown_phase(tmp_path: Path) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with pytest.raises(ValueError, match="unknown MS1 identity fault phase"):
+        Catalog(path, _migration_fault_phase="unknown")
+    assert not path.exists()
+
+
+@pytest.mark.parametrize(
     "malformed", ["missing_gap_id", "invalid_json", "invalid_side_data_json"]
 )
 def test_legacy_migration_fails_closed_without_rewriting_malformed_catalog(
@@ -488,6 +614,60 @@ def test_legacy_current_mixed_identity_schema_fails_closed_without_mutation(
         Catalog(path)
 
     assert _identity_snapshot(path) == mixed
+
+
+@pytest.mark.parametrize(
+    "partial_state",
+    [
+        "current_absent",
+        "absent_current",
+        "current_legacy",
+        "current_current_missing_index",
+        "malformed_current",
+        "migration_artifact",
+    ],
+)
+def test_arbitrary_partial_current_identity_schema_fails_closed_without_mutation(
+    tmp_path: Path, partial_state: str
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path):
+        pass
+    connection = sqlite3.connect(path)
+    try:
+        if partial_state == "current_absent":
+            connection.execute("DROP TABLE side_data_cursors")
+        elif partial_state == "absent_current":
+            connection.execute("DROP TABLE operational_events")
+        elif partial_state == "current_legacy":
+            connection.execute("DROP TABLE side_data_cursors")
+            connection.execute(
+                "CREATE TABLE side_data_cursors ("
+                "kind TEXT PRIMARY KEY, "
+                "last_persisted_period_timestamp INTEGER NOT NULL, "
+                "updated_at_utc_ns INTEGER NOT NULL, "
+                "source_retention_window TEXT NOT NULL, "
+                "retention_window_ms INTEGER NOT NULL)"
+            )
+        elif partial_state == "current_current_missing_index":
+            connection.execute("DROP INDEX operational_events_discontinuity_identity")
+        elif partial_state == "malformed_current":
+            connection.execute(
+                "ALTER TABLE operational_events ADD COLUMN unexpected TEXT"
+            )
+        else:
+            connection.execute(
+                "CREATE TABLE operational_events__ms1_legacy (event_id TEXT)"
+            )
+        connection.commit()
+    finally:
+        connection.close()
+    before = _schema_snapshot(path)
+
+    with pytest.raises(CatalogStateError):
+        Catalog(path)
+
+    assert _schema_snapshot(path) == before
 
 
 def _record_lifecycle_event(

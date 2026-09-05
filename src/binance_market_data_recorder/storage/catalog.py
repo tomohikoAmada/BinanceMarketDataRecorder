@@ -216,6 +216,40 @@ _CURRENT_SIDE_DATA_CURSOR_COLUMNS = {
     "retention_window_ms": ("INTEGER", 1, 0),
 }
 _DISCONTINUITY_IDENTITY_INDEX = "operational_events_discontinuity_identity"
+_CREATE_CURRENT_OPERATIONAL_EVENTS_SQL = """
+    CREATE TABLE IF NOT EXISTS operational_events (
+        event_id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        occurred_at_utc_ns INTEGER NOT NULL,
+        evidence_json TEXT NOT NULL,
+        market TEXT,
+        symbol TEXT,
+        stream TEXT,
+        gap_id TEXT,
+        CHECK (
+            event_type NOT IN (
+                'STREAM_DISCONTINUITY_STARTED',
+                'STREAM_DISCONTINUITY_COMPLETED'
+            )
+            OR symbol IS NOT NULL
+        )
+    )
+"""
+_CREATE_CURRENT_SIDE_DATA_CURSORS_SQL = """
+    CREATE TABLE IF NOT EXISTS side_data_cursors (
+        kind TEXT NOT NULL,
+        symbol TEXT NOT NULL,
+        last_persisted_period_timestamp INTEGER NOT NULL,
+        updated_at_utc_ns INTEGER NOT NULL,
+        source_retention_window TEXT NOT NULL,
+        retention_window_ms INTEGER NOT NULL,
+        PRIMARY KEY(kind, symbol)
+    )
+"""
+_CREATE_DISCONTINUITY_IDENTITY_INDEX_SQL = """
+    CREATE INDEX IF NOT EXISTS operational_events_discontinuity_identity
+    ON operational_events(event_type, market, symbol, stream, gap_id)
+"""
 _MS1_MIGRATION_FAULT_PHASES = frozenset(
     {
         "after_rename",
@@ -225,6 +259,16 @@ _MS1_MIGRATION_FAULT_PHASES = frozenset(
         "after_index",
         "before_commit",
     }
+)
+_MS1_FRESH_INITIALIZATION_FAULT_PHASES = frozenset(
+    {
+        "after_operational_events",
+        "after_cursor_table",
+        "after_fresh_identity_commit",
+    }
+)
+_MS1_IDENTITY_FAULT_PHASES = (
+    _MS1_MIGRATION_FAULT_PHASES | _MS1_FRESH_INITIALIZATION_FAULT_PHASES
 )
 
 
@@ -256,8 +300,8 @@ class Catalog:
     ) -> None:
         if _live_read_only and not read_only:
             raise CatalogStateError("live read-only mode requires read_only=True")
-        if _migration_fault_phase not in {None, *_MS1_MIGRATION_FAULT_PHASES}:
-            raise ValueError("unknown MS1 migration fault phase")
+        if _migration_fault_phase not in {None, *_MS1_IDENTITY_FAULT_PHASES}:
+            raise ValueError("unknown MS1 identity fault phase")
         if read_only and _migration_fault_phase is not None:
             raise ValueError("cannot inject migration failure in read-only mode")
         self.path = path
@@ -310,21 +354,13 @@ class Catalog:
             self._connection.execute("PRAGMA journal_mode=WAL")
             self._connection.execute("PRAGMA synchronous=FULL")
             identity_decision = self._identity_schema_decision()
-            if identity_decision in {"legacy_pre_m19", "legacy_c421"}:
+            if identity_decision == "fresh":
+                self._initialize_fresh_symbol_identity_schema()
+            elif identity_decision in {"legacy_pre_m19", "legacy_c421"}:
                 self._migrate_symbol_identity_schema(identity_decision)
             elif identity_decision == "current":
                 self._validate_symbol_identity_schema(allow_legacy=False)
             self._initialize()
-            if identity_decision == "fresh":
-                with self._transaction() as connection:
-                    connection.execute(
-                        """
-                        CREATE INDEX operational_events_discontinuity_identity
-                        ON operational_events(
-                            event_type, market, symbol, stream, gap_id
-                        )
-                        """
-                    )
             self._validate_symbol_identity_schema(allow_legacy=False)
             try:
                 self._remote_schema_present = self._inspect_remote_schema(create=True)
@@ -524,32 +560,6 @@ class Catalog:
                 evidence_json TEXT NOT NULL,
                 idempotency_key TEXT NOT NULL UNIQUE
             );
-            CREATE TABLE IF NOT EXISTS operational_events (
-                event_id TEXT PRIMARY KEY,
-                event_type TEXT NOT NULL,
-                occurred_at_utc_ns INTEGER NOT NULL,
-                evidence_json TEXT NOT NULL,
-                market TEXT,
-                symbol TEXT,
-                stream TEXT,
-                gap_id TEXT,
-                CHECK (
-                    event_type NOT IN (
-                        'STREAM_DISCONTINUITY_STARTED',
-                        'STREAM_DISCONTINUITY_COMPLETED'
-                    )
-                    OR symbol IS NOT NULL
-                )
-            );
-            CREATE TABLE IF NOT EXISTS side_data_cursors (
-                kind TEXT NOT NULL,
-                symbol TEXT NOT NULL,
-                last_persisted_period_timestamp INTEGER NOT NULL,
-                updated_at_utc_ns INTEGER NOT NULL,
-                source_retention_window TEXT NOT NULL,
-                retention_window_ms INTEGER NOT NULL,
-                PRIMARY KEY(kind, symbol)
-            );
             CREATE TABLE IF NOT EXISTS deployment_sessions (
                 deployment_id TEXT PRIMARY KEY,
                 reason TEXT NOT NULL,
@@ -578,6 +588,44 @@ class Catalog:
             );
             """
         )
+        self._create_current_operational_events(self._connection)
+        self._create_current_side_data_cursors(self._connection)
+
+    @staticmethod
+    def _create_current_operational_events(connection: sqlite3.Connection) -> None:
+        connection.execute(_CREATE_CURRENT_OPERATIONAL_EVENTS_SQL)
+
+    @staticmethod
+    def _create_current_side_data_cursors(connection: sqlite3.Connection) -> None:
+        connection.execute(_CREATE_CURRENT_SIDE_DATA_CURSORS_SQL)
+
+    @staticmethod
+    def _create_discontinuity_identity_index(
+        connection: sqlite3.Connection,
+    ) -> None:
+        connection.execute(_CREATE_DISCONTINUITY_IDENTITY_INDEX_SQL)
+
+    def _fresh_initialization_checkpoint(self, phase: str) -> None:
+        """Private deterministic fault seam for fresh MS1 identity tests."""
+
+        if self._migration_fault_phase == phase:
+            raise RuntimeError(f"injected MS1 fresh initialization failure: {phase}")
+
+    def _initialize_fresh_symbol_identity_schema(self) -> None:
+        """Atomically create every identity object for a genuinely fresh Catalog."""
+
+        with self._transaction() as connection:
+            if self._identity_schema_decision() != "fresh":
+                raise CatalogStateError("symbol identity schema changed before creation")
+            self._create_current_operational_events(connection)
+            self._fresh_initialization_checkpoint("after_operational_events")
+            self._create_current_side_data_cursors(connection)
+            self._fresh_initialization_checkpoint("after_cursor_table")
+            self._fresh_initialization_checkpoint("before_index")
+            self._create_discontinuity_identity_index(connection)
+            self._fresh_initialization_checkpoint("after_index")
+            self._validate_symbol_identity_schema(allow_legacy=False)
+        self._fresh_initialization_checkpoint("after_fresh_identity_commit")
 
     def _identity_schema_state(self, table: str) -> str:
         table_row = self._connection.execute(
@@ -859,27 +907,7 @@ class Catalog:
                 "operational_events__ms1_legacy"
             )
             self._migration_checkpoint("after_rename")
-            connection.execute(
-                """
-                CREATE TABLE operational_events (
-                    event_id TEXT PRIMARY KEY,
-                    event_type TEXT NOT NULL,
-                    occurred_at_utc_ns INTEGER NOT NULL,
-                    evidence_json TEXT NOT NULL,
-                    market TEXT,
-                    symbol TEXT,
-                    stream TEXT,
-                    gap_id TEXT,
-                    CHECK (
-                        event_type NOT IN (
-                            'STREAM_DISCONTINUITY_STARTED',
-                            'STREAM_DISCONTINUITY_COMPLETED'
-                        )
-                        OR symbol IS NOT NULL
-                    )
-                )
-                """
-            )
+            self._create_current_operational_events(connection)
             copied_event = False
             for row in event_rows:
                 identity = event_updates.get(str(row["event_id"]))
@@ -915,19 +943,7 @@ class Catalog:
                     "ALTER TABLE side_data_cursors RENAME TO "
                     "side_data_cursors__ms1_legacy"
                 )
-            connection.execute(
-                """
-                CREATE TABLE side_data_cursors (
-                    kind TEXT NOT NULL,
-                    symbol TEXT NOT NULL,
-                    last_persisted_period_timestamp INTEGER NOT NULL,
-                    updated_at_utc_ns INTEGER NOT NULL,
-                    source_retention_window TEXT NOT NULL,
-                    retention_window_ms INTEGER NOT NULL,
-                    PRIMARY KEY(kind, symbol)
-                )
-                """
-            )
+            self._create_current_side_data_cursors(connection)
             for row in cursor_rows:
                 connection.execute(
                     """
@@ -951,12 +967,7 @@ class Catalog:
                 connection.execute("DROP TABLE side_data_cursors__ms1_legacy")
             self._migration_checkpoint("after_drop")
             self._migration_checkpoint("before_index")
-            connection.execute(
-                """
-                CREATE INDEX operational_events_discontinuity_identity
-                ON operational_events(event_type, market, symbol, stream, gap_id)
-                """
-            )
+            self._create_discontinuity_identity_index(connection)
             self._migration_checkpoint("after_index")
             self._validate_symbol_identity_schema(allow_legacy=False)
             self._migration_checkpoint("before_commit")

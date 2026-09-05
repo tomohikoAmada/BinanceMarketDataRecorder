@@ -2,17 +2,17 @@
 
 ## Result and authority
 
-MS1 is **IMPLEMENTED / LOCALLY VALIDATED / NARROW-FIX CANDIDATE** on the
+MS1 is **IMPLEMENTED / LOCALLY VALIDATED / FINAL NARROW-FIX CANDIDATE** on the
 MacBook development repository. The original candidate was created from the
 exact requested base `c421605e302d2ad46acdb2466627f64644181c9a`, whose root
 tree was `a521dd61f8a090b4930cce5254985383f8893a3f`. An independently adjudicated
 narrow follow-up corrects historical identity-migration ordering and legacy
-authority-digest compatibility without redesigning MS1. No VPS, deployment,
-pull request, merge, or live Binance traffic was used.
+authority-digest compatibility. A final narrow follow-up makes genuinely fresh
+identity initialization restart-safe without redesigning MS1. No VPS,
+deployment, pull request, merge, or live Binance traffic was used.
 
-The original and narrow-fix candidate SHAs are reported by the implementation
-handoff rather than embedded here because this acceptance record is part of
-those commits.
+The candidate SHAs are reported by the implementation handoff rather than
+embedded here because this acceptance record is part of those commits.
 
 ## Scope and compatibility
 
@@ -25,8 +25,15 @@ The supported pre-M19 shape (`operational_events=legacy`,
 in one `BEGIN IMMEDIATE` transaction. Historical single-symbol operational
 events and any c421 cursor rows migrate to `symbol=BTCUSDT`; the pre-M19 cursor
 history is correctly treated as empty. A fresh identity schema is created only
-after the fresh-state decision, already-current schemas reopen without a
-rewrite, and arbitrary asymmetric/malformed/partial states fail closed.
+after the fresh-state decision. Its current `operational_events`, current
+`side_data_cursors`, and discontinuity identity index share one explicit
+`BEGIN IMMEDIATE` transaction and one commit boundary before ordinary Catalog
+initialization. A failure before that commit leaves both identity tables absent
+and no index or migration artifacts; a failure after that commit can reopen the
+coherent current identity schema and safely finish ordinary idempotent
+initialization. Already-current schemas reopen without a rewrite, and arbitrary
+asymmetric/malformed/partial states—including current/current with a missing
+identity index—fail closed.
 
 Historical `chunk_transitions` SEALING evidence is not rewritten by the MS1
 migration. A symbol-less pre-MS1 `seal_intent` stays exactly persisted as it
@@ -54,6 +61,12 @@ covers:
   history, integrity, and idempotent reopen;
 - fresh-schema creation, already-current reopen, and malformed/unsupported
   partial-schema fail-closed behavior;
+- deterministic fresh-identity rollback after operational-event creation,
+  after cursor-table creation, before index creation, and after index creation
+  but before commit, followed by successful retry from exact absent/absent/no-
+  index durable state;
+- restart completion after the fresh identity transaction commits but before
+  ordinary Catalog initialization begins;
 - deterministic rollback and successful retry at six migration checkpoints:
   after rename, during row copy, after legacy-table drop, before index, after
   index, and immediately before commit, for both supported legacy shapes;
@@ -78,9 +91,9 @@ The command results in the final handoff are authoritative. The validation
 matrix is:
 
 ```text
-focused MS1, migration fault, v3 authority, reconnect, readiness, audit, and
-side-data suites: PASS (217 passed, 2 online-only skipped)
-full offline pytest: PASS
+focused fresh/legacy identity, corruption, v3 authority, discontinuity, and
+cursor suites: PASS (41 passed)
+full offline pytest: PASS (1507 passed, 24 online/preview skips, 4 stress deselected)
 ruff: PASS
 mypy: PASS
 compileall: PASS
@@ -94,4 +107,4 @@ Contracts repository: NOT MODIFIED
 ```
 
 The six pre-existing untracked review artifacts in the repository worktree
-were preserved and are outside both MS1 commits.
+were preserved and are outside all MS1 commits.
