@@ -28,6 +28,7 @@ def test_unsigned_public_usdm_side_rest_smoke() -> None:
     for kind in REST_SIDE_DATA_SPECS:
         envelope = capture_rest_side_data(
             kind=kind,
+            symbol="BTCUSDT",
             collector_instance_id="online-side-smoke",
             collector_version="test",
             timeout_ms=10_000,

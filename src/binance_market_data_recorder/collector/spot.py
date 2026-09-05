@@ -133,6 +133,7 @@ class SpotCollector:
 
         self.readiness = CollectorReadiness(
             market="spot",
+            symbol="BTCUSDT",
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
@@ -205,6 +206,7 @@ class SpotCollector:
         self.streams = tuple(
             SpotStreamCollector(
                 stream=spec.stream,
+                symbol="BTCUSDT",
                 wire_name=spec.wire_name,
                 spool=spool(spec.stream.value),
                 collector_instance_id=settings.collector_instance_id,

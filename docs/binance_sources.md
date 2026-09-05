@@ -1,5 +1,13 @@
 # Official Binance Sources
 
+## MS1 metadata-only identity work — 2026-09-04
+
+MS1 changed only local durable identity and Catalog migration metadata. It did
+not change Binance endpoint, stream, payload, rate-limit, or sequence
+semantics, and it used no live Binance traffic or newly retrieved external
+source. The existing pinned official-source inventory remains authoritative;
+no new source hash is required for this milestone.
+
 ## M20 proxy transport verification — 2026-07-27T09:29:15+00:00
 
 M20 did not change Binance endpoint/schema semantics. It revalidated transport

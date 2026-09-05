@@ -37,6 +37,7 @@ def test_readiness_requires_all_streams_persisted_snapshot_and_book_sync(
 ) -> None:
     readiness = CollectorReadiness(
         market=market,
+        symbol="BTCUSDT",
         collector_instance_id="candidate-1",
         collector_version="0.2.0+candidate",
     )
@@ -101,6 +102,7 @@ def test_readiness_requires_all_streams_persisted_snapshot_and_book_sync(
 def test_readiness_rejects_another_instance_identity() -> None:
     readiness = CollectorReadiness(
         market="spot",
+        symbol="BTCUSDT",
         collector_instance_id="candidate-1",
         collector_version="0.2.0+candidate",
     )
@@ -118,6 +120,7 @@ def test_readiness_rejects_another_instance_identity() -> None:
 def test_disconnect_requires_a_new_persisted_event() -> None:
     readiness = CollectorReadiness(
         market="spot",
+        symbol="BTCUSDT",
         collector_instance_id="candidate-1",
         collector_version="0.2.0+candidate",
     )

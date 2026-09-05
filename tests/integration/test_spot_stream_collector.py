@@ -83,6 +83,7 @@ def make_stream(
     )
     collector = SpotStreamCollector(
         stream=SpotStream.DIFF_DEPTH,
+        symbol="BTCUSDT",
         wire_name="btcusdt@depth@100ms",
         spool=spool,
         collector_instance_id="collector-test",

@@ -155,6 +155,7 @@ def make_collector(
     }[stream]
     collector = SpotStreamCollector(
         stream=stream,
+        symbol="BTCUSDT",
         wire_name=wire_name,
         spool=spool,
         collector_instance_id="spot-ingress-test",
@@ -461,6 +462,7 @@ def test_restart_restores_same_open_gap_and_completes_after_raw_sync(
         evidence={
             "gap_id": gap_id,
             "market": "spot",
+            "symbol": "BTCUSDT",
             "stream": "book_ticker",
             "reason": "ingress_backpressure",
             "interval_classification": "UNRELIABLE",
@@ -469,6 +471,7 @@ def test_restart_restores_same_open_gap_and_completes_after_raw_sync(
             "original_generation": 4,
             "boundary_frame_persisted": True,
         },
+        symbol="BTCUSDT",
     )
     seed.close()
 
@@ -601,7 +604,7 @@ def test_boundary_handoff_timeout_recovers_same_gap_without_fabricating_frame(
     with Catalog(layout.catalog) as recovery_catalog:
         recover_storage(layout=layout, catalog=recovery_catalog)
         open_gaps = recovery_catalog.unclosed_stream_discontinuities(
-            market="spot", stream="book_ticker"
+            market="spot", symbol="BTCUSDT", stream="book_ticker"
         )
     assert len(open_gaps) == 1
     assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
@@ -731,7 +734,7 @@ def test_session_restart_post_close_timeout_recovers_same_gap_without_fabricatio
     with Catalog(layout.catalog) as recovery_catalog:
         recover_storage(layout=layout, catalog=recovery_catalog)
         open_gaps = recovery_catalog.unclosed_stream_discontinuities(
-            market="spot", stream="book_ticker"
+            market="spot", symbol="BTCUSDT", stream="book_ticker"
         )
     assert len(open_gaps) == 1
     assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id

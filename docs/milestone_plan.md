@@ -1146,6 +1146,35 @@ No M21 or failed M22.9 duration evidence transfers to the newly corrected
 artifact, and no stage starts automatically. Historical M21 and M22.9 evidence
 remain unchanged.
 
+## MS1 — Multi-symbol durable identity foundation
+
+- **Status:** **IMPLEMENTED / LOCALLY VALIDATED / CANDIDATE COMMIT**; acceptance
+  evidence is recorded in `docs/milestone_acceptance/MS1.md`.
+- **Scope:** Make discontinuity identity explicit as
+  `(market, symbol, stream)` across Catalog, reconnect, recovery, readiness,
+  and audit paths; migrate historical single-symbol discontinuities and
+  symbol-specific side-data cursors to `BTCUSDT`; make symbol-specific cursor
+  operations explicit; and prove cross-symbol isolation for the frozen Spot
+  and USD-M target identities.
+- **Non-scope:** Runtime fan-out, multi-symbol startup/readiness, new websocket
+  orchestration, REST scheduling redesign, Raw v1 bytes/payload schemas,
+  Contracts/protobuf changes, generic arbitrary-symbol abstractions, and
+  performance or VPS work.
+- **Compatibility:** Existing single-symbol production assembly continues to
+  pass `BTCUSDT` explicitly. Legacy Catalog rows without symbol identity are
+  migrated atomically and idempotently to `BTCUSDT`; genuinely global side
+  data retains global semantics.
+- **Dependencies:** Closed M23 hardening stage and the existing Catalog,
+  reconnect, Raw, and side-data contracts.
+- **Acceptance:** Focused migration, rollback, restart, discontinuity
+  isolation, cursor isolation, global-side-data, and frozen-target table-driven
+  tests pass; full offline pytest, Ruff, mypy, compile, and diff checks pass.
+  No online Binance traffic, deployment, VPS access, or Contracts repository
+  change is permitted.
+- **Rollback:** Revert the single MS1 candidate commit. Existing Raw bytes,
+  manifests, archive state, and Catalog evidence remain preserved; do not
+  recreate or delete production Catalogs.
+
 ## Future Work
 
 M21 historical work contains the Ubuntu ARM64/RK3588 soak evidence and recovery

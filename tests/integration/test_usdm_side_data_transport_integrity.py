@@ -103,6 +103,7 @@ def make_side_extension(
 
     collector = UsdMStreamCollector(
         stream=stream_name,
+        symbol="BTCUSDT",
         route="market",
         wire_name=wire_name,
         spool=spool,

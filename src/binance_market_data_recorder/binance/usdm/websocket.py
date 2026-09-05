@@ -52,6 +52,7 @@ from ...spool.queue import (
 )
 from ...spool.seal import RECONNECT_GAP_FLAG, RECONNECT_INTENT_SCHEMA_V2
 from ...spool.stream import StreamSpool
+from ...storage.catalog import stream_discontinuity_event_id
 from ..spot.websocket import ReceivedFrame, ReconnectBackoff
 from ..websocket_common import (
     RECONNECT_REASONS,
@@ -114,6 +115,7 @@ class UsdMStreamCollector:
         self,
         *,
         stream: UsdMStream | str,
+        symbol: str,
         route: str,
         wire_name: str,
         spool: StreamSpool,
@@ -143,9 +145,12 @@ class UsdMStreamCollector:
             raise ValueError("planned rotation must occur before the 24-hour limit")
         if post_close_handoff_timeout_seconds <= 0:
             raise ValueError("post-close handoff timeout must be positive")
+        if not symbol or spool.symbol != symbol:
+            raise ValueError("USD-M collector symbol must match its spool")
         if envelope_factory is None and not isinstance(stream, UsdMStream):
             raise ValueError("a side-data stream requires an envelope factory")
         self.stream = stream
+        self.symbol = symbol
         self.stream_name = stream.value if isinstance(stream, UsdMStream) else stream
         self.route = route
         self.wire_name = wire_name
@@ -203,6 +208,7 @@ class UsdMStreamCollector:
     def _restore_open_gap(self) -> None:
         open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
             market="um_perpetual",
+            symbol=self.symbol,
             stream=self.stream_name,
         )
         if len(open_gaps) > 1:
@@ -395,6 +401,7 @@ class UsdMStreamCollector:
         evidence: dict[str, object] = {
             "gap_id": gap_id,
             "market": "um_perpetual",
+            "symbol": self.symbol,
             "stream": self.stream_name,
             "reason": reason,
             "interval_classification": "UNRELIABLE",
@@ -428,10 +435,17 @@ class UsdMStreamCollector:
             evidence["boundary_payload_sha256"] = boundary_payload_sha256
         await _run_owned_blocking_call(
             self.spool.catalog.ensure_operational_event,
-            event_id=f"stream-discontinuity-started:{gap_id}",
+            event_id=stream_discontinuity_event_id(
+                event_type="STREAM_DISCONTINUITY_STARTED",
+                market="um_perpetual",
+                symbol=self.symbol,
+                stream=self.stream_name,
+                gap_id=gap_id,
+            ),
             event_type="STREAM_DISCONTINUITY_STARTED",
             occurred_at_utc_ns=started_at_utc_ns,
             evidence=evidence,
+            symbol=self.symbol,
         )
         self._pending_gap = {
             "gap_id": gap_id,
@@ -457,12 +471,19 @@ class UsdMStreamCollector:
         await _run_owned_blocking_call(self.spool.sync)
         await _run_owned_blocking_call(
             self.spool.catalog.ensure_operational_event,
-            event_id=f"stream-discontinuity-completed:{gap_id}",
+            event_id=stream_discontinuity_event_id(
+                event_type="STREAM_DISCONTINUITY_COMPLETED",
+                market="um_perpetual",
+                symbol=self.symbol,
+                stream=self.stream_name,
+                gap_id=gap_id,
+            ),
             event_type="STREAM_DISCONTINUITY_COMPLETED",
             occurred_at_utc_ns=completed_at,
             evidence={
                 **gap,
                 "market": "um_perpetual",
+                "symbol": self.symbol,
                 "stream": self.stream_name,
                 "reason": gap["reason"],
                 "interval_classification": "UNRELIABLE",
@@ -472,6 +493,7 @@ class UsdMStreamCollector:
                 "raw_gap_marker": "sequence_gap",
                 "historical_continuity_restored": False,
             },
+            symbol=self.symbol,
         )
         self._pending_gap = None
         self._recovery_flag_pending = False
@@ -528,6 +550,7 @@ class UsdMStreamCollector:
                 "gap_id": str(parent["gap_id"]),
                 "reason": str(parent["reason"]),
                 "market": "um_perpetual",
+                "symbol": self.symbol,
                 "stream": self.stream_name,
                 "original_connection_id": str(
                     parent["original_connection_id"]
@@ -553,6 +576,7 @@ class UsdMStreamCollector:
             "gap_id": str(uuid4()),
             "reason": outcome,
             "market": "um_perpetual",
+            "symbol": self.symbol,
             "stream": self.stream_name,
             "original_connection_id": self._boundary_connection_id,
             "original_generation": self._generation,

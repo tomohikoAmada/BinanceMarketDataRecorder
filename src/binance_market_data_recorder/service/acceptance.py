@@ -564,6 +564,9 @@ class AcceptanceObserver:
                     started_at = _integer(interval.get("started_at_utc_ns"), "gap start")
                     ended_at = _integer(interval.get("ended_at_utc_ns"), "gap end")
                     item = {
+                        "market": interval.get("market"),
+                        "symbol": interval.get("symbol"),
+                        "stream": interval.get("stream"),
                         "gap_id": interval.get("gap_id"),
                         "started_at_utc_ns": started_at,
                         "ended_at_utc_ns": ended_at,
@@ -584,6 +587,9 @@ class AcceptanceObserver:
                     started_at = _integer(evidence.get("gap_started_at_utc_ns"), "gap start")
                     open_intervals.append(
                         {
+                            "market": evidence.get("market"),
+                            "symbol": evidence.get("symbol"),
+                            "stream": evidence.get("stream"),
                             "gap_id": evidence.get("gap_id"),
                             "started_at_utc_ns": started_at,
                             "timing": "OPEN_AT_T0" if started_at <= t0 else "OPENED_IN_STAGE",
@@ -593,7 +599,8 @@ class AcceptanceObserver:
                 "malformed_events": malformed,
                 "degraded_pairs": degraded,
                 "unclosed": {
-                    f"{market}:{stream}": items for (market, stream), items in unclosed.items()
+                    f"{market}:{symbol}:{stream}": items
+                    for (market, symbol, stream), items in unclosed.items()
                 },
                 "terminal_events": terminal,
                 "baseline_history": baseline_history,

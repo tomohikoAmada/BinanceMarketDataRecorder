@@ -126,6 +126,7 @@ class UsdMCollector:
 
         self.readiness = CollectorReadiness(
             market="um_perpetual",
+            symbol="BTCUSDT",
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
@@ -203,6 +204,7 @@ class UsdMCollector:
         self.streams = tuple(
             UsdMStreamCollector(
                 stream=spec.stream,
+                symbol="BTCUSDT",
                 route=spec.route,
                 wire_name=spec.wire_name,
                 spool=spool(spec.stream.value),
@@ -222,6 +224,7 @@ class UsdMCollector:
         if settings.side_data is not None:
             self.side_data = UsdMSideDataManager(
                 settings=settings.side_data,
+                symbol="BTCUSDT",
                 layout=self.layout,
                 catalog=self.catalog,
                 collector_instance_id=settings.collector_instance_id,

@@ -64,7 +64,11 @@ from binance_market_data_recorder.spool.seal import (
     read_strict_manifest,
     validate_sealed_artifact,
 )
-from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
+from binance_market_data_recorder.storage.catalog import (
+    LEGACY_SINGLE_SYMBOL,
+    Catalog,
+    ChunkState,
+)
 from binance_market_data_recorder.storage.layout import StorageLayout
 
 TOOL_SCHEMA_VERSION = "historical-reconnect-audit.v1"
@@ -135,6 +139,7 @@ class ChunkScan:
 class CatalogGapInterval:
     gap_id: str
     market: str
+    symbol: str
     stream: str
     started_at_utc_ns: int
     ended_at_utc_ns: int | None
@@ -392,6 +397,7 @@ def _manifest_has(manifest: dict[str, Any], flag: str) -> bool:
 def _catalog_gap_match(
     intervals: list[CatalogGapInterval],
     market: str,
+    symbol: str,
     stream: str,
     occurred_at_utc_ns: int,
     old_connection_id: str | None,
@@ -404,7 +410,7 @@ def _catalog_gap_match(
     EXACT_PAIR only when all four identities exist and
     ``old == original AND new == interval.new``; a one-sided match is
     PARTIAL_OLD / PARTIAL_NEW and can never prove the boundary by itself.
-    Matching is market/stream specific. Multiple candidates of equal
+    Matching is market/symbol/stream specific. Multiple candidates of equal
     strength classify AMBIGUOUS; time overlap alone is TIME_ONLY.
 
     Returns (match, identity_match_kind, matched_gap_id).
@@ -412,7 +418,11 @@ def _catalog_gap_match(
     stream_intervals = [
         interval
         for interval in intervals
-        if interval.market == market and interval.stream == stream
+        if (
+            interval.market == market
+            and interval.symbol == symbol
+            and interval.stream == stream
+        )
     ]
 
     def within(interval: CatalogGapInterval) -> bool:
@@ -472,9 +482,11 @@ def _catalog_gap_match(
     return "UNMATCHED", NONE, None
 
 
-def _catalog_intervals(events: list[dict[str, Any]]) -> list[CatalogGapInterval]:
+def _catalog_intervals(
+    events: list[dict[str, Any]], *, allow_legacy_symbol: bool = False
+) -> list[CatalogGapInterval]:
     intervals: list[CatalogGapInterval] = []
-    started: dict[str, CatalogGapInterval] = {}
+    started: dict[tuple[str, str, str, str], CatalogGapInterval] = {}
     for event in events:
         evidence = event.get("evidence")
         if not isinstance(evidence, dict):
@@ -482,11 +494,27 @@ def _catalog_intervals(events: list[dict[str, Any]]) -> list[CatalogGapInterval]
         gap_id = evidence.get("gap_id")
         if not isinstance(gap_id, str) or not gap_id:
             continue
+        market = evidence.get("market")
+        symbol = evidence.get("symbol")
+        if symbol is None and allow_legacy_symbol:
+            symbol = LEGACY_SINGLE_SYMBOL
+        stream = evidence.get("stream")
+        if (
+            not isinstance(market, str)
+            or not market
+            or not isinstance(symbol, str)
+            or not symbol
+            or not isinstance(stream, str)
+            or not stream
+        ):
+            continue
+        identity = (market, symbol, stream, gap_id)
         if event["event_type"] == "STREAM_DISCONTINUITY_STARTED":
             interval = CatalogGapInterval(
                 gap_id=gap_id,
-                market=str(evidence.get("market", "")),
-                stream=str(evidence.get("stream", "")),
+                market=market,
+                symbol=symbol,
+                stream=stream,
                 started_at_utc_ns=int(evidence.get("gap_started_at_utc_ns", 0)),
                 ended_at_utc_ns=None,
                 reason=(
@@ -507,10 +535,10 @@ def _catalog_intervals(events: list[dict[str, Any]]) -> list[CatalogGapInterval]
                 original_generation=_optional_int(evidence, "original_generation"),
                 new_generation=_optional_int(evidence, "new_generation"),
             )
-            started[gap_id] = interval
+            started[identity] = interval
             intervals.append(interval)
         elif event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
-            completed_interval = started.get(gap_id)
+            completed_interval = started.get(identity)
             if completed_interval is None:
                 continue
             completed_interval.ended_at_utc_ns = int(
@@ -745,8 +773,8 @@ def _frame_info(frame: FrameIdentity | None, *, persisted: bool) -> dict[str, An
     }
 
 
-def _stream_key(market: str, stream: str) -> tuple[str, str]:
-    return (market, stream)
+def _stream_key(market: str, symbol: str, stream: str) -> tuple[str, str, str]:
+    return (market, symbol, stream)
 
 
 def collect_transitions(
@@ -755,25 +783,31 @@ def collect_transitions(
     catalog: Catalog | None,
     *,
     emit_chunk_ids: frozenset[str] | None = None,
-) -> tuple[list[Transition], dict[tuple[str, str], dict[str, int]], list[CatalogGapInterval]]:
+) -> tuple[
+    list[Transition], dict[tuple[str, str, str], dict[str, int]], list[CatalogGapInterval]
+]:
     """Return deterministic per-stream transitions, summaries, and intervals."""
     _load_frames(chunks, layout)
     intervals = (
-        _catalog_intervals(catalog.operational_events())
+        _catalog_intervals(
+            catalog.operational_events(),
+            allow_legacy_symbol=catalog.legacy_identity_schema,
+        )
         if catalog is not None
         else []
     )
 
     transitions: list[Transition] = []
-    summaries: dict[tuple[str, str], dict[str, int]] = {}
-    previous_by_key: dict[tuple[str, str], ChunkScan] = {}
-    intervening_by_key: dict[tuple[str, str], list[ChunkScan]] = {}
+    summaries: dict[tuple[str, str, str], dict[str, int]] = {}
+    previous_by_key: dict[tuple[str, str, str], ChunkScan] = {}
+    intervening_by_key: dict[tuple[str, str, str], list[ChunkScan]] = {}
     for chunk in chunks:
         market = str(chunk.manifest["market"])
+        symbol = str(chunk.manifest["symbol"])
         stream = str(chunk.manifest["stream"])
         if market not in {"spot", "um_perpetual"}:
             continue
-        key = _stream_key(market, stream)
+        key = _stream_key(market, symbol, stream)
         if key not in summaries:
             summaries[key] = {
                 "chunks_scanned": 0,
@@ -822,6 +856,7 @@ def collect_transitions(
                 match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
+                    symbol,
                     stream,
                     frame.receive_time_utc_ns,
                     previous_frame.connection_id,
@@ -865,6 +900,7 @@ def collect_transitions(
                 match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
+                    symbol,
                     stream,
                     int(chunk.manifest.get("created_at_utc_ns", 0)),
                     None,
@@ -925,6 +961,7 @@ def collect_transitions(
                 match, identity_kind, matched_gap_id = _catalog_gap_match(
                     intervals,
                     market,
+                    symbol,
                     stream,
                     occurred_at,
                     old_connection,
@@ -1001,7 +1038,9 @@ def collect_transitions(
             # Already reported as a manifest-level intra-chunk transition.
             continue
         key = _stream_key(
-            str(chunk.manifest["market"]), str(chunk.manifest["stream"])
+            str(chunk.manifest["market"]),
+            str(chunk.manifest["symbol"]),
+            str(chunk.manifest["stream"]),
         )
         if key in summaries:
             summaries[key]["chunks_with_scan_issues"] += 1
@@ -1216,7 +1255,12 @@ def _chunk_from_context(document: Mapping[str, object]) -> ChunkScan:
     if (
         not isinstance(manifest.get("chunk_id"), str)
         or not isinstance(manifest.get("market"), str)
+        or not isinstance(manifest.get("symbol"), str)
         or not isinstance(manifest.get("stream"), str)
+        or not manifest["chunk_id"]
+        or not manifest["market"]
+        or not manifest["symbol"]
+        or not manifest["stream"]
         or not isinstance(manifest.get("created_at_utc_ns"), int)
         or isinstance(manifest.get("created_at_utc_ns"), bool)
         or not isinstance(manifest.get("record_count"), int)
@@ -1244,7 +1288,7 @@ def _chunk_from_context(document: Mapping[str, object]) -> ChunkScan:
 
 def _continuation_contexts(
     continuation: Mapping[str, object] | None,
-) -> dict[tuple[str, str], list[ChunkScan]]:
+) -> dict[tuple[str, str, str], list[ChunkScan]]:
     if continuation is None:
         return {}
     if continuation.get("schema_version") != INCREMENTAL_SCHEMA_VERSION:
@@ -1262,28 +1306,52 @@ def _continuation_contexts(
     streams = continuation.get("streams")
     if not isinstance(streams, dict):
         raise SealError("reconnect continuation streams are malformed")
-    result: dict[tuple[str, str], list[ChunkScan]] = {}
+    result: dict[tuple[str, str, str], list[ChunkScan]] = {}
     for name, value in streams.items():
         if not isinstance(value, dict):
             raise SealError("reconnect continuation stream is malformed")
         market = value.get("market")
+        symbol = value.get("symbol")
         stream = value.get("stream")
         chunks = value.get("chunks")
+        legacy_name = (
+            isinstance(name, str)
+            and isinstance(market, str)
+            and isinstance(stream, str)
+            and symbol is None
+            and name == f"{market}:{stream}"
+        )
+        if legacy_name:
+            symbol = LEGACY_SINGLE_SYMBOL
+        expected_name = (
+            f"{market}:{stream}" if legacy_name else f"{market}:{symbol}:{stream}"
+        )
         if (
             not isinstance(name, str)
             or not isinstance(market, str)
+            or not isinstance(symbol, str)
             or not isinstance(stream, str)
+            or not name
+            or not market
+            or not symbol
+            or not stream
             or not isinstance(chunks, list)
-            or name != f"{market}:{stream}"
+            or name != expected_name
         ):
             raise SealError("reconnect continuation stream identity is malformed")
-        result[(market, stream)] = [
+        context = [
             _chunk_from_context(cast(Mapping[str, object], item))
             for item in chunks
             if isinstance(item, dict)
         ]
-        if len(result[(market, stream)]) != len(chunks):
+        if len(context) != len(chunks) or any(
+            chunk.manifest.get("market") != market
+            or chunk.manifest.get("symbol") != symbol
+            or chunk.manifest.get("stream") != stream
+            for chunk in context
+        ):
             raise SealError("reconnect continuation chunk list is malformed")
+        result[(market, symbol, stream)] = context
     return result
 
 
@@ -1294,12 +1362,16 @@ def validate_incremental_continuation(continuation: Mapping[str, object]) -> Non
 
 
 def _updated_contexts(
-    prior: dict[tuple[str, str], list[ChunkScan]],
+    prior: dict[tuple[str, str, str], list[ChunkScan]],
     new_chunks: list[ChunkScan],
-) -> dict[tuple[str, str], list[ChunkScan]]:
+) -> dict[tuple[str, str, str], list[ChunkScan]]:
     updated = {key: list(value) for key, value in prior.items()}
     for chunk in new_chunks:
-        key = (str(chunk.manifest["market"]), str(chunk.manifest["stream"]))
+        key = (
+            str(chunk.manifest["market"]),
+            str(chunk.manifest["symbol"]),
+            str(chunk.manifest["stream"]),
+        )
         current = updated.setdefault(key, [])
         if _zero_record_chunk(chunk):
             if current:
@@ -1311,19 +1383,21 @@ def _updated_contexts(
 
 def _audit_output(
     transitions: list[Transition],
-    summaries: dict[tuple[str, str], dict[str, int]],
+    summaries: dict[tuple[str, str, str], dict[str, int]],
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
     streams_output: list[dict[str, Any]] = []
-    for (market, stream), summary in sorted(summaries.items()):
+    for (market, symbol, stream), summary in sorted(summaries.items()):
         streams_output.append(
             {
                 "market": market,
+                "symbol": symbol,
                 "stream": stream,
                 "summary": dict(summary),
                 "transitions": [
                     item.to_dict()
                     for item in transitions
                     if item.old_manifest.get("market") == market
+                    and item.old_manifest.get("symbol") == symbol
                     and item.old_manifest.get("stream") == stream
                 ],
             }
@@ -1394,9 +1468,13 @@ def incremental_audit_data_root(
         except (OSError, SealError, ValueError) as exc:
             raise SealError(f"strict Raw verification failed for {sealed}") from exc
     prior_contexts = _continuation_contexts(continuation)
-    new_by_key: dict[tuple[str, str], list[ChunkScan]] = {}
+    new_by_key: dict[tuple[str, str, str], list[ChunkScan]] = {}
     for chunk in new_chunks:
-        key = (str(chunk.manifest["market"]), str(chunk.manifest["stream"]))
+        key = (
+            str(chunk.manifest["market"]),
+            str(chunk.manifest["symbol"]),
+            str(chunk.manifest["stream"]),
+        )
         new_by_key.setdefault(key, []).append(chunk)
     audit_chunks: list[ChunkScan] = []
     for key in sorted(new_by_key):
@@ -1456,12 +1534,13 @@ def incremental_audit_data_root(
         "schema_version": INCREMENTAL_SCHEMA_VERSION,
         "manifest_members": current_members,
         "streams": {
-            f"{market}:{stream}": {
+            f"{market}:{symbol}:{stream}": {
                 "market": market,
+                "symbol": symbol,
                 "stream": stream,
                 "chunks": [_chunk_context_document(chunk) for chunk in context],
             }
-            for (market, stream), context in sorted(updated.items())
+            for (market, symbol, stream), context in sorted(updated.items())
         },
     }
     streams_output, summary = _audit_output(transitions, summaries)
@@ -1514,16 +1593,20 @@ def audit_data_root(
         inventory_count, inventory_sha256 = manifest_inventory(chunks, layout)
         transitions, summaries, intervals = collect_transitions(chunks, layout, catalog)
         streams_output: list[dict[str, Any]] = []
-        for (market_name, stream_name), summary in sorted(summaries.items()):
+        for (market_name, symbol_name, stream_name), summary in sorted(
+            summaries.items()
+        ):
             stream_transitions = [
                 transition.to_dict()
                 for transition in transitions
                 if transition.old_manifest.get("market") == market_name
+                and transition.old_manifest.get("symbol") == symbol_name
                 and transition.old_manifest.get("stream") == stream_name
             ]
             streams_output.append(
                 {
                     "market": market_name,
+                    "symbol": symbol_name,
                     "stream": stream_name,
                     "summary": {
                         "chunks_scanned": summary["chunks_scanned"],
@@ -1554,8 +1637,8 @@ def audit_data_root(
                 item["chunks_with_scan_issues"] for item in summaries.values()
             ),
         }
-        started_by_id: dict[str, dict[str, Any]] = {}
-        completed_by_id: dict[str, dict[str, Any]] = {}
+        started_by_id: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+        completed_by_id: dict[tuple[str, str, str, str], dict[str, Any]] = {}
         for event in catalog.operational_events() if catalog is not None else []:
             evidence = event.get("evidence")
             if not isinstance(evidence, dict):
@@ -1563,10 +1646,29 @@ def audit_data_root(
             gap_id = evidence.get("gap_id")
             if not isinstance(gap_id, str) or not gap_id:
                 continue
+            event_market = evidence.get("market")
+            event_symbol = evidence.get("symbol")
+            if (
+                event_symbol is None
+                and catalog is not None
+                and catalog.legacy_identity_schema
+            ):
+                event_symbol = LEGACY_SINGLE_SYMBOL
+            event_stream = evidence.get("stream")
+            if (
+                not isinstance(event_market, str)
+                or not event_market
+                or not isinstance(event_symbol, str)
+                or not event_symbol
+                or not isinstance(event_stream, str)
+                or not event_stream
+            ):
+                continue
+            identity = (event_market, event_symbol, event_stream, gap_id)
             if event["event_type"] == "STREAM_DISCONTINUITY_STARTED":
-                started_by_id[gap_id] = event
+                started_by_id[identity] = event
             elif event["event_type"] == "STREAM_DISCONTINUITY_COMPLETED":
-                completed_by_id[gap_id] = event
+                completed_by_id[identity] = event
         matched_pairs = len(set(started_by_id) & set(completed_by_id))
         unmatched_started = len(started_by_id) - matched_pairs
         unmatched_completed = len(completed_by_id) - matched_pairs
@@ -1591,6 +1693,7 @@ def audit_data_root(
                     {
                         "gap_id": interval.gap_id,
                         "market": interval.market,
+                        "symbol": interval.symbol,
                         "stream": interval.stream,
                         "started_at_utc_ns": interval.started_at_utc_ns,
                         "ended_at_utc_ns": interval.ended_at_utc_ns,
@@ -1657,7 +1760,7 @@ def _print_summary(document: dict[str, Any], output: TextIO) -> None:
     for stream in document["streams"]:
         item = stream["summary"]
         output.write(
-            f"{stream['market']}/{stream['stream']}: "
+            f"{stream['market']}/{stream['symbol']}/{stream['stream']}: "
             f"chunks={item['chunks_scanned']} transitions={item['transitions_total']} "
             f"(explicit={item['explicit_gap']} overlap={item['blue_green_overlap']} "
             f"unmarked={item['unmarked_reconnect']} unknown={item['unknown']}"
@@ -1667,7 +1770,8 @@ def _print_summary(document: dict[str, Any], output: TextIO) -> None:
         for transition in stream["transitions"]:
             if transition["kind"] in {UNMARKED_RECONNECT, UNKNOWN}:
                 output.write(
-                    f"  {transition['kind']}: {stream['market']}/{stream['stream']} "
+                    f"  {transition['kind']}: "
+                    f"{stream['market']}/{stream['symbol']}/{stream['stream']} "
                     f"chunk {transition['old_chunk_id'][:8]} -> "
                     f"{transition['new_chunk_id'][:8]} "
                     f"conn {_short(transition['old_connection_id'])} -> "

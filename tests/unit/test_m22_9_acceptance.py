@@ -593,9 +593,11 @@ def test_unresolved_gap_open_at_t0_blocks(tmp_path: Path) -> None:
             evidence={
                 "gap_id": "open-at-t0",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "gap_started_at_utc_ns": clock.utc - 1,
             },
+            symbol="BTCUSDT",
         )
     _path, _sha, start = observer.start()
     assert start["result"] == "FAIL"

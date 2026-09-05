@@ -118,6 +118,7 @@ def test_rest_side_data_uses_only_public_sdk_methods_and_records_provenance(
     monotonic = iter([300, 400])
     envelope = capture_rest_side_data(
         kind=kind,
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -139,6 +140,7 @@ def test_rest_side_data_uses_only_public_sdk_methods_and_records_provenance(
 def test_funding_info_missing_btcusdt_remains_absent_without_fixed_eight_hour_fill() -> None:
     envelope = capture_rest_side_data(
         kind=RestSideDataKind.FUNDING_INFO,
+        symbol="BTCUSDT",
         rest_api=Api("funding_info.json"),
         collector_instance_id="collector-1",
         collector_version="test",
@@ -154,6 +156,7 @@ def test_empty_funding_responses_are_valid_and_not_forward_filled() -> None:
     api.value = []
     envelope = capture_rest_side_data(
         kind=RestSideDataKind.FUNDING_HISTORY,
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -168,6 +171,7 @@ def test_invalid_side_data_schema_is_not_silently_accepted() -> None:
     with pytest.raises(SideDataSchemaError, match="openInterest"):
         capture_rest_side_data(
             kind=RestSideDataKind.OPEN_INTEREST,
+            symbol="BTCUSDT",
             rest_api=api,
             collector_instance_id="collector-1",
             collector_version="test",
@@ -181,6 +185,7 @@ def test_http_rate_limit_preserves_retry_after_boundary() -> None:
     with pytest.raises(UsdMSideDataHttpError) as raised:
         capture_rest_side_data(
             kind=RestSideDataKind.OPEN_INTEREST,
+            symbol="BTCUSDT",
             rest_api=api,
             collector_instance_id="collector-1",
             collector_version="test",
@@ -272,6 +277,7 @@ def test_five_minute_statistics_capture_latest_closed_period(
     wall = iter([600_000_000_000, 600_100_000_000])
     envelope = capture_rest_side_data(
         kind=kind,
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -310,6 +316,7 @@ def test_taker_volume_preserves_official_leading_overlap_but_advances_requested_
     ]
     envelope = capture_rest_side_data(
         kind=RestSideDataKind.TAKER_BUY_SELL_VOLUME,
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",

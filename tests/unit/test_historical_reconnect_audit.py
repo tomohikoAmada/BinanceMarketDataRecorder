@@ -224,9 +224,11 @@ def test_audit_correlates_catalog_discontinuity_intervals(tmp_path: Path) -> Non
             evidence={
                 "gap_id": "gap-1",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "gap_started_at_utc_ns": 1_000_000_003,
             },
+            symbol="BTCUSDT",
         )
         catalog.record_operational_event(
             event_id="stream-discontinuity-completed:gap-1",
@@ -235,9 +237,11 @@ def test_audit_correlates_catalog_discontinuity_intervals(tmp_path: Path) -> Non
             evidence={
                 "gap_id": "gap-1",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "gap_ended_at_utc_ns": 1_000_000_004,
             },
+            symbol="BTCUSDT",
         )
     document = audit_data_root(tmp_path)
     assert document["catalog"]["discontinuity_started"] == 1
@@ -496,10 +500,12 @@ def test_audit_catalog_gap_matching_is_stream_specific(tmp_path: Path) -> None:
             evidence={
                 "gap_id": "gap-b",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "agg_trade",
                 "gap_started_at_utc_ns": 1_000_000_003,
                 "original_connection_id": "conn-b",
             },
+            symbol="BTCUSDT",
         )
         catalog.record_operational_event(
             event_id="stream-discontinuity-completed:gap-b",
@@ -508,10 +514,12 @@ def test_audit_catalog_gap_matching_is_stream_specific(tmp_path: Path) -> None:
             evidence={
                 "gap_id": "gap-b",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "agg_trade",
                 "gap_ended_at_utc_ns": 1_000_000_004,
                 "new_connection_id": "conn-c",
             },
+            symbol="BTCUSDT",
         )
     document = audit_data_root(tmp_path)
     unmarked = [
@@ -541,10 +549,12 @@ def test_audit_catalog_gap_identity_selects_correct_nearby_gap(tmp_path: Path) -
                 evidence={
                     "gap_id": gap_id,
                     "market": "um_perpetual",
+                    "symbol": "BTCUSDT",
                     "stream": "book_ticker",
                     "gap_started_at_utc_ns": start,
                     "original_connection_id": old_conn,
                 },
+                symbol="BTCUSDT",
             )
             catalog.record_operational_event(
                 event_id=f"stream-discontinuity-completed:{gap_id}",
@@ -553,10 +563,12 @@ def test_audit_catalog_gap_identity_selects_correct_nearby_gap(tmp_path: Path) -
                 evidence={
                     "gap_id": gap_id,
                     "market": "um_perpetual",
+                    "symbol": "BTCUSDT",
                     "stream": "book_ticker",
                     "gap_ended_at_utc_ns": start + 1,
                     "new_connection_id": new_conn,
                 },
+                symbol="BTCUSDT",
             )
     document = audit_data_root(tmp_path)
     transitions = all_transitions(document)
@@ -584,9 +596,11 @@ def test_audit_unmatched_catalog_counts_use_gap_id_identity(tmp_path: Path) -> N
             evidence={
                 "gap_id": "orphan-started",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "gap_started_at_utc_ns": 1_000_000_010,
             },
+            symbol="BTCUSDT",
         )
         catalog.record_operational_event(
             event_id="stream-discontinuity-completed:orphan-completed",
@@ -595,9 +609,11 @@ def test_audit_unmatched_catalog_counts_use_gap_id_identity(tmp_path: Path) -> N
             evidence={
                 "gap_id": "orphan-completed",
                 "market": "um_perpetual",
+                "symbol": "BTCUSDT",
                 "stream": "book_ticker",
                 "gap_ended_at_utc_ns": 1_000_000_011,
             },
+            symbol="BTCUSDT",
         )
     document = audit_data_root(tmp_path)
     assert document["catalog"]["discontinuity_started"] == 1
@@ -819,6 +835,7 @@ def record_gap_interval(
     gap_id: str,
     market: str,
     stream: str,
+    symbol: str,
     started_at_utc_ns: int,
     ended_at_utc_ns: int,
     original_connection_id: str | None = None,
@@ -827,6 +844,7 @@ def record_gap_interval(
     evidence: dict[str, Any] = {
         "gap_id": gap_id,
         "market": market,
+        "symbol": symbol,
         "stream": stream,
         "gap_started_at_utc_ns": started_at_utc_ns,
     }
@@ -837,6 +855,7 @@ def record_gap_interval(
         event_type="STREAM_DISCONTINUITY_STARTED",
         occurred_at_utc_ns=started_at_utc_ns,
         evidence=evidence,
+        symbol=symbol,
     )
     completed: dict[str, Any] = {
         **evidence,
@@ -849,6 +868,7 @@ def record_gap_interval(
         event_type="STREAM_DISCONTINUITY_COMPLETED",
         occurred_at_utc_ns=ended_at_utc_ns,
         evidence=completed,
+        symbol=symbol,
     )
 
 
@@ -880,6 +900,7 @@ def test_catalog_exact_pair_proves_explicit(tmp_path: Path) -> None:
             gap_id="gap-exact",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -907,6 +928,7 @@ def test_catalog_partial_old_match_is_never_explicit(tmp_path: Path) -> None:
             gap_id="gap-partial-old",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -931,6 +953,7 @@ def test_catalog_partial_new_match_is_never_explicit(tmp_path: Path) -> None:
             gap_id="gap-partial-new",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-C",
@@ -955,6 +978,7 @@ def test_catalog_unrelated_pair_has_no_identity_match(tmp_path: Path) -> None:
             gap_id="gap-unrelated",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=9_000_000_101,
             ended_at_utc_ns=9_000_000_102,
             original_connection_id="conn-C",
@@ -978,6 +1002,7 @@ def test_catalog_started_without_completed_new_is_not_exact(tmp_path: Path) -> N
             gap_id="gap-pending",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -1000,6 +1025,7 @@ def test_catalog_exact_pair_wins_over_nearby_partial(tmp_path: Path) -> None:
             gap_id="gap-nearby",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_100,
             ended_at_utc_ns=1_000_000_103,
             original_connection_id="conn-A",
@@ -1010,6 +1036,7 @@ def test_catalog_exact_pair_wins_over_nearby_partial(tmp_path: Path) -> None:
             gap_id="gap-exact",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -1032,6 +1059,7 @@ def test_catalog_two_exact_candidates_are_ambiguous(tmp_path: Path) -> None:
             gap_id="gap-exact-1",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -1042,6 +1070,7 @@ def test_catalog_two_exact_candidates_are_ambiguous(tmp_path: Path) -> None:
             gap_id="gap-exact-2",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_101,
             ended_at_utc_ns=1_000_000_102,
             original_connection_id="conn-A",
@@ -1094,6 +1123,7 @@ def test_catalog_matching_is_market_stream_specific_exact(tmp_path: Path) -> Non
             gap_id="gap-other-stream",
             market="um_perpetual",
             stream="agg_trade",
+            symbol="BTCUSDT",
             started_at_utc_ns=1_000_000_200,
             ended_at_utc_ns=1_000_000_201,
             original_connection_id="conn-A",
@@ -1252,6 +1282,7 @@ def test_empty_chunk_with_unrelated_catalog_gap_is_not_explicit(
             gap_id="gap-unrelated-empty",
             market="um_perpetual",
             stream="book_ticker",
+            symbol="BTCUSDT",
             original_connection_id="conn-x",
             new_connection_id="conn-y",
             started_at_utc_ns=1_000_000_000,

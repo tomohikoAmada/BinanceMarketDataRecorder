@@ -53,6 +53,7 @@ def test_usdm_five_minute_statistics_unsigned_public_smoke(
     ) * FIVE_MINUTE_PERIOD_MS - 12 * FIVE_MINUTE_PERIOD_MS
     envelope = capture_rest_side_data(
         kind=kind,
+        symbol="BTCUSDT",
         collector_instance_id="m19-online-usdm",
         collector_version="test",
         period_start_ms=request_start,

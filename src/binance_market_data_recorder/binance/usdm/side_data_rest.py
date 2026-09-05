@@ -87,6 +87,7 @@ FIVE_MINUTE_RETENTION: dict[RestSideDataKind, tuple[str, int]] = {
         30 * 24 * 60 * 60 * 1000,
     ),
 }
+GLOBAL_SIDE_DATA_SYMBOL = "BTCUSDT"
 
 
 @dataclass(frozen=True)
@@ -336,10 +337,12 @@ def _sdk_model_value(value: object) -> Any:
     raise SideDataSchemaError("SDK response data is not a model or model list")
 
 
-def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
+def _validate_model(
+    kind: RestSideDataKind, model: Any, *, symbol: str
+) -> dict[str, int | str]:
     if kind is RestSideDataKind.PREMIUM_INDEX:
         item = _object(model)
-        if _text(item, "symbol") != "BTCUSDT":
+        if _text(item, "symbol") != symbol:
             raise SideDataSchemaError("unexpected premium-index symbol")
         for name in (
             "markPrice",
@@ -355,7 +358,7 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
         }
     if kind is RestSideDataKind.OPEN_INTEREST:
         item = _object(model)
-        if _text(item, "symbol") != "BTCUSDT":
+        if _text(item, "symbol") != symbol:
             raise SideDataSchemaError("unexpected open-interest symbol")
         _text(item, "openInterest")
         return {"observationTime": _integer(item, "time")}
@@ -364,7 +367,7 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
         times: list[int] = []
         for raw_item in items:
             item = _object(raw_item)
-            if _text(item, "symbol") != "BTCUSDT":
+            if _text(item, "symbol") != symbol:
                 raise SideDataSchemaError("unexpected funding-history symbol")
             _text(item, "fundingRate")
             if "markPrice" in item:
@@ -399,7 +402,7 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
         for raw_item in items:
             item = _object(raw_item)
             if kind is RestSideDataKind.BASIS:
-                if _text(item, "pair") != "BTCUSDT":
+                if _text(item, "pair") != symbol:
                     raise SideDataSchemaError("unexpected basis pair")
                 for name in (
                     "contractType",
@@ -413,7 +416,7 @@ def _validate_model(kind: RestSideDataKind, model: Any) -> dict[str, int | str]:
             else:
                 if (
                     kind is not RestSideDataKind.TAKER_BUY_SELL_VOLUME
-                    and _text(item, "symbol") != "BTCUSDT"
+                    and _text(item, "symbol") != symbol
                 ):
                     raise SideDataSchemaError("unexpected statistics symbol")
                 required = {
@@ -471,21 +474,22 @@ def _call(
     kind: RestSideDataKind,
     now_ms: int,
     *,
+    symbol: str,
     period_start_ms: int | None = None,
     period_end_ms: int | None = None,
     period_limit: int = 1,
 ) -> tuple[PublicResponse, dict[str, object]]:
     if kind is RestSideDataKind.PREMIUM_INDEX:
-        return api.mark_price("BTCUSDT"), {"symbol": "BTCUSDT"}
+        return api.mark_price(symbol), {"symbol": symbol}
     if kind is RestSideDataKind.FUNDING_HISTORY:
-        return api.get_funding_rate_history("BTCUSDT", None, None, 100), {
-            "symbol": "BTCUSDT",
+        return api.get_funding_rate_history(symbol, None, None, 100), {
+            "symbol": symbol,
             "limit": 100,
         }
     if kind is RestSideDataKind.FUNDING_INFO:
         return api.get_funding_rate_info(), {}
     if kind is RestSideDataKind.OPEN_INTEREST:
-        return api.open_interest("BTCUSDT"), {"symbol": "BTCUSDT"}
+        return api.open_interest(symbol), {"symbol": symbol}
     if kind is RestSideDataKind.EXCHANGE_INFO:
         return api.exchange_information(), {}
     if kind not in FIVE_MINUTE_KINDS:
@@ -521,7 +525,7 @@ def _call(
         else period_end
     )
     parameters: dict[str, object] = {
-        "symbol": "BTCUSDT",
+        "symbol": symbol,
         "period": "5m",
         "limit": api_limit,
         "requestedPeriodCount": period_limit,
@@ -537,7 +541,7 @@ def _call(
         parameters["requestedEndTime"] = period_end
     if kind is RestSideDataKind.OPEN_INTEREST_STATISTICS:
         response = api.open_interest_statistics(
-            "BTCUSDT",
+            symbol,
             OpenInterestStatisticsPeriodEnum.PERIOD_5m,
             api_limit,
             period_start,
@@ -545,7 +549,7 @@ def _call(
         )
     elif kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME:
         response = api.taker_buy_sell_volume(
-            "BTCUSDT",
+            symbol,
             TakerBuySellVolumePeriodEnum.PERIOD_5m,
             api_limit,
             period_start,
@@ -553,7 +557,7 @@ def _call(
         )
     elif kind is RestSideDataKind.GLOBAL_LONG_SHORT_RATIO:
         response = api.long_short_ratio(
-            "BTCUSDT",
+            symbol,
             LongShortRatioPeriodEnum.PERIOD_5m,
             api_limit,
             period_start,
@@ -561,7 +565,7 @@ def _call(
         )
     elif kind is RestSideDataKind.TOP_LONG_SHORT_ACCOUNT_RATIO:
         response = api.top_trader_long_short_ratio_accounts(
-            "BTCUSDT",
+            symbol,
             TopTraderLongShortRatioAccountsPeriodEnum.PERIOD_5m,
             api_limit,
             period_start,
@@ -569,7 +573,7 @@ def _call(
         )
     elif kind is RestSideDataKind.TOP_LONG_SHORT_POSITION_RATIO:
         response = api.top_trader_long_short_ratio_positions(
-            "BTCUSDT",
+            symbol,
             TopTraderLongShortRatioPositionsPeriodEnum.PERIOD_5m,
             api_limit,
             period_start,
@@ -579,7 +583,7 @@ def _call(
         parameters["pair"] = parameters.pop("symbol")
         parameters["contractType"] = "PERPETUAL"
         response = api.basis(
-            "BTCUSDT",
+            symbol,
             BasisContractTypeEnum.PERPETUAL,
             BasisPeriodEnum.PERIOD_5m,
             api_limit,
@@ -592,6 +596,7 @@ def _call(
 def capture_rest_side_data(
     *,
     kind: RestSideDataKind,
+    symbol: str,
     rest_api: UsdMSideRestApi | None = None,
     collector_instance_id: str,
     collector_version: str,
@@ -606,6 +611,8 @@ def capture_rest_side_data(
 
     if timeout_ms < 1000:
         raise ValueError("USD-M side-data REST timeout must be at least 1000 ms")
+    if not symbol:
+        raise ValueError("USD-M side-data REST symbol must be non-empty")
     api = (
         rest_api
         if rest_api is not None
@@ -620,6 +627,7 @@ def capture_rest_side_data(
         api,
         kind,
         request_utc_ns // 1_000_000,
+        symbol=symbol,
         period_start_ms=period_start_ms,
         period_end_ms=period_end_ms,
         period_limit=period_limit,
@@ -637,7 +645,9 @@ def capture_rest_side_data(
             retry_at_utc_ns=retry_at_utc_ns,
         )
     model = _sdk_model_value(response.data())
-    source_sequence: dict[str, int | str] = _validate_model(kind, model)
+    source_sequence: dict[str, int | str] = _validate_model(
+        kind, model, symbol=symbol
+    )
     if kind in FIVE_MINUTE_KINDS:
         requested_start_value = parameters.get(
             "requestedStartTime", parameters["startTime"]
@@ -724,7 +734,11 @@ def capture_rest_side_data(
     ).encode()
     return EventEnvelope(
         market="um_perpetual",
-        symbol="BTCUSDT",
+        symbol=(
+            symbol
+            if kind not in {RestSideDataKind.FUNDING_INFO, RestSideDataKind.EXCHANGE_INFO}
+            else GLOBAL_SIDE_DATA_SYMBOL
+        ),
         stream=kind.value,
         module="binance.usdm.side_rest.v1",
         connection_id=f"rest-{uuid4()}",

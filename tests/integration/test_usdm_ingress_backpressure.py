@@ -295,6 +295,7 @@ def make_collector(
     )
     collector = UsdMStreamCollector(
         stream=stream,
+        symbol="BTCUSDT",
         route="market" if stream == UsdMStream.AGG_TRADE else "public",
         wire_name={
             UsdMStream.DIFF_DEPTH: "btcusdt@depth@100ms",
@@ -350,6 +351,7 @@ def make_blocking_writer_collector(
 
     collector = UsdMStreamCollector(
         stream=UsdMStream.BOOK_TICKER,
+        symbol="BTCUSDT",
         route="public",
         wire_name="btcusdt@bookTicker",
         spool=spool,
@@ -501,6 +503,7 @@ def record_gap_started(
         evidence={
             "gap_id": gap_id,
             "market": "um_perpetual",
+            "symbol": "BTCUSDT",
             "stream": stream,
             "reason": "ingress_backpressure",
             "interval_classification": "UNRELIABLE",
@@ -509,6 +512,7 @@ def record_gap_started(
             "original_generation": generation,
             "boundary_frame_persisted": True,
         },
+        symbol="BTCUSDT",
     )
 
 
@@ -525,11 +529,13 @@ def record_gap_completed(
         evidence={
             "gap_id": gap_id,
             "market": "um_perpetual",
+            "symbol": "BTCUSDT",
             "stream": stream,
             "reason": "ingress_backpressure",
             "gap_ended_at_utc_ns": 200,
             "historical_continuity_restored": False,
         },
+        symbol="BTCUSDT",
     )
 
 
@@ -806,7 +812,7 @@ def test_post_close_handoff_timeout_recovers_same_gap_without_fabricating_frame(
     with Catalog(layout.catalog) as recovery_catalog:
         recover_storage(layout=layout, catalog=recovery_catalog)
         open_gaps = recovery_catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
     assert len(open_gaps) == 1
     assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
@@ -942,7 +948,7 @@ def test_session_restart_post_close_timeout_recovers_same_gap_without_fabricatio
     with Catalog(layout.catalog) as recovery_catalog:
         recover_storage(layout=layout, catalog=recovery_catalog)
         open_gaps = recovery_catalog.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
     assert len(open_gaps) == 1
     assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
@@ -1597,6 +1603,7 @@ def test_cancel_during_raw_drain_waits_for_worker_then_cleans_up(
 
         collector = UsdMStreamCollector(
             stream=UsdMStream.BOOK_TICKER,
+            symbol="BTCUSDT",
             route="public",
             wire_name="btcusdt@bookTicker",
             spool=spool,
@@ -1778,7 +1785,7 @@ def test_gap_marker_sync_failure_leaves_started_open_and_fail_closed(
                 event_type="STREAM_DISCONTINUITY_COMPLETED"
             ) == []
             open_gaps = catalog.unclosed_stream_discontinuities(
-                market="um_perpetual", stream="diff_depth"
+                market="um_perpetual", symbol="BTCUSDT", stream="diff_depth"
             )
             assert len(open_gaps) == 1
             assert cast(dict[str, Any], open_gaps[0]["evidence"])["gap_id"] == gap_id
@@ -1929,6 +1936,7 @@ def test_multiple_unclosed_gaps_fail_closed_without_new_evidence(tmp_path: Path)
         ):
             UsdMStreamCollector(
                 stream=UsdMStream.BOOK_TICKER,
+                symbol="BTCUSDT",
                 route="public",
                 wire_name="btcusdt@bookTicker",
                 spool=spool,
@@ -2033,7 +2041,7 @@ def test_cancel_after_gap_sync_before_catalog_writes_no_completion_or_leaks_task
             ) == []
             assert len(
                 catalog.unclosed_stream_discontinuities(
-                    market="um_perpetual", stream="book_ticker"
+                    market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
                 )
             ) == 1
             await asyncio.sleep(0)
@@ -2108,7 +2116,7 @@ def test_cancel_inside_owned_gap_sync_waits_before_abort(
                 event_type="STREAM_DISCONTINUITY_COMPLETED"
             ) == []
             open_gaps = catalog.unclosed_stream_discontinuities(
-                market="um_perpetual", stream="book_ticker"
+                market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
             )
             assert [cast(dict[str, Any], event["evidence"])["gap_id"] for event in open_gaps] == [
                 gap_id
@@ -2173,6 +2181,7 @@ def test_cancel_inside_owned_catalog_completion_waits_before_close(
             event_type: str,
             occurred_at_utc_ns: int,
             evidence: Any,
+            symbol: str | None = None,
         ) -> bool:
             if event_type != "STREAM_DISCONTINUITY_COMPLETED":
                 return original_record(
@@ -2180,6 +2189,7 @@ def test_cancel_inside_owned_catalog_completion_waits_before_close(
                     event_type=event_type,
                     occurred_at_utc_ns=occurred_at_utc_ns,
                     evidence=evidence,
+                    symbol=symbol,
                 )
             write_active.set()
             write_started.set()
@@ -2193,6 +2203,7 @@ def test_cancel_inside_owned_catalog_completion_waits_before_close(
                     event_type=event_type,
                     occurred_at_utc_ns=occurred_at_utc_ns,
                     evidence=evidence,
+                    symbol=symbol,
                 )
             finally:
                 write_active.clear()
@@ -2251,7 +2262,7 @@ def test_cancel_inside_owned_catalog_completion_waits_before_close(
         )
         assert len(completed) == (0 if fail_write else 1)
         open_gaps = reopened.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert len(open_gaps) == (1 if fail_write else 0)
 
@@ -2293,6 +2304,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
             event_type: str,
             occurred_at_utc_ns: int,
             evidence: Any,
+            symbol: str | None = None,
         ) -> bool:
             nonlocal attempted_gap_id
             if event_type != "STREAM_DISCONTINUITY_STARTED":
@@ -2301,6 +2313,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
                     event_type=event_type,
                     occurred_at_utc_ns=occurred_at_utc_ns,
                     evidence=evidence,
+                    symbol=symbol,
                 )
             attempted_gap_id = str(evidence["gap_id"])
             write_active.set()
@@ -2315,6 +2328,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
                     event_type=event_type,
                     occurred_at_utc_ns=occurred_at_utc_ns,
                     evidence=evidence,
+                    symbol=symbol,
                 )
             finally:
                 write_active.clear()
@@ -2374,7 +2388,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
     gap_id = asyncio.run(exercise())
     with Catalog(layout.catalog) as reopened:
         open_gaps = reopened.unclosed_stream_discontinuities(
-            market="um_perpetual", stream="book_ticker"
+            market="um_perpetual", symbol="BTCUSDT", stream="book_ticker"
         )
         assert len(open_gaps) == (0 if fail_write else 1)
         if fail_write:
@@ -2401,6 +2415,7 @@ def test_cancel_inside_owned_catalog_started_waits_and_is_restart_explainable(
             )
             restarted = UsdMStreamCollector(
                 stream=UsdMStream.BOOK_TICKER,
+                symbol="BTCUSDT",
                 route="public",
                 wire_name="btcusdt@bookTicker",
                 spool=spool,
