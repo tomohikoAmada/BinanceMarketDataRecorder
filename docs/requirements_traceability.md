@@ -142,9 +142,12 @@ repository is published to GitHub; the run, review, and archive evidence
 themselves are not uploaded.
 
 The M21.4 table above is historical evidence. The M21.4/M23.4 deployment
-references in the rows above are artifact-specific historical evidence. Current GitHub main is
-`d38180074b5f76ab6b7778eea7fc505160c671ae`, MS1 is merged, and current main is
-not deployed. The pre-MS1 deployed artifact completed clean 24h non-formal
+references in the rows above are artifact-specific historical evidence. Verify
+live GitHub `main` at takeover; the post-MS1 implementation/behavior authority
+is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`. Documentation-only descendants
+may make live `main` newer without changing that behavior authority. MS1 is
+merged, and live GitHub `main` is not deployed. The pre-MS1 deployed artifact completed clean 24h non-formal
 evidence, but formal M22.9 has not started and no duration credit transfers.
 See `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PRODUCTION_STATE.md`, and
 historical `docs/milestone_acceptance/M22.9.md`. Update this matrix whenever a

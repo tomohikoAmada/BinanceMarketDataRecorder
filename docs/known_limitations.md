@@ -1,12 +1,16 @@
 # Known Limitations
 
-Current GitHub `main` is `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`), with MS1 merged through PR #51 and
-post-merge CI run `33955915046` passed on macOS and Ubuntu. It is not deployed.
+Verify live GitHub `main` at takeover. The post-MS1 implementation/behavior
+authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`); documentation-only descendants
+may make live `main` newer without changing that behavior authority. MS1 is
+merged through PR #51 and post-merge CI run `33955915046` passed on macOS and
+Ubuntu. Live GitHub `main` is not deployed.
 The last independently qualified deployed artifact is pre-MS1 source
 `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour non-formal stage
-is complete and remains artifact-specific. No duration credit transfers to
-current main. Formal M22.9 has not started and Production Ready is NO.
+is complete and remains artifact-specific. No duration credit transfers to MS1
+or the future multi-symbol artifact. Formal M22.9 has not started and
+Production Ready is NO.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).

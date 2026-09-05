@@ -1,10 +1,13 @@
 # Binance Market Data Recorder
 
-> **Current authority (2026-09-05):** verify live GitHub `main`; its current
-> engineering authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-> `95f16f05b30b7db23e43ebb6439ed0d055081902`). MS1 is merged through PR #51 and
-> post-merge offline CI run `33955915046` passed on macOS and Ubuntu. The current
-> main is **not deployed**. The last independently qualified deployed artifact
+> **Current authority (2026-09-05):** verify live GitHub `main`. The post-MS1
+> implementation/behavior authority is `d38180074b5f76ab6b7778eea7fc505160c671ae`
+> (tree `95f16f05b30b7db23e43ebb6439ed0d055081902`). Documentation-only
+> descendants may make live `main` newer without changing that behavior
+> authority; any behavior/source change after this SHA requires a fresh
+> authority check. MS1 is merged through PR #51 and post-merge offline CI run
+> `33955915046` passed on macOS and Ubuntu. Live GitHub `main` is **not deployed**.
+> The last independently qualified deployed artifact
 > is the pre-MS1 single-symbol source `c421605e302d2ad46acdb2466627f64644181c9a`.
 > Its clean 24-hour non-formal stage is complete, but Production Ready is NO and
 > formal M22.9 is NOT_STARTED. The new team starts at MS2; see
@@ -179,8 +182,8 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
-| 当前生产状态 | GitHub main `d381800…` is not deployed; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | MS1 merged via PR #51; post-merge CI run `33955915046` passed on macOS/Ubuntu; no current-main deployment |
+| 当前生产状态 | Live GitHub main is not deployed; post-MS1 implementation authority is `d381800…`; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | MS1 merged via PR #51; post-merge CI run `33955915046` passed on macOS/Ubuntu; no live-main deployment |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、

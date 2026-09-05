@@ -15,20 +15,29 @@ unless new MS2+ evidence creates a concrete contradiction.
 
 Before MS2 implementation:
 
-1. Verify live GitHub `main`.
-2. Read `AGENTS.md`, `docs/CURRENT_PRODUCTION_STATE.md`, this handoff,
+1. Fetch live GitHub `main`.
+2. Verify that `d38180074b5f76ab6b7778eea7fc505160c671ae` remains an ancestor.
+3. Inspect every commit after `d38180074b5f76ab6b7778eea7fc505160c671ae`.
+4. If those commits are only the post-MS1 documentation synchronization, use
+   `d38180074b5f76ab6b7778eea7fc505160c671ae` and tree
+   `95f16f05b30b7db23e43ebb6439ed0d055081902` as implementation authority.
+5. If any later commit changes source or behavior, **STOP** and establish the
+   new implementation authority before MS2.
+6. Read `AGENTS.md`, `docs/CURRENT_PRODUCTION_STATE.md`, this handoff,
    `docs/milestone_plan.md`, and `docs/architecture.md`.
-3. Read ADR-0031 and `docs/milestone_acceptance/MS1.md`.
-4. Inspect the current single-symbol runtime assembly.
-5. Obtain explicit MS2 implementation authorization.
+7. Read ADR-0031 and `docs/milestone_acceptance/MS1.md`.
+8. Inspect the current single-symbol runtime assembly.
+9. Obtain explicit MS2 implementation authorization.
 
 ## Current authority split
 
-### A. GitHub engineering authority
+### A. Live GitHub main and post-MS1 implementation/behavior authority
 
 ```text
-GITHUB_MAIN_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
-GITHUB_MAIN_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+LIVE_GITHUB_MAIN=VERIFY_AT_TAKEOVER
+POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 MS1_IMPLEMENTATION_MERGED=YES
 MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
@@ -37,8 +46,9 @@ CURRENT_MAIN_DEPLOYED=NO
 ```
 
 The merge parents are `c421605e302d2ad46acdb2466627f64644181c9a` and
-`11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged, the remote
-branch set is `main` only, and there are no open PRs at this handoff.
+`11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged. The MS1 merge
+is the last behavior-changing authority at this handoff; later documentation-
+only descendants do not become a new behavior authority.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.

@@ -8,8 +8,10 @@ deployment, live traffic, formal acceptance, or data retirement.
 ## Status at a glance
 
 ```text
-GITHUB_MAIN_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
-GITHUB_MAIN_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+LIVE_GITHUB_MAIN=VERIFY_AT_TAKEOVER
+POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 MS1_STATUS=MERGED
 MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
@@ -25,22 +27,33 @@ FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
 
-## A. Current GitHub engineering authority
+## A. Live GitHub main and post-MS1 implementation/behavior authority
 
 | Item | Authority |
 | --- | --- |
-| `main` merge | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
-| `main` tree | `95f16f05b30b7db23e43ebb6439ed0d055081902` |
+| Live GitHub `main` | verify at takeover |
+| Post-MS1 implementation/behavior authority | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
+| Post-MS1 implementation tree | `95f16f05b30b7db23e43ebb6439ed0d055081902` |
+| MS1 merge | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
 | Merge parents | `c421605e302d2ad46acdb2466627f64644181c9a`, `11e100fbcb974e7d54f0515c99e08ac6042b9204` |
 | MS1 | merged via PR #51; reviewed head `11e100fbcb974e7d54f0515c99e08ac6042b9204` |
 | Post-merge CI | `offline-ci` run `33955915046`, push event, macOS and Ubuntu Python 3.12 jobs successful |
-| Deployment | current `main` is not deployed |
+| Deployment | live GitHub `main` is not deployed |
 
 MS1 is the merged multi-symbol durable identity foundation. Its three
 implementation commits remain provenance, not separate current authorities:
 `026e357eb9af9b5b9fd111872dc6dcc30e9c599d`,
 `39fbd04172a6b5b27b41d43c57d0e5ff575b95d4`, and
 `11e100fbcb974e7d54f0515c99e08ac6042b9204`.
+
+The last behavior-changing engineering authority at this handoff is the MS1
+merge `d38180074b5f76ab6b7778eea7fc505160c671ae`, with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`. A documentation-only descendant
+may make live GitHub `main` newer without changing that implementation or
+behavior authority. At takeover, verify live `main`, confirm this SHA remains
+an ancestor, and inspect every later commit. If any later commit changes
+source or behavior, stop and establish the new implementation authority before
+MS2.
 
 ## B. Deployed and clean-24h authority
 

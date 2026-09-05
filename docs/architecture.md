@@ -1,10 +1,12 @@
 # Architecture
 
 This document describes the implemented Recorder, the approved future
-deployment topology, and the accepted future multi-symbol target. Current
-GitHub engineering authority is `d38180074b5f76ab6b7778eea7fc505160c671ae`
-(tree `95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged, but current
-main is not deployed. The independently qualified deployed artifact is the
+deployment topology, and the accepted future multi-symbol target. Verify live
+GitHub `main` at takeover. The post-MS1 implementation/behavior authority is
+`d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged, but live GitHub
+`main` is not deployed. Documentation-only descendants may make live `main`
+newer without changing that behavior authority. The independently qualified deployed artifact is the
 pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`, whose clean 24-hour
 non-formal stage is complete. MS2 runtime fan-out is accepted as a target, not
 implemented. Formal M22.9 has not started and Production Ready is not

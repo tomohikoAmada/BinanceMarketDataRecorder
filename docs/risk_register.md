@@ -1,10 +1,11 @@
 # Risk Register
 
-Current authority: GitHub `main` is
-`d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`. MS1 is merged through PR #51 and
-post-merge `offline-ci` run `33955915046` passed on macOS and Ubuntu. Current
-main is not deployed. The last independently qualified deployed artifact is
+Verify live GitHub `main` at takeover. The post-MS1 implementation/behavior
+authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`. Documentation-only descendants
+may make live `main` newer without changing that behavior authority. MS1 is
+merged through PR #51 and post-merge `offline-ci` run `33955915046` passed on
+macOS and Ubuntu. Live GitHub `main` is not deployed. The last independently qualified deployed artifact is
 pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour
 non-formal stage is complete and remains artifact-specific. Formal M22.9 has
 not started and Production Ready remains NO. The future multi-symbol target is

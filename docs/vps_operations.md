@@ -1,8 +1,11 @@
 # VPS Operations
 
-Status: M22.7B substrate and the historical VPS profile are documented. Current
-GitHub main `d38180074b5f76ab6b7778eea7fc505160c671ae` contains merged MS1 but is
-not deployed. The pre-MS1 deployed artifact completed the clean 24-hour
+Status: M22.7B substrate and the historical VPS profile are documented. Verify
+live GitHub `main` at takeover. The post-MS1 implementation/behavior authority
+is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`; documentation-only descendants
+may make live `main` newer without changing that behavior authority. Live
+GitHub `main` is not deployed. The pre-MS1 deployed artifact completed the clean 24-hour
 non-formal single-symbol stage; that evidence does not qualify MS1 or a future
 14-product run. MS2 is next development work and requires explicit
 authorization. Formal M22.9 has not started and Production Ready is not claimed.

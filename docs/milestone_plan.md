@@ -1165,9 +1165,10 @@ remain unchanged.
   tests pass; full offline pytest, Ruff, mypy, compile, and diff checks pass.
   No online Binance traffic, deployment, VPS access, or Contracts repository
   change is permitted.
-- **Rollback:** Revert the single MS1 implementation commit if needed. Existing Raw bytes,
-  manifests, archive state, and Catalog evidence remain preserved; do not
-  recreate or delete production Catalogs.
+- **Rollback:** Perform a separately reviewed revert of the merged MS1 change /
+  PR #51 if needed. Preserve Raw bytes, manifests, archive state, Catalog
+  evidence, and production data; do not individually delete or rewrite Catalog
+  state.
 
 ## MS2 — Fixed 7-symbol / 14-core-product runtime fan-out
 

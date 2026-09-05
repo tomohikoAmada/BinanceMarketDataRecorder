@@ -11,8 +11,11 @@ Production Ready.
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
-context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Current GitHub main is
-`d38180074b5f76ab6b7778eea7fc505160c671ae`, with MS1 merged and not deployed.
+context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Verify live GitHub
+`main` at takeover. The post-MS1 implementation/behavior authority is
+`d38180074b5f76ab6b7778eea7fc505160c671ae`; documentation-only descendants
+may make live `main` newer without changing that behavior authority. Live
+GitHub `main` is not deployed.
 The pre-MS1 source `c421605e…` is the independently qualified deployed
 single-symbol artifact; its clean 24-hour non-formal stage is complete. MS2 is
 the next development milestone, not an operations or burn-in authorization.
