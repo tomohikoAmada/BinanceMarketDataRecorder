@@ -1,18 +1,21 @@
 # Binance Market Data Recorder
 
-> **Current authority (2026-09-01):** verify live GitHub `main`; the pre-doc
-> authority for this refresh is `c7d7900830e39d17470059f670ab2e5005e57103`, and
-> this documentation commit is newer than it. The deployed VPS source remains
-> the older `e074d41a979af92b50bee880d6d55295ca65413d`; current main is newer and
-> is not deployed. PR #45, PR #46, and PR #47 are integrated; the Recorder
-> hardening phase is CLOSED, and PR #47 post-merge CI run `33456832048` passed on
-> macOS and Ubuntu. Production Ready is NO; formal M22.9 is NOT_STARTED; 24h is
-> PAUSED_NOT_STARTED; 72h and 168h are NOT_STARTED. Current main has no
-> long-burn-in duration credit. The next phase requires separate authorization:
-> choose fresh current-main profiling or a new immutable artifact plus fresh
-> short deployment qualification. Start with
-> [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md) and
-> [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md).
+> **Current authority (2026-09-05):** verify live GitHub `main`. The post-MS1
+> implementation/behavior authority is `d38180074b5f76ab6b7778eea7fc505160c671ae`
+> (tree `95f16f05b30b7db23e43ebb6439ed0d055081902`). Documentation-only
+> descendants may make live `main` newer without changing that behavior
+> authority; any behavior/source change after this SHA requires a fresh
+> authority check. MS1 is merged through PR #51 and post-merge offline CI run
+> `33955915046` passed on macOS and Ubuntu. Live GitHub `main` is **not deployed**.
+> The last independently qualified deployed artifact
+> is the pre-MS1 single-symbol source `c421605e302d2ad46acdb2466627f64644181c9a`.
+> Its clean 24-hour non-formal stage is complete, but Production Ready is NO and
+> formal M22.9 is NOT_STARTED. The new team starts at MS2; see
+> [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md),
+> [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md),
+> [`docs/milestone_plan.md`](docs/milestone_plan.md),
+> [`docs/milestone_acceptance/MS1.md`](docs/milestone_acceptance/MS1.md), and
+> [`docs/adr/0031-fixed-seven-symbol-multi-symbol-expansion.md`](docs/adr/0031-fixed-seven-symbol-multi-symbol-expansion.md).
 
 ## Historical status narrative (superseded as current authority)
 
@@ -178,9 +181,9 @@ BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
 | Symbol | BTCUSDT |
 | Market | Spot + USD-M Perpetual |
-| 长期验证 | older deployed candidate: 30m/2h/4h/12h non-formal evidence PASS; current main has no duration credit; 24h PAUSED_NOT_STARTED, 72h/168h NOT_STARTED |
-| 当前生产状态 | current GitHub main is newer than deployed source `e074d41a…` and is not deployed; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | PR #45/#46/#47 integrated; PR #47 post-merge CI run `33456832048` passed on macOS/Ubuntu; no current-main deployment |
+| 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
+| 当前生产状态 | Live GitHub main is not deployed; post-MS1 implementation authority is `d381800…`; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | MS1 merged via PR #51; post-merge CI run `33955915046` passed on macOS/Ubuntu; no live-main deployment |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、

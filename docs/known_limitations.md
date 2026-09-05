@@ -1,16 +1,16 @@
 # Known Limitations
 
-Current GitHub `main` is `c7d7900830e39d17470059f670ab2e5005e57103`; it is
-newer than the deployed source `e074d41a…` and is not deployed. PR #45, PR #46,
-and PR #47 are integrated; the hardening phase is closed and PR #47 post-merge
-CI run `33456832048` passed on macOS and Ubuntu. The older deployed candidate's
-new-host substrate, 30-minute, 2-hour, 4-hour, and 12-hour non-formal stages
-passed, but that evidence belongs only to its exact source/Wheel/deployment
-identity. Current main has no long-burn-in duration credit. The 24-hour stage is
-paused/not started; 72h and 168h are not started. Formal M22.9 has not started,
-Production Ready is NO, and the M22.9 precondition measured about 32.523 hours
-of runway, insufficient for the later approximately 278-hour complete formal
-chain.
+Verify live GitHub `main` at takeover. The post-MS1 implementation/behavior
+authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`); documentation-only descendants
+may make live `main` newer without changing that behavior authority. MS1 is
+merged through PR #51 and post-merge CI run `33955915046` passed on macOS and
+Ubuntu. Live GitHub `main` is not deployed.
+The last independently qualified deployed artifact is pre-MS1 source
+`c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour non-formal stage
+is complete and remains artifact-specific. No duration credit transfers to MS1
+or the future multi-symbol artifact. Formal M22.9 has not started and
+Production Ready is NO.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
@@ -23,14 +23,13 @@ checked 2026-08-31, states that average CPU usage should not exceed 30% and
 permits bursts to 100% for 10 minutes every 24 hours. The operator observed
 approximately 20% in the provider panel during recent Recorder operation.
 This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
-CPU benchmark. Because CPU headroom is limited under the current provider
-policy, the 24h/72h/168h non-formal burn-ins are paused or not started.
+CPU benchmark. This historical capacity watch does not authorize or schedule
+another burn-in.
 
-The next phase requires separate authorization. After verifying live main,
-choose either fresh profiling/development against exact current GitHub main or
-build a new immutable artifact from current main and begin a separately
-authorized short deployment qualification. Provider-panel CPU% alone does not
-select an optimization. CPU changes must preserve Raw v1, exact
+The current next phase is MS2 fixed seven-symbol runtime fan-out, not profiling.
+After verifying live main, receive explicit authorization before implementation.
+Provider-panel CPU% alone does not select an optimization. Any future CPU
+changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
 ingress, durability/fsync, seal/manifest/Catalog ordering, reconnect/
 discontinuity and gap/resync evidence, crash/recovery, deterministic replay,
@@ -43,13 +42,9 @@ approximately `244400128` bytes at 2h, `260460544` at 4h, and `286740480` at
 12h, with no swap, OOM, systemd restart, or clear resource exhaustion. Keep
 observing RSS during profiling and new-artifact validation.
 
-The older deployed candidate is source `e074d41a…`, retained Wheel
-`48784824f9d7501ddb5f56a210fcf6b846ae1dd8b46e3cc3dd71f96652c53d0c`, and
-deployment identity
-`6856d07f54bb27f2b375443f4e96abf8f551babd530bafda94c167242aaaac24`. If CPU
-optimization changes production code, build a new immutable Wheel and identity;
-the completed 30m/2h/4h/12h duration does not transfer, and a new candidate
-must begin a separately selected short qualification/progressive sequence.
+The clean-24h deployed artifact identity is recorded in
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md). It is pre-MS1 and
+must not be represented as current main or as MS1 live qualification.
 
 The M21/M22.9 narrative below is historical incident evidence. Claims within
 that narrative that a correction was local-only or undeployed describe that
@@ -226,18 +221,21 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. No burn-in or profiling is the
-automatic next action; `NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION`.
+staged chain on a capacity-complete environment. The next development action is
+MS2 fixed seven-symbol fan-out after explicit authorization; deployment,
+profiling, and burn-in remain separately gated.
 
-### Current GitHub main limitations and decision boundary
+### Current GitHub main and multi-symbol limitations
 
-- Current main is newer than the deployed VPS artifact and has no deployment or
-  duration credit from the older 30m/2h/4h/12h evidence.
-- Production Ready remains NO; formal M22.9 is NOT_STARTED; 24h is
-  PAUSED_NOT_STARTED; 72h and 168h are NOT_STARTED.
-- If current main is deployed, build and identify a new immutable Wheel and
-  select a fresh short qualification. Do not automatically authorize 24h,
-  formal M22.9, M23.5, or a C++/Go rewrite.
+- Current main contains the MS1 durable identity foundation but is not deployed
+  and has no duration credit from the pre-MS1 clean-24h artifact.
+- The current runtime implementation is still single-symbol BTCUSDT assembly;
+  MS2, MS3, and MS4 are not implemented.
+- The frozen multi-symbol target is seven symbols across Spot and USD-M, or 14
+  core product identities. The new team starts at MS2 after explicit
+  authorization; no 72h/168h campaign is automatically scheduled.
+- Production Ready remains NO and formal M22.9 is NOT_STARTED. Do not
+  automatically authorize deployment, long burn-in, M23.5, or a C++/Go rewrite.
 - The remaining nonblocking backlog is the repeated-cancellation supplemental
   test-strength P3, process-memory-only cooldown across restart, conservative
   typed/no-header 418 fallback, any genuinely unresolved documentation/source
@@ -258,8 +256,9 @@ automatic next action; `NEXT_PHASE=REQUIRES_SEPARATE_AUTHORIZATION`.
   machine, manifest-level `reconnect_gap`, seal defense) was later deployed
   as `f659895…`, which passed its own 72h observational gate; the further
   orphan-intent correction later entered the M22.9 incident artifact. The
-  additional R-054 continuity correction is now included in deployed current
-  source `e074d41a…`; longer non-formal and formal proof remains pending.
+  additional R-054 continuity correction is included in the recorded older
+  deployed source `e074d41a…`; longer non-formal and formal proof remains
+  pending.
 - **Historical silent gaps are immutable**: the corrected boundary-local
   read-only audit (M21.4.11-R2/R3/R5, cutoff `1786349202047196027`,
   inventory 161,817 manifests) found 4,680 unmarked reconnect boundaries

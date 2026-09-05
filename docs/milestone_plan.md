@@ -1015,14 +1015,12 @@ mutation exists; those remain exclusively M22.4B scope.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **NOT STARTED FOR THE CURRENT CANDIDATE / PRODUCTION READY NO**.
-  Historical M22.9 incident and incomplete-stage evidence remains unchanged in
-  `docs/milestone_acceptance/M22.9.md`. The current deployed source is
-  `e074d41a…`. A precondition-only inspection found healthy service and durable
-  state but approximately `32.523064 h` of runway, insufficient for the
-  complete approximately 278-hour formal chain. It therefore stopped before
-  T0 with `INSUFFICIENT_MEASURED_CAPACITY_RUNWAY`; no formal root or acceptance
-  ID was created. This is not a formal-run failure.
+- **Status:** **NOT STARTED / PRODUCTION READY NO**. Historical M22.9 incident
+  and incomplete-stage evidence remains unchanged in
+  `docs/milestone_acceptance/M22.9.md`; it is not current-main authority. The
+  pre-MS1 deployed artifact's precondition-only inspection stopped before T0
+  with `INSUFFICIENT_MEASURED_CAPACITY_RUNWAY`; no formal root or acceptance ID
+  was created. This is not a formal-run failure.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,
@@ -1038,10 +1036,11 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Rollback:** Stop the staged run on failure, preserve evidence and Raw, and
   return to the last approved artifact without deleting unarchived data.
 
-### M23 — Recorder Resource & Throughput Hardening
+### M23 — Recorder Resource & Throughput Hardening (historical)
 
-- **Status:** **M23.4 COMPLETE / MERGED / DEPLOYED / 12H NON-FORMAL
-  NEW-HOST PASS; M22.9 NOT STARTED**. M23.0/M23.0F profiling and independent
+- **Status:** **HISTORICAL M23.4 COMPLETE / MERGED / DEPLOYED; M22.9 NOT
+  STARTED**. This evidence belongs to its recorded pre-MS1/older artifact and
+  is not current-main authority. M23.0/M23.0F profiling and independent
   architecture review authorized the execution-order override. Final M23.4
   correctness review recorded P0/P1/P2/P3 all zero; PR #41 merged as
   `e074d41a…`; post-merge CI passed; the two-hour production-equivalent VPS A/B
@@ -1086,24 +1085,16 @@ mutation exists; those remain exclusively M22.4B scope.
   sealed artifacts, manifests, and Catalog rows remain compatible and
   recoverable by the unchanged scan-based authority.
 
-### Current progressive non-formal VPS validation
+### Historical progressive non-formal VPS validation (superseded current authority)
 
 - **Classification:** engineering validation/burn-in, not formal M22.9.
 - **Completed checkpoints:** 2h PASS, 4h PASS, and 12h PASS on the new host;
   the 30-minute qualification and substrate gates also passed.
-- **Current checkpoint:** 24h PAUSED / NOT STARTED.
-- **Reason for pause:** the current GreenCloud ordinary KVM policy limits
-  average CPU usage to 30% (shared cores except VDS; limited 100% bursts are
-  permitted), while the operator's provider-panel observation was
-  approximately 20% during Recorder operation. This is an operational
-  constraint and an operator/provider-panel observation, not a normalized
-  Recorder CPU benchmark. The current host has limited CPU headroom for longer
-  burn-ins.
-- **Next:** exact-head CPU profiling, then one measured hot-path optimization
-  at a time with deterministic same-workload A/B and review.
-- **Later checkpoints:** 24h, 72h, and 168h remain unstarted or paused pending
-  the profiling/optimization decision. Durations may change when measurements
-  justify it.
+- **Final checkpoint:** clean 24h PASS before MS1; this is artifact-specific
+  non-formal evidence and is not Formal M22.9 evidence.
+- **Accepted watches:** capacity cadence tail jitter and RSS
+  early-growth-then-plateau remain watches for later multi-symbol qualification.
+- **Next:** MS2 fixed seven-symbol runtime fan-out after explicit authorization.
 - **Between independent runs:** freeze/hash evidence, analyze, optimize only on
   measured need, then use a separately authorized consistency-safe retirement
   or reset for disposable test data if space must be reclaimed. Never delete
@@ -1148,8 +1139,11 @@ remain unchanged.
 
 ## MS1 — Multi-symbol durable identity foundation
 
-- **Status:** **IMPLEMENTED / LOCALLY VALIDATED / CANDIDATE COMMIT**; acceptance
-  evidence is recorded in `docs/milestone_acceptance/MS1.md`.
+- **Status:** **MERGED / CLOSED** through PR #51 at
+  `d38180074b5f76ab6b7778eea7fc505160c671ae`; reviewed head
+  `11e100fbcb974e7d54f0515c99e08ac6042b9204`; post-merge `offline-ci` run
+  `33955915046` passed on macOS and Ubuntu. Acceptance evidence is recorded in
+  `docs/milestone_acceptance/MS1.md`.
 - **Scope:** Make discontinuity identity explicit as
   `(market, symbol, stream)` across Catalog, reconnect, recovery, readiness,
   and audit paths; migrate historical single-symbol discontinuities and
@@ -1171,9 +1165,71 @@ remain unchanged.
   tests pass; full offline pytest, Ruff, mypy, compile, and diff checks pass.
   No online Binance traffic, deployment, VPS access, or Contracts repository
   change is permitted.
-- **Rollback:** Revert the single MS1 candidate commit. Existing Raw bytes,
-  manifests, archive state, and Catalog evidence remain preserved; do not
-  recreate or delete production Catalogs.
+- **Rollback:** Perform a separately reviewed revert of the merged MS1 change /
+  PR #51 if needed. Preserve Raw bytes, manifests, archive state, Catalog
+  evidence, and production data; do not individually delete or rewrite Catalog
+  state.
+
+## MS2 — Fixed 7-symbol / 14-core-product runtime fan-out
+
+- **Status:** **NEXT / NOT IMPLEMENTED**.
+- **Scope:** Expand the existing one-process BTCUSDT runtime assembly to the
+  fixed symbols `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `XRPUSDT`, `DOGEUSDT`,
+  `SUIUSDT`, and `LINKUSDT` in both Spot and USD-M perpetual. Propagate explicit
+  `(market, symbol)` ownership through current runtime assembly while reusing
+  MS1 durable identities, bounded queues/backpressure, per-product
+  reconnect/resync isolation, shared REST authority, and global-versus-
+  symbol-specific side-data semantics.
+- **Non-scope:** Raw v1, external Contracts, archive format, arbitrary-symbol
+  discovery, other exchanges, unrelated optimization, long burn-in, deployment,
+  or a Production Ready claim.
+- **Dependencies:** Accepted MS1, ADR-0031, existing Spot/USD-M runtime,
+  Catalog, side-data, readiness, and REST-gate contracts.
+- **Acceptance intent:** Deterministic/offline proof that all 14 products are
+  unique and instantiate; same stream/`gap_id` cannot collide across symbols;
+  product failure does not alter another; product readiness is observable;
+  global readiness is fail-closed; the shared REST gate is not multiplied;
+  global side data is not duplicated; symbol-specific cursors are independent;
+  and one-process shutdown/restart is coherent.
+- **Rollback/stop:** Stop before implementation if MS1 identity or existing
+  product isolation cannot be preserved. Revert only MS2 code/config after
+  sealing and retaining any test evidence; never rewrite Raw.
+
+## MS3 — Shared resources / rotation / observability
+
+- **Status:** **PLANNED**.
+- **Scope:** Harden process-wide Spot/USD-M REST gates under fan-out; verify
+  scheduling fairness; phase writer rotations; attribute queue,
+  high-watermark, backpressure, reconnect, and recovery evidence to products;
+  retain process-global metrics as global; inspect archive/capacity behavior;
+  and preserve optional side-data isolation.
+- **Non-scope:** Speculative optimization, Raw v1 or Contracts changes,
+  arbitrary-symbol framework, deployment, or long burn-in.
+- **Dependencies:** Independently accepted MS2 and ADR-0031.
+- **Acceptance intent:** Deterministic and bounded-load evidence proves no
+  product starvation, no multiplied shared authority, phased rotation, product
+  attribution, coherent global metrics, and no cross-product state corruption.
+- **Rollback/stop:** Stop on fairness, capacity, or isolation regressions;
+  revert only MS3 changes while retaining Raw and manifests.
+
+## MS4 — Multi-symbol integration / deployment qualification
+
+- **Status:** **PLANNED**.
+- **Scope:** Freeze exact main, run full offline CI, build one new immutable
+  Wheel and record source/Wheel/lock/config/unit/deployment identities; after
+  separate deployment authorization, run a bounded short live qualification
+  proving all 14 products ready, isolation under reconnect/resync, no
+  unresolved discontinuities, Catalog/Raw/manifest/archive integrity, shared
+  REST behavior, resource behavior, and the two clean-24h watches.
+- **Non-scope:** Automatic 72h/168h scheduling, inherited single-symbol
+  duration credit, Formal M22.9 acceptance, or Production Ready declaration.
+- **Dependencies:** Accepted MS2 and MS3, fresh artifact identity, and
+  separate deployment authorization.
+- **Acceptance intent:** Every identity and live result is artifact-specific;
+  any later burn-in duration is independently justified from MS4 evidence.
+- **Rollback/stop:** Stop on any unresolved gap, false readiness, shared-gate
+  bypass, integrity failure, or resource exhaustion; preserve evidence and Raw,
+  return to the last approved artifact, and do not delete unarchived data.
 
 ## Future Work
 

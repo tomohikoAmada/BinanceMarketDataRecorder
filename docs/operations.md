@@ -11,10 +11,15 @@ Production Ready.
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
-context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Source `e074d41a…` is
-deployed and passed the two-hour non-formal M23.4 validation. The next planned
-test is a four-hour non-formal burn-in. Formal M22.9 has not started for this
-candidate, and Production Ready remains NO.
+context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Verify live GitHub
+`main` at takeover. The post-MS1 implementation/behavior authority is
+`d38180074b5f76ab6b7778eea7fc505160c671ae`; documentation-only descendants
+may make live `main` newer without changing that behavior authority. Live
+GitHub `main` is not deployed.
+The pre-MS1 source `c421605e…` is the independently qualified deployed
+single-symbol artifact; its clean 24-hour non-formal stage is complete. MS2 is
+the next development milestone, not an operations or burn-in authorization.
+Formal M22.9 has not started and Production Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -374,9 +379,9 @@ M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
 cleanup. M22.9 remained a separate exact-VPS staged acceptance. A historical
 artifact later produced an incomplete 24h attempt after startup readiness
-failed. For current source `e074d41a…`, formal M22.9 has not started: a
-capacity precondition stopped before T0, so historical and non-formal runs have
-formal runtime credit zero.
+failed. For current main, formal M22.9 has not started; the capacity
+precondition belonged to the older deployed artifact and stopped before T0, so
+historical and non-formal runs have formal runtime credit zero.
 
 ### Formal 2h/12h/24h/72h/168h T0 independence
 

@@ -1,10 +1,14 @@
 # VPS Operations
 
-Status: M22.7B substrate is implemented and real-host validated. Current source
-`e074d41a…` is deployed and the new-host substrate, 30-minute, 2-hour,
-4-hour, and 12-hour non-formal validation stages passed. The 24-hour stage is
-paused/not started for CPU hardening; exact-head CPU profiling is next. Formal
-M22.9 has not started for this candidate and Production Ready is not claimed.
+Status: M22.7B substrate and the historical VPS profile are documented. Verify
+live GitHub `main` at takeover. The post-MS1 implementation/behavior authority
+is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`; documentation-only descendants
+may make live `main` newer without changing that behavior authority. Live
+GitHub `main` is not deployed. The pre-MS1 deployed artifact completed the clean 24-hour
+non-formal single-symbol stage; that evidence does not qualify MS1 or a future
+14-product run. MS2 is next development work and requires explicit
+authorization. Formal M22.9 has not started and Production Ready is not claimed.
 See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
@@ -275,19 +279,19 @@ WARNING/CRITICAL/EMERGENCY above 10 GiB and `INSUFFICIENT_DATA` with a current
 safe observation may remain READY while exposing the degraded evidence.
 Process existence or `systemctl is-active` alone is never READY.
 
-The historical returning-observation startup-liveness race is fixed. Its
-correction and the later M23.4 changes are included in current deployed source
-`e074d41a…`. Deployment and non-formal duration do not complete M22.9 or
-transfer formal duration credit from any historical attempt.
+The historical returning-observation startup-liveness race is fixed in the
+recorded deployed artifact. Deployment and non-formal duration do not complete
+M22.9 or transfer duration credit to current main or a future multi-symbol
+artifact.
 
 Capacity planning for formal acceptance is separate from the hardcoded policy
 and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
-This is not the next test. Exact-head CPU profiling is the current next action;
-the paused 24h and later non-formal stages do not begin until the profiling /
-optimization decision is complete. Between independent non-formal runs,
+This is not the next development action. MS2 fixed seven-symbol fan-out is next;
+any deployment or later non-formal run remains separately authorized. Between
+independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.
@@ -357,10 +361,11 @@ evidence, and no stage starts automatically. M22.8 is accepted only as
 isolated cross-machine failure evidence for fixed run
 `m22.8-20260822T041913Z-23f1fcc7` on `vps-b5bfe3f8`; its nine scenarios passed
 without touching production. Historical M22.9 incident evidence includes an
-incomplete 24h attempt on an older artifact. For current source `e074d41a…`,
-formal M22.9 has not started: a precondition-only capacity check stopped before
-T0, created no acceptance root, and assigned no acceptance ID. Historical and
-non-formal runs provide no formal duration credit.
+incomplete 24h attempt on an older artifact. For current main, formal M22.9 has
+not started; the precondition-only capacity check belonged to the older
+deployed artifact and stopped before T0, created no acceptance root, and
+assigned no acceptance ID. Historical and non-formal runs provide no formal
+duration credit.
 
 The operator sequence is explicit and ordered:
 
