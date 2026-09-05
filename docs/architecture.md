@@ -1,16 +1,14 @@
 # Architecture
 
-This document describes the implemented Recorder and the approved future
-deployment topology. The primary production target is Ubuntu 24.04 LTS
-x86_64, Python 3.12, systemd, and a non-root service on a shared 2 vCPU/4 GiB/
-40 GB-class VPS. macOS Apple Silicon remains a development/local profile;
-Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical evidence
-profile. Current main `e074d41a…` is deployed on the VPS; M23.4 is complete and
-its two-hour non-formal post-merge validation passed. The project is now in
-progressive non-formal VPS validation, with 4h next. Formal M22.9 has not
-started for this candidate and Production Ready is not authorized. The
-implemented system remains subject to the deferred long-running reliability
-limits in `docs/known_limitations.md`. See `docs/PROJECT_HANDOFF.md` and
+This document describes the implemented Recorder, the approved future
+deployment topology, and the accepted future multi-symbol target. Current
+GitHub engineering authority is `d38180074b5f76ab6b7778eea7fc505160c671ae`
+(tree `95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged, but current
+main is not deployed. The independently qualified deployed artifact is the
+pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`, whose clean 24-hour
+non-formal stage is complete. MS2 runtime fan-out is accepted as a target, not
+implemented. Formal M22.9 has not started and Production Ready is not
+authorized. See `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`.
 
 ## M19 recovery boundary
@@ -316,6 +314,33 @@ architectural facts, not implementation changes:
 - **Zero internal drop ≠ zero market-data absence**: the Recorder can prove
   it dropped nothing internally, but it cannot prove the exchange sent
   nothing it missed. Do not equate the two.
+
+## Accepted multi-symbol target (MS2–MS4; not implemented)
+
+ADR-0031 freezes a fixed seven-symbol target: `BTCUSDT`, `ETHUSDT`, `SOLUSDT`,
+`XRPUSDT`, `DOGEUSDT`, `SUIUSDT`, and `LINKUSDT`, each in Binance Spot and
+USD-M perpetual. One core product identity is `(market, symbol)`, giving 14
+core products. The target is one Recorder process with one durable Catalog,
+not one process per symbol and not a generic exchange/symbol plugin framework.
+
+MS1's durable `(market, symbol, stream)` discontinuity identity and
+`(kind, symbol)` symbol-specific cursor identity are reused. Product-owned
+connection, reconnect, resync, queue, backpressure, and side-data state must
+remain isolated. Global readiness is fail-closed until all 14 core products
+meet the core readiness contract.
+
+Public REST cooldown/rate-limit authority remains process-wide per relevant
+Binance market domain, including all USD-M symbols and relevant USD-M side-data
+calls. Genuinely global side data, including USD-M `funding_info` and
+`exchange_info`, is not duplicated; the six persisted 5-minute statistics
+cursor families remain symbol-specific. Writer rotations are phased across
+products and operational evidence is symbol-aware while process-global metrics
+remain global.
+
+The sequence is MS2 fixed runtime fan-out, MS3 shared resources/rotation/
+observability, and MS4 integration plus bounded live qualification. Raw v1 and
+external Contracts stay frozen absent a concrete blocker. None of MS2–MS4 is
+implemented or live-qualified here.
 
 ## Runtime isolation
 

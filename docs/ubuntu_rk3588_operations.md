@@ -1,6 +1,9 @@
 # Ubuntu ARM64 / RK3588 operations
 
-Status: M20 Ubuntu ARM64/RK3588 Developer Preview / Soak Candidate. This is
+Status: M20 Ubuntu ARM64/RK3588 Developer Preview / Soak Candidate. All
+artifact and validation statements in this profile are historical. Current
+GitHub main is not deployed; consult `CURRENT_PRODUCTION_STATE.md` for current
+authority. This profile is
 not the primary production authority and is not Production Ready. The approved
 future production profile is Ubuntu 24.04 LTS x86_64 on a shared VPS; see
 `vps_operations.md` and `test_environment_matrix.md`.

@@ -2,17 +2,17 @@
 
 ## Result and authority
 
-MS1 is **IMPLEMENTED / LOCALLY VALIDATED / FINAL NARROW-FIX CANDIDATE** on the
-MacBook development repository. The original candidate was created from the
-exact requested base `c421605e302d2ad46acdb2466627f64644181c9a`, whose root
-tree was `a521dd61f8a090b4930cce5254985383f8893a3f`. An independently adjudicated
-narrow follow-up corrects historical identity-migration ordering and legacy
-authority-digest compatibility. A final narrow follow-up makes genuinely fresh
-identity initialization restart-safe without redesigning MS1. No VPS,
-deployment, pull request, merge, or live Binance traffic was used.
+MS1 is **MERGED / CLOSED** through PR #51. The merge commit is
+`d38180074b5f76ab6b7778eea7fc505160c671ae`, with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`; its reviewed head is
+`11e100fbcb974e7d54f0515c99e08ac6042b9204`. Post-merge `offline-ci` run
+`33955915046` passed on both `ubuntu-python312` and `macos-python312`.
 
-The candidate SHAs are reported by the implementation handoff rather than
-embedded here because this acceptance record is part of those commits.
+The original implementation was developed from the exact requested base
+`c421605e302d2ad46acdb2466627f64644181c9a`, whose root tree was
+`a521dd61f8a090b4930cce5254985383f8893a3f`. The three reviewed implementation
+commits remain historical provenance. MS1 had no VPS deployment or live
+Binance traffic; current `main` remains undeployed.
 
 ## Scope and compatibility
 
