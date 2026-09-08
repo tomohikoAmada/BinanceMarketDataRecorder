@@ -289,9 +289,10 @@ and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
-This is not the next development action. MS2 fixed seven-symbol fan-out is next;
-any deployment or later non-formal run remains separately authorized. Between
-independent runs,
+This is not the next development action. MS2 configurable-product runtime is
+next; its future readiness gate must verify the exact configured ProductKey set
+and all configured products. Any deployment or later non-formal run remains
+separately authorized. Between independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.

@@ -1,6 +1,7 @@
 # ADR-0031 — Fixed seven-symbol multi-symbol Recorder expansion
 
-- **Status:** Accepted target; MS2–MS4 not implemented
+- **Status:** Superseded by ADR-0032
+- **Replacement:** [ADR-0032 — Operator-configured Binance product set](0032-configurable-product-set.md)
 - **Date:** 2026-09-05
 - **Decision owners:** Recorder project authority
 

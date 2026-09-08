@@ -107,22 +107,34 @@ ONE_SIXTY_EIGHT_HOUR_BURNIN_REQUIRED_BEFORE_MULTI_SYMBOL=NO
 PERFORMANCE_ENGINEERING_REOPENED=NO
 ```
 
-## C. Future multi-symbol program
+## C. Future configurable-product program
 
-The frozen target is seven symbols in both Binance Spot and USD-M perpetual:
+ADR-0032 supersedes ADR-0031. The future target remains Binance-specific with
+Spot and USD-M perpetual markets, but the operator explicitly configures a
+finite symbol list independently for each market. There is no fixed symbol
+allowlist, automatic all-symbol discovery, exchange/plugin framework, or hot
+runtime topology reload. Configuration changes take effect on normal process
+restart. See
+[`docs/adr/0032-configurable-product-set.md`](adr/0032-configurable-product-set.md).
 
-```text
-BTCUSDT ETHUSDT SOLUSDT XRPUSDT DOGEUSDT SUIUSDT LINKUSDT
-CORE_SYMBOL_COUNT=7
-CORE_MARKET_COUNT=2
-CORE_PRODUCT_IDENTITY_COUNT=14
-```
+The intended future surface is `[recorder]` with `spot_symbols = [...]` and
+`usdm_symbols = [...]`. Legacy compatibility mode applies only when both fields
+are absent, resolving to BTCUSDT in both markets. If either field is present,
+explicit product-selection mode applies: supplied lists are exact and an
+omitted sibling resolves to an empty list; both resolved lists empty is invalid.
+The current runtime assembly remains single-process, single-symbol BTCUSDT. MS2
+is not implemented and this documentation task does not start it.
 
-The current runtime assembly remains single-symbol BTCUSDT. MS2 is not
-implemented and this documentation task does not start it. The accepted
-sequence is MS2 fixed runtime fan-out, MS3 shared resources/rotation/
-observability, then MS4 integration and bounded live qualification. See
-[`docs/adr/0031-fixed-seven-symbol-multi-symbol-expansion.md`](adr/0031-fixed-seven-symbol-multi-symbol-expansion.md).
+In explicit Spot-only mode, the resolved USD-M set is empty: no USD-M
+Collectors, product-specific side-data managers, process-global USD-M
+side-data owner, REST polling, or WebSocket collection are instantiated. An
+empty Spot set similarly creates no Spot Collector or Spot side-data traffic.
+The process-global USD-M side-data owner exists only when a USD-M ProductKey is
+configured and at least one global kind is enabled. The legacy
+`GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` sentinel never creates a core ProductKey.
+The accepted sequence is MS2 configurable product runtime, MS3 shared-resource
+scaling/rotation/observability, then MS4 configurable-product integration and
+bounded live qualification.
 
 ## Boundaries that remain frozen
 
@@ -153,5 +165,6 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 The new team starts at MS2 only after verifying the then-live `main`, reading
 `AGENTS.md`, this file, `docs/PROJECT_HANDOFF.md`,
-`docs/milestone_plan.md`, `docs/architecture.md`, ADR-0031, and MS1 acceptance,
-then receiving explicit MS2 implementation authorization.
+`docs/milestone_plan.md`, `docs/architecture.md`, ADR-0032, the superseded
+ADR-0031 history, and MS1 acceptance, then receiving explicit MS2
+implementation authorization.

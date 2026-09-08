@@ -1,7 +1,8 @@
 # Architecture
 
 This document describes the implemented Recorder, the approved future
-deployment topology, and the accepted future multi-symbol target. Verify live
+deployment topology, and the accepted future configurable product-set target.
+Verify live
 GitHub `main` at takeover. The post-MS1 implementation/behavior authority is
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged, but live GitHub
@@ -317,32 +318,85 @@ architectural facts, not implementation changes:
   it dropped nothing internally, but it cannot prove the exchange sent
   nothing it missed. Do not equate the two.
 
-## Accepted multi-symbol target (MS2–MS4; not implemented)
+## Accepted configurable product-set target (MS2–MS4; not implemented)
 
-ADR-0031 freezes a fixed seven-symbol target: `BTCUSDT`, `ETHUSDT`, `SOLUSDT`,
-`XRPUSDT`, `DOGEUSDT`, `SUIUSDT`, and `LINKUSDT`, each in Binance Spot and
-USD-M perpetual. One core product identity is `(market, symbol)`, giving 14
-core products. The target is one Recorder process with one durable Catalog,
-not one process per symbol and not a generic exchange/symbol plugin framework.
+ADR-0032 supersedes ADR-0031. The Recorder remains Binance-specific with
+current markets Spot and USD-M perpetual, while the operator configures the
+finite symbol list independently for each market. There is no fixed symbol
+allowlist, automatic all-symbol discovery, or exchange/plugin framework. A
+configuration change takes effect on normal process restart; topology does not
+hot-reload.
 
-MS1's durable `(market, symbol, stream)` discontinuity identity and
-`(kind, symbol)` symbol-specific cursor identity are reused. Product-owned
-connection, reconnect, resync, queue, backpressure, and side-data state must
-remain isolated. Global readiness is fail-closed until all 14 core products
-meet the core readiness contract.
+`ProductKey = (market, symbol)`. One Recorder process owns one durable Catalog
+and one existing `SpotCollector` or `UsdMCollector` per configured ProductKey.
+The runtime authority is `Mapping[ProductKey, RuntimeCollector]`, not one
+process per symbol. Each product owns its three core WebSocket streams,
+snapshot/bootstrap, continuity/reconnect, order-book resync, bounded ingress,
+readiness, and product-local side-data state. Recoverable product-local
+transport/resync/readiness failure must not mutate another product. A terminal
+core integrity/owner/storage failure remains process-fatal and restarts through
+the service manager.
 
-Public REST cooldown/rate-limit authority remains process-wide per relevant
-Binance market domain, including all USD-M symbols and relevant USD-M side-data
-calls. Genuinely global side data, including USD-M `funding_info` and
-`exchange_info`, is not duplicated; the six persisted 5-minute statistics
-cursor families remain symbol-specific. Writer rotations are phased across
-products and operational evidence is symbol-aware while process-global metrics
-remain global.
+The intended future `[recorder]` surface is `spot_symbols = [...]` and
+`usdm_symbols = [...]`. The lists are independent finite sets; the same symbol
+in both creates two ProductKeys. If neither field is present, legacy
+compatibility mode resolves both to `BTCUSDT`. If either field is present,
+explicit product-selection mode uses supplied lists exactly and resolves an
+omitted sibling to an empty list; both resolved lists empty is invalid. Symbols
+are canonicalized once to uppercase at the configuration boundary;
+empty/control/whitespace-invalid symbols and within-market duplicates are
+rejected. Parsing does not query Binance. There are no symbol environment
+variables, CLI product DSL, or ADR-level product-count maximum. These fields
+are not implemented by this documentation change.
 
-The sequence is MS2 fixed runtime fan-out, MS3 shared resources/rotation/
-observability, and MS4 integration plus bounded live qualification. Raw v1 and
-external Contracts stay frozen absent a concrete blocker. None of MS2–MS4 is
-implemented or live-qualified here.
+Spot reuses the existing process/event-loop shared Spot IP limiter. USD-M uses
+one process-owned asyncio request lock and one process-owned `UsdMRestCooldown`,
+injected into every configured USD-M Collector and the process-global USD-M
+side-data owner. Shared rate authority is required; a shared SDK client is not
+required without an established thread-safety decision.
+
+If the resolved USD-M ProductKey set is empty, MS2 must instantiate zero
+`UsdMCollector` instances and zero product-specific USD-M side-data managers,
+create no process-global USD-M side-data owner, and perform no USD-M REST or
+WebSocket traffic. The global owner exists only when at least one USD-M
+ProductKey is configured and at least one global kind is enabled; when present,
+it runs `funding_info` and `exchange_info` at most once per process and shares
+the same request lock/cooldown. An empty Spot set likewise creates no Spot
+Collector or Spot side-data traffic.
+
+USD-M side data has one process-global execution owner. `funding_info` and
+`exchange_info` are global REST kinds. `mark_price`, `liquidation`,
+`premium_index_snapshot`, `funding_history`, `open_interest`,
+`open_interest_statistics_5m`, `taker_buy_sell_volume_5m`,
+`global_long_short_ratio_5m`, `top_long_short_account_ratio_5m`,
+`top_long_short_position_ratio_5m`, and `basis_5m` are product-specific. The
+six persisted five-minute cursor families remain keyed by `(kind, symbol)`.
+`GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` remains the legacy global-side-data
+sentinel for compatibility; it is not an implicitly configured BTC product.
+
+Global core readiness requires a non-empty configured set, exact equality
+between configured and actual runtime ProductKeys, and readiness of every
+configured product under the existing core contract. Missing or unexpected
+products fail closed; readiness is not “all observed collectors are ready”.
+Service state exposes `products.spot.<SYMBOL>` and
+`products.um_perpetual.<SYMBOL>` readiness plus
+`expected_product_count`, `ready_product_count`, and `core_ready`. Market-level
+status may remain a derived compatibility summary. VPS readiness independently
+derives or receives the expected set and verifies exact topology.
+
+Hard-reserve handling iterates configured ProductKeys × core streams and emits
+the existing MS1 `(market, symbol, stream)` discontinuity identity. Historical
+data for removed products is retained; unconfigured intervals are outside
+active collection scope and are not continuity-complete. Adding or re-adding a
+product starts a normal current bootstrap/recovery session. No Catalog
+migration, Raw v1 change, Contracts production code/schema change, or Projection
+change is required.
+
+The sequence is MS2 configurable product runtime, MS3 shared-resource scaling/
+rotation/observability, and MS4 configurable-product integration plus bounded
+live qualification. A fixed qualification workload is evidence only, not a
+supported-symbol allowlist. None of MS2–MS4 is implemented or live-qualified;
+Formal M22.9 and Production Ready remain unauthorized.
 
 ## Runtime isolation
 

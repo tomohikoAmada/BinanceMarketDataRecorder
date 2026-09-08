@@ -31,6 +31,33 @@ USD-M mark/index/premium data, funding, open interest, liquidation events, and
 exchange/filter snapshots are isolated side data added after both core L2
 collectors. Side-data failure must never block the core collectors.
 
+## Prospective MS2 product-set authority
+
+The table above describes the current BTCUSDT compatibility implementation.
+ADR-0032 defines the future architecture: the operator configures independent,
+finite `spot_symbols` and `usdm_symbols` lists for the two Binance markets.
+There is no fixed symbol allowlist, automatic all-symbol discovery, or
+exchange/plugin framework, and a configuration change takes effect only after a
+normal process restart. `ProductKey = (market, symbol)`; one process owns one
+durable Catalog and one existing market Collector per configured ProductKey.
+
+Legacy compatibility mode applies only when both product-selection fields are
+absent, resolving both lists to the historical BTCUSDT/BTCUSDT profile. If
+either field appears, explicit product-selection mode uses the supplied list
+exactly and resolves an omitted sibling to an empty list; both resolved lists
+empty is invalid. Symbols are canonicalized once to uppercase at the
+configuration boundary; empty, control/whitespace-invalid, and within-market
+duplicate symbols are rejected. Parsing does not query Binance. These future
+fields and the configurable runtime are not implemented by this documentation
+change.
+
+An empty resolved USD-M set creates no USD-M Collector, product-specific
+side-data manager, process-global USD-M side-data owner, REST polling, or
+WebSocket traffic. The global owner exists only when a USD-M ProductKey is
+configured and at least one global kind is enabled. An empty Spot set likewise
+creates no Spot Collector or Spot side-data traffic. The legacy
+`GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` sentinel never creates a ProductKey.
+
 ## Ownership and dependency contract
 
 The Recorder core owns:
@@ -174,8 +201,9 @@ live in SQLite. SQLite does not store the market-event corpus.
 
 Qt, current web UI, FastAPI product API, trading UI, strategies, factors, backtest
 engine, orders, account connection, API-key management, live trading, maker
-queue simulation, other exchanges/additional symbols, Kafka, Kubernetes, cloud
-stateless capture, automatic disk formatting/repair, mandatory SMART support,
+queue simulation, other exchanges, automatic all-symbol discovery, exchange/
+plugin frameworks, Kafka, Kubernetes, cloud stateless capture, automatic disk
+formatting/repair, mandatory SMART support,
 and Windows certification are excluded from the current implementation. Ubuntu
 ARM64 long-run certification, zero-interruption claims, Linux blue/green
 certification, and VPS production acceptance remain separate gates. A future

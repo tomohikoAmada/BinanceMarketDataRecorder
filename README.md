@@ -15,7 +15,7 @@
 > [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md),
 > [`docs/milestone_plan.md`](docs/milestone_plan.md),
 > [`docs/milestone_acceptance/MS1.md`](docs/milestone_acceptance/MS1.md), and
-> [`docs/adr/0031-fixed-seven-symbol-multi-symbol-expansion.md`](docs/adr/0031-fixed-seven-symbol-multi-symbol-expansion.md).
+> [`docs/adr/0032-configurable-product-set.md`](docs/adr/0032-configurable-product-set.md).
 
 ## Historical status narrative (superseded as current authority)
 
@@ -120,8 +120,10 @@ macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持并作为开发/
 profile；Ubuntu ARM64/RK3588 的非 root **systemd** 部署是独立的 Soak
 Candidate/LAN Linux profile。主生产目标是 Ubuntu 24.04 LTS x86_64
 共享 VPS；M22.9 24h结果INCOMPLETE且本地修复未部署。Windows 尚未实现，但未来归档客户端要求支持
-macOS/Linux/Windows。V1 仅支持 BTCUSDT Spot 和
-BTCUSDT USD-M 永续合约。支持其它交易所需要单独的架构审查
+macOS/Linux/Windows。当前实现仅采集 BTCUSDT Spot 和 BTCUSDT USD-M 永续合约；
+MS2 未来目标是由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
+正常重启后生效。它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所
+插件框架；MS2 尚未实现。支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
 ## 目录
@@ -1125,7 +1127,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - macOS sleep/closed lid 会中断用户会话网络。Recorder 标记检测到的 gap，
   但无法恢复 Binance 不再提供的事件。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
-- 仅 BTCUSDT Spot 和 USD-M Perpetual。
+- 当前实现仅 BTCUSDT Spot 和 USD-M Perpetual；MS2 的可配置 product-set
+  runtime 尚未实现。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。
@@ -1146,7 +1149,9 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   authorized and remains outside the current Recorder core.
 - **无 HTTP/gRPC/WebSocket 数据服务。**
 - **无策略引擎、因子、回测框架。**
-- **无多交易所、多 Symbol 支持。**
+- **无多交易所支持，也尚未实现可配置多 ProductKey runtime。** 未来 MS2
+  仅支持 operator 配置的有限 Spot/USD-M symbol 集合，不支持自动全量发现或
+  exchange/plugin framework。
 - **无 Docker、Kubernetes、Kafka、Redis。**
 - **无 Prometheus、Grafana 集成。**
 - **无自动格式化、修复、重新分区或独占外部卷。**

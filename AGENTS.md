@@ -34,11 +34,14 @@ Build a long-running, stateful Python 3.12 recorder specifically for Binance
 public market data. The primary future production profile is Ubuntu 24.04 LTS
 x86_64 with systemd and a non-root service. macOS Apple Silicon remains a
 development/local profile, and Ubuntu ARM64/RK3588 remains a distinct Linux
-validation and historical evidence profile. V1 captures BTCUSDT Spot and USD-M
-perpetual depth at 100 ms, aggregate trades, book ticker events, and public REST
-depth snapshots, followed by defined USD-M auxiliary data. It keeps recoverable
-immutable raw payloads, deterministic replay metadata, explicit gap evidence,
-and verified archival across the approved VPS/local Offline Workspace boundary.
+validation and historical evidence profile. The current implementation captures
+BTCUSDT Spot and USD-M perpetual depth at 100 ms, aggregate trades, book ticker
+events, and public REST depth snapshots, followed by defined USD-M auxiliary
+data. The accepted future MS2 architecture is an operator-configured finite
+product set across those two Binance markets; it is not implemented yet. The
+system keeps recoverable immutable raw payloads, deterministic replay metadata,
+explicit gap evidence, and verified archival across the approved VPS/local
+Offline Workspace boundary.
 
 The authoritative scope is `docs/project_contract.md`. Before current-state or
 milestone work, read `docs/PROJECT_HANDOFF.md` and
@@ -54,7 +57,9 @@ time-local status and must not be treated as current operational authority.
 - No factors, Alpha DSL, strategies, positions, backtests, account ledger, or
   live/simulated execution.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
-- No other exchanges or additional symbols in V1.
+- No other exchanges, automatic all-symbol discovery, or exchange/plugin
+  framework. The pre-MS2 implementation remains the BTCUSDT compatibility
+  profile; future configured symbols require the MS2 implementation gate.
 - No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first
   stateless collection.
 - No automatic formatting, repair, repartitioning, or exclusive ownership of an
@@ -87,7 +92,10 @@ protocols. See ADR-0001 and ADR-0007.
 
 Spot and USD-M transport/schema modules are required boundaries. Do not build a
 framework for hypothetical exchanges as a V1 acceptance condition. Supporting
-another exchange requires a separate future architecture review.
+another exchange requires a separate future architecture review. The future
+operator-configured product-set authority is ADR-0032; its ProductKey is
+`(market, symbol)` and its runtime topology is one process with one Collector
+per configured ProductKey.
 
 ## Data-integrity rules
 
