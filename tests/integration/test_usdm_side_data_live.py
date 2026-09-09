@@ -44,6 +44,7 @@ def test_unsigned_public_usdm_side_stream_smoke() -> None:
             raw = await asyncio.wait_for(websocket.recv(decode=False), timeout=10)
             payload = raw.encode() if isinstance(raw, str) else raw
             envelope = envelope_from_side_stream_frame(
+                symbol="BTCUSDT",
                 raw_payload=payload,
                 stream=UsdMSideStream.MARK_PRICE,
                 connection_id="online-mark",
@@ -62,6 +63,7 @@ def test_unsigned_public_usdm_side_stream_smoke() -> None:
                 return
             payload = raw.encode() if isinstance(raw, str) else raw
             envelope = envelope_from_side_stream_frame(
+                symbol="BTCUSDT",
                 raw_payload=payload,
                 stream=UsdMSideStream.LIQUIDATION,
                 connection_id="online-liquidation",

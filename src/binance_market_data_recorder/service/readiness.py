@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ..domain.product import ProductKey
 from ..storage.capacity import HARD_RESERVE_BYTES, VPS_PRODUCTION_V1
 from ..storage.catalog import Catalog
 from ..supervisor.readiness import CORE_STREAMS
@@ -157,6 +158,7 @@ class VpsReadinessEvaluator:
     def __init__(
         self,
         *,
+        expected_products: frozenset[ProductKey],
         data_root: Path,
         identity: DeploymentIdentity,
         systemd_manager: SystemdManager,
@@ -164,10 +166,9 @@ class VpsReadinessEvaluator:
         process_alive: Callable[[int], bool] = _process_alive,
         catalog_ready: Callable[[Path], bool] = _catalog_ready,
         identity_verifier: Callable[[DeploymentIdentity], Mapping[str, object]] | None = None,
-        process_environment: Callable[[int], Mapping[str, str]] = (
-            _read_process_environment
-        ),
+        process_environment: Callable[[int], Mapping[str, str]] = (_read_process_environment),
     ) -> None:
+        self.expected_products = expected_products
         self.data_root = data_root
         self.identity = identity
         self.systemd_manager = systemd_manager
@@ -286,31 +287,43 @@ class VpsReadinessEvaluator:
             )
         if not catalog_is_ready:
             return self._result("FAILED", ["catalog_validation_failed"], evidence)
-        markets = service_state.get("markets")
-        if not isinstance(markets, dict):
-            return self._result("FAILED", ["market_readiness_absent"], evidence)
-        for market_name in ("spot", "um_perpetual"):
-            market = markets.get(market_name)
-            if not isinstance(market, dict):
-                return self._result(
-                    "NOT_READY", [f"{market_name}_readiness_absent"], evidence
-                )
-            if market.get("failure") is not None:
-                return self._result("FAILED", [f"{market_name}_failed"], evidence)
-            connected = market.get("connected_streams")
-            persisted = market.get("persisted_streams")
+        products = service_state.get("products")
+        if not isinstance(products, dict):
+            return self._result("FAILED", ["product_readiness_absent"], evidence)
+        actual = set()
+        for market_name, symbols in products.items():
+            if market_name not in {"spot", "um_perpetual"} or not isinstance(symbols, dict):
+                return self._result("FAILED", ["product_topology_invalid"], evidence)
+            for symbol in symbols:
+                if not isinstance(symbol, str):
+                    return self._result("FAILED", ["product_topology_invalid"], evidence)
+                actual.add((market_name, symbol))
+        if not self.expected_products or actual != {
+            (key.market, key.symbol) for key in self.expected_products
+        }:
+            return self._result("NOT_READY", ["product_topology_mismatch"], evidence)
+        for key in sorted(self.expected_products):
+            product = products[key.market][key.symbol]
+            name = f"{key.market}:{key.symbol}"
+            if not isinstance(product, dict):
+                return self._result("FAILED", [f"{name}_readiness_invalid"], evidence)
+            if product.get("market") != key.market or product.get("symbol") != key.symbol:
+                return self._result("FAILED", ["product_identity_mismatch"], evidence)
+            if product.get("failure") is not None:
+                return self._result("FAILED", [f"{name}_failed"], evidence)
+            connected = product.get("connected_streams")
+            persisted = product.get("persisted_streams")
             if (
-                market.get("ready") is not True
+                product.get("ready") is not True
                 or not isinstance(connected, list)
                 or not isinstance(persisted, list)
+                or not all(isinstance(item, str) for item in connected + persisted)
                 or not set(connected) >= CORE_STREAMS
                 or not set(persisted) >= CORE_STREAMS
-                or market.get("snapshot_persisted") is not True
-                or market.get("orderbook_synchronized") is not True
+                or product.get("snapshot_persisted") is not True
+                or product.get("orderbook_synchronized") is not True
             ):
-                return self._result(
-                    "NOT_READY", [f"{market_name}_core_not_ready"], evidence
-                )
+                return self._result("NOT_READY", [f"{name}_core_not_ready"], evidence)
         capacity = service_state.get("capacity")
         if not isinstance(capacity, dict):
             return self._result("FAILED", ["capacity_observation_unavailable"], evidence)

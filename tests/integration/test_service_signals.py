@@ -9,8 +9,10 @@ import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import Market
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.logging import configure_logging
 from binance_market_data_recorder.service.power import CaffeinateAssertion
 from binance_market_data_recorder.service.runtime import RuntimeCollector, ServiceRuntime
@@ -70,16 +72,20 @@ def _service_process(data_root: str) -> None:
         _logger: logging.Logger,
         _version: str,
         service_instance_id: str,
-    ) -> Mapping[str, RuntimeCollector]:
+        _request_lock: asyncio.Lock | None,
+        _cooldown: UsdMRestCooldown | None,
+    ) -> Mapping[ProductKey, RuntimeCollector]:
         return {
-            "spot": ProcessCollector("spot", f"{service_instance_id}-spot"),
-            "um_perpetual": ProcessCollector(
+            ProductKey("spot", "BTCUSDT"): ProcessCollector("spot", f"{service_instance_id}-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): ProcessCollector(
                 "um_perpetual", f"{service_instance_id}-um"
             ),
         }
 
     runtime = ServiceRuntime(
         config=RecorderConfig(
+            side_funding_info_enabled=False,
+            side_exchange_info_enabled=False,
             data_root=root,
             heartbeat_seconds=1.0,
             sleep_gap_threshold_seconds=5.0,

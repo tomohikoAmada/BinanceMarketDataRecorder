@@ -186,6 +186,7 @@ def _collector(
 ) -> UsdMCollector:
     return UsdMCollector(
         UsdMCollectorSettings(
+            symbol="BTCUSDT",
             data_root=tmp_path,
             collector_instance_id="shared-rest-gate-test",
             collector_version="test",
@@ -195,6 +196,8 @@ def _collector(
             snapshot_retry_jitter_ratio=0,
             side_data=_side_settings() if with_side_data else None,
         ),
+        request_lock=asyncio.Lock(),
+        cooldown=UsdMRestCooldown(),
         logger=logging.getLogger("test.usdm.shared-rest-gate"),
         rest_api=rest_api,
         side_rest_api=cast(UsdMSideRestApi | None, side_rest_api),

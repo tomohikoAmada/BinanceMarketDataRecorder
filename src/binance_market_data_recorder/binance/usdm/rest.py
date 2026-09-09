@@ -175,6 +175,7 @@ _retry_boundary = retry_boundary
 def capture_depth_snapshot(
     *,
     rest_api: UsdMRestApi | None = None,
+    symbol: str,
     collector_instance_id: str,
     collector_version: str,
     limit: int = SNAPSHOT_LIMIT,
@@ -199,7 +200,7 @@ def capture_depth_snapshot(
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
-    response = api.order_book("BTCUSDT", limit)
+    response = api.order_book(symbol, limit)
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
@@ -237,7 +238,7 @@ def capture_depth_snapshot(
         "request": {
             "method": "GET",
             "path": "/fapi/v1/depth",
-            "symbol": "BTCUSDT",
+            "symbol": symbol,
             "limit": limit,
             "request_time_utc_ns": request_utc_ns,
             "request_monotonic_ns": request_monotonic_ns,
@@ -262,7 +263,7 @@ def capture_depth_snapshot(
     ).encode()
     return EventEnvelope(
         market="um_perpetual",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream="depth_snapshot",
         module="binance.usdm.rest.v1",
         connection_id=f"rest-{uuid4()}",

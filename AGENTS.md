@@ -35,10 +35,11 @@ public market data. The primary future production profile is Ubuntu 24.04 LTS
 x86_64 with systemd and a non-root service. macOS Apple Silicon remains a
 development/local profile, and Ubuntu ARM64/RK3588 remains a distinct Linux
 validation and historical evidence profile. The current implementation captures
-BTCUSDT Spot and USD-M perpetual depth at 100 ms, aggregate trades, book ticker
+configured Spot and USD-M perpetual depth at 100 ms, aggregate trades, book ticker
 events, and public REST depth snapshots, followed by defined USD-M auxiliary
-data. The accepted future MS2 architecture is an operator-configured finite
-product set across those two Binance markets; it is not implemented yet. The
+data. MS2 implements an operator-configured finite product set across those
+two markets, with BTCUSDT/BTCUSDT compatibility only when both selection
+fields are absent. MS3 shared-resource qualification is next. The
 system keeps recoverable immutable raw payloads, deterministic replay metadata,
 explicit gap evidence, and verified archival across the approved VPS/local
 Offline Workspace boundary.
@@ -58,8 +59,8 @@ time-local status and must not be treated as current operational authority.
   live/simulated execution.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
 - No other exchanges, automatic all-symbol discovery, or exchange/plugin
-  framework. The pre-MS2 implementation remains the BTCUSDT compatibility
-  profile; future configured symbols require the MS2 implementation gate.
+  framework. Product selection follows ADR-0032 and becomes effective only on
+  restart; MS2 offline acceptance does not authorize deployment.
 - No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first
   stateless collection.
 - No automatic formatting, repair, repartitioning, or exclusive ownership of an
@@ -92,7 +93,7 @@ protocols. See ADR-0001 and ADR-0007.
 
 Spot and USD-M transport/schema modules are required boundaries. Do not build a
 framework for hypothetical exchanges as a V1 acceptance condition. Supporting
-another exchange requires a separate future architecture review. The future
+another exchange requires a separate future architecture review. The
 operator-configured product-set authority is ADR-0032; its ProductKey is
 `(market, symbol)` and its runtime topology is one process with one Collector
 per configured ProductKey.

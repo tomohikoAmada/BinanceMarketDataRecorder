@@ -7,13 +7,15 @@ traffic authorization.
 
 ## Start here: the boundary
 
-The new team starts at **MS2**. MS1 is merged and closed. Do not restart or
+MS2 implementation/offline acceptance is **CLOSED**, with independent PR review
+pending. **MS3 is NEXT** after review/merge and separate authorization. MS1
+remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md). Do not restart or
 reopen the historical M23 optimization, BBO, Storage Forecast, remote-delete,
 single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
 MS1 migration design, Raw v1, Contracts, or the closed MS1 review findings
 unless new MS2+ evidence creates a concrete contradiction.
 
-Before MS2 implementation:
+The following pre-MS2 authority checks were completed before implementation:
 
 1. Fetch live GitHub `main`.
 2. Verify that `d38180074b5f76ab6b7778eea7fc505160c671ae` remains an ancestor.
@@ -48,8 +50,8 @@ CURRENT_MAIN_DEPLOYED=NO
 
 The merge parents are `c421605e302d2ad46acdb2466627f64644181c9a` and
 `11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged. The MS1 merge
-is the last behavior-changing authority at this handoff; later documentation-
-only descendants do not become a new behavior authority.
+is the historical pre-MS2 behavior authority. The MS2 candidate commit containing
+`milestone_acceptance/MS2.md` changes behavior; it is not yet merged or deployed.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.
@@ -81,7 +83,7 @@ Accepted watches for later qualification are capacity cadence tail jitter
 early-growth-then-plateau (maximum 377339904 bytes, with the final segment
 approximately flat). They are not MS2 blockers.
 
-### C. Future target
+### C. MS2 implemented target
 
 ADR-0032 supersedes ADR-0031. The future target is Binance-specific Spot and
 USD-M perpetual capture with an operator-configured finite symbol list for
@@ -90,14 +92,14 @@ discovery, exchange/plugin framework, or hot runtime topology reload; changed
 configuration takes effect on normal process restart. The project is not
 becoming a multi-exchange framework.
 
-The intended `[recorder]` surface is `spot_symbols = [...]` and
+The implemented `[recorder]` surface is `spot_symbols = [...]` and
 `usdm_symbols = [...]`. Only when both fields are absent does legacy
 compatibility mode resolve to the historical BTCUSDT/BTCUSDT profile. If either
 field is present, explicit product-selection mode uses each supplied list
 exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. `ProductKey = (market, symbol)`; one process owns one durable
 Catalog and one existing market Collector per configured ProductKey. The
-current runtime remains single-symbol BTCUSDT until MS2 merges.
+MS2 candidate implements that runtime; live main remains pre-MS2 until merge.
 
 An empty resolved USD-M set means zero USD-M Collectors, zero product-specific
 USD-M side-data managers, no process-global USD-M side-data owner, and no
@@ -128,7 +130,8 @@ families are symbol-specific. Runtime fan-out is not part of MS1.
 
 ### MS2 — Configurable product runtime
 
-Next and not implemented. Add the explicit finite Spot/USD-M product lists,
+Implemented and offline-accepted; independent review pending. Includes explicit
+finite Spot/USD-M product lists,
 ProductKey propagation through existing WS/REST/schema/envelope/spool paths,
 dynamic one-process Collector assembly, product-aware service state and
 configuration-bound readiness, product-aware hard-reserve discontinuity
@@ -150,7 +153,7 @@ declare Production Ready.
 
 ### MS3 — Shared resources / rotation / observability
 
-Planned after MS2. Prove REST scheduling/fairness and shared cooldown behavior
+Next after independent MS2 review/merge and authorization. Prove REST scheduling/fairness and shared cooldown behavior
 under multiple configured products; stagger writer rotations; attribute queues,
 high-watermarks, backpressure, reconnects, and recovery evidence to products;
 retain process-global metrics where appropriate; inspect capacity/archive
@@ -179,4 +182,5 @@ recoverable and unchanged. Do not write production data under the repository
 or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
-`DEPLOYMENT_AUTHORIZED=NO`, and `MS2_IMPLEMENTATION_STARTED=NO`.
+`DEPLOYMENT_AUTHORIZED=NO`, `CURRENT_MAIN_DEPLOYED=NO`,
+`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`, `MS3=NEXT`, `MS4=PLANNED`.

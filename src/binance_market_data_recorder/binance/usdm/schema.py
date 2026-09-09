@@ -57,10 +57,10 @@ def _require_usdm_symbol_type(payload: dict[str, Any]) -> None:
         raise ValueError("payload is not USD-M")
 
 
-def _require_usdm_pair(payload: dict[str, Any]) -> None:
+def _require_usdm_pair(payload: dict[str, Any], symbol: str) -> None:
     """Require the pair field on streams whose official schema defines it."""
 
-    if _text(payload, "ps") != "BTCUSDT":
+    if _text(payload, "ps") != symbol:
         raise ValueError("unexpected pair")
 
 
@@ -78,7 +78,7 @@ def _levels(payload: dict[str, Any], name: str) -> None:
 
 
 def _parse_metadata(
-    raw_payload: bytes, stream: UsdMStream
+    raw_payload: bytes, stream: UsdMStream, symbol: str
 ) -> tuple[int | None, int | None, dict[str, int | str], tuple[str, ...]]:
     try:
         decoded = json.loads(raw_payload)
@@ -87,7 +87,7 @@ def _parse_metadata(
         spec = _SPEC_BY_STREAM[stream]
         if decoded.get("e") != spec.expected_event:
             raise ValueError(f"unexpected event type for {stream}")
-        if _text(decoded, "s") != "BTCUSDT":
+        if _text(decoded, "s") != symbol:
             raise ValueError("unexpected symbol")
         _require_usdm_symbol_type(decoded)
         event_time = _integer(decoded, "E")
@@ -101,7 +101,7 @@ def _parse_metadata(
                 raise ValueError("depth U exceeds u")
             _levels(decoded, "b")
             _levels(decoded, "a")
-            _require_usdm_pair(decoded)
+            _require_usdm_pair(decoded, symbol)
             return event_time, transaction_time, {"U": first, "u": last, "pu": previous}, ()
         if stream is UsdMStream.AGG_TRADE:
             aggregate = _integer(decoded, "a")
@@ -121,7 +121,7 @@ def _parse_metadata(
             )
 
         update_id = _integer(decoded, "u")
-        _require_usdm_pair(decoded)
+        _require_usdm_pair(decoded, symbol)
         for name in ("b", "B", "a", "A"):
             _text(decoded, name)
         return event_time, transaction_time, {"u": update_id}, ()
@@ -131,6 +131,7 @@ def _parse_metadata(
 
 def envelope_from_websocket_frame(
     *,
+    symbol: str,
     raw_payload: bytes,
     stream: UsdMStream,
     connection_id: str,
@@ -142,10 +143,10 @@ def envelope_from_websocket_frame(
 ) -> EventEnvelope:
     """Create a USD-M Raw envelope while retaining exact transport bytes."""
 
-    event_time, transaction_time, sequence, flags = _parse_metadata(raw_payload, stream)
+    event_time, transaction_time, sequence, flags = _parse_metadata(raw_payload, stream, symbol)
     return EventEnvelope(
         market="um_perpetual",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream=stream.value,
         module="binance.usdm.websocket.v1",
         connection_id=connection_id,

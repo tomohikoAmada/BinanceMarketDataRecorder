@@ -26,6 +26,7 @@ def test_live_spot_capture_for_at_least_fifteen_minutes(tmp_path: Path) -> None:
         stop = asyncio.Event()
         collector = SpotCollector(
             SpotCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="m4-live-smoke",
                 collector_version="0.1.0+m4-live",

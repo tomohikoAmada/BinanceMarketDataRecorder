@@ -21,6 +21,7 @@ from binance_market_data_recorder.collector.usdm import (
     UsdMCollector,
     UsdMCollectorSettings,
 )
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
 
 
 class FailingRestApi:
@@ -97,6 +98,7 @@ def _collector(
 ) -> UsdMCollector:
     collector = UsdMCollector(
         UsdMCollectorSettings(
+            symbol="BTCUSDT",
             data_root=tmp_path,
             collector_instance_id="m21-3-usdm",
             collector_version="0.1.0+test",
@@ -105,6 +107,8 @@ def _collector(
             snapshot_retry_maximum_seconds=retry_seconds,
             snapshot_retry_jitter_ratio=0,
         ),
+        request_lock=asyncio.Lock(),
+        cooldown=UsdMRestCooldown(),
         logger=logging.getLogger("test.m21-3.usdm"),
         rest_api=rest_api,
     )
@@ -388,6 +392,7 @@ def test_spot_pre_snapshot_session_stop_remains_clean(tmp_path: Path) -> None:
     async def exercise() -> None:
         collector = SpotCollector(
             SpotCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="m21-3-spot",
                 collector_version="0.1.0+test",

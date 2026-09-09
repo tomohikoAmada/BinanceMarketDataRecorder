@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import tomllib
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,6 +56,8 @@ class RecorderConfig(BaseModel):
     )
 
     data_root: Path
+    spot_symbols: tuple[str, ...] = ()
+    usdm_symbols: tuple[str, ...] = ()
     capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel = "INFO"
     network_proxy_mode: ProxyMode = "direct"
@@ -99,6 +102,37 @@ class RecorderConfig(BaseModel):
     )
     side_basis_interval_seconds: float = Field(default=300.0, gt=0)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_products(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        resolved = dict(value)
+        explicit = "spot_symbols" in resolved or "usdm_symbols" in resolved
+        for name in ("spot_symbols", "usdm_symbols"):
+            symbols = resolved.get(name, () if explicit else ("BTCUSDT",))
+            if not isinstance(symbols, (list, tuple)):
+                raise ValueError("product symbols must be a list")
+            canonical = []
+            for symbol in symbols:
+                if (
+                    not isinstance(symbol, str)
+                    or not symbol
+                    or any(
+                        ch.isspace() or unicodedata.category(ch).startswith("C") for ch in symbol
+                    )
+                    or any(ch in symbol for ch in "/\\@?#%&=:")
+                    or symbol in {".", ".."}
+                ):
+                    raise ValueError("invalid product symbol")
+                canonical.append(symbol.upper())
+            if len(set(canonical)) != len(canonical):
+                raise ValueError("duplicate canonical product symbol")
+            resolved[name] = tuple(canonical)
+        if not resolved["spot_symbols"] and not resolved["usdm_symbols"]:
+            raise ValueError("at least one product must be configured")
+        return resolved
+
     @field_validator("data_root", mode="before")
     @classmethod
     def _path_from_text(cls, value: object) -> object:
@@ -138,6 +172,8 @@ class RecorderConfig(BaseModel):
 
         return {
             "data_root": str(self.data_root),
+            "spot_symbols": list(self.spot_symbols),
+            "usdm_symbols": list(self.usdm_symbols),
             "capacity_profile": self.capacity_profile,
             "log_level": self.log_level,
             "network_proxy_mode": self.network_proxy_mode,
@@ -153,16 +189,16 @@ class RecorderConfig(BaseModel):
             **{
                 name: getattr(self, name)
                 for name in self.__class__.model_fields
-                if name.startswith(("side_", "spot_"))
+                if name.startswith(("side_", "spot_")) and name != "spot_symbols"
             },
         }
 
 
 class _RecorderOverrides(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid", strict=True, hide_input_in_errors=True
-    )
+    model_config = ConfigDict(extra="forbid", strict=True, hide_input_in_errors=True)
 
+    spot_symbols: list[str] | None = None
+    usdm_symbols: list[str] | None = None
     data_root: Path | None = None
     capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel | None = None
@@ -324,6 +360,10 @@ def load_config(
 
     if selected_file is not None:
         overrides = _read_config_file(selected_file)
+        for name in ("spot_symbols", "usdm_symbols"):
+            if name in overrides.model_fields_set:
+                values[name] = getattr(overrides, name)
+                sources[name] = "config_file"
         if overrides.data_root is not None:
             values["data_root"] = overrides.data_root
             sources["data_root"] = "config_file"
@@ -450,6 +490,8 @@ def load_config(
         )
     except UnsafeDataRootError as exc:
         raise ConfigurationError(str(exc)) from exc
+    for name in ("spot_symbols", "usdm_symbols"):
+        sources.setdefault(name, "resolved")
     return LoadedConfig(
         config=parsed.model_copy(update={"data_root": safe_root}),
         config_file=selected_file,

@@ -12,6 +12,8 @@ import pytest
 from binance_market_data_recorder.collector.spot import SpotCollector, SpotCollectorSettings
 from binance_market_data_recorder.collector.supervisor import MarketCollectorSupervisor
 from binance_market_data_recorder.collector.usdm import UsdMCollector, UsdMCollectorSettings
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
+from binance_market_data_recorder.domain.product import ProductKey
 
 pytestmark = pytest.mark.online
 
@@ -28,20 +30,24 @@ def test_spot_and_usdm_run_together_for_at_least_thirty_minutes(tmp_path: Path) 
         stop = asyncio.Event()
         supervisor = MarketCollectorSupervisor(
             {
-                "spot": SpotCollector(
+                ProductKey("spot", "BTCUSDT"): SpotCollector(
                     SpotCollectorSettings(
+                        symbol="BTCUSDT",
                         data_root=tmp_path,
                         collector_instance_id="m5-live-spot",
                         collector_version="0.1.0+m5-live",
                     ),
                     logger=logging.getLogger("m5.live.spot"),
                 ),
-                "um_perpetual": UsdMCollector(
+                ProductKey("um_perpetual", "BTCUSDT"): UsdMCollector(
                     UsdMCollectorSettings(
+                        symbol="BTCUSDT",
                         data_root=tmp_path,
                         collector_instance_id="m5-live-usdm",
                         collector_version="0.1.0+m5-live",
                     ),
+                    request_lock=asyncio.Lock(),
+                    cooldown=UsdMRestCooldown(),
                     logger=logging.getLogger("m5.live.usdm"),
                 ),
             }

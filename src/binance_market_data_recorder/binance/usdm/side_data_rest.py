@@ -459,13 +459,11 @@ def _validate_model(
     item = _object(model)
     symbols = _array(item.get("symbols"))
     rate_limits = _array(item.get("rateLimits"))
-    btc = [
-        symbol
-        for symbol in symbols
-        if isinstance(symbol, dict) and symbol.get("symbol") == "BTCUSDT"
-    ]
-    if len(btc) != 1 or not isinstance(btc[0].get("filters"), list):
-        raise SideDataSchemaError("exchange info has no BTCUSDT filters")
+    for record in symbols:
+        entry = _object(record)
+        _text(entry, "symbol")
+        if not isinstance(entry.get("filters"), list):
+            raise SideDataSchemaError("exchange info symbol filters are invalid")
     return {"symbolCount": len(symbols), "rateLimitCount": len(rate_limits)}
 
 

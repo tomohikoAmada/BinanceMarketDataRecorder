@@ -44,6 +44,7 @@ def test_official_side_stream_fixtures_preserve_exact_bytes_and_semantics(
 ) -> None:
     raw = (FIXTURES / name).read_bytes().rstrip(b"\n")
     envelope = envelope_from_side_stream_frame(
+        symbol="BTCUSDT",
         raw_payload=raw,
         stream=stream,
         connection_id="connection-1",
@@ -70,6 +71,7 @@ def test_side_stream_routes_are_current_market_routes() -> None:
 def test_liquidation_silence_is_sparse_semantics_not_a_synthetic_event() -> None:
     malformed = b'{"e":"forceOrder","E":1,"o":{"s":"ETHUSDT"}}'
     envelope = envelope_from_side_stream_frame(
+        symbol="BTCUSDT",
         raw_payload=malformed,
         stream=UsdMSideStream.LIQUIDATION,
         connection_id="connection-1",
@@ -86,6 +88,7 @@ def test_liquidation_silence_is_sparse_semantics_not_a_synthetic_event() -> None
 def test_mark_price_requires_current_usdm_symbol_type() -> None:
     raw = (FIXTURES / "mark_price.json").read_bytes().replace(b'"st":1', b'"st":2')
     envelope = envelope_from_side_stream_frame(
+        symbol="BTCUSDT",
         raw_payload=raw,
         stream=UsdMSideStream.MARK_PRICE,
         connection_id="connection-1",

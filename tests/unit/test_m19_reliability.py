@@ -18,6 +18,7 @@ from binance_market_data_recorder.collector.usdm import (
     UsdMCollector,
     UsdMCollectorSettings,
 )
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
 from binance_market_data_recorder.domain.event import EventEnvelope, Market
 from binance_market_data_recorder.service.resources import (
     current_rss_bytes,
@@ -69,12 +70,24 @@ def test_diff_depth_lifecycle_requests_market_local_resync(
     instance = f"{collector_kind}-instance"
     if collector_kind == "spot":
         collector: SpotCollector | UsdMCollector = SpotCollector(
-            SpotCollectorSettings(tmp_path / collector_kind, instance, "test"),
+            SpotCollectorSettings(
+                tmp_path / collector_kind,
+                instance,
+                "test",
+                symbol="BTCUSDT",
+            ),
             logger=logging.getLogger("test.m19.spot"),
         )
     else:
         collector = UsdMCollector(
-            UsdMCollectorSettings(tmp_path / collector_kind, instance, "test"),
+            UsdMCollectorSettings(
+                tmp_path / collector_kind,
+                instance,
+                "test",
+                symbol="BTCUSDT",
+            ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.m19.usdm"),
         )
     collector._observe_persisted(_depth_event(market, instance, 10))
@@ -109,6 +122,7 @@ def test_bootstrap_overflow_requests_bounded_session_restart(
                 tmp_path / collector_kind,
                 instance,
                 "test",
+                symbol="BTCUSDT",
                 bootstrap_buffer_capacity=2,
             ),
             logger=logging.getLogger("test.m19.spot-overflow"),
@@ -119,8 +133,11 @@ def test_bootstrap_overflow_requests_bounded_session_restart(
                 tmp_path / collector_kind,
                 instance,
                 "test",
+                symbol="BTCUSDT",
                 bootstrap_buffer_capacity=2,
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.m19.usdm-overflow"),
         )
     collector._observe_persisted(_depth_event(market, instance, 10))
@@ -192,7 +209,14 @@ def test_usdm_ingress_backpressure_forces_fresh_depth_snapshot_bridge(
 ) -> None:
     instance = "usdm-ingress-backpressure"
     collector = UsdMCollector(
-        UsdMCollectorSettings(tmp_path, instance, "test"),
+        UsdMCollectorSettings(
+            tmp_path,
+            instance,
+            "test",
+            symbol="BTCUSDT",
+        ),
+        request_lock=asyncio.Lock(),
+        cooldown=UsdMRestCooldown(),
         logger=logging.getLogger("test.m21-4.usdm-resync"),
     )
     observers = {
@@ -259,7 +283,7 @@ def test_resync_completion_records_applied_local_book_update_id(
         collector_instance_id=instance,
         collector_version="test",
     )
-    coordinator = DepthResyncCoordinator(market="spot", catalog=catalog)
+    coordinator = DepthResyncCoordinator(symbol="BTCUSDT", market="spot", catalog=catalog)
     first = _depth_event("spot", instance, 100, "new-connection")
     second = _depth_event("spot", instance, 101, "new-connection")
     readiness.observe_persisted(first)
@@ -291,7 +315,10 @@ def test_usdm_core_failure_awaits_side_cleanup_before_catalog_close(
                 tmp_path,
                 "usdm-cleanup",
                 "test",
+                symbol="BTCUSDT",
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.m19.usdm-cleanup"),
         )
         side_stopped = asyncio.Event()

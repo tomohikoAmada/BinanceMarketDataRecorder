@@ -46,6 +46,7 @@ def test_snapshot_uses_only_public_depth_and_records_model_provenance() -> None:
     ticks = iter([100, 200])
     monotonic = iter([300, 400])
     captured = capture_depth_snapshot(
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="0.1.0+test",
@@ -66,12 +67,14 @@ def test_snapshot_uses_only_public_depth_and_records_model_provenance() -> None:
 def test_snapshot_rejects_http_failure_and_missing_update_id() -> None:
     with pytest.raises(RuntimeError, match="HTTP 429"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(status=429)),
             collector_instance_id="collector-1",
             collector_version="test",
         )
     with pytest.raises(RuntimeError, match="no lastUpdateId"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(model=FakeModel(last_update_id=None))),
             collector_instance_id="collector-1",
             collector_version="test",

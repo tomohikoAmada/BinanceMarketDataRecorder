@@ -18,6 +18,8 @@ from binance_market_data_recorder.collector.usdm import (
     UsdMCollector,
     UsdMCollectorSettings,
 )
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.spool.seal import validate_sealed_artifact
 from binance_market_data_recorder.status import service_status
 
@@ -38,6 +40,7 @@ def test_developer_preview_spot_and_usdm_smoke(tmp_path: Path) -> None:
         stop = asyncio.Event()
         spot = SpotCollector(
             SpotCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="m18-preview-spot",
                 collector_version="0.1.0a1",
@@ -46,15 +49,18 @@ def test_developer_preview_spot_and_usdm_smoke(tmp_path: Path) -> None:
         )
         usdm = UsdMCollector(
             UsdMCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="m18-preview-usdm",
                 collector_version="0.1.0a1",
                 side_data=None,
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("m18.preview.usdm"),
         )
         supervisor = MarketCollectorSupervisor(
-            {"spot": spot, "um_perpetual": usdm}
+            {ProductKey("spot", "BTCUSDT"): spot, ProductKey("um_perpetual", "BTCUSDT"): usdm}
         )
         task = asyncio.create_task(supervisor.run(stop))
         timer = asyncio.create_task(asyncio.sleep(duration))

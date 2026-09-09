@@ -38,11 +38,12 @@ class Response:
 
 
 class RestApi:
-    def __init__(self, failures: int = 0) -> None:
+    def __init__(self, failures: int = 0, symbol: str = "BTCUSDT") -> None:
         self.failures = failures
+        self.symbol = symbol
 
     def depth(self, symbol: str, limit: int) -> DepthResponse:
-        assert (symbol, limit) == ("BTCUSDT", 1000)
+        assert (symbol, limit) == (self.symbol, 1000)
         if self.failures:
             self.failures -= 1
             raise RuntimeError("injected public snapshot failure")
@@ -65,7 +66,10 @@ class Socket:
         return None
 
 
-def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: Path) -> None:
+@pytest.mark.parametrize("symbol", ["BTCUSDT", "ETHUSDT", "SOLUSDT"])
+def test_complete_spot_collector_assembles_three_streams_and_snapshot(
+    tmp_path: Path, symbol: str
+) -> None:
     payloads = {
         "btcusdt@depth@100ms": (
             b'{"e":"depthUpdate","E":1,"s":"BTCUSDT",'
@@ -76,6 +80,11 @@ def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: 
             b'"f":1,"l":1,"T":1,"m":true,"M":true}'
         ),
         "btcusdt@bookTicker": b'{"u":101,"s":"BTCUSDT","b":"1","B":"1","a":"2","A":"1"}',
+    }
+
+    payloads = {
+        key.replace("btcusdt", symbol.lower()): value.replace(b"BTCUSDT", symbol.encode())
+        for key, value in payloads.items()
     }
 
     async def exercise() -> None:
@@ -90,6 +99,7 @@ def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: 
 
         collector = SpotCollector(
             SpotCollectorSettings(
+                symbol=symbol,
                 data_root=tmp_path,
                 collector_instance_id="collector-test",
                 collector_version="0.1.0+test",
@@ -98,7 +108,7 @@ def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: 
                 snapshot_retry_maximum_seconds=0.001,
             ),
             logger=logging.getLogger("test.spot.complete"),
-            rest_api=RestApi(failures=1),
+            rest_api=RestApi(failures=1, symbol=symbol),
             websocket_opener=opener,
         )
         collector.set_handoff_context(
@@ -120,6 +130,7 @@ def test_complete_spot_collector_assembles_three_streams_and_snapshot(tmp_path: 
         json.loads(path.read_text(encoding="utf-8"))
         for path in (tmp_path / "data" / "manifests").glob("*.json")
     ]
+    assert all(document["symbol"] == symbol for document in documents)
     assert {document["stream"] for document in documents} == {
         "diff_depth",
         "agg_trade",
@@ -137,6 +148,7 @@ def test_spot_collector_refuses_repository_as_data_root() -> None:
     with pytest.raises(UnsafeDataRootError, match="unsafe data root"):
         SpotCollector(
             SpotCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=Path.cwd(),
                 collector_instance_id="collector-test",
                 collector_version="0.1.0+test",
@@ -223,6 +235,7 @@ def test_bootstrap_buffer_overflow_restarts_connections_and_snapshot(
         )
         collector = SpotCollector(
             SpotCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="collector-overflow",
                 collector_version="test",

@@ -11,6 +11,7 @@ from typing import Any, ClassVar
 from binance_market_data_recorder.binance.usdm.rest import DepthResponse
 from binance_market_data_recorder.binance.usdm.websocket import WebSocketConnection
 from binance_market_data_recorder.collector.usdm import UsdMCollector, UsdMCollectorSettings
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
 from tests.integration.test_usdm_stream_collector import envelopes
 
 
@@ -81,13 +82,13 @@ class Socket:
 def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path) -> None:
     payloads = {
         "btcusdt@depth@100ms": (
-            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":100,"u":101,"pu":99,"b":[],"a":[]}'
+            b'{"st":1,"ps":"BTCUSDT","e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":100,"u":101,"pu":99,"b":[],"a":[]}'
         ),
         "btcusdt@aggTrade": (
-            b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,"p":"1","q":"1","f":1,"l":1,"m":true}'
+            b'{"st":1,"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,"p":"1","q":"1","f":1,"l":1,"m":true}'
         ),
         "btcusdt@bookTicker": (
-            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1"}'
+            b'{"st":1,"ps":"BTCUSDT","e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,"b":"1","B":"1","a":"2","A":"1"}'
         ),
     }
 
@@ -105,6 +106,7 @@ def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path
 
         collector = UsdMCollector(
             UsdMCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="usdm-test",
                 collector_version="0.1.0+test",
@@ -113,6 +115,8 @@ def test_complete_usdm_collector_uses_routed_streams_and_snapshot(tmp_path: Path
                 snapshot_retry_maximum_seconds=0.001,
                 snapshot_retry_jitter_ratio=0,
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.usdm.complete"),
             rest_api=RestApi(failures=1),
             websocket_opener=opener,
@@ -159,15 +163,15 @@ def test_active_usdm_collector_retries_snapshot_that_cannot_bridge(
 ) -> None:
     payloads = {
         "btcusdt@depth@100ms": (
-            b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT",'
+            b'{"st":1,"ps":"BTCUSDT","e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT",'
             b'"U":100,"u":101,"pu":99,"b":[],"a":[]}'
         ),
         "btcusdt@aggTrade": (
-            b'{"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,'
+            b'{"st":1,"e":"aggTrade","E":1,"T":1,"s":"BTCUSDT","a":1,'
             b'"p":"1","q":"1","f":1,"l":1,"m":true}'
         ),
         "btcusdt@bookTicker": (
-            b'{"e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,'
+            b'{"st":1,"ps":"BTCUSDT","e":"bookTicker","E":1,"T":1,"s":"BTCUSDT","u":1,'
             b'"b":"1","B":"1","a":"2","A":"1"}'
         ),
     }
@@ -182,6 +186,7 @@ def test_active_usdm_collector_retries_snapshot_that_cannot_bridge(
 
         collector = UsdMCollector(
             UsdMCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="usdm-active-retry",
                 collector_version="0.1.0a1",
@@ -190,6 +195,8 @@ def test_active_usdm_collector_retries_snapshot_that_cannot_bridge(
                 snapshot_retry_maximum_seconds=0.001,
                 snapshot_retry_jitter_ratio=0,
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.usdm.active-retry"),
             rest_api=rest_api,
             websocket_opener=opener,

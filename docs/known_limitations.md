@@ -26,7 +26,8 @@ This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
 CPU benchmark. This historical capacity watch does not authorize or schedule
 another burn-in.
 
-The current next phase is MS2 configurable-product runtime, not profiling.
+MS2 configurable-product runtime is offline-accepted; independent PR review
+is next, followed by separately authorized MS3.
 After verifying live main, receive explicit authorization before implementation.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
@@ -207,8 +208,9 @@ substitute for long-running proof.
 - macOS Apple Silicon retains its logged-in-user LaunchAgent behavior. Ubuntu
   ARM64 adds M20 systemd support at Soak Candidate level. Windows is not
   implemented.
-- The current implementation captures BTCUSDT Spot and BTCUSDT USD-M
-  perpetual. MS2 will define an operator-configured finite symbol set for
+- MS2 implements an operator-configured finite symbol set for Spot and USD-M
+  perpetual, with legacy BTCUSDT/BTCUSDT defaults only when neither field is set.
+  Qualification remains pending for
   those two markets; other exchanges, automatic all-symbol discovery, and an
   exchange/plugin framework remain outside the architecture.
 - The current Binance Global Spot bootstrap wording conflicts with the
@@ -224,18 +226,18 @@ substitute for long-running proof.
 
 Formal M22.9 and any later use decision still require the repository-owned full
 staged chain on a capacity-complete environment. The next development action is
-MS2 configurable-product runtime after explicit authorization; deployment,
+independent MS2 PR review, then separately authorized MS3; deployment,
 profiling, and burn-in remain separately gated.
 
 ### Current GitHub main and multi-symbol limitations
 
 - Current main contains the MS1 durable identity foundation but is not deployed
   and has no duration credit from the pre-MS1 clean-24h artifact.
-- The current runtime implementation is still single-symbol BTCUSDT assembly;
-  MS2, MS3, and MS4 are not implemented.
+- The MS2 candidate implements configurable-product assembly with offline
+  acceptance. It is not yet merged or deployed; MS3/MS4 remain unimplemented.
 - ADR-0032 replaces the former fixed-seven-symbol target with independent,
-  operator-configured finite Spot/USD-M symbol lists. The new team starts at
-  MS2 after explicit authorization; no 72h/168h campaign is automatically
+  operator-configured finite Spot/USD-M symbol lists. MS3 follows independent
+  MS2 review/merge and authorization; no 72h/168h campaign is automatically
   scheduled.
 - Production Ready remains NO and formal M22.9 is NOT_STARTED. Do not
   automatically authorize deployment, long burn-in, M23.5, or a C++/Go rewrite.

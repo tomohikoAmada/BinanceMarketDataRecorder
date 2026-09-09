@@ -1,21 +1,30 @@
 # Binance Market Data Recorder
 
-> **Current authority (2026-09-05):** verify live GitHub `main`. The post-MS1
-> implementation/behavior authority is `d38180074b5f76ab6b7778eea7fc505160c671ae`
-> (tree `95f16f05b30b7db23e43ebb6439ed0d055081902`). Documentation-only
-> descendants may make live `main` newer without changing that behavior
-> authority; any behavior/source change after this SHA requires a fresh
-> authority check. MS1 is merged through PR #51 and post-merge offline CI run
-> `33955915046` passed on macOS and Ubuntu. Live GitHub `main` is **not deployed**.
-> The last independently qualified deployed artifact
-> is the pre-MS1 single-symbol source `c421605e302d2ad46acdb2466627f64644181c9a`.
-> Its clean 24-hour non-formal stage is complete, but Production Ready is NO and
-> formal M22.9 is NOT_STARTED. The new team starts at MS2; see
-> [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md),
-> [`docs/PROJECT_HANDOFF.md`](docs/PROJECT_HANDOFF.md),
-> [`docs/milestone_plan.md`](docs/milestone_plan.md),
-> [`docs/milestone_acceptance/MS1.md`](docs/milestone_acceptance/MS1.md), and
-> [`docs/adr/0032-configurable-product-set.md`](docs/adr/0032-configurable-product-set.md).
+> **MS2 candidate (2026-09-09):** configurable product runtime is implemented
+> and offline-accepted on `feat/ms2-configurable-products`; independent review
+> and merge are pending. Base: `42ba52ba328fa991a04e5f21ca7f397d58c895ce`
+> (merged architecture PR #53). MS1 remains closed. MS3 is next after review/
+> merge and separate authorization. Current main is not deployed; the older
+> pre-MS1 clean-24h artifact retains only its own historical duration evidence.
+> `FORMAL_M22_9=NOT_STARTED`, `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`.
+> See [current state](docs/CURRENT_PRODUCTION_STATE.md),
+> [handoff](docs/PROJECT_HANDOFF.md), and [MS2 acceptance](docs/milestone_acceptance/MS2.md).
+
+Configure products under `[recorder]`:
+
+```toml
+[recorder]
+spot_symbols = ["BTCUSDT", "ETHUSDT"]
+usdm_symbols = ["SOLUSDT"]
+```
+
+Only when both fields are absent does configuration select BTCUSDT in both
+markets. If either appears, an omitted sibling is empty. Both empty is invalid.
+Symbols canonicalize to uppercase; duplicate canonical symbols within a market
+are rejected. Parsing performs no exchange lookup. Restart applies topology
+changes; removing a product preserves all historical Raw, Catalog, manifests,
+and archives. Service status exposes exact per-product readiness and configured
+symbol lists. Unconfigured markets create no collection traffic.
 
 ## Historical status narrative (superseded as current authority)
 
@@ -120,10 +129,9 @@ macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持并作为开发/
 profile；Ubuntu ARM64/RK3588 的非 root **systemd** 部署是独立的 Soak
 Candidate/LAN Linux profile。主生产目标是 Ubuntu 24.04 LTS x86_64
 共享 VPS；M22.9 24h结果INCOMPLETE且本地修复未部署。Windows 尚未实现，但未来归档客户端要求支持
-macOS/Linux/Windows。当前实现仅采集 BTCUSDT Spot 和 BTCUSDT USD-M 永续合约；
-MS2 未来目标是由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
+macOS/Linux/Windows。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
 正常重启后生效。它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所
-插件框架；MS2 尚未实现。支持其它交易所需要单独的架构审查
+插件框架；MS2 已通过离线验收，等待独立 PR 审查。支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
 ## 目录
@@ -1127,8 +1135,7 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - macOS sleep/closed lid 会中断用户会话网络。Recorder 标记检测到的 gap，
   但无法恢复 Binance 不再提供的事件。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
-- 当前实现仅 BTCUSDT Spot 和 USD-M Perpetual；MS2 的可配置 product-set
-  runtime 尚未实现。
+- MS2 可配置 product-set runtime 已通过离线验收；多产品实机资格验证尚未运行。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。
@@ -1149,8 +1156,7 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   authorized and remains outside the current Recorder core.
 - **无 HTTP/gRPC/WebSocket 数据服务。**
 - **无策略引擎、因子、回测框架。**
-- **无多交易所支持，也尚未实现可配置多 ProductKey runtime。** 未来 MS2
-  仅支持 operator 配置的有限 Spot/USD-M symbol 集合，不支持自动全量发现或
+- **无多交易所支持。** MS2 仅支持 operator 配置的有限 Spot/USD-M symbol 集合，不支持自动全量发现或
   exchange/plugin framework。
 - **无 Docker、Kubernetes、Kafka、Redis。**
 - **无 Prometheus、Grafana 集成。**

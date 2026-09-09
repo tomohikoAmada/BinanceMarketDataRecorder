@@ -66,6 +66,7 @@ def create_spot_exchange_info_api(
 def capture_spot_exchange_info(
     *,
     rest_api: SpotExchangeInfoApi | None = None,
+    symbol: str,
     collector_instance_id: str,
     collector_version: str,
     timeout_ms: int = 10_000,
@@ -84,7 +85,7 @@ def capture_spot_exchange_info(
     )
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
-    response = api.exchange_info(symbol="BTCUSDT")
+    response = api.exchange_info(symbol=symbol)
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     if response.status != 200:
@@ -97,22 +98,22 @@ def capture_spot_exchange_info(
         raise RuntimeError("Spot exchangeInfo model must be an object")
     symbols = model.get("symbols")
     if not isinstance(symbols, list) or len(symbols) != 1:
-        raise RuntimeError("Spot exchangeInfo must contain exactly BTCUSDT")
-    symbol = symbols[0]
+        raise RuntimeError("Spot exchangeInfo must contain exactly the requested symbol")
+    symbol_model = symbols[0]
     if (
-        not isinstance(symbol, dict)
-        or symbol.get("symbol") != "BTCUSDT"
-        or not isinstance(symbol.get("filters"), list)
-        or not isinstance(symbol.get("orderTypes"), list)
-        or not isinstance(symbol.get("status"), str)
+        not isinstance(symbol_model, dict)
+        or symbol_model.get("symbol") != symbol
+        or not isinstance(symbol_model.get("filters"), list)
+        or not isinstance(symbol_model.get("orderTypes"), list)
+        or not isinstance(symbol_model.get("status"), str)
     ):
-        raise RuntimeError("Spot exchangeInfo BTCUSDT schema is incomplete")
+        raise RuntimeError("Spot exchangeInfo requested symbol schema is incomplete")
     provenance = {
         "schema_version": "binance-spot-exchange-info-provenance.v1",
         "request": {
             "method": "GET",
             "path": "/api/v3/exchangeInfo",
-            "parameters": {"symbol": "BTCUSDT"},
+            "parameters": {"symbol": symbol},
             "request_weight": 20,
             "request_time_utc_ns": request_utc_ns,
             "request_monotonic_ns": request_monotonic_ns,
@@ -141,7 +142,7 @@ def capture_spot_exchange_info(
         server_time = "not_provided"
     return EventEnvelope(
         market="spot",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream="exchange_info",
         module="binance.spot.rest.exchange_info.v1",
         connection_id=f"rest-{uuid4()}",
@@ -152,7 +153,7 @@ def capture_spot_exchange_info(
         exchange_event_time=(
             model.get("serverTime") if isinstance(model.get("serverTime"), int) else None
         ),
-        source_sequence={"serverTime": server_time, "status": str(symbol["status"])},
+        source_sequence={"serverTime": server_time, "status": str(symbol_model["status"])},
         payload_encoding="utf-8-json-provenance",
         raw_payload=json.dumps(
             provenance, sort_keys=True, separators=(",", ":"), ensure_ascii=False

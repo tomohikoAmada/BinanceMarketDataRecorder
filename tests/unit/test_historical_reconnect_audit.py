@@ -54,6 +54,7 @@ def usdm_envelope(
     flags: tuple[str, ...] = (),
 ) -> Any:
     return envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=book_ticker(update_id),
         stream=UsdMStream.BOOK_TICKER,
         connection_id=connection_id,
@@ -1107,6 +1108,7 @@ def test_catalog_matching_is_market_stream_specific_exact(tmp_path: Path) -> Non
         for index, connection_id in enumerate(("conn-A", "conn-B")):
             writer.append(
                 envelope_from_websocket_frame(
+                    symbol="BTCUSDT",
                     raw_payload=book_ticker(200 + index),
                     stream=UsdMStream.AGG_TRADE,
                     connection_id=connection_id,

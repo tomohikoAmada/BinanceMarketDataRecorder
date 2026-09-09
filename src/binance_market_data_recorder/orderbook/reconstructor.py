@@ -90,8 +90,8 @@ class LocalBookReconstructor:
         bootstrap_buffer_capacity: int = 8192,
         bootstrap_buffer_warning_ratio: float = 0.75,
     ) -> None:
-        if market not in {"spot", "um_perpetual"} or symbol != "BTCUSDT":
-            raise OrderBookDataError("M6 supports Binance Spot/USD-M BTCUSDT only")
+        if market not in {"spot", "um_perpetual"} or not symbol:
+            raise OrderBookDataError("order book requires a Binance Spot/USD-M product")
         if bootstrap_buffer_capacity < 2:
             raise ValueError("bootstrap buffer capacity must be at least two")
         if not 0 < bootstrap_buffer_warning_ratio < 1:

@@ -56,6 +56,7 @@ class SpotExchangeInfoPoller:
                     async with limiter.request_slot():
                         envelope = await asyncio.to_thread(
                             capture_spot_exchange_info,
+                            symbol=self.spool.symbol,
                             rest_api=self.rest_api,
                             collector_instance_id=self.collector_instance_id,
                             collector_version=self.collector_version,

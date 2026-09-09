@@ -60,8 +60,10 @@ def _decode(raw_payload: bytes) -> dict[str, Any]:
     return value
 
 
-def _mark_price_metadata(payload: dict[str, Any]) -> tuple[int, None, dict[str, int | str]]:
-    if payload.get("e") != "markPriceUpdate" or _text(payload, "s") != "BTCUSDT":
+def _mark_price_metadata(
+    payload: dict[str, Any], symbol: str
+) -> tuple[int, None, dict[str, int | str]]:
+    if payload.get("e") != "markPriceUpdate" or _text(payload, "s") != symbol:
         raise ValueError("unexpected mark-price identity")
     if _integer(payload, "st") != 1:
         raise ValueError("mark-price payload is not USD-M")
@@ -72,12 +74,14 @@ def _mark_price_metadata(payload: dict[str, Any]) -> tuple[int, None, dict[str, 
     return event_time, None, {"nextFundingTime": next_funding_time}
 
 
-def _liquidation_metadata(payload: dict[str, Any]) -> tuple[int, int, dict[str, int | str]]:
+def _liquidation_metadata(
+    payload: dict[str, Any], symbol: str
+) -> tuple[int, int, dict[str, int | str]]:
     if payload.get("e") != "forceOrder":
         raise ValueError("unexpected liquidation event type")
     event_time = _integer(payload, "E")
     order = payload.get("o")
-    if not isinstance(order, dict) or _text(order, "s") != "BTCUSDT":
+    if not isinstance(order, dict) or _text(order, "s") != symbol:
         raise ValueError("unexpected liquidation symbol")
     for name in ("S", "o", "f", "q", "p", "ap", "X", "l", "z"):
         _text(order, name)
@@ -87,6 +91,7 @@ def _liquidation_metadata(payload: dict[str, Any]) -> tuple[int, int, dict[str, 
 
 def envelope_from_side_stream_frame(
     *,
+    symbol: str,
     raw_payload: bytes,
     stream: UsdMSideStream,
     connection_id: str,
@@ -106,14 +111,14 @@ def envelope_from_side_stream_frame(
     try:
         payload = _decode(raw_payload)
         if stream is UsdMSideStream.MARK_PRICE:
-            event_time, trade_time, sequence = _mark_price_metadata(payload)
+            event_time, trade_time, sequence = _mark_price_metadata(payload, symbol)
         else:
-            event_time, trade_time, sequence = _liquidation_metadata(payload)
+            event_time, trade_time, sequence = _liquidation_metadata(payload, symbol)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError):
         flags = (*flags, "malformed")
     return EventEnvelope(
         market="um_perpetual",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream=stream.value,
         module="binance.usdm.side_stream.v1",
         connection_id=connection_id,

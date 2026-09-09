@@ -92,6 +92,7 @@ def make_side_extension(
         receive_monotonic_ns: int,
     ) -> Any:
         return envelope_from_side_stream_frame(
+            symbol="BTCUSDT",
             raw_payload=raw_payload,
             connection_id=connection_id,
             collector_instance_id=collector_instance_id,

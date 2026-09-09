@@ -32,6 +32,7 @@ from .archive.remote_transport import (
 from .backfill import HistoricalImporter, build_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
+from .domain.product import configured_products
 from .logging import configure_logging, log_event
 from .metrics.report import DailyReporter
 from .normalize import NormalizationError, Normalizer, normalization_status
@@ -750,6 +751,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0
                 evaluator = VpsReadinessEvaluator(
+                    expected_products=frozenset(
+                        configured_products(loaded.config.spot_symbols, loaded.config.usdm_symbols)
+                    ),
                     data_root=loaded.config.data_root,
                     identity=identity,
                     systemd_manager=acceptance_manager,
@@ -935,6 +939,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else:
                     readiness = wait_for_readiness(
                         VpsReadinessEvaluator(
+                            expected_products=frozenset(
+                                configured_products(
+                                    loaded.config.spot_symbols, loaded.config.usdm_symbols
+                                )
+                            ),
                             data_root=loaded.config.data_root,
                             identity=deployment_identity,
                             systemd_manager=systemd_identity_manager,

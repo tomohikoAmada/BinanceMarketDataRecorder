@@ -19,15 +19,26 @@ MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
 CURRENT_NONFORMAL_VALIDATION_STAGE_COMPLETE=YES
 MULTI_SYMBOL_DEVELOPMENT_MAY_BEGIN=YES
-MS2_IMPLEMENTATION_STARTED=NO
-MS2=NEXT
-MS3=PLANNED
+MS2_IMPLEMENTATION_STARTED=YES
+MS2=CLOSED
+MS2_INDEPENDENT_PR_REVIEW=PENDING
+MS3=NEXT
 MS4=PLANNED
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
 
-## A. Live GitHub main and post-MS1 implementation/behavior authority
+## MS2 candidate authority
+
+MS2 implementation and offline acceptance are closed on
+`feat/ms2-configurable-products`; independent PR review and merge remain pending.
+The exact base is `42ba52ba328fa991a04e5f21ca7f397d58c895ce` (PR #53 merged).
+The MS2 implementation commit containing `milestone_acceptance/MS2.md` is the
+candidate behavior authority. The post-MS1 SHA below remains the historical
+pre-MS2 behavior authority and the live-main authority until MS2 merges.
+See [MS2 acceptance](milestone_acceptance/MS2.md) for commands and compatibility.
+
+## A. Verified pre-MS2 main and post-MS1 implementation/behavior authority
 
 | Item | Authority |
 | --- | --- |
@@ -46,7 +57,7 @@ implementation commits remain provenance, not separate current authorities:
 `39fbd04172a6b5b27b41d43c57d0e5ff575b95d4`, and
 `11e100fbcb974e7d54f0515c99e08ac6042b9204`.
 
-The last behavior-changing engineering authority at this handoff is the MS1
+The last behavior-changing authority before MS2 was the MS1
 merge `d38180074b5f76ab6b7778eea7fc505160c671ae`, with tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`. A documentation-only descendant
 may make live GitHub `main` newer without changing that implementation or
@@ -107,7 +118,7 @@ ONE_SIXTY_EIGHT_HOUR_BURNIN_REQUIRED_BEFORE_MULTI_SYMBOL=NO
 PERFORMANCE_ENGINEERING_REOPENED=NO
 ```
 
-## C. Future configurable-product program
+## C. Implemented configurable-product runtime and next qualification
 
 ADR-0032 supersedes ADR-0031. The future target remains Binance-specific with
 Spot and USD-M perpetual markets, but the operator explicitly configures a
@@ -117,13 +128,13 @@ runtime topology reload. Configuration changes take effect on normal process
 restart. See
 [`docs/adr/0032-configurable-product-set.md`](adr/0032-configurable-product-set.md).
 
-The intended future surface is `[recorder]` with `spot_symbols = [...]` and
+The implemented surface is `[recorder]` with `spot_symbols = [...]` and
 `usdm_symbols = [...]`. Legacy compatibility mode applies only when both fields
 are absent, resolving to BTCUSDT in both markets. If either field is present,
 explicit product-selection mode applies: supplied lists are exact and an
 omitted sibling resolves to an empty list; both resolved lists empty is invalid.
-The current runtime assembly remains single-process, single-symbol BTCUSDT. MS2
-is not implemented and this documentation task does not start it.
+MS2 assembles one Collector per configured ProductKey in one process.
+It passed offline acceptance; MS3/MS4 and live qualification remain pending.
 
 In explicit Spot-only mode, the resolved USD-M set is empty: no USD-M
 Collectors, product-specific side-data managers, process-global USD-M
@@ -163,8 +174,6 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-The new team starts at MS2 only after verifying the then-live `main`, reading
-`AGENTS.md`, this file, `docs/PROJECT_HANDOFF.md`,
-`docs/milestone_plan.md`, `docs/architecture.md`, ADR-0032, the superseded
-ADR-0031 history, and MS1 acceptance, then receiving explicit MS2
-implementation authorization.
+Independent review of the MS2 PR is next. After successful merge, verify live
+main and the MS2 acceptance record before separately authorized MS3 work.
+Do not deploy, start MS3, or run qualification as part of the MS2 review.

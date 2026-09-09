@@ -24,6 +24,7 @@ pytestmark = [
 
 def test_spot_exchange_info_unsigned_public_smoke() -> None:
     envelope = capture_spot_exchange_info(
+        symbol="BTCUSDT",
         collector_instance_id="m19-online-spot",
         collector_version="test",
     )
