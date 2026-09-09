@@ -1,6 +1,6 @@
 # ADR-0032 — Operator-configured Binance product set
 
-- **Status:** Accepted; MS2 implemented/offline-accepted (PR review pending); MS3–MS4 not implemented
+- **Status:** Accepted; MS2 implemented/offline-accepted and merged through PR #54; MS3-A merged through PR #55; MS3-B candidate offline evidence updated on PR #56 pending independent re-review/merge; MS4 not implemented
 - **Date:** 2026-09-09
 - **Decision owners:** Recorder project authority
 - **Supersedes:** ADR-0031, fixed seven-symbol multi-symbol Recorder expansion

@@ -1173,8 +1173,8 @@ remain unchanged.
 
 ## MS2 — Configurable product runtime
 
-- **Status:** **CLOSED / OFFLINE ACCEPTED; INDEPENDENT PR REVIEW PENDING**.
-  Evidence: `docs/milestone_acceptance/MS2.md`. Not merged or deployed yet.
+- **Status:** **CLOSED / OFFLINE ACCEPTED; MERGED THROUGH PR #54**. Evidence:
+  `docs/milestone_acceptance/MS2.md`. Current main is not deployed.
 - **Scope:** Implement the explicit finite `[recorder]` `spot_symbols` and
   `usdm_symbols` lists; `ProductKey = (market, symbol)`; symbol propagation
   through current Spot/USD-M WS/REST/schema/envelope/spool paths; dynamic
@@ -1207,10 +1207,18 @@ remain unchanged.
 
 ## MS3 — Shared-resource scaling / rotation / observability
 
-- **Status:** **IN PROGRESS** — MS3-A candidate; MS3-B is not started.
-- **Current work package:** MS3-A — product-aware writer rotation phase and
-  operational product attribution. REST scheduling/fairness, bounded
-  multi-product load, and archive/capacity qualification remain outstanding.
+- **Status:** **MS3-B OFFLINE CANDIDATE EVIDENCE UPDATED** — MS3-A is merged
+  through PR #55; the candidate branch is
+  `feat/ms3b-shared-resource-acceptance`; independent re-review/merge is
+  pending.
+- **Current work package:** MS3-B — shared REST scheduling/fairness and
+  cooldown behavior, bounded Profile D load, product attribution/recovery
+  isolation, archive/retry, and aggregate capacity interaction. The updated
+  evidence adds real `UsdMCollector`/`RestSideDataPoller` gate and pagination/
+  cursor paths, cancellation lifecycle coverage, and a finite mixed
+  14-product/42-core-stream running path. Evidence is
+  `docs/milestone_acceptance/MS3.md`; independent re-review/merge and live
+  qualification remain pending.
 - **Scope:** Prove REST scheduling/fairness under multiple configured products;
   shared cooldown behavior; product-aware writer rotation phase; product task,
   log, reconnect, resync, and backpressure attribution; bounded synthetic
@@ -1222,15 +1230,20 @@ remain unchanged.
   Contracts changes, exchange/plugin framework, hot reload, deployment, or long
   burn-in.
 - **Dependencies:** Independently accepted MS2 and ADR-0032.
-- **Acceptance intent:** Deterministic and bounded-load evidence proves no
-  product starvation, no multiplied shared authority, phased rotation, product
-  attribution, coherent global metrics, and no cross-product state corruption.
+- **Acceptance intent:** Model tests establish fairness traces and edge-case
+  oracles; production-path tests establish the real Collector/Poller shared
+  gate, finite eligible-request termination, page release/reacquisition,
+  Catalog cursor isolation, 429/418, cancel/stop, and sibling progress under
+  backpressure. The sequential storage Profile D test proves storage-layer
+  identity/seal/recovery only; the separate running-path test proves
+  simultaneous 14-product activity. No physical host, live Binance, CPU/RSS
+  benchmark, or long soak is implied.
 - **Rollback/stop:** Stop on fairness, capacity, or isolation regressions;
   revert only MS3 changes while retaining Raw and manifests.
 
 ## MS4 — Configurable-product integration / bounded live qualification
 
-- **Status:** **PLANNED**.
+- **Status:** **NEXT / PLANNED after MS3-B merge**.
 - **Scope:** Freeze exact main, run full offline CI, build one new immutable
   Wheel and record source/Wheel/lock/config/unit/deployment identities; after
   separate deployment authorization, run a bounded live qualification using a

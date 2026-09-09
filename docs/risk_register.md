@@ -1,15 +1,20 @@
 # Risk Register
 
-Verify live GitHub `main` at takeover. The post-MS1 implementation/behavior
-authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`. Documentation-only descendants
-may make live `main` newer without changing that behavior authority. MS1 is
-merged through PR #51 and post-merge `offline-ci` run `33955915046` passed on
-macOS and Ubuntu. Live GitHub `main` is not deployed. The last independently qualified deployed artifact is
+At the MS3-B authority check, GitHub `main` was
+`01527037254595267003f886689bb270e08b5e5d` with tree
+`eb63b645660a64ac606341ce3fb7f447a6e89457`; its MS3-A merge parents were
+`52bf086dd240556b054821f33bf1e2840fdcf912` and
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. The post-MS1 implementation/
+behavior authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`. MS1 is merged through PR #51,
+MS2 through PR #54, and MS3-A through PR #55. Live GitHub `main` is not
+deployed. The last independently qualified deployed artifact is
 pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour
 non-formal stage is complete and remains artifact-specific. Formal M22.9 has
-not started and Production Ready remains NO. The MS2 configurable-product candidate is implemented and offline-accepted,
-with independent PR review pending; MS3 is next and MS4 remains planned. Current status and authority boundaries are in
+not started and Production Ready remains NO. The MS2 configurable-product
+runtime is merged and offline-accepted. MS3-B candidate offline evidence is
+updated on `feat/ms3b-shared-resource-acceptance`, with independent re-review/
+merge pending; MS4 is next only after that decision. Current status and authority boundaries are in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
@@ -94,7 +99,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-062 | Stepwise RSS growth is mistaken for a confirmed memory leak or safe configurable-product scaling | Medium | Clean-24h evidence classified RSS `EARLY_GROWTH_THEN_PLATEAU`; MS4 must re-evaluate scaling under the configured qualification workload. No leak is claimed from the historical watch alone. | M23/MS4 | Monitoring |
 | R-063 | Validation duration credit transfers from the pre-MS1 artifact to MS1 or a later multi-symbol artifact | High | Current main is not deployed. Any new artifact requires a new immutable identity and separately selected bounded qualification; no 24h, 72h, or 168h credit transfers automatically, and formal M22.9 remains separate. | MS4/M22.9 | Open |
 | R-064 | Configurable-product propagation or incomplete runtime identity could collapse discontinuity evidence or side-data cursors across products | High | MS1 uses explicit `(market, symbol, stream)` lifecycle identity and `(kind, symbol)` symbol-specific cursors, preserves non-unique historical records, migrates legacy rows atomically/idempotently to `BTCUSDT`, and rejects malformed/partial migrations. ADR-0032 requires MS2 to preserve this foundation for every configured ProductKey across Spot/USD-M. | MS1/MS2 | Mitigated |
-| R-065 | Fan-out multiplies shared REST gates or global side data, or reports global readiness while a configured product is unhealthy | High | ADR-0032 requires the shared Spot limiter, one process-owned USD-M request lock/cooldown, one process-global USD-M side-data owner, independent product readiness, and exact configured-versus-runtime ProductKey equality. MS2 offline acceptance proves topology, exact shared object identity, observed 418/429 sibling blocking, global ownership, zero-market construction, and independently verified readiness. MS3 scheduling/fairness and resource qualification remain next. | MS2/MS3 | Open |
+| R-065 | Fan-out multiplies shared REST gates or global side data, or reports global readiness while a configured product is unhealthy | High | ADR-0032 requires the shared Spot limiter, one process-owned USD-M request lock/cooldown, one process-global USD-M side-data owner, independent product readiness, and exact configured-versus-runtime ProductKey equality. MS2 offline acceptance proves topology, exact shared object identity, observed 418/429 sibling blocking, global ownership, zero-market construction, and independently verified readiness. Updated MS3-B evidence adds real Collector/Poller core/product/global competition, finite terminal-request accounting, page release/reacquisition, real Catalog cursor isolation, and mixed running-path sibling progress. Live qualification and CPU/RSS capacity proof remain MS4 work. | MS2/MS3/MS4 | Monitoring |
+| R-066 | Cancellation of an in-flight USD-M side REST call releases the shared gate while its SDK worker thread still runs | High | Deterministic production-path reproduction found bare `asyncio.to_thread` could release the real `asyncio.Lock` before its worker completed. `run_owned_blocking_call` now retains ownership through worker completion; waiting cancellation, in-flight cancellation, post-stop request, and core exclusion are covered by `test_ms3b_production_paths.py`. | MS3-B | Mitigated |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

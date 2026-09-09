@@ -8,8 +8,10 @@ traffic authorization.
 ## Start here: the boundary
 
 MS2 implementation/offline acceptance, independent review, and merge are
-**CLOSED**. **MS3 is IN_PROGRESS** on the MS3-A candidate branch, with MS3-B
-not started. MS1 remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md). Do not restart or
+**CLOSED**. **MS3-A is merged and MS3-B candidate offline evidence is updated**
+on branch `feat/ms3b-shared-resource-acceptance`; its independent re-review/
+merge is pending. MS1 remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md)
+and [MS3 acceptance](milestone_acceptance/MS3.md). Do not restart or
 reopen the historical M23 optimization, BBO, Storage Forecast, remote-delete,
 single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
 MS1 migration design, Raw v1, Contracts, or the closed MS1 review findings
@@ -37,7 +39,8 @@ The following pre-MS2 authority checks were completed before implementation:
 ### A. Live GitHub main and post-MS1 implementation/behavior authority
 
 ```text
-LIVE_GITHUB_MAIN=VERIFY_AT_TAKEOVER
+LIVE_GITHUB_MAIN=01527037254595267003f886689bb270e08b5e5d
+LIVE_GITHUB_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -46,18 +49,29 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=52bf086dd240556b054821f33bf1e2840fdcf912
-CURRENT_MAIN_TREE=762729846fae766ae1c2edde0af95cd63648e7df
+CURRENT_MAIN_SHA=01527037254595267003f886689bb270e08b5e5d
+CURRENT_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 MS2_PR=54
 MS2_MERGED=YES
-MS3=IN_PROGRESS
-MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution
-MS3_B=NOT_STARTED
+MS3=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_A_MERGED=YES
+MS3_A_PR=55
+MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
+MS3_B_MERGED=NO
+MS3_INDEPENDENT_RE_REVIEW=PENDING
+MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
+NEXT=INDEPENDENT_MS3_RE_REVIEW
 ```
 
-The merge parents are `c421605e302d2ad46acdb2466627f64644181c9a` and
-`11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged. PR #54 is now
-the merged MS2 behavior authority on current `main`; it is not deployed.
+The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. PR #51 is merged, PR #54 is the
+merged MS2 behavior authority, and PR #55 is the merged MS3-A authority on
+current `main`; none is deployed as current production. The MS3-B candidate
+adds only the shared-resource acceptance work recorded in
+`docs/milestone_acceptance/MS3.md`, including the real production-path
+Collector/Poller supplement and its minimal in-flight REST cancellation
+lifecycle correction. It remains an unmerged, offline-only candidate.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.
@@ -105,7 +119,7 @@ field is present, explicit product-selection mode uses each supplied list
 exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. `ProductKey = (market, symbol)`; one process owns one durable
 Catalog and one existing market Collector per configured ProductKey. The
-MS2 candidate implements that runtime; live main remains pre-MS2 until merge.
+Current `main` contains that runtime; it is not deployed.
 
 An empty resolved USD-M set means zero USD-M Collectors, zero product-specific
 USD-M side-data managers, no process-global USD-M side-data owner, and no
@@ -136,7 +150,7 @@ families are symbol-specific. Runtime fan-out is not part of MS1.
 
 ### MS2 — Configurable product runtime
 
-Implemented and offline-accepted; independent review pending. Includes explicit
+Implemented, independently reviewed, merged through PR #54, and offline-accepted. Includes explicit
 finite Spot/USD-M product lists,
 ProductKey propagation through existing WS/REST/schema/envelope/spool paths,
 dynamic one-process Collector assembly, product-aware service state and
@@ -159,13 +173,15 @@ declare Production Ready.
 
 ### MS3 — Shared resources / rotation / observability
 
-**IN_PROGRESS — MS3-A candidate.** MS3-B has not started. Prove REST scheduling/fairness and shared cooldown behavior
-under multiple configured products; stagger writer rotations; attribute queues,
-high-watermarks, backpressure, reconnects, and recovery evidence to products;
-retain process-global metrics where appropriate; inspect capacity/archive
-behavior; and keep optional side-data failures isolated. Persisted metrics
-schema migration is not automatic; prefer runtime/state/log attribution unless
-acceptance requires durable schema change. No speculative optimization.
+**MS3-B OFFLINE CANDIDATE EVIDENCE UPDATED.** MS3-A is merged through PR #55.
+The candidate retains the deterministic F1–F10 model evidence and now adds
+real `UsdMCollector`/`RestSideDataPoller` gate, pagination/cursor, rate-limit,
+cancel/stop, and mixed 14-product/42-core-stream running-path evidence. The
+existing sequential storage Profile D test is labeled as storage-layer proof;
+the new running-path test proves simultaneous activity and sibling progress
+under target backpressure. It adds no generic scheduler, persisted metrics
+migration, or speculative optimization. Independent re-review/merge and live
+qualification remain pending; see `docs/milestone_acceptance/MS3.md`.
 
 ### MS4 — Configurable-product integration / deployment qualification
 
@@ -189,6 +205,9 @@ or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
 `DEPLOYMENT_AUTHORIZED=NO`, `CURRENT_MAIN_DEPLOYED=NO`,
-`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`, `MS3=IN_PROGRESS`,
-`MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution`,
-`MS3_B=NOT_STARTED`, `MS4=PLANNED`.
+`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
+`MS3_A_MERGED=YES`, `MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED`,
+`MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance`,
+`MS3_B_MERGED=NO`, `MS3_INDEPENDENT_RE_REVIEW=PENDING`,
+`MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE`,
+`NEXT=INDEPENDENT_MS3_RE_REVIEW`.

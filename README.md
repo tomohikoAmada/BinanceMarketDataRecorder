@@ -1,14 +1,19 @@
 # Binance Market Data Recorder
 
-> **MS2 candidate (2026-09-09):** configurable product runtime is implemented
-> and offline-accepted on `feat/ms2-configurable-products`; independent review
-> and merge are pending. Base: `42ba52ba328fa991a04e5f21ca7f397d58c895ce`
-> (merged architecture PR #53). MS1 remains closed. MS3 is next after review/
-> merge and separate authorization. Current main is not deployed; the older
-> pre-MS1 clean-24h artifact retains only its own historical duration evidence.
+> **MS3-B candidate (2026-09-10 update):** shared-resource scaling, bounded
+> multi-product load, archive, and capacity interaction have updated offline
+> candidate evidence on
+> `feat/ms3b-shared-resource-acceptance`. Base current main:
+> `01527037254595267003f886689bb270e08b5e5d` (tree
+> `eb63b645660a64ac606341ce3fb7f447a6e89457`); MS2 PR #54 and MS3-A PR #55 are
+> merged. The candidate now includes real Collector/Poller gate and
+> multi-product running-path supplements; independent MS3 re-review/merge and
+> separate authorization are pending. Current main is not deployed; the older pre-MS1 clean-24h artifact
+> retains only its own historical duration evidence.
 > `FORMAL_M22_9=NOT_STARTED`, `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`.
 > See [current state](docs/CURRENT_PRODUCTION_STATE.md),
-> [handoff](docs/PROJECT_HANDOFF.md), and [MS2 acceptance](docs/milestone_acceptance/MS2.md).
+> [handoff](docs/PROJECT_HANDOFF.md), [MS2 acceptance](docs/milestone_acceptance/MS2.md),
+> and [MS3 acceptance](docs/milestone_acceptance/MS3.md).
 
 Configure products under `[recorder]`:
 
@@ -131,7 +136,8 @@ Candidate/LAN Linux profile。主生产目标是 Ubuntu 24.04 LTS x86_64
 共享 VPS；M22.9 24h结果INCOMPLETE且本地修复未部署。Windows 尚未实现，但未来归档客户端要求支持
 macOS/Linux/Windows。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
 正常重启后生效。它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所
-插件框架；MS2 已通过离线验收，等待独立 PR 审查。支持其它交易所需要单独的架构审查
+插件框架；MS2 已通过离线验收，MS3-B 候选的离线证据已补充，等待独立 PR 复审与合并。
+支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
 ## 目录
@@ -189,11 +195,11 @@ macOS/Linux/Windows。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表
 | 平台 | macOS Apple Silicon Developer Preview; Ubuntu ARM64/RK3588 Soak Candidate; production target: Ubuntu 24.04 x86_64 VPS |
 | 部署方式 | logged-in-user LaunchAgent / non-root systemd |
 | 默认 data root | macOS Application Support; Linux XDG（systemd 用 `/var/lib/...`） |
-| Symbol | BTCUSDT |
+| Symbol | Operator-configured finite Spot/USD-M lists; legacy BTCUSDT/BTCUSDT only when both fields are absent |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
-| 当前生产状态 | Live GitHub main is not deployed; post-MS1 implementation authority is `d381800…`; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | MS1 merged via PR #51; post-merge CI run `33955915046` passed on macOS/Ubuntu; no live-main deployment |
+| 当前生产状态 | Current main is `015270372…` (tree `eb63b645…`), not deployed; MS3-B candidate evidence is updated and independent re-review is pending; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55; no current-main deployment |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -1135,7 +1141,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - macOS sleep/closed lid 会中断用户会话网络。Recorder 标记检测到的 gap，
   但无法恢复 Binance 不再提供的事件。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
-- MS2 可配置 product-set runtime 已通过离线验收；多产品实机资格验证尚未运行。
+- MS2 可配置 product-set runtime 和 MS3-B shared-resource/bounded-load/archive/capacity
+  离线验收已通过；多产品实机资格验证尚未运行。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。

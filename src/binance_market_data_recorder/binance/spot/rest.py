@@ -327,8 +327,8 @@ class SpotSnapshotRequester:
         additional_capture_flags: tuple[str, ...],
     ) -> EventEnvelope:
         await self.rate_limiter.acquire(limit=limit)
-        try:
-            async with self.rate_limiter.request_slot():
+        async with self.rate_limiter.request_slot():
+            try:
                 envelope = await asyncio.to_thread(
                     capture_depth_snapshot,
                     rest_api=self.rest_api,
@@ -339,16 +339,16 @@ class SpotSnapshotRequester:
                     timeout_ms=timeout_ms,
                     additional_capture_flags=additional_capture_flags,
                 )
-        except SpotSnapshotHttpError as exc:
-            if exc.status in {418, 429}:
-                blocked = await self.rate_limiter.observe_rejection(
-                    status=exc.status,
-                    limit=limit,
-                    headers=exc.headers,
-                    body_text=exc.raw_body.decode("utf-8", errors="replace"),
-                )
-                raise blocked from exc
-            raise
+            except SpotSnapshotHttpError as exc:
+                if exc.status in {418, 429}:
+                    blocked = await self.rate_limiter.observe_rejection(
+                        status=exc.status,
+                        limit=limit,
+                        headers=exc.headers,
+                        body_text=exc.raw_body.decode("utf-8", errors="replace"),
+                    )
+                    raise blocked from exc
+                raise
         provenance = json.loads(envelope.raw_payload)
         headers = provenance["response"]["headers"]
         if not isinstance(headers, dict):

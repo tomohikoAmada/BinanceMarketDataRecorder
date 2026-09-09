@@ -8,7 +8,8 @@ deployment, live traffic, formal acceptance, or data retirement.
 ## Status at a glance
 
 ```text
-LIVE_GITHUB_MAIN=VERIFY_AT_TAKEOVER
+LIVE_GITHUB_MAIN=01527037254595267003f886689bb270e08b5e5d
+LIVE_GITHUB_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -23,29 +24,38 @@ MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
 MS2_INDEPENDENT_PR_REVIEW=COMPLETE
 MS2_MERGED_PR=54
-MS3=IN_PROGRESS
-MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution
-MS3_B=NOT_STARTED
-MS4=PLANNED
+MS3=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_A=MERGED_PR_55
+MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
+MS3_B_MERGED=NO
+MS3_INDEPENDENT_RE_REVIEW=PENDING
+MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
 
-## Current MS3-A candidate authority
+## Current MS3-B candidate authority
 
 MS2 implementation, offline acceptance, independent review, and merge are
-closed on current `main` via PR #54 at
-`52bf086dd240556b054821f33bf1e2840fdcf912`, tree
-`762729846fae766ae1c2edde0af95cd63648e7df`. The MS3-A implementation candidate
-is the local branch `feat/ms3a-product-rotation-attribution`; it is not merged
-or deployed. MS3-B remains outstanding. See [MS2 acceptance](milestone_acceptance/MS2.md)
-for the closed MS2 implementation record and compatibility.
+closed on current `main` via PR #54. MS3-A is merged via PR #55 at
+`01527037254595267003f886689bb270e08b5e5d`, tree
+`eb63b645660a64ac606341ce3fb7f447a6e89457`, with merge parents
+`52bf086dd240556b054821f33bf1e2840fdcf912` and
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. MS3-B candidate evidence is
+updated on `feat/ms3b-shared-resource-acceptance` / PR #56; it is not merged
+or deployed, and this record does not close MS3 before independent re-review.
+The update adds real `UsdMCollector`/`RestSideDataPoller` production-path
+evidence, finite Catalog pagination/cursor competition, cancellation lifecycle
+coverage, and a minimal owned-worker fix for in-flight side REST cancellation.
+See [MS2 acceptance](milestone_acceptance/MS2.md) and
+[MS3 acceptance](milestone_acceptance/MS3.md) for the acceptance records.
 
 ## A. Verified pre-MS2 main and post-MS1 implementation/behavior authority
 
 | Item | Authority |
 | --- | --- |
-| Live GitHub `main` | verify at takeover |
+| Live GitHub `main` at MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
 | Post-MS1 implementation/behavior authority | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
 | Post-MS1 implementation tree | `95f16f05b30b7db23e43ebb6439ed0d055081902` |
 | MS1 merge | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
@@ -137,7 +147,10 @@ are absent, resolving to BTCUSDT in both markets. If either field is present,
 explicit product-selection mode applies: supplied lists are exact and an
 omitted sibling resolves to an empty list; both resolved lists empty is invalid.
 MS2 assembles one Collector per configured ProductKey in one process.
-It passed offline acceptance; MS3/MS4 and live qualification remain pending.
+It passed offline acceptance on current main; MS3-B candidate evidence is now
+updated with production-path tests, while independent re-review/merge and live
+qualification remain pending. MS4 is next only after the independent MS3
+re-review/merge decision.
 
 In explicit Spot-only mode, the resolved USD-M set is empty: no USD-M
 Collectors, product-specific side-data managers, process-global USD-M
@@ -177,5 +190,8 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-Complete the independent MS3-A review. Do not merge this candidate, deploy,
-start MS3-B, or run qualification as part of this work package.
+NEXT=INDEPENDENT_MS3_RE_REVIEW
+
+Complete the independent MS3-B review and merge decision. Do not deploy or
+run live qualification as part of this work package; MS4 is next only after
+the candidate is independently reviewed and merged.

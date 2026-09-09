@@ -122,10 +122,31 @@ class SpotIpRateLimiter:
 
     @asynccontextmanager
     async def request_slot(self) -> AsyncIterator[None]:
-        """Permit at most one process-local Spot REST request on the wire."""
+        """Permit one Spot request after a final block-only gate check.
+
+        Weight admission happens before this context is entered.  The second
+        check deliberately does not charge weight again: a caller can be
+        admitted by ``acquire_weight`` and then wait behind another request
+        that discovers a 418/429 before releasing the wire slot.  Holding the
+        FIFO slot while the block expires prevents a later waiter from
+        overtaking the already-admitted request.
+        """
 
         async with self._request_lock:
-            yield
+            while True:
+                async with self._lock:
+                    delay = max(
+                        0.0,
+                        self._blocked_until_monotonic
+                        - self._monotonic_clock(),
+                    )
+                if delay <= 0:
+                    yield
+                    return
+                if self._sleep is None:
+                    await asyncio.sleep(delay)
+                else:
+                    await self._sleep(delay)
 
     async def observe_success(
         self,
