@@ -21,7 +21,7 @@ from ..binance.spot.exchange_info import create_spot_exchange_info_api
 from ..binance.spot.rest import PublicSpotRestApi
 from ..binance.spot.websocket import SPOT_WEBSOCKET_BASE_URL, open_spot_websocket
 from ..binance.usdm.rest import create_usdm_rest_api
-from ..binance.usdm.side_data_rest import create_usdm_side_rest_api
+from ..binance.usdm.side_data_rest import GLOBAL_SIDE_DATA_SYMBOL, create_usdm_side_rest_api
 from ..binance.usdm.websocket import USDM_WEBSOCKET_ROOT, open_usdm_websocket
 from ..collector import (
     MarketCollectorSupervisor,
@@ -30,10 +30,18 @@ from ..collector import (
     UsdMCollector,
     UsdMCollectorSettings,
 )
-from ..collector.usdm_side_data import UsdMSideDataSettings
+from ..collector.usdm_side_data import (
+    UsdMRestCooldown,
+    UsdMSideDataManager,
+    UsdMSideDataSettings,
+)
 from ..config import RecorderConfig
+from ..domain.product import ProductKey, configured_products
 from ..logging import log_event
+from ..metrics.recorder import MetricsRecorder
+from ..metrics.report import DailyReporter
 from ..spool import recover_storage
+from ..spool.writer import RotationPolicy
 from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
 from ..storage.catalog import Catalog, stream_discontinuity_event_id
 from ..storage.forecast import StorageForecaster
@@ -66,10 +74,48 @@ class SleepObserver(Protocol):
 
 
 CollectorFactory = Callable[
-    [RecorderConfig, logging.Logger, str, str],
-    Mapping[str, RuntimeCollector],
+    [RecorderConfig, logging.Logger, str, str, asyncio.Lock | None, UsdMRestCooldown | None],
+    Mapping[ProductKey, RuntimeCollector],
 ]
 SleepObserverFactory = Callable[[Callable[[str, int], None]], SleepObserver]
+
+
+def _usdm_side_settings(config: RecorderConfig) -> UsdMSideDataSettings:
+    return UsdMSideDataSettings(
+        mark_price_enabled=config.side_mark_price_enabled,
+        liquidation_enabled=config.side_liquidation_enabled,
+        premium_index_enabled=config.side_premium_index_enabled,
+        funding_history_enabled=config.side_funding_history_enabled,
+        funding_info_enabled=config.side_funding_info_enabled,
+        open_interest_enabled=config.side_open_interest_enabled,
+        exchange_info_enabled=config.side_exchange_info_enabled,
+        premium_index_interval_seconds=config.side_premium_index_interval_seconds,
+        funding_history_interval_seconds=config.side_funding_history_interval_seconds,
+        funding_info_interval_seconds=config.side_funding_info_interval_seconds,
+        open_interest_interval_seconds=config.side_open_interest_interval_seconds,
+        exchange_info_interval_seconds=config.side_exchange_info_interval_seconds,
+        degraded_after_seconds=config.side_degraded_after_seconds,
+        open_interest_statistics_enabled=(config.side_open_interest_statistics_enabled),
+        taker_buy_sell_volume_enabled=(config.side_taker_buy_sell_volume_enabled),
+        global_long_short_ratio_enabled=(config.side_global_long_short_ratio_enabled),
+        top_long_short_account_ratio_enabled=(config.side_top_long_short_account_ratio_enabled),
+        top_long_short_position_ratio_enabled=(config.side_top_long_short_position_ratio_enabled),
+        basis_enabled=config.side_basis_enabled,
+        open_interest_statistics_interval_seconds=(
+            config.side_open_interest_statistics_interval_seconds
+        ),
+        taker_buy_sell_volume_interval_seconds=(config.side_taker_buy_sell_volume_interval_seconds),
+        global_long_short_ratio_interval_seconds=(
+            config.side_global_long_short_ratio_interval_seconds
+        ),
+        top_long_short_account_ratio_interval_seconds=(
+            config.side_top_long_short_account_ratio_interval_seconds
+        ),
+        top_long_short_position_ratio_interval_seconds=(
+            config.side_top_long_short_position_ratio_interval_seconds
+        ),
+        basis_interval_seconds=config.side_basis_interval_seconds,
+    )
 
 
 def _collector_factory(
@@ -77,7 +123,9 @@ def _collector_factory(
     logger: logging.Logger,
     collector_version: str,
     service_instance_id: str,
-) -> Mapping[str, RuntimeCollector]:
+    request_lock: asyncio.Lock | None,
+    cooldown: UsdMRestCooldown | None,
+) -> Mapping[ProductKey, RuntimeCollector]:
     proxy_policy = config.proxy_policy()
     spot_websocket_opener = partial(
         open_spot_websocket,
@@ -88,106 +136,67 @@ def _collector_factory(
         proxy=proxy_policy.websocket_proxy(USDM_WEBSOCKET_ROOT),
     )
     timeout_ms = 10_000
-    return {
-        "spot": SpotCollector(
-            SpotCollectorSettings(
-                data_root=config.data_root,
-                collector_instance_id=f"{service_instance_id}-spot",
-                collector_version=collector_version,
-                queue_capacity=config.ingress_queue_capacity,
-                receipt_queue_capacity=config.ingress_queue_capacity,
-                rotation_seconds=config.rotation_seconds,
-                rotation_bytes=config.rotation_bytes,
-                durability_interval_seconds=config.durability_interval_seconds,
-                max_frame_bytes=config.max_frame_bytes,
-                exchange_info_enabled=config.spot_exchange_info_enabled,
-                exchange_info_interval_seconds=(
-                    config.spot_exchange_info_interval_seconds
+    collectors: dict[ProductKey, RuntimeCollector] = {}
+    for product in configured_products(config.spot_symbols, config.usdm_symbols):
+        if product.market == "spot":
+            collectors[product] = SpotCollector(
+                SpotCollectorSettings(
+                    data_root=config.data_root,
+                    symbol=product.symbol,
+                    collector_instance_id=f"{service_instance_id}:{product.market}:{product.symbol}",
+                    collector_version=collector_version,
+                    queue_capacity=config.ingress_queue_capacity,
+                    receipt_queue_capacity=config.ingress_queue_capacity,
+                    rotation_seconds=config.rotation_seconds,
+                    rotation_bytes=config.rotation_bytes,
+                    durability_interval_seconds=config.durability_interval_seconds,
+                    max_frame_bytes=config.max_frame_bytes,
+                    exchange_info_enabled=config.spot_exchange_info_enabled,
+                    exchange_info_interval_seconds=(config.spot_exchange_info_interval_seconds),
+                    side_data_degraded_after_seconds=config.side_degraded_after_seconds,
                 ),
-                side_data_degraded_after_seconds=config.side_degraded_after_seconds,
-            ),
-            logger=logger,
-            rest_api=PublicSpotRestApi(
-                timeout_ms=timeout_ms,
-                proxy_policy=proxy_policy,
-            ),
-            websocket_opener=spot_websocket_opener,
-            exchange_info_api=create_spot_exchange_info_api(
-                timeout_ms=timeout_ms,
-                proxy_policy=proxy_policy,
-            ),
-        ),
-        "um_perpetual": UsdMCollector(
-            UsdMCollectorSettings(
-                data_root=config.data_root,
-                collector_instance_id=f"{service_instance_id}-um",
-                collector_version=collector_version,
-                queue_capacity=config.ingress_queue_capacity,
-                receipt_queue_capacity=config.ingress_queue_capacity,
-                rotation_seconds=config.rotation_seconds,
-                rotation_bytes=config.rotation_bytes,
-                durability_interval_seconds=config.durability_interval_seconds,
-                max_frame_bytes=config.max_frame_bytes,
-                side_data=UsdMSideDataSettings(
-                    mark_price_enabled=config.side_mark_price_enabled,
-                    liquidation_enabled=config.side_liquidation_enabled,
-                    premium_index_enabled=config.side_premium_index_enabled,
-                    funding_history_enabled=config.side_funding_history_enabled,
-                    funding_info_enabled=config.side_funding_info_enabled,
-                    open_interest_enabled=config.side_open_interest_enabled,
-                    exchange_info_enabled=config.side_exchange_info_enabled,
-                    premium_index_interval_seconds=config.side_premium_index_interval_seconds,
-                    funding_history_interval_seconds=config.side_funding_history_interval_seconds,
-                    funding_info_interval_seconds=config.side_funding_info_interval_seconds,
-                    open_interest_interval_seconds=config.side_open_interest_interval_seconds,
-                    exchange_info_interval_seconds=config.side_exchange_info_interval_seconds,
-                    degraded_after_seconds=config.side_degraded_after_seconds,
-                    open_interest_statistics_enabled=(
-                        config.side_open_interest_statistics_enabled
-                    ),
-                    taker_buy_sell_volume_enabled=(
-                        config.side_taker_buy_sell_volume_enabled
-                    ),
-                    global_long_short_ratio_enabled=(
-                        config.side_global_long_short_ratio_enabled
-                    ),
-                    top_long_short_account_ratio_enabled=(
-                        config.side_top_long_short_account_ratio_enabled
-                    ),
-                    top_long_short_position_ratio_enabled=(
-                        config.side_top_long_short_position_ratio_enabled
-                    ),
-                    basis_enabled=config.side_basis_enabled,
-                    open_interest_statistics_interval_seconds=(
-                        config.side_open_interest_statistics_interval_seconds
-                    ),
-                    taker_buy_sell_volume_interval_seconds=(
-                        config.side_taker_buy_sell_volume_interval_seconds
-                    ),
-                    global_long_short_ratio_interval_seconds=(
-                        config.side_global_long_short_ratio_interval_seconds
-                    ),
-                    top_long_short_account_ratio_interval_seconds=(
-                        config.side_top_long_short_account_ratio_interval_seconds
-                    ),
-                    top_long_short_position_ratio_interval_seconds=(
-                        config.side_top_long_short_position_ratio_interval_seconds
-                    ),
-                    basis_interval_seconds=config.side_basis_interval_seconds,
+                logger=logger,
+                rest_api=PublicSpotRestApi(
+                    timeout_ms=timeout_ms,
+                    proxy_policy=proxy_policy,
                 ),
-            ),
-            logger=logger,
-            rest_api=create_usdm_rest_api(
-                timeout_ms=timeout_ms,
-                proxy_policy=proxy_policy,
-            ),
-            side_rest_api=create_usdm_side_rest_api(
-                timeout_ms=timeout_ms,
-                proxy_policy=proxy_policy,
-            ),
-            websocket_opener=usdm_websocket_opener,
-        ),
-    }
+                websocket_opener=spot_websocket_opener,
+                exchange_info_api=create_spot_exchange_info_api(
+                    timeout_ms=timeout_ms,
+                    proxy_policy=proxy_policy,
+                ),
+            )
+        else:
+            if request_lock is None or cooldown is None:
+                raise ValueError("USD-M products require process-owned REST authority")
+            collectors[product] = UsdMCollector(
+                UsdMCollectorSettings(
+                    data_root=config.data_root,
+                    symbol=product.symbol,
+                    collector_instance_id=f"{service_instance_id}:{product.market}:{product.symbol}",
+                    collector_version=collector_version,
+                    queue_capacity=config.ingress_queue_capacity,
+                    receipt_queue_capacity=config.ingress_queue_capacity,
+                    rotation_seconds=config.rotation_seconds,
+                    rotation_bytes=config.rotation_bytes,
+                    durability_interval_seconds=config.durability_interval_seconds,
+                    max_frame_bytes=config.max_frame_bytes,
+                    side_data=_usdm_side_settings(config),
+                ),
+                logger=logger,
+                request_lock=request_lock,
+                cooldown=cooldown,
+                rest_api=create_usdm_rest_api(
+                    timeout_ms=timeout_ms,
+                    proxy_policy=proxy_policy,
+                ),
+                side_rest_api=create_usdm_side_rest_api(
+                    timeout_ms=timeout_ms,
+                    proxy_policy=proxy_policy,
+                ),
+                websocket_opener=usdm_websocket_opener,
+            )
+    return collectors
 
 
 class ServiceRuntime:
@@ -253,7 +262,14 @@ class ServiceRuntime:
         self._recovery_stop: threading.Event | None = None
         self._catalog: Catalog | None = None
         self._supervisor: MarketCollectorSupervisor | None = None
-        self._collectors: Mapping[str, RuntimeCollector] = {}
+        self._collectors: Mapping[ProductKey, RuntimeCollector] = {}
+        self.expected_products = frozenset(
+            configured_products(config.spot_symbols, config.usdm_symbols)
+        )
+        self.usdm_request_lock = asyncio.Lock() if config.usdm_symbols else None
+        self.usdm_cooldown = UsdMRestCooldown() if config.usdm_symbols else None
+        self.global_side_data: UsdMSideDataManager | None = None
+        self._global_side_metrics: MetricsRecorder | None = None
         self._sleep_started_at_utc_ns: int | None = None
         self._last_sleep_gap: SleepGap | None = None
         self._detector = ClockDiscontinuityDetector(
@@ -264,6 +280,47 @@ class ServiceRuntime:
         self._startup_recovery_complete = False
         self._capacity_evidence: dict[str, object] | None = None
         self._state_write_lock = asyncio.Lock()
+
+    def _create_global_side_data(self) -> None:
+        if not self.config.usdm_symbols or not (
+            self.config.side_funding_info_enabled or self.config.side_exchange_info_enabled
+        ):
+            return
+        if self._catalog is None:
+            raise RuntimeError("global side-data owner requires the service Catalog")
+        policy = self.config.proxy_policy()
+        self._global_side_metrics = MetricsRecorder(
+            catalog=self._catalog,
+            data_root=self.layout.root,
+            collector_instance_id=f"{self.service_instance_id}:um_perpetual:global",
+            logger=self.logger,
+        )
+        self.global_side_data = UsdMSideDataManager(
+            metrics=self._global_side_metrics,
+            scope="global",
+            symbol=GLOBAL_SIDE_DATA_SYMBOL,
+            settings=_usdm_side_settings(self.config),
+            layout=self.layout,
+            catalog=self._catalog,
+            collector_instance_id=f"{self.service_instance_id}:um_perpetual:global",
+            collector_version=self.collector_version,
+            logger=self.logger,
+            queue_capacity=self.config.ingress_queue_capacity,
+            receipt_queue_capacity=self.config.ingress_queue_capacity,
+            rotation=RotationPolicy(
+                seconds=self.config.rotation_seconds, bytes=self.config.rotation_bytes
+            ),
+            durability_interval_seconds=self.config.durability_interval_seconds,
+            max_frame_bytes=self.config.max_frame_bytes,
+            planned_rotation_seconds=23 * 60 * 60 + 50 * 60,
+            rest_timeout_ms=10_000,
+            rest_api=create_usdm_side_rest_api(timeout_ms=10_000, proxy_policy=policy),
+            websocket_opener=partial(
+                open_usdm_websocket, proxy=policy.websocket_proxy(USDM_WEBSOCKET_ROOT)
+            ),
+            request_lock=self.usdm_request_lock,
+            cooldown=self.usdm_cooldown,
+        )
 
     def request_stop(self, reason: str) -> None:
         if not reason:
@@ -342,16 +399,18 @@ class ServiceRuntime:
             **gap.public_dict(),
         )
 
-    def _market_state(self) -> dict[str, dict[str, object]]:
-        output: dict[str, dict[str, object]] = {}
+    def _product_state(self) -> dict[str, dict[str, dict[str, object]]]:
+        output: dict[str, dict[str, dict[str, object]]] = {"spot": {}, "um_perpetual": {}}
         failures = self._supervisor.failures if self._supervisor is not None else {}
-        for name, collector in self._collectors.items():
+        for name, collector in sorted(self._collectors.items()):
             readiness = collector.readiness_snapshot()
-            output[name] = {
-                "status": "FAILED" if name in failures else (
-                    "READY" if readiness.ready else "CONNECTING"
-                ),
-                "ready": readiness.ready,
+            output[name.market][name.symbol] = {
+                "market": readiness.market,
+                "symbol": readiness.symbol,
+                "status": "FAILED"
+                if name in failures
+                else ("READY" if readiness.ready else "CONNECTING"),
+                "ready": readiness.ready and name not in failures,
                 "collector_instance_id": readiness.collector_instance_id,
                 "collector_version": readiness.collector_version,
                 "connected_streams": sorted(readiness.connected_streams),
@@ -367,28 +426,68 @@ class ServiceRuntime:
             }
             side_status = getattr(collector, "side_data_status", None)
             if callable(side_status):
-                output[name]["side_data"] = side_status()
+                output[name.market][name.symbol]["side_data"] = side_status()
         return output
 
     def _state_document(self) -> dict[str, object]:
-        markets = self._market_state()
-        ready_count = sum(bool(item["ready"]) for item in markets.values())
-        if ready_count == len(markets) and markets:
+        products = self._product_state()
+        states = [item for market in products.values() for item in market.values()]
+        ready_count = sum(item["ready"] is True for item in states)
+        core_ready = (
+            bool(self.expected_products)
+            and set(self._collectors) == self.expected_products
+            and ready_count == len(self.expected_products)
+            and all(
+                item["market"] == key.market and item["symbol"] == key.symbol
+                for key in self._collectors
+                for item in [products[key.market][key.symbol]]
+            )
+        )
+        markets = {}
+        for market, items in products.items():
+            expected_symbols = {
+                key.symbol for key in self.expected_products if key.market == market
+            }
+            market_ready = (
+                bool(expected_symbols)
+                and set(items) == expected_symbols
+                and all(item["ready"] is True for item in items.values())
+            )
+            summary = dict(next(iter(items.values()))) if len(items) == 1 else {}
+            summary.update(
+                {
+                    "configured_product_count": len(expected_symbols),
+                    "ready_product_count": sum(item["ready"] is True for item in items.values()),
+                    "ready": market_ready,
+                    "status": "NOT_CONFIGURED"
+                    if not expected_symbols
+                    else (
+                        "READY"
+                        if market_ready
+                        else (
+                            "FAILED"
+                            if any(item["failure"] is not None for item in items.values())
+                            else "CONNECTING"
+                        )
+                    ),
+                }
+            )
+            markets[market] = summary
+        if core_ready:
             network_status = "ALL_MARKETS_READY"
         elif ready_count:
             network_status = "DEGRADED"
         else:
             network_status = "CONNECTING"
         side_items: list[dict[str, object]] = []
-        for market in markets.values():
-            side_data = market.get("side_data")
+        for product_state in states:
+            side_data = product_state.get("side_data")
             if isinstance(side_data, dict):
-                side_items.extend(
-                    item for item in side_data.values() if isinstance(item, dict)
-                )
+                side_items.extend(item for item in side_data.values() if isinstance(item, dict))
+        if self.global_side_data is not None:
+            side_items.extend(self.global_side_data.status().values())
         if any(
-            item.get("enabled")
-            and item.get("status") in {"RETRYING", "STALE"}
+            item.get("enabled") and item.get("status") in {"RETRYING", "STALE"}
             for item in side_items
         ):
             network_status = "DEGRADED"
@@ -406,6 +505,15 @@ class ServiceRuntime:
             "network_status": network_status,
             **self.config.proxy_policy().status().public_dict(),
             "markets": markets,
+            "products": products,
+            "spot_symbols": list(self.config.spot_symbols),
+            "usdm_symbols": list(self.config.usdm_symbols),
+            "expected_product_count": len(self.expected_products),
+            "ready_product_count": ready_count,
+            "core_ready": core_ready,
+            "global_usdm_side_data": self.global_side_data.status()
+            if self.global_side_data
+            else {},
             "shutdown_reason": self.shutdown_reason,
             "prevent_sleep_enabled": self.config.prevent_sleep,
             "power_assertion_active": self.power_assertion.active,
@@ -561,16 +669,14 @@ class ServiceRuntime:
             )
             if not inserted:
                 raise RuntimeError("hard-reserve stop event identity collision")
-        for market in ("spot", "um_perpetual"):
+        for product in sorted(self.expected_products):
+            market, symbol = product.market, product.symbol
             for stream in sorted(CORE_STREAMS):
-                symbol = "BTCUSDT"
                 if self._catalog.unclosed_stream_discontinuities(
                     market=market, symbol=symbol, stream=stream
                 ):
                     continue
-                gap_id = (
-                    f"hard-reserve:{self.service_instance_id}:{market}:{stream}"
-                )
+                gap_id = f"hard-reserve:{self.service_instance_id}:{market}:{symbol}:{stream}"
                 self._catalog.ensure_operational_event(
                     event_id=stream_discontinuity_event_id(
                         event_type="STREAM_DISCONTINUITY_STARTED",
@@ -633,10 +739,9 @@ class ServiceRuntime:
                 occurred_at,
             )
 
-        observer = self.sleep_observer_factory(
-            notify_sleep
-        )
+        observer = self.sleep_observer_factory(notify_sleep)
         heartbeat_task: asyncio.Task[None] | None = None
+        global_side_task: asyncio.Task[None] | None = None
         supervisor_task: asyncio.Task[None] | None = None
         capacity_task: asyncio.Task[dict[str, object] | None] | None = None
         failure: BaseException | None = None
@@ -674,8 +779,12 @@ class ServiceRuntime:
                 self.logger,
                 self.collector_version,
                 self.service_instance_id,
+                self.usdm_request_lock,
+                self.usdm_cooldown,
             )
-            def observe_terminal(name: str, exc: BaseException) -> None:
+            self._create_global_side_data()
+
+            def observe_terminal(name: ProductKey, exc: BaseException) -> None:
                 if self._catalog is None:
                     return
                 occurred_at = self.utc_clock_ns()
@@ -687,7 +796,8 @@ class ServiceRuntime:
                     event_type="CORE_MARKET_TERMINAL_FAILURE",
                     occurred_at_utc_ns=occurred_at,
                     evidence={
-                        "market": name,
+                        "market": name.market,
+                        "symbol": name.symbol,
                         "error_type": type(exc).__name__,
                         "restart_owner": (
                             "systemd" if sys.platform.startswith("linux") else "launchd"
@@ -712,6 +822,8 @@ class ServiceRuntime:
                     "prevent_sleep": self.config.prevent_sleep,
                 },
             )
+            if self.global_side_data is not None:
+                global_side_task = asyncio.create_task(self.global_side_data.run(stop))
             supervisor_task = asyncio.create_task(self._supervisor.run(stop))
             await asyncio.sleep(0)
             await self._write_state()
@@ -756,6 +868,26 @@ class ServiceRuntime:
                 await asyncio.gather(capacity_task, return_exceptions=True)
             if supervisor_task is not None and not supervisor_task.done():
                 await asyncio.gather(supervisor_task, return_exceptions=True)
+            if global_side_task is not None:
+                await asyncio.gather(global_side_task, return_exceptions=True)
+                if self._global_side_metrics is not None and self._catalog is not None:
+                    days = {day for day, _, _ in self._global_side_metrics.pending_keys()}
+                    batch = await asyncio.to_thread(self._global_side_metrics.safely_flush)
+                    if batch is not None:
+                        reporter = DailyReporter(
+                            catalog=self._catalog, daily_directory=self.layout.daily_reports
+                        )
+                        for day in sorted(days):
+                            try:
+                                await asyncio.to_thread(reporter.write, day)
+                            except Exception as exc:
+                                log_event(
+                                    self.logger,
+                                    logging.ERROR,
+                                    "global_side_report_failed",
+                                    "global side-data daily report could not be written",
+                                    error_type=type(exc).__name__,
+                                )
             try:
                 observer.stop()
             except RuntimeError as exc:

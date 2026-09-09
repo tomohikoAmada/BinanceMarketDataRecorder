@@ -9,8 +9,8 @@ GitHub `main` at takeover. The post-MS1 implementation/behavior authority is
 `main` is not deployed. Documentation-only descendants may make live `main`
 newer without changing that behavior authority. The independently qualified deployed artifact is the
 pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`, whose clean 24-hour
-non-formal stage is complete. MS2 runtime fan-out is accepted as a target, not
-implemented. Formal M22.9 has not started and Production Ready is not
+non-formal stage is complete. The MS2 candidate implements configurable
+product runtime and has offline acceptance; independent review/merge is pending. Formal M22.9 has not started and Production Ready is not
 authorized. See `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`.
 
@@ -318,7 +318,7 @@ architectural facts, not implementation changes:
   it dropped nothing internally, but it cannot prove the exchange sent
   nothing it missed. Do not equate the two.
 
-## Accepted configurable product-set target (MS2–MS4; not implemented)
+## Configurable product runtime (MS2 implemented; MS3/MS4 pending)
 
 ADR-0032 supersedes ADR-0031. The Recorder remains Binance-specific with
 current markets Spot and USD-M perpetual, while the operator configures the
@@ -337,7 +337,7 @@ transport/resync/readiness failure must not mutate another product. A terminal
 core integrity/owner/storage failure remains process-fatal and restarts through
 the service manager.
 
-The intended future `[recorder]` surface is `spot_symbols = [...]` and
+The implemented `[recorder]` surface is `spot_symbols = [...]` and
 `usdm_symbols = [...]`. The lists are independent finite sets; the same symbol
 in both creates two ProductKeys. If neither field is present, legacy
 compatibility mode resolves both to `BTCUSDT`. If either field is present,
@@ -346,8 +346,7 @@ omitted sibling to an empty list; both resolved lists empty is invalid. Symbols
 are canonicalized once to uppercase at the configuration boundary;
 empty/control/whitespace-invalid symbols and within-market duplicates are
 rejected. Parsing does not query Binance. There are no symbol environment
-variables, CLI product DSL, or ADR-level product-count maximum. These fields
-are not implemented by this documentation change.
+variables, CLI product DSL, or ADR-level product-count maximum. MS2 acceptance is recorded in `milestone_acceptance/MS2.md`.
 
 Spot reuses the existing process/event-loop shared Spot IP limiter. USD-M uses
 one process-owned asyncio request lock and one process-owned `UsdMRestCooldown`,
@@ -355,7 +354,7 @@ injected into every configured USD-M Collector and the process-global USD-M
 side-data owner. Shared rate authority is required; a shared SDK client is not
 required without an established thread-safety decision.
 
-If the resolved USD-M ProductKey set is empty, MS2 must instantiate zero
+If the resolved USD-M ProductKey set is empty, MS2 instantiates zero
 `UsdMCollector` instances and zero product-specific USD-M side-data managers,
 create no process-global USD-M side-data owner, and perform no USD-M REST or
 WebSocket traffic. The global owner exists only when at least one USD-M
@@ -395,13 +394,15 @@ change is required.
 The sequence is MS2 configurable product runtime, MS3 shared-resource scaling/
 rotation/observability, and MS4 configurable-product integration plus bounded
 live qualification. A fixed qualification workload is evidence only, not a
-supported-symbol allowlist. None of MS2–MS4 is implemented or live-qualified;
+supported-symbol allowlist. MS2 is offline-accepted; MS3/MS4 are not implemented
+and no multi-product artifact is live-qualified;
 Formal M22.9 and Production Ready remain unauthorized.
 
 ## Runtime isolation
 
-Spot and USD-M use separate connection/session state, queues, failure budgets,
-checkpoints, and metrics. Failure of one market cannot stop the other. USD-M
+Configured products use separate connection/session state, queues, failure
+budgets, checkpoints, and readiness. Recoverable failure stays product-local;
+terminal core failure stops the service coherently. USD-M
 side-data tasks are still more weakly coupled and cannot block core L2.
 
 The M4 socket receive boundary timestamps immediately after `recv(decode=False)`

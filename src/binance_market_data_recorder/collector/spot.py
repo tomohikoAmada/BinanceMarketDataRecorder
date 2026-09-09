@@ -61,6 +61,7 @@ class SpotCollectorSettings:
     data_root: Path
     collector_instance_id: str
     collector_version: str
+    symbol: str
     queue_capacity: int = 8192
     receipt_queue_capacity: int = 1024
     rotation_seconds: float = 60.0
@@ -116,8 +117,11 @@ class SpotCollector:
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
         )
-        self.resync = DepthResyncCoordinator(market="spot", catalog=self.catalog)
+        self.resync = DepthResyncCoordinator(
+            market="spot", symbol=settings.symbol, catalog=self.catalog
+        )
         self._bootstrap_restart = self.resync.requested
+
         def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
             if occurred_at_utc_ns is None:
                 return
@@ -133,7 +137,7 @@ class SpotCollector:
 
         self.readiness = CollectorReadiness(
             market="spot",
-            symbol="BTCUSDT",
+            symbol=settings.symbol,
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
@@ -168,7 +172,7 @@ class SpotCollector:
                 layout=self.layout,
                 catalog=self.catalog,
                 market="spot",
-                symbol="BTCUSDT",
+                symbol=settings.symbol,
                 stream=stream,
                 collector_instance_id=settings.collector_instance_id,
                 collector_version=settings.collector_version,
@@ -206,7 +210,7 @@ class SpotCollector:
         self.streams = tuple(
             SpotStreamCollector(
                 stream=spec.stream,
-                symbol="BTCUSDT",
+                symbol=settings.symbol,
                 wire_name=spec.wire_name,
                 spool=spool(spec.stream.value),
                 collector_instance_id=settings.collector_instance_id,
@@ -253,6 +257,7 @@ class SpotCollector:
         while not stop.is_set():
             request_task = asyncio.create_task(
                 self.snapshot_requester.capture(
+                    symbol=self.settings.symbol,
                     collector_instance_id=self.settings.collector_instance_id,
                     collector_version=self.settings.collector_version,
                     limit=self.settings.snapshot_limit,

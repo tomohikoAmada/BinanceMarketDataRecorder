@@ -1,11 +1,11 @@
 # ADR-0032 — Operator-configured Binance product set
 
-- **Status:** Accepted target; MS2–MS4 not implemented
+- **Status:** Accepted; MS2 implemented/offline-accepted (PR review pending); MS3–MS4 not implemented
 - **Date:** 2026-09-09
 - **Decision owners:** Recorder project authority
 - **Supersedes:** ADR-0031, fixed seven-symbol multi-symbol Recorder expansion
 
-## Context
+## Original pre-MS2 context
 
 MS1 merged the durable symbol-aware identity foundation. The current runtime
 assembly remains one process with the historical BTCUSDT Spot and USD-M
@@ -48,7 +48,7 @@ process-fatal: stop all collectors, fail closed, and let the service manager
 restart the process. The design does not create one operating-system process per
 symbol.
 
-## Future configuration surface
+## Configuration surface
 
 MS2 must freeze this intended TOML surface under `[recorder]`:
 
@@ -86,7 +86,8 @@ parsing does not query Binance. This architecture has no symbol environment
 variables, no CLI product DSL, and no hard-coded maximum product count in this
 ADR. Actual operational capacity is established later by MS3/MS4 evidence.
 
-These fields are not implemented by this ADR or documentation change.
+These fields are implemented by MS2; see `../milestone_acceptance/MS2.md`.
+The original architecture-only acceptance preceded this implementation.
 
 ## Shared resources
 

@@ -35,6 +35,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from dataclasses import replace
 from typing import Protocol, cast
+from urllib.parse import quote
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
@@ -153,7 +154,7 @@ class UsdMStreamCollector:
         self.symbol = symbol
         self.stream_name = stream.value if isinstance(stream, UsdMStream) else stream
         self.route = route
-        self.wire_name = wire_name
+        self.wire_name = f"{quote(symbol.lower(), safe='')}@{wire_name.split('@', 1)[1]}"
         self.spool = spool
         self.collector_instance_id = collector_instance_id
         self.collector_version = collector_version
@@ -631,6 +632,7 @@ class UsdMStreamCollector:
                 if not isinstance(self.stream, UsdMStream):
                     raise RuntimeError("missing USD-M envelope factory")
                 envelope = envelope_from_websocket_frame(
+                    symbol=self.symbol,
                     raw_payload=receipt.raw_payload,
                     stream=self.stream,
                     connection_id=receipt.connection_id,

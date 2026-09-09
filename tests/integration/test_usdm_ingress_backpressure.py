@@ -32,6 +32,7 @@ from binance_market_data_recorder.binance.usdm.websocket import (
     _run_owned_blocking_call,
 )
 from binance_market_data_recorder.collector.supervisor import MarketCollectorSupervisor
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.spool.format import (
     FRAME_PREFIX,
     decode_chunk_header,
@@ -1456,7 +1457,7 @@ def test_catalog_gap_evidence_failure_is_process_fatal_not_silent(
 def test_recoverable_stream_overload_does_not_reach_market_supervisor(
     tmp_path: Path,
 ) -> None:
-    async def exercise() -> tuple[dict[str, BaseException], bool, int]:
+    async def exercise() -> tuple[dict[ProductKey, BaseException], bool, int]:
         global_stop = asyncio.Event()
         attempts = 0
 
@@ -1483,7 +1484,10 @@ def test_recoverable_stream_overload_does_not_reach_market_supervisor(
         )
         healthy = HealthyMarket()
         supervisor = MarketCollectorSupervisor(
-            {"spot": healthy, "um_perpetual": collector}
+            {
+                ProductKey("spot", "BTCUSDT"): healthy,
+                ProductKey("um_perpetual", "BTCUSDT"): collector,
+            }
         )
         try:
             await asyncio.wait_for(supervisor.run(global_stop), timeout=5)
@@ -2575,6 +2579,7 @@ def test_owned_blocking_worker_100_cancellation_races_do_not_leak(
                     payload_id = 5_000 + iteration
                     spool.enqueue(
                         envelope_from_websocket_frame(
+                            symbol="BTCUSDT",
                             raw_payload=book_ticker(payload_id),
                             stream=UsdMStream.BOOK_TICKER,
                             connection_id=f"cancel-race-{iteration}",

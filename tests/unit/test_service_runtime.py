@@ -13,8 +13,10 @@ from typing import Any, cast
 import pytest
 
 import binance_market_data_recorder.service.runtime as runtime_module
+from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import Market
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.logging import configure_logging
 from binance_market_data_recorder.service.deployment_identity import (
     RuntimeDeploymentIdentity,
@@ -103,9 +105,11 @@ def test_runtime_applies_ingress_capacity_to_both_bounded_queue_levels(
         logging.getLogger("test.runtime.capacity"),
         "test",
         "service-instance",
+        asyncio.Lock(),
+        UsdMRestCooldown(),
     )
-    spot = collectors["spot"]
-    usdm = collectors["um_perpetual"]
+    spot = collectors[ProductKey("spot", "BTCUSDT")]
+    usdm = collectors[ProductKey("um_perpetual", "BTCUSDT")]
     assert spot.settings.queue_capacity == 65_536  # type: ignore[attr-defined]
     assert spot.settings.receipt_queue_capacity == 65_536  # type: ignore[attr-defined]
     assert usdm.settings.queue_capacity == 65_536  # type: ignore[attr-defined]
@@ -178,6 +182,8 @@ class AdvancingClock:
 
 def _config(tmp_path: Path) -> RecorderConfig:
     return RecorderConfig(
+        side_funding_info_enabled=False,
+        side_exchange_info_enabled=False,
         data_root=tmp_path,
         heartbeat_seconds=1.0,
         sleep_gap_threshold_seconds=5.0,
@@ -238,7 +244,9 @@ def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             nonlocal factory_called
             factory_called = True
             return {}
@@ -264,7 +272,7 @@ def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(
             assert state["status"] == "STARTING"
             assert state["startup_recovery_complete"] is False
             assert state["capacity"] is None
-            assert state["markets"] == {}
+            assert state["products"] == {"spot": {}, "um_perpetual": {}}
             initial_heartbeat = cast(int, state["heartbeat_at_utc_ns"])
             started_at = cast(int, state["started_at_utc_ns"])
 
@@ -314,8 +322,8 @@ def test_recovery_completion_observes_capacity_before_collectors_and_reuses_hear
         release = threading.Event()
         order: list[str] = []
         collectors = {
-            "spot": FakeCollector("spot", "service-spot"),
-            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "service-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "service-um"),
         }
 
         def slow_recovery(
@@ -346,7 +354,9 @@ def test_recovery_completion_observes_capacity_before_collectors_and_reuses_hear
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             assert runtime._startup_recovery_complete is True
             assert runtime._capacity_evidence is not None
             order.append("collectors")
@@ -355,6 +365,8 @@ def test_recovery_completion_observes_capacity_before_collectors_and_reuses_hear
         monkeypatch.setattr(runtime_module, "recover_storage", slow_recovery)
         runtime = ControlledHeartbeatRuntime(
             config=RecorderConfig(
+                side_funding_info_enabled=False,
+                side_exchange_info_enabled=False,
                 data_root=tmp_path,
                 capacity_profile="vps-production-v1",
                 heartbeat_seconds=1.0,
@@ -408,8 +420,8 @@ def test_stop_during_startup_capacity_observation_prevents_promotion(
         factory_called = False
         sleep_observer: FakeSleepObserver | None = None
         collectors = {
-            "spot": FakeCollector("spot", "service-spot"),
-            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "service-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "service-um"),
         }
 
         def completed_recovery(
@@ -450,7 +462,9 @@ def test_stop_during_startup_capacity_observation_prevents_promotion(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             nonlocal factory_called
             factory_called = True
             return collectors
@@ -458,6 +472,8 @@ def test_stop_during_startup_capacity_observation_prevents_promotion(
         monkeypatch.setattr(runtime_module, "recover_storage", completed_recovery)
         runtime = ServiceRuntime(
             config=RecorderConfig(
+                side_funding_info_enabled=False,
+                side_exchange_info_enabled=False,
                 data_root=tmp_path,
                 capacity_profile="vps-production-v1",
                 heartbeat_seconds=1.0,
@@ -499,7 +515,7 @@ def test_stop_during_startup_capacity_observation_prevents_promotion(
         assert final is not None
         assert final["status"] == "STOPPED"
         assert final["shutdown_reason"] == "SIGTERM"
-        assert final["markets"] == {}
+        assert final["products"] == {"spot": {}, "um_perpetual": {}}
 
         with Catalog(tmp_path / "state" / "catalog.sqlite") as catalog:
             assert catalog.operational_events(event_type="SERVICE_STARTED") == []
@@ -518,8 +534,8 @@ def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
 ) -> None:
     async def exercise() -> None:
         collectors = {
-            "spot": FakeCollector("spot", "service-spot"),
-            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "service-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "service-um"),
         }
 
         def factory(
@@ -527,7 +543,9 @@ def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             return collectors
 
         power = FakePowerAssertion()
@@ -542,9 +560,11 @@ def test_runtime_writes_live_state_sleep_gap_and_graceful_stop(
         for _ in range(100):
             await asyncio.sleep(0.005)
             state = runtime.state_store.read()
-            if state is not None and state["status"] == "RUNNING" and collectors[
-                "spot"
-            ].started:
+            if (
+                state is not None
+                and state["status"] == "RUNNING"
+                and collectors[ProductKey("spot", "BTCUSDT")].started
+            ):
                 break
         else:
             pytest.fail("runtime did not become RUNNING")
@@ -591,13 +611,17 @@ def test_vps_startup_hard_reserve_recovers_then_stops_cleanly_without_collectors
         _logger: logging.Logger,
         _version: str,
         _instance_id: str,
-    ) -> Mapping[str, RuntimeCollector]:
+        _request_lock: asyncio.Lock | None,
+        _cooldown: UsdMRestCooldown | None,
+    ) -> Mapping[ProductKey, RuntimeCollector]:
         nonlocal factory_called
         factory_called = True
         return {}
 
     runtime = ServiceRuntime(
         config=RecorderConfig(
+            side_funding_info_enabled=False,
+            side_exchange_info_enabled=False,
             data_root=tmp_path,
             capacity_profile="vps-production-v1",
             heartbeat_seconds=1.0,
@@ -641,6 +665,8 @@ def test_vps_startup_hard_reserve_recovers_then_stops_cleanly_without_collectors
 
     repeated = ServiceRuntime(
         config=RecorderConfig(
+            side_funding_info_enabled=False,
+            side_exchange_info_enabled=False,
             data_root=tmp_path,
             capacity_profile="vps-production-v1",
             heartbeat_seconds=1.0,
@@ -681,8 +707,8 @@ def test_vps_runtime_hard_reserve_seals_via_graceful_stop_and_exits_cleanly(
 
     async def exercise() -> None:
         collectors = {
-            "spot": FakeCollector("spot", "service-spot"),
-            "um_perpetual": FakeCollector("um_perpetual", "service-um"),
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "service-spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "service-um"),
         }
 
         def factory(
@@ -690,12 +716,16 @@ def test_vps_runtime_hard_reserve_seals_via_graceful_stop_and_exits_cleanly(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             assert runtime._startup_recovery_complete is True
             return collectors
 
         runtime = ServiceRuntime(
             config=RecorderConfig(
+                side_funding_info_enabled=False,
+                side_exchange_info_enabled=False,
                 data_root=tmp_path,
                 capacity_profile="vps-production-v1",
                 heartbeat_seconds=1.0,
@@ -734,8 +764,8 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
 ) -> None:
     async def exercise() -> None:
         collectors = {
-            "spot": FakeCollector("spot", "failed-spot", fail=True),
-            "um_perpetual": FakeCollector(
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "failed-spot", fail=True),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector(
                 "um_perpetual", "failed-um", fail=True
             ),
         }
@@ -745,7 +775,9 @@ def test_all_market_failures_make_service_failed_for_launchd_restart(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
             return collectors
 
         runtime = ServiceRuntime(
@@ -783,8 +815,13 @@ def test_normally_returning_core_marks_service_failed_and_stops_peer(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
-            return {"spot": returning, "um_perpetual": healthy}
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
+            return {
+                ProductKey("spot", "BTCUSDT"): returning,
+                ProductKey("um_perpetual", "BTCUSDT"): healthy,
+            }
 
         runtime = ServiceRuntime(
             config=_config(tmp_path),
@@ -857,8 +894,13 @@ def test_failed_runtime_state_write_order_cannot_be_overwritten_by_heartbeat(
             _logger: logging.Logger,
             _version: str,
             _instance_id: str,
-        ) -> Mapping[str, RuntimeCollector]:
-            return {"spot": returning, "um_perpetual": healthy}
+            _request_lock: asyncio.Lock | None,
+            _cooldown: UsdMRestCooldown | None,
+        ) -> Mapping[ProductKey, RuntimeCollector]:
+            return {
+                ProductKey("spot", "BTCUSDT"): returning,
+                ProductKey("um_perpetual", "BTCUSDT"): healthy,
+            }
 
         runtime = ServiceRuntime(
             config=_config(tmp_path),

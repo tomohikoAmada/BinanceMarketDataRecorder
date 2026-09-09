@@ -50,8 +50,8 @@ def _text(payload: dict[str, Any], name: str) -> str:
     return value
 
 
-def _check_symbol(payload: dict[str, Any]) -> None:
-    if _text(payload, "s") != "BTCUSDT":
+def _check_symbol(payload: dict[str, Any], symbol: str) -> None:
+    if _text(payload, "s") != symbol:
         raise ValueError("unexpected symbol")
 
 
@@ -74,7 +74,7 @@ def _boolean(payload: dict[str, Any], name: str) -> None:
 
 
 def _parse_metadata(
-    raw_payload: bytes, stream: SpotStream
+    raw_payload: bytes, stream: SpotStream, symbol: str
 ) -> tuple[int | None, int | None, dict[str, int | str], tuple[str, ...]]:
     try:
         decoded = json.loads(raw_payload)
@@ -87,7 +87,7 @@ def _parse_metadata(
         spec = _SPEC_BY_STREAM[stream]
         if spec.expected_event is not None and event_type != spec.expected_event:
             raise ValueError(f"unexpected event type for {stream}")
-        _check_symbol(decoded)
+        _check_symbol(decoded, symbol)
 
         if stream is SpotStream.DIFF_DEPTH:
             first = _integer(decoded, "U")
@@ -127,6 +127,7 @@ def _parse_metadata(
 
 def envelope_from_websocket_frame(
     *,
+    symbol: str,
     raw_payload: bytes,
     stream: SpotStream,
     connection_id: str,
@@ -138,10 +139,10 @@ def envelope_from_websocket_frame(
 ) -> EventEnvelope:
     """Create a Raw envelope while retaining the exact transport bytes."""
 
-    event_time, trade_time, sequence, flags = _parse_metadata(raw_payload, stream)
+    event_time, trade_time, sequence, flags = _parse_metadata(raw_payload, stream, symbol)
     return EventEnvelope(
         market="spot",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream=stream.value,
         module="binance.spot.websocket.v1",
         connection_id=connection_id,

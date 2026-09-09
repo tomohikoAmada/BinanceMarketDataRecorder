@@ -123,7 +123,7 @@ class CollectorReadiness:
 
     def observe_persisted(self, envelope: EventEnvelope) -> None:
         self._check_identity(envelope)
-        if envelope.stream not in CORE_STREAMS:
+        if envelope.stream not in CORE_STREAMS or "malformed" in envelope.capture_flags:
             return
         with self._lock:
             self._persisted.add(envelope.stream)

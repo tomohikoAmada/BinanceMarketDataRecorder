@@ -34,7 +34,7 @@ import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Protocol
+from typing import Literal, Protocol
 
 from binance_common.errors import Error as BinanceSdkError
 from binance_common.errors import RateLimitBanError, TooManyRequestsError
@@ -43,6 +43,7 @@ from ..binance.usdm.side_data_rest import (
     FIVE_MINUTE_KINDS,
     FIVE_MINUTE_PERIOD_MS,
     FIVE_MINUTE_RETENTION,
+    GLOBAL_SIDE_DATA_SYMBOL,
     REST_SIDE_DATA_SPECS,
     RestSideDataKind,
     UsdMSideDataHttpError,
@@ -791,6 +792,7 @@ class UsdMSideDataManager:
         *,
         settings: UsdMSideDataSettings,
         symbol: str,
+        scope: Literal["product", "global"],
         layout: StorageLayout,
         catalog: Catalog,
         collector_instance_id: str,
@@ -811,17 +813,22 @@ class UsdMSideDataManager:
     ) -> None:
         if not symbol:
             raise ValueError("USD-M side-data symbol must be non-empty")
+        self.scope = scope
+        self.symbol = symbol
+        global_kinds = {RestSideDataKind.FUNDING_INFO, RestSideDataKind.EXCHANGE_INFO}
+        if scope == "global" and symbol != GLOBAL_SIDE_DATA_SYMBOL:
+            raise ValueError("global side data requires the legacy sentinel")
+        selected_kinds = tuple(
+            kind for kind in REST_SIDE_DATA_SPECS if (kind in global_kinds) == (scope == "global")
+        )
+        selected_streams = USDM_SIDE_STREAMS if scope == "product" else ()
         enabled = {
-            **{kind.value: settings.rest_enabled(kind) for kind in REST_SIDE_DATA_SPECS},
+            **{kind.value: settings.rest_enabled(kind) for kind in selected_kinds},
             **{
-                spec.stream.value: settings.stream_enabled(spec.stream)
-                for spec in USDM_SIDE_STREAMS
+                spec.stream.value: settings.stream_enabled(spec.stream) for spec in selected_streams
             },
         }
-        rest_intervals = {
-            kind.value: settings.rest_interval(kind)
-            for kind in REST_SIDE_DATA_SPECS
-        }
+        rest_intervals = {kind.value: settings.rest_interval(kind) for kind in selected_kinds}
         self.stats = {
             name: SideDataStats(
                 is_enabled,
@@ -834,6 +841,7 @@ class UsdMSideDataManager:
         self.cursor_state = {
             kind.value: catalog.side_data_cursor(kind.value, symbol)
             for kind in FIVE_MINUTE_KINDS
+            if scope == "product"
         }
 
         def observe_cursor(kind: str, cursor: dict[str, object]) -> None:
@@ -892,13 +900,9 @@ class UsdMSideDataManager:
             return observe
 
         factories: dict[str, Callable[[], SideDataExtension]] = {}
-        self.rest_request_lock = (
-            request_lock if request_lock is not None else asyncio.Lock()
-        )
-        self.rest_cooldown = (
-            cooldown if cooldown is not None else UsdMRestCooldown()
-        )
-        for spec in USDM_SIDE_STREAMS:
+        self.rest_request_lock = request_lock if request_lock is not None else asyncio.Lock()
+        self.rest_cooldown = cooldown if cooldown is not None else UsdMRestCooldown()
+        for spec in selected_streams:
             if not settings.stream_enabled(spec.stream):
                 continue
             stream_stats = self.stats[spec.stream.value]
@@ -921,7 +925,9 @@ class UsdMSideDataManager:
                         planned_rotation_seconds=planned_rotation_seconds,
                         opener=websocket_opener,
                         envelope_factory=partial(
-                            envelope_from_side_stream_frame, stream=stream_spec.stream
+                            envelope_from_side_stream_frame,
+                            stream=stream_spec.stream,
+                            symbol=symbol,
                         ),
                         envelope_observer=stats.observe_envelope,
                         failure_observer=stats.observe_failure,
@@ -932,7 +938,7 @@ class UsdMSideDataManager:
                 )
 
             factories[spec.stream.value] = stream_factory
-        for kind in REST_SIDE_DATA_SPECS:
+        for kind in selected_kinds:
             if not settings.rest_enabled(kind):
                 continue
 
@@ -975,6 +981,6 @@ class UsdMSideDataManager:
             )
             for name, stats in sorted(self.stats.items())
         }
-        for kind in FIVE_MINUTE_KINDS:
-            result[kind.value]["cursor"] = self.cursor_state[kind.value]
+        for kind, cursor in self.cursor_state.items():
+            result[kind]["cursor"] = cursor
         return result

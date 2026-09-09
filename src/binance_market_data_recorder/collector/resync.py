@@ -37,8 +37,9 @@ class ResyncRequest:
 class DepthResyncCoordinator:
     """Coordinate one market's bounded capture-session restart."""
 
-    def __init__(self, *, market: str, catalog: Catalog) -> None:
+    def __init__(self, *, market: str, symbol: str, catalog: Catalog) -> None:
         self.market = market
+        self.symbol = symbol
         self.catalog = catalog
         self.requested = asyncio.Event()
         self._lock = RLock()
@@ -47,6 +48,8 @@ class DepthResyncCoordinator:
         self._failure_count = 0
 
     def observe_depth(self, envelope: EventEnvelope) -> None:
+        if (envelope.market, envelope.symbol) != (self.market, self.symbol):
+            raise ValueError("resync product identity mismatch")
         with self._lock:
             self._last_connection_id = envelope.connection_id
 
@@ -69,6 +72,7 @@ class DepthResyncCoordinator:
                     occurred_at_utc_ns=request.gap_started_at_utc_ns,
                     evidence={
                         "market": self.market,
+                        "symbol": self.symbol,
                         "reason": request.reason,
                         "gap_started_at_utc_ns": request.gap_started_at_utc_ns,
                         "interval_classification": "UNRELIABLE",
@@ -79,6 +83,8 @@ class DepthResyncCoordinator:
             self.requested.set()
 
     def complete(self, snapshot: EventEnvelope, recovered_update_id: int) -> None:
+        if (snapshot.market, snapshot.symbol) != (self.market, self.symbol):
+            raise ValueError("resync snapshot product identity mismatch")
         with self._lock:
             request = self._active
             if request is None:
@@ -90,6 +96,7 @@ class DepthResyncCoordinator:
                 occurred_at_utc_ns=completed_at,
                 evidence={
                     "market": self.market,
+                    "symbol": self.symbol,
                     "reason": request.reason,
                     "gap_started_at_utc_ns": request.gap_started_at_utc_ns,
                     "gap_ended_at_utc_ns": completed_at,

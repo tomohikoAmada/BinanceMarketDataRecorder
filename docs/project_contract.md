@@ -20,7 +20,7 @@ systemd, and a non-root service. macOS Apple Silicon remains a development/local
 profile; Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical
 evidence profile. Docker is not the production deployment.
 
-V1 records public BTCUSDT Binance market data:
+V1 records configured public Binance products (legacy default: BTCUSDT in both markets):
 
 | Market | Core streams | Recovery/bootstrap |
 | --- | --- | --- |
@@ -31,10 +31,10 @@ USD-M mark/index/premium data, funding, open interest, liquidation events, and
 exchange/filter snapshots are isolated side data added after both core L2
 collectors. Side-data failure must never block the core collectors.
 
-## Prospective MS2 product-set authority
+## MS2 product-set authority
 
-The table above describes the current BTCUSDT compatibility implementation.
-ADR-0032 defines the future architecture: the operator configures independent,
+The table above applies to every configured product.
+ADR-0032 defines the implemented MS2 architecture: the operator configures independent,
 finite `spot_symbols` and `usdm_symbols` lists for the two Binance markets.
 There is no fixed symbol allowlist, automatic all-symbol discovery, or
 exchange/plugin framework, and a configuration change takes effect only after a
@@ -47,9 +47,8 @@ either field appears, explicit product-selection mode uses the supplied list
 exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. Symbols are canonicalized once to uppercase at the
 configuration boundary; empty, control/whitespace-invalid, and within-market
-duplicate symbols are rejected. Parsing does not query Binance. These future
-fields and the configurable runtime are not implemented by this documentation
-change.
+duplicate symbols are rejected. Parsing does not query Binance. MS2 implements these fields and runtime;
+independent review/merge and live qualification remain separate.
 
 An empty resolved USD-M set creates no USD-M Collector, product-specific
 side-data manager, process-global USD-M side-data owner, REST polling, or

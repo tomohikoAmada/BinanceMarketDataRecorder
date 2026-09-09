@@ -75,7 +75,7 @@ class BookSnapshot:
     def __post_init__(self) -> None:
         if (
             self.market not in {"spot", "um_perpetual"}
-            or self.symbol != "BTCUSDT"
+            or not self.symbol
             or self.last_update_id < 0
         ):
             raise OrderBookDataError("invalid snapshot identity or update ID")
@@ -95,7 +95,7 @@ class DepthUpdate:
     receive_time_utc_ns: int = 0
 
     def __post_init__(self) -> None:
-        if self.market not in {"spot", "um_perpetual"} or self.symbol != "BTCUSDT":
+        if self.market not in {"spot", "um_perpetual"} or not self.symbol:
             raise OrderBookDataError("unexpected depth symbol")
         if self.first_update_id < 0 or self.final_update_id < self.first_update_id:
             raise OrderBookDataError("invalid depth update ID range")
@@ -122,11 +122,7 @@ class BookTicker:
     ask_quantity: str
 
     def __post_init__(self) -> None:
-        if (
-            self.market not in {"spot", "um_perpetual"}
-            or self.symbol != "BTCUSDT"
-            or self.update_id < 0
-        ):
+        if self.market not in {"spot", "um_perpetual"} or not self.symbol or self.update_id < 0:
             raise OrderBookDataError("invalid book ticker identity or update ID")
         decimal_value(self.bid_price, positive=True)
         decimal_value(self.ask_price, positive=True)

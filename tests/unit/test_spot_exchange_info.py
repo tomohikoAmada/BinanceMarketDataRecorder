@@ -54,6 +54,7 @@ class Api:
 def test_spot_exchange_info_preserves_rules_status_headers_and_time_source() -> None:
     api = Api()
     envelope = capture_spot_exchange_info(
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="spot-1",
         collector_version="test",

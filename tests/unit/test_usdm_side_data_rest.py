@@ -110,15 +110,18 @@ class Api:
         (RestSideDataKind.EXCHANGE_INFO, "exchange_info.json", ("exchange_info", ())),
     ],
 )
+@pytest.mark.parametrize("symbol", ["BTCUSDT", "ETHUSDT", "SOLUSDT"])
 def test_rest_side_data_uses_only_public_sdk_methods_and_records_provenance(
-    kind: RestSideDataKind, fixture: str, call: tuple[str, tuple[object, ...]]
+    kind: RestSideDataKind, fixture: str, call: tuple[str, tuple[object, ...]], symbol: str
 ) -> None:
     api = Api(fixture)
+    api.value = json.loads(json.dumps(api.value).replace("BTCUSDT", symbol))
+    call = (call[0], tuple(symbol if item == "BTCUSDT" else item for item in call[1]))
     wall = iter([100, 200])
     monotonic = iter([300, 400])
     envelope = capture_rest_side_data(
         kind=kind,
-        symbol="BTCUSDT",
+        symbol=symbol,
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -269,15 +272,16 @@ def test_http_rate_limit_preserves_retry_after_boundary() -> None:
         ),
     ],
 )
+@pytest.mark.parametrize("symbol", ["BTCUSDT", "ETHUSDT", "SOLUSDT"])
 def test_five_minute_statistics_capture_latest_closed_period(
-    kind: RestSideDataKind, model: dict[str, object], call_name: str
+    kind: RestSideDataKind, model: dict[str, object], call_name: str, symbol: str
 ) -> None:
     api = Api("funding_history.json")
-    api.value = [model]
+    api.value = [json.loads(json.dumps(model).replace("BTCUSDT", symbol))]
     wall = iter([600_000_000_000, 600_100_000_000])
     envelope = capture_rest_side_data(
         kind=kind,
-        symbol="BTCUSDT",
+        symbol=symbol,
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -286,6 +290,14 @@ def test_five_minute_statistics_capture_latest_closed_period(
     )
     provenance = json.loads(envelope.raw_payload)
     assert api.calls[0][0] == call_name
+    assert api.calls[0][1][0] == symbol
+    assert envelope.symbol == symbol
+    assert (
+        provenance["request"]["parameters"].get(
+            "symbol", provenance["request"]["parameters"].get("pair")
+        )
+        == symbol
+    )
     assert provenance["request"]["parameters"]["period"] == "5m"
     assert provenance["request"]["parameters"]["startTime"] == 300_000
     expected_end = (

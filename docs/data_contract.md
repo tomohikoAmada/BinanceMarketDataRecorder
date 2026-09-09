@@ -9,10 +9,10 @@ roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
 market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
 explicit gaps, and historical/live clock separation remain authoritative.
 
-## Prospective configurable-product compatibility
+## MS2 configurable-product compatibility
 
-ADR-0032 changes future collection topology, not the production data contract.
-MS2 will propagate the configured symbol through the existing Spot/USD-M
+ADR-0032 changes collection topology, not Raw v1 or durable schema.
+MS2 propagates the configured symbol through the existing Spot/USD-M
 WebSocket, REST, envelope, Raw, spool, and normalized paths while retaining
 the current EventEnvelope and Raw v1 schemas. Product identity is
 `(market, symbol)` and existing MS1 durable discontinuity identity remains
@@ -29,7 +29,7 @@ cursor families remain symbol-scoped by `(kind, symbol)`. A future cleanup of
 the sentinel requires a separate data-contract decision. Contracts production
 code/schema and Projection production code remain unchanged.
 
-For the future configurable topology, product-specific USD-M side data is
+For the configurable topology, product-specific USD-M side data is
 `mark_price`, `liquidation`, `premium_index_snapshot`, `funding_history`,
 `open_interest`, `open_interest_statistics_5m`,
 `taker_buy_sell_volume_5m`, `global_long_short_ratio_5m`,
@@ -172,9 +172,11 @@ M5 USD-M mappings are:
 After Binance's CM migration, the core USD-M WebSocket schemas also require
 the documented `st` discriminator to be integer `1` (UM). Public depth and
 individual bookTicker additionally require their documented `ps` pair field to
-be `BTCUSDT`; aggTrade does not require an undocumented `ps` field.
+match the configured canonical symbol; aggTrade does not require an undocumented `ps` field.
 Payloads failing these identity checks are retained as exact Raw bytes and
-marked malformed, never admitted under the `um_perpetual/BTCUSDT` identity.
+marked malformed. MS2 excludes malformed frames from readiness and book
+admission; a wrong-symbol frame cannot satisfy configured-product readiness.
+The envelope records the capture route and retains the exact invalid payload.
 
 Schema-invalid messages are retained byte-for-byte with `malformed`; duplicates
 and out-of-order source IDs remain in Raw. `serverShutdown` is retained with its

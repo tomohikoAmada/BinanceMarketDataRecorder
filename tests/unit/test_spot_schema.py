@@ -16,6 +16,7 @@ FIXTURES = Path(__file__).parents[1] / "fixtures" / "binance" / "spot"
 def envelope(name: str, stream: SpotStream) -> tuple[bytes, EventEnvelope]:
     raw = (FIXTURES / name).read_bytes().rstrip(b"\n")
     return raw, envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=raw,
         stream=stream,
         connection_id="connection-1",
@@ -65,6 +66,7 @@ def test_server_shutdown_is_preserved_and_flagged() -> None:
 def test_malformed_payload_is_preserved_in_raw_instead_of_dropped() -> None:
     raw = b'{"e":"depthUpdate","s":"BTCUSDT","U":9,"u":8}'
     parsed = envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=raw,
         stream=SpotStream.DIFF_DEPTH,
         connection_id="connection-1",

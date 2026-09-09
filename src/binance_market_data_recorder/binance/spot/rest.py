@@ -115,8 +115,6 @@ class PublicSpotRestApi:
         self._opener = opener or policy.urllib_opener(base_url).open
 
     def depth(self, symbol: str, limit: int) -> PublicDepthResponse:
-        if symbol != "BTCUSDT":
-            raise ValueError("V1 Spot REST scope is BTCUSDT only")
         depth_request_weight(limit)
         query = urlencode({"symbol": symbol, "limit": limit})
         request = Request(
@@ -175,6 +173,7 @@ def _safe_headers(headers: Mapping[str, object]) -> dict[str, str]:
 def capture_depth_snapshot(
     *,
     rest_api: SpotRestApi,
+    symbol: str,
     collector_instance_id: str,
     collector_version: str,
     limit: int = SNAPSHOT_LIMIT,
@@ -190,7 +189,7 @@ def capture_depth_snapshot(
         raise ValueError("Spot REST timeout must be at least 1000 ms")
     request_utc_ns = utc_clock_ns()
     request_monotonic_ns = monotonic_clock_ns()
-    response = rest_api.depth("BTCUSDT", limit)
+    response = rest_api.depth(symbol, limit)
     receive_utc_ns = utc_clock_ns()
     receive_monotonic_ns = monotonic_clock_ns()
     raw_body = getattr(response, "raw_body", None)
@@ -209,7 +208,7 @@ def capture_depth_snapshot(
         "request": {
             "method": "GET",
             "path": "/api/v3/depth",
-            "symbol": "BTCUSDT",
+            "symbol": symbol,
             "limit": limit,
             "request_weight": weight,
             "request_time_utc_ns": request_utc_ns,
@@ -246,7 +245,7 @@ def capture_depth_snapshot(
     )
     return EventEnvelope(
         market="spot",
-        symbol="BTCUSDT",
+        symbol=symbol,
         stream="depth_snapshot",
         module="binance.spot.rest.v2",
         connection_id=f"rest-{uuid4()}",
@@ -284,18 +283,20 @@ class SpotSnapshotRequester:
     async def capture(
         self,
         *,
+        symbol: str,
         collector_instance_id: str,
         collector_version: str,
         limit: int,
         timeout_ms: int,
         additional_capture_flags: tuple[str, ...] = (),
     ) -> EventEnvelope:
-        key = ("spot", "BTCUSDT")
+        key = ("spot", symbol)
         async with self._inflight_lock:
             task = self._inflight.get(key)
             if task is None:
                 task = asyncio.create_task(
                     self._capture_once(
+                        symbol=symbol,
                         collector_instance_id=collector_instance_id,
                         collector_version=collector_version,
                         limit=limit,
@@ -318,6 +319,7 @@ class SpotSnapshotRequester:
     async def _capture_once(
         self,
         *,
+        symbol: str,
         collector_instance_id: str,
         collector_version: str,
         limit: int,
@@ -330,6 +332,7 @@ class SpotSnapshotRequester:
                 envelope = await asyncio.to_thread(
                     capture_depth_snapshot,
                     rest_api=self.rest_api,
+                    symbol=symbol,
                     collector_instance_id=collector_instance_id,
                     collector_version=collector_version,
                     limit=limit,

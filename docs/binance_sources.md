@@ -1,5 +1,15 @@
 # Official Binance Sources
 
+## MS2 configurable-product parameterization — 2026-09-09
+
+MS2 reuses the pinned official sources below for parameterized symbol routes,
+public REST symbol arguments, UM `st`/`ps`, and IP-wide cooldown semantics.
+No endpoint, stream suffix, sequence algorithm, weight, or retry policy changed.
+Global exchangeInfo validation no longer requires BTCUSDT to appear in its
+all-symbol response; the durable BTCUSDT global sentinel is unchanged under
+ADR-0032. No live Binance traffic or new external documentation retrieval was
+performed. Existing URL/retrieval/SHA records retain their original dates.
+
 ## MS1 metadata-only identity work — 2026-09-04
 
 MS1 changed only local durable identity and Catalog migration metadata. It did

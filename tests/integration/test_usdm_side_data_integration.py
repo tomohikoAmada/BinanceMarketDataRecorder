@@ -14,7 +14,12 @@ from binance_market_data_recorder.binance.usdm.side_data_rest import (
 )
 from binance_market_data_recorder.binance.usdm.websocket import WebSocketConnection
 from binance_market_data_recorder.collector.usdm import UsdMCollector, UsdMCollectorSettings
-from binance_market_data_recorder.collector.usdm_side_data import UsdMSideDataSettings
+from binance_market_data_recorder.collector.usdm_side_data import (
+    UsdMRestCooldown,
+    UsdMSideDataManager,
+    UsdMSideDataSettings,
+)
+from binance_market_data_recorder.spool.writer import RotationPolicy
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "binance" / "usdm"
 
@@ -154,32 +159,62 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
         )
         collector = UsdMCollector(
             UsdMCollectorSettings(
+                symbol="BTCUSDT",
                 data_root=tmp_path,
                 collector_instance_id="m7-test",
                 collector_version="0.1.0+test",
                 durability_interval_seconds=0,
                 side_data=side_settings,
             ),
+            request_lock=asyncio.Lock(),
+            cooldown=UsdMRestCooldown(),
             logger=logging.getLogger("test.usdm.side-data"),
             rest_api=SnapshotApi(),
             side_rest_api=cast(UsdMSideRestApi, SideApi()),
             websocket_opener=opener,
         )
+        global_owner = UsdMSideDataManager(
+            metrics=collector.metrics,
+            scope="global",
+            symbol="BTCUSDT",
+            settings=side_settings,
+            layout=collector.layout,
+            catalog=collector.catalog,
+            collector_instance_id="m7-global",
+            collector_version="test",
+            logger=collector.logger,
+            queue_capacity=8192,
+            receipt_queue_capacity=1024,
+            rotation=RotationPolicy(),
+            durability_interval_seconds=0,
+            max_frame_bytes=16 * 1024 * 1024,
+            planned_rotation_seconds=85800,
+            rest_timeout_ms=10000,
+            rest_api=cast(UsdMSideRestApi, SideApi()),
+            websocket_opener=opener,
+            request_lock=collector.public_rest_request_lock,
+            cooldown=collector.public_rest_cooldown,
+        )
+        global_task = asyncio.create_task(global_owner.run(stop))
         task = asyncio.create_task(collector.run(stop))
         for _ in range(300):
             status = collector.side_data_status()
             if (
-                opened == set(payloads)
+                all(
+                    count(global_owner.status(), name, "accepted") >= 1
+                    for name in global_owner.stats
+                )
+                and opened == set(payloads)
                 and count(status, "open_interest", "failures") >= 1
-                    and all(
-                        not bool(item["enabled"])
-                        or count(status, name, "accepted") >= 1
-                        for name, item in status.items()
-                    )
+                and all(
+                    not bool(item["enabled"]) or count(status, name, "accepted") >= 1
+                    for name, item in status.items()
+                )
             ):
                 stop.set()
                 break
             await asyncio.sleep(0.01)
+        await asyncio.wait_for(global_task, timeout=5)
         await asyncio.wait_for(task, timeout=5)
         assert opened == set(payloads)
         assert collector.side_data is not None

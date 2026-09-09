@@ -27,6 +27,7 @@ def test_official_usdm_fixtures_preserve_bytes_and_metadata(
 ) -> None:
     raw = (FIXTURES / name).read_bytes().rstrip(b"\n")
     envelope = envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=raw,
         stream=stream,
         connection_id="connection-1",
@@ -56,6 +57,7 @@ def test_usdm_depth_requires_and_preserves_previous_final_update_id() -> None:
     assert USDM_DEPTH_CONTINUITY_CONTRACT == "each_event_pu_equals_previous_event_u"
     malformed = b'{"e":"depthUpdate","E":1,"T":1,"s":"BTCUSDT","U":1,"u":2,"b":[],"a":[]}'
     envelope = envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=malformed,
         stream=UsdMStream.DIFF_DEPTH,
         connection_id="connection-1",
@@ -106,6 +108,7 @@ def test_usdm_identity_fields_fail_closed_without_losing_raw_bytes(
     stream: UsdMStream, payload: bytes
 ) -> None:
     envelope = envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=payload,
         stream=stream,
         connection_id="connection-1",
@@ -126,6 +129,7 @@ def test_usdm_agg_trade_does_not_require_undocumented_pair_field() -> None:
         b'"ps":"NOT_REQUIRED_BY_AGG_TRADE_SCHEMA"}'
     )
     envelope = envelope_from_websocket_frame(
+        symbol="BTCUSDT",
         raw_payload=payload,
         stream=UsdMStream.AGG_TRADE,
         connection_id="connection-1",

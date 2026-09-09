@@ -51,6 +51,7 @@ def test_usdm_snapshot_uses_unsigned_public_sdk_method_and_provenance() -> None:
     wall = iter([100, 200])
     monotonic = iter([300, 400])
     captured = capture_depth_snapshot(
+        symbol="BTCUSDT",
         rest_api=api,
         collector_instance_id="collector-1",
         collector_version="test",
@@ -69,10 +70,15 @@ def test_usdm_snapshot_uses_unsigned_public_sdk_method_and_provenance() -> None:
 def test_usdm_snapshot_rejects_bad_limit_permanent_http_and_missing_id() -> None:
     with pytest.raises(ValueError, match="not supported"):
         capture_depth_snapshot(
-            rest_api=FakeApi(), collector_instance_id="c", collector_version="v", limit=5000
+            symbol="BTCUSDT",
+            rest_api=FakeApi(),
+            collector_instance_id="c",
+            collector_version="v",
+            limit=5000,
         )
     with pytest.raises(UsdMSnapshotHttpError, match="HTTP 400") as captured:
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(status=400)),
             collector_instance_id="c",
             collector_version="v",
@@ -83,6 +89,7 @@ def test_usdm_snapshot_rejects_bad_limit_permanent_http_and_missing_id() -> None
     assert captured.value.retry_at_utc_ns is None
     with pytest.raises(UsdMSnapshotResponseError, match="no lastUpdateId"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(model=FakeModel(last_update_id=None))),
             collector_instance_id="c",
             collector_version="v",
@@ -102,6 +109,7 @@ def test_usdm_snapshot_http_error_retains_only_safe_retry_evidence() -> None:
     )
     with pytest.raises(UsdMSnapshotHttpError, match="HTTP 429") as captured:
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(response),
             collector_instance_id="c",
             collector_version="v",
@@ -127,6 +135,7 @@ def test_usdm_snapshot_http_error_uses_sdk_retry_after_evidence() -> None:
     wall = iter([1_000_000_000, 2_000_000_000])
     with pytest.raises(UsdMSnapshotHttpError, match="HTTP 418") as captured:
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(RateLimitedResponse(status=418, headers={})),
             collector_instance_id="c",
             collector_version="v",
@@ -143,6 +152,7 @@ def test_usdm_snapshot_model_parse_failure_is_a_fatal_response_error() -> None:
 
     with pytest.raises(UsdMSnapshotResponseError, match="could not be parsed"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(InvalidModelResponse()),
             collector_instance_id="c",
             collector_version="v",
@@ -156,6 +166,7 @@ def test_usdm_snapshot_to_dict_failure_and_invalid_schema_remain_fatal() -> None
 
     with pytest.raises(UsdMSnapshotResponseError, match="could not be parsed"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(model=ToDictFailureModel())),
             collector_instance_id="c",
             collector_version="v",
@@ -167,6 +178,7 @@ def test_usdm_snapshot_to_dict_failure_and_invalid_schema_remain_fatal() -> None
 
     with pytest.raises(UsdMSnapshotResponseError, match="schema is invalid"):
         capture_depth_snapshot(
+            symbol="BTCUSDT",
             rest_api=FakeApi(FakeResponse(model=InvalidSchemaModel())),
             collector_instance_id="c",
             collector_version="v",

@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import pytest
 
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service.deployment_identity import (
     DeploymentIdentity,
     create_deployment_identity,
@@ -180,7 +181,10 @@ def _state(identity: DeploymentIdentity) -> dict[str, object]:
         "capacity_profile_id": "vps-production-v1",
         "catalog_open": True,
         "startup_recovery_complete": True,
-        "markets": {"spot": _market(), "um_perpetual": _market()},
+        "products": {
+            market: {"BTCUSDT": {**_market(), "market": market, "symbol": "BTCUSDT"}}
+            for market in ("spot", "um_perpetual")
+        },
         "capacity": {
             "observed_at_utc_ns": NOW,
             "total_bytes": 40 * 1024**3,
@@ -204,6 +208,9 @@ def _evaluate(
     if state is not None:
         ServiceStateStore(tmp_path / "state" / "service_state.json").write(state)
     evaluator = VpsReadinessEvaluator(
+        expected_products=frozenset(
+            {ProductKey("spot", "BTCUSDT"), ProductKey("um_perpetual", "BTCUSDT")}
+        ),
         data_root=tmp_path,
         identity=identity,
         systemd_manager=cast(SystemdManager, systemd or FakeSystemd()),
@@ -269,7 +276,7 @@ def test_fresh_starting_heartbeat_remains_not_ready_after_thirty_seconds(
             "heartbeat_at_utc_ns": NOW,
             "startup_recovery_complete": False,
             "capacity": None,
-            "markets": {},
+            "products": {},
         }
     )
     result = _evaluate(tmp_path, state)
@@ -285,12 +292,12 @@ def test_each_core_market_must_reuse_existing_full_readiness(
 ) -> None:
     identity = _identity(tmp_path)
     state = _state(identity)
-    markets = cast(dict[str, dict[str, object]], state["markets"])
-    markets[market_name]["snapshot_persisted"] = False
-    markets[market_name]["ready"] = False
+    markets = cast(dict[str, dict[str, dict[str, object]]], state["products"])
+    markets[market_name]["BTCUSDT"]["snapshot_persisted"] = False
+    markets[market_name]["BTCUSDT"]["ready"] = False
     result = _evaluate(tmp_path, state)
     assert result.state == "NOT_READY"
-    assert f"{market_name}_core_not_ready" in result.reasons
+    assert f"{market_name}:BTCUSDT_core_not_ready" in result.reasons
 
 
 def test_capacity_unavailable_fails_readiness(tmp_path: Path) -> None:
@@ -458,6 +465,9 @@ def test_full_ready_invokes_real_file_identity_and_effective_systemd_seams(
         lambda: {"service_non_root": True}
     )
     result = VpsReadinessEvaluator(
+        expected_products=frozenset(
+            {ProductKey("spot", "BTCUSDT"), ProductKey("um_perpetual", "BTCUSDT")}
+        ),
         data_root=data_root,
         identity=identity,
         systemd_manager=manager,
@@ -725,6 +735,9 @@ def test_full_ready_invokes_complete_real_installed_identity_chain(
     )
     ServiceStateStore(data_root / "state/service_state.json").write(_state(identity))
     result = VpsReadinessEvaluator(
+        expected_products=frozenset(
+            {ProductKey("spot", "BTCUSDT"), ProductKey("um_perpetual", "BTCUSDT")}
+        ),
         data_root=data_root,
         identity=identity,
         systemd_manager=manager,

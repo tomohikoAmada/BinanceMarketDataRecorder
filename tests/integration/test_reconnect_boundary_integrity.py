@@ -1088,6 +1088,7 @@ def test_blue_green_overlap_chunk_is_not_forced_incomplete(tmp_path: Path) -> No
 
         def envelope(connection_id: str, update_id: int, flags: tuple[str, ...]) -> Any:
             return envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(update_id),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id=connection_id,
@@ -1132,6 +1133,7 @@ def test_unmarked_connection_change_seal_fails_closed_to_incomplete(
 
         def envelope(connection_id: str, update_id: int) -> Any:
             return envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(update_id),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id=connection_id,
@@ -1180,6 +1182,7 @@ def test_legacy_multiconnection_partial_recovers_as_forced_incomplete(
 
     def envelope(connection_id: str, update_id: int) -> Any:
         return envelope_from_websocket_frame(
+            symbol="BTCUSDT",
             raw_payload=book_ticker(update_id),
             stream=UsdMStream.BOOK_TICKER,
             connection_id=connection_id,
@@ -2088,6 +2091,7 @@ def test_overlap_at_one_transition_never_exempts_unmarked_third(
 
         def envelope(connection_id: str, update_id: int, flags: tuple[str, ...]) -> Any:
             return envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(update_id),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id=connection_id,
@@ -2140,6 +2144,7 @@ def test_seal_rejects_existing_manifest_that_contradicts_reconnect_intent(
 
         def envelope(connection_id: str, update_id: int) -> Any:
             return envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(update_id),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id=connection_id,
@@ -3013,6 +3018,7 @@ def test_normal_sealing_crash_without_intent_does_not_fake_reconnect_gap(
         )
         writer.append(
             envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(1),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id="plain-conn",
@@ -3074,6 +3080,7 @@ def test_phase_a_crash_before_started_retains_orphan_active_partial(
         )
         writer.append(
             envelope_from_websocket_frame(
+                symbol="BTCUSDT",
                 raw_payload=book_ticker(1),
                 stream=UsdMStream.BOOK_TICKER,
                 connection_id="phase-a-conn",
@@ -3502,6 +3509,7 @@ def _seal_chunk_with_intent(
     )
     writer.append(
         envelope_from_websocket_frame(
+            symbol="BTCUSDT",
             raw_payload=frame_payload,
             stream=stream,
             connection_id=str(intent["original_connection_id"]),

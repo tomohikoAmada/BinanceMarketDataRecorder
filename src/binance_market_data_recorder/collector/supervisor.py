@@ -15,6 +15,8 @@ import asyncio
 from collections.abc import Callable, Mapping
 from typing import Protocol
 
+from ..domain.product import ProductKey
+
 
 class MarketCollector(Protocol):
     async def run(self, stop: asyncio.Event) -> None: ...
@@ -33,13 +35,13 @@ class MarketCollectorSupervisor:
 
     def __init__(
         self,
-        collectors: Mapping[str, MarketCollector],
-        terminal_failure_observer: Callable[[str, BaseException], None] | None = None,
+        collectors: Mapping[ProductKey, MarketCollector],
+        terminal_failure_observer: Callable[[ProductKey, BaseException], None] | None = None,
     ) -> None:
         if not collectors:
             raise ValueError("at least one market Collector is required")
         self.collectors = dict(collectors)
-        self.failures: dict[str, BaseException] = {}
+        self.failures: dict[ProductKey, BaseException] = {}
         self.terminal_failure_observer = terminal_failure_observer
 
     async def run(self, stop: asyncio.Event) -> None:
@@ -87,7 +89,7 @@ class MarketCollectorSupervisor:
                         f"core market Collector terminated: {name}"
                     ) from normal_exit
             if not tasks and not stop.is_set():
-                failed = ",".join(sorted(self.failures)) or "all"
+                failed = ",".join(str(key) for key in sorted(self.failures)) or "all"
                 raise AllMarketCollectorsStopped(
                     f"all core market Collectors stopped; failed={failed}"
                 )

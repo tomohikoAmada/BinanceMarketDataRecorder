@@ -187,6 +187,7 @@ def test_snapshot_requester_deduplicates_concurrent_same_symbol_calls() -> None:
         captures = await asyncio.gather(
             *(
                 requester.capture(
+                    symbol="BTCUSDT",
                     collector_instance_id="collector",
                     collector_version="test",
                     limit=1000,
@@ -208,6 +209,7 @@ def test_snapshot_cancellation_reclaims_singleflight_worker() -> None:
         requester = SpotSnapshotRequester(rest_api=api, rate_limiter=_limiter())
         task = asyncio.create_task(
             requester.capture(
+                symbol="BTCUSDT",
                 collector_instance_id="collector",
                 collector_version="test",
                 limit=1000,
@@ -243,6 +245,7 @@ def test_requester_classifies_429_418_and_5xx_without_retry_loop() -> None:
         requester = SpotSnapshotRequester(rest_api=api, rate_limiter=_limiter())
         with pytest.raises(SpotRateLimitBlocked) as limited:
             await requester.capture(
+                symbol="BTCUSDT",
                 collector_instance_id="collector",
                 collector_version="test",
                 limit=1000,
@@ -251,6 +254,7 @@ def test_requester_classifies_429_418_and_5xx_without_retry_loop() -> None:
         assert limited.value.status == 429
         with pytest.raises(SpotRateLimitBlocked) as banned:
             await requester.capture(
+                symbol="BTCUSDT",
                 collector_instance_id="collector",
                 collector_version="test",
                 limit=1000,
@@ -259,6 +263,7 @@ def test_requester_classifies_429_418_and_5xx_without_retry_loop() -> None:
         assert banned.value.status == 418
         with pytest.raises(SpotSnapshotHttpError) as server:
             await requester.capture(
+                symbol="BTCUSDT",
                 collector_instance_id="collector",
                 collector_version="test",
                 limit=1000,
@@ -277,6 +282,7 @@ def test_snapshot_success_provenance_contains_limit_weight_headers_and_exact_bod
             rate_limiter=_limiter(),
         )
         envelope = await requester.capture(
+            symbol="BTCUSDT",
             collector_instance_id="collector",
             collector_version="test",
             limit=1000,
@@ -325,6 +331,7 @@ def test_shared_limiter_allows_only_one_snapshot_request_on_the_wire() -> None:
         captures = await asyncio.gather(
             *(
                 requester.capture(
+                    symbol="BTCUSDT",
                     collector_instance_id=f"collector-{ordinal}",
                     collector_version="test",
                     limit=1000,

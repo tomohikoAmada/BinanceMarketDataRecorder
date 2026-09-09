@@ -57,6 +57,7 @@ class UsdMCollectorSettings:
     data_root: Path
     collector_instance_id: str
     collector_version: str
+    symbol: str
     queue_capacity: int = 8192
     receipt_queue_capacity: int = 1024
     rotation_seconds: float = 60.0
@@ -85,6 +86,8 @@ class UsdMCollector:
         settings: UsdMCollectorSettings,
         *,
         logger: logging.Logger,
+        request_lock: asyncio.Lock,
+        cooldown: UsdMRestCooldown,
         rest_api: UsdMRestApi | None = None,
         side_rest_api: UsdMSideRestApi | None = None,
         websocket_opener: ConnectionOpener = open_usdm_websocket,
@@ -92,8 +95,8 @@ class UsdMCollector:
         self.settings = settings
         self.logger = logger
         self.rest_api = rest_api
-        self.public_rest_request_lock = asyncio.Lock()
-        self.public_rest_cooldown = UsdMRestCooldown()
+        self.public_rest_request_lock = request_lock
+        self.public_rest_cooldown = cooldown
         self.snapshot_backoff = ReconnectBackoff(
             initial_seconds=settings.snapshot_retry_initial_seconds,
             maximum_seconds=settings.snapshot_retry_maximum_seconds,
@@ -109,8 +112,9 @@ class UsdMCollector:
             logger=logger,
         )
         self.resync = DepthResyncCoordinator(
-            market="um_perpetual", catalog=self.catalog
+            market="um_perpetual", symbol=settings.symbol, catalog=self.catalog
         )
+
         def observe_quality(audit: QualityAudit, occurred_at_utc_ns: int | None) -> None:
             if occurred_at_utc_ns is None:
                 return
@@ -126,7 +130,7 @@ class UsdMCollector:
 
         self.readiness = CollectorReadiness(
             market="um_perpetual",
-            symbol="BTCUSDT",
+            symbol=settings.symbol,
             collector_instance_id=settings.collector_instance_id,
             collector_version=settings.collector_version,
             audit_observer=observe_quality,
@@ -162,7 +166,7 @@ class UsdMCollector:
                 layout=self.layout,
                 catalog=self.catalog,
                 market="um_perpetual",
-                symbol="BTCUSDT",
+                symbol=settings.symbol,
                 stream=stream,
                 collector_instance_id=settings.collector_instance_id,
                 collector_version=settings.collector_version,
@@ -204,7 +208,7 @@ class UsdMCollector:
         self.streams = tuple(
             UsdMStreamCollector(
                 stream=spec.stream,
-                symbol="BTCUSDT",
+                symbol=settings.symbol,
                 route=spec.route,
                 wire_name=spec.wire_name,
                 spool=spool(spec.stream.value),
@@ -224,7 +228,8 @@ class UsdMCollector:
         if settings.side_data is not None:
             self.side_data = UsdMSideDataManager(
                 settings=settings.side_data,
-                symbol="BTCUSDT",
+                scope="product",
+                symbol=settings.symbol,
                 layout=self.layout,
                 catalog=self.catalog,
                 collector_instance_id=settings.collector_instance_id,
@@ -259,6 +264,7 @@ class UsdMCollector:
                         asyncio.to_thread(
                             capture_depth_snapshot,
                             rest_api=self.rest_api,
+                            symbol=self.settings.symbol,
                             collector_instance_id=self.settings.collector_instance_id,
                             collector_version=self.settings.collector_version,
                             limit=self.settings.snapshot_limit,

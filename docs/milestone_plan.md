@@ -1173,7 +1173,8 @@ remain unchanged.
 
 ## MS2 — Configurable product runtime
 
-- **Status:** **NEXT / NOT IMPLEMENTED**.
+- **Status:** **CLOSED / OFFLINE ACCEPTED; INDEPENDENT PR REVIEW PENDING**.
+  Evidence: `docs/milestone_acceptance/MS2.md`. Not merged or deployed yet.
 - **Scope:** Implement the explicit finite `[recorder]` `spot_symbols` and
   `usdm_symbols` lists; `ProductKey = (market, symbol)`; symbol propagation
   through current Spot/USD-M WS/REST/schema/envelope/spool paths; dynamic
@@ -1206,7 +1207,7 @@ remain unchanged.
 
 ## MS3 — Shared-resource scaling / rotation / observability
 
-- **Status:** **PLANNED**.
+- **Status:** **NEXT**, after independent MS2 review/merge and authorization.
 - **Scope:** Prove REST scheduling/fairness under multiple configured products;
   shared cooldown behavior; product-aware writer rotation phase; product task,
   log, reconnect, resync, and backpressure attribution; bounded synthetic
