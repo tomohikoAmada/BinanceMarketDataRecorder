@@ -7,9 +7,9 @@ traffic authorization.
 
 ## Start here: the boundary
 
-MS2 implementation/offline acceptance is **CLOSED**, with independent PR review
-pending. **MS3 is NEXT** after review/merge and separate authorization. MS1
-remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md). Do not restart or
+MS2 implementation/offline acceptance, independent review, and merge are
+**CLOSED**. **MS3 is IN_PROGRESS** on the MS3-A candidate branch, with MS3-B
+not started. MS1 remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md). Do not restart or
 reopen the historical M23 optimization, BBO, Storage Forecast, remote-delete,
 single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
 MS1 migration design, Raw v1, Contracts, or the closed MS1 review findings
@@ -46,12 +46,18 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_SHA=52bf086dd240556b054821f33bf1e2840fdcf912
+CURRENT_MAIN_TREE=762729846fae766ae1c2edde0af95cd63648e7df
+MS2_PR=54
+MS2_MERGED=YES
+MS3=IN_PROGRESS
+MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution
+MS3_B=NOT_STARTED
 ```
 
 The merge parents are `c421605e302d2ad46acdb2466627f64644181c9a` and
-`11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged. The MS1 merge
-is the historical pre-MS2 behavior authority. The MS2 candidate commit containing
-`milestone_acceptance/MS2.md` changes behavior; it is not yet merged or deployed.
+`11e100fbcb974e7d54f0515c99e08ac6042b9204`. PR #51 is merged. PR #54 is now
+the merged MS2 behavior authority on current `main`; it is not deployed.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.
@@ -153,7 +159,7 @@ declare Production Ready.
 
 ### MS3 — Shared resources / rotation / observability
 
-Next after independent MS2 review/merge and authorization. Prove REST scheduling/fairness and shared cooldown behavior
+**IN_PROGRESS — MS3-A candidate.** MS3-B has not started. Prove REST scheduling/fairness and shared cooldown behavior
 under multiple configured products; stagger writer rotations; attribute queues,
 high-watermarks, backpressure, reconnects, and recovery evidence to products;
 retain process-global metrics where appropriate; inspect capacity/archive
@@ -183,4 +189,6 @@ or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
 `DEPLOYMENT_AUTHORIZED=NO`, `CURRENT_MAIN_DEPLOYED=NO`,
-`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`, `MS3=NEXT`, `MS4=PLANNED`.
+`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`, `MS3=IN_PROGRESS`,
+`MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution`,
+`MS3_B=NOT_STARTED`, `MS4=PLANNED`.

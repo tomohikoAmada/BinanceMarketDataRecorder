@@ -13,6 +13,8 @@ from ..binance.spot.exchange_info import (
     capture_spot_exchange_info,
 )
 from ..binance.spot.rate_limit import shared_spot_ip_rate_limiter
+from ..domain.product import product_log_fields
+from ..logging import log_event
 from ..spool.stream import StreamSpool
 from .usdm_side_data import SideDataStats
 
@@ -81,11 +83,27 @@ class SpotExchangeInfoPoller:
                         body_text=str(exc),
                     )
                     self.stats.observe_failure(type(exc).__name__)
+                    log_event(
+                        self.logger,
+                        logging.WARNING,
+                        "spot_exchange_info_rate_limited",
+                        "Spot exchangeInfo request was rate limited",
+                        **product_log_fields(
+                            "spot", self.spool.symbol, stream="exchange_info"
+                        ),
+                        http_status=status,
+                    )
                 except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
                     self.stats.observe_failure(type(exc).__name__)
-                    self.logger.warning(
+                    log_event(
+                        self.logger,
+                        logging.WARNING,
+                        "spot_exchange_info_failed",
                         "Spot exchangeInfo failed without stopping core L2",
-                        extra={"error_type": type(exc).__name__},
+                        **product_log_fields(
+                            "spot", self.spool.symbol, stream="exchange_info"
+                        ),
+                        error_type=type(exc).__name__,
                     )
                 try:
                     await asyncio.wait_for(

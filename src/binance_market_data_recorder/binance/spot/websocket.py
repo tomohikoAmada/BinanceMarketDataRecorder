@@ -39,6 +39,7 @@ from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
 
 from ...domain.event import EventEnvelope
+from ...domain.product import product_log_fields
 from ...logging import log_event
 from ...network import WebSocketProxy
 from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
@@ -262,7 +263,7 @@ class SpotStreamCollector:
             logging.WARNING,
             "spot_ingress_gap_recovered",
             "Spot stream recovered an unclosed discontinuity from Catalog",
-            stream=self.stream.value,
+            **product_log_fields("spot", self.symbol, stream=self.stream.value),
             connection_id=connection_id,
             generation=self._generation,
             gap_id=gap_id,
@@ -362,7 +363,7 @@ class SpotStreamCollector:
             level,
             event,
             message,
-            stream=self.stream.value,
+            **product_log_fields("spot", self.symbol, stream=self.stream.value),
             connection_id=connection_id,
             generation=self._generation,
             outcome=outcome,
@@ -511,7 +512,7 @@ class SpotStreamCollector:
                 logging.CRITICAL,
                 "spot_ingress_writer_failed",
                 "Spot Raw writer stopped before its ingress generation completed",
-                stream=self.stream.value,
+                **product_log_fields("spot", self.symbol, stream=self.stream.value),
                 connection_id=self._active_connection_id or "unavailable",
                 generation=self._generation,
                 outcome="FATAL",
@@ -857,7 +858,9 @@ class SpotStreamCollector:
                         logging.INFO,
                         "spot_websocket_connected",
                         "Binance Spot raw stream connected",
-                        stream=self.stream.value,
+                        **product_log_fields(
+                            "spot", self.symbol, stream=self.stream.value
+                        ),
                         connection_id=connection_id,
                     )
                     reason = await self._receive_connection(
@@ -883,7 +886,7 @@ class SpotStreamCollector:
                     logging.WARNING,
                     "spot_websocket_disconnected",
                     "Binance Spot stream disconnected unexpectedly",
-                    stream=self.stream.value,
+                    **product_log_fields("spot", self.symbol, stream=self.stream.value),
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
                     retry=failures,
@@ -918,7 +921,7 @@ class SpotStreamCollector:
                     logging.INFO,
                     f"spot_{reason}",
                     "Binance Spot connection will be replaced",
-                    stream=self.stream.value,
+                    **product_log_fields("spot", self.symbol, stream=self.stream.value),
                     connection_id=connection_id,
                 )
                 self._remember_boundary(connection_id)
@@ -955,7 +958,10 @@ class SpotStreamCollector:
             self._backpressure_boundary_handoff_succeeded = None
             self._post_close_handoff_outcome = None
             self._active_connection_id = None
-            writer_task = asyncio.create_task(self._writer_loop(producer_done))
+            writer_task = asyncio.create_task(
+                self._writer_loop(producer_done),
+                name=f"raw-writer:spot:{self.symbol}:{self.stream.value}",
+            )
             outcome = "stopped"
             gap_just_started = False
             try:
@@ -1112,7 +1118,7 @@ class SpotStreamCollector:
                     logging.WARNING,
                     "spot_ingress_gap_extended",
                     "Spot reconnect boundary extends the pending discontinuity",
-                    stream=self.stream.value,
+                    **product_log_fields("spot", self.symbol, stream=self.stream.value),
                     connection_id=self._boundary_connection_id or "unknown",
                     generation=self._generation,
                     gap_id=self._pending_gap["gap_id"],
@@ -1129,7 +1135,7 @@ class SpotStreamCollector:
                 logging.WARNING,
                 "spot_ingress_stream_recovery",
                 "Spot stream is opening a new generation with persistent gap evidence",
-                stream=self.stream.value,
+                **product_log_fields("spot", self.symbol, stream=self.stream.value),
                 connection_id=self._boundary_connection_id or "unknown",
                 generation=self._generation,
                 outcome=(

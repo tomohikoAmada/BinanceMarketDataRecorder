@@ -47,10 +47,13 @@ class MarketCollectorSupervisor:
     async def run(self, stop: asyncio.Event) -> None:
         child_stops = {name: asyncio.Event() for name in self.collectors}
         tasks = {
-            name: asyncio.create_task(collector.run(child_stops[name]))
+            name: asyncio.create_task(
+                collector.run(child_stops[name]),
+                name=f"collector:{name.market}:{name.symbol}",
+            )
             for name, collector in self.collectors.items()
         }
-        stop_task = asyncio.create_task(stop.wait())
+        stop_task = asyncio.create_task(stop.wait(), name="GLOBAL:collector-supervisor-stop")
         try:
             while tasks and not stop.is_set():
                 done, _pending = await asyncio.wait(

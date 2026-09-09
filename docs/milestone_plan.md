@@ -1207,7 +1207,10 @@ remain unchanged.
 
 ## MS3 — Shared-resource scaling / rotation / observability
 
-- **Status:** **NEXT**, after independent MS2 review/merge and authorization.
+- **Status:** **IN PROGRESS** — MS3-A candidate; MS3-B is not started.
+- **Current work package:** MS3-A — product-aware writer rotation phase and
+  operational product attribution. REST scheduling/fairness, bounded
+  multi-product load, and archive/capacity qualification remain outstanding.
 - **Scope:** Prove REST scheduling/fairness under multiple configured products;
   shared cooldown behavior; product-aware writer rotation phase; product task,
   log, reconnect, resync, and backpressure attribution; bounded synthetic

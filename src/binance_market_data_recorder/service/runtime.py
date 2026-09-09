@@ -36,7 +36,12 @@ from ..collector.usdm_side_data import (
     UsdMSideDataSettings,
 )
 from ..config import RecorderConfig
-from ..domain.product import ProductKey, configured_products
+from ..domain.product import (
+    ProductKey,
+    configured_products,
+    global_log_fields,
+    product_log_fields,
+)
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
@@ -294,6 +299,9 @@ class ServiceRuntime:
             data_root=self.layout.root,
             collector_instance_id=f"{self.service_instance_id}:um_perpetual:global",
             logger=self.logger,
+            log_context=global_log_fields(
+                "um_perpetual", owner="usdm_side_data"
+            ),
         )
         self.global_side_data = UsdMSideDataManager(
             metrics=self._global_side_metrics,
@@ -750,7 +758,9 @@ class ServiceRuntime:
             self._catalog = Catalog(self.layout.catalog)
             self._catalog_open = True
             await self._write_state()
-            heartbeat_task = asyncio.create_task(self._heartbeat(stop))
+            heartbeat_task = asyncio.create_task(
+                self._heartbeat(stop), name="GLOBAL:service-heartbeat"
+            )
             await asyncio.sleep(0)
             if recovery_stop.is_set():
                 return
@@ -788,6 +798,17 @@ class ServiceRuntime:
                 if self._catalog is None:
                     return
                 occurred_at = self.utc_clock_ns()
+                log_event(
+                    self.logger,
+                    logging.CRITICAL,
+                    "core_market_terminal_failure",
+                    "configured product Collector terminated; service will fail closed",
+                    **product_log_fields(name.market, name.symbol),
+                    error_type=type(exc).__name__,
+                    restart_owner=(
+                        "systemd" if sys.platform.startswith("linux") else "launchd"
+                    ),
+                )
                 self._catalog.record_operational_event(
                     event_id=(
                         f"core-market-terminal:{self.service_instance_id}:"
@@ -823,12 +844,19 @@ class ServiceRuntime:
                 },
             )
             if self.global_side_data is not None:
-                global_side_task = asyncio.create_task(self.global_side_data.run(stop))
-            supervisor_task = asyncio.create_task(self._supervisor.run(stop))
+                global_side_task = asyncio.create_task(
+                    self.global_side_data.run(stop),
+                    name="GLOBAL:usdm-side-data-owner",
+                )
+            supervisor_task = asyncio.create_task(
+                self._supervisor.run(stop), name="GLOBAL:collector-supervisor"
+            )
             await asyncio.sleep(0)
             await self._write_state()
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
-                capacity_task = asyncio.create_task(self._capacity_monitor(stop))
+                capacity_task = asyncio.create_task(
+                    self._capacity_monitor(stop), name="GLOBAL:capacity-monitor"
+                )
                 done, _pending = await asyncio.wait(
                     {supervisor_task, capacity_task},
                     return_when=asyncio.FIRST_COMPLETED,
@@ -886,6 +914,9 @@ class ServiceRuntime:
                                     logging.ERROR,
                                     "global_side_report_failed",
                                     "global side-data daily report could not be written",
+                                    **global_log_fields(
+                                        "um_perpetual", owner="usdm_side_data"
+                                    ),
                                     error_type=type(exc).__name__,
                                 )
             try:

@@ -120,20 +120,30 @@ def test_writer_rejects_unreadable_frame_bound_before_creating_file(tmp_path: Pa
 def test_stream_rotation_deadlines_are_bounded_and_phase_staggered() -> None:
     opened = 1_000.0
     period = 60.0
-    deadlines = {
-        _rotation_deadline(
+    def deadline(market: str, symbol: str, stream: str) -> float:
+        return _rotation_deadline(
             opened_monotonic=opened,
             period_seconds=period,
             market=market,
+            symbol=symbol,
             stream=stream,
         )
-        for market, stream in (
-            ("spot", "book_ticker"),
-            ("spot", "agg_trade"),
-            ("spot", "diff_depth"),
-            ("um_perpetual", "book_ticker"),
-            ("um_perpetual", "agg_trade"),
-            ("um_perpetual", "diff_depth"),
+
+    btc_depth = deadline("spot", "BTCUSDT", "diff_depth")
+    eth_depth = deadline("spot", "ETHUSDT", "diff_depth")
+    assert deadline("spot", "BTCUSDT", "diff_depth") == btc_depth
+    assert btc_depth != eth_depth
+    assert btc_depth != deadline("um_perpetual", "BTCUSDT", "diff_depth")
+    assert btc_depth != deadline("spot", "BTCUSDT", "agg_trade")
+    deadlines = {
+        deadline(market, symbol, stream)
+        for market, symbol, stream in (
+            ("spot", "BTCUSDT", "book_ticker"),
+            ("spot", "ETHUSDT", "book_ticker"),
+            ("spot", "BTCUSDT", "agg_trade"),
+            ("spot", "ETHUSDT", "agg_trade"),
+            ("um_perpetual", "BTCUSDT", "book_ticker"),
+            ("um_perpetual", "ETHUSDT", "book_ticker"),
         )
     }
     assert len(deadlines) == 6
