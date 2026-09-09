@@ -24,7 +24,7 @@ import logging
 import resource
 import shutil
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
@@ -59,6 +59,7 @@ class MetricsRecorder:
         sample_interval_ns: int = 60_000_000_000,
         daily_directory: Path | None = None,
         logger: logging.Logger | None = None,
+        log_context: Mapping[str, object] | None = None,
     ) -> None:
         if not collector_instance_id or sample_interval_ns < 0:
             raise ValueError("invalid metrics recorder configuration")
@@ -75,6 +76,7 @@ class MetricsRecorder:
             else daily_directory
         )
         self.logger = logger or logging.getLogger("binance_market_data_recorder.metrics")
+        self.log_context = dict(log_context or {})
         self.failure_count = 0
         self.last_error_type: str | None = None
         self._lock = RLock()
@@ -267,6 +269,7 @@ class MetricsRecorder:
             logging.ERROR,
             "metrics_operation_failed",
             "operational metrics failed; Raw capture remains active",
+            **self.log_context,
             operation=operation,
             error_type=type(exc).__name__,
             failure_count=self.failure_count,

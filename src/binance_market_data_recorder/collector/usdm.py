@@ -34,6 +34,7 @@ from ..binance.usdm.schema import USDM_STREAMS
 from ..binance.usdm.side_data_rest import UsdMSideRestApi
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector, open_usdm_websocket
 from ..domain.event import EventEnvelope
+from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
@@ -110,6 +111,7 @@ class UsdMCollector:
             data_root=self.layout.root,
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
+            log_context=product_log_fields("um_perpetual", settings.symbol),
         )
         self.resync = DepthResyncCoordinator(
             market="um_perpetual", symbol=settings.symbol, catalog=self.catalog
@@ -303,6 +305,9 @@ class UsdMCollector:
                     logging.WARNING,
                     "usdm_snapshot_server_error",
                     "USD-M public depth snapshot returned a transient server error",
+                    **product_log_fields(
+                        "um_perpetual", self.settings.symbol, stream="depth_snapshot"
+                    ),
                     http_status=exc.status,
                     retry_at_utc_ns=exc.retry_at_utc_ns,
                     response_headers=exc.headers,
@@ -336,6 +341,9 @@ class UsdMCollector:
                     logging.WARNING,
                     "usdm_snapshot_failed",
                     "public USD-M depth snapshot failed; core streams remain active",
+                    **product_log_fields(
+                        "um_perpetual", self.settings.symbol, stream="depth_snapshot"
+                    ),
                     error_type=type(exc).__name__,
                     retry=failures,
                 )
@@ -369,6 +377,9 @@ class UsdMCollector:
                 logging.WARNING,
                 "usdm_snapshot_bridge_pending",
                 "snapshot did not bridge buffered depth; retry remains backoff bounded",
+                **product_log_fields(
+                    "um_perpetual", self.settings.symbol, stream="depth_snapshot"
+                ),
                 synchronize_result=result.value,
                 candidate_handoff=self._candidate_handoff,
                 retry=failures,
@@ -459,6 +470,9 @@ class UsdMCollector:
             logging.WARNING,
             "usdm_snapshot_rate_limited",
             "USD-M public REST is rate limited; shared cooldown installed",
+            **product_log_fields(
+                "um_perpetual", self.settings.symbol, stream="depth_snapshot"
+            ),
             **fields,
         )
         return True
@@ -490,13 +504,29 @@ class UsdMCollector:
 
         async with asyncio.TaskGroup() as tasks:
             for stream in self.streams:
-                tasks.create_task(stream.run(session_stop, session_restart=restarting))
-            tasks.create_task(self._capture_snapshot(session_stop))
-            tasks.create_task(control_session())
+                stream_name = getattr(stream, "stream_name", type(stream).__name__)
+                tasks.create_task(
+                    stream.run(session_stop, session_restart=restarting),
+                    name=(
+                        "collector-stream:um_perpetual:"
+                        f"{self.settings.symbol}:{stream_name}"
+                    ),
+                )
+            tasks.create_task(
+                self._capture_snapshot(session_stop),
+                name=f"collector-snapshot:um_perpetual:{self.settings.symbol}",
+            )
+            tasks.create_task(
+                control_session(),
+                name=f"collector-control:um_perpetual:{self.settings.symbol}",
+            )
 
     async def run(self, stop: asyncio.Event) -> None:
         side_task = (
-            asyncio.create_task(self.side_data.run(stop))
+            asyncio.create_task(
+                self.side_data.run(stop),
+                name=f"collector-side-data:um_perpetual:{self.settings.symbol}",
+            )
             if self.side_data is not None
             else None
         )
@@ -517,6 +547,9 @@ class UsdMCollector:
                     logging.CRITICAL,
                     "usdm_depth_resync_restart",
                     "depth continuity invalidated; restarting USD-M capture session",
+                    **product_log_fields(
+                        "um_perpetual", self.settings.symbol, stream="diff_depth"
+                    ),
                     buffered_capacity=self.settings.bootstrap_buffer_capacity,
                     reason=(
                         self.resync.active.reason
@@ -544,6 +577,7 @@ class UsdMCollector:
                         logging.ERROR,
                         "usdm_side_shutdown_failed",
                         "USD-M side-data cleanup failed after stop; preserving core cause",
+                        **product_log_fields("um_perpetual", self.settings.symbol),
                         error_type=type(side_result[0]).__name__,
                     )
             await asyncio.to_thread(self.snapshot_spool.close_and_seal)
@@ -562,6 +596,9 @@ class UsdMCollector:
                             logging.ERROR,
                             "daily_report_failed",
                             "daily report write failed; Raw remains sealed",
+                            **product_log_fields(
+                                "um_perpetual", self.settings.symbol
+                            ),
                             utc_date=day,
                             error_type=type(exc).__name__,
                         )

@@ -41,6 +41,7 @@ from ..binance.spot.websocket import (
     open_spot_websocket,
 )
 from ..domain.event import EventEnvelope
+from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..metrics.report import DailyReporter
@@ -116,6 +117,7 @@ class SpotCollector:
             data_root=self.layout.root,
             collector_instance_id=settings.collector_instance_id,
             logger=logger,
+            log_context=product_log_fields("spot", settings.symbol),
         )
         self.resync = DepthResyncCoordinator(
             market="spot", symbol=settings.symbol, catalog=self.catalog
@@ -248,6 +250,8 @@ class SpotCollector:
             side_factories,
             self._side_stats,
             logger,
+            log_context=product_log_fields("spot", settings.symbol),
+            task_name_prefix=f"side-data:spot:{settings.symbol}",
             retry_initial_seconds=settings.snapshot_retry_initial_seconds,
             retry_maximum_seconds=settings.snapshot_retry_maximum_seconds,
         )
@@ -286,6 +290,9 @@ class SpotCollector:
                     logging.WARNING,
                     "spot_snapshot_rate_limited",
                     "Spot public REST is blocked until the official retry boundary",
+                    **product_log_fields(
+                        "spot", self.settings.symbol, stream="depth_snapshot"
+                    ),
                     http_status=exc.status,
                     retry_at_utc_ns=exc.retry_at_utc_ns,
                     response_headers=exc.headers,
@@ -309,6 +316,9 @@ class SpotCollector:
                     logging.WARNING,
                     "spot_snapshot_server_error",
                     "Spot public depth snapshot returned a transient server error",
+                    **product_log_fields(
+                        "spot", self.settings.symbol, stream="depth_snapshot"
+                    ),
                     http_status=exc.status,
                     response_headers=exc.headers,
                     retry=failures,
@@ -324,6 +334,9 @@ class SpotCollector:
                     logging.WARNING,
                     "spot_snapshot_transport_error",
                     "Spot public depth snapshot transport failed",
+                    **product_log_fields(
+                        "spot", self.settings.symbol, stream="depth_snapshot"
+                    ),
                     error_type=type(exc).__name__,
                     retry=failures,
                 )
@@ -352,6 +365,9 @@ class SpotCollector:
                 logging.WARNING,
                 "spot_snapshot_bridge_pending",
                 "snapshot did not bridge buffered depth; retry remains rate limited",
+                **product_log_fields(
+                    "spot", self.settings.symbol, stream="depth_snapshot"
+                ),
                 synchronize_result=result.value,
                 retry=failures,
             )
@@ -394,15 +410,27 @@ class SpotCollector:
 
         async with asyncio.TaskGroup() as tasks:
             for stream in self.streams:
-                tasks.create_task(stream.run(session_stop, session_restart=restarting))
-            tasks.create_task(self._capture_snapshot(session_stop))
-            tasks.create_task(control_session())
+                tasks.create_task(
+                    stream.run(session_stop, session_restart=restarting),
+                    name=f"collector-stream:spot:{self.settings.symbol}:{stream.stream.value}",
+                )
+            tasks.create_task(
+                self._capture_snapshot(session_stop),
+                name=f"collector-snapshot:spot:{self.settings.symbol}",
+            )
+            tasks.create_task(
+                control_session(),
+                name=f"collector-control:spot:{self.settings.symbol}",
+            )
 
     async def run(self, stop: asyncio.Event) -> None:
         """Start streams before snapshot, then gracefully seal when stopped."""
 
         try:
-            side_task = asyncio.create_task(self._side_supervisor.run(stop))
+            side_task = asyncio.create_task(
+                self._side_supervisor.run(stop),
+                name=f"collector-side-data:spot:{self.settings.symbol}",
+            )
             restart_failures = 0
             while not stop.is_set():
                 self.resync.requested.clear()
@@ -419,6 +447,9 @@ class SpotCollector:
                     logging.CRITICAL,
                     "spot_depth_resync_restart",
                     "depth continuity invalidated; restarting Spot capture session",
+                    **product_log_fields(
+                        "spot", self.settings.symbol, stream="diff_depth"
+                    ),
                     buffered_capacity=self.settings.bootstrap_buffer_capacity,
                     reason=(
                         self.resync.active.reason
@@ -455,6 +486,9 @@ class SpotCollector:
                             logging.ERROR,
                             "daily_report_failed",
                             "daily report write failed; Raw remains sealed",
+                            **product_log_fields(
+                                "spot", self.settings.symbol
+                            ),
                             utc_date=day,
                             error_type=type(exc).__name__,
                         )

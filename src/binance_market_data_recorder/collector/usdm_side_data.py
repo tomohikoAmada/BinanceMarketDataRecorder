@@ -58,6 +58,7 @@ from ..binance.usdm.side_data_schema import (
 )
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector
 from ..domain.event import EventEnvelope
+from ..domain.product import global_log_fields, product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
 from ..spool.stream import StreamSpool
@@ -391,6 +392,7 @@ class RestSideDataPoller:
         *,
         kind: RestSideDataKind,
         symbol: str,
+        scope: Literal["product", "global"] = "product",
         interval_seconds: float,
         spool: StreamSpool,
         stats: SideDataStats,
@@ -406,11 +408,13 @@ class RestSideDataPoller:
         catchup_batches_per_attempt: int = 2,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         cursor_observer: Callable[[str, dict[str, object]], None] | None = None,
+        log_context: Mapping[str, object] | None = None,
     ) -> None:
         if not symbol or spool.symbol != symbol:
             raise ValueError("USD-M side-data symbol must match its spool")
         self.kind = kind
         self.symbol = symbol
+        self.scope = scope
         self.interval_seconds = interval_seconds
         self.spool = spool
         self.stats = stats
@@ -436,6 +440,14 @@ class RestSideDataPoller:
         self.catchup_batches_per_attempt = catchup_batches_per_attempt
         self.utc_clock_ns = utc_clock_ns
         self.cursor_observer = cursor_observer
+        self.log_context = dict(
+            log_context
+            or (
+                product_log_fields("um_perpetual", symbol)
+                if scope == "product"
+                else global_log_fields("um_perpetual", owner="usdm_side_data")
+            )
+        )
 
     async def run(self, stop: asyncio.Event) -> None:
         self._active_stop = stop
@@ -463,6 +475,7 @@ class RestSideDataPoller:
                             logging.WARNING,
                             "usdm_rest_shared_cooldown",
                             "USD-M REST shared rate-limit cooldown entered or extended",
+                            **self.log_context,
                             stream=self.kind.value,
                             status=rate_limit[0],
                             cooldown_deadline_utc_ns=retry_at_utc_ns,
@@ -473,6 +486,7 @@ class RestSideDataPoller:
                         logging.WARNING,
                         "usdm_side_rest_failed",
                         "USD-M side-data poll failed; core collectors remain active",
+                        **self.log_context,
                         stream=self.kind.value,
                         error_type=type(exc).__name__,
                         failures=self.stats.failures,
@@ -692,6 +706,8 @@ class SideDataSupervisor:
         *,
         retry_initial_seconds: float = 1.0,
         retry_maximum_seconds: float = 60.0,
+        log_context: Mapping[str, object] | None = None,
+        task_name_prefix: str = "side-data",
     ) -> None:
         self.factories = {
             name: (
@@ -706,6 +722,8 @@ class SideDataSupervisor:
         self.failures: dict[str, BaseException] = {}
         self.retry_initial_seconds = retry_initial_seconds
         self.retry_maximum_seconds = retry_maximum_seconds
+        self.log_context = dict(log_context or {})
+        self.task_name_prefix = task_name_prefix
 
     async def _run_one(
         self, name: str, factory: Callable[[], SideDataExtension], stop: asyncio.Event
@@ -739,6 +757,7 @@ class SideDataSupervisor:
                         "usdm_side_task_terminal",
                         "USD-M side-data transport task failed closed; "
                         "no automatic reconnect without a durable boundary",
+                        **self.log_context,
                         stream=name,
                         error_type=type(exc).__name__,
                         attempts=stats.attempts,
@@ -759,6 +778,7 @@ class SideDataSupervisor:
                     logging.ERROR,
                     "usdm_side_task_retry",
                     "USD-M side-data task stopped; retry scheduled while core remains active",
+                    **self.log_context,
                     stream=name,
                     error_type=type(exc).__name__,
                     consecutive_failures=stats.consecutive_failures,
@@ -775,7 +795,10 @@ class SideDataSupervisor:
 
     async def run(self, stop: asyncio.Event) -> None:
         tasks = [
-            asyncio.create_task(self._run_one(name, factory, stop))
+            asyncio.create_task(
+                self._run_one(name, factory, stop),
+                name=f"{self.task_name_prefix}:{name}",
+            )
             for name, factory in self.factories.items()
         ]
         try:
@@ -815,6 +838,16 @@ class UsdMSideDataManager:
             raise ValueError("USD-M side-data symbol must be non-empty")
         self.scope = scope
         self.symbol = symbol
+        self.log_context = (
+            product_log_fields("um_perpetual", symbol)
+            if scope == "product"
+            else global_log_fields("um_perpetual", owner="usdm_side_data")
+        )
+        self.task_name_prefix = (
+            f"side-data:um_perpetual:{symbol}"
+            if scope == "product"
+            else "GLOBAL:side-data:um_perpetual"
+        )
         global_kinds = {RestSideDataKind.FUNDING_INFO, RestSideDataKind.EXCHANGE_INFO}
         if scope == "global" and symbol != GLOBAL_SIDE_DATA_SYMBOL:
             raise ValueError("global side data requires the legacy sentinel")
@@ -921,6 +954,7 @@ class UsdMSideDataManager:
                         collector_instance_id=collector_instance_id,
                         collector_version=collector_version,
                         logger=logger,
+                        log_context=self.log_context,
                         receipt_queue_capacity=receipt_queue_capacity,
                         planned_rotation_seconds=planned_rotation_seconds,
                         opener=websocket_opener,
@@ -948,6 +982,7 @@ class UsdMSideDataManager:
                 return RestSideDataPoller(
                     kind=rest_kind,
                     symbol=symbol,
+                    scope=scope,
                     interval_seconds=settings.rest_interval(rest_kind),
                     spool=spool(rest_kind.value),
                     stats=self.stats[rest_kind.value],
@@ -960,6 +995,7 @@ class UsdMSideDataManager:
                     request_lock=self.rest_request_lock,
                     cooldown=self.rest_cooldown,
                     cursor_observer=observe_cursor,
+                    log_context=self.log_context,
                 )
 
             factories[kind.value] = rest_factory
@@ -969,6 +1005,8 @@ class UsdMSideDataManager:
             logger,
             retry_initial_seconds=settings.retry_initial_seconds,
             retry_maximum_seconds=settings.retry_maximum_seconds,
+            log_context=self.log_context,
+            task_name_prefix=self.task_name_prefix,
         )
 
     async def run(self, stop: asyncio.Event) -> None:

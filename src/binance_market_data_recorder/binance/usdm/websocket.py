@@ -31,7 +31,7 @@ import asyncio
 import hashlib
 import logging
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from dataclasses import replace
 from typing import Protocol, cast
@@ -42,6 +42,7 @@ from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
 
 from ...domain.event import EventEnvelope
+from ...domain.product import product_log_fields
 from ...logging import log_event
 from ...network import WebSocketProxy
 from ...spool.async_queue import AsyncQueueStats, BoundedAsyncQueue
@@ -123,6 +124,7 @@ class UsdMStreamCollector:
         collector_instance_id: str,
         collector_version: str,
         logger: logging.Logger,
+        log_context: Mapping[str, object] | None = None,
         receipt_queue_capacity: int = 1024,
         planned_rotation_seconds: float = 23 * 60 * 60 + 50 * 60,
         backoff: ReconnectBackoff | None = None,
@@ -159,6 +161,9 @@ class UsdMStreamCollector:
         self.collector_instance_id = collector_instance_id
         self.collector_version = collector_version
         self.logger = logger
+        self.log_context = dict(
+            log_context or product_log_fields("um_perpetual", symbol)
+        )
         self.planned_rotation_seconds = planned_rotation_seconds
         self.backoff = backoff or ReconnectBackoff()
         self.websocket_root = websocket_root.rstrip("/")
@@ -259,6 +264,7 @@ class UsdMStreamCollector:
             logging.WARNING,
             "usdm_ingress_gap_recovered",
             "USD-M stream recovered an unclosed discontinuity from Catalog",
+            **self.log_context,
             stream=self.stream_name,
             connection_id=connection_id,
             generation=self._generation,
@@ -364,6 +370,7 @@ class UsdMStreamCollector:
             level,
             event,
             message,
+            **self.log_context,
             stream=self.stream_name,
             connection_id=connection_id,
             generation=self._generation,
@@ -607,6 +614,7 @@ class UsdMStreamCollector:
                 logging.CRITICAL,
                 "usdm_ingress_writer_failed",
                 "USD-M Raw writer stopped before its ingress generation completed",
+                **self.log_context,
                 stream=self.stream_name,
                 connection_id=self._active_connection_id or "unavailable",
                 generation=self._generation,
@@ -883,6 +891,7 @@ class UsdMStreamCollector:
                         logging.INFO,
                         "usdm_websocket_connected",
                         "Binance USD-M raw stream connected",
+                        **self.log_context,
                         stream=self.stream_name,
                         route=self.route,
                         connection_id=connection_id,
@@ -912,6 +921,7 @@ class UsdMStreamCollector:
                     logging.WARNING,
                     "usdm_websocket_disconnected",
                     "Binance USD-M stream disconnected unexpectedly",
+                    **self.log_context,
                     stream=self.stream_name,
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
@@ -942,6 +952,15 @@ class UsdMStreamCollector:
                 elif reason in {"planned_rotation", "server_shutdown"}:
                     if self.lifecycle_observer is not None:
                         self.lifecycle_observer(reason)
+                log_event(
+                    self.logger,
+                    logging.INFO,
+                    f"usdm_{reason}",
+                    "Binance USD-M connection will be replaced",
+                    **self.log_context,
+                    stream=self.stream_name,
+                    connection_id=connection_id,
+                )
                 self._remember_boundary(connection_id)
                 return reason
             if stop.is_set() or reason == "graceful_shutdown":
@@ -974,7 +993,10 @@ class UsdMStreamCollector:
             self._backpressure_boundary_handoff_succeeded = None
             self._post_close_handoff_outcome = None
             self._active_connection_id = None
-            writer_task = asyncio.create_task(self._writer_loop(producer_done))
+            writer_task = asyncio.create_task(
+                self._writer_loop(producer_done),
+                name=f"raw-writer:um_perpetual:{self.symbol}:{self.stream_name}",
+            )
             outcome = "stopped"
             gap_just_started = False
             try:
@@ -1140,6 +1162,7 @@ class UsdMStreamCollector:
                     logging.WARNING,
                     "usdm_ingress_gap_extended",
                     "USD-M reconnect boundary extends the pending discontinuity",
+                    **self.log_context,
                     stream=self.stream_name,
                     connection_id=self._boundary_connection_id or "unknown",
                     generation=self._generation,

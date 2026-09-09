@@ -199,6 +199,7 @@ class RawChunkWriter:
             opened_monotonic=self._opened_monotonic,
             period_seconds=self.rotation.seconds,
             market=market,
+            symbol=symbol,
             stream=stream,
         )
         self._last_sync_monotonic = self._opened_monotonic
@@ -433,11 +434,12 @@ def _rotation_deadline(
     opened_monotonic: float,
     period_seconds: float,
     market: str,
+    symbol: str,
     stream: str,
 ) -> float:
     """Spread stream seals across one bounded period using a stable phase."""
 
-    identity = f"{market}\0{stream}".encode()
+    identity = f"{market}\0{symbol}\0{stream}".encode()
     phase_ratio = int.from_bytes(sha256(identity).digest()[:8], "big") / 2**64
     phase_seconds = period_seconds * phase_ratio
     cycle_start = (opened_monotonic // period_seconds) * period_seconds

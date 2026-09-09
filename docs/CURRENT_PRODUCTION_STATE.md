@@ -21,22 +21,25 @@ CURRENT_NONFORMAL_VALIDATION_STAGE_COMPLETE=YES
 MULTI_SYMBOL_DEVELOPMENT_MAY_BEGIN=YES
 MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
-MS2_INDEPENDENT_PR_REVIEW=PENDING
-MS3=NEXT
+MS2_INDEPENDENT_PR_REVIEW=COMPLETE
+MS2_MERGED_PR=54
+MS3=IN_PROGRESS
+MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution
+MS3_B=NOT_STARTED
 MS4=PLANNED
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
 
-## MS2 candidate authority
+## Current MS3-A candidate authority
 
-MS2 implementation and offline acceptance are closed on
-`feat/ms2-configurable-products`; independent PR review and merge remain pending.
-The exact base is `42ba52ba328fa991a04e5f21ca7f397d58c895ce` (PR #53 merged).
-The MS2 implementation commit containing `milestone_acceptance/MS2.md` is the
-candidate behavior authority. The post-MS1 SHA below remains the historical
-pre-MS2 behavior authority and the live-main authority until MS2 merges.
-See [MS2 acceptance](milestone_acceptance/MS2.md) for commands and compatibility.
+MS2 implementation, offline acceptance, independent review, and merge are
+closed on current `main` via PR #54 at
+`52bf086dd240556b054821f33bf1e2840fdcf912`, tree
+`762729846fae766ae1c2edde0af95cd63648e7df`. The MS3-A implementation candidate
+is the local branch `feat/ms3a-product-rotation-attribution`; it is not merged
+or deployed. MS3-B remains outstanding. See [MS2 acceptance](milestone_acceptance/MS2.md)
+for the closed MS2 implementation record and compatibility.
 
 ## A. Verified pre-MS2 main and post-MS1 implementation/behavior authority
 
@@ -174,6 +177,5 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-Independent review of the MS2 PR is next. After successful merge, verify live
-main and the MS2 acceptance record before separately authorized MS3 work.
-Do not deploy, start MS3, or run qualification as part of the MS2 review.
+Complete the independent MS3-A review. Do not merge this candidate, deploy,
+start MS3-B, or run qualification as part of this work package.
