@@ -25,7 +25,8 @@ Before MS2 implementation:
    new implementation authority before MS2.
 6. Read `AGENTS.md`, `docs/CURRENT_PRODUCTION_STATE.md`, this handoff,
    `docs/milestone_plan.md`, and `docs/architecture.md`.
-7. Read ADR-0031 and `docs/milestone_acceptance/MS1.md`.
+7. Read ADR-0032, retain ADR-0031 as superseded history, and read
+   `docs/milestone_acceptance/MS1.md`.
 8. Inspect the current single-symbol runtime assembly.
 9. Obtain explicit MS2 implementation authorization.
 
@@ -82,10 +83,28 @@ approximately flat). They are not MS2 blockers.
 
 ### C. Future target
 
-The fixed allowlist is `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `XRPUSDT`, `DOGEUSDT`,
-`SUIUSDT`, and `LINKUSDT`, each in Binance Spot and Binance USD-M perpetual.
-That is 7 symbols, 2 markets, and 14 core product identities. The project is
-not becoming a generic arbitrary-symbol or multi-exchange framework.
+ADR-0032 supersedes ADR-0031. The future target is Binance-specific Spot and
+USD-M perpetual capture with an operator-configured finite symbol list for
+each market. There is no fixed symbol allowlist, automatic all-symbol
+discovery, exchange/plugin framework, or hot runtime topology reload; changed
+configuration takes effect on normal process restart. The project is not
+becoming a multi-exchange framework.
+
+The intended `[recorder]` surface is `spot_symbols = [...]` and
+`usdm_symbols = [...]`. Only when both fields are absent does legacy
+compatibility mode resolve to the historical BTCUSDT/BTCUSDT profile. If either
+field is present, explicit product-selection mode uses each supplied list
+exactly and resolves an omitted sibling to an empty list; both resolved lists
+empty is invalid. `ProductKey = (market, symbol)`; one process owns one durable
+Catalog and one existing market Collector per configured ProductKey. The
+current runtime remains single-symbol BTCUSDT until MS2 merges.
+
+An empty resolved USD-M set means zero USD-M Collectors, zero product-specific
+USD-M side-data managers, no process-global USD-M side-data owner, and no
+USD-M REST or WebSocket traffic. The global owner exists only when a USD-M
+ProductKey exists and at least one global kind is enabled. An empty Spot set
+similarly creates no Spot Collector or Spot side-data traffic. The legacy
+`GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` sentinel never creates a ProductKey.
 
 ## MS1 accepted architecture
 
@@ -107,40 +126,49 @@ families are symbol-specific. Runtime fan-out is not part of MS1.
 
 ## Roadmap: MS2 → MS3 → MS4
 
-### MS2 — Fixed 7-symbol / 14-core-product runtime fan-out
+### MS2 — Configurable product runtime
 
-Next and not implemented. Expand the existing one-process BTCUSDT assembly to
-all seven symbols in Spot and USD-M. Preserve product ownership, per-product
-reconnect/resync and backpressure isolation, the shared REST authority, global
-versus symbol-specific side-data semantics, and the MS1 durable identities.
+Next and not implemented. Add the explicit finite Spot/USD-M product lists,
+ProductKey propagation through existing WS/REST/schema/envelope/spool paths,
+dynamic one-process Collector assembly, product-aware service state and
+configuration-bound readiness, product-aware hard-reserve discontinuity
+evidence, the shared USD-M REST authority, and one process-global USD-M
+side-data owner. Preserve product ownership, per-product reconnect/resync and
+backpressure isolation, and the MS1 durable identities.
 
-Acceptance is primarily deterministic/offline: all 14 products instantiate and
-are unique; identities cannot collide; product failure does not alter another;
-product readiness is observable; global readiness is fail-closed; shared REST
-gating is not multiplied; global side-data is not duplicated; cursors remain
-independent; and one-process restart/shutdown remains coherent.
+Acceptance is primarily deterministic/offline: actual runtime ProductKeys equal
+the configured expected set; identities cannot collide; product failure does
+not alter another; product readiness is observable; global readiness is
+configuration-bound and fail-closed; shared REST gating is not multiplied;
+global side-data is not duplicated; cursors remain independent; and one-process
+restart/shutdown remains coherent.
 
-MS2 does not change Raw v1 or Contracts, add arbitrary symbols/exchanges,
-redesign archive format, optimize unrelated hot paths, run a long burn-in, or
+MS2 does not change Raw v1 or Contracts, add another exchange, implement
+automatic all-symbol discovery, redesign archive format, optimize unrelated
+hot paths, run a long burn-in, or
 declare Production Ready.
 
 ### MS3 — Shared resources / rotation / observability
 
-Planned after MS2. Harden process-wide Spot/USD-M REST gates, scheduling and
-fairness; stagger writer rotations; attribute queues, high-watermarks,
-backpressure, reconnects, and recovery to products; retain process-global
-metrics where appropriate; inspect capacity and archive behavior; and keep
-optional side-data failures isolated. No speculative optimization.
+Planned after MS2. Prove REST scheduling/fairness and shared cooldown behavior
+under multiple configured products; stagger writer rotations; attribute queues,
+high-watermarks, backpressure, reconnects, and recovery evidence to products;
+retain process-global metrics where appropriate; inspect capacity/archive
+behavior; and keep optional side-data failures isolated. Persisted metrics
+schema migration is not automatic; prefer runtime/state/log attribution unless
+acceptance requires durable schema change. No speculative optimization.
 
-### MS4 — Multi-symbol integration / deployment qualification
+### MS4 — Configurable-product integration / deployment qualification
 
 Planned after MS2 and MS3. Freeze exact main, run offline CI, build a new
 immutable artifact, record all identities, and deploy only with separate
-authorization. Run a bounded short qualification proving all 14 products
-ready, isolation under reconnect/resync, no unresolved discontinuities,
-Catalog/Raw/manifest/archive integrity, shared REST behavior, resource
-behavior, and the two accepted watches. Do not automatically schedule 72h or
-168h; formal M22.9 remains separate.
+authorization. Run a bounded qualification using a representative mixed
+Spot/USD-M configured profile with non-BTC products, proving all configured
+products ready, isolation under reconnect/resync, no unresolved
+discontinuities, Catalog/Raw/manifest/archive integrity, shared REST behavior,
+and resource behavior. A fixed qualification workload is evidence only, not a
+supported-symbol allowlist. Do not automatically schedule 72h or 168h; formal
+M22.9 remains separate.
 
 ## Non-negotiable boundaries
 

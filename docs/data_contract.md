@@ -9,6 +9,39 @@ roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
 market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
 explicit gaps, and historical/live clock separation remain authoritative.
 
+## Prospective configurable-product compatibility
+
+ADR-0032 changes future collection topology, not the production data contract.
+MS2 will propagate the configured symbol through the existing Spot/USD-M
+WebSocket, REST, envelope, Raw, spool, and normalized paths while retaining
+the current EventEnvelope and Raw v1 schemas. Product identity is
+`(market, symbol)` and existing MS1 durable discontinuity identity remains
+`(market, symbol, stream)`. Legacy BTCUSDT/BTCUSDT defaults apply only when both
+product-selection fields are absent. If either field is present, its supplied
+list is exact and an omitted sibling is empty; both resolved lists empty is
+invalid.
+
+The current `GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` remains a legacy global-side-
+data sentinel for durable compatibility; it is not an implicitly configured
+core product. USD-M `funding_info` and `exchange_info` remain global side-data
+kinds, while product-specific side-data and the six persisted five-minute
+cursor families remain symbol-scoped by `(kind, symbol)`. A future cleanup of
+the sentinel requires a separate data-contract decision. Contracts production
+code/schema and Projection production code remain unchanged.
+
+For the future configurable topology, product-specific USD-M side data is
+`mark_price`, `liquidation`, `premium_index_snapshot`, `funding_history`,
+`open_interest`, `open_interest_statistics_5m`,
+`taker_buy_sell_volume_5m`, `global_long_short_ratio_5m`,
+`top_long_short_account_ratio_5m`, `top_long_short_position_ratio_5m`, and
+`basis_5m`. One process-global USD-M side-data owner executes the global kinds
+and uses the same process-owned REST authority as every configured USD-M
+Collector. The global owner exists only when a USD-M ProductKey is configured
+and at least one global kind is enabled. With no resolved USD-M ProductKey,
+there is no USD-M Collector, product-specific side-data manager, global
+side-data owner, REST polling, or WebSocket collection. With no resolved Spot
+ProductKey, there is no Spot Collector or Spot side-data traffic.
+
 ## M20 transport and platform compatibility
 
 M20 changes no EventEnvelope, Raw chunk, manifest, normalized, replay, or

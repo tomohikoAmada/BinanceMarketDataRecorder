@@ -1094,7 +1094,8 @@ mutation exists; those remain exclusively M22.4B scope.
   non-formal evidence and is not Formal M22.9 evidence.
 - **Accepted watches:** capacity cadence tail jitter and RSS
   early-growth-then-plateau remain watches for later multi-symbol qualification.
-- **Next:** MS2 fixed seven-symbol runtime fan-out after explicit authorization.
+- **Next:** MS2 configurable-product runtime after explicit authorization;
+  ADR-0032 supersedes the former fixed-seven-symbol target.
 - **Between independent runs:** freeze/hash evidence, analyze, optimize only on
   measured need, then use a separately authorized consistency-safe retirement
   or reset for disposable test data if space must be reclaimed. Never delete
@@ -1170,63 +1171,78 @@ remain unchanged.
   evidence, and production data; do not individually delete or rewrite Catalog
   state.
 
-## MS2 — Fixed 7-symbol / 14-core-product runtime fan-out
+## MS2 — Configurable product runtime
 
 - **Status:** **NEXT / NOT IMPLEMENTED**.
-- **Scope:** Expand the existing one-process BTCUSDT runtime assembly to the
-  fixed symbols `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `XRPUSDT`, `DOGEUSDT`,
-  `SUIUSDT`, and `LINKUSDT` in both Spot and USD-M perpetual. Propagate explicit
-  `(market, symbol)` ownership through current runtime assembly while reusing
-  MS1 durable identities, bounded queues/backpressure, per-product
-  reconnect/resync isolation, shared REST authority, and global-versus-
-  symbol-specific side-data semantics.
-- **Non-scope:** Raw v1, external Contracts, archive format, arbitrary-symbol
-  discovery, other exchanges, unrelated optimization, long burn-in, deployment,
-  or a Production Ready claim.
-- **Dependencies:** Accepted MS1, ADR-0031, existing Spot/USD-M runtime,
+- **Scope:** Implement the explicit finite `[recorder]` `spot_symbols` and
+  `usdm_symbols` lists; `ProductKey = (market, symbol)`; symbol propagation
+  through current Spot/USD-M WS/REST/schema/envelope/spool paths; dynamic
+  configured Collector assembly; product-aware service state; config-bound
+  global readiness; product-aware hard-reserve discontinuity evidence; shared
+  USD-M REST authority; the process-global USD-M side-data singleton; and the
+  backward-compatible BTCUSDT/BTCUSDT default profile. Resolve that profile
+  only when both product-selection fields are absent; when either field is
+  present, use supplied lists exactly and resolve an omitted sibling to empty.
+  Both resolved lists empty is invalid. An empty USD-M set creates no USD-M
+  collectors, side-data managers, global owner, REST polling, or WebSocket
+  traffic; an empty Spot set creates no Spot collector or side-data traffic.
+- **Non-scope:** Raw v1, existing Catalog/MS1 durable identity, external
+  Contracts, Projection, archive format, automatic all-symbol discovery, other
+  exchanges, hot reload, unrelated optimization, long burn-in, deployment, or
+  a Production Ready claim.
+- **Dependencies:** Accepted MS1, ADR-0032, existing Spot/USD-M runtime,
   Catalog, side-data, readiness, and REST-gate contracts.
-- **Acceptance intent:** Deterministic/offline proof that all 14 products are
-  unique and instantiate; same stream/`gap_id` cannot collide across symbols;
-  product failure does not alter another; product readiness is observable;
-  global readiness is fail-closed; the shared REST gate is not multiplied;
-  global side data is not duplicated; symbol-specific cursors are independent;
-  and one-process shutdown/restart is coherent.
+- **Acceptance intent:** Deterministic/offline proof that the actual runtime
+  ProductKey set exactly equals the configured expected set; same stream/`gap_id`
+  cannot collide across products; product failure does not alter another;
+  product readiness is observable; global readiness is config-bound and fail-
+  closed; the shared REST authority is not multiplied; global side data is not
+  duplicated; symbol-specific cursors are independent; Spot-only configuration
+  implies zero USD-M traffic and no global USD-M owner; and one-process
+  shutdown/restart is coherent.
 - **Rollback/stop:** Stop before implementation if MS1 identity or existing
   product isolation cannot be preserved. Revert only MS2 code/config after
   sealing and retaining any test evidence; never rewrite Raw.
 
-## MS3 — Shared resources / rotation / observability
+## MS3 — Shared-resource scaling / rotation / observability
 
 - **Status:** **PLANNED**.
-- **Scope:** Harden process-wide Spot/USD-M REST gates under fan-out; verify
-  scheduling fairness; phase writer rotations; attribute queue,
-  high-watermark, backpressure, reconnect, and recovery evidence to products;
-  retain process-global metrics as global; inspect archive/capacity behavior;
-  and preserve optional side-data isolation.
-- **Non-scope:** Speculative optimization, Raw v1 or Contracts changes,
-  arbitrary-symbol framework, deployment, or long burn-in.
-- **Dependencies:** Independently accepted MS2 and ADR-0031.
+- **Scope:** Prove REST scheduling/fairness under multiple configured products;
+  shared cooldown behavior; product-aware writer rotation phase; product task,
+  log, reconnect, resync, and backpressure attribution; bounded synthetic
+  multi-product load; archive/capacity interaction; and optional side-data
+  isolation. Prefer runtime/state/log product attribution; persisted metrics
+  schema migration is not automatic unless a concrete acceptance need requires
+  it.
+- **Non-scope:** Speculative optimization without evidence, Raw v1 or
+  Contracts changes, exchange/plugin framework, hot reload, deployment, or long
+  burn-in.
+- **Dependencies:** Independently accepted MS2 and ADR-0032.
 - **Acceptance intent:** Deterministic and bounded-load evidence proves no
   product starvation, no multiplied shared authority, phased rotation, product
   attribution, coherent global metrics, and no cross-product state corruption.
 - **Rollback/stop:** Stop on fairness, capacity, or isolation regressions;
   revert only MS3 changes while retaining Raw and manifests.
 
-## MS4 — Multi-symbol integration / deployment qualification
+## MS4 — Configurable-product integration / bounded live qualification
 
 - **Status:** **PLANNED**.
 - **Scope:** Freeze exact main, run full offline CI, build one new immutable
   Wheel and record source/Wheel/lock/config/unit/deployment identities; after
-  separate deployment authorization, run a bounded short live qualification
-  proving all 14 products ready, isolation under reconnect/resync, no
-  unresolved discontinuities, Catalog/Raw/manifest/archive integrity, shared
-  REST behavior, resource behavior, and the two clean-24h watches.
+  separate deployment authorization, run a bounded live qualification using a
+  representative mixed Spot/USD-M configured profile with non-BTC products.
+  All configured products must be READY, with shared-resource integrity,
+  Raw/Catalog/manifest/archive checks, and CPU/RSS/queue/backpressure/capacity
+  observation.
 - **Non-scope:** Automatic 72h/168h scheduling, inherited single-symbol
   duration credit, Formal M22.9 acceptance, or Production Ready declaration.
 - **Dependencies:** Accepted MS2 and MS3, fresh artifact identity, and
   separate deployment authorization.
 - **Acceptance intent:** Every identity and live result is artifact-specific;
-  any later burn-in duration is independently justified from MS4 evidence.
+  a fixed qualification workload is evidence only, not a supported-symbol
+  allowlist; a bounded steady-state window may begin after all products become
+  ready; any later burn-in duration is independently justified from MS4
+  evidence.
 - **Rollback/stop:** Stop on any unresolved gap, false readiness, shared-gate
   bypass, integrity failure, or resource exhaustion; preserve evidence and Raw,
   return to the last approved artifact, and do not delete unarchived data.
