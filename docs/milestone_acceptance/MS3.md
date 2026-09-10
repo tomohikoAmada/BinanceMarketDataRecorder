@@ -1,16 +1,39 @@
 # MS3 — Shared-resource scaling / rotation / observability acceptance
 
 - Date: 2026-09-09; evidence update: 2026-09-10
-- Status: **CI REPAIR IMPLEMENTED — AWAITING INDEPENDENT REVIEW**
-- Candidate branch: `feat/ms3b-shared-resource-acceptance`
-- Candidate PR: `#56` (not merged)
-- NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
-- MS4: **NEXT**, only after independent review/merge and separate authorization
+- Status: **CLOSED / MERGED**
+- Candidate branch: `feat/ms3b-shared-resource-acceptance` (deleted after merge)
+- Candidate tip retained for restoration: `2a701fe79b78d3c63dd5959efecd20a2369d58e5`
+- Candidate PR: `#56` (merged)
+- Reviewed head: `2a701fe79b78d3c63dd5959efecd20a2369d58e5`
+- Reviewed tree: `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`
+- CI run: `34436773366` (macOS and Ubuntu all steps passed)
+- Actual merge SHA: `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`
+- Actual merge tree: `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`
+- NEXT=MS4_A_LOCAL_PREPARATION
+- MS4: **NEXT**, with separate authorization; no deployment in MS3
 - FORMAL_M22_9=NOT_STARTED
 - PRODUCTION_READY=NO
 - CURRENT_MAIN_DEPLOYED=NO
 
-## MS3-CI2 final local validation
+## MS3 merge closeout — 2026-09-10
+
+PR #56 was merged through the normal repository rule after exact-head CI run
+`34436773366` passed both macOS and Ubuntu, including build and clean-wheel
+smoke. Astra's approved candidate was head
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; the actual merge commit is
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. MS3-R1, MS3-CI1 and MS3-CI2
+are CLOSED. The former candidate branch was deleted only after verifying the
+merged tip, no active worktree and no later work; restoration tip
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5` is retained in the ledger.
+
+MS3 remains not deployed; VPS access, online traffic and Formal M22.9 were not
+started. `PRODUCTION_READY=NO`. MS4-A is the next separately authorized
+milestone.
+
+## MS3-CI2 final local validation (pre-submit evidence)
 
 Implemented and checked by GPT-6 Astra on macOS / Python 3.12.9, based on
 `e6dc3a993defa2c6f24af25209090a55deda2381`. Only one test file and current
@@ -31,23 +54,25 @@ at the boundary, with no wall-clock wait required to cause rotation.
 - No new remote CI result is claimed. Online, VPS, deployment, external media,
   stress/soak and Formal M22.9 were not run.
 
-NEXT=LOCAL_LUNA_MS3_CI2_SUBMIT. Commit/push and verify normal required checks
-through the local execution workflow. No production repair or architecture
-expansion is requested; merge only the exact submitted delta under normal gates.
+SUBMISSION=COMPLETED. The subsequent exact-head CI and normal merge outcome are
+recorded in the MS3 merge closeout above. No production repair or architecture
+expansion was requested.
 
-## Latest CI disposition — MS3-CI2
+## Latest CI disposition — MS3-CI2 (historical trigger)
 
 On `e6dc3a993defa2c6f24af25209090a55deda2381`, run `34424559261`:
 Ubuntu passed all gates; macOS failed the older global-stop backpressure test's
 single-manifest assertion (actual 2). Profile D passed on both platforms.
 Astra reproduced this failure with an injected normal rotation boundary and
 implemented a test-only aggregate-manifest correction plus a boundary case.
-Local validation passed (1641 passed, 24 skipped, 4 deselected); PR remains unmerged and no deployment is
-implied. See the MS3-CI2 entry in milestone_plan.md for current execution scope.
+Local validation passed (1641 passed, 24 skipped, 4 deselected). This was the
+pre-submit disposition; the repair was later included in PR #56 and merged as
+recorded above. No deployment is implied.
 
-## MS3-CI1 implementation — 2026-09-10 (current disposition)
+## MS3-CI1 implementation — 2026-09-10 (historical handoff; now closed)
 
-**IMPLEMENTED / AWAITING REVIEW.** The Ubuntu failure was caused by the Profile
+**IMPLEMENTED / AWAITING REVIEW at handoff; CLOSED/MERGED in the final
+closeout.** The Ubuntu failure was caused by the Profile
 D fixture synchronously waiting for depth persistence inside fake SDK calls
 already occupying the shared default executor. Those waits competed with the
 42 real stream-writer drains and the one intentionally blocked writer. On a
@@ -80,11 +105,13 @@ Validation on Darwin arm64 with Python 3.12.9:
 - Ruff, strict MyPy, M0 contracts, Go Raw golden and `git diff --check`: pass;
 - sdist/wheel build and clean-wheel `--version`/`doctor`/`status`: pass.
 
-Ubuntu required checks and independent review of this repair delta remain open.
+At this handoff, Ubuntu required checks and independent review of this repair
+delta remained open; the exact candidate later passed and merged as recorded in
+the closeout above.
 No online/VPS/external-media/stress/soak test ran, and no GitHub CI operation was
 manually triggered, rerun, cancelled or awaited. The earlier Astra approval at
 `66e036a0` remains historical and does not approve this new test delta.
-NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW.
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW (historical handoff).
 
 ## CI failure update — 2026-09-10 (historical trigger)
 
@@ -98,7 +125,7 @@ facts, but do not authorize merging this failing candidate. Execute
 No merge/auto-merge, deployment or manual CI operation is authorized for the
 unreviewed repair. NEXT=MS3_CI1_REPAIR.
 
-## Final independent review — 2026-09-10
+## Final independent review — 2026-09-10 (historical review record)
 
 **APPROVED for the bounded offline MS3 scope. MS3-R1 CLOSED.**
 Reviewed by GPT-6 Astra at `66e036a07f422818f5e3f54f0216d4083b443698`, tree
@@ -111,16 +138,17 @@ are closed. Historical reviews below retain their time-local disposition.
 Independent validation: 44 passed in the five focused files listed in the prior
 review below. Full offline suite, Ruff/MyPy and other gates remain implementer
 reported evidence; this review did not rerun full CI, online, VPS, external media
-or stress/soak. PR #56 is still open/unmerged. Approval is not deployment or live
-qualification. Local Luna must update the stale PR description and complete the
-normal merge handoff before MS3 is marked CLOSED. Any later code/test changes
-require review of their delta; documentation-only review records do not invalidate
-this source review.
+or stress/soak. At review time PR #56 was open/unmerged; it was later updated,
+validated and merged as recorded in the closeout above. Approval is not
+deployment or live qualification. Any later code/test changes require review of
+their delta; documentation-only review records do not invalidate this source
+review.
 
-## Independent re-review — 2026-09-10
+## Independent re-review — 2026-09-10 (historical review record)
 
 Reviewed head `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`, tree
-`b573c09ae958f81905ace58ca0c3612c81666ae4`; PR #56 still open/unmerged.
+`b573c09ae958f81905ace58ca0c3612c81666ae4`; at that review time PR #56 was
+open/unmerged.
 Reviewer: GPT-6 Astra. The real Collector/Poller and concurrent Profile D
 supplements substantially resolve the original findings. One P2 test-evidence
 correction remains: the waiting-cancellation test waits for request_count == 1
@@ -483,11 +511,16 @@ CAPACITY_THRESHOLDS_CHANGED=NO
 ARCHIVE_TRANSACTION_PROTOCOL_CHANGED=NO
 CONTRACTS_CHANGED=NO
 PROJECTION_CHANGED=NO
-MS3=CI_REPAIR_IMPLEMENTED_AWAITING_REVIEW
+MS3=CLOSED_MERGED
 MS3_INDEPENDENT_RE_REVIEW=APPROVED
-MS3_B_MERGED=NO
-MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
+MS3_R1=CLOSED
+MS3_CI1=CLOSED
+MS3_CI2=CLOSED
+MS3_B_MERGED=YES
+MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS4=NEXT
+NEXT=MS4_A_LOCAL_PREPARATION
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO
