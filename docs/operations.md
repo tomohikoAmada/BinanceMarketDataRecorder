@@ -4,22 +4,30 @@ Current implementation status and approved future architecture are distinct.
 macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
 implemented/local validation profiles. The primary production deployment
 profile is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
-[`vps_operations.md`](vps_operations.md). The M22.7B deployment/readiness host
-gate passed on the recorded Ubuntu host, but that VPS profile, remote archive
-client, and Catalog snapshot transfer are not production deployed or
-Production Ready.
+[`vps_operations.md`](vps_operations.md). The reviewed MS4-B stopped deployment
+is installed from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`), but is not live-qualified or
+Production Ready. The archive protocol/library exists; the approved
+cross-machine target, operator command freeze, and production certification
+remain pending.
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
 context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Verify live GitHub
-`main` at takeover. The post-MS1 implementation/behavior authority is
-`d38180074b5f76ab6b7778eea7fc505160c671ae`; documentation-only descendants
-may make live `main` newer without changing that behavior authority. Live
-GitHub `main` is not deployed.
-The pre-MS1 source `c421605e…` is the independently qualified deployed
-single-symbol artifact; its clean 24-hour non-formal stage is complete. MS2 is
-the next development milestone, not an operations or burn-in authorization.
-Formal M22.9 has not started and Production Ready remains NO.
+`main` at takeover. Current behavior/deployment-source authority is
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The MS1 merge
+`d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
+only. Live GitHub `main` is `bb8c93ba63c23adaf2cb0288b6ea127030b89e58`
+(tree `8770f48d458dc4e35d813e8db8dc2009ff78889c`), a documentation-only
+descendant and not deployed.
+The pre-MS1 source `c421605e…` remains the independently qualified deployed
+single-symbol artifact; its clean 24-hour non-formal stage is complete. MS3-B
+is merged, and the MS4-B exact target deployment is reviewed complete but
+stopped. The next action is owner-authorized MS4-C, not an automatic operation
+or burn-in; its archive target and explicit start authorization are still
+missing. Formal M22.9 has not started and Production Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -34,7 +42,7 @@ and port. They never expose the configured URL. `direct` ignores the shell,
 one credential-free HTTP(S) proxy for all Recorder network exits when selected.
 The RK3588
 validation systemd profile uses TOML `explicit`, never an SSH environment. The
-certified Germany VPS profile requires `direct` mode. Its unit neutralizes the
+current Tokyo VPS profile `vps-production-v1` uses `direct` mode. Its unit neutralizes the
 upper- and lowercase standard proxy variables, and readiness rejects any
 nonempty proxy authority in the live service process. Local and LAN proxy modes
 remain testable outside `vps-production-v1`.
@@ -159,7 +167,7 @@ External absence does not stop internal capture.
 Linux M20 performs no automatic eject; it reports manual action without
 `SAFE_TO_REMOVE`.
 
-The future archive workflow is local-client pull over SSH. The local client
+The production archive workflow is local-client pull over SSH. The local client
 must verify durability, readback, size, SHA-256, Raw manifest identity,
 Archive Set/storage identity, and a durable receipt before the VPS can authorize
 deletion. A transport success, file name, or size match alone is never enough.
@@ -205,8 +213,8 @@ Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
 measurements are also point-in-time evidence, not permanent runway. The current
-project next action remains the 4h non-formal burn-in, not the 278-hour formal
-chain or a capacity expansion action.
+project next action is owner resumption of MS4-C after its archive and explicit
+start gates, not the 278-hour formal chain or a capacity expansion action.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:

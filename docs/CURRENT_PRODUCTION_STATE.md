@@ -1,11 +1,28 @@
 # Current Production State
 
 This is the concise current authority. It separates GitHub engineering source,
-the independently qualified deployed artifact, and the future multi-symbol
-program. Verify live GitHub before acting; this document does not authorize
+the independently qualified deployed artifact, and the current multi-symbol
+qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Stage closeout — MS4-A local preparation
+## Current stage — MS4-B stopped deployment review complete
+
+MS4-A local preparation and review remain complete. MS4-B target preflight,
+rollback evidence preservation, exact frozen-source Linux artifact build,
+complete four-ProductKey configuration, stopped systemd deployment and
+deployment identity verification are reviewed complete from the owner-supplied
+Tokyo VPS execution summary and cross-checked Git/runbook evidence. Direct
+inspection of the private evidence bundle was not performed locally:
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`. The Tokyo Recorder
+was gracefully stopped before mutation and remains stopped. No live capture,
+Binance qualification traffic, controlled recovery, or Formal M22.9 was
+started. `PRODUCTION_READY=NO` and MS4-C remains blocked/not started.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=BLOCKED_NOT_STARTED;
+NEXT=OWNER_RESUME_REQUIRED_MS4_C.
+
+## Historical stage closeout — MS4-A local preparation
 
 MS3 is merged. MS4-A local preparation and its document review are complete;
 PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
@@ -26,7 +43,8 @@ closed. The historical CI1/CI2 failures remain recorded in the milestone plan
 and MS3 acceptance; they do not describe the current state.
 
 MS3 is not deployed. Formal M22.9 has not started and Production Ready remains
-NO. NEXT=MS4_A_LOCAL_PREPARATION.
+NO. This historical checkpoint recorded `NEXT=MS4_A_LOCAL_PREPARATION`; the
+current next action is `OWNER_RESUME_REQUIRED_MS4_C` after its remaining gates.
 
 ## MS3-CI1 update — 2026-09-10 (historical handoff; now closed)
 
@@ -57,19 +75,23 @@ below retain their evidence context. No MS4 deployment is authorized.
 ## Status at a glance
 
 ```text
-LIVE_GITHUB_MAIN=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-LIVE_GITHUB_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
-POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+LIVE_GITHUB_MAIN=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+LIVE_GITHUB_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS1_FOUNDATION_LINEAGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+MS1_FOUNDATION_LINEAGE_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 MS1_STATUS=MERGED
 MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-CURRENT_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-CURRENT_NONFORMAL_VALIDATION_STAGE_COMPLETE=YES
+CURRENT_MAIN_SHA=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+CURRENT_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+PRE_MS1_NONFORMAL_VALIDATION_STAGE_COMPLETE=YES
 MULTI_SYMBOL_DEVELOPMENT_MAY_BEGIN=YES
 MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
@@ -89,7 +111,11 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=NEXT
+MS4=IN_PROGRESS_MS4_C_BLOCKED
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=BLOCKED_NOT_STARTED
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
@@ -101,8 +127,8 @@ closed on current `main` via PR #54. MS3-A is merged via PR #55 at
 `01527037254595267003f886689bb270e08b5e5d`, tree
 `eb63b645660a64ac606341ce3fb7f447a6e89457`, with merge parents
 `52bf086dd240556b054821f33bf1e2840fdcf912` and
-`ad1e941af3cd2bd3922eac239ba92a47058e9875`. MS3-B candidate evidence is
-merged via PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. MS3-B merged evidence is
+recorded via PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; it is not deployed. The merged
 candidate includes the narrow MS3-R1 waiting-cancellation correction and the
 MS3-CI1/CI2 test repairs. The former candidate branch was safely removed after
@@ -115,14 +141,15 @@ the corrected waiter enqueue/cancel/successor/post-stop assertions.
 See [MS2 acceptance](milestone_acceptance/MS2.md) and
 [MS3 acceptance](milestone_acceptance/MS3.md) for the acceptance records.
 
-## A. Verified pre-MS2 main and post-MS1 implementation/behavior authority
+## A. Historical/time-local pre-MS2 lineage and current source split
 
 | Item | Authority |
 | --- | --- |
-| Live GitHub `main` at MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
-| Post-MS1 implementation/behavior authority | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
-| Post-MS1 implementation tree | `95f16f05b30b7db23e43ebb6439ed0d055081902` |
-| MS1 merge | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
+| Live GitHub `main` at historical MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
+| Current behavior/deployment source | `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee` |
+| Current live GitHub `main` (docs-only descendant; not deployed) | `bb8c93ba63c23adaf2cb0288b6ea127030b89e58`; tree `8770f48d458dc4e35d813e8db8dc2009ff78889c` |
+| MS1 foundation lineage (historical) | `d38180074b5f76ab6b7778eea7fc505160c671ae`; tree `95f16f05b30b7db23e43ebb6439ed0d055081902` |
+| MS1 merge (historical) | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
 | Merge parents | `c421605e302d2ad46acdb2466627f64644181c9a`, `11e100fbcb974e7d54f0515c99e08ac6042b9204` |
 | MS1 | merged via PR #51; reviewed head `11e100fbcb974e7d54f0515c99e08ac6042b9204` |
 | Post-merge CI | `offline-ci` run `33955915046`, push event, macOS and Ubuntu Python 3.12 jobs successful |
@@ -134,14 +161,13 @@ implementation commits remain provenance, not separate current authorities:
 `39fbd04172a6b5b27b41d43c57d0e5ff575b95d4`, and
 `11e100fbcb974e7d54f0515c99e08ac6042b9204`.
 
-The last behavior-changing authority before MS2 was the MS1
-merge `d38180074b5f76ab6b7778eea7fc505160c671ae`, with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`. A documentation-only descendant
-may make live GitHub `main` newer without changing that implementation or
-behavior authority. At takeover, verify live `main`, confirm this SHA remains
-an ancestor, and inspect every later commit. If any later commit changes
-source or behavior, stop and establish the new implementation authority before
-MS2.
+The MS1 merge above is retained as historical foundation lineage from the
+pre-MS2 review; it is not the current behavior authority. The current
+behavior/deployment source is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. Current live GitHub `main` is
+`bb8c93ba63c23adaf2cb0288b6ea127030b89e58`, tree
+`8770f48d458dc4e35d813e8db8dc2009ff78889c`; it is a documentation-only
+descendant and is not production deployed.
 
 ## B. Deployed and clean-24h authority
 
@@ -212,8 +238,10 @@ explicit product-selection mode applies: supplied lists are exact and an
 omitted sibling resolves to an empty list; both resolved lists empty is invalid.
 MS2 assembles one Collector per configured ProductKey in one process.
 It passed offline acceptance on current main; MS3-B was then merged through PR
-#56 with the production-path tests and CI1/CI2 repairs. Live qualification
-remains pending, and MS4-A is the next separately authorized milestone.
+#56 with the production-path tests and CI1/CI2 repairs. MS4-B stopped-deployment
+review is complete. Live qualification remains pending and MS4-C is blocked
+until the archive target, immediate ETHUSDT eligibility evidence, and explicit
+start authorization are supplied.
 
 In explicit Spot-only mode, the resolved USD-M set is empty: no USD-M
 Collectors, product-specific side-data managers, process-global USD-M
@@ -241,20 +269,25 @@ exchanges, or arbitrary-symbol framework are authorized.
 ## Formal and deployment status
 
 ```text
+STOPPED_DEPLOYMENT_INSTALLED=YES
+LIVE_START_AUTHORIZED=NO
 DEPLOYMENT_AUTHORIZED=NO
 FORMAL_M22_9_STARTED=NO
 PRODUCTION_READY=NO
 ```
 
-Any MS4 deployment requires a newly frozen source, immutable Wheel, lock,
-config, unit, and deployment identities, followed by separate authorization
-and a fresh bounded qualification. Historical single-symbol duration credit
-does not transfer to a behavior-changing multi-symbol artifact.
+Here `DEPLOYMENT_AUTHORIZED=NO` means live deployment/start authorization is
+absent. Any MS4-C start requires the reviewed exact installed source/artifact,
+immutable Wheel, lock, config, unit, and deployment identities, followed by
+explicit authorization and a fresh bounded qualification. Historical
+single-symbol duration credit does not transfer to a behavior-changing
+multi-symbol artifact.
 
 ## Next action
 
-NEXT=MS4_A_LOCAL_PREPARATION
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
 
-MS3 is closed/merged. Start MS4-A as a separate local preparation run. Do not
-deploy or run live qualification without the MS4 authorization and artifact-
-specific gates.
+MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
+review is complete. Do not start the Recorder or run live qualification. Resume
+only MS4-C after the approved archive target and explicit start authorization
+are available; capture ETHUSDT official eligibility immediately before start.

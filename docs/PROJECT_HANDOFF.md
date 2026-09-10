@@ -2,10 +2,26 @@
 
 This handoff is self-contained for a new development team. It separates
 current GitHub engineering authority, the older deployed/qualified artifact,
-and the future multi-symbol plan. Documentation is not deployment or live
+and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Stage closeout — MS4-A local preparation
+## Current stage — MS4-B stopped deployment review complete
+
+MS4-A local preparation and review remain complete. MS4-B target preflight,
+rollback evidence preservation, exact frozen-source Linux artifact build,
+complete four-ProductKey configuration, stopped systemd deployment and
+deployment identity verification are reviewed complete from the owner-supplied
+Tokyo VPS execution summary and cross-checked Git/runbook evidence. Direct
+inspection of the private evidence bundle was not performed locally:
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`. The Tokyo Recorder
+was gracefully stopped before mutation and remains stopped. No live capture,
+Binance qualification traffic, controlled recovery, or Formal M22.9 was
+started. `PRODUCTION_READY=NO` and MS4-C remains blocked/not started.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=BLOCKED_NOT_STARTED; NEXT=OWNER_RESUME_REQUIRED_MS4_C.
+
+## Historical stage closeout — MS4-A local preparation
 
 MS3 is merged. MS4-A local preparation and its document review are complete;
 PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
@@ -26,7 +42,8 @@ closed. The historical CI1/CI2 failures remain recorded in the milestone plan
 and MS3 acceptance; they do not describe the current state.
 
 MS3 is not deployed. Formal M22.9 has not started and Production Ready remains
-NO. NEXT=MS4_A_LOCAL_PREPARATION.
+NO. This historical checkpoint recorded `NEXT=MS4_A_LOCAL_PREPARATION`; the
+current next action is `OWNER_RESUME_REQUIRED_MS4_C` after its remaining gates.
 
 ## MS3-CI1 update — 2026-09-10 (historical handoff; now closed)
 
@@ -67,16 +84,19 @@ single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
 MS1 migration design, Raw v1, Contracts, or the closed MS1 review findings
 unless new MS2+ evidence creates a concrete contradiction.
 
-The following pre-MS2 authority checks were completed before implementation:
+The following pre-MS2 authority checks were completed before implementation.
+They are historical/time-local lineage, not current behavior or deployment
+authority:
 
 1. Fetch live GitHub `main`.
 2. Verify that `d38180074b5f76ab6b7778eea7fc505160c671ae` remains an ancestor.
 3. Inspect every commit after `d38180074b5f76ab6b7778eea7fc505160c671ae`.
-4. If those commits are only the post-MS1 documentation synchronization, use
+4. At that historical checkpoint, if those commits were only post-MS1
+   documentation synchronization, retain
    `d38180074b5f76ab6b7778eea7fc505160c671ae` and tree
-   `95f16f05b30b7db23e43ebb6439ed0d055081902` as implementation authority.
+   `95f16f05b30b7db23e43ebb6439ed0d055081902` as MS1 foundation lineage.
 5. If any later commit changes source or behavior, **STOP** and establish the
-   new implementation authority before MS2.
+   new implementation authority for that historical checkpoint before MS2.
 6. Read `AGENTS.md`, `docs/CURRENT_PRODUCTION_STATE.md`, this handoff,
    `docs/milestone_plan.md`, and `docs/architecture.md`.
 7. Read ADR-0032, retain ADR-0031 as superseded history, and read
@@ -86,21 +106,25 @@ The following pre-MS2 authority checks were completed before implementation:
 
 ## Current authority split
 
-### A. Live GitHub main and post-MS1 implementation/behavior authority
+### A. Live GitHub main and current behavior/deployment source
 
 ```text
-LIVE_GITHUB_MAIN=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-LIVE_GITHUB_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
-POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+LIVE_GITHUB_MAIN=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+LIVE_GITHUB_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS1_FOUNDATION_LINEAGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+MS1_FOUNDATION_LINEAGE_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 MS1_IMPLEMENTATION_MERGED=YES
 MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-CURRENT_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_MAIN_SHA=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+CURRENT_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
 MS2_PR=54
 MS2_MERGED=YES
 MS3=CLOSED_MERGED
@@ -118,15 +142,18 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=NEXT
-NEXT=MS4_A_LOCAL_PREPARATION
+MS4=IN_PROGRESS_MS4_C_BLOCKED
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=BLOCKED_NOT_STARTED
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
 `ad1e941af3cd2bd3922eac239ba92a47058e9875`. PR #51 is merged, PR #54 is the
 merged MS2 behavior authority, and PR #55 is the merged MS3-A authority on
-current `main`; none is deployed as current production. The MS3-B candidate is
-merged through PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+current `main`; none is deployed as current production. The MS3-B implementation
+is merged through PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. It adds only the shared-resource
 acceptance work recorded in `docs/milestone_acceptance/MS3.md`, including the
 real production-path Collector/Poller supplement, its minimal in-flight REST
@@ -136,7 +163,13 @@ the CI1/CI2 fixture repairs. The former candidate tip
 the candidate branch was removed after merge and worktree checks.
 
 MS1 merged the durable identity foundation. It did not implement runtime
-fan-out, multi-symbol startup, or a new readiness policy.
+fan-out, multi-symbol startup, or a new readiness policy. The MS1 merge SHA
+above is historical foundation lineage; current behavior/deployment authority
+is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. Current live GitHub `main` is
+`bb8c93ba63c23adaf2cb0288b6ea127030b89e58` with tree
+`8770f48d458dc4e35d813e8db8dc2009ff78889c`; it is a documentation-only
+descendant and not production deployed.
 
 ### B. Deployed and clean-24h authority
 
@@ -243,21 +276,26 @@ cancel/stop, and mixed 14-product/42-core-stream running-path evidence. The
 existing sequential storage Profile D test is labeled as storage-layer proof;
 the new running-path test proves simultaneous activity and sibling progress
 under target backpressure. It adds no generic scheduler, persisted metrics
-migration, or speculative optimization. Independent re-review/merge and live
-qualification remains pending; see `docs/milestone_acceptance/MS3.md`. MS4-A is
-the next separately authorized milestone.
+migration, or speculative optimization. Independent re-review/merge is closed;
+live qualification remains pending; see `docs/milestone_acceptance/MS3.md`.
+MS4-B stopped-deployment review is complete; MS4-C is the next separately
+authorized milestone after its remaining archive and start gates.
 
 ### MS4 — Configurable-product integration / deployment qualification
 
-Planned after MS2 and MS3. Freeze exact main, run offline CI, build a new
-immutable artifact, record all identities, and deploy only with separate
-authorization. Run a bounded qualification using a representative mixed
-Spot/USD-M configured profile with non-BTC products, proving all configured
+MS4-B stopped-deployment review is complete after the exact source/artifact,
+configuration, rollback and identity gates. The remaining MS4-C work is blocked
+until its approved archive target, immediate ETHUSDT eligibility evidence and
+explicit start authorization are available. The bounded qualification uses a
+representative mixed Spot/USD-M configured profile with non-BTC products,
+proving all configured
 products ready, isolation under reconnect/resync, no unresolved
 discontinuities, Catalog/Raw/manifest/archive integrity, shared REST behavior,
 and resource behavior. A fixed qualification workload is evidence only, not a
-supported-symbol allowlist. Do not automatically schedule 72h or 168h; formal
-M22.9 remains separate.
+supported-symbol allowlist. MS4-B target preflight/stopped deployment is the
+completed stopped gate; MS4-C live qualification is the current blocked gate
+and requires separate pre-start review and authorization. Do not automatically
+schedule 72h or 168h; Formal M22.9 remains separate.
 
 ## Non-negotiable boundaries
 
@@ -268,7 +306,8 @@ recoverable and unchanged. Do not write production data under the repository
 or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
-`DEPLOYMENT_AUTHORIZED=NO`, `CURRENT_MAIN_DEPLOYED=NO`,
+`STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
+`DEPLOYMENT_AUTHORIZED=NO` (live start only), `CURRENT_MAIN_DEPLOYED=NO`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
 `MS3_B=CLOSED_MERGED_PR_56`,
@@ -276,4 +315,11 @@ or use an external volume as an active Collector target.
 `MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
 `MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
 `MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
-`MS4=NEXT`, `NEXT=MS4_A_LOCAL_PREPARATION`.
+`MS4=IN_PROGRESS_MS4_C_BLOCKED`,
+`MS4_B=REVIEWED_COMPLETE`, `MS4_C=BLOCKED_NOT_STARTED`,
+`NEXT=OWNER_RESUME_REQUIRED_MS4_C`.
+
+Any MS4-C start requires the reviewed exact installed source/artifact,
+immutable Wheel, lock, config, unit, and deployment identities, explicit start
+authorization, and a fresh bounded qualification. Historical single-symbol
+duration credit does not transfer to the current multi-symbol artifact.

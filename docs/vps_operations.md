@@ -1,13 +1,19 @@
 # VPS Operations
 
-Status: M22.7B substrate and the historical VPS profile are documented. Verify
-live GitHub `main` at takeover. The post-MS1 implementation/behavior authority
-is `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`; documentation-only descendants
-may make live `main` newer without changing that behavior authority. Live
-GitHub `main` is not deployed. The pre-MS1 deployed artifact completed the clean 24-hour
-non-formal single-symbol stage; that evidence does not qualify MS1 or a future
-14-product run. MS2 is next development work and requires explicit
+Status: MS4-B Tokyo VPS preflight and stopped deployment are reviewed complete;
+MS4-C live execution is blocked/not started. Verify live GitHub `main` at
+takeover. Current behavior/deployment-source authority is
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The MS1 merge
+`d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902` is historical foundation lineage
+only. Live GitHub `main` is `bb8c93ba63c23adaf2cb0288b6ea127030b89e58`
+with tree `8770f48d458dc4e35d813e8db8dc2009ff78889c`, a documentation-only
+descendant and not deployed as current production. The pre-MS1 deployed
+artifact completed the clean 24-hour non-formal single-symbol stage; that
+evidence does not qualify MS1 or the current four-ProductKey run. MS3-B is
+merged, and MS4-B is stopped/reviewed complete. MS4-C requires the approved
+archive target, immediate ETHUSDT eligibility evidence, and explicit start
 authorization. Formal M22.9 has not started and Production Ready is not claimed.
 See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
@@ -84,9 +90,10 @@ acceptance T0. Do not start acceptance without sufficient measured runway.
 
 ## Network profile
 
-Direct Binance connectivity is mandatory for the certified Germany VPS
-profile. `environment` and `explicit` proxy modes remain available only outside
-`vps-production-v1` for local development, fault injection, and LAN testing.
+Direct Binance connectivity is mandatory for the current Tokyo VPS
+`vps-production-v1` profile. `environment` and `explicit` proxy modes remain
+available only outside `vps-production-v1` for local development, fault
+injection, and LAN testing.
 Proxy URLs and credentials do not enter Raw, manifests, Catalog event bodies,
 status, or logs.
 
@@ -281,7 +288,7 @@ Process existence or `systemctl is-active` alone is never READY.
 
 The historical returning-observation startup-liveness race is fixed in the
 recorded deployed artifact. Deployment and non-formal duration do not complete
-M22.9 or transfer duration credit to current main or a future multi-symbol
+M22.9 or transfer duration credit to current main or a current stopped multi-symbol
 artifact.
 
 Capacity planning for formal acceptance is separate from the hardcoded policy
@@ -289,10 +296,10 @@ and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
-This is not the next development action. MS2 configurable-product runtime is
-next; its future readiness gate must verify the exact configured ProductKey set
-and all configured products. Any deployment or later non-formal run remains
-separately authorized. Between independent runs,
+This is not the next development action. MS4-B stopped-deployment review is
+complete; MS4-C is the next separately authorized action and must verify the
+exact configured ProductKey set and all configured products. Any deployment or
+later non-formal run remains separately authorized. Between independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.

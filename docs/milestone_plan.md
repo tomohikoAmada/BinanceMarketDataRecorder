@@ -3,19 +3,20 @@
 ## Current stage closeout — 2026-09-10
 
 MS3 implementation is merged; MS4-A local preparation is reviewed complete.
-The owner authorizes document fixes, merging PRs #57/#58 and safe completed
-branch cleanup, then requests a rest. Do not start MS4-B/C/D or later milestones.
-Deployment, VPS access and live qualification remain unauthorized. The full
-MS4 milestone remains incomplete; only its local preparation work package closes.
-PR #57 merged at `df934820dc1b7cd20afdc4997444ff3a6ab938bc`.
-PR #58 is the closeout delivery vehicle; verify its final merge in GitHub.
+The MS4-B target preflight/stopped-deployment work package is reviewed
+complete. The Recorder remains stopped; no live qualification or MS4-C traffic
+was started. MS4-C is blocked/not started and the full MS4 milestone remains
+incomplete.
+PR #57 and PR #58 are historical documentation closeouts. PR #60 is the
+current MS4-B documentation/evidence closeout vehicle; verify its final merge
+in GitHub.
 
 The runbook now consistently references the retained lock/Wheel, avoids moving
 an installed venv, separates non-formal MS4 evidence from M22.9, and leaves
-machine-specific remote archive commands for the separately authorized target
-preflight. These are documentation corrections, not production changes.
+machine-specific remote archive commands for the separately authorized MS4-C
+target. These are documentation corrections, not production changes.
 
-NEXT=OWNER_RESUME_REQUIRED
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
 
 ## Multi-symbol execution ledger — 2026-09-10
 
@@ -166,8 +167,8 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | MS3-R2 final review / merge handoff | CLOSED / MERGED | PR #56 merged by normal repository rules; actual merge SHA/tree recorded above |
 | MS4-A offline qualification preparation | REVIEWED_COMPLETE | Local artifact/profile/coverage ledger and corrected runbook; later target qualification is not authorized |
 
-| MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
-| MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
+| MS4-B Tokyo VPS preflight / stopped deployment | REVIEWED_COMPLETE | Owner-supplied Tokyo VPS report, exact artifact/config/unit/identity, rollback and stopped-state evidence; no start/readiness/live traffic |
+| MS4-C bounded qualification | BLOCKED / NOT STARTED | Requires approved cross-machine archive target, immediate ETHUSDT eligibility evidence and explicit start authorization |
 | MS4-D final review / documentation closure | NOT STARTED | Review MS4-C; close only what evidence supports |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
@@ -305,10 +306,13 @@ Completed preparation:
    sample, so no global side-data owner is part of the proposed workload.
    Symbol eligibility and official-source provenance remain a pre-live check.
 4. The runbook freezes the existing direct proxy policy, 60-second/128 MiB
-   rotation defaults, exact readiness set and a proposed 15-minute startup,
-   2-hour steady-state, 15-minute recovery, 15-minute shutdown and 15-minute
-   margin envelope. It does not guess the target host, service principal,
-   archive destination or live root.
+   rotation defaults, exact readiness set and a 15-minute absolute outer
+   startup envelope, followed by the proposed 2-hour steady-state,
+   15-minute recovery, 15-minute shutdown and 15-minute margin envelope. The
+   existing readiness observer's 300-second bound is an implementation
+   interval inside that outer deadline, not an automatic extension. It does
+   not guess the target host, service principal, archive destination or live
+   root.
 5. The runbook provides concrete existing-CLI install, check, start, sample,
    stop, archive/verify and fail-closed rollback commands. Rollback explicitly
    requires a target identity that understands the MS1+ Catalog and current
@@ -319,40 +323,40 @@ Completed preparation:
    `status` and `git diff --check`. Exact-source run `34436773366` is reused for
    the merged-code Ubuntu x86_64 lock/build/clean-Wheel evidence.
 
-Remaining before MS4-B:
+Current MS4-B disposition and remaining before MS4-C:
 
-- The final complete configuration, installed systemd unit and
-  `deployment-identity.v1` cannot be frozen until the operator confirms the
-  target host, service user/group, canonical roots, archive target, final
-  auxiliary decision and artifact transfer/release location.
-- The locally built macOS artifact has not been installed with the Linux
-  x86_64 lock. A new target-compatible build and exact lock/venv/import/
-  `pip check` verification are required; the pure-Python Wheel tag is not
-  sufficient.
-- No VPS access, systemd mutation, deployment/readiness evidence, archive
-  receive/verify/receipt cycle, online Binance traffic, qualification window,
-  stress/soak or Formal M22.9 was run. These are MS4-B/C scope and remain
-  unauthorized here.
+- The stopped deployment identity is verified against the actual canonical
+  filesystem and effective systemd unit; the exact four-product config is
+  frozen without operational environment overrides.
+- The approved cross-machine archive machine/SSH destination is still an
+  operator input. The registered same-host external storage target is not
+  substituted for that remote boundary.
+- ETHUSDT official eligibility, if required, is reserved for the immediate
+  MS4-C pre-start step. No Binance eligibility or qualification request was
+  made in this stopped preparation.
 
-Exit: MS4-A local preparation is `REVIEWED_COMPLETE`; MS4-B remains
-`NOT_AUTHORIZED` until the grouped operator inputs and concrete deployment
-authorization exist. The full ledger, evidence template, hashes, coverage map,
-capacity formula and missing-input list are in `docs/milestone_acceptance/MS4.md`.
+Exit: MS4-B is `REVIEWED_COMPLETE` for the stopped boundary; MS4-C is
+`BLOCKED_NOT_STARTED`. The full ledger, evidence template, hashes, coverage
+map, capacity formula and missing-input list are in
+`docs/milestone_acceptance/MS4.md`.
 
 MS4-A=REVIEWED_COMPLETE
-MS4-B=NOT_AUTHORIZED
-MS4-C=NOT_STARTED
+MS4-B=REVIEWED_COMPLETE
+MS4-C=BLOCKED_NOT_STARTED
 MS4-D=NOT_STARTED
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=OWNER_RESUME_REQUIRED
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
 
-### MS4-B — Tokyo VPS preflight and deployment
+### MS4-B — Tokyo VPS preflight and stopped deployment (reviewed complete)
 
-Execution: **Tokyo VPS Codex**, Luna-max; local archive steps run on the
-explicitly identified archive machine. Every execution prompt must name its
-machine. Access and deployment require the owner's separate authorization.
+Execution: **Tokyo VPS Codex**, Luna-max. The owner-supplied execution summary
+and cross-checked Git/runbook evidence establish the stopped boundary; the
+private evidence bundle was not directly inspected in this local worktree
+(`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`). Local archive steps
+remain for the explicitly identified archive machine. Every future execution
+prompt must name its machine.
 
 1. Verify host OS/architecture, actual deployed identity, service user/unit,
    active root, free bytes, memory headroom and co-resident service boundaries.
@@ -368,20 +372,28 @@ machine. Access and deployment require the owner's separate authorization.
    understood by the old deployed artifact. Do not simply point old binaries at
    new state. Use a proven supported rollback path or retained prior root;
    preserve all new Raw and record any stopped interval explicitly.
-4. Verify the approved artifact/config/unit hashes, deploy via existing native
-   procedure, and check actual ProductKeys against independently parsed config.
-   Record startup errors, readiness and expected/actual counts. No steady-state
-   T0 until all products are ready and initial recovery is accounted for.
+4. Verify the approved artifact/config/unit hashes, install via the existing
+   native procedure while stopped, and check actual ProductKeys against the
+   independently parsed config. Record the final deployment identity and
+   stopped service state. Do not start the service, test readiness, create T0,
+   or make Binance qualification traffic in MS4-B.
 
-Exit: exact running identity, all expected products ready, sufficient finite
-runway, no unexpected product/global owner, rollback procedure verified.
+Exit: exact installed identity and four-ProductKey configuration, rollback
+procedure verified, sufficient preflight runway, and service `inactive/dead`.
+Startup/readiness, live capture, controlled recovery, archive receive/verify,
+and shutdown/integrity observation belong to MS4-C.
 On a failed gate preserve evidence, mark the failed step, and repair only the
 demonstrated issue; do not silently substitute another artifact or workload.
 
-### MS4-C — bounded live evidence
+### MS4-C — bounded live evidence (blocked/not started)
 
-Use the approved MS4-B artifact/config. Collect existing telemetry/logs at a
-fixed documented cadence, avoiding expensive per-sample full Catalog scans.
+Use the approved MS4-B artifact/config only after the owner supplies the
+approved cross-machine archive machine/SSH/destination/workflow authority,
+captures ETHUSDT eligibility from an allowed official source immediately before
+start, and grants explicit start authorization. Collect existing telemetry/logs
+at a fixed documented cadence, avoiding expensive per-sample full Catalog
+scans. The 15-minute startup envelope is absolute; the 300-second readiness
+observer is inside that envelope, not an extension.
 
 | Check | Required evidence / pass condition |
 | --- | --- |
@@ -1654,13 +1666,17 @@ remain unchanged.
   product isolation cannot be preserved. Revert only MS2 code/config after
   sealing and retaining any test evidence; never rewrite Raw.
 
-## MS3 — Shared-resource scaling / rotation / observability
+## Historical plan snapshot — MS3 shared-resource scaling / rotation / observability
 
-- **Status:** **OFFLINE REVIEW APPROVED / MERGE PENDING** — MS3-A is merged
+> The following MS3/MS4 entries preserve the earlier planning snapshot for
+> provenance. They are not the active queue; the current authority is the
+> execution ledger and status block near the top of this document.
+
+- **Historical status at handoff:** **OFFLINE REVIEW APPROVED / MERGE PENDING** — MS3-A is merged
   through PR #55; the candidate branch is
   `feat/ms3b-shared-resource-acceptance`; independent re-review/merge is
   pending.
-- **Current work package:** MS3-B — shared REST scheduling/fairness and
+- **Historical work package:** MS3-B — shared REST scheduling/fairness and
   cooldown behavior, bounded Profile D load, product attribution/recovery
   isolation, archive/retry, and aggregate capacity interaction. The updated
   evidence adds real `UsdMCollector`/`RestSideDataPoller` gate and pagination/
@@ -1690,9 +1706,9 @@ remain unchanged.
 - **Rollback/stop:** Stop on fairness, capacity, or isolation regressions;
   revert only MS3 changes while retaining Raw and manifests.
 
-## MS4 — Configurable-product integration / bounded live qualification
+## Historical plan snapshot — MS4 configurable-product integration / bounded live qualification
 
-- **Status:** **NEXT / PLANNED after MS3-B merge**.
+- **Historical status at handoff:** **NEXT / PLANNED after MS3-B merge**.
 - **Scope:** Freeze exact main, run full offline CI, build one new immutable
   Wheel and record source/Wheel/lock/config/unit/deployment identities; after
   separate deployment authorization, run a bounded live qualification using a

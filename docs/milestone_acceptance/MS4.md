@@ -1,6 +1,101 @@
-# MS4-A — Local preparation acceptance ledger
+# MS4 qualification acceptance ledger
 
-## 1. Frozen representative profile
+## Current MS4-B disposition — target preflight and stopped deployment
+
+The Tokyo target preflight, old-deployment rollback evidence, exact frozen
+Linux artifact, complete four-ProductKey configuration, stopped systemd
+installation, and deployment identity verification are reviewed complete for
+the stopped boundary.
+The Recorder was gracefully stopped before mutation and remains stopped. No
+live capture, Binance qualification traffic, controlled recovery, or Formal
+M22.9 was started. `PRODUCTION_READY` remains `NO`; MS4-C remains blocked and
+not started pending its remaining gates.
+
+```text
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=BLOCKED_NOT_STARTED
+NEXT=OWNER_RESUME_REQUIRED_MS4_C
+```
+
+## Reviewed MS4-B evidence ledger — 2026-09-10
+
+MS4-B is **REVIEWED_COMPLETE** for its stopped boundary: target preflight,
+rollback preservation, exact artifact installation, exact four-ProductKey
+configuration, and deployment identity verification. This exit does not include
+systemd start, readiness, live capture, controlled recovery, remote archive
+receive, or any Formal M22.9 window. The review uses the owner-supplied Tokyo
+VPS Luna-max execution summary plus Git authority and implementation/runbook
+cross-checks. The private evidence bundle was not directly inspected in this
+local worktree:
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`.
+
+```text
+EVIDENCE_RUN_ID=MS4-B-STOPPED-20260910T093753Z
+HOST_ID_SHA256=0568e0cf8458b7686f7094b470fd8d361a4981f8781eb0a63ee63b17ce2d55e9
+OS=Ubuntu 24.04.4 LTS
+ARCH=x86_64
+KERNEL=6.8.0-138-generic
+PYTHON=3.12.3
+SYSTEMD=255
+SERVICE_USER=bmdr
+SERVICE_GROUP=bmdr
+DATA_ROOT=/var/lib/binance-market-data-recorder
+ARTIFACT_ROOT=/opt/binance-market-data-recorder
+WHEEL_PATH=/opt/binance-market-data-recorder/releases/303e073e25d5ed53d7cf6e26a9c6c6e879013b50/binance_market_data_recorder-0.1.0a1-py3-none-any.whl
+CONFIG_PATH=/etc/binance-market-data-recorder/recorder.toml
+UNIT_PATH=/etc/systemd/system/binance-market-data-recorder.service
+DEPLOYMENT_IDENTITY_PATH=/etc/binance-market-data-recorder/deployment-identity.json
+REVIEWED_SOURCE_GIT_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+REVIEWED_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+WHEEL_SHA256=cfce08f747bf53372e4619d37bdfdbab9a6b3bd39c7f09337ddf86c9286b5602
+LOCK_SHA256=44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335
+CONFIG_SHA256=4dbbb6bf415b209635857df6cf537478b03f262b2c3a88553ac77bb9c1c0d781
+SYSTEMD_UNIT_SHA256=d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6
+DEPLOYMENT_IDENTITY_SHA256=e925733f9e0388b705ffcad40664bdb049ba786f4b170462275891f838cd41e5
+PRODUCT_KEYS=(spot,BTCUSDT),(spot,ETHUSDT),(um_perpetual,BTCUSDT),(um_perpetual,ETHUSDT)
+CORE_STREAM_CONTEXTS=12
+AUXILIARY_KINDS=all_disabled
+PROXY_MODE=direct
+DEPLOYMENT_VERIFY=VERIFIED
+ROLLBACK_VERIFY=VERIFIED
+LEGACY_RECONNECT_PREFLIGHT=398_candidates; ambiguous/conflict/contradiction/degraded=0
+SYSTEMD_FINAL=enabled=true; ActiveState=inactive; SubState=dead; MainPID=0
+RAW_CATALOG_DELETION=NONE
+BINANCE_LIVE_CAPTURE_STARTED=NO
+RECORDER_STARTED=NO
+CONTROLLED_RECOVERY_RUN=NO
+FORMAL_M22_9_STARTED=NO
+F0_BYTES=44766736384
+F1_BYTES=44766720000
+MEASURED_DT_SECONDS=60.000321759
+SHORT_SHARED_HOST_G_NET_BYTES_PER_SECOND=273.065202313559
+SHORT_SHARED_HOST_T_RUNWAY_SECONDS=124619693.288
+CONSERVATIVE_24H_RATE_BYTES_PER_SECOND=107636.550405
+CONSERVATIVE_RUNWAY_HOURS=87.819461
+MS4_3H_PREFLIGHT=PASS_PREFLIGHT_ONLY
+ARCHIVE_TARGET=ARCHIVE_TARGET_BLOCKED_OPERATOR_INPUT
+ETHUSDT_OFFICIAL_ELIGIBILITY=NOT_CAPTURED
+OLD_SOURCE_SHA=c421605e302d2ad46acdb2466627f64644181c9a
+OLD_WHEEL_SHA256=278ee0b0df1e7766e205684ad1e401b12fb98341296164edc1c0de9b6d58c9c6
+OLD_CONFIG_SHA256=5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb
+OLD_UNIT_SHA256=d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6
+OLD_IDENTITY_SHA256=bdda546432bcaf6d29f281cd2a281b4d684bc447b2fafa382ffd1948f39a107f
+CATALOG_COMPATIBILITY=REMOTE_DELETE_PENDING,REMOTE_DELETED
+```
+
+The short capacity sample is shared-host evidence and is not attributed to the
+Recorder. The conservative 24-hour rate is used for planning; neither result
+authorizes live T0 or Formal M22.9. The registered same-host external target is
+not a confirmed cross-machine archive authority. Before MS4-C, the owner must
+provide the archive machine/SSH/destination/workflow authority, capture
+ETHUSDT eligibility from an allowed official source immediately before start,
+and issue explicit start authorization. The Recorder remains stopped and
+`PRODUCTION_READY=NO`.
+
+## Historical MS4-A — local preparation acceptance ledger (time-local snapshot; superseded)
+
+### 1. Frozen representative profile
 
 The reviewable selection fragment is
 [`docs/runbooks/MS4_candidate_profile.toml.example`](../runbooks/MS4_candidate_profile.toml.example).
@@ -28,10 +123,11 @@ review. `ETHUSDT` is a proposed sample symbol, not a supported-symbol
 allowlist. Official eligibility and provenance must be checked immediately
 before any live execution; no official source was consulted in this local run.
 
-## 2. Artifact and identity ledger
+### 2. Artifact and identity ledger
 
-The artifact was built before adding this documentation, from the exact code
-authority above. It is staged outside the repository and is not committed.
+The following is the time-local MS4-A snapshot, retained for provenance. It was
+written before the target work and is superseded by the reviewed MS4-B ledger
+above. The artifact was staged outside the repository and is not committed.
 
 | Item | Local evidence |
 | --- | --- |
@@ -46,9 +142,9 @@ authority above. It is staged outside the repository and is not committed.
 | Runtime Linux lock | `requirements/linux-x86_64-python312.lock`, SHA-256 `44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335` |
 | CI tool lock | `requirements/ci-linux-python312.lock`, SHA-256 `656fdae154982ab2095376059d23ed7ca45367a65fd5567ce396358b5efae9f2` |
 | Profile fragment | `docs/runbooks/MS4_candidate_profile.toml.example`, SHA-256 `ec945b2dc34c8fb1bfed8406f030ba8e68dd1bbd4847fc093303bd22ee3b9149` |
-| Complete deployment config | **NOT FROZEN** — operator must supply/confirm the exact root and final file |
-| systemd unit | **NOT FROZEN** — exact service user/group and target installation are absent |
-| deployment-identity.v1 | **NOT GENERATED** — requires the stopped Ubuntu target and all exact files |
+| Complete deployment config | **HISTORICAL MS4-A SNAPSHOT: NOT FROZEN** — superseded by reviewed MS4-B config SHA above |
+| systemd unit | **HISTORICAL MS4-A SNAPSHOT: NOT FROZEN** — superseded by reviewed MS4-B unit SHA above |
+| deployment-identity.v1 | **HISTORICAL MS4-A SNAPSHOT: NOT GENERATED** — superseded by reviewed MS4-B identity SHA above |
 
 The profile fragment hash is not a deployment `config_sha256`. A final
 identity must hash the complete root-controlled config, the installed unit,
@@ -71,7 +167,7 @@ has them or that the owner has selected them. The operator must confirm the
 actual target and service principal before MS4-B. No service user, group,
 archive destination, hostname or VPS identity was guessed here.
 
-## 3. Existing coverage map
+### 3. Existing coverage map
 
 MS4-A reuses the accepted MS2/MS3 behavior evidence and current commands. It
 does not add a scheduler, benchmark framework, Contract/Projection change or
@@ -96,7 +192,7 @@ status/retry/drain/verify`, `systemd install/start/stop/restart/status`, and
 `deployment identity-create/verify/readiness/rollback-check/acceptance`.
 The qualification runbook uses only these existing interfaces plus `journalctl`.
 
-## 4. Local preparation validation
+### 4. Local preparation validation
 
 Executed on Darwin arm64, with no Binance network access and no production
 filesystem:
@@ -124,8 +220,10 @@ run.
 Ubuntu x86_64 compatibility is therefore proven for the merged source and CI
 clean-wheel path, but the locally built macOS artifact has not itself been
 installed with the Linux x86_64 lock. `py3-none-any` alone is not sufficient
-proof for its native/transitive dependencies. The final artifact-specific
-Linux lock install and target service identity remain **PENDING MS4-B**.
+proof for its native/transitive dependencies. In this historical MS4-A
+snapshot, the final artifact-specific Linux lock install and target service
+identity remained **PENDING MS4-B in the MS4-A snapshot**; the reviewed MS4-B ledger above records
+their subsequent completion.
 The generic `doctor` x86_64 warning described in M22.7B remains informational;
 the exact deployment identity/readiness gate is authoritative.
 
@@ -135,19 +233,25 @@ deployment identity generation, live readiness, archive transfer, VPS access,
 and any acceptance duration. These are either already covered by unchanged
 exact-source evidence or require the separately authorized target.
 
-## 5. Qualification window and capacity method
+## 5. MS4-C qualification window and capacity method
 
 The proposed MS4-C envelope is frozen for review, not yet approved for
 execution:
 
 ```text
-startup deadline:       15 minutes after explicit start request
+outer startup envelope: 15 minutes after explicit start request (absolute)
+readiness observer bound: 300 seconds (bounded implementation interval)
 steady state:           2 hours after all four ProductKeys are READY
 recovery observation:   15 minutes, separately bounded and attributed
 shutdown/verification:  15 minutes
 planning margin:        15 minutes
 minimum conservative runway envelope: 3 hours
 ```
+
+The 300-second readiness observer interval is not an automatic extension of
+the 15-minute outer stage deadline. Use existing systemd/status/service-state
+read-only observation as appropriate, and require the final authoritative
+deployment readiness result to return `READY` within the outer envelope.
 
 There is no automatic extension, repetition, or `72h`/`168h` campaign. The
 two-hour window cannot certify long-term RSS, rotation or formal M22.9.
@@ -172,7 +276,7 @@ Raw and Catalog state if the reserve gate fails.
 
 ## 6. Evidence template
 
-The following fields are required for each later MS4-B/C record. Blank,
+The following fields are required for the later MS4-C record. Blank,
 `NOT RUN`, `BLOCKED` and `PENDING` values remain visible; they are never
 converted to PASS by inference.
 
@@ -219,10 +323,10 @@ STAGE_RESULT=PASS_CANDIDATE|FAIL|INCOMPLETE|REVIEW_REQUIRED
 BLOCKING_FINDINGS=
 ```
 
-## 7. Operator inputs and exit disposition
+## Historical MS4-A operator inputs and exit disposition (superseded)
 
-The following must be supplied together before MS4-B; none is guessed by
-MS4-A:
+The following list is the time-local MS4-A input gate, retained for provenance;
+it is superseded by the reviewed MS4-B evidence ledger above:
 
 - exact target host, Ubuntu release, x86_64 architecture, Python executable,
   systemd version and co-resident-service boundary;
@@ -248,16 +352,16 @@ inputs and authorization are absent.
 
 ```text
 MS4-A=REVIEWED_COMPLETE
-MS4-B=NOT_AUTHORIZED
-MS4-C=NOT_STARTED
+HISTORICAL_MS4_B=NOT_AUTHORIZED
+HISTORICAL_MS4_C=NOT_STARTED
 MS4-D=NOT_STARTED
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=OWNER_RESUME_REQUIRED
+HISTORICAL_NEXT=OWNER_RESUME_REQUIRED
 ```
 
-## Final preparation review and stage closeout
+## Historical final preparation review and stage closeout
 
 GPT-6 Astra reviewed the local preparation and corrected the retained lock
 path, the absolute-path venv publication guidance, retained Wheel reference,
@@ -266,9 +370,8 @@ The runbook is an approved local preparation reference; target-specific commands
 remain explicitly gated before deployment. MS4-A completion does not mean the
 whole MS4 milestone or deployment qualification is complete.
 
-The owner requests closure of current work and no later milestone development.
-MS3 is merged; MS4-A is REVIEWED_COMPLETE. MS4-B/C/D remain unstarted and no
-VPS access, deployment or scheduled continuation is authorized. Resume only on
-owner instruction. Pure documentation review used path/CLI/consistency checks;
-no tests or CI were manually rerun. Staged /var/tmp artifacts must be rechecked
-for availability and hashes when resuming; they are not durable release storage.
+The historical owner-requested rest predates the current MS4-B target
+preflight/stopped-deployment record above. Its statement that MS4-B/C/D were
+unstarted and that no VPS access was authorized is retained as history, not as
+current authority. The current record remains stopped and has not started
+MS4-C.

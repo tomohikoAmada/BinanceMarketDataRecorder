@@ -1,16 +1,17 @@
 # MS4 qualification runbook
 
-Status: **MS4-A local preparation reviewed; target execution NOT AUTHORIZED**.
+Status: **MS4-B target preflight/stopped deployment REVIEWED_COMPLETE; MS4-C
+BLOCKED_NOT_STARTED; live execution NOT AUTHORIZED**.
 This is a preparation reference, not a copy-and-run deployment script. Target
 inputs and target-specific publication/remote-archive commands must be completed
-and reviewed when the owner resumes MS4-B. No command authorizes VPS access,
+and reviewed when the owner resumes MS4-C. No command authorizes VPS access,
 deployment or Binance traffic by itself.
 
 The runbook uses the existing CLI, systemd manager, deployment identity and
 existing read-only status/report interfaces. It does not introduce a scheduler, a second
 service, a GUI, a benchmark framework, or a new data path.
 
-## 1. Freeze the inputs
+## 1. Freeze the inputs (MS4-B completed/report-derived)
 
 Use a clean checkout at the exact code authority below. The merge commit is a
 Git identity; the second parent is the reviewed implementation candidate. Do
@@ -69,7 +70,7 @@ OLD_IDENTITY=<operator-supplied preserved compatible deployment identity>
 EVIDENCE_ROOT=<operator-supplied evidence directory outside Recorder roots>
 ```
 
-## 2. Build and prove the target-compatible artifact
+## 2. Build and prove the target-compatible artifact (MS4-B completed/report-derived)
 
 Run the following on an Ubuntu 24.04 LTS x86_64 preparation environment (not
 the production service host unless explicitly authorized). Use the repository
@@ -97,10 +98,15 @@ python3.12 -m venv --copies /var/tmp/bmdr-ms4-production-venv
   'from pathlib import Path; from binance_market_data_recorder.service.deployment_identity import verify_installed_dependencies; e = verify_installed_dependencies(Path("requirements/linux-x86_64-python312.lock")); assert e["exact_match"] is True and e["recorder_distribution_separate"] is True; print(e)'
 ```
 
-This target step is **PENDING** in MS4-A. The merged source already passed
-the same Ubuntu x86_64 lock/build/clean-wheel path in CI run `34436773366`,
-but the locally staged macOS wheel hash is not silently promoted to target
-compatibility. A final target build gets a new artifact hash and identity.
+This target step was **PENDING in the historical MS4-A snapshot**. The
+owner-supplied Tokyo VPS report records it complete for the reviewed MS4-B
+stopped deployment: exact wheel SHA
+`cfce08f747bf53372e4619d37bdfdbab9a6b3bd39c7f09337ddf86c9286b5602`, lock SHA
+`44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335`, and
+package version `0.1.0a1`. The merged source also passed the same Ubuntu x86_64
+lock/build/clean-wheel path in CI run `34436773366`. Direct inspection of the
+private VPS evidence bundle was not performed locally;
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`.
 
 Copy the one verified Wheel and the exact lock into a root-controlled release
 directory beneath `ARTIFACT_ROOT` while stopped. Never rebuild after hashing.
@@ -120,7 +126,7 @@ root-controlled, symlink-free and not writable by `SERVICE_USER`. The target
 operator must preserve the exact Wheel, lock, source SHA, config, unit and
 deployment identity as one release bundle.
 
-## 3. Prepare the complete configuration while stopped
+## 3. Prepare the complete configuration while stopped (MS4-B completed/report-derived)
 
 Create `CONFIG` as `root:SERVICE_GROUP` mode `0640`. Start from the fragment,
 then add the confirmed canonical `DATA_ROOT`; do not leave a placeholder in a
@@ -177,12 +183,13 @@ sha256sum "$CONFIG"
 `doctor` may report its existing generic x86_64 informational warning. It does
 not replace exact installed identity/readiness verification.
 
-## 4. Install, identify and verify the stopped service
+## 4. Install, identify and verify the stopped service (MS4-B completed/report-derived)
 
-The following changes the named host and is MS4-B-only. Confirm the service is
-stopped and the data root is the intended project-owned subdirectory before
-the first mutating command. Recorder does not provision accounts or own the
-host.
+The following is the retained MS4-B target procedure and is recorded as
+completed in the owner-supplied Tokyo VPS report. It changes the named host;
+future operators must confirm the service is stopped and the data root is the
+intended project-owned subdirectory before any mutating command. Recorder does
+not provision accounts or own the host.
 
 ```bash
 sudo install -d -o "$SERVICE_USER" -g "$SERVICE_GROUP" -m 0750 "$DATA_ROOT"
@@ -193,7 +200,8 @@ sudo install -o root -g "$SERVICE_GROUP" -m 0640 "$LOCAL_CONFIG" "$CONFIG"
 # After preserving the old release and while STOPPED, create a fresh venv
 # directly at its final canonical path. Do not move a populated venv: installed
 # entry-point shebangs contain absolute paths. The exact old-venv preservation
-# commands depend on the observed host and must be frozen before MS4-B.
+# commands are target-specific and were recorded in the MS4-B evidence; do not
+# infer or rerun them as part of this documentation closure.
 sudo python3.12 -m venv --copies "$VENV"
 sudo "$PYTHON" -m pip install --require-hashes \
   -r "$ARTIFACT_ROOT/releases/$SOURCE_SHA/linux-x86_64-python312.lock"
@@ -228,11 +236,17 @@ classification authority is present:
 An ineligible or missing required preflight is a stop condition, not a repair
 request to this preparation work.
 
-## 5. Start and validate readiness
+## 5. MS4-C start and validate readiness (not started)
 
-Start explicitly; no service manager action is automatic in this runbook.
+Start explicitly only after MS4-C has its separate authorization and archive
+target. No service manager action is automatic in this runbook.
 Startup must complete recovery and current capacity observation before it can
 construct collectors.
+
+Immediately before the explicit start, capture ETHUSDT eligibility from an
+allowed official source and record its URL, UTC retrieval time, content SHA-256
+and conclusion. If the archive machine/SSH/destination/workflow authority is
+absent, or explicit start authorization is absent, remain stopped.
 
 ```bash
 sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" systemd start
@@ -242,7 +256,14 @@ sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" deployment rea
 "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" status
 ```
 
-The fixed deployment-readiness observer deadline is 300 seconds. Do not count
+The outer MS4 startup qualification envelope is an absolute 15 minutes after
+the explicit start request. The existing deployment-readiness observer has a
+single bounded implementation observation interval of 300 seconds. That
+interval is not an automatic extension of the 15-minute stage envelope; do
+not invoke it so early or interpret its bound as permission to extend the
+stage deadline. Use existing systemd/status/service-state read-only
+observation as appropriate, and require the final authoritative deployment
+readiness result to return `READY` within the outer deadline. Do not count
 `systemctl is-active`, a process PID, or a single boolean as readiness. Record
 the configuration-bound expected set, actual set, per-product readiness,
 connected/persisted core streams, snapshot/order-book sync, recovery result,
@@ -261,23 +282,23 @@ every sample:
 journalctl -u "$SERVICE" --since '<fixed UTC start>' --until '<fixed UTC end>'
 ```
 
-### Non-formal MS4 evidence boundary
+### Non-formal MS4-C evidence boundary
 
 Do not invoke `deployment acceptance identity/readiness/stage` for this
 non-formal MS4 window. Those commands implement the separate M22.9 acceptance
 chain. Reusing a 2-hour duration does not authorize that chain.
 
-On future MS4-B authorization, freeze a dedicated MS4 evidence directory,
+On future MS4-C authorization, freeze a dedicated MS4 evidence directory,
 record the deployment identity/hash, boot ID, process incarnation, UTC and
 monotonic T0 after all products are ready, and UTC/monotonic T1. Preserve the
 existing status, forecast, readiness and bounded journal outputs at a fixed
 cadence (proposed 60 seconds), plus the final integrity and archive results.
 Use the host's monotonic elapsed time for the duration, not sample counts.
-The exact target sampling commands are a required MS4-B runbook finalization
-item. No new observer implementation is requested in MS4-A. The resulting
+The exact target sampling commands are a required MS4-C runbook execution
+item. No new observer implementation is requested. The resulting
 record must say NONFORMAL_MS4 and grants zero Formal M22.9 duration credit.
 
-## 6. Capacity and archive gate
+## 6. MS4-C capacity and archive gate
 
 Use the existing `vps-production-v1` reserve policy without lowering it:
 
@@ -289,8 +310,9 @@ HARD RESERVE <= 10 GiB
 ```
 
 For free bytes `F0`, `F1` and monotonic interval `dt`, calculate
-`g_net=max(0,(F0-F1)/dt)` and `T_runway=(F0-10 GiB)/g_net` when growth is
-positive. Use the existing 1h/6h/24h/7d observations where present, do not
+`g_net=max(0,(F0-F1)/dt)` and `T_runway=(F1-10 GiB)/g_net` when growth is
+positive. Use the latest measured remaining free space `F1` as the runway
+authority. Use the existing 1h/6h/24h/7d observations where present, do not
 attribute shared-host space changes, and treat unverified archive release as
 zero. The proposed startup + 2h steady + 15m recovery + 15m shutdown + 15m
 margin envelope is 3 hours. Refuse T0 if free space is at/below reserve or
@@ -304,14 +326,16 @@ operate on storage registered on the machine executing those commands; they
 are not a VPS-to-local remote receive/receipt procedure. Do not run them on the
 VPS as a substitute for the remote archive boundary.
 
-When resuming, select the existing remote source/transport/receive/verify/receipt
-workflow for the approved archive machine and freeze the exact machine-specific
-commands. This remains a target-dependent MS4-B preparation item, not an MS4-A
-implementation request. Preserve verified receive/readback/size/SHA-256/manifest/
+When resuming MS4-C, select the existing remote source/transport/receive/verify/
+receipt workflow for the approved archive machine and freeze the exact
+machine-specific commands. The transfer protocol/library exists, but the
+operator-selected archive-machine command freeze is still pending; do not
+invent or present a general public archive CLI. Preserve verified
+receive/readback/size/SHA-256/manifest/
 receipt evidence and keep source retirement separately authorized. An unavailable
 destination means archive acceptance NOT RUN, not PASS.
 
-## 7. Stop and verify
+## 7. MS4-C stop and verify
 
 Stop explicitly at the frozen observation end or on any stop condition:
 
@@ -327,7 +351,7 @@ Require graceful `STOPPED`, sealed active tails, no orphan active ownership,
 and preserved process-session/gap evidence. Do not delete Raw, Catalog,
 manifests, receipts or evidence as part of stopping.
 
-## 8. Fail-closed rollback
+## 8. MS4-C fail-closed rollback
 
 Rollback never rolls data backward. Before stopping a candidate, retain the
 prior exact identity, Wheel, lock, config, unit, startup authority and a
@@ -367,7 +391,7 @@ Any failed identity, Catalog, reserve, recovery or readiness gate leaves the
 service stopped and the data intact. A rollback does not grant duration credit
 to a different artifact and does not close MS4.
 
-## 9. Stop conditions and scope boundary
+## 9. MS4-C stop conditions and scope boundary
 
 Stop the qualification and preserve evidence on false readiness, unexpected
 ProductKeys, unresolved integrity/gap evidence, shared-gate bypass,
@@ -378,6 +402,7 @@ thresholds, skip products/streams, deliberately provoke live 418/429, run
 heavy Normalize/Replay/Backfill on the live host, access credentials, or start
 Formal M22.9 from this runbook.
 
-MS4-A local artifact/document preparation is reviewed and complete.
-MS4-B remains unauthorized until the owner supplies the grouped inputs and
-explicitly authorizes the named target.
+MS4-A local artifact/document preparation and MS4-B target preflight/stopped
+deployment review are complete. Live start, Binance qualification traffic,
+controlled recovery and archive receive remain MS4-C scope and separately
+unauthorized until the owner supplies the remaining inputs.

@@ -47,8 +47,9 @@ either field appears, explicit product-selection mode uses the supplied list
 exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. Symbols are canonicalized once to uppercase at the
 configuration boundary; empty, control/whitespace-invalid, and within-market
-duplicate symbols are rejected. Parsing does not query Binance. MS2 implements these fields and runtime;
-independent review/merge and live qualification remain separate.
+duplicate symbols are rejected. Parsing does not query Binance. MS2 implements
+these fields and runtime, and MS3-B is merged; live qualification remains a
+separate MS4-C gate and is not authorized by this contract.
 
 An empty resolved USD-M set creates no USD-M Collector, product-specific
 side-data manager, process-global USD-M side-data owner, REST polling, or
