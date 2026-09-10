@@ -39,10 +39,12 @@ configured Spot and USD-M perpetual depth at 100 ms, aggregate trades, book tick
 events, and public REST depth snapshots, followed by defined USD-M auxiliary
 data. MS2 implements an operator-configured finite product set across those
 two markets, with BTCUSDT/BTCUSDT compatibility only when both selection
-fields are absent. MS3-B candidate offline evidence is updated on the
-`feat/ms3b-shared-resource-acceptance` candidate; independent re-review/merge
-is next. This is not final MS3 closure, and separately authorized MS4
-qualification remains out of scope. The
+fields are absent. MS3-B offline evidence is merged through PR #56 at
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; MS3 is closed. MS4-B target
+preflight and the exact four-ProductKey stopped deployment are reviewed
+complete, while MS4-C qualification remains blocked/not started pending an
+approved archive target, immediate ETHUSDT official eligibility evidence, and
+explicit authorization. This is not full MS4 closure or Production Ready. The
 system keeps recoverable immutable raw payloads, deterministic replay metadata,
 explicit gap evidence, and verified archival across the approved VPS/local
 Offline Workspace boundary.
@@ -296,4 +298,6 @@ parent `/Users/amada/Documents/Development/Crypto` as a production data root.
 The future local archive client targets macOS, Linux, and Windows. Platform
 volume/eject adapters may differ, but archive verification, Archive Set
 identity, receipt binding, and deletion authorization remain portable. The
-current implementation does not yet provide that cross-platform remote client.
+archive protocol/library is implemented; the operator-selected archive-machine
+receive/readback/receipt command freeze and cross-platform production
+certification remain pending.

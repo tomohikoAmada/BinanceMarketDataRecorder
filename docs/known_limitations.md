@@ -1,22 +1,25 @@
 # Known Limitations
 
-At the MS3-B authority check, GitHub `main` was
-`01527037254595267003f886689bb270e08b5e5d` (tree
-`eb63b645660a64ac606341ce3fb7f447a6e89457`), with MS3-A merged through PR
-#55. The post-MS1 implementation/behavior authority is
+Current GitHub `main` is
+`bb8c93ba63c23adaf2cb0288b6ea127030b89e58` (tree
+`8770f48d458dc4e35d813e8db8dc2009ff78889c`), with MS3-B merged through PR
+#56 at deployment source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The current behavior/deployment-
+source authority is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged through PR #51,
-MS2 through PR #54, and live GitHub `main` is not deployed.
-The last independently qualified deployed artifact is pre-MS1 source
+`95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
+only; live GitHub `main` is not deployed.
+The last independently qualified deployed artifact remains pre-MS1 source
 `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour non-formal stage
 is complete and remains artifact-specific. No duration credit transfers to MS1
-or the future multi-symbol artifact. Formal M22.9 has not started and
+or the current stopped multi-symbol artifact. Formal M22.9 has not started and
 Production Ready is NO.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
-### Current new-host limitations and decision boundary
+### Current MS4-B/MS4-C limitations and decision boundary
 
 The current GreenCloud ordinary KVM service has shared CPU cores except VDS;
 the official [Terms of Service](https://greencloudvps.com/terms-of-service.php),
@@ -27,10 +30,10 @@ This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
 CPU benchmark. This historical capacity watch does not authorize or schedule
 another burn-in.
 
-MS2 configurable-product runtime is merged and offline-accepted. MS3-B
-candidate offline evidence is updated on
-`feat/ms3b-shared-resource-acceptance`; independent re-review/merge is next,
-followed by separately authorized MS4.
+MS2 configurable-product runtime and MS3-B offline evidence are merged and
+accepted. MS4-B stopped-deployment review is complete; MS4-C live
+qualification remains blocked/not started pending the approved archive target,
+immediate ETHUSDT eligibility evidence, and explicit start authorization.
 After verifying live main, receive explicit authorization before implementation.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
@@ -214,7 +217,8 @@ substitute for long-running proof.
 - MS2 implements an operator-configured finite symbol set for Spot and USD-M
   perpetual, with legacy BTCUSDT/BTCUSDT defaults only when neither field is set.
   MS3-B adds offline bounded shared-resource, archive, and capacity evidence;
-  multi-product live qualification remains pending. Other exchanges,
+  MS4-B stopped-deployment review is complete and multi-product live
+  qualification remains pending. Other exchanges,
   automatic all-symbol discovery, and an exchange/plugin framework remain
   outside the architecture.
 - The current Binance Global Spot bootstrap wording conflicts with the
@@ -229,22 +233,22 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. The next development action is
-independent MS3-B review/merge, then separately authorized MS4; deployment,
+staged chain on a capacity-complete environment. The next action is owner
+resumption of MS4-C after the archive and authorization gates; deployment,
 profiling, and burn-in remain separately gated.
 
 ### Current GitHub main and multi-symbol limitations
 
 - Current main contains the MS1 durable identity foundation but is not deployed
   and has no duration credit from the pre-MS1 clean-24h artifact.
-- Current main contains the MS2 configurable-product assembly and MS3-A; the
-  MS3-B candidate adds offline shared-resource, bounded-load, archive, and
-  capacity acceptance. It is not yet merged or deployed; live qualification
-  remains an MS4 task.
+- Current main contains the MS2 configurable-product assembly and merged MS3-A/
+  MS3-B shared-resource, bounded-load, archive, and capacity acceptance. The
+  MS4-B stopped deployment is reviewed complete but is not live-qualified;
+  live qualification remains an MS4-C task.
 - ADR-0032 replaces the former fixed-seven-symbol target with independent,
-  operator-configured finite Spot/USD-M symbol lists. MS4 follows independent
-  MS3-B review/merge and authorization; no 72h/168h campaign is automatically
-  scheduled.
+  operator-configured finite Spot/USD-M symbol lists. MS4-C follows the
+  reviewed MS4-B stopped boundary and explicit authorization; no 72h/168h
+  campaign is automatically scheduled.
 - Production Ready remains NO and formal M22.9 is NOT_STARTED. Do not
   automatically authorize deployment, long burn-in, M23.5, or a C++/Go rewrite.
 - The production-path repeated-cancellation supplement is now present and the
@@ -340,7 +344,7 @@ profiling, and burn-in remain separately gated.
   `--version` output may change when the CLI is invoked from a repository
   directory. Production identity must use immutable artifact properties.
 
-## Approved future architecture not yet implemented
+## Approved production architecture not yet operationally complete
 
 - The primary production target is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU,
   4 GiB, 40 GB-class VPS. At the historical M22.9 incident cut, that candidate
@@ -350,9 +354,11 @@ profiling, and burn-in remain separately gated.
   [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md) for current project state.
 - The VPS live path and local Offline Workspace execution-role split is
   approved, but heavy offline profiles are not yet separated operationally.
-- The local-client pull archive workflow, SSH transport seam, durable receipt,
-  source-deletion authorization, Archive Set, and Catalog snapshot transfer are
-  not implemented.
+- The local-client pull archive protocol, SSH transport seam, durable receipt,
+  source-deletion authorization, Archive Set, and Catalog snapshot transfer
+  library are implemented. The operator-selected archive-machine
+  receive/readback/receipt command freeze and production client certification
+  remain pending.
 - The future archive client targets macOS, Linux, and Windows; platform client
   implementations/certifications do not yet exist.
 - Notifications and Web UI remain future, separately authorized extensions.

@@ -13,8 +13,9 @@ Binance Market Data Recorder 是一个独立的、无 API 密钥的 Binance 公�
 批准的未来生产 profile 是 Ubuntu 24.04 LTS x86_64、Python 3.12、systemd
 和非 root Recorder 服务，运行于共享的 2 vCPU / 4 GiB / 40 GB-class VPS。
 macOS Apple Silicon 是开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
-Linux 验证和历史证据 profile。VPS 归档客户端、Archive Set 和 Offline
-Workspace 仍未实现。
+Linux 验证和历史证据 profile。VPS 归档传输协议/library、Archive Set 和
+Offline Workspace 已有实现与合同；实际归档机器的命令冻结和跨平台客户端
+认证仍待完成。
 
 ## 2. 数据流全景
 
@@ -125,8 +126,9 @@ Depth Resync 相互隔离，side-data 失败不停止核心 L2。若任一核心
 批准的未来拓扑由本地客户端通过 SSH 从 VPS 拉取。Durable 本地验证、Raw
 manifest/Archive Set/storage_id 身份、receipt 持久化、VPS receipt 校验和
 源重新验证都完成后，才可授权删除 VPS 源。SSH 成功不等于删除授权。
-`RemoteTransport` 是传输替换 seam；当前 `ArchiveManager` 尚未实现远程
-receipt 或 Archive Set。
+`RemoteTransport` 是传输替换 seam；远程 receipt、Archive Set 和 Catalog
+snapshot 协议/library 已实现，但实际归档机器的接收/回读/receipt 命令仍须
+由 operator 冻结，不能把它表述为已发布的通用 archive CLI。
 
 **kill -9 恢复：**
 - 每个 frame 有独立的 CRC32C。尾部截断到最后一个有效 frame（`ftruncate`），标记 `RECOVERED`。
@@ -211,13 +213,16 @@ receipt 或 Archive Set。
 - **R-036（Open）**：USD-M 5 分钟统计在录制器离线期间可能错过，超出保留窗口即不可恢复。
 - 无 Historical L2：data.binance.vision 不提供深度数据。
 - 无 Live raw trades/klines 流。
-- 仅支持 BTCUSDT。
+- MS2/MS3-B 已支持 operator-configured finite Spot/USD-M product set；当前
+  MS4-B review 使用四个 ProductKey，但 live qualification 仍未开始。
 - macOS Apple Silicon 为开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
-  验证 profile；VPS production profile 尚未部署或验收。
+  验证 profile；VPS MS4-B stopped deployment 已完成 review，live qualification
+  尚未开始。
 - Live 和 Historical 数据集从不自动混合。
-- 未来 local-client pull、SSH `RemoteTransport`、Archive Set、receipt 和
-  Catalog post-session snapshot 尚未实现；它们不改变现有 Raw/EventEnvelope
-  语义。
+- VPS local-client pull、SSH `RemoteTransport`、Archive Set、receipt 和
+  Catalog post-session snapshot 的协议/library 已实现；归档机器的实际
+  operator 命令、跨平台客户端认证和目标选择仍待完成，不改变现有
+  Raw/EventEnvelope 语义。
 
 ## 13. Durable Cursor 与实际持久状态
 

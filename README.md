@@ -1,19 +1,19 @@
 # Binance Market Data Recorder
 
-> **MS3-B candidate (2026-09-10 update):** shared-resource scaling, bounded
-> multi-product load, archive, and capacity interaction have updated offline
-> candidate evidence on
-> `feat/ms3b-shared-resource-acceptance`. Base current main:
-> `01527037254595267003f886689bb270e08b5e5d` (tree
-> `eb63b645660a64ac606341ce3fb7f447a6e89457`); MS2 PR #54 and MS3-A PR #55 are
-> merged. The candidate now includes real Collector/Poller gate and
-> multi-product running-path supplements; independent MS3 re-review/merge and
-> separate authorization are pending. Current main is not deployed; the older pre-MS1 clean-24h artifact
-> retains only its own historical duration evidence.
-> `FORMAL_M22_9=NOT_STARTED`, `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`.
-> See [current state](docs/CURRENT_PRODUCTION_STATE.md),
-> [handoff](docs/PROJECT_HANDOFF.md), [MS2 acceptance](docs/milestone_acceptance/MS2.md),
-> and [MS3 acceptance](docs/milestone_acceptance/MS3.md).
+> **MS4-B reviewed complete (2026-09-10):** the Tokyo VPS target preflight,
+> rollback preservation, exact frozen Linux artifact, exact four-ProductKey
+> configuration, stopped systemd deployment, and deployment identity evidence
+> are reviewed complete. The Recorder remains stopped; no live capture,
+> Binance qualification, controlled recovery, or Formal M22.9 was started.
+> `MS4_C=BLOCKED_NOT_STARTED` pending an approved cross-machine archive target,
+> immediate ETHUSDT official eligibility evidence, and explicit start
+> authorization. `FORMAL_M22_9=NOT_STARTED`, `PRODUCTION_READY=NO`,
+> `CURRENT_MAIN_DEPLOYED=NO`. Live main is
+> `bb8c93ba63c23adaf2cb0288b6ea127030b89e58` (tree
+> `8770f48d458dc4e35d813e8db8dc2009ff78889c`); the stopped deployment source
+> is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+> `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). See [current state](docs/CURRENT_PRODUCTION_STATE.md),
+> [handoff](docs/PROJECT_HANDOFF.md), and [MS4 acceptance](docs/milestone_acceptance/MS4.md).
 
 Configure products under `[recorder]`:
 
@@ -133,10 +133,12 @@ Binance Market Data Recorder 是 specifically for Binance public market data
 macOS Apple Silicon 保持 **logged-in-user LaunchAgent** 支持并作为开发/本地
 profile；Ubuntu ARM64/RK3588 的非 root **systemd** 部署是独立的 Soak
 Candidate/LAN Linux profile。主生产目标是 Ubuntu 24.04 LTS x86_64
-共享 VPS；M22.9 24h结果INCOMPLETE且本地修复未部署。Windows 尚未实现，但未来归档客户端要求支持
-macOS/Linux/Windows。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
+共享 VPS；MS4-B stopped deployment 已安装并审查，但尚未 live-qualified。归档
+protocol/library 已实现，跨机器目标、operator command freeze 和 macOS/Linux/Windows
+生产认证仍待完成。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在
 正常重启后生效。它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所
-插件框架；MS2 已通过离线验收，MS3-B 候选的离线证据已补充，等待独立 PR 复审与合并。
+插件框架；MS2 已通过离线验收，MS3-B 离线证据已通过 PR #56 合并；MS4-B
+停止部署审查已完成，MS4-C 实机资格验证仍待单独授权。
 支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
@@ -198,8 +200,8 @@ macOS/Linux/Windows。MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表
 | Symbol | Operator-configured finite Spot/USD-M lists; legacy BTCUSDT/BTCUSDT only when both fields are absent |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
-| 当前生产状态 | Current main is `015270372…` (tree `eb63b645…`), not deployed; MS3-B candidate evidence is updated and independent re-review is pending; deployed/validated source is pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55; no current-main deployment |
+| 当前生产状态 | Current main is `bb8c93ba…` (tree `8770f48d…`), a docs-only descendant and not deployed; current behavior/deployment source is `303e073e…` (tree `2b30a4dd…`), installed only as the reviewed stopped MS4-B deployment; MS4-C is blocked/not started; the independently qualified source remains pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55, MS3-B via PR #56; current main is not deployed |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -210,12 +212,12 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 
 | 子系统 | 实现状态 | 触发方式 | 输出 | 主要限制 |
 |--------|---------|---------|------|---------|
-| Spot 实时采集 | 已实现 | Collector 启动后自动 | Raw chunks (.bmdr.zst) | 仅 BTCUSDT |
-| USD-M 实时采集 | 已实现 | Collector 启动后自动 | Raw chunks (.bmdr.zst) | 仅 BTCUSDT perpetual |
+| Spot 实时采集 | 已实现 | Collector 启动后自动 | Raw chunks (.bmdr.zst) | 每个已配置 Spot ProductKey；两字段均缺省时 legacy BTCUSDT |
+| USD-M 实时采集 | 已实现 | Collector 启动后自动 | Raw chunks (.bmdr.zst) | 每个已配置 USD-M ProductKey；两字段均缺省时 legacy BTCUSDT perpetual |
 | USD-M 辅助 WebSocket | 已实现 | 默认启用 | Raw chunks | mark price, liquidation |
 | USD-M 辅助 REST 轮询 | 已实现 | 默认启用 | Raw chunks | premium index, funding, OI, exchange info |
 | USD-M 5 分钟统计 | 已实现 | 默认全部启用 | Raw + normalized | 受官方保留窗口约束 |
-| Spot exchangeInfo | 已实现 | 默认启用 (每小时) | Raw + normalized | 仅 BTCUSDT |
+| Spot exchangeInfo | 已实现 | 默认启用 (每小时) | Raw + normalized | 每个已配置 Spot symbol；两字段均缺省时 legacy BTCUSDT |
 | 本地订单簿重建 | 已实现 | Collector 内部自动 | Checkpoints | R-034 Open, Spot U/u, USD-M U/u/pu |
 | Depth Resync | 已实现 | 序列断连时自动触发 | Gap 证据, RESYNC_REQUIRED | Spot/USD-M 各自隔离 |
 | Raw Spool | 已实现 | Collector 回调自动 | .partial → .bmdr.zst | CBOR + CRC32C |
@@ -230,14 +232,14 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | 已实现；运行中的 VPS 是 older deployed candidate | `systemd install` CLI | system unit + journald | older M23.4 2h 非正式验证 PASS；正式 M22.9 未开始 |
+| systemd 服务 | 已实现；MS4-B exact target deployment is installed and stopped | `systemd install` CLI | system unit + journald | MS4-C/live qualification and formal M22.9 未开始 |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
 
 ## 数据覆盖矩阵
 
-### Spot BTCUSDT
+### Spot configured ProductKey (BTCUSDT example)
 
 | 数据流 | Live | Historical | 时钟 | 备注 |
 |--------|------|------------|------|------|
@@ -249,7 +251,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | klines 1m | 未实现 Live 流 | baseline-bars | archive source | 基准 bars |
 | raw trades | 未实现 Live 流 | microstructure-trades | archive source | 逐笔交易 |
 
-### USD-M BTCUSDT Perpetual
+### USD-M configured ProductKey (BTCUSDT example)
 
 | 数据流 | Live | Historical | 时钟 | 备注 |
 |--------|------|------------|------|------|
@@ -613,8 +615,9 @@ SEALED → ARCHIVE_COPYING → ARCHIVE_VERIFYING → ARCHIVED_VERIFIED
 批准的未来 VPS 拓扑由本地 archive client 通过 SSH 拉取 VPS sealed Raw。
 本地 durable verification、Raw manifest/Archive Set/storage_id 身份、receipt
 持久化、VPS receipt 校验和源重新验证完成后才可删除 VPS 源。SSH 成功不等于
-删除授权。当前实现仍是 local ArchiveManager；远程 transfer、Archive Set 和
-Catalog post-session snapshot 尚未实现。
+删除授权。当前 protocol/library 已实现；operator-selected archive-machine
+receive/readback/receipt command freeze、cross-machine production certification
+和 Catalog post-session snapshot transfer workflow 仍待完成。
 
 ### 安全弹出
 
@@ -1117,8 +1120,10 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - 在线测试是**显式 opt-in**，默认 CI 不依赖 Binance 网络。
 - Stress 测试从默认 suite 排除。
 - CI 使用 GitHub Actions (`offline-ci`)。
-- 当前工程验证按非正式 `2h（已通过）→ 4h（下一步）→ 约
-  12h → 24h → 72h` 渐进；每次先冻结证据，再按单独授权安全回收测试数据。
+- MS4-B 仅完成 stopped-deployment review；MS4-C 的 bounded non-formal window
+  （15m absolute startup + 2h steady + 15m recovery + 15m shutdown + margin）
+  尚未开始。独立 Formal M22.9 的 2h/12h/24h/72h/168h chain 也尚未开始；
+  每次 live run 都需先冻结证据，再按单独授权安全回收测试数据。
 - 正式 M22.9 的约 278h 完整链是后续容量门，不是当前下一项测试。
 
 ## 已知限制和非目标
@@ -1128,8 +1133,10 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 
 - **R-034（Open）**：官方 Global Spot bootstrap 文辞与 toolbox 示例冲突。
   代码使用 `lastUpdateId + 1`，不作官方纠正声明。
-- **R-035（Open）**：当前候选仅完成 2h 非正式验证；4h/12h/24h/72h
-  渐进验证与正式 M22.9 均未完成，Production Ready 未授权。
+- **R-035（Open）**：MS4-B 仅完成 stopped-deployment review；MS4-C 的 bounded
+  non-formal window（15m startup + 2h steady + 15m recovery + 15m shutdown +
+  margin）尚未开始；独立 Formal M22.9 的 2h/12h/24h/72h/168h chain 也未开始，
+  Production Ready 未授权。
 - **R-036（Open）**：USD-M 5 分钟统计在 Recorder 离线期间可能错过，
   超出保留窗口即不可恢复。
 
@@ -1145,8 +1152,9 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   离线验收已通过；多产品实机资格验证尚未运行。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
-  Developer Preview / Soak Candidate。VPS production profile 尚未部署或验收。
-  Windows archive-client support is future work; the client is not implemented.
+  Developer Preview / Soak Candidate。VPS production profile 已安装并完成
+  stopped MS4-B review，但尚未 live-qualified。Archive protocol/library 已实现；
+  operator command freeze 与跨平台生产认证仍属 future work。
 - RK3588 实机配置使用有界 `ingress_queue_capacity = 262144` 并错开各流的
   Raw seal 相位；长期队列、RSS 与 eMMC seal 延迟仍属于 M21 soak 验证。
 - 无 Historical L2（data.binance.vision 不提供深度数据）。

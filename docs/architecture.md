@@ -1,16 +1,22 @@
 # Architecture
 
 This document describes the implemented Recorder, the approved future
-deployment topology, and the accepted future configurable product-set target.
-Verify live
-GitHub `main` at takeover. The post-MS1 implementation/behavior authority is
+deployment topology, and the implemented configurable product set.
+Verify live GitHub `main` at takeover. The current behavior/deployment-source
+authority for the reviewed MS4-B stopped deployment is
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). Live GitHub `main` is
+`bb8c93ba63c23adaf2cb0288b6ea127030b89e58` (tree
+`8770f48d458dc4e35d813e8db8dc2009ff78889c`), a documentation-only descendant
+and not the production-deployed source. The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged, but live GitHub
-`main` is not deployed. Documentation-only descendants may make live `main`
-newer without changing that behavior authority. The independently qualified deployed artifact is the
+`95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical MS1 foundation
+lineage, not the current behavior authority. The independently qualified deployed artifact is the
 pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`, whose clean 24-hour
-non-formal stage is complete. The MS2 candidate implements configurable
-product runtime and has offline acceptance; independent review/merge is pending. Formal M22.9 has not started and Production Ready is not
+non-formal stage is complete. MS2 and MS3-B are implemented, offline-accepted,
+and merged (MS3-B through PR #56). MS4-B stopped-deployment review is complete;
+MS4-C live qualification is blocked/not started pending its archive and
+authorization gates. Formal M22.9 has not started and Production Ready is not
 authorized. See `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`.
 
@@ -318,7 +324,7 @@ architectural facts, not implementation changes:
   it dropped nothing internally, but it cannot prove the exchange sent
   nothing it missed. Do not equate the two.
 
-## Configurable product runtime (MS2 implemented; MS3/MS4 pending)
+## Configurable product runtime (MS2/MS3 implemented; MS4-B reviewed)
 
 ADR-0032 supersedes ADR-0031. The Recorder remains Binance-specific with
 current markets Spot and USD-M perpetual, while the operator configures the
@@ -394,9 +400,10 @@ change is required.
 The sequence is MS2 configurable product runtime, MS3 shared-resource scaling/
 rotation/observability, and MS4 configurable-product integration plus bounded
 live qualification. A fixed qualification workload is evidence only, not a
-supported-symbol allowlist. MS2 is offline-accepted; MS3/MS4 are not implemented
-and no multi-product artifact is live-qualified;
-Formal M22.9 and Production Ready remain unauthorized.
+supported-symbol allowlist. MS2 and MS3-B are merged and offline-accepted;
+MS4-B stopped-deployment review is complete, but no multi-product artifact is
+live-qualified. MS4-C remains blocked/not started, and Formal M22.9 and
+Production Ready remain unauthorized.
 
 ## Runtime isolation
 
@@ -511,9 +518,12 @@ continues.
 The approved future topology uses a local archive client pulling immutable
 sealed Raw from the VPS over SSH through a transport-neutral seam. Durable
 local verification, Archive Set identity, a receipt, VPS source revalidation,
-and deletion authorization precede VPS deletion. See
-`docs/archive_transfer_contract.md` and ADR-0029. This future workflow is not
-implemented by the current local ArchiveManager.
+and deletion authorization precede VPS deletion. The transfer
+protocol/library, receipt binding and failure matrix are implemented; the
+current local ArchiveManager remains a local-storage operation. The
+operator-selected archive-machine receive/readback/receipt command freeze and
+production client certification remain pending. See
+`docs/archive_transfer_contract.md` and ADR-0029.
 
 ## Deterministic time and replay
 
