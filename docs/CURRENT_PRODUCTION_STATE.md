@@ -5,10 +5,46 @@ the independently qualified deployed artifact, and the future multi-symbol
 program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
+## Latest CI disposition — MS3-CI2
+
+On `e6dc3a993defa2c6f24af25209090a55deda2381`, run `34424559261`:
+Ubuntu passed all gates; macOS failed the older global-stop backpressure test's
+single-manifest assertion (actual 2). Profile D passed on both platforms.
+Astra reproduced this failure with an injected normal rotation boundary and
+implemented a test-only aggregate-manifest correction plus a boundary case.
+Local validation passed (1641 passed, 24 skipped, 4 deselected); PR remains unmerged and no deployment is
+implied. See the MS3-CI2 entry in milestone_plan.md for current execution scope.
+
+## MS3-CI1 update — 2026-09-10 (current disposition)
+
+**MS3-CI1 IMPLEMENTED / AWAITING REVIEW; merge readiness remains suspended.**
+The Ubuntu failure was a fixture executor-scheduling cycle: fake snapshot SDK
+workers synchronously waited for depth writer work queued in the same executor.
+Profile D now uses real-persistence async phase events before SDK submission,
+thread-safe worker-to-loop signals and separate hang watchdogs. The local
+default/six-worker repeat, focused/full offline suites and static/build/wheel
+gates pass. No production code or capacity setting changed. Required Ubuntu CI
+and independent repair review remain open; prior Astra approval does not cover
+this delta. No merge/auto-merge, deployment or manual CI operation is authorized.
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW.
+
+## Current review update — 2026-09-10
+
+Astra approved the offline MS3 candidate at
+`66e036a07f422818f5e3f54f0216d4083b443698` (tree
+`1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
+coverage findings are CLOSED. That approval remains historical: PR #56 now has
+an unreviewed MS3-CI1 test delta, so independent repair review precedes any merge
+handoff. PR #56 is still open/unmerged. No deployment is authorized.
+The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
+is the current detailed continuation queue; the candidate submission summaries
+below retain their evidence context. No MS4 deployment is authorized.
+
 ## Status at a glance
 
 ```text
-LIVE_GITHUB_MAIN=VERIFY_AT_TAKEOVER
+LIVE_GITHUB_MAIN=01527037254595267003f886689bb270e08b5e5d
+LIVE_GITHUB_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -23,29 +59,42 @@ MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
 MS2_INDEPENDENT_PR_REVIEW=COMPLETE
 MS2_MERGED_PR=54
-MS3=IN_PROGRESS
-MS3_A_CANDIDATE=feat/ms3a-product-rotation-attribution
-MS3_B=NOT_STARTED
-MS4=PLANNED
+MS3=CI_REPAIR_IMPLEMENTED_AWAITING_REVIEW
+MS3_A=MERGED_PR_55
+MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
+MS3_B_MERGED=NO
+MS3_R1=CLOSED
+MS3_INDEPENDENT_RE_REVIEW=APPROVED
+MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
 
-## Current MS3-A candidate authority
+## Current MS3-B candidate authority
 
 MS2 implementation, offline acceptance, independent review, and merge are
-closed on current `main` via PR #54 at
-`52bf086dd240556b054821f33bf1e2840fdcf912`, tree
-`762729846fae766ae1c2edde0af95cd63648e7df`. The MS3-A implementation candidate
-is the local branch `feat/ms3a-product-rotation-attribution`; it is not merged
-or deployed. MS3-B remains outstanding. See [MS2 acceptance](milestone_acceptance/MS2.md)
-for the closed MS2 implementation record and compatibility.
+closed on current `main` via PR #54. MS3-A is merged via PR #55 at
+`01527037254595267003f886689bb270e08b5e5d`, tree
+`eb63b645660a64ac606341ce3fb7f447a6e89457`, with merge parents
+`52bf086dd240556b054821f33bf1e2840fdcf912` and
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. MS3-B candidate evidence is
+updated on `feat/ms3b-shared-resource-acceptance` / PR #56; it is not merged
+or deployed, and this record does not close MS3 before independent final
+re-review. The update now includes the narrow MS3-R1 waiting-cancellation test
+barrier correction; the appended head/tree must be independently reverified.
+The update adds real `UsdMCollector`/`RestSideDataPoller` production-path
+evidence, finite Catalog pagination/cursor competition, cancellation lifecycle
+coverage, a minimal owned-worker fix for in-flight side REST cancellation, and
+the corrected waiter enqueue/cancel/successor/post-stop assertions.
+See [MS2 acceptance](milestone_acceptance/MS2.md) and
+[MS3 acceptance](milestone_acceptance/MS3.md) for the acceptance records.
 
 ## A. Verified pre-MS2 main and post-MS1 implementation/behavior authority
 
 | Item | Authority |
 | --- | --- |
-| Live GitHub `main` | verify at takeover |
+| Live GitHub `main` at MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
 | Post-MS1 implementation/behavior authority | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
 | Post-MS1 implementation tree | `95f16f05b30b7db23e43ebb6439ed0d055081902` |
 | MS1 merge | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
@@ -137,7 +186,10 @@ are absent, resolving to BTCUSDT in both markets. If either field is present,
 explicit product-selection mode applies: supplied lists are exact and an
 omitted sibling resolves to an empty list; both resolved lists empty is invalid.
 MS2 assembles one Collector per configured ProductKey in one process.
-It passed offline acceptance; MS3/MS4 and live qualification remain pending.
+It passed offline acceptance on current main; MS3-B candidate evidence is now
+updated with production-path tests, while independent re-review/merge and live
+qualification remain pending. MS4 is next only after the independent MS3
+re-review/merge decision.
 
 In explicit Spot-only mode, the resolved USD-M set is empty: no USD-M
 Collectors, product-specific side-data managers, process-global USD-M
@@ -177,5 +229,8 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-Complete the independent MS3-A review. Do not merge this candidate, deploy,
-start MS3-B, or run qualification as part of this work package.
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
+
+Review the appended MS3-R1 diff and evidence for the MS3-B merge decision.
+Do not deploy or run live qualification as part of this work package; MS4 is
+next only after the candidate is independently reviewed and merged.

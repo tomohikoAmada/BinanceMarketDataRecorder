@@ -1,11 +1,12 @@
 # Known Limitations
 
-Verify live GitHub `main` at takeover. The post-MS1 implementation/behavior
-authority is `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`); documentation-only descendants
-may make live `main` newer without changing that behavior authority. MS1 is
-merged through PR #51 and post-merge CI run `33955915046` passed on macOS and
-Ubuntu. Live GitHub `main` is not deployed.
+At the MS3-B authority check, GitHub `main` was
+`01527037254595267003f886689bb270e08b5e5d` (tree
+`eb63b645660a64ac606341ce3fb7f447a6e89457`), with MS3-A merged through PR
+#55. The post-MS1 implementation/behavior authority is
+`d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
+`95f16f05b30b7db23e43ebb6439ed0d055081902`); MS1 is merged through PR #51,
+MS2 through PR #54, and live GitHub `main` is not deployed.
 The last independently qualified deployed artifact is pre-MS1 source
 `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour non-formal stage
 is complete and remains artifact-specific. No duration credit transfers to MS1
@@ -26,8 +27,10 @@ This is an **OPERATOR / PROVIDER-PANEL OBSERVATION**, not a normalized Recorder
 CPU benchmark. This historical capacity watch does not authorize or schedule
 another burn-in.
 
-MS2 configurable-product runtime is offline-accepted; independent PR review
-is next, followed by separately authorized MS3.
+MS2 configurable-product runtime is merged and offline-accepted. MS3-B
+candidate offline evidence is updated on
+`feat/ms3b-shared-resource-acceptance`; independent re-review/merge is next,
+followed by separately authorized MS4.
 After verifying live main, receive explicit authorization before implementation.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
@@ -210,9 +213,10 @@ substitute for long-running proof.
   implemented.
 - MS2 implements an operator-configured finite symbol set for Spot and USD-M
   perpetual, with legacy BTCUSDT/BTCUSDT defaults only when neither field is set.
-  Qualification remains pending for
-  those two markets; other exchanges, automatic all-symbol discovery, and an
-  exchange/plugin framework remain outside the architecture.
+  MS3-B adds offline bounded shared-resource, archive, and capacity evidence;
+  multi-product live qualification remains pending. Other exchanges,
+  automatic all-symbol discovery, and an exchange/plugin framework remain
+  outside the architecture.
 - The current Binance Global Spot bootstrap wording conflicts with the
   official toolbox example and observed adjacent Raw boundary. ADR-0011 uses
   `lastUpdateId + 1`, records the conflict, and awaits maintainer confirmation.
@@ -226,27 +230,30 @@ substitute for long-running proof.
 
 Formal M22.9 and any later use decision still require the repository-owned full
 staged chain on a capacity-complete environment. The next development action is
-independent MS2 PR review, then separately authorized MS3; deployment,
+independent MS3-B review/merge, then separately authorized MS4; deployment,
 profiling, and burn-in remain separately gated.
 
 ### Current GitHub main and multi-symbol limitations
 
 - Current main contains the MS1 durable identity foundation but is not deployed
   and has no duration credit from the pre-MS1 clean-24h artifact.
-- The MS2 candidate implements configurable-product assembly with offline
-  acceptance. It is not yet merged or deployed; MS3/MS4 remain unimplemented.
+- Current main contains the MS2 configurable-product assembly and MS3-A; the
+  MS3-B candidate adds offline shared-resource, bounded-load, archive, and
+  capacity acceptance. It is not yet merged or deployed; live qualification
+  remains an MS4 task.
 - ADR-0032 replaces the former fixed-seven-symbol target with independent,
-  operator-configured finite Spot/USD-M symbol lists. MS3 follows independent
-  MS2 review/merge and authorization; no 72h/168h campaign is automatically
+  operator-configured finite Spot/USD-M symbol lists. MS4 follows independent
+  MS3-B review/merge and authorization; no 72h/168h campaign is automatically
   scheduled.
 - Production Ready remains NO and formal M22.9 is NOT_STARTED. Do not
   automatically authorize deployment, long burn-in, M23.5, or a C++/Go rewrite.
-- The remaining nonblocking backlog is the repeated-cancellation supplemental
-  test-strength P3, process-memory-only cooldown across restart, conservative
-  typed/no-header 418 fallback, any genuinely unresolved documentation/source
-  provenance item, RSS WATCH/not proven leak, open R-034, and unresolved formal
-  capacity runway. These do not reopen the closed shared-gate P2 or remote-delete
-  P1.
+- The production-path repeated-cancellation supplement is now present and the
+  in-flight side-request lifecycle correction is covered. Remaining
+  nonblocking backlog is process-memory-only cooldown across restart,
+  conservative typed/no-header 418 fallback, any genuinely unresolved
+  documentation/source provenance item, RSS WATCH/not proven leak, open R-034,
+  and unresolved formal capacity runway. These do not reopen the closed
+  shared-gate P2 or remote-delete P1.
 
 ### Additional M21.4 known limitations
 

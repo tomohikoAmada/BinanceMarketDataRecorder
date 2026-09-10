@@ -3,6 +3,412 @@
 Status: frozen by M0, historically corrected by M0.1, and finally scoped/named
 by M0.2/ADR-0007 on 2026-07-22. Execute exactly one milestone per run and one
 local commit per milestone. Never start the next milestone automatically.
+Within the current milestone, execute the remaining authorized work packages
+without asking for permission for each routine step. The execution ledger below
+is the current multi-symbol continuation plan; historical milestone records
+are not instructions to repeat completed work.
+
+## Multi-symbol execution ledger — 2026-09-10
+
+This section implements the owner's Luna-max implementation / Astra review
+workflow. It is a planning and MS3 review update, not MS4 deployment authority.
+Use this document as the single task queue; acceptance files hold evidence,
+CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
+
+### MS3-CI2 — macOS normal rotation assertion repair
+
+Current repair by GPT-6 Astra on base `e6dc3a993defa2c6f24af25209090a55deda2381`.
+Run `34424559261`: Ubuntu job `102706917778` passed all gates, including
+Profile D, build and clean-wheel smoke. macOS job `102706918017` failed a
+DIFFERENT test: `test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap`
+in `tests/integration/test_usdm_ingress_backpressure.py:1070`, expecting one
+manifest but observing two (1 failed, 1639 passed, 24 skipped, 4 deselected).
+Profile D passed in both jobs. Do not repeat the CI1 repair or attribute this
+failure to the executor without evidence.
+
+The test uses 60-second stable-phase Raw rotation. The next boundary can be
+arbitrarily close to writer creation; a short test may legitimately seal more
+than one chunk. Astra reproduced the exact 2 != 1 failure by injecting a near
+rotation deadline. The minimal test-only repair validates every manifest as
+complete/no-gap, aggregate record counts, the nonempty exact source prefix and
+absence of discontinuity events. A parametrized boundary case exercises the
+real should_rotate decision at its deadline, without sleeping for a phase.
+No production logic, rotation policy, public contracts or CI configuration changes.
+
+MS3-CI2=FIXED_LOCAL_VALIDATION_PASS
+NEXT_EXECUTABLE=LOCAL_LUNA_MS3_CI2_SUBMIT
+Merge remains pending new exact-head CI and repair review. Preserve historical
+approvals as historical; they are not current full-CI success. Finish validation,
+record results in MS3 acceptance, then local Luna may submit the reviewed diff
+and update PR #56 through the usual rules. No automatic CI retry/cancel/wait.
+
+### MS3-CI1 — Ubuntu Profile D failure (implemented; awaiting review)
+
+New evidence supersedes merge readiness, not the closed R1 test repair.
+GitHub run `34421869781`, Ubuntu job `102698845490`, candidate
+`54fc7a7bd006d071c628e2f4db824f3fdd43d649`: pytest failed with
+1 failed, 1634 passed, 28 skipped, 4 deselected in 298.70s. macOS succeeded.
+Ubuntu lint/type/build steps were skipped after pytest, not independently failed.
+Failure: `test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams`,
+line 1130, waiting up to 2 seconds for all 41 sibling stream counts to reach 2.
+This is distinct from MS3-R1. No merge or auto-merge until this new issue is
+resolved and the changed test/code delta independently reviewed.
+
+Root cause is NOT yet established. The test mixes 1/2-second coroutine waits,
+a 3-second blocked writer, synchronous snapshot waits for depth persistence,
+and a shared default executor. Inspect event causality and worker availability
+before classifying slow scheduling versus deadlock or production failure.
+A reviewer local run with the asyncio default executor bounded to 6 workers
+passed (1 passed in 1.03s); this does not reproduce or explain Ubuntu's failure.
+Do not label it fixed by rerunning green or by increasing every timeout.
+
+Luna-max execution bundle (complete in one MS3 run, then one review handoff):
+
+1. Preserve CI evidence and exact source identity; instrument only the fixture
+   as needed to show missing product/stream counts, task failures, barrier state
+   and worker progress. Reproduce the causal condition locally or on an already
+   authorized non-production Linux test environment; no VPS access is implied.
+2. Correct test synchronization at its cause. Prefer explicit async phase events
+   and a terminal-state/deadline guard; bridge worker signals with the owning
+   loop's thread-safe API. Keep 14 real collectors, 42 active streams, real writer
+   backpressure and 41 sibling progress assertions. Never synthesize counters,
+   replace production processing with a model, skip the test or reduce the load.
+   A documented generous watchdog is acceptable for hung-test termination; it
+   must not be the synchronization mechanism. Ensure the injected writer cannot
+   time out before the test phase it intentionally blocks is allowed to finish.
+3. Audit the other NEW production-path fixture waits for the same demonstrated
+   defect and fix that class together. Do not rewrite unrelated old tests or
+   tune production pools without production defect evidence. Ensure cleanup
+   releases every injected worker gate before bounded task cleanup, preserving
+   the original failure rather than hanging or replacing it with teardown noise.
+4. Run a finite repeat batch (e.g. 20 targeted repetitions), include a bounded
+   small-executor/scheduling variant if it tests the identified cause, then the
+   focused suite and one full offline suite plus applicable static/build/clean
+   wheel smoke gates. Record platform/Python and failures honestly. Actual Linux
+   CI success is not inferred from macOS emulation. No endless retries or soak.
+5. Update this ledger, MS3 acceptance and active status docs with root cause,
+   fix, evidence and remaining Linux verification. Prepare the MS4-A coverage
+   map and missing operator inputs as planning notes only, using existing tools;
+   do not start MS4 implementation or build a final deployment artifact yet.
+6. Commit/push the MS3-only repair and update PR #56. Do not manually run/retry/
+   cancel/wait for CI. Do not merge or enable auto-merge for the unreviewed delta.
+   Return one complete review bundle, not an interim result after each step.
+
+Implementation result — 2026-09-10:
+
+- Root cause: the Profile D fake snapshot API waited synchronously for depth
+  persistence inside SDK calls already running in the shared asyncio default
+  executor. Seven Spot requests, the serialized USD-M request, 42 real writer
+  drains and the intentionally blocked target drain therefore competed for the
+  same small worker pool. On the Ubuntu schedule, workers could wait for depth
+  work still queued behind them, while the 2-second polling assertion expired.
+  This was a fixture scheduling cycle, not evidence of a production defect.
+- Fix: initial Spot and USD-M snapshot admission now waits asynchronously for an
+  aggregate real-depth-persisted phase before submitting SDK worker calls. Real
+  writer observers set explicit async phase events; worker callbacks cross to
+  the owning loop with `call_soon_threadsafe`. The 41 siblings and target third
+  frame are still counted only after real production persistence. A 10-second
+  watchdog terminates a hung phase, while the injected target writer has a
+  separate 60-second guard and is unconditionally released during cleanup.
+- The finite repeat also exposed an independent invalid fixture assumption:
+  production's stable-phase rotation can legitimately split two frames across
+  two complete chunks. Profile D now requires exact aggregate record counts,
+  identity, completeness and no-gap evidence across all manifests, while still
+  requiring at least one sealed chunk for every expected product/stream.
+- Audit: the other new worker-start waits do not form this cycle: their SDK
+  requests are serialized by the shared REST lock and only one blocking worker
+  is active. They remain bounded and their existing cancellation/gate assertions
+  remain intact.
+- Local Darwin arm64 / Python 3.12.9 evidence: 20 repeats of both the normal and
+  6-worker variants passed (40 cases); focused five-file suite 45 passed; full
+  offline suite 1640 passed, 24 skipped, 4 deselected; Ruff, strict MyPy, M0
+  contracts, Go Raw golden, source/wheel build, clean-wheel install, `--version`,
+  `doctor` and `status` passed. Linux and required GitHub checks remain pending
+  normal push execution; no CI run was manually triggered, rerun, cancelled or
+  awaited.
+
+MS3-CI1=IMPLEMENTED_AWAITING_REVIEW
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
+MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
+
+### Status and next task
+
+| Work package | Status | Exit evidence / remaining work |
+| --- | --- | --- |
+| MS1 durable identity | CLOSED / MERGED | PR #51, MS1 acceptance; do not repeat |
+| MS2 configurable runtime | CLOSED / MERGED | PR #54, MS2 acceptance; do not repeat |
+| MS3-A implementation | MERGED | PR #55, base `01527037254595267003f886689bb270e08b5e5d` |
+| MS3-B production-path supplement | OFFLINE REVIEW APPROVED / MERGE PENDING | Reviewed head `66e036a07f422818f5e3f54f0216d4083b443698`; final review below; PR #56 still open |
+| MS3-R1 waiting-cancellation evidence | CLOSED / REVIEWED | Actual enqueue, cancellation, retained holder, successor and post-stop evidence verified |
+| MS3-CI1 Ubuntu Profile D failure | UBUNTU CI PASS / DELTA INSPECTED | Run 34424559261: Profile D passed both platforms; no production changes |
+| MS3-CI2 normal rotation assertion | FIXED / LOCAL VALIDATION PASS | Deterministic boundary repro and aggregate-manifest repair; new CI pending |
+| MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI2 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
+| MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
+| MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
+| MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
+| MS4-D final review / documentation closure | NOT STARTED | Review MS4-C; close only what evidence supports |
+| Completed-branch cleanup | PENDING / SEPARATE MAINTENANCE | Only proven merged branches without additional work; preserve PR #56 while active |
+| Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
+
+NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
+
+### MS3 final independent review — 2026-09-10
+
+Verdict: **APPROVED for offline MS3 scope; no remaining blocking review findings**.
+Reviewer: GPT-6 Astra. Head `66e036a07f422818f5e3f54f0216d4083b443698`,
+tree `1413ec705db3fd9f214499c57696bcab2da2e8b9`; incremental parent
+`c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`. PR base remains
+`01527037254595267003f886689bb270e08b5e5d`; do not confuse the incremental
+review parent with the PR base. GitHub head matched local HEAD; PR #56 open.
+
+The R1 test now yields until the real waiter attempts the held lock, verifies
+no grant before cancellation, observes cancellation at the lock, preserves the
+holder, then completes a successor and excludes post-stop wire calls. Together
+with the previously reviewed production-path and Profile D supplement, this
+closes the original review findings. No production code changed in R1.
+Reviewer reran the same five focused test files (44 tests); see MS3 acceptance
+for the result. Full-suite evidence remains the implementer's reported result.
+
+Next local Luna run: commit only these review documentation updates; update
+PR #56 body (it still names c7d6c904); preserve the approved code/test content.
+Verify any descendant is documentation-only before relying on this review.
+Use normal merge gates without administrative bypass, manual CI actions or
+waiting. If pending, return MERGE_PENDING; if merged, record actual merge
+SHA/tree and MS3=CLOSED, then stop this MS3 run. Start MS4-A in the next MS4
+run following this plan. No further code repair, deployment or long test is
+requested. These documentation edits do not require a full test/CI rerun.
+
+### MS3 review disposition and R1 repair
+
+Reviewer: GPT-6 Astra, 2026-09-10. Reviewed the supplement against previous
+candidate `e2a51dfe32eb15f4873bf027f4199ce8086877bb` and the existing owned-worker
+helper. The original model-only coverage finding is substantially addressed by
+real Collector/Poller requests and Catalog pagination; its waiting-cancellation
+subcase was open at c7d6c904 and is now CLOSED by the final review below. The original sequential-only Profile D finding is CLOSED:
+the supplement runs 14 collectors and 42 core stream contexts simultaneously,
+observes sibling progress during target backpressure, and verifies shutdown and
+persisted identities. These are bounded offline results, not live capacity proof.
+
+R1 [P2]: In `tests/integration/test_ms3b_production_paths.py`,
+`test_production_waiting_cancel_and_post_stop_request_have_no_wire_side_effect`
+first acquires `_RecordingLock` in the test owner, incrementing request_count
+to 1. It then creates a waiter but waits for `request_count == 1`, a condition
+already true. `_wait_until` can return without yielding, so the task is cancelled
+before entering `_request` or enqueueing on the production lock. A passing test
+does not establish waiting-cancellation behavior.
+
+Historical R1 repair instructions (completed; do not repeat):
+
+1. Capture the holder's request/acquire counts, start the real poller waiter,
+   and wait for its additional acquire request (or an equivalent explicit
+   enqueue event). Assert no additional grant and no SDK call before cancel.
+2. Cancel that queued waiter; assert cancellation is observed by the lock,
+   the original holder still owns it, and no wire request occurred.
+3. Release the holder and prove a subsequent real request can acquire and
+   finish with no stale ownership. Preserve the separate post-stop no-wire case.
+4. Keep changes narrow: this finding requires a test correction, not another
+   scheduler or production refactor. Fix production only if a new deterministic
+   failing case actually establishes a defect.
+5. Update MS3 acceptance and this row to IMPLEMENTED / AWAITING REVIEW, with
+   commands and results. Do not mark independent review or merge complete.
+
+Reviewer validation on c7d6c904: 44 passed in 2.03s for the production-path
+supplement, fairness, multi-product storage, archive/capacity, and existing
+USD-M shared-gate files. This is a focused re-run, not a reproduction of the
+implementer's reported full suite (1639 passed, 24 skipped, 4 deselected).
+Online, VPS, external media, stress/soak and full CI were not run by reviewer.
+
+R2 exit: Astra reviews the R1 diff and results against the reviewed source.
+Merge state and source identity must be verified independently of test success.
+If GitHub checks are pending, report a merge-ready handoff and continue only
+independent authorized documentation/preparation in the current milestone;
+do not wait, bypass required checks, or begin MS4 implementation on an unmerged
+dependency. Do not automatically force-push or rewrite reviewed history.
+
+### MS3-R1 execution result — 2026-09-10
+
+R1 was submitted as **IMPLEMENTED / AWAITING REVIEW** in the appended MS3 test commit. The
+change is limited to `tests/integration/test_ms3b_production_paths.py`; no
+production scheduler or production-code refactor was added.
+
+The corrected test captures the holder's request/acquire/release counts before
+starting the real `RestSideDataPoller._request()` waiter, then waits for the
+waiter's additional request-lock acquisition attempt. Before cancellation it
+asserts no additional grant, no release, no SDK wire start, and that the lock
+is still held by the original holder. After cancellation it asserts the
+`_RecordingLock` observed `CancelledError`, the acquire/release counts remain
+unchanged, the SDK still has no wire call, and the holder still owns the lock.
+It releases the holder and completes a subsequent real poller request through
+the same lock, proving no stale ownership. It then clears the SDK-start marker,
+sets stop, and independently asserts the post-stop request does not increment
+the lock request count or start the SDK.
+
+Post-R1 validation: the focused MS3 suite passed 44 tests in 1.83s; the full
+offline suite passed 1639 tests with 24 explicit online/preview skips and 4
+stress tests deselected. Ruff, MyPy, compileall, M0 contract verification, and
+Raw v1 golden verification also passed. Independent final review, merge, CI,
+online traffic, VPS access, external media, stress/soak, and deployment remain
+outside this result.
+
+### MS4-A — local preparation, no production access
+
+Execution: local macOS Codex, Luna-max. Start in a new MS4 run after accepted
+MS3 merge. Use existing configuration, readiness, deployment identity,
+archive and audit interfaces. No new service, RPC, GUI or benchmark framework.
+
+Deliverables: `docs/milestone_acceptance/MS4.md` (evidence ledger) and
+`docs/runbooks/MS4_qualification.md` (exact executable procedure; create during
+MS4). Link them here when created. Do not create an empty secondary task system.
+
+1. Freeze the actual merged source SHA/tree. Record Python/lock/build tooling,
+   Wheel hash, config hash, unit hash and deployment identity using existing
+   mechanisms. A macOS artifact is not presumed installable on Ubuntu x86_64;
+   use the repository's supported build path and verify target compatibility.
+2. Map MS4 checks to existing CLI/tools/tests before writing anything new.
+   Reuse MS2/MS3 results for configuration/identity/unit behavior; add only
+   missing integration checks. No Contracts/gRPC rebuild is required by default.
+3. Draft a mixed profile with BTC and at least one non-BTC product per market.
+   Proposed starting workload: BTCUSDT and ETHUSDT in both markets (4 products,
+   12 core streams). Confirm currently eligible products from allowed official
+   sources before live execution and record source provenance if consulted.
+   This is a qualification sample, not an allowlist or a capacity guarantee.
+   Profile D remains a larger optional workload, not an automatic VPS target.
+4. Freeze enabled auxiliary kinds, rotation, proxy policy, active root, archive
+   destination and readiness expected ProductKeys. No secrets or raw proxy URLs
+   in evidence. An unconfigured market must remain inactive; retain the existing
+   offline single-market tests rather than deploying every config permutation.
+5. Propose a 2-hour steady-state window after all configured products are READY,
+   with a finite startup deadline and a separate bounded recovery observation.
+   Freeze actual durations before execution; no automatic extensions or repeat
+   72h/168h campaign. The short window cannot certify long-term RSS or rotation.
+6. Write concrete commands for install/check/start/sample/stop/verify/rollback,
+   deriving options from current CLI. Identify the exact service and Recorder
+   directories; never assume exclusive VPS ownership. List unresolved operator
+   inputs together (host, roots, archive target and approval), not one by one.
+7. Run applicable offline gates once for final code. Reuse exact-source green
+   CI evidence where available; pending CI is not a local preparation blocker.
+   Prepare a reviewable deployment bundle before requesting live authorization.
+
+Exit: reproducible artifact, complete runbook and evidence schema, local gates
+recorded, no unresolved implementation blocker. Set MS4-A=READY_FOR_REVIEW;
+MS4-B remains unauthorized until the owner approves the concrete deployment.
+
+Planning-only coverage map prepared during MS3-CI1 (not MS4 execution): existing
+commands cover `config show`, `doctor`, `status`, `storage forecast`, archive
+`status`/`verify`, daily reports, systemd `status`, deployment
+`identity-create`/`verify`/`readiness`, and deployment acceptance readiness.
+Existing offline suites cover configured ProductKey topology, per-product
+readiness, reconnect evidence, shared REST serialization/cooldown, Raw/manifest/
+Catalog closure, archive/capacity and rollback primitives. MS4-A must still
+freeze the merged SHA/tree and artifact hashes and obtain together the operator's
+exact target host, service user/group, config path, active data root, archive
+target, proxy mode, enabled auxiliary kinds, approved product set/durations,
+rollback root/artifact and explicit MS4-B access/deployment authorization.
+
+### MS4-B — Tokyo VPS preflight and deployment
+
+Execution: **Tokyo VPS Codex**, Luna-max; local archive steps run on the
+explicitly identified archive machine. Every execution prompt must name its
+machine. Access and deployment require the owner's separate authorization.
+
+1. Verify host OS/architecture, actual deployed identity, service user/unit,
+   active root, free bytes, memory headroom and co-resident service boundaries.
+   Record observations; do not change unrelated services or inspect credentials.
+2. Calculate capacity runway from measured aggregate growth where available.
+   Single-symbol historical rates are provisional estimates, not a multi-product
+   measurement. Require available bytes above hard reserve to cover the finite
+   planned window plus a stated shutdown/recovery margin. Treat unverified
+   archive throughput as zero when budgeting. If insufficient, shorten/reduce
+   the proposed workload with explicit recording or return an actionable block;
+   never lower reserve thresholds or delete unarchived data.
+3. Verify rollback compatibility: MS1 migrated Catalog identities may not be
+   understood by the old deployed artifact. Do not simply point old binaries at
+   new state. Use a proven supported rollback path or retained prior root;
+   preserve all new Raw and record any stopped interval explicitly.
+4. Verify the approved artifact/config/unit hashes, deploy via existing native
+   procedure, and check actual ProductKeys against independently parsed config.
+   Record startup errors, readiness and expected/actual counts. No steady-state
+   T0 until all products are ready and initial recovery is accounted for.
+
+Exit: exact running identity, all expected products ready, sufficient finite
+runway, no unexpected product/global owner, rollback procedure verified.
+On a failed gate preserve evidence, mark the failed step, and repair only the
+demonstrated issue; do not silently substitute another artifact or workload.
+
+### MS4-C — bounded live evidence
+
+Use the approved MS4-B artifact/config. Collect existing telemetry/logs at a
+fixed documented cadence, avoiding expensive per-sample full Catalog scans.
+
+| Check | Required evidence / pass condition |
+| --- | --- |
+| Identity and topology | SHA/tree/Wheel/lock/config/unit/deployment IDs; all expected ProductKeys, no extras; each configured core stream produces correctly attributed Raw |
+| Readiness | Independently configuration-bound; no false-ready interval; final products ready |
+| Continuity and recovery | Product-specific START/COMPLETE evidence and final unresolved core discontinuities zero; recoverable gaps remain honestly recorded |
+| Controlled recovery | One approved targeted reconnect/resync or equivalent observed event, bounded and attributed; siblings progress; no host-wide firewall/proxy fault injection |
+| Shared REST | Existing traces/logs plus offline proof; no observed cooldown bypass or duplicated global owner; never deliberately provoke live 418/429 |
+| Storage | Verify sealed chunks, hashes, manifest identity/counts and Catalog consistency; do not checksum active partials as sealed artifacts |
+| Archive | At least one authorized receive/verify/publish cycle for qualifying identities on the actual chosen archive path; receipt/manifest/hash evidence; source retirement remains separately authorized |
+| Resources | CPU/RSS/queue/backpressure/capacity samples, maxima and trend, no OOM or reserve breach; scope conclusions to the measured window |
+| Shutdown/restart | Graceful seal and bounded restart if included in approved runbook; no orphan active ownership after stop; preserve process-session gap evidence |
+
+If an archive destination is unavailable, mark archive verification NOT RUN and
+MS4 partial; do not call the entire milestone complete based on local mocks.
+Global auxiliary sentinel BTCUSDT and REST request connection IDs are not extra
+core products or automatic core reconnects. Keep known fail-closed auxiliary
+manifest classifications visible; do not relabel incomplete artifacts complete.
+
+On integrity failure, false readiness, persistent unresolved recovery beyond
+the frozen deadline, or resource exhaustion: stop the qualification, preserve
+Raw/evidence, and use the approved rollback/stop path. Normal transient recovery
+is observed within its bounded deadline rather than treated as immediate
+permanent failure. Any behavior-changing fix gets fresh source/artifact identity
+and a fresh affected qualification window; no duration credit transfers.
+
+### MS4-D — review and stage closure
+
+Luna summarizes MS4-A/B/C evidence in MS4 acceptance and updates each ledger
+row. Astra reviews the exact implementation and measured results. Use explicit
+PASS / FAIL / NOT RUN / BLOCKED states, with artifact identity and reason.
+Keep IMPLEMENTED, REVIEWED, MERGED, DEPLOYED and QUALIFIED distinct.
+
+After approval, align README, AGENTS, CURRENT_PRODUCTION_STATE, PROJECT_HANDOFF,
+this plan, ADR status summaries, known limitations, risks and traceability where
+their current claims changed. Preserve historical records. MS4 is complete only
+when all required checks pass; label this multi-symbol bounded qualification,
+not Formal M22.9 or Production Ready. Record the next separately authorized
+program without implementing it. Do not require Gateway multi-symbol support,
+Contracts publication, a Web UI or speculative optimization for this closure.
+
+### Execution, review and CI rules for every continuation
+
+- Recommended implementation model: Luna, max. Astra owns final independent
+  review and architecture decisions. Sol-medium is optional only when the owner
+  explicitly chooses it; no extra agents or background tasks are implied.
+- At run start read this ledger and Git status; choose the first authorized
+  unfinished package in the current milestone. Complete routine steps without
+  repeated permission questions. At a review boundary deliver one evidence
+  bundle; after review the next run reads the revised queue from this document.
+- An implementer may mark work IMPLEMENTED / AWAITING REVIEW, never approve its
+  own independent review. A reviewer marks CLOSED only when the stated exit is
+  met. Record new findings here with file, trigger, impact, minimal change and
+  test, so the next Luna run has a concrete task rather than another redesign.
+- Keep one milestone per run/commit. This document's future planning is not
+  future implementation. Preserve user files and these uncommitted planning
+  edits; do not demand a globally clean checkout by deleting unrelated files.
+- Documentation-only changes require diff/link/status checks, not test/CI
+  reruns. Code/test changes require focused regression and applicable repository
+  offline gates; report unrun tests. Do not manually trigger/retry/cancel/wait on
+  CI, bypass required checks, or disable workflows. Normal pushes may naturally
+  trigger configured CI; the owner supervises it.
+- GitHub mutations run only through the user's local Luna execution prompt.
+  Do not merge without the review/authorization gate. Branch cleanup is separate
+  maintenance: only proven merged tips with no later work, no active worktree,
+  no protected/default/current branch; preserve restoration SHAs, use a remote
+  expected-tip condition, and retain local branches when `git branch -d` fails.
+- Return milestone/package, base/head/tree, changed files, tests, unrun reasons,
+  findings resolved/open, compatibility, NEXT and execution machine. Include
+  concrete missing inputs only when they actually block the next authorized step.
 
 ## Universal gate
 
@@ -1173,8 +1579,8 @@ remain unchanged.
 
 ## MS2 — Configurable product runtime
 
-- **Status:** **CLOSED / OFFLINE ACCEPTED; INDEPENDENT PR REVIEW PENDING**.
-  Evidence: `docs/milestone_acceptance/MS2.md`. Not merged or deployed yet.
+- **Status:** **CLOSED / OFFLINE ACCEPTED; MERGED THROUGH PR #54**. Evidence:
+  `docs/milestone_acceptance/MS2.md`. Current main is not deployed.
 - **Scope:** Implement the explicit finite `[recorder]` `spot_symbols` and
   `usdm_symbols` lists; `ProductKey = (market, symbol)`; symbol propagation
   through current Spot/USD-M WS/REST/schema/envelope/spool paths; dynamic
@@ -1207,10 +1613,18 @@ remain unchanged.
 
 ## MS3 — Shared-resource scaling / rotation / observability
 
-- **Status:** **IN PROGRESS** — MS3-A candidate; MS3-B is not started.
-- **Current work package:** MS3-A — product-aware writer rotation phase and
-  operational product attribution. REST scheduling/fairness, bounded
-  multi-product load, and archive/capacity qualification remain outstanding.
+- **Status:** **OFFLINE REVIEW APPROVED / MERGE PENDING** — MS3-A is merged
+  through PR #55; the candidate branch is
+  `feat/ms3b-shared-resource-acceptance`; independent re-review/merge is
+  pending.
+- **Current work package:** MS3-B — shared REST scheduling/fairness and
+  cooldown behavior, bounded Profile D load, product attribution/recovery
+  isolation, archive/retry, and aggregate capacity interaction. The updated
+  evidence adds real `UsdMCollector`/`RestSideDataPoller` gate and pagination/
+  cursor paths, cancellation lifecycle coverage, and a finite mixed
+  14-product/42-core-stream running path. Evidence is
+  `docs/milestone_acceptance/MS3.md`; independent re-review/merge and live
+  qualification remain pending.
 - **Scope:** Prove REST scheduling/fairness under multiple configured products;
   shared cooldown behavior; product-aware writer rotation phase; product task,
   log, reconnect, resync, and backpressure attribution; bounded synthetic
@@ -1222,15 +1636,20 @@ remain unchanged.
   Contracts changes, exchange/plugin framework, hot reload, deployment, or long
   burn-in.
 - **Dependencies:** Independently accepted MS2 and ADR-0032.
-- **Acceptance intent:** Deterministic and bounded-load evidence proves no
-  product starvation, no multiplied shared authority, phased rotation, product
-  attribution, coherent global metrics, and no cross-product state corruption.
+- **Acceptance intent:** Model tests establish fairness traces and edge-case
+  oracles; production-path tests establish the real Collector/Poller shared
+  gate, finite eligible-request termination, page release/reacquisition,
+  Catalog cursor isolation, 429/418, cancel/stop, and sibling progress under
+  backpressure. The sequential storage Profile D test proves storage-layer
+  identity/seal/recovery only; the separate running-path test proves
+  simultaneous 14-product activity. No physical host, live Binance, CPU/RSS
+  benchmark, or long soak is implied.
 - **Rollback/stop:** Stop on fairness, capacity, or isolation regressions;
   revert only MS3 changes while retaining Raw and manifests.
 
 ## MS4 — Configurable-product integration / bounded live qualification
 
-- **Status:** **PLANNED**.
+- **Status:** **NEXT / PLANNED after MS3-B merge**.
 - **Scope:** Freeze exact main, run full offline CI, build one new immutable
   Wheel and record source/Wheel/lock/config/unit/deployment identities; after
   separate deployment authorization, run a bounded live qualification using a

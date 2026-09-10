@@ -57,6 +57,7 @@ from ..binance.usdm.side_data_schema import (
     envelope_from_side_stream_frame,
 )
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector
+from ..binance.websocket_common import run_owned_blocking_call
 from ..domain.event import EventEnvelope
 from ..domain.product import global_log_fields, product_log_fields
 from ..logging import log_event
@@ -546,7 +547,7 @@ class RestSideDataPoller:
             await self.cooldown.wait(stop)
             if stop.is_set():
                 raise asyncio.CancelledError
-            envelope = await asyncio.to_thread(
+            envelope = await run_owned_blocking_call(
                 capture_rest_side_data,
                 kind=self.kind,
                 symbol=self.symbol,

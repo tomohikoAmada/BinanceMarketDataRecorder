@@ -39,7 +39,10 @@ configured Spot and USD-M perpetual depth at 100 ms, aggregate trades, book tick
 events, and public REST depth snapshots, followed by defined USD-M auxiliary
 data. MS2 implements an operator-configured finite product set across those
 two markets, with BTCUSDT/BTCUSDT compatibility only when both selection
-fields are absent. MS3 shared-resource qualification is next. The
+fields are absent. MS3-B candidate offline evidence is updated on the
+`feat/ms3b-shared-resource-acceptance` candidate; independent re-review/merge
+is next. This is not final MS3 closure, and separately authorized MS4
+qualification remains out of scope. The
 system keeps recoverable immutable raw payloads, deterministic replay metadata,
 explicit gap evidence, and verified archival across the approved VPS/local
 Offline Workspace boundary.
