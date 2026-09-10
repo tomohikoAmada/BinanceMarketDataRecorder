@@ -143,7 +143,7 @@ MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
 | MS3-CI1 Ubuntu Profile D failure | UBUNTU CI PASS / DELTA INSPECTED | Run 34424559261: Profile D passed both platforms; no production changes |
 | MS3-CI2 normal rotation assertion | FIXED / LOCAL VALIDATION PASS | Deterministic boundary repro and aggregate-manifest repair; new CI pending |
 | MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI2 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
-| MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
+| MS4-A offline qualification preparation | READY_FOR_REVIEW | `docs/milestone_acceptance/MS4.md`, `docs/runbooks/MS4_qualification.md`, representative profile fragment, local artifact/hash ledger and coverage map; target identity/host inputs remain pending |
 | MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
 | MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
 | MS4-D final review / documentation closure | NOT STARTED | Review MS4-C; close only what evidence supports |
@@ -252,58 +252,78 @@ outside this result.
 
 ### MS4-A — local preparation, no production access
 
-Execution: local macOS Codex, Luna-max. Start in a new MS4 run after accepted
-MS3 merge. Use existing configuration, readiness, deployment identity,
-archive and audit interfaces. No new service, RPC, GUI or benchmark framework.
+Status: **READY_FOR_REVIEW**. Execution was local macOS Codex, Luna-max, on a
+new MS4 run after verifying the actual MS3 merge. The preparation uses the
+existing configuration, readiness, deployment identity, archive and audit
+interfaces; it adds no service, RPC, GUI, scheduler or benchmark framework.
 
-Deliverables: `docs/milestone_acceptance/MS4.md` (evidence ledger) and
-`docs/runbooks/MS4_qualification.md` (exact executable procedure; create during
-MS4). Link them here when created. Do not create an empty secondary task system.
+The reviewable deliverables are
+[`docs/milestone_acceptance/MS4.md`](milestone_acceptance/MS4.md),
+[`docs/runbooks/MS4_qualification.md`](runbooks/MS4_qualification.md), and
+[`docs/runbooks/MS4_candidate_profile.toml.example`](runbooks/MS4_candidate_profile.toml.example).
+This branch starts from merged main `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`
+with tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; the known MS3
+documentation-only closeout PR #57 is not duplicated here.
 
-1. Freeze the actual merged source SHA/tree. Record Python/lock/build tooling,
-   Wheel hash, config hash, unit hash and deployment identity using existing
-   mechanisms. A macOS artifact is not presumed installable on Ubuntu x86_64;
-   use the repository's supported build path and verify target compatibility.
-2. Map MS4 checks to existing CLI/tools/tests before writing anything new.
-   Reuse MS2/MS3 results for configuration/identity/unit behavior; add only
-   missing integration checks. No Contracts/gRPC rebuild is required by default.
-3. Draft a mixed profile with BTC and at least one non-BTC product per market.
-   Proposed starting workload: BTCUSDT and ETHUSDT in both markets (4 products,
-   12 core streams). Confirm currently eligible products from allowed official
-   sources before live execution and record source provenance if consulted.
-   This is a qualification sample, not an allowlist or a capacity guarantee.
-   Profile D remains a larger optional workload, not an automatic VPS target.
-4. Freeze enabled auxiliary kinds, rotation, proxy policy, active root, archive
-   destination and readiness expected ProductKeys. No secrets or raw proxy URLs
-   in evidence. An unconfigured market must remain inactive; retain the existing
-   offline single-market tests rather than deploying every config permutation.
-5. Propose a 2-hour steady-state window after all configured products are READY,
-   with a finite startup deadline and a separate bounded recovery observation.
-   Freeze actual durations before execution; no automatic extensions or repeat
-   72h/168h campaign. The short window cannot certify long-term RSS or rotation.
-6. Write concrete commands for install/check/start/sample/stop/verify/rollback,
-   deriving options from current CLI. Identify the exact service and Recorder
-   directories; never assume exclusive VPS ownership. List unresolved operator
-   inputs together (host, roots, archive target and approval), not one by one.
-7. Run applicable offline gates once for final code. Reuse exact-source green
-   CI evidence where available; pending CI is not a local preparation blocker.
-   Prepare a reviewable deployment bundle before requesting live authorization.
+Completed preparation:
 
-Exit: reproducible artifact, complete runbook and evidence schema, local gates
-recorded, no unresolved implementation blocker. Set MS4-A=READY_FOR_REVIEW;
-MS4-B remains unauthorized until the owner approves the concrete deployment.
+1. The exact merged source/tree, Python/build tooling, macOS Wheel and sdist
+   hashes, Linux runtime lock hash and profile-fragment hash are recorded in
+   `docs/milestone_acceptance/MS4.md`. The local Wheel is
+   `py3-none-any`, but target compatibility is not inferred from that tag.
+2. Existing CLI/tools/tests are mapped to configuration, exact ProductKey
+   readiness, shared REST, concurrent backpressure/rotation, Raw/manifest/
+   Catalog, archive, capacity, systemd and deployment identity checks. MS2/MS3
+   green evidence is reused; no Contracts/gRPC rebuild is required.
+3. The representative profile is BTCUSDT and ETHUSDT in both Spot and USD-M
+   perpetual markets: exactly `(spot, BTCUSDT)`, `(spot, ETHUSDT)`,
+   `(um_perpetual, BTCUSDT)` and `(um_perpetual, ETHUSDT)`, with 12 core stream
+   contexts. All current auxiliary kinds are explicitly disabled for this
+   sample, so no global side-data owner is part of the proposed workload.
+   Symbol eligibility and official-source provenance remain a pre-live check.
+4. The runbook freezes the existing direct proxy policy, 60-second/128 MiB
+   rotation defaults, exact readiness set and a proposed 15-minute startup,
+   2-hour steady-state, 15-minute recovery, 15-minute shutdown and 15-minute
+   margin envelope. It does not guess the target host, service principal,
+   archive destination or live root.
+5. The runbook provides concrete existing-CLI install, check, start, sample,
+   stop, archive/verify and fail-closed rollback commands. Rollback explicitly
+   requires a target identity that understands the MS1+ Catalog and current
+   durable remote states; a pre-MS1 binary is not used against new state merely
+   because its Wheel is retained.
+6. Local preparation checks passed: build, no-index temporary Wheel smoke,
+   `pip check`, `--version`, profile `config show`, offline `doctor`, structured
+   `status` and `git diff --check`. Exact-source run `34436773366` is reused for
+   the merged-code Ubuntu x86_64 lock/build/clean-Wheel evidence.
 
-Planning-only coverage map prepared during MS3-CI1 (not MS4 execution): existing
-commands cover `config show`, `doctor`, `status`, `storage forecast`, archive
-`status`/`verify`, daily reports, systemd `status`, deployment
-`identity-create`/`verify`/`readiness`, and deployment acceptance readiness.
-Existing offline suites cover configured ProductKey topology, per-product
-readiness, reconnect evidence, shared REST serialization/cooldown, Raw/manifest/
-Catalog closure, archive/capacity and rollback primitives. MS4-A must still
-freeze the merged SHA/tree and artifact hashes and obtain together the operator's
-exact target host, service user/group, config path, active data root, archive
-target, proxy mode, enabled auxiliary kinds, approved product set/durations,
-rollback root/artifact and explicit MS4-B access/deployment authorization.
+Remaining before MS4-B:
+
+- The final complete configuration, installed systemd unit and
+  `deployment-identity.v1` cannot be frozen until the operator confirms the
+  target host, service user/group, canonical roots, archive target, final
+  auxiliary decision and artifact transfer/release location.
+- The locally built macOS artifact has not been installed with the Linux
+  x86_64 lock. A new target-compatible build and exact lock/venv/import/
+  `pip check` verification are required; the pure-Python Wheel tag is not
+  sufficient.
+- No VPS access, systemd mutation, deployment/readiness evidence, archive
+  receive/verify/receipt cycle, online Binance traffic, qualification window,
+  stress/soak or Formal M22.9 was run. These are MS4-B/C scope and remain
+  unauthorized here.
+
+Exit: MS4-A local preparation is `READY_FOR_REVIEW`; MS4-B remains
+`NOT_AUTHORIZED` until the grouped operator inputs and concrete deployment
+authorization exist. The full ledger, evidence template, hashes, coverage map,
+capacity formula and missing-input list are in `docs/milestone_acceptance/MS4.md`.
+
+MS4-A=READY_FOR_REVIEW
+MS4-B=NOT_AUTHORIZED
+MS4-C=NOT_STARTED
+MS4-D=NOT_STARTED
+CURRENT_MAIN_DEPLOYED=NO
+FORMAL_M22_9=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_MS4_A_REVIEW
 
 ### MS4-B — Tokyo VPS preflight and deployment
 
