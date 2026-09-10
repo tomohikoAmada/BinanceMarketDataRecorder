@@ -5,6 +5,15 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the future multi-symbol plan. Documentation is not deployment or live
 traffic authorization.
 
+## Stage closeout — MS4-A local preparation
+
+MS3 is merged. MS4-A local preparation and its document review are complete;
+PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
+deployment or live qualification is authorized. The owner requested a rest
+after merging current completed work and cleaning its branches.
+MS4_A=REVIEWED_COMPLETE; NEXT=OWNER_RESUME_REQUIRED.
+Historical next-step fields below describe their recorded checkpoint only.
+
 ## MS3 merge closeout — 2026-09-10
 
 PR #56 is CLOSED/MERGED through the normal repository rule. Astra approved head

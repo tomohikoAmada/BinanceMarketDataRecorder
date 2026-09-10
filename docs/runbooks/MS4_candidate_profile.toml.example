@@ -1,0 +1,47 @@
+# Binance Market Data Recorder — MS4-A representative profile fragment
+#
+# This is a reviewable product-selection fragment, not a deployable production
+# configuration. It deliberately omits data_root and network_proxy_url. Before
+# any MS4-B action, merge these values into the operator-supplied configuration
+# at the canonical path and record the resulting complete-file SHA-256.
+# Confirm the actual host, root, archive destination and service principal
+# separately; do not infer them from this example.
+
+[recorder]
+# Explicit mode: these lists are exact; no implicit BTC product is added.
+spot_symbols = ["BTCUSDT", "ETHUSDT"]
+usdm_symbols = ["BTCUSDT", "ETHUSDT"]
+
+# The target capacity policy is explicit and requires direct routing. The
+# operator must still confirm that this profile is appropriate for the host.
+capacity_profile = "vps-production-v1"
+network_proxy_mode = "direct"
+
+# Freeze the existing generic defaults for the qualification sample.
+log_level = "INFO"
+rotation_seconds = 60.0
+rotation_bytes = 134217728
+durability_interval_seconds = 1.0
+ingress_queue_capacity = 8192
+max_frame_bytes = 16777216
+heartbeat_seconds = 5.0
+sleep_gap_threshold_seconds = 30.0
+prevent_sleep = false
+
+# MS4-A freezes the initial sample to core streams only. No auxiliary REST or
+# side-data owner is enabled by this fragment; enabling one later changes the
+# complete config hash and requires review of the resulting workload.
+side_mark_price_enabled = false
+side_liquidation_enabled = false
+side_premium_index_enabled = false
+side_funding_history_enabled = false
+side_funding_info_enabled = false
+side_open_interest_enabled = false
+side_exchange_info_enabled = false
+spot_exchange_info_enabled = false
+side_open_interest_statistics_enabled = false
+side_taker_buy_sell_volume_enabled = false
+side_global_long_short_ratio_enabled = false
+side_top_long_short_account_ratio_enabled = false
+side_top_long_short_position_ratio_enabled = false
+side_basis_enabled = false
