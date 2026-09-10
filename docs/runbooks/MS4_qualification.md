@@ -1,12 +1,13 @@
 # MS4 qualification runbook
 
-Status: **MS4-A preparation READY_FOR_REVIEW**. The commands below are the
-approved procedure to use only after a separate MS4-B deployment authorization.
-They are not being executed by this local preparation run. No command in this
-document authorizes VPS access, deployment or Binance traffic by itself.
+Status: **MS4-A local preparation reviewed; target execution NOT AUTHORIZED**.
+This is a preparation reference, not a copy-and-run deployment script. Target
+inputs and target-specific publication/remote-archive commands must be completed
+and reviewed when the owner resumes MS4-B. No command authorizes VPS access,
+deployment or Binance traffic by itself.
 
 The runbook uses the existing CLI, systemd manager, deployment identity and
-read-only acceptance observer. It does not introduce a scheduler, a second
+existing read-only status/report interfaces. It does not introduce a scheduler, a second
 service, a GUI, a benchmark framework, or a new data path.
 
 ## 1. Freeze the inputs
@@ -53,7 +54,7 @@ document. The service principal must be an existing dedicated non-root user
 and group. Production uses `network_proxy_mode = "direct"`; do not place a
 proxy URL or credential in the config, environment, logs or evidence.
 
-Set the path variables in the first code block in one controlled shell before
+Set the canonical path variables listed above in one controlled shell before
 using later snippets. Required operator variables, intentionally unset here,
 are:
 
@@ -81,8 +82,9 @@ python3.12 -m pip install --require-hashes \
 python3.12 -m pip install -r requirements/ci-linux-python312.lock
 python3.12 -m build --no-isolation
 
-EXACT_WHEEL="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
-test -n "$EXACT_WHEEL"
+# Use a fresh build output directory; never select an arbitrary old wheel.
+# Set EXACT_WHEEL to the one artifact just built, then verify its hash.
+: "${EXACT_WHEEL:?set the exact newly built wheel path}"
 EXACT_WHEEL_BASENAME="$(basename "$EXACT_WHEEL")"
 sha256sum "$EXACT_WHEEL" requirements/linux-x86_64-python312.lock
 
@@ -188,23 +190,13 @@ sudo install -d -o root -g "$SERVICE_GROUP" -m 0750 "$(dirname "$CONFIG")"
 # Install the complete CONFIG as root:SERVICE_GROUP mode 0640 here.
 sudo install -o root -g "$SERVICE_GROUP" -m 0640 "$LOCAL_CONFIG" "$CONFIG"
 
-# Create/rebuild a clean copied venv in the retained release staging area,
-# verify it there, and publish it at VENV only while the service is stopped.
-# Preserve the old VENV/release before the publish; do not overwrite a running
-# venv or leave the old rollback bundle unidentifiable.
-STAGING_VENV="$ARTIFACT_ROOT/releases/$SOURCE_SHA/venv.staging"
-sudo python3.12 -m venv --copies "$STAGING_VENV"
-sudo "$STAGING_VENV/bin/pip" install --require-hashes \
-  -r "$ARTIFACT_ROOT/releases/$SOURCE_SHA/requirements/linux-x86_64-python312.lock"
-sudo "$STAGING_VENV/bin/pip" install --no-deps \
-  "$ARTIFACT_ROOT/releases/$SOURCE_SHA/$EXACT_WHEEL_BASENAME"
-sudo "$STAGING_VENV/bin/pip" check
-
-# Operator-controlled stopped publish of the already-verified staging venv to
-# VENV occurs here, with the old exact venv retained for rollback.
-
+# After preserving the old release and while STOPPED, create a fresh venv
+# directly at its final canonical path. Do not move a populated venv: installed
+# entry-point shebangs contain absolute paths. The exact old-venv preservation
+# commands depend on the observed host and must be frozen before MS4-B.
+sudo python3.12 -m venv --copies "$VENV"
 sudo "$PYTHON" -m pip install --require-hashes \
-  -r "$ARTIFACT_ROOT/releases/$SOURCE_SHA/requirements/linux-x86_64-python312.lock"
+  -r "$ARTIFACT_ROOT/releases/$SOURCE_SHA/linux-x86_64-python312.lock"
 sudo "$PYTHON" -m pip install --no-deps \
   "$ARTIFACT_ROOT/releases/$SOURCE_SHA/$EXACT_WHEEL_BASENAME"
 sudo "$PYTHON" -m pip check
@@ -213,8 +205,8 @@ sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" \
   systemd install --user "$SERVICE_USER" --group "$SERVICE_GROUP"
 sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" \
   deployment identity-create --source-git-sha "$SOURCE_SHA" \
-  --wheel "$EXACT_WHEEL" \
-  --dependency-lock "$ARTIFACT_ROOT/releases/$SOURCE_SHA/requirements/linux-x86_64-python312.lock"
+  --wheel "$ARTIFACT_ROOT/releases/$SOURCE_SHA/$EXACT_WHEEL_BASENAME" \
+  --dependency-lock "$ARTIFACT_ROOT/releases/$SOURCE_SHA/linux-x86_64-python312.lock"
 sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" deployment verify
 ```
 
@@ -269,34 +261,21 @@ every sample:
 journalctl -u "$SERVICE" --since '<fixed UTC start>' --until '<fixed UTC end>'
 ```
 
-The repository-owned observer is the duration authority. First publish identity
-and readiness evidence outside the Recorder roots:
+### Non-formal MS4 evidence boundary
 
-```bash
-sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" \
-  deployment acceptance identity --expected-source-git-sha "$SOURCE_SHA" \
-  --evidence-root "$EVIDENCE_ROOT"
-sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" \
-  deployment acceptance readiness \
-  --identity-evidence "$EVIDENCE_ROOT/identity-result.json" \
-  --evidence-root "$EVIDENCE_ROOT"
-```
+Do not invoke `deployment acceptance identity/readiness/stage` for this
+non-formal MS4 window. Those commands implement the separate M22.9 acceptance
+chain. Reusing a 2-hour duration does not authorize that chain.
 
-Only after readiness is a real `READY` predecessor may the separately
-authorized two-hour stage begin:
-
-```bash
-sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" \
-  deployment acceptance stage --stage 2h \
-  --previous-evidence "$EVIDENCE_ROOT/readiness-result.json" \
-  --evidence-root "$EVIDENCE_ROOT"
-```
-
-The observer is read-only with respect to Recorder production state and does
-not start, stop, restart or promote the service. It records immutable,
-artifact-bound samples. A later `12h`, `24h`, `72h` or `168h` stage requires
-the exact eligible predecessor and a new explicit authorization; MS4-A does
-not start or schedule any of them.
+On future MS4-B authorization, freeze a dedicated MS4 evidence directory,
+record the deployment identity/hash, boot ID, process incarnation, UTC and
+monotonic T0 after all products are ready, and UTC/monotonic T1. Preserve the
+existing status, forecast, readiness and bounded journal outputs at a fixed
+cadence (proposed 60 seconds), plus the final integrity and archive results.
+Use the host's monotonic elapsed time for the duration, not sample counts.
+The exact target sampling commands are a required MS4-B runbook finalization
+item. No new observer implementation is requested in MS4-A. The resulting
+record must say NONFORMAL_MS4 and grants zero Formal M22.9 duration credit.
 
 ## 6. Capacity and archive gate
 
@@ -319,21 +298,18 @@ the measured runway does not cover that envelope. A hard-reserve stop seals,
 records `DISK_EMERGENCY_STOP` and gap evidence, and exits; it never deletes
 unarchived Raw.
 
-An archive destination is an operator input, not a path in this repository.
-After it is registered and approved, use the existing verified workflow:
+An archive destination and the machine hosting it are operator inputs.
+`storage status`, `archive retry --storage-id ...` and `archive verify ...`
+operate on storage registered on the machine executing those commands; they
+are not a VPS-to-local remote receive/receipt procedure. Do not run them on the
+VPS as a substitute for the remote archive boundary.
 
-```bash
-"$PYTHON" -m binance_market_data_recorder --config "$CONFIG" storage status
-"$PYTHON" -m binance_market_data_recorder --config "$CONFIG" archive retry \
-  --storage-id "$ARCHIVE_STORAGE_ID"
-"$PYTHON" -m binance_market_data_recorder --config "$CONFIG" archive verify \
-  "$ARCHIVE_STORAGE_ID"
-```
-
-Do not claim archive acceptance when the actual destination is unavailable.
-Verified archive receive/readback/size/SHA-256/manifest/receipt evidence must
-exist before any source-retirement authorization; a successful transport alone
-is insufficient.
+When resuming, select the existing remote source/transport/receive/verify/receipt
+workflow for the approved archive machine and freeze the exact machine-specific
+commands. This remains a target-dependent MS4-B preparation item, not an MS4-A
+implementation request. Preserve verified receive/readback/size/SHA-256/manifest/
+receipt evidence and keep source retirement separately authorized. An unavailable
+destination means archive acceptance NOT RUN, not PASS.
 
 ## 7. Stop and verify
 
@@ -402,6 +378,6 @@ thresholds, skip products/streams, deliberately provoke live 418/429, run
 heavy Normalize/Replay/Backfill on the live host, access credentials, or start
 Formal M22.9 from this runbook.
 
-MS4-A ends with the local artifact/document bundle ready for Astra review.
+MS4-A local artifact/document preparation is reviewed and complete.
 MS4-B remains unauthorized until the owner supplies the grouped inputs and
 explicitly authorizes the named target.

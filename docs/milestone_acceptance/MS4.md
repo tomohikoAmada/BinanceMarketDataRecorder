@@ -1,24 +1,5 @@
 # MS4-A — Local preparation acceptance ledger
 
-- Date: 2026-09-10
-- Status: **READY_FOR_REVIEW (MS4-A local preparation only)**
-- Preparation branch: `codex/ms4-a-local-preparation`
-- Code authority: merged PR #56, source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`
-- Code tree: `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`
-- MS3 reviewed candidate: `2a701fe79b78d3c63dd5959efecd20a2369d58e5`
-- MS3 reviewed tree: `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`
-- MS3 CI: run `34436773366`, macOS and Ubuntu all steps passed
-- MS3 actual merge: `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`
-- MS4-B deployment: **NOT AUTHORIZED**
-- Current main deployed: **NO**
-- Formal M22.9: **NOT STARTED**
-- Production Ready: **NO**
-
-This ledger records local preparation, not a deployment or live qualification.
-The known MS3 documentation-only closeout is in PR #57 and is intentionally
-not duplicated in this MS4 branch. This branch starts from the actual merged
-code in `origin/main`; no source or test file is changed by MS4-A.
-
 ## 1. Frozen representative profile
 
 The reviewable selection fragment is
@@ -177,7 +158,7 @@ conservative non-negative net growth rate:
 
 ```text
 g_net = max(0, (F0 - F1) / (t1 - t0))       bytes/second
-T_runway = (F0 - R) / g_net                  seconds, when g_net > 0
+T_runway = (F1 - R) / g_net                  seconds, when g_net > 0
 T_runway = INSUFFICIENT_DATA                when g_net == 0 without history
 ```
 
@@ -258,7 +239,7 @@ MS4-A:
 - approved startup/steady/recovery/shutdown durations and the explicit
   MS4-B access/deployment authorization.
 
-MS4-A is complete for independent review: the existing interfaces are mapped,
+MS4-A local preparation is reviewed complete: the existing interfaces are mapped,
 the exact four-key sample is recorded, a local artifact and hashes exist, the
 runbook and evidence schema are reviewable, and no implementation blocker was
 found. Target artifact compatibility, final identity, host/runway evidence,
@@ -266,12 +247,28 @@ archive verification, and live qualification remain pending because their
 inputs and authorization are absent.
 
 ```text
-MS4-A=READY_FOR_REVIEW
+MS4-A=REVIEWED_COMPLETE
 MS4-B=NOT_AUTHORIZED
 MS4-C=NOT_STARTED
 MS4-D=NOT_STARTED
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=INDEPENDENT_MS4_A_REVIEW
+NEXT=OWNER_RESUME_REQUIRED
 ```
+
+## Final preparation review and stage closeout
+
+GPT-6 Astra reviewed the local preparation and corrected the retained lock
+path, the absolute-path venv publication guidance, retained Wheel reference,
+non-formal evidence boundary and remote/local archive command distinction.
+The runbook is an approved local preparation reference; target-specific commands
+remain explicitly gated before deployment. MS4-A completion does not mean the
+whole MS4 milestone or deployment qualification is complete.
+
+The owner requests closure of current work and no later milestone development.
+MS3 is merged; MS4-A is REVIEWED_COMPLETE. MS4-B/C/D remain unstarted and no
+VPS access, deployment or scheduled continuation is authorized. Resume only on
+owner instruction. Pure documentation review used path/CLI/consistency checks;
+no tests or CI were manually rerun. Staged /var/tmp artifacts must be rechecked
+for availability and hashes when resuming; they are not durable release storage.

@@ -1,13 +1,5 @@
 # Milestone Plan
 
-Status: frozen by M0, historically corrected by M0.1, and finally scoped/named
-by M0.2/ADR-0007 on 2026-07-22. Execute exactly one milestone per run and one
-local commit per milestone. Never start the next milestone automatically.
-Within the current milestone, execute the remaining authorized work packages
-without asking for permission for each routine step. The execution ledger below
-is the current multi-symbol continuation plan; historical milestone records
-are not instructions to repeat completed work.
-
 ## Multi-symbol execution ledger — 2026-09-10
 
 This section implements the owner's Luna-max implementation / Astra review
