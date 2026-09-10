@@ -1,14 +1,33 @@
 # MS3 — Shared-resource scaling / rotation / observability acceptance
 
 - Date: 2026-09-09; evidence update: 2026-09-10
-- Status: **MS3-R1 IMPLEMENTED — AWAITING INDEPENDENT FINAL REVIEW**
+- Status: **OFFLINE INDEPENDENT REVIEW APPROVED — MERGE PENDING**
 - Candidate branch: `feat/ms3b-shared-resource-acceptance`
 - Candidate PR: `#56` (not merged)
-- NEXT=INDEPENDENT_MS3_FINAL_REVIEW
+- NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
 - MS4: **NEXT**, only after independent review/merge and separate authorization
 - FORMAL_M22_9=NOT_STARTED
 - PRODUCTION_READY=NO
 - CURRENT_MAIN_DEPLOYED=NO
+
+## Final independent review — 2026-09-10
+
+**APPROVED for the bounded offline MS3 scope. MS3-R1 CLOSED.**
+Reviewed by GPT-6 Astra at `66e036a07f422818f5e3f54f0216d4083b443698`, tree
+`1413ec705db3fd9f214499c57696bcab2da2e8b9`. The actual waiter enqueue,
+no premature grant/release, cancellation observation, successor completion and
+post-stop no-wire assertions satisfy R1. No new blocking findings were found
+in this incremental review; the earlier production-path and Profile D findings
+are closed. Historical reviews below retain their time-local disposition.
+
+Independent validation: 44 passed in the five focused files listed in the prior
+review below. Full offline suite, Ruff/MyPy and other gates remain implementer
+reported evidence; this review did not rerun full CI, online, VPS, external media
+or stress/soak. PR #56 is still open/unmerged. Approval is not deployment or live
+qualification. Local Luna must update the stale PR description and complete the
+normal merge handoff before MS3 is marked CLOSED. Any later code/test changes
+require review of their delta; documentation-only review records do not invalidate
+this source review.
 
 ## Independent re-review — 2026-09-10
 
@@ -114,7 +133,7 @@ clock values, and deterministic wait boundaries.
 | F5 repeated core retry | PASS — model evidence | 5xx → transport error → success lock release remains covered by the model; no new production retry behavior was needed for this review finding |
 | F6 USD-M 429 | PASS — model; production cooldown supplement | Actual side poller 429 installed shared cooldown and blocked actual core snapshot wire start |
 | F7 USD-M 418 | PASS — model; production cooldown supplement | Actual side poller 418 installed shared cooldown and blocked actual core snapshot wire start |
-| F8 cancellation | PASS — model; R1 production lifecycle correction | Waiting enqueue/cancellation, in-flight SDK cancellation, successor reacquisition, and post-stop request are covered on the real path; final independent review pending |
+| F8 cancellation | PASS — model; R1 production lifecycle correction | Waiting enqueue/cancellation, in-flight SDK cancellation, successor reacquisition, and post-stop request are covered on the real path; independent final review approved at 66e036a |
 | F9 stop | PASS — model; production lifecycle supplement | Stop converged the actual side/core path with no post-stop wire start |
 | F10 Spot contention | PASS after authorized correction | Both active-block and rejection-installation races are covered |
 
@@ -376,11 +395,11 @@ CAPACITY_THRESHOLDS_CHANGED=NO
 ARCHIVE_TRANSACTION_PROTOCOL_CHANGED=NO
 CONTRACTS_CHANGED=NO
 PROJECTION_CHANGED=NO
-MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
-MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
+MS3=OFFLINE_REVIEW_APPROVED_MERGE_PENDING
+MS3_INDEPENDENT_RE_REVIEW=APPROVED
 MS3_B_MERGED=NO
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=INDEPENDENT_MS3_FINAL_REVIEW
+NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO

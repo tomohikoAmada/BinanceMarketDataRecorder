@@ -7,11 +7,11 @@ deployment, live traffic, formal acceptance, or data retirement.
 
 ## Current review update — 2026-09-10
 
-Astra reviewed candidate `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`.
-The production-path and simultaneous Profile D supplements addressed the
-original coverage gaps; the MS3-R1 waiting-cancellation test correction is now
-implemented as a narrow test-only change on the appended candidate. MS3 is not
-finally approved or merged. Hand off next for MS3-R2 independent final review.
+Astra approved the offline MS3 candidate at
+`66e036a07f422818f5e3f54f0216d4083b443698` (tree
+`1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
+coverage findings are CLOSED. PR #56 is still open/unmerged; next is the local
+Luna merge handoff under normal repository gates. No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
 is the current detailed continuation queue; the candidate submission summaries
 below retain their evidence context. No MS4 deployment is authorized.
@@ -35,13 +35,13 @@ MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
 MS2_INDEPENDENT_PR_REVIEW=COMPLETE
 MS2_MERGED_PR=54
-MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
+MS3=OFFLINE_REVIEW_APPROVED_MERGE_PENDING
 MS3_A=MERGED_PR_55
 MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
 MS3_B_MERGED=NO
-MS3_R1=IMPLEMENTED_AWAITING_REVIEW
-MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
+MS3_R1=CLOSED
+MS3_INDEPENDENT_RE_REVIEW=APPROVED
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
@@ -205,7 +205,7 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-NEXT=INDEPENDENT_MS3_FINAL_REVIEW
+NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
 
 Review the appended MS3-R1 diff and evidence for the MS3-B merge decision.
 Do not deploy or run live qualification as part of this work package; MS4 is

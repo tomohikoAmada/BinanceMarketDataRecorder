@@ -22,9 +22,9 @@ CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 | MS1 durable identity | CLOSED / MERGED | PR #51, MS1 acceptance; do not repeat |
 | MS2 configurable runtime | CLOSED / MERGED | PR #54, MS2 acceptance; do not repeat |
 | MS3-A implementation | MERGED | PR #55, base `01527037254595267003f886689bb270e08b5e5d` |
-| MS3-B production-path supplement | R1 IMPLEMENTED / AWAITING INDEPENDENT FINAL REVIEW | Reviewed source `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`, tree `b573c09ae958f81905ace58ca0c3612c81666ae4`; appended R1 candidate remains PR #56 open/unmerged |
-| MS3-R1 waiting-cancellation evidence | IMPLEMENTED / AWAITING REVIEW | Test-only waiter barrier correction and post-cancel successor proof recorded below; independent review is not complete |
-| MS3-R2 final review / merge handoff | NEXT — INDEPENDENT FINAL REVIEW | Astra reviews the appended R1 diff/evidence; local Luna performs authorized GitHub operations; do not self-approve |
+| MS3-B production-path supplement | OFFLINE REVIEW APPROVED / MERGE PENDING | Reviewed head `66e036a07f422818f5e3f54f0216d4083b443698`; final review below; PR #56 still open |
+| MS3-R1 waiting-cancellation evidence | CLOSED / REVIEWED | Actual enqueue, cancellation, retained holder, successor and post-stop evidence verified |
+| MS3-R2 final review / merge handoff | REVIEW APPROVED / LOCAL MERGE HANDOFF NEXT | Local Luna records review, updates stale PR body and merges only under normal repository gates |
 | MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
 | MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
 | MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
@@ -32,7 +32,33 @@ CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 | Completed-branch cleanup | PENDING / SEPARATE MAINTENANCE | Only proven merged branches without additional work; preserve PR #56 while active |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
-NEXT_EXECUTABLE=MS3-R2
+NEXT_EXECUTABLE=MS3-R2-MERGE-HANDOFF
+
+### MS3 final independent review — 2026-09-10
+
+Verdict: **APPROVED for offline MS3 scope; no remaining blocking review findings**.
+Reviewer: GPT-6 Astra. Head `66e036a07f422818f5e3f54f0216d4083b443698`,
+tree `1413ec705db3fd9f214499c57696bcab2da2e8b9`; incremental parent
+`c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`. PR base remains
+`01527037254595267003f886689bb270e08b5e5d`; do not confuse the incremental
+review parent with the PR base. GitHub head matched local HEAD; PR #56 open.
+
+The R1 test now yields until the real waiter attempts the held lock, verifies
+no grant before cancellation, observes cancellation at the lock, preserves the
+holder, then completes a successor and excludes post-stop wire calls. Together
+with the previously reviewed production-path and Profile D supplement, this
+closes the original review findings. No production code changed in R1.
+Reviewer reran the same five focused test files (44 tests); see MS3 acceptance
+for the result. Full-suite evidence remains the implementer's reported result.
+
+Next local Luna run: commit only these review documentation updates; update
+PR #56 body (it still names c7d6c904); preserve the approved code/test content.
+Verify any descendant is documentation-only before relying on this review.
+Use normal merge gates without administrative bypass, manual CI actions or
+waiting. If pending, return MERGE_PENDING; if merged, record actual merge
+SHA/tree and MS3=CLOSED, then stop this MS3 run. Start MS4-A in the next MS4
+run following this plan. No further code repair, deployment or long test is
+requested. These documentation edits do not require a full test/CI rerun.
 
 ### MS3 review disposition and R1 repair
 
@@ -40,7 +66,7 @@ Reviewer: GPT-6 Astra, 2026-09-10. Reviewed the supplement against previous
 candidate `e2a51dfe32eb15f4873bf027f4199ce8086877bb` and the existing owned-worker
 helper. The original model-only coverage finding is substantially addressed by
 real Collector/Poller requests and Catalog pagination; its waiting-cancellation
-subcase remains open. The original sequential-only Profile D finding is CLOSED:
+subcase was open at c7d6c904 and is now CLOSED by the final review below. The original sequential-only Profile D finding is CLOSED:
 the supplement runs 14 collectors and 42 core stream contexts simultaneously,
 observes sibling progress during target backpressure, and verifies shutdown and
 persisted identities. These are bounded offline results, not live capacity proof.
@@ -53,7 +79,7 @@ already true. `_wait_until` can return without yielding, so the task is cancelle
 before entering `_request` or enqueueing on the production lock. A passing test
 does not establish waiting-cancellation behavior.
 
-Luna-max must:
+Historical R1 repair instructions (completed; do not repeat):
 
 1. Capture the holder's request/acquire counts, start the real poller waiter,
    and wait for its additional acquire request (or an equivalent explicit
@@ -83,7 +109,7 @@ dependency. Do not automatically force-push or rewrite reviewed history.
 
 ### MS3-R1 execution result — 2026-09-10
 
-R1 is **IMPLEMENTED / AWAITING REVIEW** in the appended MS3 test commit. The
+R1 was submitted as **IMPLEMENTED / AWAITING REVIEW** in the appended MS3 test commit. The
 change is limited to `tests/integration/test_ms3b_production_paths.py`; no
 production scheduler or production-code refactor was added.
 
@@ -1457,7 +1483,7 @@ remain unchanged.
 
 ## MS3 — Shared-resource scaling / rotation / observability
 
-- **Status:** **MS3-R1 IMPLEMENTED / AWAITING INDEPENDENT FINAL REVIEW** — MS3-A is merged
+- **Status:** **OFFLINE REVIEW APPROVED / MERGE PENDING** — MS3-A is merged
   through PR #55; the candidate branch is
   `feat/ms3b-shared-resource-acceptance`; independent re-review/merge is
   pending.

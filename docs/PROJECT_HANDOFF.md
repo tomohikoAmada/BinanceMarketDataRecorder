@@ -7,11 +7,11 @@ traffic authorization.
 
 ## Current review update — 2026-09-10
 
-Astra reviewed candidate `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`.
-The production-path and simultaneous Profile D supplements addressed the
-original coverage gaps; the MS3-R1 waiting-cancellation test correction is now
-implemented as a narrow test-only change on the appended candidate. MS3 is not
-finally approved or merged. Hand off next for MS3-R2 independent final review.
+Astra approved the offline MS3 candidate at
+`66e036a07f422818f5e3f54f0216d4083b443698` (tree
+`1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
+coverage findings are CLOSED. PR #56 is still open/unmerged; next is the local
+Luna merge handoff under normal repository gates. No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
 is the current detailed continuation queue; the candidate submission summaries
 below retain their evidence context. No MS4 deployment is authorized.
@@ -64,16 +64,16 @@ CURRENT_MAIN_SHA=01527037254595267003f886689bb270e08b5e5d
 CURRENT_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 MS2_PR=54
 MS2_MERGED=YES
-MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
+MS3=OFFLINE_REVIEW_APPROVED_MERGE_PENDING
 MS3_A_MERGED=YES
 MS3_A_PR=55
 MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
 MS3_B_MERGED=NO
-MS3_R1=IMPLEMENTED_AWAITING_REVIEW
-MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
+MS3_R1=CLOSED
+MS3_INDEPENDENT_RE_REVIEW=APPROVED
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=INDEPENDENT_MS3_FINAL_REVIEW
+NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
@@ -222,7 +222,7 @@ or use an external volume as an active Collector target.
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED`,
 `MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance`,
-`MS3_B_MERGED=NO`, `MS3_R1=IMPLEMENTED_AWAITING_REVIEW`,
-`MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW`,
+`MS3_B_MERGED=NO`, `MS3_R1=CLOSED`,
+`MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
 `MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE`,
-`NEXT=INDEPENDENT_MS3_FINAL_REVIEW`.
+`NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF`.
