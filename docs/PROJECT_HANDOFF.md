@@ -5,7 +5,20 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the future multi-symbol plan. Documentation is not deployment or live
 traffic authorization.
 
-## Stage closeout — MS4-A local preparation
+## Current stage — MS4-B target preflight/stopped deployment
+
+MS4-A local preparation and review remain complete. MS4-B target preflight,
+rollback evidence preservation, exact frozen-source Linux artifact build,
+complete four-ProductKey configuration, stopped systemd deployment and
+deployment identity verification are ready for independent review. The Tokyo
+Recorder was gracefully stopped before mutation and remains stopped. No live
+capture, Binance qualification traffic, controlled recovery, or Formal M22.9
+was started. `PRODUCTION_READY=NO` and MS4-C remains not started.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW;
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW.
+
+## Historical stage closeout — MS4-A local preparation
 
 MS3 is merged. MS4-A local preparation and its document review are complete;
 PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
@@ -89,8 +102,10 @@ The following pre-MS2 authority checks were completed before implementation:
 ### A. Live GitHub main and post-MS1 implementation/behavior authority
 
 ```text
-LIVE_GITHUB_MAIN=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-LIVE_GITHUB_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+LIVE_GITHUB_MAIN=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+LIVE_GITHUB_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -99,8 +114,8 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-CURRENT_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_MAIN_SHA=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+CURRENT_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
 MS2_PR=54
 MS2_MERGED=YES
 MS3=CLOSED_MERGED
@@ -118,8 +133,11 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=NEXT
-NEXT=MS4_A_LOCAL_PREPARATION
+MS4=IN_PROGRESS_MS4_B_STOPPED_DEPLOYMENT
+MS4_A=REVIEWED_COMPLETE
+MS4_B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW
+MS4_C=NOT_STARTED
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
@@ -256,8 +274,10 @@ Spot/USD-M configured profile with non-BTC products, proving all configured
 products ready, isolation under reconnect/resync, no unresolved
 discontinuities, Catalog/Raw/manifest/archive integrity, shared REST behavior,
 and resource behavior. A fixed qualification workload is evidence only, not a
-supported-symbol allowlist. Do not automatically schedule 72h or 168h; formal
-M22.9 remains separate.
+supported-symbol allowlist. MS4-B target preflight/stopped deployment is the
+current gate; MS4-C live qualification requires separate pre-start review and
+authorization. Do not automatically schedule 72h or 168h; Formal M22.9 remains
+separate.
 
 ## Non-negotiable boundaries
 
@@ -276,4 +296,5 @@ or use an external volume as an active Collector target.
 `MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
 `MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
 `MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
-`MS4=NEXT`, `NEXT=MS4_A_LOCAL_PREPARATION`.
+`MS4=IN_PROGRESS_MS4_B_STOPPED_DEPLOYMENT`,
+`NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW`.

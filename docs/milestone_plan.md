@@ -3,10 +3,9 @@
 ## Current stage closeout — 2026-09-10
 
 MS3 implementation is merged; MS4-A local preparation is reviewed complete.
-The owner authorizes document fixes, merging PRs #57/#58 and safe completed
-branch cleanup, then requests a rest. Do not start MS4-B/C/D or later milestones.
-Deployment, VPS access and live qualification remain unauthorized. The full
-MS4 milestone remains incomplete; only its local preparation work package closes.
+The MS4-B target preflight/stopped-deployment work package is now complete for
+review. The Recorder remains stopped; no live qualification or MS4-C traffic
+was started. The full MS4 milestone remains incomplete.
 PR #57 merged at `df934820dc1b7cd20afdc4997444ff3a6ab938bc`.
 PR #58 is the closeout delivery vehicle; verify its final merge in GitHub.
 
@@ -15,7 +14,7 @@ an installed venv, separates non-formal MS4 evidence from M22.9, and leaves
 machine-specific remote archive commands for the separately authorized target
 preflight. These are documentation corrections, not production changes.
 
-NEXT=OWNER_RESUME_REQUIRED
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
 
 ## Multi-symbol execution ledger — 2026-09-10
 
@@ -305,10 +304,13 @@ Completed preparation:
    sample, so no global side-data owner is part of the proposed workload.
    Symbol eligibility and official-source provenance remain a pre-live check.
 4. The runbook freezes the existing direct proxy policy, 60-second/128 MiB
-   rotation defaults, exact readiness set and a proposed 15-minute startup,
-   2-hour steady-state, 15-minute recovery, 15-minute shutdown and 15-minute
-   margin envelope. It does not guess the target host, service principal,
-   archive destination or live root.
+   rotation defaults, exact readiness set and a 15-minute absolute outer
+   startup envelope, followed by the proposed 2-hour steady-state,
+   15-minute recovery, 15-minute shutdown and 15-minute margin envelope. The
+   existing readiness observer's 300-second bound is an implementation
+   interval inside that outer deadline, not an automatic extension. It does
+   not guess the target host, service principal, archive destination or live
+   root.
 5. The runbook provides concrete existing-CLI install, check, start, sample,
    stop, archive/verify and fail-closed rollback commands. Rollback explicitly
    requires a target identity that understands the MS1+ Catalog and current
@@ -319,34 +321,30 @@ Completed preparation:
    `status` and `git diff --check`. Exact-source run `34436773366` is reused for
    the merged-code Ubuntu x86_64 lock/build/clean-Wheel evidence.
 
-Remaining before MS4-B:
+Current MS4-B disposition and remaining before MS4-C:
 
-- The final complete configuration, installed systemd unit and
-  `deployment-identity.v1` cannot be frozen until the operator confirms the
-  target host, service user/group, canonical roots, archive target, final
-  auxiliary decision and artifact transfer/release location.
-- The locally built macOS artifact has not been installed with the Linux
-  x86_64 lock. A new target-compatible build and exact lock/venv/import/
-  `pip check` verification are required; the pure-Python Wheel tag is not
-  sufficient.
-- No VPS access, systemd mutation, deployment/readiness evidence, archive
-  receive/verify/receipt cycle, online Binance traffic, qualification window,
-  stress/soak or Formal M22.9 was run. These are MS4-B/C scope and remain
-  unauthorized here.
+- The stopped deployment identity is verified against the actual canonical
+  filesystem and effective systemd unit; the exact four-product config is
+  frozen without operational environment overrides.
+- The approved cross-machine archive machine/SSH destination is still an
+  operator input. The registered same-host external storage target is not
+  substituted for that remote boundary.
+- ETHUSDT official eligibility, if required, is reserved for the immediate
+  MS4-C pre-start step. No Binance eligibility or qualification request was
+  made in this stopped preparation.
 
-Exit: MS4-A local preparation is `REVIEWED_COMPLETE`; MS4-B remains
-`NOT_AUTHORIZED` until the grouped operator inputs and concrete deployment
-authorization exist. The full ledger, evidence template, hashes, coverage map,
+Exit: MS4-B is `STOPPED_DEPLOYMENT_READY_FOR_REVIEW`; MS4-C remains
+`NOT_STARTED`. The full ledger, evidence template, hashes, coverage map,
 capacity formula and missing-input list are in `docs/milestone_acceptance/MS4.md`.
 
 MS4-A=REVIEWED_COMPLETE
-MS4-B=NOT_AUTHORIZED
+MS4-B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW
 MS4-C=NOT_STARTED
 MS4-D=NOT_STARTED
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=OWNER_RESUME_REQUIRED
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
 
 ### MS4-B — Tokyo VPS preflight and deployment
 

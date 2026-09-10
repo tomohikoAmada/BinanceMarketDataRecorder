@@ -5,7 +5,20 @@ the independently qualified deployed artifact, and the future multi-symbol
 program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Stage closeout — MS4-A local preparation
+## Current stage — MS4-B target preflight/stopped deployment
+
+MS4-A local preparation and review remain complete. MS4-B target preflight,
+rollback evidence preservation, exact frozen-source Linux artifact build,
+complete four-ProductKey configuration, stopped systemd deployment and
+deployment identity verification are ready for independent review. The Tokyo
+Recorder was gracefully stopped before mutation and remains stopped. No live
+capture, Binance qualification traffic, controlled recovery, or Formal M22.9
+was started. `PRODUCTION_READY=NO` and MS4-C remains not started.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW;
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW.
+
+## Historical stage closeout — MS4-A local preparation
 
 MS3 is merged. MS4-A local preparation and its document review are complete;
 PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
@@ -57,8 +70,10 @@ below retain their evidence context. No MS4 deployment is authorized.
 ## Status at a glance
 
 ```text
-LIVE_GITHUB_MAIN=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-LIVE_GITHUB_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+LIVE_GITHUB_MAIN=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+LIVE_GITHUB_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -67,8 +82,8 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
-CURRENT_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_MAIN_SHA=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
+CURRENT_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
 CURRENT_NONFORMAL_VALIDATION_STAGE_COMPLETE=YES
 MULTI_SYMBOL_DEVELOPMENT_MAY_BEGIN=YES
 MS2_IMPLEMENTATION_STARTED=YES
@@ -89,7 +104,11 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=NEXT
+MS4=IN_PROGRESS_MS4_B_STOPPED_DEPLOYMENT
+MS4_A=REVIEWED_COMPLETE
+MS4_B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW
+MS4_C=NOT_STARTED
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 ```
@@ -253,8 +272,9 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-NEXT=MS4_A_LOCAL_PREPARATION
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
 
-MS3 is closed/merged. Start MS4-A as a separate local preparation run. Do not
-deploy or run live qualification without the MS4 authorization and artifact-
-specific gates.
+MS3 is closed/merged and MS4-A is reviewed complete. Review the MS4-B target
+preflight/stopped deployment evidence as a separate gate. Do not start the
+Recorder or run live qualification; MS4-C requires its own pre-start review
+and authorization.

@@ -1,6 +1,6 @@
 # MS4 qualification runbook
 
-Status: **MS4-A local preparation reviewed; target execution NOT AUTHORIZED**.
+Status: **MS4-B target preflight/stopped deployment prepared; live execution NOT AUTHORIZED**.
 This is a preparation reference, not a copy-and-run deployment script. Target
 inputs and target-specific publication/remote-archive commands must be completed
 and reviewed when the owner resumes MS4-B. No command authorizes VPS access,
@@ -242,7 +242,14 @@ sudo "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" deployment rea
 "$PYTHON" -m binance_market_data_recorder --config "$CONFIG" status
 ```
 
-The fixed deployment-readiness observer deadline is 300 seconds. Do not count
+The outer MS4 startup qualification envelope is an absolute 15 minutes after
+the explicit start request. The existing deployment-readiness observer has a
+single bounded implementation observation interval of 300 seconds. That
+interval is not an automatic extension of the 15-minute stage envelope; do
+not invoke it so early or interpret its bound as permission to extend the
+stage deadline. Use existing systemd/status/service-state read-only
+observation as appropriate, and require the final authoritative deployment
+readiness result to return `READY` within the outer deadline. Do not count
 `systemctl is-active`, a process PID, or a single boolean as readiness. Record
 the configuration-bound expected set, actual set, per-product readiness,
 connected/persisted core streams, snapshot/order-book sync, recovery result,
@@ -289,8 +296,9 @@ HARD RESERVE <= 10 GiB
 ```
 
 For free bytes `F0`, `F1` and monotonic interval `dt`, calculate
-`g_net=max(0,(F0-F1)/dt)` and `T_runway=(F0-10 GiB)/g_net` when growth is
-positive. Use the existing 1h/6h/24h/7d observations where present, do not
+`g_net=max(0,(F0-F1)/dt)` and `T_runway=(F1-10 GiB)/g_net` when growth is
+positive. Use the latest measured remaining free space `F1` as the runway
+authority. Use the existing 1h/6h/24h/7d observations where present, do not
 attribute shared-host space changes, and treat unverified archive release as
 zero. The proposed startup + 2h steady + 15m recovery + 15m shutdown + 15m
 margin envelope is 3 hours. Refuse T0 if free space is at/below reserve or
@@ -378,6 +386,7 @@ thresholds, skip products/streams, deliberately provoke live 418/429, run
 heavy Normalize/Replay/Backfill on the live host, access credentials, or start
 Formal M22.9 from this runbook.
 
-MS4-A local artifact/document preparation is reviewed and complete.
-MS4-B remains unauthorized until the owner supplies the grouped inputs and
-explicitly authorizes the named target.
+MS4-A local artifact/document preparation is reviewed and complete. The
+MS4-B target preflight and stopped deployment may be recorded as ready for
+review, but live start, Binance qualification traffic and MS4-C remain
+separately unauthorized.

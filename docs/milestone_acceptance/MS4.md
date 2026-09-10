@@ -1,4 +1,22 @@
-# MS4-A — Local preparation acceptance ledger
+# MS4 qualification acceptance ledger
+
+## Current MS4-B disposition — target preflight and stopped deployment
+
+The Tokyo target preflight, old-deployment rollback evidence, exact frozen
+Linux artifact, complete four-ProductKey configuration, stopped systemd
+installation, and deployment identity verification are complete for review.
+The Recorder was gracefully stopped before mutation and remains stopped. No
+live capture, Binance qualification traffic, controlled recovery, or Formal
+M22.9 was started. `PRODUCTION_READY` remains `NO`; MS4-C remains not started.
+
+```text
+MS4_A=REVIEWED_COMPLETE
+MS4_B=STOPPED_DEPLOYMENT_READY_FOR_REVIEW
+MS4_C=NOT_STARTED
+NEXT=MS4_B_TARGET_PREFLIGHT_STOPPED_DEPLOYMENT_REVIEW
+```
+
+## Historical MS4-A — local preparation acceptance ledger
 
 ## 1. Frozen representative profile
 
@@ -141,13 +159,19 @@ The proposed MS4-C envelope is frozen for review, not yet approved for
 execution:
 
 ```text
-startup deadline:       15 minutes after explicit start request
+outer startup envelope: 15 minutes after explicit start request (absolute)
+readiness observer bound: 300 seconds (bounded implementation interval)
 steady state:           2 hours after all four ProductKeys are READY
 recovery observation:   15 minutes, separately bounded and attributed
 shutdown/verification:  15 minutes
 planning margin:        15 minutes
 minimum conservative runway envelope: 3 hours
 ```
+
+The 300-second readiness observer interval is not an automatic extension of
+the 15-minute outer stage deadline. Use existing systemd/status/service-state
+read-only observation as appropriate, and require the final authoritative
+deployment readiness result to return `READY` within the outer envelope.
 
 There is no automatic extension, repetition, or `72h`/`168h` campaign. The
 two-hour window cannot certify long-term RSS, rotation or formal M22.9.
@@ -257,7 +281,7 @@ PRODUCTION_READY=NO
 NEXT=OWNER_RESUME_REQUIRED
 ```
 
-## Final preparation review and stage closeout
+## Historical final preparation review and stage closeout
 
 GPT-6 Astra reviewed the local preparation and corrected the retained lock
 path, the absolute-path venv publication guidance, retained Wheel reference,
@@ -266,9 +290,8 @@ The runbook is an approved local preparation reference; target-specific commands
 remain explicitly gated before deployment. MS4-A completion does not mean the
 whole MS4 milestone or deployment qualification is complete.
 
-The owner requests closure of current work and no later milestone development.
-MS3 is merged; MS4-A is REVIEWED_COMPLETE. MS4-B/C/D remain unstarted and no
-VPS access, deployment or scheduled continuation is authorized. Resume only on
-owner instruction. Pure documentation review used path/CLI/consistency checks;
-no tests or CI were manually rerun. Staged /var/tmp artifacts must be rechecked
-for availability and hashes when resuming; they are not durable release storage.
+The historical owner-requested rest predates the current MS4-B target
+preflight/stopped-deployment record above. Its statement that MS4-B/C/D were
+unstarted and that no VPS access was authorized is retained as history, not as
+current authority. The current record remains stopped and has not started
+MS4-C.
