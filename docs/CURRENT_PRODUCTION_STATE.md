@@ -5,6 +5,17 @@ the independently qualified deployed artifact, and the future multi-symbol
 program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
+## Current review update — 2026-09-10
+
+Astra reviewed candidate `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`.
+The production-path and simultaneous Profile D supplements addressed the
+original coverage gaps; the MS3-R1 waiting-cancellation test correction is now
+implemented as a narrow test-only change on the appended candidate. MS3 is not
+finally approved or merged. Hand off next for MS3-R2 independent final review.
+The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
+is the current detailed continuation queue; the candidate submission summaries
+below retain their evidence context. No MS4 deployment is authorized.
+
 ## Status at a glance
 
 ```text
@@ -24,12 +35,13 @@ MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
 MS2_INDEPENDENT_PR_REVIEW=COMPLETE
 MS2_MERGED_PR=54
-MS3=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
 MS3_A=MERGED_PR_55
 MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
 MS3_B_MERGED=NO
-MS3_INDEPENDENT_RE_REVIEW=PENDING
+MS3_R1=IMPLEMENTED_AWAITING_REVIEW
+MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
@@ -44,10 +56,13 @@ closed on current `main` via PR #54. MS3-A is merged via PR #55 at
 `52bf086dd240556b054821f33bf1e2840fdcf912` and
 `ad1e941af3cd2bd3922eac239ba92a47058e9875`. MS3-B candidate evidence is
 updated on `feat/ms3b-shared-resource-acceptance` / PR #56; it is not merged
-or deployed, and this record does not close MS3 before independent re-review.
+or deployed, and this record does not close MS3 before independent final
+re-review. The update now includes the narrow MS3-R1 waiting-cancellation test
+barrier correction; the appended head/tree must be independently reverified.
 The update adds real `UsdMCollector`/`RestSideDataPoller` production-path
 evidence, finite Catalog pagination/cursor competition, cancellation lifecycle
-coverage, and a minimal owned-worker fix for in-flight side REST cancellation.
+coverage, a minimal owned-worker fix for in-flight side REST cancellation, and
+the corrected waiter enqueue/cancel/successor/post-stop assertions.
 See [MS2 acceptance](milestone_acceptance/MS2.md) and
 [MS3 acceptance](milestone_acceptance/MS3.md) for the acceptance records.
 
@@ -190,8 +205,8 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-NEXT=INDEPENDENT_MS3_RE_REVIEW
+NEXT=INDEPENDENT_MS3_FINAL_REVIEW
 
-Complete the independent MS3-B review and merge decision. Do not deploy or
-run live qualification as part of this work package; MS4 is next only after
-the candidate is independently reviewed and merged.
+Review the appended MS3-R1 diff and evidence for the MS3-B merge decision.
+Do not deploy or run live qualification as part of this work package; MS4 is
+next only after the candidate is independently reviewed and merged.

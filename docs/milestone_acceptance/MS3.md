@@ -1,14 +1,61 @@
 # MS3 — Shared-resource scaling / rotation / observability acceptance
 
 - Date: 2026-09-09; evidence update: 2026-09-10
-- Status: **OFFLINE CANDIDATE EVIDENCE UPDATED — INDEPENDENT RE-REVIEW PENDING**
+- Status: **MS3-R1 IMPLEMENTED — AWAITING INDEPENDENT FINAL REVIEW**
 - Candidate branch: `feat/ms3b-shared-resource-acceptance`
 - Candidate PR: `#56` (not merged)
-- NEXT=INDEPENDENT_MS3_RE_REVIEW
+- NEXT=INDEPENDENT_MS3_FINAL_REVIEW
 - MS4: **NEXT**, only after independent review/merge and separate authorization
 - FORMAL_M22_9=NOT_STARTED
 - PRODUCTION_READY=NO
 - CURRENT_MAIN_DEPLOYED=NO
+
+## Independent re-review — 2026-09-10
+
+Reviewed head `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`, tree
+`b573c09ae958f81905ace58ca0c3612c81666ae4`; PR #56 still open/unmerged.
+Reviewer: GPT-6 Astra. The real Collector/Poller and concurrent Profile D
+supplements substantially resolve the original findings. One P2 test-evidence
+correction remains: the waiting-cancellation test waits for request_count == 1
+after the holder has already made count 1, so it can cancel before the waiter
+executes. The F8 waiting-cancellation claim below was the implementer's
+submitted claim, not independently accepted evidence until MS3-R1 was fixed.
+
+See [MS3-R1 in the execution plan](../milestone_plan.md#ms3-review-disposition-and-r1-repair)
+for the minimal correction and exit checks. The concurrent Profile D finding
+is closed; no production redesign is requested. Final MS3 approval is pending.
+
+Independent focused run: 44 passed in 2.03s using `.venv-ms2/bin/python -m
+pytest -q` on `tests/integration/test_ms3b_production_paths.py`,
+`tests/unit/test_ms3b_rest_fairness.py`,
+`tests/integration/test_ms3b_multi_product_load.py`,
+`tests/integration/test_ms3b_archive_capacity.py`, and
+`tests/unit/test_usdm_shared_rest_gate.py`. Full-suite results below remain
+implementer evidence; reviewer did not rerun full suite, online, VPS, external
+media, stress/soak or CI.
+
+## MS3-R1 implementation — 2026-09-10
+
+The waiting-cancellation barrier was corrected in
+`tests/integration/test_ms3b_production_paths.py`. The test now records the
+holder's request/acquire/release counts, starts the real
+`RestSideDataPoller._request()` waiter, and waits for the additional
+request-lock attempt (`request_count == holder_request_count + 1`). Before
+cancellation it proves there was no additional grant or release, no SDK wire
+start, and the original holder still owns the lock.
+
+After cancellation, the `_RecordingLock` event trace must contain the waiter's
+`cancelled` observation while acquire/release counts remain at the holder
+baseline, the SDK remains untouched, and the holder remains locked. The holder
+is then released; a subsequent real poller request acquires the same lock,
+reaches the SDK, and completes, proving there is no stale ownership. The test
+clears the SDK-start marker and separately verifies that a request created after
+`stop` does not increment the lock request count or start the SDK.
+
+R1 is test-only; no scheduler or production-code refactor was added. The local
+focused regression passed, and the updated evidence is awaiting Astra's
+independent MS3-R2 final review. This record does not mark MS3 approved or PR
+#56 merged.
 
 ## Frozen authority and scope
 
@@ -67,7 +114,7 @@ clock values, and deterministic wait boundaries.
 | F5 repeated core retry | PASS — model evidence | 5xx → transport error → success lock release remains covered by the model; no new production retry behavior was needed for this review finding |
 | F6 USD-M 429 | PASS — model; production cooldown supplement | Actual side poller 429 installed shared cooldown and blocked actual core snapshot wire start |
 | F7 USD-M 418 | PASS — model; production cooldown supplement | Actual side poller 418 installed shared cooldown and blocked actual core snapshot wire start |
-| F8 cancellation | PASS — model; production lifecycle supplement | Waiting cancellation, in-flight SDK cancellation, and post-stop request were separately observed on the real path |
+| F8 cancellation | PASS — model; R1 production lifecycle correction | Waiting enqueue/cancellation, in-flight SDK cancellation, successor reacquisition, and post-stop request are covered on the real path; final independent review pending |
 | F9 stop | PASS — model; production lifecycle supplement | Stop converged the actual side/core path with no post-stop wire start |
 | F10 Spot contention | PASS after authorized correction | Both active-block and rejection-installation races are covered |
 
@@ -298,7 +345,8 @@ The offline repository gates were run with the repository's available Python
 
 | Gate | Result |
 | --- | --- |
-| Targeted MS3 production/shared-gate/Profile D/archive suites | PASS: 61 passed |
+| MS3-R1 waiting-cancellation/post-stop regression | PASS: 1 passed in 0.93s |
+| Targeted MS3 production/shared-gate/Profile D/archive suites | PASS: 44 passed in 1.83s after R1 |
 | `python -m pytest -q` | PASS: 1639 passed, 24 explicit online/preview skips, 4 stress deselected; 13 existing fork warnings |
 | `python -m ruff check .` | PASS |
 | `python -m mypy` | PASS: 254 source files |
@@ -328,10 +376,11 @@ CAPACITY_THRESHOLDS_CHANGED=NO
 ARCHIVE_TRANSACTION_PROTOCOL_CHANGED=NO
 CONTRACTS_CHANGED=NO
 PROJECTION_CHANGED=NO
-MS3=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
-MS3_INDEPENDENT_RE_REVIEW=PENDING
+MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
+MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
 MS3_B_MERGED=NO
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
+NEXT=INDEPENDENT_MS3_FINAL_REVIEW
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO

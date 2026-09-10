@@ -5,6 +5,17 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the future multi-symbol plan. Documentation is not deployment or live
 traffic authorization.
 
+## Current review update — 2026-09-10
+
+Astra reviewed candidate `c7d6c904c42b4bc86cd0937d4fca03aebc16a81b`.
+The production-path and simultaneous Profile D supplements addressed the
+original coverage gaps; the MS3-R1 waiting-cancellation test correction is now
+implemented as a narrow test-only change on the appended candidate. MS3 is not
+finally approved or merged. Hand off next for MS3-R2 independent final review.
+The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
+is the current detailed continuation queue; the candidate submission summaries
+below retain their evidence context. No MS4 deployment is authorized.
+
 ## Start here: the boundary
 
 MS2 implementation/offline acceptance, independent review, and merge are
@@ -53,15 +64,16 @@ CURRENT_MAIN_SHA=01527037254595267003f886689bb270e08b5e5d
 CURRENT_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
 MS2_PR=54
 MS2_MERGED=YES
-MS3=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3=R1_IMPLEMENTED_AWAITING_INDEPENDENT_FINAL_REVIEW
 MS3_A_MERGED=YES
 MS3_A_PR=55
 MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
 MS3_B_MERGED=NO
-MS3_INDEPENDENT_RE_REVIEW=PENDING
+MS3_R1=IMPLEMENTED_AWAITING_REVIEW
+MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=INDEPENDENT_MS3_RE_REVIEW
+NEXT=INDEPENDENT_MS3_FINAL_REVIEW
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
@@ -70,8 +82,10 @@ merged MS2 behavior authority, and PR #55 is the merged MS3-A authority on
 current `main`; none is deployed as current production. The MS3-B candidate
 adds only the shared-resource acceptance work recorded in
 `docs/milestone_acceptance/MS3.md`, including the real production-path
-Collector/Poller supplement and its minimal in-flight REST cancellation
-lifecycle correction. It remains an unmerged, offline-only candidate.
+Collector/Poller supplement, its minimal in-flight REST cancellation lifecycle
+correction, and the MS3-R1 waiting-cancellation test barrier correction. The
+R1 change is test-only and remains an unmerged, offline-only candidate; the
+appended head/tree must be independently reverified at MS3-R2.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.
@@ -208,6 +222,7 @@ or use an external volume as an active Collector target.
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED`,
 `MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance`,
-`MS3_B_MERGED=NO`, `MS3_INDEPENDENT_RE_REVIEW=PENDING`,
+`MS3_B_MERGED=NO`, `MS3_R1=IMPLEMENTED_AWAITING_REVIEW`,
+`MS3_INDEPENDENT_RE_REVIEW=AWAITING_FINAL_REVIEW`,
 `MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE`,
-`NEXT=INDEPENDENT_MS3_RE_REVIEW`.
+`NEXT=INDEPENDENT_MS3_FINAL_REVIEW`.

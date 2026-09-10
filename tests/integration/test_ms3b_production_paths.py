@@ -738,18 +738,51 @@ def test_production_waiting_cancel_and_post_stop_request_have_no_wire_side_effec
         poller._active_stop = stop
 
         await request_lock.acquire()
+        holder_request_count = request_lock.request_count
+        holder_acquire_count = request_lock.acquire_count
+        holder_release_count = request_lock.release_count
         waiting = asyncio.create_task(poller._request())
-        await _wait_until(lambda: request_lock.request_count == 1)
+        await _wait_until(
+            lambda: request_lock.request_count >= holder_request_count + 1
+        )
+        assert request_lock.request_count == holder_request_count + 1
+        assert request_lock.acquire_count == holder_acquire_count
+        assert request_lock.release_count == holder_release_count
+        assert request_lock.locked()
+        assert not api.side_started.is_set()
         waiting.cancel()
         with pytest.raises(asyncio.CancelledError):
             await waiting
+        assert request_lock.events.count("cancelled") == 1
+        assert request_lock.request_count == holder_request_count + 1
+        assert request_lock.acquire_count == holder_acquire_count
+        assert request_lock.release_count == holder_release_count
         assert not api.side_started.is_set()
         assert request_lock.locked()
         request_lock.release()
+        assert not request_lock.locked()
+        after_holder_release_count = request_lock.release_count
 
+        follow_up = asyncio.create_task(poller._request())
+        await _wait_until(
+            lambda: request_lock.request_count >= holder_request_count + 2
+        )
+        assert request_lock.acquire_count == holder_acquire_count + 1
+        assert await asyncio.to_thread(api.side_started.wait, 1)
+        api.side_release.set()
+        await asyncio.wait_for(follow_up, timeout=1)
+        assert request_lock.acquire_count == holder_acquire_count + 1
+        assert request_lock.release_count == after_holder_release_count + 1
+        assert not request_lock.locked()
+
+        api.side_started.clear()
+        post_stop_request_count = request_lock.request_count
         stop.set()
         with pytest.raises(asyncio.CancelledError):
             await poller._request()
+        assert request_lock.request_count == post_stop_request_count
+        assert request_lock.acquire_count == holder_acquire_count + 1
+        assert request_lock.release_count == after_holder_release_count + 1
         assert not api.side_started.is_set()
         await _close_artifacts(collector, poller)
 
