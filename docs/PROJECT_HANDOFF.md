@@ -5,37 +5,51 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the future multi-symbol plan. Documentation is not deployment or live
 traffic authorization.
 
-## Latest CI disposition — MS3-CI2
+## Stage closeout — MS4-A local preparation
 
-On `e6dc3a993defa2c6f24af25209090a55deda2381`, run `34424559261`:
-Ubuntu passed all gates; macOS failed the older global-stop backpressure test's
-single-manifest assertion (actual 2). Profile D passed on both platforms.
-Astra reproduced this failure with an injected normal rotation boundary and
-implemented a test-only aggregate-manifest correction plus a boundary case.
-Local validation passed (1641 passed, 24 skipped, 4 deselected); PR remains unmerged and no deployment is
-implied. See the MS3-CI2 entry in milestone_plan.md for current execution scope.
+MS3 is merged. MS4-A local preparation and its document review are complete;
+PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
+deployment or live qualification is authorized. The owner requested a rest
+after merging current completed work and cleaning its branches.
+MS4_A=REVIEWED_COMPLETE; NEXT=OWNER_RESUME_REQUIRED.
+Historical next-step fields below describe their recorded checkpoint only.
 
-## MS3-CI1 update — 2026-09-10 (current disposition)
+## MS3 merge closeout — 2026-09-10
 
-**MS3-CI1 IMPLEMENTED / AWAITING REVIEW; merge readiness remains suspended.**
+PR #56 is CLOSED/MERGED through the normal repository rule. Astra approved head
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; exact-head CI run `34436773366`
+passed every macOS and Ubuntu step, including build and clean-wheel smoke. The
+actual merge commit is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. MS3-R1, MS3-CI1 and MS3-CI2 are
+closed. The historical CI1/CI2 failures remain recorded in the milestone plan
+and MS3 acceptance; they do not describe the current state.
+
+MS3 is not deployed. Formal M22.9 has not started and Production Ready remains
+NO. NEXT=MS4_A_LOCAL_PREPARATION.
+
+## MS3-CI1 update — 2026-09-10 (historical handoff; now closed)
+
+**MS3-CI1 was IMPLEMENTED / AWAITING REVIEW at handoff and is now
+CLOSED/MERGED.**
 The Ubuntu failure was a fixture executor-scheduling cycle: fake snapshot SDK
 workers synchronously waited for depth writer work queued in the same executor.
 Profile D now uses real-persistence async phase events before SDK submission,
 thread-safe worker-to-loop signals and separate hang watchdogs. The local
 default/six-worker repeat, focused/full offline suites and static/build/wheel
-gates pass. No production code or capacity setting changed. Required Ubuntu CI
-and independent repair review remain open; prior Astra approval does not cover
-this delta. No merge/auto-merge, deployment or manual CI operation is authorized.
-NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW.
+gates pass. No production code or capacity setting changed. The exact candidate
+later passed required CI and was merged in PR #56. No deployment or online
+qualification is implied.
 
-## Current review update — 2026-09-10
+## Current review update — 2026-09-10 (historical approval, now merged)
 
 Astra approved the offline MS3 candidate at
 `66e036a07f422818f5e3f54f0216d4083b443698` (tree
 `1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
-coverage findings are CLOSED. That approval remains historical: PR #56 now has
-an unreviewed MS3-CI1 test delta, so independent repair review precedes any merge
-handoff. PR #56 is still open/unmerged. No deployment is authorized.
+coverage findings are CLOSED. The approved exact candidate was subsequently
+validated by run `34436773366` and merged in PR #56 as
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
 is the current detailed continuation queue; the candidate submission summaries
 below retain their evidence context. No MS4 deployment is authorized.
@@ -43,9 +57,10 @@ below retain their evidence context. No MS4 deployment is authorized.
 ## Start here: the boundary
 
 MS2 implementation/offline acceptance, independent review, and merge are
-**CLOSED**. **MS3-A is merged and MS3-B candidate offline evidence is updated**
-on branch `feat/ms3b-shared-resource-acceptance`; its independent re-review/
-merge is pending. MS1 remains merged and closed. See [MS2 acceptance](milestone_acceptance/MS2.md)
+**CLOSED**. **MS3-A and MS3-B are merged**; MS3-B is merged through PR #56 at
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. MS1 remains merged and closed.
+See [MS2 acceptance](milestone_acceptance/MS2.md)
 and [MS3 acceptance](milestone_acceptance/MS3.md). Do not restart or
 reopen the historical M23 optimization, BBO, Storage Forecast, remote-delete,
 single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
@@ -74,8 +89,8 @@ The following pre-MS2 authority checks were completed before implementation:
 ### A. Live GitHub main and post-MS1 implementation/behavior authority
 
 ```text
-LIVE_GITHUB_MAIN=01527037254595267003f886689bb270e08b5e5d
-LIVE_GITHUB_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
+LIVE_GITHUB_MAIN=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+LIVE_GITHUB_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 POST_MS1_IMPLEMENTATION_AUTHORITY_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
 POST_MS1_IMPLEMENTATION_AUTHORITY_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
 MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
@@ -84,32 +99,41 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=01527037254595267003f886689bb270e08b5e5d
-CURRENT_MAIN_TREE=eb63b645660a64ac606341ce3fb7f447a6e89457
+CURRENT_MAIN_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+CURRENT_MAIN_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 MS2_PR=54
 MS2_MERGED=YES
-MS3=CI_REPAIR_IMPLEMENTED_AWAITING_REVIEW
+MS3=CLOSED_MERGED
 MS3_A_MERGED=YES
 MS3_A_PR=55
-MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
+MS3_B=CLOSED_MERGED_PR_56
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
-MS3_B_MERGED=NO
+MS3_B_CANDIDATE_BRANCH_STATUS=DELETED_AFTER_MERGE
+MS3_B_CANDIDATE_TIP=2a701fe79b78d3c63dd5959efecd20a2369d58e5
+MS3_B_MERGED=YES
 MS3_R1=CLOSED
 MS3_INDEPENDENT_RE_REVIEW=APPROVED
-MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
+MS3_CI1=CLOSED
+MS3_CI2=CLOSED
+MS3_R2=CLOSED
+MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS4=NEXT
+NEXT=MS4_A_LOCAL_PREPARATION
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
 `ad1e941af3cd2bd3922eac239ba92a47058e9875`. PR #51 is merged, PR #54 is the
 merged MS2 behavior authority, and PR #55 is the merged MS3-A authority on
-current `main`; none is deployed as current production. The MS3-B candidate
-adds only the shared-resource acceptance work recorded in
-`docs/milestone_acceptance/MS3.md`, including the real production-path
-Collector/Poller supplement, its minimal in-flight REST cancellation lifecycle
-correction, and the MS3-R1 waiting-cancellation test barrier correction. The
-R1 change is test-only and remains an unmerged, offline-only candidate; the
-appended head/tree must be independently reverified at MS3-R2.
+current `main`; none is deployed as current production. The MS3-B candidate is
+merged through PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. It adds only the shared-resource
+acceptance work recorded in `docs/milestone_acceptance/MS3.md`, including the
+real production-path Collector/Poller supplement, its minimal in-flight REST
+cancellation lifecycle correction, the MS3-R1 waiter barrier correction and
+the CI1/CI2 fixture repairs. The former candidate tip
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5` is retained as restoration evidence;
+the candidate branch was removed after merge and worktree checks.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy.
@@ -211,7 +235,8 @@ declare Production Ready.
 
 ### MS3 — Shared resources / rotation / observability
 
-**MS3-B OFFLINE CANDIDATE EVIDENCE UPDATED.** MS3-A is merged through PR #55.
+**MS3 CLOSED/MERGED.** MS3-A is merged through PR #55 and MS3-B is merged
+through PR #56.
 The candidate retains the deterministic F1–F10 model evidence and now adds
 real `UsdMCollector`/`RestSideDataPoller` gate, pagination/cursor, rate-limit,
 cancel/stop, and mixed 14-product/42-core-stream running-path evidence. The
@@ -219,7 +244,8 @@ existing sequential storage Profile D test is labeled as storage-layer proof;
 the new running-path test proves simultaneous activity and sibling progress
 under target backpressure. It adds no generic scheduler, persisted metrics
 migration, or speculative optimization. Independent re-review/merge and live
-qualification remain pending; see `docs/milestone_acceptance/MS3.md`.
+qualification remains pending; see `docs/milestone_acceptance/MS3.md`. MS4-A is
+the next separately authorized milestone.
 
 ### MS4 — Configurable-product integration / deployment qualification
 
@@ -244,9 +270,10 @@ or use an external volume as an active Collector target.
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
 `DEPLOYMENT_AUTHORIZED=NO`, `CURRENT_MAIN_DEPLOYED=NO`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
-`MS3_A_MERGED=YES`, `MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED`,
-`MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance`,
-`MS3_B_MERGED=NO`, `MS3_R1=CLOSED`,
+`MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
+`MS3_B=CLOSED_MERGED_PR_56`,
+`MS3_B_MERGED=YES`, `MS3_R1=CLOSED`, `MS3_CI1=CLOSED`, `MS3_CI2=CLOSED`,
 `MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
-`MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE`,
-`NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW`.
+`MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
+`MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
+`MS4=NEXT`, `NEXT=MS4_A_LOCAL_PREPARATION`.
