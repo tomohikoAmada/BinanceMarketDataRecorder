@@ -5,6 +5,16 @@ the independently qualified deployed artifact, and the future multi-symbol
 program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
+## Latest CI disposition — MS3-CI2
+
+On `e6dc3a993defa2c6f24af25209090a55deda2381`, run `34424559261`:
+Ubuntu passed all gates; macOS failed the older global-stop backpressure test's
+single-manifest assertion (actual 2). Profile D passed on both platforms.
+Astra reproduced this failure with an injected normal rotation boundary and
+implemented a test-only aggregate-manifest correction plus a boundary case.
+Local validation passed (1641 passed, 24 skipped, 4 deselected); PR remains unmerged and no deployment is
+implied. See the MS3-CI2 entry in milestone_plan.md for current execution scope.
+
 ## MS3-CI1 update — 2026-09-10 (current disposition)
 
 **MS3-CI1 IMPLEMENTED / AWAITING REVIEW; merge readiness remains suspended.**

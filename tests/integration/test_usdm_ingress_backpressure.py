@@ -1025,9 +1025,29 @@ def test_session_restart_post_close_timeout_recovers_same_gap_without_fabricatio
     assert completed["historical_continuity_restored"] is False
 
 
+@pytest.mark.parametrize("cross_rotation_boundary", [False, True], ids=["normal", "rotation"])
 def test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cross_rotation_boundary: bool,
 ) -> None:
+    if cross_rotation_boundary:
+        original_should_rotate = RawChunkWriter.should_rotate
+        boundary_observed = False
+
+        def at_rotation_boundary(
+            writer: RawChunkWriter, *, now_monotonic: float | None = None
+        ) -> bool:
+            nonlocal boundary_observed
+            if not boundary_observed:
+                boundary_observed = True
+                # Exercise the real deadline decision without waiting for the
+                # machine's monotonic clock to reach this product's phase.
+                now_monotonic = writer._rotation_deadline_monotonic
+            return original_should_rotate(writer, now_monotonic=now_monotonic)
+
+        monkeypatch.setattr(RawChunkWriter, "should_rotate", at_rotation_boundary)
+
     source_payloads = [book_ticker(value) for value in range(500)]
 
     async def exercise() -> None:
@@ -1067,9 +1087,16 @@ def test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap(
 
     asyncio.run(exercise())
     envelopes, manifests = captured(tmp_path)
-    assert len(manifests) == 1
-    assert manifests[0]["gap"] is False
-    assert manifests[0]["complete"] is True
+    # A normal time-based seal may split the captured prefix across chunks.
+    # Global stop must not turn any of those chunks into a reconnect gap.
+    assert manifests
+    if cross_rotation_boundary:
+        assert boundary_observed
+        assert len(manifests) >= 2
+    assert all(manifest["gap"] is False for manifest in manifests)
+    assert all(manifest["complete"] is True for manifest in manifests)
+    assert sum(manifest["record_count"] for manifest in manifests) == len(envelopes)
+    assert envelopes
     assert [envelope.raw_payload for envelope in envelopes] == source_payloads[
         : len(envelopes)
     ]

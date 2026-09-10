@@ -10,6 +10,41 @@
 - PRODUCTION_READY=NO
 - CURRENT_MAIN_DEPLOYED=NO
 
+## MS3-CI2 final local validation
+
+Implemented and checked by GPT-6 Astra on macOS / Python 3.12.9, based on
+`e6dc3a993defa2c6f24af25209090a55deda2381`. Only one test file and current
+review documents changed; production code is unchanged. Exact CI failure was
+reproduced before repair with a near-deadline rotation injection (2 manifests
+versus assumed 1). The permanent regression uses the actual deadline decision
+at the boundary, with no wall-clock wait required to cause rotation.
+
+- New normal/boundary test: 2 passed; ten repeated runs: 20 passed.
+- USD-M ingress backpressure plus MS3 production-path files: 46 passed,
+  1 stress case deselected.
+- Full offline pytest: 1641 passed, 24 skipped, 4 deselected, 13 existing fork
+  warnings in 136.41s.
+- Ruff, mypy (254 files), compileall, M0 contracts, Go Raw v1 golden and
+  git diff --check passed.
+- Build/clean-wheel checks were not repeated for this test/document-only delta;
+  Ubuntu's successful e6dc3a9 CI includes those checks on unchanged production.
+- No new remote CI result is claimed. Online, VPS, deployment, external media,
+  stress/soak and Formal M22.9 were not run.
+
+NEXT=LOCAL_LUNA_MS3_CI2_SUBMIT. Commit/push and verify normal required checks
+through the local execution workflow. No production repair or architecture
+expansion is requested; merge only the exact submitted delta under normal gates.
+
+## Latest CI disposition — MS3-CI2
+
+On `e6dc3a993defa2c6f24af25209090a55deda2381`, run `34424559261`:
+Ubuntu passed all gates; macOS failed the older global-stop backpressure test's
+single-manifest assertion (actual 2). Profile D passed on both platforms.
+Astra reproduced this failure with an injected normal rotation boundary and
+implemented a test-only aggregate-manifest correction plus a boundary case.
+Local validation passed (1641 passed, 24 skipped, 4 deselected); PR remains unmerged and no deployment is
+implied. See the MS3-CI2 entry in milestone_plan.md for current execution scope.
+
 ## MS3-CI1 implementation — 2026-09-10 (current disposition)
 
 **IMPLEMENTED / AWAITING REVIEW.** The Ubuntu failure was caused by the Profile

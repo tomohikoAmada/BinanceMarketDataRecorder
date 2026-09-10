@@ -15,6 +15,33 @@ workflow. It is a planning and MS3 review update, not MS4 deployment authority.
 Use this document as the single task queue; acceptance files hold evidence,
 CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 
+### MS3-CI2 — macOS normal rotation assertion repair
+
+Current repair by GPT-6 Astra on base `e6dc3a993defa2c6f24af25209090a55deda2381`.
+Run `34424559261`: Ubuntu job `102706917778` passed all gates, including
+Profile D, build and clean-wheel smoke. macOS job `102706918017` failed a
+DIFFERENT test: `test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap`
+in `tests/integration/test_usdm_ingress_backpressure.py:1070`, expecting one
+manifest but observing two (1 failed, 1639 passed, 24 skipped, 4 deselected).
+Profile D passed in both jobs. Do not repeat the CI1 repair or attribute this
+failure to the executor without evidence.
+
+The test uses 60-second stable-phase Raw rotation. The next boundary can be
+arbitrarily close to writer creation; a short test may legitimately seal more
+than one chunk. Astra reproduced the exact 2 != 1 failure by injecting a near
+rotation deadline. The minimal test-only repair validates every manifest as
+complete/no-gap, aggregate record counts, the nonempty exact source prefix and
+absence of discontinuity events. A parametrized boundary case exercises the
+real should_rotate decision at its deadline, without sleeping for a phase.
+No production logic, rotation policy, public contracts or CI configuration changes.
+
+MS3-CI2=FIXED_LOCAL_VALIDATION_PASS
+NEXT_EXECUTABLE=LOCAL_LUNA_MS3_CI2_SUBMIT
+Merge remains pending new exact-head CI and repair review. Preserve historical
+approvals as historical; they are not current full-CI success. Finish validation,
+record results in MS3 acceptance, then local Luna may submit the reviewed diff
+and update PR #56 through the usual rules. No automatic CI retry/cancel/wait.
+
 ### MS3-CI1 — Ubuntu Profile D failure (implemented; awaiting review)
 
 New evidence supersedes merge readiness, not the closed R1 test repair.
@@ -113,8 +140,9 @@ MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
 | MS3-A implementation | MERGED | PR #55, base `01527037254595267003f886689bb270e08b5e5d` |
 | MS3-B production-path supplement | OFFLINE REVIEW APPROVED / MERGE PENDING | Reviewed head `66e036a07f422818f5e3f54f0216d4083b443698`; final review below; PR #56 still open |
 | MS3-R1 waiting-cancellation evidence | CLOSED / REVIEWED | Actual enqueue, cancellation, retained holder, successor and post-stop evidence verified |
-| MS3-CI1 Ubuntu Profile D failure | IMPLEMENTED / AWAITING REVIEW | Fixture-only async phase repair; local repeat/focused/full/static/build gates pass; Linux CI and independent delta review pending |
-| MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI1 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
+| MS3-CI1 Ubuntu Profile D failure | UBUNTU CI PASS / DELTA INSPECTED | Run 34424559261: Profile D passed both platforms; no production changes |
+| MS3-CI2 normal rotation assertion | FIXED / LOCAL VALIDATION PASS | Deterministic boundary repro and aggregate-manifest repair; new CI pending |
+| MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI2 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
 | MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
 | MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
 | MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
