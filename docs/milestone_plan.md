@@ -15,9 +15,9 @@ workflow. It is a planning and MS3 review update, not MS4 deployment authority.
 Use this document as the single task queue; acceptance files hold evidence,
 CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 
-### MS3-CI2 — macOS normal rotation assertion repair
+### MS3-CI2 — macOS normal rotation assertion repair (closed/merged)
 
-Current repair by GPT-6 Astra on base `e6dc3a993defa2c6f24af25209090a55deda2381`.
+Merged repair prepared by GPT-6 Astra on base `e6dc3a993defa2c6f24af25209090a55deda2381`.
 Run `34424559261`: Ubuntu job `102706917778` passed all gates, including
 Profile D, build and clean-wheel smoke. macOS job `102706918017` failed a
 DIFFERENT test: `test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap`
@@ -35,14 +35,25 @@ absence of discontinuity events. A parametrized boundary case exercises the
 real should_rotate decision at its deadline, without sleeping for a phase.
 No production logic, rotation policy, public contracts or CI configuration changes.
 
-MS3-CI2=FIXED_LOCAL_VALIDATION_PASS
-NEXT_EXECUTABLE=LOCAL_LUNA_MS3_CI2_SUBMIT
-Merge remains pending new exact-head CI and repair review. Preserve historical
-approvals as historical; they are not current full-CI success. Finish validation,
-record results in MS3 acceptance, then local Luna may submit the reviewed diff
-and update PR #56 through the usual rules. No automatic CI retry/cancel/wait.
+MS3-CI2=CLOSED
+MS3=CLOSED_MERGED
+MS3_R1=CLOSED
+MS3_CI1=CLOSED
+MS3_CI2_REVIEWED_HEAD=2a701fe79b78d3c63dd5959efecd20a2369d58e5
+MS3_CI2_REVIEWED_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS3_CI2_CI_RUN=34436773366
+MS3_CI2_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS3_CI2_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS3_CURRENT_DISPOSITION=CLOSED_MERGED
+MS4=NEXT
+NEXT_EXECUTABLE=MS4-A-LOCAL-PREPARATION
+PR #56 is merged through the normal repository rule. The actual merge commit
+is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; the latter is the final candidate
+tree, not a GitHub temporary test merge. No deployment or MS4 implementation
+was performed.
 
-### MS3-CI1 — Ubuntu Profile D failure (implemented; awaiting review)
+### MS3-CI1 — Ubuntu Profile D failure (historical handoff; now closed)
 
 New evidence supersedes merge readiness, not the closed R1 test repair.
 GitHub run `34421869781`, Ubuntu job `102698845490`, candidate
@@ -94,7 +105,7 @@ Luna-max execution bundle (complete in one MS3 run, then one review handoff):
    cancel/wait for CI. Do not merge or enable auto-merge for the unreviewed delta.
    Return one complete review bundle, not an interim result after each step.
 
-Implementation result — 2026-09-10:
+Implementation result — 2026-09-10 (historical; subsequently merged):
 
 - Root cause: the Profile D fake snapshot API waited synchronously for depth
   persistence inside SDK calls already running in the shared asyncio default
@@ -127,9 +138,10 @@ Implementation result — 2026-09-10:
   normal push execution; no CI run was manually triggered, rerun, cancelled or
   awaited.
 
-MS3-CI1=IMPLEMENTED_AWAITING_REVIEW
-NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
-MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
+The CI1 handoff was later closed by exact-head run `34436773366`; macOS and
+Ubuntu both passed all required steps, including build and clean-wheel smoke.
+MS3-CI1=CLOSED
+MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 
 ### Status and next task
 
@@ -138,19 +150,20 @@ MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
 | MS1 durable identity | CLOSED / MERGED | PR #51, MS1 acceptance; do not repeat |
 | MS2 configurable runtime | CLOSED / MERGED | PR #54, MS2 acceptance; do not repeat |
 | MS3-A implementation | MERGED | PR #55, base `01527037254595267003f886689bb270e08b5e5d` |
-| MS3-B production-path supplement | OFFLINE REVIEW APPROVED / MERGE PENDING | Reviewed head `66e036a07f422818f5e3f54f0216d4083b443698`; final review below; PR #56 still open |
+| MS3-B production-path supplement | CLOSED / MERGED | PR #56; actual merge `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee` |
 | MS3-R1 waiting-cancellation evidence | CLOSED / REVIEWED | Actual enqueue, cancellation, retained holder, successor and post-stop evidence verified |
-| MS3-CI1 Ubuntu Profile D failure | UBUNTU CI PASS / DELTA INSPECTED | Run 34424559261: Profile D passed both platforms; no production changes |
-| MS3-CI2 normal rotation assertion | FIXED / LOCAL VALIDATION PASS | Deterministic boundary repro and aggregate-manifest repair; new CI pending |
-| MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI2 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
-| MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
+| MS3-CI1 Ubuntu Profile D failure | CLOSED / MERGED | Exact-head run 34436773366 passed Ubuntu and macOS, including Profile D and build/clean-wheel smoke |
+| MS3-CI2 normal rotation assertion | CLOSED / MERGED | Deterministic boundary regression and aggregate-manifest repair included in PR #56 |
+| MS3-R2 final review / merge handoff | CLOSED / MERGED | PR #56 merged by normal repository rules; actual merge SHA/tree recorded above |
+| MS4-A offline qualification preparation | NEXT | Start as a separate MS4 run; no MS4 implementation or deployment performed here |
 | MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
 | MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
 | MS4-D final review / documentation closure | NOT STARTED | Review MS4-C; close only what evidence supports |
-| Completed-branch cleanup | PENDING / SEPARATE MAINTENANCE | Only proven merged branches without additional work; preserve PR #56 while active |
+| Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
 NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
+NEXT_AFTER_CI2_REVIEW=MS4-A-LOCAL-PREPARATION
 
 ### MS3 final independent review — 2026-09-10
 
