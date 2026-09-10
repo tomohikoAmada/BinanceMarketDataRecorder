@@ -4,7 +4,9 @@ import asyncio
 import json
 import logging
 import threading
+from collections import Counter
 from collections.abc import AsyncIterator, Callable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, ClassVar, Literal, cast
@@ -301,6 +303,8 @@ PROFILE_D_PRODUCTS = tuple(
     for market in ("spot", "um_perpetual")
     for symbol in PROFILE_D_SYMBOLS
 )
+PROFILE_D_PHASE_WATCHDOG_SECONDS = 10.0
+PROFILE_D_WORKER_GATE_WATCHDOG_SECONDS = 60.0
 
 
 def _profile_d_frame(
@@ -398,19 +402,20 @@ class _ProfileDWebSocket:
 class _ProfileDWebSocketHarness:
     def __init__(self, stop: asyncio.Event) -> None:
         self.stop = stop
+        self.loop = asyncio.get_running_loop()
         self.all_opened = asyncio.Event()
-        self.all_opened_threading = threading.Event()
+        self.all_depth_persisted = asyncio.Event()
         self.second_wave = asyncio.Event()
         self.target_third_ready = asyncio.Event()
+        self.target_third_persisted = asyncio.Event()
+        self.siblings_second_wave_persisted = asyncio.Event()
+        self.all_snapshots_persisted = asyncio.Event()
         self.opened_count = 0
         self.target_market = "um_perpetual"
         self.target_symbol = PROFILE_D_SYMBOLS[0]
-        self.depth_persisted = {
-            product: threading.Event() for product in PROFILE_D_PRODUCTS
-        }
-        self.snapshot_persisted = {
-            product: threading.Event() for product in PROFILE_D_PRODUCTS
-        }
+        self.depth_persisted: set[tuple[str, str]] = set()
+        self.snapshot_persisted: set[tuple[str, str]] = set()
+        self._snapshot_guard = threading.Lock()
         self.counts: dict[tuple[str, str, str], int] = {}
 
     @asynccontextmanager
@@ -429,7 +434,6 @@ class _ProfileDWebSocketHarness:
         assert (market, symbol) in PROFILE_D_PRODUCTS
         self.opened_count += 1
         if self.opened_count == len(PROFILE_D_PRODUCTS) * 3:
-            self.all_opened_threading.set()
             self.all_opened.set()
         yield _ProfileDWebSocket(self, market, symbol, stream)
 
@@ -438,10 +442,58 @@ class _ProfileDWebSocketHarness:
         key = (str(event.market), str(event.symbol), str(event.stream))
         self.counts[key] = self.counts.get(key, 0) + 1
         if event.stream == UsdMStream.DIFF_DEPTH.value and self.counts[key] == 1:
-            self.depth_persisted[(str(event.market), str(event.symbol))].set()
+            self.depth_persisted.add((str(event.market), str(event.symbol)))
+            if len(self.depth_persisted) == len(PROFILE_D_PRODUCTS):
+                self.all_depth_persisted.set()
+        if key == (
+            self.target_market,
+            self.target_symbol,
+            UsdMStream.AGG_TRADE.value,
+        ) and self.counts[key] >= 3:
+            self.target_third_persisted.set()
+        if not self.missing_siblings():
+            self.siblings_second_wave_persisted.set()
 
     def observe_snapshot(self, market: str, symbol: str) -> None:
-        self.snapshot_persisted[(market, symbol)].set()
+        # StreamSpool invokes this observer in its blocking writer worker.
+        # Bridge the aggregate phase signal to the owning event loop instead
+        # of making the loop consume another default-executor worker to wait.
+        with self._snapshot_guard:
+            self.snapshot_persisted.add((market, symbol))
+            complete = len(self.snapshot_persisted) == len(PROFILE_D_PRODUCTS)
+        if complete:
+            self.loop.call_soon_threadsafe(self.all_snapshots_persisted.set)
+
+    def missing_siblings(self) -> list[tuple[str, str, str, int]]:
+        return [
+            (
+                market,
+                symbol,
+                core_stream.value,
+                self.counts.get((market, symbol, core_stream.value), 0),
+            )
+            for market, symbol in PROFILE_D_PRODUCTS
+            for core_stream in UsdMStream
+            if (market, symbol, core_stream.value)
+            != (
+                self.target_market,
+                self.target_symbol,
+                UsdMStream.AGG_TRADE.value,
+            )
+            and self.counts.get((market, symbol, core_stream.value), 0) < 2
+        ]
+
+
+class _ProfileDSpotRateLimiter(SpotIpRateLimiter):
+    """Keep fake Spot SDK workers out of the shared executor until depth exists."""
+
+    def __init__(self, harness: _ProfileDWebSocketHarness) -> None:
+        super().__init__(weight_budget_per_minute=6_000_000)
+        self.harness = harness
+
+    async def acquire(self, *, limit: int) -> int:
+        await self.harness.all_depth_persisted.wait()
+        return await super().acquire(limit=limit)
 
 
 class _ProfileDDepthApi:
@@ -451,8 +503,9 @@ class _ProfileDDepthApi:
 
     def _response(self, symbol: str, limit: int) -> DepthResponse:
         assert limit == 1000
-        if not self.harness.depth_persisted[(self.market, symbol)].wait(timeout=3):
-            raise AssertionError(f"depth did not persist for {symbol}")
+        assert self.harness.all_depth_persisted.is_set(), (
+            f"{self.market}:{symbol} snapshot escaped the async depth phase gate"
+        )
         return _DepthResponse()
 
     def order_book(self, symbol: str, limit: int) -> DepthResponse:
@@ -1012,18 +1065,26 @@ def test_production_finite_usdm_gate_cohort_covers_products_global_and_pages(
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize("executor_workers", [None, 6], ids=["default-executor", "six-workers"])
 def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
     tmp_path: Path,
+    executor_workers: int | None,
 ) -> None:
     """Keep the mixed 14-product Profile D and all 42 core streams live."""
 
     async def exercise() -> None:
+        if executor_workers is not None:
+            asyncio.get_running_loop().set_default_executor(
+                ThreadPoolExecutor(max_workers=executor_workers)
+            )
         stop = asyncio.Event()
         harness = _ProfileDWebSocketHarness(stop)
         spot_api = _ProfileDDepthApi(harness, "spot")
         usdm_api = _ProfileDDepthApi(harness, "um_perpetual")
-        spot_limiter = SpotIpRateLimiter(weight_budget_per_minute=6_000_000)
+        spot_limiter = _ProfileDSpotRateLimiter(harness)
         request_lock = _RecordingLock()
+        await request_lock.acquire()
+        request_gate_held = True
         cooldown = UsdMRestCooldown()
         spot_collectors: list[SpotCollector] = []
         usdm_collectors: list[UsdMCollector] = []
@@ -1102,7 +1163,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             for collector_stream in target.streams
             if collector_stream.stream_name == UsdMStream.AGG_TRADE.value
         )
-        target_drain_started = threading.Event()
+        target_drain_started = asyncio.Event()
         release_target_drain = threading.Event()
         original_drain = target_stream.spool.drain_all
         first_drain = True
@@ -1111,35 +1172,55 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             nonlocal first_drain
             if first_drain:
                 first_drain = False
-                target_drain_started.set()
-                if not release_target_drain.wait(timeout=3):
+                harness.loop.call_soon_threadsafe(target_drain_started.set)
+                if not release_target_drain.wait(
+                    timeout=PROFILE_D_WORKER_GATE_WATCHDOG_SECONDS
+                ):
                     raise AssertionError("test did not release the target drain")
             return original_drain()
 
         target_stream.spool.drain_all = blocked_drain  # type: ignore[method-assign]
         tasks = [asyncio.create_task(collector.run(stop)) for collector in collectors]
+
+        async def wait_for_phase(event: asyncio.Event, phase: str) -> None:
+            try:
+                await asyncio.wait_for(
+                    event.wait(), timeout=PROFILE_D_PHASE_WATCHDOG_SECONDS
+                )
+            except TimeoutError as exc:
+                task_failures = [
+                    (task.get_name(), type(error).__name__, str(error))
+                    for task in tasks
+                    if task.done()
+                    and not task.cancelled()
+                    and (error := task.exception()) is not None
+                ]
+                raise AssertionError(
+                    f"Profile D phase {phase!r} did not complete; "
+                    f"opened={harness.opened_count}; "
+                    f"depth={len(harness.depth_persisted)}; "
+                    f"snapshots={len(harness.snapshot_persisted)}; "
+                    f"missing_siblings={harness.missing_siblings()!r}; "
+                    f"task_failures={task_failures!r}"
+                ) from exc
+
         try:
-            assert await asyncio.to_thread(harness.all_opened_threading.wait, 1)
-            await asyncio.wait_for(harness.all_opened.wait(), timeout=1)
+            await wait_for_phase(harness.all_opened, "all streams opened")
             assert harness.opened_count == len(PROFILE_D_PRODUCTS) * 3
-            assert await asyncio.to_thread(target_drain_started.wait, 1)
+            await wait_for_phase(target_drain_started, "target writer blocked")
+            await wait_for_phase(harness.all_depth_persisted, "all initial depth persisted")
+            request_lock.release()
+            request_gate_held = False
 
             harness.second_wave.set()
-            await _wait_until(lambda: harness.target_third_ready.is_set())
-            await _wait_until(lambda: target_stream.receipt_queue_stats.depth == 1)
+            await wait_for_phase(harness.target_third_ready, "target third receipt ready")
             await _wait_until(
-                lambda: all(
-                    harness.counts.get((market, symbol, core_stream.value), 0) >= 2
-                    for market, symbol in PROFILE_D_PRODUCTS
-                    for core_stream in UsdMStream
-                    if (market, symbol, core_stream.value)
-                    != (
-                        harness.target_market,
-                        harness.target_symbol,
-                        UsdMStream.AGG_TRADE.value,
-                    )
-                ),
-                timeout=2,
+                lambda: target_stream.receipt_queue_stats.depth == 1,
+                timeout=PROFILE_D_PHASE_WATCHDOG_SECONDS,
+            )
+            await wait_for_phase(
+                harness.siblings_second_wave_persisted,
+                "all 41 siblings persisted the second wave",
             )
             assert target_stream.receipt_queue_stats.high_watermark == 1
             assert target_stream.receipt_queue_stats.depth == 1
@@ -1158,28 +1239,16 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             release_target_drain.set()
             await _wait_until(
                 lambda: target_stream.receipt_queue_stats.wait_count >= 1,
-                timeout=2,
+                timeout=PROFILE_D_PHASE_WATCHDOG_SECONDS,
             )
-            await _wait_until(
-                lambda: harness.counts.get(
-                    (
-                        harness.target_market,
-                        harness.target_symbol,
-                        UsdMStream.AGG_TRADE.value,
-                    ),
-                    0,
-                )
-                >= 3,
-                timeout=2,
+            await wait_for_phase(
+                harness.target_third_persisted, "target third receipt persisted"
             )
             assert target_stream.receipt_queue_stats.wait_count >= 1
             assert target_stream.receipt_queue_stats.depth == 0
             assert target_stream._backpressure_active is False
-            await _wait_until(
-                lambda: all(
-                    event.is_set() for event in harness.snapshot_persisted.values()
-                ),
-                timeout=2,
+            await wait_for_phase(
+                harness.all_snapshots_persisted, "all snapshots persisted"
             )
 
             expected_counts = {
@@ -1204,6 +1273,8 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
                 if isinstance(result, BaseException)
             ]
         finally:
+            if request_gate_held:
+                request_lock.release()
             release_target_drain.set()
             stop.set()
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -1212,7 +1283,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
         catalog = Catalog(layout.catalog)
         try:
             sealed = catalog.chunks_in_states(ChunkState.SEALED)
-            assert len(sealed) == len(PROFILE_D_PRODUCTS) * 4
+            assert len(sealed) >= len(PROFILE_D_PRODUCTS) * 4
             assert not catalog.chunks_in_states(ChunkState.ACTIVE, ChunkState.SEALING)
         finally:
             catalog.close()
@@ -1225,7 +1296,8 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             json.loads(path.read_text(encoding="utf-8"))
             for path in layout.manifests.glob("*.json")
         ]
-        assert len(documents) == len(PROFILE_D_PRODUCTS) * 4
+        assert len(documents) >= len(PROFILE_D_PRODUCTS) * 4
+        assert len(documents) == len(sealed)
         assert {document["market"] for document in documents} == {
             "spot",
             "um_perpetual",
@@ -1253,18 +1325,40 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             }
         )
         assert {
-            (document["market"], document["symbol"], document["stream"]): int(
-                document["record_count"]
-            )
+            (document["market"], document["symbol"], document["stream"])
             for document in documents
-        } == expected_manifest_counts
+        } == set(expected_manifest_counts)
+        manifest_counts = Counter(
+            {
+                key: sum(
+                    int(document["record_count"])
+                    for document in documents
+                    if (
+                        document["market"],
+                        document["symbol"],
+                        document["stream"],
+                    )
+                    == key
+                )
+                for key in expected_manifest_counts
+            }
+        )
+        assert manifest_counts == expected_manifest_counts
         assert {
-            (document["market"], document["symbol"], document["stream"]): document[
-                "collector_instance_ids"
-            ][0]
-            for document in documents
+            key: {
+                collector_instance_id
+                for document in documents
+                if (
+                    document["market"],
+                    document["symbol"],
+                    document["stream"],
+                )
+                == key
+                for collector_instance_id in document["collector_instance_ids"]
+            }
+            for key in expected_manifest_counts
         } == {
-            key: f"ms3b-profile-d-{key[0]}-{key[1]}"
+            key: {f"ms3b-profile-d-{key[0]}-{key[1]}"}
             for key in expected_manifest_counts
         }
 

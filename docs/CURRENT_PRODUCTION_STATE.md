@@ -5,13 +5,27 @@ the independently qualified deployed artifact, and the future multi-symbol
 program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
+## MS3-CI1 update — 2026-09-10 (current disposition)
+
+**MS3-CI1 IMPLEMENTED / AWAITING REVIEW; merge readiness remains suspended.**
+The Ubuntu failure was a fixture executor-scheduling cycle: fake snapshot SDK
+workers synchronously waited for depth writer work queued in the same executor.
+Profile D now uses real-persistence async phase events before SDK submission,
+thread-safe worker-to-loop signals and separate hang watchdogs. The local
+default/six-worker repeat, focused/full offline suites and static/build/wheel
+gates pass. No production code or capacity setting changed. Required Ubuntu CI
+and independent repair review remain open; prior Astra approval does not cover
+this delta. No merge/auto-merge, deployment or manual CI operation is authorized.
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW.
+
 ## Current review update — 2026-09-10
 
 Astra approved the offline MS3 candidate at
 `66e036a07f422818f5e3f54f0216d4083b443698` (tree
 `1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
-coverage findings are CLOSED. PR #56 is still open/unmerged; next is the local
-Luna merge handoff under normal repository gates. No deployment is authorized.
+coverage findings are CLOSED. That approval remains historical: PR #56 now has
+an unreviewed MS3-CI1 test delta, so independent repair review precedes any merge
+handoff. PR #56 is still open/unmerged. No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
 is the current detailed continuation queue; the candidate submission summaries
 below retain their evidence context. No MS4 deployment is authorized.
@@ -35,7 +49,7 @@ MS2_IMPLEMENTATION_STARTED=YES
 MS2=CLOSED
 MS2_INDEPENDENT_PR_REVIEW=COMPLETE
 MS2_MERGED_PR=54
-MS3=OFFLINE_REVIEW_APPROVED_MERGE_PENDING
+MS3=CI_REPAIR_IMPLEMENTED_AWAITING_REVIEW
 MS3_A=MERGED_PR_55
 MS3_B=OFFLINE_CANDIDATE_EVIDENCE_UPDATED
 MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
@@ -205,7 +219,7 @@ does not transfer to a behavior-changing multi-symbol artifact.
 
 ## Next action
 
-NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
 
 Review the appended MS3-R1 diff and evidence for the MS3-B merge decision.
 Do not deploy or run live qualification as part of this work package; MS4 is

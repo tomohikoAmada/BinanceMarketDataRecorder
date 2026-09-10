@@ -15,6 +15,95 @@ workflow. It is a planning and MS3 review update, not MS4 deployment authority.
 Use this document as the single task queue; acceptance files hold evidence,
 CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 
+### MS3-CI1 — Ubuntu Profile D failure (implemented; awaiting review)
+
+New evidence supersedes merge readiness, not the closed R1 test repair.
+GitHub run `34421869781`, Ubuntu job `102698845490`, candidate
+`54fc7a7bd006d071c628e2f4db824f3fdd43d649`: pytest failed with
+1 failed, 1634 passed, 28 skipped, 4 deselected in 298.70s. macOS succeeded.
+Ubuntu lint/type/build steps were skipped after pytest, not independently failed.
+Failure: `test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams`,
+line 1130, waiting up to 2 seconds for all 41 sibling stream counts to reach 2.
+This is distinct from MS3-R1. No merge or auto-merge until this new issue is
+resolved and the changed test/code delta independently reviewed.
+
+Root cause is NOT yet established. The test mixes 1/2-second coroutine waits,
+a 3-second blocked writer, synchronous snapshot waits for depth persistence,
+and a shared default executor. Inspect event causality and worker availability
+before classifying slow scheduling versus deadlock or production failure.
+A reviewer local run with the asyncio default executor bounded to 6 workers
+passed (1 passed in 1.03s); this does not reproduce or explain Ubuntu's failure.
+Do not label it fixed by rerunning green or by increasing every timeout.
+
+Luna-max execution bundle (complete in one MS3 run, then one review handoff):
+
+1. Preserve CI evidence and exact source identity; instrument only the fixture
+   as needed to show missing product/stream counts, task failures, barrier state
+   and worker progress. Reproduce the causal condition locally or on an already
+   authorized non-production Linux test environment; no VPS access is implied.
+2. Correct test synchronization at its cause. Prefer explicit async phase events
+   and a terminal-state/deadline guard; bridge worker signals with the owning
+   loop's thread-safe API. Keep 14 real collectors, 42 active streams, real writer
+   backpressure and 41 sibling progress assertions. Never synthesize counters,
+   replace production processing with a model, skip the test or reduce the load.
+   A documented generous watchdog is acceptable for hung-test termination; it
+   must not be the synchronization mechanism. Ensure the injected writer cannot
+   time out before the test phase it intentionally blocks is allowed to finish.
+3. Audit the other NEW production-path fixture waits for the same demonstrated
+   defect and fix that class together. Do not rewrite unrelated old tests or
+   tune production pools without production defect evidence. Ensure cleanup
+   releases every injected worker gate before bounded task cleanup, preserving
+   the original failure rather than hanging or replacing it with teardown noise.
+4. Run a finite repeat batch (e.g. 20 targeted repetitions), include a bounded
+   small-executor/scheduling variant if it tests the identified cause, then the
+   focused suite and one full offline suite plus applicable static/build/clean
+   wheel smoke gates. Record platform/Python and failures honestly. Actual Linux
+   CI success is not inferred from macOS emulation. No endless retries or soak.
+5. Update this ledger, MS3 acceptance and active status docs with root cause,
+   fix, evidence and remaining Linux verification. Prepare the MS4-A coverage
+   map and missing operator inputs as planning notes only, using existing tools;
+   do not start MS4 implementation or build a final deployment artifact yet.
+6. Commit/push the MS3-only repair and update PR #56. Do not manually run/retry/
+   cancel/wait for CI. Do not merge or enable auto-merge for the unreviewed delta.
+   Return one complete review bundle, not an interim result after each step.
+
+Implementation result — 2026-09-10:
+
+- Root cause: the Profile D fake snapshot API waited synchronously for depth
+  persistence inside SDK calls already running in the shared asyncio default
+  executor. Seven Spot requests, the serialized USD-M request, 42 real writer
+  drains and the intentionally blocked target drain therefore competed for the
+  same small worker pool. On the Ubuntu schedule, workers could wait for depth
+  work still queued behind them, while the 2-second polling assertion expired.
+  This was a fixture scheduling cycle, not evidence of a production defect.
+- Fix: initial Spot and USD-M snapshot admission now waits asynchronously for an
+  aggregate real-depth-persisted phase before submitting SDK worker calls. Real
+  writer observers set explicit async phase events; worker callbacks cross to
+  the owning loop with `call_soon_threadsafe`. The 41 siblings and target third
+  frame are still counted only after real production persistence. A 10-second
+  watchdog terminates a hung phase, while the injected target writer has a
+  separate 60-second guard and is unconditionally released during cleanup.
+- The finite repeat also exposed an independent invalid fixture assumption:
+  production's stable-phase rotation can legitimately split two frames across
+  two complete chunks. Profile D now requires exact aggregate record counts,
+  identity, completeness and no-gap evidence across all manifests, while still
+  requiring at least one sealed chunk for every expected product/stream.
+- Audit: the other new worker-start waits do not form this cycle: their SDK
+  requests are serialized by the shared REST lock and only one blocking worker
+  is active. They remain bounded and their existing cancellation/gate assertions
+  remain intact.
+- Local Darwin arm64 / Python 3.12.9 evidence: 20 repeats of both the normal and
+  6-worker variants passed (40 cases); focused five-file suite 45 passed; full
+  offline suite 1640 passed, 24 skipped, 4 deselected; Ruff, strict MyPy, M0
+  contracts, Go Raw golden, source/wheel build, clean-wheel install, `--version`,
+  `doctor` and `status` passed. Linux and required GitHub checks remain pending
+  normal push execution; no CI run was manually triggered, rerun, cancelled or
+  awaited.
+
+MS3-CI1=IMPLEMENTED_AWAITING_REVIEW
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
+MS3_CURRENT_DISPOSITION=CI_REPAIR_AWAITING_REVIEW
+
 ### Status and next task
 
 | Work package | Status | Exit evidence / remaining work |
@@ -24,7 +113,8 @@ CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 | MS3-A implementation | MERGED | PR #55, base `01527037254595267003f886689bb270e08b5e5d` |
 | MS3-B production-path supplement | OFFLINE REVIEW APPROVED / MERGE PENDING | Reviewed head `66e036a07f422818f5e3f54f0216d4083b443698`; final review below; PR #56 still open |
 | MS3-R1 waiting-cancellation evidence | CLOSED / REVIEWED | Actual enqueue, cancellation, retained holder, successor and post-stop evidence verified |
-| MS3-R2 final review / merge handoff | REVIEW APPROVED / LOCAL MERGE HANDOFF NEXT | Local Luna records review, updates stale PR body and merges only under normal repository gates |
+| MS3-CI1 Ubuntu Profile D failure | IMPLEMENTED / AWAITING REVIEW | Fixture-only async phase repair; local repeat/focused/full/static/build gates pass; Linux CI and independent delta review pending |
+| MS3-R2 final review / merge handoff | BLOCKED BY MS3-CI1 | Local Luna records review, updates stale PR body and merges only under normal repository gates |
 | MS4-A offline qualification preparation | PLANNED AFTER MS3 MERGE | Concrete runbook, candidate configuration, offline coverage map and artifact identity |
 | MS4-B Tokyo VPS preflight / deployment | NOT AUTHORIZED | Exact host/path/artifact/config and deployment approval; do not infer from this plan |
 | MS4-C bounded qualification | NOT STARTED | Artifact-specific live and archive evidence under the authorized runbook |
@@ -32,7 +122,7 @@ CURRENT_PRODUCTION_STATE holds deployed facts, and PROJECT_HANDOFF points here.
 | Completed-branch cleanup | PENDING / SEPARATE MAINTENANCE | Only proven merged branches without additional work; preserve PR #56 while active |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
-NEXT_EXECUTABLE=MS3-R2-MERGE-HANDOFF
+NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
 
 ### MS3 final independent review — 2026-09-10
 
@@ -174,6 +264,18 @@ MS4). Link them here when created. Do not create an empty secondary task system.
 Exit: reproducible artifact, complete runbook and evidence schema, local gates
 recorded, no unresolved implementation blocker. Set MS4-A=READY_FOR_REVIEW;
 MS4-B remains unauthorized until the owner approves the concrete deployment.
+
+Planning-only coverage map prepared during MS3-CI1 (not MS4 execution): existing
+commands cover `config show`, `doctor`, `status`, `storage forecast`, archive
+`status`/`verify`, daily reports, systemd `status`, deployment
+`identity-create`/`verify`/`readiness`, and deployment acceptance readiness.
+Existing offline suites cover configured ProductKey topology, per-product
+readiness, reconnect evidence, shared REST serialization/cooldown, Raw/manifest/
+Catalog closure, archive/capacity and rollback primitives. MS4-A must still
+freeze the merged SHA/tree and artifact hashes and obtain together the operator's
+exact target host, service user/group, config path, active data root, archive
+target, proxy mode, enabled auxiliary kinds, approved product set/durations,
+rollback root/artifact and explicit MS4-B access/deployment authorization.
 
 ### MS4-B — Tokyo VPS preflight and deployment
 

@@ -1,14 +1,67 @@
 # MS3 — Shared-resource scaling / rotation / observability acceptance
 
 - Date: 2026-09-09; evidence update: 2026-09-10
-- Status: **OFFLINE INDEPENDENT REVIEW APPROVED — MERGE PENDING**
+- Status: **CI REPAIR IMPLEMENTED — AWAITING INDEPENDENT REVIEW**
 - Candidate branch: `feat/ms3b-shared-resource-acceptance`
 - Candidate PR: `#56` (not merged)
-- NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
+- NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
 - MS4: **NEXT**, only after independent review/merge and separate authorization
 - FORMAL_M22_9=NOT_STARTED
 - PRODUCTION_READY=NO
 - CURRENT_MAIN_DEPLOYED=NO
+
+## MS3-CI1 implementation — 2026-09-10 (current disposition)
+
+**IMPLEMENTED / AWAITING REVIEW.** The Ubuntu failure was caused by the Profile
+D fixture synchronously waiting for depth persistence inside fake SDK calls
+already occupying the shared default executor. Those waits competed with the
+42 real stream-writer drains and the one intentionally blocked writer. On a
+small-worker schedule, depth work needed to satisfy the fake SDK could remain
+queued behind waiting workers until the 2-second sibling poll expired.
+
+The fixture now gates Spot rate-limit admission and the shared USD-M request lock
+asynchronously until all 14 real depth streams report persisted data. Snapshot
+SDK calls then use their unchanged production paths without holding workers that
+wait on writer progress. Real writer observers set explicit events for all 41
+sibling second frames and the target third frame; snapshot worker observations
+use the owning loop's thread-safe callback. Phase deadlines are 10-second hang
+watchdogs rather than the synchronization mechanism. The injected writer's
+60-second safety guard exceeds the phase window and cleanup always releases it.
+
+The required 14 products, 42 streams, capacity-one target queues, actual target
+backpressure, all 41 sibling advances, target recovery, exact Raw payload counts,
+complete/no-gap manifests, Catalog closure and graceful task shutdown remain.
+Manifest validation now aggregates exact records across complete chunks because
+the production stable-phase rotation may legitimately split the two finite
+frames; a local pre-fix repeat observed that valid split once. No production
+source, scheduler, thread pool, capacity threshold, Contracts or Projection was
+changed.
+
+Validation on Darwin arm64 with Python 3.12.9:
+
+- target default + six-worker variants: 20 repetitions, 40 passed;
+- five focused MS3 files: 45 passed in 2.13s;
+- full offline suite: 1640 passed, 24 skipped, 4 deselected in 130.32s;
+- Ruff, strict MyPy, M0 contracts, Go Raw golden and `git diff --check`: pass;
+- sdist/wheel build and clean-wheel `--version`/`doctor`/`status`: pass.
+
+Ubuntu required checks and independent review of this repair delta remain open.
+No online/VPS/external-media/stress/soak test ran, and no GitHub CI operation was
+manually triggered, rerun, cancelled or awaited. The earlier Astra approval at
+`66e036a0` remains historical and does not approve this new test delta.
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW.
+
+## CI failure update — 2026-09-10 (historical trigger)
+
+**MS3-CI1 OPEN; merge readiness suspended.** Ubuntu job `102698845490` in
+run `34421869781` failed the Profile D sibling-progress wait at line 1130
+(2-second deadline); 1 failed, 1634 passed, 28 skipped, 4 deselected.
+macOS passed. The root cause is under investigation; this is not proof of a
+production integrity defect. Earlier code review and R1 closure remain historical
+facts, but do not authorize merging this failing candidate. Execute
+[MS3-CI1](../milestone_plan.md#ms3-ci1--ubuntu-profile-d-failure-implemented-awaiting-review), then independently review the repair delta.
+No merge/auto-merge, deployment or manual CI operation is authorized for the
+unreviewed repair. NEXT=MS3_CI1_REPAIR.
 
 ## Final independent review — 2026-09-10
 
@@ -395,11 +448,11 @@ CAPACITY_THRESHOLDS_CHANGED=NO
 ARCHIVE_TRANSACTION_PROTOCOL_CHANGED=NO
 CONTRACTS_CHANGED=NO
 PROJECTION_CHANGED=NO
-MS3=OFFLINE_REVIEW_APPROVED_MERGE_PENDING
+MS3=CI_REPAIR_IMPLEMENTED_AWAITING_REVIEW
 MS3_INDEPENDENT_RE_REVIEW=APPROVED
 MS3_B_MERGED=NO
 MS4=NEXT_AFTER_INDEPENDENT_MS3_RE_REVIEW_AND_MERGE
-NEXT=LOCAL_LUNA_MS3_MERGE_HANDOFF
+NEXT=INDEPENDENT_MS3_CI_REPAIR_REVIEW
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO
