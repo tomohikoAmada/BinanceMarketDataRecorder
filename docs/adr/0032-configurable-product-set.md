@@ -1,6 +1,6 @@
 # ADR-0032 — Operator-configured Binance product set
 
-- **Status:** Accepted; MS2 implemented/offline-accepted and merged through PR #54; MS3-A merged through PR #55; MS3-B offline evidence is merged through PR #56; MS4-B stopped-deployment review is complete, while MS4-C/live qualification remains blocked/not started and Formal M22.9 is not started
+- **Status:** Accepted; MS2 implemented/offline-accepted and merged through PR #54; MS3-A merged through PR #55; MS3-B offline evidence is merged through PR #56; MS4-B stopped-deployment review is complete; the original MS4-C two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`, while the separate R3 non-formal supplement closes the recovery gate for review with zero Formal M22.9 duration credit; MS4-D is not started and Formal M22.9 is not started
 - **Date:** 2026-09-09
 - **Decision owners:** Recorder project authority
 - **Supersedes:** ADR-0031, fixed seven-symbol multi-symbol Recorder expansion
@@ -215,6 +215,14 @@ concrete acceptance need requires durable schema change. No speculative
 optimization is authorized without evidence.
 
 ### MS4 — Configurable-product integration and bounded live qualification
+
+Current status: the original MS4-C two-hour window is
+`EXECUTED_PARTIAL_NOT_ACCEPTED`; the separate passing R3
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT` makes MS4-C
+`REVIEWED_COMPLETE` for the recovery gate. The Recorder is stopped, the
+archive timer is disabled, MS4-D review/stage closure is next, and overall MS4
+is not complete. The receiver-only Mac Downloads path is not external-media
+certification and did not authorize source retirement.
 
 Freeze exact implementation authority, complete offline acceptance, produce an
 immutable artifact, and obtain separate deployment authorization. Qualify a

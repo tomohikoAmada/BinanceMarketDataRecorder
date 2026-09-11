@@ -1,15 +1,14 @@
 # Known Limitations
 
-Current GitHub `main` is
-`bb8c93ba63c23adaf2cb0288b6ea127030b89e58` (tree
-`8770f48d458dc4e35d813e8db8dc2009ff78889c`), with MS3-B merged through PR
-#56 at deployment source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The current behavior/deployment-
-source authority is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+GitHub `main` at MS4-C review start was
+`efae0135ed5272d18d800af0ac247b70ece07422` (tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); later merges may change live
+`main`. The current behavior/deployment-source authority is
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
-only; live GitHub `main` is not deployed.
+only; the recorded MS4-C review-start snapshot was not deployed.
 The last independently qualified deployed artifact remains pre-MS1 source
 `c421605e302d2ad46acdb2466627f64644181c9a`; its clean 24-hour non-formal stage
 is complete and remains artifact-specific. No duration credit transfers to MS1
@@ -31,10 +30,13 @@ CPU benchmark. This historical capacity watch does not authorize or schedule
 another burn-in.
 
 MS2 configurable-product runtime and MS3-B offline evidence are merged and
-accepted. MS4-B stopped-deployment review is complete; MS4-C live
-qualification remains blocked/not started pending the approved archive target,
-immediate ETHUSDT eligibility evidence, and explicit start authorization.
-After verifying live main, receive explicit authorization before implementation.
+accepted. MS4-B stopped-deployment review is complete; the original MS4-C
+two-hour window was partial and the R3 non-formal supplement closes the
+recovery gate for review with zero Formal M22.9 duration credit. The service is
+stopped, the archive timer is disabled, and MS4-D review/stage closure is next;
+external-media certification, source retirement, and long-duration/formal
+qualification remain open. Any future implementation or start still requires
+current-main verification and explicit authorization.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
@@ -233,18 +235,22 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. The next action is owner
-resumption of MS4-C after the archive and authorization gates; deployment,
-profiling, and burn-in remain separately gated.
+staged chain on a capacity-complete environment. The next action is MS4-D
+review/stage closure; external-media certification, source retirement, formal
+qualification, deployment, profiling, and burn-in remain separately gated.
 
 ### Current GitHub main and multi-symbol limitations
 
-- Current main contains the MS1 durable identity foundation but is not deployed
-  and has no duration credit from the pre-MS1 clean-24h artifact.
-- Current main contains the MS2 configurable-product assembly and merged MS3-A/
-  MS3-B shared-resource, bounded-load, archive, and capacity acceptance. The
-  MS4-B stopped deployment is reviewed complete but is not live-qualified;
-  live qualification remains an MS4-C task.
+- The GitHub `main` snapshot at MS4-C review start contains the MS1 durable
+  identity foundation but was not deployed and has no duration credit from the
+  pre-MS1 clean-24h artifact; later merges may change live `main`.
+- That snapshot contains the MS2 configurable-product assembly and merged
+  MS3-A/MS3-B shared-resource, bounded-load, archive, and capacity acceptance.
+  The MS4-B stopped deployment then ran in bounded MS4-C/R3 core qualification;
+  the original two-hour window was partial and R3 closes the recovery gate for
+  review with zero Formal M22.9 duration credit. The service is now stopped,
+  MS4-D review/stage closure is next, and long-duration/formal qualification
+  remains open.
 - ADR-0032 replaces the former fixed-seven-symbol target with independent,
   operator-configured finite Spot/USD-M symbol lists. MS4-C follows the
   reviewed MS4-B stopped boundary and explicit authorization; no 72h/168h
