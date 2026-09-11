@@ -28,7 +28,7 @@ from binance_market_data_recorder.spool.format import (
 from binance_market_data_recorder.spool.queue import IngressPostCloseHandoffTimeout
 from binance_market_data_recorder.spool.recovery import recover_storage
 from binance_market_data_recorder.spool.stream import StreamSpool
-from binance_market_data_recorder.spool.writer import RotationPolicy
+from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
@@ -337,11 +337,41 @@ def test_transient_saturation_is_lossless_ordered_and_gap_free(tmp_path: Path) -
         (SpotStream.AGG_TRADE, agg_trade),
     ],
 )
+@pytest.mark.parametrize(
+    "cross_rotation_boundary",
+    [False, True],
+    ids=["normal", "rotation"],
+)
 def test_sustained_saturation_preserves_boundary_and_publishes_gap(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     stream: SpotStream,
     payload_factory: PayloadFactory,
+    cross_rotation_boundary: bool,
 ) -> None:
+    boundary_observed = False
+    forced_deadline_decisions = 0
+    if cross_rotation_boundary:
+        original_should_rotate = RawChunkWriter.should_rotate
+
+        def at_rotation_boundary(
+            writer: RawChunkWriter, *, now_monotonic: float | None = None
+        ) -> bool:
+            nonlocal boundary_observed, forced_deadline_decisions
+            if (
+                not boundary_observed
+                and writer.record_count > 0
+                and "sequence_gap" in writer._previous_capture_flags
+            ):
+                boundary_observed = True
+                forced_deadline_decisions += 1
+                # Exercise the real deadline decision after the boundary frame
+                # is committed, without waiting for the stable rotation phase.
+                now_monotonic = writer._rotation_deadline_monotonic
+            return original_should_rotate(writer, now_monotonic=now_monotonic)
+
+        monkeypatch.setattr(RawChunkWriter, "should_rotate", at_rotation_boundary)
+
     async def exercise() -> list[BurstSocket]:
         stop = asyncio.Event()
         attempts = 0
@@ -390,12 +420,71 @@ def test_sustained_saturation_preserves_boundary_and_publishes_gap(
         envelopes[first_new].connection_id
     )
 
+    manifest_diagnostics = [
+        {
+            "chunk_id": document.get("chunk_id"),
+            "capture_flags": document.get("capture_flags"),
+            "record_count": document.get("record_count"),
+            "connection_ids": document.get("connection_ids"),
+            "gap": document.get("gap"),
+            "complete": document.get("complete"),
+        }
+        for document in manifests
+    ]
     gap_manifests = [document for document in manifests if document["gap"]]
-    assert gap_manifests
+    assert gap_manifests, f"no gap manifests: {manifest_diagnostics!r}"
     assert all(document["complete"] is False for document in gap_manifests)
+    zero_record_manifests = [
+        document for document in manifests if document["record_count"] == 0
+    ]
     assert all(
-        "sequence_gap" in document["capture_flags"] for document in gap_manifests
+        document["gap"] for document in zero_record_manifests
+    ), f"unaccounted zero-record manifests: {manifest_diagnostics!r}"
+    sequence_gap_manifests: list[dict[str, Any]] = []
+    reconnect_gap_markers: list[dict[str, Any]] = []
+    for document in gap_manifests:
+        frames = manifest_envelopes(tmp_path, document)
+        assert document["record_count"] == len(frames), (
+            "manifest record count differs from decoded frames: "
+            f"{manifest_diagnostics!r}"
+        )
+        if document["record_count"] > 0:
+            assert document["capture_flags"] == ["sequence_gap"], (
+                "non-empty gap manifest has unexpected flags: "
+                f"{manifest_diagnostics!r}"
+            )
+            assert any(
+                "sequence_gap" in frame.capture_flags for frame in frames
+            ), f"sequence_gap manifest has no flagged frame: {manifest_diagnostics!r}"
+            sequence_gap_manifests.append(document)
+        else:
+            assert document["capture_flags"] == ["reconnect_gap"], (
+                "zero-record gap manifest has unexpected flags: "
+                f"{manifest_diagnostics!r}"
+            )
+            assert document["connection_ids"] == [], (
+                "zero-record reconnect marker has a connection: "
+                f"{manifest_diagnostics!r}"
+            )
+            assert frames == [], (
+                "zero-record reconnect marker decoded frames: "
+                f"{manifest_diagnostics!r}"
+            )
+            reconnect_gap_markers.append(document)
+    assert sequence_gap_manifests, (
+        "no non-empty sequence_gap manifest: " f"{manifest_diagnostics!r}"
     )
+    assert sum(document["record_count"] for document in manifests) == len(envelopes), (
+        "manifest aggregate count differs from captured frames: "
+        f"{manifest_diagnostics!r}"
+    )
+    if cross_rotation_boundary:
+        assert boundary_observed
+        assert forced_deadline_decisions == 1
+        assert len(reconnect_gap_markers) == 1, (
+            "forced boundary did not produce exactly one zero-record marker: "
+            f"{manifest_diagnostics!r}"
+        )
     with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
         events = discontinuities(catalog)
     assert [event["event_type"] for event in events] == [
