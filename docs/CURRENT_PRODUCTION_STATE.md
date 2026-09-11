@@ -5,7 +5,7 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current stage — MS4-D reviewed complete; bounded MS4 closed (2026-09-11)
+## Current stage — M22.9-P1 reviewed complete; next preflight named (2026-09-11)
 
 MS4-A local preparation and MS4-B target preflight/stopped-deployment review
 remain complete. The owner-authorized MS4-C attempt started the reviewed
@@ -35,17 +35,23 @@ delete or retire the VPS source, and did not produce a formal receipt-bound
 Catalog snapshot. MS4-D reviewed the bounded evidence and closes the
 multi-symbol qualification for the exact four-ProductKey profile. The original
 window remains partial and the R3 supplement does not transfer duration credit.
-`PRODUCTION_READY=NO`; Formal M22.9 remains separate and unstarted.
+`PRODUCTION_READY=NO`; Formal M22.9 remains separate and unstarted. The
+current M22.9-P1 package documents an external systemd-detached observer for
+one explicitly selected stage and is reviewed complete; it did not deploy or
+start the Recorder.
 
-The current MS4-D review base is `main` commit
+The historical MS4-D review base was `main` commit
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`). It includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
-`34551834444` completed successfully. These are review authorities only;
-`CURRENT_MAIN_DEPLOYED=NO` remains in force.
+`34551834444` completed successfully. These are historical review authorities
+only. P1 is based on current main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; `CURRENT_MAIN_DEPLOYED=NO`
+remains in force.
 
-The final read-only VPS check at `2026-09-11T06:39:23Z` passed: Recorder was
+The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z`
+passed: Recorder was
 `inactive/dead` with `MainPID=0`, `Result=success`, `NRestarts=0`, and the
 archive timer was `disabled/inactive`. It observed `/dev/vdb1` (`ext4`) mounted
 at `/srv/recorder-data` with `2163348520960` total bytes,
@@ -54,6 +60,18 @@ root remains `/var/lib/binance-market-data-recorder`; this mounted disk is an
 archive target, not the active writer root. No start, mutation or live traffic
 occurred during the check.
 
+The P1 current read-only VPS check at `2026-09-11T07:27:40Z` recorded systemd
+255; Recorder `inactive/dead` with `MainPID=0`, `Result=success`,
+`NRestarts=0`; and `binance-market-data-archive.timer`
+`loaded/disabled/inactive`. The active `/dev/vda1` writer filesystem was
+approximately 57.1 GB total with 41.2 GB available. The archive `/dev/vdb1`
+filesystem was ext4, approximately 2 TB with approximately 1.9 TB available;
+Catalog storage ID `ef852751-721c-4145-9083-f6fd48718480` resolved `READY` at
+`/srv/recorder-data/recorder-archive`. P1 performed only these read-only checks
+and the two harmless transient-unit lifecycle probes: it did not deploy or
+start Recorder, enable the timer, archive or delete Raw, or send Binance
+traffic. The probes changed only their ephemeral systemd test units.
+
 MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
 MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
 MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
@@ -61,7 +79,41 @@ BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
 QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
 FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
 PRODUCTION_READY=NO; CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
-NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION.
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT.
+
+M22_9_P1=REVIEWED_COMPLETE;
+FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+PRODUCTION_READY=NO; CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT.
+
+P1 is documentation-only and is based on main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`. It retains the existing
+`AcceptanceObserver` as the only measurement/evidence authority and documents
+systemd 255 transient `Type=exec` units with `Restart=no`, `SIGINT` stop,
+120-second stop timeout, non-root `bmdr:bmdr`, `UMask=0027`,
+`NoNewPrivileges=yes`, and journal output. Each unit observes one stage only;
+SSH detachment does not authorize automatic restart or stage advancement.
+
+The harmless systemd detached probe used InvocationID
+`ec84df57f764445ca2db873eedc97b6c` from `2026-09-11T07:29:02Z` to
+`2026-09-11T07:29:22Z`; a second SSH session saw the retained journal and the
+successful unit later became `not-found` after garbage collection. The SIGINT
+probe used InvocationID `2bc9ce4af8a94d4f867f5842631fab67` and recorded
+SIGINT/KeyboardInterrupt followed by clean `systemctl stop`. Neither probe
+touched Recorder or Raw.
+
+The current correct archive timer is `binance-market-data-archive.timer`,
+loaded/disabled/inactive. Recorder remains `inactive/dead`, `MainPID=0`,
+`Result=success`, `NRestarts=0`. The active writer is `/dev/vda1`
+(approximately 57.1 GB total and 41.2 GB available); its selected historical
+24-hour net growth is `167228.007472 B/s`, forecasting hard-reserve reach at
+`2026-09-13T15:11:31.626026Z`, so the approximately 278-hour formal chain
+does not have a capacity-complete precondition. The mounted 2 TB `/dev/vdb1`
+has approximately 2.122 TB available and registered storage ID
+`ef852751-721c-4145-9083-f6fd48718480` resolves `READY` at
+`/srv/recorder-data/recorder-archive`; it remains an archive target, not the
+active writer root. P1 does not enable the timer, archive, delete source Raw,
+or start Formal M22.9.
 
 ## Original MS4-C attempt disposition — 2026-09-10
 
@@ -204,7 +256,8 @@ RECOVERY_GATE=REVIEWED_COMPLETE
 MS4_D=REVIEWED_COMPLETE
 BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
 QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
-NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+M22_9_P1=REVIEWED_COMPLETE
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT
 FORMAL_M22_9=NOT_STARTED
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
@@ -240,8 +293,9 @@ See [MS2 acceptance](milestone_acceptance/MS2.md) and
 | Live GitHub `main` at historical MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
 | Current behavior/deployment source | `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee` |
 | Historical GitHub `main` at MS4-C review start (PR #60 merge; not deployed) | `efae0135ed5272d18d800af0ac247b70ece07422`; tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b` |
-| Current MS4-D documentation review base (`main`; not deployed) | `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b` |
-| Merged MS4-C evidence closeout included in current MS4-D review base (PR #61; not deployed separately) | `013e20d6b911fde2f443aa6c855039599483ef7d`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b`; CI `34551834444` completed/success |
+| Historical MS4-D documentation review base (`main`; not deployed) | `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b` |
+| Merged MS4-C evidence closeout included in historical MS4-D review base (PR #61; not deployed separately) | `013e20d6b911fde2f443aa6c855039599483ef7d`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b`; CI `34551834444` completed/success |
+| M22.9-P1 documentation base (current `main`; not deployed) | `83a063f5bb9f91508238c9fd86d21aa45d1bd501` |
 | MS1 foundation lineage (historical) | `d38180074b5f76ab6b7778eea7fc505160c671ae`; tree `95f16f05b30b7db23e43ebb6439ed0d055081902` |
 | MS1 merge (historical) | `d38180074b5f76ab6b7778eea7fc505160c671ae` |
 | Merge parents | `c421605e302d2ad46acdb2466627f64644181c9a`, `11e100fbcb974e7d54f0515c99e08ac6042b9204` |
@@ -262,12 +316,14 @@ behavior/deployment source is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
 snapshot at MS4-C review start was `efae0135ed5272d18d800af0ac247b70ece07422`,
 tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`; it is the PR #60 merge,
 documentation-only relative to the deployed source, and is not production
-deployed. The current MS4-D review base is
+deployed. The historical MS4-D review base is
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` with tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`; it includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d`, and base CI run `34551834444`
-completed successfully. Later GitHub merges may change live `main`.
+completed successfully. The current M22.9-P1 documentation base is main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; later GitHub merges may change
+live `main`.
 
 ## B. Deployed and clean-24h authority
 
@@ -388,12 +444,16 @@ multi-symbol artifact.
 
 ## Next action
 
-NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
 non-formal R3 recovery supplement; the original two-hour window remains
 `EXECUTED_PARTIAL_NOT_ACCEPTED` and receives no transferred duration credit.
-MS4-D has now closed the bounded four-ProductKey qualification. The next
-program is Formal M22.9 preparation and requires separate authorization; do
-not claim Formal M22.9 or Production Ready.
+MS4-D has now closed the bounded four-ProductKey qualification. M22.9-P1 is
+the reviewed-complete documentation-only systemd-detached observation
+preparation. It did not deploy/start Recorder, enable the archive timer, create
+a Formal M22.9 T0, or claim Production Ready. The next named milestone is
+`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; it is not executed by
+this document update. Formal M22.9 preparation and every stage still require
+separate authorization.

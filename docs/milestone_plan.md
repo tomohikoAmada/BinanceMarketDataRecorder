@@ -1,6 +1,6 @@
 # Milestone Plan
 
-## Current stage disposition — MS4-D reviewed complete; bounded MS4 closed (2026-09-11)
+## Current stage disposition — M22.9-P1 reviewed complete; next preflight named (2026-09-11)
 
 MS3 implementation is merged; MS4-A local preparation and the MS4-B target
 preflight/stopped-deployment work package are reviewed complete. The
@@ -12,18 +12,22 @@ recovery was not executed in the approved window. The separate passing
 for review with zero Formal M22.9 credit; it does not retroactively grant the
 original window duration. The Recorder is now stopped, the archive timer is
 disabled, and the MS4-D review closes the bounded qualification. The full
-Formal M22.9 chain remains separate and unstarted.
+Formal M22.9 chain remains separate and unstarted. The current M22.9-P1
+package documents systemd-detached execution for one explicitly selected stage
+while reusing the existing foreground acceptance observer; it is reviewed
+complete and did not deploy Recorder, enable archive, or start Formal M22.9.
 PR #57 and PR #58 are historical documentation closeouts. PR #60 is the
 historical MS4-C review-start merge through the normal repository rule as
 `efae0135ed5272d18d800af0ac247b70ece07422` (tree
 `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); exact-head CI run `34478654689`
-passed. The current MS4-D documentation review is based on `main`
+passed. The historical MS4-D documentation review was based on `main`
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`), which includes the merged
 MS4-C evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
 completed successfully. Neither review authority is a deployment
-authorization.
+authorization. P1 is based on current main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`.
 
 The runbook now consistently references the retained lock/Wheel, avoids moving
 an installed venv, separates non-formal MS4 evidence from M22.9, and leaves
@@ -38,12 +42,13 @@ MS4_D=REVIEWED_COMPLETE
 MS4=REVIEWED_COMPLETE
 BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
 QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+M22_9_P1=REVIEWED_COMPLETE
 FORMAL_M22_9=NOT_STARTED
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO
 RECORDER=STOPPED
-NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT
 
 ## Multi-symbol execution ledger — 2026-09-10
 
@@ -197,6 +202,7 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | MS4-B Tokyo VPS preflight / stopped deployment | REVIEWED_COMPLETE | Owner-supplied Tokyo VPS report, exact artifact/config/unit/identity, rollback and stopped-state evidence; no start/readiness/live traffic |
 | MS4-C bounded qualification | REVIEWED_COMPLETE | Original 2026-09-10 two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; separate passing R3 non-formal recovery supplement closes the recovery gate with zero Formal M22.9 credit; see `docs/milestone_evidence/MS4-C-20260910.md` |
 | MS4-D final review / documentation closure | REVIEWED_COMPLETE | Eleven bounded gates are `PASS` with explicit scope limitations; current claims are aligned without changing source, runtime or deployment behavior |
+| M22.9-P1 detached single-stage observation preparation | REVIEWED_COMPLETE | Documentation-only systemd 255 transient-unit procedure around the existing observer; current main `83a063f5bb9f91508238c9fd86d21aa45d1bd501`; no deployment, timer enablement, Recorder start, Formal T0 or duration credit |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
@@ -507,7 +513,8 @@ explicit. Queue depth was unavailable, so the resource result is bounded to
 the observed CPU/RSS/no-symptom window. Auxiliary live data was disabled, and
 the archive result is limited to the authorized Mac internal APFS
 receiver-only test path.
-The final read-only VPS check at `2026-09-11T06:39:23Z` also passed with the
+The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z` also
+passed with the
 Recorder `inactive/dead` (`MainPID=0`, `Result=success`, `NRestarts=0`) and the
 archive timer `disabled/inactive`; `/dev/vdb1` is a mounted `/srv/recorder-data`
 archive target, while the active writer root remains
@@ -1566,6 +1573,49 @@ mutation exists; those remain exclusively M22.4B scope.
   counts as M22.9 duration evidence, even when the same physical VPS is used.
 - **Rollback:** Stop the test deployment and preserve evidence/data; revert
   only test-profile changes.
+
+### M22.9-P1 — systemd-detached single-stage observation preparation
+
+- **Status:** **REVIEWED_COMPLETE** in
+  `docs/milestone_acceptance/M22.9-P1.md`, based on current main
+  `83a063f5bb9f91508238c9fd86d21aa45d1bd501`. This is documentation-only;
+  `FORMAL_M22_9=NOT_STARTED`, duration credit is zero, and Production Ready is
+  NO. `NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT` is named but
+  not started.
+- **Scope:** Document an external systemd 255 transient `Type=exec` unit for
+  one explicitly selected stage, using the existing foreground
+  `AcceptanceObserver`/`deployment acceptance stage` command. The frozen unit
+  uses `Restart=no`, `KillSignal=SIGINT`, `TimeoutStopSec=120s`,
+  `User/Group=bmdr`, `UMask=0027`, `NoNewPrivileges=yes`, and journal output;
+  SSH detachment must not affect the observer.
+- **Evidence root:** Use only an operator-selected child under the registered
+  relative archive path, for example
+  `/srv/recorder-data/recorder-archive/acceptance/m22.9/<id>`. Never use the
+  volume root or the active writer root. Resume reuses the exact recorded
+  stage child and T0; it does not create another root or stage.
+- **Acceptance:** The existing observer remains the sole measurement and
+  evidence authority; one-stage status/journal/stop/resume/final-review steps
+  are reproducible, and no command advances a later stage. Harmless systemd
+  probes are recorded in the acceptance file; they did not touch Recorder or
+  Raw.
+- **Historical MS4-D read-only check:** At `2026-09-11T06:39:23Z`, Recorder
+  was `inactive/dead` (`MainPID=0`, `Result=success`, `NRestarts=0`), the
+  archive timer was disabled/inactive, and `/dev/vdb1` was mounted as the
+  registered archive target. No start, mutation, or live traffic occurred.
+- **P1 current read-only check:** At `2026-09-11T07:27:40Z`, systemd was 255;
+  Recorder was `inactive/dead` (`MainPID=0`, `Result=success`, `NRestarts=0`);
+  `binance-market-data-archive.timer` was `loaded/disabled/inactive`; active
+  `/dev/vda1` was approximately 57.1 GB total with 41.2 GB available; and
+  archive `/dev/vdb1` was ext4, approximately 2 TB with approximately 1.9 TB
+  available. Catalog storage ID
+  `ef852751-721c-4145-9083-f6fd48718480` resolved `READY` at
+  `/srv/recorder-data/recorder-archive`. No Recorder/Raw mutation or Binance
+  traffic occurred; P1 also ran only the two harmless transient-unit probes.
+- **Non-scope / blockers:** No Python, test, supervisor, Contract, timer,
+  archive, deployment, Recorder start, Formal stage, source deletion, or
+  automatic stage advancement. The current `/dev/vda1` active-root runway
+  forecast reaches hard reserve at `2026-09-13T15:11:31.626026Z`, so the
+  approximately 278-hour complete-chain capacity precondition remains blocked.
 
 ### M22.9 — Exact VPS staged acceptance
 

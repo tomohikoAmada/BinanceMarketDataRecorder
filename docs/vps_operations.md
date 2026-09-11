@@ -1,6 +1,8 @@
 # VPS Operations
 
-Status: MS4-B Tokyo VPS preflight and stopped deployment are reviewed complete;
+Status: M22.9-P1 systemd-detached single-stage observation preparation is
+reviewed complete. MS4-B Tokyo VPS preflight and stopped
+deployment are reviewed complete;
 the original MS4-C two-hour window was partial, and the R3 non-formal
 supplement closes the recovery gate for review with zero Formal M22.9 duration
 credit. The service is stopped, the archive timer is disabled, and MS4-D has
@@ -22,21 +24,26 @@ certification, source retirement and Formal M22.9 remain gated. Production
 Ready is not claimed. Current status is `MS4=REVIEWED_COMPLETE` and
 `BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS` for
 `NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; `RECORDER=STOPPED`,
-`CURRENT_MAIN_DEPLOYED=NO`, and the next step is separately authorized Formal
-M22.9 preparation.
+`CURRENT_MAIN_DEPLOYED=NO`, and `FORMAL_M22_9=NOT_STARTED`. The next step is
+`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; Formal M22.9
+preparation remains separately authorized and has zero duration credit.
 See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
 
-The current MS4-D review base is main
+The historical MS4-D review base was main
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
-`34551834444` completed successfully. The earlier PR #60 / `efae0135…`
-snapshot above is historical MS4-C review-start authority, not current.
+`34551834444` completed successfully. These are historical review authorities
+only. The P1 package is based on current main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`. The earlier PR #60 /
+`efae0135…` snapshot above is historical MS4-C review-start authority, not
+current.
 
-The final read-only VPS check at `2026-09-11T06:39:23Z` passed: Recorder was
+The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z`
+passed: Recorder was
 `inactive/dead` with `MainPID=0`, `Result=success`, `NRestarts=0`, and the
 archive timer was `disabled/inactive`. It observed `/dev/vdb1` (`ext4`) mounted
 at `/srv/recorder-data` with `2163348520960` total bytes,
@@ -44,6 +51,38 @@ at `/srv/recorder-data` with `2163348520960` total bytes,
 root remains `/var/lib/binance-market-data-recorder`; this mounted disk is an
 archive target, not the active writer root. No start, mutation or live traffic
 occurred during the check.
+
+The P1 current read-only VPS check at `2026-09-11T07:27:40Z` recorded systemd
+255; Recorder `inactive/dead` with `MainPID=0`, `Result=success`,
+`NRestarts=0`; and `binance-market-data-archive.timer`
+`loaded/disabled/inactive`. The active `/dev/vda1` writer filesystem was
+approximately 57.1 GB total with 41.2 GB available. The archive `/dev/vdb1`
+filesystem was ext4, approximately 2 TB with approximately 1.9 TB available;
+Catalog storage ID `ef852751-721c-4145-9083-f6fd48718480` resolved `READY` at
+`/srv/recorder-data/recorder-archive`.
+
+P1 changes are documentation-only. P1 performed these VPS read-only checks and
+the two harmless transient-unit lifecycle probes; it did not deploy or start
+Recorder, enable the timer, archive or delete Raw, or send Binance traffic.
+The probes changed only their ephemeral systemd test units. One detached probe
+used InvocationID
+`ec84df57f764445ca2db873eedc97b6c` from `2026-09-11T07:29:02Z` to
+`2026-09-11T07:29:22Z`; a second SSH session saw the persistent journal and
+the successful unit later became `not-found` after garbage collection. A
+separate SIGINT probe used InvocationID
+`2bc9ce4af8a94d4f867f5842631fab67`, recorded SIGINT/KeyboardInterrupt, and
+stopped cleanly. Neither probe touched Recorder or Raw. The correct archive
+timer is `binance-market-data-archive.timer`, loaded/disabled/inactive. The
+active writer filesystem is `/dev/vda1` (approximately 57.1 GB total and
+41.2 GB available); historical selected 24-hour net growth is
+`167228.007472 B/s`, forecasting hard-reserve reach at
+`2026-09-13T15:11:31.626026Z`, so the approximately 278-hour formal chain is
+not capacity-complete. The mounted 2 TB `/dev/vdb1` has approximately 2.122 TB
+available and registered storage ID
+`ef852751-721c-4145-9083-f6fd48718480` resolves `READY` at
+`/srv/recorder-data/recorder-archive`; it is an archive target, not the active
+writer root. P1 does not enable the timer, archive, delete source Raw, or
+start Formal M22.9.
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -323,10 +362,10 @@ measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
 This is not the next development action. MS4-B stopped-deployment review,
-MS4-C bounded recovery review and MS4-D stage closure are complete. Formal
-M22.9 preparation is the next separately authorized program and must verify
-the exact configured ProductKey set and all configured products. Any
-deployment or later non-formal run remains separately authorized. Between independent runs,
+MS4-C bounded recovery review and MS4-D stage closure are complete. The current
+next action is `M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; Formal M22.9 preparation remains a
+separately authorized program and must verify the exact configured ProductKey
+set and all configured products. Any deployment or later non-formal run remains separately authorized. Between independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.
@@ -428,6 +467,136 @@ must be invoked explicitly with its eligible predecessor and has an independent
 T0; `--resume` preserves the original T0 and published sample chain. The
 observer never starts, stops, restarts, deploys, promotes, or claims Production
 Ready, and it does not persist capacity observations.
+
+### M22.9-P1 detached single-stage observation
+
+P1 is reviewed complete and does not add a worker or scheduler. It documents
+running the existing foreground observer under one external systemd 255
+transient unit so an SSH
+disconnect does not terminate it. The unit is `Type=exec`, runs as non-root
+`bmdr:bmdr`, writes stdout/stderr to the journal, sets `UMask=0027` and
+`NoNewPrivileges=yes`, uses `KillSignal=SIGINT` and `TimeoutStopSec=120s`, and
+sets `Restart=no`. It must not use `--wait`, `--pipe`, or `--pty`; the launch
+command waits only for systemd to accept the start job and for the `Type=exec`
+process launch to succeed, not for the long task to finish. The SSH command
+then returns while systemd continues to supervise the unit, and a separate SSH
+session checks status and journal.
+
+The operator first verifies the exact artifact, readiness, current capacity,
+and registered archive target under the separately authorized Formal M22.9
+preconditions. The evidence parent is a stable subdirectory of the registered
+relative path, never the volume root:
+
+```bash
+CONFIG=/etc/binance-market-data-recorder/recorder.toml
+ACCEPTANCE_ROOT=/srv/recorder-data/recorder-archive/acceptance/m22.9/<acceptance-id>
+STAGE=2h
+PREVIOUS_EVIDENCE="$ACCEPTANCE_ROOT/readiness-result.json"  # 2h only
+UNIT=binance-market-data-acceptance-${STAGE}-<run-id>.service
+
+sudo systemd-run --unit="$UNIT" \
+  --property=Type=exec \
+  --property=User=bmdr \
+  --property=Group=bmdr \
+  --property=UMask=0027 \
+  --property=NoNewPrivileges=yes \
+  --property=KillSignal=SIGINT \
+  --property=TimeoutStopSec=120s \
+  --property=Restart=no \
+  --property=StandardOutput=journal \
+  --property=StandardError=journal \
+  -- /opt/binance-market-data-recorder/venv/bin/binance-market-recorder \
+  --config "$CONFIG" deployment acceptance stage \
+  --stage "$STAGE" \
+  --previous-evidence "$PREVIOUS_EVIDENCE" \
+  --evidence-root "$ACCEPTANCE_ROOT"
+```
+
+The existing command creates one immutable child `<stage>-<uuid>` under
+`ACCEPTANCE_ROOT`; retain the exact child containing `stage-start.json` as
+`STAGE_ROOT`. For later stages, `PREVIOUS_EVIDENCE` is the independently
+verified immediate predecessor `stage-final.json` under the same parent. Never
+rerun the new-stage form after an interruption.
+
+Before leaving SSH, record the unit's InvocationID and lifecycle, then inspect
+the journal from the same or a second SSH session:
+
+```bash
+sudo systemctl show "$UNIT" \
+  -p Id -p ActiveState -p SubState -p MainPID -p InvocationID \
+  -p Result -p ExecMainCode -p ExecMainStatus -p ActiveEnterTimestamp
+sudo journalctl -u "$UNIT" --no-pager -o short-iso-precise
+```
+
+The failed unit state is intentionally left available for inspection. A
+successful transient unit may still be garbage-collected by systemd, so
+`not-found` is then possible and the immutable stage-final record remains
+authoritative. To stop cleanly, use the unit only; systemd sends SIGINT and
+waits up to 120 seconds. The incomplete evidence remains for review:
+
+```bash
+sudo systemctl stop "$UNIT"
+sudo systemctl show "$UNIT" -p ActiveState -p SubState -p MainPID -p Result
+sudo journalctl -u "$UNIT" --no-pager -o short-iso-precise
+```
+
+Resume only the exact `STAGE_ROOT` when it has no `stage-final.json`, the boot
+ID/process incarnation/service instance/deployment identity are unchanged,
+and no sample gap exceeds 600 seconds. The first command intentionally omits a
+collection flag, so its failed `$UNIT` may still be loaded. Choose a fresh
+unique supervisor unit before resuming; this changes only external process
+custody and preserves the exact `STAGE_ROOT`, original T0, original `run_id`,
+and immutable chain. It must not create a second T0. The existing observer's
+`--resume` path reuses that original T0 and chain:
+
+```bash
+RESUME_UNIT=binance-market-data-acceptance-${STAGE}-resume-<resume-id>.service
+
+sudo systemd-run --unit="$RESUME_UNIT" \
+  --property=Type=exec \
+  --property=User=bmdr \
+  --property=Group=bmdr \
+  --property=UMask=0027 \
+  --property=NoNewPrivileges=yes \
+  --property=KillSignal=SIGINT \
+  --property=TimeoutStopSec=120s \
+  --property=Restart=no \
+  --property=StandardOutput=journal \
+  --property=StandardError=journal \
+  -- /opt/binance-market-data-recorder/venv/bin/binance-market-recorder \
+  --config "$CONFIG" deployment acceptance stage --resume "$STAGE_ROOT"
+```
+
+Inspect the resume custody unit with the new unique name, not the possibly
+still-loaded first-run unit:
+
+```bash
+sudo systemctl show "$RESUME_UNIT" \
+  -p Id -p ActiveState -p SubState -p MainPID -p InvocationID \
+  -p Result -p ExecMainCode -p ExecMainStatus -p ActiveEnterTimestamp
+sudo journalctl -u "$RESUME_UNIT" --no-pager -o short-iso-precise
+```
+
+If any path, predecessor digest, boot/process/service/identity, or chain check
+fails, preserve the evidence and stop. Normal `FAIL`/`INCOMPLETE` does not
+auto-restart or start a new stage. Final review runs the exact installed
+package's existing `verify_completed_stage` against `STAGE_ROOT`, confirms the
+eligible predecessor, and only then explicitly authorizes the next stage. No
+command here starts a later stage.
+
+The properties above follow the official primary systemd references:
+[`systemd.service.xml`](https://github.com/systemd/systemd/blob/main/man/systemd.service.xml),
+[`systemd.unit.xml`](https://github.com/systemd/systemd/blob/main/man/systemd.unit.xml),
+[`systemd.exec.xml`](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml),
+[`systemd.kill.xml`](https://github.com/systemd/systemd/blob/main/man/systemd.kill.xml),
+and [`systemd-run.xml`](https://github.com/systemd/systemd/blob/main/man/systemd-run.xml).
+`Type=`, `Restart=`, and `TimeoutStopSec=` are covered by
+`systemd.service.xml`; transient lifecycle and possible unit GC by
+`systemd.unit.xml`; `User=`, `Group=`, `UMask=`, `NoNewPrivileges=`, and journal
+output by `systemd.exec.xml`; `KillSignal=` and the kill procedure by
+`systemd.kill.xml`; and the default start-job wait plus optional
+wait-for-completion/collection semantics by `systemd-run.xml`. P1 intentionally
+uses neither a wait-for-completion mode nor a collection flag.
 
 The future service must remain non-root, bounded, and recovery-first:
 

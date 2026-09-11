@@ -14,6 +14,15 @@ Mac internal APFS receiver-only path was verified, while external-media
 production certification, source retirement and the Formal M22.9 chain remain
 pending.
 
+The current milestone is `M22_9_P1=REVIEWED_COMPLETE`.
+P1 documents one-stage observation detached under an external systemd 255
+transient `Type=exec` unit around the existing `AcceptanceObserver`; it adds no
+Recorder scheduler or supervisor and does not start Recorder, enable archive,
+or begin Formal M22.9. The exact procedure is in
+[`milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
+P1 is based on current main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; it is not a deployment artifact.
+
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
 context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). GitHub `main` at MS4-C
@@ -219,8 +228,10 @@ Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
 measurements are also point-in-time evidence, not permanent runway. The current
-project next action is separately authorized Formal M22.9 preparation;
-external-media certification, source retirement, and the 278-hour formal chain
+project next action is `M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`;
+Formal M22.9 preparation is separately authorized only after that preflight and
+the stated capacity gates.
+External-media certification, source retirement, and the 278-hour formal chain
 remain gated rather than automatically scheduled.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
@@ -426,6 +437,18 @@ analysis, and expensive Raw audit work is incremental. It is not a service
 controller or automatic stage runner: production observation is read-only and
 no stage advances automatically. Historical M21/M22 evidence was collected
 before this observer and remains unchanged.
+
+M22.9-P1 documents the same foreground observer under one external systemd 255
+`Type=exec` unit per selected stage. Use `Restart=no`, `KillSignal=SIGINT`,
+`TimeoutStopSec=120s`, `User/Group=bmdr`, `UMask=0027`,
+`NoNewPrivileges=yes`, and journal output; omit `--wait`, `--pipe`, and `--pty`.
+Inspect the unit and journal from a second SSH session, then review the exact
+immutable stage root with `verify_completed_stage`. A failed or incomplete
+stage is preserved and is neither automatically restarted nor promoted; resume
+is allowed only for the same root and unchanged boot/process/service/identity
+within the existing 600-second evidence-gap bound. See
+[`vps_operations.md`](vps_operations.md) and
+[`milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
 
 The 24h corrective review and Backpressure contract forensic review
 established binding rules for every future formal window:
