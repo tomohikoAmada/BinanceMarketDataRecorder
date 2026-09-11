@@ -1,6 +1,38 @@
 # Milestone Plan
 
-## Current stage disposition — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+## Current stage disposition — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+
+The bounded offline diagnosis and fix for the AcceptanceObserver/archive
+concurrency race is complete. The implementation freezes a Catalog lifecycle
+boundary before the long filesystem scan, performs one authoritative
+membership comparison from that boundary, defers later rows, and re-reads
+fresh exact-chunk archive lifecycle state when local Raw disappears. Existing
+archive verification and fail-closed semantics remain unchanged. Deterministic
+offline tests cover post-boundary deferral, ArchiveManager-held
+`LOCAL_DELETE_PENDING`, validation-time disappearance, unauthorized absence,
+external corruption, and observer read-only behavior.
+Independent Luna Max review of exact code-review commit
+`31cabe4445ee699ad284aa707d24333c78cf8d21` against base
+`e214120a25a5aff28fad4903c9510920a25738d3` found P0=0, P1=0, and P2=0.
+
+```text
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The new acceptance record is
+[`M22.9 observer/archive concurrency fix`](milestone_acceptance/M22.9-observer-archive-concurrency-fix.md).
+The next gate is exact-artifact redeploy preflight; any redeploy or Formal
+retry requires separate authorization.
+
+## Historical Formal M22.9 2h failed closeout — reviewed complete (2026-09-11)
 
 The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
 before the first observer sample. T0 was
@@ -48,9 +80,9 @@ ARCHIVE_TIMER=ENABLED_ACTIVE
 PRODUCTION_READY=NO
 ```
 
-The next milestone is only acceptance-observer/archive-concurrency diagnosis,
-fix, and offline test. Redeploy and Formal retry require separate
-authorization.
+This historical closeout remains unchanged. The offline fix is recorded in the
+current section above; redeploy and Formal retry remain separately authorized
+gates.
 
 ## Historical CI repair — Spot ingress gap manifest layout (2026-09-12)
 
@@ -1833,6 +1865,43 @@ mutation exists; those remain exclusively M22.4B scope.
   [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
 - **Next:** `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`.
   Redeploy and retry remain separately authorized actions.
+
+### AcceptanceObserver/archive concurrency fix — reviewed complete
+
+- **Status:** `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`.
+  The Catalog boundary is captured before the long filesystem scan; one audit
+  result owns membership comparison; post-boundary rows are deferred; and
+  exact missing-Chunk lifecycle reads use the existing verified archive
+  protocol without changing archive state transitions.
+- **Offline gates:** Deterministic tests cover post-boundary Catalog/manifest
+  deferral, real ArchiveManager `LOCAL_DELETE_PENDING` windows including
+  validation-time unlink, unauthorized local absence, external corruption,
+  and observer read-only sidecar/tree preservation. Full offline pytest,
+  Ruff, MyPy, M0 contracts, and diff checks pass.
+- **Boundary:** No VPS, deployment, live traffic, production archive, GitHub
+  operation, Formal retry, or duration credit was authorized. Existing Formal
+  `EXECUTED_FAILED_AT_T0`, zero credit, `12H=NOT_STARTED`, and
+  `PRODUCTION_READY=NO` remain unchanged.
+- **Independent review:** Exact code-review commit
+  `31cabe4445ee699ad284aa707d24333c78cf8d21` was reviewed by Luna Max against
+  base `e214120a25a5aff28fad4903c9510920a25738d3`; P0=0, P1=0, and P2=0.
+  The review confirmed boundary deferral, resume-subset validation, the bounded
+  112,817-`LOCAL_DELETED` fast path, fail-closed external verification for
+  active deletion races, observer read-only behavior, and registered
+  READY/LOW_SPACE archive-root resolution. The reviewer could not rerun pytest
+  because its read-only sandbox had no usable temporary directory; this is not
+  a product failure. Implementer/lead focused tests passed 55 tests, and the
+  full isolated offline gates had already passed: 1,652 passed, 24 skipped,
+  4 deselected; Ruff; strict MyPy for 254 source files; M0 contracts; and
+  `git diff --check`.
+- **Residual safeguards:** The 112,817-manifest audit is historical
+  performance evidence. Terminal `LOCAL_DELETED` classification intentionally
+  relies on durable transaction evidence; full external verification remains
+  a separate stage safeguard. No per-read interleaving trace proves the
+  original race, the reviewed source is not deployed, and no Formal retry or
+  retroactive credit is authorized. **Next:** Exact-artifact redeploy
+  preflight; any redeploy or Formal retry requires separate authorization. See
+  [`M22.9 observer/archive concurrency fix`](milestone_acceptance/M22.9-observer-archive-concurrency-fix.md).
 
 ### M22.9 — Exact VPS staged acceptance
 

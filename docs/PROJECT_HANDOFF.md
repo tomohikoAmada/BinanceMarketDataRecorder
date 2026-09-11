@@ -5,7 +5,42 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+## Current stage — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+
+The narrowly scoped offline diagnosis and fix is complete. The observer now
+freezes one Catalog lifecycle boundary before the long manifest scan, makes
+one authoritative membership comparison from that boundary, defers later
+rows, and re-reads fresh exact-chunk archive state when local Raw disappears.
+Existing ArchiveManager verification and fail-closed safety semantics remain
+unchanged. Offline regression coverage includes post-boundary deferral,
+`LOCAL_DELETE_PENDING` unlink/validation races, unauthorized absence,
+external corruption, and observer read-only behavior.
+Independent Luna Max review of exact code-review commit
+`31cabe4445ee699ad284aa707d24333c78cf8d21` against base
+`e214120a25a5aff28fad4903c9510920a25738d3` found P0=0, P1=0, and P2=0 and
+confirmed boundary deferral, resume-subset validation, the bounded terminal
+`LOCAL_DELETED` path, fail-closed active-deletion-race verification, observer
+read-only behavior, and registered READY/LOW_SPACE archive-root resolution.
+The reviewer could not rerun pytest because its read-only sandbox had no usable
+temporary directory; this is not a product failure.
+
+```text
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The detailed record is [`M22.9 observer/archive concurrency fix`](milestone_acceptance/M22.9-observer-archive-concurrency-fix.md).
+The next gate is exact-artifact redeploy preflight; any redeploy or Formal
+retry requires separate authorization.
+
+## Historical current-stage record — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
 
 The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
 before its first observer sample. T0 was
@@ -49,10 +84,10 @@ ARCHIVE_TIMER=ENABLED_ACTIVE
 PRODUCTION_READY=NO
 ```
 
-No redeploy, retry, configuration, unit, identity, source, or code change is
-authorized by this closeout. The next milestone is narrowly the
-acceptance-observer/archive-concurrency diagnosis, fix, and offline test;
-redeploy/retry authorization is separate.
+No redeploy or retry was authorized by this historical closeout. The offline
+fix is recorded in the current section above; independent code review and
+exact-artifact redeploy preflight remain the next gate, with redeploy/retry
+authorization separate.
 
 ## P2 deployment basis — reviewed complete (2026-09-11)
 
@@ -318,13 +353,14 @@ CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
 RECORDER=STOPPED
 ARCHIVE_TIMER=ENABLED_ACTIVE
 M22_9_P2=REVIEWED_COMPLETE
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
 M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
 FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
 FORMAL_M22_9=EXECUTED_FAILED_AT_T0
 FORMAL_M22_9_CREDIT_SECONDS=0
 12H=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
 REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
 ```
 
@@ -565,7 +601,7 @@ or use an external volume as an active Collector target.
 `DEPLOYMENT_AUTHORIZED=NO` (future live start only),
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
 `CURRENT_MAIN_DEPLOYED=NO`,
-`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED`,
+`CURRENT_MAIN_DEPLOYMENT_REASON=REVIEWED_FIX_SOURCE_NOT_INSTALLED`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
 `MS3_B=CLOSED_MERGED_PR_56`,
@@ -579,9 +615,10 @@ or use an external volume as an active Collector target.
 `BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS`,
 `QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`,
 `M22_9_P1=REVIEWED_COMPLETE`, `M22_9_P2=REVIEWED_COMPLETE`,
+`ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
-`NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`.
+`NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`.
 
 Any further live traffic or Formal stage requires the exact P2 deployment
 source/artifact, immutable Wheel, lock, config, unit, and deployment identities,
@@ -600,13 +637,14 @@ P1 did not deploy, start Recorder, enable the archive timer, archive/delete
 Raw, or begin Formal M22.9. P2 is reviewed complete: it installed and verified
 the exact P2 deployment source/review base, drained the registered archive via
 the existing transaction path, and performed bounded non-formal readiness and
-interaction before stopping Recorder. After this docs-only merge,
-`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+interaction before stopping Recorder. `CURRENT_MAIN_DEPLOYED=NO`; the current
+engineering source is not installed.
 The installed P2 artifact remains the evidence basis for the failed attempt,
-but is not retry-eligible until the scoped observer fix is reviewed and a
-later exact artifact is separately authorized and deployed. The Formal 2-hour
+but remains not retry-eligible; a later exact artifact containing the reviewed
+fix must be separately authorized and deployed. The Formal 2-hour
 attempt then failed at T0 before its first sample; the exact roots and
 quiescent forensic review are recorded in
-[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The next named
-milestone is `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`;
-redeploy/retry authorization is separate and this handoff does not start it.
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The offline fix is
+complete; the next gate is exact-artifact redeploy preflight. Redeploy/retry
+authorization is separate and this handoff
+does not start it.

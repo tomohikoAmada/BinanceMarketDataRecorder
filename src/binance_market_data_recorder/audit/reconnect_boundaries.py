@@ -45,7 +45,7 @@ import os
 import sys
 import tempfile
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -54,6 +54,11 @@ from typing import Any, TextIO, cast
 
 import zstandard
 
+from binance_market_data_recorder.archive.manager import (
+    ArchiveError,
+    ArchiveManager,
+    ArchiveTarget,
+)
 from binance_market_data_recorder.spool.format import (
     FRAME_PREFIX,
     decode_chunk_header,
@@ -65,9 +70,12 @@ from binance_market_data_recorder.spool.seal import (
     validate_sealed_artifact,
 )
 from binance_market_data_recorder.storage.catalog import (
+    ARCHIVE_CHUNK_STATES,
     LEGACY_SINGLE_SYMBOL,
+    ArchiveState,
     Catalog,
     ChunkState,
+    RemoteArchiveState,
 )
 from binance_market_data_recorder.storage.layout import StorageLayout
 
@@ -1088,6 +1096,200 @@ def _tally(summary: dict[str, int], kind: str) -> None:
 
 INCREMENTAL_SCHEMA_VERSION = "m22.9-reconnect-audit-continuation.v1"
 
+# The observer resolves registered archive roots outside the audit engine so
+# this module remains usable against an offline fixture or a platform where a
+# target is currently unmounted.  Returning no root is deliberately
+# fail-closed for a missing internal source.
+ArchiveRootResolver = Callable[[], Mapping[str, Path]]
+
+
+def _catalog_boundary_digest(rows: list[dict[str, object]]) -> str:
+    canonical = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _capture_catalog_boundary(
+    catalog_path: Path,
+) -> tuple[list[dict[str, object]], dict[str, object]]:
+    with Catalog(catalog_path, read_only=True) as catalog:
+        integrity = catalog.integrity_check()
+        if integrity != ("ok",):
+            raise SealError("Catalog integrity check failed")
+        rows = catalog.chunks_in_states_snapshot(*tuple(ChunkState))
+    return rows, {
+        "row_count": len(rows),
+        "sha256": _catalog_boundary_digest(rows),
+    }
+
+
+def _required_catalog_manifest_values(
+    manifest: Mapping[str, object],
+) -> dict[str, object]:
+    return {
+        "record_count": manifest["record_count"],
+        "sealed_path": manifest["relative_path"],
+        "stored_bytes": manifest["stored_bytes"],
+        "stored_sha256": manifest["stored_sha256"],
+        "uncompressed_bytes": manifest["uncompressed_bytes"],
+        "uncompressed_sha256": manifest["uncompressed_sha256"],
+    }
+
+
+def _boundary_local_delete_authorized(
+    row: Mapping[str, object],
+    *,
+    chunk_id: str,
+    manifest_path: str,
+    manifest: Mapping[str, object],
+    manifest_sha256: str,
+) -> bool:
+    """Recognize a stable terminal archive row without reopening its target.
+
+    LOCAL_DELETED is committed only after ArchiveManager has verified the
+    external Raw and manifest.  Reusing that frozen terminal transaction keeps
+    already-retired history bounded; rows not already terminal at the
+    observation boundary take the fresh exact-chunk path below.
+    """
+
+    if row.get("archive_state") != ArchiveState.LOCAL_DELETED.value:
+        return False
+    if row.get("state") != ARCHIVE_CHUNK_STATES[ArchiveState.LOCAL_DELETED].value:
+        return False
+    if not isinstance(row.get("archive_transaction_id"), str):
+        return False
+    expected = {
+        "archive_chunk_id": chunk_id,
+        "archive_storage_id": row.get("archive_storage_id"),
+        "archive_source_relative_path": manifest.get("relative_path"),
+        "archive_source_manifest_relative_path": manifest_path,
+        "archive_source_manifest_sha256": manifest_sha256,
+        "archive_stored_bytes": manifest.get("stored_bytes"),
+        "archive_stored_sha256": manifest.get("stored_sha256"),
+    }
+    return bool(expected["archive_storage_id"]) and all(
+        row.get(key) == value for key, value in expected.items()
+    )
+
+
+def _safe_manifest_path(layout: Any, relative: object) -> Path:
+    if not isinstance(relative, str) or not relative:
+        raise SealError("Catalog manifest path is malformed")
+    candidate = (Path(layout.root) / relative).resolve()
+    if candidate.parent != Path(layout.manifests).resolve():
+        raise SealError("Catalog manifest path escapes the manifest directory")
+    return candidate
+
+
+def _resolved_archive_root(
+    resolver: ArchiveRootResolver | None,
+    storage_id: object,
+) -> Path | None:
+    if resolver is None or not isinstance(storage_id, str) or not storage_id:
+        return None
+    try:
+        roots = resolver()
+    except (OSError, RuntimeError, ValueError):
+        return None
+    root = roots.get(storage_id)
+    return root.resolve() if isinstance(root, Path) else None
+
+
+def _classify_missing_local_source(
+    data_root: Path,
+    *,
+    chunk_id: str,
+    manifest_path: str,
+    archive_root_resolver: ArchiveRootResolver | None,
+) -> str:
+    """Classify one absent sealed Raw artifact using a fresh exact read.
+
+    The Catalog connection used for this decision is opened after the
+    inventory scan and is closed immediately.  In particular, it cannot
+    retain an immutable pre-delete snapshot from the long scan's beginning.
+    """
+
+    layout = read_only_layout(data_root)
+    with Catalog(layout.catalog, read_only=True) as catalog:
+        if catalog.integrity_check() != ("ok",):
+            raise SealError("Catalog integrity check failed")
+        if (
+            catalog.malformed_discontinuity_events()
+            or catalog.degraded_closed_discontinuity_pairs()
+        ):
+            raise SealError("Catalog discontinuity authority is invalid")
+        chunk, local, remote = catalog.source_lifecycle_snapshot(chunk_id)
+        if remote is not None and remote.get("state") == RemoteArchiveState.REMOTE_DELETED.value:
+            return "AUTHORIZED_REMOTE_DELETE"
+        if chunk is None or local is None:
+            return "UNEXPLAINED_ABSENCE" if local is None else "UNKNOWN"
+        local_state = local.get("state")
+        if local_state not in {
+            ArchiveState.LOCAL_DELETE_PENDING.value,
+            ArchiveState.LOCAL_DELETED.value,
+        }:
+            # COPYING, VERIFYING and VERIFIED are deliberately not deletion
+            # authorization.  A present transaction in any other state is
+            # observable, but never accepted as a reason for source absence.
+            return "UNKNOWN"
+        expected_chunk_state = ARCHIVE_CHUNK_STATES[ArchiveState(local_state)]
+        if chunk.get("state") != expected_chunk_state.value:
+            return "UNKNOWN"
+        if local.get("chunk_id") != chunk_id:
+            return "UNKNOWN"
+        if local.get("source_manifest_relative_path") != manifest_path:
+            return "UNKNOWN"
+        if local.get("source_relative_path") != chunk.get("sealed_path"):
+            return "UNKNOWN"
+        target_row = next(
+            (
+                row
+                for row in catalog.storage_targets()
+                if row.get("storage_id") == local.get("storage_id")
+            ),
+            None,
+        )
+        if target_row is None:
+            return "UNKNOWN"
+        root = _resolved_archive_root(
+            archive_root_resolver,
+            target_row.get("storage_id"),
+        )
+        if root is None:
+            return "UNKNOWN"
+        manifest_file = _safe_manifest_path(layout, manifest_path)
+        try:
+            manifest_bytes = manifest_file.read_bytes()
+            manifest = read_strict_manifest(manifest_file, recorder_root=layout.root)
+        except (OSError, SealError, ValueError):
+            return "UNKNOWN"
+        if hashlib.sha256(manifest_bytes).hexdigest() != local.get(
+            "source_manifest_sha256"
+        ):
+            return "UNKNOWN"
+        if manifest.get("chunk_id") != chunk_id:
+            return "UNKNOWN"
+        if any(
+            chunk.get(key) != value
+            for key, value in _required_catalog_manifest_values(manifest).items()
+        ):
+            return "UNKNOWN"
+        target = ArchiveTarget(
+            storage_id=str(target_row["storage_id"]),
+            volume_uuid=str(target_row["volume_uuid"]),
+            registered_relative_path=str(target_row["relative_path"]),
+            marker_nonce=str(target_row["marker_nonce"]),
+            root=root,
+        )
+        try:
+            ArchiveManager(
+                layout=layout,
+                catalog=catalog,
+                target=target,
+            ).validate_external_commit(local)
+        except (ArchiveError, OSError, ValueError):
+            return "UNKNOWN"
+        return "AUTHORIZED_LOCAL_DELETE"
+
 
 def strict_manifest_inventory(
     data_root: Path,
@@ -1421,15 +1623,54 @@ def incremental_audit_data_root(
     data_root: Path,
     *,
     continuation: Mapping[str, object] | None = None,
+    archive_root_resolver: ArchiveRootResolver | None = None,
 ) -> dict[str, Any]:
-    """Strict baseline/incremental audit without rescanning verified old Raw."""
+    """Strict baseline/incremental audit without rescanning verified old Raw.
+
+    Catalog membership is frozen before the potentially long manifest scan.
+    Only that frozen row set participates in the membership comparison; rows
+    committed after the boundary are deferred to the next observation.
+    """
 
     layout = read_only_layout(data_root)
+    boundary_rows: list[dict[str, object]] = []
+    catalog_boundary: dict[str, object] = {
+        "row_count": 0,
+        "sha256": hashlib.sha256(b"[]").hexdigest(),
+    }
+    if layout.catalog.is_file():
+        boundary_rows, catalog_boundary = _capture_catalog_boundary(layout.catalog)
     chunks, inventory = strict_manifest_inventory(data_root, deep_scan=False)
     current_members = {
         str(item["path"]): str(item["sha256"])
         for item in cast(list[dict[str, str]], inventory["members"])
     }
+    manifests_by_chunk = {
+        str(chunk.manifest["chunk_id"]): chunk.manifest for chunk in chunks
+    }
+    manifest_paths_by_chunk = {
+        str(item["chunk_id"]): str(item["path"])
+        for item in cast(list[dict[str, str]], inventory["members"])
+    }
+    boundary_rows_by_chunk = {
+        str(row["chunk_id"]): row
+        for row in boundary_rows
+        if isinstance(row.get("chunk_id"), str)
+    }
+    boundary_manifest_paths = {
+        str(row["manifest_path"])
+        for row in boundary_rows
+        if isinstance(row.get("manifest_path"), str)
+    }
+    observed_members = (
+        {
+            path: digest
+            for path, digest in current_members.items()
+            if path in boundary_manifest_paths
+        }
+        if layout.catalog.is_file()
+        else dict(current_members)
+    )
     known_members: dict[str, str] = {}
     if continuation is not None:
         members = continuation.get("manifest_members")
@@ -1442,9 +1683,9 @@ def incremental_audit_data_root(
     integrity_findings = sorted(
         path
         for path, digest in known_members.items()
-        if current_members.get(path) != digest
+        if observed_members.get(path) != digest
     )
-    new_paths = set(current_members) - set(known_members)
+    new_paths = set(observed_members) - set(known_members)
     new_chunk_ids = {
         item["chunk_id"]
         for item in cast(list[dict[str, str]], inventory["members"])
@@ -1455,6 +1696,8 @@ def incremental_audit_data_root(
         for chunk in chunks
         if str(chunk.manifest["chunk_id"]) in new_chunk_ids
     ]
+    raw_loss: list[dict[str, object]] = []
+    loss_keys: set[tuple[str, str]] = set()
     for chunk in new_chunks:
         sealed = _sealed_path(layout, chunk.manifest)
         if not sealed.is_file():
@@ -1466,7 +1709,28 @@ def incremental_audit_data_root(
             chunk.frames = scan_chunk_frames(sealed, chunk.manifest)
             chunk.deep_scan_allowed = False
         except (OSError, SealError, ValueError) as exc:
-            raise SealError(f"strict Raw verification failed for {sealed}") from exc
+            if sealed.is_file():
+                raise SealError(f"strict Raw verification failed for {sealed}") from exc
+            chunk_id = str(chunk.manifest["chunk_id"])
+            manifest_path = manifest_paths_by_chunk.get(chunk_id)
+            if manifest_path is None:
+                raise SealError("Raw validation lost the manifest identity") from exc
+            classification = _classify_missing_local_source(
+                data_root,
+                chunk_id=chunk_id,
+                manifest_path=manifest_path,
+                archive_root_resolver=archive_root_resolver,
+            )
+            raw_loss.append(
+                {
+                    "chunk_id": chunk_id,
+                    "manifest_path": manifest_path,
+                    "classification": classification,
+                }
+            )
+            loss_keys.add((chunk_id, manifest_path))
+            chunk.issue = "sealed_file_missing_after_archival"
+            chunk.deep_scan_allowed = False
     prior_contexts = _continuation_contexts(continuation)
     new_by_key: dict[tuple[str, str, str], list[ChunkScan]] = {}
     for chunk in new_chunks:
@@ -1495,16 +1759,19 @@ def incremental_audit_data_root(
             manifests_by_chunk = {
                 str(chunk.manifest["chunk_id"]): chunk.manifest for chunk in chunks
             }
-            known_manifest_paths = set(current_members)
-            for row in catalog.chunks_in_states(*tuple(ChunkState)):
-                manifest_path = row.get("manifest_path")
-                if (
-                    isinstance(manifest_path, str)
-                    and manifest_path not in known_manifest_paths
-                ):
+            known_manifest_paths = set(observed_members)
+            for row in boundary_rows:
+                boundary_manifest_path = row.get("manifest_path")
+                if not isinstance(boundary_manifest_path, str):
+                    # ACTIVE/SEALING rows have no manifest authority at this
+                    # boundary. A manifest published later belongs wholly to
+                    # the next observation.
+                    continue
+                if boundary_manifest_path not in known_manifest_paths:
                     catalog_findings.append(
                         f"catalog_manifest_disagreement:{row.get('chunk_id')}"
                     )
+                    continue
                 manifest = manifests_by_chunk.get(str(row.get("chunk_id", "")))
                 if manifest is None:
                     continue
@@ -1520,19 +1787,118 @@ def incremental_audit_data_root(
                     catalog_findings.append(
                         f"catalog_manifest_disagreement:{row.get('chunk_id')}"
                     )
-        transitions, summaries, _intervals = collect_transitions(
-            audit_chunks,
-            layout,
-            catalog,
-            emit_chunk_ids=frozenset(str(chunk.manifest["chunk_id"]) for chunk in new_chunks),
-        )
     finally:
         if catalog is not None:
             catalog.close()
+
+    boundary_chunk_ids = {
+        str(row.get("chunk_id"))
+        for row in boundary_rows
+        if isinstance(row.get("chunk_id"), str)
+    }
+    absences = inventory.get("artifact_absences", [])
+    if not isinstance(absences, list):
+        raise SealError("Raw artifact absence inventory is malformed")
+    for absence in absences:
+        if not isinstance(absence, dict):
+            raise SealError("Raw artifact absence inventory member is malformed")
+        absence_chunk_id = absence.get("chunk_id")
+        absence_manifest_path = absence.get("manifest_path")
+        if (
+            not isinstance(absence_chunk_id, str)
+            or not isinstance(absence_manifest_path, str)
+            or absence_chunk_id not in boundary_chunk_ids
+        ):
+            # A manifest published after the Catalog boundary is deferred as
+            # a unit.  It will be included by the next sample's frozen rows.
+            continue
+        boundary_row = boundary_rows_by_chunk.get(absence_chunk_id)
+        manifest = manifests_by_chunk.get(absence_chunk_id)
+        manifest_sha256 = current_members.get(absence_manifest_path)
+        if (
+            boundary_row is not None
+            and manifest is not None
+            and manifest_sha256 is not None
+            and _boundary_local_delete_authorized(
+                boundary_row,
+                chunk_id=absence_chunk_id,
+                manifest_path=absence_manifest_path,
+                manifest=manifest,
+                manifest_sha256=manifest_sha256,
+            )
+        ):
+            classification = "AUTHORIZED_LOCAL_DELETE"
+        else:
+            classification = _classify_missing_local_source(
+                data_root,
+                chunk_id=absence_chunk_id,
+                manifest_path=absence_manifest_path,
+                archive_root_resolver=archive_root_resolver,
+            )
+        raw_loss.append({**absence, "classification": classification})
+        loss_keys.add((absence_chunk_id, absence_manifest_path))
+
+    for row in boundary_rows:
+        boundary_chunk_id = row.get("chunk_id")
+        boundary_manifest_path = row.get("manifest_path")
+        if not isinstance(boundary_chunk_id, str) or not isinstance(
+            boundary_manifest_path, str
+        ):
+            continue
+        if boundary_manifest_path in current_members:
+            continue
+        loss_key = (boundary_chunk_id, boundary_manifest_path)
+        if loss_key in loss_keys:
+            continue
+        boundary_row = boundary_rows_by_chunk.get(boundary_chunk_id)
+        manifest = manifests_by_chunk.get(boundary_chunk_id)
+        manifest_sha256 = current_members.get(boundary_manifest_path)
+        if (
+            boundary_row is not None
+            and manifest is not None
+            and manifest_sha256 is not None
+            and _boundary_local_delete_authorized(
+                boundary_row,
+                chunk_id=boundary_chunk_id,
+                manifest_path=boundary_manifest_path,
+                manifest=manifest,
+                manifest_sha256=manifest_sha256,
+            )
+        ):
+            classification = "AUTHORIZED_LOCAL_DELETE"
+        else:
+            classification = _classify_missing_local_source(
+                data_root,
+                chunk_id=boundary_chunk_id,
+                manifest_path=boundary_manifest_path,
+                archive_root_resolver=archive_root_resolver,
+            )
+        raw_loss.append(
+            {
+                "chunk_id": boundary_chunk_id,
+                "manifest_path": boundary_manifest_path,
+                "classification": classification,
+            }
+        )
+        loss_keys.add(loss_key)
+
+    transition_catalog: Catalog | None = None
+    if layout.catalog.is_file():
+        transition_catalog = Catalog(layout.catalog, read_only=True)
+    try:
+        transitions, summaries, _intervals = collect_transitions(
+            audit_chunks,
+            layout,
+            transition_catalog,
+            emit_chunk_ids=frozenset(str(chunk.manifest["chunk_id"]) for chunk in new_chunks),
+        )
+    finally:
+        if transition_catalog is not None:
+            transition_catalog.close()
     updated = _updated_contexts(prior_contexts, new_chunks)
     continuation_document = {
         "schema_version": INCREMENTAL_SCHEMA_VERSION,
-        "manifest_members": current_members,
+        "manifest_members": observed_members,
         "streams": {
             f"{market}:{symbol}:{stream}": {
                 "market": market,
@@ -1547,8 +1913,10 @@ def incremental_audit_data_root(
     return {
         "schema_version": "m22.9-reconnect-audit.v2",
         "manifest_inventory": inventory,
+        "catalog_boundary": catalog_boundary,
         "integrity_findings": integrity_findings,
         "catalog_findings": sorted(set(catalog_findings)),
+        "raw_loss": raw_loss,
         "deep_scanned_chunk_ids": sorted(
             str(chunk.manifest["chunk_id"]) for chunk in new_chunks
         ),

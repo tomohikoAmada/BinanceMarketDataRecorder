@@ -104,12 +104,18 @@ status is `FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
 `PRODUCTION_READY=NO`. The exact P2 source/review base
 `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` and deployment identity
 `11029b9434f72fe48912659c050167e6a058e9827cd40401c9a852dff3c019cd` remain
-the installed artifact basis; this docs-only descendant is not deployed. The
-installed artifact is not retry-eligible until the scoped fix is reviewed and
-a later exact artifact is separately authorized and deployed.
-The next milestone is the narrowly scoped acceptance-observer/archive-
-concurrency diagnosis, fix, and offline test. Any redeploy or retry requires
-separate authorization.
+the installed artifact basis; the current engineering source containing the
+reviewed fix is not deployed. The installed P2 artifact remains not retry-eligible;
+a later exact artifact containing the reviewed fix must be separately
+authorized and deployed.
+The exact code-review commit `31cabe4445ee699ad284aa707d24333c78cf8d21`
+was independently reviewed against base
+`e214120a25a5aff28fad4903c9510920a25738d3` with P0=0, P1=0, and P2=0.
+Current milestone status is
+`ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`;
+`NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. This docs-only closeout is not a
+deployment authorization; any redeploy or retry requires separate
+authorization.
 
 The P2 evidence bundle is `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
 It verified the P2 deployment source/review base
@@ -118,11 +124,11 @@ It verified the P2 deployment source/review base
 drained the registered archive target through the existing verified transaction
 path, and completed the bounded non-formal live interaction before stopping
 Recorder. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact identity
-verification. After this docs-only merge,
-`CURRENT_MAIN_DEPLOYED=NO` because the docs-only merge descendant is not
+verification. `CURRENT_MAIN_DEPLOYED=NO`; the current engineering source is not
 installed. At P2 completion the artifact was the Formal candidate; after the
-failed T0 it remains only the installed evidence basis pending the scoped fix,
-review, and separately authorized redeploy. The archive timer is
+failed T0 it remains only the installed evidence basis. A later exact artifact
+containing the reviewed fix is pending separate authorization and deployment.
+The archive timer is
 enabled and active/waiting; Recorder is stopped. The P2 review remains
 `M22_9_P2=REVIEWED_COMPLETE`; the later Formal attempt is a separate
 milestone record.
