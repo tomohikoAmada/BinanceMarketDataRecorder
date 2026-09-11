@@ -47,11 +47,25 @@ steady interval but remains `EXECUTED_PARTIAL_NOT_ACCEPTED` as an
 original-window record because controlled recovery was not executed in that
 approved window. The separate 2026-09-11 R3 run is a passing
 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT`: it closes the MS4-C recovery gate for
-review, with `formal_m22_9_credit_seconds=0`; the full MS4 milestone is still
-incomplete, MS4-D is not started, and Production Ready is not authorized. The
-system keeps recoverable immutable raw payloads, deterministic replay metadata,
-explicit gap evidence, and verified archival across the approved VPS/local
-Offline Workspace boundary.
+review, with `formal_m22_9_credit_seconds=0`. The MS4-D review records the
+bounded four-ProductKey qualification as `REVIEWED_COMPLETE` while preserving
+the original partial-window disposition, zero Formal M22.9 credit, and
+`PRODUCTION_READY=NO`; it does not authorize a new live run. The system keeps
+recoverable immutable raw payloads,
+deterministic replay metadata, explicit gap evidence, and verified archival
+across the approved VPS/local Offline Workspace boundary.
+
+Current milestone status is `MS4=REVIEWED_COMPLETE` and
+`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS` for
+`NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; `RECORDER=STOPPED`,
+`CURRENT_MAIN_DEPLOYED=NO`, `FORMAL_M22_9=NOT_STARTED`, and the next step is
+`FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION`.
+The current MS4-D review base uses main
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
+completed successfully. This is not a deployment authorization.
 
 The authoritative scope is `docs/project_contract.md`. Before current-state or
 milestone work, read `docs/PROJECT_HANDOFF.md` and

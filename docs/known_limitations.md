@@ -17,8 +17,15 @@ Production Ready is NO.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+The current MS4-D review base is main
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
+`34551834444` completed successfully. The earlier `efae0135…` / PR #60
+snapshot above is historical MS4-C review-start authority, not current.
 
-### Current MS4-B/MS4-C limitations and decision boundary
+### Current MS4 bounded-qualification limitations and decision boundary
 
 The current GreenCloud ordinary KVM service has shared CPU cores except VDS;
 the official [Terms of Service](https://greencloudvps.com/terms-of-service.php),
@@ -32,11 +39,11 @@ another burn-in.
 MS2 configurable-product runtime and MS3-B offline evidence are merged and
 accepted. MS4-B stopped-deployment review is complete; the original MS4-C
 two-hour window was partial and the R3 non-formal supplement closes the
-recovery gate for review with zero Formal M22.9 duration credit. The service is
-stopped, the archive timer is disabled, and MS4-D review/stage closure is next;
-external-media certification, source retirement, and long-duration/formal
-qualification remain open. Any future implementation or start still requires
-current-main verification and explicit authorization.
+recovery gate for review with zero Formal M22.9 duration credit. MS4-D closes
+the bounded four-ProductKey qualification. The service is stopped, the archive
+timer is disabled, and external-media certification, source retirement, and
+long-duration/formal qualification remain open. Any future implementation or
+start still requires current-main verification and explicit authorization.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
@@ -50,6 +57,13 @@ The RSS trend remains **WATCH / NOT YET PROVEN LEAK**. Frozen maxima were
 approximately `244400128` bytes at 2h, `260460544` at 4h, and `286740480` at
 12h, with no swap, OOM, systemd restart, or clear resource exhaustion. Keep
 observing RSS during profiling and new-artifact validation.
+
+The MS4-D resource gate is bounded to the observed CPU/RSS/no-symptom window:
+queue depth was unavailable, so it does not prove a long-run queue trend or
+backpressure bound. The capacity result likewise covers the measured 3-hour
+MS4 envelope only. The archive result covers the authorized Mac internal APFS
+receiver-only test path; external-media production certification, formal
+receipt-bound Catalog snapshots, and source retirement remain separate work.
 
 The clean-24h deployed artifact identity is recorded in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md). It is pre-MS1 and
@@ -219,8 +233,8 @@ substitute for long-running proof.
 - MS2 implements an operator-configured finite symbol set for Spot and USD-M
   perpetual, with legacy BTCUSDT/BTCUSDT defaults only when neither field is set.
   MS3-B adds offline bounded shared-resource, archive, and capacity evidence;
-  MS4-B stopped-deployment review is complete and multi-product live
-  qualification remains pending. Other exchanges,
+  MS4-B stopped-deployment review and MS4-D bounded four-ProductKey
+  qualification are complete. Other exchanges,
   automatic all-symbol discovery, and an exchange/plugin framework remain
   outside the architecture.
 - The current Binance Global Spot bootstrap wording conflicts with the
@@ -235,9 +249,10 @@ substitute for long-running proof.
   backtest, or trading engine exists.
 
 Formal M22.9 and any later use decision still require the repository-owned full
-staged chain on a capacity-complete environment. The next action is MS4-D
-review/stage closure; external-media certification, source retirement, formal
-qualification, deployment, profiling, and burn-in remain separately gated.
+staged chain on a capacity-complete environment. The next action is separately
+authorized Formal M22.9 preparation; external-media certification, source
+retirement, formal qualification, deployment, profiling, and burn-in remain
+separately gated.
 
 ### Current GitHub main and multi-symbol limitations
 
@@ -249,8 +264,8 @@ qualification, deployment, profiling, and burn-in remain separately gated.
   The MS4-B stopped deployment then ran in bounded MS4-C/R3 core qualification;
   the original two-hour window was partial and R3 closes the recovery gate for
   review with zero Formal M22.9 duration credit. The service is now stopped,
-  MS4-D review/stage closure is next, and long-duration/formal qualification
-  remains open.
+  and MS4-D closes the bounded four-ProductKey qualification; long-duration/
+  formal qualification remains open.
 - ADR-0032 replaces the former fixed-seven-symbol target with independent,
   operator-configured finite Spot/USD-M symbol lists. MS4-C follows the
   reviewed MS4-B stopped boundary and explicit authorization; no 72h/168h

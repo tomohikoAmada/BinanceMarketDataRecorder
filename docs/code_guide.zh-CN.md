@@ -213,11 +213,12 @@ snapshot 协议/library 已实现，但实际归档机器的接收/回读/receip
 - **R-036（Open）**：USD-M 5 分钟统计在录制器离线期间可能错过，超出保留窗口即不可恢复。
 - 无 Historical L2：data.binance.vision 不提供深度数据。
 - 无 Live raw trades/klines 流。
-- MS2/MS3-B 已支持 operator-configured finite Spot/USD-M product set；当前
-  MS4-B review 使用四个 ProductKey，但 live qualification 仍未开始。
+- MS2/MS3-B 已支持 operator-configured finite Spot/USD-M product set；MS4-D
+  已完成四个 ProductKey 的 bounded non-formal qualification review。该结果
+  不代表自动发现全部 symbol、长期运行或 Formal M22.9。
 - macOS Apple Silicon 为开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
-  验证 profile；VPS MS4-B stopped deployment 已完成 review，live qualification
-  尚未开始。
+  验证 profile；VPS MS4-B stopped deployment 已完成 review，MS4-C/R3 bounded
+  qualification 已运行并在完成后保持 stopped。
 - Live 和 Historical 数据集从不自动混合。
 - VPS local-client pull、SSH `RemoteTransport`、Archive Set、receipt 和
   Catalog post-session snapshot 的协议/library 已实现；归档机器的实际

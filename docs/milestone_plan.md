@@ -1,6 +1,6 @@
 # Milestone Plan
 
-## Current stage disposition — MS4-C reviewed complete; MS4-D not started (2026-09-11)
+## Current stage disposition — MS4-D reviewed complete; bounded MS4 closed (2026-09-11)
 
 MS3 implementation is merged; MS4-A local preparation and the MS4-B target
 preflight/stopped-deployment work package are reviewed complete. The
@@ -11,20 +11,39 @@ recovery was not executed in the approved window. The separate passing
 2026-09-11 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the MS4-C recovery gate
 for review with zero Formal M22.9 credit; it does not retroactively grant the
 original window duration. The Recorder is now stopped, the archive timer is
-disabled, MS4-D is not started,
-and the full MS4 milestone remains incomplete.
-PR #57 and PR #58 are historical documentation closeouts. PR #60 is merged
-through the normal repository rule as `efae0135ed5272d18d800af0ac247b70ece07422`
-(tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); exact-head CI run
-`34478654689` passed. This is the GitHub main authority at MS4-C review start,
-not a future live-main guarantee.
+disabled, and the MS4-D review closes the bounded qualification. The full
+Formal M22.9 chain remains separate and unstarted.
+PR #57 and PR #58 are historical documentation closeouts. PR #60 is the
+historical MS4-C review-start merge through the normal repository rule as
+`efae0135ed5272d18d800af0ac247b70ece07422` (tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); exact-head CI run `34478654689`
+passed. The current MS4-D documentation review is based on `main`
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`), which includes the merged
+MS4-C evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
+completed successfully. Neither review authority is a deployment
+authorization.
 
 The runbook now consistently references the retained lock/Wheel, avoids moving
 an installed venv, separates non-formal MS4 evidence from M22.9, and leaves
 machine-specific remote archive commands for the separately authorized MS4-C
 target. These are documentation corrections, not production changes.
 
-NEXT=MS4_D_REVIEW_STAGE_CLOSURE
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4_D=REVIEWED_COMPLETE
+MS4=REVIEWED_COMPLETE
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
 
 ## Multi-symbol execution ledger — 2026-09-10
 
@@ -177,7 +196,7 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 
 | MS4-B Tokyo VPS preflight / stopped deployment | REVIEWED_COMPLETE | Owner-supplied Tokyo VPS report, exact artifact/config/unit/identity, rollback and stopped-state evidence; no start/readiness/live traffic |
 | MS4-C bounded qualification | REVIEWED_COMPLETE | Original 2026-09-10 two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; separate passing R3 non-formal recovery supplement closes the recovery gate with zero Formal M22.9 credit; see `docs/milestone_evidence/MS4-C-20260910.md` |
-| MS4-D final review / documentation closure | NOT STARTED | Review/stage-close MS4-C; do not enter implementation scope |
+| MS4-D final review / documentation closure | REVIEWED_COMPLETE | Eleven bounded gates are `PASS` with explicit scope limitations; current claims are aligned without changing source, runtime or deployment behavior |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
@@ -331,7 +350,7 @@ Completed preparation:
    `status` and `git diff --check`. Exact-source run `34436773366` is reused for
    the merged-code Ubuntu x86_64 lock/build/clean-Wheel evidence.
 
-Current MS4-B disposition and MS4-C handoff:
+MS4-B disposition and MS4-C/MS4-D handoff:
 
 - The stopped deployment identity is verified against the actual canonical
   filesystem and effective systemd unit; the exact four-product config is
@@ -345,8 +364,8 @@ Current MS4-B disposition and MS4-C handoff:
 
 Exit: MS4-B is `REVIEWED_COMPLETE` for the stopped boundary. The original
 MS4-C attempt remains an executed partial record; the separate R3 supplement
-closes its recovery gate for review. The full ledger, evidence template,
-hashes, coverage map, capacity formula and disposition are in
+closes its recovery gate for review, and MS4-D closes the bounded qualification.
+The full ledger, evidence template, hashes, coverage map, capacity formula and disposition are in
 `docs/milestone_acceptance/MS4.md` and
 `docs/milestone_evidence/MS4-C-20260910.md`.
 
@@ -354,11 +373,16 @@ MS4-A=REVIEWED_COMPLETE
 MS4-B=REVIEWED_COMPLETE
 MS4-C=REVIEWED_COMPLETE
 RECOVERY_GATE=REVIEWED_COMPLETE
-MS4-D=NOT_STARTED
+MS4_D=REVIEWED_COMPLETE
+MS4=REVIEWED_COMPLETE
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
-NEXT=MS4_D_REVIEW_STAGE_CLOSURE
+RECORDER=STOPPED
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
 
 ### MS4-B — Tokyo VPS preflight and stopped deployment (reviewed complete)
 
@@ -454,7 +478,7 @@ malformed/degraded/unclosed/active chunks, and no `.partial` file remained.
 Final systemd state was `inactive/dead`, `MainPID=0`, `Result=success`.
 The unique recovered gap remains explicit; historical continuity is not
 claimed restored, and source retirement was not authorized. This closes the
-MS4-C recovery gate for review; MS4-D remains `NOT_STARTED`.
+MS4-C recovery gate for review; MS4-D closure is recorded below.
 
 ### MS4-D — review and stage closure
 
@@ -470,6 +494,39 @@ when all required checks pass; label this multi-symbol bounded qualification,
 not Formal M22.9 or Production Ready. Record the next separately authorized
 program without implementing it. Do not require Gateway multi-symbol support,
 Contracts publication, a Web UI or speculative optimization for this closure.
+
+#### MS4-D outcome
+
+The eleven MS4-D main gates are recorded as the single primary state `PASS` in
+[`docs/milestone_acceptance/MS4.md`](milestone_acceptance/MS4.md), with each
+bounded limitation retained in its reason. The review is bound to the exact
+four configured ProductKeys and the deployed source/tree and evidence hashes
+recorded there. `ROLLBACK_COMPATIBILITY=PASS` refers to the verified
+compatibility preflight only; `ACTUAL_ROLLBACK_EXECUTION=NOT RUN` remains
+explicit. Queue depth was unavailable, so the resource result is bounded to
+the observed CPU/RSS/no-symptom window. Auxiliary live data was disabled, and
+the archive result is limited to the authorized Mac internal APFS
+receiver-only test path.
+The final read-only VPS check at `2026-09-11T06:39:23Z` also passed with the
+Recorder `inactive/dead` (`MainPID=0`, `Result=success`, `NRestarts=0`) and the
+archive timer `disabled/inactive`; `/dev/vdb1` is a mounted `/srv/recorder-data`
+archive target, while the active writer root remains
+`/var/lib/binance-market-data-recorder`.
+
+The current result is:
+
+```text
+MS4_D=REVIEWED_COMPLETE
+MS4=REVIEWED_COMPLETE
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+```
 
 ### Execution, review and CI rules for every continuation
 

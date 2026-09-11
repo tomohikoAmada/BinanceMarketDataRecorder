@@ -3,8 +3,8 @@
 Status: MS4-B Tokyo VPS preflight and stopped deployment are reviewed complete;
 the original MS4-C two-hour window was partial, and the R3 non-formal
 supplement closes the recovery gate for review with zero Formal M22.9 duration
-credit. The service is stopped, the archive timer is disabled, and MS4-D
-review/stage closure is next. GitHub `main` at MS4-C review start was
+credit. The service is stopped, the archive timer is disabled, and MS4-D has
+closed the non-formal bounded four-ProductKey qualification. GitHub `main` at MS4-C review start was
 `efae0135ed5272d18d800af0ac247b70ece07422` (tree
 `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); later merges may change live
 `main`. Current behavior/deployment-source authority is
@@ -17,12 +17,33 @@ descendant and was not deployed as current production. The pre-MS1 deployed
 artifact completed the clean 24-hour non-formal single-symbol stage; that
 evidence does not qualify MS1 or the current four-ProductKey run. MS3-B is
 merged, and MS4-B is stopped/reviewed complete. The R3 supplement's bounded
-recovery review is complete, but external-media certification, source
-retirement, Formal M22.9, and MS4-D remain gated. Production Ready is not
-claimed.
+recovery review and MS4-D stage closure are complete, but external-media
+certification, source retirement and Formal M22.9 remain gated. Production
+Ready is not claimed. Current status is `MS4=REVIEWED_COMPLETE` and
+`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS` for
+`NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; `RECORDER=STOPPED`,
+`CURRENT_MAIN_DEPLOYED=NO`, and the next step is separately authorized Formal
+M22.9 preparation.
 See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+
+The current MS4-D review base is main
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
+`34551834444` completed successfully. The earlier PR #60 / `efae0135…`
+snapshot above is historical MS4-C review-start authority, not current.
+
+The final read-only VPS check at `2026-09-11T06:39:23Z` passed: Recorder was
+`inactive/dead` with `MainPID=0`, `Result=success`, `NRestarts=0`, and the
+archive timer was `disabled/inactive`. It observed `/dev/vdb1` (`ext4`) mounted
+at `/srv/recorder-data` with `2163348520960` total bytes,
+`19120271360` used, `2122221260800` available and `1%` used. The active writer
+root remains `/var/lib/binance-market-data-recorder`; this mounted disk is an
+archive target, not the active writer root. No start, mutation or live traffic
+occurred during the check.
 
 This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
 shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
@@ -301,10 +322,11 @@ and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
-This is not the next development action. MS4-B stopped-deployment review is
-complete; MS4-C is the next separately authorized action and must verify the
-exact configured ProductKey set and all configured products. Any deployment or
-later non-formal run remains separately authorized. Between independent runs,
+This is not the next development action. MS4-B stopped-deployment review,
+MS4-C bounded recovery review and MS4-D stage closure are complete. Formal
+M22.9 preparation is the next separately authorized program and must verify
+the exact configured ProductKey set and all configured products. Any
+deployment or later non-formal run remains separately authorized. Between independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.
