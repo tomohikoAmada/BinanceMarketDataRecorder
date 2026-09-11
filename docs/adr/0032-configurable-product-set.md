@@ -1,6 +1,6 @@
 # ADR-0032 — Operator-configured Binance product set
 
-- **Status:** Accepted; MS2 implemented/offline-accepted and merged through PR #54; MS3-A merged through PR #55; MS3-B offline evidence is merged through PR #56; MS4-B stopped-deployment review is complete; the original MS4-C two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`, while the separate R3 non-formal supplement closes the recovery gate for review with zero Formal M22.9 duration credit; MS4-D and overall MS4 are `REVIEWED_COMPLETE` for `NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; Formal M22.9 is not started
+- **Status:** Accepted; MS2 implemented/offline-accepted and merged through PR #54; MS3-A merged through PR #55; MS3-B offline evidence is merged through PR #56; MS4-B stopped-deployment review is complete; the original MS4-C two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`, while the separate R3 non-formal supplement closes the recovery gate for review with zero Formal M22.9 duration credit; MS4-D and overall MS4 are `REVIEWED_COMPLETE` for `NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; Formal M22.9 2h is `EXECUTED_FAILED_AT_T0` with zero credit and later stages not started
 - **Date:** 2026-09-09
 - **Decision owners:** Recorder project authority
 - **Supersedes:** ADR-0031, fixed seven-symbol multi-symbol Recorder expansion
@@ -220,10 +220,11 @@ Current status: the original MS4-C two-hour window is
 `EXECUTED_PARTIAL_NOT_ACCEPTED`; the separate passing R3
 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` makes MS4-C
 `REVIEWED_COMPLETE` for the recovery gate. MS4-D and overall MS4 are
-`REVIEWED_COMPLETE` for `NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`. The Recorder is
-stopped, the archive timer is disabled, and the receiver-only Mac Downloads
-path is not external-media certification and did not authorize source
-retirement. Formal M22.9 remains separately authorized and unstarted.
+`REVIEWED_COMPLETE` for `NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`. P2 later
+installed exact source `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`, enabled
+the verified archive timer, and exercised authorized source retirement through
+ArchiveManager/Catalog. The Recorder is stopped. Formal M22.9 2h failed at T0
+before its first observer sample with zero credit; later stages are not started.
 
 Freeze exact implementation authority, complete offline acceptance, produce an
 immutable artifact, and obtain separate deployment authorization. Qualify a

@@ -57,7 +57,7 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | CON-01 | Receive/exchange replay, range/seek/gap/manifest/dataset version | consumer/data contracts, ADR-0004/0021 | M16 half-open range, equal-time order, missing-clock/gap, manifest corruption and checkpoint-seek tests pass |
 | CON-02 | Generic consumers hide archive location and use no Recorder internals/reverse coupling | ADR-0001/0007/0021, architecture | M16 public descriptors omit paths; independent example imports only replay API; named-consumer validation remains optional |
 | FAI-01 | Required network/sequence/process/Catalog/disk/volume/checksum/sleep/deploy fault matrix | risk register and M17 plan | M17 fault report |
-| FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | The current stopped artifact from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` has no duration credit; the pre-MS1 clean 24h non-formal stage remains artifact-specific. Formal M22.9 remains not started |
+| FAI-02 | 72-hour and 168-hour continuous-operation proof with resource/rotation/archive evidence | Risk R-035 and Future Work | Exact installed P2 source `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` has zero duration credit: Formal 2h failed at T0 before its first observer sample. The pre-MS1 clean 24h non-formal stage remains artifact-specific; 12h/24h/72h/168h are not started |
 | FAI-03 | Depth lifecycle/gap resync, fail-fast core terminal recovery and restartable side data | ADR-0023 | M19 deterministic lifecycle/overflow/terminal/retry tests |
 | DAT-10 | Critical Spot rules/USD-M 5m statistics plus revisioned official archive import without clock fabrication | ADR-0024, data coverage | M19 schema/checksum/404/revision/timestamp/idempotency tests |
 | DAT-11 | Market-specific normalized schemas for M19 Live data; one row per 5m period; exchange-timestamp identity; explicit empty response; deterministic duplicate/conflict treatment | data contract, ADR-0020, data coverage | M19.2 parser/schema and Raw-to-Parquet regressions |
@@ -70,9 +70,9 @@ steps are in `milestone_plan.md`; a row never weakens those steps.
 | LNX-03 | Already-mounted Linux external directory identity/capacity/marker; no auto mount/eject/format/repair | storage contract, ADR-0026, R-041 | M20 mountinfo/findmnt/lsblk fixtures; physical media remains M21 |
 | FAI-04 | Proxy restart produces visible reconnect/resync/gap evidence without silent loss | ADR-0025/0026, R-039 | M20 Mock CONNECT plus RK3588 Mihomo restart; repeated long-run proof M21 |
 | FAI-05 | A fatal bounded post-close handoff failure cannot seal the old tail complete or restart without same-gap/first-new Raw evidence | ADR-0027, Risk R-054 | Historical deployed-artifact correction remains artifact-specific; in the bounded MS4-C/R3 evidence an exact MainPID-owned socket disconnect produced one explicit `um_perpetual:BTCUSDT/book_ticker` gap and a new connection, with 12 core contexts sealed and Catalog clean. The original two-hour window remains partial; long-run and Formal M22.9 continuity are not claimed. MS4-D closes only the bounded review scope |
-| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055 | Repository-owned observer is installed. Current-candidate preconditions bound exact identity and health but stopped before T0 on insufficient complete-chain capacity; no formal root/ID/stage exists |
-| FAI-07 | Startup recovery remains live and stoppable without false completion | Risk R-056, M22.9 current-state record | Current behavior/deployment source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` was verified in the stopped MS4-B deployment and exercised in the bounded MS4-C/R3 evidence: all four ProductKeys reached `READY`, R3 retained that state across 15 post-fault observations, and final systemd was `inactive/dead`, `MainPID=0`, `Result=success`. This closes the bounded recovery review; no long-run/Formal M22.9 duration is claimed, and the archive/source-retirement limits remain open |
-| VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, shared engineering VPS | ADR-0028 | The exact artifact for current behavior/deployment source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` is frozen and installed in the stopped MS4-B deployment; the owner-authorized MS4-C/R3 run used the four-ProductKey profile and ended `inactive/dead` with the archive timer disabled. MS4-D records `REVIEWED_COMPLETE` for bounded non-formal evidence; external-media certification, source retirement and Formal M22.9 remain unstarted |
+| FAI-06 | Future exact-VPS staged acceptance is artifact-bound, reboot-sensitive, and fail-closed on evidence loss | M22.9 acceptance observer, Risk R-055/R-070 | Repository-owned observer created a Formal 2h T0 for exact installed P2 source `646792f2…`, then failed before its first sample on 24 archive-consistency blockers. All 26 implicated chunks later reconciled, supporting but not proving an observer/archive snapshot race. The failure remains immutable, credit is zero, and the next milestone is a scoped fix with deterministic offline tests |
+| FAI-07 | Startup recovery remains live and stoppable without false completion | Risk R-056, M22.9 current-state record | Exact installed P2 source `646792f2…` reached four-ProductKey readiness before Formal start and was gracefully stopped after the T0 failure. Final systemd is `inactive/dead`, `MainPID=0`, `Result=success`, `NRestarts=0`; no Formal duration is claimed |
+| VPS-01 | Ubuntu 24.04 LTS x86_64, Python 3.12, non-root systemd, shared engineering VPS | ADR-0028 | Exact P2 source `646792f2…` is installed on the target profile. Recorder is stopped and the archive timer is enabled/active/waiting. Formal 2h failed at T0 with zero credit; 12h and Production Ready remain not started/not authorized |
 | VPS-02 | VPS owns live acquisition, compressed Raw/seal/manifests, Catalog/recovery, gap/provenance, order-book/checkpoint state, metrics/status/capacity; heavy offline work remains local | ADR-0028, offline workspace | Role boundary documented; `normalize run`, heavy Replay/analytical scans, and Historical Backfill are explicit offline operations, not Collector callbacks; no current acceptance claim |
 | ARC-01 | Local client pulls from VPS over SSH through replaceable transport seam | ADR-0029, archive transfer contract | Archive protocol/library, replaceable transport seam, and the M22.8 isolated real Mac/OpenSSH/Linux cross-machine matrix/test are implemented and accepted; only the operator-selected production archive-machine workflow, target execution, and certification remain pending |
 | ARC-02 | Durable local verification -> durable exact VPS pre-delete authorization (bound to receipt + source identity) -> source revalidation -> unlink/durability -> terminal state with restart reconciliation; one copy is not backup | ADR-0029, R-048 | Protocol/library, M22.8 isolated cross-machine matrix, and crash/restart deletion-authorization tests are implemented and accepted; only the operator-selected production archive-machine workflow, target execution, and certification remain pending |
@@ -145,17 +145,13 @@ themselves are not uploaded.
 
 The M21.4 table above is historical evidence. The M21.4/M23.4 deployment
 references in the rows above are artifact-specific historical evidence. Current
-behavior/deployment source is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with
-tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; MS4-B installed it, and the
-owner-authorized bounded MS4-C/R3 core qualification then ran it; it is now
-stopped. GitHub `main` at MS4-C review start was
-`efae0135ed5272d18d800af0ac247b70ece07422` with tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`, a documentation-only merge
-relative to the deployed source and not deployed. The MS1 merge
-`d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902` remains historical foundation
-lineage only. The pre-MS1 deployed artifact completed clean 24h non-formal
-evidence, but formal M22.9 has not started and no duration credit transfers.
+installed behavior/deployment source is P2 source
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` with tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`; later documentation-only
+descendants are not installed. Formal M22.9 2h created T0 and failed before its
+first sample, so no duration credit is awarded and later stages remain not
+started. The pre-MS1 deployed artifact's clean 24h non-formal evidence remains
+artifact-specific and transfers no credit.
 See `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PRODUCTION_STATE.md`, and
 historical `docs/milestone_acceptance/M22.9.md`. Update this matrix whenever a
 requirement, ADR, or milestone acceptance changes.

@@ -2,34 +2,19 @@
 
 This document describes the implemented Recorder, the approved future
 deployment topology, and the implemented configurable product set.
-The historical GitHub `main` snapshot at the MS4-C review start is recorded
-below; later merges may change live `main`. The current behavior/deployment-source
-authority for the reviewed MS4-B stopped deployment is
-`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). GitHub `main` at MS4-C review
-start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), a documentation-only PR #60
-merge relative to the deployment source and not production-deployed authority.
-The current MS4-D review base is main
-`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
-`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
-evidence closeout PR #61 at commit
-`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
-`34551834444` completed successfully. The
-MS1 merge
-`d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical MS1 foundation
-lineage, not the current behavior authority. The independently qualified deployed artifact is the
-pre-MS1 source `c421605e302d2ad46acdb2466627f64644181c9a`, whose clean 24-hour
-non-formal stage is complete. MS2 and MS3-B are implemented, offline-accepted,
-and merged (MS3-B through PR #56). MS4-B stopped-deployment review is complete.
-The original MS4-C two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; the
-separate passing R3 non-formal supplement closes the MS4-C recovery gate for
-review with zero Formal M22.9 duration credit. MS4-D closes the bounded
-four-ProductKey qualification. The Recorder is stopped, the archive timer is
-disabled, Formal M22.9 has not started, and Production Ready is not authorized.
-See `docs/PROJECT_HANDOFF.md` and
-`docs/CURRENT_PRODUCTION_STATE.md`.
+The exact installed behavior/deployment authority is the P2 source
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`). Later documentation-only
+descendants are not deployed. MS2 and MS3-B are implemented, offline-accepted,
+and merged; MS4 is reviewed complete for the non-formal bounded
+four-ProductKey core. The owner-authorized Formal M22.9 2-hour observer then
+created T0 and failed before its first sample, so the 2-hour stage is not passed
+and receives zero credit. A quiescent review reconciled the affected archive
+lifecycle and supports, but does not prove, a concurrent observer/archive
+snapshot race. Recorder is stopped, the archive timer is enabled and
+active/waiting, 12h is not started, and Production Ready is not authorized.
+See `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PRODUCTION_STATE.md`, and
+`docs/milestone_acceptance/M22.9-2h.md`.
 
 ## M19 recovery boundary
 
@@ -416,9 +401,11 @@ MS4-B stopped-deployment review is complete. The original MS4-C two-hour
 window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; the passing R3 non-formal
 supplement makes MS4-C `REVIEWED_COMPLETE` for its recovery gate with zero
 Formal M22.9 duration credit. MS4-D closes the non-formal bounded
-four-ProductKey qualification. The archive was receiver-only rather than
-external-media certification, source retirement was not authorized, and
-Formal M22.9/Production Ready remain unauthorized.
+four-ProductKey qualification. P2 subsequently installed exact source
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f`, enabled the verified archive
+timer, and exercised source retirement through ArchiveManager/Catalog. The
+Formal 2-hour attempt failed at T0 before its first sample with zero credit;
+12h and Production Ready remain unauthorized.
 
 ## Runtime isolation
 

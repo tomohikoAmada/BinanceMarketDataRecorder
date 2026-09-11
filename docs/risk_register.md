@@ -1,9 +1,11 @@
 # Risk Register
 
-## Current P2 risk checkpoint — 2026-09-11
+## Current Formal 2h failed-closeout risk checkpoint — 2026-09-11
 
-`M22_9_P2=REVIEWED_COMPLETE` is the current milestone. Exact P2 deployment
-source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE` is the current milestone. The Formal
+2-hour attempt remains `EXECUTED_FAILED_AT_T0`, with zero duration credit;
+12 hours and all later stages are not started. Exact P2 deployment source/
+review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
 `c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) is verified in the installed
 deployment; Recorder is stopped and the managed archive timer is
 `ENABLED_ACTIVE`. The registered archive target
@@ -21,15 +23,15 @@ runway. The short live interaction is not a long-run generation proof.
 
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact identity verification;
 after this docs-only merge, `CURRENT_MAIN_DEPLOYED=NO` because the descendant
-is not installed;
-`FORMAL_M22_9=NOT_STARTED`, `FORMAL_M22_9_CREDIT_SECONDS=0`, and
-`PRODUCTION_READY=NO`. P2 preserved corrected-before-start orchestration
-incidents and used only the existing verified archive transaction authority;
-no manual Raw deletion occurred. See
-[`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md) and the bundle under
-`/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
+is not installed. The failed stage-start reported 24 blockers across 26 unique
+chunks. A post-stop exact reconciliation and full audit found zero persistent
+Catalog/integrity findings and all 112,817 archived lifecycles authorized.
+This supports, but does not prove, a concurrent observer/archive snapshot
+race. The installed artifact is not retry-eligible until the scoped fix is
+reviewed and a later exact artifact is separately authorized and deployed.
+See [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
 
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
 
 ### Historical pre-P2 authority (preserved)
 
@@ -162,6 +164,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-067 | A detached acceptance unit can be garbage-collected or mistaken for the evidence authority, or an unsafe retry can create a second T0/root | High | M22.9-P1 keeps `AcceptanceObserver` and immutable `stage-final.json`/SHA chain authoritative; external systemd uses `Type=exec`, `Restart=no`, fixed operator-selected registered relative root, and no automatic stage advancement. Inspect InvocationID/journal separately, and resume only the exact unfinished root when boot/process/service/identity and the 600-second gap bound still match; otherwise preserve and fail closed. | M22.9-P1 | Monitoring |
 | R-068 | Active writer root can reach its hard reserve before a long Formal chain even when the registered archive target has ample space | Critical | P2 observed the exact current deployment with the archive timer enabled and backlog returning to zero. The conservative existing 24-hour generation rate is `349910.017730 B/s`; active-root runway above the 10 GiB reserve is only about 26.46 hours, so every Formal stage start/end must recheck runway, timer health, backlog, and target margin. | M22.9-P2 | Monitoring |
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
+| R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and a full 112,817-manifest audit had zero Catalog/integrity findings; timing supports but does not prove this race. The next milestone must establish lifecycle-coherent observation or a bounded consistent retry and add deterministic offline concurrency coverage without weakening true-loss detection. No retry or retroactive credit is allowed before review and separate redeploy authorization. | M22.9 observer fix | Open |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |
