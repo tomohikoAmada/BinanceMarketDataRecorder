@@ -5,21 +5,68 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — MS4-B stopped deployment review complete
+## Current stage — MS4-C reviewed complete; MS4-D not started (2026-09-11)
 
-MS4-A local preparation and review remain complete. MS4-B target preflight,
-rollback evidence preservation, exact frozen-source Linux artifact build,
-complete four-ProductKey configuration, stopped systemd deployment and
-deployment identity verification are reviewed complete from the owner-supplied
-Tokyo VPS execution summary and cross-checked Git/runbook evidence. Direct
-inspection of the private evidence bundle was not performed locally:
-`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL`. The Tokyo Recorder
-was gracefully stopped before mutation and remains stopped. No live capture,
-Binance qualification traffic, controlled recovery, or Formal M22.9 was
-started. `PRODUCTION_READY=NO` and MS4-C remains blocked/not started.
+MS4-A local preparation and MS4-B target preflight/stopped-deployment review
+remain complete. The owner-authorized MS4-C attempt started the reviewed
+four-ProductKey artifact on the Tokyo VPS, reached authoritative `READY` for
+all four ProductKeys, and completed the bounded two-hour steady interval. That
+first window remains `EXECUTED_PARTIAL_NOT_ACCEPTED` because controlled
+recovery was not executed in the approved window; it is not retroactively
+reclassified by the later supplement. The MS4-B private bundle's
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL` is a historical
+MS4-B local-review limitation, not an MS4-C evidence limitation. The MS4-C VPS
+evidence was directly inspected by the primary agent; both records are listed
+in [`MS4-C evidence`](milestone_evidence/MS4-C-20260910.md).
+
+The separate 2026-09-11 R3 evidence is a passing
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`. It used fresh official eligibility,
+an exact-MainPID socket disconnect, and bounded post-fault observations; all
+four ProductKeys remained ready and receiving, 12 core contexts passed sealed
+validation, Catalog integrity was clean, and no active partial remained. It
+closes the MS4-C recovery gate for review, but grants
+`formal_m22_9_credit_seconds=0`.
+
+The service was gracefully stopped and remains stopped. A receiver-only SSH
+archive cycle to the explicitly authorized MacBook Downloads internal-folder
+test target was verified; it created no remote pending authority, did not
+delete or retire the VPS source, and did not produce a formal receipt-bound
+Catalog snapshot. `PRODUCTION_READY=NO`; the full MS4 milestone remains
+incomplete and MS4-D has not started. The archive timer is explicitly
+`disabled`.
 
 MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
-MS4_C=BLOCKED_NOT_STARTED; NEXT=OWNER_RESUME_REQUIRED_MS4_C.
+MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
+MS4_D=NOT_STARTED; NEXT=MS4_D_REVIEW_STAGE_CLOSURE.
+
+## Original MS4-C attempt disposition — 2026-09-10
+
+The attempt ran from `T0=2026-09-10T15:10:26.637211Z` to
+`T1=2026-09-10T17:10:33.156829Z`, with recorded monotonic duration
+`7206.519615476` seconds. The recovery observation ended at
+`2026-09-10T17:25:33.300961Z`; controlled recovery was not executed in the
+approved window. The explicit stop returned success at
+`2026-09-10T17:26:04.819925Z`, with systemd `inactive/dead`, `MainPID=0`, and
+`Result=success`. The receive-only archive source remained present with its
+original stored SHA-256 after the stop; its manifest was sealed before T0 and
+is not steady-period archive-throughput evidence.
+
+## MS4-C R3 recovery supplement — 2026-09-11
+
+The R3 supplement is recorded at
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json` on the Tokyo
+VPS. Its status is `PASS`, classification
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`, and Formal M22.9 credit is zero. Fresh
+official eligibility was captured at 2026-09-11T01:01:49Z. MainPID 685913 was
+`READY` before the exact owned socket was disconnected. The only durable gap
+was `um_perpetual:BTCUSDT/book_ticker`, completed in `0.436024210` seconds
+with a new connection. Fifteen post-fault observations kept all four expected
+ProductKeys ready with receive progress; 12 core contexts passed sealed
+validation (`validated_chunks=23`). Catalog integrity was `ok`, with no
+malformed, degraded, unclosed, active, or `.partial` artifacts. Final systemd
+state was `inactive/dead`, `MainPID=0`, `Result=success`. Historical continuity
+is not claimed restored, duration credit is zero, and source retirement was not
+authorized.
 
 ## Historical stage closeout — MS4-A local preparation
 
@@ -42,8 +89,9 @@ closed. The historical CI1/CI2 failures remain recorded in the milestone plan
 and MS3 acceptance; they do not describe the current state.
 
 MS3 is not deployed. Formal M22.9 has not started and Production Ready remains
-NO. This historical checkpoint recorded `NEXT=MS4_A_LOCAL_PREPARATION`; the
-current next action is `OWNER_RESUME_REQUIRED_MS4_C` after its remaining gates.
+NO. This historical checkpoint recorded `NEXT=MS4_A_LOCAL_PREPARATION`; at that
+historical checkpoint the follow-up field was
+`OWNER_RESUME_REQUIRED_MS4_C`. It is not the current project next action.
 
 ## MS3-CI1 update — 2026-09-10 (historical handoff; now closed)
 
@@ -109,8 +157,8 @@ authority:
 ### A. Live GitHub main and current behavior/deployment source
 
 ```text
-LIVE_GITHUB_MAIN=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
-LIVE_GITHUB_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
+MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
+MS4_C_REVIEW_BASE_MAIN_TREE=53342ac880cc36d65eba6f5e9b49fa722cc9d56b
 MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
@@ -123,8 +171,6 @@ MS1_PR=51
 MS1_POST_MERGE_CI_RUN=33955915046
 MS1_POST_MERGE_CI_PASS=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_SHA=bb8c93ba63c23adaf2cb0288b6ea127030b89e58
-CURRENT_MAIN_TREE=8770f48d458dc4e35d813e8db8dc2009ff78889c
 MS2_PR=54
 MS2_MERGED=YES
 MS3=CLOSED_MERGED
@@ -142,11 +188,13 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=IN_PROGRESS_MS4_C_BLOCKED
+MS4=IN_PROGRESS_MS4_C_REVIEWED_COMPLETE
 MS4_A=REVIEWED_COMPLETE
 MS4_B=REVIEWED_COMPLETE
-MS4_C=BLOCKED_NOT_STARTED
-NEXT=OWNER_RESUME_REQUIRED_MS4_C
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4_D=NOT_STARTED
+NEXT=MS4_D_REVIEW_STAGE_CLOSURE
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
@@ -166,10 +214,11 @@ MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy. The MS1 merge SHA
 above is historical foundation lineage; current behavior/deployment authority
 is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. Current live GitHub `main` is
-`bb8c93ba63c23adaf2cb0288b6ea127030b89e58` with tree
-`8770f48d458dc4e35d813e8db8dc2009ff78889c`; it is a documentation-only
-descendant and not production deployed.
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. GitHub `main` at MS4-C review
+start was `efae0135ed5272d18d800af0ac247b70ece07422` with tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`. It is the PR #60 merge,
+documentation-only relative to the deployed source, and not production
+deployed; later GitHub merges may change live `main`.
 
 ### B. Deployed and clean-24h authority
 
@@ -214,7 +263,8 @@ field is present, explicit product-selection mode uses each supplied list
 exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. `ProductKey = (market, symbol)`; one process owns one durable
 Catalog and one existing market Collector per configured ProductKey. The
-Current `main` contains that runtime; it is not deployed.
+The GitHub `main` snapshot at MS4-C review start contains that runtime; it was
+not deployed as production, and later merges may change live `main`.
 
 An empty resolved USD-M set means zero USD-M Collectors, zero product-specific
 USD-M side-data managers, no process-global USD-M side-data owner, and no
@@ -277,25 +327,21 @@ existing sequential storage Profile D test is labeled as storage-layer proof;
 the new running-path test proves simultaneous activity and sibling progress
 under target backpressure. It adds no generic scheduler, persisted metrics
 migration, or speculative optimization. Independent re-review/merge is closed;
-live qualification remains pending; see `docs/milestone_acceptance/MS3.md`.
-MS4-B stopped-deployment review is complete; MS4-C is the next separately
-authorized milestone after its remaining archive and start gates.
+see `docs/milestone_acceptance/MS3.md`. MS4-B stopped-deployment review and the
+MS4-C recovery-gate review are complete; MS4-D review/stage closure is next.
 
 ### MS4 — Configurable-product integration / deployment qualification
 
 MS4-B stopped-deployment review is complete after the exact source/artifact,
-configuration, rollback and identity gates. The remaining MS4-C work is blocked
-until its approved archive target, immediate ETHUSDT eligibility evidence and
-explicit start authorization are available. The bounded qualification uses a
-representative mixed Spot/USD-M configured profile with non-BTC products,
-proving all configured
-products ready, isolation under reconnect/resync, no unresolved
-discontinuities, Catalog/Raw/manifest/archive integrity, shared REST behavior,
-and resource behavior. A fixed qualification workload is evidence only, not a
-supported-symbol allowlist. MS4-B target preflight/stopped deployment is the
-completed stopped gate; MS4-C live qualification is the current blocked gate
-and requires separate pre-start review and authorization. Do not automatically
-schedule 72h or 168h; Formal M22.9 remains separate.
+configuration, rollback and identity gates. The original owner-authorized
+MS4-C window used the representative mixed Spot/USD-M profile and remains
+`EXECUTED_PARTIAL_NOT_ACCEPTED` because its controlled recovery was not run in
+that window. The separate passing R3
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the MS4-C recovery gate for review
+with zero Formal M22.9 credit; it does not retroactively grant the original
+window duration. The receiver-only Mac archive cycle did not authorize source
+retirement. MS4-D review/stage closure is next; do not automatically schedule
+72h or 168h, and keep Formal M22.9 separate.
 
 ## Non-negotiable boundaries
 
@@ -315,9 +361,10 @@ or use an external volume as an active Collector target.
 `MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
 `MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
 `MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
-`MS4=IN_PROGRESS_MS4_C_BLOCKED`,
-`MS4_B=REVIEWED_COMPLETE`, `MS4_C=BLOCKED_NOT_STARTED`,
-`NEXT=OWNER_RESUME_REQUIRED_MS4_C`.
+`MS4=IN_PROGRESS_MS4_C_REVIEWED_COMPLETE`,
+`MS4_B=REVIEWED_COMPLETE`, `MS4_C=REVIEWED_COMPLETE`,
+`RECOVERY_GATE=REVIEWED_COMPLETE`, `MS4_D=NOT_STARTED`,
+`NEXT=MS4_D_REVIEW_STAGE_CLOSURE`.
 
 Any MS4-C start requires the reviewed exact installed source/artifact,
 immutable Wheel, lock, config, unit, and deployment identities, explicit start

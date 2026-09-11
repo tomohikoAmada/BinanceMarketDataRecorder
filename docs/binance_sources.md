@@ -396,3 +396,19 @@ The later startup-liveness correction at local commit `2e8525f…` likewise
 changes only local recovery scheduling, stable-sealed reconciliation, heartbeat
 liveness, and cooperative shutdown. It changes no Binance API semantics and
 requires no new official-source retrieval.
+
+## MS4-C R3 official eligibility refresh — 2026-09-11
+
+Immediately before the separate R3 recovery supplement, the Tokyo VPS captured
+the following official source responses. Retrieval was unsigned public market
+data only; no account, order, credential or trading endpoint was used.
+
+| Source | URL | Retrieval (UTC) | SHA-256 | Conclusion |
+| --- | --- | --- | --- | --- |
+| Agent Native source index | `https://developers.binance.com/en/docs/llms.txt` | `2026-09-11T01:01:49.552554Z` | `d5bdebefe19b4976b55835f11ac5b43e8e3045103b6c8c7ab15b134b2122a103` | Official index captured for the R3 source-selection record; it is not itself a market eligibility assertion |
+| Spot `exchangeInfo` | `https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D` | `2026-09-11T01:01:49.576772Z` | `396050c65df5d01baf107f4d4d76217333b4566f9da66502e6aef86dd7cba3e8` | `ELIGIBLE` for Spot BTCUSDT and ETHUSDT; both selected symbols reported `TRADING` |
+| USD-M `exchangeInfo` | `https://fapi.binance.com/fapi/v1/exchangeInfo` | `2026-09-11T01:01:49.616402Z` | `2dc55e92a76cbd999f4e37478da2d43551181e794b2ec94f00295f31014f683d` | `ELIGIBLE` for USD-M BTCUSDT and ETHUSDT; both selected symbols reported `TRADING` |
+
+These hashes and conclusions are the fresh eligibility evidence bound to the
+R3 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT`; they do not authorize a new live run,
+Formal M22.9, or source retirement.

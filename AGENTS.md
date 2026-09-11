@@ -42,9 +42,13 @@ two markets, with BTCUSDT/BTCUSDT compatibility only when both selection
 fields are absent. MS3-B offline evidence is merged through PR #56 at
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; MS3 is closed. MS4-B target
 preflight and the exact four-ProductKey stopped deployment are reviewed
-complete, while MS4-C qualification remains blocked/not started pending an
-approved archive target, immediate ETHUSDT official eligibility evidence, and
-explicit authorization. This is not full MS4 closure or Production Ready. The
+complete. The owner-authorized MS4-C attempt on 2026-09-10 reached its bounded
+steady interval but remains `EXECUTED_PARTIAL_NOT_ACCEPTED` as an
+original-window record because controlled recovery was not executed in that
+approved window. The separate 2026-09-11 R3 run is a passing
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`: it closes the MS4-C recovery gate for
+review, with `formal_m22_9_credit_seconds=0`; the full MS4 milestone is still
+incomplete, MS4-D is not started, and Production Ready is not authorized. The
 system keeps recoverable immutable raw payloads, deterministic replay metadata,
 explicit gap evidence, and verified archival across the approved VPS/local
 Offline Workspace boundary.

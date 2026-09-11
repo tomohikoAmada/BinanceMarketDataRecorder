@@ -1,22 +1,30 @@
 # Milestone Plan
 
-## Current stage closeout — 2026-09-10
+## Current stage disposition — MS4-C reviewed complete; MS4-D not started (2026-09-11)
 
-MS3 implementation is merged; MS4-A local preparation is reviewed complete.
-The MS4-B target preflight/stopped-deployment work package is reviewed
-complete. The Recorder remains stopped; no live qualification or MS4-C traffic
-was started. MS4-C is blocked/not started and the full MS4 milestone remains
-incomplete.
-PR #57 and PR #58 are historical documentation closeouts. PR #60 is the
-current MS4-B documentation/evidence closeout vehicle; verify its final merge
-in GitHub.
+MS3 implementation is merged; MS4-A local preparation and the MS4-B target
+preflight/stopped-deployment work package are reviewed complete. The
+owner-authorized MS4-C attempt started the reviewed artifact, reached all-four
+ProductKey readiness, and completed its bounded two-hour steady interval. That
+original window remains `EXECUTED_PARTIAL_NOT_ACCEPTED` because controlled
+recovery was not executed in the approved window. The separate passing
+2026-09-11 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the MS4-C recovery gate
+for review with zero Formal M22.9 credit; it does not retroactively grant the
+original window duration. The Recorder is now stopped, the archive timer is
+disabled, MS4-D is not started,
+and the full MS4 milestone remains incomplete.
+PR #57 and PR #58 are historical documentation closeouts. PR #60 is merged
+through the normal repository rule as `efae0135ed5272d18d800af0ac247b70ece07422`
+(tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); exact-head CI run
+`34478654689` passed. This is the GitHub main authority at MS4-C review start,
+not a future live-main guarantee.
 
 The runbook now consistently references the retained lock/Wheel, avoids moving
 an installed venv, separates non-formal MS4 evidence from M22.9, and leaves
 machine-specific remote archive commands for the separately authorized MS4-C
 target. These are documentation corrections, not production changes.
 
-NEXT=OWNER_RESUME_REQUIRED_MS4_C
+NEXT=MS4_D_REVIEW_STAGE_CLOSURE
 
 ## Multi-symbol execution ledger — 2026-09-10
 
@@ -168,8 +176,8 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | MS4-A offline qualification preparation | REVIEWED_COMPLETE | Local artifact/profile/coverage ledger and corrected runbook; later target qualification is not authorized |
 
 | MS4-B Tokyo VPS preflight / stopped deployment | REVIEWED_COMPLETE | Owner-supplied Tokyo VPS report, exact artifact/config/unit/identity, rollback and stopped-state evidence; no start/readiness/live traffic |
-| MS4-C bounded qualification | BLOCKED / NOT STARTED | Requires approved cross-machine archive target, immediate ETHUSDT eligibility evidence and explicit start authorization |
-| MS4-D final review / documentation closure | NOT STARTED | Review MS4-C; close only what evidence supports |
+| MS4-C bounded qualification | REVIEWED_COMPLETE | Original 2026-09-10 two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; separate passing R3 non-formal recovery supplement closes the recovery gate with zero Formal M22.9 credit; see `docs/milestone_evidence/MS4-C-20260910.md` |
+| MS4-D final review / documentation closure | NOT STARTED | Review/stage-close MS4-C; do not enter implementation scope |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
@@ -323,31 +331,34 @@ Completed preparation:
    `status` and `git diff --check`. Exact-source run `34436773366` is reused for
    the merged-code Ubuntu x86_64 lock/build/clean-Wheel evidence.
 
-Current MS4-B disposition and remaining before MS4-C:
+Current MS4-B disposition and MS4-C handoff:
 
 - The stopped deployment identity is verified against the actual canonical
   filesystem and effective systemd unit; the exact four-product config is
   frozen without operational environment overrides.
-- The approved cross-machine archive machine/SSH destination is still an
-  operator input. The registered same-host external storage target is not
-  substituted for that remote boundary.
-- ETHUSDT official eligibility, if required, is reserved for the immediate
-  MS4-C pre-start step. No Binance eligibility or qualification request was
-  made in this stopped preparation.
+- The owner-authorized cross-machine destination was the current MacBook
+  Downloads internal-folder test target. It is not an external-storage
+  certification and the receiver-only cycle did not authorize source
+  retirement.
+- Immediate official Spot/USD-M eligibility evidence was captured before
+  start and recorded under the preserved VPS evidence root.
 
-Exit: MS4-B is `REVIEWED_COMPLETE` for the stopped boundary; MS4-C is
-`BLOCKED_NOT_STARTED`. The full ledger, evidence template, hashes, coverage
-map, capacity formula and missing-input list are in
-`docs/milestone_acceptance/MS4.md`.
+Exit: MS4-B is `REVIEWED_COMPLETE` for the stopped boundary. The original
+MS4-C attempt remains an executed partial record; the separate R3 supplement
+closes its recovery gate for review. The full ledger, evidence template,
+hashes, coverage map, capacity formula and disposition are in
+`docs/milestone_acceptance/MS4.md` and
+`docs/milestone_evidence/MS4-C-20260910.md`.
 
 MS4-A=REVIEWED_COMPLETE
 MS4-B=REVIEWED_COMPLETE
-MS4-C=BLOCKED_NOT_STARTED
+MS4-C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
 MS4-D=NOT_STARTED
 CURRENT_MAIN_DEPLOYED=NO
 FORMAL_M22_9=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=OWNER_RESUME_REQUIRED_MS4_C
+NEXT=MS4_D_REVIEW_STAGE_CLOSURE
 
 ### MS4-B — Tokyo VPS preflight and stopped deployment (reviewed complete)
 
@@ -385,15 +396,18 @@ and shutdown/integrity observation belong to MS4-C.
 On a failed gate preserve evidence, mark the failed step, and repair only the
 demonstrated issue; do not silently substitute another artifact or workload.
 
-### MS4-C — bounded live evidence (blocked/not started)
+### MS4-C — bounded live evidence (original window; partial record)
 
-Use the approved MS4-B artifact/config only after the owner supplies the
-approved cross-machine archive machine/SSH/destination/workflow authority,
-captures ETHUSDT eligibility from an allowed official source immediately before
-start, and grants explicit start authorization. Collect existing telemetry/logs
-at a fixed documented cadence, avoiding expensive per-sample full Catalog
-scans. The 15-minute startup envelope is absolute; the 300-second readiness
-observer is inside that envelope, not an extension.
+The 2026-09-10 owner-authorized attempt used the approved MS4-B artifact/config,
+the Tokyo-to-MacBook receiver-only archive target, immediate official
+ETHUSDT eligibility evidence and the explicit start authorization. It reached
+all-four ProductKey readiness and completed the two-hour steady interval. At
+that window's disposition it was `EXECUTED_PARTIAL_NOT_ACCEPTED`: controlled
+recovery was not executed in the approved window. The detailed record is
+`docs/milestone_evidence/MS4-C-20260910.md`; the separate R3 supplement below
+is the current recovery-gate review. Any future continuation
+must review that record first; the 15-minute startup envelope remains
+absolute and the 300-second readiness observer remains inside it.
 
 | Check | Required evidence / pass condition |
 | --- | --- |
@@ -407,8 +421,11 @@ observer is inside that envelope, not an extension.
 | Resources | CPU/RSS/queue/backpressure/capacity samples, maxima and trend, no OOM or reserve breach; scope conclusions to the measured window |
 | Shutdown/restart | Graceful seal and bounded restart if included in approved runbook; no orphan active ownership after stop; preserve process-session gap evidence |
 
-If an archive destination is unavailable, mark archive verification NOT RUN and
-MS4 partial; do not call the entire milestone complete based on local mocks.
+The receiver-only archive destination was available for one verified cycle;
+formal receipt-bound Catalog snapshot and source retirement were deliberately
+not run. If a future archive destination is unavailable, mark archive
+verification NOT RUN and MS4 partial; do not call the entire milestone
+complete based on local mocks.
 Global auxiliary sentinel BTCUSDT and REST request connection IDs are not extra
 core products or automatic core reconnects. Keep known fail-closed auxiliary
 manifest classifications visible; do not relabel incomplete artifacts complete.
@@ -419,6 +436,25 @@ Raw/evidence, and use the approved rollback/stop path. Normal transient recovery
 is observed within its bounded deadline rather than treated as immediate
 permanent failure. Any behavior-changing fix gets fresh source/artifact identity
 and a fresh affected qualification window; no duration credit transfers.
+
+### MS4-C R3 recovery supplement — 2026-09-11 (reviewed complete)
+
+The R3 evidence is a separate, owner-authorized non-formal supplement, not a
+continuation of the original two-hour duration stage and not Formal M22.9.
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json` reports
+`PASS`, classification `NONFORMAL_MS4_RECOVERY_SUPPLEMENT`, and
+`formal_m22_9_credit_seconds=0`. Fresh official Spot/USD-M eligibility was
+captured at `2026-09-11T01:01:49Z`; MainPID `685913` reached `READY`, then the
+exact owned socket was disconnected. The only durable recovery was
+`um_perpetual:BTCUSDT/book_ticker`, completed in `0.436024210` seconds with a
+new connection. Fifteen post-fault observations retained all four expected
+ProductKeys ready with receive progress. Twelve core contexts passed sealed
+validation (`validated_chunks=23`), Catalog integrity was `ok` with zero
+malformed/degraded/unclosed/active chunks, and no `.partial` file remained.
+Final systemd state was `inactive/dead`, `MainPID=0`, `Result=success`.
+The unique recovered gap remains explicit; historical continuity is not
+claimed restored, and source retirement was not authorized. This closes the
+MS4-C recovery gate for review; MS4-D remains `NOT_STARTED`.
 
 ### MS4-D — review and stage closure
 
@@ -1635,7 +1671,8 @@ remain unchanged.
 ## MS2 — Configurable product runtime
 
 - **Status:** **CLOSED / OFFLINE ACCEPTED; MERGED THROUGH PR #54**. Evidence:
-  `docs/milestone_acceptance/MS2.md`. Current main is not deployed.
+  `docs/milestone_acceptance/MS2.md`. GitHub `main` at MS4-C review start was
+  not deployed.
 - **Scope:** Implement the explicit finite `[recorder]` `spot_symbols` and
   `usdm_symbols` lists; `ProductKey = (market, symbol)`; symbol propagation
   through current Spot/USD-M WS/REST/schema/envelope/spool paths; dynamic

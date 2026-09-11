@@ -1,21 +1,64 @@
 # MS4 qualification acceptance ledger
 
+## Current MS4-C disposition — reviewed complete; original window partial
+
+The owner-authorized MS4-C attempt on 2026-09-10 reached the bounded steady
+interval after all four configured ProductKeys became ready. Its original
+window disposition remains `EXECUTED_PARTIAL_NOT_ACCEPTED` because controlled
+recovery was not executed in that approved window; it is not retroactively
+reclassified. The detailed run record is
+[`MS4-C-20260910`](../milestone_evidence/MS4-C-20260910.md).
+
+The separate 2026-09-11 R3 evidence is a passing
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`. Fresh official eligibility was recorded
+at `2026-09-11T01:01:49Z`; MainPID `685913` was `READY` before the exact owned
+socket was disconnected. The only durable recovery was
+`um_perpetual:BTCUSDT/book_ticker`, completed in `0.436024210` seconds with a
+new connection. Fifteen post-fault observations kept all four ProductKeys
+ready with receive progress; 12 core contexts passed sealed validation
+(`validated_chunks=23`); Catalog was clean with no malformed, degraded,
+unclosed or active chunks; no `.partial` file remained; and final systemd was
+`inactive/dead`, MainPID `0`, Result `success`. The supplement is
+`PASS`, closes the MS4-C recovery gate for review, and grants zero Formal
+M22.9 duration credit. The gap remains explicitly recorded and historical
+continuity is not claimed restored.
+
+The Tokyo Recorder was then stopped cleanly and remains stopped. One
+receiver-only SSH archive cycle to the owner-authorized internal APFS MacBook
+Downloads test target was verified after the stop. The archive timer is
+explicitly disabled. It created no remote pending authority, did not retire
+the VPS source, and has no formal receipt-bound Catalog snapshot. This closes
+the MS4-C recovery gate only; it does not close overall MS4 or authorize
+Formal M22.9.
+
+```text
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4=INCOMPLETE
+MS4_D=NOT_STARTED
+NEXT=MS4_D_REVIEW_STAGE_CLOSURE
+```
+
 ## Current MS4-B disposition — target preflight and stopped deployment
 
 The Tokyo target preflight, old-deployment rollback evidence, exact frozen
 Linux artifact, complete four-ProductKey configuration, stopped systemd
 installation, and deployment identity verification are reviewed complete for
 the stopped boundary.
-The Recorder was gracefully stopped before mutation and remains stopped. No
-live capture, Binance qualification traffic, controlled recovery, or Formal
-M22.9 was started. `PRODUCTION_READY` remains `NO`; MS4-C remains blocked and
-not started pending its remaining gates.
+The Recorder was gracefully stopped before mutation and remains stopped. This
+MS4-B exit does not include the later MS4-C attempt, controlled recovery,
+source retirement or Formal M22.9. `PRODUCTION_READY` remains `NO`; the full
+MS4 milestone remains incomplete.
 
 ```text
 MS4_A=REVIEWED_COMPLETE
 MS4_B=REVIEWED_COMPLETE
-MS4_C=BLOCKED_NOT_STARTED
-NEXT=OWNER_RESUME_REQUIRED_MS4_C
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4_D=NOT_STARTED
+NEXT=MS4_D_REVIEW_STAGE_CLOSURE
 ```
 
 ## Reviewed MS4-B evidence ledger — 2026-09-10

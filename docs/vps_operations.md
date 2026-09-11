@@ -1,20 +1,25 @@
 # VPS Operations
 
 Status: MS4-B Tokyo VPS preflight and stopped deployment are reviewed complete;
-MS4-C live execution is blocked/not started. Verify live GitHub `main` at
-takeover. Current behavior/deployment-source authority is
+the original MS4-C two-hour window was partial, and the R3 non-formal
+supplement closes the recovery gate for review with zero Formal M22.9 duration
+credit. The service is stopped, the archive timer is disabled, and MS4-D
+review/stage closure is next. GitHub `main` at MS4-C review start was
+`efae0135ed5272d18d800af0ac247b70ece07422` (tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); later merges may change live
+`main`. Current behavior/deployment-source authority is
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902` is historical foundation lineage
-only. Live GitHub `main` is `bb8c93ba63c23adaf2cb0288b6ea127030b89e58`
-with tree `8770f48d458dc4e35d813e8db8dc2009ff78889c`, a documentation-only
-descendant and not deployed as current production. The pre-MS1 deployed
+only. The recorded MS4-C review-start `main` snapshot was a documentation-only
+descendant and was not deployed as current production. The pre-MS1 deployed
 artifact completed the clean 24-hour non-formal single-symbol stage; that
 evidence does not qualify MS1 or the current four-ProductKey run. MS3-B is
-merged, and MS4-B is stopped/reviewed complete. MS4-C requires the approved
-archive target, immediate ETHUSDT eligibility evidence, and explicit start
-authorization. Formal M22.9 has not started and Production Ready is not claimed.
+merged, and MS4-B is stopped/reviewed complete. The R3 supplement's bounded
+recovery review is complete, but external-media certification, source
+retirement, Formal M22.9, and MS4-D remain gated. Production Ready is not
+claimed.
 See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).

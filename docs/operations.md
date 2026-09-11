@@ -6,28 +6,32 @@ implemented/local validation profiles. The primary production deployment
 profile is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
 [`vps_operations.md`](vps_operations.md). The reviewed MS4-B stopped deployment
 is installed from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`), but is not live-qualified or
-Production Ready. The archive protocol/library exists; the approved
-cross-machine target, operator command freeze, and production certification
-remain pending.
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`) and was run in the bounded MS4-C/R3
+core qualification; it is now stopped. The original two-hour window remains
+partial, while the R3 supplement closes the recovery gate for review with zero
+Formal M22.9 duration credit. The archive timer is disabled; the archive
+protocol/library, approved cross-machine target, operator command freeze, and
+production certification remain pending.
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
-context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). Verify live GitHub
-`main` at takeover. Current behavior/deployment-source authority is
+context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). GitHub `main` at MS4-C
+review start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), and later merges may change live
+`main`. Current behavior/deployment-source authority is
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
-only. Live GitHub `main` is `bb8c93ba63c23adaf2cb0288b6ea127030b89e58`
-(tree `8770f48d458dc4e35d813e8db8dc2009ff78889c`), a documentation-only
-descendant and not deployed.
+only. The recorded MS4-C review-start `main` snapshot was a documentation-only
+descendant and was not deployed.
 The pre-MS1 source `c421605e…` remains the independently qualified deployed
 single-symbol artifact; its clean 24-hour non-formal stage is complete. MS3-B
-is merged, and the MS4-B exact target deployment is reviewed complete but
-stopped. The next action is owner-authorized MS4-C, not an automatic operation
-or burn-in; its archive target and explicit start authorization are still
-missing. Formal M22.9 has not started and Production Ready remains NO.
+is merged, and the MS4-B exact target deployment is reviewed complete. The
+original MS4-C window was partial; the R3 supplement closes the recovery gate
+for review with zero Formal M22.9 duration credit. The service is stopped, the
+archive timer is disabled, and MS4-D review/stage closure is next. Formal M22.9
+has not started and Production Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -213,8 +217,9 @@ Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
 measurements are also point-in-time evidence, not permanent runway. The current
-project next action is owner resumption of MS4-C after its archive and explicit
-start gates, not the 278-hour formal chain or a capacity expansion action.
+project next action is MS4-D review/stage closure; external-media certification,
+source retirement, and the 278-hour formal chain remain gated rather than
+automatically scheduled.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:

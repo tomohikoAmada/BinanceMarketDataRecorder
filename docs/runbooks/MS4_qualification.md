@@ -1,11 +1,15 @@
 # MS4 qualification runbook
 
-Status: **MS4-B target preflight/stopped deployment REVIEWED_COMPLETE; MS4-C
-BLOCKED_NOT_STARTED; live execution NOT AUTHORIZED**.
+Status: **MS4-B target preflight/stopped deployment REVIEWED_COMPLETE; the
+original MS4-C window is EXECUTED_PARTIAL_NOT_ACCEPTED; the separate R3
+non-formal recovery supplement is REVIEWED_COMPLETE; MS4-D NOT_STARTED**.
 This is a preparation reference, not a copy-and-run deployment script. Target
-inputs and target-specific publication/remote-archive commands must be completed
-and reviewed when the owner resumes MS4-C. No command authorizes VPS access,
-deployment or Binance traffic by itself.
+inputs and target-specific publication/remote-archive commands remain subject
+to review before any continuation. No command authorizes VPS access, deployment
+or Binance traffic by itself. See
+[`MS4-C-20260910`](../milestone_evidence/MS4-C-20260910.md) for the original
+window and R3 supplement disposition; it is not full MS4 or Formal M22.9
+acceptance.
 
 The runbook uses the existing CLI, systemd manager, deployment identity and
 existing read-only status/report interfaces. It does not introduce a scheduler, a second
@@ -236,10 +240,12 @@ classification authority is present:
 An ineligible or missing required preflight is a stop condition, not a repair
 request to this preparation work.
 
-## 5. MS4-C start and validate readiness (not started)
+## 5. MS4-C start and validate readiness (original window; R3 recovery reviewed)
 
-Start explicitly only after MS4-C has its separate authorization and archive
-target. No service manager action is automatic in this runbook.
+The 2026-09-10 attempt started only after separate authorization and the
+owner-selected archive target were supplied. Any continuation must be
+explicitly reviewed first; no service manager action is automatic in this
+runbook.
 Startup must complete recovery and current capacity observation before it can
 construct collectors.
 
@@ -298,6 +304,17 @@ The exact target sampling commands are a required MS4-C runbook execution
 item. No new observer implementation is requested. The resulting
 record must say NONFORMAL_MS4 and grants zero Formal M22.9 duration credit.
 
+The separate 2026-09-11 R3 supplement passed its bounded recovery gate. Its
+evidence is `/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`;
+the classification is `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` and formal M22.9
+credit is zero. It used fresh official Spot/USD-M eligibility, an exact
+MainPID-owned socket disconnect, and existing status/journal/Catalog reads.
+All four expected ProductKeys stayed ready with receive progress across 15
+post-fault observations; 12 core contexts passed sealed validation, Catalog was
+clean, and no active `.partial` remained. The original two-hour window remains
+`EXECUTED_PARTIAL_NOT_ACCEPTED`; this supplement does not transfer duration
+credit or start Formal M22.9.
+
 ## 6. MS4-C capacity and archive gate
 
 Use the existing `vps-production-v1` reserve policy without lowering it:
@@ -326,14 +343,17 @@ operate on storage registered on the machine executing those commands; they
 are not a VPS-to-local remote receive/receipt procedure. Do not run them on the
 VPS as a substitute for the remote archive boundary.
 
-When resuming MS4-C, select the existing remote source/transport/receive/verify/
-receipt workflow for the approved archive machine and freeze the exact
-machine-specific commands. The transfer protocol/library exists, but the
-operator-selected archive-machine command freeze is still pending; do not
-invent or present a general public archive CLI. Preserve verified
-receive/readback/size/SHA-256/manifest/
-receipt evidence and keep source retirement separately authorized. An unavailable
-destination means archive acceptance NOT RUN, not PASS.
+The attempt selected the existing remote source/transport/receive/verify/receipt
+workflow for `greencloud-tokyo-01` and the owner-authorized MacBook Downloads
+internal-folder test target. One receiver-only cycle is verified in the
+attempt report; it created no remote authority and did not retire the source.
+The archive timer is explicitly `disabled` after the run. A host reboot does
+not automatically schedule the timer; manual archive remains unauthorized.
+The transfer protocol/library exists, but this partial result does not certify
+the production archive workflow or a receipt-bound Catalog snapshot. Preserve
+verified receive/readback/size/SHA-256/manifest/receipt evidence and keep
+source retirement separately authorized. An unavailable destination means
+archive acceptance NOT RUN, not PASS.
 
 ## 7. MS4-C stop and verify
 
@@ -348,7 +368,8 @@ journalctl -u "$SERVICE" --since '<fixed UTC start>' --until '<fixed UTC end>'
 ```
 
 Require graceful `STOPPED`, sealed active tails, no orphan active ownership,
-and preserved process-session/gap evidence. Do not delete Raw, Catalog,
+and preserved process-session/gap evidence. Keep the archive timer
+`disabled`. Do not delete Raw, Catalog,
 manifests, receipts or evidence as part of stopping.
 
 ## 8. MS4-C fail-closed rollback
@@ -403,6 +424,10 @@ heavy Normalize/Replay/Backfill on the live host, access credentials, or start
 Formal M22.9 from this runbook.
 
 MS4-A local artifact/document preparation and MS4-B target preflight/stopped
-deployment review are complete. Live start, Binance qualification traffic,
-controlled recovery and archive receive remain MS4-C scope and separately
-unauthorized until the owner supplies the remaining inputs.
+deployment review are complete. The original owner-authorized MS4-C attempt
+remains an executed-partial record because controlled recovery was not
+executed in its approved window. The separate passing R3 non-formal supplement
+closes the MS4-C recovery gate for review with zero Formal M22.9 credit. Any
+additional live traffic or source retirement requires a fresh explicit review;
+MS4-D review/stage closure is next, and Formal M22.9 is not started from this
+runbook.
