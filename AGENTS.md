@@ -55,30 +55,42 @@ recoverable immutable raw payloads,
 deterministic replay metadata, explicit gap evidence, and verified archival
 across the approved VPS/local Offline Workspace boundary.
 
-Current milestone status is `M22_9_P1=REVIEWED_COMPLETE` for
-the systemd-detached single-stage observation preparation. The bounded MS4
-qualification remains closed, while `FORMAL_M22_9=NOT_STARTED`,
-`FORMAL_M22_9_CREDIT_SECONDS=0`, `PRODUCTION_READY=NO`,
-`CURRENT_MAIN_DEPLOYED=NO`, and `RECORDER=STOPPED`. The next step is
-`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`.
+Current milestone status is `M22_9_P2=REVIEWED_COMPLETE` for
+the exact deployment, archive, and capacity preflight. The P2 evidence bundle
+is `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
+It verified the P2 deployment source/review base
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) in the installed deployment,
+drained the registered archive target through the existing verified transaction
+path, and completed the bounded non-formal live interaction before stopping
+Recorder. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact identity
+verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO` because the docs-only merge descendant is not
+installed; the installed P2 artifact remains
+the Formal candidate until a later authorized redeploy. The archive timer is
+enabled and active/waiting;
+Recorder is stopped. `FORMAL_M22_9=NOT_STARTED`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, and `PRODUCTION_READY=NO`. The next step is
+`FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`.
 The historical MS4-D review base used main
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
-completed successfully. P1 is based on current main
+completed successfully. P1 was based on main at its historical checkpoint
 `83a063f5bb9f91508238c9fd86d21aa45d1bd501`. Neither is a deployment
 authorization.
 
-P1 keeps `AcceptanceObserver` as the sole measurement/evidence authority and
-uses an external systemd 255 transient `Type=exec` unit for each explicitly
-selected stage. The unit runs as non-root `bmdr:bmdr` with `Restart=no`,
-`KillSignal=SIGINT`, `TimeoutStopSec=120s`, `UMask=0027`,
-`NoNewPrivileges=yes`, and journal stdout/stderr. It is detached from SSH but
-does not schedule, restart, or advance stages. The exact registered archive
-subdirectory evidence root and the same-stage resume/final-review procedure
-are recorded in `docs/milestone_acceptance/M22.9-P1.md`; P1 does not deploy,
-enable the archive timer, start Recorder, or begin Formal M22.9.
+P1 remains reviewed complete and keeps `AcceptanceObserver` as the sole
+measurement/evidence authority for a stage. Its external systemd 255 transient
+`Type=exec` procedure is separate from the P2 deployment. P2's archive timer
+uses the fixed verified deployment and the registered target
+`ef852751-721c-4145-9083-f6fd48718480` at
+`/srv/recorder-data/recorder-archive`; source retirement occurred only after
+the existing ArchiveManager/Catalog readback, hash, manifest, and transaction
+checks. The active writer root remains `/var/lib/binance-market-data-recorder`;
+the approximately 2 TB `/dev/vdb1` is an archive target, not an active writer
+root. See `docs/milestone_acceptance/M22.9-P2.md` for the bounded P2 record.
 
 The authoritative scope is `docs/project_contract.md`. Before current-state or
 milestone work, read `docs/PROJECT_HANDOFF.md` and

@@ -3,34 +3,55 @@
 Current implementation status and approved future architecture are distinct.
 macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
 implemented/local validation profiles. The primary production deployment
-profile is Ubuntu 24.04 LTS x86_64 on a shared 2 vCPU/4 GiB/40 GB-class VPS; see
-[`vps_operations.md`](vps_operations.md). The reviewed MS4-B stopped deployment
+profile is Ubuntu 24.04 LTS x86_64. The P2 host has 4 vCPU and
+6,163,615,744 bytes RAM; active `/dev/vda1` is 61,285,326,848 bytes and
+archive `/dev/vdb1` is 2,163,348,520,960 bytes. See
+[`vps_operations.md`](vps_operations.md). The earlier reviewed MS4-B stopped deployment
 is installed from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`) and was run in the bounded MS4-C/R3
-core qualification; it is now stopped. The original two-hour window remains
+core qualification; that is historical. The original two-hour window remains
 partial, while the R3 supplement closes the recovery gate for review with zero
-Formal M22.9 duration credit. The archive timer is disabled; the selected
-Mac internal APFS receiver-only path was verified, while external-media
-production certification, source retirement and the Formal M22.9 chain remain
-pending.
+Formal M22.9 duration credit. The P2 registered VPS archive target was
+exercised through the verified ArchiveManager/Catalog path; external-media
+production certification and the Formal M22.9 chain remain pending.
 
-The current milestone is `M22_9_P1=REVIEWED_COMPLETE`.
-P1 documents one-stage observation detached under an external systemd 255
-transient `Type=exec` unit around the existing `AcceptanceObserver`; it adds no
-Recorder scheduler or supervisor and does not start Recorder, enable archive,
-or begin Formal M22.9. The exact procedure is in
-[`milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
-P1 is based on current main
-`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; it is not a deployment artifact.
+The current milestone is `M22_9_P2=REVIEWED_COMPLETE`.
+The exact P2 deployment source/review base
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
+verified. The four canonical ProductKeys reached readiness with 12 core stream
+contexts; Recorder was gracefully stopped and is currently inactive/dead with
+`MainPID=0`, `Result=success`, and `NRestarts=0`. The registered archive target
+`ef852751-721c-4145-9083-f6fd48718480` was drained through the existing
+verified ArchiveManager/Catalog transaction path; full verification reported
+112,570 verified files, zero failed, and zero pending. The managed timer is
+enabled and active/waiting with a future monotonic trigger. The evidence bundle
+is under `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`;
+see [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
+
+`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
+verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy.
+`PRODUCTION_READY=NO`. Formal M22.9 remains unstarted with zero duration
+credit. The conservative archive projection has approximately 1.772 TB of
+target margin, while active-root runway above the 10 GiB hard reserve is only
+about 26.46 hours. Every future Formal stage must recheck timer, backlog,
+target capacity, and active-root runway. P1 remains reviewed complete as a
+documentation-only systemd-detached observation preparation.
+
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
 context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). GitHub `main` at MS4-C
 review start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
 `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), and later merges may change live
-`main`. Current behavior/deployment-source authority is
-`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). The MS1 merge
+`main`. The P2 deployment source/review base for this checkpoint is
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`). The earlier MS4-B deployment
+source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` is historical. The MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
 only. The recorded MS4-C review-start `main` snapshot was a documentation-only
@@ -40,7 +61,7 @@ single-symbol artifact; its clean 24-hour non-formal stage is complete. MS3-B
 is merged, and the MS4-B exact target deployment is reviewed complete. The
 original MS4-C window was partial; the R3 supplement closes the recovery gate
 for review with zero Formal M22.9 duration credit. The service is stopped, the
-archive timer is disabled, and MS4-D has closed the non-formal bounded
+archive timer is enabled/active for verified draining, and MS4-D has closed the non-formal bounded
 four-ProductKey qualification. Formal M22.9 has not started and Production
 Ready remains NO.
 
@@ -228,11 +249,11 @@ Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
 measurements are also point-in-time evidence, not permanent runway. The current
-project next action is `M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`;
-Formal M22.9 preparation is separately authorized only after that preflight and
-the stated capacity gates.
-External-media certification, source retirement, and the 278-hour formal chain
-remain gated rather than automatically scheduled.
+P2 is reviewed complete. Formal M22.9 preparation remains separately
+authorized and requires a fresh capacity/readiness decision before a 2-hour
+start.
+External-media certification and the 278-hour formal chain remain gated rather
+than automatically scheduled.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:

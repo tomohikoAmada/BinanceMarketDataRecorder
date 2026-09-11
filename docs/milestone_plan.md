@@ -1,6 +1,39 @@
 # Milestone Plan
 
-## Current stage disposition — M22.9-P1 reviewed complete; next preflight named (2026-09-11)
+## Current stage disposition — M22.9-P2 reviewed complete (2026-09-11)
+
+M22.9-P2 executed the exact deployment, archive, and capacity preflight. The
+installed source is the P2 deployment source/review base
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`). The canonical four ProductKeys
+reached readiness with 12 core stream contexts, then Recorder was gracefully
+stopped. The registered 2 TB archive target was drained through the existing
+verified ArchiveManager/Catalog path; full verification reported 112,570
+verified files, zero failed, and zero pending. The managed archive timer is
+enabled and active/waiting with a future monotonic trigger.
+
+The evidence bundle is
+`/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`;
+its `EVIDENCE_SUMMARY.md` and `SHA256SUMS` hashes are recorded in the P2
+acceptance file. The conservative 24-hour generation rate is
+`349910.017730 B/s`; the 278-hour archive projection leaves about 1.772 TB of
+archive margin, while active-root runway above the 10 GiB reserve is about
+26.46 hours. P2 is non-formal: Formal M22.9 remains unstarted with zero credit
+and Production Ready remains NO. P2 is reviewed complete; the next step still
+requires separate authorization.
+
+M22_9_P2=REVIEWED_COMPLETE
+P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+
+### Historical pre-P2 disposition (preserved)
 
 MS3 implementation is merged; MS4-A local preparation and the MS4-B target
 preflight/stopped-deployment work package are reviewed complete. The
@@ -26,7 +59,7 @@ passed. The historical MS4-D documentation review was based on `main`
 MS4-C evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
 completed successfully. Neither review authority is a deployment
-authorization. P1 is based on current main
+authorization. P1 was based on main at its historical checkpoint
 `83a063f5bb9f91508238c9fd86d21aa45d1bd501`.
 
 The runbook now consistently references the retained lock/Wheel, avoids moving
@@ -203,6 +236,7 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | MS4-C bounded qualification | REVIEWED_COMPLETE | Original 2026-09-10 two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; separate passing R3 non-formal recovery supplement closes the recovery gate with zero Formal M22.9 credit; see `docs/milestone_evidence/MS4-C-20260910.md` |
 | MS4-D final review / documentation closure | REVIEWED_COMPLETE | Eleven bounded gates are `PASS` with explicit scope limitations; current claims are aligned without changing source, runtime or deployment behavior |
 | M22.9-P1 detached single-stage observation preparation | REVIEWED_COMPLETE | Documentation-only systemd 255 transient-unit procedure around the existing observer; current main `83a063f5bb9f91508238c9fd86d21aa45d1bd501`; no deployment, timer enablement, Recorder start, Formal T0 or duration credit |
+| M22.9-P2 exact deployment/archive/capacity preflight | REVIEWED_COMPLETE | P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` was installed and verified; registered archive drained and fully verified; timer enabled/active, Recorder stopped; see `docs/milestone_acceptance/M22.9-P2.md`; Formal M22.9 remains unstarted with zero credit |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
 | Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
 
@@ -1616,6 +1650,55 @@ mutation exists; those remain exclusively M22.4B scope.
   automatic stage advancement. The current `/dev/vda1` active-root runway
   forecast reaches hard reserve at `2026-09-13T15:11:31.626026Z`, so the
   approximately 278-hour complete-chain capacity precondition remains blocked.
+
+### M22.9-P2 — exact deployment, archive, and capacity preflight
+
+- **Status:** **REVIEWED_COMPLETE** in
+  `docs/milestone_acceptance/M22.9-P2.md`. This is a bounded, non-formal
+  preflight. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records that the exact
+  P2 deployment source/review base was verified in the installed deployment;
+  after this docs-only merge,
+  `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+  The installed P2 artifact
+  remains the Formal candidate until a later authorized redeploy;
+  `RECORDER=STOPPED`,
+  `ARCHIVE_TIMER=ENABLED_ACTIVE`, `FORMAL_M22_9=NOT_STARTED`,
+  `FORMAL_M22_9_CREDIT_SECONDS=0`, and `PRODUCTION_READY=NO`.
+- **Exact identity:** P2 deployment source/review base
+  `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`, tree
+  `c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`; the wheel, lock, config, unit,
+  and deployment identity hashes are frozen in the acceptance record. The
+  four configured ProductKeys reached readiness with 12 core stream contexts.
+- **Archive:** storage ID
+  `ef852751-721c-4145-9083-f6fd48718480` resolves to the registered
+  `/srv/recorder-data/recorder-archive` directory on ext4 `/dev/vdb1`. The
+  one-file canary and timer drain used only the existing verified
+  ArchiveManager/Catalog transaction. Backlog reached zero; the one full
+  verification reported 112,570 verified files, zero failed, and zero pending.
+  The timer is enabled/active/waiting with a future monotonic trigger.
+- **Capacity:** the conservative existing 24-hour generation rate is
+  `349910.017730 B/s`; the 278-hour projection is `350189945744` bytes, below
+  the archive free-space margin of approximately `1771538091120` bytes. The
+  active writer root has only about 26.46 hours above its 10 GiB hard reserve
+  at that rate. The initial backlog-clearance envelope was approximately
+  1.51 MB/s wall-clock, and service-active mean was approximately 1.76 MB/s;
+  the full-window 347,073 B/s average includes idle cycles and is not saturated
+  capacity. Every Formal stage start/end must recheck these values.
+- **Live interaction:** direct unsigned official eligibility was captured for
+  Spot and USD-M BTCUSDT/ETHUSDT. Readiness and an approximately five-minute
+  non-formal interaction were observed, then Recorder was gracefully stopped
+  and the sealed post-stop backlog was drained. No Formal T0, P1 observer,
+  long soak, or automatic stage advancement occurred.
+- **Evidence and limits:** the VPS evidence bundle and checksum are listed in
+  the acceptance file. Corrected-before-start orchestration failures remain
+  preserved there. Full local pytest/Ruff/MyPy/build and manual CI were not run
+  for this docs-only closeout; deployment pip checks, readiness, archive drain,
+  full archive verification, and the authorized capacity forecast were run on
+  the VPS. P2 does not certify long-run generation, active-root runway, or
+  Production Ready status.
+- **Next:** `NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`. A
+  later authorized run may revalidate exact identity/readiness and request the
+  Formal 2-hour start; no Formal stage is started by this milestone.
 
 ### M22.9 — Exact VPS staged acceptance
 
