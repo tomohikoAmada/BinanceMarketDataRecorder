@@ -5,7 +5,7 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — MS4-C reviewed complete; MS4-D not started (2026-09-11)
+## Current stage — MS4-D reviewed complete; bounded MS4 closed (2026-09-11)
 
 MS4-A local preparation and MS4-B target preflight/stopped-deployment review
 remain complete. The owner-authorized MS4-C attempt started the reviewed
@@ -31,13 +31,36 @@ The service was gracefully stopped and remains stopped. A receiver-only SSH
 archive cycle to the explicitly authorized MacBook Downloads internal-folder
 test target was verified; it created no remote pending authority, did not
 delete or retire the VPS source, and did not produce a formal receipt-bound
-Catalog snapshot. `PRODUCTION_READY=NO`; the full MS4 milestone remains
-incomplete and MS4-D has not started. The archive timer is explicitly
-`disabled`.
+Catalog snapshot. MS4-D reviewed the bounded evidence and closes the
+multi-symbol qualification for the exact four-ProductKey profile. The archive
+timer is explicitly `disabled`; Formal M22.9 remains separate and unstarted,
+and `PRODUCTION_READY=NO`.
+
+The current MS4-D review base is `main` commit
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`). It includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
+`34551834444` completed successfully. These are review authorities only; the
+current main is not deployed.
+
+The final read-only VPS check at `2026-09-11T06:39:23Z` passed: Recorder was
+`inactive/dead` with `MainPID=0`, `Result=success`, `NRestarts=0`, and the
+archive timer was `disabled/inactive`. It observed `/dev/vdb1` (`ext4`) mounted
+at `/srv/recorder-data` with `2163348520960` total bytes,
+`19120271360` used, `2122221260800` available and `1%` used. The active writer
+root remains `/var/lib/binance-market-data-recorder`; this mounted disk is an
+archive target, not the active writer root. No start, mutation or live traffic
+occurred during the check.
 
 MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
 MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
-MS4_D=NOT_STARTED; NEXT=MS4_D_REVIEW_STAGE_CLOSURE.
+MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
+FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+PRODUCTION_READY=NO; CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION.
 
 ## Original MS4-C attempt disposition — 2026-09-10
 
@@ -157,8 +180,15 @@ authority:
 ### A. Live GitHub main and current behavior/deployment source
 
 ```text
-MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
-MS4_C_REVIEW_BASE_MAIN_TREE=53342ac880cc36d65eba6f5e9b49fa722cc9d56b
+HISTORICAL_MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
+HISTORICAL_MS4_C_REVIEW_BASE_MAIN_TREE=53342ac880cc36d65eba6f5e9b49fa722cc9d56b
+MS4_D_REVIEW_BASE_MAIN_SHA=e11d5cbdf861ab82bb110ead8e98a1f9498f3c55
+MS4_D_REVIEW_BASE_MAIN_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+MS4_D_REVIEW_BASE_PR=61
+MS4_D_REVIEW_BASE_PR_COMMIT_SHA=013e20d6b911fde2f443aa6c855039599483ef7d
+MS4_D_REVIEW_BASE_PR_COMMIT_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+MS4_D_REVIEW_BASE_CI_RUN=34551834444
+MS4_D_REVIEW_BASE_CI_STATUS=COMPLETED_SUCCESS
 MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
 CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
@@ -188,13 +218,17 @@ MS3_CI2=CLOSED
 MS3_R2=CLOSED
 MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
 MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
-MS4=IN_PROGRESS_MS4_C_REVIEWED_COMPLETE
+MS4=REVIEWED_COMPLETE
 MS4_A=REVIEWED_COMPLETE
 MS4_B=REVIEWED_COMPLETE
 MS4_C=REVIEWED_COMPLETE
 RECOVERY_GATE=REVIEWED_COMPLETE
-MS4_D=NOT_STARTED
-NEXT=MS4_D_REVIEW_STAGE_CLOSURE
+MS4_D=REVIEWED_COMPLETE
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
 ```
 
 The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
@@ -214,11 +248,16 @@ MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy. The MS1 merge SHA
 above is historical foundation lineage; current behavior/deployment authority
 is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. GitHub `main` at MS4-C review
-start was `efae0135ed5272d18d800af0ac247b70ece07422` with tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`. It is the PR #60 merge,
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The historical GitHub `main` at
+MS4-C review start was `efae0135ed5272d18d800af0ac247b70ece07422` with tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`; it is the PR #60 merge,
 documentation-only relative to the deployed source, and not production
-deployed; later GitHub merges may change live `main`.
+deployed. The current MS4-D review base is
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` with tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`; it includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d`, and base CI run `34551834444`
+completed successfully. Later GitHub merges may change live `main`.
 
 ### B. Deployed and clean-24h authority
 
@@ -327,8 +366,8 @@ existing sequential storage Profile D test is labeled as storage-layer proof;
 the new running-path test proves simultaneous activity and sibling progress
 under target backpressure. It adds no generic scheduler, persisted metrics
 migration, or speculative optimization. Independent re-review/merge is closed;
-see `docs/milestone_acceptance/MS3.md`. MS4-B stopped-deployment review and the
-MS4-C recovery-gate review are complete; MS4-D review/stage closure is next.
+see `docs/milestone_acceptance/MS3.md`. MS4-B stopped-deployment review, the
+MS4-C recovery-gate review and the MS4-D bounded stage closure are complete.
 
 ### MS4 — Configurable-product integration / deployment qualification
 
@@ -340,8 +379,9 @@ that window. The separate passing R3
 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the MS4-C recovery gate for review
 with zero Formal M22.9 credit; it does not retroactively grant the original
 window duration. The receiver-only Mac archive cycle did not authorize source
-retirement. MS4-D review/stage closure is next; do not automatically schedule
-72h or 168h, and keep Formal M22.9 separate.
+retirement. The resulting qualification is non-formal and bounded to the
+four-product core; do not automatically schedule 72h or 168h, and keep Formal
+M22.9 separate.
 
 ## Non-negotiable boundaries
 
@@ -361,12 +401,15 @@ or use an external volume as an active Collector target.
 `MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
 `MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
 `MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
-`MS4=IN_PROGRESS_MS4_C_REVIEWED_COMPLETE`,
+`MS4=REVIEWED_COMPLETE`,
 `MS4_B=REVIEWED_COMPLETE`, `MS4_C=REVIEWED_COMPLETE`,
-`RECOVERY_GATE=REVIEWED_COMPLETE`, `MS4_D=NOT_STARTED`,
-`NEXT=MS4_D_REVIEW_STAGE_CLOSURE`.
+`RECOVERY_GATE=REVIEWED_COMPLETE`, `MS4_D=REVIEWED_COMPLETE`,
+`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS`,
+`QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
+`NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION`.
 
-Any MS4-C start requires the reviewed exact installed source/artifact,
+Any further MS4-C live traffic requires the reviewed exact installed source/artifact,
 immutable Wheel, lock, config, unit, and deployment identities, explicit start
 authorization, and a fresh bounded qualification. Historical single-symbol
 duration credit does not transfer to the current multi-symbol artifact.

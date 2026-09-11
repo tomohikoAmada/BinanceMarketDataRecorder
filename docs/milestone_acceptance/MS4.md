@@ -1,6 +1,115 @@
 # MS4 qualification acceptance ledger
 
-## Current MS4-C disposition — reviewed complete; original window partial
+## Current MS4-D final closure — reviewed complete (2026-09-11)
+
+MS4-D reviewed the exact implementation and the bounded MS4-C/R3 evidence
+below. The result is a closed, non-formal, four-ProductKey qualification
+record. It does not certify every possible symbol, long-duration operation,
+Formal M22.9, external-media production archiving, source retirement, or
+Production Ready.
+
+```text
+REVIEW_BASE_MAIN_SHA=e11d5cbdf861ab82bb110ead8e98a1f9498f3c55
+REVIEW_BASE_MAIN_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+IMPLEMENTER=LUNA_MAX
+FINAL_REVIEWER=PRIMARY_AGENT
+PRODUCT_CODE_AND_GATES_DIFF_FROM_DEPLOYED_SOURCE=NONE
+MS4_D_REVIEW_BASE_PR=61
+MS4_D_REVIEW_BASE_PR_COMMIT_SHA=013e20d6b911fde2f443aa6c855039599483ef7d
+MS4_D_REVIEW_BASE_PR_COMMIT_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+MS4_D_REVIEW_BASE_CI_RUN=34551834444
+MS4_D_REVIEW_BASE_CI_STATUS=COMPLETED_SUCCESS
+DEPLOYED_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+DEPLOYED_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+WHEEL_SHA256=cfce08f747bf53372e4619d37bdfdbab9a6b3bd39c7f09337ddf86c9286b5602
+LOCK_SHA256=44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335
+CONFIG_SHA256=4dbbb6bf415b209635857df6cf537478b03f262b2c3a88553ac77bb9c1c0d781
+SYSTEMD_UNIT_SHA256=d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6
+DEPLOYMENT_IDENTITY_SHA256=e925733f9e0388b705ffcad40664bdb049ba786f4b170462275891f838cd41e5
+EVIDENCE_ROOT=/Users/amada/Downloads/BinanceMarketDataRecorder-MS4-C-20260910
+STOPPED_AUDIT_PATH=vps-evidence/stopped-audit.json
+RECOVERY_R3_AUDIT_PATH=recovery-r3-evidence/recovery-audit.json
+ARCHIVE_RECEIVE_RESULT_PATH=evidence/receive-result.json
+STOPPED_AUDIT_SHA256=0e14518202cfa4039f4275fe3ef230752b26ac9a9a146a177b6dab60aafba0d9
+RECOVERY_R3_AUDIT_SHA256=be69a8bc3e88f78ded017021b85d2e7978ea3d2d42d9bdcf8b9974e38e204f7e
+ARCHIVE_RECEIVE_RESULT_SHA256=41f47ca9f3d672f6bd085d6036f7f5e8a3e0fa0256b24f92c6f1f98029e27de7
+PRODUCT_KEYS=(spot,BTCUSDT),(spot,ETHUSDT),(um_perpetual,BTCUSDT),(um_perpetual,ETHUSDT)
+AUXILIARY_KINDS=none
+PROXY_MODE=direct
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4_D=REVIEWED_COMPLETE
+MS4=REVIEWED_COMPLETE
+MS4_D_REVIEW_CONCLUSION=ALL_11_MAIN_GATES_PASS
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+ACTUAL_ROLLBACK_EXECUTION=NOT RUN
+QUEUE_DEPTH=UNAVAILABLE
+ARCHIVE_SCOPE=MAC_INTERNAL_APFS_RECEIVER_ONLY_TEST_PATH
+FINAL_READ_ONLY_VPS_CHECK_AT=2026-09-11T06:39:23Z
+FINAL_READ_ONLY_VPS_CHECK=PASS
+FINAL_RECORDER_STATE=inactive/dead
+FINAL_RECORDER_MAINPID=0
+FINAL_RECORDER_RESULT=success
+FINAL_RECORDER_NRESTARTS=0
+FINAL_ARCHIVE_TIMER_STATE=disabled/inactive
+ACTIVE_WRITER_ROOT=/var/lib/binance-market-data-recorder
+ARCHIVE_DISK_DEVICE=/dev/vdb1
+ARCHIVE_DISK_FSTYPE=ext4
+ARCHIVE_DISK_MOUNT=/srv/recorder-data
+ARCHIVE_DISK_TOTAL_BYTES=2163348520960
+ARCHIVE_DISK_USED_BYTES=19120271360
+ARCHIVE_DISK_AVAILABLE_BYTES=2122221260800
+ARCHIVE_DISK_USE_PERCENT=1%
+ARCHIVE_DISK_ROLE=MOUNTED_ARCHIVE_TARGET_NOT_ACTIVE_WRITER_ROOT
+NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
+```
+
+### MS4-D gate ledger
+
+Each main gate uses exactly one of the acceptance states `PASS`, `FAIL`,
+`NOT RUN` or `BLOCKED`. Scope limits are recorded in the reason; they do not
+create a fifth gate state.
+
+| Gate | State | Direct evidence and bounded limitation |
+| --- | --- | --- |
+| IDENTITY | `PASS` | The deployed source/tree and Wheel, lock, config, unit and deployment-identity hashes above matched at MS4-B, the original C window and R3 checks. |
+| TOPOLOGY | `PASS` | One process owned exactly four configured ProductKeys, 12 core stream contexts and four REST snapshot contexts; no extra product or automatic discovery was used. Auxiliary data was disabled. |
+| READINESS | `PASS` | All four ProductKeys were ready in the original T0 and 121 observations; R3 retained all four ready and receiving for 15 post-fault observations. This is not long-duration evidence. |
+| RAW_MANIFEST_CATALOG | `PASS` | The stopped audit recorded 1,637 SEALED transitions across all core and snapshot contexts with valid manifests/Catalog state; R3 added 23 validated chunks across 12 core contexts. Active, partial, malformed, degraded and unclosed counts were zero. |
+| CONTINUITY_RECOVERY | `PASS` | An exact MainPID-owned socket disconnect produced one explicit `sequence_gap` for `um_perpetual:BTCUSDT/book_ticker`, a new connection and recovery in `0.436024210` seconds. The original C window remains recovery `NOT RUN`; historical continuity is not claimed restored. |
+| SHARED_REST | `PASS` | Accepted exact-source offline traces and the bounded live run showed no cooldown bypass or duplicate global owner. Auxiliary live side-data and deliberate live 418/429 behavior were not covered. |
+| ARCHIVE | `PASS` | One authorized receiver-only receive/readback/hash/manifest/receipt cycle passed for the internal APFS MacBook Downloads test path. It is not external-media or production archive certification; no formal Catalog snapshot or source retirement was performed. |
+| CPU_RSS_QUEUE_BACKPRESSURE | `PASS` | Bounded RSS, cgroup memory and CPU samples showed no OOM, restart or backpressure symptoms. Queue depth was unavailable, so no long-run queue trend is claimed. |
+| CAPACITY_RUNWAY | `PASS` | Minimum free bytes were `44328247296`, hard-reserve violations were zero, and the last ETA was approximately 25h versus the 3h bounded envelope. The final read-only check at `2026-09-11T06:39:23Z` also observed `/dev/vdb1` (`ext4`) mounted at `/srv/recorder-data`, with `2163348520960` total bytes, `19120271360` used, `2122221260800` available and `1%` used. This is a mounted archive target, not the active writer root; shared-host attribution and Formal runway remain unproven. |
+| SHUTDOWN | `PASS` | Final read-only VPS check at `2026-09-11T06:39:23Z` confirmed systemd `inactive/dead`, `MainPID=0`, `Result=success`, `NRestarts=0`, and archive timer `disabled/inactive`; no start, mutation or live traffic occurred. The active writer root remains `/var/lib/binance-market-data-recorder`. |
+| ROLLBACK_COMPATIBILITY | `PASS` | MS4-B compatibility preflight was verified for the preserved identity. `ACTUAL_ROLLBACK_EXECUTION=NOT RUN`; no claim is made that an artifact rollback was exercised. |
+
+The original 2026-09-10 MS4-C window remains
+`EXECUTED_PARTIAL_NOT_ACCEPTED`; the independent 2026-09-11 R3 supplement
+closes the recovery gate only and does not transfer duration credit. The
+receiver-only archive result is a selected test-path result, not production
+archive certification. These limitations are non-formal scope boundaries for
+this closure, and remain open risks for later work.
+
+### MS4-D documentation checks
+
+This milestone changes documentation only. The permitted checks are
+`git diff --check`, a scoped status/claim `rg` review, and `git status`; pytest,
+Ruff, MyPy, build, online smoke, and Formal M22.9 observation were not run
+because they are outside this documentation-only closure. A final read-only VPS
+status/identity/disk check at `2026-09-11T06:39:23Z` was `PASS`; it observed
+the Recorder stopped and the archive target mounted, with no start, mutation or
+live traffic.
+
+## Historical MS4-C disposition — reviewed complete; original window partial
 
 The owner-authorized MS4-C attempt on 2026-09-10 reached the bounded steady
 interval after all four configured ProductKeys became ready. Its original
@@ -27,9 +136,9 @@ The Tokyo Recorder was then stopped cleanly and remains stopped. One
 receiver-only SSH archive cycle to the owner-authorized internal APFS MacBook
 Downloads test target was verified after the stop. The archive timer is
 explicitly disabled. It created no remote pending authority, did not retire
-the VPS source, and has no formal receipt-bound Catalog snapshot. This closes
-the MS4-C recovery gate only; it does not close overall MS4 or authorize
-Formal M22.9.
+the VPS source, and has no formal receipt-bound Catalog snapshot. The status
+block below is the time-local pre-MS4-D snapshot; the current closure is
+recorded above. It does not authorize Formal M22.9.
 
 ```text
 MS4_A=REVIEWED_COMPLETE
@@ -41,16 +150,16 @@ MS4_D=NOT_STARTED
 NEXT=MS4_D_REVIEW_STAGE_CLOSURE
 ```
 
-## Current MS4-B disposition — target preflight and stopped deployment
+## Historical MS4-B disposition — target preflight and stopped deployment
 
 The Tokyo target preflight, old-deployment rollback evidence, exact frozen
 Linux artifact, complete four-ProductKey configuration, stopped systemd
 installation, and deployment identity verification are reviewed complete for
 the stopped boundary.
 The Recorder was gracefully stopped before mutation and remains stopped. This
-MS4-B exit does not include the later MS4-C attempt, controlled recovery,
-source retirement or Formal M22.9. `PRODUCTION_READY` remains `NO`; the full
-MS4 milestone remains incomplete.
+MS4-B boundary record does not include the later MS4-C attempt, controlled
+recovery, source retirement or Formal M22.9. Its status block is time-local;
+the current MS4-D closure is recorded at the top of this file.
 
 ```text
 MS4_A=REVIEWED_COMPLETE

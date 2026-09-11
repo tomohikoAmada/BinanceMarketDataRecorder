@@ -9,9 +9,10 @@ is installed from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`) and was run in the bounded MS4-C/R3
 core qualification; it is now stopped. The original two-hour window remains
 partial, while the R3 supplement closes the recovery gate for review with zero
-Formal M22.9 duration credit. The archive timer is disabled; the archive
-protocol/library, approved cross-machine target, operator command freeze, and
-production certification remain pending.
+Formal M22.9 duration credit. The archive timer is disabled; the selected
+Mac internal APFS receiver-only path was verified, while external-media
+production certification, source retirement and the Formal M22.9 chain remain
+pending.
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
@@ -30,8 +31,9 @@ single-symbol artifact; its clean 24-hour non-formal stage is complete. MS3-B
 is merged, and the MS4-B exact target deployment is reviewed complete. The
 original MS4-C window was partial; the R3 supplement closes the recovery gate
 for review with zero Formal M22.9 duration credit. The service is stopped, the
-archive timer is disabled, and MS4-D review/stage closure is next. Formal M22.9
-has not started and Production Ready remains NO.
+archive timer is disabled, and MS4-D has closed the non-formal bounded
+four-ProductKey qualification. Formal M22.9 has not started and Production
+Ready remains NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -217,9 +219,9 @@ Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
 measurements are also point-in-time evidence, not permanent runway. The current
-project next action is MS4-D review/stage closure; external-media certification,
-source retirement, and the 278-hour formal chain remain gated rather than
-automatically scheduled.
+project next action is separately authorized Formal M22.9 preparation;
+external-media certification, source retirement, and the 278-hour formal chain
+remain gated rather than automatically scheduled.
 
 Exact VPS static verification and the 300-second recovery-first readiness gate
 are exposed as:

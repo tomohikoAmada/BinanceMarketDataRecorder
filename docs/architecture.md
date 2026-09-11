@@ -2,14 +2,20 @@
 
 This document describes the implemented Recorder, the approved future
 deployment topology, and the implemented configurable product set.
-GitHub `main` is recorded below at the MS4-C review start; later merges may
-change live `main`. The current behavior/deployment-source
+The historical GitHub `main` snapshot at the MS4-C review start is recorded
+below; later merges may change live `main`. The current behavior/deployment-source
 authority for the reviewed MS4-B stopped deployment is
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). GitHub `main` at MS4-C review
 start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), a documentation-only merge
-relative to the deployment source and not production-deployed authority. The
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), a documentation-only PR #60
+merge relative to the deployment source and not production-deployed authority.
+The current MS4-D review base is main
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
+`34551834444` completed successfully. The
 MS1 merge
 `d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
 `95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical MS1 foundation
@@ -19,10 +25,10 @@ non-formal stage is complete. MS2 and MS3-B are implemented, offline-accepted,
 and merged (MS3-B through PR #56). MS4-B stopped-deployment review is complete.
 The original MS4-C two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; the
 separate passing R3 non-formal supplement closes the MS4-C recovery gate for
-review with zero Formal M22.9 duration credit. The Recorder is stopped, the
-archive timer is disabled, MS4-D review/stage closure is next, and overall MS4
-is not complete. Formal M22.9 has not started and Production Ready is not
-authorized. See `docs/PROJECT_HANDOFF.md` and
+review with zero Formal M22.9 duration credit. MS4-D closes the bounded
+four-ProductKey qualification. The Recorder is stopped, the archive timer is
+disabled, Formal M22.9 has not started, and Production Ready is not authorized.
+See `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`.
 
 ## M19 recovery boundary
@@ -409,9 +415,10 @@ supported-symbol allowlist. MS2 and MS3-B are merged and offline-accepted;
 MS4-B stopped-deployment review is complete. The original MS4-C two-hour
 window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; the passing R3 non-formal
 supplement makes MS4-C `REVIEWED_COMPLETE` for its recovery gate with zero
-Formal M22.9 duration credit. The archive was receiver-only rather than
-external-media certification, source retirement was not authorized, MS4-D is
-next, and Formal M22.9/Production Ready remain unauthorized.
+Formal M22.9 duration credit. MS4-D closes the non-formal bounded
+four-ProductKey qualification. The archive was receiver-only rather than
+external-media certification, source retirement was not authorized, and
+Formal M22.9/Production Ready remain unauthorized.
 
 ## Runtime isolation
 

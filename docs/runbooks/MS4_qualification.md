@@ -2,14 +2,16 @@
 
 Status: **MS4-B target preflight/stopped deployment REVIEWED_COMPLETE; the
 original MS4-C window is EXECUTED_PARTIAL_NOT_ACCEPTED; the separate R3
-non-formal recovery supplement is REVIEWED_COMPLETE; MS4-D NOT_STARTED**.
+non-formal recovery supplement and MS4-D bounded stage closure are
+REVIEWED_COMPLETE; overall MS4 is REVIEWED_COMPLETE for the non-formal bounded
+four-ProductKey core**.
 This is a preparation reference, not a copy-and-run deployment script. Target
 inputs and target-specific publication/remote-archive commands remain subject
 to review before any continuation. No command authorizes VPS access, deployment
 or Binance traffic by itself. See
 [`MS4-C-20260910`](../milestone_evidence/MS4-C-20260910.md) for the original
-window and R3 supplement disposition; it is not full MS4 or Formal M22.9
-acceptance.
+window and R3 supplement disposition; it is the bounded MS4 record, not
+Formal M22.9 acceptance.
 
 The runbook uses the existing CLI, systemd manager, deployment identity and
 existing read-only status/report interfaces. It does not introduce a scheduler, a second
@@ -305,7 +307,9 @@ item. No new observer implementation is requested. The resulting
 record must say NONFORMAL_MS4 and grants zero Formal M22.9 duration credit.
 
 The separate 2026-09-11 R3 supplement passed its bounded recovery gate. Its
-evidence is `/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`;
+original VPS evidence is `/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`;
+the local review mirror is under
+`/Users/amada/Downloads/BinanceMarketDataRecorder-MS4-C-20260910/recovery-r3-evidence/`;
 the classification is `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` and formal M22.9
 credit is zero. It used fresh official Spot/USD-M eligibility, an exact
 MainPID-owned socket disconnect, and existing status/journal/Catalog reads.
@@ -349,8 +353,9 @@ internal-folder test target. One receiver-only cycle is verified in the
 attempt report; it created no remote authority and did not retire the source.
 The archive timer is explicitly `disabled` after the run. A host reboot does
 not automatically schedule the timer; manual archive remains unauthorized.
-The transfer protocol/library exists, but this partial result does not certify
-the production archive workflow or a receipt-bound Catalog snapshot. Preserve
+The transfer protocol/library exists, but this selected test-path result does
+not certify the production archive workflow or a receipt-bound Catalog
+snapshot. Preserve
 verified receive/readback/size/SHA-256/manifest/receipt evidence and keep
 source retirement separately authorized. An unavailable destination means
 archive acceptance NOT RUN, not PASS.
@@ -429,5 +434,5 @@ remains an executed-partial record because controlled recovery was not
 executed in its approved window. The separate passing R3 non-formal supplement
 closes the MS4-C recovery gate for review with zero Formal M22.9 credit. Any
 additional live traffic or source retirement requires a fresh explicit review;
-MS4-D review/stage closure is next, and Formal M22.9 is not started from this
-runbook.
+MS4-D bounded stage closure is complete. Formal M22.9 preparation is the next
+separately authorized program and is not started from this runbook.

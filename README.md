@@ -1,15 +1,21 @@
 # Binance Market Data Recorder
 
-> **MS4-C reviewed complete for its recovery gate (2026-09-11):** the
+> **MS4-D reviewed complete; bounded MS4 qualification closed (2026-09-11):** the
 > original 2026-09-10 two-hour window remains
 > `EXECUTED_PARTIAL_NOT_ACCEPTED` because recovery was not run in that window.
 > The separate passing R3 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the
 > MS4-C recovery gate with zero Formal M22.9 duration credit. The Recorder is
-> stopped, the archive timer is `disabled`, MS4-D review/stage closure is next,
-> and overall MS4 remains incomplete. `FORMAL_M22_9=NOT_STARTED`,
-> `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`. GitHub `main` at MS4-C
-> review start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
-> `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); the stopped deployment source
+> stopped, the archive timer is `disabled`, and overall MS4 is
+> `REVIEWED_COMPLETE` for the non-formal bounded four-product core.
+> `FORMAL_M22_9=NOT_STARTED`, `FORMAL_M22_9_CREDIT_SECONDS=0`,
+> `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`. The historical MS4-C
+> review-start `main` (PR #60) was `efae0135ed5272d18d800af0ac247b70ece07422`
+> (tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`). The current MS4-D
+> review base is `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+> `9fcf3e4128706938ffd02ef5a6af80c558cb234b`), which includes merged
+> MS4-C evidence closeout PR #61 at commit
+> `013e20d6b911fde2f443aa6c855039599483ef7d` (same tree); base CI run
+> `34551834444` completed successfully. The stopped deployment source
 > is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 > `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). See [current state](docs/CURRENT_PRODUCTION_STATE.md),
 > [handoff](docs/PROJECT_HANDOFF.md), and [MS4 acceptance](docs/milestone_acceptance/MS4.md).
@@ -139,7 +145,7 @@ MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在正�
 它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所插件框架；MS2 已通过
 离线验收，MS3-B 离线证据已通过 PR #56 合并；原始 MS4-C 两小时窗口为
 `EXECUTED_PARTIAL_NOT_ACCEPTED`，R3 非正式补充已完成 recovery-gate review；MS4-D
-review/stage closure 为下一步。Recorder 保持 stopped，archive timer 为 disabled。
+已完成 bounded stage closure。Recorder 保持 stopped，archive timer 为 disabled。
 支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
@@ -201,8 +207,8 @@ review/stage closure 为下一步。Recorder 保持 stopped，archive timer 为 
 | Symbol | Operator-configured finite Spot/USD-M lists; legacy BTCUSDT/BTCUSDT only when both fields are absent |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
-| 当前生产状态 | GitHub `main` at MS4-C review start was `efae0135…` (tree `53342ac…`), not deployed; current behavior/deployment source is `303e073e…` (tree `2b30a4dd…`), installed for MS4-B, then run in the bounded MS4-C/R3 core qualification and stopped; the original MS4-C two-hour window is `EXECUTED_PARTIAL_NOT_ACCEPTED`, while the separate R3 non-formal supplement makes MS4-C `REVIEWED_COMPLETE` for the recovery gate; MS4-D review/stage closure is next; archive timer is disabled; the independently qualified source remains pre-MS1 `c421605…`; Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55, MS3-B via PR #56; GitHub `main` at MS4-C review start was not deployed |
+| 当前生产状态 | 历史 MS4-C review-start `main`（PR #60）为 `efae0135…`（tree `53342ac…`），未部署；当前 MS4-D review base 为 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55`（tree `9fcf3e4…`），其中包含已合并的 MS4-C evidence closeout PR #61（commit `013e20d6…`），base CI `34551834444` completed/success；实际行为/部署 source 为 `303e073e…`（tree `2b30a4dd…`），已安装用于 MS4-B 并运行 bounded MS4-C/R3 core qualification 后停止；原始 MS4-C 两小时窗口为 `EXECUTED_PARTIAL_NOT_ACCEPTED`，独立 R3 non-formal supplement 完成 recovery-gate review，MS4-D 关闭 bounded MS4 qualification；archive timer disabled；Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55, MS3-B via PR #56; historical MS4-C review-start PR #60 was not deployed; current MS4-D review base includes merged MS4-C evidence closeout PR #61 (`013e20d6…`), CI `34551834444` completed/success |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -233,7 +239,7 @@ CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀�
 | Replay | 已实现 | 只读 Consumer Python API | 确定性事件流 | 无网络 API |
 | Historical Backfill | 已实现 | `backfill plan/run` CLI | Parquet (archive clock) | 无 L2, 无 receive clock |
 | launchd 服务 | 已实现 | `launchd install` CLI | LaunchAgent plist | logged-in user only |
-| systemd 服务 | 已实现；MS4-B exact target deployment is installed and stopped; MS4-C recovery-gate review is complete | `systemd install` CLI | system unit + journald | MS4-D review/stage closure and formal M22.9 remain unstarted |
+| systemd 服务 | 已实现；MS4-B exact target deployment is installed and stopped; MS4-C recovery-gate review and MS4-D bounded stage closure are complete | `systemd install` CLI | system unit + journald | Formal M22.9 remains separately authorized and unstarted |
 | 统一代理策略 | M20 已实现 | TOML / environment | direct/environment/explicit | 显式 URL 不进入状态或数据 |
 | Blue/Green 切换 | 已实现 | make-before-break | 重叠 Raw + Catalog 审计 | 长期重复轮换未验证 |
 | CLI 诊断 | 已实现 | `doctor/status/config` | JSON | 离线 |
@@ -1125,7 +1131,7 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   window（15m absolute startup + 2h steady + 15m recovery + 15m shutdown +
   margin）已执行但为 `EXECUTED_PARTIAL_NOT_ACCEPTED`，因为 recovery 未在该
   窗口运行。独立 R3 non-formal supplement 已完成 recovery-gate review，
-  Formal M22.9 duration credit 为 0；MS4-D review/stage closure 尚未开始。
+  Formal M22.9 duration credit 为 0；MS4-D 已完成 bounded stage closure。
   Formal M22.9 的 2h/12h/24h/72h/168h chain 也尚未开始；任何后续 live run
   都需先冻结证据并获得单独授权。
 - 正式 M22.9 的约 278h 完整链是后续容量门，不是当前下一项测试。
@@ -1139,9 +1145,9 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
   代码使用 `lastUpdateId + 1`，不作官方纠正声明。
 - **R-035（Open）**：原始 MS4-C bounded non-formal window 已完成两小时段但
   仍为 `EXECUTED_PARTIAL_NOT_ACCEPTED`；R3 supplement 仅闭合 recovery gate，
-  不提供长期运行或 Formal M22.9 duration credit。MS4-D review/stage closure、
-  Formal M22.9 的 2h/12h/24h/72h/168h chain、外置介质认证和 source retirement
-  仍未完成，Production Ready 未授权。
+  不提供长期运行或 Formal M22.9 duration credit。Formal M22.9 的
+  2h/12h/24h/72h/168h chain、外置介质认证和 source retirement 仍未完成，
+  Production Ready 未授权。
 - **R-036（Open）**：USD-M 5 分钟统计在 Recorder 离线期间可能错过，
   超出保留窗口即不可恢复。
 
@@ -1155,8 +1161,8 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - Binance 公开端点可能限流、封禁、变更或区域不可用。
 - MS2 可配置 product-set runtime 和 MS3-B shared-resource/bounded-load/archive/capacity
   离线验收已通过；原始 MS4-C bounded non-formal window 已运行但为 partial，R3
-  supplement 已完成 recovery-gate review；MS4-D stage closure、长期和 Formal
-  验证仍未开始。
+  supplement 已完成 recovery-gate review；MS4-D 已完成 bounded stage closure，
+  但长期和 Formal 验证仍未开始。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 已安装，在 bounded
