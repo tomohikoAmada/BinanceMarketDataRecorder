@@ -1,6 +1,58 @@
 # Milestone Plan
 
-## Current stage disposition — M22.9-P2 reviewed complete (2026-09-11)
+## Current stage disposition — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+
+The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
+before the first observer sample. T0 was
+`2026-09-11T13:41:32.831837Z` / `1789134092831837314` ns, with BOOTTIME
+`789457702764089` and boot ID
+`f2720022-bc39-4e22-bc68-af6bfce92274`. The detached observer unit
+`binance-market-data-acceptance-2h-20260911T132845Z-5b4fd719.service`
+failed with exit 1, InvocationID
+`ee05ad7a73f04dec867629767439bc82`.
+
+Formal failed root:
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`.
+Stage root:
+`.../2h-a8b45b7e1da640c497213b172c235815`. Immutable stage-start SHA-256:
+`1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
+Stage-start result was FAIL with 24 blockers: 23 Catalog/manifest
+disagreements and one unexplained raw absence. The separate pre-T0 aborted
+setup root
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T130258Z-646792f2`
+is preserved and receives no credit; it is not the Formal failed T0.
+
+The quiescent exact-chunk forensic review covered 26 unique IDs from those
+findings. Every row currently resolves to verified archive state with Catalog
+`LOCAL_DELETED`, retained internal manifest, absent internal sealed Raw, and
+present verified archive Raw/manifest. The 26 archive transactions and local
+source retirements occurred after T0. This supports, but does not prove, a
+concurrent AcceptanceObserver filesystem/Catalog snapshot race; there is no
+per-read interleaving trace. The installed read-only post-stop audit completed
+over 112,817 manifests in 115.95 seconds with zero Catalog findings, zero
+integrity findings, and zero chunks with scan issues. Additive correction
+evidence preserves the original closeout and supersedes only its mistaken
+no-result statement.
+
+The failed-stage closeout evidence is in the formal root under
+`operator-evidence/closeout-review/`; its exact hashes and final VPS state are
+recorded in [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+
+```text
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+```
+
+The next milestone is only acceptance-observer/archive-concurrency diagnosis,
+fix, and offline test. Redeploy and Formal retry require separate
+authorization.
+
+## P2 deployment basis — reviewed complete (2026-09-11)
 
 M22.9-P2 executed the exact deployment, archive, and capacity preflight. The
 installed source is the P2 deployment source/review base
@@ -10,7 +62,9 @@ reached readiness with 12 core stream contexts, then Recorder was gracefully
 stopped. The registered 2 TB archive target was drained through the existing
 verified ArchiveManager/Catalog path; full verification reported 112,570
 verified files, zero failed, and zero pending. The managed archive timer is
-enabled and active/waiting with a future monotonic trigger.
+enabled and active/waiting with a future monotonic trigger. At P2 completion
+Formal M22.9 was unstarted; the later Formal 2-hour attempt is recorded in
+the current closeout section above.
 
 The evidence bundle is
 `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`;
@@ -18,20 +72,24 @@ its `EVIDENCE_SUMMARY.md` and `SHA256SUMS` hashes are recorded in the P2
 acceptance file. The conservative 24-hour generation rate is
 `349910.017730 B/s`; the 278-hour archive projection leaves about 1.772 TB of
 archive margin, while active-root runway above the 10 GiB reserve is about
-26.46 hours. P2 is non-formal: Formal M22.9 remains unstarted with zero credit
-and Production Ready remains NO. P2 is reviewed complete; the next step still
-requires separate authorization.
+26.46 hours. P2 was non-formal and is reviewed complete; the subsequent
+Formal 2-hour attempt failed at T0 with zero credit, while Production Ready
+remains NO.
 
 M22_9_P2=REVIEWED_COMPLETE
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
 P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
 CURRENT_MAIN_DEPLOYED=NO
 CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
 RECORDER=STOPPED
 ARCHIVE_TIMER=ENABLED_ACTIVE
-FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
 FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
 
 ### Historical pre-P2 disposition (preserved)
 
@@ -236,9 +294,10 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | MS4-C bounded qualification | REVIEWED_COMPLETE | Original 2026-09-10 two-hour window remains `EXECUTED_PARTIAL_NOT_ACCEPTED`; separate passing R3 non-formal recovery supplement closes the recovery gate with zero Formal M22.9 credit; see `docs/milestone_evidence/MS4-C-20260910.md` |
 | MS4-D final review / documentation closure | REVIEWED_COMPLETE | Eleven bounded gates are `PASS` with explicit scope limitations; current claims are aligned without changing source, runtime or deployment behavior |
 | M22.9-P1 detached single-stage observation preparation | REVIEWED_COMPLETE | Documentation-only systemd 255 transient-unit procedure around the existing observer; current main `83a063f5bb9f91508238c9fd86d21aa45d1bd501`; no deployment, timer enablement, Recorder start, Formal T0 or duration credit |
-| M22.9-P2 exact deployment/archive/capacity preflight | REVIEWED_COMPLETE | P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` was installed and verified; registered archive drained and fully verified; timer enabled/active, Recorder stopped; see `docs/milestone_acceptance/M22.9-P2.md`; Formal M22.9 remains unstarted with zero credit |
+| M22.9-P2 exact deployment/archive/capacity preflight | REVIEWED_COMPLETE | P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` was installed and verified; registered archive drained and fully verified; timer enabled/active, Recorder stopped; see `docs/milestone_acceptance/M22.9-P2.md` |
+| M22.9 2h Formal failed closeout | REVIEWED_COMPLETE | Formal result remains `EXECUTED_FAILED_AT_T0`: failed before first observer sample with 24 stage-start blockers; zero credit; Recorder stopped and archive drained; see `docs/milestone_acceptance/M22.9-2h.md` |
 | Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
-| Formal M22.9 | NOT STARTED / OUTSIDE THIS PROGRAM | Existing formal gates remain separate; Production Ready remains NO |
+| Formal M22.9 | 2H EXECUTED_FAILED_AT_T0 / LATER STAGES NOT STARTED | Zero duration credit; Production Ready remains NO |
 
 NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
 NEXT_AFTER_CI2_REVIEW=MS4-A-LOCAL-PREPARATION
@@ -1659,10 +1718,12 @@ mutation exists; those remain exclusively M22.4B scope.
   P2 deployment source/review base was verified in the installed deployment;
   after this docs-only merge,
   `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-  The installed P2 artifact
-  remains the Formal candidate until a later authorized redeploy;
+  At P2 completion the artifact was the Formal candidate; after the failed T0
+  it remains only the installed evidence basis pending the scoped fix, review,
+  and separately authorized redeploy;
   `RECORDER=STOPPED`,
-  `ARCHIVE_TIMER=ENABLED_ACTIVE`, `FORMAL_M22_9=NOT_STARTED`,
+  `ARCHIVE_TIMER=ENABLED_ACTIVE`. At P2 completion Formal M22.9 was
+  unstarted; the later 2-hour attempt and current status are recorded above.
   `FORMAL_M22_9_CREDIT_SECONDS=0`, and `PRODUCTION_READY=NO`.
 - **Exact identity:** P2 deployment source/review base
   `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`, tree
@@ -1687,8 +1748,9 @@ mutation exists; those remain exclusively M22.4B scope.
 - **Live interaction:** direct unsigned official eligibility was captured for
   Spot and USD-M BTCUSDT/ETHUSDT. Readiness and an approximately five-minute
   non-formal interaction were observed, then Recorder was gracefully stopped
-  and the sealed post-stop backlog was drained. No Formal T0, P1 observer,
-  long soak, or automatic stage advancement occurred.
+  and the sealed post-stop backlog was drained. P2 itself created no Formal T0,
+  P1 observer, long soak, or automatic stage advancement; the later Formal
+  2-hour attempt did create T0 and failed there.
 - **Evidence and limits:** the VPS evidence bundle and checksum are listed in
   the acceptance file. Corrected-before-start orchestration failures remain
   preserved there. Full local pytest/Ruff/MyPy/build and manual CI were not run
@@ -1696,18 +1758,55 @@ mutation exists; those remain exclusively M22.4B scope.
   full archive verification, and the authorized capacity forecast were run on
   the VPS. P2 does not certify long-run generation, active-root runway, or
   Production Ready status.
-- **Next:** `NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`. A
-  later authorized run may revalidate exact identity/readiness and request the
-  Formal 2-hour start; no Formal stage is started by this milestone.
+- **Next:** `NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`.
+  The diagnosis/fix/offline-test milestone must finish before any separately
+  authorized redeploy or Formal retry; no retry is started here.
+
+### M22.9-2h — Formal failed attempt closeout
+
+- **Closeout status:** **REVIEWED_COMPLETE**. The immutable Formal result is
+  **EXECUTED_FAILED_AT_T0**. The observer failed before its first
+  sample at `2026-09-11T13:41:32.831837Z`; `FORMAL_M22_9_CREDIT_SECONDS=0`.
+  The distinct earlier pre-T0 aborted setup root remains preserved and is not
+  conflated with this Formal failed root. The 12-hour stage is
+  `12H=NOT_STARTED` and `PRODUCTION_READY=NO`.
+- **Evidence:** Failed root
+  `/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`;
+  stage root `2h-a8b45b7e1da640c497213b172c235815`; immutable stage-start
+  SHA-256 `1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
+- **Forensic disposition:** Stage-start produced 24 blockers (23 Catalog/
+  manifest disagreements plus one unexplained raw absence). The exact
+  quiescent review covered 26 unique chunk IDs; all currently resolve to
+  verified archive state, with 26 post-T0 archive/local-delete transactions.
+  This supports, but does not prove, a concurrent observer/archive snapshot
+  race. No per-read interleaving trace exists. The installed read-only
+  post-stop audit completed over 112,817 manifests in 115.95 seconds with zero
+  Catalog findings, zero integrity findings, and zero chunks with scan issues;
+  the additive correction authority supersedes only the original mistaken
+  no-result statement.
+- **Final VPS state:** Recorder is inactive/dead, `MainPID=0`,
+  `Result=success`, `NRestarts=0`, with no active `.partial`; the archive timer
+  is enabled/active/waiting, target storage ID
+  `ef852751-721c-4145-9083-f6fd48718480` is READY, backlog/pending/failed are
+  zero, and Catalog integrity is ok.
+- **Closeout evidence:** The compact JSON, human summary, and SHA256SUMS are
+  under the failed root's
+  `operator-evidence/closeout-review/`. Their paths, digests, ownership, and
+  permissions are recorded in
+  [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+- **Next:** `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`.
+  Redeploy and retry remain separately authorized actions.
 
 ### M22.9 — Exact VPS staged acceptance
 
-- **Status:** **NOT STARTED / PRODUCTION READY NO**. Historical M22.9 incident
-  and incomplete-stage evidence remains unchanged in
-  `docs/milestone_acceptance/M22.9.md`; it is not current-main authority. The
-  pre-MS1 deployed artifact's precondition-only inspection stopped before T0
-  with `INSUFFICIENT_MEASURED_CAPACITY_RUNWAY`; no formal root or acceptance ID
-  was created. This is not a formal-run failure.
+- **Status:** The Formal 2-hour stage is
+  `EXECUTED_FAILED_AT_T0`; later stages, including 12h, remain not started and
+  Production Ready is NO. The failed-stage record is in
+  `docs/milestone_acceptance/M22.9-2h.md`; older M22.9 incident and
+  incomplete-stage evidence in `docs/milestone_acceptance/M22.9.md` remains
+  historical and unchanged. The pre-MS1 precondition-only inspection stopped
+  before T0 with `INSUFFICIENT_MEASURED_CAPACITY_RUNWAY` and is a separate
+  historical record.
 - **Scope:** Only the final integrated M22 artifact runs exact identity,
   readiness, then independent `2h -> 12h -> 24h -> 72h -> 168h` stages.
 - **Non-scope:** Automatic stage advancement, transfer of M21 evidence,

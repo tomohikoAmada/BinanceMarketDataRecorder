@@ -5,7 +5,69 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current stage — M22.9-P2 reviewed complete (2026-09-11)
+## Current stage — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+
+The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
+before the first observer sample. T0 was
+`2026-09-11T13:41:32.831837Z` / `1789134092831837314` ns, BOOTTIME
+`789457702764089`, boot ID
+`f2720022-bc39-4e22-bc68-af6bfce92274`. Observer unit
+`binance-market-data-acceptance-2h-20260911T132845Z-5b4fd719.service`
+failed with exit 1, InvocationID
+`ee05ad7a73f04dec867629767439bc82`; no first sample was recorded.
+
+The failed Formal root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`
+and its stage root is
+`.../2h-a8b45b7e1da640c497213b172c235815`. The immutable stage-start
+SHA-256 is
+`1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
+Stage-start reported 24 blockers: 23
+`catalog_manifest_disagreement:<chunk_id>` findings and one
+`unexplained_raw_absence`; the attempt receives zero duration credit. The
+earlier pre-T0 aborted setup root
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T130258Z-646792f2`
+is preserved separately and is not the failed Formal T0 root.
+
+After graceful Recorder stop and the bounded verified archive drain, a
+focused exact-chunk review found all 26 unique affected chunk IDs currently
+reconciled as `AUTHORIZED_ARCHIVE_STATE_CURRENTLY_COMPLETE`: Catalog rows
+are `LOCAL_DELETED`, internal manifests remain, internal sealed Raw is
+absent, and verified archive Raw/manifests are present. All 26 archive
+transactions and source retirements occurred after T0. This supports, but
+does not prove, a concurrent AcceptanceObserver filesystem/Catalog snapshot
+race; no per-read interleaving trace exists. The compact forensic record is
+under the failed root's `operator-evidence/closeout-review/`. The full
+installed read-only post-stop audit also completed over 112,817 manifests in
+115.95 seconds with zero Catalog findings, zero integrity findings, and zero
+chunks with scan issues. An additive correction preserves the original files
+and supersedes only their mistaken no-result statement. Exact hashes are in
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+
+Current status is:
+
+```text
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+```
+
+The installed P2 exact source/review base remains
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f`, with deployment identity
+`11029b9434f72fe48912659c050167e6a058e9827cd40401c9a852dff3c019cd`.
+`CURRENT_MAIN_DEPLOYED=NO` because this documentation-only descendant is
+not installed. The installed artifact is not retry-eligible until the scoped
+fix is reviewed and a later exact artifact is separately authorized and
+deployed. The next milestone is narrowly the acceptance-observer/
+archive-concurrency diagnosis, fix, and offline test; redeploy and retry
+require separate authorization.
+
+## P2 deployment basis — reviewed complete (2026-09-11)
 
 P2 executed the exact deployment, archive, and capacity preflight. The complete
 record is [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md) and the VPS
@@ -22,9 +84,10 @@ The canonical Spot/USD-M four-ProductKey deployment reached readiness with
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records that exact identity
 verification. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the reason is
-`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy. This does not mean
-Production Ready.
+`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. At P2 completion the artifact was the
+Formal candidate; after the failed T0 it remains only the installed evidence
+basis pending the scoped fix, review, and separately authorized redeploy. This
+does not mean Production Ready.
 
 The registered archive target is storage ID
 `ef852751-721c-4145-9083-f6fd48718480` at
@@ -53,19 +116,23 @@ BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
 QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
 M22_9_P1=REVIEWED_COMPLETE;
 M22_9_P2=REVIEWED_COMPLETE;
-FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE;
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0; FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0;
+FORMAL_M22_9_CREDIT_SECONDS=0; 12H=NOT_STARTED;
 PRODUCTION_READY=NO; P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES;
 CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
 CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED;
 ARCHIVE_TIMER=ENABLED_ACTIVE;
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION.
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST;
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION.
 
 P2 used only unsigned public Binance eligibility endpoints for BTCUSDT and
 ETHUSDT on Spot and USD-M; no account, order, key, or credential endpoint was
 accessed. Source retirement occurred only through the existing verified
 ArchiveManager/Catalog transaction path; no manual deletion was used. The
 short live interaction is non-formal evidence and grants no duration credit.
-No Formal T0, P1 observer, long soak, or automatic stage advancement occurred.
+P2 itself created no Formal T0, P1 observer, long soak, or automatic stage
+advancement; the later Formal 2-hour attempt did create T0 and failed there.
 
 ### Historical MS4 and P1 checkpoints (not current authority)
 
@@ -494,15 +561,21 @@ exchanges, or arbitrary-symbol framework are authorized.
 STOPPED_DEPLOYMENT_INSTALLED=YES
 LIVE_START_AUTHORIZED=NO
 DEPLOYMENT_AUTHORIZED=NO
-FORMAL_M22_9_STARTED=NO
+FORMAL_M22_9_STARTED=YES
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
 PRODUCTION_READY=NO
 P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
 CURRENT_MAIN_DEPLOYED=NO
 CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
 M22_9_P2=REVIEWED_COMPLETE
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
 ARCHIVE_TIMER=ENABLED_ACTIVE
 RECORDER=STOPPED
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
 ```
 
 Here `DEPLOYMENT_AUTHORIZED=NO` means future live deployment/start
@@ -514,7 +587,7 @@ credit does not transfer.
 
 ## Next action
 
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
@@ -527,8 +600,13 @@ installed and verified, the registered archive was drained and fully verified,
 and bounded non-formal readiness/interaction completed before Recorder was
 stopped. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy. Formal M22.9 preparation
-and every stage still require separate authorization. The next named milestone
-is `FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`; it is not started by
-this document.
+The installed P2 artifact remains the evidence basis for the failed attempt,
+but it is not eligible for retry until the scoped observer fix is reviewed and
+a later exact artifact is separately authorized and deployed. The Formal
+2-hour stage was attempted once and failed at T0 before the first observer sample; its
+stage-start evidence and post-stop forensic review are recorded in
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The affected
+Catalog/manifest findings support, but do not prove, a concurrent archive
+snapshot race. No redeploy or retry is authorized by this document. The next named
+milestone is `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`;
+redeploy/retry authorization is separate.

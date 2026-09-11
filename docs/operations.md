@@ -15,7 +15,18 @@ Formal M22.9 duration credit. The P2 registered VPS archive target was
 exercised through the verified ArchiveManager/Catalog path; external-media
 production certification and the Formal M22.9 chain remain pending.
 
-The current milestone is `M22_9_P2=REVIEWED_COMPLETE`.
+The current milestone is `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`. The
+owner-authorized Formal 2-hour attempt remains
+`FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`: its immutable T0 existed, but the
+observer failed before its first sample with 24 blockers and receives zero
+duration credit. Post-stop exact reconciliation covered 26 implicated chunks;
+the full installed read-only audit covered 112,817 manifests with zero Catalog
+or integrity findings. This supports, but does not prove, a concurrent
+observer/archive snapshot race. Recorder remains stopped; the archive timer is
+enabled/active with zero backlog. See
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+
+The exact deployment basis remains the reviewed P2 artifact.
 The exact P2 deployment source/review base
 `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
 `c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
@@ -32,16 +43,17 @@ see [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
 verification. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy.
-`PRODUCTION_READY=NO`. Formal M22.9 remains unstarted with zero duration
-credit. The conservative archive projection has approximately 1.772 TB of
+The installed P2 artifact remains the evidence basis for the failed attempt,
+but is not retry-eligible until the scoped observer fix is reviewed and a
+later exact artifact is separately authorized and deployed.
+`PRODUCTION_READY=NO`; 12 hours and all later stages are not started. The
+conservative archive projection has approximately 1.772 TB of
 target margin, while active-root runway above the 10 GiB hard reserve is only
 about 26.46 hours. Every future Formal stage must recheck timer, backlog,
 target capacity, and active-root runway. P1 remains reviewed complete as a
 documentation-only systemd-detached observation preparation.
 
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
 
 Current operational authority is consolidated in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
@@ -62,8 +74,9 @@ is merged, and the MS4-B exact target deployment is reviewed complete. The
 original MS4-C window was partial; the R3 supplement closes the recovery gate
 for review with zero Formal M22.9 duration credit. The service is stopped, the
 archive timer is enabled/active for verified draining, and MS4-D has closed the non-formal bounded
-four-ProductKey qualification. Formal M22.9 has not started and Production
-Ready remains NO.
+four-ProductKey qualification. Formal M22.9 has a failed-at-T0 2-hour attempt
+with zero credit; later stages have not started and Production Ready remains
+NO.
 
 Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
 directory, and M21 soak procedures are in
@@ -248,10 +261,11 @@ and planning estimates, not current runtime authority or policy constants.
 Capacity is a measured live property. Consult
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and rerun the
 current capacity-precondition tooling before any formal M22.9 T0. Later
-measurements are also point-in-time evidence, not permanent runway. The current
-P2 is reviewed complete. Formal M22.9 preparation remains separately
-authorized and requires a fresh capacity/readiness decision before a 2-hour
-start.
+measurements are also point-in-time evidence, not permanent runway. P2 is
+reviewed complete. The later Formal M22.9 2-hour attempt failed at T0 before
+its first observer sample and receives zero credit. The scoped observer fix is
+the next milestone; any redeploy or retry remains separately authorized and
+requires a fresh capacity/readiness decision.
 External-media certification and the 278-hour formal chain remain gated rather
 than automatically scheduled.
 
@@ -426,9 +440,9 @@ M8-03, and M8-08, and retained the run workspace and evidence for forensics.
 Cleanup must not authorize or delete these objects merely for cosmetic
 cleanup. M22.9 remained a separate exact-VPS staged acceptance. A historical
 artifact later produced an incomplete 24h attempt after startup readiness
-failed. For current main, formal M22.9 has not started; the capacity
-precondition belonged to the older deployed artifact and stopped before T0, so
-historical and non-formal runs have formal runtime credit zero.
+failed. That older capacity precondition stopped before T0 and retains zero
+credit. The current Formal 2-hour attempt is a separate record: it created T0,
+failed before its first sample, and also receives zero credit.
 
 ### Formal 2h/12h/24h/72h/168h T0 independence
 

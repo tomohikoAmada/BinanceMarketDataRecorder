@@ -5,7 +5,56 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — M22.9-P2 reviewed complete (2026-09-11)
+## Current stage — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+
+The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
+before its first observer sample. T0 was
+`2026-09-11T13:41:32.831837Z` / `1789134092831837314` ns with BOOTTIME
+`789457702764089`, boot ID
+`f2720022-bc39-4e22-bc68-af6bfce92274`, and observer InvocationID
+`ee05ad7a73f04dec867629767439bc82`. The observer unit
+`binance-market-data-acceptance-2h-20260911T132845Z-5b4fd719.service`
+exited 1 before the first sample.
+
+The failed root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`
+with stage root
+`.../2h-a8b45b7e1da640c497213b172c235815` and immutable stage-start SHA-256
+`1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
+Stage-start failed with 24 blockers (23 Catalog/manifest disagreements and
+one unexplained raw absence), so Formal duration credit is zero. The earlier
+pre-T0 aborted setup root
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T130258Z-646792f2`
+is preserved as a distinct zero-credit setup record.
+
+After the requested graceful stop and archive drain, exact lifecycle checks
+found all 26 unique chunk IDs named by those findings currently complete in
+the verified archive state. This supports, but does not prove, a concurrent
+AcceptanceObserver filesystem/Catalog snapshot race; the review has no
+per-read interleaving trace. The compact forensic JSON, summary, and hashes
+are under the failed root's `operator-evidence/closeout-review/` and are
+listed in [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The full
+installed read-only post-stop audit completed over 112,817 manifests in 115.95
+seconds with zero Catalog findings, zero integrity findings, and zero chunks
+with scan issues. An additive correction preserves the original closeout
+files and supersedes only their mistaken no-result statement.
+
+```text
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+```
+
+No redeploy, retry, configuration, unit, identity, source, or code change is
+authorized by this closeout. The next milestone is narrowly the
+acceptance-observer/archive-concurrency diagnosis, fix, and offline test;
+redeploy/retry authorization is separate.
+
+## P2 deployment basis — reviewed complete (2026-09-11)
 
 P2 executed the exact deployment, archive, and capacity preflight. The review
 record is [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md), with VPS
@@ -34,9 +83,12 @@ free-space margin, while active-root runway above the 10 GiB reserve is only
 about 26.46 hours. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact
 installed identity verification. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the reason is
-`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy. `PRODUCTION_READY=NO`,
-Formal M22.9 is unstarted, and duration credit is zero.
+`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. At P2 completion the artifact was the
+Formal candidate; after the failed T0 it remains only the installed evidence
+basis pending the scoped fix, review, and separately authorized redeploy.
+`PRODUCTION_READY=NO`.
+The Formal 2-hour attempt subsequently failed at T0 before its first sample;
+duration credit remains zero. The separate 12-hour stage is not started.
 
 MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
 MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
@@ -45,18 +97,22 @@ BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
 QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
 M22_9_P1=REVIEWED_COMPLETE;
 M22_9_P2=REVIEWED_COMPLETE;
-FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE;
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0; FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0;
+FORMAL_M22_9_CREDIT_SECONDS=0; 12H=NOT_STARTED;
 PRODUCTION_READY=NO; P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES;
 CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
 CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED;
 ARCHIVE_TIMER=ENABLED_ACTIVE;
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION.
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST;
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION.
 
 P2 used only unsigned public Binance market-data eligibility endpoints. No
 account, order, key, or credential endpoint was accessed, and no manual Raw
 deletion was used. The short live interaction is non-formal and grants no
-Formal duration credit. No Formal T0, P1 observer, long soak, or automatic
-stage advancement occurred.
+Formal duration credit. P2 itself created no Formal T0, P1 observer, long soak,
+or automatic stage advancement; the later Formal 2-hour attempt did create T0
+and failed there.
 
 ### Historical MS4 and P1 checkpoints (not current authority)
 
@@ -262,10 +318,14 @@ CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
 RECORDER=STOPPED
 ARCHIVE_TIMER=ENABLED_ACTIVE
 M22_9_P2=REVIEWED_COMPLETE
-FORMAL_M22_9=NOT_STARTED
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
 FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
 PRODUCTION_READY=NO
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
 ```
 
 The exact deployment passed identity/readiness verification for four
@@ -496,7 +556,11 @@ consumer repository dependency. Raw payload bytes and Raw v1 framing remain
 recoverable and unchanged. Do not write production data under the repository
 or use an external volume as an active Collector target.
 
-`FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
+`FORMAL_M22_9_STARTED=YES`,
+`FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`,
+`FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
+`PRODUCTION_READY=NO`,
 `STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
 `DEPLOYMENT_AUTHORIZED=NO` (future live start only),
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
@@ -517,7 +581,7 @@ or use an external volume as an active Collector target.
 `M22_9_P1=REVIEWED_COMPLETE`, `M22_9_P2=REVIEWED_COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
-`NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`.
+`NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`.
 
 Any further live traffic or Formal stage requires the exact P2 deployment
 source/artifact, immutable Wheel, lock, config, unit, and deployment identities,
@@ -538,7 +602,11 @@ the exact P2 deployment source/review base, drained the registered archive via
 the existing transaction path, and performed bounded non-formal readiness and
 interaction before stopping Recorder. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy. The next named
-milestone is `FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`; it is not
-started by this handoff.
+The installed P2 artifact remains the evidence basis for the failed attempt,
+but is not retry-eligible until the scoped observer fix is reviewed and a
+later exact artifact is separately authorized and deployed. The Formal 2-hour
+attempt then failed at T0 before its first sample; the exact roots and
+quiescent forensic review are recorded in
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The next named
+milestone is `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`;
+redeploy/retry authorization is separate and this handoff does not start it.

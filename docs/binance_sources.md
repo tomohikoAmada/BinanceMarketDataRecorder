@@ -1,5 +1,24 @@
 # Official Binance Sources
 
+## Formal M22.9 2h eligibility refresh — 2026-09-11
+
+Immediately before the owner-authorized Formal 2-hour start, direct unsigned
+public market-data requests revalidated the exact configured symbols. The
+record is preserved at
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2/operator-evidence/public-eligibility.json`,
+SHA-256
+`ef87ac01513d9f56be49226ab2308e9048756adb6f351f61e862e8ccac07faf9`.
+
+| Source | URL | Retrieved UTC | Response SHA-256 | Conclusion |
+| --- | --- | --- | --- | --- |
+| Spot `exchangeInfo` | `https://api.binance.com/api/v3/exchangeInfo` | `2026-09-11T13:32:30.642704409Z` | `727f7ff505be55a1df1e1e638ef9571dfe99274771c6dde7ac61d1218adea3c3` | BTCUSDT and ETHUSDT both reported `TRADING`; eligible |
+| USD-M `exchangeInfo` | `https://fapi.binance.com/fapi/v1/exchangeInfo` | `2026-09-11T13:32:30.752525992Z` | `2b31db1a4bdab613a7cf5af248b57694fa4bf5cfea27c2cc32f3025b873c74e1` | BTCUSDT and ETHUSDT both reported `TRADING`; eligible |
+
+No account, order, key, credential, or private endpoint was accessed. This
+eligibility evidence authorizes no retry and awards no duration credit; the
+attempt's immutable result is recorded in
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+
 ## M22.9-P2 live eligibility preflight — 2026-09-11
 
 Immediately before the bounded P2 Recorder start, direct unsigned public

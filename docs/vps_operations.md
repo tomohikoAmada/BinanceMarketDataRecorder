@@ -1,7 +1,16 @@
 # VPS Operations
 
-Status: `M22_9_P2=REVIEWED_COMPLETE`. The exact P2 deployment source/review
-base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+Status: `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`. The owner-authorized Formal
+2-hour attempt remains `FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`: the observer
+failed before its first sample at immutable T0 with 24 blockers and receives
+zero duration credit. A post-stop exact review reconciled all 26 implicated
+chunks; the full installed read-only audit covered 112,817 manifests with zero
+Catalog or integrity findings. This supports, but does not prove, a concurrent
+observer/archive snapshot race. See
+[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+
+The exact P2 deployment source/review base
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
 `c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
 verified. The four canonical ProductKeys reached readiness with 12 core stream
 contexts; Recorder was gracefully stopped and is currently `inactive/dead`,
@@ -20,10 +29,11 @@ remains `/var/lib/binance-market-data-recorder` on `/dev/vda1`; the 2 TB
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
 verification. After this docs-only merge,
 `CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains
-the Formal candidate until a later authorized redeploy.
-`PRODUCTION_READY=NO`, `FORMAL_M22_9=NOT_STARTED`, and
-`FORMAL_M22_9_CREDIT_SECONDS=0`. The conservative 278-hour archive projection
+The installed P2 artifact remains the evidence basis for the failed attempt,
+but is not retry-eligible until the scoped observer fix is reviewed and a
+later exact artifact is separately authorized and deployed.
+`PRODUCTION_READY=NO`, `FORMAL_M22_9_CREDIT_SECONDS=0`, and 12 hours and all
+later stages are not started. The conservative 278-hour archive projection
 leaves approximately 1.772 TB of target margin, while active-root runway above
 the 10 GiB hard reserve is only about 26.46 hours. Every future Formal stage
 must recheck timer, backlog, target capacity, and active-root runway. See
@@ -31,13 +41,14 @@ must recheck timer, backlog, target capacity, and active-root runway. See
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md), and
 [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
 
-NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
 
 The bounded MS4 qualification remains reviewed complete, and P1 remains
 reviewed complete as a documentation-only systemd-detached preparation. The
 original MS4-C window remains partial and the R3 supplement grants no Formal
-duration credit. No Formal T0, P1 observer, long soak, or automatic stage
-advancement occurred in P2.
+duration credit. P2 itself created no Formal T0; the later 2-hour attempt did
+create T0 and failed before its first sample. No long soak or automatic stage
+advancement occurred.
 
 ### Historical MS4-D and P1 checkpoints (not current authority)
 
@@ -370,17 +381,16 @@ artifact.
 Capacity planning for formal acceptance is separate from the hardcoded policy
 and from the current non-formal campaign. A later point-in-time precondition
 measurement found approximately 32.523 hours of runway, insufficient for the
-independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
-did not start.
-This is not the next development action. MS4-B stopped-deployment review,
-MS4-C bounded recovery review and MS4-D stage closure are complete. P2 exact
-deployment/archive/capacity execution is complete and awaits primary review;
-Formal M22.9 preparation remains a separately authorized program and must
-verify the exact configured ProductKey set and all configured products. Any
-later non-formal run remains separately authorized. Between independent runs,
-disposable test data may be retired only by a separately authorized
-consistency-safe procedure after evidence is frozen. No referenced or
-unarchived Raw may be manually deleted.
+independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so that
+historical precondition did not create a formal T0. P2 exact
+deployment/archive/capacity review is now complete. The later owner-authorized
+Formal 2-hour attempt created T0 and failed before its first sample with zero
+credit. The next development action is only the observer/archive-concurrency
+diagnosis, fix, and deterministic offline test. Redeploy, retry, and any later
+stage remain separately authorized. Between independent runs, disposable test
+data may be retired only by a separately authorized consistency-safe procedure
+after evidence is frozen. No referenced or unarchived Raw may be manually
+deleted.
 
 ## Stopped upgrade
 
@@ -447,10 +457,10 @@ evidence, and no stage starts automatically. M22.8 is accepted only as
 isolated cross-machine failure evidence for fixed run
 `m22.8-20260822T041913Z-23f1fcc7` on `vps-b5bfe3f8`; its nine scenarios passed
 without touching production. Historical M22.9 incident evidence includes an
-incomplete 24h attempt on an older artifact. For current main, formal M22.9 has
-not started; the precondition-only capacity check belonged to the older
-deployed artifact and stopped before T0, created no acceptance root, and
-assigned no acceptance ID. Historical and non-formal runs provide no formal
+incomplete 24h attempt on an older artifact. Its precondition-only capacity
+check stopped before T0 and created no acceptance stage. The later Formal 2h
+attempt is distinct: it created T0, failed before its first observer sample,
+and receives zero credit. Historical and non-formal runs also provide no formal
 duration credit.
 
 The operator sequence is explicit and ordered:

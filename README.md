@@ -1,24 +1,19 @@
 # Binance Market Data Recorder
 
-> **MS4-D reviewed complete; bounded MS4 qualification closed (2026-09-11):** the
-> original 2026-09-10 two-hour window remains
-> `EXECUTED_PARTIAL_NOT_ACCEPTED` because recovery was not run in that window.
-> The separate passing R3 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the
-> MS4-C recovery gate with zero Formal M22.9 duration credit. The Recorder is
-> stopped, the archive timer is `disabled`, and overall MS4 is
-> `REVIEWED_COMPLETE` for the non-formal bounded four-product core.
-> `FORMAL_M22_9=NOT_STARTED`, `FORMAL_M22_9_CREDIT_SECONDS=0`,
-> `PRODUCTION_READY=NO`, `CURRENT_MAIN_DEPLOYED=NO`. The historical MS4-C
-> review-start `main` (PR #60) was `efae0135ed5272d18d800af0ac247b70ece07422`
-> (tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`). The current MS4-D
-> review base is `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
-> `9fcf3e4128706938ffd02ef5a6af80c558cb234b`), which includes merged
-> MS4-C evidence closeout PR #61 at commit
-> `013e20d6b911fde2f443aa6c855039599483ef7d` (same tree); base CI run
-> `34551834444` completed successfully. The stopped deployment source
-> is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-> `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). See [current state](docs/CURRENT_PRODUCTION_STATE.md),
-> [handoff](docs/PROJECT_HANDOFF.md), and [MS4 acceptance](docs/milestone_acceptance/MS4.md).
+> **Formal M22.9 2h failed-at-T0 closeout reviewed complete (2026-09-11):**
+> the owner-authorized 2-hour observer created an immutable T0 but failed before
+> its first sample. It receives zero duration credit; 12h and all later stages
+> are not started. Post-stop review reconciled all 26 implicated chunks, and a
+> full quiescent audit found zero Catalog or integrity findings across 112,817
+> manifests. This supports, but does not prove, an observer/archive snapshot
+> race. Recorder is stopped, the archive timer is enabled and active/waiting,
+> and `PRODUCTION_READY=NO`. The installed evidence basis is exact source
+> `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`; the current documentation-only
+> descendant is not deployed. The next milestone is the scoped observer/archive
+> concurrency diagnosis, fix, and offline test; redeploy and retry require
+> separate authorization. See [current state](docs/CURRENT_PRODUCTION_STATE.md),
+> [handoff](docs/PROJECT_HANDOFF.md), and
+> [2h closeout](docs/milestone_acceptance/M22.9-2h.md).
 
 Configure products under `[recorder]`:
 
@@ -145,7 +140,8 @@ MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在正�
 它不采用固定 symbol allowlist、自动发现全部 symbol 或交易所插件框架；MS2 已通过
 离线验收，MS3-B 离线证据已通过 PR #56 合并；原始 MS4-C 两小时窗口为
 `EXECUTED_PARTIAL_NOT_ACCEPTED`，R3 非正式补充已完成 recovery-gate review；MS4-D
-已完成 bounded stage closure。Recorder 保持 stopped，archive timer 为 disabled。
+已完成 bounded stage closure。在该历史 checkpoint，Recorder 为 stopped、archive
+timer 为 disabled；后续 P2 启用了 archive timer，Formal 2h 尝试在 T0 失败。
 支持其它交易所需要单独的架构审查
 (another exchange requires a separate architecture review)。
 
@@ -207,8 +203,8 @@ MS2 由 operator 配置 Spot/USD-M 的有限 symbol 列表，配置变更在正�
 | Symbol | Operator-configured finite Spot/USD-M lists; legacy BTCUSDT/BTCUSDT only when both fields are absent |
 | Market | Spot + USD-M Perpetual |
 | 长期验证 | pre-MS1 deployed artifact: clean 24h non-formal stage complete; no duration credit transfers to current main |
-| 当前生产状态 | 历史 MS4-C review-start `main`（PR #60）为 `efae0135…`（tree `53342ac…`），未部署；当前 MS4-D review base 为 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55`（tree `9fcf3e4…`），其中包含已合并的 MS4-C evidence closeout PR #61（commit `013e20d6…`），base CI `34551834444` completed/success；实际行为/部署 source 为 `303e073e…`（tree `2b30a4dd…`），已安装用于 MS4-B 并运行 bounded MS4-C/R3 core qualification 后停止；原始 MS4-C 两小时窗口为 `EXECUTED_PARTIAL_NOT_ACCEPTED`，独立 R3 non-formal supplement 完成 recovery-gate review，MS4-D 关闭 bounded MS4 qualification；archive timer disabled；Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
-| PR/部署 | MS1 merged via PR #51, MS2 via PR #54, MS3-A via PR #55, MS3-B via PR #56; historical MS4-C review-start PR #60 was not deployed; current MS4-D review base includes merged MS4-C evidence closeout PR #61 (`013e20d6…`), CI `34551834444` completed/success |
+| 当前生产状态 | P2 exact source `646792f2…`（tree `c7bcd5e…`）已安装并作为证据基础；Formal M22.9 2h 在 T0、首个 sample 前失败，credit=0，12h 未开始；26 个相关 chunk 已核对为授权归档完成，112,817 个 manifest 的停机全量审计无 Catalog/integrity finding；Recorder stopped，archive timer enabled/active/waiting，Production Ready=NO；详见 [`docs/CURRENT_PRODUCTION_STATE.md`](docs/CURRENT_PRODUCTION_STATE.md) |
+| PR/部署 | 当前工程 `main` 的文档后继未部署；实际安装仍是 `646792f2…`，修复审查和单独授权前不得重试 Formal 2h |
 
 CLI `--version` 显示版本号和 Git commit 用于参考。注意 Git 后缀可能受构建工作目录或
 检出分支影响；生产安装的 Artifact 身份必须以不可变 Wheel SHA-256、direct_url.json、
@@ -1162,11 +1158,12 @@ Kubernetes, Prometheus, Grafana, React/Vue, gRPC。
 - MS2 可配置 product-set runtime 和 MS3-B shared-resource/bounded-load/archive/capacity
   离线验收已通过；原始 MS4-C bounded non-formal window 已运行但为 partial，R3
   supplement 已完成 recovery-gate review；MS4-D 已完成 bounded stage closure，
-  但长期和 Formal 验证仍未开始。
+  Formal 2h 已在 T0、首个 observer sample 前失败且 credit 为零；长期阶段仍未开始。
 - Ubuntu ARM64/RK3588 已实现 M20 短期部署；部署的工件`f659895…`完成正式72小时
   观测（PASS）但不可进入168h，168h未运行，因此仅为
   Developer Preview / Soak Candidate。VPS production profile 已安装，在 bounded
-  MS4-C/R3 core qualification 中运行后当前 stopped；archive timer 已 disabled。
+  MS4-C/R3 core qualification 中运行后当前 stopped；P2 后 archive timer 已启用并
+  active/waiting。
   Receiver-only path 不是外置介质生产认证或 source retirement。Archive
   protocol/library 已实现；operator command freeze 与跨平台生产认证仍属 future
   work。
