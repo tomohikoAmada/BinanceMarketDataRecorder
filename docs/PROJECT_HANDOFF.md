@@ -5,7 +5,60 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — M22.9-P1 reviewed complete; next preflight named (2026-09-11)
+## Current stage — M22.9-P2 reviewed complete (2026-09-11)
+
+P2 executed the exact deployment, archive, and capacity preflight. The review
+record is [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md), with VPS
+evidence under
+`/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
+P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`
+and tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c` were installed and deployment
+verified with exact artifact hashes. The four canonical ProductKeys reached
+readiness with 12 core stream contexts; the Recorder was gracefully stopped
+and is now `inactive/dead`, `MainPID=0`, `Result=success`, `NRestarts=0`.
+
+The registered archive target is storage ID
+`ef852751-721c-4145-9083-f6fd48718480` at
+`/srv/recorder-data/recorder-archive` on ext4 `/dev/vdb1`. Existing verified
+ArchiveManager/Catalog transactions drained the backlog to zero, and the full
+archive verification reported 112,570 verified files with zero failures or
+pending files. `binance-market-data-archive.timer` is enabled and
+active/waiting with a future monotonic trigger and successful last service
+result. `/dev/vdb1` is archive storage; the active writer root remains
+`/var/lib/binance-market-data-recorder` on `/dev/vda1`.
+
+The conservative historical generation rate is `349910.017730 B/s`; the
+bounded 278-hour archive projection leaves approximately 1.772 TB of target
+free-space margin, while active-root runway above the 10 GiB reserve is only
+about 26.46 hours. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact
+installed identity verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the reason is
+`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy. `PRODUCTION_READY=NO`,
+Formal M22.9 is unstarted, and duration credit is zero.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
+MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
+M22_9_P1=REVIEWED_COMPLETE;
+M22_9_P2=REVIEWED_COMPLETE;
+FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+PRODUCTION_READY=NO; P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES;
+CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED;
+ARCHIVE_TIMER=ENABLED_ACTIVE;
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION.
+
+P2 used only unsigned public Binance market-data eligibility endpoints. No
+account, order, key, or credential endpoint was accessed, and no manual Raw
+deletion was used. The short live interaction is non-formal and grants no
+Formal duration credit. No Formal T0, P1 observer, long soak, or automatic
+stage advancement occurred.
+
+### Historical MS4 and P1 checkpoints (not current authority)
 
 MS4-A local preparation and MS4-B target preflight/stopped-deployment review
 remain complete. The owner-authorized MS4-C attempt started the reviewed
@@ -44,8 +97,9 @@ The historical MS4-D review base was `main` commit
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
 `34551834444` completed successfully. These are historical review authorities
-only. P1 is based on current main
-`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; the current main is not deployed.
+only. P1 was based on main at its historical checkpoint
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; at that checkpoint the current
+main was not deployed. This is historical, not the current P2 state.
 
 The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z`
 passed: Recorder was
@@ -156,8 +210,9 @@ validated by run `34436773366` and merged in PR #56 as
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
-is the current detailed continuation queue; the candidate submission summaries
-below retain their evidence context. No MS4 deployment is authorized.
+was the detailed continuation queue at that historical cut; the candidate
+submission summaries below retain their evidence context. The current P2
+authority is the opening section of this handoff.
 
 ## Start here: the boundary
 
@@ -194,7 +249,37 @@ authority:
 
 ## Current authority split
 
-### A. Live GitHub main and current behavior/deployment source
+### P2 current deployment/archive authority
+
+```text
+P2_REVIEW_BASE_MAIN_SHA=646792f2e5fc5b7195ea58541d3f1dfda6555b7f
+P2_REVIEW_BASE_MAIN_TREE=c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c
+EVIDENCE_ROOT=/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z
+STORAGE_ID=ef852751-721c-4145-9083-f6fd48718480
+P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+M22_9_P2=REVIEWED_COMPLETE
+FORMAL_M22_9=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+```
+
+The exact deployment passed identity/readiness verification for four
+ProductKeys and 12 core stream contexts. The existing archive transaction path
+drained the registered target to backlog zero; full verification reported
+112,570 verified files with zero failures or pending files. The archive timer
+is enabled and active/waiting with a future monotonic trigger. The active
+writer root remains `/var/lib/binance-market-data-recorder`; the approximately
+2 TB `/dev/vdb1` filesystem is archive storage only. Capacity margin and the
+active-root runway limitation are recorded in the P2 acceptance file. This
+block is the current authority; the following A/B sections preserve historical
+lineage.
+
+### A. Historical GitHub main and behavior/deployment source
 
 ```text
 HISTORICAL_MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
@@ -264,8 +349,8 @@ the candidate branch was removed after merge and worktree checks.
 
 MS1 merged the durable identity foundation. It did not implement runtime
 fan-out, multi-symbol startup, or a new readiness policy. The MS1 merge SHA
-above is historical foundation lineage; current behavior/deployment authority
-is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+above is historical foundation lineage; historical MS4-C behavior/deployment
+authority was `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The historical GitHub `main` at
 MS4-C review start was `efae0135ed5272d18d800af0ac247b70ece07422` with tree
 `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`; it is the PR #60 merge,
@@ -413,7 +498,10 @@ or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=NO`, `PRODUCTION_READY=NO`,
 `STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
-`DEPLOYMENT_AUTHORIZED=NO` (live start only), `CURRENT_MAIN_DEPLOYED=NO`,
+`DEPLOYMENT_AUTHORIZED=NO` (future live start only),
+`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
+`CURRENT_MAIN_DEPLOYED=NO`,
+`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
 `MS3_B=CLOSED_MERGED_PR_56`,
@@ -426,14 +514,15 @@ or use an external volume as an active Collector target.
 `RECOVERY_GATE=REVIEWED_COMPLETE`, `MS4_D=REVIEWED_COMPLETE`,
 `BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS`,
 `QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`,
-`M22_9_P1=REVIEWED_COMPLETE`,
+`M22_9_P1=REVIEWED_COMPLETE`, `M22_9_P2=REVIEWED_COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
-`NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`.
+`ARCHIVE_TIMER=ENABLED_ACTIVE`,
+`NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`.
 
-Any further MS4-C live traffic requires the reviewed exact installed source/artifact,
-immutable Wheel, lock, config, unit, and deployment identities, explicit start
-authorization, and a fresh bounded qualification. Historical single-symbol
-duration credit does not transfer to the current multi-symbol artifact.
+Any further live traffic or Formal stage requires the exact P2 deployment
+source/artifact, immutable Wheel, lock, config, unit, and deployment identities,
+explicit separate authorization, and a fresh readiness/capacity decision.
+Historical single-symbol and non-formal duration credit does not transfer.
 
 M22.9-P1 is reviewed-complete, documentation-only preparation for an external systemd 255
 transient `Type=exec` unit around the existing foreground acceptance observer.
@@ -444,6 +533,12 @@ registered archive-subdirectory root, detached probe evidence, same-stage
 resume rules, and final-review command are in
 [`docs/milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
 P1 did not deploy, start Recorder, enable the archive timer, archive/delete
-Raw, or begin Formal M22.9. The next named milestone is
-`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; it is not executed by
-this handoff.
+Raw, or begin Formal M22.9. P2 is reviewed complete: it installed and verified
+the exact P2 deployment source/review base, drained the registered archive via
+the existing transaction path, and performed bounded non-formal readiness and
+interaction before stopping Recorder. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy. The next named
+milestone is `FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`; it is not
+started by this handoff.

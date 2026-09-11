@@ -1,5 +1,20 @@
 # Official Binance Sources
 
+## M22.9-P2 live eligibility preflight — 2026-09-11
+
+Immediately before the bounded P2 Recorder start, direct unsigned public
+market-data requests captured eligibility for the exact configured symbols. No
+account, order, key, or credential endpoint was accessed. The response bytes
+are preserved under the P2 VPS evidence bundle.
+
+| Source | URL | Retrieval (UTC) | SHA-256 | Conclusion |
+| --- | --- | --- | --- | --- |
+| Spot `exchangeInfo` | `https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%5D` | `2026-09-11T09:49:16Z` | `ed547a4f2b90e5301d2b3cbe70ec5b0f9f2374f8490e37e228c39d8833f12182` | BTCUSDT and ETHUSDT reported `TRADING` |
+| USD-M `exchangeInfo` | `https://fapi.binance.com/fapi/v1/exchangeInfo?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%5D` | `2026-09-11T09:49:16Z` | `b46d606170205aec8576a325418c393d88f2bb1adefa9426739628ec7fa0c0a0` | BTCUSDT and ETHUSDT reported `TRADING`; both are `PERPETUAL` |
+
+This evidence supports the P2 bounded readiness/interaction observation only;
+it does not authorize Formal M22.9 or trading activity.
+
 ## MS2 configurable-product parameterization — 2026-09-09
 
 MS2 reuses the pinned official sources below for parameterized symbol routes,

@@ -1,35 +1,45 @@
 # VPS Operations
 
-Status: M22.9-P1 systemd-detached single-stage observation preparation is
-reviewed complete. MS4-B Tokyo VPS preflight and stopped
-deployment are reviewed complete;
-the original MS4-C two-hour window was partial, and the R3 non-formal
-supplement closes the recovery gate for review with zero Formal M22.9 duration
-credit. The service is stopped, the archive timer is disabled, and MS4-D has
-closed the non-formal bounded four-ProductKey qualification. GitHub `main` at MS4-C review start was
-`efae0135ed5272d18d800af0ac247b70ece07422` (tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`); later merges may change live
-`main`. Current behavior/deployment-source authority is
-`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The MS1 merge
-`d38180074b5f76ab6b7778eea7fc505160c671ae` with tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902` is historical foundation lineage
-only. The recorded MS4-C review-start `main` snapshot was a documentation-only
-descendant and was not deployed as current production. The pre-MS1 deployed
-artifact completed the clean 24-hour non-formal single-symbol stage; that
-evidence does not qualify MS1 or the current four-ProductKey run. MS3-B is
-merged, and MS4-B is stopped/reviewed complete. The R3 supplement's bounded
-recovery review and MS4-D stage closure are complete, but external-media
-certification, source retirement and Formal M22.9 remain gated. Production
-Ready is not claimed. Current status is `MS4=REVIEWED_COMPLETE` and
-`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS` for
-`NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; `RECORDER=STOPPED`,
-`CURRENT_MAIN_DEPLOYED=NO`, and `FORMAL_M22_9=NOT_STARTED`. The next step is
-`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; Formal M22.9
-preparation remains separately authorized and has zero duration credit.
-See
-[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
-[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
+Status: `M22_9_P2=REVIEWED_COMPLETE`. The exact P2 deployment source/review
+base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
+verified. The four canonical ProductKeys reached readiness with 12 core stream
+contexts; Recorder was gracefully stopped and is currently `inactive/dead`,
+`MainPID=0`, `Result=success`, `NRestarts=0`.
+
+The registered archive target is storage ID
+`ef852751-721c-4145-9083-f6fd48718480` at
+`/srv/recorder-data/recorder-archive` on ext4 `/dev/vdb1`. Existing verified
+ArchiveManager/Catalog transactions drained the backlog to zero; full archive
+verification reported 112,570 verified files, zero failed, and zero pending.
+`binance-market-data-archive.timer` is enabled and active/waiting with a future
+monotonic trigger and successful last service result. The active writer root
+remains `/var/lib/binance-market-data-recorder` on `/dev/vda1`; the 2 TB
+`/dev/vdb1` filesystem is an archive target, not an active writer root.
+
+`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
+verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy.
+`PRODUCTION_READY=NO`, `FORMAL_M22_9=NOT_STARTED`, and
+`FORMAL_M22_9_CREDIT_SECONDS=0`. The conservative 278-hour archive projection
+leaves approximately 1.772 TB of target margin, while active-root runway above
+the 10 GiB hard reserve is only about 26.46 hours. Every future Formal stage
+must recheck timer, backlog, target capacity, and active-root runway. See
+[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md),
+[`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md), and
+[`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
+
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
+
+The bounded MS4 qualification remains reviewed complete, and P1 remains
+reviewed complete as a documentation-only systemd-detached preparation. The
+original MS4-C window remains partial and the R3 supplement grants no Formal
+duration credit. No Formal T0, P1 observer, long soak, or automatic stage
+advancement occurred in P2.
+
+### Historical MS4-D and P1 checkpoints (not current authority)
 
 The historical MS4-D review base was main
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
@@ -37,7 +47,7 @@ The historical MS4-D review base was main
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
 `34551834444` completed successfully. These are historical review authorities
-only. The P1 package is based on current main
+only. The P1 package was based on main at its historical checkpoint
 `83a063f5bb9f91508238c9fd86d21aa45d1bd501`. The earlier PR #60 /
 `efae0135…` snapshot above is historical MS4-C review-start authority, not
 current.
@@ -84,10 +94,11 @@ available and registered storage ID
 writer root. P1 does not enable the timer, archive, delete source Raw, or
 start Formal M22.9.
 
-This document describes the intended Ubuntu 24.04 LTS x86_64 profile for a
-shared 2 vCPU, 4 GiB RAM, 40 GB-class VPS. Ubuntu 22.04 x86_64 is a
-compatibility target. macOS is a development/local profile and RK3588 remains
-a separate LAN Linux validation and historical evidence profile.
+This document describes the intended Ubuntu 24.04 LTS x86_64 profile. The P2
+host observed 4 vCPU, 6,163,615,744 bytes RAM, a 61,285,326,848-byte active
+`/dev/vda1`, and a 2,163,348,520,960-byte archive `/dev/vdb1`. Ubuntu 22.04
+x86_64 is a compatibility target. macOS is a development/local profile and
+RK3588 remains a separate LAN Linux validation and historical evidence profile.
 
 ## Responsibility boundary
 
@@ -362,10 +373,11 @@ measurement found approximately 32.523 hours of runway, insufficient for the
 independent 2h+12h+24h+72h+168h formal chain (about 278 hours), so formal T0
 did not start.
 This is not the next development action. MS4-B stopped-deployment review,
-MS4-C bounded recovery review and MS4-D stage closure are complete. The current
-next action is `M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; Formal M22.9 preparation remains a
-separately authorized program and must verify the exact configured ProductKey
-set and all configured products. Any deployment or later non-formal run remains separately authorized. Between independent runs,
+MS4-C bounded recovery review and MS4-D stage closure are complete. P2 exact
+deployment/archive/capacity execution is complete and awaits primary review;
+Formal M22.9 preparation remains a separately authorized program and must
+verify the exact configured ProductKey set and all configured products. Any
+later non-formal run remains separately authorized. Between independent runs,
 disposable test data may be retired only by a separately authorized
 consistency-safe procedure after evidence is frozen. No referenced or
 unarchived Raw may be manually deleted.

@@ -5,7 +5,69 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current stage — M22.9-P1 reviewed complete; next preflight named (2026-09-11)
+## Current stage — M22.9-P2 reviewed complete (2026-09-11)
+
+P2 executed the exact deployment, archive, and capacity preflight. The complete
+record is [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md) and the VPS
+evidence bundle at
+`/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
+The installed deployment verifies the P2 deployment source/review base
+`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` and tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`. Exact wheel, lock, config, unit,
+and identity hashes are recorded in the acceptance file.
+
+The canonical Spot/USD-M four-ProductKey deployment reached readiness with
+12 core stream contexts. It was gracefully stopped and is currently
+`inactive/dead`, `MainPID=0`, `Result=success`, `NRestarts=0`.
+`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records that exact identity
+verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the reason is
+`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy. This does not mean
+Production Ready.
+
+The registered archive target is storage ID
+`ef852751-721c-4145-9083-f6fd48718480` at
+`/srv/recorder-data/recorder-archive` on ext4 `/dev/vdb1`. The existing
+ArchiveManager/Catalog transaction path drained the bounded and post-stop
+backlogs to zero; the full archive verification reported 112,570 verified
+files, zero failed, and zero pending. The archive timer is
+`binance-market-data-archive.timer`, `enabled/active/waiting` with a future
+monotonic trigger and successful last service result. The active writer remains
+`/var/lib/binance-market-data-recorder` on `/dev/vda1`; `/dev/vdb1` is an
+archive target, not an active writer root.
+
+The conservative existing 24-hour generation rate is `349910.017730 B/s`.
+The 278-hour projection is `350189945744` bytes and archive free space leaves
+approximately `1771538091120` bytes after that projection (about 6.06x the
+projection). The active-root free space above the 10 GiB hard reserve provides
+only about 26.46 hours at that rate. The short live interaction's
+`43835.914894 B/s` active-root growth is not a long-run rate. Every Formal
+stage start and end must independently recheck timer health, backlog, target
+margin, and active-root runway.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
+MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
+M22_9_P1=REVIEWED_COMPLETE;
+M22_9_P2=REVIEWED_COMPLETE;
+FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+PRODUCTION_READY=NO; P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES;
+CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED;
+ARCHIVE_TIMER=ENABLED_ACTIVE;
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION.
+
+P2 used only unsigned public Binance eligibility endpoints for BTCUSDT and
+ETHUSDT on Spot and USD-M; no account, order, key, or credential endpoint was
+accessed. Source retirement occurred only through the existing verified
+ArchiveManager/Catalog transaction path; no manual deletion was used. The
+short live interaction is non-formal evidence and grants no duration credit.
+No Formal T0, P1 observer, long soak, or automatic stage advancement occurred.
+
+### Historical MS4 and P1 checkpoints (not current authority)
 
 MS4-A local preparation and MS4-B target preflight/stopped-deployment review
 remain complete. The owner-authorized MS4-C attempt started the reviewed
@@ -46,9 +108,9 @@ The historical MS4-D review base was `main` commit
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
 `34551834444` completed successfully. These are historical review authorities
-only. P1 is based on current main
-`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; `CURRENT_MAIN_DEPLOYED=NO`
-remains in force.
+only. P1 was based on main at its historical checkpoint
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; at that checkpoint
+`CURRENT_MAIN_DEPLOYED=NO`. This is historical, not the current P2 state.
 
 The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z`
 passed: Recorder was
@@ -201,10 +263,11 @@ validated by run `34436773366` and merged in PR #56 as
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). No deployment is authorized.
 The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
-is the current detailed continuation queue; the candidate submission summaries
-below retain their evidence context. No MS4 deployment is authorized.
+was the detailed continuation queue at that historical cut; the candidate
+submission summaries below retain their evidence context. The current P2
+authority is the opening section of this document.
 
-## Status at a glance
+## Historical status at a glance (not current authority)
 
 ```text
 HISTORICAL_MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
@@ -291,7 +354,7 @@ See [MS2 acceptance](milestone_acceptance/MS2.md) and
 | Item | Authority |
 | --- | --- |
 | Live GitHub `main` at historical MS3-B start | `01527037254595267003f886689bb270e08b5e5d`; tree `eb63b645660a64ac606341ce3fb7f447a6e89457` |
-| Current behavior/deployment source | `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee` |
+| Historical behavior/deployment source at the pre-P2 cut | `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; tree `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee` |
 | Historical GitHub `main` at MS4-C review start (PR #60 merge; not deployed) | `efae0135ed5272d18d800af0ac247b70ece07422`; tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b` |
 | Historical MS4-D documentation review base (`main`; not deployed) | `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b` |
 | Merged MS4-C evidence closeout included in historical MS4-D review base (PR #61; not deployed separately) | `013e20d6b911fde2f443aa6c855039599483ef7d`; tree `9fcf3e4128706938ffd02ef5a6af80c558cb234b`; CI `34551834444` completed/success |
@@ -310,8 +373,8 @@ implementation commits remain provenance, not separate current authorities:
 `11e100fbcb974e7d54f0515c99e08ac6042b9204`.
 
 The MS1 merge above is retained as historical foundation lineage from the
-pre-MS2 review; it is not the current behavior authority. The current
-behavior/deployment source is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+pre-MS2 review; it is not the current behavior authority. The historical
+behavior/deployment source at that cut was `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The historical GitHub `main`
 snapshot at MS4-C review start was `efae0135ed5272d18d800af0ac247b70ece07422`,
 tree `53342ac880cc36d65eba6f5e9b49fa722cc9d56b`; it is the PR #60 merge,
@@ -433,27 +496,39 @@ LIVE_START_AUTHORIZED=NO
 DEPLOYMENT_AUTHORIZED=NO
 FORMAL_M22_9_STARTED=NO
 PRODUCTION_READY=NO
+P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
+M22_9_P2=REVIEWED_COMPLETE
+ARCHIVE_TIMER=ENABLED_ACTIVE
+RECORDER=STOPPED
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
 ```
 
-Here `DEPLOYMENT_AUTHORIZED=NO` means live deployment/start authorization is
-absent. Any further MS4-C live traffic requires the reviewed exact installed source/artifact,
-immutable Wheel, lock, config, unit, and deployment identities, followed by
-explicit authorization and a fresh bounded qualification. Historical
-single-symbol duration credit does not transfer to a behavior-changing
-multi-symbol artifact.
+Here `DEPLOYMENT_AUTHORIZED=NO` means future live deployment/start
+authorization is absent. Any future live traffic or Formal stage requires the
+exact P2 deployment source/artifact, immutable Wheel, lock, config, unit, and
+deployment identities, followed by explicit separate authorization and a fresh
+readiness/capacity decision. Historical single-symbol and non-formal duration
+credit does not transfer.
 
 ## Next action
 
-NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT
+NEXT=FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
 non-formal R3 recovery supplement; the original two-hour window remains
 `EXECUTED_PARTIAL_NOT_ACCEPTED` and receives no transferred duration credit.
-MS4-D has now closed the bounded four-ProductKey qualification. M22.9-P1 is
-the reviewed-complete documentation-only systemd-detached observation
-preparation. It did not deploy/start Recorder, enable the archive timer, create
-a Formal M22.9 T0, or claim Production Ready. The next named milestone is
-`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`; it is not executed by
-this document update. Formal M22.9 preparation and every stage still require
-separate authorization.
+MS4-D has closed the bounded four-ProductKey qualification. M22.9-P1 is the
+reviewed-complete documentation-only systemd-detached observation preparation.
+M22.9-P2 is reviewed complete: the exact P2 deployment source/review base was
+installed and verified, the registered archive was drained and fully verified,
+and bounded non-formal readiness/interaction completed before Recorder was
+stopped. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+The installed P2 artifact remains
+the Formal candidate until a later authorized redeploy. Formal M22.9 preparation
+and every stage still require separate authorization. The next named milestone
+is `FORMAL_M22_9_2H_START_REQUIRES_SEPARATE_AUTHORIZATION`; it is not started by
+this document.
