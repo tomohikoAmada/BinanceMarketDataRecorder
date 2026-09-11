@@ -52,6 +52,43 @@ The next milestone is only acceptance-observer/archive-concurrency diagnosis,
 fix, and offline test. Redeploy and Formal retry require separate
 authorization.
 
+## Historical CI repair — Spot ingress gap manifest layout (2026-09-12)
+
+The failed push run was `34615091958`, Ubuntu job/node `103314892201`. Only
+pytest failed, at
+`tests/integration/test_spot_ingress_backpressure.py::test_sustained_saturation_preserves_boundary_and_publishes_gap[agg_trade-agg_trade]`,
+where the test incorrectly required every gap manifest to contain
+`sequence_gap`; the result was `1 failed, 1636 passed`. The same code passed
+PR run `34615041520` and parent push run `34597348895`; merge `#66` changed no
+`src`, tests, dependencies or workflow, and macOS passed. A read-only Luna
+diagnosis ran the exact node 21 times on macOS arm64 / Python 3.12.9; all
+passed.
+
+Root cause: stable-phase 60-second rotation can place the writer deadline at
+the boundary. After the old boundary frame has persisted its `sequence_gap`,
+the writer may rotate before `close_and_seal`; the pending reconnect seal
+intent then creates a valid zero-record `reconnect_gap` marker. The old
+manifest-wide assertion rejected that legal layout. The test-only repair
+monkeypatches `RawChunkWriter.should_rotate` to make the real deadline
+decision exactly once after the first persisted `sequence_gap`, without
+sleeping, and validates every gap manifest as either a non-empty exact
+`sequence_gap` manifest backed by a flagged Raw frame or an exact empty
+`reconnect_gap` marker. Forced cases require the hook and one marker.
+
+Local validation for this repair: the forced boundary proof passed both stream
+variants and showed two non-empty `sequence_gap` manifests plus one
+zero-record, empty-connection `reconnect_gap` manifest per case; 20 complete
+repetitions covered all four normal/forced stream cases (80 passed); the four
+focused files passed 80 tests; and the full offline suite passed 1,643 tests,
+with 24 skipped, 4 deselected and 13 existing fork warnings. Ruff, strict
+MyPy (254 files), M0 contracts, Go Raw golden, `compileall`,
+`build --no-isolation`, `git diff --check`, and clean-wheel CLI smoke passed.
+No runtime, public contract, dependency, workflow or deployment behavior
+changed; no VPS, online, or GitHub operation was performed. The current
+production disposition and Formal credit are unchanged.
+
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+
 ## P2 deployment basis — reviewed complete (2026-09-11)
 
 M22.9-P2 executed the exact deployment, archive, and capacity preflight. The
