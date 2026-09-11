@@ -26,13 +26,22 @@ timer is disabled. Source retirement/external-media certification remain
 unauthorized. Current status and authority boundaries are in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md).
-The current MS4-D review base is main
+The historical MS4-D review base was main
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
 `34551834444` completed successfully. The earlier `efae0135…` / PR #60
 snapshot above is historical MS4-C review-start authority, not current.
+The current milestone is `M22_9_P1=REVIEWED_COMPLETE`, based
+on main `83a063f5bb9f91508238c9fd86d21aa45d1bd501`. The Recorder remains
+stopped, `FORMAL_M22_9=NOT_STARTED`, formal credit is zero, and
+`PRODUCTION_READY=NO`; the next milestone is
+`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`. P1's systemd 255
+lifecycle probes were harmless and
+did not touch Recorder or Raw. The active `/dev/vda1` runway is not sufficient
+for the approximately 278-hour chain; the mounted `/dev/vdb1` is an archive
+target only and does not remove that active-root precondition.
 
 ## Frozen historical long-run notice
 
@@ -117,6 +126,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-064 | Configurable-product propagation or incomplete runtime identity could collapse discontinuity evidence or side-data cursors across products | High | MS1 uses explicit `(market, symbol, stream)` lifecycle identity and `(kind, symbol)` symbol-specific cursors, preserves non-unique historical records, migrates legacy rows atomically/idempotently to `BTCUSDT`, and rejects malformed/partial migrations. ADR-0032 requires MS2 to preserve this foundation for every configured ProductKey across Spot/USD-M. | MS1/MS2 | Mitigated |
 | R-065 | Fan-out multiplies shared REST gates or global side data, or reports global readiness while a configured product is unhealthy | High | ADR-0032 requires the shared Spot limiter, one process-owned USD-M request lock/cooldown, one process-global USD-M side-data owner, independent product readiness, and exact configured-versus-runtime ProductKey equality. MS2 offline acceptance proves topology, exact shared object identity, observed 418/429 sibling blocking, global ownership, zero-market construction, and independently verified readiness. Updated MS3-B evidence adds real Collector/Poller core/product/global competition, finite terminal-request accounting, page release/reacquisition, real Catalog cursor isolation, and mixed running-path sibling progress. The bounded MS4-C/R3 evidence kept all four expected ProductKeys ready and showed no observed shared-REST fault; queue depth was unavailable, and long-run CPU/RSS/capacity proof and formal stages remain open. | MS2/MS3/MS4 | Monitoring |
 | R-066 | Cancellation of an in-flight USD-M side REST call releases the shared gate while its SDK worker thread still runs | High | Deterministic production-path reproduction found bare `asyncio.to_thread` could release the real `asyncio.Lock` before its worker completed. `run_owned_blocking_call` now retains ownership through worker completion; waiting cancellation, in-flight cancellation, post-stop request, and core exclusion are covered by `test_ms3b_production_paths.py`. | MS3-B | Mitigated |
+| R-067 | A detached acceptance unit can be garbage-collected or mistaken for the evidence authority, or an unsafe retry can create a second T0/root | High | M22.9-P1 keeps `AcceptanceObserver` and immutable `stage-final.json`/SHA chain authoritative; external systemd uses `Type=exec`, `Restart=no`, fixed operator-selected registered relative root, and no automatic stage advancement. Inspect InvocationID/journal separately, and resume only the exact unfinished root when boot/process/service/identity and the 600-second gap bound still match; otherwise preserve and fail closed. | M22.9-P1 | Monitoring |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

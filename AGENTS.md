@@ -55,17 +55,30 @@ recoverable immutable raw payloads,
 deterministic replay metadata, explicit gap evidence, and verified archival
 across the approved VPS/local Offline Workspace boundary.
 
-Current milestone status is `MS4=REVIEWED_COMPLETE` and
-`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS` for
-`NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`; `RECORDER=STOPPED`,
-`CURRENT_MAIN_DEPLOYED=NO`, `FORMAL_M22_9=NOT_STARTED`, and the next step is
-`FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION`.
-The current MS4-D review base uses main
+Current milestone status is `M22_9_P1=REVIEWED_COMPLETE` for
+the systemd-detached single-stage observation preparation. The bounded MS4
+qualification remains closed, while `FORMAL_M22_9=NOT_STARTED`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `PRODUCTION_READY=NO`,
+`CURRENT_MAIN_DEPLOYED=NO`, and `RECORDER=STOPPED`. The next step is
+`M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT`.
+The historical MS4-D review base used main
 `e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
 `9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
 evidence closeout PR #61 at commit
 `013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
-completed successfully. This is not a deployment authorization.
+completed successfully. P1 is based on current main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`. Neither is a deployment
+authorization.
+
+P1 keeps `AcceptanceObserver` as the sole measurement/evidence authority and
+uses an external systemd 255 transient `Type=exec` unit for each explicitly
+selected stage. The unit runs as non-root `bmdr:bmdr` with `Restart=no`,
+`KillSignal=SIGINT`, `TimeoutStopSec=120s`, `UMask=0027`,
+`NoNewPrivileges=yes`, and journal stdout/stderr. It is detached from SSH but
+does not schedule, restart, or advance stages. The exact registered archive
+subdirectory evidence root and the same-stage resume/final-review procedure
+are recorded in `docs/milestone_acceptance/M22.9-P1.md`; P1 does not deploy,
+enable the archive timer, start Recorder, or begin Formal M22.9.
 
 The authoritative scope is `docs/project_contract.md`. Before current-state or
 milestone work, read `docs/PROJECT_HANDOFF.md` and
