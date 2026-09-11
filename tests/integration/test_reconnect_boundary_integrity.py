@@ -142,6 +142,7 @@ def make_collector(
     *,
     opener: Any,
     stream: UsdMStream = UsdMStream.BOOK_TICKER,
+    rotation: RotationPolicy | None = None,
     lifecycle_observer: Callable[[str], None] | None = None,
     event_observer: Callable[[Any, int, int], None] | None = None,
     operation_observer: Callable[[str, int], None] | None = None,
@@ -157,7 +158,7 @@ def make_collector(
         collector_instance_id="m21-4-11-test",
         collector_version="0.1.0+test",
         queue_capacity=32,
-        rotation=RotationPolicy(seconds=60),
+        rotation=rotation or RotationPolicy(seconds=60),
         durability_interval_seconds=0,
         max_frame_bytes=1024 * 1024,
         event_observer=event_observer,
@@ -1703,7 +1704,14 @@ def test_crash_after_old_seal_before_replacement_connection_recovers_same_gap(
                 )
             raise RuntimeError("injected crash before replacement connection")
 
-        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        collector, catalog, _spool = make_collector(
+            tmp_path,
+            opener=opener,
+            # TEST-105 asserts the crash layout before recovery. Disable
+            # time-based rotation so a slow macOS runner cannot create the
+            # legal ordinary-chunk-plus-marker layout before that boundary.
+            rotation=RotationPolicy(seconds=1_000_000_000),
+        )
         try:
             with pytest.raises(RuntimeError, match="before replacement"):
                 await asyncio.wait_for(collector.run(asyncio.Event()), timeout=3)
@@ -1730,7 +1738,11 @@ def test_crash_after_old_seal_before_replacement_connection_recovers_same_gap(
             attempts += 1
             yield ScriptedSocket([book_ticker(2)], stop=stop)
 
-        collector, catalog, _spool = make_collector(tmp_path, opener=opener)
+        collector, catalog, _spool = make_collector(
+            tmp_path,
+            opener=opener,
+            rotation=RotationPolicy(seconds=1_000_000_000),
+        )
         try:
             await asyncio.wait_for(collector.run(stop), timeout=3)
             events = discontinuity_events(catalog)
