@@ -4262,6 +4262,53 @@ class Catalog:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def chunks_in_states_snapshot(self, *states: ChunkState) -> list[dict[str, object]]:
+        """Read chunk lifecycle rows from one committed SQLite snapshot.
+
+        Acceptance and audit callers use this short-lived helper to freeze the
+        Catalog membership boundary before scanning the filesystem.  It is
+        deliberately read-only and does not use the writable transaction
+        helper, so static read-only Catalogs remain free of WAL/SHM sidecars.
+        """
+
+        if not states:
+            return []
+        placeholders = ",".join("?" for _ in states)
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                rows = self._connection.execute(
+                    f"""
+                    SELECT
+                        chunks.*,
+                        archive_transactions.transaction_id
+                            AS archive_transaction_id,
+                        archive_transactions.chunk_id AS archive_chunk_id,
+                        archive_transactions.state AS archive_state,
+                        archive_transactions.storage_id AS archive_storage_id,
+                        archive_transactions.source_relative_path
+                            AS archive_source_relative_path,
+                        archive_transactions.source_manifest_relative_path
+                            AS archive_source_manifest_relative_path,
+                        archive_transactions.source_manifest_sha256
+                            AS archive_source_manifest_sha256,
+                        archive_transactions.stored_bytes AS archive_stored_bytes,
+                        archive_transactions.stored_sha256 AS archive_stored_sha256
+                    FROM chunks
+                    LEFT JOIN archive_transactions
+                        ON archive_transactions.chunk_id = chunks.chunk_id
+                    WHERE chunks.state IN ({placeholders})
+                    ORDER BY chunks.chunk_id
+                    """,
+                    tuple(states),
+                ).fetchall()
+            except Exception:
+                self._connection.execute("ROLLBACK")
+                raise
+            else:
+                self._connection.execute("COMMIT")
+        return [dict(row) for row in rows]
+
     def transition_count(self, chunk_id: str) -> int:
         with self._lock:
             row = self._connection.execute(

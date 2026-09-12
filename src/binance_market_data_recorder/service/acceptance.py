@@ -23,13 +23,14 @@ from uuid import uuid4
 from ..audit.reconnect_boundaries import (
     UNKNOWN,
     UNMARKED_RECONNECT,
+    ArchiveRootResolver,
     incremental_audit_data_root,
     strict_manifest_inventory,
     validate_incremental_continuation,
 )
 from ..spool.seal import SealError
 from ..storage.capacity import VpsCapacityState, evaluate_capacity, selected_capacity_profile
-from ..storage.catalog import Catalog, CatalogStateError, ChunkState, RemoteArchiveState
+from ..storage.catalog import Catalog, CatalogStateError
 from ..storage.layout import fsync_directory
 from .deployment_identity import (
     DeploymentIdentity,
@@ -521,6 +522,7 @@ class AcceptanceObserver:
     last_sample_utc_ns: int | None = None
     last_sample_boottime_ns: int | None = None
     reconnect_continuation: dict[str, object] | None = None
+    archive_root_resolver: ArchiveRootResolver | None = None
     t0_manifest_members: dict[str, str] | None = None
     next_sample_ordinal: int = 0
     ever_blocking_findings: set[str] = field(default_factory=set)
@@ -622,6 +624,7 @@ class AcceptanceObserver:
             audit = incremental_audit_data_root(
                 self.data_root,
                 continuation=self.reconnect_continuation,
+                archive_root_resolver=self.archive_root_resolver,
             )
         except (OSError, SealError, CatalogStateError, ValueError, RuntimeError) as exc:
             raise AcceptanceError(f"strict Raw/manifest audit failed: {exc}") from exc
@@ -716,56 +719,15 @@ class AcceptanceObserver:
         if not isinstance(catalog_findings, list):
             raise AcceptanceError("Raw audit Catalog findings are malformed")
         findings.extend(str(item) for item in catalog_findings)
-        members = inventory.get("members", []) if isinstance(inventory, dict) else []
-        member_paths = {
-            str(item.get("path"))
-            for item in members
-            if isinstance(item, dict) and isinstance(item.get("path"), str)
-        }
-        loss: list[dict[str, object]] = []
-        catalog_path = self.data_root / "state" / "catalog.sqlite"
-        with Catalog(catalog_path, read_only=True) as catalog:
-
-            def classify_absence(chunk_id: str) -> str:
-                _chunk, local, remote = catalog.source_lifecycle_snapshot(chunk_id)
-                if local is not None and local.get("state") == "LOCAL_DELETED":
-                    return "AUTHORIZED_LOCAL_DELETE"
-                if (
-                    remote is not None
-                    and remote.get("state") == RemoteArchiveState.REMOTE_DELETED.value
-                ):
-                    return "AUTHORIZED_REMOTE_DELETE"
-                if remote is not None or local is not None:
-                    return "UNKNOWN"
-                return "UNEXPLAINED_ABSENCE"
-
-            absences = inventory.get("artifact_absences", []) if isinstance(inventory, dict) else []
-            for absence in absences:
-                if not isinstance(absence, dict):
-                    continue
-                chunk_id = str(absence.get("chunk_id", ""))
-                classification = classify_absence(chunk_id)
-                loss.append({**absence, "classification": classification})
-                if classification == "UNEXPLAINED_ABSENCE":
-                    findings.append("unexplained_raw_absence")
-                elif classification == "UNKNOWN":
-                    findings.append("unknown_raw_absence")
-            for row in catalog.chunks_in_states(*tuple(ChunkState)):
-                manifest_path = row.get("manifest_path")
-                if not isinstance(manifest_path, str) or manifest_path in member_paths:
-                    continue
-                classification = classify_absence(str(row.get("chunk_id", "")))
-                loss.append(
-                    {
-                        "chunk_id": row.get("chunk_id"),
-                        "manifest_path": manifest_path,
-                        "classification": classification,
-                    }
-                )
-                if classification == "UNEXPLAINED_ABSENCE":
-                    findings.append("unexplained_raw_absence")
-                elif classification == "UNKNOWN":
-                    findings.append("unknown_raw_absence")
+        loss = audit.get("raw_loss")
+        if not isinstance(loss, list) or any(not isinstance(item, dict) for item in loss):
+            raise AcceptanceError("Raw audit loss classification is malformed")
+        for item in loss:
+            classification = item.get("classification")
+            if classification == "UNEXPLAINED_ABSENCE":
+                findings.append("unexplained_raw_absence")
+            elif classification == "UNKNOWN":
+                findings.append("unknown_raw_absence")
         return {
             "audit": audit,
             "inventory": inventory,
@@ -1034,7 +996,7 @@ def _continuation_from(document: Mapping[str, object]) -> dict[str, object]:
         observed_members[str(item["path"])] = _digest(
             item["sha256"], "manifest inventory digest"
         )
-    if observed_members != members:
+    if any(observed_members.get(path) != digest for path, digest in members.items()):
         raise AcceptanceError("reconnect continuation does not bind manifest inventory")
     return continuation
 
@@ -1327,6 +1289,7 @@ def resume_observer(
     evaluator: VpsReadinessEvaluator,
     clock: Clock | None = None,
     disk_usage: Callable[[Path], Any] = shutil.disk_usage,
+    archive_root_resolver: ArchiveRootResolver | None = None,
 ) -> AcceptanceObserver:
     selected_clock = LinuxClock() if clock is None else clock
     if (stage_root / "stage-final.json").exists():
@@ -1392,6 +1355,7 @@ def resume_observer(
         evaluator=evaluator,
         clock=selected_clock,
         disk_usage=disk_usage,
+        archive_root_resolver=archive_root_resolver,
         t0_utc_ns=_integer(start["observed_at_utc_ns"], "stage-start UTC timestamp"),
         t0_boottime_ns=_integer(start["observed_at_boottime_ns"], "stage-start BOOTTIME timestamp"),
         t0_boot_id=str(start["boot_id"]),

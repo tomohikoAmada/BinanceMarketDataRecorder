@@ -12,6 +12,7 @@ from binance_market_data_recorder.service.acceptance import (
     STAGE_DURATION_NS,
     AcceptanceError,
     AcceptanceObserver,
+    _continuation_from,
     _empty_common,
     _publish,
     _safe_evidence_root,
@@ -301,6 +302,27 @@ def test_resume_rejects_continuation_not_bound_to_sample_inventory(tmp_path: Pat
             clock=clock,
             disk_usage=observer.disk_usage,
         )
+
+
+def test_resume_accepts_post_boundary_inventory_member_deferred_from_continuation() -> None:
+    included_path = "data/manifests/included.manifest.json"
+    deferred_path = "data/manifests/deferred.manifest.json"
+    continuation = {
+        "schema_version": reconnect_audit.INCREMENTAL_SCHEMA_VERSION,
+        "manifest_members": {included_path: "a" * 64},
+        "streams": {},
+    }
+    document = {
+        "manifest_inventory": {
+            "members": [
+                {"path": included_path, "sha256": "a" * 64, "chunk_id": "included"},
+                {"path": deferred_path, "sha256": "b" * 64, "chunk_id": "deferred"},
+            ]
+        },
+        "reconnect_summary": {"continuation": continuation},
+    }
+
+    assert _continuation_from(document) == continuation
 
 
 def test_canonical_json_is_sorted_and_has_one_trailing_newline() -> None:

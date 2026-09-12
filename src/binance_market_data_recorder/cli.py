@@ -11,7 +11,7 @@ import os
 import sys
 import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -112,6 +112,34 @@ def _volume_adapter() -> Any:
     if DiskArbitrationAdapter is not _ORIGINAL_DISK_ARBITRATION_ADAPTER:
         return DiskArbitrationAdapter()
     return volume_adapter()
+
+
+def _acceptance_archive_root_resolver(
+    data_root: Path,
+) -> Callable[[], Mapping[str, Path]]:
+    """Resolve registered archive roots without changing Catalog or storage."""
+
+    def resolve() -> Mapping[str, Path]:
+        catalog_path = data_root / "state" / "catalog.sqlite"
+        if not catalog_path.is_file():
+            return {}
+        try:
+            with Catalog(catalog_path, read_only=True) as catalog:
+                statuses = StorageRegistry(
+                    catalog=catalog,
+                    volumes=_volume_adapter(),
+                ).observe_statuses()
+        except (CatalogStateError, OSError, PlatformVolumeError, RuntimeError, ValueError):
+            return {}
+        return {
+            str(status["storage_id"]): Path(str(status["resolved_path"])).resolve()
+            for status in statuses
+            if status.get("state") in {"READY", "LOW_SPACE"}
+            and isinstance(status.get("storage_id"), str)
+            and isinstance(status.get("resolved_path"), str)
+        }
+
+    return resolve
 
 
 def _write_json(payload: object, *, stream: TextIO | None = None) -> None:
@@ -777,6 +805,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0 if document["result"] == "PASS_CANDIDATE" else 2
                 if acceptance_action == "stage":
+                    archive_root_resolver = _acceptance_archive_root_resolver(
+                        loaded.config.data_root
+                    )
                     if args.resume is not None:
                         observer = resume_observer(
                             args.resume,
@@ -784,6 +815,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             identity=identity,
                             manager=acceptance_manager,
                             evaluator=evaluator,
+                            archive_root_resolver=archive_root_resolver,
                         )
                     else:
                         if args.previous_evidence is None or args.evidence_root is None:
@@ -804,6 +836,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             prior_stage_sha256=prior_sha,
                             manager=acceptance_manager,
                             evaluator=evaluator,
+                            archive_root_resolver=archive_root_resolver,
                         )
                         path, digest, start_document = observer.start()
                         _write_json(

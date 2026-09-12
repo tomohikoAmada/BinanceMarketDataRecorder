@@ -1,8 +1,32 @@
 # Risk Register
 
-## Current Formal 2h failed-closeout risk checkpoint — 2026-09-11
+## Current observer/archive concurrency-fix reviewed checkpoint — 2026-09-12
 
-`M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE` is the current milestone. The Formal
+`ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`. The fix
+freezes a short-lived Catalog lifecycle boundary before the long filesystem
+scan, uses one authoritative membership comparison, defers rows committed
+after that boundary, and re-reads fresh exact-chunk lifecycle state when
+sealed Raw disappears. Existing ArchiveManager verification and fail-closed
+archive semantics are unchanged. Deterministic offline tests cover the
+post-boundary race, `LOCAL_DELETE_PENDING` unlink/validation windows,
+unauthorized absence, external corruption, and observer read-only behavior.
+
+The source is not deployed. The historical Formal 2-hour attempt remains
+`EXECUTED_FAILED_AT_T0` with zero duration credit; `12H=NOT_STARTED` and
+`PRODUCTION_READY=NO`. Independent Luna Max review of exact code-review
+commit `31cabe4445ee699ad284aa707d24333c78cf8d21` against base
+`e214120a25a5aff28fad4903c9510920a25738d3` found P0=0, P1=0, and P2=0.
+The 112,817-manifest audit is historical performance evidence; terminal
+`LOCAL_DELETED` uses durable transaction evidence, while full external
+verification remains a separate stage safeguard. Any redeploy or Formal retry
+requires separate authorization.
+
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+
+## Historical Formal 2h failed-closeout risk checkpoint — 2026-09-11
+
+At that historical checkpoint, `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE` was the
+current milestone. The Formal
 2-hour attempt remains `EXECUTED_FAILED_AT_T0`, with zero duration credit;
 12 hours and all later stages are not started. Exact P2 deployment source/
 review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
@@ -164,7 +188,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-067 | A detached acceptance unit can be garbage-collected or mistaken for the evidence authority, or an unsafe retry can create a second T0/root | High | M22.9-P1 keeps `AcceptanceObserver` and immutable `stage-final.json`/SHA chain authoritative; external systemd uses `Type=exec`, `Restart=no`, fixed operator-selected registered relative root, and no automatic stage advancement. Inspect InvocationID/journal separately, and resume only the exact unfinished root when boot/process/service/identity and the 600-second gap bound still match; otherwise preserve and fail closed. | M22.9-P1 | Monitoring |
 | R-068 | Active writer root can reach its hard reserve before a long Formal chain even when the registered archive target has ample space | Critical | P2 observed the exact current deployment with the archive timer enabled and backlog returning to zero. The conservative existing 24-hour generation rate is `349910.017730 B/s`; active-root runway above the 10 GiB reserve is only about 26.46 hours, so every Formal stage start/end must recheck runway, timer health, backlog, and target margin. | M22.9-P2 | Monitoring |
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
-| R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and a full 112,817-manifest audit had zero Catalog/integrity findings; timing supports but does not prove this race. The next milestone must establish lifecycle-coherent observation or a bounded consistent retry and add deterministic offline concurrency coverage without weakening true-loss detection. No retry or retroactive credit is allowed before review and separate redeploy authorization. | M22.9 observer fix | Open |
+| R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The reviewed fix freezes a lifecycle-coherent boundary, makes one membership comparison, defers later rows, and fresh-validates authorized `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` absence with existing external verification. Deterministic race, unauthorized-loss, corruption, and read-only tests pass; independent review found P0/P1/P2=0. Source is not deployed, exact-artifact redeploy preflight remains separate, and no retry or retroactive credit is authorized. | M22.9 observer fix | Monitoring |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

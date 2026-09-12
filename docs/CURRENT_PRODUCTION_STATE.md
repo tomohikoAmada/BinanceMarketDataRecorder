@@ -5,7 +5,39 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current stage — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+## Current stage — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+
+The narrowly scoped offline diagnosis and fix is complete. AcceptanceObserver
+now receives one lifecycle-coherent Catalog boundary before its long manifest
+scan, compares membership only within that boundary, defers later rows, and
+freshly validates exact archive lifecycle state when local Raw disappears.
+The existing ArchiveManager verification and fail-closed safety rules remain
+the authority. Deterministic offline coverage includes post-boundary deferral,
+`LOCAL_DELETE_PENDING` unlink races, validation-time disappearance,
+unauthorized absence, external corruption, and observer read-only behavior.
+Independent Luna Max review of exact code-review commit
+`31cabe4445ee699ad284aa707d24333c78cf8d21` against base
+`e214120a25a5aff28fad4903c9510920a25738d3` found P0=0, P1=0, and P2=0;
+the reviewer could not rerun pytest because its read-only sandbox had no usable
+temporary directory, which is not a product failure.
+
+```text
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The detailed record is [`M22.9 observer/archive concurrency fix`](milestone_acceptance/M22.9-observer-archive-concurrency-fix.md).
+The next gate is exact-artifact redeploy preflight; redeploy and any Formal
+retry require separate authorization.
+
+## Historical current-stage record — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
 
 The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
 before the first observer sample. T0 was
@@ -63,9 +95,9 @@ The installed P2 exact source/review base remains
 `CURRENT_MAIN_DEPLOYED=NO` because this documentation-only descendant is
 not installed. The installed artifact is not retry-eligible until the scoped
 fix is reviewed and a later exact artifact is separately authorized and
-deployed. The next milestone is narrowly the acceptance-observer/
-archive-concurrency diagnosis, fix, and offline test; redeploy and retry
-require separate authorization.
+deployed. The offline fix is recorded in the current section above; the next
+gate is independent code review plus exact-artifact redeploy preflight, and
+redeploy/retry require separate authorization.
 
 ## P2 deployment basis — reviewed complete (2026-09-11)
 
@@ -569,12 +601,13 @@ FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
+CURRENT_MAIN_DEPLOYMENT_REASON=REVIEWED_FIX_SOURCE_NOT_INSTALLED
 M22_9_P2=REVIEWED_COMPLETE
 M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
 ARCHIVE_TIMER=ENABLED_ACTIVE
 RECORDER=STOPPED
-NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
 REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
 ```
 
@@ -587,7 +620,7 @@ credit does not transfer.
 
 ## Next action
 
-NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
@@ -598,15 +631,16 @@ reviewed-complete documentation-only systemd-detached observation preparation.
 M22.9-P2 is reviewed complete: the exact P2 deployment source/review base was
 installed and verified, the registered archive was drained and fully verified,
 and bounded non-formal readiness/interaction completed before Recorder was
-stopped. After this docs-only merge,
-`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
+stopped. `CURRENT_MAIN_DEPLOYED=NO`; the current engineering source is not
+installed.
 The installed P2 artifact remains the evidence basis for the failed attempt,
-but it is not eligible for retry until the scoped observer fix is reviewed and
-a later exact artifact is separately authorized and deployed. The Formal
+but it is not eligible for retry until the reviewed observer fix is built into
+a later exact artifact and that artifact is separately authorized and
+deployed. The Formal
 2-hour stage was attempted once and failed at T0 before the first observer sample; its
 stage-start evidence and post-stop forensic review are recorded in
 [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The affected
 Catalog/manifest findings support, but do not prove, a concurrent archive
-snapshot race. No redeploy or retry is authorized by this document. The next named
-milestone is `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST`;
+snapshot race. The offline fix is complete; no redeploy or retry is authorized
+by this document. The next gate is exact-artifact redeploy preflight;
 redeploy/retry authorization is separate.

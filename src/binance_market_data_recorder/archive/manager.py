@@ -213,6 +213,18 @@ class ArchiveManager:
             "files": results,
         }
 
+    def validate_external_commit(self, transaction: dict[str, object]) -> None:
+        """Validate one committed archive without changing any state.
+
+        The acceptance observer uses the same target identity, Raw-byte, and
+        embedded-manifest checks as ArchiveManager before accepting a missing
+        internal source during an authorized local-delete window.  This
+        method is intentionally read-only; it never advances Catalog state or
+        creates an archive directory.
+        """
+
+        self._validate_external_commit(transaction)
+
     def _next_transaction(self) -> dict[str, object] | None:
         transaction = self.catalog.oldest_incomplete_archive_transaction(
             self.target.storage_id
