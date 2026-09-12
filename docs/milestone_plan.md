@@ -1,16 +1,50 @@
 # Milestone Plan
 
-## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
-The exact current main source
+The exact-artifact retry established a valid T0 and ten samples, then became
+incomplete when the VPS unattended glibc/Python upgrade reexecuted systemd and
+externally restarted both Recorder and its transient observer at approximately
+85 minutes. No finalized 7,200-second evidence chain exists, so the retry earns
+zero duration credit and does not unlock 12 hours.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+The current milestone ends with Recorder stopped and archive/Catalog state
+healthy. The next milestone is a narrowly scoped host-maintenance quiet-window
+preflight: it must establish how pending unattended package work and systemd
+service reexecution are excluded from an authorized measurement window, test
+that procedure, preserve security update authority, and stop. It must not start
+another Formal T0.
+
+Detailed evidence is in
+[`M22.9 Formal 2-hour retry closeout`](milestone_acceptance/M22.9-2h-retry.md).
+
+## Previous milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+At that milestone, the exact current main source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
-`e968ede54d9f110ef7371a4847a54940177a1a19` is installed with wheel SHA-256
+`e968ede54d9f110ef7371a4847a54940177a1a19` was installed with wheel SHA-256
 `9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`.
 Deployment identity
 `582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
-and retained P2 rollback compatibility both verify. Recorder reached READY for
-all four ProductKeys and 12 core contexts; the archive timer remains active.
-No Formal stage child or T0 was created.
+and retained P2 rollback compatibility both verified. Recorder reached READY
+for all four ProductKeys and 12 core contexts; the archive timer was active. No
+Formal stage child or T0 had been created.
 
 ```text
 MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS

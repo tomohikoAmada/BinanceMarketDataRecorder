@@ -5,22 +5,55 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
-The exact current GitHub main source
+One Formal 2-hour retry started from the exact current-main deployment and
+passed T0 plus ten published samples. At approximately 85 minutes, Ubuntu's
+unattended upgrade of glibc and Python 3.12 reexecuted systemd and externally
+stopped/restarted both Recorder and the transient observer. The original
+process/service identity was lost, there is no `stage-final.json`, and the
+stage receives zero duration credit. An automatic relaunch artifact is
+preserved but is not a second authorized Formal attempt.
+
+Recorder is now stopped. The exact deployed artifact still verifies; the
+archive timer is enabled/active, backlog and pending counts are zero, Catalog
+integrity is `ok`, and no active `.partial` files remain.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+The authority is the
+[Formal 2-hour retry closeout](milestone_acceptance/M22.9-2h-retry.md).
+
+## Previous milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+At that milestone, the exact current GitHub main source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
-`e968ede54d9f110ef7371a4847a54940177a1a19` is now installed and verified on
+`e968ede54d9f110ef7371a4847a54940177a1a19` was installed and verified on
 `greencloud-tokyo-01`. Its wheel SHA-256 is
 `9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb` and
 deployment identity SHA-256 is
 `582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`.
 The old P2 venv and identity remain retained and rollback-compatible.
 
-Recorder is running READY with four ProductKeys and 12 connected/persisted
+Recorder was running READY with four ProductKeys and 12 connected/persisted
 core stream contexts. Each product has a persisted public snapshot and a
 synchronized order book. Systemd reports PID `763514`, InvocationID
 `63571de3b46a4ebd9e3676392fd35a0b`, and `NRestarts=0`; the archive timer is
-enabled/active. No new Formal T0 exists yet.
+enabled/active. No new Formal T0 existed at that checkpoint.
 
 ```text
 MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
@@ -723,40 +756,42 @@ Raw v1 framing and payload bytes are unchanged. External Contracts are
 unchanged. No account endpoints, credentials, orders, trading, other
 exchanges, or arbitrary-symbol framework are authorized.
 
-## Formal and deployment status
+## Current Formal and deployment status
 
 ```text
 STOPPED_DEPLOYMENT_INSTALLED=YES
 LIVE_START_AUTHORIZED=NO
 DEPLOYMENT_AUTHORIZED=NO
 FORMAL_M22_9_STARTED=YES
-FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
-FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
 FORMAL_M22_9_CREDIT_SECONDS=0
 12H=NOT_STARTED
 PRODUCTION_READY=NO
 P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_DEPLOYMENT_REASON=REVIEWED_FIX_SOURCE_NOT_INSTALLED
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
 M22_9_P2=REVIEWED_COMPLETE
 M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
 ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
 ARCHIVE_TIMER=ENABLED_ACTIVE
 RECORDER=STOPPED
-NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
-REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
 ```
 
 Here `DEPLOYMENT_AUTHORIZED=NO` means future live deployment/start
 authorization is absent. Any future live traffic or Formal stage requires the
-exact P2 deployment source/artifact, immutable Wheel, lock, config, unit, and
-deployment identities, followed by explicit separate authorization and a fresh
-readiness/capacity decision. Historical single-symbol and non-formal duration
-credit does not transfer.
+exact installed runtime artifact identified above and its immutable Wheel,
+lock, config, unit, and deployment identities, followed by explicit separate
+authorization and a fresh readiness/capacity decision. Historical
+single-symbol, non-formal, and incomplete-stage duration credit does not
+transfer.
 
 ## Next action
 
-NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
@@ -764,19 +799,14 @@ non-formal R3 recovery supplement; the original two-hour window remains
 `EXECUTED_PARTIAL_NOT_ACCEPTED` and receives no transferred duration credit.
 MS4-D has closed the bounded four-ProductKey qualification. M22.9-P1 is the
 reviewed-complete documentation-only systemd-detached observation preparation.
-M22.9-P2 is reviewed complete: the exact P2 deployment source/review base was
-installed and verified, the registered archive was drained and fully verified,
-and bounded non-formal readiness/interaction completed before Recorder was
-stopped. `CURRENT_MAIN_DEPLOYED=NO`; the current engineering source is not
-installed.
-The installed P2 artifact remains the evidence basis for the failed attempt,
-but it is not eligible for retry until the reviewed observer fix is built into
-a later exact artifact and that artifact is separately authorized and
-deployed. The Formal
-2-hour stage was attempted once and failed at T0 before the first observer sample; its
-stage-start evidence and post-stop forensic review are recorded in
-[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The affected
-Catalog/manifest findings support, but do not prove, a concurrent archive
-snapshot race. The offline fix is complete; no redeploy or retry is authorized
-by this document. The next gate is exact-artifact redeploy preflight;
-redeploy/retry authorization is separate.
+M22.9-P2 and the original failed-at-T0 closeout remain historical reviewed
+records. The observer concurrency fix was merged, the exact current-main
+artifact was deployed and reached readiness, and one separately authorized
+Formal retry then produced a valid T0 plus ten passing samples. Host unattended
+maintenance reexecuted systemd at approximately 85 minutes, invalidating the
+Recorder and observer process identities before finalization. The retry is
+therefore incomplete with zero credit; Recorder is stopped and 12 hours is not
+started. The next milestone is only the bounded host-maintenance quiet-window
+preflight described in
+[`M22.9-2h retry closeout`](milestone_acceptance/M22.9-2h-retry.md). It must not
+create another T0 or restart Recorder.

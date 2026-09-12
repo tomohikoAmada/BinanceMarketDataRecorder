@@ -5,9 +5,42 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
-The exact current main artifact is installed and verified on the Tokyo VPS:
+The owner-authorized retry created one valid Formal T0 and ten samples from the
+exact current-main deployment. It did not reach two hours: the VPS unattended
+upgrade of glibc and Python 3.12 reexecuted systemd at approximately 85 minutes
+and stopped/restarted Recorder and the observer. The immutable original root
+has no `stage-final.json` and cannot be resumed because the Recorder process,
+InvocationID, and service instance changed.
+
+Recorder has been stopped gracefully. Deployment verification still passes;
+the archive timer is enabled/active, archive backlog and pending are zero,
+Catalog integrity is `ok`, and active `.partial` count is zero. Do not restart,
+resume, create another T0, or start 12 hours from this record.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+See [`M22.9 Formal 2-hour retry closeout`](milestone_acceptance/M22.9-2h-retry.md).
+
+## Previous milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+At that milestone, the exact current main artifact was installed and verified
+on the Tokyo VPS:
 source `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
 `e968ede54d9f110ef7371a4847a54940177a1a19`, wheel
 `9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
@@ -15,12 +48,12 @@ and deployment identity
 `582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`.
 The prior P2 venv and identity are retained and rollback-compatible.
 
-Recorder is `RUNNING_READY`: both BTCUSDT and ETHUSDT on Spot and USD-M
-perpetual have all three core streams connected and persisted, plus snapshots
-and synchronized books. The archive timer is enabled/active. The acceptance
+Recorder was `RUNNING_READY`: both BTCUSDT and ETHUSDT on Spot and USD-M
+perpetual had all three core streams connected and persisted, plus snapshots
+and synchronized books. The archive timer was enabled/active. The acceptance
 root is
 `/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-retry-20260912T032409Z-98a352df322a-e267ae38`.
-No Formal stage child or T0 has been created; duration credit remains zero.
+No Formal stage child or T0 had been created; duration credit remained zero.
 
 ```text
 MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
@@ -485,9 +518,9 @@ authority:
 8. Inspect the current single-symbol runtime assembly.
 9. Obtain explicit MS2 implementation authorization.
 
-## Current authority split
+## Historical authority split before exact-current-main redeploy
 
-### P2 current deployment/archive authority
+### P2 deployment/archive authority at that checkpoint
 
 ```text
 P2_REVIEW_BASE_MAIN_SHA=646792f2e5fc5b7195ea58541d3f1dfda6555b7f
@@ -519,8 +552,8 @@ is enabled and active/waiting with a future monotonic trigger. The active
 writer root remains `/var/lib/binance-market-data-recorder`; the approximately
 2 TB `/dev/vdb1` filesystem is archive storage only. Capacity margin and the
 active-root runway limitation are recorded in the P2 acceptance file. This
-block is the current authority; the following A/B sections preserve historical
-lineage.
+block is historical authority; the opening closeout section is the current
+authority, and the following A/B sections preserve older lineage.
 
 ### A. Historical GitHub main and behavior/deployment source
 
@@ -740,15 +773,16 @@ recoverable and unchanged. Do not write production data under the repository
 or use an external volume as an active Collector target.
 
 `FORMAL_M22_9_STARTED=YES`,
-`FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`,
-`FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
+`FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
+`FORMAL_M22_9=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
 `PRODUCTION_READY=NO`,
 `STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
 `DEPLOYMENT_AUTHORIZED=NO` (future live start only),
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
+`DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`,
 `CURRENT_MAIN_DEPLOYED=NO`,
-`CURRENT_MAIN_DEPLOYMENT_REASON=REVIEWED_FIX_SOURCE_NOT_INSTALLED`,
+`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
 `MS3_B=CLOSED_MERGED_PR_56`,
@@ -765,12 +799,14 @@ or use an external volume as an active Collector target.
 `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
-`NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`.
+`RETRY_ELIGIBLE=NO`,
+`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT`.
 
-Any further live traffic or Formal stage requires the exact P2 deployment
-source/artifact, immutable Wheel, lock, config, unit, and deployment identities,
-explicit separate authorization, and a fresh readiness/capacity decision.
-Historical single-symbol and non-formal duration credit does not transfer.
+Any further live traffic or Formal stage requires the exact installed runtime
+source/artifact identified above, its immutable Wheel, lock, config, unit, and
+deployment identities, explicit separate authorization, and a fresh
+readiness/capacity decision. Historical single-symbol, non-formal, and
+incomplete-stage duration credit does not transfer.
 
 M22.9-P1 is reviewed-complete, documentation-only preparation for an external systemd 255
 transient `Type=exec` unit around the existing foreground acceptance observer.
@@ -781,17 +817,13 @@ registered archive-subdirectory root, detached probe evidence, same-stage
 resume rules, and final-review command are in
 [`docs/milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
 P1 did not deploy, start Recorder, enable the archive timer, archive/delete
-Raw, or begin Formal M22.9. P2 is reviewed complete: it installed and verified
-the exact P2 deployment source/review base, drained the registered archive via
-the existing transaction path, and performed bounded non-formal readiness and
-interaction before stopping Recorder. `CURRENT_MAIN_DEPLOYED=NO`; the current
-engineering source is not installed.
-The installed P2 artifact remains the evidence basis for the failed attempt,
-but remains not retry-eligible; a later exact artifact containing the reviewed
-fix must be separately authorized and deployed. The Formal 2-hour
-attempt then failed at T0 before its first sample; the exact roots and
-quiescent forensic review are recorded in
-[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The offline fix is
-complete; the next gate is exact-artifact redeploy preflight. Redeploy/retry
-authorization is separate and this handoff
-does not start it.
+Raw, or begin Formal M22.9. P2 and the original failed-at-T0 attempt remain
+reviewed historical records. The observer fix was subsequently merged and the
+exact current-main artifact was deployed and verified. The separately
+authorized retry reached a valid T0 plus ten passing samples, but host
+maintenance reexecuted systemd before two hours and invalidated both process
+identities. The retry is incomplete with zero credit; Recorder is stopped and
+12 hours is not started. The next gate is the bounded host-maintenance
+quiet-window preflight in
+[`M22.9-2h retry acceptance`](milestone_acceptance/M22.9-2h-retry.md). It does
+not authorize a restart or another T0.

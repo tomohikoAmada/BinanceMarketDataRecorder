@@ -110,17 +110,36 @@ the installed artifact basis; the then-current engineering source containing
 the reviewed fix was not deployed. The installed P2 artifact was not
 retry-eligible; this was later superseded by the exact-artifact redeploy below.
 
-The exact current main artifact is now installed and READY on
+The owner-authorized Formal 2-hour retry on 2026-09-12 established one valid
+T0 and ten samples before Ubuntu unattended upgrades of glibc and Python 3.12
+reexecuted systemd and externally restarted both Recorder and the transient
+observer at approximately 85 minutes. The original stage has no
+`stage-final.json`, cannot be resumed across the changed process/service
+identity, and receives zero credit. A new-stage command relaunched by host
+maintenance produced one separate `REVIEW_REQUIRED` root; it is preserved as
+an ineligible automatic artifact, not an authorized second Formal attempt.
+Recorder is now stopped, the archive timer remains enabled/active, archive
+backlog and pending are zero, Catalog integrity is `ok`, and no active
+`.partial` files remain. Current milestone status is
+`M22_9_FORMAL_2H_RETRY_CLOSEOUT=REVIEWED_COMPLETE`;
+`FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`, and
+`PRODUCTION_READY=NO`. The deployed runtime source remains
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`; after this documentation-only
+closeout, GitHub main is a documentation descendant and is not itself deployed.
+`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT`.
+
+Before that retry, the exact current main artifact was installed and READY on
 greencloud-tokyo-01. Source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
 `e968ede54d9f110ef7371a4847a54940177a1a19`, wheel SHA-256
 `9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
 and deployment identity
 `582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
-verify. Recorder is `RUNNING_READY` for the four configured ProductKeys and 12
-core stream contexts; the archive timer is enabled/active. No new Formal T0
-has been created, Formal credit remains zero, and 12h is not started. Current
-milestone status is
+verify. At that readiness checkpoint Recorder was `RUNNING_READY` for the four
+configured ProductKeys and 12 core stream contexts, and the archive timer was
+enabled/active. No Formal T0 had yet been created, Formal credit was zero, and
+12h was not started. That milestone status was
 `EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS=COMPLETE`;
 `NEXT=FORMAL_M22_9_2H_RETRY_START`.
 The exact code-review commit `31cabe4445ee699ad284aa707d24333c78cf8d21`

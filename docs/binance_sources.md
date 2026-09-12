@@ -461,3 +461,18 @@ was used.
 The raw responses and compact conclusion are retained in the root-controlled
 redeploy/readiness evidence bundle. This refresh supports the immediate 2-hour
 retry gate only; it does not authorize 12 hours or Production Ready.
+
+## Formal M22.9 2h retry immediate pre-T0 refresh — 2026-09-12
+
+Immediately before the actual Formal retry T0, the Tokyo VPS refreshed the
+same unsigned public official endpoints. No account, order, credential, API-key,
+or private endpoint was used.
+
+| Source | URL | Retrieval (UTC) | SHA-256 | Conclusion |
+| --- | --- | --- | --- | --- |
+| Spot `exchangeInfo` | `https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%5D` | `2026-09-12T05:25:28.069854051Z` | `1d16143356258a9b42d96c8134f74dd6f8a3a4a50b5d266024b737312281130b` | BTCUSDT and ETHUSDT both reported `TRADING` |
+| USD-M `exchangeInfo` | `https://fapi.binance.com/fapi/v1/exchangeInfo` | `2026-09-12T05:25:28.069854051Z` | `fc562c75cf7513b1d08e386547053a43d252292f450ed9b620d56b2493e9094b` | BTCUSDT and ETHUSDT both reported `TRADING` and `PERPETUAL` |
+
+The raw responses and compact conclusion are retained in the Formal acceptance
+root. Eligibility passed, but the later host-maintenance interruption leaves
+the stage incomplete and provides no 12-hour or Production Ready authority.
