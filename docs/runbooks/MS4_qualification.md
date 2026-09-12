@@ -307,8 +307,10 @@ item. No new observer implementation is requested. The resulting
 record must say NONFORMAL_MS4 and grants zero Formal M22.9 duration credit.
 
 The separate 2026-09-11 R3 supplement passed its bounded recovery gate. Its
-original VPS evidence is `/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`;
-the local review mirror is under
+historical original VPS path was
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`; the 2026-09-12
+root-home incident removed root-only material, so that path is no longer
+available. The surviving local review mirror is under
 `/Users/amada/Downloads/BinanceMarketDataRecorder-MS4-C-20260910/recovery-r3-evidence/`;
 the classification is `NONFORMAL_MS4_RECOVERY_SUPPLEMENT` and formal M22.9
 credit is zero. It used fresh official Spot/USD-M eligibility, an exact

@@ -1,6 +1,35 @@
 # Risk Register
 
-## Current milestone risk checkpoint — M22_9 Formal 2-hour retry closeout (2026-09-12)
+## Current milestone risk checkpoint — VPS root-home recovery and handoff (2026-09-12)
+
+The first host-maintenance quiet-window preflight was aborted after an unsafe
+remote cleanup expanded an unset target to `/root/` and removed root-home
+contents, including SSH authorization. Root access was recovered without a
+rebuild through GreenCloud password reset and VNC. The dedicated SSH key is
+restored, the temporary recovery key is removed, and VNC disablement is
+operator-confirmed. Production authorities under `/etc`, `/opt`, `/var/lib`,
+and `/srv` survived; prior material stored only under `/root` is unavailable.
+
+The preceding reboot also auto-started the enabled Recorder for approximately
+six minutes. It stopped successfully, created no observer or Formal stage, and
+earns zero duration credit. Recorder is now inactive and disabled; the archive
+timer remains enabled/active, Catalog is `ok`, archive backlog/pending are zero,
+and the registered target is READY. R-072 and R-073 are added below.
+
+```text
+MILESTONE=M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+```
+
+## Previous milestone risk checkpoint — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
 The exact-artifact Formal retry passed T0 and ten samples, then Ubuntu
 `apt-daily-upgrade` upgraded glibc and Python 3.12, requested a systemd manager
@@ -264,6 +293,8 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
 | R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The reviewed fix freezes a lifecycle-coherent boundary, makes one membership comparison, defers later rows, and fresh-validates authorized `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` absence with existing external verification. Deterministic race, unauthorized-loss, corruption, and read-only tests pass; independent review found P0/P1/P2=0. Source is not deployed, exact-artifact redeploy preflight remains separate, and no retry or retroactive credit is authorized. | M22.9 observer fix | Monitoring |
 | R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-12 retry preserves one interrupted original root and one ineligible relaunch root, awards zero credit, and stops Recorder. Before another retry, complete a bounded quiet-window preflight that handles pending package work and prevents maintenance-driven service reexecution during measurement, then restores normal security-update authority. Never resume across changed Recorder PID/InvocationID/service instance or treat an automatic relaunch as authorized. | M22.9 host-maintenance preflight | Open |
+| R-072 | A local/remote shell expansion error or unset cleanup variable broadens an administrative deletion to `/root`, another protected path, or a mount root | Critical | The 2026-09-12 incident is closed only for access recovery; lost root-home-only content is not recoverable evidence. Recursive remote cleanup is forbidden across SSH variable boundaries. Prefer no cleanup and fresh `mktemp -d` children. Any necessary cleanup requires same-remote-shell unset-variable failure, nonempty and canonical-path checks, an exact approved disposable parent/child relationship, explicit refusal of `/`, home, `/etc`, `/opt`, `/var`, `/srv`, and mount roots, printed target review, and a separate step. Evidence directories are retained by default. | M22.9 operations / all VPS work | Mitigated; permanent guard |
+| R-073 | A Recorder that is stopped but systemd-enabled silently starts during a host reboot or maintenance cycle, creating unauthorized non-formal capture and consuming active-root capacity | High | The 2026-09-12 reboot auto-started Recorder for about six minutes; no observer/T0 existed and credit is zero. Recorder is now inactive and disabled while archive scheduling remains enabled. Every stopped handoff and maintenance preflight must check both `is-active` and `is-enabled`; re-enable only as an explicit separately authorized pre-start step, then repeat exact deployment/readiness verification. | M22.9 host-maintenance preflight | Mitigated for current handoff; monitoring |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

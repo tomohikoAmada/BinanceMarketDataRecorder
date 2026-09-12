@@ -1,54 +1,40 @@
 # VPS Operations
 
-Status: `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`. The owner-authorized Formal
-2-hour attempt remains `FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`: the observer
-failed before its first sample at immutable T0 with 24 blockers and receives
-zero duration credit. A post-stop exact review reconciled all 26 implicated
-chunks; the full installed read-only audit covered 112,817 manifests with zero
-Catalog or integrity findings. This supports, but does not prove, a concurrent
-observer/archive snapshot race. See
-[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
+Current status:
+`M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF=COMPLETE`. The first
+host-maintenance quiet-window preflight is `ABORTED_UNACCEPTED`: an unsafe
+remote cleanup expanded an unset target to `/root/`, removed root-home contents
+and SSH authorization, and invalidated that preflight. GreenCloud password
+reset plus temporary VNC restored access without rebuilding the VPS. `/root`
+and exactly one dedicated VPS SSH key are restored; the temporary recovery key
+was removed and VNC disablement is operator-confirmed. Prior material stored
+only under `/root` is unavailable.
 
-The exact P2 deployment source/review base
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
-verified. The four canonical ProductKeys reached readiness with 12 core stream
-contexts; Recorder was gracefully stopped and is currently `inactive/dead`,
-`MainPID=0`, `Result=success`, `NRestarts=0`.
+The preceding reboot auto-started the then-enabled Recorder from
+`2026-09-12T11:32:36.869172Z` to `11:38:59.343979Z`. It stopped successfully,
+created no observer or Formal stage, and earns zero credit. Recorder is now
+inactive and disabled so a maintenance reboot cannot start capture. The
+archive timer remains enabled and active/waiting.
 
-The registered archive target is storage ID
-`ef852751-721c-4145-9083-f6fd48718480` at
-`/srv/recorder-data/recorder-archive` on ext4 `/dev/vdb1`. Existing verified
-ArchiveManager/Catalog transactions drained the backlog to zero; full archive
-verification reported 112,570 verified files, zero failed, and zero pending.
-`binance-market-data-archive.timer` is enabled and active/waiting with a future
-monotonic trigger and successful last service result. The active writer root
-remains `/var/lib/binance-market-data-recorder` on `/dev/vda1`; the 2 TB
-`/dev/vdb1` filesystem is an archive target, not an active writer root.
+The installed exact source remains
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`; its Wheel, lock, config, unit,
+and deployment identity files survived and verified before the unit was
+disabled. The active data root, Catalog, and archive also survived. Catalog
+integrity is `ok`, active `.partial` count is zero, archive backlog and remote
+pending are zero, and all 115413 archive transactions are `LOCAL_DELETED`.
+Storage ID `ef852751-721c-4145-9083-f6fd48718480` resolves READY at
+`/srv/recorder-data/recorder-archive` on the approximately 2 TB ext4
+`/dev/vdb1`; the active writer root remains
+`/var/lib/binance-market-data-recorder` on `/dev/vda1`.
 
-`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
-verification. After this docs-only merge,
-`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains the evidence basis for the failed attempt,
-but is not retry-eligible until the scoped observer fix is reviewed and a
-later exact artifact is separately authorized and deployed.
-`PRODUCTION_READY=NO`, `FORMAL_M22_9_CREDIT_SECONDS=0`, and 12 hours and all
-later stages are not started. The conservative 278-hour archive projection
-leaves approximately 1.772 TB of target margin, while active-root runway above
-the 10 GiB hard reserve is only about 26.46 hours. Every future Formal stage
-must recheck timer, backlog, target capacity, and active-root runway. See
+The owner-authorized Formal 2-hour retry remains
+`EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED` with zero credit; 12 hours
+is not started and `PRODUCTION_READY=NO`. The next action is
+`FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`
+using a fresh evidence root while Recorder stays stopped/disabled. See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md),
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md), and
-[`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
-
-NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
-
-The bounded MS4 qualification remains reviewed complete, and P1 remains
-reviewed complete as a documentation-only systemd-detached preparation. The
-original MS4-C window remains partial and the R3 supplement grants no Formal
-duration credit. P2 itself created no Formal T0; the later 2-hour attempt did
-create T0 and failed before its first sample. No long soak or automatic stage
-advancement occurred.
+[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
 
 ### Historical MS4-D and P1 checkpoints (not current authority)
 
@@ -474,6 +460,45 @@ The corrected future artifact must therefore run `2h -> 12h -> 24h -> 72h ->
 168h`; no command promotes or starts the next stage. `--resume <stage-root>`
 continues the same stage authority and reuses that stage's original T0 and
 published evidence chain; it does not create a new duration window.
+
+## Remote administration and maintenance safety
+
+The 2026-09-12 root-home incident is the controlling negative example. A
+cleanup variable was expanded on the wrong side of an SSH boundary and an
+unset remote value collapsed the intended child target to `/root/`. The
+following rules are mandatory:
+
+1. Do not recursively remove `/`, `/root`, any home directory, `/etc`, `/opt`,
+   `/var`, `/srv`, a mount root, or a value that is empty, unresolved, or not
+   created by the current operation.
+2. Never mix local and remote variable interpolation for a cleanup target.
+   Create, validate, and consume the target inside the same remote shell with
+   unset variables fatal.
+3. Default to no cleanup. Use a fresh `mktemp -d` child under a named disposable
+   parent, retain evidence roots, and treat cleanup failure as nonfatal.
+4. When cleanup is required, canonicalize the path; require an exact approved
+   parent plus nonempty child; refuse the parent itself and every protected or
+   mounted root; print the resolved path; then perform cleanup as a separate
+   reviewed step. Do not append recursive cleanup to deployment, evidence, or
+   acceptance commands.
+5. A handoff is stopped only when both service state and boot policy are safe.
+   Record `systemctl is-active` and `systemctl is-enabled`. Keep Recorder
+   inactive and disabled through host maintenance; explicitly enable it only
+   inside a separately authorized start procedure.
+
+The current disabled inactive unit remains installed with unchanged bytes.
+The installed deployment verifier expects an inactive unit to remain loaded in
+systemd memory and reports `Unit ... not loaded` after the disabled unit is
+garbage-collected. Do not work around this by leaving auto-start armed. The
+future authorized procedure explicitly enables/loads the unit, reruns
+deployment verification, and only then evaluates readiness/start authority.
+
+Operating-system security updates remain authoritative. The owner's roughly
+monthly disruptive-maintenance preference does not justify disabling security
+updates indefinitely. A Formal quiet window must finish pending work and any
+required reboot before T0, temporarily prevent apt/systemd reexecution only
+for the bounded measurement window, and prove normal update authority is
+restored afterward. The aborted 2026-09-12 evidence roots are never resumable.
 
 ## Operations and recovery
 

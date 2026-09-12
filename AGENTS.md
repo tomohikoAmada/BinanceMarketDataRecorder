@@ -129,6 +129,23 @@ backlog and pending are zero, Catalog integrity is `ok`, and no active
 closeout, GitHub main is a documentation descendant and is not itself deployed.
 `NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT`.
 
+The first 2026-09-12 attempt at that quiet-window preflight was aborted and is
+not accepted. An unsafe administrative cleanup crossed local/remote shell
+expansion boundaries with an unset target and recursively removed `/root/`
+contents, including SSH authorization. GreenCloud password reset and temporary
+VNC access restored `/root` and the dedicated VPS public key without a server
+rebuild; the temporary recovery key was removed and the owner confirmed VNC
+was disabled. The preceding reboot also auto-started the enabled Recorder for
+approximately six minutes; it was stopped successfully, created no observer or
+Formal stage, and earns zero credit. Recorder is now inactive and disabled,
+while the archive timer remains enabled/active. Deployment files, active data,
+Catalog, and archive under `/etc`, `/opt`, `/var/lib`, and `/srv` survived;
+anything stored only under `/root` is unavailable. Current milestone status is
+`M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF=COMPLETE`;
+`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED` and
+`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`.
+See `docs/milestone_acceptance/M22.9-vps-root-home-recovery.md`.
+
 Before that retry, the exact current main artifact was installed and READY on
 greencloud-tokyo-01. Source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
@@ -424,6 +441,28 @@ explicitly for M3 acceptance because it writes and scans one million synthetic
 Raw frames in a temporary test directory.
 
 ## Storage safety
+
+### Remote administrative command safety
+
+The 2026-09-12 root-home incident makes these rules permanent for every human,
+agent, prompt, script, and SSH operation:
+
+- Never recursively remove `/`, `/root`, another home directory, `/etc`,
+  `/opt`, `/var`, `/srv`, a mount root, or an unresolved/empty target.
+- Never assume a shell variable crosses the SSH boundary, and never construct
+  a remote deletion target from local/remote interpolation. Cleanup variables
+  must be created, validated, and consumed in the same remote shell with unset
+  variables fatal.
+- Prefer retaining evidence and creating a new `mktemp -d` child under an
+  approved disposable parent. Do not clean merely to obtain a fresh workspace.
+- If cleanup is necessary, require a nonempty canonical path, exact approved
+  parent/child relationship, explicit protected-path and mount-root refusal,
+  and printed resolved target before mutation. Creation/inspection and cleanup
+  are separate reviewed steps; cleanup failure is normally nonfatal.
+- A stopped live service is not necessarily safe across reboot. Every stopped
+  handoff and maintenance preflight must record both `systemctl is-active` and
+  `systemctl is-enabled`; keep Recorder disabled until an explicitly authorized
+  pre-start step.
 
 The interactive defaults are:
 
