@@ -1,6 +1,45 @@
 # Milestone Plan
 
-## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
+## Current milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+
+The first host-maintenance quiet-window preflight attempt is aborted and
+unaccepted. An unsafe remote cleanup expanded an unset target to `/root/`,
+removed root-home contents and SSH authorization, and invalidated the ongoing
+preflight shell/workspace. GreenCloud password reset plus temporary VNC
+restored access without a rebuild. The root home and dedicated SSH key are
+re-established, the temporary recovery key is removed, and VNC disablement is
+operator-confirmed.
+
+The preceding reboot also demonstrated that a stopped-but-enabled Recorder
+will auto-start. It ran for approximately six minutes, stopped successfully,
+created no observer or Formal stage, and earns zero credit. Recorder is now
+inactive and disabled; archive scheduling stays enabled/active. Installed
+deployment files, active data, Catalog, and archive survived, while prior
+material stored only under `/root` is unavailable.
+
+```text
+MILESTONE=M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+```
+
+The next milestone must begin with a fresh evidence root and a reviewed
+bounded procedure. It finishes pending package work before T0, proves the
+maintenance quiet window and restoration of normal update authority, and
+keeps Recorder stopped/disabled. It must not reuse the two aborted evidence
+roots, create a Formal T0, or start 12 hours. See the
+[recovery and handoff acceptance record](milestone_acceptance/M22.9-vps-root-home-recovery.md).
+
+## Previous milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
 The exact-artifact retry established a valid T0 and ten samples, then became
 incomplete when the VPS unattended glibc/Python upgrade reexecuted systemd and
@@ -813,7 +852,8 @@ and a fresh affected qualification window; no duration credit transfers.
 
 The R3 evidence is a separate, owner-authorized non-formal supplement, not a
 continuation of the original two-hour duration stage and not Formal M22.9.
-`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json` reports
+The historical VPS path
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json` reported
 `PASS`, classification `NONFORMAL_MS4_RECOVERY_SUPPLEMENT`, and
 `formal_m22_9_credit_seconds=0`. Fresh official Spot/USD-M eligibility was
 captured at `2026-09-11T01:01:49Z`; MainPID `685913` reached `READY`, then the
@@ -1915,6 +1955,31 @@ mutation exists; those remain exclusively M22.4B scope.
   counts as M22.9 duration evidence, even when the same physical VPS is used.
 - **Rollback:** Stop the test deployment and preserve evidence/data; revert
   only test-profile changes.
+
+### M22.9 root-home recovery and handoff closeout
+
+- **Status:** `COMPLETE`. The first maintenance quiet-window preflight is
+  `ABORTED_UNACCEPTED`; neither of its partial evidence roots is resumable or
+  acceptable. Formal credit remains zero and 12 hours is not started.
+- **Recovery:** GreenCloud password reset and temporary VNC restored root
+  access without rebuild. `/root` and the dedicated VPS SSH key were restored;
+  the temporary recovery key was removed and VNC was disabled. Production
+  authorities under `/etc`, `/opt`, `/var/lib`, and `/srv` survived. Prior
+  root-home-only content is unavailable.
+- **Reboot behavior:** The enabled Recorder auto-started for approximately six
+  minutes after boot, then stopped successfully. It created no observer or
+  Formal stage. Recorder is now inactive and disabled; the archive timer is
+  still enabled/active.
+- **Permanent safety gate:** No remote recursive cleanup may target a variable
+  that crosses an SSH expansion boundary. Cleanup is normally omitted; when
+  required it uses a fresh exact child under an allowed disposable parent,
+  same-shell nonempty/canonical-prefix guards, explicit protected-path refusal,
+  and a separate reviewed cleanup step.
+- **Next:** Restart
+  `FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT` from scratch with a
+  fresh evidence root. Keep Recorder stopped/disabled and do not create T0.
+  See
+  [`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
 
 ### M22.9-P1 — systemd-detached single-stage observation preparation
 

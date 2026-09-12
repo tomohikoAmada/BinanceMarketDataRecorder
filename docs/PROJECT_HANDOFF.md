@@ -5,7 +5,61 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
+## Current milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+
+The attempted host-maintenance quiet-window preflight is aborted and
+unaccepted. A remote cleanup command crossed local/remote variable-expansion
+boundaries with an unset target and recursively removed `/root/` contents,
+including SSH authorization. Recovery used the GreenCloud password reset and
+VNC console without rebuilding the VPS. `/root` is restored as `root:root`
+`0700`; exactly one dedicated VPS key remains in `authorized_keys`, a new SSH
+session passed, and the owner confirmed VNC was disabled. Anything previously
+stored only under `/root` is no longer an authority.
+
+The owner reboot immediately before this incident created boot ID
+`bf2d01cf96b24268a6c94bccbcc49b3f` on Ubuntu 24.04.4, kernel
+`6.8.0-139-generic`. The enabled Recorder automatically ran from
+`2026-09-12T11:32:36.869172Z` until a successful stop at
+`11:38:59.343979Z`. No observer or stage root was created, so the short run is
+non-formal and earns zero credit. Recorder is now inactive and disabled; the
+archive timer remains enabled/active.
+
+```text
+MILESTONE=M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_AT_AUDIT_START_SHA=4615df5e8d046a0aa70b94a4c8ffb0de6bf5d44b
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+ROOT_HOME_RECOVERY=COMPLETE
+SSH_KEY_RECOVERY=VERIFIED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+```
+
+The installed artifact and deployment files survived, Catalog integrity is
+`ok`, active `.partial` count is zero, archive backlog/pending are zero, and
+the registered 2 TB target is READY. Deployment verification passed before
+the unit was disabled. The installed verifier cannot inspect the inactive
+disabled unit after systemd garbage-collects it, so the next authorized run
+must explicitly enable/load the unit and re-run verification before start.
+
+The first aborted preflight root contains zero files. The second contains 17
+raw captures only, with no summary, checksum authority, completion marker, or
+acceptance decision. Preserve both, but never resume or accept them. Start the
+next preflight from a fresh root. Full incident, recovery, hashes, capacity,
+package state, and permanent cleanup rules are in
+[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
+
+## Previous milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
 
 The owner-authorized retry created one valid Formal T0 and ten samples from the
 exact current-main deployment. It did not reach two hours: the VPS unattended
@@ -418,9 +472,11 @@ is not steady-period archive-throughput evidence.
 
 ## MS4-C R3 recovery supplement — 2026-09-11
 
-The R3 supplement is recorded at
-`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json` on the Tokyo
-VPS. Its status is `PASS`, classification
+The R3 supplement's historical VPS path was
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`. That root-only
+copy was lost in the later root-home incident; the operator-side Downloads
+mirror recorded in the current recovery closeout survives. Its reviewed status
+is `PASS`, classification
 `NONFORMAL_MS4_RECOVERY_SUPPLEMENT`, and Formal M22.9 credit is zero. Fresh
 official eligibility was captured at 2026-09-11T01:01:49Z. MainPID 685913 was
 `READY` before the exact owned socket was disconnected. The only durable gap
@@ -798,9 +854,12 @@ or use an external volume as an active Collector target.
 `M22_9_P1=REVIEWED_COMPLETE`, `M22_9_P2=REVIEWED_COMPLETE`,
 `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
+`RECORDER_ENABLED=NO`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
 `RETRY_ELIGIBLE=NO`,
-`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT`.
+`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED`,
+`ROOT_HOME_RECOVERY=COMPLETE`,
+`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`.
 
 Any further live traffic or Formal stage requires the exact installed runtime
 source/artifact identified above, its immutable Wheel, lock, config, unit, and
@@ -822,8 +881,10 @@ reviewed historical records. The observer fix was subsequently merged and the
 exact current-main artifact was deployed and verified. The separately
 authorized retry reached a valid T0 plus ten passing samples, but host
 maintenance reexecuted systemd before two hours and invalidated both process
-identities. The retry is incomplete with zero credit; Recorder is stopped and
-12 hours is not started. The next gate is the bounded host-maintenance
-quiet-window preflight in
-[`M22.9-2h retry acceptance`](milestone_acceptance/M22.9-2h-retry.md). It does
-not authorize a restart or another T0.
+identities. The retry is incomplete with zero credit; 12 hours is not started.
+The subsequent first quiet-window preflight was aborted by the root-home
+incident and is not reusable. Recorder is stopped/disabled, root access is
+restored, and the next team must restart the bounded preflight from scratch as
+defined in
+[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
+It does not authorize a Recorder start or another T0.
