@@ -55,7 +55,7 @@ recoverable immutable raw payloads,
 deterministic replay metadata, explicit gap evidence, and verified archival
 across the approved VPS/local Offline Workspace boundary.
 
-Current milestone status is `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`; the
+The previous milestone status is `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`; the
 owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 remains
 `FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`. It failed before
 the first observer sample at T0
@@ -116,6 +116,16 @@ Current milestone status is
 `NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. This docs-only closeout is not a
 deployment authorization; any redeploy or retry requires separate
 authorization.
+
+The current operational milestone is
+`EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. The exact main candidate
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` (tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`) is staged only in a private,
+root-controlled VPS evidence root; the old P2 artifact remains installed,
+Recorder remains stopped, the prior Formal 2-hour failure remains immutable
+with zero credit, no new Formal run has started, and `PRODUCTION_READY=NO`.
+This preflight is not deployment or live-run authorization.
+`NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS`.
 
 The P2 evidence bundle is `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
 It verified the P2 deployment source/review base

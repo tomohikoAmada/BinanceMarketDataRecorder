@@ -5,7 +5,62 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+## Current milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+
+The exact GitHub main candidate is now preflighted on
+`greencloud-tokyo-01` without deployment or live-run authorization. A fresh
+detached clean source workspace at commit
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
+`e968ede54d9f110ef7371a4847a54940177a1a19` produced exactly one wheel in a
+fresh build environment. The wheel was installed into a uniquely named
+staging-only venv with the exact hashed runtime lock; dependency, pip, package
+RECORD, and isolated offline CLI checks passed. The candidate is staged only.
+
+The bounded VPS gate passed before evidence creation and remained passing after
+staging: Recorder is inactive/dead with PID 0, the archive timer is
+enabled/active/waiting, there are no active partial files, the registered
+archive target is READY, archive backlog and remote pending are zero, Catalog
+integrity is OK, the installed P2 deployment verifies VERIFIED, and legacy
+reconnect preflight has no ambiguity, conflict, contradiction, or degraded
+authority. Active and archive free space safely exceed the conservative 2-hour
+projection plus a 1-hour safety envelope.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+MILESTONE_STATUS=PREFLIGHT_COMPLETE
+GITHUB_MAIN_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_TREE=e968ede54d9f110ef7371a4847a54940177a1a19
+OLD_P2_ARTIFACT_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+NEW_CANDIDATE_STAGED=YES
+NEW_CANDIDATE_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+NEW_FORMAL_RUN_STARTED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+DEPLOYMENT_AUTHORIZATION=NOT_GRANTED
+LIVE_RUN_AUTHORIZATION=NOT_GRANTED
+```
+
+Evidence is retained under
+`/srv/recorder-data/recorder-archive/evidence/M22.9-redeploy-preflight-20260912T022735Z`
+with root custody `root:root` mode `0700`. Its `SHA256SUMS` digest is
+`44254c9a609e19e8504ca2e57114c1aab81ca7150d710f43382db6f4e0e6dd2f`; the
+wheel digest is
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb` and the
+runtime lock digest is
+`44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335`.
+The complete inventory and command-boundary record are in the
+[exact-artifact redeploy preflight acceptance record](milestone_acceptance/M22.9-exact-artifact-redeploy-preflight.md).
+
+The local branch is based exactly on the candidate; no GitHub state was mutated.
+The six unrelated untracked artifacts remain preserved and excluded.
+
+## Previous local milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
 
 This milestone is a test-and-documentation-only repair. GitHub main push
 offline-ci run `34663566549` failed only the macOS Python 3.12 job

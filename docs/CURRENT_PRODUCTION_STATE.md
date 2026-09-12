@@ -5,7 +5,59 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+## Current milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+
+The exact main candidate is staged and verified, not deployed. The fresh
+detached source is commit `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` with tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`. It produced one wheel, installed
+with the exact hashed runtime lock into a uniquely named non-production venv,
+and passed `pip check`, exact dependency matching, package RECORD
+verification, and isolated offline CLI smoke. Python is exactly `3.12.3`.
+
+The authorized VPS preflight passed and the final state remained unchanged:
+Recorder is inactive/dead with `MainPID=0`, the archive timer is
+enabled/active/waiting, active partial count is zero, the registered target
+`ef852751-721c-4145-9083-f6fd48718480` is READY, archive backlog and remote
+pending are zero, Catalog integrity is OK, the current installed P2 artifact
+is VERIFIED, and legacy reconnect preflight has zero ambiguity, conflict,
+contradiction, and degraded-authority findings. Both active and archive roots
+pass the conservative 2-hour capacity envelope.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+MILESTONE_STATUS=PREFLIGHT_COMPLETE
+GITHUB_MAIN_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_TREE=e968ede54d9f110ef7371a4847a54940177a1a19
+OLD_P2_ARTIFACT_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+NEW_CANDIDATE_STAGED=YES
+NEW_CANDIDATE_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+NEW_FORMAL_RUN_STARTED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+DEPLOYMENT_AUTHORIZATION=NOT_GRANTED
+LIVE_RUN_AUTHORIZATION=NOT_GRANTED
+```
+
+The private evidence root is
+`/srv/recorder-data/recorder-archive/evidence/M22.9-redeploy-preflight-20260912T022735Z`;
+root custody is `root:root` mode `0700`. Its `SHA256SUMS` digest is
+`44254c9a609e19e8504ca2e57114c1aab81ca7150d710f43382db6f4e0e6dd2f`. See the
+[acceptance record](milestone_acceptance/M22.9-exact-artifact-redeploy-preflight.md)
+for the compact gate ledger, staged-artifact hashes, rollback authority, and
+unrun scope.
+
+The previous Formal 2-hour failure remains immutable and receives zero credit;
+no new Formal run started. This preflight did not touch the current `/opt`
+installation, `/etc` configuration or unit, Catalog, Raw, or archive timer and
+does not authorize deployment or live traffic.
+
+## Previous local milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
 
 This milestone records a test-only schedule-sensitive assumption repair exposed
 by GitHub main push offline-ci run `34663566549`. Only macOS Python 3.12 job
