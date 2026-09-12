@@ -791,15 +791,6 @@ def test_session_restart_post_close_timeout_recovers_same_gap_without_fabricatio
     asyncio.run(fail_handoff())
 
     old_envelopes, old_manifests = captured(tmp_path)
-    assert len(old_manifests) == 1
-    assert old_manifests[0]["gap"] is True
-    assert old_manifests[0]["complete"] is False
-    assert "reconnect_gap" in old_manifests[0]["capture_flags"]
-    old_payloads = [envelope.raw_payload for envelope in old_envelopes]
-    assert old_payloads
-    assert old_payloads == source_payloads[: len(old_payloads)]
-    assert all("sequence_gap" not in envelope.capture_flags for envelope in old_envelopes)
-
     layout = ensure_storage_layout(tmp_path)
     with Catalog(layout.catalog, read_only=True) as catalog:
         lifecycle = discontinuities(catalog)
@@ -811,6 +802,14 @@ def test_session_restart_post_close_timeout_recovers_same_gap_without_fabricatio
     assert started["reason"] == "session_restart"
     assert started["boundary_kind"] == "last_frame_in_hand"
     assert started["boundary_frame_persisted"] is False
+    old_payloads = assert_old_ingress_boundary_layout(
+        tmp_path,
+        old_manifests,
+        source_payloads=source_payloads,
+        original_connection_id=str(started["original_connection_id"]),
+    )
+    assert [envelope.raw_payload for envelope in old_envelopes] == old_payloads
+    assert all("sequence_gap" not in envelope.capture_flags for envelope in old_envelopes)
     boundary_index = next(
         index
         for index, payload in enumerate(source_payloads)

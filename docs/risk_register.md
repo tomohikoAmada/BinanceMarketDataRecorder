@@ -1,6 +1,53 @@
 # Risk Register
 
-## Current observer/archive concurrency-fix reviewed checkpoint — 2026-09-12
+## Current milestone risk checkpoint — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+
+The test-only repair addresses a schedule-sensitive false failure in the
+session-restart reconnect-boundary coverage. GitHub main push offline-ci run
+`34663566549` failed only macOS Python 3.12 job `103470852952` with
+`1 failed, 1651 passed, 24 skipped, 4 deselected`; Ubuntu job `103470853142`
+passed all gates. PR #68 exact-head run `34663191565` passed both platforms,
+and twenty local exact Spot-node repetitions on macOS arm64 Python 3.12.14
+passed. The legal ordinary-plus-`reconnect_gap` layout is already enforced by
+the existing helper, which preserves exact original connection identity and
+payload prefix. The equivalent USD-M assertion is repaired at the same time.
+
+The repair changes no production behavior, Binance source semantics, public
+contracts, dependencies, workflow, VPS state, or archive data. Independent lead
+review found P0=0, P1=0, and P2=0; the production/test delta is independently
+reviewed complete, while GitHub merge remains a separate operation. The helper
+continues to fail closed on extra manifests, wrong lifecycle flags, wrong
+connection identity, sequence-gap fabrication, and payload ordering. The
+current status and unchanged deployment authority are:
+
+```text
+MILESTONE=M22_9_POST_MERGE_MACOS_CI_RECONNECT_LAYOUT_REPAIR
+MILESTONE_STATUS=REVIEWED_COMPLETE
+BASE_MAIN_SHA=bed826909e1a53089289981e9ea435c7ddbf07f0
+BASE_MAIN_TREE=a85a39f5096f834a95bae11f9d047fac18602bc6
+BRANCH=codex/m22-9-main-macos-ci-reconnect-layout
+GITHUB_MAIN_PUSH_RUN=34663566549
+MACOS_PYTHON312_JOB=103470852952
+UBUNTU_PYTHON312_JOB=103470853142
+PR_68_EXACT_HEAD_RUN=34663191565
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+These stopped/active values are carried forward from the last authoritative
+VPS record; no VPS or production archive action was part of this milestone.
+After GitHub merge, exact-artifact redeploy preflight remains the next
+gate, and any redeploy or Formal retry requires separate authorization.
+
+## Previous local milestone risk checkpoint — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
 
 `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`. The fix
 freezes a short-lived Catalog lifecycle boundary before the long filesystem

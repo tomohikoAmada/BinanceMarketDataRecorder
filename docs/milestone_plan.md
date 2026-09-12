@@ -1,6 +1,65 @@
 # Milestone Plan
 
-## Current stage disposition — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+## Current milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+
+This narrowly scoped milestone records a legal reconnect-boundary layout
+assumption in the Spot and USD-M backpressure tests. GitHub main push
+offline-ci run `34663566549` failed only macOS Python 3.12 job
+`103470852952`; macOS pytest reported `1 failed, 1651 passed, 24 skipped, 4
+deselected` at the old fixed `len(old_manifests) == 1` assertion in the Spot
+session-restart post-close timeout test. Ubuntu job `103470853142` passed all
+gates. PR #68 exact-head run `34663191565` passed both macOS and Ubuntu, and
+twenty local exact Spot-node repetitions on macOS arm64 Python 3.12.14 passed.
+
+The diagnosis is schedule sensitivity, not a production regression. The
+existing `assert_old_ingress_boundary_layout` helper already specifies the
+legal result: zero or one earlier ordinary complete manifest followed by
+exactly one incomplete `reconnect_gap` manifest, preserving the original
+connection identity and exact source payload prefix. The USD-M session-restart
+test contained the same brittle assumption and is repaired symmetrically.
+Each test now passes the lifecycle STARTED evidence's exact
+`original_connection_id` to that helper. All existing boundary hash,
+missing-frame, gap-id, recovery, completion-after-sync, ordering,
+no-fabrication, and fail-closed checks remain. No production code or public
+contract changes. Independent lead review found P0=0, P1=0, and P2=0; the
+production/test delta is independently reviewed complete, while GitHub merge
+remains a separate operation.
+
+```text
+MILESTONE=M22_9_POST_MERGE_MACOS_CI_RECONNECT_LAYOUT_REPAIR
+MILESTONE_STATUS=REVIEWED_COMPLETE
+BASE_MAIN_SHA=bed826909e1a53089289981e9ea435c7ddbf07f0
+BASE_MAIN_TREE=a85a39f5096f834a95bae11f9d047fac18602bc6
+BRANCH=codex/m22-9-main-macos-ci-reconnect-layout
+GITHUB_MAIN_PUSH_RUN=34663566549
+MACOS_PYTHON312_JOB=103470852952
+UBUNTU_PYTHON312_JOB=103470853142
+PR_68_EXACT_HEAD_RUN=34663191565
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+Validation passed with 20 repetitions of both repaired nodes (40 passed), the
+complete Spot/USD-M ingress files (50 passed, 1 deselected), the full offline
+suite (1,652 passed, 24 skipped, 4 deselected, 13 existing warnings), Ruff,
+strict MyPy, M0 contracts, Go Raw golden, build, and clean-wheel CLI smoke.
+The prior observer/archive fix remains a previous reviewed milestone. This
+milestone did not access or mutate the VPS; its last authoritative state stays
+stopped with the archive timer enabled/active. See the [acceptance record](milestone_acceptance/M22.9-main-macos-ci-reconnect-layout.md).
+
+After GitHub merge, the next milestone remains
+`EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`; this record authorizes no deployment or
+retry.
+
+## Previous local milestone — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
 
 The bounded offline diagnosis and fix for the AcceptanceObserver/archive
 concurrency race is complete. The implementation freezes a Catalog lifecycle

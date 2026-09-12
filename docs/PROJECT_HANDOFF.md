@@ -5,7 +5,66 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current stage — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+## Current milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+
+This milestone is a test-and-documentation-only repair. GitHub main push
+offline-ci run `34663566549` failed only the macOS Python 3.12 job
+`103470852952`; its pytest result was `1 failed, 1651 passed, 24 skipped,
+4 deselected`. The failure was
+`tests/integration/test_spot_ingress_backpressure.py::test_session_restart_post_close_timeout_recovers_same_gap_without_fabrication`
+at the old line 794, where the test required one manifest although two legal
+manifests were produced. Ubuntu job `103470853142` passed all gates.
+
+PR #68 exact-head run `34663191565` passed on both macOS and Ubuntu, and the
+main squash did not change the old test. Twenty repetitions of the exact Spot
+node on macOS arm64 Python 3.12.14 also passed, establishing schedule
+sensitivity rather than a deterministic product regression. The valid second
+layout is already defined by `assert_old_ingress_boundary_layout`: at most one
+earlier ordinary complete manifest may precede exactly one incomplete
+`reconnect_gap` manifest, with the original connection identity and exact
+payload prefix preserved. The analogous USD-M session-restart test retained
+the same brittle assumption and is repaired symmetrically.
+
+The implementation changes only the two ingress backpressure tests. Each
+session-restart test now obtains the lifecycle STARTED evidence first and
+passes its exact `original_connection_id` to the existing strict helper. All
+boundary hash, missing-frame, gap-id, recovery, post-sync completion,
+ordering, no-fabrication, and fail-closed assertions remain in place. No
+production code, Binance source record, public contract, dependency, CI
+workflow, deployment, VPS state, or archive data changes.
+Independent lead review found P0=0, P1=0, and P2=0; the production/test delta
+is independently reviewed complete, while GitHub merge remains a separate
+operation.
+
+```text
+MILESTONE=M22_9_POST_MERGE_MACOS_CI_RECONNECT_LAYOUT_REPAIR
+MILESTONE_STATUS=REVIEWED_COMPLETE
+BASE_MAIN_SHA=bed826909e1a53089289981e9ea435c7ddbf07f0
+BASE_MAIN_TREE=a85a39f5096f834a95bae11f9d047fac18602bc6
+BRANCH=codex/m22-9-main-macos-ci-reconnect-layout
+GITHUB_MAIN_PUSH_RUN=34663566549
+MACOS_PYTHON312_JOB=103470852952
+UBUNTU_PYTHON312_JOB=103470853142
+PR_68_EXACT_HEAD_RUN=34663191565
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The last four VPS status values are carried forward from the authoritative
+stopped deployment state; this milestone did not connect to or mutate
+the VPS. The acceptance record is [`M22.9 main macOS CI reconnect-layout repair`](milestone_acceptance/M22.9-main-macos-ci-reconnect-layout.md).
+After GitHub merge, the next gate remains exact-artifact redeploy
+preflight; deployment or Formal retry still requires separate authorization.
+
+## Previous local milestone — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
 
 The narrowly scoped offline diagnosis and fix is complete. The observer now
 freezes one Catalog lifecycle boundary before the long manifest scan, makes
