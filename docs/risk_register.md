@@ -1,6 +1,33 @@
 # Risk Register
 
-## Current milestone risk checkpoint — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+## Current milestone risk checkpoint — M22_9 Formal 2-hour retry closeout (2026-09-12)
+
+The exact-artifact Formal retry passed T0 and ten samples, then Ubuntu
+`apt-daily-upgrade` upgraded glibc and Python 3.12, requested a systemd manager
+reexecution, and externally restarted Recorder and the transient observer.
+This broke the required process/service incarnation at approximately 85
+minutes. The stage is incomplete, earns zero credit, and does not unlock 12
+hours. Recorder is stopped; deployment, archive, Catalog, and partial-file
+closeout checks pass.
+
+R-071 is open. A later retry is ineligible until a bounded maintenance
+quiet-window preflight handles pending package work and systemd service
+reexecution while preserving operating-system security update authority. This
+closeout does not implement that policy or create another T0.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+## Previous milestone risk checkpoint — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
 
 The test-only repair addresses a schedule-sensitive false failure in the
 session-restart reconnect-boundary coverage. GitHub main push offline-ci run
@@ -236,6 +263,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-068 | Active writer root can reach its hard reserve before a long Formal chain even when the registered archive target has ample space | Critical | P2 observed the exact current deployment with the archive timer enabled and backlog returning to zero. The conservative existing 24-hour generation rate is `349910.017730 B/s`; active-root runway above the 10 GiB reserve is only about 26.46 hours, so every Formal stage start/end must recheck runway, timer health, backlog, and target margin. | M22.9-P2 | Monitoring |
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
 | R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The reviewed fix freezes a lifecycle-coherent boundary, makes one membership comparison, defers later rows, and fresh-validates authorized `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` absence with existing external verification. Deterministic race, unauthorized-loss, corruption, and read-only tests pass; independent review found P0/P1/P2=0. Source is not deployed, exact-artifact redeploy preflight remains separate, and no retry or retroactive credit is authorized. | M22.9 observer fix | Monitoring |
+| R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-12 retry preserves one interrupted original root and one ineligible relaunch root, awards zero credit, and stops Recorder. Before another retry, complete a bounded quiet-window preflight that handles pending package work and prevents maintenance-driven service reexecution during measurement, then restores normal security-update authority. Never resume across changed Recorder PID/InvocationID/service instance or treat an automatic relaunch as authorized. | M22.9 host-maintenance preflight | Open |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

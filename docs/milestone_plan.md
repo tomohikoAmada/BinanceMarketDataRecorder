@@ -1,6 +1,127 @@
 # Milestone Plan
 
-## Current milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+## Current milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
+
+The exact-artifact retry established a valid T0 and ten samples, then became
+incomplete when the VPS unattended glibc/Python upgrade reexecuted systemd and
+externally restarted both Recorder and its transient observer at approximately
+85 minutes. No finalized 7,200-second evidence chain exists, so the retry earns
+zero duration credit and does not unlock 12 hours.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+The current milestone ends with Recorder stopped and archive/Catalog state
+healthy. The next milestone is a narrowly scoped host-maintenance quiet-window
+preflight: it must establish how pending unattended package work and systemd
+service reexecution are excluded from an authorized measurement window, test
+that procedure, preserve security update authority, and stop. It must not start
+another Formal T0.
+
+Detailed evidence is in
+[`M22.9 Formal 2-hour retry closeout`](milestone_acceptance/M22.9-2h-retry.md).
+
+## Previous milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+At that milestone, the exact current main source
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
+`e968ede54d9f110ef7371a4847a54940177a1a19` was installed with wheel SHA-256
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`.
+Deployment identity
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
+and retained P2 rollback compatibility both verified. Recorder reached READY
+for all four ProductKeys and 12 core contexts; the archive timer was active. No
+Formal stage child or T0 had been created.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+MILESTONE_STATUS=COMPLETE
+CURRENT_MAIN_DEPLOYED=YES
+RECORDER=RUNNING_READY
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H_RETRY=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_RETRY_START
+```
+
+The detailed authority is
+[`M22.9 exact-artifact stopped redeploy and readiness`](milestone_acceptance/M22.9-exact-artifact-redeploy-readiness.md).
+The next milestone starts exactly one new detached Formal 2-hour observer from
+the recorded readiness evidence; it must not start 12 hours.
+
+## Previous milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+
+This bounded milestone preflights, but does not authorize, redeployment of the
+exact GitHub main candidate. The authoritative candidate is commit
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`; existing main CI is green. On the
+VPS it was cloned into a fresh clean detached workspace, built once with Python
+3.12.3 in a fresh isolated build environment, and staged into a uniquely named
+venv outside `/opt`. The exact runtime lock was installed with
+`--require-hashes`, the wheel with `--no-deps`, and pip, dependency, RECORD, and
+offline CLI checks passed.
+
+The read-only gate and final post-staging snapshot both show Recorder
+inactive/dead with PID 0, the archive timer enabled/active/waiting, zero active
+partial files, READY registered archive target
+`ef852751-721c-4145-9083-f6fd48718480`, zero archive backlog and remote
+pending, Catalog integrity OK, current P2 deployment VERIFIED, and zero legacy
+reconnect ambiguity/conflict/contradiction/degraded-authority findings. Active
+and archive capacity both pass the conservative 2-hour projection plus safety
+margin. Only the private evidence root and disposable staging area were
+written; the installed deployment and archive timer were not changed.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+MILESTONE_STATUS=PREFLIGHT_COMPLETE
+GITHUB_MAIN_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_TREE=e968ede54d9f110ef7371a4847a54940177a1a19
+OLD_P2_ARTIFACT_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+NEW_CANDIDATE_STAGED=YES
+NEW_CANDIDATE_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+NEW_FORMAL_RUN_STARTED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+DEPLOYMENT_AUTHORIZATION=NOT_GRANTED
+LIVE_RUN_AUTHORIZATION=NOT_GRANTED
+```
+
+The evidence root is
+`/srv/recorder-data/recorder-archive/evidence/M22.9-redeploy-preflight-20260912T022735Z`;
+its root-controlled `SHA256SUMS` digest is
+`44254c9a609e19e8504ca2e57114c1aab81ca7150d710f43382db6f4e0e6dd2f`. The
+complete gate and digest record is
+[`M22.9 exact-artifact redeploy preflight`](milestone_acceptance/M22.9-exact-artifact-redeploy-preflight.md).
+
+The previous Formal 2-hour failed-at-T0 record remains immutable and has zero
+credit. No new Formal run started and Production Ready remains NO. The local
+branch is based exactly on the candidate; no GitHub state was mutated and the
+six unrelated untracked artifacts remain excluded. The next milestone is
+`EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS`, which still requires its own
+authorization boundary.
+
+## Previous local milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
 
 This narrowly scoped milestone records a legal reconnect-boundary layout
 assumption in the Spot and USD-M backpressure tests. GitHub main push
