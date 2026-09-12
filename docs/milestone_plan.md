@@ -1,6 +1,36 @@
 # Milestone Plan
 
-## Current milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+The exact current main source
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
+`e968ede54d9f110ef7371a4847a54940177a1a19` is installed with wheel SHA-256
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`.
+Deployment identity
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
+and retained P2 rollback compatibility both verify. Recorder reached READY for
+all four ProductKeys and 12 core contexts; the archive timer remains active.
+No Formal stage child or T0 was created.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+MILESTONE_STATUS=COMPLETE
+CURRENT_MAIN_DEPLOYED=YES
+RECORDER=RUNNING_READY
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H_RETRY=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_RETRY_START
+```
+
+The detailed authority is
+[`M22.9 exact-artifact stopped redeploy and readiness`](milestone_acceptance/M22.9-exact-artifact-redeploy-readiness.md).
+The next milestone starts exactly one new detached Formal 2-hour observer from
+the recorded readiness evidence; it must not start 12 hours.
+
+## Previous milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
 
 This bounded milestone preflights, but does not authorize, redeployment of the
 exact GitHub main candidate. The authoritative candidate is commit

@@ -55,7 +55,8 @@ recoverable immutable raw payloads,
 deterministic replay metadata, explicit gap evidence, and verified archival
 across the approved VPS/local Offline Workspace boundary.
 
-The previous milestone status is `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`; the
+The historical failed-at-T0 milestone status is
+`M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`; the
 owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 remains
 `FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`. It failed before
 the first observer sample at T0
@@ -94,38 +95,53 @@ compact review evidence and additive correction authority are under
 original mistaken no-result statement and does not alter the failed-stage
 disposition.
 
-The final VPS state is `RECORDER=STOPPED`, with systemd inactive/dead,
+The final VPS state recorded by that historical closeout was
+`RECORDER=STOPPED`, with systemd inactive/dead,
 `MainPID=0`, `Result=success`, `NRestarts=0`, and no active `.partial` files.
 `ARCHIVE_TIMER=ENABLED_ACTIVE` remains enabled and active/waiting; the verified
 archive target is READY, backlog/pending/failed counts are zero, and Catalog
-integrity is ok. The observer remains loaded failed for evidence. Current
-status is `FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
+integrity is ok. The observer remained loaded failed for evidence. That
+historical attempt's status is `FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`, and
-`PRODUCTION_READY=NO`. The exact P2 source/review base
+`PRODUCTION_READY=NO`. At that checkpoint, the exact P2 source/review base
 `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` and deployment identity
-`11029b9434f72fe48912659c050167e6a058e9827cd40401c9a852dff3c019cd` remain
-the installed artifact basis; the current engineering source containing the
-reviewed fix is not deployed. The installed P2 artifact remains not retry-eligible;
-a later exact artifact containing the reviewed fix must be separately
-authorized and deployed.
+`11029b9434f72fe48912659c050167e6a058e9827cd40401c9a852dff3c019cd` were
+the installed artifact basis; the then-current engineering source containing
+the reviewed fix was not deployed. The installed P2 artifact was not
+retry-eligible; this was later superseded by the exact-artifact redeploy below.
+
+The exact current main artifact is now installed and READY on
+greencloud-tokyo-01. Source
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`, wheel SHA-256
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
+and deployment identity
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
+verify. Recorder is `RUNNING_READY` for the four configured ProductKeys and 12
+core stream contexts; the archive timer is enabled/active. No new Formal T0
+has been created, Formal credit remains zero, and 12h is not started. Current
+milestone status is
+`EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS=COMPLETE`;
+`NEXT=FORMAL_M22_9_2H_RETRY_START`.
 The exact code-review commit `31cabe4445ee699ad284aa707d24333c78cf8d21`
 was independently reviewed against base
 `e214120a25a5aff28fad4903c9510920a25738d3` with P0=0, P1=0, and P2=0.
-Current milestone status is
+That earlier review milestone status was
 `ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`;
-`NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. This docs-only closeout is not a
+its time-local `NEXT` was `EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. That docs-only closeout was not a
 deployment authorization; any redeploy or retry requires separate
 authorization.
 
-The current operational milestone is
+The preceding operational milestone was
 `EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. The exact main candidate
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` (tree
-`e968ede54d9f110ef7371a4847a54940177a1a19`) is staged only in a private,
-root-controlled VPS evidence root; the old P2 artifact remains installed,
-Recorder remains stopped, the prior Formal 2-hour failure remains immutable
-with zero credit, no new Formal run has started, and `PRODUCTION_READY=NO`.
-This preflight is not deployment or live-run authorization.
-`NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS`.
+`e968ede54d9f110ef7371a4847a54940177a1a19`) was staged only in a private,
+root-controlled VPS evidence root. At that checkpoint the old P2 artifact was
+still installed and Recorder was stopped. The prior Formal 2-hour failure
+remained immutable with zero credit, no new Formal run had started, and
+`PRODUCTION_READY=NO`. That preflight was not deployment or live-run
+authorization; its time-local `NEXT` was
+`EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS`.
 
 The P2 evidence bundle is `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
 It verified the P2 deployment source/review base
@@ -134,12 +150,13 @@ It verified the P2 deployment source/review base
 drained the registered archive target through the existing verified transaction
 path, and completed the bounded non-formal live interaction before stopping
 Recorder. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact identity
-verification. `CURRENT_MAIN_DEPLOYED=NO`; the current engineering source is not
-installed. At P2 completion the artifact was the Formal candidate; after the
-failed T0 it remains only the installed evidence basis. A later exact artifact
-containing the reviewed fix is pending separate authorization and deployment.
+verification. At that historical checkpoint `CURRENT_MAIN_DEPLOYED=NO`; the
+then-current engineering source was not installed. At P2 completion the
+artifact was the Formal candidate; after the failed T0 it remained only the
+installed evidence basis, until the later exact-artifact redeploy superseded
+it.
 The archive timer is
-enabled and active/waiting; Recorder is stopped. The P2 review remains
+enabled and active/waiting; Recorder was stopped. The P2 review remains
 `M22_9_P2=REVIEWED_COMPLETE`; the later Formal attempt is a separate
 milestone record.
 The historical MS4-D review base used main

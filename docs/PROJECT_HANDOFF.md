@@ -5,7 +5,40 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+The exact current main artifact is installed and verified on the Tokyo VPS:
+source `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`, wheel
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
+and deployment identity
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`.
+The prior P2 venv and identity are retained and rollback-compatible.
+
+Recorder is `RUNNING_READY`: both BTCUSDT and ETHUSDT on Spot and USD-M
+perpetual have all three core streams connected and persisted, plus snapshots
+and synchronized books. The archive timer is enabled/active. The acceptance
+root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-retry-20260912T032409Z-98a352df322a-e267ae38`.
+No Formal stage child or T0 has been created; duration credit remains zero.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+MILESTONE_STATUS=COMPLETE
+CURRENT_MAIN_DEPLOYED=YES
+RECORDER=RUNNING_READY
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H_RETRY=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_RETRY_START
+```
+
+The detailed record is
+[`M22.9 exact-artifact stopped redeploy and readiness`](milestone_acceptance/M22.9-exact-artifact-redeploy-readiness.md).
+
+## Previous milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
 
 The exact GitHub main candidate is now preflighted on
 `greencloud-tokyo-01` without deployment or live-run authorization. A fresh

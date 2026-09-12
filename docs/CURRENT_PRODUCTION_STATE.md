@@ -5,7 +5,43 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+## Current milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+The exact current GitHub main source
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
+`e968ede54d9f110ef7371a4847a54940177a1a19` is now installed and verified on
+`greencloud-tokyo-01`. Its wheel SHA-256 is
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb` and
+deployment identity SHA-256 is
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`.
+The old P2 venv and identity remain retained and rollback-compatible.
+
+Recorder is running READY with four ProductKeys and 12 connected/persisted
+core stream contexts. Each product has a persisted public snapshot and a
+synchronized order book. Systemd reports PID `763514`, InvocationID
+`63571de3b46a4ebd9e3676392fd35a0b`, and `NRestarts=0`; the archive timer is
+enabled/active. No new Formal T0 exists yet.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+MILESTONE_STATUS=COMPLETE
+CURRENT_MAIN_DEPLOYED=YES
+RECORDER=RUNNING_READY
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H_RETRY=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_RETRY_START
+```
+
+The acceptance root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-retry-20260912T032409Z-98a352df322a-e267ae38`;
+readiness evidence SHA-256 is
+`e2569091f5c8be9b2a4eb4cf29857716deab37f4817d87b959d956548b8f685f`.
+See the [acceptance record](milestone_acceptance/M22.9-exact-artifact-redeploy-readiness.md).
+
+## Previous milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
 
 The exact main candidate is staged and verified, not deployed. The fresh
 detached source is commit `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` with tree
