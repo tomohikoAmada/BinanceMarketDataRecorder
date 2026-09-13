@@ -5,7 +5,55 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+
+The restart-from-scratch preflight passed. All six pending Ubuntu updates were
+completed before T0, the post-maintenance simulation reports zero pending
+upgrades, `dpkg --audit` is empty, and no reboot is required. The tested quiet
+window stops and applies runtime-only masks to both apt timers, both apt
+services, and `unattended-upgrades.service`. The explicit masked-service start
+probe was rejected; the 60-second hold had no systemd reexecution or boot
+change. The runtime masks were then removed and normal security-update
+authority was restored: both apt timers and unattended-upgrades are enabled
+and active.
+
+Recorder was never started and remains inactive and disabled. No observer,
+acceptance stage, or Formal T0 was created. Archive/Catalog health is unchanged:
+the archive timer is enabled/active, Catalog integrity is `ok`, active partial
+count and archive backlog/pending are zero, and the registered target is READY.
+
+```text
+MILESTONE=M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_AT_PREFLIGHT_SHA=3fbf59c276583ed0d7c9b46909f6fc644c9296f3
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
+```
+
+Evidence is under
+`/srv/recorder-data/recorder-archive/evidence/M22.9-host-maintenance-quiet-window-preflight-20260913T0533Z-BClBDtHq`;
+the evidence-index SHA-256 is
+`7db53fd6f05b7f8125b2c69e63d8b1888f963b0707602b6068ec4599a3b52458`.
+The next milestone is one new Formal 2-hour retry, not 12 hours. It must repeat
+the quiet-window gate and fresh identity/readiness/archive/capacity checks,
+explicitly enable/load Recorder before verification, and create exactly one
+new acceptance root and T0. See the
+[quiet-window preflight record](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+
+## Previous milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
 
 The host-maintenance quiet-window preflight did not complete. An unsafe remote
 cleanup expanded an unset target to `/root/` and removed the root user's home
@@ -833,10 +881,13 @@ ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
 ARCHIVE_TIMER=ENABLED_ACTIVE
 RECORDER=STOPPED
 RECORDER_ENABLED=NO
-HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
 ROOT_HOME_RECOVERY=COMPLETE
-RETRY_ELIGIBLE=NO
-NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
 ```
 
 Here `DEPLOYMENT_AUTHORIZED=NO` means future live deployment/start
@@ -849,7 +900,7 @@ transfer.
 
 ## Next action
 
-NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
@@ -864,8 +915,10 @@ Formal retry then produced a valid T0 plus ten passing samples. Host unattended
 maintenance reexecuted systemd at approximately 85 minutes, invalidating the
 Recorder and observer process identities before finalization. The retry is
 therefore incomplete with zero credit and 12 hours is not started. The first
-subsequent quiet-window preflight was aborted by the root-home incident and
-must not be resumed. Recorder is now stopped/disabled. The next milestone
-restarts only that preflight from a fresh evidence root under the rules in
-[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md);
-it must not create another T0 or start Recorder.
+subsequent quiet-window preflight was aborted by the root-home incident and is
+not resumable; the 2026-09-13 restart-from-scratch preflight then completed the
+pending package work, proved the runtime-only maintenance exclusion, and
+restored update authority. Recorder is stopped/disabled. The next milestone is
+one new Formal 2-hour retry using the fresh gates in
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md);
+it must not resume either incomplete stage or start 12 hours automatically.

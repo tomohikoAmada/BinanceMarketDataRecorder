@@ -1,6 +1,38 @@
 # Risk Register
 
-## Current milestone risk checkpoint — VPS root-home recovery and handoff (2026-09-12)
+## Current milestone risk checkpoint — host-maintenance quiet-window preflight (2026-09-13)
+
+R-071's retry precondition is now mitigated by a tested bounded procedure. The
+six pending Ubuntu packages were completed before any T0; zero upgrades remain,
+the dpkg audit is clean, and no reboot is required. Runtime-only masks kept both
+apt timers, both apt services, and `unattended-upgrades.service` inactive; an
+explicit start probe was rejected and no systemd reexecution occurred during
+the bounded hold. All runtime masks were removed and normal enabled/active
+update authority was restored before handoff.
+
+Recorder remained inactive and disabled, and no observer or Formal stage was
+created. R-071 remains a monitored stage risk: the next 2-hour retry must
+repeat the pre-T0 package/lock/mask gate and restore update authority on every
+controlled exit. R-072's permanent remote-cleanup prohibition and R-073's
+inactive-plus-disabled handoff rule remain in force.
+
+```text
+MILESTONE=M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
+```
+
+## Previous milestone risk checkpoint — VPS root-home recovery and handoff (2026-09-12)
 
 The first host-maintenance quiet-window preflight was aborted after an unsafe
 remote cleanup expanded an unset target to `/root/` and removed root-home
@@ -292,7 +324,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-068 | Active writer root can reach its hard reserve before a long Formal chain even when the registered archive target has ample space | Critical | P2 observed the exact current deployment with the archive timer enabled and backlog returning to zero. The conservative existing 24-hour generation rate is `349910.017730 B/s`; active-root runway above the 10 GiB reserve is only about 26.46 hours, so every Formal stage start/end must recheck runway, timer health, backlog, and target margin. | M22.9-P2 | Monitoring |
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
 | R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The reviewed fix freezes a lifecycle-coherent boundary, makes one membership comparison, defers later rows, and fresh-validates authorized `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` absence with existing external verification. Deterministic race, unauthorized-loss, corruption, and read-only tests pass; independent review found P0/P1/P2=0. Source is not deployed, exact-artifact redeploy preflight remains separate, and no retry or retroactive credit is authorized. | M22.9 observer fix | Monitoring |
-| R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-12 retry preserves one interrupted original root and one ineligible relaunch root, awards zero credit, and stops Recorder. Before another retry, complete a bounded quiet-window preflight that handles pending package work and prevents maintenance-driven service reexecution during measurement, then restores normal security-update authority. Never resume across changed Recorder PID/InvocationID/service instance or treat an automatic relaunch as authorized. | M22.9 host-maintenance preflight | Open |
+| R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-13 preflight completed pending package work, proved a runtime-only mask of both apt timers/services and `unattended-upgrades.service`, rejected an explicit masked start, observed no reexecution during its bounded hold, and restored persistent update authority. The next Formal stage must repeat the package/lock/mask gate, keep it for the full window, restore it on controlled exit, and award zero credit on any boot/process/service change. | M22.9 2h quiet-window retry | Mitigated; stage monitoring |
 | R-072 | A local/remote shell expansion error or unset cleanup variable broadens an administrative deletion to `/root`, another protected path, or a mount root | Critical | The 2026-09-12 incident is closed only for access recovery; lost root-home-only content is not recoverable evidence. Recursive remote cleanup is forbidden across SSH variable boundaries. Prefer no cleanup and fresh `mktemp -d` children. Any necessary cleanup requires same-remote-shell unset-variable failure, nonempty and canonical-path checks, an exact approved disposable parent/child relationship, explicit refusal of `/`, home, `/etc`, `/opt`, `/var`, `/srv`, and mount roots, printed target review, and a separate step. Evidence directories are retained by default. | M22.9 operations / all VPS work | Mitigated; permanent guard |
 | R-073 | A Recorder that is stopped but systemd-enabled silently starts during a host reboot or maintenance cycle, creating unauthorized non-formal capture and consuming active-root capacity | High | The 2026-09-12 reboot auto-started Recorder for about six minutes; no observer/T0 existed and credit is zero. Recorder is now inactive and disabled while archive scheduling remains enabled. Every stopped handoff and maintenance preflight must check both `is-active` and `is-enabled`; re-enable only as an explicit separately authorized pre-start step, then repeat exact deployment/readiness verification. | M22.9 host-maintenance preflight | Mitigated for current handoff; monitoring |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |

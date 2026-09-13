@@ -1,12 +1,14 @@
 # Known Limitations
 
-The current exact installed behavior/deployment authority is P2 source
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`); later documentation-only
-descendants are not deployed. The owner-authorized Formal M22.9 2-hour stage
-failed at T0 before its first observer sample and receives zero duration
-credit. Recorder is stopped, the archive timer is enabled and active/waiting,
-12h is not started, and Production Ready is NO. Current authority is in
+The current exact installed behavior/deployment authority is source
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` (tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`); later documentation-only
+descendants are not deployed. The first Formal M22.9 2-hour attempt failed at
+T0 and the later retry was interrupted by host maintenance; both receive zero
+duration credit. The 2026-09-13 host-maintenance quiet-window preflight passed,
+but it created no T0. Recorder is stopped and disabled, the archive timer is
+enabled and active/waiting, 12h is not started, and Production Ready is NO.
+Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md); historical artifact-specific
 qualification remains recorded in its original acceptance documents.
@@ -28,10 +30,13 @@ two-hour window was partial and the R3 non-formal supplement closes the
 recovery gate for review with zero Formal M22.9 duration credit. MS4-D closes
 the bounded four-ProductKey qualification. P2 later enabled the verified
 archive timer and exercised transaction-authorized source retirement. The
-Formal 2-hour stage failed at T0 before its first sample with zero credit. The
-service is stopped; 12h, long-duration qualification, and Production Ready
-remain open. Any future implementation or start still requires current-main
-verification and explicit authorization.
+first Formal 2-hour stage failed at T0 before its first sample; the exact-
+artifact retry then reached ten passing samples before host maintenance
+invalidated it at about 85 minutes. The quiet-window preflight has now passed,
+but the service is stopped/disabled and Formal credit remains zero. One fresh
+2-hour retry, 12h, later long-duration qualification, and Production Ready
+remain open. Any future start still requires installed-artifact verification,
+fresh readiness/archive/capacity gates, and explicit authorization.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded

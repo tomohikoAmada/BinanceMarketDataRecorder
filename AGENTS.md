@@ -118,9 +118,9 @@ observer at approximately 85 minutes. The original stage has no
 identity, and receives zero credit. A new-stage command relaunched by host
 maintenance produced one separate `REVIEW_REQUIRED` root; it is preserved as
 an ineligible automatic artifact, not an authorized second Formal attempt.
-Recorder is now stopped, the archive timer remains enabled/active, archive
+Recorder was stopped, the archive timer remained enabled/active, archive
 backlog and pending are zero, Catalog integrity is `ok`, and no active
-`.partial` files remain. Current milestone status is
+`.partial` files remained. That closeout's milestone status was
 `M22_9_FORMAL_2H_RETRY_CLOSEOUT=REVIEWED_COMPLETE`;
 `FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`, and
@@ -138,13 +138,32 @@ rebuild; the temporary recovery key was removed and the owner confirmed VNC
 was disabled. The preceding reboot also auto-started the enabled Recorder for
 approximately six minutes; it was stopped successfully, created no observer or
 Formal stage, and earns zero credit. Recorder is now inactive and disabled,
-while the archive timer remains enabled/active. Deployment files, active data,
+while the archive timer remained enabled/active. Deployment files, active data,
 Catalog, and archive under `/etc`, `/opt`, `/var/lib`, and `/srv` survived;
-anything stored only under `/root` is unavailable. Current milestone status is
+anything stored only under `/root` is unavailable. That recovery checkpoint's
+milestone status was
 `M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF=COMPLETE`;
 `HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED` and
 `NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`.
 See `docs/milestone_acceptance/M22.9-vps-root-home-recovery.md`.
+
+The restart-from-scratch host-maintenance preflight completed on 2026-09-13.
+It installed the six pending Ubuntu updates before T0, left zero pending
+upgrades with a clean dpkg audit and no reboot requirement, proved a bounded
+runtime-only mask for both apt timers/services and
+`unattended-upgrades.service`, rejected explicit masked activation, and
+restored all normal update authorities. Recorder remained inactive and
+disabled; the archive timer remained enabled/active; Catalog integrity is
+`ok`; active partial and archive backlog/pending counts are zero; and no
+observer or Formal T0 was created. Current milestone status is
+`M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=COMPLETE`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
+`PRODUCTION_READY=NO`, and
+`NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`. The retry remains conditional on a
+separately authorized pre-start that repeats the package/lock/runtime-mask
+gate, explicitly enables/loads the Recorder unit, and passes fresh exact
+identity, readiness, archive, and capacity checks. See
+`docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md`.
 
 Before that retry, the exact current main artifact was installed and READY on
 greencloud-tokyo-01. Source

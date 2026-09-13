@@ -1,20 +1,17 @@
 # VPS Operations
 
 Current status:
-`M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF=COMPLETE`. The first
-host-maintenance quiet-window preflight is `ABORTED_UNACCEPTED`: an unsafe
-remote cleanup expanded an unset target to `/root/`, removed root-home contents
-and SSH authorization, and invalidated that preflight. GreenCloud password
-reset plus temporary VNC restored access without rebuilding the VPS. `/root`
-and exactly one dedicated VPS SSH key are restored; the temporary recovery key
-was removed and VNC disablement is operator-confirmed. Prior material stored
-only under `/root` is unavailable.
+`M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=COMPLETE`. The restarted
+preflight completed all six pending Ubuntu updates, left zero pending upgrades
+and no reboot requirement, tested a runtime-only mask of the automatic apt and
+unattended-upgrade units, and restored their normal enabled/active authority.
+The negative activation probe was rejected and the bounded hold observed no
+systemd reexecution or boot change.
 
-The preceding reboot auto-started the then-enabled Recorder from
-`2026-09-12T11:32:36.869172Z` to `11:38:59.343979Z`. It stopped successfully,
-created no observer or Formal stage, and earns zero credit. Recorder is now
-inactive and disabled so a maintenance reboot cannot start capture. The
-archive timer remains enabled and active/waiting.
+Recorder remained inactive and disabled, so the preflight created no live
+traffic, observer, Formal stage, or duration credit. The archive timer remains
+enabled and active/waiting. The first aborted preflight and root-home incident
+remain historical evidence; their roots are preserved and were not reused.
 
 The installed exact source remains
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`; its Wheel, lock, config, unit,
@@ -29,12 +26,12 @@ Storage ID `ef852751-721c-4145-9083-f6fd48718480` resolves READY at
 
 The owner-authorized Formal 2-hour retry remains
 `EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED` with zero credit; 12 hours
-is not started and `PRODUCTION_READY=NO`. The next action is
-`FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`
-using a fresh evidence root while Recorder stays stopped/disabled. See
+is not started and `PRODUCTION_READY=NO`. The next action is one
+`FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`, with a fresh pre-start identity,
+readiness, archive and capacity gate and exactly one new T0. See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md),
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md), and
-[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
 
 ### Historical MS4-D and P1 checkpoints (not current authority)
 
@@ -499,6 +496,38 @@ updates indefinitely. A Formal quiet window must finish pending work and any
 required reboot before T0, temporarily prevent apt/systemd reexecution only
 for the bounded measurement window, and prove normal update authority is
 restored afterward. The aborted 2026-09-12 evidence roots are never resumable.
+
+The 2026-09-13 preflight accepted this minimal runtime-only mechanism. Run it
+only after pending package work, dpkg audit, reboot, Recorder
+inactive/disabled, archive, and capacity gates are complete:
+
+```bash
+systemctl stop apt-daily.timer apt-daily-upgrade.timer \
+  apt-daily.service apt-daily-upgrade.service unattended-upgrades.service
+systemctl mask --runtime apt-daily.timer apt-daily-upgrade.timer \
+  apt-daily.service apt-daily-upgrade.service unattended-upgrades.service
+```
+
+All five units must then report `masked-runtime` and inactive, no apt/dpkg
+worker or lock holder may exist, and an explicit `systemctl start
+apt-daily.service` negative probe must fail because the unit is masked. Record
+the boot ID and PID 1 identity before T0. Any successful maintenance
+activation, systemd reexecution, boot change, or Recorder process/service
+identity change fails the Formal stage with zero credit.
+
+On every controlled exit, restore normal security-update authority and verify
+the resulting enabled/active states:
+
+```bash
+systemctl unmask --runtime apt-daily.timer apt-daily-upgrade.timer \
+  apt-daily.service apt-daily-upgrade.service unattended-upgrades.service
+systemctl enable --now apt-daily.timer apt-daily-upgrade.timer \
+  unattended-upgrades.service
+```
+
+A reboot clears runtime masks but also invalidates a Formal stage; it is an
+emergency fail-closed exit, never a continuation. Do not use persistent masks
+or disable security-update authority beyond the bounded measurement window.
 
 ## Operations and recovery
 

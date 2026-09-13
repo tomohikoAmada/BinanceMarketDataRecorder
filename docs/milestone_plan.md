@@ -1,6 +1,47 @@
 # Milestone Plan
 
-## Current milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+
+The restart-from-scratch preflight is complete. It installed the six pending
+Ubuntu updates before any T0, established zero pending upgrades with a clean
+dpkg audit and no reboot requirement, and tested the bounded runtime-only
+maintenance exclusion. Both apt timers, both apt services, and
+`unattended-upgrades.service` were inactive and `masked-runtime`; an explicit
+start was rejected and the 60-second hold observed no boot change or systemd
+reexecution. All runtime masks were then removed and the normal enabled/active
+update authorities were restored.
+
+Recorder remained inactive and disabled. No observer or Formal stage was
+created. The archive timer remains enabled/active; Catalog integrity is `ok`,
+active partial and archive backlog/pending counts are zero, and the registered
+target is READY.
+
+```text
+MILESTONE=M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
+```
+
+The next milestone is exactly one new Formal 2-hour retry. Before its T0, the
+operator repeats the package/lock and runtime-mask gates, explicitly
+enables/loads the Recorder unit, verifies the unchanged installed artifact,
+and obtains fresh readiness, archive and capacity evidence. It creates one new
+acceptance root, never resumes either prior incomplete stage, restores update
+authority on controlled exit, and does not start 12 hours automatically. See
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+
+## Previous milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
 
 The first host-maintenance quiet-window preflight attempt is aborted and
 unaccepted. An unsafe remote cleanup expanded an unset target to `/root/`,
@@ -584,8 +625,11 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | M22.9-P1 detached single-stage observation preparation | REVIEWED_COMPLETE | Documentation-only systemd 255 transient-unit procedure around the existing observer; current main `83a063f5bb9f91508238c9fd86d21aa45d1bd501`; no deployment, timer enablement, Recorder start, Formal T0 or duration credit |
 | M22.9-P2 exact deployment/archive/capacity preflight | REVIEWED_COMPLETE | P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f` was installed and verified; registered archive drained and fully verified; timer enabled/active, Recorder stopped; see `docs/milestone_acceptance/M22.9-P2.md` |
 | M22.9 2h Formal failed closeout | REVIEWED_COMPLETE | Formal result remains `EXECUTED_FAILED_AT_T0`: failed before first observer sample with 24 stage-start blockers; zero credit; Recorder stopped and archive drained; see `docs/milestone_acceptance/M22.9-2h.md` |
-| Completed-branch cleanup | COMPLETE FOR PR #56 | Candidate local and remote branch deleted only after exact tip/worktree/merge checks; restoration tip `2a701fe79b78d3c63dd5959efecd20a2369d58e5` recorded |
-| Formal M22.9 | 2H EXECUTED_FAILED_AT_T0 / LATER STAGES NOT STARTED | Zero duration credit; Production Ready remains NO |
+| M22.9 Formal 2h retry | EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED | Valid T0 plus ten passing samples; systemd reexecution at about 85 minutes invalidated the process/service identity; zero credit; see `docs/milestone_acceptance/M22.9-2h-retry.md` |
+| M22.9 root-home recovery / stopped handoff | COMPLETE | Access recovered without rebuild; Recorder inactive and disabled; archive timer enabled/active; aborted preflight roots preserved |
+| M22.9 host-maintenance quiet-window preflight | COMPLETE / PASS | Six pending packages completed; runtime-only maintenance exclusion tested; update authority restored; no Recorder start or T0; see `docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md` |
+| Completed-branch cleanup | CURRENTLY NO REMOTE CANDIDATES | Luna read-only audit on 2026-09-13 found only `main` in Recorder and Contracts, with no open PR or running Action; earlier merged heads are already absent |
+| Formal M22.9 | NEXT: 2H QUIET-WINDOW RETRY / LATER STAGES NOT STARTED | Fresh identity/readiness/archive/capacity gates and one new T0 required; zero current duration credit; Production Ready remains NO |
 
 NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
 NEXT_AFTER_CI2_REVIEW=MS4-A-LOCAL-PREPARATION
@@ -1955,6 +1999,28 @@ mutation exists; those remain exclusively M22.4B scope.
   counts as M22.9 duration evidence, even when the same physical VPS is used.
 - **Rollback:** Stop the test deployment and preserve evidence/data; revert
   only test-profile changes.
+
+### M22.9 host-maintenance quiet-window preflight
+
+- **Status:** `COMPLETE`. The 2026-09-13 restart-from-scratch attempt passed;
+  Formal credit remains zero and 12 hours is not started.
+- **Maintenance:** The six pending Ubuntu packages were installed before any
+  T0. The final simulation reports zero pending upgrades, `dpkg --audit` is
+  empty, and no reboot is required.
+- **Quiet-window gate:** Both apt timers, both apt services, and
+  `unattended-upgrades.service` were stopped and `masked-runtime`. An explicit
+  start probe was rejected; the bounded hold retained boot/systemd identity
+  with no maintenance activation or reexecution. Runtime masks were then
+  removed and normal enabled/active update authority was restored.
+- **Recorder/archive:** Recorder remained inactive and disabled, no observer
+  or stage was created, the archive timer remained enabled/active, Catalog
+  integrity is `ok`, backlog/pending/partial counts are zero, and the
+  registered archive target is READY.
+- **Next:** One `FORMAL_M22_9_2H_QUIET_WINDOW_RETRY` after separately
+  authorized fresh identity, readiness, archive, capacity, package/lock, and
+  runtime-mask gates. Never resume the prior incomplete roots and never start
+  12 hours automatically. See
+  [`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
 
 ### M22.9 root-home recovery and handoff closeout
 

@@ -5,7 +5,77 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+
+The restarted preflight is complete. The six pending Ubuntu packages were
+installed before any T0; the post-maintenance simulation reports zero pending
+upgrades, `dpkg --audit` is empty, and no reboot is required. A bounded
+runtime-only mask of `apt-daily`/`apt-daily-upgrade` timers and services plus
+`unattended-upgrades.service` was tested. All five units were inactive and
+`masked-runtime`, an explicit start probe was rejected, and the 60-second hold
+had no systemd reexecution or boot change. Persistent update authority was then
+restored and all three normal timer/service authorities are enabled and active.
+
+Recorder remained inactive and disabled throughout; no observer, acceptance
+stage, or Formal T0 was created. The archive timer is enabled/active, Catalog
+integrity is `ok`, active partial count and archive backlog/pending are zero,
+and the registered archive target is READY.
+
+```text
+MILESTONE=M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_AT_PREFLIGHT_SHA=3fbf59c276583ed0d7c9b46909f6fc644c9296f3
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
+```
+
+The evidence root is
+`/srv/recorder-data/recorder-archive/evidence/M22.9-host-maintenance-quiet-window-preflight-20260913T0533Z-BClBDtHq`;
+its evidence-index SHA-256 is
+`7db53fd6f05b7f8125b2c69e63d8b1888f963b0707602b6068ec4599a3b52458`.
+The installed verifier's known `Unit ... not loaded` result while Recorder is
+disabled remains a mandatory pre-start check: the next authorized 2-hour
+procedure must explicitly enable/load the unit and rerun exact identity,
+readiness, archive and capacity gates before creating one new T0. See
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+
+### Current development queue
+
+1. Run one new `FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`; this is the only next
+   Recorder milestone.
+2. Only after an eligible 2-hour final record, run independent 12h, 24h, 72h,
+   and 168h stages in order. No stage starts automatically and no historical
+   duration transfers.
+3. Keep the already closed MS1–MS4 configurable-product implementation frozen
+   unless the Formal evidence identifies a concrete product-isolation or
+   resource defect. The runtime already supports operator-configured finite
+   Spot/USD-M symbol sets; the four-ProductKey profile is the bounded production
+   qualification workload, not a hard-coded allowlist.
+4. Treat GitHub issue #59 (`Possible exposed API Key / Secret`) as a separate
+   security-triage task. Do not copy possible secret material into prompts,
+   logs, commits, or milestone evidence.
+
+The 2026-09-13 GitHub audit found no open PR, no running Action, and no remote
+branch other than `main` in Recorder or Contracts. There is currently no
+completed branch to delete. Contracts needs no change for Recorder
+multi-symbol work: its symbol identity is already opaque and market/symbol
+attribution is part of the public contract surface. Gateway's fixed two-product
+runtime is a separate repository concern and does not block Recorder M22.9.
+
+## Previous milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
 
 The attempted host-maintenance quiet-window preflight is aborted and
 unaccepted. A remote cleanup command crossed local/remote variable-expansion
@@ -856,10 +926,13 @@ or use an external volume as an active Collector target.
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
 `RECORDER_ENABLED=NO`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
-`RETRY_ELIGIBLE=NO`,
-`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED`,
+`RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES`,
+`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS`,
+`OS_UPDATE_AUTHORITY=RESTORED`,
+`PENDING_UPGRADES=0`,
+`REBOOT_REQUIRED=NO`,
 `ROOT_HOME_RECOVERY=COMPLETE`,
-`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`.
+`NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`.
 
 Any further live traffic or Formal stage requires the exact installed runtime
 source/artifact identified above, its immutable Wheel, lock, config, unit, and
@@ -883,8 +956,10 @@ authorized retry reached a valid T0 plus ten passing samples, but host
 maintenance reexecuted systemd before two hours and invalidated both process
 identities. The retry is incomplete with zero credit; 12 hours is not started.
 The subsequent first quiet-window preflight was aborted by the root-home
-incident and is not reusable. Recorder is stopped/disabled, root access is
-restored, and the next team must restart the bounded preflight from scratch as
-defined in
-[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
-It does not authorize a Recorder start or another T0.
+incident and is not reusable. The 2026-09-13 restart-from-scratch preflight
+completed the pending maintenance, proved the runtime-only exclusion, and
+restored normal update authority. Recorder remains stopped/disabled. The next
+team may proceed only to one separately authorized Formal 2-hour retry after
+fresh identity/readiness/archive/capacity gates, as defined in
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+It does not authorize 12 hours or automatic stage advancement.
