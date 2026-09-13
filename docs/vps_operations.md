@@ -1,37 +1,40 @@
 # VPS Operations
 
 Current status:
-`M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=COMPLETE`. The restarted
-preflight completed all six pending Ubuntu updates, left zero pending upgrades
-and no reboot requirement, tested a runtime-only mask of the automatic apt and
-unattended-upgrade units, and restored their normal enabled/active authority.
-The negative activation probe was rejected and the bounded hold observed no
-systemd reexecution or boot change.
+`M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT=REVIEWED_COMPLETE`. The retry
+created one valid T0, 14 canonical samples, and a canonical final after
+`7677610836692` BOOTTIME ns. It is nevertheless
+`EXECUTED_INCOMPLETE_OBSERVATION_GAP`: later full-state samples were about
+223 MB, the audit/publication loop exceeded the 600-second cadence, and
+`acceptance_observation_gap` remained in the final. Formal credit is zero;
+12 hours is not started and `PRODUCTION_READY=NO`.
 
-Recorder remained inactive and disabled, so the preflight created no live
-traffic, observer, Formal stage, or duration credit. The archive timer remains
-enabled and active/waiting. The first aborted preflight and root-home incident
-remain historical evidence; their roots are preserved and were not reused.
+Recorder identity remained stable with PID `35683`, InvocationID
+`cd5d1dcc7ce54c10a15c166c893af609`, service instance
+`4829aec5-4a34-41cd-94ef-bb972c31446c`, unchanged boot ID, and
+`NRestarts=0`. Controlled closeout then stopped and disabled Recorder, drained
+archive backlog/pending to zero, verified Catalog `ok` and zero active
+partials, retained the archive timer enabled/active, and restored automatic OS
+update authority with zero pending upgrades and no reboot requirement.
 
 The installed exact source remains
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`; its Wheel, lock, config, unit,
-and deployment identity files survived and verified before the unit was
-disabled. The active data root, Catalog, and archive also survived. Catalog
-integrity is `ok`, active `.partial` count is zero, archive backlog and remote
-pending are zero, and all 115413 archive transactions are `LOCAL_DELETED`.
+and deployment identity files verified after the unit was stopped. The active
+data root, Catalog, and archive remain healthy. Catalog integrity is `ok`,
+active `.partial` count is zero, archive backlog and remote pending are zero,
+and all 117383 archive transactions are `LOCAL_DELETED`.
 Storage ID `ef852751-721c-4145-9083-f6fd48718480` resolves READY at
 `/srv/recorder-data/recorder-archive` on the approximately 2 TB ext4
 `/dev/vdb1`; the active writer root remains
 `/var/lib/binance-market-data-recorder` on `/dev/vda1`.
 
-The owner-authorized Formal 2-hour retry remains
-`EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED` with zero credit; 12 hours
-is not started and `PRODUCTION_READY=NO`. The next action is one
-`FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`, with a fresh pre-start identity,
-readiness, archive and capacity gate and exactly one new T0. See
+The next action is `M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX`, not
+another unchanged live run. Repeated evidence and completed-chain verification
+must become bounded-memory without weakening the immutable chain or fail-closed
+gates. See
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md),
 [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md), and
-[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+[`M22.9 Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
 
 ### Historical MS4-D and P1 checkpoints (not current authority)
 

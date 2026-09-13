@@ -155,7 +155,7 @@ runtime-only mask for both apt timers/services and
 restored all normal update authorities. Recorder remained inactive and
 disabled; the archive timer remained enabled/active; Catalog integrity is
 `ok`; active partial and archive backlog/pending counts are zero; and no
-observer or Formal T0 was created. Current milestone status is
+observer or Formal T0 was created. That checkpoint's milestone status was
 `M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=COMPLETE`,
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
 `PRODUCTION_READY=NO`, and
@@ -165,7 +165,26 @@ gate, explicitly enables/loads the Recorder unit, and passes fresh exact
 identity, readiness, archive, and capacity checks. See
 `docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md`.
 
-Before that retry, the exact current main artifact was installed and READY on
+The owner-authorized 2026-09-13 quiet-window retry created one valid Formal T0,
+14 canonical samples, and a canonical final after `7677610836692` BOOTTIME ns.
+It remains `EXECUTED_INCOMPLETE_OBSERVATION_GAP`: later full-state observer
+documents were approximately 223 MB, the audit/publication cycle exceeded the
+600-second evidence cadence, and `acceptance_observation_gap` remained in the
+final. Recorder PID, InvocationID, service instance, boot ID, and deployment
+identity were stable with `NRestarts=0`; Formal credit is zero and 12h remains
+not started. A later read-only operator diagnostic that materialized multiple
+large samples was OOM-killed, but only after the first blocker and without
+changing Recorder or observer identity. Controlled closeout stopped and
+disabled Recorder, drained archive backlog/pending to zero, verified Catalog
+`ok` and zero active partials, retained the archive timer enabled/active, and
+restored OS update authority. Current status is
+`M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT=REVIEWED_COMPLETE`,
+`PRODUCTION_READY=NO`, and
+`NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX`. Do not repeat the
+unchanged live run or start 12h. See
+`docs/milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md`.
+
+Before the quiet-window retry, the exact current main artifact was installed and READY on
 greencloud-tokyo-01. Source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
 `e968ede54d9f110ef7371a4847a54940177a1a19`, wheel SHA-256

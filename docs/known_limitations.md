@@ -4,9 +4,10 @@ The current exact installed behavior/deployment authority is source
 `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` (tree
 `e968ede54d9f110ef7371a4847a54940177a1a19`); later documentation-only
 descendants are not deployed. The first Formal M22.9 2-hour attempt failed at
-T0 and the later retry was interrupted by host maintenance; both receive zero
-duration credit. The 2026-09-13 host-maintenance quiet-window preflight passed,
-but it created no T0. Recorder is stopped and disabled, the archive timer is
+T0 and the next retry was interrupted by host maintenance. A third
+quiet-window attempt reached a canonical final beyond two hours but failed its
+evidence cadence with `acceptance_observation_gap`; all three receive zero
+duration credit. Recorder is stopped and disabled, the archive timer is
 enabled and active/waiting, 12h is not started, and Production Ready is NO.
 Current authority is in
 [`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and
@@ -32,11 +33,15 @@ the bounded four-ProductKey qualification. P2 later enabled the verified
 archive timer and exercised transaction-authorized source retirement. The
 first Formal 2-hour stage failed at T0 before its first sample; the exact-
 artifact retry then reached ten passing samples before host maintenance
-invalidated it at about 85 minutes. The quiet-window preflight has now passed,
-but the service is stopped/disabled and Formal credit remains zero. One fresh
-2-hour retry, 12h, later long-duration qualification, and Production Ready
-remain open. Any future start still requires installed-artifact verification,
-fresh readiness/archive/capacity gates, and explicit authorization.
+invalidated it at about 85 minutes. The quiet-window retry kept Recorder
+identity stable beyond two hours, but full-state evidence grew to about 223 MB
+per sample and exceeded the 600-second observation cadence. Its final is
+`INCOMPLETE`, credit remains zero, and an unchanged retry is ineligible. The
+observer must first use bounded repeated evidence and bounded-memory chain
+verification. A separately reviewed/deployed artifact, fresh 2-hour retry,
+12h, later long-duration qualification, and Production Ready remain open.
+Any future start still requires installed-artifact verification, fresh
+readiness/archive/capacity gates, and explicit authorization.
 Provider-panel CPU% alone does not select an optimization. Any future CPU
 changes must preserve Raw v1, exact
 payload bytes, receive timestamps, canonical CBOR, CRC32C, SHA-256, bounded
@@ -46,10 +51,14 @@ and Spot/USD-M sequence semantics. Longer fsync intervals, CRC/SHA removal,
 float substitution, silent metrics/gap deletion, and unreviewed stream merging
 are not authorized.
 
-The RSS trend remains **WATCH / NOT YET PROVEN LEAK**. Frozen maxima were
+The Recorder RSS trend remains **WATCH / NOT YET PROVEN LEAK**. Frozen maxima were
 approximately `244400128` bytes at 2h, `260460544` at 4h, and `286740480` at
 12h, with no swap, OOM, systemd restart, or clear resource exhaustion. Keep
-observing RSS during profiling and new-artifact validation.
+observing RSS during profiling and new-artifact validation. Separately, the
+current acceptance observer peaked at about 4.14 GB and a read-only diagnostic
+that loaded multiple large samples was OOM-killed at about 4.62 GB anonymous
+RSS. This is a confirmed evidence-path scalability limit, not the historical
+Recorder RSS trend.
 
 The MS4-D resource gate is bounded to the observed CPU/RSS/no-symptom window:
 queue depth was unavailable, so it does not prove a long-run queue trend or

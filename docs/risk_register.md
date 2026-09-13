@@ -1,6 +1,35 @@
 # Risk Register
 
-## Current milestone risk checkpoint — host-maintenance quiet-window preflight (2026-09-13)
+## Current milestone risk checkpoint — Formal 2-hour quiet-window retry closeout (2026-09-13)
+
+The quiet-window controls worked: boot, Recorder process/service identity, and
+deployment identity remained stable, with zero Recorder restarts. The stage
+still finalized `INCOMPLETE` because later full-state observer documents grew
+to approximately 223 MB and the observation/audit/publication loop exceeded
+the 600-second evidence cadence. `acceptance_observation_gap` first appeared in
+`sample-00000005.json` and remained a monotonic blocker.
+
+R-074 is open. The next artifact must bound repeated evidence and completed-
+chain memory without weakening immutable hashes, lifecycle authority, or
+fail-closed eligibility. A read-only operator diagnostic also OOMed after
+materializing multiple large samples; it did not change Recorder identity and
+occurred after the first blocker, but confirms the same memory-risk boundary.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_QUIET_WINDOW_RETRY=EXECUTED_INCOMPLETE_OBSERVATION_GAP
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX
+```
+
+## Previous milestone risk checkpoint — host-maintenance quiet-window preflight (2026-09-13)
 
 R-071's retry precondition is now mitigated by a tested bounded procedure. The
 six pending Ubuntu packages were completed before any T0; zero upgrades remain,
@@ -323,10 +352,11 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-067 | A detached acceptance unit can be garbage-collected or mistaken for the evidence authority, or an unsafe retry can create a second T0/root | High | M22.9-P1 keeps `AcceptanceObserver` and immutable `stage-final.json`/SHA chain authoritative; external systemd uses `Type=exec`, `Restart=no`, fixed operator-selected registered relative root, and no automatic stage advancement. Inspect InvocationID/journal separately, and resume only the exact unfinished root when boot/process/service/identity and the 600-second gap bound still match; otherwise preserve and fail closed. | M22.9-P1 | Monitoring |
 | R-068 | Active writer root can reach its hard reserve before a long Formal chain even when the registered archive target has ample space | Critical | P2 observed the exact current deployment with the archive timer enabled and backlog returning to zero. The conservative existing 24-hour generation rate is `349910.017730 B/s`; active-root runway above the 10 GiB reserve is only about 26.46 hours, so every Formal stage start/end must recheck runway, timer health, backlog, and target margin. | M22.9-P2 | Monitoring |
 | R-069 | A monotonic archive timer can be enabled without an immediately established future periodic trigger, or can later stall while the Recorder is stopped | High | P2 explicitly bootstrapped the first bounded archive service cycle, then observed autonomous `OnUnitActiveSec` triggers with future monotonic next times, zero failed transactions, and backlog zero. Keep the timer enabled/active and inspect service result, journal, backlog, and future trigger before every Formal stage. | M22.9-P2 | Monitoring |
-| R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The reviewed fix freezes a lifecycle-coherent boundary, makes one membership comparison, defers later rows, and fresh-validates authorized `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` absence with existing external verification. Deterministic race, unauthorized-loss, corruption, and read-only tests pass; independent review found P0/P1/P2=0. Source is not deployed, exact-artifact redeploy preflight remains separate, and no retry or retroactive credit is authorized. | M22.9 observer fix | Monitoring |
-| R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-13 preflight completed pending package work, proved a runtime-only mask of both apt timers/services and `unattended-upgrades.service`, rejected an explicit masked start, observed no reexecution during its bounded hold, and restored persistent update authority. The next Formal stage must repeat the package/lock/mask gate, keep it for the full window, restore it on controlled exit, and award zero credit on any boot/process/service change. | M22.9 2h quiet-window retry | Mitigated; stage monitoring |
+| R-070 | AcceptanceObserver can compare filesystem inventory with a Catalog snapshot while the archive timer is concurrently committing `LOCAL_DELETED` retirement, producing a false stage blocker or hiding a real lifecycle defect | High | The first Formal 2-hour attempt failed closed at T0. Post-stop review reconciled all 26 implicated chunks and the full 112,817-manifest audit had zero persistent Catalog/integrity findings. The lifecycle-coherent fix was independently reviewed, deployed in exact source `e267ae38…`, and the quiet-window retry passed T0 without recurrence. Deterministic race, unauthorized-loss, corruption, and read-only tests remain the implementation authority; no retroactive credit is granted. | M22.9 observer fix | Monitoring |
+| R-071 | Unattended host package maintenance can reexecute systemd and restart Recorder or a transient Formal observer inside a duration window, invalidating process identity and relaunching a new-stage command despite `Restart=no` | Critical | The 2026-09-13 preflight completed pending package work and proved a runtime-only mask of both apt timers/services and `unattended-upgrades.service`. The quiet-window retry then retained unchanged boot, process, and service identity beyond two hours; controlled closeout restored normal update authority. Every future Formal stage must repeat the package/lock/mask gate, restore it on controlled exit, and award zero credit on any identity change. | M22.9 2h quiet-window retry | Mitigated; stage monitoring |
 | R-072 | A local/remote shell expansion error or unset cleanup variable broadens an administrative deletion to `/root`, another protected path, or a mount root | Critical | The 2026-09-12 incident is closed only for access recovery; lost root-home-only content is not recoverable evidence. Recursive remote cleanup is forbidden across SSH variable boundaries. Prefer no cleanup and fresh `mktemp -d` children. Any necessary cleanup requires same-remote-shell unset-variable failure, nonempty and canonical-path checks, an exact approved disposable parent/child relationship, explicit refusal of `/`, home, `/etc`, `/opt`, `/var`, `/srv`, and mount roots, printed target review, and a separate step. Evidence directories are retained by default. | M22.9 operations / all VPS work | Mitigated; permanent guard |
 | R-073 | A Recorder that is stopped but systemd-enabled silently starts during a host reboot or maintenance cycle, creating unauthorized non-formal capture and consuming active-root capacity | High | The 2026-09-12 reboot auto-started Recorder for about six minutes; no observer/T0 existed and credit is zero. Recorder is now inactive and disabled while archive scheduling remains enabled. Every stopped handoff and maintenance preflight must check both `is-active` and `is-enabled`; re-enable only as an explicit separately authorized pre-start step, then repeat exact deployment/readiness verification. | M22.9 host-maintenance preflight | Mitigated for current handoff; monitoring |
+| R-074 | AcceptanceObserver full-state samples and completed-stage verification grow with cumulative manifest history until evidence cadence or host memory fails | Critical | The 2026-09-13 quiet-window retry produced approximately 223 MB later samples, first exceeded the 600-second cadence at `sample-00000005.json`, and finalized `INCOMPLETE`; observer MemoryPeak was about 4.14 GB. A separate read-only multi-sample diagnostic was OOM-killed at about 4.62 GB anonymous RSS after the first blocker. Bound repeated evidence and stream chain verification while preserving immutable hashes, lifecycle authority, and fail-closed eligibility; do not repeat the unchanged live run. | M22.9 observer bounded-evidence fix | Open |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

@@ -5,7 +5,66 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+
+The quiet-window retry produced a canonical final after 14 samples and more
+than the required two hours, but finalized `INCOMPLETE`. Full observer evidence
+grew to approximately 223 MB per later sample; audit plus durable publication
+eventually exceeded the mandatory 600-second observation cadence. The first
+blocker appeared in `sample-00000005.json`, the maximum observed gap was
+`696.438246769` seconds, and the final retained
+`acceptance_observation_gap`.
+
+Recorder remained stable at PID `35683`, InvocationID
+`cd5d1dcc7ce54c10a15c166c893af609`, service instance
+`4829aec5-4a34-41cd-94ef-bb972c31446c`, unchanged boot ID, and
+`NRestarts=0`. Controlled closeout stopped and disabled Recorder, drained
+archive work, verified Catalog and storage, kept the archive timer
+enabled/active, and restored OS update authority.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_QUIET_WINDOW_RETRY=EXECUTED_INCOMPLETE_OBSERVATION_GAP
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX
+```
+
+Do not repeat the unchanged live test or start 12 hours. The next development
+milestone is limited to bounded repeated evidence and bounded-memory chain
+verification while preserving the existing integrity semantics. Full evidence,
+hashes, four preserved pre-T0 setup records, the monitoring-side OOM incident,
+and closeout state are in the
+[`Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
+
+### Current development queue
+
+1. Implement and review `M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX`.
+2. Deploy that exact reviewed artifact through a separately authorized stopped
+   redeploy/readiness milestone.
+3. Run a fresh Formal 2-hour stage only after deployment; start 12h, 24h, 72h,
+   and 168h independently and in order only after each preceding eligible final.
+4. Keep the closed MS1–MS4 configurable-product implementation frozen unless
+   evidence identifies a concrete Recorder defect. Four ProductKeys are the
+   bounded qualification workload, not a hard-coded allowlist.
+5. Treat GitHub issue #59 (`Possible exposed API Key / Secret`) as a separate
+   security-triage task; never reproduce possible secret material.
+
+The 2026-09-13 GitHub audit found no open PR, running Action, or remote branch
+other than `main` in Recorder or Contracts. Contracts remains compatible: its
+symbol identity is opaque and already includes market/symbol attribution.
+
+## Previous milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
 
 The restarted preflight is complete. The six pending Ubuntu packages were
 installed before any T0; the post-maintenance simulation reports zero pending
@@ -52,7 +111,7 @@ procedure must explicitly enable/load the unit and rerun exact identity,
 readiness, archive and capacity gates before creating one new T0. See
 [`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
 
-### Current development queue
+### Development queue at that checkpoint
 
 1. Run one new `FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`; this is the only next
    Recorder milestone.

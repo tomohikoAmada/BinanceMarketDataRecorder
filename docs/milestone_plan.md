@@ -1,6 +1,44 @@
 # Milestone Plan
 
-## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+
+The owner-authorized retry reached a canonical final after
+`7677610836692` BOOTTIME ns and 14 samples, but it is not eligible. Full-state
+observer samples grew to approximately 223 MB; the observation/audit/publication
+cycle exceeded the 600-second cadence and the final retained
+`acceptance_observation_gap`. Recorder process, service instance, boot ID, and
+deployment identity remained stable with `NRestarts=0`, so this is an
+acceptance-evidence scalability defect rather than a demonstrated Recorder
+continuity failure.
+
+Controlled closeout stopped and disabled Recorder, drained archive backlog and
+pending to zero, verified Catalog `ok` with no active partials, retained the
+archive timer enabled/active, and restored normal OS update authority. Formal
+credit remains zero and 12 hours is not started.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_QUIET_WINDOW_RETRY=EXECUTED_INCOMPLETE_OBSERVATION_GAP
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX
+```
+
+The next milestone is a focused bounded-evidence repair: stop repeating the
+full Catalog/reconnect/manifest inventory in every sample and verify completed
+chains with bounded memory, without weakening immutable hashes, chain
+continuity, lifecycle evidence, or fail-closed eligibility. A new live retry
+is not eligible until that artifact is reviewed and deployed. See
+[`M22.9 Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
+
+## Previous milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
 
 The restart-from-scratch preflight is complete. It installed the six pending
 Ubuntu updates before any T0, established zero pending upgrades with a clean
@@ -628,8 +666,10 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | M22.9 Formal 2h retry | EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED | Valid T0 plus ten passing samples; systemd reexecution at about 85 minutes invalidated the process/service identity; zero credit; see `docs/milestone_acceptance/M22.9-2h-retry.md` |
 | M22.9 root-home recovery / stopped handoff | COMPLETE | Access recovered without rebuild; Recorder inactive and disabled; archive timer enabled/active; aborted preflight roots preserved |
 | M22.9 host-maintenance quiet-window preflight | COMPLETE / PASS | Six pending packages completed; runtime-only maintenance exclusion tested; update authority restored; no Recorder start or T0; see `docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md` |
+| M22.9 Formal 2h quiet-window retry | EXECUTED_INCOMPLETE_OBSERVATION_GAP | Stable Recorder identity beyond two hours, but approximately 223 MB observer samples exceeded the 600-second cadence; final `INCOMPLETE`, zero credit; see `docs/milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md` |
+| M22.9 AcceptanceObserver bounded evidence | NEXT | Bound repeated evidence and completed-chain memory without weakening immutable integrity or fail-closed acceptance |
 | Completed-branch cleanup | CURRENTLY NO REMOTE CANDIDATES | Luna read-only audit on 2026-09-13 found only `main` in Recorder and Contracts, with no open PR or running Action; earlier merged heads are already absent |
-| Formal M22.9 | NEXT: 2H QUIET-WINDOW RETRY / LATER STAGES NOT STARTED | Fresh identity/readiness/archive/capacity gates and one new T0 required; zero current duration credit; Production Ready remains NO |
+| Formal M22.9 | 2H QUIET-WINDOW RETRY INCOMPLETE / LATER STAGES NOT STARTED | Bounded-evidence code fix, exact review/deploy, and a new eligible 2h final are required; zero current duration credit; Production Ready remains NO |
 
 NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
 NEXT_AFTER_CI2_REVIEW=MS4-A-LOCAL-PREPARATION

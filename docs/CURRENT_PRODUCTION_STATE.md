@@ -5,7 +5,50 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+
+The exact installed artifact completed more than two hours with stable Recorder
+identity, but the canonical Formal result is `INCOMPLETE`. Fourteen full-state
+observer samples grew to approximately 223 MB each; the audit/publication cycle
+exceeded the 600-second evidence cadence, first at
+`sample-00000005.json`, and the final retained
+`acceptance_observation_gap`. Final elapsed BOOTTIME is
+`7677610836692` ns; elapsed duration does not override the blocking finding.
+
+Recorder PID `35683`, InvocationID
+`cd5d1dcc7ce54c10a15c166c893af609`, service instance
+`4829aec5-4a34-41cd-94ef-bb972c31446c`, boot ID, and deployment identity
+remained unchanged, with `NRestarts=0`. This is an observer-evidence
+scalability failure, not an eligible Recorder continuity proof.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_QUIET_WINDOW_RETRY=EXECUTED_INCOMPLETE_OBSERVATION_GAP
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX
+```
+
+Controlled closeout drained archive backlog and pending to zero, verified
+Catalog `ok` and zero active partials, kept the archive timer enabled/active,
+and restored normal apt/unattended-upgrade authority. Recorder is now
+inactive/dead and disabled. Do not start 12 hours or repeat the unchanged
+artifact. See the
+[`Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
+
+## Previous milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
 
 The restart-from-scratch preflight passed. All six pending Ubuntu updates were
 completed before T0, the post-maintenance simulation reports zero pending
