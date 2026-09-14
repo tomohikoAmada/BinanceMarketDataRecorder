@@ -1,6 +1,29 @@
 # Milestone Plan
 
-## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+## Current candidate milestone — M22_9 acceptance observer cadence scheduling fix (2026-09-14)
+
+The focused stage-runner correction is implemented on branch
+`fix/m22-9-acceptance-cadence-scheduling` from the independently verified
+main authority `a917f18f75afeb03ab2f9baa7e3695c0995c1ea9` / tree
+`1927b96a3be41da79abd7cb5f5dc99da38be1202`. Deterministic fake-clock tests
+prove that observation work consumes the five-minute sample-start cadence,
+overruns start the next sample immediately without replaying missed slots, and
+stage-end/resume/interrupt behavior remains bounded. Offline validation is
+complete, but independent review, exact artifact rebuild, stopped redeploy,
+readiness gates, and separate live authorization remain required.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_OBSERVER_CADENCE_SCHEDULING_FIX
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+FORMAL_RUN_STARTED=NO
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+See [`M22.9 acceptance cadence scheduling`](milestone_acceptance/M22.9-acceptance-cadence-scheduling.md).
+
+## Previous milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
 
 The owner-authorized retry reached a canonical final after
 `7677610836692` BOOTTIME ns and 14 samples, but it is not eligible. Full-state

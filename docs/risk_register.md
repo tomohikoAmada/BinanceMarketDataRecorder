@@ -1,5 +1,29 @@
 # Risk Register
 
+## Current candidate risk checkpoint — M22.9 acceptance observer cadence scheduling fix (2026-09-14)
+
+The stage runner's fixed post-observation sleep was adding the full
+five-minute interval after observation work. The offline fix schedules from
+the existing acceptance clock's BOOTTIME sample-start authority, consumes the
+work time from the interval, skips missed slots after an overrun, and caps
+waiting at stage end. Deterministic tests cover cheap work, exact consumption,
+overrun, excessive-work visibility, resume, interrupt, and catch-up behavior.
+
+This mitigates the scheduling component of the live observation-gap failure,
+but does not claim that the observer's evidence production will fit inside the
+600-second bound on the VPS. R-074 remains open until an independently
+reviewed, rebuilt, separately authorized artifact produces eligible live
+evidence. No VPS or Formal run was performed by this candidate.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_OBSERVER_CADENCE_SCHEDULING_FIX
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+FORMAL_RUN_STARTED=NO
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
 ## Current milestone risk checkpoint — Formal 2-hour quiet-window retry closeout (2026-09-13)
 
 The quiet-window controls worked: boot, Recorder process/service identity, and
