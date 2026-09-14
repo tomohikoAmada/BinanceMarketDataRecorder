@@ -914,7 +914,9 @@ class AcceptanceObserver:
         self.t0_manifest_aggregate_sha256 = _manifest_aggregate(records)
         return {path: str(record["sha256"]) for path, record in records.items()}
 
-    def _catalog_evidence(self, t0: int) -> tuple[dict[str, object], list[str]]:
+    def _catalog_evidence(
+        self, t0: int, *, as_of_utc_ns: int
+    ) -> tuple[dict[str, object], list[str]]:
         path = self.data_root / "state" / "catalog.sqlite"
         if not path.is_file():
             raise AcceptanceError("Catalog is unavailable")
@@ -922,11 +924,20 @@ class AcceptanceObserver:
             integrity = catalog.integrity_check()
             if integrity != ("ok",):
                 raise AcceptanceError("Catalog integrity check failed")
-            malformed = catalog.malformed_discontinuity_events()
-            degraded = catalog.degraded_closed_discontinuity_pairs()
-            unclosed = catalog.unclosed_stream_discontinuities_by_stream()
-            closed = catalog.closed_stream_discontinuity_intervals_by_stream()
-            events = catalog.operational_events()
+            authority = catalog.discontinuity_authority_snapshot(
+                as_of_utc_ns=as_of_utc_ns
+            )
+            malformed = cast(list[dict[str, object]], authority["malformed_events"])
+            degraded = cast(list[dict[str, object]], authority["degraded_pairs"])
+            unclosed = cast(
+                dict[tuple[str, str, str], list[dict[str, object]]],
+                authority["unclosed"],
+            )
+            closed = cast(
+                dict[tuple[str, str, str], list[dict[str, object]]],
+                authority["closed"],
+            )
+            events = cast(list[dict[str, object]], authority["operational_events"])
             terminal = [
                 str(event.get("event_type"))
                 for event in events
@@ -1485,7 +1496,10 @@ class AcceptanceObserver:
         elif readiness.state != "READY":
             findings.append("readiness_not_ready")
         try:
-            catalog, catalog_findings = self._catalog_evidence(self.t0_utc_ns)
+            catalog, catalog_findings = self._catalog_evidence(
+                self.t0_utc_ns,
+                as_of_utc_ns=now_utc,
+            )
             raw, raw_findings = self._raw_evidence()
             (
                 catalog_baseline,

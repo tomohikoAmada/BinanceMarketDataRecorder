@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import pytest
 
@@ -17,6 +17,7 @@ from binance_market_data_recorder.audit.reconnect_boundaries import (
 )
 from binance_market_data_recorder.domain.event import EventEnvelope
 from binance_market_data_recorder.service.acceptance import _sample_chain, sha256_bytes
+from binance_market_data_recorder.service.readiness import DeploymentReadinessResult
 from binance_market_data_recorder.spool.seal import (
     SealError,
     seal_partial,
@@ -563,4 +564,99 @@ def test_catalog_acceptance_v2_rolling_lifecycle_matches_producer(
     assert state.catalog_open == {}
     assert state.catalog_current_interval_keys == {
         ("um_perpetual", "BTCUSDT", "book_ticker", "integration-gap")
+    }
+
+
+def test_acceptance_catalog_evidence_uses_frozen_utc_boundary(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    _start_path, _start_sha, _start = observer.start()
+    assert observer.t0_utc_ns is not None
+    observation_boundary = observer.t0_utc_ns + 10
+
+    class WriteLifecycleBeforeCatalogRead:
+        def __init__(self, catalog_path: Path, boundary: int) -> None:
+            self.catalog_path = catalog_path
+            self.boundary = boundary
+            self.written = False
+
+        def evaluate(self) -> DeploymentReadinessResult:
+            if not self.written:
+                self.written = True
+                with Catalog(self.catalog_path) as catalog:
+                    catalog.record_operational_event(
+                        event_id="boundary-race-start",
+                        event_type="STREAM_DISCONTINUITY_STARTED",
+                        occurred_at_utc_ns=self.boundary + 1,
+                        evidence={
+                            "market": "um_perpetual",
+                            "symbol": "BTCUSDT",
+                            "stream": "book_ticker",
+                            "gap_id": "boundary-race",
+                            "gap_started_at_utc_ns": self.boundary + 1,
+                            "original_connection_id": "connection-a",
+                            "original_generation": 1,
+                        },
+                        symbol="BTCUSDT",
+                    )
+                    catalog.record_operational_event(
+                        event_id="boundary-race-complete",
+                        event_type="STREAM_DISCONTINUITY_COMPLETED",
+                        occurred_at_utc_ns=self.boundary + 2,
+                        evidence={
+                            "market": "um_perpetual",
+                            "symbol": "BTCUSDT",
+                            "stream": "book_ticker",
+                            "gap_id": "boundary-race",
+                            "gap_ended_at_utc_ns": self.boundary + 2,
+                            "new_connection_id": "connection-b",
+                            "new_generation": 2,
+                        },
+                        symbol="BTCUSDT",
+                    )
+            return DeploymentReadinessResult("READY", (), {"authoritative": True})
+
+    observer.evaluator = WriteLifecycleBeforeCatalogRead(
+        observer.data_root / "state" / "catalog.sqlite", observation_boundary
+    )  # type: ignore[assignment]
+    clock.utc = observation_boundary
+    clock.boot += 1
+    _open_path, _open_sha, first = observer.sample()
+    assert first["observed_at_utc_ns"] == observation_boundary
+    first_transition = cast(dict[str, object], first["catalog_transition"])
+    assert first_transition["started"] == []
+    assert first_transition["completed"] == []
+    assert first_transition["current_open"] == []
+
+    clock.utc = observation_boundary + 3
+    clock.boot += 1
+    _closed_path, _closed_sha, second = observer.sample()
+    second_transition = cast(dict[str, object], second["catalog_transition"])
+    completed = cast(list[dict[str, object]], second_transition["completed"])
+    current_open = cast(list[dict[str, object]], second_transition["current_open"])
+    assert len(completed) == 1
+    assert completed[0]["gap_id"] == "boundary-race"
+    assert current_open == []
+    assert {
+        item["gap_id"] for item in completed
+    }.isdisjoint({item["gap_id"] for item in current_open})
+    ended_at = cast(int, completed[0]["ended_at_utc_ns"])
+    observed_at = cast(int, second["observed_at_utc_ns"])
+    assert ended_at <= observed_at
+
+    state = _sample_chain(
+        observer.evidence_root,
+        start=json.loads(
+            (observer.evidence_root / "stage-start.json").read_text(encoding="utf-8")
+        ),
+        start_sha=sha256_bytes(
+            (observer.evidence_root / "stage-start.json").read_bytes()
+        ),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.catalog_open == {}
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "boundary-race")
     }
