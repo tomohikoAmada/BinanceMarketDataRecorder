@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -628,6 +629,416 @@ def _rewrite(path: Path, **changes: object) -> None:
 
 def _read_json(path: Path) -> dict[str, object]:
     return cast(dict[str, object], json.loads(path.read_text(encoding="utf-8")))
+
+
+def _catalog_open_item(
+    *, gap_id: str = "gap-a", started_at_utc_ns: int = 1_000_000_001
+) -> dict[str, object]:
+    return {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "stream": "book_ticker",
+        "gap_id": gap_id,
+        "started_at_utc_ns": started_at_utc_ns,
+        "timing": "OPENED_IN_STAGE",
+    }
+
+
+def _catalog_closed_item(
+    *,
+    gap_id: str = "gap-a",
+    started_at_utc_ns: int = 1_000_000_001,
+    ended_at_utc_ns: int = 1_000_000_002,
+    timing: str = "CURRENT_STAGE",
+) -> dict[str, object]:
+    return {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "stream": "book_ticker",
+        "gap_id": gap_id,
+        "started_at_utc_ns": started_at_utc_ns,
+        "ended_at_utc_ns": ended_at_utc_ns,
+        "timing": timing,
+    }
+
+
+def _catalog_transition(
+    *,
+    started: list[dict[str, object]] | None = None,
+    completed: list[dict[str, object]] | None = None,
+    current_open: list[dict[str, object]] | None = None,
+    current_interval_count: int = 0,
+) -> dict[str, object]:
+    open_items = [] if current_open is None else current_open
+    return {
+        "started": [] if started is None else started,
+        "completed": [] if completed is None else completed,
+        "current_open": open_items,
+        "terminal_events": [],
+        "summary": {
+            "open_count": len(open_items),
+            "current_interval_count": current_interval_count,
+        },
+    }
+
+
+def _rewrite_v2_samples(
+    stage_root: Path,
+    mutators: Mapping[int, Callable[[dict[str, object]], None]],
+    *,
+    update_final: bool = False,
+) -> None:
+    previous_sha: str | None = None
+    sample_paths = sorted(stage_root.glob("sample-*.json"))
+    for ordinal, path in enumerate(sample_paths):
+        document = _read_json(path)
+        mutator = mutators.get(ordinal)
+        if mutator is not None:
+            mutator(document)
+        document["sample_ordinal"] = ordinal
+        document["previous_sample_sha256"] = previous_sha
+        path.write_bytes(canonical_json(document))
+        previous_sha = sha256_bytes(path.read_bytes())
+    if update_final:
+        final_path = stage_root / "stage-final.json"
+        final = _read_json(final_path)
+        final["previous_sample_sha256"] = previous_sha
+        final["last_sample_sha256"] = previous_sha
+        final_path.write_bytes(canonical_json(final))
+
+
+def _add_unresolved_finding(document: dict[str, object]) -> None:
+    document["blocking_findings"] = ["unresolved_discontinuity"]
+    document["new_finding_details"] = {
+        "unresolved_discontinuity": {
+            "observed_at_utc_ns": document["observed_at_utc_ns"]
+        }
+    }
+    document["result"] = "FAIL"
+
+
+def _two_sample_observer(
+    tmp_path: Path,
+) -> tuple[AcceptanceObserver, FakeClock, FakeManager]:
+    observer, clock, manager = _observer(tmp_path)
+    observer.start()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    return observer, clock, manager
+
+
+def test_v2_verifier_rejects_rehashed_manifest_anomaly_without_blocker(
+    tmp_path: Path,
+) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+
+    def mutate(document: dict[str, object]) -> None:
+        transition = cast(dict[str, object], document["manifest_transition"])
+        transition["state"] = "ANOMALY"
+        transition["anomalies"] = [{"kind": "mutated", "path": "historical.manifest"}]
+        transition["added_members"] = []
+        transition["deferred_members"] = []
+        document["manifest_transition"] = transition
+
+    _rewrite_v2_samples(observer.evidence_root, {0: mutate}, update_final=True)
+
+    previous_sha: str | None = None
+    for path in sorted(observer.evidence_root.glob("sample-*.json")):
+        document = _read_json(path)
+        assert document["previous_sample_sha256"] == previous_sha
+        previous_sha = sha256_bytes(path.read_bytes())
+    final = _read_json(observer.evidence_root / "stage-final.json")
+    assert final["previous_sample_sha256"] == previous_sha
+    assert final["last_sample_sha256"] == previous_sha
+
+    with pytest.raises(
+        AcceptanceError, match=r"manifest anomaly.*manifest_byte_mutation_or_loss"
+    ):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
+def test_resume_rejects_manifest_authority_anomaly_without_modifying_evidence(
+    tmp_path: Path,
+) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("manifest-authority", 1)])
+    observer.start()
+    manifest_path = next(layout.manifests.glob("*.manifest.json"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    before = {path.name: path.read_bytes() for path in observer.evidence_root.glob("*.json")}
+
+    with pytest.raises(
+        AcceptanceError, match=r"manifest authority.*deterministically resumed"
+    ):
+        resume_observer(
+            observer.evidence_root,
+            data_root=observer.data_root,
+            identity=observer.identity,
+            manager=manager,  # type: ignore[arg-type]
+            evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+            clock=clock,
+            disk_usage=observer.disk_usage,
+        )
+
+    after = {path.name: path.read_bytes() for path in observer.evidence_root.glob("*.json")}
+    assert after == before
+
+
+def test_catalog_new_open_requires_exact_started_item(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    open_item = _catalog_open_item()
+
+    def mutate(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["catalog_transition"] = _catalog_transition(current_open=[open_item])
+
+    _rewrite_v2_samples(observer.evidence_root, {0: mutate})
+    with pytest.raises(AcceptanceError, match="does not explain new open identities"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_catalog_rejects_repeated_started_item(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    open_item = _catalog_open_item()
+
+    def first(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    def repeated(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["unresolved_discontinuity"]
+        document["new_finding_details"] = {}
+        document["result"] = "FAIL"
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {0: first, 1: repeated})
+    with pytest.raises(
+        AcceptanceError, match=r"already-open identity|new open identities"
+    ):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_catalog_rejects_silent_open_disappearance(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    open_item = _catalog_open_item()
+
+    def first(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    def disappeared(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["unresolved_discontinuity"]
+        document["new_finding_details"] = {}
+        document["result"] = "FAIL"
+        document["catalog_transition"] = _catalog_transition()
+
+    _rewrite_v2_samples(observer.evidence_root, {0: first, 1: disappeared})
+    with pytest.raises(AcceptanceError, match="disappeared without completion"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_catalog_rejects_orphan_completion_outside_observation_boundaries(
+    tmp_path: Path,
+) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    orphan = _catalog_closed_item(started_at_utc_ns=1_000_000_000, ended_at_utc_ns=1_000_000_001)
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(
+            completed=[orphan], current_interval_count=1
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {1: mutate})
+    with pytest.raises(AcceptanceError, match="orphan completion"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=True,
+        )
+
+
+def test_catalog_allows_legitimate_between_observation_completion(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    sample_paths = sorted(observer.evidence_root.glob("sample-*.json"))
+    first = _read_json(sample_paths[0])
+    second = _read_json(sample_paths[1])
+    interval = _catalog_closed_item(
+        started_at_utc_ns=cast(int, first["observed_at_utc_ns"]),
+        ended_at_utc_ns=cast(int, second["observed_at_utc_ns"]),
+    )
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(
+            completed=[interval], current_interval_count=1
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {1: mutate})
+    state = _sample_chain(
+        observer.evidence_root,
+        start=_read_json(observer.evidence_root / "stage-start.json"),
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=True,
+    )
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
+    }
+
+
+def test_catalog_current_interval_count_must_match_rolling_authority(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(current_interval_count=1)
+
+    _rewrite_v2_samples(observer.evidence_root, {0: mutate})
+    with pytest.raises(AcceptanceError, match="current interval count"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=True,
+        )
+
+
+def test_catalog_current_open_requires_unresolved_blocker(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    open_item = _catalog_open_item()
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {0: mutate})
+    with pytest.raises(AcceptanceError, match="unresolved_discontinuity"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_v2_verifier_rejects_new_finding_without_detail(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+
+    def mutate(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["synthetic_blocker"]
+        document["new_finding_details"] = {}
+        document["result"] = "FAIL"
+
+    _rewrite_v2_samples(observer.evidence_root, {0: mutate})
+    with pytest.raises(AcceptanceError, match="finding details are incomplete"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_v2_verifier_rejects_repeated_finding_detail(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+
+    def first(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["synthetic_blocker"]
+        document["new_finding_details"] = {"synthetic_blocker": {"value": 1}}
+        document["result"] = "FAIL"
+
+    def repeated(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["synthetic_blocker"]
+        document["new_finding_details"] = {"synthetic_blocker": {"value": 1}}
+        document["result"] = "FAIL"
+
+    _rewrite_v2_samples(observer.evidence_root, {0: first, 1: repeated})
+    with pytest.raises(AcceptanceError, match="finding detail is repeated"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_v2_verifier_requires_complete_stage_start_finding_details(
+    tmp_path: Path,
+) -> None:
+    observer, _clock, _manager = _observer(tmp_path)
+    observer.start()
+    start_path = observer.evidence_root / "stage-start.json"
+    _rewrite(start_path, blocking_findings=["synthetic_blocker"])
+    with pytest.raises(AcceptanceError, match="stage-start finding details are incomplete"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(start_path),
+            start_sha=sha256_bytes(start_path.read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_catalog_terminal_authority_is_not_double_counted_at_stage_start(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="service-failed-at-start",
+            event_type="SERVICE_FAILED",
+            occurred_at_utc_ns=clock.utc,
+            evidence={},
+        )
+    _path, _sha, start = observer.start()
+    assert "terminal_service_or_core_failure" in cast(list[object], start["blocking_findings"])
+    state = _sample_chain(
+        observer.evidence_root,
+        start=start,
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.terminal_event_keys == {"SERVICE_FAILED"}
 
 
 def _legacy_stage_document(

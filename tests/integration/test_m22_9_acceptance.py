@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Literal
 
@@ -15,6 +16,7 @@ from binance_market_data_recorder.audit.reconnect_boundaries import (
     strict_manifest_inventory,
 )
 from binance_market_data_recorder.domain.event import EventEnvelope
+from binance_market_data_recorder.service.acceptance import _sample_chain, sha256_bytes
 from binance_market_data_recorder.spool.seal import (
     SealError,
     seal_partial,
@@ -29,6 +31,7 @@ from tests.unit.test_historical_reconnect_audit import (
     seal_chunk,
     usdm_envelope,
 )
+from tests.unit.test_m22_9_acceptance import _observer
 from tools.audit_reconnect_boundaries import audit_data_root as historical_audit_data_root
 
 
@@ -486,3 +489,78 @@ def test_incremental_audit_is_read_only_for_catalog_and_recorder_tree(
     }
     assert after_catalog == before_catalog
     assert after_tree == before_tree
+
+
+def test_catalog_acceptance_v2_rolling_lifecycle_matches_producer(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    observer.start()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+
+    gap_started = clock.utc + 1
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="integration-gap-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=gap_started,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "integration-gap",
+                "gap_started_at_utc_ns": gap_started,
+                "original_connection_id": "connection-a",
+                "original_generation": 1,
+            },
+            symbol="BTCUSDT",
+        )
+    clock.utc += 1
+    clock.boot += 1
+    _open_path, _open_sha, open_sample = observer.sample()
+
+    gap_ended = clock.utc + 1
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="integration-gap-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=gap_ended,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "integration-gap",
+                "gap_ended_at_utc_ns": gap_ended,
+                "new_connection_id": "connection-b",
+                "new_generation": 2,
+            },
+            symbol="BTCUSDT",
+        )
+    clock.utc += 1
+    clock.boot += 1
+    _closed_path, _closed_sha, closed_sample = observer.sample()
+
+    open_transition = open_sample["catalog_transition"]
+    assert isinstance(open_transition, dict)
+    assert len(open_transition["started"]) == 1
+    assert len(open_transition["current_open"]) == 1
+    closed_transition = closed_sample["catalog_transition"]
+    assert isinstance(closed_transition, dict)
+    assert len(closed_transition["completed"]) == 1
+    assert closed_transition["current_open"] == []
+
+    state = _sample_chain(
+        observer.evidence_root,
+        start=json.loads(
+            (observer.evidence_root / "stage-start.json").read_text(encoding="utf-8")
+        ),
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.catalog_open == {}
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "integration-gap")
+    }

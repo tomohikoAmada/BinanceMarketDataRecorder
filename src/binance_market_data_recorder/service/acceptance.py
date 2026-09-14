@@ -627,6 +627,11 @@ class _V2ChainState:
     terminal_event_keys: set[str]
     known_findings: set[str]
     finding_detail_keys: set[str]
+    catalog_current_interval_keys: set[tuple[str, str, str, str]] = field(
+        default_factory=set
+    )
+    stage_start_utc_ns: int | None = None
+    last_observed_utc_ns: int | None = None
     last: _LastSampleMetadata | None = None
     invalid_manifest_authority: bool = False
 
@@ -1101,7 +1106,13 @@ class AcceptanceObserver:
         completed = [
             dict(current_closed[key])
             for key in sorted(current_closed)
-            if current_closed[key].get("timing") == "CURRENT_STAGE"
+            if (
+                current_closed[key].get("timing") == "CURRENT_STAGE"
+                or (
+                    current_closed[key].get("timing") == "CROSSES_T0"
+                    and key in self.published_catalog_open
+                )
+            )
             and key not in self.published_catalog_interval_keys
         ]
         new_terminal = [
@@ -1750,7 +1761,10 @@ def _continuation_from(document: Mapping[str, object]) -> dict[str, object]:
 
 
 def _apply_manifest_transition(
-    previous: Mapping[str, Mapping[str, object]], transition: object
+    previous: Mapping[str, Mapping[str, object]],
+    transition: object,
+    *,
+    blocking_findings: set[str] | frozenset[str] | None = None,
 ) -> tuple[dict[str, dict[str, object]], set[str], bool]:
     if not isinstance(transition, dict):
         raise AcceptanceError("manifest transition is malformed")
@@ -1766,6 +1780,13 @@ def _apply_manifest_transition(
         anomalies = transition.get("anomalies")
         if not isinstance(anomalies, list) or not anomalies:
             raise AcceptanceError("manifest anomaly transition is malformed")
+        if (
+            blocking_findings is None
+            or "manifest_byte_mutation_or_loss" not in blocking_findings
+        ):
+            raise AcceptanceError(
+                "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+            )
         _integer(transition.get("current_count"), "manifest anomaly current count")
         _digest(
             transition.get("current_aggregate_sha256"),
@@ -1857,7 +1878,21 @@ def _apply_reconnect_transition(
     state.continuation_streams = cast(dict[str, object], continuation["streams"])
 
 
-def _apply_catalog_transition(state: _V2ChainState, transition: object) -> None:
+def _catalog_interval_timestamps(
+    item: Mapping[str, object], field: str
+) -> tuple[int, int]:
+    return (
+        _integer(item.get("started_at_utc_ns"), f"{field} start timestamp"),
+        _integer(item.get("ended_at_utc_ns"), f"{field} end timestamp"),
+    )
+
+
+def _apply_catalog_transition(
+    state: _V2ChainState,
+    transition: object,
+    *,
+    current_observed_at_utc_ns: int | None = None,
+) -> None:
     if not isinstance(transition, dict):
         raise AcceptanceError("Catalog transition is malformed")
     started = transition.get("started")
@@ -1875,21 +1910,104 @@ def _apply_catalog_transition(state: _V2ChainState, transition: object) -> None:
         or any(not isinstance(item, str) for item in terminal_events)
     ):
         raise AcceptanceError("Catalog transition is malformed")
+
+    previous_open = state.catalog_open
     open_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
     for item in current_open:
         key = _catalog_key(item)
         if key in open_state:
             raise AcceptanceError("Catalog transition repeats an open identity")
+        if item.get("timing") not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+            raise AcceptanceError("Catalog transition open timing is invalid")
+        started_at = _integer(item.get("started_at_utc_ns"), "Catalog open start timestamp")
+        if state.stage_start_utc_ns is not None:
+            if item.get("timing") == "OPEN_AT_T0" and started_at > state.stage_start_utc_ns:
+                raise AcceptanceError("Catalog transition T0-open timing is invalid")
+            if item.get("timing") == "OPENED_IN_STAGE" and started_at <= state.stage_start_utc_ns:
+                raise AcceptanceError("Catalog transition stage-open timing is invalid")
         open_state[key] = dict(item)
+
+    started_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
     for item in started:
         key = _catalog_key(item)
+        if key in started_state:
+            raise AcceptanceError("Catalog transition repeats a start identity")
         if item.get("timing") != "OPENED_IN_STAGE" or key not in open_state:
             raise AcceptanceError("Catalog transition start is invalid")
+        if key in previous_open:
+            raise AcceptanceError("Catalog transition starts an already-open identity")
+        if dict(item) != open_state[key]:
+            raise AcceptanceError("Catalog transition start does not match current open")
+        started_state[key] = dict(item)
+
+    expected_started = set(open_state) - set(previous_open)
+    if set(started_state) != expected_started:
+        raise AcceptanceError("Catalog transition does not explain new open identities")
+    for key in set(open_state) & set(previous_open):
+        if open_state[key] != previous_open[key]:
+            raise AcceptanceError("Catalog transition changes an open identity")
+
+    completed_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
     for item in completed:
         key = _catalog_key(item)
-        if item.get("timing") != "CURRENT_STAGE" or key in state.catalog_interval_keys:
+        if key in completed_state:
+            raise AcceptanceError("Catalog transition repeats a completion identity")
+        timing = item.get("timing")
+        if timing not in {"CURRENT_STAGE", "CROSSES_T0"}:
+            raise AcceptanceError("Catalog transition completion timing is invalid")
+        started_at, ended_at = _catalog_interval_timestamps(item, "Catalog completion")
+        if key in open_state:
+            raise AcceptanceError("Catalog transition leaves a completed identity open")
+        if key in state.catalog_interval_keys:
             raise AcceptanceError("Catalog transition completion is invalid")
+        previous = previous_open.get(key)
+        if previous is None:
+            if timing != "CURRENT_STAGE":
+                raise AcceptanceError("Catalog transition has an orphan crossing completion")
+            previous_boundary = state.last_observed_utc_ns
+            current_boundary = (
+                current_observed_at_utc_ns
+                if current_observed_at_utc_ns is not None
+                else previous_boundary
+            )
+            if (
+                previous_boundary is None
+                or current_boundary is None
+                or started_at < previous_boundary
+                or ended_at > current_boundary
+                or started_at > ended_at
+            ):
+                raise AcceptanceError(
+                    "Catalog transition orphan completion is not between observations"
+                )
+        else:
+            previous_started_at = _integer(
+                previous.get("started_at_utc_ns"), "Catalog open start timestamp"
+            )
+            if started_at != previous_started_at:
+                raise AcceptanceError("Catalog completion does not close the exact open identity")
+            previous_timing = previous.get("timing")
+            if previous_timing == "OPENED_IN_STAGE" and timing != "CURRENT_STAGE":
+                raise AcceptanceError("Catalog transition has an invalid open completion timing")
+            if previous_timing == "OPEN_AT_T0":
+                stage_start = state.stage_start_utc_ns
+                if (
+                    stage_start is not None
+                    and previous_started_at < stage_start
+                    and timing != "CROSSES_T0"
+                ):
+                    raise AcceptanceError("Catalog transition has an invalid T0 crossing timing")
+            if previous_timing not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+                raise AcceptanceError("Catalog transition previous open timing is invalid")
+        completed_state[key] = dict(item)
+
+    disappeared = set(previous_open) - set(open_state)
+    if not disappeared <= set(completed_state):
+        raise AcceptanceError("Catalog open identity disappeared without completion authority")
+
+    for key in completed_state:
         state.catalog_interval_keys.add(key)
+        state.catalog_current_interval_keys.add(key)
     for event in terminal_events:
         if event in state.terminal_event_keys:
             raise AcceptanceError("Catalog terminal event is duplicated")
@@ -1899,11 +2017,18 @@ def _apply_catalog_transition(state: _V2ChainState, transition: object) -> None:
         raise AcceptanceError("Catalog transition summary is malformed")
     if _integer(summary.get("open_count"), "Catalog open count") != len(open_state):
         raise AcceptanceError("Catalog transition open count is invalid")
+    if _integer(
+        summary.get("current_interval_count"), "Catalog current interval count"
+    ) != len(state.catalog_current_interval_keys):
+        raise AcceptanceError("Catalog current interval count is invalid")
     state.catalog_open = open_state
+    if current_observed_at_utc_ns is not None:
+        state.last_observed_utc_ns = current_observed_at_utc_ns
 
 
 def _catalog_baseline_state(baseline: object) -> tuple[
     dict[tuple[str, str, str, str], dict[str, object]],
+    set[tuple[str, str, str, str]],
     set[tuple[str, str, str, str]],
     set[str],
 ]:
@@ -1929,20 +2054,38 @@ def _catalog_baseline_state(baseline: object) -> tuple[
         key = _catalog_key(item)
         if key in open_state:
             raise AcceptanceError("Catalog baseline repeats an open identity")
+        if item.get("timing") not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+            raise AcceptanceError("Catalog baseline open timing is invalid")
+        _integer(item.get("started_at_utc_ns"), "Catalog baseline open timestamp")
         open_state[key] = dict(item)
     interval_keys: set[tuple[str, str, str, str]] = set()
-    for item in [*crossing, *closed]:
+    current_interval_keys: set[tuple[str, str, str, str]] = set()
+    for item in crossing:
         key = _catalog_key(item)
+        if item.get("timing") != "CROSSES_T0":
+            raise AcceptanceError("Catalog baseline crossing timing is invalid")
+        _catalog_interval_timestamps(item, "Catalog baseline crossing")
         if key in interval_keys:
             raise AcceptanceError("Catalog baseline repeats an interval identity")
         interval_keys.add(key)
-    return open_state, interval_keys, set(terminal)
+        current_interval_keys.add(key)
+    for item in closed:
+        key = _catalog_key(item)
+        if key in interval_keys:
+            raise AcceptanceError("Catalog baseline repeats an interval identity")
+        _catalog_interval_timestamps(item, "Catalog baseline closed interval")
+        interval_keys.add(key)
+    if set(open_state) & interval_keys:
+        raise AcceptanceError("Catalog baseline identity is both open and closed")
+    if len(set(terminal)) != len(terminal):
+        raise AcceptanceError("Catalog baseline repeats a terminal event")
+    return open_state, interval_keys, current_interval_keys, set(terminal)
 
 
 def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
     manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
     raw_absences = _raw_absence_baseline_from_evidence(start.get("raw_absence_baseline"))
-    open_state, interval_keys, terminal_keys = _catalog_baseline_state(
+    open_state, interval_keys, current_interval_keys, terminal_keys = _catalog_baseline_state(
         start.get("catalog_baseline")
     )
     reconnect_baseline = start.get("reconnect_baseline")
@@ -1966,8 +2109,9 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
         not isinstance(key, str) for key in details
     ):
         raise AcceptanceError("stage-start finding details are malformed")
-    if not set(details) <= set(start_findings):
-        raise AcceptanceError("stage-start finding detail is not a blocker")
+    if set(details) != set(start_findings):
+        raise AcceptanceError("stage-start finding details are incomplete")
+    start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
     state = _V2ChainState(
         manifest_records=manifest_records,
         raw_absences=raw_absences,
@@ -1976,15 +2120,37 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
         reconnect_transition_keys=set(),
         catalog_open=open_state,
         catalog_interval_keys=interval_keys,
-        terminal_event_keys=terminal_keys,
+        # Stage-start catalog_transition carries the same terminal authority
+        # summarized by catalog_baseline.  Seed it only through that
+        # transition so the first observation is not mistaken for a duplicate.
+        terminal_event_keys=set(),
         known_findings=set(start_findings),
         finding_detail_keys=set(details),
+        catalog_current_interval_keys=current_interval_keys,
+        stage_start_utc_ns=start_utc_ns,
+        last_observed_utc_ns=start_utc_ns,
     )
     state.manifest_records, state.deferred_manifest_paths, state.invalid_manifest_authority = (
-        _apply_manifest_transition(state.manifest_records, start.get("manifest_transition"))
+        _apply_manifest_transition(
+            state.manifest_records,
+            start.get("manifest_transition"),
+            blocking_findings=set(start_findings),
+        )
     )
     _apply_reconnect_transition(state, start.get("reconnect_transition"))
-    _apply_catalog_transition(state, start.get("catalog_transition"))
+    _apply_catalog_transition(
+        state,
+        start.get("catalog_transition"),
+        current_observed_at_utc_ns=start_utc_ns,
+    )
+    if not set(terminal_keys) <= state.terminal_event_keys:
+        raise AcceptanceError("Catalog baseline terminal authority is not published")
+    if state.catalog_open and "unresolved_discontinuity" not in state.known_findings:
+        raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
+    if state.terminal_event_keys and "terminal_service_or_core_failure" not in state.known_findings:
+        raise AcceptanceError(
+            "Catalog terminal authority is not bound to terminal_service_or_core_failure"
+        )
     return state
 
 
@@ -2038,6 +2204,7 @@ def _sample_chain(
         if boottime - previous_boottime > MAX_EVIDENCE_GAP_NS:
             raise AcceptanceError("sample observation chain has an excessive gap")
         previous_boottime = boottime
+        observed_utc = _integer(sample.get("observed_at_utc_ns"), "sample UTC timestamp")
         findings = sample.get("blocking_findings")
         if not isinstance(findings, list) or any(
             not isinstance(item, str) for item in findings
@@ -2046,8 +2213,6 @@ def _sample_chain(
         if findings != sorted(set(findings)):
             raise AcceptanceError("sample blocking findings are not canonical")
         sample_findings = set(findings)
-        if not state.known_findings <= sample_findings:
-            raise AcceptanceError("sample blocking findings are not monotonic")
         new_details = sample.get("new_finding_details")
         if not isinstance(new_details, dict):
             raise AcceptanceError("sample finding details are malformed")
@@ -2056,18 +2221,25 @@ def _sample_chain(
                 raise AcceptanceError("sample finding detail is not a blocker")
             if key in state.finding_detail_keys:
                 raise AcceptanceError("sample finding detail is repeated")
-        state.finding_detail_keys.update(str(key) for key in new_details)
-        state.known_findings = sample_findings
-        if require_eligible and findings:
-            raise AcceptanceError("completed stage contains ineligible sample findings")
         if sample.get("observer_status") != "COMPLETE":
             raise AcceptanceError("sample observer status is invalid")
-        if require_eligible and sample.get("result") != "PASS_CANDIDATE":
-            raise AcceptanceError("completed stage contains an ineligible sample result")
-        if not state.invalid_manifest_authority:
+
+        manifest_transition = sample.get("manifest_transition")
+        if state.invalid_manifest_authority:
+            if (
+                isinstance(manifest_transition, dict)
+                and manifest_transition.get("state") == "ANOMALY"
+                and "manifest_byte_mutation_or_loss" not in sample_findings
+            ):
+                raise AcceptanceError(
+                    "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+                )
+        else:
             state.manifest_records, state.deferred_manifest_paths, anomaly = (
                 _apply_manifest_transition(
-                    state.manifest_records, sample.get("manifest_transition")
+                    state.manifest_records,
+                    manifest_transition,
+                    blocking_findings=sample_findings,
                 )
             )
             state.invalid_manifest_authority = anomaly
@@ -2075,11 +2247,34 @@ def _sample_chain(
             state.raw_absences, sample.get("raw_absence_transition")
         )
         _apply_reconnect_transition(state, sample.get("reconnect_transition"))
-        _apply_catalog_transition(state, sample.get("catalog_transition"))
+        _apply_catalog_transition(
+            state,
+            sample.get("catalog_transition"),
+            current_observed_at_utc_ns=observed_utc,
+        )
+        if state.catalog_open and "unresolved_discontinuity" not in sample_findings:
+            raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
+        if state.terminal_event_keys and "terminal_service_or_core_failure" not in sample_findings:
+            raise AcceptanceError(
+                "Catalog terminal authority is not bound to terminal_service_or_core_failure"
+            )
+        if not state.known_findings <= sample_findings:
+            raise AcceptanceError("sample blocking findings are not monotonic")
+        expected_new_findings = sample_findings - state.known_findings
+        if set(new_details) != expected_new_findings:
+            raise AcceptanceError("sample finding details are incomplete")
+        state.finding_detail_keys.update(str(key) for key in new_details)
+        state.known_findings = sample_findings
+        if state.invalid_manifest_authority and require_eligible:
+            raise AcceptanceError("completed stage contains invalid manifest authority")
+        if require_eligible and findings:
+            raise AcceptanceError("completed stage contains ineligible sample findings")
+        if require_eligible and sample.get("result") != "PASS_CANDIDATE":
+            raise AcceptanceError("completed stage contains an ineligible sample result")
         state.last = _LastSampleMetadata(
             ordinal=ordinal,
             sha256=sample_sha,
-            utc_ns=_integer(sample.get("observed_at_utc_ns"), "sample UTC timestamp"),
+            utc_ns=observed_utc,
             boottime_ns=boottime,
             result=str(sample.get("result")),
             findings=frozenset(sample_findings),
@@ -2507,6 +2702,21 @@ def resume_observer(
     if (stage_root / "stage-final.json").exists():
         raise AcceptanceError("stage is already finalized")
     start, start_sha = _read_published(stage_root / "stage-start.json")
+    start_manifest_transition = start.get("manifest_transition")
+    if (
+        isinstance(start_manifest_transition, dict)
+        and start_manifest_transition.get("state") == "ANOMALY"
+    ):
+        start_findings = start.get("blocking_findings")
+        if not isinstance(start_findings, list) or (
+            "manifest_byte_mutation_or_loss" not in start_findings
+        ):
+            raise AcceptanceError(
+                "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+            )
+        raise AcceptanceError(
+            "manifest authority is invalid; stage cannot be deterministically resumed"
+        )
     if (
         start.get("schema_version") != SCHEMA_VERSION
         or start.get("schema_version") == LEGACY_SCHEMA_VERSION
@@ -2538,6 +2748,10 @@ def resume_observer(
         identity=identity,
         require_eligible=False,
     )
+    if state.invalid_manifest_authority:
+        raise AcceptanceError(
+            "manifest authority is invalid; stage cannot be deterministically resumed"
+        )
     if selected_clock.boot_id() != start.get("boot_id"):
         raise AcceptanceError("resume boot identity changed")
     if selected_clock.boottime_ns() < _integer(
