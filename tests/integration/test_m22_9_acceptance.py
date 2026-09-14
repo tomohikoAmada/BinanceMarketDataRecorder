@@ -567,6 +567,91 @@ def test_catalog_acceptance_v2_rolling_lifecycle_matches_producer(
     }
 
 
+@pytest.mark.parametrize(
+    "ended_at_utc_ns",
+    [150, 200],
+    ids=["inversion", "equal-timestamp"],
+)
+def test_catalog_non_monotonic_producer_evidence_binds_acceptance_blocker(
+    tmp_path: Path, ended_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="non-monotonic-gap-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=200,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "non-monotonic-gap",
+                "gap_started_at_utc_ns": 200,
+                "original_connection_id": "connection-a",
+                "original_generation": 1,
+            },
+            symbol="BTCUSDT",
+        )
+        catalog.record_operational_event(
+            event_id="non-monotonic-gap-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=ended_at_utc_ns,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "non-monotonic-gap",
+                "gap_ended_at_utc_ns": ended_at_utc_ns,
+                "new_connection_id": "connection-b",
+                "new_generation": 2,
+            },
+            symbol="BTCUSDT",
+        )
+
+    clock.utc = 250
+    clock.boot += 1
+    _sample_path, _sample_sha, sample = observer.sample()
+    transition = cast(dict[str, object], sample["catalog_transition"])
+    completed = cast(list[dict[str, object]], transition["completed"])
+    assert len(completed) == 1
+    assert completed[0]["market"] == "um_perpetual"
+    assert completed[0]["symbol"] == "BTCUSDT"
+    assert completed[0]["stream"] == "book_ticker"
+    assert completed[0]["gap_id"] == "non-monotonic-gap"
+    assert completed[0]["started_at_utc_ns"] == 200
+    assert completed[0]["ended_at_utc_ns"] == ended_at_utc_ns
+    findings = cast(list[object], sample["blocking_findings"])
+    assert "unsafe_wall_clock_backward" in findings
+    assert sample["result"] == "INCOMPLETE"
+    details = cast(dict[str, object], sample["new_finding_details"])
+    assert details["unsafe_wall_clock_backward"] == {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "stream": "book_ticker",
+        "gap_id": "non-monotonic-gap",
+        "started_at_utc_ns": 200,
+        "ended_at_utc_ns": ended_at_utc_ns,
+    }
+
+    state = _sample_chain(
+        observer.evidence_root,
+        start=json.loads(
+            (observer.evidence_root / "stage-start.json").read_text(encoding="utf-8")
+        ),
+        start_sha=sha256_bytes(
+            (observer.evidence_root / "stage-start.json").read_bytes()
+        ),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.catalog_open == {}
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "non-monotonic-gap")
+    }
+
+
 def test_acceptance_catalog_evidence_uses_frozen_utc_boundary(
     tmp_path: Path,
 ) -> None:

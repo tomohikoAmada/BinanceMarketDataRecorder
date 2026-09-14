@@ -761,6 +761,51 @@ def test_v2_verifier_rejects_rehashed_manifest_anomaly_without_blocker(
         verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
 
 
+def test_v2_verifier_rejects_rehashed_non_monotonic_completion_without_blocker(
+    tmp_path: Path,
+) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+    interval = _catalog_closed_item(
+        started_at_utc_ns=1_000_000_100,
+        ended_at_utc_ns=1_000_000_099,
+    )
+
+    def non_monotonic_without_blocker(document: dict[str, object]) -> None:
+        document["blocking_findings"] = []
+        document["new_finding_details"] = {}
+        document["result"] = "PASS_CANDIDATE"
+        document["catalog_transition"] = _catalog_transition(
+            completed=[interval], current_interval_count=1
+        )
+
+    def subsequent_clean_sample(document: dict[str, object]) -> None:
+        document["blocking_findings"] = []
+        document["new_finding_details"] = {}
+        document["result"] = "PASS_CANDIDATE"
+        document["catalog_transition"] = _catalog_transition(current_interval_count=1)
+
+    mutators: dict[int, Callable[[dict[str, object]], None]] = {
+        0: non_monotonic_without_blocker
+    }
+    mutators.update({ordinal: subsequent_clean_sample for ordinal in range(1, 24)})
+    _rewrite_v2_samples(observer.evidence_root, mutators, update_final=True)
+
+    previous_sha: str | None = None
+    for path in sorted(observer.evidence_root.glob("sample-*.json")):
+        document = _read_json(path)
+        assert document["previous_sample_sha256"] == previous_sha
+        previous_sha = sha256_bytes(path.read_bytes())
+    final = _read_json(observer.evidence_root / "stage-final.json")
+    assert final["previous_sample_sha256"] == previous_sha
+    assert final["last_sample_sha256"] == previous_sha
+
+    with pytest.raises(
+        AcceptanceError,
+        match=r"non-monotonic completion is not bound to unsafe_wall_clock_backward",
+    ):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
 def test_resume_rejects_manifest_authority_anomaly_without_modifying_evidence(
     tmp_path: Path,
 ) -> None:
@@ -919,6 +964,171 @@ def test_catalog_allows_legitimate_between_observation_completion(tmp_path: Path
     assert state.catalog_current_interval_keys == {
         ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
     }
+
+
+@pytest.mark.parametrize(
+    "ended_at_utc_ns",
+    [150, 200],
+    ids=["inversion", "equal-timestamp"],
+)
+def test_catalog_allows_blocked_non_monotonic_orphan_completion(
+    tmp_path: Path, ended_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    clock.utc = 101
+    clock.boot += 1
+    observer.sample()
+    clock.utc = 250
+    clock.boot += 1
+    observer.sample()
+    interval = _catalog_closed_item(
+        started_at_utc_ns=200,
+        ended_at_utc_ns=ended_at_utc_ns,
+    )
+
+    def mutate(document: dict[str, object]) -> None:
+        document["blocking_findings"] = ["unsafe_wall_clock_backward"]
+        document["new_finding_details"] = {
+            "unsafe_wall_clock_backward": {
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "gap-a",
+                "started_at_utc_ns": 200,
+                "ended_at_utc_ns": ended_at_utc_ns,
+            }
+        }
+        document["result"] = "INCOMPLETE"
+        document["catalog_transition"] = _catalog_transition(
+            completed=[interval], current_interval_count=1
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {1: mutate})
+    state = _sample_chain(
+        observer.evidence_root,
+        start=_read_json(observer.evidence_root / "stage-start.json"),
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
+    }
+    with pytest.raises(AcceptanceError, match="ineligible sample findings"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes(
+                (observer.evidence_root / "stage-start.json").read_bytes()
+            ),
+            identity=observer.identity,
+            require_eligible=True,
+        )
+
+
+def test_catalog_rejects_normal_orphan_completion_after_current_observation(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager = _two_sample_observer(tmp_path)
+    interval = _catalog_closed_item(
+        started_at_utc_ns=cast(int, observer.t0_utc_ns) + 1,
+        ended_at_utc_ns=clock.utc + 1,
+    )
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(
+            completed=[interval], current_interval_count=1
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {1: mutate})
+    with pytest.raises(AcceptanceError, match="current observation"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_catalog_allows_non_monotonic_completion_of_published_open_gap_and_resumes(
+    tmp_path: Path,
+) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    clock.utc = 200
+    clock.boot += 1
+    observer.sample()
+    clock.utc = 250
+    clock.boot += 1
+    observer.sample()
+    open_item = _catalog_open_item(started_at_utc_ns=200)
+    completed_item = _catalog_closed_item(
+        started_at_utc_ns=200,
+        ended_at_utc_ns=150,
+    )
+
+    def opened(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    def completed(document: dict[str, object]) -> None:
+        document["blocking_findings"] = [
+            "unresolved_discontinuity",
+            "unsafe_wall_clock_backward",
+        ]
+        document["new_finding_details"] = {
+            "unsafe_wall_clock_backward": {
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "gap-a",
+                "started_at_utc_ns": 200,
+                "ended_at_utc_ns": 150,
+            }
+        }
+        document["result"] = "FAIL"
+        document["catalog_transition"] = _catalog_transition(
+            completed=[completed_item], current_interval_count=1
+        )
+
+    _rewrite_v2_samples(observer.evidence_root, {0: opened, 1: completed})
+    state = _sample_chain(
+        observer.evidence_root,
+        start=_read_json(observer.evidence_root / "stage-start.json"),
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.catalog_open == {}
+    assert state.catalog_current_interval_keys == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
+    }
+
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=observer.disk_usage,
+    )
+    last_sample_path = observer.evidence_root / "sample-00000001.json"
+    last_sample_sha = sha256_bytes(last_sample_path.read_bytes())
+    assert resumed.t0_utc_ns == 100
+    assert resumed.t0_boottime_ns == observer.t0_boottime_ns
+    assert resumed.ever_blocking_findings == {
+        "unresolved_discontinuity",
+        "unsafe_wall_clock_backward",
+    }
+    assert resumed.next_sample_ordinal == 2
+    assert resumed.last_sample_sha256 == last_sample_sha
 
 
 def test_catalog_current_interval_count_must_match_rolling_authority(tmp_path: Path) -> None:

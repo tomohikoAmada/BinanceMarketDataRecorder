@@ -916,7 +916,7 @@ class AcceptanceObserver:
 
     def _catalog_evidence(
         self, t0: int, *, as_of_utc_ns: int
-    ) -> tuple[dict[str, object], list[str]]:
+    ) -> tuple[dict[str, object], list[str], dict[str, object]]:
         path = self.data_root / "state" / "catalog.sqlite"
         if not path.is_file():
             raise AcceptanceError("Catalog is unavailable")
@@ -1003,7 +1003,41 @@ class AcceptanceObserver:
             findings.append("terminal_service_or_core_failure")
         if unclosed:
             findings.append("unresolved_discontinuity")
-        return {"integrity_check": list(integrity), "discontinuity": discontinuity}, findings
+        detail_candidates: dict[str, object] = {}
+        non_monotonic = sorted(
+            (
+                {
+                    field: interval[field]
+                    for field in (
+                        "market",
+                        "symbol",
+                        "stream",
+                        "gap_id",
+                        "started_at_utc_ns",
+                        "ended_at_utc_ns",
+                    )
+                }
+                for interval in current_intervals
+                if _integer(interval.get("ended_at_utc_ns"), "gap end")
+                <= _integer(interval.get("started_at_utc_ns"), "gap start")
+            ),
+            key=lambda item: (
+                str(item["market"]),
+                str(item["symbol"]),
+                str(item["stream"]),
+                str(item["gap_id"]),
+                _integer(item["started_at_utc_ns"], "gap start"),
+                _integer(item["ended_at_utc_ns"], "gap end"),
+            ),
+        )
+        if non_monotonic:
+            findings.append("unsafe_wall_clock_backward")
+            detail_candidates["unsafe_wall_clock_backward"] = non_monotonic[0]
+        return (
+            {"integrity_check": list(integrity), "discontinuity": discontinuity},
+            findings,
+            detail_candidates,
+        )
 
     def _manifest_transition(
         self,
@@ -1496,7 +1530,7 @@ class AcceptanceObserver:
         elif readiness.state != "READY":
             findings.append("readiness_not_ready")
         try:
-            catalog, catalog_findings = self._catalog_evidence(
+            catalog, catalog_findings, catalog_finding_details = self._catalog_evidence(
                 self.t0_utc_ns,
                 as_of_utc_ns=now_utc,
             )
@@ -1509,6 +1543,7 @@ class AcceptanceObserver:
             ) = self._catalog_projection(catalog, stage_start=stage_start)
             findings.extend(catalog_findings)
             findings.extend(raw_findings)
+            detail_candidates.update(catalog_finding_details)
             detail_candidates.update(catalog_details)
             raw_details = raw.get("details")
             if isinstance(raw_details, dict):
@@ -1901,11 +1936,29 @@ def _catalog_interval_timestamps(
     )
 
 
+def _require_non_monotonic_catalog_blocker(
+    started_at: int,
+    ended_at: int,
+    blocking_findings: set[str] | frozenset[str] | None,
+    *,
+    context: str,
+) -> None:
+    if ended_at <= started_at and (
+        blocking_findings is None
+        or "unsafe_wall_clock_backward" not in blocking_findings
+    ):
+        raise AcceptanceError(
+            f"{context} non-monotonic completion is not bound to "
+            "unsafe_wall_clock_backward"
+        )
+
+
 def _apply_catalog_transition(
     state: _V2ChainState,
     transition: object,
     *,
     current_observed_at_utc_ns: int | None = None,
+    blocking_findings: set[str] | frozenset[str] | None = None,
 ) -> None:
     if not isinstance(transition, dict):
         raise AcceptanceError("Catalog transition is malformed")
@@ -1974,23 +2027,37 @@ def _apply_catalog_transition(
             raise AcceptanceError("Catalog transition leaves a completed identity open")
         if key in state.catalog_interval_keys:
             raise AcceptanceError("Catalog transition completion is invalid")
+        _require_non_monotonic_catalog_blocker(
+            started_at,
+            ended_at,
+            blocking_findings,
+            context="Catalog transition",
+        )
         previous = previous_open.get(key)
+        current_boundary = (
+            current_observed_at_utc_ns
+            if current_observed_at_utc_ns is not None
+            else state.last_observed_utc_ns
+        )
+        if current_boundary is None or ended_at > current_boundary:
+            raise AcceptanceError(
+                "Catalog transition completion is after the current observation"
+            )
         if previous is None:
             if timing != "CURRENT_STAGE":
                 raise AcceptanceError("Catalog transition has an orphan crossing completion")
             previous_boundary = state.last_observed_utc_ns
-            current_boundary = (
-                current_observed_at_utc_ns
-                if current_observed_at_utc_ns is not None
-                else previous_boundary
+            normal_window_invalid = (
+                ended_at > started_at
+                and (
+                    previous_boundary is None
+                    or started_at < previous_boundary
+                )
             )
-            if (
-                previous_boundary is None
-                or current_boundary is None
-                or started_at < previous_boundary
-                or ended_at > current_boundary
-                or started_at > ended_at
-            ):
+            non_monotonic_window_invalid = (
+                ended_at <= started_at and started_at > current_boundary
+            )
+            if normal_window_invalid or non_monotonic_window_invalid:
                 raise AcceptanceError(
                     "Catalog transition orphan completion is not between observations"
                 )
@@ -2040,7 +2107,11 @@ def _apply_catalog_transition(
         state.last_observed_utc_ns = current_observed_at_utc_ns
 
 
-def _catalog_baseline_state(baseline: object) -> tuple[
+def _catalog_baseline_state(
+    baseline: object,
+    *,
+    blocking_findings: set[str] | frozenset[str] | None = None,
+) -> tuple[
     dict[tuple[str, str, str, str], dict[str, object]],
     set[tuple[str, str, str, str]],
     set[tuple[str, str, str, str]],
@@ -2078,7 +2149,13 @@ def _catalog_baseline_state(baseline: object) -> tuple[
         key = _catalog_key(item)
         if item.get("timing") != "CROSSES_T0":
             raise AcceptanceError("Catalog baseline crossing timing is invalid")
-        _catalog_interval_timestamps(item, "Catalog baseline crossing")
+        started_at, ended_at = _catalog_interval_timestamps(item, "Catalog baseline crossing")
+        _require_non_monotonic_catalog_blocker(
+            started_at,
+            ended_at,
+            blocking_findings,
+            context="Catalog baseline",
+        )
         if key in interval_keys:
             raise AcceptanceError("Catalog baseline repeats an interval identity")
         interval_keys.add(key)
@@ -2099,9 +2176,6 @@ def _catalog_baseline_state(baseline: object) -> tuple[
 def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
     manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
     raw_absences = _raw_absence_baseline_from_evidence(start.get("raw_absence_baseline"))
-    open_state, interval_keys, current_interval_keys, terminal_keys = _catalog_baseline_state(
-        start.get("catalog_baseline")
-    )
     reconnect_baseline = start.get("reconnect_baseline")
     if not isinstance(reconnect_baseline, dict):
         raise AcceptanceError("reconnect baseline is malformed")
@@ -2125,6 +2199,10 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
         raise AcceptanceError("stage-start finding details are malformed")
     if set(details) != set(start_findings):
         raise AcceptanceError("stage-start finding details are incomplete")
+    open_state, interval_keys, current_interval_keys, terminal_keys = _catalog_baseline_state(
+        start.get("catalog_baseline"),
+        blocking_findings=set(start_findings),
+    )
     start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
     state = _V2ChainState(
         manifest_records=manifest_records,
@@ -2156,6 +2234,7 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
         state,
         start.get("catalog_transition"),
         current_observed_at_utc_ns=start_utc_ns,
+        blocking_findings=set(start_findings),
     )
     if not set(terminal_keys) <= state.terminal_event_keys:
         raise AcceptanceError("Catalog baseline terminal authority is not published")
@@ -2265,6 +2344,7 @@ def _sample_chain(
             state,
             sample.get("catalog_transition"),
             current_observed_at_utc_ns=observed_utc,
+            blocking_findings=sample_findings,
         )
         if state.catalog_open and "unresolved_discontinuity" not in sample_findings:
             raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
