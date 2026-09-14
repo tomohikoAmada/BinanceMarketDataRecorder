@@ -393,6 +393,67 @@ def test_backward_utc_does_not_shorten_boottime_interval(tmp_path: Path) -> None
     assert "unsafe_wall_clock_backward" in cast(list[object], sample["blocking_findings"])
 
 
+@pytest.mark.parametrize(
+    ("findings", "result"),
+    [
+        (["unsafe_wall_clock_backward"], "PASS_CANDIDATE"),
+        ([], "INCOMPLETE"),
+        (["unresolved_discontinuity", "unsafe_wall_clock_backward"], "FAIL"),
+        (["unsafe_wall_clock_backward"], "FAIL"),
+        (["unsafe_wall_clock_backward"], "REVIEW_REQUIRED"),
+    ],
+    ids=[
+        "unsafe-pass",
+        "empty-incomplete",
+        "unsafe-plus-another",
+        "unsafe-fail",
+        "unsafe-review-required",
+    ],
+)
+def test_resume_rejects_non_exact_stage_start_admission(
+    tmp_path: Path, findings: list[str], result: str
+) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    observer.start()
+    start_path = observer.evidence_root / "stage-start.json"
+    start = _read_json(start_path)
+    start["blocking_findings"] = findings
+    start["new_finding_details"] = {
+        finding: {"observed_at_utc_ns": start["observed_at_utc_ns"]}
+        for finding in findings
+    }
+    start["result"] = result
+    start_path.write_bytes(canonical_json(start))
+
+    with pytest.raises(AcceptanceError, match="stage-start is not resumable"):
+        resume_observer(
+            observer.evidence_root,
+            data_root=observer.data_root,
+            identity=observer.identity,
+            manager=manager,  # type: ignore[arg-type]
+            evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+            clock=clock,
+            disk_usage=observer.disk_usage,
+        )
+
+
+def test_completed_stage_still_rejects_unsafe_stage_start(tmp_path: Path) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+    start_path = observer.evidence_root / "stage-start.json"
+    start = _read_json(start_path)
+    start["blocking_findings"] = ["unsafe_wall_clock_backward"]
+    start["new_finding_details"] = {
+        "unsafe_wall_clock_backward": {
+            "observed_at_utc_ns": start["observed_at_utc_ns"]
+        }
+    }
+    start["result"] = "INCOMPLETE"
+    start_path.write_bytes(canonical_json(start))
+
+    with pytest.raises(AcceptanceError, match="stage-start is not eligible"):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
 def test_resume_keeps_original_t0_and_rejects_published_collision(tmp_path: Path) -> None:
     observer, clock, manager = _observer(tmp_path)
     _start, _start_sha, _document = observer.start()
@@ -707,6 +768,36 @@ def _rewrite_v2_samples(
         final_path.write_bytes(canonical_json(final))
 
 
+def _rewrite_v2_stage_start_and_rebind(
+    stage_root: Path,
+    mutator: Callable[[dict[str, object]], None],
+) -> tuple[str, str]:
+    start_path = stage_root / "stage-start.json"
+    start = _read_json(start_path)
+    mutator(start)
+    start_path.write_bytes(canonical_json(start))
+    start_sha = sha256_bytes(start_path.read_bytes())
+
+    previous_sha: str | None = None
+    for ordinal, path in enumerate(sorted(stage_root.glob("sample-*.json"))):
+        document = _read_json(path)
+        document["sample_ordinal"] = ordinal
+        document["stage_start_evidence_sha256"] = start_sha
+        document["previous_sample_sha256"] = previous_sha
+        path.write_bytes(canonical_json(document))
+        previous_sha = sha256_bytes(path.read_bytes())
+
+    if previous_sha is None:
+        raise AssertionError("stage must contain at least one sample")
+    final_path = stage_root / "stage-final.json"
+    final = _read_json(final_path)
+    final["stage_start_evidence_sha256"] = start_sha
+    final["previous_sample_sha256"] = previous_sha
+    final["last_sample_sha256"] = previous_sha
+    final_path.write_bytes(canonical_json(final))
+    return start_sha, previous_sha
+
+
 def _add_unresolved_finding(document: dict[str, object]) -> None:
     document["blocking_findings"] = ["unresolved_discontinuity"]
     document["new_finding_details"] = {
@@ -802,6 +893,61 @@ def test_v2_verifier_rejects_rehashed_non_monotonic_completion_without_blocker(
     with pytest.raises(
         AcceptanceError,
         match=r"non-monotonic completion is not bound to unsafe_wall_clock_backward",
+    ):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
+def test_v2_verifier_rejects_fully_rehashed_catalog_baseline_laundering(
+    tmp_path: Path,
+) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+
+    def launder_current_interval_into_pre_t0(start: dict[str, object]) -> None:
+        t0 = cast(int, start["observed_at_utc_ns"])
+        interval = _catalog_closed_item(
+            gap_id="baseline-laundered",
+            started_at_utc_ns=t0 + 200,
+            ended_at_utc_ns=t0 + 150,
+        )
+        interval.pop("timing")
+        baseline = cast(dict[str, object], start["catalog_baseline"])
+        baseline["pre_t0_closed"] = [interval]
+        start["blocking_findings"] = []
+        start["new_finding_details"] = {}
+        start["result"] = "PASS_CANDIDATE"
+
+    start_sha, last_sample_sha = _rewrite_v2_stage_start_and_rebind(
+        observer.evidence_root, launder_current_interval_into_pre_t0
+    )
+
+    rewritten_start = _read_json(observer.evidence_root / "stage-start.json")
+    assert rewritten_start["blocking_findings"] == []
+    assert rewritten_start["new_finding_details"] == {}
+    assert rewritten_start["result"] == "PASS_CANDIDATE"
+    forged_baseline = cast(dict[str, object], rewritten_start["catalog_baseline"])
+    forged_closed = cast(list[dict[str, object]], forged_baseline["pre_t0_closed"])
+    assert cast(int, forged_closed[0]["ended_at_utc_ns"]) >= cast(
+        int, rewritten_start["observed_at_utc_ns"]
+    )
+
+    previous_sha: str | None = None
+    sample_paths = sorted(observer.evidence_root.glob("sample-*.json"))
+    assert sample_paths
+    for ordinal, path in enumerate(sample_paths):
+        document = _read_json(path)
+        assert document["sample_ordinal"] == ordinal
+        assert document["stage_start_evidence_sha256"] == start_sha
+        assert document["previous_sample_sha256"] == previous_sha
+        previous_sha = sha256_bytes(path.read_bytes())
+    assert previous_sha == last_sample_sha
+    final = _read_json(observer.evidence_root / "stage-final.json")
+    assert final["stage_start_evidence_sha256"] == start_sha
+    assert final["previous_sample_sha256"] == last_sample_sha
+    assert final["last_sample_sha256"] == last_sample_sha
+
+    with pytest.raises(
+        AcceptanceError,
+        match=r"pre_t0_closed.*before stage T0",
     ):
         verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
 
@@ -964,6 +1110,135 @@ def test_catalog_allows_legitimate_between_observation_completion(tmp_path: Path
     assert state.catalog_current_interval_keys == {
         ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
     }
+
+
+@pytest.mark.parametrize(
+    "ended_at_utc_ns",
+    [100, 150],
+    ids=["boundary-equality", "current-stage"],
+)
+def test_catalog_baseline_pre_t0_closed_requires_strictly_pre_t0(
+    tmp_path: Path, ended_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    start = _read_json(observer.evidence_root / "stage-start.json")
+    baseline = cast(dict[str, object], start["catalog_baseline"])
+    baseline["pre_t0_closed"] = [
+        _catalog_closed_item(
+            gap_id="baseline-laundered",
+            started_at_utc_ns=200,
+            ended_at_utc_ns=ended_at_utc_ns,
+        )
+    ]
+
+    with pytest.raises(AcceptanceError, match=r"pre_t0_closed.*before stage T0"):
+        _sample_chain(
+            observer.evidence_root,
+            start=start,
+            start_sha=sha256_bytes(canonical_json(start)),
+            identity=observer.identity,
+            require_eligible=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("started_at_utc_ns", "ended_at_utc_ns"),
+    [(50, 90), (90, 50)],
+    ids=["normal", "non-monotonic"],
+)
+def test_catalog_baseline_accepts_historical_closed_authority(
+    tmp_path: Path, started_at_utc_ns: int, ended_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    start = _read_json(observer.evidence_root / "stage-start.json")
+    baseline = cast(dict[str, object], start["catalog_baseline"])
+    baseline["pre_t0_closed"] = [
+        _catalog_closed_item(
+            gap_id="historical-closed",
+            started_at_utc_ns=started_at_utc_ns,
+            ended_at_utc_ns=ended_at_utc_ns,
+        )
+    ]
+
+    state = _sample_chain(
+        observer.evidence_root,
+        start=start,
+        start_sha=sha256_bytes(canonical_json(start)),
+        identity=observer.identity,
+        require_eligible=True,
+    )
+    key = ("um_perpetual", "BTCUSDT", "book_ticker", "historical-closed")
+    assert key in state.catalog_interval_keys
+    assert key not in state.catalog_current_interval_keys
+
+
+@pytest.mark.parametrize(
+    ("started_at_utc_ns", "ended_at_utc_ns"),
+    [(110, 120), (80, 90)],
+    ids=["starts-after-t0", "ends-before-t0"],
+)
+def test_catalog_baseline_crossing_requires_exact_t0_boundaries(
+    tmp_path: Path, started_at_utc_ns: int, ended_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    start = _read_json(observer.evidence_root / "stage-start.json")
+    baseline = cast(dict[str, object], start["catalog_baseline"])
+    baseline["crossing_at_t0"] = [
+        _catalog_closed_item(
+            gap_id="fake-crossing",
+            started_at_utc_ns=started_at_utc_ns,
+            ended_at_utc_ns=ended_at_utc_ns,
+            timing="CROSSES_T0",
+        )
+    ]
+
+    with pytest.raises(
+        AcceptanceError, match=r"crossing.*between stage T0 boundaries"
+    ):
+        _sample_chain(
+            observer.evidence_root,
+            start=start,
+            start_sha=sha256_bytes(canonical_json(start)),
+            identity=observer.identity,
+            require_eligible=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("timing", "started_at_utc_ns"),
+    [("OPENED_IN_STAGE", 90), ("OPEN_AT_T0", 101)],
+    ids=["wrong-timing", "future-open"],
+)
+def test_catalog_baseline_open_at_t0_requires_exact_open_authority(
+    tmp_path: Path, timing: str, started_at_utc_ns: int
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    clock.utc = 100
+    observer.start()
+    start = _read_json(observer.evidence_root / "stage-start.json")
+    baseline = cast(dict[str, object], start["catalog_baseline"])
+    baseline["open_at_t0"] = [
+        _catalog_open_item(
+            gap_id="invalid-open-at-t0",
+            started_at_utc_ns=started_at_utc_ns,
+        )
+    ]
+    cast(list[dict[str, object]], baseline["open_at_t0"])[0]["timing"] = timing
+
+    with pytest.raises(AcceptanceError, match="Catalog baseline"):
+        _sample_chain(
+            observer.evidence_root,
+            start=start,
+            start_sha=sha256_bytes(canonical_json(start)),
+            identity=observer.identity,
+            require_eligible=True,
+        )
 
 
 @pytest.mark.parametrize(

@@ -2110,6 +2110,7 @@ def _apply_catalog_transition(
 def _catalog_baseline_state(
     baseline: object,
     *,
+    stage_start_utc_ns: int,
     blocking_findings: set[str] | frozenset[str] | None = None,
 ) -> tuple[
     dict[tuple[str, str, str, str], dict[str, object]],
@@ -2139,9 +2140,11 @@ def _catalog_baseline_state(
         key = _catalog_key(item)
         if key in open_state:
             raise AcceptanceError("Catalog baseline repeats an open identity")
-        if item.get("timing") not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+        if item.get("timing") != "OPEN_AT_T0":
             raise AcceptanceError("Catalog baseline open timing is invalid")
-        _integer(item.get("started_at_utc_ns"), "Catalog baseline open timestamp")
+        started_at = _integer(item.get("started_at_utc_ns"), "Catalog baseline open timestamp")
+        if started_at > stage_start_utc_ns:
+            raise AcceptanceError("Catalog baseline OPEN_AT_T0 starts after stage T0")
         open_state[key] = dict(item)
     interval_keys: set[tuple[str, str, str, str]] = set()
     current_interval_keys: set[tuple[str, str, str, str]] = set()
@@ -2150,6 +2153,8 @@ def _catalog_baseline_state(
         if item.get("timing") != "CROSSES_T0":
             raise AcceptanceError("Catalog baseline crossing timing is invalid")
         started_at, ended_at = _catalog_interval_timestamps(item, "Catalog baseline crossing")
+        if not started_at < stage_start_utc_ns <= ended_at:
+            raise AcceptanceError("Catalog baseline crossing is not between stage T0 boundaries")
         _require_non_monotonic_catalog_blocker(
             started_at,
             ended_at,
@@ -2164,7 +2169,13 @@ def _catalog_baseline_state(
         key = _catalog_key(item)
         if key in interval_keys:
             raise AcceptanceError("Catalog baseline repeats an interval identity")
-        _catalog_interval_timestamps(item, "Catalog baseline closed interval")
+        _started_at, ended_at = _catalog_interval_timestamps(
+            item, "Catalog baseline closed interval"
+        )
+        if ended_at >= stage_start_utc_ns:
+            raise AcceptanceError(
+                "Catalog baseline pre_t0_closed interval is not before stage T0"
+            )
         interval_keys.add(key)
     if set(open_state) & interval_keys:
         raise AcceptanceError("Catalog baseline identity is both open and closed")
@@ -2174,6 +2185,7 @@ def _catalog_baseline_state(
 
 
 def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
+    start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
     manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
     raw_absences = _raw_absence_baseline_from_evidence(start.get("raw_absence_baseline"))
     reconnect_baseline = start.get("reconnect_baseline")
@@ -2201,9 +2213,9 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
         raise AcceptanceError("stage-start finding details are incomplete")
     open_state, interval_keys, current_interval_keys, terminal_keys = _catalog_baseline_state(
         start.get("catalog_baseline"),
+        stage_start_utc_ns=start_utc_ns,
         blocking_findings=set(start_findings),
     )
-    start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
     state = _V2ChainState(
         manifest_records=manifest_records,
         raw_absences=raw_absences,
@@ -2819,7 +2831,6 @@ def resume_observer(
         or not _same_identity(start, identity)
         or start.get("stage_start_evidence_sha256") is not None
         or start.get("previous_sample_sha256") is not None
-        or start.get("result") != "PASS_CANDIDATE"
     ):
         if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
             raise AcceptanceError("v1 failed stage cannot resume as v2")
@@ -2846,6 +2857,20 @@ def resume_observer(
         raise AcceptanceError(
             "manifest authority is invalid; stage cannot be deterministically resumed"
         )
+    start_findings = start.get("blocking_findings")
+    if not isinstance(start_findings, list) or any(
+        not isinstance(item, str) for item in start_findings
+    ):
+        raise AcceptanceError("stage-start blocking findings are malformed")
+    resumable_start = (
+        start_findings == []
+        and start.get("result") == "PASS_CANDIDATE"
+    ) or (
+        start_findings == ["unsafe_wall_clock_backward"]
+        and start.get("result") == "INCOMPLETE"
+    )
+    if not resumable_start:
+        raise AcceptanceError("stage-start is not resumable")
     if selected_clock.boot_id() != start.get("boot_id"):
         raise AcceptanceError("resume boot identity changed")
     if selected_clock.boottime_ns() < _integer(

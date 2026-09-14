@@ -16,7 +16,11 @@ from binance_market_data_recorder.audit.reconnect_boundaries import (
     strict_manifest_inventory,
 )
 from binance_market_data_recorder.domain.event import EventEnvelope
-from binance_market_data_recorder.service.acceptance import _sample_chain, sha256_bytes
+from binance_market_data_recorder.service.acceptance import (
+    _sample_chain,
+    resume_observer,
+    sha256_bytes,
+)
 from binance_market_data_recorder.service.readiness import DeploymentReadinessResult
 from binance_market_data_recorder.spool.seal import (
     SealError,
@@ -650,6 +654,86 @@ def test_catalog_non_monotonic_producer_evidence_binds_acceptance_blocker(
     assert state.catalog_current_interval_keys == {
         ("um_perpetual", "BTCUSDT", "book_ticker", "non-monotonic-gap")
     }
+
+
+def test_non_monotonic_stage_start_resumes_and_preserves_finding_authority(
+    tmp_path: Path,
+) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    clock.utc = 100
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="stage-start-non-monotonic-gap-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=100,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "stage-start-non-monotonic-gap",
+                "gap_started_at_utc_ns": 100,
+                "original_connection_id": "connection-a",
+                "original_generation": 1,
+            },
+            symbol="BTCUSDT",
+        )
+        catalog.record_operational_event(
+            event_id="stage-start-non-monotonic-gap-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=100,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": "stage-start-non-monotonic-gap",
+                "gap_ended_at_utc_ns": 100,
+                "new_connection_id": "connection-b",
+                "new_generation": 2,
+            },
+            symbol="BTCUSDT",
+        )
+
+    _start_path, _start_sha, start = observer.start()
+    assert start["blocking_findings"] == ["unsafe_wall_clock_backward"]
+    assert start["result"] == "INCOMPLETE"
+    assert start["new_finding_details"] == {
+        "unsafe_wall_clock_backward": {
+            "market": "um_perpetual",
+            "symbol": "BTCUSDT",
+            "stream": "book_ticker",
+            "gap_id": "stage-start-non-monotonic-gap",
+            "started_at_utc_ns": 100,
+            "ended_at_utc_ns": 100,
+        }
+    }
+    original_t0_utc = observer.t0_utc_ns
+    original_t0_boottime = observer.t0_boottime_ns
+
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=observer.evaluator,
+        clock=clock,
+        disk_usage=observer.disk_usage,
+    )
+    resumed.identity_verifier = observer.identity_verifier
+    assert resumed.t0_utc_ns == original_t0_utc == 100
+    assert resumed.t0_boottime_ns == original_t0_boottime
+    assert resumed.t0_boot_id == start["boot_id"]
+    assert resumed.frozen_process == start["systemd_process_incarnation"]
+    assert resumed.frozen_service_instance_id == start["service_instance_id"]
+    assert resumed.ever_blocking_findings == {"unsafe_wall_clock_backward"}
+    assert resumed.next_sample_ordinal == 0
+    assert resumed.last_sample_sha256 is None
+
+    clock.utc = 101
+    clock.boot += 1
+    _sample_path, _sample_sha, sample = resumed.sample()
+    assert sample["blocking_findings"] == ["unsafe_wall_clock_backward"]
+    assert sample["new_finding_details"] == {}
+    assert sample["result"] == "INCOMPLETE"
 
 
 def test_acceptance_catalog_evidence_uses_frozen_utc_boundary(
