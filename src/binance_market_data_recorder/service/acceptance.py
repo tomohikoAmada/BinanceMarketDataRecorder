@@ -21,6 +21,7 @@ from typing import Any, Protocol, cast
 from uuid import uuid4
 
 from ..audit.reconnect_boundaries import (
+    INCREMENTAL_SCHEMA_VERSION,
     UNKNOWN,
     UNMARKED_RECONNECT,
     ArchiveRootResolver,
@@ -44,7 +45,8 @@ from .readiness import VpsReadinessEvaluator
 from .state import ServiceStateError, ServiceStateStore
 from .systemd import SystemdError, SystemdManager
 
-SCHEMA_VERSION = "m22.9-acceptance-evidence.v1"
+SCHEMA_VERSION = "m22.9-acceptance-evidence.v2"
+LEGACY_SCHEMA_VERSION = "m22.9-acceptance-evidence.v1"
 STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h")
 STAGE_DURATION_NS = {
     "2h": 7_200_000_000_000,
@@ -90,6 +92,65 @@ _COMMON_FIELDS = frozenset(
 )
 _EXTRA_FIELDS = frozenset(
     {"identity", "identity_static_verification", "elapsed_boottime_ns", "required_duration_ns"}
+)
+
+_V2_STAGE_CORE_FIELDS = frozenset(
+    {
+        "schema_version",
+        "evidence_kind",
+        "stage",
+        "run_id",
+        "observed_at_utc_ns",
+        "observed_at_boottime_ns",
+        "boot_id",
+        "deployment_identity_sha256",
+        "source_git_sha",
+        "wheel_sha256",
+        "config_sha256",
+        "systemd_unit_sha256",
+        "capacity_profile_id",
+        "prior_stage_evidence_sha256",
+        "stage_start_evidence_sha256",
+        "previous_sample_sha256",
+        "systemd_process_incarnation",
+        "service_instance_id",
+        "readiness",
+        "catalog_integrity",
+        "capacity",
+        "blocking_findings",
+        "new_finding_details",
+        "observer_status",
+        "result",
+    }
+)
+_V2_STAGE_START_FIELDS = _V2_STAGE_CORE_FIELDS | frozenset(
+    {
+        "manifest_baseline",
+        "manifest_transition",
+        "raw_absence_baseline",
+        "reconnect_baseline",
+        "reconnect_transition",
+        "catalog_baseline",
+        "catalog_transition",
+    }
+)
+_V2_STAGE_SAMPLE_FIELDS = _V2_STAGE_CORE_FIELDS | frozenset(
+    {
+        "sample_ordinal",
+        "manifest_transition",
+        "raw_absence_transition",
+        "reconnect_transition",
+        "catalog_transition",
+    }
+)
+_V2_STAGE_FINAL_FIELDS = _V2_STAGE_CORE_FIELDS | frozenset(
+    {
+        "elapsed_boottime_ns",
+        "required_duration_ns",
+        "last_sample_ordinal",
+        "last_sample_sha256",
+        "eligible_for_next_stage",
+    }
 )
 
 
@@ -221,10 +282,29 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
         raise AcceptanceError(f"invalid published evidence: {path}") from exc
     if not isinstance(value, dict) or canonical_json(value) != body:
         raise AcceptanceError(f"evidence is not canonical JSON: {path}")
-    if value.get("schema_version") != SCHEMA_VERSION:
+    schema_version = value.get("schema_version")
+    if schema_version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
         raise AcceptanceError("unsupported acceptance evidence schema")
-    if not set(value) >= _COMMON_FIELDS or set(value) - (_COMMON_FIELDS | _EXTRA_FIELDS):
-        raise AcceptanceError("acceptance evidence fields are not exact")
+    if schema_version == LEGACY_SCHEMA_VERSION:
+        if not set(value) >= _COMMON_FIELDS or set(value) - (_COMMON_FIELDS | _EXTRA_FIELDS):
+            raise AcceptanceError("acceptance evidence fields are not exact")
+    else:
+        kind = value.get("evidence_kind")
+        if kind in {"identity-result", "readiness-result"}:
+            allowed = _COMMON_FIELDS | _EXTRA_FIELDS
+            if not set(value) >= _COMMON_FIELDS or set(value) - allowed:
+                raise AcceptanceError("acceptance evidence fields are not exact")
+        elif kind == "stage-start":
+            if set(value) != _V2_STAGE_START_FIELDS:
+                raise AcceptanceError("stage-start evidence fields are not exact")
+        elif kind == "stage-sample":
+            if set(value) != _V2_STAGE_SAMPLE_FIELDS:
+                raise AcceptanceError("stage-sample evidence fields are not exact")
+        elif kind == "stage-final":
+            if set(value) != _V2_STAGE_FINAL_FIELDS:
+                raise AcceptanceError("stage-final evidence fields are not exact")
+        else:
+            raise AcceptanceError("acceptance evidence kind is invalid")
     for field_name in ("observed_at_utc_ns", "observed_at_boottime_ns"):
         _integer(value.get(field_name), field_name)
     if value.get("result") not in RESULTS:
@@ -277,6 +357,283 @@ def _empty_common(
         "blocking_findings": [],
         "result": "INCOMPLETE",
     }
+
+
+def _empty_v2_stage(
+    *,
+    kind: str,
+    stage: str,
+    run_id: str,
+    identity: DeploymentIdentity,
+    now_utc: int,
+    now_boot: int,
+    boot_id: str,
+) -> dict[str, object]:
+    """Return only the bounded common fields used by a v2 stage record."""
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "evidence_kind": kind,
+        "stage": stage,
+        "run_id": run_id,
+        "observed_at_utc_ns": now_utc,
+        "observed_at_boottime_ns": now_boot,
+        "boot_id": boot_id,
+        **_identity_fields(identity),
+        "prior_stage_evidence_sha256": None,
+        "stage_start_evidence_sha256": None,
+        "previous_sample_sha256": None,
+        "systemd_process_incarnation": None,
+        "service_instance_id": None,
+        "readiness": {},
+        "catalog_integrity": {},
+        "capacity": {},
+        "blocking_findings": [],
+        "new_finding_details": {},
+        "observer_status": "OBSERVED",
+        "result": "INCOMPLETE",
+    }
+
+
+def _manifest_aggregate(records: Mapping[str, Mapping[str, object]]) -> str:
+    canonical = "".join(
+        f"{path}\t{record['sha256']}\n"
+        for path, record in sorted(records.items())
+    ).encode()
+    return sha256_bytes(canonical)
+
+
+def _key_aggregate(keys: set[str]) -> str:
+    return sha256_bytes("".join(f"{key}\n" for key in sorted(keys)).encode())
+
+
+def _manifest_records_from_inventory(inventory: object) -> dict[str, dict[str, object]]:
+    if not isinstance(inventory, dict):
+        raise AcceptanceError("Raw audit manifest inventory is malformed")
+    members = inventory.get("members")
+    if not isinstance(members, list):
+        raise AcceptanceError("Raw audit manifest inventory is malformed")
+    records: dict[str, dict[str, object]] = {}
+    for member in members:
+        if (
+            not isinstance(member, dict)
+            or not isinstance(member.get("path"), str)
+            or not isinstance(member.get("chunk_id"), str)
+            or member.get("path") in records
+        ):
+            raise AcceptanceError("Raw audit manifest inventory member is malformed")
+        path = str(member["path"])
+        records[path] = {
+            "path": path,
+            "sha256": _digest(member.get("sha256"), "Raw manifest inventory digest"),
+            "chunk_id": str(member["chunk_id"]),
+        }
+    declared = inventory.get("sha256")
+    if declared is not None and _digest(
+        declared, "Raw manifest inventory aggregate"
+    ) != _manifest_aggregate(records):
+        raise AcceptanceError("Raw audit manifest inventory aggregate is invalid")
+    count = inventory.get("count")
+    if count is not None and _integer(count, "Raw manifest inventory count") != len(records):
+        raise AcceptanceError("Raw audit manifest inventory count is invalid")
+    return records
+
+
+def _manifest_records_from_list(value: object, field: str) -> dict[str, dict[str, object]]:
+    if not isinstance(value, list):
+        raise AcceptanceError(f"{field} is malformed")
+    records: dict[str, dict[str, object]] = {}
+    for member in value:
+        if (
+            not isinstance(member, dict)
+            or not isinstance(member.get("path"), str)
+            or not isinstance(member.get("chunk_id"), str)
+            or member["path"] in records
+        ):
+            raise AcceptanceError(f"{field} member is malformed")
+        path = str(member["path"])
+        records[path] = {
+            "path": path,
+            "sha256": _digest(member.get("sha256"), f"{field} digest"),
+            "chunk_id": str(member["chunk_id"]),
+        }
+    return records
+
+
+def _manifest_baseline_from_evidence(value: object) -> dict[str, dict[str, object]]:
+    if not isinstance(value, dict):
+        raise AcceptanceError("stage baseline manifest membership is malformed")
+    members = value.get("members")
+    if not isinstance(members, list):
+        raise AcceptanceError("stage baseline manifest membership is malformed")
+    records: dict[str, dict[str, object]] = {}
+    for member in members:
+        if (
+            not isinstance(member, dict)
+            or not isinstance(member.get("path"), str)
+            or not isinstance(member.get("chunk_id"), str)
+            or member["path"] in records
+        ):
+            raise AcceptanceError("stage baseline manifest member is malformed")
+        path = str(member["path"])
+        records[path] = {
+            "path": path,
+            "sha256": _digest(member.get("sha256"), "stage baseline manifest digest"),
+            "chunk_id": str(member["chunk_id"]),
+        }
+    count = _integer(value.get("count"), "stage baseline manifest count")
+    aggregate = _digest(value.get("aggregate_sha256"), "stage baseline manifest aggregate")
+    if count != len(records) or aggregate != _manifest_aggregate(records):
+        raise AcceptanceError("stage baseline manifest authority is invalid")
+    return records
+
+
+def _absence_key(member: Mapping[str, object]) -> tuple[str, str]:
+    chunk_id = member.get("chunk_id")
+    manifest_path = member.get("manifest_path")
+    if not isinstance(chunk_id, str) or not chunk_id:
+        raise AcceptanceError("Raw absence chunk identity is malformed")
+    if not isinstance(manifest_path, str) or not manifest_path:
+        raise AcceptanceError("Raw absence manifest identity is malformed")
+    return chunk_id, manifest_path
+
+
+def _catalog_key(item: Mapping[str, object]) -> tuple[str, str, str, str]:
+    values = tuple(item.get(name) for name in ("market", "symbol", "stream", "gap_id"))
+    if any(not isinstance(value, str) or not value for value in values):
+        raise AcceptanceError("Catalog discontinuity identity is malformed")
+    return cast(tuple[str, str, str, str], values)
+
+
+def _absence_members(value: object) -> dict[tuple[str, str], dict[str, object]]:
+    if not isinstance(value, list):
+        raise AcceptanceError("Raw absence evidence is malformed")
+    result: dict[tuple[str, str], dict[str, object]] = {}
+    for item in value:
+        if not isinstance(item, dict):
+            raise AcceptanceError("Raw absence evidence member is malformed")
+        key = _absence_key(item)
+        if key in result:
+            raise AcceptanceError("Raw absence evidence contains duplicate identities")
+        result[key] = {str(name): member for name, member in item.items()}
+    return result
+
+
+def _absence_aggregate(members: Mapping[tuple[str, str], Mapping[str, object]]) -> str:
+    ordered = [dict(members[key]) for key in sorted(members)]
+    body = json.dumps(ordered, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return sha256_bytes(body)
+
+
+def _raw_absence_baseline_from_evidence(value: object) -> dict[tuple[str, str], dict[str, object]]:
+    if not isinstance(value, dict):
+        raise AcceptanceError("Raw absence baseline is malformed")
+    members = _absence_members(value.get("members"))
+    count = _integer(value.get("count"), "Raw absence baseline count")
+    aggregate = _digest(value.get("aggregate_sha256"), "Raw absence baseline aggregate")
+    if count != len(members) or aggregate != _absence_aggregate(members):
+        raise AcceptanceError("Raw absence baseline authority is invalid")
+    return members
+
+
+def _raw_absence_transition(
+    previous: Mapping[tuple[str, str], Mapping[str, object]],
+    current: Mapping[tuple[str, str], Mapping[str, object]],
+) -> dict[str, object]:
+    added = [dict(current[key]) for key in sorted(set(current) - set(previous))]
+    reclassified = [
+        {"previous": dict(previous[key]), "current": dict(current[key])}
+        for key in sorted(set(previous) & set(current))
+        if dict(previous[key]) != dict(current[key])
+    ]
+    resolved = [dict(previous[key]) for key in sorted(set(previous) - set(current))]
+    return {
+        "previous_count": len(previous),
+        "previous_aggregate_sha256": _absence_aggregate(previous),
+        "current_count": len(current),
+        "current_aggregate_sha256": _absence_aggregate(current),
+        "added": added,
+        "reclassified": reclassified,
+        "resolved": resolved,
+    }
+
+
+def _apply_raw_absence_transition(
+    previous: Mapping[tuple[str, str], Mapping[str, object]],
+    transition: object,
+) -> dict[tuple[str, str], dict[str, object]]:
+    if not isinstance(transition, dict):
+        raise AcceptanceError("Raw absence transition is malformed")
+    if _integer(transition.get("previous_count"), "Raw absence previous count") != len(previous):
+        raise AcceptanceError("Raw absence transition previous count is invalid")
+    if _digest(
+        transition.get("previous_aggregate_sha256"), "Raw absence previous aggregate"
+    ) != _absence_aggregate(previous):
+        raise AcceptanceError("Raw absence transition predecessor is invalid")
+    result = {key: dict(value) for key, value in previous.items()}
+    added = _absence_members(transition.get("added"))
+    for key, value in added.items():
+        if key in result:
+            raise AcceptanceError("Raw absence transition adds an existing identity")
+        result[key] = value
+    reclassified = transition.get("reclassified")
+    if not isinstance(reclassified, list):
+        raise AcceptanceError("Raw absence reclassification is malformed")
+    for item in reclassified:
+        if not isinstance(item, dict):
+            raise AcceptanceError("Raw absence reclassification is malformed")
+        old = item.get("previous")
+        new = item.get("current")
+        if not isinstance(old, dict) or not isinstance(new, dict):
+            raise AcceptanceError("Raw absence reclassification is malformed")
+        old_key = _absence_key(old)
+        new_key = _absence_key(new)
+        if old_key != new_key or old_key not in result or result[old_key] != old:
+            raise AcceptanceError("Raw absence reclassification predecessor is invalid")
+        result[old_key] = {str(name): value for name, value in new.items()}
+    resolved = _absence_members(transition.get("resolved"))
+    for key, value in resolved.items():
+        if key not in result or result[key] != value:
+            raise AcceptanceError("Raw absence resolution predecessor is invalid")
+        del result[key]
+    if _integer(transition.get("current_count"), "Raw absence current count") != len(result):
+        raise AcceptanceError("Raw absence transition current count is invalid")
+    if _digest(
+        transition.get("current_aggregate_sha256"), "Raw absence current aggregate"
+    ) != _absence_aggregate(result):
+        raise AcceptanceError("Raw absence transition current aggregate is invalid")
+    return result
+
+
+@dataclass
+class _LastSampleMetadata:
+    ordinal: int
+    sha256: str
+    utc_ns: int
+    boottime_ns: int
+    result: str
+    findings: frozenset[str]
+
+
+@dataclass
+class _V2ChainState:
+    manifest_records: dict[str, dict[str, object]]
+    raw_absences: dict[tuple[str, str], dict[str, object]]
+    deferred_manifest_paths: set[str]
+    continuation_streams: dict[str, object]
+    reconnect_transition_keys: set[str]
+    catalog_open: dict[tuple[str, str, str, str], dict[str, object]]
+    catalog_interval_keys: set[tuple[str, str, str, str]]
+    terminal_event_keys: set[str]
+    known_findings: set[str]
+    finding_detail_keys: set[str]
+    catalog_current_interval_keys: set[tuple[str, str, str, str]] = field(
+        default_factory=set
+    )
+    stage_start_utc_ns: int | None = None
+    last_observed_utc_ns: int | None = None
+    last: _LastSampleMetadata | None = None
+    invalid_manifest_authority: bool = False
 
 
 def _manager_for(
@@ -524,6 +881,21 @@ class AcceptanceObserver:
     reconnect_continuation: dict[str, object] | None = None
     archive_root_resolver: ArchiveRootResolver | None = None
     t0_manifest_members: dict[str, str] | None = None
+    t0_manifest_records: dict[str, dict[str, object]] | None = None
+    t0_manifest_aggregate_sha256: str | None = None
+    published_manifest_records: dict[str, dict[str, object]] | None = None
+    published_raw_absences: dict[tuple[str, str], dict[str, object]] | None = None
+    published_deferred_manifest_paths: set[str] = field(default_factory=set)
+    published_reconnect_transition_keys: set[str] = field(default_factory=set)
+    published_reconnect_streams: dict[str, object] = field(default_factory=dict)
+    published_catalog_open: dict[tuple[str, str, str, str], dict[str, object]] = field(
+        default_factory=dict
+    )
+    published_catalog_interval_keys: set[tuple[str, str, str, str]] = field(
+        default_factory=set
+    )
+    published_terminal_event_keys: set[str] = field(default_factory=set)
+    finding_details: dict[str, object] = field(default_factory=dict)
     next_sample_ordinal: int = 0
     ever_blocking_findings: set[str] = field(default_factory=set)
 
@@ -537,9 +909,14 @@ class AcceptanceObserver:
             _chunks, inventory = strict_manifest_inventory(self.data_root, deep_scan=False)
         except (OSError, SealError, CatalogStateError, ValueError, RuntimeError) as exc:
             raise AcceptanceError(f"strict Raw/manifest baseline inventory failed: {exc}") from exc
-        return _manifest_members_from_inventory(inventory)
+        records = _manifest_records_from_inventory(inventory)
+        self.t0_manifest_records = records
+        self.t0_manifest_aggregate_sha256 = _manifest_aggregate(records)
+        return {path: str(record["sha256"]) for path, record in records.items()}
 
-    def _catalog_evidence(self, t0: int) -> tuple[dict[str, object], list[str]]:
+    def _catalog_evidence(
+        self, t0: int, *, as_of_utc_ns: int
+    ) -> tuple[dict[str, object], list[str], dict[str, object]]:
         path = self.data_root / "state" / "catalog.sqlite"
         if not path.is_file():
             raise AcceptanceError("Catalog is unavailable")
@@ -547,11 +924,20 @@ class AcceptanceObserver:
             integrity = catalog.integrity_check()
             if integrity != ("ok",):
                 raise AcceptanceError("Catalog integrity check failed")
-            malformed = catalog.malformed_discontinuity_events()
-            degraded = catalog.degraded_closed_discontinuity_pairs()
-            unclosed = catalog.unclosed_stream_discontinuities_by_stream()
-            closed = catalog.closed_stream_discontinuity_intervals_by_stream()
-            events = catalog.operational_events()
+            authority = catalog.discontinuity_authority_snapshot(
+                as_of_utc_ns=as_of_utc_ns
+            )
+            malformed = cast(list[dict[str, object]], authority["malformed_events"])
+            degraded = cast(list[dict[str, object]], authority["degraded_pairs"])
+            unclosed = cast(
+                dict[tuple[str, str, str], list[dict[str, object]]],
+                authority["unclosed"],
+            )
+            closed = cast(
+                dict[tuple[str, str, str], list[dict[str, object]]],
+                authority["closed"],
+            )
+            events = cast(list[dict[str, object]], authority["operational_events"])
             terminal = [
                 str(event.get("event_type"))
                 for event in events
@@ -617,7 +1003,209 @@ class AcceptanceObserver:
             findings.append("terminal_service_or_core_failure")
         if unclosed:
             findings.append("unresolved_discontinuity")
-        return {"integrity_check": list(integrity), "discontinuity": discontinuity}, findings
+        detail_candidates: dict[str, object] = {}
+        non_monotonic = sorted(
+            (
+                {
+                    field: interval[field]
+                    for field in (
+                        "market",
+                        "symbol",
+                        "stream",
+                        "gap_id",
+                        "started_at_utc_ns",
+                        "ended_at_utc_ns",
+                    )
+                }
+                for interval in current_intervals
+                if _integer(interval.get("ended_at_utc_ns"), "gap end")
+                <= _integer(interval.get("started_at_utc_ns"), "gap start")
+            ),
+            key=lambda item: (
+                str(item["market"]),
+                str(item["symbol"]),
+                str(item["stream"]),
+                str(item["gap_id"]),
+                _integer(item["started_at_utc_ns"], "gap start"),
+                _integer(item["ended_at_utc_ns"], "gap end"),
+            ),
+        )
+        if non_monotonic:
+            findings.append("unsafe_wall_clock_backward")
+            detail_candidates["unsafe_wall_clock_backward"] = non_monotonic[0]
+        return (
+            {"integrity_check": list(integrity), "discontinuity": discontinuity},
+            findings,
+            detail_candidates,
+        )
+
+    def _manifest_transition(
+        self,
+        current_records: dict[str, dict[str, object]],
+        continuation_members: dict[str, str],
+    ) -> dict[str, object]:
+        previous = self.published_manifest_records
+        if previous is None:
+            previous = dict(current_records)
+        anomalies: list[dict[str, object]] = []
+        for path, previous_record in sorted(previous.items()):
+            current_record = current_records.get(path)
+            if current_record is None:
+                anomalies.append(
+                    {
+                        "path": path,
+                        "kind": "missing",
+                        "expected_sha256": previous_record["sha256"],
+                        "observed_sha256": None,
+                    }
+                )
+                continue
+            if (
+                current_record.get("sha256") != previous_record.get("sha256")
+                or current_record.get("chunk_id") != previous_record.get("chunk_id")
+            ):
+                anomalies.append(
+                    {
+                        "path": path,
+                        "kind": "mutated",
+                        "expected_sha256": previous_record["sha256"],
+                        "observed_sha256": current_record["sha256"],
+                    }
+                )
+        added = [
+            dict(current_records[path])
+            for path in sorted(set(current_records) - set(previous))
+        ]
+        deferred = [
+            dict(current_records[path])
+            for path in sorted(set(current_records) - set(continuation_members))
+        ]
+        if anomalies:
+            transition: dict[str, object] = {
+                "state": "ANOMALY",
+                "previous_count": len(previous),
+                "previous_aggregate_sha256": _manifest_aggregate(previous),
+                "current_count": len(current_records),
+                "current_aggregate_sha256": _manifest_aggregate(current_records),
+                "added_members": [],
+                "deferred_members": [],
+                "anomalies": anomalies,
+            }
+        else:
+            transition = {
+                "state": "NORMAL",
+                "previous_count": len(previous),
+                "previous_aggregate_sha256": _manifest_aggregate(previous),
+                "current_count": len(current_records),
+                "current_aggregate_sha256": _manifest_aggregate(current_records),
+                "added_members": added,
+                "deferred_members": deferred,
+                "anomalies": [],
+            }
+        self.published_manifest_records = current_records
+        self.published_deferred_manifest_paths = {
+            str(member["path"]) for member in deferred
+        }
+        return transition
+
+    @staticmethod
+    def _transition_key(transition: Mapping[str, object]) -> str:
+        return sha256_bytes(canonical_json(transition))
+
+    def _catalog_projection(
+        self, catalog: Mapping[str, object], *, stage_start: bool
+    ) -> tuple[dict[str, object], dict[str, object], list[str], dict[str, object]]:
+        discontinuity = catalog.get("discontinuity")
+        if not isinstance(discontinuity, dict):
+            raise AcceptanceError("Catalog discontinuity evidence is malformed")
+        current_intervals = discontinuity.get("current_intervals")
+        open_intervals = discontinuity.get("open_intervals")
+        terminal_events = discontinuity.get("terminal_events")
+        if (
+            not isinstance(current_intervals, list)
+            or any(not isinstance(item, dict) for item in current_intervals)
+            or not isinstance(open_intervals, list)
+            or any(not isinstance(item, dict) for item in open_intervals)
+            or not isinstance(terminal_events, list)
+            or any(not isinstance(item, str) for item in terminal_events)
+        ):
+            raise AcceptanceError("Catalog discontinuity evidence is malformed")
+        current_open: dict[tuple[str, str, str, str], dict[str, object]] = {}
+        for item in open_intervals:
+            key = _catalog_key(item)
+            if key in current_open:
+                raise AcceptanceError("Catalog open discontinuity identities are duplicated")
+            current_open[key] = dict(item)
+        current_closed: dict[tuple[str, str, str, str], dict[str, object]] = {}
+        for item in current_intervals:
+            key = _catalog_key(item)
+            if key in current_closed:
+                raise AcceptanceError("Catalog discontinuity identities are duplicated")
+            current_closed[key] = dict(item)
+        started = [
+            dict(current_open[key])
+            for key in sorted(current_open)
+            if current_open[key].get("timing") == "OPENED_IN_STAGE"
+            and key not in self.published_catalog_open
+        ]
+        completed = [
+            dict(current_closed[key])
+            for key in sorted(current_closed)
+            if (
+                current_closed[key].get("timing") == "CURRENT_STAGE"
+                or (
+                    current_closed[key].get("timing") == "CROSSES_T0"
+                    and key in self.published_catalog_open
+                )
+            )
+            and key not in self.published_catalog_interval_keys
+        ]
+        new_terminal = [
+            event for event in terminal_events if event not in self.published_terminal_event_keys
+        ]
+        transition: dict[str, object] = {
+            "started": started,
+            "completed": completed,
+            "current_open": [dict(current_open[key]) for key in sorted(current_open)],
+            "terminal_events": new_terminal,
+            "summary": {
+                "open_count": len(current_open),
+                "current_interval_count": len(current_closed),
+            },
+        }
+        self.published_catalog_open = current_open
+        self.published_catalog_interval_keys.update(current_closed)
+        self.published_terminal_event_keys.update(terminal_events)
+        baseline: dict[str, object] = {}
+        if stage_start:
+            baseline = {
+                "malformed_events": discontinuity.get("malformed_events", []),
+                "degraded_pairs": discontinuity.get("degraded_pairs", []),
+                "pre_t0_closed": discontinuity.get("baseline_history", []),
+                "crossing_at_t0": [
+                    dict(item)
+                    for item in current_intervals
+                    if item.get("timing") == "CROSSES_T0"
+                ],
+                "open_at_t0": [
+                    dict(item)
+                    for item in open_intervals
+                    if item.get("timing") == "OPEN_AT_T0"
+                ],
+                "terminal_events": list(terminal_events),
+            }
+        details: dict[str, object] = {}
+        if open_intervals:
+            details["unresolved_discontinuity"] = dict(open_intervals[0])
+        if discontinuity.get("malformed_events"):
+            details["malformed_discontinuity_authority"] = discontinuity.get(
+                "malformed_events"
+            )
+        if discontinuity.get("degraded_pairs"):
+            details["degraded_discontinuity_authority"] = discontinuity.get(
+                "degraded_pairs"
+            )
+        return baseline, transition, [str(item) for item in terminal_events], details
 
     def _raw_evidence(self) -> tuple[dict[str, object], list[str]]:
         try:
@@ -634,18 +1222,17 @@ class AcceptanceObserver:
         continuation_members = continuation.get("manifest_members")
         if not isinstance(continuation_members, dict):
             raise AcceptanceError("Raw audit manifest membership is malformed")
-        current_members = {
+        current_continuation_members = {
             str(path): _digest(digest, "Raw manifest member digest")
             for path, digest in continuation_members.items()
             if isinstance(path, str)
         }
-        if len(current_members) != len(continuation_members):
+        if len(current_continuation_members) != len(continuation_members):
             raise AcceptanceError("Raw audit manifest membership is malformed")
         if self.t0_manifest_members is None:
             raise AcceptanceError("baseline manifest membership is not frozen")
         self.reconnect_continuation = continuation
-        summary = audit.get("summary")
-        if not isinstance(summary, dict):
+        if not isinstance(audit.get("summary"), dict):
             raise AcceptanceError("Raw audit summary is malformed")
         findings: list[str] = []
         transitions = [
@@ -656,21 +1243,13 @@ class AcceptanceObserver:
             if isinstance(item, dict)
         ]
         inventory = audit.get("manifest_inventory")
-        inventory_members = _manifest_members_from_inventory(inventory)
+        current_records = _manifest_records_from_inventory(inventory)
         members_by_chunk: dict[str, tuple[str, str]] = {}
-        raw_inventory_members = inventory.get("members") if isinstance(inventory, dict) else None
-        if not isinstance(raw_inventory_members, list):
-            raise AcceptanceError("Raw audit manifest inventory is malformed")
-        for member in raw_inventory_members:
-            if not isinstance(member, dict) or not isinstance(member.get("chunk_id"), str):
-                raise AcceptanceError("Raw audit manifest inventory member is malformed")
-            chunk_id = str(member["chunk_id"])
+        for path, record in current_records.items():
+            chunk_id = str(record["chunk_id"])
             if chunk_id in members_by_chunk:
                 raise AcceptanceError("Raw audit manifest inventory has duplicate chunk IDs")
-            members_by_chunk[chunk_id] = (
-                str(member["path"]),
-                inventory_members[str(member["path"])],
-            )
+            members_by_chunk[chunk_id] = (path, str(record["sha256"]))
 
         def baseline_bound(transition: dict[str, object]) -> bool:
             required_chunk_ids: list[str] = []
@@ -728,15 +1307,136 @@ class AcceptanceObserver:
                 findings.append("unexplained_raw_absence")
             elif classification == "UNKNOWN":
                 findings.append("unknown_raw_absence")
+        current_absences = _absence_members(loss)
+        previous_absences = self.published_raw_absences
+        absence_transition = (
+            None
+            if previous_absences is None
+            else _raw_absence_transition(previous_absences, current_absences)
+        )
+        self.published_raw_absences = current_absences
+        transition = self._manifest_transition(
+            current_records, current_continuation_members
+        )
+        if integrity_findings or transition.get("state") == "ANOMALY":
+            findings.append("manifest_byte_mutation_or_loss")
+        streams = continuation.get("streams")
+        if not isinstance(streams, dict):
+            raise AcceptanceError("Raw audit continuation streams are malformed")
+        added_transitions: list[dict[str, object]] = []
+        for item in current_transitions:
+            key = self._transition_key(item)
+            if key not in self.published_reconnect_transition_keys:
+                added_transitions.append(dict(item))
+                self.published_reconnect_transition_keys.add(key)
+        reconnect_transition = {
+            "added": added_transitions,
+            "stage_transition_count": len(self.published_reconnect_transition_keys),
+            "stage_transition_aggregate_sha256": _key_aggregate(
+                self.published_reconnect_transition_keys
+            ),
+            "continuation": {
+                "schema_version": continuation.get("schema_version"),
+                "streams": streams,
+            },
+        }
+        self.published_reconnect_streams = {
+            str(name): value for name, value in streams.items()
+        }
+        details: dict[str, object] = {}
+        if transition.get("anomalies"):
+            details["manifest_byte_mutation_or_loss"] = transition["anomalies"]
+        if any(item.get("kind") == UNMARKED_RECONNECT for item in current_transitions):
+            details["UNMARKED_RECONNECT"] = next(
+                item
+                for item in current_transitions
+                if item.get("kind") == UNMARKED_RECONNECT
+            )
+        if any(item.get("kind") == UNKNOWN for item in current_transitions):
+            details["UNKNOWN_RECONNECT_BOUNDARY"] = next(
+                item for item in current_transitions if item.get("kind") == UNKNOWN
+            )
+        unknown_absence = next(
+            (
+                item
+                for item in loss
+                if isinstance(item, dict)
+                and item.get("classification") in {"UNEXPLAINED_ABSENCE", "UNKNOWN"}
+            ),
+            None,
+        )
+        if unknown_absence is not None:
+            details["unexplained_raw_absence"] = unknown_absence
+            details["unknown_raw_absence"] = unknown_absence
         return {
-            "audit": audit,
-            "inventory": inventory,
-            "raw_loss": loss,
+            "manifest_records": current_records,
+            "manifest_transition": transition,
+            "raw_absences": current_absences,
+            "raw_absence_transition": absence_transition,
             "baseline_history": baseline_history,
             "current_transitions": current_transitions,
-            "continuation": continuation,
-            "baseline_manifest_members": dict(self.t0_manifest_members or {}),
+            "reconnect_baseline": {
+                "pre_t0_history": baseline_history,
+                "continuation": {
+                    "schema_version": continuation.get("schema_version"),
+                    "streams": streams,
+                },
+            },
+            "reconnect_transition": reconnect_transition,
+            "continuation_members": current_continuation_members,
+            "details": details,
         }, findings
+
+    def _fallback_raw_projection(self, *, stage_start: bool) -> dict[str, object]:
+        """Keep a failed observation publishable without inventing live state."""
+
+        records = dict(self.published_manifest_records or self.t0_manifest_records or {})
+        continuation_members = {
+            path: str(record["sha256"])
+            for path, record in records.items()
+            if path not in self.published_deferred_manifest_paths
+        }
+        transition = self._manifest_transition(records, continuation_members)
+        absences = dict(self.published_raw_absences or {})
+        continuation = self.reconnect_continuation
+        streams: dict[str, object] = dict(self.published_reconnect_streams)
+        if isinstance(continuation, dict) and isinstance(continuation.get("streams"), dict):
+            streams = {
+                str(name): value
+                for name, value in cast(
+                    dict[str, object], continuation["streams"]
+                ).items()
+            }
+        return {
+            "manifest_records": records,
+            "manifest_transition": transition,
+            "raw_absences": absences,
+            "raw_absence_transition": (
+                None if stage_start else _raw_absence_transition(absences, absences)
+            ),
+            "baseline_history": [],
+            "current_transitions": [],
+            "reconnect_baseline": {
+                "pre_t0_history": [],
+                "continuation": {
+                    "schema_version": INCREMENTAL_SCHEMA_VERSION,
+                    "streams": streams,
+                },
+            },
+            "reconnect_transition": {
+                "added": [],
+                "stage_transition_count": len(self.published_reconnect_transition_keys),
+                "stage_transition_aggregate_sha256": _key_aggregate(
+                    self.published_reconnect_transition_keys
+                ),
+                "continuation": {
+                    "schema_version": INCREMENTAL_SCHEMA_VERSION,
+                    "streams": streams,
+                },
+            },
+            "continuation_members": continuation_members,
+            "details": {},
+        }
 
     def _observation(
         self,
@@ -760,7 +1460,8 @@ class AcceptanceObserver:
             else observed_at_boottime_ns
         )
         boot_id = self.clock.boot_id() if observed_boot_id is None else observed_boot_id
-        document = _empty_common(
+        stage_start = self.stage_start_sha256 is None
+        document = _empty_v2_stage(
             kind="stage-sample",
             stage=self.stage,
             run_id=self.run_id,
@@ -770,6 +1471,7 @@ class AcceptanceObserver:
             boot_id=boot_id,
         )
         findings: list[str] = []
+        detail_candidates: dict[str, object] = {}
         if boot_id != self.t0_boot_id:
             findings.append("boot_id_changed")
         wall_floor = (
@@ -828,13 +1530,35 @@ class AcceptanceObserver:
         elif readiness.state != "READY":
             findings.append("readiness_not_ready")
         try:
-            catalog, catalog_findings = self._catalog_evidence(self.t0_utc_ns)
+            catalog, catalog_findings, catalog_finding_details = self._catalog_evidence(
+                self.t0_utc_ns,
+                as_of_utc_ns=now_utc,
+            )
             raw, raw_findings = self._raw_evidence()
+            (
+                catalog_baseline,
+                catalog_transition,
+                _terminal_events,
+                catalog_details,
+            ) = self._catalog_projection(catalog, stage_start=stage_start)
             findings.extend(catalog_findings)
             findings.extend(raw_findings)
+            detail_candidates.update(catalog_finding_details)
+            detail_candidates.update(catalog_details)
+            raw_details = raw.get("details")
+            if isinstance(raw_details, dict):
+                detail_candidates.update(raw_details)
         except AcceptanceError as exc:
             findings.append(str(exc))
-            catalog, raw = {}, {}
+            catalog, raw = {}, self._fallback_raw_projection(stage_start=stage_start)
+            catalog_baseline = {}
+            catalog_transition = {
+                "started": [],
+                "completed": [],
+                "current_open": [],
+                "terminal_events": [],
+                "summary": {"open_count": 0, "current_interval_count": 0},
+            }
         capacity = _capacity(self.data_root, now_utc, self.disk_usage)
         if (
             _integer(capacity["free_bytes"], "free capacity")
@@ -848,14 +1572,24 @@ class AcceptanceObserver:
             or current_process.get("result") != "success"
         ):
             findings.append("service_process_not_running")
+        previous_findings = set(self.ever_blocking_findings)
         self.ever_blocking_findings.update(findings)
         all_findings = sorted(self.ever_blocking_findings)
+        new_finding_details: dict[str, object] = {}
+        for finding in sorted(set(findings) - previous_findings):
+            detail = detail_candidates.get(finding)
+            if detail is None:
+                detail = {"observed_at_utc_ns": now_utc}
+            self.finding_details[finding] = detail
+            new_finding_details[finding] = detail
         soft_findings = {
             "acceptance_observation_gap",
             "readiness_not_ready",
             "unsafe_wall_clock_backward",
         }
         fatal = any(item not in soft_findings for item in all_findings)
+        manifest_transition = raw.get("manifest_transition", {})
+        reconnect_transition = raw.get("reconnect_transition", {})
         document.update(
             {
                 "prior_stage_evidence_sha256": self.prior_stage_sha256,
@@ -864,20 +1598,68 @@ class AcceptanceObserver:
                 "systemd_process_incarnation": current_process,
                 "service_instance_id": instance,
                 "readiness": readiness.public_dict(),
-                "catalog_integrity": catalog,
-                "discontinuity_summary": catalog.get("discontinuity", {})
-                if isinstance(catalog, dict)
-                else {},
+                "catalog_integrity": (
+                    {"integrity_check": catalog.get("integrity_check", [])}
+                    if isinstance(catalog, dict)
+                    else {}
+                ),
                 "capacity": capacity,
-                "reconnect_summary": raw,
-                "manifest_inventory": raw.get("inventory", {}) if isinstance(raw, dict) else {},
                 "blocking_findings": all_findings,
+                "new_finding_details": new_finding_details,
                 "observer_status": "COMPLETE",
                 "result": "FAIL"
                 if fatal
                 else ("INCOMPLETE" if all_findings else "PASS_CANDIDATE"),
             }
         )
+        if stage_start:
+            if self.t0_manifest_records is None or self.t0_manifest_aggregate_sha256 is None:
+                raise AcceptanceError("manifest baseline is not frozen")
+            raw_absences = raw.get("raw_absences", {})
+            if not isinstance(raw_absences, dict):
+                raise AcceptanceError("Raw absence baseline is malformed")
+            absence_members = _absence_members(
+                [dict(raw_absences[key]) for key in sorted(raw_absences)]
+            )
+            document.update(
+                {
+                    "manifest_baseline": {
+                        "count": len(self.t0_manifest_records),
+                        "aggregate_sha256": self.t0_manifest_aggregate_sha256,
+                        "members": [
+                            dict(self.t0_manifest_records[path])
+                            for path in sorted(self.t0_manifest_records)
+                        ],
+                    },
+                    "manifest_transition": manifest_transition,
+                    "raw_absence_baseline": {
+                        "count": len(absence_members),
+                        "aggregate_sha256": _absence_aggregate(absence_members),
+                        "members": [
+                            dict(absence_members[key]) for key in sorted(absence_members)
+                        ],
+                    },
+                    "reconnect_baseline": raw.get("reconnect_baseline", {}),
+                    "reconnect_transition": reconnect_transition,
+                    "catalog_baseline": catalog_baseline,
+                    "catalog_transition": catalog_transition,
+                }
+            )
+        else:
+            raw_absence_transition = raw.get("raw_absence_transition")
+            if not isinstance(raw_absence_transition, dict):
+                raw_absence_transition = _raw_absence_transition(
+                    self.published_raw_absences or {}, self.published_raw_absences or {}
+                )
+            document.update(
+                {
+                    "sample_ordinal": self.next_sample_ordinal,
+                    "manifest_transition": manifest_transition,
+                    "raw_absence_transition": raw_absence_transition,
+                    "reconnect_transition": reconnect_transition,
+                    "catalog_transition": catalog_transition,
+                }
+            )
         if all_findings == ["readiness_not_ready"]:
             document["result"] = "REVIEW_REQUIRED"
         return document, findings
@@ -886,6 +1668,15 @@ class AcceptanceObserver:
         if self.t0_boottime_ns is not None:
             raise AcceptanceError("stage T0 is already initialized")
         self.t0_manifest_members = self._freeze_manifest_membership()
+        self.published_manifest_records = dict(self.t0_manifest_records or {})
+        self.published_raw_absences = None
+        self.published_deferred_manifest_paths = set()
+        self.published_reconnect_transition_keys = set()
+        self.published_reconnect_streams = {}
+        self.published_catalog_open = {}
+        self.published_catalog_interval_keys = set()
+        self.published_terminal_event_keys = set()
+        self.finding_details = {}
         t0_utc_ns = self.clock.utc_ns()
         t0_boottime_ns = self.clock.boottime_ns()
         t0_boot_id = self.clock.boot_id()
@@ -910,6 +1701,8 @@ class AcceptanceObserver:
         return path, digest, document
 
     def sample(self) -> tuple[Path, str, dict[str, object]]:
+        if self.stage_start_sha256 is None:
+            raise AcceptanceError("stage T0 evidence is not published")
         document, _findings = self._observation()
         filename = f"sample-{self.next_sample_ordinal:08d}.json"
         path, digest = _publish(self.evidence_root, filename, document)
@@ -937,19 +1730,34 @@ class AcceptanceObserver:
             result = "INCOMPLETE"
         else:
             result = str(sample["result"])
-        final = dict(sample)
+        final = _empty_v2_stage(
+            kind="stage-final",
+            stage=self.stage,
+            run_id=self.run_id,
+            identity=self.identity,
+            now_utc=_integer(sample["observed_at_utc_ns"], "sample UTC timestamp"),
+            now_boot=_integer(sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp"),
+            boot_id=str(sample["boot_id"]),
+        )
         final.update(
             {
-                "evidence_kind": "stage-final",
                 "stage_start_evidence_sha256": self.stage_start_sha256,
                 "previous_sample_sha256": last,
                 "prior_stage_evidence_sha256": self.prior_stage_sha256,
-                "elapsed_boottime_ns": elapsed,
-                "required_duration_ns": STAGE_DURATION_NS[self.stage],
+                "systemd_process_incarnation": sample["systemd_process_incarnation"],
+                "service_instance_id": sample["service_instance_id"],
+                "blocking_findings": sample["blocking_findings"],
                 "result": result,
                 "observer_status": "FINALIZED",
+                "elapsed_boottime_ns": elapsed,
+                "required_duration_ns": STAGE_DURATION_NS[self.stage],
+                "last_sample_ordinal": self.next_sample_ordinal - 1,
+                "last_sample_sha256": last,
+                "eligible_for_next_stage": result == "PASS_CANDIDATE",
             }
         )
+        for field_name in ("readiness", "catalog_integrity", "capacity"):
+            final[field_name] = sample[field_name]
         path, digest = _publish(self.evidence_root, "stage-final.json", final)
         return path, digest, final
 
@@ -1001,6 +1809,456 @@ def _continuation_from(document: Mapping[str, object]) -> dict[str, object]:
     return continuation
 
 
+def _apply_manifest_transition(
+    previous: Mapping[str, Mapping[str, object]],
+    transition: object,
+    *,
+    blocking_findings: set[str] | frozenset[str] | None = None,
+) -> tuple[dict[str, dict[str, object]], set[str], bool]:
+    if not isinstance(transition, dict):
+        raise AcceptanceError("manifest transition is malformed")
+    state = transition.get("state")
+    previous_records = {path: dict(record) for path, record in previous.items()}
+    if _integer(transition.get("previous_count"), "manifest previous count") != len(previous):
+        raise AcceptanceError("manifest transition previous count is invalid")
+    if _digest(
+        transition.get("previous_aggregate_sha256"), "manifest previous aggregate"
+    ) != _manifest_aggregate(previous):
+        raise AcceptanceError("manifest transition predecessor is invalid")
+    if state == "ANOMALY":
+        anomalies = transition.get("anomalies")
+        if not isinstance(anomalies, list) or not anomalies:
+            raise AcceptanceError("manifest anomaly transition is malformed")
+        if (
+            blocking_findings is None
+            or "manifest_byte_mutation_or_loss" not in blocking_findings
+        ):
+            raise AcceptanceError(
+                "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+            )
+        _integer(transition.get("current_count"), "manifest anomaly current count")
+        _digest(
+            transition.get("current_aggregate_sha256"),
+            "manifest anomaly current aggregate",
+        )
+        if transition.get("added_members") != [] or transition.get("deferred_members") != []:
+            raise AcceptanceError("manifest anomaly transition has legal additions")
+        return previous_records, set(), True
+    if state != "NORMAL":
+        raise AcceptanceError("manifest transition state is invalid")
+    added = _manifest_records_from_list(transition.get("added_members"), "manifest additions")
+    result = dict(previous_records)
+    for path, member in added.items():
+        if path in result:
+            raise AcceptanceError("manifest transition adds an existing member")
+        result[path] = member
+    deferred = _manifest_records_from_list(
+        transition.get("deferred_members"), "manifest deferred members"
+    )
+    if any(path not in result or result[path] != member for path, member in deferred.items()):
+        raise AcceptanceError("manifest deferred member is not current")
+    if _integer(transition.get("current_count"), "manifest current count") != len(result):
+        raise AcceptanceError("manifest transition current count is invalid")
+    if _digest(
+        transition.get("current_aggregate_sha256"), "manifest current aggregate"
+    ) != _manifest_aggregate(result):
+        raise AcceptanceError("manifest transition current aggregate is invalid")
+    if transition.get("anomalies") != []:
+        raise AcceptanceError("normal manifest transition contains anomalies")
+    return result, set(deferred), False
+
+
+def _continuation_projection(
+    transition: object,
+    manifest_records: Mapping[str, Mapping[str, object]],
+    deferred_paths: set[str],
+) -> dict[str, object]:
+    if not isinstance(transition, dict):
+        raise AcceptanceError("reconnect transition is malformed")
+    continuation = transition.get("continuation")
+    if not isinstance(continuation, dict):
+        raise AcceptanceError("reconnect continuation projection is malformed")
+    if continuation.get("schema_version") != INCREMENTAL_SCHEMA_VERSION:
+        raise AcceptanceError("reconnect continuation projection schema is invalid")
+    streams = continuation.get("streams")
+    if not isinstance(streams, dict):
+        raise AcceptanceError("reconnect continuation projection streams are malformed")
+    members = {
+        path: str(record["sha256"])
+        for path, record in manifest_records.items()
+        if path not in deferred_paths
+    }
+    reconstructed: dict[str, object] = {
+        "schema_version": INCREMENTAL_SCHEMA_VERSION,
+        "manifest_members": members,
+        "streams": streams,
+    }
+    try:
+        validate_incremental_continuation(reconstructed)
+    except SealError as exc:
+        raise AcceptanceError("reconnect continuation evidence is invalid") from exc
+    return reconstructed
+
+
+def _apply_reconnect_transition(
+    state: _V2ChainState, transition: object
+) -> None:
+    if not isinstance(transition, dict):
+        raise AcceptanceError("reconnect transition is malformed")
+    added = transition.get("added")
+    if not isinstance(added, list) or any(not isinstance(item, dict) for item in added):
+        raise AcceptanceError("reconnect transition additions are malformed")
+    for item in added:
+        key = sha256_bytes(canonical_json(cast(Mapping[str, object], item)))
+        if key in state.reconnect_transition_keys:
+            raise AcceptanceError("reconnect transition is duplicated")
+        state.reconnect_transition_keys.add(key)
+    count = _integer(transition.get("stage_transition_count"), "reconnect transition count")
+    if count != len(state.reconnect_transition_keys):
+        raise AcceptanceError("reconnect transition count is invalid")
+    if _digest(
+        transition.get("stage_transition_aggregate_sha256"),
+        "reconnect transition aggregate",
+    ) != _key_aggregate(state.reconnect_transition_keys):
+        raise AcceptanceError("reconnect transition aggregate is invalid")
+    continuation = _continuation_projection(
+        transition, state.manifest_records, state.deferred_manifest_paths
+    )
+    state.continuation_streams = cast(dict[str, object], continuation["streams"])
+
+
+def _catalog_interval_timestamps(
+    item: Mapping[str, object], field: str
+) -> tuple[int, int]:
+    return (
+        _integer(item.get("started_at_utc_ns"), f"{field} start timestamp"),
+        _integer(item.get("ended_at_utc_ns"), f"{field} end timestamp"),
+    )
+
+
+def _require_non_monotonic_catalog_blocker(
+    started_at: int,
+    ended_at: int,
+    blocking_findings: set[str] | frozenset[str] | None,
+    *,
+    context: str,
+) -> None:
+    if ended_at <= started_at and (
+        blocking_findings is None
+        or "unsafe_wall_clock_backward" not in blocking_findings
+    ):
+        raise AcceptanceError(
+            f"{context} non-monotonic completion is not bound to "
+            "unsafe_wall_clock_backward"
+        )
+
+
+def _apply_catalog_transition(
+    state: _V2ChainState,
+    transition: object,
+    *,
+    current_observed_at_utc_ns: int | None = None,
+    blocking_findings: set[str] | frozenset[str] | None = None,
+) -> None:
+    if not isinstance(transition, dict):
+        raise AcceptanceError("Catalog transition is malformed")
+    started = transition.get("started")
+    completed = transition.get("completed")
+    current_open = transition.get("current_open")
+    terminal_events = transition.get("terminal_events")
+    if (
+        not isinstance(started, list)
+        or any(not isinstance(item, dict) for item in started)
+        or not isinstance(completed, list)
+        or any(not isinstance(item, dict) for item in completed)
+        or not isinstance(current_open, list)
+        or any(not isinstance(item, dict) for item in current_open)
+        or not isinstance(terminal_events, list)
+        or any(not isinstance(item, str) for item in terminal_events)
+    ):
+        raise AcceptanceError("Catalog transition is malformed")
+
+    previous_open = state.catalog_open
+    open_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
+    for item in current_open:
+        key = _catalog_key(item)
+        if key in open_state:
+            raise AcceptanceError("Catalog transition repeats an open identity")
+        if item.get("timing") not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+            raise AcceptanceError("Catalog transition open timing is invalid")
+        started_at = _integer(item.get("started_at_utc_ns"), "Catalog open start timestamp")
+        if state.stage_start_utc_ns is not None:
+            if item.get("timing") == "OPEN_AT_T0" and started_at > state.stage_start_utc_ns:
+                raise AcceptanceError("Catalog transition T0-open timing is invalid")
+            if item.get("timing") == "OPENED_IN_STAGE" and started_at <= state.stage_start_utc_ns:
+                raise AcceptanceError("Catalog transition stage-open timing is invalid")
+        open_state[key] = dict(item)
+
+    started_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
+    for item in started:
+        key = _catalog_key(item)
+        if key in started_state:
+            raise AcceptanceError("Catalog transition repeats a start identity")
+        if item.get("timing") != "OPENED_IN_STAGE" or key not in open_state:
+            raise AcceptanceError("Catalog transition start is invalid")
+        if key in previous_open:
+            raise AcceptanceError("Catalog transition starts an already-open identity")
+        if dict(item) != open_state[key]:
+            raise AcceptanceError("Catalog transition start does not match current open")
+        started_state[key] = dict(item)
+
+    expected_started = set(open_state) - set(previous_open)
+    if set(started_state) != expected_started:
+        raise AcceptanceError("Catalog transition does not explain new open identities")
+    for key in set(open_state) & set(previous_open):
+        if open_state[key] != previous_open[key]:
+            raise AcceptanceError("Catalog transition changes an open identity")
+
+    completed_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
+    for item in completed:
+        key = _catalog_key(item)
+        if key in completed_state:
+            raise AcceptanceError("Catalog transition repeats a completion identity")
+        timing = item.get("timing")
+        if timing not in {"CURRENT_STAGE", "CROSSES_T0"}:
+            raise AcceptanceError("Catalog transition completion timing is invalid")
+        started_at, ended_at = _catalog_interval_timestamps(item, "Catalog completion")
+        if key in open_state:
+            raise AcceptanceError("Catalog transition leaves a completed identity open")
+        if key in state.catalog_interval_keys:
+            raise AcceptanceError("Catalog transition completion is invalid")
+        _require_non_monotonic_catalog_blocker(
+            started_at,
+            ended_at,
+            blocking_findings,
+            context="Catalog transition",
+        )
+        previous = previous_open.get(key)
+        current_boundary = (
+            current_observed_at_utc_ns
+            if current_observed_at_utc_ns is not None
+            else state.last_observed_utc_ns
+        )
+        if current_boundary is None or ended_at > current_boundary:
+            raise AcceptanceError(
+                "Catalog transition completion is after the current observation"
+            )
+        if previous is None:
+            if timing != "CURRENT_STAGE":
+                raise AcceptanceError("Catalog transition has an orphan crossing completion")
+            previous_boundary = state.last_observed_utc_ns
+            normal_window_invalid = (
+                ended_at > started_at
+                and (
+                    previous_boundary is None
+                    or started_at < previous_boundary
+                )
+            )
+            non_monotonic_window_invalid = (
+                ended_at <= started_at and started_at > current_boundary
+            )
+            if normal_window_invalid or non_monotonic_window_invalid:
+                raise AcceptanceError(
+                    "Catalog transition orphan completion is not between observations"
+                )
+        else:
+            previous_started_at = _integer(
+                previous.get("started_at_utc_ns"), "Catalog open start timestamp"
+            )
+            if started_at != previous_started_at:
+                raise AcceptanceError("Catalog completion does not close the exact open identity")
+            previous_timing = previous.get("timing")
+            if previous_timing == "OPENED_IN_STAGE" and timing != "CURRENT_STAGE":
+                raise AcceptanceError("Catalog transition has an invalid open completion timing")
+            if previous_timing == "OPEN_AT_T0":
+                stage_start = state.stage_start_utc_ns
+                if (
+                    stage_start is not None
+                    and previous_started_at < stage_start
+                    and timing != "CROSSES_T0"
+                ):
+                    raise AcceptanceError("Catalog transition has an invalid T0 crossing timing")
+            if previous_timing not in {"OPEN_AT_T0", "OPENED_IN_STAGE"}:
+                raise AcceptanceError("Catalog transition previous open timing is invalid")
+        completed_state[key] = dict(item)
+
+    disappeared = set(previous_open) - set(open_state)
+    if not disappeared <= set(completed_state):
+        raise AcceptanceError("Catalog open identity disappeared without completion authority")
+
+    for key in completed_state:
+        state.catalog_interval_keys.add(key)
+        state.catalog_current_interval_keys.add(key)
+    for event in terminal_events:
+        if event in state.terminal_event_keys:
+            raise AcceptanceError("Catalog terminal event is duplicated")
+        state.terminal_event_keys.add(event)
+    summary = transition.get("summary")
+    if not isinstance(summary, dict):
+        raise AcceptanceError("Catalog transition summary is malformed")
+    if _integer(summary.get("open_count"), "Catalog open count") != len(open_state):
+        raise AcceptanceError("Catalog transition open count is invalid")
+    if _integer(
+        summary.get("current_interval_count"), "Catalog current interval count"
+    ) != len(state.catalog_current_interval_keys):
+        raise AcceptanceError("Catalog current interval count is invalid")
+    state.catalog_open = open_state
+    if current_observed_at_utc_ns is not None:
+        state.last_observed_utc_ns = current_observed_at_utc_ns
+
+
+def _catalog_baseline_state(
+    baseline: object,
+    *,
+    stage_start_utc_ns: int,
+    blocking_findings: set[str] | frozenset[str] | None = None,
+) -> tuple[
+    dict[tuple[str, str, str, str], dict[str, object]],
+    set[tuple[str, str, str, str]],
+    set[tuple[str, str, str, str]],
+    set[str],
+]:
+    if not isinstance(baseline, dict):
+        raise AcceptanceError("Catalog baseline is malformed")
+    open_items = baseline.get("open_at_t0")
+    crossing = baseline.get("crossing_at_t0")
+    closed = baseline.get("pre_t0_closed")
+    terminal = baseline.get("terminal_events")
+    if (
+        not isinstance(open_items, list)
+        or any(not isinstance(item, dict) for item in open_items)
+        or not isinstance(crossing, list)
+        or any(not isinstance(item, dict) for item in crossing)
+        or not isinstance(closed, list)
+        or any(not isinstance(item, dict) for item in closed)
+        or not isinstance(terminal, list)
+        or any(not isinstance(item, str) for item in terminal)
+    ):
+        raise AcceptanceError("Catalog baseline is malformed")
+    open_state: dict[tuple[str, str, str, str], dict[str, object]] = {}
+    for item in open_items:
+        key = _catalog_key(item)
+        if key in open_state:
+            raise AcceptanceError("Catalog baseline repeats an open identity")
+        if item.get("timing") != "OPEN_AT_T0":
+            raise AcceptanceError("Catalog baseline open timing is invalid")
+        started_at = _integer(item.get("started_at_utc_ns"), "Catalog baseline open timestamp")
+        if started_at > stage_start_utc_ns:
+            raise AcceptanceError("Catalog baseline OPEN_AT_T0 starts after stage T0")
+        open_state[key] = dict(item)
+    interval_keys: set[tuple[str, str, str, str]] = set()
+    current_interval_keys: set[tuple[str, str, str, str]] = set()
+    for item in crossing:
+        key = _catalog_key(item)
+        if item.get("timing") != "CROSSES_T0":
+            raise AcceptanceError("Catalog baseline crossing timing is invalid")
+        started_at, ended_at = _catalog_interval_timestamps(item, "Catalog baseline crossing")
+        if not started_at < stage_start_utc_ns <= ended_at:
+            raise AcceptanceError("Catalog baseline crossing is not between stage T0 boundaries")
+        _require_non_monotonic_catalog_blocker(
+            started_at,
+            ended_at,
+            blocking_findings,
+            context="Catalog baseline",
+        )
+        if key in interval_keys:
+            raise AcceptanceError("Catalog baseline repeats an interval identity")
+        interval_keys.add(key)
+        current_interval_keys.add(key)
+    for item in closed:
+        key = _catalog_key(item)
+        if key in interval_keys:
+            raise AcceptanceError("Catalog baseline repeats an interval identity")
+        _started_at, ended_at = _catalog_interval_timestamps(
+            item, "Catalog baseline closed interval"
+        )
+        if ended_at >= stage_start_utc_ns:
+            raise AcceptanceError(
+                "Catalog baseline pre_t0_closed interval is not before stage T0"
+            )
+        interval_keys.add(key)
+    if set(open_state) & interval_keys:
+        raise AcceptanceError("Catalog baseline identity is both open and closed")
+    if len(set(terminal)) != len(terminal):
+        raise AcceptanceError("Catalog baseline repeats a terminal event")
+    return open_state, interval_keys, current_interval_keys, set(terminal)
+
+
+def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
+    start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
+    manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
+    raw_absences = _raw_absence_baseline_from_evidence(start.get("raw_absence_baseline"))
+    reconnect_baseline = start.get("reconnect_baseline")
+    if not isinstance(reconnect_baseline, dict):
+        raise AcceptanceError("reconnect baseline is malformed")
+    continuation = reconnect_baseline.get("continuation")
+    if not isinstance(continuation, dict):
+        raise AcceptanceError("reconnect baseline continuation is malformed")
+    streams = continuation.get("streams")
+    if not isinstance(streams, dict):
+        raise AcceptanceError("reconnect baseline streams are malformed")
+    start_findings = start.get("blocking_findings")
+    if not isinstance(start_findings, list) or any(
+        not isinstance(item, str) for item in start_findings
+    ):
+        raise AcceptanceError("stage-start blocking findings are malformed")
+    if start_findings != sorted(set(start_findings)):
+        raise AcceptanceError("stage-start blocking findings are not canonical")
+    details = start.get("new_finding_details")
+    if not isinstance(details, dict) or any(
+        not isinstance(key, str) for key in details
+    ):
+        raise AcceptanceError("stage-start finding details are malformed")
+    if set(details) != set(start_findings):
+        raise AcceptanceError("stage-start finding details are incomplete")
+    open_state, interval_keys, current_interval_keys, terminal_keys = _catalog_baseline_state(
+        start.get("catalog_baseline"),
+        stage_start_utc_ns=start_utc_ns,
+        blocking_findings=set(start_findings),
+    )
+    state = _V2ChainState(
+        manifest_records=manifest_records,
+        raw_absences=raw_absences,
+        deferred_manifest_paths=set(),
+        continuation_streams={str(name): value for name, value in streams.items()},
+        reconnect_transition_keys=set(),
+        catalog_open=open_state,
+        catalog_interval_keys=interval_keys,
+        # Stage-start catalog_transition carries the same terminal authority
+        # summarized by catalog_baseline.  Seed it only through that
+        # transition so the first observation is not mistaken for a duplicate.
+        terminal_event_keys=set(),
+        known_findings=set(start_findings),
+        finding_detail_keys=set(details),
+        catalog_current_interval_keys=current_interval_keys,
+        stage_start_utc_ns=start_utc_ns,
+        last_observed_utc_ns=start_utc_ns,
+    )
+    state.manifest_records, state.deferred_manifest_paths, state.invalid_manifest_authority = (
+        _apply_manifest_transition(
+            state.manifest_records,
+            start.get("manifest_transition"),
+            blocking_findings=set(start_findings),
+        )
+    )
+    _apply_reconnect_transition(state, start.get("reconnect_transition"))
+    _apply_catalog_transition(
+        state,
+        start.get("catalog_transition"),
+        current_observed_at_utc_ns=start_utc_ns,
+        blocking_findings=set(start_findings),
+    )
+    if not set(terminal_keys) <= state.terminal_event_keys:
+        raise AcceptanceError("Catalog baseline terminal authority is not published")
+    if state.catalog_open and "unresolved_discontinuity" not in state.known_findings:
+        raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
+    if state.terminal_event_keys and "terminal_service_or_core_failure" not in state.known_findings:
+        raise AcceptanceError(
+            "Catalog terminal authority is not bound to terminal_service_or_core_failure"
+        )
+    return state
+
+
 def _sample_chain(
     stage_root: Path,
     *,
@@ -1008,11 +2266,143 @@ def _sample_chain(
     start_sha: str,
     identity: DeploymentIdentity,
     require_eligible: bool,
-) -> tuple[list[dict[str, object]], str | None, dict[str, object]]:
+) -> _V2ChainState:
+    stage = str(start["stage"])
+    run_id = str(start["run_id"])
+    state = _v2_chain_state_from_start(start)
+    expected_previous: str | None = None
+    previous_boottime = _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    paths = sorted(stage_root.glob("sample-*.json"))
+    for ordinal, sample_path in enumerate(paths):
+        if sample_path.name != f"sample-{ordinal:08d}.json":
+            raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
+        sample, sample_sha = _read_published(sample_path)
+        if sample.get("schema_version") != SCHEMA_VERSION:
+            raise AcceptanceError("v1 evidence cannot be resumed or mixed into a v2 chain")
+        if sample.get("evidence_kind") != "stage-sample":
+            raise AcceptanceError("sample evidence kind is invalid")
+        _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
+        if sample.get("stage_start_evidence_sha256") != start_sha:
+            raise AcceptanceError("sample stage-start digest is invalid")
+        if sample.get("prior_stage_evidence_sha256") != start.get(
+            "prior_stage_evidence_sha256"
+        ):
+            raise AcceptanceError("sample predecessor digest is invalid")
+        if sample.get("previous_sample_sha256") != expected_previous:
+            raise AcceptanceError("sample hash chain is invalid")
+        if _integer(sample.get("sample_ordinal"), "sample ordinal") != ordinal:
+            raise AcceptanceError("sample ordinal is invalid")
+        if (
+            sample.get("boot_id") != start.get("boot_id")
+            or sample.get("systemd_process_incarnation")
+            != start.get("systemd_process_incarnation")
+            or sample.get("service_instance_id") != start.get("service_instance_id")
+        ):
+            raise AcceptanceError("sample process/service authority is mixed")
+        boottime = _integer(
+            sample.get("observed_at_boottime_ns"), "sample BOOTTIME timestamp"
+        )
+        if boottime < previous_boottime:
+            raise AcceptanceError("sample BOOTTIME chain is non-monotonic")
+        if boottime - previous_boottime > MAX_EVIDENCE_GAP_NS:
+            raise AcceptanceError("sample observation chain has an excessive gap")
+        previous_boottime = boottime
+        observed_utc = _integer(sample.get("observed_at_utc_ns"), "sample UTC timestamp")
+        findings = sample.get("blocking_findings")
+        if not isinstance(findings, list) or any(
+            not isinstance(item, str) for item in findings
+        ):
+            raise AcceptanceError("sample blocking findings are malformed")
+        if findings != sorted(set(findings)):
+            raise AcceptanceError("sample blocking findings are not canonical")
+        sample_findings = set(findings)
+        new_details = sample.get("new_finding_details")
+        if not isinstance(new_details, dict):
+            raise AcceptanceError("sample finding details are malformed")
+        for key in new_details:
+            if not isinstance(key, str) or key not in sample_findings:
+                raise AcceptanceError("sample finding detail is not a blocker")
+            if key in state.finding_detail_keys:
+                raise AcceptanceError("sample finding detail is repeated")
+        if sample.get("observer_status") != "COMPLETE":
+            raise AcceptanceError("sample observer status is invalid")
+
+        manifest_transition = sample.get("manifest_transition")
+        if state.invalid_manifest_authority:
+            if (
+                isinstance(manifest_transition, dict)
+                and manifest_transition.get("state") == "ANOMALY"
+                and "manifest_byte_mutation_or_loss" not in sample_findings
+            ):
+                raise AcceptanceError(
+                    "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+                )
+        else:
+            state.manifest_records, state.deferred_manifest_paths, anomaly = (
+                _apply_manifest_transition(
+                    state.manifest_records,
+                    manifest_transition,
+                    blocking_findings=sample_findings,
+                )
+            )
+            state.invalid_manifest_authority = anomaly
+        state.raw_absences = _apply_raw_absence_transition(
+            state.raw_absences, sample.get("raw_absence_transition")
+        )
+        _apply_reconnect_transition(state, sample.get("reconnect_transition"))
+        _apply_catalog_transition(
+            state,
+            sample.get("catalog_transition"),
+            current_observed_at_utc_ns=observed_utc,
+            blocking_findings=sample_findings,
+        )
+        if state.catalog_open and "unresolved_discontinuity" not in sample_findings:
+            raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
+        if state.terminal_event_keys and "terminal_service_or_core_failure" not in sample_findings:
+            raise AcceptanceError(
+                "Catalog terminal authority is not bound to terminal_service_or_core_failure"
+            )
+        if not state.known_findings <= sample_findings:
+            raise AcceptanceError("sample blocking findings are not monotonic")
+        expected_new_findings = sample_findings - state.known_findings
+        if set(new_details) != expected_new_findings:
+            raise AcceptanceError("sample finding details are incomplete")
+        state.finding_detail_keys.update(str(key) for key in new_details)
+        state.known_findings = sample_findings
+        if state.invalid_manifest_authority and require_eligible:
+            raise AcceptanceError("completed stage contains invalid manifest authority")
+        if require_eligible and findings:
+            raise AcceptanceError("completed stage contains ineligible sample findings")
+        if require_eligible and sample.get("result") != "PASS_CANDIDATE":
+            raise AcceptanceError("completed stage contains an ineligible sample result")
+        state.last = _LastSampleMetadata(
+            ordinal=ordinal,
+            sha256=sample_sha,
+            utc_ns=observed_utc,
+            boottime_ns=boottime,
+            result=str(sample.get("result")),
+            findings=frozenset(sample_findings),
+        )
+        expected_previous = sample_sha
+    return state
+
+
+def _sample_chain_v1(
+    stage_root: Path,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    identity: DeploymentIdentity,
+    require_eligible: bool,
+) -> tuple[dict[str, object] | None, str | None, dict[str, object], int]:
+    """Stream the immutable v1 chain without changing its historical meaning."""
+
     stage = str(start["stage"])
     run_id = str(start["run_id"])
     expected_previous: str | None = None
-    samples: list[dict[str, object]] = []
+    last_sample: dict[str, object] | None = None
     last_continuation = _continuation_from(start)
     previous_members = cast(dict[str, str], last_continuation["manifest_members"])
     baseline_members = _manifest_members_from_evidence(
@@ -1034,6 +2424,8 @@ def _sample_chain(
         if sample_path.name != f"sample-{ordinal:08d}.json":
             raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
         sample, sample_sha = _read_published(sample_path)
+        if sample.get("schema_version") != LEGACY_SCHEMA_VERSION:
+            raise AcceptanceError("legacy sample schema is invalid")
         if sample.get("evidence_kind") != "stage-sample":
             raise AcceptanceError("sample evidence kind is invalid")
         _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
@@ -1086,29 +2478,24 @@ def _sample_chain(
         last_continuation = _continuation_from(sample)
         current_members = cast(dict[str, str], last_continuation["manifest_members"])
         lost_manifest_authority = any(
-            current_members.get(path) != digest
-            for path, digest in previous_members.items()
+            current_members.get(path) != digest for path, digest in previous_members.items()
         )
-        if (
-            lost_manifest_authority
-            and "manifest_byte_mutation_or_loss" not in sample_findings
-        ):
+        if lost_manifest_authority and "manifest_byte_mutation_or_loss" not in sample_findings:
             raise AcceptanceError("sample continuation lost manifest authority")
         previous_members = current_members
-        samples.append(sample)
+        last_sample = sample
         expected_previous = sample_sha
-    return samples, expected_previous, last_continuation
+    return last_sample, expected_previous, last_continuation, len(paths)
 
 
-def verify_completed_stage(
+def _verify_completed_stage_v2(
     stage_root: Path,
     identity: DeploymentIdentity,
     *,
-    expected_stage: str | None = None,
+    start: Mapping[str, object],
+    start_sha: str,
+    expected_stage: str | None,
 ) -> tuple[dict[str, object], str]:
-    """Verify the complete immutable authority for one duration stage."""
-
-    start, start_sha = _read_published(stage_root / "stage-start.json")
     stage = start.get("stage")
     run_id = start.get("run_id")
     if (
@@ -1134,18 +2521,104 @@ def verify_completed_stage(
         or not start.get("service_instance_id")
     ):
         raise AcceptanceError("stage-start is not eligible")
-    _continuation_from(start)
-    samples, last_sample_sha, _continuation = _sample_chain(
+    state = _sample_chain(
         stage_root,
         start=start,
         start_sha=start_sha,
         identity=identity,
         require_eligible=True,
     )
-    if not samples or last_sample_sha is None:
+    if state.last is None:
         raise AcceptanceError("completed stage has no canonical samples")
-    final_path = stage_root / "stage-final.json"
-    final, final_sha = _read_published(final_path)
+    final, final_sha = _read_published(stage_root / "stage-final.json")
+    if final.get("schema_version") != SCHEMA_VERSION:
+        raise AcceptanceError("v1 final cannot terminate a v2 stage")
+    if final.get("evidence_kind") != "stage-final":
+        raise AcceptanceError("stage-final evidence kind is invalid")
+    _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
+    last = state.last
+    if (
+        final.get("stage_start_evidence_sha256") != start_sha
+        or final.get("previous_sample_sha256") != last.sha256
+        or final.get("last_sample_sha256") != last.sha256
+        or final.get("last_sample_ordinal") != last.ordinal
+        or final.get("eligible_for_next_stage") is not True
+        or final.get("prior_stage_evidence_sha256") != prior_digest
+        or final.get("boot_id") != start.get("boot_id")
+        or final.get("systemd_process_incarnation")
+        != start.get("systemd_process_incarnation")
+        or final.get("service_instance_id") != start.get("service_instance_id")
+        or final.get("observed_at_utc_ns") != last.utc_ns
+        or final.get("observed_at_boottime_ns") != last.boottime_ns
+        or final.get("blocking_findings") != []
+        or final.get("new_finding_details") != {}
+        or final.get("result") != "PASS_CANDIDATE"
+        or final.get("observer_status") != "FINALIZED"
+    ):
+        raise AcceptanceError("stage-final is not an eligible chain terminus")
+    required = _integer(final.get("required_duration_ns"), "required duration")
+    elapsed = _integer(final.get("elapsed_boottime_ns"), "elapsed duration")
+    expected_required = STAGE_DURATION_NS[stage]
+    expected_elapsed = last.boottime_ns - _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    if required != expected_required or elapsed != expected_elapsed or elapsed < required:
+        raise AcceptanceError("stage duration authority is invalid")
+    _resolve_stage_predecessor(
+        stage_root,
+        identity=identity,
+        stage=stage,
+        prior_digest=prior_digest,
+        required_schema=SCHEMA_VERSION,
+    )
+    return final, final_sha
+
+
+def _verify_completed_stage_v1(
+    stage_root: Path,
+    identity: DeploymentIdentity,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    expected_stage: str | None,
+) -> tuple[dict[str, object], str]:
+    """Read historical v1 chains without rewriting or converting them."""
+
+    stage = start.get("stage")
+    run_id = start.get("run_id")
+    if (
+        start.get("evidence_kind") != "stage-start"
+        or not isinstance(stage, str)
+        or stage not in STAGE_NAMES
+        or (expected_stage is not None and stage != expected_stage)
+        or not isinstance(run_id, str)
+        or not run_id
+    ):
+        raise AcceptanceError("stage-start evidence is invalid")
+    _chain_identity(start, identity=identity, stage=stage, run_id=run_id)
+    prior_digest = _digest(
+        start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
+    )
+    if (
+        start.get("stage_start_evidence_sha256") is not None
+        or start.get("previous_sample_sha256") is not None
+        or start.get("result") != "PASS_CANDIDATE"
+        or start.get("blocking_findings") != []
+        or not isinstance(start.get("systemd_process_incarnation"), dict)
+        or not isinstance(start.get("service_instance_id"), str)
+        or not start.get("service_instance_id")
+    ):
+        raise AcceptanceError("stage-start is not eligible")
+    last_sample, last_sample_sha, _continuation, _sample_count = _sample_chain_v1(
+        stage_root,
+        start=start,
+        start_sha=start_sha,
+        identity=identity,
+        require_eligible=True,
+    )
+    if last_sample is None or last_sample_sha is None:
+        raise AcceptanceError("completed stage has no canonical samples")
+    final, final_sha = _read_published(stage_root / "stage-final.json")
     if final.get("evidence_kind") != "stage-final":
         raise AcceptanceError("stage-final evidence kind is invalid")
     _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
@@ -1170,7 +2643,6 @@ def verify_completed_stage(
     ) - _integer(start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp")
     if required != expected_required or elapsed != expected_elapsed or elapsed < required:
         raise AcceptanceError("stage duration authority is invalid")
-    last_sample = samples[-1]
     expected_final = dict(last_sample)
     expected_final.update(
         {
@@ -1191,8 +2663,35 @@ def verify_completed_stage(
         identity=identity,
         stage=stage,
         prior_digest=prior_digest,
+        required_schema=LEGACY_SCHEMA_VERSION,
     )
     return final, final_sha
+
+
+def verify_completed_stage(
+    stage_root: Path,
+    identity: DeploymentIdentity,
+    *,
+    expected_stage: str | None = None,
+) -> tuple[dict[str, object], str]:
+    """Verify a v2 chain, or read a historical v1 chain without conversion."""
+
+    start, start_sha = _read_published(stage_root / "stage-start.json")
+    if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
+        return _verify_completed_stage_v1(
+            stage_root,
+            identity,
+            start=start,
+            start_sha=start_sha,
+            expected_stage=expected_stage,
+        )
+    return _verify_completed_stage_v2(
+        stage_root,
+        identity,
+        start=start,
+        start_sha=start_sha,
+        expected_stage=expected_stage,
+    )
 
 
 def _verify_readiness_predecessor(
@@ -1200,12 +2699,15 @@ def _verify_readiness_predecessor(
     identity: DeploymentIdentity,
     *,
     expected_digest: str | None = None,
+    expected_schema: str | None = None,
 ) -> tuple[dict[str, object], str]:
     if path.name != "readiness-result.json":
         raise AcceptanceError("readiness predecessor must be canonical readiness-result.json")
     document, digest = _read_published(path)
     if expected_digest is not None and digest != expected_digest:
         raise AcceptanceError("readiness predecessor digest does not match")
+    if expected_schema is not None and document.get("schema_version") != expected_schema:
+        raise AcceptanceError("readiness predecessor schema cannot authorize this stage")
     readiness = document.get("readiness")
     reasons = readiness.get("reasons") if isinstance(readiness, dict) else None
     if (
@@ -1226,6 +2728,8 @@ def _verify_readiness_predecessor(
     )
     identity_path = path.parent / "identity-result.json"
     _identity_document, identity_digest = read_identity_evidence(identity_path, identity)
+    if expected_schema is not None and _identity_document.get("schema_version") != expected_schema:
+        raise AcceptanceError("identity predecessor schema cannot authorize this stage")
     if identity_digest != prior_identity_digest:
         raise AcceptanceError("readiness identity predecessor digest does not match")
     return document, digest
@@ -1237,6 +2741,7 @@ def _resolve_stage_predecessor(
     identity: DeploymentIdentity,
     stage: str,
     prior_digest: str,
+    required_schema: str | None = None,
 ) -> tuple[dict[str, object], str]:
     """Resolve the actual predecessor beneath this operator evidence root."""
 
@@ -1245,6 +2750,7 @@ def _resolve_stage_predecessor(
             stage_root.parent / "readiness-result.json",
             identity,
             expected_digest=prior_digest,
+            expected_schema=required_schema,
         )
 
     previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
@@ -1254,6 +2760,8 @@ def _resolve_stage_predecessor(
     for candidate in candidates:
         _document, digest = _read_published(candidate)
         if digest != prior_digest:
+            continue
+        if required_schema is not None and _document.get("schema_version") != required_schema:
             continue
         verified, verified_digest = verify_completed_stage(
             candidate.parent,
@@ -1273,10 +2781,15 @@ def verify_prior_stage(
 ) -> tuple[dict[str, object], str]:
     _validate_stage(stage)
     if stage == "2h":
-        return _verify_readiness_predecessor(path, identity)
+        return _verify_readiness_predecessor(
+            path, identity, expected_schema=SCHEMA_VERSION
+        )
     previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
     if path.name != "stage-final.json":
         raise AcceptanceError("duration predecessor must be canonical stage-final.json")
+    predecessor, _predecessor_sha = _read_published(path)
+    if predecessor.get("schema_version") != SCHEMA_VERSION:
+        raise AcceptanceError("v1 predecessor cannot authorize a v2 stage")
     return verify_completed_stage(path.parent, identity, expected_stage=previous_stage)
 
 
@@ -1295,14 +2808,32 @@ def resume_observer(
     if (stage_root / "stage-final.json").exists():
         raise AcceptanceError("stage is already finalized")
     start, start_sha = _read_published(stage_root / "stage-start.json")
+    start_manifest_transition = start.get("manifest_transition")
     if (
-        start.get("evidence_kind") != "stage-start"
+        isinstance(start_manifest_transition, dict)
+        and start_manifest_transition.get("state") == "ANOMALY"
+    ):
+        start_findings = start.get("blocking_findings")
+        if not isinstance(start_findings, list) or (
+            "manifest_byte_mutation_or_loss" not in start_findings
+        ):
+            raise AcceptanceError(
+                "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+            )
+        raise AcceptanceError(
+            "manifest authority is invalid; stage cannot be deterministically resumed"
+        )
+    if (
+        start.get("schema_version") != SCHEMA_VERSION
+        or start.get("schema_version") == LEGACY_SCHEMA_VERSION
+        or start.get("evidence_kind") != "stage-start"
         or start.get("stage") not in STAGE_NAMES
         or not _same_identity(start, identity)
         or start.get("stage_start_evidence_sha256") is not None
         or start.get("previous_sample_sha256") is not None
-        or start.get("result") != "PASS_CANDIDATE"
     ):
+        if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
+            raise AcceptanceError("v1 failed stage cannot resume as v2")
         raise AcceptanceError("stage-start evidence is invalid")
     stage = str(start["stage"])
     run_id = start.get("run_id")
@@ -1312,24 +2843,34 @@ def resume_observer(
     prior_digest = _digest(
         start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
     )
-    baseline_members = _manifest_members_from_evidence(
-        cast(dict[str, object], start.get("reconnect_summary", {})).get(
-            "baseline_manifest_members"
-        )
-    )
     start_process = start.get("systemd_process_incarnation")
     if not isinstance(start_process, dict):
         raise AcceptanceError("stage-start process-incarnation evidence is malformed")
-    start_findings = start.get("blocking_findings")
-    if not isinstance(start_findings, list):
-        raise AcceptanceError("stage-start findings are malformed")
-    samples, last_sample_sha, continuation = _sample_chain(
+    state = _sample_chain(
         stage_root,
         start=start,
         start_sha=start_sha,
         identity=identity,
         require_eligible=False,
     )
+    if state.invalid_manifest_authority:
+        raise AcceptanceError(
+            "manifest authority is invalid; stage cannot be deterministically resumed"
+        )
+    start_findings = start.get("blocking_findings")
+    if not isinstance(start_findings, list) or any(
+        not isinstance(item, str) for item in start_findings
+    ):
+        raise AcceptanceError("stage-start blocking findings are malformed")
+    resumable_start = (
+        start_findings == []
+        and start.get("result") == "PASS_CANDIDATE"
+    ) or (
+        start_findings == ["unsafe_wall_clock_backward"]
+        and start.get("result") == "INCOMPLETE"
+    )
+    if not resumable_start:
+        raise AcceptanceError("stage-start is not resumable")
     if selected_clock.boot_id() != start.get("boot_id"):
         raise AcceptanceError("resume boot identity changed")
     if selected_clock.boottime_ns() < _integer(
@@ -1344,6 +2885,23 @@ def resume_observer(
     _current_state, current_instance = _state_instance(data_root)
     if current_instance != start.get("service_instance_id"):
         raise AcceptanceError("resume service instance changed")
+    manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
+    t0_manifest_members = {
+        path: str(record["sha256"]) for path, record in manifest_records.items()
+    }
+    continuation: dict[str, object] = {
+        "schema_version": INCREMENTAL_SCHEMA_VERSION,
+        "manifest_members": {
+            path: str(record["sha256"])
+            for path, record in state.manifest_records.items()
+            if path not in state.deferred_manifest_paths
+        },
+        "streams": state.continuation_streams,
+    }
+    try:
+        validate_incremental_continuation(continuation)
+    except SealError as exc:
+        raise AcceptanceError("resume reconnect continuation is invalid") from exc
     observer = AcceptanceObserver(
         stage=stage,
         run_id=run_id,
@@ -1357,27 +2915,31 @@ def resume_observer(
         disk_usage=disk_usage,
         archive_root_resolver=archive_root_resolver,
         t0_utc_ns=_integer(start["observed_at_utc_ns"], "stage-start UTC timestamp"),
-        t0_boottime_ns=_integer(start["observed_at_boottime_ns"], "stage-start BOOTTIME timestamp"),
+        t0_boottime_ns=_integer(
+            start["observed_at_boottime_ns"], "stage-start BOOTTIME timestamp"
+        ),
         t0_boot_id=str(start["boot_id"]),
         frozen_process=start_process,
         frozen_service_instance_id=str(start.get("service_instance_id") or ""),
         stage_start_sha256=start_sha,
-        t0_manifest_members=baseline_members,
-        ever_blocking_findings={str(item) for item in start_findings},
+        t0_manifest_members=t0_manifest_members,
+        t0_manifest_records=manifest_records,
+        t0_manifest_aggregate_sha256=_manifest_aggregate(manifest_records),
+        published_manifest_records=state.manifest_records,
+        published_raw_absences=state.raw_absences,
+        published_deferred_manifest_paths=state.deferred_manifest_paths,
+        published_reconnect_transition_keys=state.reconnect_transition_keys,
+        published_reconnect_streams=state.continuation_streams,
+        published_catalog_open=state.catalog_open,
+        published_catalog_interval_keys=state.catalog_interval_keys,
+        published_terminal_event_keys=state.terminal_event_keys,
+        ever_blocking_findings=state.known_findings,
         reconnect_continuation=continuation,
-        next_sample_ordinal=len(samples),
+        next_sample_ordinal=0 if state.last is None else state.last.ordinal + 1,
+        last_sample_sha256=None if state.last is None else state.last.sha256,
+        last_sample_utc_ns=None if state.last is None else state.last.utc_ns,
+        last_sample_boottime_ns=None if state.last is None else state.last.boottime_ns,
     )
-    if samples:
-        sample = samples[-1]
-        for existing_sample in samples:
-            findings = existing_sample.get("blocking_findings")
-            if isinstance(findings, list):
-                observer.ever_blocking_findings.update(str(item) for item in findings)
-        observer.last_sample_sha256 = last_sample_sha
-        observer.last_sample_utc_ns = _integer(sample["observed_at_utc_ns"], "sample UTC timestamp")
-        observer.last_sample_boottime_ns = _integer(
-            sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp"
-        )
     return observer
 
 

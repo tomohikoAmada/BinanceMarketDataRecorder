@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -34,6 +35,261 @@ def _create_catalog(path: Path) -> None:
             request_id="read-only-control",
             occurred_at_utc_ns=2,
         ) == []
+
+
+def _record_gap_event(
+    catalog: Catalog,
+    *,
+    event_id: str,
+    event_type: str,
+    occurred_at_utc_ns: int,
+    evidence: dict[str, object],
+) -> None:
+    catalog.record_operational_event(
+        event_id=event_id,
+        event_type=event_type,
+        occurred_at_utc_ns=occurred_at_utc_ns,
+        evidence=evidence,
+        symbol="BTCUSDT",
+    )
+
+
+def _started_evidence(gap_id: str, started_at_utc_ns: int) -> dict[str, object]:
+    return {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "stream": "book_ticker",
+        "gap_id": gap_id,
+        "gap_started_at_utc_ns": started_at_utc_ns,
+        "original_connection_id": "connection-a",
+        "original_generation": 1,
+    }
+
+
+def _completed_evidence(
+    gap_id: str, ended_at_utc_ns: int, *, malformed: bool = False
+) -> dict[str, object]:
+    evidence: dict[str, object] = {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "stream": "book_ticker",
+        "gap_id": gap_id,
+        "gap_ended_at_utc_ns": ended_at_utc_ns,
+        "new_connection_id": "connection-b",
+    }
+    if not malformed:
+        evidence["new_generation"] = 2
+    return evidence
+
+
+def _snapshot(path: Path, as_of_utc_ns: int) -> dict[str, object]:
+    with Catalog(path, read_only=True) as catalog:
+        return catalog.discontinuity_authority_snapshot(as_of_utc_ns=as_of_utc_ns)
+
+
+def test_discontinuity_snapshot_excludes_a_future_lifecycle_completely(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        _record_gap_event(
+            catalog,
+            event_id="future-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=101,
+            evidence=_started_evidence("future-gap", 101),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="future-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=102,
+            evidence=_completed_evidence("future-gap", 102),
+        )
+
+    snapshot = _snapshot(path, 100)
+    assert snapshot["operational_events"] == []
+    assert snapshot["malformed_events"] == []
+    assert snapshot["degraded_pairs"] == []
+    assert snapshot["unclosed"] == {}
+    assert snapshot["closed"] == {}
+
+
+def test_discontinuity_snapshot_future_completion_leaves_open_until_next_boundary(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        _record_gap_event(
+            catalog,
+            event_id="open-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=99,
+            evidence=_started_evidence("open-gap", 99),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="open-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=101,
+            evidence=_completed_evidence("open-gap", 101),
+        )
+
+    at_boundary = _snapshot(path, 100)
+    unclosed = cast(dict[tuple[str, str, str], list[dict[str, object]]], at_boundary["unclosed"])
+    assert set(unclosed) == {
+        ("um_perpetual", "BTCUSDT", "book_ticker")
+    }
+    assert at_boundary["closed"] == {}
+
+    after_completion = _snapshot(path, 101)
+    assert after_completion["unclosed"] == {}
+    closed = after_completion["closed"]
+    assert isinstance(closed, dict)
+    assert closed[("um_perpetual", "BTCUSDT", "book_ticker")][0]["gap_id"] == "open-gap"
+
+
+def test_discontinuity_snapshot_completed_before_boundary_is_closed(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        _record_gap_event(
+            catalog,
+            event_id="closed-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=98,
+            evidence=_started_evidence("closed-gap", 98),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="closed-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=99,
+            evidence=_completed_evidence("closed-gap", 99),
+        )
+
+    snapshot = _snapshot(path, 100)
+    assert snapshot["unclosed"] == {}
+    closed = snapshot["closed"]
+    assert isinstance(closed, dict)
+    assert closed[("um_perpetual", "BTCUSDT", "book_ticker")][0]["ended_at_utc_ns"] == 99
+
+
+def test_discontinuity_snapshot_excludes_future_terminal_event(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        catalog.record_operational_event(
+            event_id="future-stop",
+            event_type="SERVICE_STOPPED",
+            occurred_at_utc_ns=101,
+            evidence={},
+        )
+
+    before = _snapshot(path, 100)
+    assert before["operational_events"] == []
+    assert before["terminal_events"] == []
+    after = _snapshot(path, 101)
+    terminal = after["terminal_events"]
+    assert isinstance(terminal, list)
+    assert [event["event_type"] for event in terminal] == ["SERVICE_STOPPED"]
+
+
+def test_discontinuity_snapshot_bounds_malformed_and_degraded_authority(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        _record_gap_event(
+            catalog,
+            event_id="degraded-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=99,
+            evidence=_started_evidence("degraded-gap", 99),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="future-degraded-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=101,
+            evidence=_completed_evidence("degraded-gap", 101, malformed=True),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="future-malformed",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=102,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "gap_id": "malformed-gap",
+            },
+        )
+
+    before = _snapshot(path, 100)
+    assert before["degraded_pairs"] == []
+    assert before["malformed_events"] == []
+    unclosed = cast(dict[tuple[str, str, str], list[dict[str, object]]], before["unclosed"])
+    assert set(unclosed) == {
+        ("um_perpetual", "BTCUSDT", "book_ticker")
+    }
+
+    after = _snapshot(path, 102)
+    degraded = after["degraded_pairs"]
+    assert isinstance(degraded, list)
+    assert degraded[0]["gap_id"] == "degraded-gap"
+    malformed = after["malformed_events"]
+    assert isinstance(malformed, list)
+    assert malformed == [
+        {
+            "event_id": "future-malformed",
+            "event_type": "STREAM_DISCONTINUITY_STARTED",
+            "reason": "missing_stream",
+        }
+    ]
+
+
+def test_discontinuity_snapshot_uses_one_bounded_operational_event_read(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        _record_gap_event(
+            catalog,
+            event_id="bounded-start",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=99,
+            evidence=_started_evidence("bounded-gap", 99),
+        )
+        _record_gap_event(
+            catalog,
+            event_id="bounded-complete",
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=101,
+            evidence=_completed_evidence("bounded-gap", 101),
+        )
+
+    before = _catalog_files(tmp_path)
+    statements: list[str] = []
+    with Catalog(path, read_only=True) as catalog:
+        catalog._connection.set_trace_callback(statements.append)
+        snapshot = catalog.discontinuity_authority_snapshot(as_of_utc_ns=100)
+    assert _catalog_files(tmp_path) == before
+
+    event_reads = [
+        statement
+        for statement in statements
+        if "FROM operational_events" in statement
+    ]
+    assert len(event_reads) == 1
+    assert "occurred_at_utc_ns <= 100" in event_reads[0]
+    unclosed = cast(dict[tuple[str, str, str], list[dict[str, object]]], snapshot["unclosed"])
+    assert set(unclosed) == {
+        ("um_perpetual", "BTCUSDT", "book_ticker")
+    }
+    assert snapshot["closed"] == {}
 
 
 def test_read_only_catalog_reads_aggregate_targets_and_control_without_mutation(

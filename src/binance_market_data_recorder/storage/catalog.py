@@ -1610,6 +1610,224 @@ class Catalog:
             output.append(document)
         return output
 
+    def discontinuity_authority_snapshot(
+        self, *, as_of_utc_ns: int
+    ) -> dict[str, object]:
+        """Return one coherent, read-only discontinuity authority snapshot.
+
+        The bounded event read is one SQLite statement.  All lifecycle pairing,
+        malformed/degraded validation, and terminal-event selection is then
+        derived from that immutable row set, so a writer cannot commit between
+        the open and closed queries of one Acceptance observation.  The read
+        lock is released before this in-memory derivation and never spans any
+        filesystem or Raw scan.
+        """
+        if (
+            isinstance(as_of_utc_ns, bool)
+            or not isinstance(as_of_utc_ns, int)
+            or as_of_utc_ns < 0
+        ):
+            raise ValueError("as_of_utc_ns must be a non-negative integer")
+        rows = self._read_discontinuity_event_rows(as_of_utc_ns=as_of_utc_ns)
+        authority = self._discontinuity_authority_from_rows(rows)
+        authority["as_of_utc_ns"] = as_of_utc_ns
+        return authority
+
+    def _read_discontinuity_event_rows(
+        self, *, as_of_utc_ns: int | None = None
+    ) -> list[sqlite3.Row]:
+        if (
+            as_of_utc_ns is not None
+            and (
+                isinstance(as_of_utc_ns, bool)
+                or not isinstance(as_of_utc_ns, int)
+                or as_of_utc_ns < 0
+            )
+        ):
+            raise ValueError("as_of_utc_ns must be a non-negative integer")
+        query = "SELECT * FROM operational_events"
+        parameters: tuple[object, ...] = ()
+        if as_of_utc_ns is not None:
+            query += " WHERE occurred_at_utc_ns <= ?"
+            parameters = (as_of_utc_ns,)
+        query += " ORDER BY occurred_at_utc_ns, event_id"
+        with self._lock:
+            return self._connection.execute(query, parameters).fetchall()
+
+    def _discontinuity_authority_from_rows(
+        self, rows: Sequence[sqlite3.Row]
+    ) -> dict[str, object]:
+        event_documents: list[dict[str, object]] = []
+        lifecycle_rows: list[tuple[dict[str, object], object, bool]] = []
+        for row in rows:
+            row_document = dict(row)
+            event_type = str(row_document["event_type"])
+            parse_failed = False
+            try:
+                evidence = json.loads(str(row_document["evidence_json"]))
+            except (TypeError, json.JSONDecodeError):
+                evidence = None
+                parse_failed = True
+            row_document["evidence"] = evidence
+            event_documents.append(
+                {
+                    "event_id": str(row_document["event_id"]),
+                    "event_type": event_type,
+                    "occurred_at_utc_ns": int(row_document["occurred_at_utc_ns"]),
+                    "evidence": evidence,
+                }
+            )
+            if event_type in _DISCONTINUITY_EVENT_TYPES:
+                lifecycle_rows.append((row_document, evidence, parse_failed))
+
+        malformed: list[dict[str, object]] = []
+        valid_rows: list[
+            tuple[
+                dict[str, object],
+                dict[str, object],
+                tuple[str, str, str, str],
+            ]
+        ] = []
+        for row_document, evidence, parse_failed in lifecycle_rows:
+            event_id = str(row_document["event_id"])
+            event_type = str(row_document["event_type"])
+            reason: str | None = None
+            if parse_failed:
+                reason = "evidence_not_json"
+            elif not isinstance(evidence, dict):
+                reason = "evidence_not_object"
+            else:
+                market = evidence.get("market")
+                symbol = evidence.get("symbol")
+                stream = evidence.get("stream")
+                gap_id = evidence.get("gap_id")
+                if not isinstance(market, str) or not market:
+                    reason = "missing_market"
+                elif not isinstance(symbol, str) or not symbol:
+                    if not (
+                        self._legacy_identity_schema and "symbol" not in evidence
+                    ):
+                        reason = "missing_symbol"
+                elif not isinstance(stream, str) or not stream:
+                    reason = "missing_stream"
+                elif not isinstance(gap_id, str) or not gap_id:
+                    reason = "missing_gap_id"
+            if reason is not None:
+                malformed.append(
+                    {
+                        "event_id": event_id,
+                        "event_type": event_type,
+                        "reason": reason,
+                    }
+                )
+                continue
+            assert isinstance(evidence, dict)
+            evidence_document = cast(dict[str, object], evidence)
+            identity = _discontinuity_identity(
+                evidence_document,
+                allow_legacy_symbol=self._legacy_identity_schema,
+            )
+            if identity is not None:
+                valid_rows.append((row_document, evidence_document, identity))
+        malformed.sort(key=lambda item: str(item["event_id"]))
+
+        started_by_gap: dict[
+            tuple[str, str, str, str], tuple[dict[str, object], dict[str, object]]
+        ] = {}
+        completed_by_gap: dict[
+            tuple[str, str, str, str], tuple[dict[str, object], dict[str, object]]
+        ] = {}
+        for row_document, evidence, identity in valid_rows:
+            if str(row_document["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                completed_by_gap[identity] = (row_document, evidence)
+            else:
+                started_by_gap[identity] = (row_document, evidence)
+
+        degraded: list[dict[str, object]] = []
+        for key in sorted(set(started_by_gap) & set(completed_by_gap)):
+            started_evidence = started_by_gap[key][1]
+            completed_evidence = completed_by_gap[key][1]
+            if _closed_lifecycle_identity_valid(
+                started_evidence, completed_evidence
+            ):
+                continue
+            market, symbol, stream, gap_id = key
+            degraded.append(
+                {
+                    "market": market,
+                    "symbol": symbol,
+                    "stream": stream,
+                    "gap_id": gap_id,
+                    "reason": "malformed_lifecycle_identity",
+                }
+            )
+
+        closed: dict[tuple[str, str, str], list[dict[str, object]]] = {}
+        for (market, symbol, stream, gap_id), (
+            _started_row,
+            started_evidence,
+        ) in sorted(started_by_gap.items()):
+            completed = completed_by_gap.get((market, symbol, stream, gap_id))
+            if completed is None:
+                continue
+            _completed_row, completed_evidence = completed
+            if not _closed_lifecycle_identity_valid(
+                started_evidence, completed_evidence
+            ):
+                continue
+            started_at = cast(int, started_evidence["gap_started_at_utc_ns"])
+            ended_at = cast(int, completed_evidence["gap_ended_at_utc_ns"])
+            closed.setdefault((market, symbol, stream), []).append(
+                {
+                    "market": market,
+                    "symbol": symbol,
+                    "stream": stream,
+                    "gap_id": gap_id,
+                    "started_at_utc_ns": started_at,
+                    "ended_at_utc_ns": ended_at,
+                    "wall_time_order": (
+                        "NORMAL" if ended_at > started_at else "NON_MONOTONIC"
+                    ),
+                    "original_connection_id": started_evidence[
+                        "original_connection_id"
+                    ],
+                    "original_generation": started_evidence["original_generation"],
+                    "new_connection_id": completed_evidence["new_connection_id"],
+                    "new_generation": completed_evidence["new_generation"],
+                }
+            )
+
+        completed_gap_ids = set(completed_by_gap)
+        unclosed: dict[tuple[str, str, str], list[dict[str, object]]] = {}
+        for row_document, _evidence, identity in valid_rows:
+            if str(row_document["event_type"]) == "STREAM_DISCONTINUITY_COMPLETED":
+                continue
+            if identity in completed_gap_ids:
+                continue
+            market, symbol, stream, _gap_id = identity
+            document = dict(row_document)
+            document.pop("evidence_json", None)
+            unclosed.setdefault((market, symbol, stream), []).append(document)
+
+        terminal_types = {
+            "SERVICE_FAILED",
+            "SERVICE_STOPPED",
+            "CORE_MARKET_TERMINAL_FAILURE",
+        }
+        terminal_events = [
+            dict(event)
+            for event in event_documents
+            if str(event.get("event_type")) in terminal_types
+        ]
+        return {
+            "operational_events": event_documents,
+            "terminal_events": terminal_events,
+            "malformed_events": malformed,
+            "degraded_pairs": degraded,
+            "unclosed": unclosed,
+            "closed": closed,
+        }
+
     def unclosed_stream_discontinuities(
         self, *, market: str, symbol: str, stream: str
     ) -> list[dict[str, object]]:
