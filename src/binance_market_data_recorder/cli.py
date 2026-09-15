@@ -38,6 +38,7 @@ from .metrics.report import DailyReporter
 from .normalize import NormalizationError, Normalizer, normalization_status
 from .paths import discover_repository_root
 from .service.acceptance import (
+    SAMPLE_INTERVAL_NS,
     STAGE_DURATION_NS,
     AcceptanceError,
     AcceptanceObserver,
@@ -587,6 +588,55 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
         return 2
 
 
+def _run_acceptance_stage(
+    observer: AcceptanceObserver,
+    *,
+    sleep: Callable[[float], None] | None = None,
+) -> tuple[Path, str, dict[str, object]]:
+    """Run an acceptance stage on a BOOTTIME sample-start cadence.
+
+    The first regular sample retains the existing immediate-start behavior.
+    Every later target is anchored to the actual start of the preceding
+    sample, so observation work consumes the cadence budget.  When a sample
+    overruns its target, the next sample starts immediately and the following
+    target is re-anchored from that actual start; missed slots are not replayed.
+    """
+
+    selected_sleep = time.sleep if sleep is None else sleep
+    required_duration_ns = STAGE_DURATION_NS[observer.stage]
+    if observer.t0_boottime_ns is None:
+        raise AcceptanceError("stage T0 is not initialized")
+
+    next_target_boottime_ns = (
+        None
+        if observer.last_sample_boottime_ns is None
+        else observer.last_sample_boottime_ns + SAMPLE_INTERVAL_NS
+    )
+    while (
+        observer.last_sample_boottime_ns is None
+        or observer.last_sample_boottime_ns - observer.t0_boottime_ns
+        < required_duration_ns
+    ):
+        if next_target_boottime_ns is not None:
+            now_boottime_ns = observer.clock.boottime_ns()
+            remaining_stage_ns = required_duration_ns - (
+                now_boottime_ns - observer.t0_boottime_ns
+            )
+            if remaining_stage_ns > 0:
+                wait_ns = min(
+                    max(0, next_target_boottime_ns - now_boottime_ns),
+                    remaining_stage_ns,
+                )
+                if wait_ns > 0:
+                    selected_sleep(wait_ns / 1_000_000_000)
+
+        sample_started_boottime_ns = observer.clock.boottime_ns()
+        observer.sample()
+        next_target_boottime_ns = sample_started_boottime_ns + SAMPLE_INTERVAL_NS
+
+    return observer.finalize()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -852,21 +902,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     try:
                         if observer.stage_start_sha256 is None:
                             observer.start()
-                        while (
-                            observer.last_sample_boottime_ns is None
-                            or int(observer.last_sample_boottime_ns)
-                            - int(observer.t0_boottime_ns or 0)
-                            < STAGE_DURATION_NS[observer.stage]
-                        ):
-                            _path, _digest, _sample = observer.sample()
-                            remaining = STAGE_DURATION_NS[observer.stage] - (
-                                (observer.last_sample_boottime_ns or 0)
-                                - (observer.t0_boottime_ns or 0)
-                            )
-                            if remaining <= 0:
-                                break
-                            time.sleep(min(300.0, remaining / 1_000_000_000))
-                        path, digest, document = observer.finalize()
+                        path, digest, document = _run_acceptance_stage(observer)
                     except KeyboardInterrupt:
                         _write_json(
                             {

@@ -6,13 +6,194 @@ from pathlib import Path
 
 import pytest
 
-from binance_market_data_recorder.cli import main
+from binance_market_data_recorder.cli import _run_acceptance_stage, main
 from binance_market_data_recorder.metrics.model import MetricAggregate
+from binance_market_data_recorder.service import acceptance as acceptance_module
 from binance_market_data_recorder.status import service_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from binance_market_data_recorder.storage.macos import PlatformEjectResult, VolumeInfo
 from tests.archive_support import FixedVolumes, prepare_archive
+
+
+class _CadenceClock:
+    def __init__(self, now_ns: int = 0) -> None:
+        self.now_ns = now_ns
+
+    def boottime_ns(self) -> int:
+        return self.now_ns
+
+
+class _CadenceObserver:
+    stage = "2h"
+
+    def __init__(self, work_ns: int | list[int], *, last_sample_ns: int | None = None) -> None:
+        self.clock = _CadenceClock(0 if last_sample_ns is None else last_sample_ns)
+        self.t0_boottime_ns = 0
+        self.last_sample_boottime_ns = last_sample_ns
+        self.work_ns = work_ns
+        self.sample_starts: list[int] = []
+        self.blocking_findings: set[str] = set()
+        self.finalized = False
+
+    def sample(self) -> None:
+        previous_boottime_ns = (
+            self.last_sample_boottime_ns
+            if self.last_sample_boottime_ns is not None
+            else self.t0_boottime_ns
+        )
+        self.sample_starts.append(self.clock.now_ns)
+        work_ns = (
+            self.work_ns.pop(0)
+            if isinstance(self.work_ns, list) and self.work_ns
+            else self.work_ns
+            if isinstance(self.work_ns, int)
+            else 0
+        )
+        self.clock.now_ns += work_ns
+        if self.clock.now_ns - previous_boottime_ns > acceptance_module.MAX_EVIDENCE_GAP_NS:
+            self.blocking_findings.add("acceptance_observation_gap")
+        self.last_sample_boottime_ns = self.clock.now_ns
+
+    def finalize(self) -> tuple[object, str, dict[str, object]]:
+        self.finalized = True
+        return object(), "final", {"result": "PASS_CANDIDATE"}
+
+
+def _run_cadence_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+    observer: _CadenceObserver,
+    *,
+    duration_ns: int,
+) -> list[float]:
+    monkeypatch.setitem(acceptance_module.STAGE_DURATION_NS, "2h", duration_ns)
+    sleeps: list[float] = []
+
+    def sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+        observer.clock.now_ns += int(seconds * 1_000_000_000)
+
+    _run_acceptance_stage(observer, sleep=sleep)  # type: ignore[arg-type]
+    return sleeps
+
+
+def test_acceptance_cadence_consumes_cheap_observation_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = _CadenceObserver(10 * 1_000_000_000)
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=600 * 1_000_000_000,
+    )
+
+    assert sleeps == pytest.approx([290.0, 290.0])
+    assert 300.0 not in sleeps
+    assert observer.sample_starts[:3] == [0, 300_000_000_000, 600_000_000_000]
+    assert observer.finalized is True
+
+
+@pytest.mark.parametrize("work_seconds", [300.0, 301.1])
+def test_acceptance_cadence_starts_immediately_after_interval_overrun(
+    monkeypatch: pytest.MonkeyPatch,
+    work_seconds: float,
+) -> None:
+    work_ns = int(work_seconds * 1_000_000_000)
+    observer = _CadenceObserver(work_ns)
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=work_ns + 1,
+    )
+
+    assert sum(sleeps) == pytest.approx(0.0)
+    assert observer.sample_starts[:2] == [0, work_ns]
+
+
+def test_acceptance_cadence_does_not_hide_excessive_observation_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = _CadenceObserver(650 * 1_000_000_000)
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=1_300 * 1_000_000_000,
+    )
+
+    assert observer.sample_starts[0] == 0
+    assert observer.sample_starts[1] == 650 * 1_000_000_000
+    assert observer.blocking_findings == {"acceptance_observation_gap"}
+    assert sleeps == []
+
+
+def test_acceptance_cadence_skips_missed_slots_without_catch_up_storm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = _CadenceObserver(
+        [650 * 1_000_000_000, 0, 0],
+    )
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=950 * 1_000_000_000,
+    )
+
+    assert observer.sample_starts == [
+        0,
+        650 * 1_000_000_000,
+        950 * 1_000_000_000,
+    ]
+    assert sleeps == pytest.approx([300.0])
+
+
+def test_acceptance_cadence_caps_sleep_at_stage_end(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = _CadenceObserver(10 * 1_000_000_000)
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=250 * 1_000_000_000,
+    )
+
+    assert sleeps == pytest.approx([240.0])
+    assert observer.sample_starts[:2] == [0, 250 * 1_000_000_000]
+
+
+def test_acceptance_resume_cadence_uses_existing_sample_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    observer = _CadenceObserver(
+        10 * 1_000_000_000,
+        last_sample_ns=100 * 1_000_000_000,
+    )
+
+    sleeps = _run_cadence_fixture(
+        monkeypatch,
+        observer,
+        duration_ns=1_000 * 1_000_000_000,
+    )
+
+    assert observer.sample_starts[0] == 400 * 1_000_000_000
+    assert sleeps[0] == pytest.approx(300.0)
+    assert sleeps[1] == pytest.approx(290.0)
+
+
+def test_acceptance_stage_preserves_keyboard_interrupt() -> None:
+    class InterruptingObserver(_CadenceObserver):
+        def sample(self) -> None:
+            raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        _run_acceptance_stage(
+            InterruptingObserver(0),  # type: ignore[arg-type]
+            sleep=lambda _seconds: pytest.fail("sleep before first sample"),
+        )
 
 
 def test_version_identifies_distribution(capsys: pytest.CaptureFixture[str]) -> None:
