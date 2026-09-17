@@ -1,6 +1,33 @@
 # Risk Register
 
-## Current candidate risk checkpoint — M22.9 acceptance observer cadence scheduling fix (2026-09-14)
+## Current candidate risk checkpoint — M22.9 acceptance evidence V3 (2026-09-18)
+
+The reviewed P1 acceptance-policy defect is corrected in an acceptance-only
+V3 implementation. A valid intermediate Catalog OPEN remains compact causal
+evidence and is not sticky; terminal OPEN alone derives
+`unresolved_discontinuity`. Exact lifecycle continuity, all unrelated
+fail-closed findings, bounded evidence, and the 300-second/600-second timing
+authorities remain unchanged. Deterministic offline tests cover the real
+1.909730489-second reconnect, sampling-phase invariance, terminal OPEN, resume,
+invalid completion, mixed schema, historical V2/V1 compatibility, and rolling
+chain memory.
+
+The correction is not deployed and no VPS/Formal action was performed. R-074
+remains open until an independently reviewed, rebuilt, separately authorized
+artifact produces eligible live evidence; the old V2 failed 12h receives no
+credit and is not retried unchanged.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V3
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+DEPLOYED=NO
+FORMAL_V3_STARTED=NO
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+## Previous candidate risk checkpoint — M22.9 acceptance observer cadence scheduling fix (2026-09-14)
 
 The stage runner's fixed post-observation sleep was adding the full
 five-minute interval after observation work. The offline fix schedules from

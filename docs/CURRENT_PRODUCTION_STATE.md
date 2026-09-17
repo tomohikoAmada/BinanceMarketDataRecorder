@@ -5,7 +5,31 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+## Current milestone — M22_9 acceptance evidence V3 (2026-09-18)
+
+The frozen P1 acceptance-policy defect is corrected in an acceptance-only V3
+implementation on branch `fix/m22-9-acceptance-evidence-v3`. Valid
+intermediate Catalog OPEN remains present in compact causal evidence without a
+sticky blocker; terminal OPEN derives `unresolved_discontinuity` and fails
+closed. Historical V1/V2 readers and evidence remain immutable, and mixed
+schema chains are rejected.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V3
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+DEPLOYED=NO
+FORMAL_V3_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+Offline validation passes. This source is not installed on the VPS and does
+not authorize deployment, live traffic, or Formal acceptance. See
+[`M22.9 acceptance evidence V3`](milestone_acceptance/M22.9-acceptance-evidence-v3.md).
+
+## Previous milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
 
 The exact installed artifact completed more than two hours with stable Recorder
 identity, but the canonical Formal result is `INCOMPLETE`. Fourteen full-state

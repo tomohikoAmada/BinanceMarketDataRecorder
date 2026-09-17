@@ -45,7 +45,8 @@ from .readiness import VpsReadinessEvaluator
 from .state import ServiceStateError, ServiceStateStore
 from .systemd import SystemdError, SystemdManager
 
-SCHEMA_VERSION = "m22.9-acceptance-evidence.v2"
+SCHEMA_VERSION = "m22.9-acceptance-evidence.v3"
+PREVIOUS_SCHEMA_VERSION = "m22.9-acceptance-evidence.v2"
 LEGACY_SCHEMA_VERSION = "m22.9-acceptance-evidence.v1"
 STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h")
 STAGE_DURATION_NS = {
@@ -152,6 +153,13 @@ _V2_STAGE_FINAL_FIELDS = _V2_STAGE_CORE_FIELDS | frozenset(
         "eligible_for_next_stage",
     }
 )
+
+# V2 and V3 deliberately have the same bounded physical field layout.  They
+# remain separate authorities because their acceptance semantics differ.
+_V3_STAGE_CORE_FIELDS = frozenset(_V2_STAGE_CORE_FIELDS)
+_V3_STAGE_START_FIELDS = frozenset(_V2_STAGE_START_FIELDS)
+_V3_STAGE_SAMPLE_FIELDS = frozenset(_V2_STAGE_SAMPLE_FIELDS)
+_V3_STAGE_FINAL_FIELDS = frozenset(_V2_STAGE_FINAL_FIELDS)
 
 
 def _integer(value: object, field: str) -> int:
@@ -283,7 +291,11 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
     if not isinstance(value, dict) or canonical_json(value) != body:
         raise AcceptanceError(f"evidence is not canonical JSON: {path}")
     schema_version = value.get("schema_version")
-    if schema_version not in {LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}:
+    if schema_version not in {
+        LEGACY_SCHEMA_VERSION,
+        PREVIOUS_SCHEMA_VERSION,
+        SCHEMA_VERSION,
+    }:
         raise AcceptanceError("unsupported acceptance evidence schema")
     if schema_version == LEGACY_SCHEMA_VERSION:
         if not set(value) >= _COMMON_FIELDS or set(value) - (_COMMON_FIELDS | _EXTRA_FIELDS):
@@ -295,13 +307,28 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
             if not set(value) >= _COMMON_FIELDS or set(value) - allowed:
                 raise AcceptanceError("acceptance evidence fields are not exact")
         elif kind == "stage-start":
-            if set(value) != _V2_STAGE_START_FIELDS:
+            expected = (
+                _V2_STAGE_START_FIELDS
+                if schema_version == PREVIOUS_SCHEMA_VERSION
+                else _V3_STAGE_START_FIELDS
+            )
+            if set(value) != expected:
                 raise AcceptanceError("stage-start evidence fields are not exact")
         elif kind == "stage-sample":
-            if set(value) != _V2_STAGE_SAMPLE_FIELDS:
+            expected = (
+                _V2_STAGE_SAMPLE_FIELDS
+                if schema_version == PREVIOUS_SCHEMA_VERSION
+                else _V3_STAGE_SAMPLE_FIELDS
+            )
+            if set(value) != expected:
                 raise AcceptanceError("stage-sample evidence fields are not exact")
         elif kind == "stage-final":
-            if set(value) != _V2_STAGE_FINAL_FIELDS:
+            expected = (
+                _V2_STAGE_FINAL_FIELDS
+                if schema_version == PREVIOUS_SCHEMA_VERSION
+                else _V3_STAGE_FINAL_FIELDS
+            )
+            if set(value) != expected:
                 raise AcceptanceError("stage-final evidence fields are not exact")
         else:
             raise AcceptanceError("acceptance evidence kind is invalid")
@@ -369,7 +396,43 @@ def _empty_v2_stage(
     now_boot: int,
     boot_id: str,
 ) -> dict[str, object]:
-    """Return only the bounded common fields used by a v2 stage record."""
+    """Return only the bounded common fields used by a historical v2 stage."""
+
+    return {
+        "schema_version": PREVIOUS_SCHEMA_VERSION,
+        "evidence_kind": kind,
+        "stage": stage,
+        "run_id": run_id,
+        "observed_at_utc_ns": now_utc,
+        "observed_at_boottime_ns": now_boot,
+        "boot_id": boot_id,
+        **_identity_fields(identity),
+        "prior_stage_evidence_sha256": None,
+        "stage_start_evidence_sha256": None,
+        "previous_sample_sha256": None,
+        "systemd_process_incarnation": None,
+        "service_instance_id": None,
+        "readiness": {},
+        "catalog_integrity": {},
+        "capacity": {},
+        "blocking_findings": [],
+        "new_finding_details": {},
+        "observer_status": "OBSERVED",
+        "result": "INCOMPLETE",
+    }
+
+
+def _empty_v3_stage(
+    *,
+    kind: str,
+    stage: str,
+    run_id: str,
+    identity: DeploymentIdentity,
+    now_utc: int,
+    now_boot: int,
+    boot_id: str,
+) -> dict[str, object]:
+    """Return only the bounded common fields used by a v3 stage record."""
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -503,6 +566,30 @@ def _catalog_key(item: Mapping[str, object]) -> tuple[str, str, str, str]:
     if any(not isinstance(value, str) or not value for value in values):
         raise AcceptanceError("Catalog discontinuity identity is malformed")
     return cast(tuple[str, str, str, str], values)
+
+
+def _catalog_open_sort_key(item: Mapping[str, object]) -> tuple[str, str, str, str, int, str]:
+    market, symbol, stream, gap_id = _catalog_key(item)
+    return (
+        market,
+        symbol,
+        stream,
+        gap_id,
+        _integer(item.get("started_at_utc_ns"), "Catalog open start timestamp"),
+        str(item.get("timing")),
+    )
+
+
+def _first_catalog_open_detail(
+    open_state: Mapping[tuple[str, str, str, str], Mapping[str, object]],
+) -> dict[str, object] | None:
+    if not open_state:
+        return None
+    first = min(open_state.values(), key=_catalog_open_sort_key)
+    # Keep the complete canonical lifecycle projection available.  This is
+    # intentionally not reduced to a source label: the same detail is derived
+    # by the streaming verifier from the immutable transition chain.
+    return dict(first)
 
 
 def _absence_members(value: object) -> dict[tuple[str, str], dict[str, object]]:
@@ -733,9 +820,14 @@ def _same_identity(document: Mapping[str, object], identity: DeploymentIdentity)
 
 
 def read_identity_evidence(
-    path: Path, identity: DeploymentIdentity
+    path: Path,
+    identity: DeploymentIdentity,
+    *,
+    expected_schema: str | None = None,
 ) -> tuple[dict[str, object], str]:
     document, digest = _read_published(path)
+    if expected_schema is not None and document.get("schema_version") != expected_schema:
+        raise AcceptanceError("identity evidence schema cannot authorize this artifact")
     if document.get("evidence_kind") != "identity-result" or document.get("stage") != "identity":
         raise AcceptanceError("identity evidence kind is invalid")
     if (
@@ -757,7 +849,11 @@ def create_readiness_evidence(
     data_root: Path,
 ) -> tuple[Path, str, dict[str, object]]:
     root = _safe_evidence_root(evidence_root, data_root)
-    _identity_doc, prior = read_identity_evidence(identity_evidence_path, identity)
+    _identity_doc, prior = read_identity_evidence(
+        identity_evidence_path,
+        identity,
+        expected_schema=SCHEMA_VERSION,
+    )
     result = evaluator.evaluate()
     now = LinuxClock()
     document = _empty_common(
@@ -1001,8 +1097,6 @@ class AcceptanceObserver:
             findings.append("malformed_discontinuity_authority")
         if terminal:
             findings.append("terminal_service_or_core_failure")
-        if unclosed:
-            findings.append("unresolved_discontinuity")
         detail_candidates: dict[str, object] = {}
         non_monotonic = sorted(
             (
@@ -1160,6 +1254,12 @@ class AcceptanceObserver:
             )
             and key not in self.published_catalog_interval_keys
         ]
+        completed_keys = {_catalog_key(item) for item in completed}
+        disappeared = set(self.published_catalog_open) - set(current_open)
+        if not disappeared <= completed_keys:
+            raise AcceptanceError(
+                "Catalog open identity disappeared without completion authority"
+            )
         new_terminal = [
             event for event in terminal_events if event not in self.published_terminal_event_keys
         ]
@@ -1461,7 +1561,7 @@ class AcceptanceObserver:
         )
         boot_id = self.clock.boot_id() if observed_boot_id is None else observed_boot_id
         stage_start = self.stage_start_sha256 is None
-        document = _empty_v2_stage(
+        document = _empty_v3_stage(
             kind="stage-sample",
             stage=self.stage,
             run_id=self.run_id,
@@ -1555,9 +1655,15 @@ class AcceptanceObserver:
             catalog_transition = {
                 "started": [],
                 "completed": [],
-                "current_open": [],
+                "current_open": [
+                    dict(self.published_catalog_open[key])
+                    for key in sorted(self.published_catalog_open)
+                ],
                 "terminal_events": [],
-                "summary": {"open_count": 0, "current_interval_count": 0},
+                "summary": {
+                    "open_count": len(self.published_catalog_open),
+                    "current_interval_count": len(self.published_catalog_interval_keys),
+                },
             }
         capacity = _capacity(self.data_root, now_utc, self.disk_usage)
         if (
@@ -1726,11 +1832,17 @@ class AcceptanceObserver:
             _integer(sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp")
             - self.t0_boottime_ns
         )
+        terminal_open_detail = _first_catalog_open_detail(self.published_catalog_open)
+        final_findings = set(self.ever_blocking_findings)
+        if terminal_open_detail is not None:
+            final_findings.add("unresolved_discontinuity")
         if sample["boot_id"] != self.t0_boot_id or elapsed < STAGE_DURATION_NS[self.stage]:
             result = "INCOMPLETE"
+        elif terminal_open_detail is not None:
+            result = "FAIL"
         else:
             result = str(sample["result"])
-        final = _empty_v2_stage(
+        final = _empty_v3_stage(
             kind="stage-final",
             stage=self.stage,
             run_id=self.run_id,
@@ -1746,14 +1858,21 @@ class AcceptanceObserver:
                 "prior_stage_evidence_sha256": self.prior_stage_sha256,
                 "systemd_process_incarnation": sample["systemd_process_incarnation"],
                 "service_instance_id": sample["service_instance_id"],
-                "blocking_findings": sample["blocking_findings"],
+                "blocking_findings": sorted(final_findings),
+                "new_finding_details": (
+                    {"unresolved_discontinuity": terminal_open_detail}
+                    if terminal_open_detail is not None
+                    else {}
+                ),
                 "result": result,
                 "observer_status": "FINALIZED",
                 "elapsed_boottime_ns": elapsed,
                 "required_duration_ns": STAGE_DURATION_NS[self.stage],
                 "last_sample_ordinal": self.next_sample_ordinal - 1,
                 "last_sample_sha256": last,
-                "eligible_for_next_stage": result == "PASS_CANDIDATE",
+                "eligible_for_next_stage": (
+                    result == "PASS_CANDIDATE" and not final_findings
+                ),
             }
         )
         for field_name in ("readiness", "catalog_integrity", "capacity"):
@@ -2184,7 +2303,9 @@ def _catalog_baseline_state(
     return open_state, interval_keys, current_interval_keys, set(terminal)
 
 
-def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
+def _v2_chain_state_from_start(
+    start: Mapping[str, object], *, require_open_finding: bool = True
+) -> _V2ChainState:
     start_utc_ns = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
     manifest_records = _manifest_baseline_from_evidence(start.get("manifest_baseline"))
     raw_absences = _raw_absence_baseline_from_evidence(start.get("raw_absence_baseline"))
@@ -2250,7 +2371,11 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
     )
     if not set(terminal_keys) <= state.terminal_event_keys:
         raise AcceptanceError("Catalog baseline terminal authority is not published")
-    if state.catalog_open and "unresolved_discontinuity" not in state.known_findings:
+    if (
+        require_open_finding
+        and state.catalog_open
+        and "unresolved_discontinuity" not in state.known_findings
+    ):
         raise AcceptanceError("Catalog open state is not bound to unresolved_discontinuity")
     if state.terminal_event_keys and "terminal_service_or_core_failure" not in state.known_findings:
         raise AcceptanceError(
@@ -2259,7 +2384,13 @@ def _v2_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
     return state
 
 
-def _sample_chain(
+def _v3_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
+    """Reconstruct v3 T0 state without v2's intermediate OPEN blocker rule."""
+
+    return _v2_chain_state_from_start(start, require_open_finding=False)
+
+
+def _sample_chain_v2(
     stage_root: Path,
     *,
     start: Mapping[str, object],
@@ -2279,8 +2410,8 @@ def _sample_chain(
         if sample_path.name != f"sample-{ordinal:08d}.json":
             raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
         sample, sample_sha = _read_published(sample_path)
-        if sample.get("schema_version") != SCHEMA_VERSION:
-            raise AcceptanceError("v1 evidence cannot be resumed or mixed into a v2 chain")
+        if sample.get("schema_version") != PREVIOUS_SCHEMA_VERSION:
+            raise AcceptanceError("sample schema cannot be mixed into a v2 chain")
         if sample.get("evidence_kind") != "stage-sample":
             raise AcceptanceError("sample evidence kind is invalid")
         _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
@@ -2387,6 +2518,170 @@ def _sample_chain(
         )
         expected_previous = sample_sha
     return state
+
+
+def _sample_chain_v3(
+    stage_root: Path,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    identity: DeploymentIdentity,
+    require_eligible: bool,
+) -> _V2ChainState:
+    """Stream a v3 chain with transient OPEN treated as causal state."""
+
+    stage = str(start["stage"])
+    run_id = str(start["run_id"])
+    state = _v3_chain_state_from_start(start)
+    expected_previous: str | None = None
+    previous_boottime = _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    paths = sorted(stage_root.glob("sample-*.json"))
+    for ordinal, sample_path in enumerate(paths):
+        if sample_path.name != f"sample-{ordinal:08d}.json":
+            raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
+        sample, sample_sha = _read_published(sample_path)
+        if sample.get("schema_version") != SCHEMA_VERSION:
+            raise AcceptanceError("sample schema cannot be mixed into a v3 chain")
+        if sample.get("evidence_kind") != "stage-sample":
+            raise AcceptanceError("sample evidence kind is invalid")
+        _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
+        if sample.get("stage_start_evidence_sha256") != start_sha:
+            raise AcceptanceError("sample stage-start digest is invalid")
+        if sample.get("prior_stage_evidence_sha256") != start.get(
+            "prior_stage_evidence_sha256"
+        ):
+            raise AcceptanceError("sample predecessor digest is invalid")
+        if sample.get("previous_sample_sha256") != expected_previous:
+            raise AcceptanceError("sample hash chain is invalid")
+        if _integer(sample.get("sample_ordinal"), "sample ordinal") != ordinal:
+            raise AcceptanceError("sample ordinal is invalid")
+        if (
+            sample.get("boot_id") != start.get("boot_id")
+            or sample.get("systemd_process_incarnation")
+            != start.get("systemd_process_incarnation")
+            or sample.get("service_instance_id") != start.get("service_instance_id")
+        ):
+            raise AcceptanceError("sample process/service authority is mixed")
+        boottime = _integer(
+            sample.get("observed_at_boottime_ns"), "sample BOOTTIME timestamp"
+        )
+        if boottime < previous_boottime:
+            raise AcceptanceError("sample BOOTTIME chain is non-monotonic")
+        if boottime - previous_boottime > MAX_EVIDENCE_GAP_NS:
+            raise AcceptanceError("sample observation chain has an excessive gap")
+        previous_boottime = boottime
+        observed_utc = _integer(sample.get("observed_at_utc_ns"), "sample UTC timestamp")
+        findings = sample.get("blocking_findings")
+        if not isinstance(findings, list) or any(
+            not isinstance(item, str) for item in findings
+        ):
+            raise AcceptanceError("sample blocking findings are malformed")
+        if findings != sorted(set(findings)):
+            raise AcceptanceError("sample blocking findings are not canonical")
+        sample_findings = set(findings)
+        if "unresolved_discontinuity" in sample_findings:
+            raise AcceptanceError(
+                "v3 sample contains terminal-only unresolved_discontinuity"
+            )
+        new_details = sample.get("new_finding_details")
+        if not isinstance(new_details, dict):
+            raise AcceptanceError("sample finding details are malformed")
+        for key in new_details:
+            if not isinstance(key, str) or key not in sample_findings:
+                raise AcceptanceError("sample finding detail is not a blocker")
+            if key in state.finding_detail_keys:
+                raise AcceptanceError("sample finding detail is repeated")
+        if sample.get("observer_status") != "COMPLETE":
+            raise AcceptanceError("sample observer status is invalid")
+
+        manifest_transition = sample.get("manifest_transition")
+        if state.invalid_manifest_authority:
+            if (
+                isinstance(manifest_transition, dict)
+                and manifest_transition.get("state") == "ANOMALY"
+                and "manifest_byte_mutation_or_loss" not in sample_findings
+            ):
+                raise AcceptanceError(
+                    "manifest anomaly is not bound to manifest_byte_mutation_or_loss"
+                )
+        else:
+            state.manifest_records, state.deferred_manifest_paths, anomaly = (
+                _apply_manifest_transition(
+                    state.manifest_records,
+                    manifest_transition,
+                    blocking_findings=sample_findings,
+                )
+            )
+            state.invalid_manifest_authority = anomaly
+        state.raw_absences = _apply_raw_absence_transition(
+            state.raw_absences, sample.get("raw_absence_transition")
+        )
+        _apply_reconnect_transition(state, sample.get("reconnect_transition"))
+        _apply_catalog_transition(
+            state,
+            sample.get("catalog_transition"),
+            current_observed_at_utc_ns=observed_utc,
+            blocking_findings=sample_findings,
+        )
+        if state.terminal_event_keys and "terminal_service_or_core_failure" not in sample_findings:
+            raise AcceptanceError(
+                "Catalog terminal authority is not bound to terminal_service_or_core_failure"
+            )
+        if not state.known_findings <= sample_findings:
+            raise AcceptanceError("sample blocking findings are not monotonic")
+        expected_new_findings = sample_findings - state.known_findings
+        if set(new_details) != expected_new_findings:
+            raise AcceptanceError("sample finding details are incomplete")
+        state.finding_detail_keys.update(str(key) for key in new_details)
+        state.known_findings = sample_findings
+        if state.invalid_manifest_authority and require_eligible:
+            raise AcceptanceError("completed stage contains invalid manifest authority")
+        if require_eligible and findings:
+            raise AcceptanceError("completed stage contains ineligible sample findings")
+        if require_eligible and sample.get("result") != "PASS_CANDIDATE":
+            raise AcceptanceError("completed stage contains an ineligible sample result")
+        state.last = _LastSampleMetadata(
+            ordinal=ordinal,
+            sha256=sample_sha,
+            utc_ns=observed_utc,
+            boottime_ns=boottime,
+            result=str(sample.get("result")),
+            findings=frozenset(sample_findings),
+        )
+        expected_previous = sample_sha
+    return state
+
+
+def _sample_chain(
+    stage_root: Path,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    identity: DeploymentIdentity,
+    require_eligible: bool,
+) -> _V2ChainState:
+    """Dispatch only after the document's explicit semantic generation."""
+
+    schema_version = start.get("schema_version")
+    if schema_version == PREVIOUS_SCHEMA_VERSION:
+        return _sample_chain_v2(
+            stage_root,
+            start=start,
+            start_sha=start_sha,
+            identity=identity,
+            require_eligible=require_eligible,
+        )
+    if schema_version == SCHEMA_VERSION:
+        return _sample_chain_v3(
+            stage_root,
+            start=start,
+            start_sha=start_sha,
+            identity=identity,
+            require_eligible=require_eligible,
+        )
+    raise AcceptanceError("unsupported stage chain schema")
 
 
 def _sample_chain_v1(
@@ -2521,7 +2816,7 @@ def _verify_completed_stage_v2(
         or not start.get("service_instance_id")
     ):
         raise AcceptanceError("stage-start is not eligible")
-    state = _sample_chain(
+    state = _sample_chain_v2(
         stage_root,
         start=start,
         start_sha=start_sha,
@@ -2531,8 +2826,8 @@ def _verify_completed_stage_v2(
     if state.last is None:
         raise AcceptanceError("completed stage has no canonical samples")
     final, final_sha = _read_published(stage_root / "stage-final.json")
-    if final.get("schema_version") != SCHEMA_VERSION:
-        raise AcceptanceError("v1 final cannot terminate a v2 stage")
+    if final.get("schema_version") != PREVIOUS_SCHEMA_VERSION:
+        raise AcceptanceError("non-v2 final cannot terminate a v2 stage")
     if final.get("evidence_kind") != "stage-final":
         raise AcceptanceError("stage-final evidence kind is invalid")
     _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
@@ -2569,8 +2864,113 @@ def _verify_completed_stage_v2(
         identity=identity,
         stage=stage,
         prior_digest=prior_digest,
+        required_schema=PREVIOUS_SCHEMA_VERSION,
+    )
+    return final, final_sha
+
+
+def _verify_completed_stage_v3(
+    stage_root: Path,
+    identity: DeploymentIdentity,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    expected_stage: str | None,
+) -> tuple[dict[str, object], str]:
+    """Verify a v3 chain with terminal-only unresolved Catalog semantics."""
+
+    stage = start.get("stage")
+    run_id = start.get("run_id")
+    if (
+        start.get("evidence_kind") != "stage-start"
+        or not isinstance(stage, str)
+        or stage not in STAGE_NAMES
+        or (expected_stage is not None and stage != expected_stage)
+        or not isinstance(run_id, str)
+        or not run_id
+    ):
+        raise AcceptanceError("stage-start evidence is invalid")
+    _chain_identity(start, identity=identity, stage=stage, run_id=run_id)
+    prior_digest = _digest(
+        start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
+    )
+    if (
+        start.get("stage_start_evidence_sha256") is not None
+        or start.get("previous_sample_sha256") is not None
+        or start.get("result") != "PASS_CANDIDATE"
+        or start.get("blocking_findings") != []
+        or not isinstance(start.get("systemd_process_incarnation"), dict)
+        or not isinstance(start.get("service_instance_id"), str)
+        or not start.get("service_instance_id")
+    ):
+        raise AcceptanceError("stage-start is not eligible")
+    state = _sample_chain_v3(
+        stage_root,
+        start=start,
+        start_sha=start_sha,
+        identity=identity,
+        require_eligible=True,
+    )
+    if state.last is None:
+        raise AcceptanceError("completed stage has no canonical samples")
+    final, final_sha = _read_published(stage_root / "stage-final.json")
+    if final.get("schema_version") != SCHEMA_VERSION:
+        raise AcceptanceError("non-v3 final cannot terminate a v3 stage")
+    if final.get("evidence_kind") != "stage-final":
+        raise AcceptanceError("stage-final evidence kind is invalid")
+    _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
+
+    last = state.last
+    terminal_detail = _first_catalog_open_detail(state.catalog_open)
+    expected_findings = set(state.known_findings)
+    expected_details: dict[str, object] = {}
+    if terminal_detail is not None:
+        expected_findings.add("unresolved_discontinuity")
+        expected_details["unresolved_discontinuity"] = terminal_detail
+    required = _integer(final.get("required_duration_ns"), "required duration")
+    elapsed = _integer(final.get("elapsed_boottime_ns"), "elapsed duration")
+    expected_required = STAGE_DURATION_NS[stage]
+    expected_elapsed = last.boottime_ns - _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    if required != expected_required or elapsed != expected_elapsed or elapsed < required:
+        raise AcceptanceError("stage duration authority is invalid")
+    expected_result = (
+        "INCOMPLETE"
+        if elapsed < required
+        else ("FAIL" if terminal_detail is not None else "PASS_CANDIDATE")
+    )
+    expected_eligible = expected_result == "PASS_CANDIDATE" and not expected_findings
+    if (
+        final.get("stage_start_evidence_sha256") != start_sha
+        or final.get("previous_sample_sha256") != last.sha256
+        or final.get("last_sample_sha256") != last.sha256
+        or final.get("last_sample_ordinal") != last.ordinal
+        or final.get("prior_stage_evidence_sha256") != prior_digest
+        or final.get("boot_id") != start.get("boot_id")
+        or final.get("systemd_process_incarnation")
+        != start.get("systemd_process_incarnation")
+        or final.get("service_instance_id") != start.get("service_instance_id")
+        or final.get("observed_at_utc_ns") != last.utc_ns
+        or final.get("observed_at_boottime_ns") != last.boottime_ns
+        or final.get("blocking_findings") != sorted(expected_findings)
+        or final.get("new_finding_details") != expected_details
+        or final.get("result") != expected_result
+        or final.get("eligible_for_next_stage") is not expected_eligible
+        or final.get("observer_status") != "FINALIZED"
+    ):
+        raise AcceptanceError(
+            "stage-final does not match reconstructed v3 terminal state/terminus"
+        )
+    _resolve_stage_predecessor(
+        stage_root,
+        identity=identity,
+        stage=stage,
+        prior_digest=prior_digest,
         required_schema=SCHEMA_VERSION,
     )
+    if not expected_eligible:
+        raise AcceptanceError("stage-final is not an eligible v3 chain terminus")
     return final, final_sha
 
 
@@ -2674,7 +3074,7 @@ def verify_completed_stage(
     *,
     expected_stage: str | None = None,
 ) -> tuple[dict[str, object], str]:
-    """Verify a v2 chain, or read a historical v1 chain without conversion."""
+    """Dispatch to the immutable verifier for the document's schema generation."""
 
     start, start_sha = _read_published(stage_root / "stage-start.json")
     if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
@@ -2685,13 +3085,23 @@ def verify_completed_stage(
             start_sha=start_sha,
             expected_stage=expected_stage,
         )
-    return _verify_completed_stage_v2(
-        stage_root,
-        identity,
-        start=start,
-        start_sha=start_sha,
-        expected_stage=expected_stage,
-    )
+    if start.get("schema_version") == PREVIOUS_SCHEMA_VERSION:
+        return _verify_completed_stage_v2(
+            stage_root,
+            identity,
+            start=start,
+            start_sha=start_sha,
+            expected_stage=expected_stage,
+        )
+    if start.get("schema_version") == SCHEMA_VERSION:
+        return _verify_completed_stage_v3(
+            stage_root,
+            identity,
+            start=start,
+            start_sha=start_sha,
+            expected_stage=expected_stage,
+        )
+    raise AcceptanceError("unsupported completed-stage schema")
 
 
 def _verify_readiness_predecessor(
@@ -2727,9 +3137,11 @@ def _verify_readiness_predecessor(
         "readiness identity predecessor digest",
     )
     identity_path = path.parent / "identity-result.json"
-    _identity_document, identity_digest = read_identity_evidence(identity_path, identity)
-    if expected_schema is not None and _identity_document.get("schema_version") != expected_schema:
-        raise AcceptanceError("identity predecessor schema cannot authorize this stage")
+    _identity_document, identity_digest = read_identity_evidence(
+        identity_path,
+        identity,
+        expected_schema=expected_schema,
+    )
     if identity_digest != prior_identity_digest:
         raise AcceptanceError("readiness identity predecessor digest does not match")
     return document, digest
@@ -2789,7 +3201,7 @@ def verify_prior_stage(
         raise AcceptanceError("duration predecessor must be canonical stage-final.json")
     predecessor, _predecessor_sha = _read_published(path)
     if predecessor.get("schema_version") != SCHEMA_VERSION:
-        raise AcceptanceError("v1 predecessor cannot authorize a v2 stage")
+        raise AcceptanceError("mixed-schema predecessor cannot authorize a v3 stage")
     return verify_completed_stage(path.parent, identity, expected_stage=previous_stage)
 
 
@@ -2825,7 +3237,6 @@ def resume_observer(
         )
     if (
         start.get("schema_version") != SCHEMA_VERSION
-        or start.get("schema_version") == LEGACY_SCHEMA_VERSION
         or start.get("evidence_kind") != "stage-start"
         or start.get("stage") not in STAGE_NAMES
         or not _same_identity(start, identity)
@@ -2833,7 +3244,9 @@ def resume_observer(
         or start.get("previous_sample_sha256") is not None
     ):
         if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
-            raise AcceptanceError("v1 failed stage cannot resume as v2")
+            raise AcceptanceError("v1 failed stage cannot resume as v2/v3")
+        if start.get("schema_version") == PREVIOUS_SCHEMA_VERSION:
+            raise AcceptanceError("v2 failed stage cannot resume as v3")
         raise AcceptanceError("stage-start evidence is invalid")
     stage = str(start["stage"])
     run_id = start.get("run_id")
@@ -2846,7 +3259,7 @@ def resume_observer(
     start_process = start.get("systemd_process_incarnation")
     if not isinstance(start_process, dict):
         raise AcceptanceError("stage-start process-incarnation evidence is malformed")
-    state = _sample_chain(
+    state = _sample_chain_v3(
         stage_root,
         start=start,
         start_sha=start_sha,
@@ -2944,8 +3357,11 @@ def resume_observer(
 
 
 __all__ = [
+    "LEGACY_SCHEMA_VERSION",
     "MAX_EVIDENCE_GAP_NS",
+    "PREVIOUS_SCHEMA_VERSION",
     "SAMPLE_INTERVAL_NS",
+    "SCHEMA_VERSION",
     "STAGE_DURATION_NS",
     "STAGE_NAMES",
     "AcceptanceError",

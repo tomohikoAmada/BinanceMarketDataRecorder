@@ -1,6 +1,36 @@
 # Milestone Plan
 
-## Current candidate milestone — M22_9 acceptance observer cadence scheduling fix (2026-09-14)
+## Current candidate milestone — M22_9 acceptance evidence V3 (2026-09-18)
+
+The independently reviewed P1 acceptance-policy defect is corrected in the
+focused acceptance-only V3 implementation on branch
+`fix/m22-9-acceptance-evidence-v3`, from frozen source
+`5302de995729fe064044c41acf9224beeca4cfc4` / tree
+`c68238dc9c7a12d1e85df15eda836b6dedd0ad0f`.
+Structurally valid intermediate Catalog OPEN is now causal, nonblocking, and
+nonsticky; terminal OPEN derives `unresolved_discontinuity` and remains
+fail-closed. V1/V2 historical semantics and immutable evidence are preserved,
+and mixed V2/V3 chains are rejected. Runtime and verifier evidence remain
+bounded; the 300-second cadence and 600-second evidence-gap threshold are
+unchanged.
+
+Offline validation is complete: 1733 tests passed, 24 were skipped, and 4
+were deselected; Ruff, strict MyPy, M0 contracts, build, and diff checks pass.
+No VPS or Formal run was performed, and the corrected artifact is not deployed.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V3
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+DEPLOYED=NO
+FORMAL_V3_STARTED=NO
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+See [`M22.9 acceptance evidence V3`](milestone_acceptance/M22.9-acceptance-evidence-v3.md).
+
+## Previous candidate milestone — M22_9 acceptance observer cadence scheduling fix (2026-09-14)
 
 The focused stage-runner correction is implemented on branch
 `fix/m22-9-acceptance-cadence-scheduling` from the independently verified
