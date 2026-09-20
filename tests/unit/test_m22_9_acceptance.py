@@ -11,6 +11,8 @@ import pytest
 from binance_market_data_recorder.audit import reconnect_boundaries as reconnect_audit
 from binance_market_data_recorder.service.acceptance import (
     LEGACY_SCHEMA_VERSION,
+    PREVIOUS_SCHEMA_VERSION,
+    SCHEMA_VERSION,
     STAGE_DURATION_NS,
     AcceptanceError,
     AcceptanceObserver,
@@ -191,7 +193,7 @@ def test_clean_interval_uses_boottime_and_publishes_immutable_chain(tmp_path: Pa
     assert cast(int, final["elapsed_boottime_ns"]) >= STAGE_DURATION_NS["2h"]
 
 
-def test_v2_sample_is_a_compact_transition_and_final_is_terminal_only(
+def test_v3_sample_is_a_compact_transition_and_final_is_terminal_only(
     tmp_path: Path,
 ) -> None:
     observer, clock, _manager = _observer(tmp_path)
@@ -199,7 +201,7 @@ def test_v2_sample_is_a_compact_transition_and_final_is_terminal_only(
     clock.utc += 1
     clock.boot += 1
     _sample_path, _sample_sha, sample = observer.sample()
-    assert sample["schema_version"] == "m22.9-acceptance-evidence.v2"
+    assert sample["schema_version"] == SCHEMA_VERSION
     for forbidden in (
         "audit",
         "inventory",
@@ -233,6 +235,165 @@ def test_v2_sample_is_a_compact_transition_and_final_is_terminal_only(
     assert final["last_sample_sha256"] == final["previous_sample_sha256"]
     assert final["eligible_for_next_stage"] is False
     assert len(canonical_json(final)) < 4_096
+
+
+def test_v3_real_1_909730489_second_reconnect_is_eligible(tmp_path: Path) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    gap_id = "real-1-91s-gap"
+    started_at = t0 + 1
+    _record_gap_started(
+        observer,
+        event_id="real-1-91s-start",
+        occurred_at_utc_ns=started_at,
+        gap_id=gap_id,
+    )
+
+    first_sample_at = started_at + 1_084_904_697
+    clock.utc = first_sample_at
+    clock.boot = cast(int, observer.t0_boottime_ns) + (first_sample_at - t0)
+    _open_path, _open_sha, open_sample = observer.sample()
+    open_transition = cast(dict[str, object], open_sample["catalog_transition"])
+    assert [
+        item["gap_id"]
+        for item in cast(list[dict[str, object]], open_transition["current_open"])
+    ] == [gap_id]
+    assert open_sample["blocking_findings"] == []
+    assert open_sample["result"] == "PASS_CANDIDATE"
+
+    completed_at = t0 + 1_909_730_489
+    _record_gap_completed(
+        observer,
+        event_id="real-1-91s-complete",
+        occurred_at_utc_ns=completed_at,
+        gap_id=gap_id,
+    )
+    clock.utc = completed_at + 1
+    clock.boot = cast(int, observer.t0_boottime_ns) + (clock.utc - t0)
+    _closed_path, _closed_sha, closed_sample = observer.sample()
+    closed_transition = cast(dict[str, object], closed_sample["catalog_transition"])
+    assert [
+        item["gap_id"]
+        for item in cast(list[dict[str, object]], closed_transition["completed"])
+    ] == [gap_id]
+    assert closed_transition["current_open"] == []
+    assert closed_sample["blocking_findings"] == []
+    assert closed_sample["result"] == "PASS_CANDIDATE"
+
+    _advance_stage_with_samples(observer, clock)
+    clock.utc += 1
+    clock.boot += 1
+    _final_path, _final_sha, final = observer.finalize()
+    assert final["schema_version"] == SCHEMA_VERSION
+    assert final["blocking_findings"] == []
+    assert final["result"] == "PASS_CANDIDATE"
+    assert final["eligible_for_next_stage"] is True
+    verified, _verified_sha = verify_completed_stage(
+        observer.evidence_root, observer.identity, expected_stage="2h"
+    )
+    assert verified["eligible_for_next_stage"] is True
+
+
+def test_v3_sampling_phase_invariance_for_one_reconnect_history(tmp_path: Path) -> None:
+    final_results: dict[str, tuple[object, object]] = {}
+
+    for phase in ("before", "during", "after"):
+        observer, clock, _manager = _observer(tmp_path / phase)
+        observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+        observer.start()
+        t0 = cast(int, observer.t0_utc_ns)
+        t0_boot = cast(int, observer.t0_boottime_ns)
+        gap_id = f"phase-{phase}-gap"
+
+        def set_time(
+            offset: int,
+            *,
+            phase_clock: FakeClock = clock,
+            phase_t0: int = t0,
+            phase_t0_boot: int = t0_boot,
+        ) -> None:
+            phase_clock.utc = phase_t0 + offset
+            phase_clock.boot = phase_t0_boot + offset
+
+        if phase == "before":
+            set_time(1)
+            _before_path, _before_sha, before = observer.sample()
+            assert cast(dict[str, object], before["catalog_transition"])["current_open"] == []
+            _record_gap_started(
+                observer,
+                event_id=f"phase-{phase}-start",
+                occurred_at_utc_ns=t0 + 2,
+                gap_id=gap_id,
+            )
+            set_time(3)
+            _open_path, _open_sha, open_sample = observer.sample()
+            assert cast(dict[str, object], open_sample["catalog_transition"])["current_open"]
+            _record_gap_completed(
+                observer,
+                event_id=f"phase-{phase}-complete",
+                occurred_at_utc_ns=t0 + 4,
+                gap_id=gap_id,
+            )
+            set_time(5)
+            observer.sample()
+        elif phase == "during":
+            _record_gap_started(
+                observer,
+                event_id=f"phase-{phase}-start",
+                occurred_at_utc_ns=t0 + 1,
+                gap_id=gap_id,
+            )
+            set_time(2)
+            _open_path, _open_sha, open_sample = observer.sample()
+            assert cast(dict[str, object], open_sample["catalog_transition"])["current_open"]
+            _record_gap_completed(
+                observer,
+                event_id=f"phase-{phase}-complete",
+                occurred_at_utc_ns=t0 + 3,
+                gap_id=gap_id,
+            )
+            set_time(4)
+            observer.sample()
+        else:
+            _record_gap_started(
+                observer,
+                event_id=f"phase-{phase}-start",
+                occurred_at_utc_ns=t0 + 1,
+                gap_id=gap_id,
+            )
+            _record_gap_completed(
+                observer,
+                event_id=f"phase-{phase}-complete",
+                occurred_at_utc_ns=t0 + 2,
+                gap_id=gap_id,
+            )
+            set_time(3)
+            _after_path, _after_sha, after = observer.sample()
+            after_transition = cast(dict[str, object], after["catalog_transition"])
+            assert after_transition["current_open"] == []
+            assert after_transition["completed"]
+
+        _advance_stage_with_samples(observer, clock)
+        clock.utc += 1
+        clock.boot += 1
+        _final_path, _final_sha, final = observer.finalize()
+        assert final["result"] == "PASS_CANDIDATE"
+        assert final["eligible_for_next_stage"] is True
+        verified, _verified_sha = verify_completed_stage(
+            observer.evidence_root, observer.identity, expected_stage="2h"
+        )
+        final_results[phase] = (
+            verified["result"],
+            verified["eligible_for_next_stage"],
+        )
+
+    assert final_results == {
+        "before": ("PASS_CANDIDATE", True),
+        "during": ("PASS_CANDIDATE", True),
+        "after": ("PASS_CANDIDATE", True),
+    }
 
 
 def test_process_incarnation_change_fails_even_when_pid_is_unchanged(tmp_path: Path) -> None:
@@ -354,7 +515,7 @@ def test_hundred_thousand_historical_raw_absences_are_not_repeated(tmp_path: Pat
 
 
 @pytest.mark.parametrize("sample_count", [10, 1_000, 10_000])
-def test_v2_chain_verifier_keeps_only_rolling_state(
+def test_v3_chain_verifier_keeps_only_rolling_state(
     tmp_path: Path, sample_count: int
 ) -> None:
     observer, clock, _manager = _observer(tmp_path)
@@ -743,12 +904,80 @@ def _catalog_transition(
     }
 
 
-def _rewrite_v2_samples(
+def _record_gap_started(
+    observer: AcceptanceObserver,
+    *,
+    event_id: str,
+    occurred_at_utc_ns: int,
+    gap_id: str,
+) -> None:
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id=event_id,
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=occurred_at_utc_ns,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": gap_id,
+                "gap_started_at_utc_ns": occurred_at_utc_ns,
+                "original_connection_id": "connection-a",
+                "original_generation": 1,
+            },
+            symbol="BTCUSDT",
+        )
+
+
+def _record_gap_completed(
+    observer: AcceptanceObserver,
+    *,
+    event_id: str,
+    occurred_at_utc_ns: int,
+    gap_id: str,
+) -> None:
+    with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id=event_id,
+            event_type="STREAM_DISCONTINUITY_COMPLETED",
+            occurred_at_utc_ns=occurred_at_utc_ns,
+            evidence={
+                "market": "um_perpetual",
+                "symbol": "BTCUSDT",
+                "stream": "book_ticker",
+                "gap_id": gap_id,
+                "gap_ended_at_utc_ns": occurred_at_utc_ns,
+                "new_connection_id": "connection-b",
+                "new_generation": 2,
+            },
+            symbol="BTCUSDT",
+        )
+
+
+def _advance_stage_with_samples(
+    observer: AcceptanceObserver,
+    clock: FakeClock,
+    *,
+    cadence_ns: int = 300 * 1_000_000_000,
+) -> None:
+    if observer.t0_boottime_ns is None:
+        raise AssertionError("observer T0 is not initialized")
+    target = observer.t0_boottime_ns + STAGE_DURATION_NS[observer.stage]
+    while clock.boot < target:
+        delta = min(cadence_ns, target - clock.boot)
+        clock.boot += delta
+        clock.utc += delta
+        observer.sample()
+
+
+def _rewrite_v3_samples(
     stage_root: Path,
     mutators: Mapping[int, Callable[[dict[str, object]], None]],
     *,
     update_final: bool = False,
 ) -> None:
+    start_path = stage_root / "stage-start.json"
+    start_sha = sha256_bytes(start_path.read_bytes())
     previous_sha: str | None = None
     sample_paths = sorted(stage_root.glob("sample-*.json"))
     for ordinal, path in enumerate(sample_paths):
@@ -757,12 +986,48 @@ def _rewrite_v2_samples(
         if mutator is not None:
             mutator(document)
         document["sample_ordinal"] = ordinal
+        document["stage_start_evidence_sha256"] = start_sha
         document["previous_sample_sha256"] = previous_sha
         path.write_bytes(canonical_json(document))
         previous_sha = sha256_bytes(path.read_bytes())
     if update_final:
         final_path = stage_root / "stage-final.json"
         final = _read_json(final_path)
+        final["stage_start_evidence_sha256"] = start_sha
+        final["previous_sample_sha256"] = previous_sha
+        final["last_sample_sha256"] = previous_sha
+        final_path.write_bytes(canonical_json(final))
+
+
+def _rewrite_v2_samples(
+    stage_root: Path,
+    mutators: Mapping[int, Callable[[dict[str, object]], None]],
+    *,
+    update_final: bool = False,
+) -> None:
+    start_path = stage_root / "stage-start.json"
+    start = _read_json(start_path)
+    start["schema_version"] = PREVIOUS_SCHEMA_VERSION
+    start_path.write_bytes(canonical_json(start))
+    start_sha = sha256_bytes(start_path.read_bytes())
+    previous_sha: str | None = None
+    sample_paths = sorted(stage_root.glob("sample-*.json"))
+    for ordinal, path in enumerate(sample_paths):
+        document = _read_json(path)
+        document["schema_version"] = PREVIOUS_SCHEMA_VERSION
+        mutator = mutators.get(ordinal)
+        if mutator is not None:
+            mutator(document)
+        document["sample_ordinal"] = ordinal
+        document["stage_start_evidence_sha256"] = start_sha
+        document["previous_sample_sha256"] = previous_sha
+        path.write_bytes(canonical_json(document))
+        previous_sha = sha256_bytes(path.read_bytes())
+    if update_final:
+        final_path = stage_root / "stage-final.json"
+        final = _read_json(final_path)
+        final["schema_version"] = PREVIOUS_SCHEMA_VERSION
+        final["stage_start_evidence_sha256"] = start_sha
         final["previous_sample_sha256"] = previous_sha
         final["last_sample_sha256"] = previous_sha
         final_path.write_bytes(canonical_json(final))
@@ -774,6 +1039,7 @@ def _rewrite_v2_stage_start_and_rebind(
 ) -> tuple[str, str]:
     start_path = stage_root / "stage-start.json"
     start = _read_json(start_path)
+    start["schema_version"] = PREVIOUS_SCHEMA_VERSION
     mutator(start)
     start_path.write_bytes(canonical_json(start))
     start_sha = sha256_bytes(start_path.read_bytes())
@@ -781,6 +1047,7 @@ def _rewrite_v2_stage_start_and_rebind(
     previous_sha: str | None = None
     for ordinal, path in enumerate(sorted(stage_root.glob("sample-*.json"))):
         document = _read_json(path)
+        document["schema_version"] = PREVIOUS_SCHEMA_VERSION
         document["sample_ordinal"] = ordinal
         document["stage_start_evidence_sha256"] = start_sha
         document["previous_sample_sha256"] = previous_sha
@@ -791,11 +1058,56 @@ def _rewrite_v2_stage_start_and_rebind(
         raise AssertionError("stage must contain at least one sample")
     final_path = stage_root / "stage-final.json"
     final = _read_json(final_path)
+    final["schema_version"] = PREVIOUS_SCHEMA_VERSION
     final["stage_start_evidence_sha256"] = start_sha
     final["previous_sample_sha256"] = previous_sha
     final["last_sample_sha256"] = previous_sha
     final_path.write_bytes(canonical_json(final))
     return start_sha, previous_sha
+
+
+def _convert_completed_v3_stage_to_v2(observer: AcceptanceObserver) -> None:
+    root = observer.evidence_root.parent
+    identity_path = root / "identity-result.json"
+    readiness_path = root / "readiness-result.json"
+    identity_document = _read_json(identity_path)
+    identity_document["schema_version"] = PREVIOUS_SCHEMA_VERSION
+    identity_path.write_bytes(canonical_json(identity_document))
+    identity_sha = sha256_bytes(identity_path.read_bytes())
+
+    readiness_document = _read_json(readiness_path)
+    readiness_document["schema_version"] = PREVIOUS_SCHEMA_VERSION
+    readiness_document["prior_stage_evidence_sha256"] = identity_sha
+    readiness_path.write_bytes(canonical_json(readiness_document))
+    readiness_sha = sha256_bytes(readiness_path.read_bytes())
+
+    start_path = observer.evidence_root / "stage-start.json"
+    start = _read_json(start_path)
+    start["schema_version"] = PREVIOUS_SCHEMA_VERSION
+    start["prior_stage_evidence_sha256"] = readiness_sha
+    start_path.write_bytes(canonical_json(start))
+    start_sha = sha256_bytes(start_path.read_bytes())
+
+    previous_sha: str | None = None
+    for ordinal, path in enumerate(sorted(observer.evidence_root.glob("sample-*.json"))):
+        document = _read_json(path)
+        document["schema_version"] = PREVIOUS_SCHEMA_VERSION
+        document["prior_stage_evidence_sha256"] = readiness_sha
+        document["stage_start_evidence_sha256"] = start_sha
+        document["sample_ordinal"] = ordinal
+        document["previous_sample_sha256"] = previous_sha
+        path.write_bytes(canonical_json(document))
+        previous_sha = sha256_bytes(path.read_bytes())
+    if previous_sha is None:
+        raise AssertionError("completed stage has no samples")
+    final_path = observer.evidence_root / "stage-final.json"
+    final = _read_json(final_path)
+    final["schema_version"] = PREVIOUS_SCHEMA_VERSION
+    final["prior_stage_evidence_sha256"] = readiness_sha
+    final["stage_start_evidence_sha256"] = start_sha
+    final["previous_sample_sha256"] = previous_sha
+    final["last_sample_sha256"] = previous_sha
+    final_path.write_bytes(canonical_json(final))
 
 
 def _add_unresolved_finding(document: dict[str, object]) -> None:
@@ -820,6 +1132,359 @@ def _two_sample_observer(
     clock.boot += 1
     observer.sample()
     return observer, clock, manager
+
+
+def test_v3_resume_open_then_exact_completion_remains_eligible(tmp_path: Path) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    t0_boot = cast(int, observer.t0_boottime_ns)
+    gap_id = "resume-close-gap"
+    _record_gap_started(
+        observer,
+        event_id="resume-close-start",
+        occurred_at_utc_ns=t0 + 1,
+        gap_id=gap_id,
+    )
+    clock.utc, clock.boot = t0 + 2, t0_boot + 2
+    observer.sample()
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=observer.disk_usage,
+    )
+    resumed.identity_verifier = observer.identity_verifier
+    assert resumed.t0_utc_ns == t0
+    assert resumed.run_id == observer.run_id
+    assert set(resumed.published_catalog_open) == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", gap_id)
+    }
+
+    _record_gap_completed(
+        observer,
+        event_id="resume-close-complete",
+        occurred_at_utc_ns=t0 + 3,
+        gap_id=gap_id,
+    )
+    clock.utc, clock.boot = t0 + 4, t0_boot + 4
+    _path, _sha, closed = resumed.sample()
+    transition = cast(dict[str, object], closed["catalog_transition"])
+    assert transition["current_open"] == []
+    assert transition["completed"]
+    assert closed["blocking_findings"] == []
+    assert closed["result"] == "PASS_CANDIDATE"
+
+    _advance_stage_with_samples(resumed, clock)
+    clock.utc += 1
+    clock.boot += 1
+    _final_path, _final_sha, final = resumed.finalize()
+    assert final["result"] == "PASS_CANDIDATE"
+    assert final["eligible_for_next_stage"] is True
+    verify_completed_stage(resumed.evidence_root, resumed.identity, expected_stage="2h")
+
+
+def test_v3_resume_open_at_terminal_fails_closed(tmp_path: Path) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    t0_boot = cast(int, observer.t0_boottime_ns)
+    gap_id = "resume-terminal-open-gap"
+    _record_gap_started(
+        observer,
+        event_id="resume-terminal-open-start",
+        occurred_at_utc_ns=t0 + 1,
+        gap_id=gap_id,
+    )
+    clock.utc, clock.boot = t0 + 2, t0_boot + 2
+    observer.sample()
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=observer.disk_usage,
+    )
+    resumed.identity_verifier = observer.identity_verifier
+    assert resumed.published_catalog_open
+    _advance_stage_with_samples(resumed, clock)
+    clock.utc += 1
+    clock.boot += 1
+    _final_path, _final_sha, final = resumed.finalize()
+    assert final["result"] == "FAIL"
+    assert final["blocking_findings"] == ["unresolved_discontinuity"]
+    assert final["eligible_for_next_stage"] is False
+    terminal_detail = cast(dict[str, object], final["new_finding_details"])[
+        "unresolved_discontinuity"
+    ]
+    assert cast(dict[str, object], terminal_detail)["gap_id"] == gap_id
+    with pytest.raises(AcceptanceError, match="v3 chain terminus"):
+        verify_completed_stage(resumed.evidence_root, resumed.identity, expected_stage="2h")
+
+
+def test_v3_verifier_rejects_open_disappearing_without_completion(tmp_path: Path) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    t0_boot = cast(int, observer.t0_boottime_ns)
+    _record_gap_started(
+        observer,
+        event_id="disappearing-open-start",
+        occurred_at_utc_ns=t0 + 1,
+        gap_id="disappearing-open-gap",
+    )
+    clock.utc, clock.boot = t0 + 2, t0_boot + 2
+    observer.sample()
+    clock.utc, clock.boot = t0 + 3, t0_boot + 3
+    observer.sample()
+
+    def disappear(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition()
+        document["blocking_findings"] = []
+        document["new_finding_details"] = {}
+        document["result"] = "PASS_CANDIDATE"
+
+    _rewrite_v3_samples(observer.evidence_root, {1: disappear})
+    with pytest.raises(AcceptanceError, match="disappeared without completion"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+@pytest.mark.parametrize("wrong_field", ["gap_id", "market", "symbol", "stream"])
+def test_v3_verifier_rejects_completion_for_wrong_lifecycle_identity(
+    tmp_path: Path, wrong_field: str
+) -> None:
+    observer, clock, _manager = _observer(tmp_path / wrong_field)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    t0_boot = cast(int, observer.t0_boottime_ns)
+    gap_id = "identity-bound-gap"
+    _record_gap_started(
+        observer,
+        event_id=f"wrong-completion-start-{wrong_field}",
+        occurred_at_utc_ns=t0 + 1,
+        gap_id=gap_id,
+    )
+    clock.utc, clock.boot = t0 + 2, t0_boot + 2
+    observer.sample()
+    clock.utc, clock.boot = t0 + 3, t0_boot + 3
+    observer.sample()
+    bad_completion = _catalog_closed_item(
+        gap_id=gap_id,
+        started_at_utc_ns=t0 + 1,
+        ended_at_utc_ns=t0 + 3,
+    )
+    replacements = {
+        "gap_id": "wrong-gap-id",
+        "market": "spot",
+        "symbol": "ETHUSDT",
+        "stream": "agg_trade",
+    }
+    bad_completion[wrong_field] = replacements[wrong_field]
+
+    def mutate(document: dict[str, object]) -> None:
+        document["catalog_transition"] = _catalog_transition(
+            completed=[bad_completion], current_interval_count=1
+        )
+        document["blocking_findings"] = []
+        document["new_finding_details"] = {}
+        document["result"] = "PASS_CANDIDATE"
+
+    _rewrite_v3_samples(observer.evidence_root, {1: mutate})
+    with pytest.raises(AcceptanceError, match=r"orphan completion|disappeared"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+
+
+def test_v3_verifier_rejects_malformed_and_conflicting_completion(
+    tmp_path: Path,
+) -> None:
+    for mode in ("malformed", "conflicting"):
+        observer, clock, _manager = _observer(tmp_path / mode)
+        observer.start()
+        t0 = cast(int, observer.t0_utc_ns)
+        t0_boot = cast(int, observer.t0_boottime_ns)
+        gap_id = f"{mode}-gap"
+        _record_gap_started(
+            observer,
+            event_id=f"{mode}-start",
+            occurred_at_utc_ns=t0 + 1,
+            gap_id=gap_id,
+        )
+        clock.utc, clock.boot = t0 + 2, t0_boot + 2
+        observer.sample()
+        clock.utc, clock.boot = t0 + 3, t0_boot + 3
+        observer.sample()
+
+        if mode == "malformed":
+            completed: list[dict[str, object]] = [{"gap_id": gap_id}]
+            match = "Catalog discontinuity identity is malformed"
+        else:
+            completed = [
+                _catalog_closed_item(
+                    gap_id=gap_id,
+                    started_at_utc_ns=t0 + 1,
+                    ended_at_utc_ns=t0 + 3,
+                )
+            ] * 2
+            match = "repeats a completion identity"
+
+        def mutate(
+            document: dict[str, object],
+            completion_items: list[dict[str, object]] = completed,
+        ) -> None:
+            document["catalog_transition"] = _catalog_transition(
+                completed=completion_items, current_interval_count=1
+            )
+            document["blocking_findings"] = []
+            document["new_finding_details"] = {}
+            document["result"] = "PASS_CANDIDATE"
+
+        _rewrite_v3_samples(observer.evidence_root, {1: mutate})
+        with pytest.raises(AcceptanceError, match=match):
+            _sample_chain(
+                observer.evidence_root,
+                start=_read_json(observer.evidence_root / "stage-start.json"),
+                start_sha=sha256_bytes(
+                    (observer.evidence_root / "stage-start.json").read_bytes()
+                ),
+                identity=observer.identity,
+                require_eligible=False,
+            )
+
+
+def test_v3_verifier_rejects_terminal_detail_tampering(tmp_path: Path) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    t0_boot = cast(int, observer.t0_boottime_ns)
+    _record_gap_started(
+        observer,
+        event_id="tampered-terminal-start",
+        occurred_at_utc_ns=t0 + 1,
+        gap_id="tampered-terminal-gap",
+    )
+    clock.utc, clock.boot = t0 + 2, t0_boot + 2
+    observer.sample()
+    _advance_stage_with_samples(observer, clock)
+    clock.utc += 1
+    clock.boot += 1
+    final_path, _final_sha, _final = observer.finalize()
+    _rewrite(
+        final_path,
+        new_finding_details={
+            "unresolved_discontinuity": {"source": "forged-terminal-state"}
+        },
+    )
+    with pytest.raises(AcceptanceError, match="reconstructed v3 terminal state"):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+
+def test_v3_catalog_degraded_authority_remains_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observer, clock, _manager = _observer(tmp_path)
+    observer.start()
+
+    def degraded(*_args: object, **_kwargs: object) -> object:
+        raise AcceptanceError("Catalog degraded authority")
+
+    monkeypatch.setattr(observer, "_catalog_evidence", degraded)
+    clock.utc += 1
+    clock.boot += 1
+    _path, _sha, sample = observer.sample()
+    assert sample["result"] == "FAIL"
+    assert "Catalog degraded authority" in cast(
+        list[object], sample["blocking_findings"]
+    )
+
+
+def test_v3_and_v2_chain_generations_cannot_be_mixed(tmp_path: Path) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+
+    def use_v2_sample(document: dict[str, object]) -> None:
+        document["schema_version"] = PREVIOUS_SCHEMA_VERSION
+
+    _rewrite_v3_samples(observer.evidence_root, {0: use_v2_sample})
+    with pytest.raises(AcceptanceError, match="mixed into a v3 chain"):
+        verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+    observer2, final_path2, _start2 = _complete_2h_stage(tmp_path / "predecessor")
+    _rewrite(final_path2, schema_version=PREVIOUS_SCHEMA_VERSION)
+    with pytest.raises(AcceptanceError, match="mixed-schema predecessor"):
+        verify_prior_stage(final_path2, observer2.identity, "12h")
+
+
+def test_historical_v2_valid_stage_remains_verifiable(tmp_path: Path) -> None:
+    observer, _final_path, _start = _complete_2h_stage(tmp_path)
+    _convert_completed_v3_stage_to_v2(observer)
+    before = {
+        path.name: path.read_bytes()
+        for path in observer.evidence_root.glob("*.json")
+    }
+    verified, _verified_sha = verify_completed_stage(
+        observer.evidence_root, observer.identity, expected_stage="2h"
+    )
+    assert verified["schema_version"] == PREVIOUS_SCHEMA_VERSION
+    after = {path.name: path.read_bytes() for path in observer.evidence_root.glob("*.json")}
+    assert after == before
+
+
+def test_historical_v2_open_remains_sticky_and_ineligible(tmp_path: Path) -> None:
+    observer, _clock, _manager = _two_sample_observer(tmp_path)
+    open_item = _catalog_open_item()
+
+    def first(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["catalog_transition"] = _catalog_transition(
+            started=[open_item], current_open=[open_item]
+        )
+
+    def second(document: dict[str, object]) -> None:
+        _add_unresolved_finding(document)
+        document["new_finding_details"] = {}
+        document["catalog_transition"] = _catalog_transition(current_open=[open_item])
+
+    _rewrite_v2_samples(observer.evidence_root, {0: first, 1: second})
+    state = _sample_chain(
+        observer.evidence_root,
+        start=_read_json(observer.evidence_root / "stage-start.json"),
+        start_sha=sha256_bytes((observer.evidence_root / "stage-start.json").read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+    assert state.known_findings == {"unresolved_discontinuity"}
+    assert set(state.catalog_open) == {
+        ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
+    }
+    with pytest.raises(AcceptanceError, match="ineligible sample findings"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes(
+                (observer.evidence_root / "stage-start.json").read_bytes()
+            ),
+            identity=observer.identity,
+            require_eligible=True,
+        )
 
 
 def test_v2_verifier_rejects_rehashed_manifest_anomaly_without_blocker(
@@ -1328,7 +1993,7 @@ def test_catalog_rejects_normal_orphan_completion_after_current_observation(
         )
 
 
-def test_catalog_allows_non_monotonic_completion_of_published_open_gap_and_resumes(
+def test_historical_v2_catalog_chain_preserves_non_monotonic_finding_authority(
     tmp_path: Path,
 ) -> None:
     observer, clock, manager = _observer(tmp_path)
@@ -1385,25 +2050,16 @@ def test_catalog_allows_non_monotonic_completion_of_published_open_gap_and_resum
         ("um_perpetual", "BTCUSDT", "book_ticker", "gap-a")
     }
 
-    resumed = resume_observer(
-        observer.evidence_root,
-        data_root=observer.data_root,
-        identity=observer.identity,
-        manager=manager,  # type: ignore[arg-type]
-        evaluator=FakeEvaluator(),  # type: ignore[arg-type]
-        clock=clock,
-        disk_usage=observer.disk_usage,
-    )
-    last_sample_path = observer.evidence_root / "sample-00000001.json"
-    last_sample_sha = sha256_bytes(last_sample_path.read_bytes())
-    assert resumed.t0_utc_ns == 100
-    assert resumed.t0_boottime_ns == observer.t0_boottime_ns
-    assert resumed.ever_blocking_findings == {
-        "unresolved_discontinuity",
-        "unsafe_wall_clock_backward",
-    }
-    assert resumed.next_sample_ordinal == 2
-    assert resumed.last_sample_sha256 == last_sample_sha
+    with pytest.raises(AcceptanceError, match="v2 failed stage cannot resume as v3"):
+        resume_observer(
+            observer.evidence_root,
+            data_root=observer.data_root,
+            identity=observer.identity,
+            manager=manager,  # type: ignore[arg-type]
+            evaluator=FakeEvaluator(),  # type: ignore[arg-type]
+            clock=clock,
+            disk_usage=observer.disk_usage,
+        )
 
 
 def test_catalog_current_interval_count_must_match_rolling_authority(tmp_path: Path) -> None:
@@ -1888,12 +2544,15 @@ def test_unresolved_gap_open_at_t0_blocks(tmp_path: Path) -> None:
             symbol="BTCUSDT",
         )
     _path, _sha, start = observer.start()
-    assert start["result"] == "FAIL"
-    assert "unresolved_discontinuity" in cast(list[object], start["blocking_findings"])
+    assert start["result"] == "PASS_CANDIDATE"
+    assert start["blocking_findings"] == []
+    transition = cast(dict[str, object], start["catalog_transition"])
+    assert len(cast(list[object], transition["current_open"])) == 1
 
 
 def test_unresolved_gap_cannot_terminate_an_eligible_stage(tmp_path: Path) -> None:
     observer, clock, _manager = _observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_valid_identity_and_readiness(observer)
     with Catalog(observer.data_root / "state" / "catalog.sqlite") as catalog:
         catalog.record_operational_event(
             event_id="stream-discontinuity-started:final-blocker",
@@ -1909,11 +2568,24 @@ def test_unresolved_gap_cannot_terminate_an_eligible_stage(tmp_path: Path) -> No
             symbol="BTCUSDT",
         )
     _path, _sha, start = observer.start()
-    assert start["result"] == "FAIL"
-    clock.boot += STAGE_DURATION_NS["2h"]
-    clock.utc += STAGE_DURATION_NS["2h"]
-    observer.finalize()
-    with pytest.raises(AcceptanceError, match="stage-start is not eligible"):
+    assert start["result"] == "PASS_CANDIDATE"
+    assert start["blocking_findings"] == []
+    last_sample: dict[str, object] | None = None
+    for _ in range(24):
+        clock.boot += 300 * 1_000_000_000
+        clock.utc += 300 * 1_000_000_000
+        _sample_path, _sample_sha, last_sample = observer.sample()
+    assert last_sample is not None
+    assert last_sample["blocking_findings"] == []
+    assert last_sample["result"] == "PASS_CANDIDATE"
+    _final_path, _final_sha, final = observer.finalize()
+    assert final["result"] == "FAIL"
+    assert final["blocking_findings"] == ["unresolved_discontinuity"]
+    assert final["eligible_for_next_stage"] is False
+    assert cast(dict[str, object], final["new_finding_details"])[
+        "unresolved_discontinuity"
+    ]
+    with pytest.raises(AcceptanceError, match="v3 chain terminus"):
         verify_completed_stage(observer.evidence_root, observer.identity)
 
 

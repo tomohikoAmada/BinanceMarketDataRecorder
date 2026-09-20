@@ -5,7 +5,33 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+## Current milestone — M22_9 acceptance evidence V3 (2026-09-18)
+
+The frozen P1 acceptance-policy defect is corrected in the acceptance-only V3
+implementation on branch `fix/m22-9-acceptance-evidence-v3`. Valid Catalog
+OPEN is retained in compact causal transitions during intermediate samples and
+is not a blocker; a Catalog OPEN remaining after the terminal sample derives
+`unresolved_discontinuity` and fails closed. V1/V2 historical semantics and
+immutable files remain unchanged, and mixed V2/V3 predecessor chains are
+rejected explicitly.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V3
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+DEPLOYED=NO
+FORMAL_V3_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+Offline pytest, Ruff, strict MyPy, M0 contracts, and build validation pass.
+This source is not installed on the VPS and does not authorize deployment,
+live traffic, or Formal acceptance. The implementation record is
+[`M22.9 acceptance evidence V3`](milestone_acceptance/M22.9-acceptance-evidence-v3.md).
+
+## Previous milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
 
 The quiet-window retry produced a canonical final after 14 samples and more
 than the required two hours, but finalized `INCOMPLETE`. Full observer evidence
@@ -49,11 +75,13 @@ and closeout state are in the
 
 ### Current development queue
 
-1. Implement and review `M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX`.
+1. Independently review and rebuild the exact M22.9 acceptance-evidence V3
+   artifact.
 2. Deploy that exact reviewed artifact through a separately authorized stopped
    redeploy/readiness milestone.
-3. Run a fresh Formal 2-hour stage only after deployment; start 12h, 24h, 72h,
-   and 168h independently and in order only after each preceding eligible final.
+3. Run a fresh V3 Formal 2-hour stage only after deployment; start 12h, 24h,
+   72h, and 168h independently and in order only after each preceding eligible
+   final.
 4. Keep the closed MS1–MS4 configurable-product implementation frozen unless
    evidence identifies a concrete Recorder defect. Four ProductKeys are the
    bounded qualification workload, not a hard-coded allowlist.
