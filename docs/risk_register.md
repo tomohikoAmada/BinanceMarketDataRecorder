@@ -1,6 +1,47 @@
 # Risk Register
 
-## Current candidate risk checkpoint — M22.9 acceptance evidence V3 (2026-09-18)
+## Current candidate risk checkpoint — M22.9 acceptance evidence V4 policy authority freeze (2026-09-23)
+
+The independent V4 semantics review is accepted against live `main`
+`6e5dd91575d53e226a20d1873eafa3e06ca64329` / tree
+`3262aa4ea46156631358a1002b7833d37325eb87`. It found no Recorder reconnect,
+readiness-evaluator, or readiness-snapshot defect, but confirmed an
+acceptance-policy design defect (`P0=0`, `P1=1`, `P2=1`, `P3=0`): V3's sticky
+intermediate `readiness_not_ready` outcome is sampling-phase dependent.
+
+ADR-0033 freezes a narrow global acceptance-observed readiness recovery episode
+at 900 seconds on `CLOCK_BOOTTIME`. It starts at the first observed
+ProductKey-core recoverable `NOT_READY` sample after valid READY/T0 authority,
+closes at the first subsequent `READY`, accepts the inclusive `<=900s`
+boundary, and freezes `readiness_recovery_deadline_exceeded` at an observed
+age `>900s`. Terminal `NOT_READY` remains an independent immediate
+`readiness_not_ready` failure. The 300-second deployment-readiness timeout,
+300-second sample cadence, and 600-second evidence-gap authority are distinct
+and unchanged.
+
+This policy is frozen but not implemented or deployed. V3 evidence remains
+historical and immutable; a future V4 source/Wheel/deployment identity must
+run a fresh full Formal chain. Recorder is stopped and no VPS or Formal action
+was performed by this milestone.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
+MILESTONE_STATUS=POLICY_AUTHORITY_FROZEN_PENDING_REVIEW
+V4_POLICY_DEADLINE_AUTHORITY=FROZEN
+V4_IMPLEMENTED=NO
+V4_DEPLOYED=NO
+FORMAL_V4_STARTED=NO
+VPS_TOUCHED=NO
+CURRENT_RECORDER=STOPPED
+V3_2H_HISTORICAL_ACCEPT=YES
+V3_12H_ELIGIBLE=NO
+24H_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+```
+
+## Previous candidate risk checkpoint — M22.9 acceptance evidence V3 (2026-09-18)
 
 The reviewed P1 acceptance-policy defect is corrected in an acceptance-only
 V3 implementation. A valid intermediate Catalog OPEN remains compact causal
@@ -408,6 +449,7 @@ or Accepted. Each implementing milestone must update its risks and evidence.
 | R-072 | A local/remote shell expansion error or unset cleanup variable broadens an administrative deletion to `/root`, another protected path, or a mount root | Critical | The 2026-09-12 incident is closed only for access recovery; lost root-home-only content is not recoverable evidence. Recursive remote cleanup is forbidden across SSH variable boundaries. Prefer no cleanup and fresh `mktemp -d` children. Any necessary cleanup requires same-remote-shell unset-variable failure, nonempty and canonical-path checks, an exact approved disposable parent/child relationship, explicit refusal of `/`, home, `/etc`, `/opt`, `/var`, `/srv`, and mount roots, printed target review, and a separate step. Evidence directories are retained by default. | M22.9 operations / all VPS work | Mitigated; permanent guard |
 | R-073 | A Recorder that is stopped but systemd-enabled silently starts during a host reboot or maintenance cycle, creating unauthorized non-formal capture and consuming active-root capacity | High | The 2026-09-12 reboot auto-started Recorder for about six minutes; no observer/T0 existed and credit is zero. Recorder is now inactive and disabled while archive scheduling remains enabled. Every stopped handoff and maintenance preflight must check both `is-active` and `is-enabled`; re-enable only as an explicit separately authorized pre-start step, then repeat exact deployment/readiness verification. | M22.9 host-maintenance preflight | Mitigated for current handoff; monitoring |
 | R-074 | AcceptanceObserver full-state samples and completed-stage verification grow with cumulative manifest history until evidence cadence or host memory fails | Critical | The 2026-09-13 quiet-window retry produced approximately 223 MB later samples, first exceeded the 600-second cadence at `sample-00000005.json`, and finalized `INCOMPLETE`; observer MemoryPeak was about 4.14 GB. A separate read-only multi-sample diagnostic was OOM-killed at about 4.62 GB anonymous RSS after the first blocker. Bound repeated evidence and stream chain verification while preserving immutable hashes, lifecycle authority, and fail-closed eligibility; do not repeat the unchanged live run. | M22.9 observer bounded-evidence fix | Open |
+| R-075 | V4 implementation may misclassify a truthful transient ProductKey readiness recovery, reset a global deadline on reason/product rotation, or weaken terminal/fail-closed readiness authority | Critical | ADR-0033 freezes one global acceptance-observed episode, exact ProductKey core-not-ready classification, integer `CLOCK_BOOTTIME` nanosecond arithmetic, inclusive `<=900s` recovery, sticky `readiness_recovery_deadline_exceeded` after `>900s`, sticky `readiness_failed`, and independent terminal `readiness_not_ready`. The 300-second startup timeout and ordinary 300-second/600-second observation authorities remain distinct. V4 is not implemented or deployed; offline semantic tests, independent review, exact artifact identity, and a fresh full Formal chain are mandatory before live use. | M22.9 V4 | Open |
 | R-036 | USD-M 5m limited-retention polls are missed while the recorder is offline | High | Independent durable Cursor per kind, bounded paginated catch-up from Cursor + 5m, Raw fsync before advance, EMPTY_RESPONSE/no-advance, and explicit gap after retention; complete long-run operation before relying on continuity | M19/M19.1 | Open |
 | R-037 | Binance historical archive checksum is revised or a file is missing | High | Immutable URL+checksum revisions with `supersedes`; 404 GAP; verified ZIP/Parquet lineage; never silently overwrite | M19 | Mitigated |
 | R-038 | Split proxy decisions bypass the operator's intended route or leak a URL/credential | Critical | ADR-0025 single policy is injected into all WS/urllib/SDK/Historical exits; direct empty handler, environment/no_proxy, explicit validation, SDK mapping, redacted state and Mock CONNECT tests | M20 | Mitigated |

@@ -1,6 +1,54 @@
 # Milestone Plan
 
-## Current candidate milestone — M22_9 acceptance evidence V3 (2026-09-18)
+## Current candidate milestone — M22_9 acceptance evidence V4 policy authority freeze (2026-09-23)
+
+The independent V4 semantics review is accepted against the exact live GitHub
+`main` base `6e5dd91575d53e226a20d1873eafa3e06ca64329` / tree
+`3262aa4ea46156631358a1002b7833d37325eb87`. It found no Recorder reconnect,
+readiness-evaluator, or readiness-snapshot defect, but confirmed an
+acceptance-policy design defect (`P0=0`, `P1=1`, `P2=1`, `P3=0`): V3's sticky
+intermediate `readiness_not_ready` outcome is sampling-phase dependent.
+
+This is a docs-only policy-authority milestone. ADR-0033 freezes one global,
+acceptance-observed ProductKey-core readiness recovery episode at 900 seconds
+(15 minutes) on integer `CLOCK_BOOTTIME` nanoseconds. The episode starts at
+the first observed recoverable `NOT_READY` sample after valid READY/T0
+authority and closes at the first later `READY` sample. A sample observed at
+age `<=900s` recovers; a recoverable `NOT_READY` observed at age `>900s`
+freezes sticky `readiness_recovery_deadline_exceeded`. Any terminal
+`NOT_READY` independently freezes `readiness_not_ready`. The policy is not
+derived from the 300-second deployment-readiness timeout; the ordinary
+300-second sample cadence and 600-second evidence-gap bound remain unchanged.
+
+The 900-second choice promotes the repository's separately bounded 15-minute
+MS4 recovery-observation envelope into explicit M22.9 V4 authority and is
+grounded by M21.4 gen6's approximately 417.861-second valid recovery. It is
+not claimed to be mathematically optimal.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
+MILESTONE_STATUS=POLICY_AUTHORITY_FROZEN_PENDING_REVIEW
+V4_POLICY_DEADLINE_AUTHORITY=FROZEN
+V4_IMPLEMENTED=NO
+V4_DEPLOYED=NO
+FORMAL_V4_STARTED=NO
+VPS_TOUCHED=NO
+CURRENT_RECORDER=STOPPED
+V3_2H_HISTORICAL_ACCEPT=YES
+V3_12H_ELIGIBLE=NO
+24H_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+```
+
+No production code, tests, Wheel, deployment identity, VPS, Recorder, or
+Formal stage is changed or authorized. V1/V2/V3 schemas and evidence remain
+historical; a future V4 implementation requires a fresh identity and a fresh
+`readiness -> 2h -> 12h -> 24h -> 72h -> 168h` chain with no old V3 credit.
+See [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).
+
+## Previous candidate milestone — M22_9 acceptance evidence V3 (2026-09-18)
 
 The independently reviewed P1 acceptance-policy defect is corrected in the
 focused acceptance-only V3 implementation on branch
@@ -720,9 +768,10 @@ MS3_CURRENT_DISPOSITION=CLOSED_MERGED
 | M22.9 root-home recovery / stopped handoff | COMPLETE | Access recovered without rebuild; Recorder inactive and disabled; archive timer enabled/active; aborted preflight roots preserved |
 | M22.9 host-maintenance quiet-window preflight | COMPLETE / PASS | Six pending packages completed; runtime-only maintenance exclusion tested; update authority restored; no Recorder start or T0; see `docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md` |
 | M22.9 Formal 2h quiet-window retry | EXECUTED_INCOMPLETE_OBSERVATION_GAP | Stable Recorder identity beyond two hours, but approximately 223 MB observer samples exceeded the 600-second cadence; final `INCOMPLETE`, zero credit; see `docs/milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md` |
-| M22.9 AcceptanceObserver bounded evidence | NEXT | Bound repeated evidence and completed-chain memory without weakening immutable integrity or fail-closed acceptance |
+| M22.9 V4 readiness recovery policy authority | FROZEN / PENDING IMPLEMENTATION | ADR-0033 freezes the 900-second global `CLOCK_BOOTTIME` episode; docs-only, no implementation, deployment, VPS, or Formal start |
+| M22.9 AcceptanceObserver bounded evidence | DEFERRED UNTIL V4 IMPLEMENTATION | Bound repeated evidence and completed-chain memory without weakening immutable integrity or fail-closed acceptance |
 | Completed-branch cleanup | CURRENTLY NO REMOTE CANDIDATES | Luna read-only audit on 2026-09-13 found only `main` in Recorder and Contracts, with no open PR or running Action; earlier merged heads are already absent |
-| Formal M22.9 | 2H QUIET-WINDOW RETRY INCOMPLETE / LATER STAGES NOT STARTED | Bounded-evidence code fix, exact review/deploy, and a new eligible 2h final are required; zero current duration credit; Production Ready remains NO |
+| Formal M22.9 | V3 HISTORICAL / V4 NOT STARTED | V3 2h historical accept remains immutable; V3 12h is ineligible; V4 requires implementation, exact review/deploy, and a fresh eligible chain; zero transferred credit; Production Ready remains NO |
 
 NEXT_AFTER_CI1_REVIEW=MS3-R2-MERGE-HANDOFF
 NEXT_AFTER_CI2_REVIEW=MS4-A-LOCAL-PREPARATION
