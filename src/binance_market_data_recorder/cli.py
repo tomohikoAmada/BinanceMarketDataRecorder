@@ -40,8 +40,10 @@ from .paths import discover_repository_root
 from .service.acceptance import (
     SAMPLE_INTERVAL_NS,
     STAGE_DURATION_NS,
+    V4_SCHEMA_VERSION,
     AcceptanceError,
     AcceptanceObserver,
+    V4AcceptanceObserver,
     create_identity_evidence,
     create_readiness_evidence,
     resume_observer,
@@ -818,6 +820,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         data_root=loaded.config.data_root,
                         identity=identity,
                         manager=acceptance_manager,
+                        schema_version=V4_SCHEMA_VERSION,
                     )
                     _write_json(
                         {
@@ -844,6 +847,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         evaluator=evaluator,
                         evidence_root=args.evidence_root,
                         data_root=loaded.config.data_root,
+                        schema_version=V4_SCHEMA_VERSION,
                     )
                     _write_json(
                         {
@@ -866,6 +870,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             manager=acceptance_manager,
                             evaluator=evaluator,
                             archive_root_resolver=archive_root_resolver,
+                            schema_version=V4_SCHEMA_VERSION,
                         )
                     else:
                         if args.previous_evidence is None or args.evidence_root is None:
@@ -874,10 +879,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                             )
                         stage = str(args.stage)
                         _prior, prior_sha = verify_prior_stage(
-                            args.previous_evidence, identity, stage
+                            args.previous_evidence,
+                            identity,
+                            stage,
+                            schema_version=V4_SCHEMA_VERSION,
                         )
                         stage_root = args.evidence_root / f"{stage}-{uuid.uuid4().hex}"
-                        observer = AcceptanceObserver(
+                        observer = V4AcceptanceObserver(
                             stage=stage,
                             run_id=uuid.uuid4().hex,
                             data_root=loaded.config.data_root,

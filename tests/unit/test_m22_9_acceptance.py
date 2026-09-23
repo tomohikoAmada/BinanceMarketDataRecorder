@@ -9,13 +9,17 @@ from typing import Any, cast
 import pytest
 
 from binance_market_data_recorder.audit import reconnect_boundaries as reconnect_audit
+from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service.acceptance import (
     LEGACY_SCHEMA_VERSION,
     PREVIOUS_SCHEMA_VERSION,
     SCHEMA_VERSION,
     STAGE_DURATION_NS,
+    V4_DEADLINE_NS,
+    V4_SCHEMA_VERSION,
     AcceptanceError,
     AcceptanceObserver,
+    V4AcceptanceObserver,
     _absence_aggregate,
     _continuation_from,
     _empty_common,
@@ -2787,3 +2791,420 @@ def test_acceptance_observation_does_not_mutate_recorder_tree(tmp_path: Path) ->
     clock.boot += 300 * 1_000_000_000
     observer.sample()
     assert snapshot() == before
+
+
+class MutableV4Evaluator:
+    def __init__(self) -> None:
+        self.expected_products = frozenset(
+            {
+                ProductKey("spot", "BTCUSDT"),
+                ProductKey("um_perpetual", "BTCUSDT"),
+            }
+        )
+        self.state = "READY"
+        self.reasons: tuple[str, ...] = ()
+
+    def evaluate(self) -> DeploymentReadinessResult:
+        return DeploymentReadinessResult(
+            self.state,
+            self.reasons,
+            {
+                "service_state": {
+                    "products": {
+                        "spot": {"BTCUSDT": {}},
+                        "um_perpetual": {"BTCUSDT": {}},
+                    }
+                }
+            },
+        )
+
+    def set_ready(self) -> None:
+        self.state = "READY"
+        self.reasons = ()
+
+    def set_recoverable(self, product: str = "spot:BTCUSDT") -> None:
+        self.state = "NOT_READY"
+        self.reasons = (f"{product}_core_not_ready",)
+
+    def set_nonrecoverable(self, reason: str = "systemd_service_not_active") -> None:
+        self.state = "NOT_READY"
+        self.reasons = (reason,)
+
+    def set_failed(self) -> None:
+        self.state = "FAILED"
+        self.reasons = ("runtime_reported_failed",)
+
+
+def _v4_observer(
+    tmp_path: Path,
+) -> tuple[V4AcceptanceObserver, FakeClock, FakeManager, MutableV4Evaluator]:
+    base, clock, manager = _observer(tmp_path)
+    evaluator = MutableV4Evaluator()
+    observer = V4AcceptanceObserver(
+        stage=base.stage,
+        run_id=base.run_id,
+        data_root=base.data_root,
+        evidence_root=base.evidence_root,
+        identity=base.identity,
+        prior_stage_sha256=base.prior_stage_sha256,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=evaluator,  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=base.disk_usage,
+        identity_verifier=base.identity_verifier,
+    )
+    return observer, clock, manager, evaluator
+
+
+def _publish_v4_predecessors(observer: V4AcceptanceObserver) -> str:
+    root = observer.evidence_root.parent
+    identity_document = _empty_common(
+        kind="identity-result",
+        stage="identity",
+        run_id="identity-v4",
+        identity=observer.identity,
+        now_utc=10,
+        now_boot=10,
+        boot_id="boot-a",
+        schema_version=V4_SCHEMA_VERSION,
+    )
+    identity_document.update(
+        {
+            "identity": observer.identity.document(),
+            "identity_static_verification": {},
+            "observer_status": "COMPLETE",
+            "result": "PASS_CANDIDATE",
+        }
+    )
+    _identity_path, identity_sha = _publish(root, "identity-result.json", identity_document)
+    readiness_document = _empty_common(
+        kind="readiness-result",
+        stage="readiness",
+        run_id="readiness-v4",
+        identity=observer.identity,
+        now_utc=11,
+        now_boot=11,
+        boot_id="boot-a",
+        schema_version=V4_SCHEMA_VERSION,
+    )
+    readiness_document.update(
+        {
+            "prior_stage_evidence_sha256": identity_sha,
+            "readiness": {
+                "schema_version": "deployment-readiness.v1",
+                "state": "READY",
+                "reasons": [],
+                "evidence": {
+                    "service_state": {
+                        "products": {
+                            "spot": {"BTCUSDT": {}},
+                            "um_perpetual": {"BTCUSDT": {}},
+                        }
+                    }
+                },
+            },
+            "systemd_process_incarnation": observer.manager.process_incarnation(),
+            "observer_status": "COMPLETE",
+            "result": "PASS_CANDIDATE",
+        }
+    )
+    _path, readiness_sha = _publish(root, "readiness-result.json", readiness_document)
+    return readiness_sha
+
+
+def test_v4_incident_recovery_has_no_permanent_readiness_blocker(tmp_path: Path) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    _path, _sha, start = observer.start()
+    assert start["schema_version"] == V4_SCHEMA_VERSION
+    evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    clock.utc += 1_210_056_629
+    clock.boot += 1_210_056_629
+    _path, _sha, intermediate = observer.sample()
+    assert intermediate["result"] == "PASS_CANDIDATE"
+    assert intermediate["blocking_findings"] == []
+    assert cast(dict[str, object], intermediate["readiness_recovery_episode"])["state"] == (
+        "ACTIVE"
+    )
+    evaluator.set_ready()
+    clock.utc += 1
+    clock.boot += 1
+    _path, _sha, recovered = observer.sample()
+    assert recovered["result"] == "PASS_CANDIDATE"
+    assert recovered["blocking_findings"] == []
+    assert cast(dict[str, object], recovered["readiness_recovery_episode"])["state"] == (
+        "RECOVERED"
+    )
+
+
+@pytest.mark.parametrize(
+    ("delta", "expected_state", "expected_finding"),
+    [
+        (899 * 1_000_000_000, "ACTIVE", None),
+        (V4_DEADLINE_NS, "ACTIVE", None),
+        (901 * 1_000_000_000, "DEADLINE_EXCEEDED", "readiness_recovery_deadline_exceeded"),
+    ],
+)
+def test_v4_deadline_boundaries_are_inclusive(
+    tmp_path: Path,
+    delta: int,
+    expected_state: str,
+    expected_finding: str | None,
+) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.start()
+    evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    remaining = delta
+    while remaining:
+        step = min(300 * 1_000_000_000, remaining)
+        clock.utc += step
+        clock.boot += step
+        _path, _sha, sample = observer.sample()
+        remaining -= step
+    episode = cast(dict[str, object], sample["readiness_recovery_episode"])
+    assert episode["state"] == expected_state
+    if expected_finding is None:
+        assert sample["blocking_findings"] == []
+    else:
+        assert expected_finding in cast(list[object], sample["blocking_findings"])
+
+
+def test_v4_ready_after_deadline_remains_sticky_failed(tmp_path: Path) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.start()
+    evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    remaining = 901 * 1_000_000_000
+    while remaining:
+        step = min(300 * 1_000_000_000, remaining)
+        clock.utc += step
+        clock.boot += step
+        observer.sample()
+        remaining -= step
+    evaluator.set_ready()
+    clock.utc += 1
+    clock.boot += 1
+    _path, _sha, sample = observer.sample()
+    assert sample["result"] == "FAIL"
+    assert "readiness_recovery_deadline_exceeded" in cast(
+        list[object], sample["blocking_findings"]
+    )
+
+
+def test_v4_product_rotation_does_not_reset_global_deadline(tmp_path: Path) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.start()
+    evaluator.set_recoverable("spot:BTCUSDT")
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    evaluator.set_recoverable("um_perpetual:BTCUSDT")
+    remaining = V4_DEADLINE_NS + 1
+    while remaining:
+        step = min(300 * 1_000_000_000, remaining)
+        clock.utc += step
+        clock.boot += step
+        _path, _sha, sample = observer.sample()
+        remaining -= step
+    assert "readiness_recovery_deadline_exceeded" in cast(
+        list[object], sample["blocking_findings"]
+    )
+    episode = cast(dict[str, object], sample["readiness_recovery_episode"])
+    assert episode["episode_start_boottime_ns"] == 2_000_000_001
+
+
+def test_v4_terminal_not_ready_fails_even_inside_deadline(tmp_path: Path) -> None:
+    observer, _clock, _manager, _evaluator = _v4_observer(tmp_path)
+    sample = {
+        "boot_id": "boot-a",
+        "readiness": {"state": "NOT_READY", "reasons": ["spot:BTCUSDT_core_not_ready"]},
+        "result": "PASS_CANDIDATE",
+    }
+    assert observer._additional_final_findings(sample) == {"readiness_not_ready"}
+    assert observer._final_result(
+        sample=sample,
+        elapsed=V4_DEADLINE_NS,
+        terminal_open_detail=None,
+    ) == "FAIL"
+
+
+def test_v4_failed_and_nonrecoverable_readiness_fail_closed(tmp_path: Path) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.start()
+    evaluator.set_failed()
+    clock.utc += 1
+    clock.boot += 1
+    _path, _sha, failed = observer.sample()
+    assert failed["result"] == "FAIL"
+    assert "readiness_failed" in cast(list[object], failed["blocking_findings"])
+    observer2, clock2, _manager2, evaluator2 = _v4_observer(tmp_path / "second")
+    observer2.start()
+    evaluator2.set_nonrecoverable()
+    clock2.utc += 1
+    clock2.boot += 1
+    _path, _sha, nonrecoverable = observer2.sample()
+    assert nonrecoverable["result"] == "FAIL"
+    assert "readiness_not_ready" in cast(list[object], nonrecoverable["blocking_findings"])
+
+
+def test_v4_pre_t0_not_ready_cannot_establish_eligible_t0(tmp_path: Path) -> None:
+    observer, _clock, _manager, evaluator = _v4_observer(tmp_path)
+    evaluator.set_recoverable()
+    _path, _sha, start = observer.start()
+    assert start["result"] == "FAIL"
+    assert "readiness_not_ready" in cast(list[object], start["blocking_findings"])
+    assert cast(dict[str, object], start["readiness_recovery_episode"])["state"] == (
+        "NONE"
+    )
+
+
+def test_v4_resume_preserves_episode_start_and_deadline(tmp_path: Path) -> None:
+    observer, clock, manager, evaluator = _v4_observer(tmp_path)
+    observer.start()
+    evaluator.set_recoverable()
+    clock.utc += 100
+    clock.boot += 100
+    observer.sample()
+    resumed = resume_observer(
+        observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=manager,  # type: ignore[arg-type]
+        evaluator=evaluator,  # type: ignore[arg-type]
+        clock=clock,
+        disk_usage=observer.disk_usage,
+        schema_version=V4_SCHEMA_VERSION,
+        identity_verifier=observer.identity_verifier,
+    )
+    assert isinstance(resumed, V4AcceptanceObserver)
+    assert resumed.readiness_episode.start_boottime_ns == 2_000_000_100
+    remaining = V4_DEADLINE_NS + 1
+    while remaining:
+        step = min(300 * 1_000_000_000, remaining)
+        clock.utc += step
+        clock.boot += step
+        _path, _sha, sample = resumed.sample()
+        remaining -= step
+    assert "readiness_recovery_deadline_exceeded" in cast(
+        list[object], sample["blocking_findings"]
+    )
+    assert resumed.readiness_episode.start_boottime_ns == 2_000_000_100
+
+
+def test_v4_completed_stage_uses_streaming_verifier_and_v4_predecessor(tmp_path: Path) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    for _ in range(24):
+        clock.utc += 300 * 1_000_000_000
+        clock.boot += 300 * 1_000_000_000
+        observer.sample()
+    final_path, _final_sha, final = observer.finalize()
+    assert final["schema_version"] == V4_SCHEMA_VERSION
+    verified, verified_sha = verify_completed_stage(
+        observer.evidence_root, observer.identity, expected_stage="2h"
+    )
+    assert verified == final
+    assert verified_sha == sha256_bytes(final_path.read_bytes())
+    assert evaluator.state == "READY"
+
+
+def test_v4_inherits_catalog_open_completed_and_cadence_fail_closed(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager, _evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    t0 = cast(int, observer.t0_utc_ns)
+    _record_gap_started(
+        observer, event_id="v4-gap-start", occurred_at_utc_ns=t0 + 1, gap_id="v4-gap"
+    )
+    clock.utc += 2
+    clock.boot += 2
+    _path, _sha, opened = observer.sample()
+    assert opened["blocking_findings"] == []
+    _record_gap_completed(
+        observer, event_id="v4-gap-complete", occurred_at_utc_ns=t0 + 3, gap_id="v4-gap"
+    )
+    clock.utc += 2
+    clock.boot += 2
+    _path, _sha, completed = observer.sample()
+    assert completed["blocking_findings"] == []
+    _advance_stage_with_samples(observer, clock)
+    _path, _sha, final = observer.finalize()
+    assert final["result"] == "PASS_CANDIDATE"
+    assert final["eligible_for_next_stage"] is True
+    verify_completed_stage(observer.evidence_root, observer.identity, expected_stage="2h")
+
+    observer2, clock2, _manager2, _evaluator2 = _v4_observer(tmp_path / "gap")
+    observer2.start()
+    clock2.utc += 600 * 1_000_000_000 + 1
+    clock2.boot += 600 * 1_000_000_000 + 1
+    _path, _sha, gap_sample = observer2.sample()
+    assert gap_sample["result"] == "INCOMPLETE"
+    assert "acceptance_observation_gap" in cast(
+        list[object], gap_sample["blocking_findings"]
+    )
+
+
+def test_v4_rejects_v3_predecessor_and_v3_resume(tmp_path: Path) -> None:
+    observer, clock, manager = _observer(tmp_path)
+    _publish_valid_identity_and_readiness(observer)
+    with pytest.raises(AcceptanceError, match="schema cannot authorize"):
+        verify_prior_stage(
+            observer.evidence_root.parent / "readiness-result.json",
+            observer.identity,
+            "2h",
+            schema_version=V4_SCHEMA_VERSION,
+        )
+    observer.start()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    with pytest.raises(AcceptanceError, match="v3 observer cannot resume as v4"):
+        resume_observer(
+            observer.evidence_root,
+            data_root=observer.data_root,
+            identity=observer.identity,
+            manager=manager,  # type: ignore[arg-type]
+            evaluator=observer.evaluator,
+            clock=clock,
+            identity_verifier=observer.identity_verifier,
+            schema_version=V4_SCHEMA_VERSION,
+        )
+
+
+def test_v4_streaming_verifier_rejects_episode_blocker_boottime_and_hash_tampering(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    sample_path, _sha, _sample = observer.sample()
+
+    def tamper_episode(document: dict[str, object]) -> None:
+        episode = cast(dict[str, object], document["readiness_recovery_episode"])
+        episode["episode_start_boottime_ns"] = 1
+
+    _rewrite_v3_samples(observer.evidence_root, {0: tamper_episode})
+    with pytest.raises(AcceptanceError, match="V4 readiness episode"):
+        _sample_chain(
+            observer.evidence_root,
+            start=_read_json(observer.evidence_root / "stage-start.json"),
+            start_sha=sha256_bytes(
+                (observer.evidence_root / "stage-start.json").read_bytes()
+            ),
+            identity=observer.identity,
+            require_eligible=False,
+        )
+    assert sample_path.exists()

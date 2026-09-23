@@ -5,14 +5,15 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 acceptance evidence V4 policy authority freeze (2026-09-23)
+## Current milestone — M22_9 acceptance evidence V4 implementation and offline validation (2026-09-24)
 
-The independent V4 semantics review is accepted. It found no Recorder
-reconnect, readiness-evaluator, or readiness-snapshot defect, but confirmed an
-acceptance-policy design defect: V3's sticky intermediate
-`readiness_not_ready` outcome is sampling-phase dependent. This is a
-documentation-only policy milestone. It does not implement V4, deploy an
-artifact, touch the VPS, start Recorder, or start Formal acceptance.
+ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as a
+new `m22.9-acceptance-evidence.v4` schema with an independent constant-space
+streaming verifier, bounded global readiness episode, explicit V1/V2/V3
+dispatch, and resume continuity. Offline validation is complete on the
+implementation branch and independent review is pending. This source is not
+deployed, does not touch the VPS, does not start Recorder, and does not start
+Formal acceptance.
 
 Current status chronology (the detailed historical records below remain
 immutable):
@@ -40,10 +41,11 @@ readiness timeout and does not change the 300-second sample cadence or
 produces `readiness_not_ready` and fails the final.
 
 ```text
-MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
-MILESTONE_STATUS=POLICY_AUTHORITY_REVIEWED_COMPLETE
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_IMPLEMENTATION
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
-V4_IMPLEMENTED=NO
+V4_SCHEMA=m22.9-acceptance-evidence.v4
+V4_IMPLEMENTED=YES
 V4_DEPLOYED=NO
 FORMAL_V4_STARTED=NO
 VPS_TOUCHED=NO
@@ -62,12 +64,13 @@ V4_DURATION_CREDIT_SECONDS=0
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 RETRY_V3_12H_UNCHANGED=NO
-NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=INDEPENDENT_REVIEW_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
 ```
 
 The full policy authority is [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).
-V3 evidence and semantics remain historical and immutable; the V4 schema and
-runtime change are not included in this milestone.
+V3 evidence and semantics remain historical and immutable. The V4 implementation
+record is [`M22.9 acceptance evidence V4`](milestone_acceptance/M22.9-acceptance-evidence-v4.md).
 
 ## Previous milestone — M22_9 acceptance evidence V3 (2026-09-18)
 
