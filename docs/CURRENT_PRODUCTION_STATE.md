@@ -42,11 +42,19 @@ VPS_TOUCHED=NO
 CURRENT_RECORDER=STOPPED
 RECORDER=STOPPED
 V3_2H_HISTORICAL_ACCEPT=YES
+V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032
+V3_12H_ATTEMPT_COUNT=2
+V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE
+V3_12H_ATTEMPT_1_CREDIT_SECONDS=0
+V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY
+V3_12H_ATTEMPT_2_CREDIT_SECONDS=0
 V3_12H_ELIGIBLE=NO
+V4_DURATION_CREDIT_SECONDS=0
 24H_STARTED=NO
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
-NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+RETRY_V3_12H_UNCHANGED=NO
+NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
 ```
 
 The full policy authority is [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).
@@ -981,22 +989,29 @@ STOPPED_DEPLOYMENT_INSTALLED=YES
 LIVE_START_AUTHORIZED=NO
 DEPLOYMENT_AUTHORIZED=NO
 HISTORICAL_FORMAL_M22_9_ACTIVITY=YES
-FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
-FORMAL_M22_9=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
-FORMAL_M22_9_CREDIT_SECONDS=0
-12H=NOT_STARTED
-PRODUCTION_READY=NO
+V3_2H_HISTORICAL_ACCEPT=YES
+V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032
+V3_12H_ATTEMPT_COUNT=2
+V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE
+V3_12H_ATTEMPT_1_CREDIT_SECONDS=0
+V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY
+V3_12H_ATTEMPT_2_CREDIT_SECONDS=0
+V3_12H_ELIGIBLE=NO
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_IMPLEMENTED=NO
 V4_DEPLOYED=NO
 FORMAL_V4_STARTED=NO
-V3_2H_HISTORICAL_ACCEPT=YES
-V3_12H_ELIGIBLE=NO
+V4_DURATION_CREDIT_SECONDS=0
 24H_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
 P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
-DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+DEPLOYED_RUNTIME_SOURCE_SHA=6e5dd91575d53e226a20d1873e06ca64329
+DEPLOYED_RUNTIME_SOURCE_TREE=3262aa4ea46156631358a1002b7833d37325eb87
+DEPLOYED_RUNTIME_WHEEL_SHA256=7201625525dc7780d2d8bada3865cccf2e6fb8895625cfc2e9e474656fcc70db
+DEPLOYMENT_IDENTITY_SHA256=6bace053fa6bf74f14cc3a30f3356f189988b273b0d5acad2f817fe8fca51467
 CURRENT_MAIN_DEPLOYED=NO
-CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_MERGE_DESCENDANT_NOT_INSTALLED
 M22_9_P2=REVIEWED_COMPLETE
 M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
 ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
@@ -1008,22 +1023,27 @@ OS_UPDATE_AUTHORITY=RESTORED
 PENDING_UPGRADES=0
 REBOOT_REQUIRED=NO
 ROOT_HOME_RECOVERY=COMPLETE
+RETRY_V3_12H_UNCHANGED=NO
 RETRY_ELIGIBLE=NO_PENDING_V4_IMPLEMENTATION_AND_REVIEW
 CURRENT_RECORDER=STOPPED
-NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
 ```
 
 Here `DEPLOYMENT_AUTHORIZED=NO` means future live deployment/start
-authorization is absent. The old installed artifact and all prior Formal
-records remain historical and provide no V4 credit. Any future live traffic or
-Formal stage requires the V4 implementation, independent review, fresh
-source/Wheel/deployment identity, explicit deployment authorization, and a
-fresh readiness/capacity decision. Historical single-symbol, non-formal, and
-incomplete-stage duration credit does not transfer.
+authorization is absent. The `DEPLOYED_RUNTIME_*` and
+`DEPLOYMENT_IDENTITY_SHA256` fields identify the last deployed runtime
+behavior/artifact; they do not claim that the exact PR #75 docs-only merge
+descendant is deployed. The V3 2-hour result and both V3 12-hour attempts are
+historical, with no V3 12-hour eligibility or transferred credit. Any future
+live traffic or Formal stage requires the V4 implementation, independent
+review, fresh source/Wheel/deployment identity, explicit deployment
+authorization, and a fresh readiness/capacity decision. Historical
+single-symbol, non-formal, and incomplete-stage duration credit does not
+transfer.
 
 ## Next action
 
-NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
 
 MS3 is closed/merged, MS4-A is reviewed complete, and MS4-B stopped-deployment
 review is complete. MS4-C is reviewed complete only through the separate,
@@ -1032,17 +1052,17 @@ non-formal R3 recovery supplement; the original two-hour window remains
 MS4-D has closed the bounded four-ProductKey qualification. M22.9-P1 is the
 reviewed-complete documentation-only systemd-detached observation preparation.
 M22.9-P2 and the original failed-at-T0 closeout remain historical reviewed
-records. The observer concurrency fix was merged, the exact current-main
-artifact was deployed and reached readiness, and one separately authorized
-Formal retry then produced a valid T0 plus ten passing samples. Host unattended
-maintenance reexecuted systemd at approximately 85 minutes, invalidating the
-Recorder and observer process identities before finalization. The retry is
-therefore incomplete with zero credit and 12 hours is not started. The first
-subsequent quiet-window preflight was aborted by the root-home incident and is
-not resumable; the 2026-09-13 restart-from-scratch preflight then completed the
-pending package work, proved the runtime-only maintenance exclusion, and
-restored update authority. Recorder is stopped/disabled. The next milestone is
-the V4 implementation and offline validation described by ADR-0033; a future
-Formal 2-hour stage requires a fresh V4 identity/readiness/deployment chain and
-separate authorization. It must not resume either incomplete stage or start 12
-hours automatically.
+records. The observer concurrency fix was included in the last deployed runtime
+artifact identified above and reached readiness; the exact PR #75 docs-only
+merge descendant is not deployed. The historical V3 2-hour result was
+accepted, while V3 12-hour attempt 1 was an operator-monitor false positive
+and attempt 2 failed on sticky `readiness_not_ready`; both receive zero credit
+and V3 12-hour eligibility is `NO`. The first subsequent quiet-window
+preflight was aborted by the root-home incident and is not resumable; the
+2026-09-13 restart-from-scratch preflight then completed the pending package
+work, proved the runtime-only maintenance exclusion, and restored update
+authority. Recorder is stopped/disabled. The next milestone is the V4
+implementation and offline validation described by ADR-0033; a future Formal
+stage requires a fresh V4 identity/readiness/deployment chain and separate
+authorization. It must not retry V3 unchanged, resume either incomplete stage,
+or advance to 24 hours automatically.
