@@ -5,7 +5,72 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 acceptance evidence V3 (2026-09-18)
+## Current milestone — M22_9 acceptance evidence V4 policy authority freeze (2026-09-23)
+
+The independent V4 semantics review is accepted. It found no Recorder
+reconnect, readiness-evaluator, or readiness-snapshot defect, but confirmed an
+acceptance-policy design defect: V3's sticky intermediate
+`readiness_not_ready` outcome is sampling-phase dependent. This is a
+documentation-only policy milestone; it does not implement V4 or authorize
+deployment, VPS work, Recorder start, or Formal execution.
+
+Current status chronology (the detailed historical records below remain
+immutable):
+
+- 2026-09-12: root-home / host-maintenance incident.
+- 2026-09-13: host-maintenance preflight completed.
+- 2026-09-20: V3 Formal 2h accepted.
+- 2026-09-21: V3 12h attempt #1 and #2 both failed; credit=0.
+
+The live GitHub `main` base was verified exactly before authoring this policy:
+
+```text
+POLICY_BASE_SOURCE_SHA=6e5dd91575d53e226a20d1873eafa3e06ca64329
+POLICY_BASE_SOURCE_TREE=3262aa4ea46156631358a1002b7833d37325eb87
+```
+
+ADR-0033 freezes one global, acceptance-observed in-stage recovery episode at
+900 seconds (15 minutes) on integer Linux `CLOCK_BOOTTIME` nanoseconds. The
+episode begins at the first observed recoverable ProductKey core `NOT_READY`
+sample after valid READY/T0 authority and closes at the first subsequent
+`READY` sample. It does not use the 300-second deployment-readiness timeout,
+does not infer an unobserved start, and does not change the 300-second sample
+cadence or 600-second evidence-gap bound. A recoverable episode that remains
+`NOT_READY` beyond 900 seconds produces sticky
+`readiness_recovery_deadline_exceeded`; any terminal `NOT_READY` independently
+produces `readiness_not_ready` and fails the final.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
+MILESTONE_STATUS=POLICY_AUTHORITY_REVIEWED_COMPLETE
+V4_POLICY_DEADLINE_AUTHORITY=FROZEN
+V4_IMPLEMENTED=NO
+V4_DEPLOYED=NO
+FORMAL_V4_STARTED=NO
+VPS_TOUCHED=NO
+CURRENT_RECORDER=STOPPED
+RECORDER=STOPPED
+V3_2H_HISTORICAL_ACCEPT=YES
+V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032
+V3_12H_ATTEMPT_COUNT=2
+V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE
+V3_12H_ATTEMPT_1_CREDIT_SECONDS=0
+V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY
+V3_12H_ATTEMPT_2_CREDIT_SECONDS=0
+V3_12H_ELIGIBLE=NO
+V4_DURATION_CREDIT_SECONDS=0
+24H_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+RETRY_V3_12H_UNCHANGED=NO
+NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+```
+
+The full policy authority is [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).
+V3 evidence and semantics remain historical and immutable; the V4 schema and
+runtime change are not included in this milestone.
+
+## Previous milestone — M22_9 acceptance evidence V3 (2026-09-18)
 
 The frozen P1 acceptance-policy defect is corrected in the acceptance-only V3
 implementation on branch `fix/m22-9-acceptance-evidence-v3`. Valid Catalog
@@ -73,7 +138,7 @@ hashes, four preserved pre-T0 setup records, the monitoring-side OOM incident,
 and closeout state are in the
 [`Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
 
-### Current development queue
+### V3 development queue at that historical checkpoint
 
 1. Independently review and rebuild the exact M22.9 acceptance-evidence V3
    artifact.
@@ -985,17 +1050,29 @@ consumer repository dependency. Raw payload bytes and Raw v1 framing remain
 recoverable and unchanged. Do not write production data under the repository
 or use an external volume as an active Collector target.
 
-`FORMAL_M22_9_STARTED=YES`,
-`FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
-`FORMAL_M22_9=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
-`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
+`HISTORICAL_FORMAL_M22_9_ACTIVITY=YES`,
+`V3_2H_HISTORICAL_ACCEPT=YES`,
+`V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032`,
+`V3_12H_ATTEMPT_COUNT=2`,
+`V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE`,
+`V3_12H_ATTEMPT_1_CREDIT_SECONDS=0`,
+`V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY`,
+`V3_12H_ATTEMPT_2_CREDIT_SECONDS=0`,
+`V3_12H_ELIGIBLE=NO`,
+`V4_DURATION_CREDIT_SECONDS=0`, `24H_STARTED=NO`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`,
 `PRODUCTION_READY=NO`,
+`V4_POLICY_DEADLINE_AUTHORITY=FROZEN`,
+`V4_IMPLEMENTED=NO`, `V4_DEPLOYED=NO`, `FORMAL_V4_STARTED=NO`,
 `STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
 `DEPLOYMENT_AUTHORIZED=NO` (future live start only),
 `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
-`DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`,
+`DEPLOYED_RUNTIME_SOURCE_SHA=6e5dd91575d53e226a20d1873e06ca64329`,
+`DEPLOYED_RUNTIME_SOURCE_TREE=3262aa4ea46156631358a1002b7833d37325eb87`,
+`DEPLOYED_RUNTIME_WHEEL_SHA256=7201625525dc7780d2d8bada3865cccf2e6fb8895625cfc2e9e474656fcc70db`,
+`DEPLOYMENT_IDENTITY_SHA256=6bace053fa6bf74f14cc3a30f3356f189988b273b0d5acad2f817fe8fca51467`,
 `CURRENT_MAIN_DEPLOYED=NO`,
-`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED`,
+`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_MERGE_DESCENDANT_NOT_INSTALLED`,
 `MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
 `MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
 `MS3_B=CLOSED_MERGED_PR_56`,
@@ -1013,19 +1090,22 @@ or use an external volume as an active Collector target.
 `FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
 `RECORDER_ENABLED=NO`,
 `ARCHIVE_TIMER=ENABLED_ACTIVE`,
-`RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES`,
+`RETRY_V3_12H_UNCHANGED=NO`,
+`RETRY_ELIGIBLE=NO_PENDING_V4_IMPLEMENTATION_AND_REVIEW`,
 `HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS`,
 `OS_UPDATE_AUTHORITY=RESTORED`,
 `PENDING_UPGRADES=0`,
 `REBOOT_REQUIRED=NO`,
 `ROOT_HOME_RECOVERY=COMPLETE`,
-`NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`.
+`CURRENT_RECORDER=STOPPED`,
+`NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION`.
 
-Any further live traffic or Formal stage requires the exact installed runtime
-source/artifact identified above, its immutable Wheel, lock, config, unit, and
-deployment identities, explicit separate authorization, and a fresh
-readiness/capacity decision. Historical single-symbol, non-formal, and
-incomplete-stage duration credit does not transfer.
+The deployed identity fields above describe the last deployed runtime
+behavior/artifact, not the exact PR #75 docs-only merge descendant. Any future
+V4 live traffic or Formal stage requires the V4 implementation, its fresh
+source/Wheel/lock/config/unit/deployment identities, independent review,
+explicit separate authorization, and a fresh readiness/capacity decision. The
+historical V3 2-hour result and both V3 12-hour attempts provide no V4 credit.
 
 M22.9-P1 is reviewed-complete, documentation-only preparation for an external systemd 255
 transient `Type=exec` unit around the existing foreground acceptance observer.
@@ -1037,16 +1117,17 @@ resume rules, and final-review command are in
 [`docs/milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
 P1 did not deploy, start Recorder, enable the archive timer, archive/delete
 Raw, or begin Formal M22.9. P2 and the original failed-at-T0 attempt remain
-reviewed historical records. The observer fix was subsequently merged and the
-exact current-main artifact was deployed and verified. The separately
-authorized retry reached a valid T0 plus ten passing samples, but host
-maintenance reexecuted systemd before two hours and invalidated both process
-identities. The retry is incomplete with zero credit; 12 hours is not started.
-The subsequent first quiet-window preflight was aborted by the root-home
-incident and is not reusable. The 2026-09-13 restart-from-scratch preflight
-completed the pending maintenance, proved the runtime-only exclusion, and
-restored normal update authority. Recorder remains stopped/disabled. The next
-team may proceed only to one separately authorized Formal 2-hour retry after
-fresh identity/readiness/archive/capacity gates, as defined in
-[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
-It does not authorize 12 hours or automatic stage advancement.
+reviewed historical records. The observer fix was included in the last
+deployed runtime artifact identified above and was verified; the exact PR #75
+docs-only merge descendant is not deployed. In chronological order, the
+2026-09-12 root-home / host-maintenance incident preceded the completed
+2026-09-13 host-maintenance preflight; V3 Formal 2h was accepted on 2026-09-20;
+and V3 12-hour attempts #1 and #2 both failed on 2026-09-21 with zero credit.
+Attempt #1 was an operator-monitor false positive and attempt #2 failed on
+sticky `readiness_not_ready`; V3 12-hour eligibility is `NO`. Recorder remains
+stopped/disabled. The next milestone is the V4 implementation and offline
+validation described by ADR-0033; only after independent review, a fresh
+identity/readiness decision, explicit deployment authorization, and a fresh
+full Formal chain may live work resume. V3 must not be retried unchanged, and
+no V4 implementation, deployment, Formal stage, or automatic stage advancement
+is authorized by this handoff.
