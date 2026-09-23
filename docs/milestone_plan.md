@@ -25,9 +25,17 @@ MS4 recovery-observation envelope into explicit M22.9 V4 authority and is
 grounded by M21.4 gen6's approximately 417.861-second valid recovery. It is
 not claimed to be mathematically optimal.
 
+Current status chronology (the detailed historical records below remain
+immutable):
+
+- 2026-09-12: root-home / host-maintenance incident.
+- 2026-09-13: host-maintenance preflight completed.
+- 2026-09-20: V3 Formal 2h accepted.
+- 2026-09-21: V3 12h attempt #1 and #2 both failed; credit=0.
+
 ```text
 MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
-MILESTONE_STATUS=POLICY_AUTHORITY_FROZEN_PENDING_REVIEW
+MILESTONE_STATUS=POLICY_AUTHORITY_REVIEWED_COMPLETE
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_IMPLEMENTED=NO
 V4_DEPLOYED=NO
@@ -39,7 +47,7 @@ V3_12H_ELIGIBLE=NO
 24H_STARTED=NO
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
-NEXT=M22_9_V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
+NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION
 ```
 
 No production code, tests, Wheel, deployment identity, VPS, Recorder, or

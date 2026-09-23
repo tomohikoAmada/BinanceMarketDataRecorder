@@ -14,6 +14,14 @@ acceptance-policy design defect: V3's sticky intermediate
 documentation-only policy milestone. It does not implement V4, deploy an
 artifact, touch the VPS, start Recorder, or start Formal acceptance.
 
+Current status chronology (the detailed historical records below remain
+immutable):
+
+- 2026-09-12: root-home / host-maintenance incident.
+- 2026-09-13: host-maintenance preflight completed.
+- 2026-09-20: V3 Formal 2h accepted.
+- 2026-09-21: V3 12h attempt #1 and #2 both failed; credit=0.
+
 The live GitHub `main` policy base was verified exactly:
 
 ```text
@@ -33,7 +41,7 @@ produces `readiness_not_ready` and fails the final.
 
 ```text
 MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_POLICY_FREEZE
-MILESTONE_STATUS=POLICY_AUTHORITY_FROZEN_PENDING_REVIEW
+MILESTONE_STATUS=POLICY_AUTHORITY_REVIEWED_COMPLETE
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_IMPLEMENTED=NO
 V4_DEPLOYED=NO
@@ -1054,15 +1062,14 @@ reviewed-complete documentation-only systemd-detached observation preparation.
 M22.9-P2 and the original failed-at-T0 closeout remain historical reviewed
 records. The observer concurrency fix was included in the last deployed runtime
 artifact identified above and reached readiness; the exact PR #75 docs-only
-merge descendant is not deployed. The historical V3 2-hour result was
-accepted, while V3 12-hour attempt 1 was an operator-monitor false positive
-and attempt 2 failed on sticky `readiness_not_ready`; both receive zero credit
-and V3 12-hour eligibility is `NO`. The first subsequent quiet-window
-preflight was aborted by the root-home incident and is not resumable; the
-2026-09-13 restart-from-scratch preflight then completed the pending package
-work, proved the runtime-only maintenance exclusion, and restored update
-authority. Recorder is stopped/disabled. The next milestone is the V4
-implementation and offline validation described by ADR-0033; a future Formal
-stage requires a fresh V4 identity/readiness/deployment chain and separate
-authorization. It must not retry V3 unchanged, resume either incomplete stage,
-or advance to 24 hours automatically.
+merge descendant is not deployed. In chronological order, the 2026-09-12
+root-home / host-maintenance incident preceded the completed 2026-09-13
+host-maintenance preflight; V3 Formal 2h was accepted on 2026-09-20; and V3
+12-hour attempts #1 and #2 both failed on 2026-09-21 with zero credit. Attempt
+#1 was an operator-monitor false positive and attempt #2 failed on sticky
+`readiness_not_ready`; V3 12-hour eligibility is `NO`. Recorder is
+stopped/disabled. The next milestone is the V4 implementation and offline
+validation described by ADR-0033; a future Formal stage requires a fresh V4
+identity/readiness/deployment chain and separate authorization. It must not
+retry V3 unchanged, resume either incomplete stage, or advance to 24 hours
+automatically.
