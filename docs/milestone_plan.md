@@ -1,8 +1,9 @@
 # Milestone Plan
 
-## Current candidate milestone — M22_9 acceptance evidence V4 implementation and offline validation (2026-09-24)
+## Current candidate milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
-The independent V4 semantics review is accepted against the exact live GitHub
+The independent V4 semantics review and final implementation review are
+accepted against the exact live GitHub
 `main` base `6e5dd91575d53e226a20d1873eafa3e06ca64329` / tree
 `3262aa4ea46156631358a1002b7833d37325eb87`. It found no Recorder reconnect,
 readiness-evaluator, or readiness-snapshot defect, but confirmed an
@@ -25,6 +26,10 @@ MS4 recovery-observation envelope into explicit M22.9 V4 authority and is
 grounded by M21.4 gen6's approximately 417.861-second valid recovery. It is
 not claimed to be mathematically optimal.
 
+PR #76 received final independent review with P0=0, P1=0, P2=0, and P3=0.
+The implementation is reviewed complete; exact V4 artifact construction and
+stopped deployment remain separate next actions.
+
 Current status chronology (the detailed historical records below remain
 immutable):
 
@@ -35,12 +40,13 @@ immutable):
 
 ```text
 MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_IMPLEMENTATION
-MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_REVIEWED_COMPLETE
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_SCHEMA=m22.9-acceptance-evidence.v4
 V4_IMPLEMENTED=YES
 V4_DEPLOYED=NO
 FORMAL_V4_STARTED=NO
+V4_DURATION_CREDIT_SECONDS=0
 VPS_TOUCHED=NO
 CURRENT_RECORDER=STOPPED
 V3_2H_HISTORICAL_ACCEPT=YES
@@ -49,7 +55,7 @@ V3_12H_ELIGIBLE=NO
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO
-NEXT=INDEPENDENT_REVIEW_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+NEXT=EXACT_V4_ARTIFACT_BUILD_AND_STOPPED_DEPLOYMENT
 ```
 
 The implementation branch is not deployed and no deployment identity, VPS,

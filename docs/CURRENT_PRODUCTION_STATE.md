@@ -5,15 +5,14 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 acceptance evidence V4 implementation and offline validation (2026-09-24)
+## Current milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as a
 new `m22.9-acceptance-evidence.v4` schema with an independent constant-space
 streaming verifier, bounded global readiness episode, explicit V1/V2/V3
-dispatch, and resume continuity. Offline validation is complete on the
-implementation branch and independent review is pending. This source is not
-deployed, does not touch the VPS, does not start Recorder, and does not start
-Formal acceptance.
+dispatch, and resume continuity. Offline validation and the final independent
+review are complete for PR #76. This source is not deployed, does not touch
+the VPS, does not start Recorder, and does not start Formal acceptance.
 
 Current status chronology (the detailed historical records below remain
 immutable):
@@ -42,12 +41,13 @@ produces `readiness_not_ready` and fails the final.
 
 ```text
 MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_IMPLEMENTATION
-MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_REVIEWED_COMPLETE
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_SCHEMA=m22.9-acceptance-evidence.v4
 V4_IMPLEMENTED=YES
 V4_DEPLOYED=NO
 FORMAL_V4_STARTED=NO
+V4_DURATION_CREDIT_SECONDS=0
 VPS_TOUCHED=NO
 CURRENT_RECORDER=STOPPED
 RECORDER=STOPPED
@@ -59,13 +59,12 @@ V3_12H_ATTEMPT_1_CREDIT_SECONDS=0
 V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY
 V3_12H_ATTEMPT_2_CREDIT_SECONDS=0
 V3_12H_ELIGIBLE=NO
-V4_DURATION_CREDIT_SECONDS=0
 24H_STARTED=NO
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 RETRY_V3_12H_UNCHANGED=NO
 CURRENT_MAIN_DEPLOYED=NO
-NEXT=INDEPENDENT_REVIEW_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+NEXT=EXACT_V4_ARTIFACT_BUILD_AND_STOPPED_DEPLOYMENT
 ```
 
 The full policy authority is [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).

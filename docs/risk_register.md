@@ -1,6 +1,6 @@
 # Risk Register
 
-## Current candidate risk checkpoint — M22.9 acceptance evidence V4 implementation and offline validation (2026-09-24)
+## Current candidate risk checkpoint — M22.9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 The independent V4 semantics review is accepted against live `main`
 `6e5dd91575d53e226a20d1873eafa3e06ca64329` / tree
@@ -19,11 +19,11 @@ age `>900s`. Terminal `NOT_READY` remains an independent immediate
 300-second sample cadence, and 600-second evidence-gap authority are distinct
 and unchanged.
 
-The policy is frozen and the V4 implementation is offline-validated on the
-implementation branch, but independent review and any future deployment remain
-pending. V3 evidence remains historical and immutable; a V4 source/wheel/
-deployment identity must run a fresh full Formal chain. Recorder is stopped and
-no VPS or Formal action was performed by this milestone.
+The policy is frozen and the V4 implementation is offline-validated and
+reviewed complete in PR #76. Any future deployment remains separate. V3
+evidence remains historical and immutable; a V4 source/wheel/deployment
+identity must run a fresh full Formal chain. Recorder is stopped and no VPS or
+Formal action was performed by this milestone.
 
 Current status chronology (the detailed historical records below remain
 immutable):
@@ -35,12 +35,13 @@ immutable):
 
 ```text
 MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_IMPLEMENTATION
-MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_REVIEWED_COMPLETE
 V4_POLICY_DEADLINE_AUTHORITY=FROZEN
 V4_SCHEMA=m22.9-acceptance-evidence.v4
 V4_IMPLEMENTED=YES
 V4_DEPLOYED=NO
 FORMAL_V4_STARTED=NO
+V4_DURATION_CREDIT_SECONDS=0
 VPS_TOUCHED=NO
 CURRENT_RECORDER=STOPPED
 V3_2H_HISTORICAL_ACCEPT=YES
@@ -49,7 +50,7 @@ V3_12H_ELIGIBLE=NO
 FORMAL_M22_9_CREDIT_SECONDS=0
 PRODUCTION_READY=NO
 CURRENT_MAIN_DEPLOYED=NO
-NEXT=INDEPENDENT_REVIEW_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+NEXT=EXACT_V4_ARTIFACT_BUILD_AND_STOPPED_DEPLOYMENT
 ```
 
 ## Previous candidate risk checkpoint — M22.9 acceptance evidence V3 (2026-09-18)
