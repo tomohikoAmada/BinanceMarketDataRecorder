@@ -179,6 +179,16 @@ _V4_STAGE_CORE_FIELDS = _V3_STAGE_CORE_FIELDS | frozenset({_V4_EPISODE_FIELD})
 _V4_STAGE_START_FIELDS = _V3_STAGE_START_FIELDS | frozenset({_V4_EPISODE_FIELD})
 _V4_STAGE_SAMPLE_FIELDS = _V3_STAGE_SAMPLE_FIELDS | frozenset({_V4_EPISODE_FIELD})
 _V4_STAGE_FINAL_FIELDS = _V3_STAGE_FINAL_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_READINESS_BLOCKERS = frozenset(
+    {
+        "readiness_failed",
+        "readiness_not_ready",
+        "readiness_recovery_deadline_exceeded",
+    }
+)
+_V4_SOFT_FINDINGS = frozenset(
+    {"acceptance_observation_gap", "unsafe_wall_clock_backward"}
+)
 
 
 def _integer(value: object, field: str) -> int:
@@ -3141,24 +3151,26 @@ def _sample_chain_v3(
             )
             if published_episode != expected_episode:
                 raise AcceptanceError("V4 readiness episode cannot be reconstructed")
-            if not set(expected_readiness_findings) <= sample_findings:
-                raise AcceptanceError("V4 readiness finding is not published")
-            if (
-                readiness.get("state") == "NOT_READY"
-                and _v4_recoverable_reason(v4_evaluator, readiness) is not None
-                and "readiness_recovery_deadline_exceeded" not in expected_readiness_findings
-                and "readiness_not_ready" in sample_findings
-            ):
-                raise AcceptanceError(
-                    "recoverable V4 intermediate NOT_READY became a permanent blocker"
-                )
-            soft_readiness_findings = {
-                "acceptance_observation_gap",
-                "unsafe_wall_clock_backward",
-            }
+            historical_readiness_blockers = (
+                state.known_findings & _V4_READINESS_BLOCKERS
+            )
+            allowed_readiness_blockers = historical_readiness_blockers | set(
+                expected_readiness_findings
+            )
+            actual_readiness_blockers = sample_findings & _V4_READINESS_BLOCKERS
+            unexpected_readiness_blockers = (
+                actual_readiness_blockers - allowed_readiness_blockers
+            )
+            if unexpected_readiness_blockers:
+                raise AcceptanceError("V4 readiness blocker is unsupported")
+            missing_readiness_blockers = (
+                allowed_readiness_blockers - actual_readiness_blockers
+            )
+            if missing_readiness_blockers:
+                raise AcceptanceError("V4 readiness blocker is missing")
             expected_sample_result = (
                 "FAIL"
-                if any(item not in soft_readiness_findings for item in sample_findings)
+                if any(item not in _V4_SOFT_FINDINGS for item in sample_findings)
                 else ("INCOMPLETE" if sample_findings else "PASS_CANDIDATE")
             )
             if sample.get("result") != expected_sample_result:
@@ -3646,8 +3658,10 @@ def _verify_completed_stage_v4(
         expected_result = "FAIL"
     elif elapsed < required:
         expected_result = "INCOMPLETE"
-    elif expected_findings:
+    elif expected_findings - _V4_SOFT_FINDINGS:
         expected_result = "FAIL"
+    elif expected_findings:
+        expected_result = "INCOMPLETE"
     else:
         expected_result = "PASS_CANDIDATE"
     expected_eligible = expected_result == "PASS_CANDIDATE" and not expected_findings

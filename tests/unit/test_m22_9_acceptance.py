@@ -2912,6 +2912,42 @@ def _publish_v4_predecessors(observer: V4AcceptanceObserver) -> str:
     return readiness_sha
 
 
+def _v4_single_sample_chain(
+    tmp_path: Path, *, recoverable: bool
+) -> V4AcceptanceObserver:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    if recoverable:
+        evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    return observer
+
+
+def _verify_v4_sample_chain(observer: V4AcceptanceObserver) -> None:
+    start_path = observer.evidence_root / "stage-start.json"
+    _sample_chain(
+        observer.evidence_root,
+        start=_read_json(start_path),
+        start_sha=sha256_bytes(start_path.read_bytes()),
+        identity=observer.identity,
+        require_eligible=False,
+    )
+
+
+def _add_readiness_blocker(document: dict[str, object], blocker: str) -> None:
+    findings = set(cast(list[str], document["blocking_findings"]))
+    findings.add(blocker)
+    document["blocking_findings"] = sorted(findings)
+    details = cast(dict[str, object], document["new_finding_details"])
+    details[blocker] = {
+        "observed_at_utc_ns": document["observed_at_utc_ns"]
+    }
+    document["result"] = "FAIL"
+
+
 def test_v4_incident_recovery_has_no_permanent_readiness_blocker(tmp_path: Path) -> None:
     observer, clock, _manager, evaluator = _v4_observer(tmp_path)
     _path, _sha, start = observer.start()
@@ -2974,6 +3010,71 @@ def test_v4_deadline_boundaries_are_inclusive(
         assert expected_finding in cast(list[object], sample["blocking_findings"])
 
 
+@pytest.mark.parametrize(
+    ("ready_age_ns", "expected_episode_state", "deadline_exceeded"),
+    [
+        (899 * 1_000_000_000, "RECOVERED", False),
+        (900 * 1_000_000_000, "RECOVERED", False),
+        (901 * 1_000_000_000, "DEADLINE_EXCEEDED", True),
+    ],
+)
+def test_v4_first_ready_transition_observes_inclusive_deadline(
+    tmp_path: Path,
+    ready_age_ns: int,
+    expected_episode_state: str,
+    deadline_exceeded: bool,
+) -> None:
+    observer, clock, _manager, evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    evaluator.set_recoverable()
+    clock.utc += 1
+    clock.boot += 1
+    observer.sample()
+    episode_start = clock.boot
+
+    last_not_ready: dict[str, object] | None = None
+    for elapsed_ns in (300 * 1_000_000_000, 600 * 1_000_000_000):
+        if elapsed_ns < ready_age_ns:
+            delta = episode_start + elapsed_ns - clock.boot
+            clock.utc += delta
+            clock.boot += delta
+            _path, _sha, last_not_ready = observer.sample()
+            readiness = cast(dict[str, object], last_not_ready["readiness"])
+            assert readiness["state"] == "NOT_READY"
+            assert readiness["reasons"] == ["spot:BTCUSDT_core_not_ready"]
+            assert "readiness_recovery_deadline_exceeded" not in cast(
+                list[object], last_not_ready["blocking_findings"]
+            )
+
+    if last_not_ready is not None:
+        not_ready = cast(dict[str, object], last_not_ready["readiness"])
+        assert not_ready["state"] == "NOT_READY"
+        assert clock.boot - episode_start <= 600 * 1_000_000_000
+
+    delta = episode_start + ready_age_ns - clock.boot
+    evaluator.set_ready()
+    clock.utc += delta
+    clock.boot += delta
+    _path, _sha, ready_sample = observer.sample()
+    episode = cast(dict[str, object], ready_sample["readiness_recovery_episode"])
+    assert episode["state"] == expected_episode_state
+    readiness = cast(dict[str, object], ready_sample["readiness"])
+    assert readiness["state"] == "READY"
+    assert readiness["reasons"] == []
+    if deadline_exceeded:
+        assert "readiness_recovery_deadline_exceeded" in cast(
+            list[object], ready_sample["blocking_findings"]
+        )
+        assert ready_sample["result"] == "FAIL"
+    else:
+        assert "readiness_recovery_deadline_exceeded" not in cast(
+            list[object], ready_sample["blocking_findings"]
+        )
+        assert ready_sample["result"] == "PASS_CANDIDATE"
+    _verify_v4_sample_chain(observer)
+
+
 def test_v4_ready_after_deadline_remains_sticky_failed(tmp_path: Path) -> None:
     observer, clock, _manager, evaluator = _v4_observer(tmp_path)
     observer.start()
@@ -2996,6 +3097,7 @@ def test_v4_ready_after_deadline_remains_sticky_failed(tmp_path: Path) -> None:
     assert "readiness_recovery_deadline_exceeded" in cast(
         list[object], sample["blocking_findings"]
     )
+    _verify_v4_sample_chain(observer)
 
 
 def test_v4_product_rotation_does_not_reset_global_deadline(tmp_path: Path) -> None:
@@ -3052,6 +3154,13 @@ def test_v4_failed_and_nonrecoverable_readiness_fail_closed(tmp_path: Path) -> N
     _path, _sha, nonrecoverable = observer2.sample()
     assert nonrecoverable["result"] == "FAIL"
     assert "readiness_not_ready" in cast(list[object], nonrecoverable["blocking_findings"])
+    evaluator2.set_ready()
+    clock2.utc += 1
+    clock2.boot += 1
+    _path, _sha, recovered = observer2.sample()
+    assert recovered["result"] == "FAIL"
+    assert "readiness_not_ready" in cast(list[object], recovered["blocking_findings"])
+    _verify_v4_sample_chain(observer2)
 
 
 def test_v4_pre_t0_not_ready_cannot_establish_eligible_t0(tmp_path: Path) -> None:
@@ -3181,7 +3290,48 @@ def test_v4_rejects_v3_predecessor_and_v3_resume(tmp_path: Path) -> None:
         )
 
 
-def test_v4_streaming_verifier_rejects_episode_blocker_boottime_and_hash_tampering(
+def test_v4_verifier_rejects_ready_with_bogus_readiness_failed(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=False)
+
+    def add_bogus_blocker(document: dict[str, object]) -> None:
+        _add_readiness_blocker(document, "readiness_failed")
+
+    _rewrite_v3_samples(observer.evidence_root, {0: add_bogus_blocker})
+    with pytest.raises(AcceptanceError, match="V4 readiness blocker is unsupported"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_verifier_rejects_bogus_transient_readiness_not_ready(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=True)
+
+    def add_bogus_blocker(document: dict[str, object]) -> None:
+        _add_readiness_blocker(document, "readiness_not_ready")
+
+    _rewrite_v3_samples(observer.evidence_root, {0: add_bogus_blocker})
+    with pytest.raises(AcceptanceError, match="V4 readiness blocker is unsupported"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_verifier_rejects_early_deadline_blocker(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=True)
+
+    def add_bogus_blocker(document: dict[str, object]) -> None:
+        _add_readiness_blocker(
+            document, "readiness_recovery_deadline_exceeded"
+        )
+
+    _rewrite_v3_samples(observer.evidence_root, {0: add_bogus_blocker})
+    with pytest.raises(AcceptanceError, match="V4 readiness blocker is unsupported"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_verifier_rejects_missing_real_deadline_blocker(
     tmp_path: Path,
 ) -> None:
     observer, clock, _manager, evaluator = _v4_observer(tmp_path)
@@ -3190,7 +3340,38 @@ def test_v4_streaming_verifier_rejects_episode_blocker_boottime_and_hash_tamperi
     evaluator.set_recoverable()
     clock.utc += 1
     clock.boot += 1
-    sample_path, _sha, _sample = observer.sample()
+    observer.sample()
+    for step in (300, 300, 301):
+        delta = step * 1_000_000_000
+        clock.utc += delta
+        clock.boot += delta
+        _path, _sha, overdue = observer.sample()
+    episode = cast(dict[str, object], overdue["readiness_recovery_episode"])
+    assert episode["state"] == "DEADLINE_EXCEEDED"
+    assert cast(dict[str, object], overdue["readiness"])["state"] == "NOT_READY"
+    assert episode["age_ns"] == 901 * 1_000_000_000
+    assert "readiness_recovery_deadline_exceeded" in cast(
+        list[object], overdue["blocking_findings"]
+    )
+
+    def remove_required_blocker(document: dict[str, object]) -> None:
+        findings = set(cast(list[str], document["blocking_findings"]))
+        findings.discard("readiness_recovery_deadline_exceeded")
+        document["blocking_findings"] = sorted(findings)
+        cast(dict[str, object], document["new_finding_details"]).pop(
+            "readiness_recovery_deadline_exceeded"
+        )
+        document["result"] = "PASS_CANDIDATE"
+
+    _rewrite_v3_samples(observer.evidence_root, {3: remove_required_blocker})
+    with pytest.raises(AcceptanceError, match="V4 readiness blocker is missing"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_streaming_verifier_rejects_episode_projection_tampering(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=True)
 
     def tamper_episode(document: dict[str, object]) -> None:
         episode = cast(dict[str, object], document["readiness_recovery_episode"])
@@ -3198,13 +3379,54 @@ def test_v4_streaming_verifier_rejects_episode_blocker_boottime_and_hash_tamperi
 
     _rewrite_v3_samples(observer.evidence_root, {0: tamper_episode})
     with pytest.raises(AcceptanceError, match="V4 readiness episode"):
-        _sample_chain(
-            observer.evidence_root,
-            start=_read_json(observer.evidence_root / "stage-start.json"),
-            start_sha=sha256_bytes(
-                (observer.evidence_root / "stage-start.json").read_bytes()
-            ),
-            identity=observer.identity,
-            require_eligible=False,
-        )
-    assert sample_path.exists()
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_streaming_verifier_rejects_semantic_boottime_tampering_after_rechain(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=True)
+    start = _read_json(observer.evidence_root / "stage-start.json")
+    start_boottime = cast(int, start["observed_at_boottime_ns"])
+
+    def move_sample_before_t0(document: dict[str, object]) -> None:
+        document["observed_at_boottime_ns"] = start_boottime - 1
+
+    _rewrite_v3_samples(observer.evidence_root, {0: move_sample_before_t0})
+    with pytest.raises(AcceptanceError, match="BOOTTIME chain is non-monotonic"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_streaming_verifier_rejects_previous_sample_hash_tampering(
+    tmp_path: Path,
+) -> None:
+    observer = _v4_single_sample_chain(tmp_path, recoverable=False)
+    sample_path = observer.evidence_root / "sample-00000000.json"
+    _rewrite_v3_samples(observer.evidence_root, {})
+    _rewrite(sample_path, previous_sample_sha256="0" * 64)
+    with pytest.raises(AcceptanceError, match="sample hash chain is invalid"):
+        _verify_v4_sample_chain(observer)
+
+
+def test_v4_completed_soft_finding_final_is_incomplete_and_ineligible(
+    tmp_path: Path,
+) -> None:
+    observer, clock, _manager, _evaluator = _v4_observer(tmp_path)
+    observer.prior_stage_sha256 = _publish_v4_predecessors(observer)
+    observer.start()
+    for ordinal in range(24):
+        delta = 300 * 1_000_000_000
+        clock.boot += delta
+        if ordinal == 0:
+            clock.utc -= 1
+        else:
+            clock.utc += delta
+        observer.sample()
+    _path, _sha, final = observer.finalize()
+    assert final["result"] == "INCOMPLETE"
+    assert final["eligible_for_next_stage"] is False
+    assert final["blocking_findings"] == ["unsafe_wall_clock_backward"]
+    with pytest.raises(
+        AcceptanceError, match="not an eligible v4 chain terminus"
+    ):
+        verify_completed_stage(observer.evidence_root, observer.identity)
