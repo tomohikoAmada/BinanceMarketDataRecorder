@@ -45,9 +45,17 @@ from .readiness import VpsReadinessEvaluator
 from .state import ServiceStateError, ServiceStateStore
 from .systemd import SystemdError, SystemdManager
 
+# ``SCHEMA_VERSION`` is retained as the V3 authority for callers that were
+# written before the V4 implementation.  New production evidence is created
+# explicitly with ``V4_SCHEMA_VERSION``; moving this alias would silently
+# reinterpret historical V3 records.
 SCHEMA_VERSION = "m22.9-acceptance-evidence.v3"
+V3_SCHEMA_VERSION = SCHEMA_VERSION
 PREVIOUS_SCHEMA_VERSION = "m22.9-acceptance-evidence.v2"
 LEGACY_SCHEMA_VERSION = "m22.9-acceptance-evidence.v1"
+V4_SCHEMA_VERSION = "m22.9-acceptance-evidence.v4"
+CURRENT_SCHEMA_VERSION = V4_SCHEMA_VERSION
+V4_DEADLINE_NS = 900 * 1_000_000_000
 STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h")
 STAGE_DURATION_NS = {
     "2h": 7_200_000_000_000,
@@ -160,6 +168,27 @@ _V3_STAGE_CORE_FIELDS = frozenset(_V2_STAGE_CORE_FIELDS)
 _V3_STAGE_START_FIELDS = frozenset(_V2_STAGE_START_FIELDS)
 _V3_STAGE_SAMPLE_FIELDS = frozenset(_V2_STAGE_SAMPLE_FIELDS)
 _V3_STAGE_FINAL_FIELDS = frozenset(_V2_STAGE_FINAL_FIELDS)
+
+# V4 keeps the bounded V3 physical layout and adds one compact, independently
+# reconstructible readiness-episode projection.  The verifier does not trust
+# this projection: it rebuilds it from the immutable readiness and BOOTTIME
+# fields in every sample and compares the result with the published value.
+_V4_EPISODE_FIELD = "readiness_recovery_episode"
+_V4_COMMON_FIELDS = _COMMON_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_STAGE_CORE_FIELDS = _V3_STAGE_CORE_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_STAGE_START_FIELDS = _V3_STAGE_START_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_STAGE_SAMPLE_FIELDS = _V3_STAGE_SAMPLE_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_STAGE_FINAL_FIELDS = _V3_STAGE_FINAL_FIELDS | frozenset({_V4_EPISODE_FIELD})
+_V4_READINESS_BLOCKERS = frozenset(
+    {
+        "readiness_failed",
+        "readiness_not_ready",
+        "readiness_recovery_deadline_exceeded",
+    }
+)
+_V4_SOFT_FINDINGS = frozenset(
+    {"acceptance_observation_gap", "unsafe_wall_clock_backward"}
+)
 
 
 def _integer(value: object, field: str) -> int:
@@ -295,6 +324,7 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
         LEGACY_SCHEMA_VERSION,
         PREVIOUS_SCHEMA_VERSION,
         SCHEMA_VERSION,
+        V4_SCHEMA_VERSION,
     }:
         raise AcceptanceError("unsupported acceptance evidence schema")
     if schema_version == LEGACY_SCHEMA_VERSION:
@@ -303,14 +333,19 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
     else:
         kind = value.get("evidence_kind")
         if kind in {"identity-result", "readiness-result"}:
-            allowed = _COMMON_FIELDS | _EXTRA_FIELDS
-            if not set(value) >= _COMMON_FIELDS or set(value) - allowed:
+            required = _V4_COMMON_FIELDS if schema_version == V4_SCHEMA_VERSION else _COMMON_FIELDS
+            allowed = required | _EXTRA_FIELDS
+            if not set(value) >= required or set(value) - allowed:
                 raise AcceptanceError("acceptance evidence fields are not exact")
         elif kind == "stage-start":
             expected = (
                 _V2_STAGE_START_FIELDS
                 if schema_version == PREVIOUS_SCHEMA_VERSION
-                else _V3_STAGE_START_FIELDS
+                else (
+                    _V4_STAGE_START_FIELDS
+                    if schema_version == V4_SCHEMA_VERSION
+                    else _V3_STAGE_START_FIELDS
+                )
             )
             if set(value) != expected:
                 raise AcceptanceError("stage-start evidence fields are not exact")
@@ -318,7 +353,11 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
             expected = (
                 _V2_STAGE_SAMPLE_FIELDS
                 if schema_version == PREVIOUS_SCHEMA_VERSION
-                else _V3_STAGE_SAMPLE_FIELDS
+                else (
+                    _V4_STAGE_SAMPLE_FIELDS
+                    if schema_version == V4_SCHEMA_VERSION
+                    else _V3_STAGE_SAMPLE_FIELDS
+                )
             )
             if set(value) != expected:
                 raise AcceptanceError("stage-sample evidence fields are not exact")
@@ -326,7 +365,11 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
             expected = (
                 _V2_STAGE_FINAL_FIELDS
                 if schema_version == PREVIOUS_SCHEMA_VERSION
-                else _V3_STAGE_FINAL_FIELDS
+                else (
+                    _V4_STAGE_FINAL_FIELDS
+                    if schema_version == V4_SCHEMA_VERSION
+                    else _V3_STAGE_FINAL_FIELDS
+                )
             )
             if set(value) != expected:
                 raise AcceptanceError("stage-final evidence fields are not exact")
@@ -359,9 +402,10 @@ def _empty_common(
     now_utc: int,
     now_boot: int,
     boot_id: str,
+    schema_version: str = SCHEMA_VERSION,
 ) -> dict[str, object]:
-    return {
-        "schema_version": SCHEMA_VERSION,
+    document: dict[str, object] = {
+        "schema_version": schema_version,
         "evidence_kind": kind,
         "stage": stage,
         "run_id": run_id,
@@ -384,6 +428,9 @@ def _empty_common(
         "blocking_findings": [],
         "result": "INCOMPLETE",
     }
+    if schema_version == V4_SCHEMA_VERSION:
+        document[_V4_EPISODE_FIELD] = _empty_v4_episode()
+    return document
 
 
 def _empty_v2_stage(
@@ -456,6 +503,241 @@ def _empty_v3_stage(
         "observer_status": "OBSERVED",
         "result": "INCOMPLETE",
     }
+
+
+def _empty_v4_episode() -> dict[str, object]:
+    """Return the canonical empty V4 bounded-recovery projection."""
+
+    return {
+        "state": "NONE",
+        "episode_start_utc_ns": None,
+        "episode_start_boottime_ns": None,
+        "episode_close_utc_ns": None,
+        "episode_close_boottime_ns": None,
+        "last_product_key": None,
+        "last_reason": None,
+        "age_ns": None,
+        "deadline_ns": V4_DEADLINE_NS,
+    }
+
+
+def _empty_v4_stage(
+    *,
+    kind: str,
+    stage: str,
+    run_id: str,
+    identity: DeploymentIdentity,
+    now_utc: int,
+    now_boot: int,
+    boot_id: str,
+) -> dict[str, object]:
+    """Return the bounded common fields used by a V4 stage record."""
+
+    document = _empty_v3_stage(
+        kind=kind,
+        stage=stage,
+        run_id=run_id,
+        identity=identity,
+        now_utc=now_utc,
+        now_boot=now_boot,
+        boot_id=boot_id,
+    )
+    document["schema_version"] = V4_SCHEMA_VERSION
+    document[_V4_EPISODE_FIELD] = _empty_v4_episode()
+    return document
+
+
+@dataclass
+class _V4EpisodeState:
+    """Constant-space state for one global bounded readiness episode."""
+
+    state: str = "NONE"
+    start_utc_ns: int | None = None
+    start_boottime_ns: int | None = None
+    close_utc_ns: int | None = None
+    close_boottime_ns: int | None = None
+    last_product_key: str | None = None
+    last_reason: str | None = None
+
+    def public(self, *, observed_boottime_ns: int) -> dict[str, object]:
+        if self.state == "NONE":
+            return _empty_v4_episode()
+        if self.start_boottime_ns is None or self.start_utc_ns is None:
+            raise AcceptanceError("V4 readiness episode start is incomplete")
+        age_boottime_ns = (
+            (self.close_boottime_ns or observed_boottime_ns) - self.start_boottime_ns
+        )
+        return {
+            "state": self.state,
+            "episode_start_utc_ns": self.start_utc_ns,
+            "episode_start_boottime_ns": self.start_boottime_ns,
+            "episode_close_utc_ns": self.close_utc_ns,
+            "episode_close_boottime_ns": self.close_boottime_ns,
+            "last_product_key": self.last_product_key,
+            "last_reason": self.last_reason,
+            "age_ns": age_boottime_ns,
+            "deadline_ns": V4_DEADLINE_NS,
+        }
+
+
+def _v4_recoverable_reason(
+    evaluator: object, readiness: Mapping[str, object]
+) -> tuple[str, str] | None:
+    """Return the configured ProductKey/reason pair for the sole V4 class."""
+
+    if readiness.get("state") != "NOT_READY":
+        return None
+    reasons = readiness.get("reasons")
+    if not isinstance(reasons, list) or len(reasons) != 1:
+        return None
+    reason = reasons[0]
+    if not isinstance(reason, str) or not reason.endswith("_core_not_ready"):
+        return None
+    prefix = reason[: -len("_core_not_ready")]
+    if prefix.count(":") != 1:
+        return None
+    market, symbol = prefix.split(":", 1)
+    if not market or not symbol:
+        return None
+    expected_products = getattr(evaluator, "expected_products", None)
+    if not isinstance(expected_products, (set, frozenset, tuple, list)):
+        return None
+    configured = {
+        (
+            (
+                product[0]
+                if isinstance(product, tuple) and len(product) == 2
+                else getattr(product, "market", None)
+            ),
+            (
+                product[1]
+                if isinstance(product, tuple) and len(product) == 2
+                else getattr(product, "symbol", None)
+            ),
+        )
+        for product in expected_products
+    }
+    if (market, symbol) not in configured:
+        return None
+    return prefix, reason
+
+
+def _v4_episode_observe(
+    episode: _V4EpisodeState,
+    *,
+    evaluator: object,
+    readiness: Mapping[str, object],
+    observed_at_utc_ns: int,
+    observed_at_boottime_ns: int,
+    allow_start: bool,
+) -> list[str]:
+    """Advance the global V4 episode and return readiness findings.
+
+    The caller owns the sticky finding set.  This function only tracks the
+    bounded episode itself and never turns a valid intermediate recovery into
+    a permanent blocker.
+    """
+
+    state = readiness.get("state")
+    if state == "READY":
+        if episode.state == "ACTIVE":
+            if episode.start_boottime_ns is None:
+                raise AcceptanceError("V4 active episode has no BOOTTIME start")
+            age = observed_at_boottime_ns - episode.start_boottime_ns
+            if age > V4_DEADLINE_NS:
+                episode.state = "DEADLINE_EXCEEDED"
+                return ["readiness_recovery_deadline_exceeded"]
+            episode.state = "RECOVERED"
+            episode.close_utc_ns = observed_at_utc_ns
+            episode.close_boottime_ns = observed_at_boottime_ns
+        return []
+    if state == "FAILED":
+        return ["readiness_failed"]
+
+    recoverable = _v4_recoverable_reason(evaluator, readiness)
+    if recoverable is None:
+        return ["readiness_not_ready"]
+    product_key, reason = recoverable
+    if episode.state == "DEADLINE_EXCEEDED":
+        return ["readiness_recovery_deadline_exceeded"]
+    if episode.state in {"NONE", "RECOVERED"}:
+        if not allow_start:
+            return ["readiness_not_ready"]
+        episode.state = "ACTIVE"
+        episode.start_utc_ns = observed_at_utc_ns
+        episode.start_boottime_ns = observed_at_boottime_ns
+        episode.close_utc_ns = None
+        episode.close_boottime_ns = None
+    elif episode.state != "ACTIVE":
+        raise AcceptanceError("V4 readiness episode state is invalid")
+    episode.last_product_key = product_key
+    episode.last_reason = reason
+    if episode.start_boottime_ns is None:
+        raise AcceptanceError("V4 readiness episode has no BOOTTIME start")
+    if observed_at_boottime_ns - episode.start_boottime_ns > V4_DEADLINE_NS:
+        episode.state = "DEADLINE_EXCEEDED"
+        return ["readiness_recovery_deadline_exceeded"]
+    return []
+
+
+def _validate_v4_episode_document(
+    value: object,
+    *,
+    observed_boottime_ns: int,
+) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise AcceptanceError("V4 readiness episode is malformed")
+    expected_keys = set(_empty_v4_episode())
+    if set(value) != expected_keys:
+        raise AcceptanceError("V4 readiness episode fields are not exact")
+    state = value.get("state")
+    if state not in {"NONE", "ACTIVE", "RECOVERED", "DEADLINE_EXCEEDED"}:
+        raise AcceptanceError("V4 readiness episode state is invalid")
+    if _integer(value.get("deadline_ns"), "V4 readiness deadline") != V4_DEADLINE_NS:
+        raise AcceptanceError("V4 readiness deadline authority is invalid")
+    for field_name in (
+        "episode_start_utc_ns",
+        "episode_start_boottime_ns",
+        "episode_close_utc_ns",
+        "episode_close_boottime_ns",
+        "age_ns",
+    ):
+        field_value = value.get(field_name)
+        if field_value is not None:
+            _integer(field_value, f"V4 {field_name}")
+    for field_name in ("last_product_key", "last_reason"):
+        field_value = value.get(field_name)
+        if field_value is not None and not isinstance(field_value, str):
+            raise AcceptanceError(f"V4 {field_name} is invalid")
+    if state == "NONE":
+        if value != _empty_v4_episode():
+            raise AcceptanceError("empty V4 readiness episode is not canonical")
+        return dict(value)
+    start_boot = _integer(value.get("episode_start_boottime_ns"), "V4 episode start BOOTTIME")
+    start_utc = _integer(value.get("episode_start_utc_ns"), "V4 episode start UTC")
+    last_key = value.get("last_product_key")
+    last_reason = value.get("last_reason")
+    if not isinstance(last_key, str) or not isinstance(last_reason, str):
+        raise AcceptanceError("V4 readiness episode reason authority is incomplete")
+    close_boot = value.get("episode_close_boottime_ns")
+    close_utc = value.get("episode_close_utc_ns")
+    if state == "RECOVERED":
+        if not isinstance(close_boot, int) or isinstance(close_boot, bool):
+            raise AcceptanceError("recovered V4 episode has no close BOOTTIME")
+        if not isinstance(close_utc, int) or isinstance(close_utc, bool):
+            raise AcceptanceError("recovered V4 episode has no close UTC")
+        age_expected = close_boot - start_boot
+        if close_boot > observed_boottime_ns:
+            raise AcceptanceError("recovered V4 episode closes after its sample")
+    else:
+        if close_boot is not None or close_utc is not None:
+            raise AcceptanceError("active V4 episode has a close timestamp")
+        age_expected = observed_boottime_ns - start_boot
+    if age_expected < 0 or value.get("age_ns") != age_expected:
+        raise AcceptanceError("V4 readiness episode age is invalid")
+    if start_utc < 0 or start_boot < 0:
+        raise AcceptanceError("V4 readiness episode timestamp is invalid")
+    return dict(value)
 
 
 def _manifest_aggregate(records: Mapping[str, Mapping[str, object]]) -> str:
@@ -721,6 +1003,7 @@ class _V2ChainState:
     last_observed_utc_ns: int | None = None
     last: _LastSampleMetadata | None = None
     invalid_manifest_authority: bool = False
+    readiness_episode: _V4EpisodeState | None = None
 
 
 def _manager_for(
@@ -751,9 +1034,12 @@ def create_identity_evidence(
     data_root: Path,
     identity: DeploymentIdentity | None = None,
     manager: SystemdManager | None = None,
+    schema_version: str = SCHEMA_VERSION,
 ) -> tuple[Path, str, dict[str, object]]:
     """Perform existing static deployment verification and publish identity."""
 
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+        raise AcceptanceError("unsupported generated acceptance schema")
     if len(expected_source_git_sha) != 40 or any(
         char not in _HEX64 for char in expected_source_git_sha.lower()
     ):
@@ -790,6 +1076,7 @@ def create_identity_evidence(
         now_utc=now.utc_ns(),
         now_boot=now.boottime_ns(),
         boot_id=now.boot_id(),
+        schema_version=schema_version,
     )
     document.update(
         {
@@ -836,6 +1123,14 @@ def read_identity_evidence(
         or document.get("identity") != identity.document()
     ):
         raise AcceptanceError("identity evidence is not eligible for this artifact")
+    if expected_schema == V4_SCHEMA_VERSION:
+        observed_boot = _integer(
+            document.get("observed_at_boottime_ns"), "identity BOOTTIME timestamp"
+        )
+        if _validate_v4_episode_document(
+            document.get(_V4_EPISODE_FIELD), observed_boottime_ns=observed_boot
+        ) != _empty_v4_episode():
+            raise AcceptanceError("V4 identity evidence has a non-empty episode")
     return document, digest
 
 
@@ -847,12 +1142,15 @@ def create_readiness_evidence(
     evaluator: VpsReadinessEvaluator,
     evidence_root: Path,
     data_root: Path,
+    schema_version: str = SCHEMA_VERSION,
 ) -> tuple[Path, str, dict[str, object]]:
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+        raise AcceptanceError("unsupported generated acceptance schema")
     root = _safe_evidence_root(evidence_root, data_root)
     _identity_doc, prior = read_identity_evidence(
         identity_evidence_path,
         identity,
-        expected_schema=SCHEMA_VERSION,
+        expected_schema=schema_version,
     )
     result = evaluator.evaluate()
     now = LinuxClock()
@@ -864,6 +1162,7 @@ def create_readiness_evidence(
         now_utc=now.utc_ns(),
         now_boot=now.boottime_ns(),
         boot_id=now.boot_id(),
+        schema_version=schema_version,
     )
     document.update(
         {
@@ -1538,6 +1837,77 @@ class AcceptanceObserver:
             "details": {},
         }
 
+    def _stage_document(
+        self,
+        *,
+        kind: str,
+        now_utc: int,
+        now_boot: int,
+        boot_id: str,
+    ) -> dict[str, object]:
+        return _empty_v3_stage(
+            kind=kind,
+            stage=self.stage,
+            run_id=self.run_id,
+            identity=self.identity,
+            now_utc=now_utc,
+            now_boot=now_boot,
+            boot_id=boot_id,
+        )
+
+    def _readiness_findings(
+        self,
+        readiness: object,
+        *,
+        observed_at_utc_ns: int,
+        observed_at_boottime_ns: int,
+        stage_start: bool,
+    ) -> list[str]:
+        state = getattr(readiness, "state", None)
+        if state == "FAILED":
+            return ["readiness_failed"]
+        if state != "READY":
+            return ["readiness_not_ready"]
+        return []
+
+    def _soft_findings(self) -> set[str]:
+        return {
+            "acceptance_observation_gap",
+            "readiness_not_ready",
+            "unsafe_wall_clock_backward",
+        }
+
+    def _additional_stage_fields(self, *, observed_boottime_ns: int) -> dict[str, object]:
+        return {}
+
+    def _additional_final_findings(self, sample: Mapping[str, object]) -> set[str]:
+        return set()
+
+    def _final_result(
+        self,
+        *,
+        sample: Mapping[str, object],
+        elapsed: int,
+        terminal_open_detail: dict[str, object] | None,
+    ) -> str:
+        if sample["boot_id"] != self.t0_boot_id or elapsed < STAGE_DURATION_NS[self.stage]:
+            return "INCOMPLETE"
+        if terminal_open_detail is not None:
+            return "FAIL"
+        return str(sample["result"])
+
+    def _additional_final_details(
+        self,
+        *,
+        sample: Mapping[str, object],
+        terminal_open_detail: dict[str, object] | None,
+    ) -> dict[str, object]:
+        return (
+            {"unresolved_discontinuity": terminal_open_detail}
+            if terminal_open_detail is not None
+            else {}
+        )
+
     def _observation(
         self,
         *,
@@ -1561,11 +1931,8 @@ class AcceptanceObserver:
         )
         boot_id = self.clock.boot_id() if observed_boot_id is None else observed_boot_id
         stage_start = self.stage_start_sha256 is None
-        document = _empty_v3_stage(
+        document = self._stage_document(
             kind="stage-sample",
-            stage=self.stage,
-            run_id=self.run_id,
-            identity=self.identity,
             now_utc=now_utc,
             now_boot=now_boot,
             boot_id=boot_id,
@@ -1625,10 +1992,14 @@ class AcceptanceObserver:
         if state.get("deployment_identity") != expected_runtime_identity:
             findings.append("runtime_deployment_identity_mismatch")
         readiness = self.evaluator.evaluate()
-        if readiness.state == "FAILED":
-            findings.append("readiness_failed")
-        elif readiness.state != "READY":
-            findings.append("readiness_not_ready")
+        findings.extend(
+            self._readiness_findings(
+                readiness,
+                observed_at_utc_ns=now_utc,
+                observed_at_boottime_ns=now_boot,
+                stage_start=stage_start,
+            )
+        )
         try:
             catalog, catalog_findings, catalog_finding_details = self._catalog_evidence(
                 self.t0_utc_ns,
@@ -1688,11 +2059,7 @@ class AcceptanceObserver:
                 detail = {"observed_at_utc_ns": now_utc}
             self.finding_details[finding] = detail
             new_finding_details[finding] = detail
-        soft_findings = {
-            "acceptance_observation_gap",
-            "readiness_not_ready",
-            "unsafe_wall_clock_backward",
-        }
+        soft_findings = self._soft_findings()
         fatal = any(item not in soft_findings for item in all_findings)
         manifest_transition = raw.get("manifest_transition", {})
         reconnect_transition = raw.get("reconnect_transition", {})
@@ -1718,6 +2085,7 @@ class AcceptanceObserver:
                 else ("INCOMPLETE" if all_findings else "PASS_CANDIDATE"),
             }
         )
+        document.update(self._additional_stage_fields(observed_boottime_ns=now_boot))
         if stage_start:
             if self.t0_manifest_records is None or self.t0_manifest_aggregate_sha256 is None:
                 raise AcceptanceError("manifest baseline is not frozen")
@@ -1766,7 +2134,7 @@ class AcceptanceObserver:
                     "catalog_transition": catalog_transition,
                 }
             )
-        if all_findings == ["readiness_not_ready"]:
+        if all_findings == ["readiness_not_ready"] and "readiness_not_ready" in soft_findings:
             document["result"] = "REVIEW_REQUIRED"
         return document, findings
 
@@ -1836,17 +2204,14 @@ class AcceptanceObserver:
         final_findings = set(self.ever_blocking_findings)
         if terminal_open_detail is not None:
             final_findings.add("unresolved_discontinuity")
-        if sample["boot_id"] != self.t0_boot_id or elapsed < STAGE_DURATION_NS[self.stage]:
-            result = "INCOMPLETE"
-        elif terminal_open_detail is not None:
-            result = "FAIL"
-        else:
-            result = str(sample["result"])
-        final = _empty_v3_stage(
+        final_findings.update(self._additional_final_findings(sample))
+        result = self._final_result(
+            sample=sample,
+            elapsed=elapsed,
+            terminal_open_detail=terminal_open_detail,
+        )
+        final = self._stage_document(
             kind="stage-final",
-            stage=self.stage,
-            run_id=self.run_id,
-            identity=self.identity,
             now_utc=_integer(sample["observed_at_utc_ns"], "sample UTC timestamp"),
             now_boot=_integer(sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp"),
             boot_id=str(sample["boot_id"]),
@@ -1859,10 +2224,8 @@ class AcceptanceObserver:
                 "systemd_process_incarnation": sample["systemd_process_incarnation"],
                 "service_instance_id": sample["service_instance_id"],
                 "blocking_findings": sorted(final_findings),
-                "new_finding_details": (
-                    {"unresolved_discontinuity": terminal_open_detail}
-                    if terminal_open_detail is not None
-                    else {}
+                "new_finding_details": self._additional_final_details(
+                    sample=sample, terminal_open_detail=terminal_open_detail
                 ),
                 "result": result,
                 "observer_status": "FINALIZED",
@@ -1877,8 +2240,113 @@ class AcceptanceObserver:
         )
         for field_name in ("readiness", "catalog_integrity", "capacity"):
             final[field_name] = sample[field_name]
+        final.update(
+            self._additional_stage_fields(
+                observed_boottime_ns=_integer(
+                    sample["observed_at_boottime_ns"], "sample BOOTTIME timestamp"
+                )
+            )
+        )
         path, digest = _publish(self.evidence_root, "stage-final.json", final)
         return path, digest, final
+
+
+@dataclass
+class V4AcceptanceObserver(AcceptanceObserver):
+    """V4 observer with a global, constant-space readiness episode."""
+
+    readiness_episode: _V4EpisodeState = field(default_factory=_V4EpisodeState)
+
+    def _stage_document(
+        self,
+        *,
+        kind: str,
+        now_utc: int,
+        now_boot: int,
+        boot_id: str,
+    ) -> dict[str, object]:
+        return _empty_v4_stage(
+            kind=kind,
+            stage=self.stage,
+            run_id=self.run_id,
+            identity=self.identity,
+            now_utc=now_utc,
+            now_boot=now_boot,
+            boot_id=boot_id,
+        )
+
+    def _readiness_findings(
+        self,
+        readiness: object,
+        *,
+        observed_at_utc_ns: int,
+        observed_at_boottime_ns: int,
+        stage_start: bool,
+    ) -> list[str]:
+        public = getattr(readiness, "public_dict", None)
+        if not callable(public):
+            raise AcceptanceError("readiness result cannot produce public evidence")
+        value = public()
+        if not isinstance(value, dict):
+            raise AcceptanceError("readiness public evidence is malformed")
+        return _v4_episode_observe(
+            self.readiness_episode,
+            evaluator=self.evaluator,
+            readiness=value,
+            observed_at_utc_ns=observed_at_utc_ns,
+            observed_at_boottime_ns=observed_at_boottime_ns,
+            allow_start=not stage_start,
+        )
+
+    def _soft_findings(self) -> set[str]:
+        return {"acceptance_observation_gap", "unsafe_wall_clock_backward"}
+
+    def _additional_stage_fields(self, *, observed_boottime_ns: int) -> dict[str, object]:
+        return {
+            _V4_EPISODE_FIELD: self.readiness_episode.public(
+                observed_boottime_ns=observed_boottime_ns
+            )
+        }
+
+    def _additional_final_findings(self, sample: Mapping[str, object]) -> set[str]:
+        readiness = sample.get("readiness")
+        if isinstance(readiness, dict) and readiness.get("state") != "READY":
+            return {"readiness_not_ready"}
+        return set()
+
+    def _final_result(
+        self,
+        *,
+        sample: Mapping[str, object],
+        elapsed: int,
+        terminal_open_detail: dict[str, object] | None,
+    ) -> str:
+        readiness = sample.get("readiness")
+        if not isinstance(readiness, dict):
+            return "FAIL"
+        if readiness.get("state") != "READY":
+            return "FAIL"
+        if sample["boot_id"] != self.t0_boot_id or elapsed < STAGE_DURATION_NS[self.stage]:
+            return "INCOMPLETE"
+        if terminal_open_detail is not None:
+            return "FAIL"
+        return str(sample["result"])
+
+    def _additional_final_details(
+        self,
+        *,
+        sample: Mapping[str, object],
+        terminal_open_detail: dict[str, object] | None,
+    ) -> dict[str, object]:
+        details = super()._additional_final_details(
+            sample=sample, terminal_open_detail=terminal_open_detail
+        )
+        readiness = sample.get("readiness")
+        if isinstance(readiness, dict) and readiness.get("state") != "READY":
+            details["readiness_not_ready"] = {
+                "observed_at_utc_ns": sample.get("observed_at_utc_ns")
+            }
+        return details
 
 
 def _chain_identity(
@@ -2390,6 +2858,70 @@ def _v3_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
     return _v2_chain_state_from_start(start, require_open_finding=False)
 
 
+def _v4_chain_state_from_start(start: Mapping[str, object]) -> _V2ChainState:
+    """Reconstruct V4 T0 state and independently validate its empty episode."""
+
+    state = _v3_chain_state_from_start(start)
+    observed_utc = _integer(start.get("observed_at_utc_ns"), "stage-start UTC timestamp")
+    observed_boot = _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    readiness = start.get("readiness")
+    if not isinstance(readiness, dict):
+        raise AcceptanceError("V4 stage-start readiness is malformed")
+    reasons = readiness.get("reasons")
+    if (
+        readiness.get("schema_version") != "deployment-readiness.v1"
+        or readiness.get("state") not in {"READY", "NOT_READY", "FAILED"}
+        or not isinstance(reasons, list)
+        or any(not isinstance(item, str) for item in reasons)
+        or not isinstance(readiness.get("evidence"), dict)
+    ):
+        raise AcceptanceError("V4 stage-start readiness authority is malformed")
+    episode = _V4EpisodeState()
+    expected_findings = _v4_episode_observe(
+        episode,
+        evaluator=_V4VerifierEvaluator(start),
+        readiness=readiness,
+        observed_at_utc_ns=observed_utc,
+        observed_at_boottime_ns=observed_boot,
+        allow_start=False,
+    )
+    if expected_findings:
+        # An ineligible stage-start is rejected by the completed-stage and
+        # resume gates, but keeping this check here prevents a forged eligible
+        # start from smuggling a pre-T0 NOT_READY into a V4 chain.
+        raise AcceptanceError("V4 stage-start readiness cannot establish T0")
+    expected_episode = episode.public(observed_boottime_ns=observed_boot)
+    published_episode = _validate_v4_episode_document(
+        start.get(_V4_EPISODE_FIELD), observed_boottime_ns=observed_boot
+    )
+    if published_episode != expected_episode:
+        raise AcceptanceError("V4 stage-start readiness episode is not reconstructible")
+    state.readiness_episode = episode
+    return state
+
+
+class _V4VerifierEvaluator:
+    """Minimal evaluator view used by the streaming verifier's classifier."""
+
+    def __init__(self, start: Mapping[str, object]) -> None:
+        readiness = start.get("readiness")
+        evidence = readiness.get("evidence") if isinstance(readiness, dict) else None
+        service_state = evidence.get("service_state") if isinstance(evidence, dict) else None
+        products = service_state.get("products") if isinstance(service_state, dict) else None
+        configured: set[tuple[str, str]] = set()
+        if isinstance(products, dict):
+            for market, symbols in products.items():
+                if isinstance(market, str) and isinstance(symbols, dict):
+                    configured.update(
+                        (market, symbol)
+                        for symbol in symbols
+                        if isinstance(symbol, str)
+                    )
+        self.expected_products = frozenset(configured)
+
+
 def _sample_chain_v2(
     stage_root: Path,
     *,
@@ -2527,12 +3059,18 @@ def _sample_chain_v3(
     start_sha: str,
     identity: DeploymentIdentity,
     require_eligible: bool,
+    schema_version: str = SCHEMA_VERSION,
 ) -> _V2ChainState:
-    """Stream a v3 chain with transient OPEN treated as causal state."""
+    """Stream a V3 or V4 chain with transient OPEN treated as causal state."""
 
     stage = str(start["stage"])
     run_id = str(start["run_id"])
-    state = _v3_chain_state_from_start(start)
+    state = (
+        _v4_chain_state_from_start(start)
+        if schema_version == V4_SCHEMA_VERSION
+        else _v3_chain_state_from_start(start)
+    )
+    v4_evaluator = _V4VerifierEvaluator(start) if schema_version == V4_SCHEMA_VERSION else None
     expected_previous: str | None = None
     previous_boottime = _integer(
         start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
@@ -2542,8 +3080,10 @@ def _sample_chain_v3(
         if sample_path.name != f"sample-{ordinal:08d}.json":
             raise AcceptanceError("sample ordinals are missing, duplicated, or malformed")
         sample, sample_sha = _read_published(sample_path)
-        if sample.get("schema_version") != SCHEMA_VERSION:
-            raise AcceptanceError("sample schema cannot be mixed into a v3 chain")
+        if sample.get("schema_version") != schema_version:
+            if schema_version == SCHEMA_VERSION:
+                raise AcceptanceError("sample schema cannot be mixed into a v3 chain")
+            raise AcceptanceError("sample schema cannot be mixed into a v4 chain")
         if sample.get("evidence_kind") != "stage-sample":
             raise AcceptanceError("sample evidence kind is invalid")
         _chain_identity(sample, identity=identity, stage=stage, run_id=run_id)
@@ -2581,6 +3121,60 @@ def _sample_chain_v3(
         if findings != sorted(set(findings)):
             raise AcceptanceError("sample blocking findings are not canonical")
         sample_findings = set(findings)
+        if schema_version == V4_SCHEMA_VERSION:
+            if state.readiness_episode is None or v4_evaluator is None:
+                raise AcceptanceError("V4 readiness episode state is unavailable")
+            readiness = sample.get("readiness")
+            if not isinstance(readiness, dict):
+                raise AcceptanceError("V4 sample readiness is malformed")
+            if (
+                readiness.get("schema_version") != "deployment-readiness.v1"
+                or readiness.get("state") not in {"READY", "NOT_READY", "FAILED"}
+                or not isinstance(readiness.get("reasons"), list)
+                or any(not isinstance(item, str) for item in readiness["reasons"])
+                or not isinstance(readiness.get("evidence"), dict)
+            ):
+                raise AcceptanceError("V4 sample readiness authority is malformed")
+            expected_readiness_findings = _v4_episode_observe(
+                state.readiness_episode,
+                evaluator=v4_evaluator,
+                readiness=readiness,
+                observed_at_utc_ns=observed_utc,
+                observed_at_boottime_ns=boottime,
+                allow_start=True,
+            )
+            published_episode = _validate_v4_episode_document(
+                sample.get(_V4_EPISODE_FIELD), observed_boottime_ns=boottime
+            )
+            expected_episode = state.readiness_episode.public(
+                observed_boottime_ns=boottime
+            )
+            if published_episode != expected_episode:
+                raise AcceptanceError("V4 readiness episode cannot be reconstructed")
+            historical_readiness_blockers = (
+                state.known_findings & _V4_READINESS_BLOCKERS
+            )
+            allowed_readiness_blockers = historical_readiness_blockers | set(
+                expected_readiness_findings
+            )
+            actual_readiness_blockers = sample_findings & _V4_READINESS_BLOCKERS
+            unexpected_readiness_blockers = (
+                actual_readiness_blockers - allowed_readiness_blockers
+            )
+            if unexpected_readiness_blockers:
+                raise AcceptanceError("V4 readiness blocker is unsupported")
+            missing_readiness_blockers = (
+                allowed_readiness_blockers - actual_readiness_blockers
+            )
+            if missing_readiness_blockers:
+                raise AcceptanceError("V4 readiness blocker is missing")
+            expected_sample_result = (
+                "FAIL"
+                if any(item not in _V4_SOFT_FINDINGS for item in sample_findings)
+                else ("INCOMPLETE" if sample_findings else "PASS_CANDIDATE")
+            )
+            if sample.get("result") != expected_sample_result:
+                raise AcceptanceError("V4 sample result is not bound to reconstructed findings")
         if "unresolved_discontinuity" in sample_findings:
             raise AcceptanceError(
                 "v3 sample contains terminal-only unresolved_discontinuity"
@@ -2680,6 +3274,15 @@ def _sample_chain(
             start_sha=start_sha,
             identity=identity,
             require_eligible=require_eligible,
+        )
+    if schema_version == V4_SCHEMA_VERSION:
+        return _sample_chain_v3(
+            stage_root,
+            start=start,
+            start_sha=start_sha,
+            identity=identity,
+            require_eligible=require_eligible,
+            schema_version=V4_SCHEMA_VERSION,
         )
     raise AcceptanceError("unsupported stage chain schema")
 
@@ -2974,6 +3577,135 @@ def _verify_completed_stage_v3(
     return final, final_sha
 
 
+def _verify_completed_stage_v4(
+    stage_root: Path,
+    identity: DeploymentIdentity,
+    *,
+    start: Mapping[str, object],
+    start_sha: str,
+    expected_stage: str | None,
+) -> tuple[dict[str, object], str]:
+    """Verify V4 by reconstructing readiness recovery from the sample stream."""
+
+    stage = start.get("stage")
+    run_id = start.get("run_id")
+    if (
+        start.get("evidence_kind") != "stage-start"
+        or not isinstance(stage, str)
+        or stage not in STAGE_NAMES
+        or (expected_stage is not None and stage != expected_stage)
+        or not isinstance(run_id, str)
+        or not run_id
+    ):
+        raise AcceptanceError("stage-start evidence is invalid")
+    _chain_identity(start, identity=identity, stage=stage, run_id=run_id)
+    prior_digest = _digest(
+        start.get("prior_stage_evidence_sha256"), "stage-start predecessor digest"
+    )
+    if (
+        start.get("stage_start_evidence_sha256") is not None
+        or start.get("previous_sample_sha256") is not None
+        or start.get("result") != "PASS_CANDIDATE"
+        or start.get("blocking_findings") != []
+        or not isinstance(start.get("systemd_process_incarnation"), dict)
+        or not isinstance(start.get("service_instance_id"), str)
+        or not start.get("service_instance_id")
+    ):
+        raise AcceptanceError("stage-start is not eligible")
+    state = _sample_chain_v3(
+        stage_root,
+        start=start,
+        start_sha=start_sha,
+        identity=identity,
+        require_eligible=False,
+        schema_version=V4_SCHEMA_VERSION,
+    )
+    if state.last is None or state.readiness_episode is None:
+        raise AcceptanceError("completed V4 stage has no canonical samples")
+    final, final_sha = _read_published(stage_root / "stage-final.json")
+    if final.get("schema_version") != V4_SCHEMA_VERSION:
+        raise AcceptanceError("non-v4 final cannot terminate a v4 stage")
+    if final.get("evidence_kind") != "stage-final":
+        raise AcceptanceError("stage-final evidence kind is invalid")
+    _chain_identity(final, identity=identity, stage=stage, run_id=run_id)
+    last = state.last
+    last_sample, _last_sample_sha = _read_published(
+        stage_root / f"sample-{last.ordinal:08d}.json"
+    )
+    expected_findings = set(state.known_findings)
+    expected_details: dict[str, object] = {}
+    terminal_detail = _first_catalog_open_detail(state.catalog_open)
+    readiness = last_sample.get("readiness")
+    if not isinstance(readiness, dict):
+        raise AcceptanceError("V4 terminal sample readiness is malformed")
+    if readiness.get("state") != "READY":
+        expected_findings.add("readiness_not_ready")
+        expected_details["readiness_not_ready"] = {
+            "observed_at_utc_ns": last.utc_ns
+        }
+    if terminal_detail is not None:
+        expected_findings.add("unresolved_discontinuity")
+        expected_details["unresolved_discontinuity"] = terminal_detail
+    required = _integer(final.get("required_duration_ns"), "required duration")
+    elapsed = _integer(final.get("elapsed_boottime_ns"), "elapsed duration")
+    expected_required = STAGE_DURATION_NS[stage]
+    expected_elapsed = last.boottime_ns - _integer(
+        start.get("observed_at_boottime_ns"), "stage-start BOOTTIME timestamp"
+    )
+    if required != expected_required or elapsed != expected_elapsed:
+        raise AcceptanceError("stage duration authority is invalid")
+    if readiness.get("state") != "READY" or terminal_detail is not None:
+        expected_result = "FAIL"
+    elif elapsed < required:
+        expected_result = "INCOMPLETE"
+    elif expected_findings - _V4_SOFT_FINDINGS:
+        expected_result = "FAIL"
+    elif expected_findings:
+        expected_result = "INCOMPLETE"
+    else:
+        expected_result = "PASS_CANDIDATE"
+    expected_eligible = expected_result == "PASS_CANDIDATE" and not expected_findings
+    expected_episode = state.readiness_episode.public(observed_boottime_ns=last.boottime_ns)
+    _validate_v4_episode_document(
+        final.get(_V4_EPISODE_FIELD), observed_boottime_ns=last.boottime_ns
+    )
+    if (
+        final.get("stage_start_evidence_sha256") != start_sha
+        or final.get("previous_sample_sha256") != last.sha256
+        or final.get("last_sample_sha256") != last.sha256
+        or final.get("last_sample_ordinal") != last.ordinal
+        or final.get("prior_stage_evidence_sha256") != prior_digest
+        or final.get("boot_id") != start.get("boot_id")
+        or final.get("systemd_process_incarnation")
+        != start.get("systemd_process_incarnation")
+        or final.get("service_instance_id") != start.get("service_instance_id")
+        or final.get("observed_at_utc_ns") != last.utc_ns
+        or final.get("observed_at_boottime_ns") != last.boottime_ns
+        or final.get("blocking_findings") != sorted(expected_findings)
+        or final.get("new_finding_details") != expected_details
+        or final.get("result") != expected_result
+        or final.get("eligible_for_next_stage") is not expected_eligible
+        or final.get("observer_status") != "FINALIZED"
+        or final.get(_V4_EPISODE_FIELD) != expected_episode
+        or final.get("readiness") != last_sample.get("readiness")
+        or final.get("catalog_integrity") != last_sample.get("catalog_integrity")
+        or final.get("capacity") != last_sample.get("capacity")
+    ):
+        raise AcceptanceError(
+            "stage-final does not match reconstructed v4 terminal state/terminus"
+        )
+    _resolve_stage_predecessor(
+        stage_root,
+        identity=identity,
+        stage=stage,
+        prior_digest=prior_digest,
+        required_schema=V4_SCHEMA_VERSION,
+    )
+    if not expected_eligible:
+        raise AcceptanceError("stage-final is not an eligible v4 chain terminus")
+    return final, final_sha
+
+
 def _verify_completed_stage_v1(
     stage_root: Path,
     identity: DeploymentIdentity,
@@ -3101,6 +3833,14 @@ def verify_completed_stage(
             start_sha=start_sha,
             expected_stage=expected_stage,
         )
+    if start.get("schema_version") == V4_SCHEMA_VERSION:
+        return _verify_completed_stage_v4(
+            stage_root,
+            identity,
+            start=start,
+            start_sha=start_sha,
+            expected_stage=expected_stage,
+        )
     raise AcceptanceError("unsupported completed-stage schema")
 
 
@@ -3132,6 +3872,14 @@ def _verify_readiness_predecessor(
         or not isinstance(readiness.get("evidence"), dict)
     ):
         raise AcceptanceError("readiness is not an actual READY predecessor")
+    if expected_schema == V4_SCHEMA_VERSION:
+        observed_boot = _integer(
+            document.get("observed_at_boottime_ns"), "readiness BOOTTIME timestamp"
+        )
+        if _validate_v4_episode_document(
+            document.get(_V4_EPISODE_FIELD), observed_boottime_ns=observed_boot
+        ) != _empty_v4_episode():
+            raise AcceptanceError("V4 readiness predecessor has a non-empty episode")
     prior_identity_digest = _digest(
         document.get("prior_stage_evidence_sha256"),
         "readiness identity predecessor digest",
@@ -3189,19 +3937,25 @@ def _resolve_stage_predecessor(
 
 
 def verify_prior_stage(
-    path: Path, identity: DeploymentIdentity, stage: str
+    path: Path,
+    identity: DeploymentIdentity,
+    stage: str,
+    *,
+    schema_version: str = SCHEMA_VERSION,
 ) -> tuple[dict[str, object], str]:
     _validate_stage(stage)
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+        raise AcceptanceError("unsupported current acceptance schema")
     if stage == "2h":
         return _verify_readiness_predecessor(
-            path, identity, expected_schema=SCHEMA_VERSION
+            path, identity, expected_schema=schema_version
         )
     previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
     if path.name != "stage-final.json":
         raise AcceptanceError("duration predecessor must be canonical stage-final.json")
     predecessor, _predecessor_sha = _read_published(path)
-    if predecessor.get("schema_version") != SCHEMA_VERSION:
-        raise AcceptanceError("mixed-schema predecessor cannot authorize a v3 stage")
+    if predecessor.get("schema_version") != schema_version:
+        raise AcceptanceError("mixed-schema predecessor cannot authorize this stage")
     return verify_completed_stage(path.parent, identity, expected_stage=previous_stage)
 
 
@@ -3215,8 +3969,12 @@ def resume_observer(
     clock: Clock | None = None,
     disk_usage: Callable[[Path], Any] = shutil.disk_usage,
     archive_root_resolver: ArchiveRootResolver | None = None,
+    schema_version: str = SCHEMA_VERSION,
+    identity_verifier: Callable[..., Mapping[str, object]] = verify_identity_files,
 ) -> AcceptanceObserver:
     selected_clock = LinuxClock() if clock is None else clock
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+        raise AcceptanceError("unsupported resume acceptance schema")
     if (stage_root / "stage-final.json").exists():
         raise AcceptanceError("stage is already finalized")
     start, start_sha = _read_published(stage_root / "stage-start.json")
@@ -3236,7 +3994,7 @@ def resume_observer(
             "manifest authority is invalid; stage cannot be deterministically resumed"
         )
     if (
-        start.get("schema_version") != SCHEMA_VERSION
+        start.get("schema_version") != schema_version
         or start.get("evidence_kind") != "stage-start"
         or start.get("stage") not in STAGE_NAMES
         or not _same_identity(start, identity)
@@ -3244,9 +4002,15 @@ def resume_observer(
         or start.get("previous_sample_sha256") is not None
     ):
         if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
-            raise AcceptanceError("v1 failed stage cannot resume as v2/v3")
+            if schema_version == SCHEMA_VERSION:
+                raise AcceptanceError("v1 failed stage cannot resume as v2/v3")
+            raise AcceptanceError("v1 failed stage cannot resume as v4")
         if start.get("schema_version") == PREVIOUS_SCHEMA_VERSION:
-            raise AcceptanceError("v2 failed stage cannot resume as v3")
+            if schema_version == SCHEMA_VERSION:
+                raise AcceptanceError("v2 failed stage cannot resume as v3")
+            raise AcceptanceError("v2 failed stage cannot resume as v4")
+        if schema_version == V4_SCHEMA_VERSION and start.get("schema_version") == SCHEMA_VERSION:
+            raise AcceptanceError("v3 observer cannot resume as v4")
         raise AcceptanceError("stage-start evidence is invalid")
     stage = str(start["stage"])
     run_id = start.get("run_id")
@@ -3265,6 +4029,7 @@ def resume_observer(
         start_sha=start_sha,
         identity=identity,
         require_eligible=False,
+        schema_version=schema_version,
     )
     if state.invalid_manifest_authority:
         raise AcceptanceError(
@@ -3315,48 +4080,60 @@ def resume_observer(
         validate_incremental_continuation(continuation)
     except SealError as exc:
         raise AcceptanceError("resume reconnect continuation is invalid") from exc
-    observer = AcceptanceObserver(
-        stage=stage,
-        run_id=run_id,
-        data_root=data_root,
-        evidence_root=stage_root,
-        identity=identity,
-        prior_stage_sha256=prior_digest,
-        manager=manager,
-        evaluator=evaluator,
-        clock=selected_clock,
-        disk_usage=disk_usage,
-        archive_root_resolver=archive_root_resolver,
-        t0_utc_ns=_integer(start["observed_at_utc_ns"], "stage-start UTC timestamp"),
-        t0_boottime_ns=_integer(
+    observer_type: type[AcceptanceObserver] = (
+        V4AcceptanceObserver if schema_version == V4_SCHEMA_VERSION else AcceptanceObserver
+    )
+    observer_kwargs: dict[str, object] = {
+        "stage": stage,
+        "run_id": run_id,
+        "data_root": data_root,
+        "evidence_root": stage_root,
+        "identity": identity,
+        "prior_stage_sha256": prior_digest,
+        "manager": manager,
+        "evaluator": evaluator,
+        "clock": selected_clock,
+        "disk_usage": disk_usage,
+        "identity_verifier": identity_verifier,
+        "archive_root_resolver": archive_root_resolver,
+        "t0_utc_ns": _integer(start["observed_at_utc_ns"], "stage-start UTC timestamp"),
+        "t0_boottime_ns": _integer(
             start["observed_at_boottime_ns"], "stage-start BOOTTIME timestamp"
         ),
-        t0_boot_id=str(start["boot_id"]),
-        frozen_process=start_process,
-        frozen_service_instance_id=str(start.get("service_instance_id") or ""),
-        stage_start_sha256=start_sha,
-        t0_manifest_members=t0_manifest_members,
-        t0_manifest_records=manifest_records,
-        t0_manifest_aggregate_sha256=_manifest_aggregate(manifest_records),
-        published_manifest_records=state.manifest_records,
-        published_raw_absences=state.raw_absences,
-        published_deferred_manifest_paths=state.deferred_manifest_paths,
-        published_reconnect_transition_keys=state.reconnect_transition_keys,
-        published_reconnect_streams=state.continuation_streams,
-        published_catalog_open=state.catalog_open,
-        published_catalog_interval_keys=state.catalog_interval_keys,
-        published_terminal_event_keys=state.terminal_event_keys,
-        ever_blocking_findings=state.known_findings,
-        reconnect_continuation=continuation,
-        next_sample_ordinal=0 if state.last is None else state.last.ordinal + 1,
-        last_sample_sha256=None if state.last is None else state.last.sha256,
-        last_sample_utc_ns=None if state.last is None else state.last.utc_ns,
-        last_sample_boottime_ns=None if state.last is None else state.last.boottime_ns,
+        "t0_boot_id": str(start["boot_id"]),
+        "frozen_process": start_process,
+        "frozen_service_instance_id": str(start.get("service_instance_id") or ""),
+        "stage_start_sha256": start_sha,
+        "t0_manifest_members": t0_manifest_members,
+        "t0_manifest_records": manifest_records,
+        "t0_manifest_aggregate_sha256": _manifest_aggregate(manifest_records),
+        "published_manifest_records": state.manifest_records,
+        "published_raw_absences": state.raw_absences,
+        "published_deferred_manifest_paths": state.deferred_manifest_paths,
+        "published_reconnect_transition_keys": state.reconnect_transition_keys,
+        "published_reconnect_streams": state.continuation_streams,
+        "published_catalog_open": state.catalog_open,
+        "published_catalog_interval_keys": state.catalog_interval_keys,
+        "published_terminal_event_keys": state.terminal_event_keys,
+        "ever_blocking_findings": state.known_findings,
+        "reconnect_continuation": continuation,
+        "next_sample_ordinal": 0 if state.last is None else state.last.ordinal + 1,
+        "last_sample_sha256": None if state.last is None else state.last.sha256,
+        "last_sample_utc_ns": None if state.last is None else state.last.utc_ns,
+        "last_sample_boottime_ns": None if state.last is None else state.last.boottime_ns,
+    }
+    if schema_version == V4_SCHEMA_VERSION:
+        if state.readiness_episode is None:
+            raise AcceptanceError("V4 resume readiness episode is absent")
+        observer_kwargs["readiness_episode"] = state.readiness_episode
+    observer = observer_type(
+        **cast(Any, observer_kwargs),
     )
     return observer
 
 
 __all__ = [
+    "CURRENT_SCHEMA_VERSION",
     "LEGACY_SCHEMA_VERSION",
     "MAX_EVIDENCE_GAP_NS",
     "PREVIOUS_SCHEMA_VERSION",
@@ -3364,10 +4141,14 @@ __all__ = [
     "SCHEMA_VERSION",
     "STAGE_DURATION_NS",
     "STAGE_NAMES",
+    "V3_SCHEMA_VERSION",
+    "V4_DEADLINE_NS",
+    "V4_SCHEMA_VERSION",
     "AcceptanceError",
     "AcceptanceObserver",
     "Clock",
     "LinuxClock",
+    "V4AcceptanceObserver",
     "canonical_json",
     "create_identity_evidence",
     "create_readiness_evidence",
