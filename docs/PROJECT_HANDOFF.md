@@ -19,8 +19,9 @@ installed verifier rejects its gap. No historical result is revised.
 V4's AcceptanceObserver repeats O(total historical manifests) work per sample;
 the Recorder, scheduler, and archive were not found defective. The proposed
 `m22.9-acceptance-evidence.v5` separates bounded 300/600-second online
-observation from a post-target, quiescent exact full-integrity audit. Old
-manifest mutation/loss must be caught before stage eligibility, a declared
+observation from a post-target, quiescent exact full-integrity audit. Any old
+manifest mutation/loss present in the exact private control corpus frozen at
+quiescence must fail before stage eligibility, a declared
 V5 detection-timing change. ADR-0033's 900-second global readiness episode
 is retained. The proposal is docs-only, not implemented or deployed; the VPS
 was not touched and no Formal retry is authorized. A reviewed V5 artifact

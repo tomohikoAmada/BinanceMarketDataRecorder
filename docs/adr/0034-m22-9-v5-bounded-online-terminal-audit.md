@@ -5,6 +5,10 @@
 - **Scope:** M22.9 acceptance evidence and qualification policy; documentation only
 - **Base:** `354f5199eda687dfe2223b0b481c8de669dfdabf` / tree `101703dbd6a6da6f8633f2a46e1323ab5b87188c`
 
+PR #77's independent architecture review returned `P0=0`, `P1=2`, `P2=1`,
+`P3=0`, `CHANGES_REQUIRED`. The V5 direction remains accepted for targeted
+correction; this ADR remains a proposal until independent re-review.
+
 ## Context and decision
 
 The exact V4 artifact's 2h final
@@ -28,10 +32,14 @@ the full-history path is a proven structural defect, not a measured exclusive
 explanation for every excess second.
 
 V5 **changes detection timing**. An old manifest's byte mutation or deletion need not be
-rediscovered in the next 300-second ordinary sample; it **must** be discovered before
-`eligible_for_next_stage=true`. A new schema, `m22.9-acceptance-evidence.v5`, makes that
-change explicit. V1–V4 evidence, dispatch, and verifier decisions remain immutable. This
-is not a V4 performance patch.
+rediscovered in the next 300-second ordinary sample. Any mutation or loss **already
+present in the control corpus frozen for terminal qualification** must fail eligibility;
+the independently verified frozen corpus is required before
+`eligible_for_next_stage=true`. The qualification point is the
+`QUIESCENCE_CORPUS_FREEZE` described below. V5 does not claim continuing proof of
+arbitrary live production bytes after their audit read. A new schema,
+`m22.9-acceptance-evidence.v5`, makes the detection-timing change explicit. V1–V4
+evidence, dispatch, and verifier decisions remain immutable.
 
 The frozen online authorities remain `SAMPLE_INTERVAL_NS=300000000000`,
 `MAX_EVIDENCE_GAP_NS=600000000000`, and `READINESS_RECOVERY_DEADLINE_NS=900000000000`.
@@ -80,18 +88,83 @@ atomic and fail closed. Updates or deletions of old rows have no legitimate onli
 delta; terminal verification detects them against the prior audit authority. No other
 Catalog schema or writer-format change is authorized by this proposal.
 
-Each online sample freezes all three high-water marks and retrieves **one bounded page
-per cursor family plus the joined changed rows in one short SQLite read snapshot**. The
-read transaction ends before filesystem/Raw work, so a later archive commit cannot alter
-this sample's joined boundary rows. Its evidence binds previous/high-water cursor pairs
-and a digest/count of ordered rows consumed. Cursor regression, unavailable history,
-rows beyond the frozen mark, missing ledger linkage, or impossible lifecycle transitions
-block the stage. Resume uses the last independently verified published sample's cursor
-tuple, open lifecycle map, and rolling aggregates; it neither resets authority nor
-performs a full-history inventory. The first V5 stage-start binds the baseline audit
-root and its cursor tuple. Later stage-starts bind the predecessor's terminal audit root
-and its cursor tuple, then consume exact intervening deltas; they do not repeat a full
-pre-T0 scan.
+Each online observation uses **one bounded SQLite read transaction** to freeze all
+three high-water marks, read one bounded page per cursor family, and perform causally
+required indexed companion lookups in that **same snapshot**. Cursor consumption and
+causal lookup are distinct: a lookup proves a selected row's dependency but does not
+advance the companion family's processed cursor. The read transaction ends before
+filesystem/Raw work, so a later archive commit cannot alter this sample's frozen rows.
+Evidence binds previous/high-water/processed cursors, canonical row digests, and
+cross-cursor causal references. Cursor regression, unavailable history, rows beyond
+the frozen mark, missing ledger linkage, or impossible lifecycle transitions block
+the stage. Resume uses the last independently verified published sample's cursor
+tuple, pending causal references, open lifecycle map, and rolling aggregates; it
+neither resets authority nor performs a full-history inventory. The first V5
+stage-start binds the baseline audit root and its cursor tuple. Later stage-starts
+bind the predecessor's terminal audit root and its cursor tuple, then consume exact
+intervening deltas; they do not repeat a full pre-T0 scan.
+
+A selected row A is acknowledged only if every required companion B is visible,
+at or below B's frozen high-water, and semantically sufficient in that snapshot.
+If B is absent, post-high-water, ambiguous, or malformed, A remains unacknowledged
+and pending, or fails under the existing lifecycle semantics. The processed cursor
+cannot skip A. A causal reference records B's family, numeric ID, primary identity,
+canonical full-row SHA-256, transaction ID, chunk ID, lifecycle state, and A's ID.
+When B is later reached by its own cursor, its exact primary identity, canonical
+row digest, transaction/chunk identity, and state must match that reference; mismatch
+blocks the stage. Its own cursor advances only after this comparison and ordinary
+validation. The verifier reconstructs these references from the sample chain rather
+than trusting a producer's processed-cursor summary. At most 256 unconsumed causal
+references may remain in continuation; reaching the cap without reconciliation is
+a fail-closed online blocker, not an invitation to grow an unbounded map.
+
+Every causal lookup has a fixed legal fan-out: `chunks` by `chunk_id`,
+`archive_transactions` by unique `transaction_id` or `chunk_id`, and archive/chunk
+events by unique `idempotency_key` return **at most one row each**. The existing
+`operational_events_discontinuity_identity` index permits an exact
+`(event_type, market, symbol, stream, gap_id)` pair lookup with at most one STARTED
+and one COMPLETED row; fetch at most three to detect an illegal extra row and fail
+closed. Companion queries never scan all transaction events, chunk history, or
+operational history. A needed lookup without an appropriate index is an
+implementation blocker until a minimal additive index exists. No per-row fan-out
+above these bounds is accepted.
+
+Archive lifecycle corroboration uses the immutable transition/event rows, not an
+assumption that a mutable `chunks` or `archive_transactions` row still has A's
+historical state. Those current rows may already be at a later legal state in the
+same snapshot. For one transaction ID, the five possible archive event keys are
+`reserve:<transaction_id>`, `archive-verifying:<transaction_id>`,
+`archive-verified:<transaction_id>`, `local-delete-pending:<transaction_id>`,
+and `local-deleted:<transaction_id>`. The matching chunk transition key for
+reserve is `archive-reserve:<transaction_id>`; for the other four it is
+`chunk:<archive_event_key>`. These exact-key lookups return **at most five archive
+events and five chunk transitions**, each an indexed at-most-one-row query.
+Require the exact required predecessor/successor chain
+through the observed current state; a missing, extra, conflicting, or illegal step
+leaves the selected row unacknowledged or blocks. Any causally referenced row that
+the other cursor has not consumed remains bound for exact later replay. This fixed
+five-step maximum follows the current production ArchiveManager protocol and legal
+archive state graph, not an unbounded per-chunk history query. An archive event
+using an unrecognized key or a second event for one step is not silently
+classified as a legal successor; it blocks qualification.
+
+Normative archive example: before a sample, the chunk-transition processed cursor
+is 900 and the archive-event cursor is 300. One Catalog transaction commits
+`LOCAL_DELETE_PENDING`: it changes the exact `chunks` and `archive_transactions`
+rows, inserts chunk transition 901 with idempotency key `chunk:<key>`, and inserts
+archive event 600 with unique idempotency key `<key>`. The sample's one SQLite
+snapshot freezes high-waters 901 and 600. Its chunk page contains 901; its
+256-row archive page can contain only events 301–556. For 901, it reads the exact
+chunk and transaction rows and looks up event 600 by `<key>` in the same snapshot.
+If those rows prove the transaction and state coherently, it binds event 600's
+identity and canonical digest and advances the chunk cursor to 901. The archive
+cursor advances only through its actually consumed contiguous page (at most 556),
+**not** to 600. When a later archive page consumes event 600, it must match the
+stored causal reference byte-for-byte at the canonical row level before its cursor
+advances; then the reference is retired. If event 600 is absent or ambiguous in the
+first snapshot, chunk 901 stays pending and the chunk cursor stays 900. The same
+rule applies to the atomic `LOCAL_DELETED` transition and in reverse when the
+archive event is selected before its paired chunk transition.
 
 Each SQL page contains at most **256 rows per cursor family**. The observer has a
 **240-second BOOTTIME delta-work cutoff** measured from the sample start, leaving 60
@@ -184,35 +257,83 @@ these actions. Hold all sanctioned Recorder/archive mutators stopped until final
 evidence is published, then restore archive scheduling under a separately reviewed
 operational procedure. Co-resident services are outside project control.
 
-The finalizer records a quiescence certificate and makes a SQLite-consistent **read-only
-online backup** of Catalog into its private audit evidence root, fsyncs and hashes that
-backup, and freezes the manifest-directory listing and registered archive-target
-identity while sanctioned mutators remain stopped. Audit reads the backup and the
-quiescent files; high-water marks and table counts from the backup are bound to the
-root. Pre/post quiescence, Catalog backup hash, directory membership, mount/target
-identity, and service-state checks must agree; any unexpected mutation or lost target
-aborts. The exact corpus includes every manifest and relevant Catalog/Raw/archive
-authority present at quiescence, including post-target handoff objects. The timed online
-projection includes only events through the target cursor tuple. Later transitions are
-separately tagged `POST_TARGET_HANDOFF`, audited for integrity, and earn zero duration.
-A manifest published before target but committed `SEALED` afterward belongs to handoff,
-because Catalog commit order defines online authority. Archive
+### QUIESCENCE_CORPUS_FREEZE
+
+The **semantic qualification point** is publication of immutable
+`quiescence-corpus.json` after the private control corpus has been frozen. It is a
+claim about that exact frozen corpus, not perpetual immutability of original live
+paths. All sanctioned Recorder and archive mutators remain stopped through freeze
+and terminal audit. The finalizer makes a SQLite-consistent **read-only online
+backup** of Catalog in the private acceptance evidence root, fsyncs and readback-
+hashes it, and binds its exact SHA-256, schema, three cursor high-waters, table
+counts, deployment identity, and registered targets. Qualification never reads a
+Catalog row from the mutable live database after this freeze.
+
+The manifest control corpus receives an actual private snapshot of **exact bytes**.
+The finalizer enumerates canonical root-relative manifest paths using bounded-memory
+external sorting. For each path it opens without symlink traversal, records
+`dev/inode/size/mtime_ns/ctime_ns` from an open descriptor, streams bytes to an
+exclusive temporary private object while hashing and counting them, fsyncs the
+object, then rereads the original through a verified descriptor and compares the
+second exact-byte length/SHA-256 plus pre/post descriptor and path identity.
+Replacement, disappearance, metadata change, or unequal passes fail closed. The
+private object is published no-overwrite, fsynced, reopened, and readback-verified;
+an existing content-addressed object may be reused only after exact readback
+verification. A bounded, canonically ordered manifest-freeze shard records each
+relative path, byte length, byte SHA-256, and private snapshot-object identity.
+Use the same **512-record / 1-MiB** canonical JSON shard caps as terminal audit;
+an oversized single record fails closed. Let `anchor` be the raw 32-byte Catalog
+backup SHA-256, `F0=SHA256(UTF8("BMDR-V5-MANIFEST-FREEZE\0") || anchor)`, and
+`Fi=SHA256(F(i-1) || uint64_be(i-1) || SHA256(exact_freeze_shard_bytes))`.
+`quiescence-corpus.json` stores the final `Fk`, shard count, record count, and
+Catalog anchor; the verifier streams and reproduces them. This requires neither
+all manifest bytes nor the full membership map in RAM. A second independently
+sorted directory-membership pass is merge-compared with the initial path stream;
+any missing, extra, duplicate, or reordered path aborts freeze. If a coherent
+per-file read cannot be proved, no corpus root is published.
+
+Only after both controls are durable does `quiescence-corpus.json` bind the Catalog
+backup SHA and metadata, manifest-freeze shard count/root digest and object count,
+service/boot state, active-partial count, source and registered archive-target
+identity, stage-target SHA (or first-baseline preflight SHA), and quiescence
+certificate. Publication is no-overwrite with fsync/readback. The independent
+verifier reads the private manifest snapshots
+and frozen Catalog backup, recomputes every mapping and digest, and rejects a
+missing/replaced private object or altered backup before allowing eligibility.
+The terminal auditor likewise reads **these frozen controls**, never original live
+manifest paths. A modification of an original manifest after its verified snapshot
+read is not silently reinterpreted as a change to the frozen corpus. Unexpected
+sanctioned mutation or loss of quiescence aborts qualification; this policy makes
+no continuous live-file proof against an out-of-scope malicious root actor.
+
+The frozen corpus includes every manifest and relevant Catalog authority present
+at quiescence, including post-target handoff objects. The timed online projection
+includes only events through the target cursor tuple. Later transitions are
+separately tagged `POST_TARGET_HANDOFF`, audited for integrity, and earn zero
+duration. A manifest published before target but committed `SEALED` afterward
+belongs to handoff because Catalog commit order defines online authority. Archive
 `LOCAL_DELETE_PENDING`/`LOCAL_DELETED` transitions on either side of target are
-interpreted by their frozen event IDs and exact transaction state; no pre/post-boundary
-row mixing is permitted.
+interpreted by their frozen event IDs and exact transaction state; no pre/post-
+boundary row mixing is permitted.
 
 ## Streaming full audit and evidence binding
 
-`deployment acceptance finalize` is a separate repository-owned, read-only data/Catalog
-auditor that writes only to its private acceptance evidence root. It validates full
-manifest presence, byte SHA-256, schema/parse, unique path and chunk ID,
+`deployment acceptance finalize` is a separate repository-owned auditor that reads
+production data/Catalog without writing them; it writes only to its private acceptance
+evidence root. It validates the frozen manifest mappings and exact private snapshot
+bytes, manifest presence, byte SHA-256, schema/parse, unique path and chunk ID,
 Catalog/manifest fields, every local Raw or authorized archived Raw/manifest readback
 and checksum, source retirement transaction/registered target authority, unauthorized
 Raw absence, reconnect/discontinuity historical authority, Catalog `PRAGMA
-integrity_check`, stage online chain/target, predecessor, and deployment identity. It
-compares historical authority against the prior baseline/terminal root plus allowed
-logged transitions; omission, replacement, deletion, malformed records, or inconsistent
-archive state is a blocker. Producer blocker summaries alone are never accepted.
+integrity_check` on the frozen backup, stage online chain/target, predecessor, and
+deployment identity. Historical Raw and archive payload **are not copied** into the
+acceptance evidence root; exact bytes may be streamed from registered storage while
+sanctioned mutators remain stopped. Qualification proves the frozen control corpus
+and the exact Raw/archive content observed by terminal audit, not perpetual post-audit
+immutability of production paths. It compares historical authority against the prior
+baseline/terminal root plus allowed logged transitions; omission, replacement,
+deletion, malformed records, or inconsistent archive state is a blocker. Producer
+blocker summaries alone are never accepted.
 
 Records are streamed in fixed family order (`manifest`, `catalog_chunk`,
 `chunk_transition`, `archive_transaction`, `archive_event`, `operational_event`,
@@ -235,9 +356,10 @@ exceeding the byte cap fails closed. Shards are numbered `shard-00000000.json` o
 immutable, UTF-8 canonical JSON (`sort_keys`, compact separators, no ASCII escaping, one
 trailing LF), no overwrite, fsync/readback/sha256. The next shard carries the prior
 shard hash. `audit-root.json` binds schema, stage/run, target hash (or first-baseline
-identity/preflight hash), predecessor/baseline root, quiescence certificate and Catalog
-backup hash, counts by family and total, shard count, ordered-shard hash-chain digest,
-final aggregate digest, findings, completion state, and exact identity. Let `anchor` be
+identity/preflight hash), predecessor/baseline root, `quiescence-corpus.json` SHA,
+Catalog backup SHA, manifest-freeze root, counts by family and total, shard count,
+ordered-shard hash-chain digest, final aggregate digest, findings, completion state,
+and exact identity. Let `anchor` be
 the raw 32-byte target SHA-256 for a terminal audit or the raw 32-byte exact
 identity/preflight SHA-256 for the first baseline. Define
 `H0=SHA256(UTF8("BMDR-V5-AUDIT-SHARDS\0") || anchor)` and `Hi=SHA256(H(i-1) ||
@@ -255,10 +377,24 @@ are immutable evidence, never a PASS. The 900-second **audit watchdog** is a sep
 liveness setting, not the ADR-0033 readiness recovery deadline; implementation must name
 the two distinctly.
 
+### P2: terminal full Raw audit scalability
+
+`P2=TERMINAL_FULL_RAW_AUDIT_SCALABILITY` remains open. Exact terminal verification
+may intentionally be O(total qualified Raw and archive bytes) because it is outside
+the timed online cadence; the P2 does not justify skipping bytes or weakening the
+full-integrity gate. Before an implementation can be qualified for deployment,
+measure the first baseline and later terminal audits at the **current production
+corpus size**: baseline throughput, terminal throughput, Raw bytes verified per
+second, archive bytes verified per second, peak RSS, and total audit duration.
+Record the dataset size, storage target, and observed bottlenecks. Use those
+measurements to size progress/watchdog operation and operator windows, without
+transferring audit wall time into Formal duration credit.
+
 On crash/interruption, published shards remain immutable. Resume rechecks target,
-identity, quiescence certificate, Catalog backup SHA, every published shard's
-bytes/hash/order and rolling digest, then continues at the exact next deterministic
-record/shard. It never reuses a shard against a changed Catalog backup/corpus, never
+identity, `quiescence-corpus.json`, Catalog backup SHA, required private manifest
+snapshot objects, and every published audit shard's bytes/hash/order and rolling
+digest, then continues at the exact next deterministic record/shard. It never reuses
+a shard against a changed Catalog backup/corpus, never
 overwrites, and never creates a second target/T0. A partial last temporary file is
 untrusted and ignored; only fully published shards count. If quiescence cannot be
 re-established against the exact frozen corpus, resume is refused and the stage remains
@@ -270,9 +406,11 @@ ineligible; an interrupted audit can be closed `INCOMPLETE` with exact reason, n
 ## Independent outcome and threat model
 
 V5 dispatch is explicit alongside immutable V1/V2/V3/V4 readers. The verifier streams
-stage-start, ordinal-contiguous online samples, exactly one target, audit root and
-shards, and final; it reconstructs hashes, BOOTTIME gaps, sticky blockers, ADR-0033
-readiness episode, cursor continuity, open lifecycles, target boundary, audit aggregate,
+stage-start, ordinal-contiguous online samples, exactly one target,
+`quiescence-corpus.json`, frozen Catalog backup, manifest-freeze shards and private
+objects, terminal audit root/shards, and final. It reconstructs hashes, BOOTTIME
+gaps, sticky blockers, ADR-0033 readiness episode, three cursor chains and pending
+causal references, open lifecycles, target boundary, frozen-corpus/audit aggregates,
 predecessor and identity. It must not trust a producer's `result`, `findings`,
 `eligible_for_next_stage`, shard count, or digest without reconstruction. The frozen V4
 627.603-second chain remains rejected by the V4 verifier.
@@ -285,14 +423,15 @@ terminal corruption/loss is `FAIL`; interrupted/incomplete terminal audit is
 `INCOMPLETE` or has no final, always `eligible=false`. No later audit time contributes
 duration. Stage advancement is never automatic.
 
-The threat model covers accidental or unauthorized manifest mutation,
-deletion/replacement, duplicate identity, Catalog disagreement, unauthorized Raw loss,
-broken archive authority, and evidence chain deletion/rewrite **before eligibility**. It
-does not claim resistance to a malicious root operator who coherently rewrites
-production data, Catalog, artifacts, and all hash authorities. No `chattr`, fs-verity,
-fanotify, inotify, or Linux audit daemon is a required V5 correctness dependency. The
-quiescent audit assumes no sanctioned writer during its frozen corpus; loss of that
-invariant aborts qualification.
+The threat model covers mutation, loss, or replacement **already present in the
+quiescence-frozen control corpus**, duplicate identity, Catalog disagreement,
+unauthorized Raw loss, broken archive authority, and evidence chain deletion/rewrite
+before eligibility. Sanctioned project mutators are stopped during corpus freeze and
+audit. The audit verifies exact Raw/archive bytes it observes from registered storage.
+It does not claim perpetual post-audit immutability or resistance to a malicious root
+operator who coherently rewrites production data, Catalog, artifacts, and all hash
+authorities. No `chattr`, fs-verity, fanotify, inotify, or Linux audit daemon is a
+required V5 correctness dependency. Loss of quiescence aborts qualification.
 
 ## Fresh chain and implementation boundary
 

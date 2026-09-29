@@ -16,7 +16,10 @@ unchanged.
 the 300-second target/600-second maximum online cadence, an immutable target
 observation, then operator-controlled quiescence and streamed exact full
 integrity before eligibility. It deliberately moves historical mutation/loss
-detection to before stage eligibility; ADR-0033's 900-second readiness policy
+detection to the exact corpus frozen at quiescence; any corruption/loss already
+present there must fail before stage eligibility. PR #77's targeted P1
+correction adds immutable private manifest snapshots and same-snapshot
+cross-cursor causal authority. ADR-0033's 900-second readiness policy
 remains unchanged. The first V5 2h needs a stopped full baseline; later stages
 bind predecessor terminal roots and exact deltas. The next milestone is
 independent architecture review, not code implementation or live retry.

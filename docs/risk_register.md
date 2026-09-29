@@ -9,14 +9,19 @@ credit. V4 2h remains historical ACCEPT. Source forensics found no Recorder,
 archive, scheduler, operator, or evidenced host-resource defect. V5 proposes
 bounded online deltas and an exact quiescent terminal audit before eligibility;
 old-history corruption detection timing changes explicitly, with V1–V4
-semantics untouched. Risk remains **open** until ADR-0034 is independently
+semantics untouched. PR #77 review returned `P0=0`, `P1=2`, `P2=1`, `P3=0`,
+`CHANGES_REQUIRED`. The targeted P1 correction freezes exact private manifest
+bytes plus a hashed Catalog backup as `QUIESCENCE_CORPUS_FREEZE`, and binds
+cross-cursor companion authority through same-snapshot indexed lookups and
+later exact cursor replay. Risk remains **open** until ADR-0034 is independently
 reviewed, code is implemented/tested, and a fresh artifact completes a new
 qualification chain. No VPS operation or Formal retry was authorized here.
 
 | ID | Risk | Severity | Proposed control | Status |
 |---|---|---|---|---|
 | R-076 | Full historical manifest/Catalog work in every ordinary sample can exceed the frozen 600-second online evidence gap | Critical | ADR-0034 proposes durable delta cursors for online observations and a separate streamed terminal full audit; preserve 300/600/900 authorities and require fresh V5 chain | Open; architecture review pending |
-| R-077 | Moving old-history mutation detection out of ordinary samples could grant eligibility before corruption is found | Critical | V5 schema changes detection timing explicitly; no eligibility until independently verified quiescent full audit over manifests, Raw/archive authority, Catalog, and evidence chain | Open; architecture review pending |
+| R-077 | A live-path terminal scan or unmatched cross-cursor reference could grant eligibility without verifying the claimed authority | Critical | `quiescence-corpus.json` binds exact private manifest snapshots and frozen Catalog backup; a single online SQLite snapshot binds indexed companion rows, and later cursor consumption must match their recorded identity/digest. Any mutation/loss present in the frozen corpus fails eligibility | Open; P1 correction pending re-review |
+| R-078 | Exact terminal verification may take too long at current full Raw/archive corpus size | Medium | Keep full-integrity semantics outside the 600-second online window; before implementation qualification measure baseline/terminal throughput, Raw and archive bytes/s, peak RSS, total duration, and watchdog progress at production corpus size | Open P2; not solved by this docs correction |
 
 ## Previous candidate risk checkpoint — M22.9 acceptance evidence V4 reviewed closeout (2026-09-26)
 

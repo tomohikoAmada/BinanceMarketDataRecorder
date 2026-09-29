@@ -21,7 +21,10 @@ Forensics found an AcceptanceObserver sample-work defect: every ordinary V4
 sample rereads all historical manifests and performs other full-history
 Catalog work. ADR-0034 proposes V5 bounded online deltas and a quiescent,
 streamed terminal full-integrity audit. V5 explicitly changes old-manifest
-mutation/loss detection timing to **before stage eligibility**, while retaining
+mutation/loss detection timing: any mutation/loss present in the exact
+quiescence-frozen control corpus must fail before stage eligibility. PR #77's
+targeted P1 correction freezes private manifest bytes and a Catalog backup,
+and binds cross-cursor causal lookups to later cursor replay, while retaining
 the 300/600-second online cadence and ADR-0033 900-second readiness authority.
 The ADR is `PROPOSED FOR INDEPENDENT REVIEW`; no V5 code exists. This docs-only
 proposal touched no VPS, started no Recorder or Formal stage, and authorizes no
