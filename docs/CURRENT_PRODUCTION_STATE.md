@@ -5,7 +5,32 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
+## Current proposal — M22.9 acceptance evidence V5 architecture (2026-09-29)
+
+Live GitHub `main` was verified at source
+`354f5199eda687dfe2223b0b481c8de669dfdabf`, tree
+`101703dbd6a6da6f8633f2a46e1323ab5b87188c`. The exact V4 2h final
+`59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`
+remains historical `ACCEPT` (`7676.600247655` seconds). The V4 12h final
+`49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`
+remains `INCOMPLETE`, zero accepted seconds: sample 96→97 exceeded the
+600-second evidence bound at `627.60286927` seconds. Its installed verifier
+rejection remains authoritative; 24h has not started.
+
+Forensics found an AcceptanceObserver sample-work defect: every ordinary V4
+sample rereads all historical manifests and performs other full-history
+Catalog work. ADR-0034 proposes V5 bounded online deltas and a quiescent,
+streamed terminal full-integrity audit. V5 explicitly changes old-manifest
+mutation/loss detection timing to **before stage eligibility**, while retaining
+the 300/600-second online cadence and ADR-0033 900-second readiness authority.
+The ADR is `PROPOSED FOR INDEPENDENT REVIEW`; no V5 code exists. This docs-only
+proposal touched no VPS, started no Recorder or Formal stage, and authorizes no
+deployment or retry. A future V5 artifact requires a fresh identity, baseline,
+readiness, and complete 2h→12h→24h→72h→168h chain; V4 2h credit does not transfer.
+See [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md) and the
+[architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+
+## Previous milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as a
 new `m22.9-acceptance-evidence.v4` schema with an independent constant-space

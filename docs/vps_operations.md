@@ -1,6 +1,24 @@
 # VPS Operations
 
-Current status:
+## V5 proposed post-target procedure — not authorized for execution
+
+The current docs-only [ADR-0034 proposal](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
+defines a future two-phase M22.9 stage. Its detached observer would publish an
+immutable online `stage-target.json` at the timed BOOTTIME boundary. Only then
+would an operator gracefully stop and disable Recorder, drain and pause archive
+mutations, verify zero active partials and Catalog/target identity, and run a
+separate quiescent `deployment acceptance finalize` full audit. Audit wall time
+earns no Formal credit. The first V5 2h would require a stopped baseline audit
+before T0. This text is a **proposal**, not an instruction to act on the VPS;
+no V5 implementation, deployment, Recorder start, or Formal retry is authorized.
+
+The historical V4 2h remains ACCEPT; V4 12h remains INCOMPLETE after its
+627.602869-second sample 96→97 gap. The installed verifier rejection and zero
+12h credit remain authoritative. A future V5 artifact needs a fresh
+identity→baseline→readiness→2h→12h→24h→72h→168h chain. See the
+[architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+
+Historical 2026-09-13 checkpoint (not current authority):
 `M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT=REVIEWED_COMPLETE`. The retry
 created one valid T0, 14 canonical samples, and a canonical final after
 `7677610836692` BOOTTIME ns. It is nevertheless

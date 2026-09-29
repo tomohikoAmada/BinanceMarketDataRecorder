@@ -5,7 +5,42 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
+## Current proposal — M22.9 V5 bounded online / terminal audit (2026-09-29)
+
+Verified live GitHub `main` is
+`354f5199eda687dfe2223b0b481c8de669dfdabf` / tree
+`101703dbd6a6da6f8633f2a46e1323ab5b87188c`. V4 2h remains historical
+`ACCEPT` (final SHA-256 `59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`,
+`7676.600247655` accepted seconds). V4 12h remains `INCOMPLETE` (final
+SHA-256 `49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`,
+zero accepted seconds): sample 96→97 took `627.60286927` seconds and the
+installed verifier rejects its gap. No historical result is revised.
+
+V4's AcceptanceObserver repeats O(total historical manifests) work per sample;
+the Recorder, scheduler, and archive were not found defective. The proposed
+`m22.9-acceptance-evidence.v5` separates bounded 300/600-second online
+observation from a post-target, quiescent exact full-integrity audit. Old
+manifest mutation/loss must be caught before stage eligibility, a declared
+V5 detection-timing change. ADR-0033's 900-second global readiness episode
+is retained. The proposal is docs-only, not implemented or deployed; the VPS
+was not touched and no Formal retry is authorized. A reviewed V5 artifact
+will require a fresh identity, baseline audit, readiness, and full
+2h→12h→24h→72h→168h chain. See [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
+and the [V5 architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+
+```text
+MILESTONE=M22_9_V5_BOUNDED_ONLINE_TERMINAL_AUDIT_ARCHITECTURE
+MILESTONE_STATUS=PROPOSED_FOR_INDEPENDENT_REVIEW
+V5_IMPLEMENTED=NO
+VPS_TOUCHED=NO
+FORMAL_RETRY_STARTED=NO
+V4_2H_HISTORICAL_ACCEPT=YES
+V4_12H_HISTORICAL_INCOMPLETE=YES
+V5_FRESH_CHAIN_REQUIRED=YES
+NEXT=INDEPENDENT_V5_ARCHITECTURE_REVIEW
+```
+
+## Previous milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as
 `m22.9-acceptance-evidence.v4` with explicit V1/V2/V3/V4 dispatch, a

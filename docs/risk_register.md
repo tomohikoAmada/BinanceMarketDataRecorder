@@ -1,6 +1,24 @@
 # Risk Register
 
-## Current candidate risk checkpoint — M22.9 acceptance evidence V4 reviewed closeout (2026-09-26)
+## Current proposal risk checkpoint — M22.9 V5 architecture (2026-09-29)
+
+The reviewed V4 12h sample-work defect is O(total historical manifests and
+Catalog history) per ordinary observation. Sample 96→97 took
+`627.60286927` seconds, so the historical 12h remains INCOMPLETE with zero
+credit. V4 2h remains historical ACCEPT. Source forensics found no Recorder,
+archive, scheduler, operator, or evidenced host-resource defect. V5 proposes
+bounded online deltas and an exact quiescent terminal audit before eligibility;
+old-history corruption detection timing changes explicitly, with V1–V4
+semantics untouched. Risk remains **open** until ADR-0034 is independently
+reviewed, code is implemented/tested, and a fresh artifact completes a new
+qualification chain. No VPS operation or Formal retry was authorized here.
+
+| ID | Risk | Severity | Proposed control | Status |
+|---|---|---|---|---|
+| R-076 | Full historical manifest/Catalog work in every ordinary sample can exceed the frozen 600-second online evidence gap | Critical | ADR-0034 proposes durable delta cursors for online observations and a separate streamed terminal full audit; preserve 300/600/900 authorities and require fresh V5 chain | Open; architecture review pending |
+| R-077 | Moving old-history mutation detection out of ordinary samples could grant eligibility before corruption is found | Critical | V5 schema changes detection timing explicitly; no eligibility until independently verified quiescent full audit over manifests, Raw/archive authority, Catalog, and evidence chain | Open; architecture review pending |
+
+## Previous candidate risk checkpoint — M22.9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 The independent V4 semantics review is accepted against live `main`
 `6e5dd91575d53e226a20d1873eafa3e06ca64329` / tree
