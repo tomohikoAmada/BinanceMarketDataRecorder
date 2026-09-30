@@ -32,6 +32,10 @@ Current and historical decisions:
 - [ADR-0028: VPS production deployment profile](0028-vps-production-deployment-profile.md)
 - [ADR-0029: Remote archive transfer and VPS source-deletion authorization](0029-remote-archive-transfer-and-deletion-authorization.md)
 - [ADR-0030: Archive Set and multi-removable-media model](0030-archive-set-and-multi-removable-media.md)
+- [ADR-0031: Fixed seven-symbol multi-symbol expansion](0031-fixed-seven-symbol-multi-symbol-expansion.md)
+- [ADR-0032: Configurable product set](0032-configurable-product-set.md)
+- [ADR-0033: M22.9 in-stage readiness recovery deadline](0033-m22-9-in-stage-readiness-recovery-deadline.md)
+- [ADR-0034: M22.9 V5 bounded online observation and terminal full audit — accepted policy authority; implementation pending](0034-m22-9-v5-bounded-online-terminal-audit.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

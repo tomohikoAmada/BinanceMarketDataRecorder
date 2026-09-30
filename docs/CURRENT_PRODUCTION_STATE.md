@@ -5,7 +5,42 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
+## Current milestone — M22.9 acceptance evidence V5 architecture reviewed complete (2026-09-30)
+
+Live GitHub `main` was verified at source
+`354f5199eda687dfe2223b0b481c8de669dfdabf`, tree
+`101703dbd6a6da6f8633f2a46e1323ab5b87188c`. The exact V4 2h final
+`59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`
+remains historical `ACCEPT` (`7676.600247655` seconds). The V4 12h final
+`49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`
+remains `INCOMPLETE`, zero accepted seconds: sample 96→97 exceeded the
+600-second evidence bound at `627.60286927` seconds. Its installed verifier
+rejection remains authoritative; 24h has not started.
+
+Forensics found an AcceptanceObserver sample-work defect: every ordinary V4
+sample rereads all historical manifests and performs other full-history
+Catalog work. Accepted ADR-0034 freezes V5 bounded online deltas and a quiescent,
+streamed terminal full-integrity audit. V5 explicitly changes old-manifest
+mutation/loss detection timing: any mutation/loss present in the exact
+quiescence-frozen control corpus must fail before stage eligibility. PR #77's
+targeted P1 correction freezes private manifest bytes and a Catalog backup,
+and binds cross-cursor causal lookups to later cursor replay, while retaining
+the 300/600-second online cadence and ADR-0033 900-second readiness authority.
+The independent architecture review accepted PR #77 at reviewed head
+`0a03bd2f54af2d516ea6f3ef7861f524c72f17da` with `P0=0`, `P1=0`,
+`P2=1`, `P3=0`. P1-A corpus freeze and P1-B cross-cursor causality are
+accepted. The nonblocking P2, `TERMINAL_FULL_RAW_AUDIT_SCALABILITY`, requires
+throughput, bytes/sec, peak RSS, and duration measurements during implementation
+qualification without weakening full integrity. V5 implementation and deployment
+have not started. This docs-only closeout touched no VPS, started no Recorder or
+Formal stage, and authorizes no deployment or retry. A future V5 artifact
+requires a fresh identity, baseline,
+readiness, and complete 2h→12h→24h→72h→168h chain; V4 2h credit does not transfer.
+`NEXT=M22_9_V5_IMPLEMENTATION`; `PRODUCTION_READY=NO`.
+See [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md) and the
+[architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+
+## Previous milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
 
 ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as a
 new `m22.9-acceptance-evidence.v4` schema with an independent constant-space
