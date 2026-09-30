@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,11 @@ def test_v5_cli_routes_repository_owned_commands(
     capsys: pytest.CaptureFixture[str],
     command: str,
 ) -> None:
+    # Production profile intentionally rejects environment overrides. Isolate
+    # this parser-routing fixture from the runner's safe default test data root.
+    for name in list(os.environ):
+        if name.startswith("BINANCE_MARKET_RECORDER_"):
+            monkeypatch.delenv(name)
     identity = _identity(tmp_path)
     config = tmp_path / "vps.toml"
     config.write_text(
