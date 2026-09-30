@@ -368,6 +368,13 @@ class Catalog:
                 raise
             except sqlite3.Error as exc:
                 raise CatalogStateError("cannot initialize remote Catalog schema") from exc
+        from .acceptance_delta import DeltaAuthorityError, inspect_sequence
+
+        try:
+            inspect_sequence(self._connection)
+        except (DeltaAuthorityError, sqlite3.Error) as exc:
+            self._connection.close()
+            raise CatalogStateError("invalid acceptance delta schema") from exc
 
     @classmethod
     def open_live_read_only(cls, path: Path) -> Catalog:
@@ -395,6 +402,27 @@ class Catalog:
             raise TypeError("backup destination must be sqlite3.Connection")
         with self._lock:
             self._connection.backup(destination)
+
+    def migrate_acceptance_sequence(
+        self, *, checkpoint: Callable[[str], None] | None = None
+    ) -> None:
+        """Atomic stopped-baseline migration for ADR-0034; never an observer write."""
+        from .acceptance_delta import migrate_sequence
+
+        with self._transaction() as connection:
+            migrate_sequence(connection, checkpoint=checkpoint)
+
+    @contextmanager
+    def acceptance_delta_snapshot(self) -> Iterator[Any]:
+        """Freeze all acceptance cursors and indexed companions in one read snapshot."""
+        from .acceptance_delta import DeltaSnapshot
+
+        with self._lock:
+            self._connection.execute("BEGIN")
+            try:
+                yield DeltaSnapshot(self._connection)
+            finally:
+                self._connection.execute("ROLLBACK")
 
     def integrity_check(self) -> tuple[str, ...]:
         """Return the complete SQLite integrity-check result."""

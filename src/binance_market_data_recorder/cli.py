@@ -15,7 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, NoReturn, TextIO
+from typing import Any, NoReturn, TextIO, cast
 
 from .archive import ArchiveError, ArchiveManager, ArchiveTarget
 from .archive.catalog_snapshot import CatalogSnapshotExporter
@@ -41,14 +41,27 @@ from .service.acceptance import (
     SAMPLE_INTERVAL_NS,
     STAGE_DURATION_NS,
     V4_SCHEMA_VERSION,
+    V5_SCHEMA_VERSION,
     AcceptanceError,
     AcceptanceObserver,
     V4AcceptanceObserver,
     create_identity_evidence,
     create_readiness_evidence,
     resume_observer,
+    verify_completed_stage,
     verify_prior_stage,
 )
+from .service.acceptance_v5_corpus import catalog_available
+from .service.acceptance_v5_finalize import (
+    baseline as v5_baseline,
+)
+from .service.acceptance_v5_finalize import (
+    finalize as v5_finalize,
+)
+from .service.acceptance_v5_finalize import (
+    verify_audit as verify_v5_audit,
+)
+from .service.acceptance_v5_online import V5AcceptanceObserver, resume_v5_observer
 from .service.archive_timer import ArchiveTimerManager, SystemdArchiveError
 from .service.deployment_identity import (
     DeploymentIdentityError,
@@ -143,6 +156,28 @@ def _acceptance_archive_root_resolver(
         }
 
     return resolve
+
+
+def _v5_archive_target_resolver(
+    authority: Mapping[str, dict[str, Any]],
+) -> Mapping[str, Path]:
+    """Only targets referenced by this page; no Catalog open/history query."""
+
+    class SnapshotControl:
+        def storage_control(self, storage_id: str) -> dict[str, object]:
+            return cast(dict[str, object], authority[storage_id]["control"])
+
+    adapter = _volume_adapter()
+    registry = StorageRegistry(catalog=cast(Catalog, SnapshotControl()), volumes=adapter)
+    volumes = {volume.volume_uuid: volume for volume in adapter.inventory()}
+    roots = {}
+    for storage_id, bundle in authority.items():
+        status = registry._resolve_target(bundle["target"], volumes, observation_only=True)
+        if status.get("state") in {"READY", "LOW_SPACE"} and isinstance(
+            status.get("resolved_path"), str
+        ):
+            roots[storage_id] = Path(str(status["resolved_path"]))
+    return roots
 
 
 def _write_json(payload: object, *, stream: TextIO | None = None) -> None:
@@ -349,6 +384,23 @@ def build_parser() -> argparse.ArgumentParser:
     stage_mode.add_argument("--resume", type=Path)
     stage_acceptance.add_argument("--previous-evidence", type=Path)
     stage_acceptance.add_argument("--evidence-root", type=Path)
+    for generation_parser in (identity_acceptance, readiness_acceptance, stage_acceptance):
+        generation_parser.add_argument("--schema-version", choices=("v4", "v5"), default="v5")
+    baseline_acceptance = acceptance_commands.add_parser(
+        "baseline", help="V5 stopped/quiescent full baseline; zero Formal duration"
+    )
+    baseline_acceptance.add_argument("--evidence-root", type=Path, required=True)
+    baseline_acceptance.add_argument("--resume", action="store_true")
+    finalize_acceptance = acceptance_commands.add_parser(
+        "finalize", help="V5 quiescent corpus freeze and terminal full audit"
+    )
+    finalize_acceptance.add_argument("--evidence-root", type=Path, required=True)
+    finalize_acceptance.add_argument("--resume", action="store_true")
+    verify_acceptance = acceptance_commands.add_parser(
+        "verify", help="independently verify baseline or completed stage evidence"
+    )
+    verify_acceptance.add_argument("--evidence-root", type=Path, required=True)
+    verify_acceptance.add_argument("--baseline", action="store_true")
     rollback = deployment_commands.add_parser(
         "rollback-check", help="fail closed unless a preserved target understands Catalog state"
     )
@@ -591,7 +643,7 @@ def _run_remote_command(args: argparse.Namespace, loaded: LoadedConfig) -> int:
 
 
 def _run_acceptance_stage(
-    observer: AcceptanceObserver,
+    observer: AcceptanceObserver | V5AcceptanceObserver,
     *,
     sleep: Callable[[float], None] | None = None,
 ) -> tuple[Path, str, dict[str, object]]:
@@ -616,14 +668,11 @@ def _run_acceptance_stage(
     )
     while (
         observer.last_sample_boottime_ns is None
-        or observer.last_sample_boottime_ns - observer.t0_boottime_ns
-        < required_duration_ns
+        or observer.last_sample_boottime_ns - observer.t0_boottime_ns < required_duration_ns
     ):
         if next_target_boottime_ns is not None:
             now_boottime_ns = observer.clock.boottime_ns()
-            remaining_stage_ns = required_duration_ns - (
-                now_boottime_ns - observer.t0_boottime_ns
-            )
+            remaining_stage_ns = required_duration_ns - (now_boottime_ns - observer.t0_boottime_ns)
             if remaining_stage_ns > 0:
                 wait_ns = min(
                     max(0, next_target_boottime_ns - now_boottime_ns),
@@ -820,7 +869,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                         data_root=loaded.config.data_root,
                         identity=identity,
                         manager=acceptance_manager,
-                        schema_version=V4_SCHEMA_VERSION,
+                        schema_version=V5_SCHEMA_VERSION
+                        if args.schema_version == "v5"
+                        else V4_SCHEMA_VERSION,
                     )
                     _write_json(
                         {
@@ -831,6 +882,52 @@ def main(argv: Sequence[str] | None = None) -> int:
                         }
                     )
                     return 0
+                if acceptance_action in {"baseline", "finalize", "verify"}:
+                    roots = _acceptance_archive_root_resolver(loaded.config.data_root)()
+                    if acceptance_action == "baseline":
+                        path, digest, document = v5_baseline(
+                            data_root=loaded.config.data_root,
+                            evidence_root=args.evidence_root,
+                            identity=identity,
+                            products=[
+                                [product.market, product.symbol]
+                                for product in configured_products(
+                                    loaded.config.spot_symbols, loaded.config.usdm_symbols
+                                )
+                            ],
+                            archive_roots=roots,
+                            resume=args.resume,
+                        )
+                    elif acceptance_action == "finalize":
+                        path, digest, document = v5_finalize(
+                            evidence_root=args.evidence_root,
+                            identity=identity,
+                            archive_roots=roots,
+                            resume=args.resume,
+                        )
+                    elif args.baseline:
+                        document, digest = verify_v5_audit(
+                            root=args.evidence_root,
+                            identity=identity,
+                            archive_roots=roots,
+                        )
+                        path = args.evidence_root / "audit-root.json"
+                    else:
+                        document, digest = verify_completed_stage(
+                            args.evidence_root,
+                            identity,
+                            archive_root_resolver=lambda: roots,
+                        )
+                        path = args.evidence_root / "stage-final.json"
+                    _write_json(
+                        {
+                            "command": f"deployment.acceptance.{acceptance_action}",
+                            "path": str(path),
+                            "evidence_sha256": digest,
+                            **document,
+                        }
+                    )
+                    return 0 if document["result"] == "PASS_CANDIDATE" else 2
                 evaluator = VpsReadinessEvaluator(
                     expected_products=frozenset(
                         configured_products(loaded.config.spot_symbols, loaded.config.usdm_symbols)
@@ -840,6 +937,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     systemd_manager=acceptance_manager,
                 )
                 if acceptance_action == "readiness":
+                    if args.schema_version == "v5":
+                        evaluator.catalog_ready = catalog_available
                     path, digest, document = create_readiness_evidence(
                         identity_evidence_path=args.identity_evidence,
                         identity=identity,
@@ -847,7 +946,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                         evaluator=evaluator,
                         evidence_root=args.evidence_root,
                         data_root=loaded.config.data_root,
-                        schema_version=V4_SCHEMA_VERSION,
+                        schema_version=V5_SCHEMA_VERSION
+                        if args.schema_version == "v5"
+                        else V4_SCHEMA_VERSION,
                     )
                     _write_json(
                         {
@@ -859,10 +960,50 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0 if document["result"] == "PASS_CANDIDATE" else 2
                 if acceptance_action == "stage":
+                    observer: AcceptanceObserver | V5AcceptanceObserver
                     archive_root_resolver = _acceptance_archive_root_resolver(
                         loaded.config.data_root
                     )
-                    if args.resume is not None:
+                    if args.schema_version == "v5":
+                        if args.resume is not None:
+                            observer = resume_v5_observer(
+                                evidence_root=args.resume,
+                                data_root=loaded.config.data_root,
+                                identity=identity,
+                                manager=acceptance_manager,
+                                evaluator=evaluator,
+                                archive_target_resolver=_v5_archive_target_resolver,
+                            )
+                        else:
+                            if args.previous_evidence is None or args.evidence_root is None:
+                                raise AcceptanceError(
+                                    "new V5 stage requires --previous-evidence and --evidence-root"
+                                )
+                            stage = str(args.stage)
+                            stage_root = args.evidence_root / f"{stage}-{uuid.uuid4().hex}"
+                            observer = V5AcceptanceObserver(
+                                stage=stage,
+                                run_id=uuid.uuid4().hex,
+                                data_root=loaded.config.data_root,
+                                evidence_root=stage_root,
+                                identity=identity,
+                                predecessor_path=args.previous_evidence,
+                                manager=acceptance_manager,
+                                evaluator=evaluator,
+                                archive_target_resolver=_v5_archive_target_resolver,
+                            )
+                            path, digest, start_document = observer.start()
+                            _write_json(
+                                {
+                                    "command": "deployment.acceptance.stage",
+                                    "status": "STARTED",
+                                    "path": str(path),
+                                    "evidence_sha256": digest,
+                                }
+                            )
+                            if start_document["blocking_findings"]:
+                                return 1
+                    elif args.resume is not None:
                         observer = resume_observer(
                             args.resume,
                             data_root=loaded.config.data_root,

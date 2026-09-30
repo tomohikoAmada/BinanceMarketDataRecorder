@@ -54,7 +54,8 @@ V3_SCHEMA_VERSION = SCHEMA_VERSION
 PREVIOUS_SCHEMA_VERSION = "m22.9-acceptance-evidence.v2"
 LEGACY_SCHEMA_VERSION = "m22.9-acceptance-evidence.v1"
 V4_SCHEMA_VERSION = "m22.9-acceptance-evidence.v4"
-CURRENT_SCHEMA_VERSION = V4_SCHEMA_VERSION
+V5_SCHEMA_VERSION = "m22.9-acceptance-evidence.v5"
+CURRENT_SCHEMA_VERSION = V5_SCHEMA_VERSION
 V4_DEADLINE_NS = 900 * 1_000_000_000
 STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h")
 STAGE_DURATION_NS = {
@@ -325,6 +326,7 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
         PREVIOUS_SCHEMA_VERSION,
         SCHEMA_VERSION,
         V4_SCHEMA_VERSION,
+        V5_SCHEMA_VERSION,
     }:
         raise AcceptanceError("unsupported acceptance evidence schema")
     if schema_version == LEGACY_SCHEMA_VERSION:
@@ -333,10 +335,16 @@ def _read_published(path: Path) -> tuple[dict[str, object], str]:
     else:
         kind = value.get("evidence_kind")
         if kind in {"identity-result", "readiness-result"}:
-            required = _V4_COMMON_FIELDS if schema_version == V4_SCHEMA_VERSION else _COMMON_FIELDS
+            required = (
+                _V4_COMMON_FIELDS
+                if schema_version in {V4_SCHEMA_VERSION, V5_SCHEMA_VERSION}
+                else _COMMON_FIELDS
+            )
             allowed = required | _EXTRA_FIELDS
             if not set(value) >= required or set(value) - allowed:
                 raise AcceptanceError("acceptance evidence fields are not exact")
+        elif schema_version == V5_SCHEMA_VERSION:
+            raise AcceptanceError("V5 timed/terminal evidence requires explicit V5 dispatch")
         elif kind == "stage-start":
             expected = (
                 _V2_STAGE_START_FIELDS
@@ -428,7 +436,7 @@ def _empty_common(
         "blocking_findings": [],
         "result": "INCOMPLETE",
     }
-    if schema_version == V4_SCHEMA_VERSION:
+    if schema_version in {V4_SCHEMA_VERSION, V5_SCHEMA_VERSION}:
         document[_V4_EPISODE_FIELD] = _empty_v4_episode()
     return document
 
@@ -1038,7 +1046,7 @@ def create_identity_evidence(
 ) -> tuple[Path, str, dict[str, object]]:
     """Perform existing static deployment verification and publish identity."""
 
-    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION, V5_SCHEMA_VERSION}:
         raise AcceptanceError("unsupported generated acceptance schema")
     if len(expected_source_git_sha) != 40 or any(
         char not in _HEX64 for char in expected_source_git_sha.lower()
@@ -1123,7 +1131,7 @@ def read_identity_evidence(
         or document.get("identity") != identity.document()
     ):
         raise AcceptanceError("identity evidence is not eligible for this artifact")
-    if expected_schema == V4_SCHEMA_VERSION:
+    if expected_schema in {V4_SCHEMA_VERSION, V5_SCHEMA_VERSION}:
         observed_boot = _integer(
             document.get("observed_at_boottime_ns"), "identity BOOTTIME timestamp"
         )
@@ -1144,7 +1152,7 @@ def create_readiness_evidence(
     data_root: Path,
     schema_version: str = SCHEMA_VERSION,
 ) -> tuple[Path, str, dict[str, object]]:
-    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION}:
+    if schema_version not in {SCHEMA_VERSION, V4_SCHEMA_VERSION, V5_SCHEMA_VERSION}:
         raise AcceptanceError("unsupported generated acceptance schema")
     root = _safe_evidence_root(evidence_root, data_root)
     _identity_doc, prior = read_identity_evidence(
@@ -3805,9 +3813,17 @@ def verify_completed_stage(
     identity: DeploymentIdentity,
     *,
     expected_stage: str | None = None,
+    archive_root_resolver: ArchiveRootResolver | None = None,
 ) -> tuple[dict[str, object], str]:
     """Dispatch to the immutable verifier for the document's schema generation."""
 
+    if (stage_root / "stage-target.json").exists():
+        from .acceptance_v5_finalize import verify_completed_v5_stage
+
+        return verify_completed_v5_stage(
+            stage_root, identity, expected_stage=expected_stage,
+            archive_roots=archive_root_resolver() if archive_root_resolver else {},
+        )
     start, start_sha = _read_published(stage_root / "stage-start.json")
     if start.get("schema_version") == LEGACY_SCHEMA_VERSION:
         return _verify_completed_stage_v1(
@@ -4144,6 +4160,7 @@ __all__ = [
     "V3_SCHEMA_VERSION",
     "V4_DEADLINE_NS",
     "V4_SCHEMA_VERSION",
+    "V5_SCHEMA_VERSION",
     "AcceptanceError",
     "AcceptanceObserver",
     "Clock",

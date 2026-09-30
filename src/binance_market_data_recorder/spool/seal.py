@@ -547,8 +547,18 @@ def read_strict_manifest(path: Path, *, recorder_root: Path | None = None) -> di
 
     try:
         raw = path.read_bytes()
+    except OSError as exc:
+        raise SealError(f"cannot read Raw manifest {path}: {type(exc).__name__}") from exc
+    return parse_strict_manifest_bytes(raw, path=path, recorder_root=recorder_root)
+
+
+def parse_strict_manifest_bytes(
+    raw: bytes, *, path: Path, recorder_root: Path | None = None
+) -> dict[str, object]:
+    """Apply the existing manifest contract to already frozen exact bytes."""
+    try:
         document: Any = json.loads(raw)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise SealError(f"cannot read Raw manifest {path}: {type(exc).__name__}") from exc
     if not isinstance(document, dict):
         raise SealError(f"Raw manifest {path} is not an object")
