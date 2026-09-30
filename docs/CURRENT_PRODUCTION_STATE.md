@@ -5,7 +5,35 @@ the independently qualified deployed artifact, and the current multi-symbol
 qualification program. Verify live GitHub before acting; this document does not authorize
 deployment, live traffic, formal acceptance, or data retirement.
 
-## Current milestone — M22.9 acceptance evidence V5 architecture reviewed complete (2026-09-30)
+## Current milestone — M22.9 V5 implementation candidate (2026-09-30)
+
+Implementation follows accepted ADR-0034 from exact main
+`8c3bb8a80e8a4ef2ef3939dfce43f92dab64a280`, tree
+`99f2a80de09f222b60eada49a288d8ca2a5306c1`, in a separate clean worktree.
+The candidate implements the additive operational sequence migration, bounded
+online deltas and causal replay, stopped baseline, immutable target, private
+quiescence corpus, streamed full terminal audit, both resume paths, independent
+verification and CLI. Offline qualification is recorded in the
+[V5 implementation record](milestone_acceptance/M22.9-v5-implementation.md).
+Implementation review remains separate; this is not deployment qualification.
+
+V4 2h remains historical ACCEPT, final SHA-256
+`59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`.
+V4 12h remains historical INCOMPLETE, final SHA-256
+`49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`,
+zero accepted seconds; its `627.60286927s` gap remains rejected.
+The 300/600/900-second authorities and V1–V4 semantics are unchanged.
+
+`V5_IMPLEMENTED=YES` (offline candidate); `V5_DEPLOYED=NO`;
+`FORMAL_V5_STARTED=NO`; `VPS_TOUCHED=NO`; `PRODUCTION_READY=NO`.
+The implementation task starts no Recorder or Formal stage and authorizes no
+production baseline, deployment or retry. A fresh artifact still requires
+identity → baseline → readiness → 2h → 12h → 24h → 72h → 168h;
+V4 duration cannot transfer. The production-corpus throughput P2
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY` remains OPEN.
+`NEXT=M22_9_V5_INDEPENDENT_IMPLEMENTATION_REVIEW`.
+
+## Previous architecture checkpoint — M22.9 acceptance evidence V5 architecture reviewed complete (2026-09-30)
 
 Live GitHub `main` was verified at source
 `354f5199eda687dfe2223b0b481c8de669dfdabf`, tree

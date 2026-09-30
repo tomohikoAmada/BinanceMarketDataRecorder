@@ -1,6 +1,13 @@
 # VPS Operations
 
-## V5 accepted architecture for post-target procedure — not authorized for execution
+## V5 implementation candidate — not deployed or authorized for execution
+
+Repository-owned V5 baseline, stage, finalize and verify commands are implemented
+and tested offline. See the [implementation contract](acceptance_evidence_v5.md)
+and [offline record](milestone_acceptance/M22.9-v5-implementation.md).
+This task touched no VPS and grants no production execution authorization.
+
+## Previous accepted architecture checkpoint
 
 The accepted, docs-only [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
 defines a future two-phase M22.9 stage. Its detached observer would publish an

@@ -1,6 +1,20 @@
 # Risk Register
 
-## Current architecture acceptance risk checkpoint — M22.9 V5 (2026-09-30)
+## Current implementation risk checkpoint — M22.9 V5 (2026-09-30)
+
+The ADR-0034 implementation candidate is now offline tested. R-076/R-077
+controls are implemented and covered by deterministic scaling, corruption,
+causality and resume tests; independent implementation review and fresh live
+qualification remain required. The previous architecture checkpoint below is
+time-local. See the [implementation record](milestone_acceptance/M22.9-v5-implementation.md).
+
+| ID | Current control / remaining gate | Status |
+|---|---|---|
+| R-076 | Bounded pages, cancellable 240-second work, explicit pending at target, no historical manifest inventory online; operation counts and synthetic history benchmarks | Implemented offline; independent review and fresh chain pending |
+| R-077 | Exact private manifest bytes, frozen Catalog, independent terminal reconstruction, same-snapshot causal references and later exact replay | Implemented offline; independent review pending |
+| R-078 | Full Raw/archive verification remains mandatory. Measure baseline/terminal throughput, Raw/archive bytes/sec, peak RSS, total duration and watchdog progress at actual production corpus size | OPEN: `TERMINAL_FULL_RAW_AUDIT_SCALABILITY`; synthetic small-chunk measurements do not close P2 |
+
+## Previous architecture acceptance risk checkpoint — M22.9 V5 (2026-09-30)
 
 The reviewed V4 12h sample-work defect is O(total historical manifests and
 Catalog history) per ordinary observation. Sample 96→97 took
