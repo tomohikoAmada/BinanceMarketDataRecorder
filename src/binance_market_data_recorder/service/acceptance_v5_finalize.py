@@ -389,6 +389,7 @@ def run_audit(
         archive_roots=archive_roots,
         stage_root=stage_root,
         raw_unit=raw_unit,
+        historical_control_only=False,
         _document=document,
         progress=progress_callback,
     )
@@ -407,6 +408,12 @@ def verify_audit(
     _document: dict[str, Any] | None = None,
     progress: Callable[[int], None] | None = None,
 ) -> tuple[dict[str, Any], str]:
+    """Reconstruct controls/records; qualification defaults to exact live Raw.
+
+    Completed historical verification may reuse hash-bound Raw proofs. It still
+    independently reconstructs the frozen controls, ledger, chain and outcome;
+    it is not a new qualification of current production storage.
+    """
     document, digest = (
         read_document(root / "audit-root.json")
         if _document is None
@@ -646,6 +653,7 @@ def verify_completed_v5_stage(
     require_eligible: bool = True,
     raw_unit: Callable[..., dict[str, Any] | None] = cancellable_unit,
 ) -> tuple[dict[str, Any], str]:
+    """Verify the immutable qualification point, not later live Raw locations."""
     replay = replay_online(evidence_root, identity, require_target=True)
     if expected_stage is not None and replay.start["stage"] != expected_stage:
         raise AcceptanceError("V5 completed stage name differs")
@@ -655,6 +663,7 @@ def verify_completed_v5_stage(
         archive_roots=archive_roots,
         stage_root=evidence_root,
         raw_unit=raw_unit,
+        historical_control_only=True,
     )
     final, digest = read_document(evidence_root / "stage-final.json")
     if final != final_document(replay, audit, audit_sha):

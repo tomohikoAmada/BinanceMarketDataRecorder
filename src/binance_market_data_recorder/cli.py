@@ -883,7 +883,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                     return 0
                 if acceptance_action in {"baseline", "finalize", "verify"}:
-                    roots = _acceptance_archive_root_resolver(loaded.config.data_root)()
+                    # Completed verification reconstructs immutable qualification
+                    # evidence, independently of later live archive retirement.
+                    roots = (
+                        {}
+                        if acceptance_action == "verify"
+                        else _acceptance_archive_root_resolver(loaded.config.data_root)()
+                    )
                     if acceptance_action == "baseline":
                         path, digest, document = v5_baseline(
                             data_root=loaded.config.data_root,
@@ -910,6 +916,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             root=args.evidence_root,
                             identity=identity,
                             archive_roots=roots,
+                            historical_control_only=True,
                         )
                         path = args.evidence_root / "audit-root.json"
                     else:
@@ -928,17 +935,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                         }
                     )
                     return 0 if document["result"] == "PASS_CANDIDATE" else 2
-                evaluator = VpsReadinessEvaluator(
-                    expected_products=frozenset(
-                        configured_products(loaded.config.spot_symbols, loaded.config.usdm_symbols)
-                    ),
-                    data_root=loaded.config.data_root,
-                    identity=identity,
-                    systemd_manager=acceptance_manager,
+                expected_products = frozenset(
+                    configured_products(loaded.config.spot_symbols, loaded.config.usdm_symbols)
                 )
+                if args.schema_version == "v5":
+                    evaluator = VpsReadinessEvaluator(
+                        expected_products=expected_products,
+                        data_root=loaded.config.data_root,
+                        identity=identity,
+                        systemd_manager=acceptance_manager,
+                        catalog_ready=catalog_available,
+                    )
+                else:
+                    evaluator = VpsReadinessEvaluator(
+                        expected_products=expected_products,
+                        data_root=loaded.config.data_root,
+                        identity=identity,
+                        systemd_manager=acceptance_manager,
+                    )
                 if acceptance_action == "readiness":
-                    if args.schema_version == "v5":
-                        evaluator.catalog_ready = catalog_available
                     path, digest, document = create_readiness_evidence(
                         identity_evidence_path=args.identity_evidence,
                         identity=identity,

@@ -7,15 +7,58 @@ import io
 import json
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import zstandard
 
+from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_available
+from binance_market_data_recorder.service.acceptance_v5_online import V5AcceptanceObserver
+from binance_market_data_recorder.service.readiness import VpsReadinessEvaluator
+from binance_market_data_recorder.service.state import ServiceStateStore
+from binance_market_data_recorder.service.systemd import SystemdManager
 from binance_market_data_recorder.spool.format import decode_chunk_header, encode_chunk_header
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.unit.test_historical_reconnect_audit import seal_chunk, usdm_envelope
+from tests.unit.test_m22_9_acceptance import FakeClock
+from tests.unit.test_vps_service_readiness import FakeSystemd, _market, _state
+
+
+def production_readiness(
+    observer: V5AcceptanceObserver, clock: FakeClock
+) -> VpsReadinessEvaluator:
+    """Actual evaluator; only OS/process and deployment probes are injected."""
+    return VpsReadinessEvaluator(
+        expected_products=frozenset(observer.evaluator.expected_products),
+        data_root=observer.data_root,
+        identity=observer.identity,
+        systemd_manager=cast(SystemdManager, FakeSystemd(main_pid=123)),
+        utc_clock_ns=clock.utc_ns,
+        process_alive=lambda _pid: True,
+        catalog_ready=catalog_available,
+        identity_verifier=lambda _identity: {},
+        process_environment=lambda _pid: {},
+    )
+
+
+def publish_ready_state(observer: V5AcceptanceObserver, clock: FakeClock) -> None:
+    state = _state(observer.identity)
+    products: dict[str, dict[str, Any]] = {}
+    for key in observer.evaluator.expected_products:
+        products.setdefault(key.market, {})[key.symbol] = {
+            **_market(), "market": key.market, "symbol": key.symbol,
+        }
+    state.update(
+        pid=123,
+        service_instance_id="service-a",
+        heartbeat_at_utc_ns=clock.utc_ns(),
+        products=products,
+    )
+    capacity = state["capacity"]
+    assert isinstance(capacity, dict)
+    capacity["observed_at_utc_ns"] = clock.utc_ns()
+    ServiceStateStore(observer.data_root / "state" / "service_state.json").write(state)
 
 
 def synthetic_history(root: Path, count: int) -> None:

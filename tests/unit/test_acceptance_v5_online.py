@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -10,10 +11,14 @@ from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service import acceptance_v5_online as online
 from binance_market_data_recorder.service import acceptance_v5_raw as raw
 from binance_market_data_recorder.service.acceptance import AcceptanceError, _publish
+from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_available
 from binance_market_data_recorder.service.acceptance_v5_io import V5_SCHEMA_VERSION, open_exact
 from binance_market_data_recorder.service.acceptance_v5_raw import qualify_task
 from binance_market_data_recorder.service.deployment_identity import DeploymentIdentity
-from binance_market_data_recorder.service.readiness import DeploymentReadinessResult
+from binance_market_data_recorder.service.readiness import (
+    DeploymentReadinessResult,
+    VpsReadinessEvaluator,
+)
 from binance_market_data_recorder.service.state import ServiceStateStore
 from binance_market_data_recorder.storage.acceptance_delta import DeltaSnapshot
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -21,6 +26,7 @@ from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.unit.test_deployment_identity import _identity
 from tests.unit.test_historical_reconnect_audit import seal_chunk, usdm_envelope
 from tests.unit.test_m22_9_acceptance import FakeClock, FakeManager
+from tests.v5_support import production_readiness, publish_ready_state
 
 
 class Evaluator:
@@ -86,6 +92,57 @@ def observer_fixture(tmp_path: Path) -> tuple[online.V5AcceptanceObserver, FakeC
 def advance(clock: FakeClock, seconds: int) -> None:
     clock.boot += seconds * 1_000_000_000
     clock.utc += seconds * 1_000_000_000
+
+
+@pytest.mark.parametrize("resume", [False, True])
+def test_direct_observer_guard_already_bounds_default_evaluator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, resume: bool
+) -> None:
+    observer, clock, _fake = observer_fixture(tmp_path)
+    probes = production_readiness(observer, clock)
+    # Direct API compatibility: unlike the corrected CLI, this caller omits
+    # catalog_ready. The pre-existing observer guard must remain effective.
+    legacy = VpsReadinessEvaluator(
+        expected_products=probes.expected_products,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        systemd_manager=probes.systemd_manager,
+        utc_clock_ns=probes.utc_clock_ns,
+        process_alive=probes.process_alive,
+        identity_verifier=probes.identity_verifier,
+        process_environment=probes.process_environment,
+    )
+    assert legacy.catalog_ready is not catalog_available
+    publish_ready_state(observer, clock)
+    if resume:
+        observer.start()
+        selected = online.resume_v5_observer(
+            evidence_root=observer.evidence_root,
+            data_root=observer.data_root,
+            identity=observer.identity,
+            manager=observer.manager,
+            evaluator=legacy,
+            clock=clock,
+            identity_verifier=observer.identity_verifier,
+            disk_usage=observer.disk_usage,
+            snapshot_unit=observer.snapshot_unit,
+        )
+    else:
+        selected = replace(observer, evaluator=legacy)
+    assert selected.evaluator is legacy
+    assert legacy.catalog_ready is catalog_available
+
+    def forbidden(_catalog: Catalog) -> Any:
+        pytest.fail("direct V5 observer lost its existing bounded readiness guard")
+
+    monkeypatch.setattr(Catalog, "integrity_check", forbidden)
+    if not resume:
+        _path, _sha, start = selected.start()
+        assert start["readiness"]["state"] == "READY"
+    advance(clock, 300)
+    publish_ready_state(selected, clock)
+    _path, _sha, sample = selected.sample()
+    assert sample["readiness"]["state"] == "READY"
 
 
 def test_sql_snapshot_budget_exhaustion_remains_explicit(tmp_path: Path) -> None:

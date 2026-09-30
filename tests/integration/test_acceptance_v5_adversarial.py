@@ -115,6 +115,11 @@ def test_audit_interruption_resume_reuses_exact_prefix(tmp_path: Path) -> None:
         "missing-shard",
         "duplicate-shard",
         "shard-byte",
+        "online-chain",
+        "stage-target",
+        "quiescence-corpus",
+        "raw-proof",
+        "stage-final",
     ],
 )
 def test_independent_verifier_rejects_rewritten_authority(tmp_path: Path, fault: str) -> None:
@@ -145,6 +150,21 @@ def test_independent_verifier_rejects_rewritten_authority(tmp_path: Path, fault:
         shard.unlink()
     elif fault == "duplicate-shard":
         shard.with_name("shard-duplicate.json").write_bytes(shard.read_bytes())
+    elif fault in {"online-chain", "stage-target", "quiescence-corpus", "stage-final"}:
+        path = {
+            "online-chain": observer.evidence_root / "sample-00000000.json",
+            "stage-target": observer.evidence_root / "stage-target.json",
+            "quiescence-corpus": root / "quiescence-corpus.json",
+            "stage-final": observer.evidence_root / "stage-final.json",
+        }[fault]
+        document = json.loads(path.read_bytes())
+        document["run_id"] = "tampered-run"
+        path.write_bytes(canonical_json(document))
+    elif fault == "raw-proof":
+        document = json.loads(shard.read_bytes())
+        manifest = next(record for record in document["records"] if record["family"] == "manifest")
+        manifest["authority"]["proof"]["local"]["stored_bytes"] += 1
+        shard.write_bytes(canonical_json(document))
     else:
         shard.write_bytes(shard.read_bytes().replace(b'"record_count":1', b'"record_count":2'))
     with pytest.raises(AcceptanceError):
@@ -169,3 +189,32 @@ def test_baseline_completed_resume_is_immutable(tmp_path: Path) -> None:
     )
     assert (root / "audit-root.json").read_bytes() == original
     verify_audit(root=root, identity=observer.identity, archive_roots={}, raw_unit=raw_unit)
+
+
+def test_finalization_rereads_live_raw_before_publishing_root(tmp_path: Path) -> None:
+    observer, _clock, manifest, _baseline = prepared(tmp_path)
+    local_raw = observer.data_root / json.loads(manifest.read_bytes())["relative_path"]
+    reads = 0
+
+    def mutate_after_producer(task: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        nonlocal reads
+        reads += 1
+        if reads == 2:
+            # The producer already completed its exact read. Its pinned proof
+            # must not replace the independent pre-publication live reread.
+            assert not (observer.evidence_root / "terminal-audit" / "audit-root.json").exists()
+            local_raw.unlink()
+        return raw_unit(task, **kwargs)
+
+    with pytest.raises(AcceptanceError, match="independent exact corpus replay"):
+        finalize(
+            evidence_root=observer.evidence_root,
+            identity=observer.identity,
+            archive_roots={},
+            probe=stopped,
+            identity_verifier=lambda _identity: None,
+            raw_unit=mutate_after_producer,
+        )
+    assert reads == 2
+    assert not (observer.evidence_root / "terminal-audit" / "audit-root.json").exists()
+    assert not (observer.evidence_root / "stage-final.json").exists()

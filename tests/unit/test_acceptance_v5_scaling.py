@@ -8,12 +8,13 @@ import pytest
 from binance_market_data_recorder.service import acceptance_v5_raw as raw
 from binance_market_data_recorder.service.acceptance import _publish, sha256_bytes
 from binance_market_data_recorder.service.acceptance_v5_io import V5_SCHEMA_VERSION, open_exact
+from binance_market_data_recorder.service.acceptance_v5_online import resume_v5_observer
 from binance_market_data_recorder.storage.acceptance_delta import DeltaSnapshot
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.unit.test_acceptance_v5_online import advance, observer_fixture
 from tests.unit.test_historical_reconnect_audit import seal_chunk, usdm_envelope
-from tests.v5_support import synthetic_history
+from tests.v5_support import production_readiness, publish_ready_state, synthetic_history
 
 
 def test_ten_thousand_history_is_not_reread_by_consecutive_online_samples(
@@ -21,6 +22,8 @@ def test_ten_thousand_history_is_not_reread_by_consecutive_online_samples(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observer, clock, _evaluator = observer_fixture(tmp_path)
+    observer.evaluator = production_readiness(observer, clock)
+    publish_ready_state(observer, clock)
     synthetic_history(observer.data_root, 10_000)
     layout = ensure_storage_layout(observer.data_root)
     with Catalog(layout.catalog) as catalog:
@@ -48,6 +51,7 @@ def test_ten_thousand_history_is_not_reread_by_consecutive_online_samples(
         "binance_market_data_recorder.audit.reconnect_boundaries.strict_manifest_inventory",
         forbidden,
     )
+    monkeypatch.setattr(Catalog, "integrity_check", forbidden)
 
     def counted(root: Path, relative: str) -> Any:
         nonlocal reads
@@ -71,8 +75,27 @@ def test_ten_thousand_history_is_not_reread_by_consecutive_online_samples(
         seal_chunk(layout, catalog, [usdm_envelope("one", 2)])
     for expected in (3, 0, 0):
         advance(clock, 300)
+        publish_ready_state(observer, clock)
         _path, _sha, sample = observer.sample()
         assert sum(len(page) for page in sample["delta_pages"].values()) == expected
         assert sample["delta_pending"] is False
+        assert sample["readiness"]["state"] == "READY"
+    resumed = resume_v5_observer(
+        evidence_root=observer.evidence_root,
+        data_root=observer.data_root,
+        identity=observer.identity,
+        manager=observer.manager,
+        evaluator=observer.evaluator,
+        clock=clock,
+        identity_verifier=observer.identity_verifier,
+        disk_usage=observer.disk_usage,
+        snapshot_unit=observer.snapshot_unit,
+        raw_unit=observer.raw_unit,
+    )
+    advance(clock, 300)
+    publish_ready_state(resumed, clock)
+    _path, _sha, sample = resumed.sample()
+    assert sample["readiness"]["state"] == "READY"
+    assert sum(len(page) for page in sample["delta_pages"].values()) == 0
     assert reads == 2  # one byte read plus one descriptor-only guard, independent of N
     assert hashes == 1

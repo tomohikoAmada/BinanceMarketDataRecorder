@@ -3822,7 +3822,8 @@ def verify_completed_stage(
 
         return verify_completed_v5_stage(
             stage_root, identity, expected_stage=expected_stage,
-            archive_roots=archive_root_resolver() if archive_root_resolver else {},
+            # Frozen V5 proof replay must not depend on current target discovery.
+            archive_roots={},
         )
     start, start_sha = _read_published(stage_root / "stage-start.json")
     if start.get("schema_version") == LEGACY_SCHEMA_VERSION:

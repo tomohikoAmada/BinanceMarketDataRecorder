@@ -48,6 +48,13 @@ transactions and share the cancellable work budget. There is no full manifest
 inventory, full chunk membership query, retired archive count, or operational
 history query in the ordinary path.
 
+The acceptance CLI injects `catalog_available` into the real
+`VpsReadinessEvaluator` constructor for V5 new stages, online resume and
+standalone readiness. The observer also retains its direct-API compatibility
+guard. V4 and non-V5 deployment readiness retain the legacy Catalog integrity
+check. Full Catalog integrity remains mandatory in the frozen baseline/terminal
+audit, outside the online cadence budget.
+
 `stage-start.json` freezes identity, run/stage, T0 UTC/BOOTTIME/boot ID,
 process incarnation, service instance, configured products, frozen policy,
 predecessor reference, and the first normal online delta. Each
@@ -145,11 +152,22 @@ endian ordinal. Roots store the chain digest/count, not a growing hash list.
 Catalog controls, family counts, shard chain/total, aggregate record SHA,
 continuation seed, findings/result, completion and verified byte counts. A
 separate exact reconstruction runs before a completed root is published.
-The reader streams private controls, Catalog, actual Raw/archive and shards;
-it independently reconstructs results and does not trust producer verdicts.
+That qualification reader streams private controls, Catalog, actual Raw/archive
+and shards; it independently reconstructs results and does not trust producer
+verdicts. Pre-publication self-check explicitly requires live Raw replay.
 Historical predecessor controls, online chains and summaries are reconstructed;
 their pinned Raw proofs must match the current full exact Raw verification,
 allowing legitimate archive retirement of old local paths.
+
+Completed-stage independent verification uses historical/control replay:
+reconstruct the frozen corpus, Catalog ledger, online chain, immutable shards,
+hash-bound Raw proof records, root aggregate and final eligibility. It does not
+reread terminal-time physical Raw locations or resolve the current live archive
+target map. Thus authorized archive retirement after qualification cannot
+invalidate an immutable historical stage. CLI `acceptance verify` (including
+`--baseline`) has this historical meaning; it is not a new integrity audit of
+current production bytes. Evidence tampering still fails closed. Baseline and
+finalize commands, including resumed qualification, retain live verification.
 
 Independent terminal replay also reconstructs each online high-water's open
 chunk and unfinished archive state, verifies immutable causal companion rows,
