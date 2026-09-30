@@ -35,7 +35,7 @@ Current and historical decisions:
 - [ADR-0031: Fixed seven-symbol multi-symbol expansion](0031-fixed-seven-symbol-multi-symbol-expansion.md)
 - [ADR-0032: Configurable product set](0032-configurable-product-set.md)
 - [ADR-0033: M22.9 in-stage readiness recovery deadline](0033-m22-9-in-stage-readiness-recovery-deadline.md)
-- [ADR-0034: M22.9 V5 bounded online observation and terminal full audit — proposed](0034-m22-9-v5-bounded-online-terminal-audit.md)
+- [ADR-0034: M22.9 V5 bounded online observation and terminal full audit — accepted policy authority; implementation pending](0034-m22-9-v5-bounded-online-terminal-audit.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

@@ -1,13 +1,20 @@
 # ADR-0034: M22.9 V5 bounded online observation and terminal full audit
 
-- **Status:** PROPOSED FOR INDEPENDENT REVIEW
+- **Status:** Accepted policy authority; implementation pending
 - **Date:** 2026-09-29
 - **Scope:** M22.9 acceptance evidence and qualification policy; documentation only
 - **Base:** `354f5199eda687dfe2223b0b481c8de669dfdabf` / tree `101703dbd6a6da6f8633f2a46e1323ab5b87188c`
 
-PR #77's independent architecture review returned `P0=0`, `P1=2`, `P2=1`,
-`P3=0`, `CHANGES_REQUIRED`. The V5 direction remains accepted for targeted
-correction; this ADR remains a proposal until independent re-review.
+The independent review accepted PR #77 at reviewed head
+`0a03bd2f54af2d516ea6f3ef7861f524c72f17da`: `P0=0`, `P1=0`,
+`P2=1`, `P3=0`; `PR_77_ARCHITECTURE_REVIEW=ACCEPT` and
+`ADR_0034_ARCHITECTURE=ACCEPT`. The reviewed P1-A
+`QUIESCENCE_CORPUS_FREEZE` and P1-B `CROSS_CURSOR_CAUSALITY` corrections are
+accepted. The nonblocking architecture-monitoring P2 is
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY`. Future implementation qualification
+must measure baseline and terminal audit throughput, Raw and archive bytes/sec,
+peak RSS, and total terminal audit duration at the current production corpus
+size; it cannot weaken terminal full-integrity semantics.
 
 ## Context and decision
 
@@ -86,7 +93,7 @@ order is only a deterministic baseline order; newly committed `event_seq` values
 online insertion cursor. Migration, trigger, FK/index checks, and rollback must be
 atomic and fail closed. Updates or deletions of old rows have no legitimate online
 delta; terminal verification detects them against the prior audit authority. No other
-Catalog schema or writer-format change is authorized by this proposal.
+Catalog schema or writer-format change is authorized by this decision.
 
 Each online observation uses **one bounded SQLite read transaction** to freeze all
 three high-water marks, read one bounded page per cursor family, and perform causally
@@ -439,5 +446,6 @@ V5 implementation will change source, wheel, and deployment identity. The old V4
 remains historical ACCEPT but is **not** a valid V5 12h predecessor; old V4 12h remains
 historical INCOMPLETE. After separate implementation, review, deployment and live
 authorization, the required chain is fresh identity → baseline audit → readiness → 2h →
-12h → 24h → 72h → 168h. This ADR is a proposal for independent review; it authorizes no
-code change, VPS operation, Recorder start, Formal T0, deployment, or retry.
+12h → 24h → 72h → 168h. Architecture acceptance authorizes no code change,
+VPS operation, Recorder start, Formal T0, deployment, or retry. V5 implementation
+requires its own task and review.

@@ -1,15 +1,15 @@
 # VPS Operations
 
-## V5 proposed post-target procedure — not authorized for execution
+## V5 accepted architecture for post-target procedure — not authorized for execution
 
-The current docs-only [ADR-0034 proposal](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
+The accepted, docs-only [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
 defines a future two-phase M22.9 stage. Its detached observer would publish an
 immutable online `stage-target.json` at the timed BOOTTIME boundary. Only then
 would an operator gracefully stop and disable Recorder, drain and pause archive
 mutations, verify zero active partials and Catalog/target identity, and run a
 separate quiescent `deployment acceptance finalize` full audit. Audit wall time
 earns no Formal credit. The first V5 2h would require a stopped baseline audit
-before T0. This text is a **proposal**, not an instruction to act on the VPS;
+before T0. This accepted architecture is **not** an instruction to act on the VPS;
 no V5 implementation, deployment, Recorder start, or Formal retry is authorized.
 
 The historical V4 2h remains ACCEPT; V4 12h remains INCOMPLETE after its

@@ -5,7 +5,7 @@ current GitHub engineering authority, the older deployed/qualified artifact,
 and the current multi-symbol qualification program. Documentation is not deployment or live
 traffic authorization.
 
-## Current proposal — M22.9 V5 bounded online / terminal audit (2026-09-29)
+## Current milestone — M22.9 V5 architecture reviewed complete (2026-09-30)
 
 Verified live GitHub `main` is
 `354f5199eda687dfe2223b0b481c8de669dfdabf` / tree
@@ -17,28 +17,37 @@ zero accepted seconds): sample 96→97 took `627.60286927` seconds and the
 installed verifier rejects its gap. No historical result is revised.
 
 V4's AcceptanceObserver repeats O(total historical manifests) work per sample;
-the Recorder, scheduler, and archive were not found defective. The proposed
-`m22.9-acceptance-evidence.v5` separates bounded 300/600-second online
+the Recorder, scheduler, and archive were not found defective. Accepted ADR-0034
+freezes `m22.9-acceptance-evidence.v5`: it separates bounded 300/600-second online
 observation from a post-target, quiescent exact full-integrity audit. Any old
 manifest mutation/loss present in the exact private control corpus frozen at
-quiescence must fail before stage eligibility, a declared
-V5 detection-timing change. ADR-0033's 900-second global readiness episode
-is retained. The proposal is docs-only, not implemented or deployed; the VPS
-was not touched and no Formal retry is authorized. A reviewed V5 artifact
-will require a fresh identity, baseline audit, readiness, and full
+quiescence must fail before stage eligibility. This is a declared V5 detection
+timing change. ADR-0033's 900-second global readiness episode
+is retained. Independent review accepted PR #77 at head
+`0a03bd2f54af2d516ea6f3ef7861f524c72f17da` (`P0=0`, `P1=0`,
+`P2=1`, `P3=0`), including corpus freeze and cross-cursor causality.
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY` is a nonblocking P2 requiring measured
+audit throughput, Raw/archive bytes/sec, peak RSS, and total duration before
+implementation qualification. The architecture closeout is docs-only; V5 is
+not implemented or deployed, the VPS was not touched, and no Formal retry is
+authorized. A future V5 artifact will require a fresh identity, baseline
+audit, readiness, and full
 2h→12h→24h→72h→168h chain. See [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
 and the [V5 architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
 
 ```text
 MILESTONE=M22_9_V5_BOUNDED_ONLINE_TERMINAL_AUDIT_ARCHITECTURE
-MILESTONE_STATUS=PROPOSED_FOR_INDEPENDENT_REVIEW
+MILESTONE_STATUS=REVIEWED_COMPLETE
+ARCHITECTURE=ACCEPT
 V5_IMPLEMENTED=NO
+V5_DEPLOYED=NO
+FORMAL_V5_STARTED=NO
 VPS_TOUCHED=NO
 FORMAL_RETRY_STARTED=NO
 V4_2H_HISTORICAL_ACCEPT=YES
 V4_12H_HISTORICAL_INCOMPLETE=YES
 V5_FRESH_CHAIN_REQUIRED=YES
-NEXT=INDEPENDENT_V5_ARCHITECTURE_REVIEW
+NEXT=M22_9_V5_IMPLEMENTATION
 ```
 
 ## Previous milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)

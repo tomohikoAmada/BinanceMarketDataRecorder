@@ -1,6 +1,6 @@
 # Milestone Plan
 
-## Current candidate milestone — M22.9 V5 architecture proposal (2026-09-29)
+## Current milestone — M22.9 V5 architecture reviewed complete (2026-09-30)
 
 Exact live GitHub base: `354f5199eda687dfe2223b0b481c8de669dfdabf` /
 tree `101703dbd6a6da6f8633f2a46e1323ab5b87188c`. This milestone is
@@ -11,7 +11,7 @@ documentation only. The V4 2h final remains historical ACCEPT
 sample 96→97 `627.60286927` seconds). The installed verifier rejection is
 unchanged.
 
-[ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md) proposes
+[ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md) freezes
 `m22.9-acceptance-evidence.v5`: bounded durable Catalog/manifest deltas during
 the 300-second target/600-second maximum online cadence, an immutable target
 observation, then operator-controlled quiescence and streamed exact full
@@ -21,19 +21,27 @@ present there must fail before stage eligibility. PR #77's targeted P1
 correction adds immutable private manifest snapshots and same-snapshot
 cross-cursor causal authority. ADR-0033's 900-second readiness policy
 remains unchanged. The first V5 2h needs a stopped full baseline; later stages
-bind predecessor terminal roots and exact deltas. The next milestone is
-independent architecture review, not code implementation or live retry.
-See the [proposal record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+bind predecessor terminal roots and exact deltas. Independent review accepted
+PR #77 at reviewed head `0a03bd2f54af2d516ea6f3ef7861f524c72f17da`
+with `P0=0`, `P1=0`, `P2=1`, `P3=0`; P1-A and P1-B are accepted. The remaining
+nonblocking P2, `TERMINAL_FULL_RAW_AUDIT_SCALABILITY`, requires baseline and
+terminal throughput, Raw/archive bytes/sec, peak RSS, and total duration
+measurements during implementation qualification. It cannot weaken the exact
+audit. The next milestone is `M22_9_V5_IMPLEMENTATION`; deployment and Formal
+remain separate. See the [architecture review record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
 
 ```text
 MILESTONE=M22_9_V5_BOUNDED_ONLINE_TERMINAL_AUDIT_ARCHITECTURE
-MILESTONE_STATUS=PROPOSED_FOR_INDEPENDENT_REVIEW
+MILESTONE_STATUS=REVIEWED_COMPLETE
+ARCHITECTURE=ACCEPT
 V5_SCHEMA=m22.9-acceptance-evidence.v5
 V5_IMPLEMENTED=NO
+V5_DEPLOYED=NO
+FORMAL_V5_STARTED=NO
 VPS_TOUCHED=NO
 FORMAL_RETRY_STARTED=NO
 24H_STARTED=NO
-NEXT=INDEPENDENT_V5_ARCHITECTURE_REVIEW
+NEXT=M22_9_V5_IMPLEMENTATION
 ```
 
 ## Previous candidate milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
