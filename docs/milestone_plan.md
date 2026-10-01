@@ -1,5 +1,32 @@
 # Milestone Plan
 
+## Current development plan — architecture review through 24h (2026-10-01)
+
+The owner requested a full code review and a practical MVP plan ending at an
+independently reviewed Formal 24h PASS. The documentation-only review fixes its
+basis at main `d6f37576f5b044bf578501cba291fe889e45a919` and changes no runtime
+or operational authority. See the [review and reproductions](reviews/2026-10-01-architecture-review.md)
+and [detailed 24h plan](qualification_to_24h_plan.md).
+
+| Milestone | Scope | Status |
+|---|---|---|
+| Q0 | Architecture review, six offline finding probes, qualification plan | Delivered; owner review pending |
+| Q1 | Supervise heartbeat failure, isolate normalized identities, robust CLI discovery | Planned |
+| Q2 | Sustainable delta consumption, practical exact audit, explicit corpus/profile decision | Planned |
+| Q3 | Frozen artifact, exact deployment, passing baseline and fresh readiness | Planned |
+| Q4 | Formal 2h, complete terminal audit and independent eligible final | Planned |
+| Q5 | Formal 12h on the same artifact/profile | Planned |
+| Q6 | Formal 24h, planned rotation/recovery, terminal verification and closeout | Planned |
+
+Do not repeat the unchanged live workflow: the reproduced single-page delta
+capacity problem must be resolved before T0. A fresh bounded corpus is an MVP
+recommendation requiring an explicit profile/corpus decision; no existing data
+is reset, no historic audit risk is closed, and canonical deployment paths do
+not acquire an implicit exception. The stopped baseline remains incomplete,
+the monitor remains paused, and `PRODUCTION_READY=NO`. This task ends at 24h;
+72h/168h are separate follow-up scope. Historical checkpoints below retain
+their time-local statuses and do not authorize execution of the new plan.
+
 ## Current checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
 
 PR #78 merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`; independent

@@ -21,6 +21,21 @@ The final implementation review accepted head
 `227b09aa3e328f890e8178603bf493013d8d91f5` with P0=0, P1=0, P2=1, P3=0.
 P2 is `TERMINAL_FULL_RAW_AUDIT_SCALABILITY` and remains open.
 
+## Current development proposal
+
+The October 1 owner-requested [architecture review](reviews/2026-10-01-architecture-review.md)
+reproduces three P1 issues: inadequate per-observation delta capacity, unsupervised
+heartbeat failure and cross-product normalized deduplication. Three P2 findings
+cover normalization fan-in, retained quality audits and inaccessible-cwd CLI
+discovery. They are open findings, not implemented fixes.
+
+The [24h MVP plan](qualification_to_24h_plan.md) orders small correctness fixes,
+sustainable qualification and an explicit corpus decision before a frozen
+artifact and separate 2h → 12h → 24h gates. It proposes a bounded fresh corpus
+while preserving old data; its required path/profile decision is not yet made.
+No deployment, baseline restart, Formal T0, data reset or monitor resume occurs
+in this documentation task. The current operational checkpoint below is unchanged.
+
 ## Current operations
 
 The merged V5 artifact is installed on `greencloud-tokyo-01`. On October 1 the
