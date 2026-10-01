@@ -21,17 +21,19 @@ The final implementation review accepted head
 `227b09aa3e328f890e8178603bf493013d8d91f5` with P0=0, P1=0, P2=1, P3=0.
 P2 is `TERMINAL_FULL_RAW_AUDIT_SCALABILITY` and remains open.
 
-## Current development proposal
+## Current development plan
 
 The October 1 owner-requested [architecture review](reviews/2026-10-01-architecture-review.md)
 reproduces three P1 issues: inadequate per-observation delta capacity, unsupervised
 heartbeat failure and cross-product normalized deduplication. Three P2 findings
 cover normalization fan-in, retained quality audits and inaccessible-cwd CLI
 discovery. F1 now has a local implemented candidate; F2–F6 remain open fixes or
-follow-up resource work. No new independent implementation review is claimed.
+follow-up resource work. The [October 2 recheck](reviews/2026-10-02-plan-recheck.md)
+adds F7, an enabled auxiliary FAILED omitted from aggregate degraded health.
+No new independent implementation review is claimed.
 
 The owner selected safe old-data cleanup followed by an independent fresh corpus.
-The [38h MVP plan](qualification_to_24h_plan.md) requires 2h + 12h + 24h all PASS
+The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h all PASS
 with complete terminal/independent verification. Next is Q1 correctness fixes,
 release review and Q3 safe cleanup/new canonical Catalog; no old archive is
 implicitly destroyed or imported into the new corpus.
@@ -75,11 +77,11 @@ compatibility analysis. Historical evidence stays available for diagnosis.
 
 Read these documents in order:
 
-1. [Developer guide](developer_guide.md).
-2. [Project contract](project_contract.md) and [architecture](architecture.md).
-3. The relevant subsystem contract and ADR.
-4. [V5 contract](acceptance_evidence_v5.md) for acceptance work.
-5. [Milestone plan](milestone_plan.md) and [risk register](risk_register.md).
+1. The current section of [milestone plan](milestone_plan.md) and [risk register](risk_register.md).
+2. [Developer guide](developer_guide.md).
+3. [Project contract](project_contract.md) and [architecture](architecture.md).
+4. The relevant subsystem contract and ADR.
+5. [V5 contract](acceptance_evidence_v5.md) for acceptance work.
 
 ## Remaining work
 
@@ -88,7 +90,8 @@ Read these documents in order:
   it establishes neither a full integrity PASS nor completed throughput.
 - Implement Q1, independently review the optimization/ADR candidate, and pass
   exact-artifact release/cloud gates. The owner has selected safe cleanup/new
-  corpus; it has not been executed. Do not resume the unchanged interrupted audit.
+  corpus; it has not been executed. Warm-up precedes the authoritative stopped
+  baseline. Do not resume the unchanged interrupted audit.
 - If qualification is restarted, verify the exact artifact and data scope,
   complete its baseline, obtain fresh readiness for every configured product,
   then execute the selected stage and terminal audit. V5 online observation

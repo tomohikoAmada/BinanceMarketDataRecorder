@@ -111,8 +111,9 @@ Go 可用现成 [fxamacker/cbor](https://github.com/fxamacker/cbor) 做确定性
 
 硬件判断按云端 CPU、steal、iowait/磁盘延迟、RSS/PSI、事件率一起做：
 CPU 满且可并行才考虑更多核；RSS/swap/PSI 持续恶化才考虑更多内存；I/O 等待主导才
-考虑更快磁盘。仅旧 baseline 用不到一个核心、程序 RSS 不到约 0.5 GB 的证据，
-不支持把当前问题归因于“4 核/6 GB 不够”。未采购/升级服务器，也未引入原生依赖。
+考虑更快磁盘。旧 baseline 用不到一个核心、采样进程 RSS 不到约 0.5 GB 的证据来自
+Recorder 停止时的审计，不能证明 live Collector 的余量；它不支持直接把当前问题
+归因于“4 核/6 GB 不够”，也未证明服务器已足够。未采购/升级服务器，未引入原生依赖。
 
 ## 验证与剩余工作
 
@@ -127,3 +128,6 @@ canonical corpus 初始化。保留历史 Catalog/manifest、现有已核验归�
 可恢复副本；清理从验收范围移出旧数据，不隐含删除唯一归档副本。任何最终物理删除
 须对应明确的可删除对象和核验记录。未解决的旧库 full-audit scalability R-078
 仍独立保留，fresh corpus 通过不会替它关闭。详见 [38h 计划](../qualification_to_24h_plan.md)。
+
+后续 [计划复核](2026-10-02-plan-recheck.md) 限定了上述小样本结论，并把唯一当前
+计划合并到 [milestone_plan.md](../milestone_plan.md)。旧计划文件只保留兼容链接。

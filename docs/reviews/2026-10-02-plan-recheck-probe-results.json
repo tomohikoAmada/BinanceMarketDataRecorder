@@ -1,0 +1,11 @@
+{
+  "kind": "OFFLINE_REVIEW_REPRODUCTION_NOT_FORMAL_CREDIT",
+  "core_ready": true,
+  "network_status": "ALL_MARKETS_READY",
+  "global_usdm_side_data": {
+    "funding_info": {
+      "enabled": true,
+      "status": "FAILED"
+    }
+  }
+}

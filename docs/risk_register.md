@@ -41,6 +41,15 @@ and the [sequenced remediation plan](qualification_to_24h_plan.md).
 | F5: reconstructor retains every quality audit in memory | P2; 10,000 duplicate updates retain 10,000 audits | Measure stable-session growth; bounded production history must preserve durable gap/checkpoint facts |
 | F6: inaccessible repository-discovery cwd crashes CLI | P2; PermissionError reproduction and owner-stop operator incident | Q1: skip inaccessible optional Git candidates, retain data-root permission checks |
 
+October 2 [plan recheck](reviews/2026-10-02-plan-recheck.md) adds **F7 (P2)**:
+enabled auxiliary `FAILED` is visible in detail but omitted from aggregate
+DEGRADED health while cores are READY. An offline state-builder reproduction
+confirms this summary inconsistency. Q1 corrects health without stopping cores.
+The recheck also requires live F5 memory disposition, warm-up before the
+authoritative baseline, cumulative audit/capacity forecasts and quiet-window
+protection through identity-sensitive audit publication. These are current
+[plan](milestone_plan.md) gates; none grants Formal credit.
+
 ## Existing operational controls
 
 Exact Raw bytes, gap evidence, checksums, verified archive retirement and

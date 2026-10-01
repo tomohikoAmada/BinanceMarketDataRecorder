@@ -16,6 +16,10 @@ remains incomplete.
 See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 [developer handoff](docs/PROJECT_HANDOFF.md).
 
+Development follows the current [milestone plan](docs/milestone_plan.md): small
+correctness fixes, reviewed release and fresh-corpus preparation, then separate
+2h + 12h + 24h acceptance, totaling 38 accepted hours. Audit time is additional.
+
 ## Features
 
 - Configurable Spot and USD-M products in one Recorder process.
