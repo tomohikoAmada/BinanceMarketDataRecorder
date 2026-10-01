@@ -33,6 +33,7 @@ from ..audit.reconnect_boundaries import (
     _frame_identity,
     _overlap_pair,
 )
+from ..domain.event import EventEnvelope
 from ..spool.format import (
     FRAME_PREFIX,
     FRAME_PREFIX_WITHOUT_CRC,
@@ -64,7 +65,10 @@ class AuditInterrupted(AcceptanceError):
 
 
 def _read_exact(source: BinaryIO, size: int) -> bytes:
-    result = bytearray()
+    block = source.read(size)
+    if len(block) == size:
+        return block
+    result = bytearray(block)
     while len(result) < size:
         block = source.read(size - len(result))
         if not block:
@@ -91,7 +95,9 @@ def scan_raw(
     stats = ChunkStatistics()
     digest = hashlib.sha256()
     size = 0
-    first = previous = previous_previous = None
+    first = None
+    previous: tuple[int, EventEnvelope] | None = None
+    previous_previous: tuple[int, EventEnvelope] | None = None
     counts = {
         kind: 0 for kind in (EXPLICIT_SEQUENCE_GAP, BLUE_GREEN_OVERLAP, UNMARKED_RECONNECT, UNKNOWN)
     }
@@ -107,6 +113,7 @@ def scan_raw(
         before_scan = _file_identity(os.fstat(source.fileno()))
         with zstandard.ZstdDecompressor().stream_reader(source, closefd=False) as decoded:
             header, header_bytes = decode_chunk_header(decoded)
+            chunk_id = str(header.chunk_id)
             expected_header = {
                 "chunk_id": str(header.chunk_id),
                 "created_at_utc_ns": header.created_at_utc_ns,
@@ -149,17 +156,23 @@ def scan_raw(
                     or not set(envelope.source_sequence) <= sequence_keys
                 ):
                     raise AcceptanceError("Raw statistics outside manifest authority")
-                frame = _frame_identity(str(header.chunk_id), stats.record_count, envelope)
-                if websocket and previous and previous.connection_id != frame.connection_id:
+                index = stats.record_count
+                if first is None:
+                    first = _frame_identity(chunk_id, index, envelope)
+                # Full validation/statistics still cover every frame. Boundary hashes and
+                # FrameIdentity objects are needed only at transitions and the retained tail.
+                if websocket and previous and previous[1].connection_id != envelope.connection_id:
+                    frame = _frame_identity(chunk_id, index, envelope)
+                    old_frame = _frame_identity(chunk_id, *previous)
                     if _frame_has_gap(frame) or (
-                        _frame_has_gap(previous)
+                        _frame_has_gap(old_frame)
                         and previous_previous is not None
-                        and previous_previous.connection_id == previous.connection_id
+                        and previous_previous[1].connection_id == previous[1].connection_id
                     ):
                         kind = EXPLICIT_SEQUENCE_GAP
-                    elif _frame_has_gap(previous):
+                    elif _frame_has_gap(old_frame):
                         kind = UNKNOWN
-                    elif _overlap_pair(previous, frame):
+                    elif _overlap_pair(old_frame, frame):
                         kind = BLUE_GREEN_OVERLAP
                     else:
                         kind = UNMARKED_RECONNECT
@@ -176,14 +189,13 @@ def scan_raw(
                         bytes.fromhex(transition_digest)
                         + canonical_json(
                             {
-                                "old": _frame_document(previous),
+                                "old": _frame_document(old_frame),
                                 "new": _frame_document(frame),
                                 "kind": kind,
                             }
                         )
                     )
-                first = first or frame
-                previous_previous, previous = previous, frame
+                previous_previous, previous = previous, (index, envelope)
                 stats.add(envelope)
                 digest.update(prefix)
                 digest.update(body)
@@ -222,8 +234,12 @@ def scan_raw(
         "uncompressed_bytes": size,
         "uncompressed_sha256": digest.hexdigest(),
         "first_frame": _frame_document(first) if first else None,
-        "last_frame": _frame_document(previous) if previous else None,
-        "penultimate_frame": _frame_document(previous_previous) if previous_previous else None,
+        "last_frame": _frame_document(_frame_identity(chunk_id, *previous)) if previous else None,
+        "penultimate_frame": (
+            _frame_document(_frame_identity(chunk_id, *previous_previous))
+            if previous_previous
+            else None
+        ),
         "intra_transition_counts": counts,
         "intra_transition_digest": transition_digest,
         "intra_transition_time_ranges": transition_times,
@@ -374,29 +390,38 @@ def qualify_task(
 
 def capture_snapshot(task: Mapping[str, Any]) -> dict[str, Any]:
     """Fixed pages and indexed companions in one read snapshot, no filesystem work."""
-    from ..storage.acceptance_delta import DeltaSnapshot
+    from ..storage.acceptance_delta import CURSORS, SQL_PAGE_CAP, DeltaSnapshot
     from .acceptance_v5_corpus import read_catalog
     from .acceptance_v5_delta import FAMILIES
 
     candidates: dict[str, list[dict[str, Any]]] = {family: [] for family in FAMILIES}
     targets: dict[str, dict[str, Any]] = {}
+    max_pages = task.get("max_pages_per_family", 1)
+    if type(max_pages) is not int or max_pages not in {1, 4}:
+        raise AcceptanceError("unsupported delta snapshot batch bound")
     with read_catalog(Path(task["catalog_path"])) as connection:
         connection.execute("BEGIN")
         snapshot = DeltaSnapshot(connection)
         for family in FAMILIES:
-            for row in snapshot.page(family, task["processed"][family]):
-                companions = snapshot.companions(family, row)
-                candidates[family].append({"row": row, "companions": companions})
-                archive = companions.get("archive")
-                if archive and archive.get("target"):
-                    target = archive["target"]
-                    targets[target["storage_id"]] = {
-                        "target": target,
-                        "control": snapshot.exact(
-                            "storage_control", "storage_id", target["storage_id"]
-                        )
-                        or {"state": "ACTIVE"},
-                    }
+            cursor = task["processed"][family]
+            for _ in range(max_pages):
+                page = snapshot.page(family, cursor)
+                for row in page:
+                    companions = snapshot.companions(family, row)
+                    candidates[family].append({"row": row, "companions": companions})
+                    archive = companions.get("archive")
+                    if archive and archive.get("target"):
+                        target = archive["target"]
+                        targets[target["storage_id"]] = {
+                            "target": target,
+                            "control": snapshot.exact(
+                                "storage_control", "storage_id", target["storage_id"]
+                            )
+                            or {"state": "ACTIVE"},
+                        }
+                if len(page) < SQL_PAGE_CAP:
+                    break
+                cursor = page[-1][CURSORS[family][1]]
         return {
             "high_water": snapshot.high_water,
             "candidates": candidates,

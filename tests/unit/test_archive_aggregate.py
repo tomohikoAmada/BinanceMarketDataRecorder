@@ -10,9 +10,50 @@ from binance_market_data_recorder.archive import (
     ArchiveManager,
     ArchiveTarget,
 )
+from binance_market_data_recorder.cli import _archive_status
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import StorageLayout
 from tests.archive_support import prepare_archive
+
+
+def test_compact_archive_status_preserves_totals_without_loading_transactions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepared = prepare_archive(tmp_path, chunk_count=4)
+    with Catalog(prepared.layout.catalog) as catalog:
+        manager = ArchiveManager(layout=prepared.layout, catalog=catalog, target=prepared.target)
+        for _ in range(3):
+            assert manager.run_once().state == "LOCAL_DELETED"
+        transactions = catalog.archive_transactions()
+        catalog.record_archive_error(
+            str(transactions[0]["transaction_id"]), "DISAPPEARED_DURING_COPY"
+        )
+
+        def forbidden(*_args: object, **_kwargs: object) -> list[dict[str, object]]:
+            pytest.fail("default status materialized archive transactions")
+
+        with monkeypatch.context() as scoped:
+            scoped.setattr(catalog, "archive_transactions", forbidden)
+            status = _archive_status(catalog)
+        assert status["transaction_count"] == 3
+        assert status["transactions_by_state"] == {"LOCAL_DELETED": 3}
+        assert status["status"] == "DISAPPEARED_DURING_COPY"
+        assert status["backlog_files"] == 1
+        assert "transactions" not in status
+        detailed = _archive_status(catalog, details=True, limit=1, offset=1)
+        assert detailed["transactions"] == transactions[1:2]
+        assert detailed["transaction_count"] == 3
+        assert detailed["transactions_included"] is True
+        assert catalog.archive_transaction_summary(storage_id="other")["transaction_count"] == 0
+
+
+@pytest.mark.parametrize(("limit", "offset"), [(0, 0), (1001, 0), (1, -1)])
+def test_archive_detail_page_rejects_invalid_bounds(
+    tmp_path: Path, limit: int, offset: int
+) -> None:
+    prepared = prepare_archive(tmp_path, chunk_count=0)
+    with Catalog(prepared.layout.catalog) as catalog, pytest.raises(ValueError):
+        _archive_status(catalog, details=True, limit=limit, offset=offset)
 
 
 def _stored_bytes(catalog: Catalog, chunk_ids: tuple[str, ...]) -> int:
@@ -73,9 +114,7 @@ def test_archive_aggregate_mixed_unassigned_and_target_inflight(
             catalog=catalog,
             layout=prepared.layout,
         )
-        transaction = catalog.oldest_incomplete_archive_transaction(
-            prepared.target.storage_id
-        )
+        transaction = catalog.oldest_incomplete_archive_transaction(prepared.target.storage_id)
         assert transaction is not None
         inflight_bytes = transaction["stored_bytes"]
         assert isinstance(inflight_bytes, int)
@@ -118,6 +157,7 @@ def test_archive_aggregate_never_calls_chunks_in_states(
 ) -> None:
     prepared = prepare_archive(tmp_path, chunk_count=5)
     with Catalog(prepared.layout.catalog) as catalog:
+
         def forbidden(*_args: object, **_kwargs: object) -> object:
             raise AssertionError("archive_aggregate loaded Chunk rows")
 
@@ -149,10 +189,7 @@ def test_archive_aggregate_many_historical_rows_stays_aggregate_only(
 
     normalized = [" ".join(statement.lower().split()) for statement in statements]
     assert not any("select * from chunks" in statement for statement in normalized)
-    assert not any(
-        "select * from archive_transactions" in statement
-        for statement in normalized
-    )
+    assert not any("select * from archive_transactions" in statement for statement in normalized)
     assert aggregate["local_deleted_files"] == 100
     assert aggregate["backlog_files"] == 0
 
@@ -195,9 +232,7 @@ def test_archive_aggregate_latest_error_by_updated_at(tmp_path: Path) -> None:
             catalog=catalog,
             layout=prepared.layout,
         )
-        transaction = catalog.oldest_incomplete_archive_transaction(
-            prepared.target.storage_id
-        )
+        transaction = catalog.oldest_incomplete_archive_transaction(prepared.target.storage_id)
         assert transaction is not None
         catalog.record_archive_error(
             str(transaction["transaction_id"]),

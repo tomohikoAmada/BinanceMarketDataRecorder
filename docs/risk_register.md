@@ -1,6 +1,7 @@
 # Risk Register
 
-Updated October 1, 2026. Current code is merged through PR #78; current operations
+Updated October 2, 2026. Merged/deployed base is PR #78; a local optimization
+candidate is implemented and not deployed. Current operations
 are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
 
 ## Current follow-up
@@ -18,22 +19,25 @@ are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
 The owner stopped live qualification and paused its monitor. Next development
 work should use the [handoff](PROJECT_HANDOFF.md) and retained
 [partial production measurements](milestone_acceptance/M22.9-v5-deployment-owner-stop.md).
-An empty-data qualification would exercise a different starting corpus; its scope
-has not been selected. No baseline integrity PASS or FAIL was published.
+The owner selected safe cleanup and a fresh independent qualification corpus.
+Execution has not occurred; existing archive/evidence and historical R-078 remain.
+No old baseline integrity PASS or FAIL was published. See the
+[cloud diagnosis](reviews/2026-10-02-cloud-performance-and-38h.md) and [38h plan](qualification_to_24h_plan.md).
 
 ## October 1 architecture-review findings
 
 These are independently reproduced review findings against main
 `d6f37576f5b044bf578501cba291fe889e45a919`, not claims of observed V5 Formal
-failure. All remain open. See [details and probe results](reviews/2026-10-01-architecture-review.md)
+failure. F1 has an implemented candidate pending review/cloud qualification;
+others remain open. See [details and probe results](reviews/2026-10-01-architecture-review.md)
 and the [sequenced remediation plan](qualification_to_24h_plan.md).
 
 | Finding | Priority / evidence | Planned control |
 |---|---|---|
-| F1: V5 single-page service rate below normal four-product row arrival | P1; two real seal/archive windows leave 224 then 448 chunk transitions pending | Q2: measure supported rotation tuning or revise bounded consumption policy; verify sustained catch-up |
+| F1: V5 single-page service rate below normal four-product row arrival | P1; initial reproduction remains historical; ADR-0035 candidate consumes 480/300 rows and drains a missed cadence in real seal/archive fixtures | Independent review and complete exact-artifact cloud observations before T0; no live closure claimed |
 | F2: failed heartbeat leaves collectors running and normal shutdown status | P1; injected state-write failure through ServiceRuntime | Q1: supervise required task failure and unexpected return; preserve orderly stop and FAILED reason |
 | F3: normalized keys omit product/stream identity in some event kinds | P1; two distinct-symbol snapshots collapse to one output | Q1: consistent namespaced dedup identity and versioned immutable builds |
-| F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 24h: bounded hierarchical fan-in |
+| F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 38h qualification: bounded hierarchical fan-in |
 | F5: reconstructor retains every quality audit in memory | P2; 10,000 duplicate updates retain 10,000 audits | Measure stable-session growth; bounded production history must preserve durable gap/checkpoint facts |
 | F6: inaccessible repository-discovery cwd crashes CLI | P2; PermissionError reproduction and owner-stop operator incident | Q1: skip inaccessible optional Git candidates, retain data-root permission checks |
 

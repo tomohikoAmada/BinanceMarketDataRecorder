@@ -10,7 +10,11 @@ import pytest
 from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service import acceptance_v5_online as online
 from binance_market_data_recorder.service import acceptance_v5_raw as raw
-from binance_market_data_recorder.service.acceptance import AcceptanceError, _publish
+from binance_market_data_recorder.service.acceptance import (
+    AcceptanceError,
+    _publish,
+    canonical_json,
+)
 from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_available
 from binance_market_data_recorder.service.acceptance_v5_io import V5_SCHEMA_VERSION, open_exact
 from binance_market_data_recorder.service.acceptance_v5_raw import qualify_task
@@ -92,6 +96,17 @@ def observer_fixture(tmp_path: Path) -> tuple[online.V5AcceptanceObserver, FakeC
 def advance(clock: FakeClock, seconds: int) -> None:
     clock.boot += seconds * 1_000_000_000
     clock.utc += seconds * 1_000_000_000
+
+
+def test_delta_policy_cannot_change_after_t0(tmp_path: Path) -> None:
+    observer, clock, _evaluator = observer_fixture(tmp_path)
+    observer.start()
+    advance(clock, 300)
+    path, _, sample = observer.sample()
+    sample["delta_policy"] = {**sample["delta_policy"], "max_pages_per_family":1}
+    path.write_bytes(canonical_json(sample))
+    with pytest.raises(AcceptanceError, match="delta policy changed"):
+        online.replay_online(observer.evidence_root, observer.identity, require_target=False)
 
 
 @pytest.mark.parametrize("resume", [False, True])

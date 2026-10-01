@@ -9,9 +9,19 @@ import pytest
 from binance_market_data_recorder.service.acceptance import AcceptanceError
 from binance_market_data_recorder.service.acceptance_v5_delta import (
     ARCHIVE_STEPS,
+    BOUNDED_BATCH_POLICY,
+    delta_limits,
     empty_continuation,
     replay_delta,
 )
+
+
+def test_declared_delta_policy_keeps_legacy_limits_and_rejects_unknown_versions() -> None:
+    assert delta_limits({}) == (1, 256)
+    assert delta_limits({"delta_policy": BOUNDED_BATCH_POLICY}) == (4, 1024)
+    for policy in (None, {}, {**BOUNDED_BATCH_POLICY, "max_pages_per_family": 40}):
+        with pytest.raises(AcceptanceError, match="unsupported V5 delta policy"):
+            delta_limits({"delta_policy": policy})
 
 
 def archive() -> dict[str, Any]:

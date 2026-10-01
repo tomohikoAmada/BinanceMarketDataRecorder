@@ -2,6 +2,15 @@
 
 Verified October 1, 2026 following the owner's instruction to stop qualification.
 
+October 2 read-only performance checks confirmed Recorder remains inactive and
+disabled; its installed source was not replaced. The owner selected safe cleanup
+and a new independent corpus for the [38h plan](qualification_to_24h_plan.md).
+That cleanup/deployment/qualification has not occurred. The local optimization
+candidate and diagnostic-only cloud measurements are recorded in the
+[performance report](reviews/2026-10-02-cloud-performance-and-38h.md); they grant
+zero Formal credit. The historical October 1 artifact and closeout below remain
+the deployed operational basis.
+
 ## Source and installed artifact
 
 | Item | Value |

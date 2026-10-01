@@ -1,31 +1,33 @@
 # Milestone Plan
 
-## Current development plan — architecture review through 24h (2026-10-01)
+## Current development plan — cloud optimization through 38 accepted hours (2026-10-02)
 
-The owner requested a full code review and a practical MVP plan ending at an
-independently reviewed Formal 24h PASS. The documentation-only review fixes its
-basis at main `d6f37576f5b044bf578501cba291fe889e45a919` and changes no runtime
-or operational authority. See the [review and reproductions](reviews/2026-10-01-architecture-review.md)
-and [detailed 24h plan](qualification_to_24h_plan.md).
+The owner requested safe code optimization, cloud-only performance assessment,
+language/hardware alternatives and a revised MVP plan. The endpoint is Formal
+2h PASS + 12h PASS + 24h PASS, at least 38 accepted timed hours. The owner chose
+safe old-data cleanup and a fresh independent corpus. See the
+[cloud measurements and implemented candidate](reviews/2026-10-02-cloud-performance-and-38h.md),
+[ADR-0035](adr/0035-v5-bounded-delta-batches.md) and [38h plan](qualification_to_24h_plan.md).
 
 | Milestone | Scope | Status |
 |---|---|---|
-| Q0 | Architecture review, six offline finding probes, qualification plan | Delivered; owner review pending |
+| Q0 | Review, cloud diagnosis, Raw/status optimization and bounded delta batches | Engineering candidate delivered; independent review/CI pending |
 | Q1 | Supervise heartbeat failure, isolate normalized identities, robust CLI discovery | Planned |
-| Q2 | Sustainable delta consumption, practical exact audit, explicit corpus/profile decision | Planned |
-| Q3 | Frozen artifact, exact deployment, passing baseline and fresh readiness | Planned |
+| Q2 | Exact release review, cloud full-observation/audit forecast and conditional escalation | Planned |
+| Q3 | Safe old-data cleanup, new canonical corpus/archive registration, deployment/baseline/readiness | Planned; fresh-corpus choice authorized |
 | Q4 | Formal 2h, complete terminal audit and independent eligible final | Planned |
 | Q5 | Formal 12h on the same artifact/profile | Planned |
-| Q6 | Formal 24h, planned rotation/recovery, terminal verification and closeout | Planned |
+| Q6 | Formal 24h, rotation/recovery, terminal verification and 38h closeout | Planned |
 
-Do not repeat the unchanged live workflow: the reproduced single-page delta
-capacity problem must be resolved before T0. A fresh bounded corpus is an MVP
-recommendation requiring an explicit profile/corpus decision; no existing data
-is reset, no historic audit risk is closed, and canonical deployment paths do
-not acquire an implicit exception. The stopped baseline remains incomplete,
-the monitor remains paused, and `PRODUCTION_READY=NO`. This task ends at 24h;
-72h/168h are separate follow-up scope. Historical checkpoints below retain
-their time-local statuses and do not authorize execution of the new plan.
+The single-page correction is implemented locally with declared policy and old
+chain compatibility, but not deployed. No cleanup, baseline, Formal stage or
+monitor resume occurs in Q0. Preserve historical archive/evidence and keep R-078
+open; reuse the canonical writer path with a coherent new Catalog, without an
+implicit path exception. The stopped old baseline stays incomplete and the
+monitor paused. Code or microbenchmark PASS does not complete this plan:
+`QUALIFICATION_38H=PASS` requires all three independently verified eligible finals.
+`PRODUCTION_READY=NO`; 72h/168h are separate scope. Historical checkpoints below
+retain their time-local statuses.
 
 ## Current checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
 

@@ -1,205 +1,153 @@
-# MVP qualification plan through accepted 24h
+# MVP milestone plan: 38 accepted hours on the cloud server
 
-Owner-requested plan, October 1, 2026. This is a proposed development/execution
-sequence, not a claim of qualification or an instruction to resume the paused
-VPS workflow. Review basis: main `d6f37576f5b044bf578501cba291fe889e45a919`.
-See the [architecture review](reviews/2026-10-01-architecture-review.md) for
-reproduced defects and optimization evidence.
+Updated October 2, 2026 following the owner’s performance instructions and choice
+of safe old-data cleanup followed by a fresh independent qualification corpus.
+The stable filename preserves links from the original 24h plan. See the
+[cloud analysis and implemented optimizations](reviews/2026-10-02-cloud-performance-and-38h.md)
+and [original review](reviews/2026-10-01-architecture-review.md).
 
-## Objective and fixed scope
+## Definition of done
 
-Reach an independently reviewed Formal **24h PASS** for one frozen artifact,
-configuration, ProductKey workload and explicitly chosen data corpus. Keep
-Python 3.12, one process, Spot/USD-M modules, Raw v1, SQLite and native systemd.
-No new trading/UI/service framework or native-language rewrite.
+**Formal 2h PASS + Formal 12h PASS + Formal 24h PASS**, at least **38 accepted
+hours (136,800 target seconds)**, on one frozen artifact/configuration/workload
+and corpus lineage on the cloud server. Each stage must have a valid T0/target,
+complete terminal audit, independent verification and reviewed eligible final.
+A single 38h process uptime, code completion or microbenchmark PASS is insufficient.
+Baseline, readiness, audit, maintenance and retries add wall time, not credit.
 
-The chain is identity → passing stopped baseline → fresh readiness → 2h → 12h
-→ 24h. Each duration is a separate stage with its own T0, online target,
-operator-controlled stop/quiescence, complete terminal audit and independent
-verification. Minimum online time is **38 hours**, excluding baseline, readiness,
-audit, maintenance and retries. Old V4 and interrupted V5 evidence grants no
-new-artifact credit. 72h/168h and Production Ready are outside this plan;
-24h completion retains `PRODUCTION_READY=NO`.
+Sequence: exact identity → passing stopped baseline → fresh readiness → 2h → 12h
+→ 24h. Old failed/partial and V4 records give no new-artifact credit. End after
+these three accepted stages; 72h/168h are separate scope. The existing broader
+`PRODUCTION_READY` status remains NO after this plan’s narrower endpoint.
 
-Default workload is the already reviewed four ProductKeys and twelve core
-contexts, with the same auxiliary settings. Freeze their actual config values
-from the installed authority during preflight; do not guess the symbols from
-old examples. Any intentional reduction is a distinct declared qualification
-profile, not certification of the wider previous workload.
+## Fixed MVP scope
+
+Cloud target: greencloud-tokyo-01, Ubuntu 24.04 x86_64, currently four logical CPUs
+and about 6 GB RAM. Keep Python 3.12, one Recorder process, SQLite, Raw v1, verified
+archive and systemd. The installed public configuration was read-only checked:
+Spot BTCUSDT/ETHUSDT and USD-M BTCUSDT/ETHUSDT; twelve core contexts; rotation
+60s / 128 MiB and durability 1s. Retain auxiliary and network settings and freeze
+their exact values before deployment. Mac timings prove no cloud performance gate.
 
 ## Milestones
 
-| ID | Deliverable | Exit gate | Next |
+| ID | Work | Completion gate | Status |
 |---|---|---|---|
-| Q0 | Architecture review and executable offline probes | Six confirmed findings, baseline checks, scoped plan; no live changes | Q1 |
-| Q1 | Small correctness fixes | Heartbeat failure is supervised, inaccessible cwd does not crash CLI, normalized product identities cannot collide; regressions and offline suite PASS | Q2 |
-| Q2 | Practical observation/audit path and selected corpus | Sustained delta consumption keeps up; complete exact audit is feasible; corpus/policy decision is documented and reviewed | Q3 |
-| Q3 | Frozen release, stopped deployment, baseline and readiness | Exact Wheel/lock/config/unit identity; package/maintenance/capacity gates; complete verified baseline; every configured product READY | Q4 |
-| Q4 | Formal 2h | Valid target, full terminal PASS, independent verifier PASS, reviewed eligible final | Q5 |
-| Q5 | Formal 12h | Same artifact/profile and passing 2h predecessor; full terminal PASS and independently reviewed eligible final | Q6 |
-| Q6 | Formal 24h and closeout | Same artifact/profile and passing 12h predecessor; planned connection rotation/recovery evidence, full terminal PASS and independently reviewed final | Stop at 24h |
+| Q0 | Review and cloud performance optimization | Cloud Raw proofs/totals equal; sustainable bounded-delta regressions; offline gates | Engineering candidate delivered; independent review/CI pending |
+| Q1 | Small correctness fixes | Heartbeat failure/early exit supervised; unreadable-cwd CLI works; normalized product identity isolated with versioned outputs | Next development task |
+| Q2 | Release review and cloud performance decision | Reviewed exact wheel/lock; clean install; dual-platform CI; practical full-observation/audit forecast | Pending |
+| Q3 | Safe old-data cleanup, fresh corpus and stopped deployment/readiness | Coherent custody/rollback; new canonical Catalog/archive registration; exact identity; passing baseline; all products READY | Pending; fresh-corpus choice authorized |
+| Q4 | Formal 2h | Target, complete terminal audit and independently reviewed eligible final PASS | Not started |
+| Q5 | Formal 12h | Same artifact/profile and eligible 2h predecessor; complete final PASS | Not started |
+| Q6 | Formal 24h and 38h closeout | Same artifact/profile and eligible 12h predecessor; rotation/recovery; complete final PASS; all three finals bind ≥38h | Not started |
 
-Q0 is the only work delivered in this review. Subsequent milestones are pending.
+No cleanup, deployment, Recorder start, Formal stage or monitor resume occurs in
+Q0. Installed operational authority remains in [production state](CURRENT_PRODUCTION_STATE.md).
+Do not mark the 38h plan complete when engineering alone passes.
 
-### Q1 — Repair confirmed correctness defects
+## Q0/Q1 — Engineering work
 
-Implement F2/F6 with the current runtime/discovery structures; no new lifecycle
-framework. Heartbeat unexpected return/exception must stop collectors coherently,
-retain the causal failure and report FAILED; ordinary requested shutdown remains
-STOPPED. Run real state-write failure, early task exit and stop/cancellation tests.
+Q0 has implemented lazy boundary summaries with complete per-frame validation,
+compact archive status with explicit detail pages, and [ADR-0035](adr/0035-v5-bounded-delta-batches.md)
+finite batches: four SQL pages of 256 rows/family, 1024 causal references, 7 MiB
+delta entries, existing 8 MiB document and 240s budget. Old starts retain original
+one-page policy on replay/resume. Cloud samples show about 21% lower scanner wall
+time and archive status/serialization reduced from 7.76s/163 MB to 0.18s/416 bytes.
+Normal four-product seal/archive windows consume 480/300 rows; a missed cadence
+can defer byte-bounded work and subsequent observations drain it. These are not
+complete live observations or full audit qualification.
 
-Fix F3 at a consistent identity boundary, testing depth snapshots from distinct
-symbols, server shutdown across markets/streams, and valid same-product duplicates.
-Changing dedup semantics must change its declared version/content-addressed build
-identity, preserve existing immutable outputs, and maintain their readers.
-This is an offline consumer defect; avoid expanding into a Parquet redesign.
+Q1 uses current structures for heartbeat failure/early exit → coherent stop and
+FAILED cause; normal stop remains STOPPED. Skip inaccessible optional Git discovery
+without weakening data-root permissions. Namespace normalized dedup identity by
+venue/market/symbol/stream, test cross-product equal inputs and valid duplicates,
+version changed build semantics, and preserve old immutable outputs/readers.
+Normalization fan-in can wait until after 38h. Measure quality-audit memory growth;
+only add bounded production history if needed, preserving persistent gap facts.
 
-Keep F4 outside the critical path because normalize/replay are offline duties.
-For F5, use measured duplicate/quality rates to decide whether the small bounded
-production-history change belongs in this release; preserve durable gap facts
-and checkpoint intervals. No speculative queue or thread-pool tuning.
+## Q2 — Cloud gate; escalate only on a measured failure
 
-Gate: focused regression tests, full offline pytest, Ruff, mypy, M0 and Raw
-golden. Exact Linux/macOS CI is required before release. No VPS action in Q1.
+Run focused and full offline tests, Ruff/mypy/M0/Raw golden, Linux/macOS CI, a
+locked wheel build and fresh-wheel smoke. Independently review batching, including
+historical replay/resume, causal tampering, snapshot races, cancellation and byte
+bounds. Measure SQL, Raw decode/statistics, identity and publication separately.
 
-### Q2 — Make qualification affordable and able to keep up
+The Q3 preflight warm-up must measure complete observations on the frozen cloud
+artifact with core/auxiliary work, size-triggered seals and archive retirement.
+Require stable normal backlog, recovery after one missed cadence, bounded memory
+and working headroom inside 240s. Keep 300s target, 600s maximum evidence gap and
+900s recoverable readiness. Unfinished target work remains INCOMPLETE.
 
-**Fix observation service rate first.** Reproduce the selected real stream count,
-60s rotation, real archive transitions and enabled auxiliary work in an offline
-running-path test with several consecutive observation windows, plus one missed
-window/catch-up and archive retirement race. At the current core-only row rate,
-480 chunk and 300 archive rows arrive per 300 seconds, above 256/256 capacity.
-The baseline must not hide this by seeding all generated rows as historical.
+Forecast complete audit cost for the growing new corpus, including BOTH producer
+and independent LIVE passes, from actual event/byte growth and cloud scan rates
+plus SQL/I/O overhead. Six chunks alone cannot predict it. Remove the previous
+suggested two-hour audit target as an artificial blocker; agree on measured
+practical wall time before T0. Never omit records or count audit time as credit.
 
-Try the least invasive supported choices first:
+If still insufficient: first test two bounded Python Raw workers with deterministic
+ordered results and existing cancellation; no concurrent Catalog/evidence writes.
+If residual parsing/object CPU cost dominates, compare an isolated Go or C/C++/Rust
+scanner on identical cloud Raw, returning the existing small proof. Require full
+format/strict-schema/CRC/hash/statistics/reconnect/mutation equivalence. Keep Python
+transactions and exchange/service orchestration; no whole-repository rewrite.
 
-1. Measure longer existing rotation intervals while preserving <=1s fsync and
-   the existing size cap. Use this only if real row/byte rates and recovery
-   behavior show adequate headroom for the explicitly selected workload.
-2. If parameter tuning cannot sustain the workload, make a narrow acceptance
-   policy revision: budgeted bounded batches with continuous cursor replay.
-   Cover SQL batches, serialized bytes, causal references and the frozen
-   snapshot together. Reuse existing immutable shards if necessary. Keep
-   old V5 evidence semantics/readers; version evidence only when semantics
-   change. Do not prescribe another large acceptance subsystem in advance.
+Upgrade hardware only for demonstrated limits: usable parallelism or single-core
+saturation for CPU, RSS/swap/PSI for RAM, iowait/device latency for storage. Include
+steal and co-resident contention in cloud measurements. Freeze any changed host
+profile before qualification. No hardware/native dependency is mandatory by default.
 
-Any change to ADR-0034's one-page authority requires a short reviewed ADR before
-implementation. Retain 300s target cadence, 600s gap failure, 900s recoverable
-readiness and the meaning of unresolved target work unless the owner explicitly
-selects a documented policy change. Never count terminal audit as online credit.
+## Q3 — Safe cleanup and fresh qualification scope
 
-**Reduce work before changing assurance.** Add compact archive status for normal
-operator checks. Profile stored reads, decompression, CBOR decode/re-encode, SQL
-companions and duplicate identity verification separately. Merge stored hashing
-and decompressed qualification through one descriptor where exact equivalence
-is proven. Keep CRC, both SHA identities, size/statistics and mutation detection.
-Start with one worker; bounded concurrency is optional only after measurements
-show a bottleneck and memory/I/O headroom on the shared host.
+The owner chose safe cleanup. Inventory exact project-owned active paths, Catalog,
+manifests, archives and interrupted evidence. Keep Recorder inactive/disabled;
+drain verified archive and check no active partials/unarchived Raw. Briefly pause
+the project archive mutator for a coherent Catalog/manifest/registration rollback
+snapshot. Preserve unrelated services and files.
 
-**Select the starting corpus explicitly.** Recommended MVP scope is a fresh,
-isolated qualification corpus with the same selected runtime workload, retaining
-the 143,362 historical manifests/Raw/Catalog and interrupted evidence as a
-separate historical custody/audit obligation. This demonstrates a new artifact's
-capture, growth, archive, recovery and rotation; it does not certify historical
-archive integrity or large-history startup. Use a small targeted existing-history
-fixture alongside it; do not add another long duration gate.
+Retire the old dataset from active qualification into verified recoverable custody.
+Keep existing archived Raw/external manifests and historical evidence; a fresh test
+does not require destroying their unique copies. Unarchived Raw is never deleted.
+Physical cleanup is limited to explicitly identified redundant/test files with
+canonical child-path/protected-path/mount-root checks from AGENTS.md. Never build
+a deletion target across local/remote shell interpolation. No cleanup occurred in Q0.
 
-This recommendation is not an authorized reset. Current V5 automatically audits
-the entire data root, and production identity enforces canonical paths. Therefore
-an empty subdirectory cannot simply be substituted. Before this option is used,
-document a minimal qualification-root/deployment-profile exception or a separately
-reviewed consistent corpus separation, including separate Catalog/registration
-and rollback authority. Do not move/delete the old tree as routine cleanup,
-rewrite old Catalog rows, change archive markers in place or claim that a clean
-root solves R-078. Exact deployed identities must reflect the actual paths.
+Initialize a new Catalog/layout at the SAME canonical writer root
+`/var/lib/binance-market-data-recorder` after retiring its coherent old scope.
+Use a distinct registered archive directory on the already mounted archive volume,
+outside the old registered data scope; freeze its exact path/UUID/storage ID/marker
+and timer binding. No mount/format, symlink exception or general multi-root framework.
+Do not import old rows/manifests into the new corpus or clear it between stages.
+Fresh-corpus success does not close historical full-audit scalability R-078.
 
-If the owner chooses the existing corpus instead, preserve ADR-0034 full-corpus
-qualification, apply safe scan optimizations and complete its baseline before
-T0. Do not carry on an unchanged >14h partial operation merely because progress
-exists. Decide using a measured complete representative audit and an explicit
-wall-time estimate for both producer and independent LIVE passes. Removing the
-second full LIVE pass is a policy/assurance change requiring a separately reviewed
-ADR, not a transparent optimization.
+Deploy the reviewed wheel/lock in canonical paths, bind exact source/tree/wheel/
+config/unit/deployment/archive-timer authority and complete the new stopped baseline
+and independent verification. Refresh package/reboot/boot/lock, capacity and archive
+checks. Use existing bounded maintenance masks during timed windows and restore
+ordinary OS authority afterward. Enable/load Recorder at the selected pre-start,
+prove four products READY and run the ordinary Q2 performance warm-up. No extra
+mandatory 30m/4h duration chain. A required fix returns to review/freeze before T0.
 
-Q2 gate:
+## Q4/Q5/Q6 — Pass each stage and close out
 
-- Selected workload's delta backlog is stable and drains after a one-window
-  disturbance; terminal processed cursors equal its frozen target high-waters.
-- Representative production-format Raw/archive passes a complete audit and
-  independent verification, with corruption/loss/replacement/retirement negatives.
-- Record unique stored/uncompressed bytes, rows/sec, phase wall/CPU time,
-  sampled RSS, cgroup memory separately, and estimated 24h corpus cost.
-- Suggested engineering target for the bounded MVP corpus: complete baseline
-  and terminal qualification including the required independent pass within
-  two hours each. This is a planning target, not an existing contract or a
-  reason to omit data; if infeasible, resolve scope/cost before Q3.
-- Report R-078 separately: fresh-corpus success does not close old-corpus P2.
-- Explicitly documented corpus/paths, operator procedure and compatibility;
-  offline regressions and independent review PASS. No live restart in Q2.
+Repeat identity, fresh readiness, maintenance and capacity gates; bind the eligible
+predecessor and create exactly one T0. Keep code, dependencies, config/workload,
+host profile and growing corpus lineage fixed. Use ordinary reconnection/archive
+paths. Monitor compact evidence, process/service/boot identity, reserve, backpressure,
+delta progress, RSS/CPU and archive backlog. Do not load giant all-history JSON
+or let a paused monitor automatically restart work.
 
-### Q3 — Freeze once and verify the operational procedure
+At target, stop accruing time; operator stop/disable, verified archive drain and
+quiescence precede complete terminal audit and independent verification. Online
+PASS_CANDIDATE alone cannot advance. Failed/incomplete windows retain evidence and
+earn no credit; fix their cause before retry. Resume only under existing same-process/
+boot/service constraints; host maintenance does not create an authorized new T0.
 
-Build one exact immutable Wheel from reviewed source, pin dependency lock,
-record source/tree/Wheel/config/unit/deployment hashes, run dual-platform CI,
-locked build, fresh-wheel install and dependency/CLI smoke checks. Build the
-canonical environment in place; retain coherent rollback materials. Keep
-Recorder disabled until the selected authorized pre-start.
+24h must include inspection of ordinary ~23h50m connection rotation, per-product
+gaps and depth resnapshot/recovery. Existing offline kill/disk/network fault tests
+remain; no destructive injection is added to the same Formal window.
 
-Production preflight refreshes package/boot/reboot/lock state, capacity and archive
-readiness. Install pending maintenance before T0, then use the existing bounded
-runtime masks during each selected timed window. Check active AND enabled state.
-Restore normal OS update authority in closeout; do not disable updates indefinitely.
-
-Complete the selected stopped baseline and independent verification; any partial
-root is not a passing predecessor. Start Recorder through systemd, prove all
-configured products READY and inspect a short ordinary warm-up's measured rates,
-queue/backpressure, RSS and archive progress. This warm-up is readiness work,
-not an extra mandatory 30m/4h duration chain. Fixes found here return to code
-review/freeze; do not silently swap an artifact inside an accepted chain.
-
-Before starting the first stage, prepare a concrete operator procedure for target
-publication, stop/disable, archive drain, paused mutators, terminal audit, verifier,
-timer/maintenance restoration and failure retention. Monitoring reads compact
-evidence and never treats expected recoverable NOT_READY as an independent
-immediate failure or relaunches a new stage when systemd/host maintenance restarts.
-
-### Q4/Q5/Q6 — Run the separate 2h → 12h → 24h gates
-
-For each stage, repeat exact identity, fresh readiness, maintenance and capacity
-gates; bind its exact passing predecessor; create exactly one authorized T0.
-Keep the code, dependency set, ProductKeys, streams and profile fixed throughout
-the chain. Recorder should use ordinary automatic reconnection and archive
-behavior; do not suppress these paths to obtain an artificially easy run.
-
-Observe canonical cadence, process/service/boot identity, disk reserve, cursor
-pending trend, queue/backpressure, RSS/CPU and archive backlog. Use the existing
-readiness recovery policy; only its authoritative acceptance path produces the
-stage verdict. Capacity planning includes active/seal overhead and the selected
-archive runway, not all 278 hours of future qualification.
-
-At target, online candidate duration stops accruing. Operator stop/disable,
-verified archive drain and quiescence precede terminal qualification. Accept only
-after a complete terminal root, independent verification and reviewed eligible
-final. An online PASS_CANDIDATE alone cannot advance. Do not automatically chain
-stages from an unchanged/paused monitor.
-
-For 24h, inspect the normal ~23h50m connection rotation and full per-product gap,
-resnapshot/recovery evidence. Existing offline fault injection covers deliberate
-kill/disk/network faults; do not add destructive live fault trials to the same
-formal window. A defect or incomplete stage retains its evidence and yields no
-credit; fix the cause before a separately selected retry. An observer interruption
-may resume only under the existing same-process/boot/service constraints; no new
-T0 or credited cross-maintenance process identity is inferred.
-
-Final handoff records exact artifact/profile/corpus, 2h/12h/24h finals and review
-results, rotation/recovery, integrity/resource/coverage limitations, stopped and
-disabled Recorder state if handing off stopped, and restored archive/OS authority.
-This plan ends there. Normal continuous operation or 72h/168h remains a subsequent
-owner-selected task.
-
-## Work intentionally left after 24h
-
-Bounded normalization merge/group improvements; portable archive-client/platform
-certification; older historical corpus audit/scalability; V1–V4 code isolation;
-broader products/auxiliary coverage; long-duration qualification. Raw integrity
-and deletion checks remain mandatory throughout, even where a follow-up is deferred.
+Final handoff binds all three reviewed eligible finals and ≥136,800 accepted target
+seconds, exact artifact/profile/corpus, integrity, rotation/recovery and measured
+resource limits. If handing off stopped, Recorder is inactive AND disabled;
+archive and normal OS maintenance authority are restored. Only then record
+`QUALIFICATION_38H=PASS`. This plan ends there.

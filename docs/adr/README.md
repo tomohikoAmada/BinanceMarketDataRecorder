@@ -36,6 +36,7 @@ Current and historical decisions:
 - [ADR-0032: Configurable product set](0032-configurable-product-set.md)
 - [ADR-0033: M22.9 in-stage readiness recovery deadline](0033-m22-9-in-stage-readiness-recovery-deadline.md)
 - [ADR-0034: M22.9 V5 bounded online observation and terminal full audit — accepted policy authority; implementation pending](0034-m22-9-v5-bounded-online-terminal-audit.md)
+- [ADR-0035: Bounded V5 delta batches — implemented candidate; review/deployment pending](0035-v5-bounded-delta-batches.md)
 
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

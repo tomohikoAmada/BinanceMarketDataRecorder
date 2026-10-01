@@ -1,5 +1,10 @@
 # ADR-0034: M22.9 V5 bounded online observation and terminal full audit
 
+October 2 implementation refinement: [ADR-0035](0035-v5-bounded-delta-batches.md)
+defines an explicitly declared bounded-batch policy for new starts. Original
+starts retain the one-page semantics below. All other authority is unchanged;
+the new implementation candidate is not deployed or independently reviewed yet.
+
 - **Status:** Accepted policy authority; implementation pending
 - **Date:** 2026-09-29
 - **Scope:** M22.9 acceptance evidence and qualification policy; documentation only

@@ -637,6 +637,12 @@ def test_archive_status_retry_and_verify_cli(
     assert retry["state"] == "LOCAL_DELETED"
     assert retry["warning"]
 
+    assert main(["archive", "status", "--details", "--limit", "1", "--offset", "0"]) == 0
+    details = json.loads(capsys.readouterr().out)
+    assert details["transactions_included"] is True
+    assert len(details["transactions"]) == 1
+    assert details["transactions"][0]["state"] == "LOCAL_DELETED"
+
     assert main(["archive", "verify", prepared.target.storage_id]) == 0
     verify = json.loads(capsys.readouterr().out)
     assert verify["status"] == "VERIFIED"

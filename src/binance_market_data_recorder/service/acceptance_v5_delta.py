@@ -18,6 +18,13 @@ from .acceptance import AcceptanceError, canonical_json, sha256_bytes
 from .acceptance_v5_reconnect import advance_reconnect, stream_key
 
 MAX_PENDING_CAUSAL_REFERENCES = 256
+BOUNDED_BATCH_POLICY = {
+    "version": "bounded-batches.v1",
+    "sql_page_cap": SQL_PAGE_CAP,
+    "max_pages_per_family": 4,
+    "causal_reference_cap": 4 * SQL_PAGE_CAP,
+    "max_canonical_delta_bytes": 7 * 1024 * 1024,
+}
 DELTA_WORK_BUDGET_NS = 240_000_000_000
 FAMILIES = ("operational", "chunk", "archive")
 BACKLOG_STATES = ("COPYING", "VERIFYING", "VERIFIED", "LOCAL_DELETE_PENDING")
@@ -32,6 +39,15 @@ ARCHIVE_STEPS = (
 
 class DependencyPending(AcceptanceError):
     """Do not acknowledge the selected row; its cursor cannot skip it."""
+
+
+def delta_limits(start: Mapping[str, Any]) -> tuple[int, int]:
+    """Old starts retain one-page semantics; new policy is frozen at T0."""
+    if "delta_policy" not in start:
+        return 1, SQL_PAGE_CAP
+    if start["delta_policy"] != BOUNDED_BATCH_POLICY:
+        raise AcceptanceError("unsupported V5 delta policy")
+    return 4, 4 * SQL_PAGE_CAP
 
 
 def row_digest(row: Mapping[str, Any]) -> str:
@@ -263,6 +279,7 @@ def replay_delta(
     pages: Mapping[str, list[dict[str, Any]]],
     *,
     t0_utc_ns: int | None = None,
+    row_cap: int = SQL_PAGE_CAP,
 ) -> dict[str, Any]:
     """Replay bounded acknowledged rows plus explicit first pending row per family.
 
@@ -270,6 +287,8 @@ def replay_delta(
     dependencies cannot be turned into acknowledgement by a producer summary.
     Raw unit proof is checked independently against terminal exact Raw replay.
     """
+    if row_cap not in {SQL_PAGE_CAP, 4 * SQL_PAGE_CAP}:
+        raise AcceptanceError("unsupported delta row cap")
     state = copy.deepcopy(dict(prior))
     if set(high_water) != set(FAMILIES) or set(pages) != set(FAMILIES):
         raise AcceptanceError("invalid delta families")
@@ -281,7 +300,7 @@ def replay_delta(
     for family in FAMILIES:
         if high_water[family] < state["observed_high_water"][family]:
             raise AcceptanceError("high-water regression")
-        if len(pages[family]) > SQL_PAGE_CAP:
+        if len(pages[family]) > row_cap:
             raise AcceptanceError("SQL page cap exceeded")
         last = state["processed"][family]
         for index, entry in enumerate(pages[family]):
@@ -432,7 +451,7 @@ def replay_delta(
                         raise AcceptanceError("conflicting causal reference")
                 else:
                     refs.append(bound)
-                if len(refs) > MAX_PENDING_CAUSAL_REFERENCES:
+                if len(refs) > row_cap:
                     raise AcceptanceError("pending causal reference cap exceeded")
             state["rolling"][family] = sha256_bytes(
                 bytes.fromhex(state["rolling"][family]) + bytes.fromhex(row_digest(row))

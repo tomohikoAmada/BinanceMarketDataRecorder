@@ -1,12 +1,12 @@
 # Project Handoff
 
-Updated October 1, 2026. This is the entry point for the next development team.
+Updated October 2, 2026. This is the entry point for the next development team.
 
 ## Current code
 
 PR #78 is merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`,
-tree `039f8fefaeefe116a3a464b7d2bffae8d05e7d9c`. This documentation update
-is a descendant of that code; it changes no runtime implementation.
+tree `039f8fefaeefe116a3a464b7d2bffae8d05e7d9c`. This is still the deployed base.
+The current branch adds a local optimization candidate, not an installed release.
 
 The Recorder implements finite configurable Spot/USD-M products, immutable Raw,
 Catalog lifecycle/recovery, gap evidence, order-book reconstruction, verified
@@ -27,14 +27,22 @@ The October 1 owner-requested [architecture review](reviews/2026-10-01-architect
 reproduces three P1 issues: inadequate per-observation delta capacity, unsupervised
 heartbeat failure and cross-product normalized deduplication. Three P2 findings
 cover normalization fan-in, retained quality audits and inaccessible-cwd CLI
-discovery. They are open findings, not implemented fixes.
+discovery. F1 now has a local implemented candidate; F2–F6 remain open fixes or
+follow-up resource work. No new independent implementation review is claimed.
 
-The [24h MVP plan](qualification_to_24h_plan.md) orders small correctness fixes,
-sustainable qualification and an explicit corpus decision before a frozen
-artifact and separate 2h → 12h → 24h gates. It proposes a bounded fresh corpus
-while preserving old data; its required path/profile decision is not yet made.
-No deployment, baseline restart, Formal T0, data reset or monitor resume occurs
-in this documentation task. The current operational checkpoint below is unchanged.
+The owner selected safe old-data cleanup followed by an independent fresh corpus.
+The [38h MVP plan](qualification_to_24h_plan.md) requires 2h + 12h + 24h all PASS
+with complete terminal/independent verification. Next is Q1 correctness fixes,
+release review and Q3 safe cleanup/new canonical Catalog; no old archive is
+implicitly destroyed or imported into the new corpus.
+
+[Cloud performance analysis](reviews/2026-10-02-cloud-performance-and-38h.md) records
+~21% scanner time reduction and compact status output with identical proofs/totals.
+[ADR-0035](adr/0035-v5-bounded-delta-batches.md) freezes finite new-start batches
+and retains old one-page replay/resume. The default CLI archive status omits full
+transaction details; use `--details --limit 100 --offset 0` for a page. Code,
+dependency set, Raw and Catalog format remain Python/compatible; no native engine
+was added. Installed source and stopped operational checkpoint are unchanged.
 
 ## Current operations
 
@@ -78,9 +86,9 @@ Read these documents in order:
 - Review the practical cost of full baseline/terminal audits using retained
   production measurements. The stopped audit gives partial measurements only;
   it establishes neither a full integrity PASS nor completed throughput.
-- Agree with the owner on the next qualification approach. An empty-data test
-  was discussed but not approved or executed. Do not restart this audit or
-  launch a stage from the paused automation.
+- Implement Q1, independently review the optimization/ADR candidate, and pass
+  exact-artifact release/cloud gates. The owner has selected safe cleanup/new
+  corpus; it has not been executed. Do not resume the unchanged interrupted audit.
 - If qualification is restarted, verify the exact artifact and data scope,
   complete its baseline, obtain fresh readiness for every configured product,
   then execute the selected stage and terminal audit. V5 online observation
@@ -94,7 +102,8 @@ Read these documents in order:
 
 Raw v1, manifest and Catalog lifecycle semantics, the ProductKey boundary, and
 consumer contracts are unchanged by V5. V1–V4 evidence readers remain available.
-Online cadence is 300 seconds, maximum evidence gap 600 seconds, delta budget
+New-start batch limits are frozen by ADR-0035; missing policy keeps the original
+one-page V5 on replay/resume. Online cadence is 300 seconds, maximum evidence gap 600 seconds, delta budget
 240 seconds, and global recoverable-readiness episode 900 seconds. Full audit
 runs outside online cadence; it retains a distinct 900-second no-progress
 watchdog. Prepublication verification reads LIVE Raw; completed historical
