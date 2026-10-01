@@ -18,246 +18,31 @@
   `/var/lib/binance-market-data-recorder/` and
   `/etc/binance-market-data-recorder/recorder.toml`
 
-Project, package, CLI, launchd, log, configuration, and service identifiers use
-the frozen project identity in ADR-0007. This is an independent, unofficial
-project; the name identifies the public API/data source and does not imply
-affiliation, maintenance, sponsorship, certification, partnership, or
-endorsement by Binance. Never use Binance logos or official visual identity.
-Future reverse-DNS/service/publisher identifiers must use a namespace owned or
-controlled by the project author; never use a Binance-owned-looking reverse-DNS
-root under `.com`, `.org`, or `.io`, and do not guess the author's final
-namespace in advance.
+Use the established package, CLI, service, and data identifiers in ADR-0007.
+The project uses its own branding and author-controlled service namespaces.
 
-## Project goal
+## Project goal and current checkpoint
 
-Build a long-running, stateful Python 3.12 recorder specifically for Binance
-public market data. The primary future production profile is Ubuntu 24.04 LTS
-x86_64 with systemd and a non-root service. macOS Apple Silicon remains a
-development/local profile, and Ubuntu ARM64/RK3588 remains a distinct Linux
-validation and historical evidence profile. The current implementation captures
-configured Spot and USD-M perpetual depth at 100 ms, aggregate trades, book ticker
-events, and public REST depth snapshots, followed by defined USD-M auxiliary
-data. MS2 implements an operator-configured finite product set across those
-two markets, with BTCUSDT/BTCUSDT compatibility only when both selection
-fields are absent. MS3-B offline evidence is merged through PR #56 at
-`303e073e25d5ed53d7cf6e26a9c6c6e879013b50`; MS3 is closed. MS4-B target
-preflight and the exact four-ProductKey stopped deployment are reviewed
-complete. The owner-authorized MS4-C attempt on 2026-09-10 reached its bounded
-steady interval but remains `EXECUTED_PARTIAL_NOT_ACCEPTED` as an
-original-window record because controlled recovery was not executed in that
-approved window. The separate 2026-09-11 R3 run is a passing
-`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`: it closes the MS4-C recovery gate for
-review, with `formal_m22_9_credit_seconds=0`. The MS4-D review records the
-bounded four-ProductKey qualification as `REVIEWED_COMPLETE` while preserving
-the original partial-window disposition, zero Formal M22.9 credit, and
-`PRODUCTION_READY=NO`; it does not authorize a new live run. The system keeps
-recoverable immutable raw payloads,
-deterministic replay metadata, explicit gap evidence, and verified archival
-across the approved VPS/local Offline Workspace boundary.
+Build a stateful Python 3.12 recorder for Binance public market data. The
+production target is Ubuntu 24.04 x86_64 with a non-root systemd service;
+macOS Apple Silicon is the development/local profile, and Ubuntu ARM64/RK3588
+has separate validation evidence. Configurable Spot/USD-M products, immutable
+Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
+are implemented.
 
-The historical failed-at-T0 milestone status is
-`M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`; the
-owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 remains
-`FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`. It failed before
-the first observer sample at T0
-`2026-09-11T13:41:32.831837Z` / `1789134092831837314` ns, with BOOTTIME
-`789457702764089` and boot ID
-`f2720022-bc39-4e22-bc68-af6bfce92274`. The failed observer unit was
-`binance-market-data-acceptance-2h-20260911T132845Z-5b4fd719.service`,
-InvocationID `ee05ad7a73f04dec867629767439bc82`; it exited 1 before the
-first sample. Stage-start failed with 24 blockers: 23
-`catalog_manifest_disagreement:<chunk_id>` findings and one
-`unexplained_raw_absence` finding. It receives zero duration credit.
+PR #78 merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`. The exact V5
+artifact is deployed on Tokyo. On 2026-10-01 the owner stopped qualification
+before baseline publication; no V5 Formal T0 or 2h stage exists. Recorder is
+stopped and disabled, normal archive/maintenance timers are restored, and the
+continuation automation is paused. Preserve existing data and evidence.
+`12H_STARTED=NO`; `PRODUCTION_READY=NO`. Production full-audit scalability
+remains an open P2. Do not restart live work from old continuation instructions.
 
-The authoritative failed root is
-`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`;
-the stage root is its child
-`2h-a8b45b7e1da640c497213b172c235815`. Its immutable stage-start SHA-256 is
-`1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
-The separate pre-T0 aborted setup root
-`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T130258Z-646792f2`
-is preserved as an earlier zero-credit setup record and is not the formal
-failed T0 root.
-
-The focused quiescent forensic review found all 26 unique chunk IDs named by
-the 24 stage-start blockers currently reconciled as
-`AUTHORIZED_ARCHIVE_STATE_CURRENTLY_COMPLETE`: Catalog rows are
-`LOCAL_DELETED`, internal manifests remain, internal sealed Raw is absent,
-and verified archive Raw/manifests are present. All 26 local archive
-transactions and source retirements occurred after T0. This supports, but does
-not prove, a concurrent AcceptanceObserver filesystem/Catalog snapshot race;
-there is no per-read interleaving trace. The full installed read-only post-stop
-audit completed over 112,817 manifests in 115.95 seconds with zero Catalog
-findings, zero integrity findings, and zero chunks with scan issues. The
-compact review evidence and additive correction authority are under
-`.../operator-evidence/closeout-review/`; their SHA-256 values are recorded in
-`docs/milestone_acceptance/M22.9-2h.md`. The correction supersedes only the
-original mistaken no-result statement and does not alter the failed-stage
-disposition.
-
-The final VPS state recorded by that historical closeout was
-`RECORDER=STOPPED`, with systemd inactive/dead,
-`MainPID=0`, `Result=success`, `NRestarts=0`, and no active `.partial` files.
-`ARCHIVE_TIMER=ENABLED_ACTIVE` remains enabled and active/waiting; the verified
-archive target is READY, backlog/pending/failed counts are zero, and Catalog
-integrity is ok. The observer remained loaded failed for evidence. That
-historical attempt's status is `FORMAL_M22_9=EXECUTED_FAILED_AT_T0`,
-`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`, and
-`PRODUCTION_READY=NO`. At that checkpoint, the exact P2 source/review base
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` and deployment identity
-`11029b9434f72fe48912659c050167e6a058e9827cd40401c9a852dff3c019cd` were
-the installed artifact basis; the then-current engineering source containing
-the reviewed fix was not deployed. The installed P2 artifact was not
-retry-eligible; this was later superseded by the exact-artifact redeploy below.
-
-The owner-authorized Formal 2-hour retry on 2026-09-12 established one valid
-T0 and ten samples before Ubuntu unattended upgrades of glibc and Python 3.12
-reexecuted systemd and externally restarted both Recorder and the transient
-observer at approximately 85 minutes. The original stage has no
-`stage-final.json`, cannot be resumed across the changed process/service
-identity, and receives zero credit. A new-stage command relaunched by host
-maintenance produced one separate `REVIEW_REQUIRED` root; it is preserved as
-an ineligible automatic artifact, not an authorized second Formal attempt.
-Recorder was stopped, the archive timer remained enabled/active, archive
-backlog and pending are zero, Catalog integrity is `ok`, and no active
-`.partial` files remained. That closeout's milestone status was
-`M22_9_FORMAL_2H_RETRY_CLOSEOUT=REVIEWED_COMPLETE`;
-`FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED`,
-`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`, and
-`PRODUCTION_READY=NO`. The deployed runtime source remains
-`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`; after this documentation-only
-closeout, GitHub main is a documentation descendant and is not itself deployed.
-`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT`.
-
-The first 2026-09-12 attempt at that quiet-window preflight was aborted and is
-not accepted. An unsafe administrative cleanup crossed local/remote shell
-expansion boundaries with an unset target and recursively removed `/root/`
-contents, including SSH authorization. GreenCloud password reset and temporary
-VNC access restored `/root` and the dedicated VPS public key without a server
-rebuild; the temporary recovery key was removed and the owner confirmed VNC
-was disabled. The preceding reboot also auto-started the enabled Recorder for
-approximately six minutes; it was stopped successfully, created no observer or
-Formal stage, and earns zero credit. Recorder is now inactive and disabled,
-while the archive timer remained enabled/active. Deployment files, active data,
-Catalog, and archive under `/etc`, `/opt`, `/var/lib`, and `/srv` survived;
-anything stored only under `/root` is unavailable. That recovery checkpoint's
-milestone status was
-`M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF=COMPLETE`;
-`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED` and
-`NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH`.
-See `docs/milestone_acceptance/M22.9-vps-root-home-recovery.md`.
-
-The restart-from-scratch host-maintenance preflight completed on 2026-09-13.
-It installed the six pending Ubuntu updates before T0, left zero pending
-upgrades with a clean dpkg audit and no reboot requirement, proved a bounded
-runtime-only mask for both apt timers/services and
-`unattended-upgrades.service`, rejected explicit masked activation, and
-restored all normal update authorities. Recorder remained inactive and
-disabled; the archive timer remained enabled/active; Catalog integrity is
-`ok`; active partial and archive backlog/pending counts are zero; and no
-observer or Formal T0 was created. That checkpoint's milestone status was
-`M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=COMPLETE`,
-`FORMAL_M22_9_CREDIT_SECONDS=0`, `12H=NOT_STARTED`,
-`PRODUCTION_READY=NO`, and
-`NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`. The retry remains conditional on a
-separately authorized pre-start that repeats the package/lock/runtime-mask
-gate, explicitly enables/loads the Recorder unit, and passes fresh exact
-identity, readiness, archive, and capacity checks. See
-`docs/milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md`.
-
-The owner-authorized 2026-09-13 quiet-window retry created one valid Formal T0,
-14 canonical samples, and a canonical final after `7677610836692` BOOTTIME ns.
-It remains `EXECUTED_INCOMPLETE_OBSERVATION_GAP`: later full-state observer
-documents were approximately 223 MB, the audit/publication cycle exceeded the
-600-second evidence cadence, and `acceptance_observation_gap` remained in the
-final. Recorder PID, InvocationID, service instance, boot ID, and deployment
-identity were stable with `NRestarts=0`; Formal credit is zero and 12h remains
-not started. A later read-only operator diagnostic that materialized multiple
-large samples was OOM-killed, but only after the first blocker and without
-changing Recorder or observer identity. Controlled closeout stopped and
-disabled Recorder, drained archive backlog/pending to zero, verified Catalog
-`ok` and zero active partials, retained the archive timer enabled/active, and
-restored OS update authority. Current status is
-`M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT=REVIEWED_COMPLETE`,
-`PRODUCTION_READY=NO`, and
-`NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX`. Do not repeat the
-unchanged live run or start 12h. See
-`docs/milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md`.
-
-Before the quiet-window retry, the exact current main artifact was installed and READY on
-greencloud-tokyo-01. Source
-`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
-`e968ede54d9f110ef7371a4847a54940177a1a19`, wheel SHA-256
-`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
-and deployment identity
-`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`
-verify. At that readiness checkpoint Recorder was `RUNNING_READY` for the four
-configured ProductKeys and 12 core stream contexts, and the archive timer was
-enabled/active. No Formal T0 had yet been created, Formal credit was zero, and
-12h was not started. That milestone status was
-`EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS=COMPLETE`;
-`NEXT=FORMAL_M22_9_2H_RETRY_START`.
-The exact code-review commit `31cabe4445ee699ad284aa707d24333c78cf8d21`
-was independently reviewed against base
-`e214120a25a5aff28fad4903c9510920a25738d3` with P0=0, P1=0, and P2=0.
-That earlier review milestone status was
-`ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`;
-its time-local `NEXT` was `EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. That docs-only closeout was not a
-deployment authorization; any redeploy or retry requires separate
-authorization.
-
-The preceding operational milestone was
-`EXACT_ARTIFACT_REDEPLOY_PREFLIGHT`. The exact main candidate
-`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` (tree
-`e968ede54d9f110ef7371a4847a54940177a1a19`) was staged only in a private,
-root-controlled VPS evidence root. At that checkpoint the old P2 artifact was
-still installed and Recorder was stopped. The prior Formal 2-hour failure
-remained immutable with zero credit, no new Formal run had started, and
-`PRODUCTION_READY=NO`. That preflight was not deployment or live-run
-authorization; its time-local `NEXT` was
-`EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS`.
-
-The P2 evidence bundle is `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
-It verified the P2 deployment source/review base
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) in the installed deployment,
-drained the registered archive target through the existing verified transaction
-path, and completed the bounded non-formal live interaction before stopping
-Recorder. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact identity
-verification. At that historical checkpoint `CURRENT_MAIN_DEPLOYED=NO`; the
-then-current engineering source was not installed. At P2 completion the
-artifact was the Formal candidate; after the failed T0 it remained only the
-installed evidence basis, until the later exact-artifact redeploy superseded
-it.
-The archive timer is
-enabled and active/waiting; Recorder was stopped. The P2 review remains
-`M22_9_P2=REVIEWED_COMPLETE`; the later Formal attempt is a separate
-milestone record.
-The historical MS4-D review base used main
-`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
-`9fcf3e4128706938ffd02ef5a6af80c558cb234b`) and includes the merged MS4-C
-evidence closeout PR #61 at commit
-`013e20d6b911fde2f443aa6c855039599483ef7d`; base CI run `34551834444`
-completed successfully. P1 was based on main at its historical checkpoint
-`83a063f5bb9f91508238c9fd86d21aa45d1bd501`. Neither is a deployment
-authorization.
-
-P1 remains reviewed complete and keeps `AcceptanceObserver` as the sole
-measurement/evidence authority for a stage. Its external systemd 255 transient
-`Type=exec` procedure is separate from the P2 deployment. P2's archive timer
-uses the fixed verified deployment and the registered target
-`ef852751-721c-4145-9083-f6fd48718480` at
-`/srv/recorder-data/recorder-archive`; source retirement occurred only after
-the existing ArchiveManager/Catalog readback, hash, manifest, and transaction
-checks. The active writer root remains `/var/lib/binance-market-data-recorder`;
-the approximately 2 TB `/dev/vdb1` is an archive target, not an active writer
-root. See `docs/milestone_acceptance/M22.9-P2.md` for the bounded P2 record.
-
-The authoritative scope is `docs/project_contract.md`. Before current-state or
-milestone work, read `docs/PROJECT_HANDOFF.md` and
-`docs/CURRENT_PRODUCTION_STATE.md`; the delivery sequence and acceptance gates
-are in `docs/milestone_plan.md`. Historical evidence files preserve their own
-time-local status and must not be treated as current operational authority.
+Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
+`docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is
+`docs/developer_guide.md`; project scope is `docs/project_contract.md`; delivery
+and acceptance gates are in `docs/milestone_plan.md`. Historical evidence retains
+its time-local status and is not current operational authority.
 
 ## Non-goals
 
@@ -269,7 +54,7 @@ time-local status and must not be treated as current operational authority.
 - No account endpoints, orders, API keys, secrets, or credential discovery.
 - No other exchanges, automatic all-symbol discovery, or exchange/plugin
   framework. Product selection follows ADR-0032 and becomes effective only on
-  restart; MS2 offline acceptance does not authorize deployment.
+  restart.
 - No Docker as the certified V1 deployment, Kafka, Kubernetes, or cloud-first
   stateless collection.
 - No automatic formatting, repair, repartitioning, or exclusive ownership of an
@@ -382,28 +167,23 @@ Never place trades, call account or order endpoints, read API keys, inspect
 credential stores, add secret fields to configuration, or request trading
 permissions. Public, unsigned market-data endpoints only.
 
-## Milestone workflow
+## Development workflow
 
-Exactly one milestone is allowed per run and per local commit. Before work:
+Follow the owner's latest task and the current code. Historical milestone
+instructions describe their original runs; they do not automatically constrain
+new development. Update obsolete documentation and checks when requirements
+change. Keep documents practical and avoid adding speculative infrastructure.
 
-1. Read this file, `docs/milestone_plan.md`, and the milestone's ADRs/contracts.
-2. Check Git status and preserve unrelated user changes.
-3. Verify the previous milestone's acceptance record. M0 has no predecessor;
-   its bootstrap exception is recorded in the M0 acceptance section.
-4. State the current milestone and do not implement later scope.
+1. Read the current handoff and the contracts relevant to the task.
+2. Check Git status and preserve unrelated changes.
+3. Implement a coherent scope, using as many logical commits as the work needs.
+4. Run checks that cover the change; record results and relevant unrun checks.
+5. Update current docs where behavior or status changed. Record substantial
+   architecture or data-contract changes in an ADR.
+6. Report the result, remaining limitations, and the next useful step.
 
-Before completing a milestone:
-
-1. Run all acceptance commands possible in the current environment.
-2. List tests not run and why; never silently lower a gate.
-3. Update the plan, risk/source records, contracts, and acceptance evidence.
-4. Ensure every commit contains only the current milestone. Normally create one
-   local commit; when the human milestone instruction explicitly requires
-   multiple logical commits (as in M19), keep those commits milestone-pure,
-   verify a clean worktree, and stop.
-5. Report milestone, modified files, architecture decisions, commands, test
-   results, unrun tests, known limitations, compatibility impact, and the next
-   milestone name.
+Production operations follow the current owner-approved task. A documentation
+status or a historical live-run procedure is not itself a command to start work.
 
 ## Test layers
 

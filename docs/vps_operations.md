@@ -1,11 +1,24 @@
 # VPS Operations
 
-## V5 implementation candidate — not deployed or authorized for execution
+## Current checkpoint — October 1, 2026
 
-Repository-owned V5 baseline, stage, finalize and verify commands are implemented
-and tested offline. See the [implementation contract](acceptance_evidence_v5.md)
-and [offline record](milestone_acceptance/M22.9-v5-implementation.md).
-This task touched no VPS and grants no production execution authorization.
+V5 is merged in PR #78 and deployed from exact source
+`89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`. The owner stopped its baseline
+before audit-root publication. Recorder is inactive/disabled, the audit and
+resource sampler are stopped, and the continuation automation is paused.
+Archive and OS maintenance timers are restored. No V5 Formal stage started.
+Read [current state](CURRENT_PRODUCTION_STATE.md),
+[handoff](PROJECT_HANDOFF.md), and the [V5 contract](acceptance_evidence_v5.md).
+
+Future V5 execution uses baseline -> verify -> fresh readiness -> online stage
+-> target -> operator stop/drain/quiescence -> finalize -> verify. The observer
+does not stop Recorder. The stopped Recorder unit must remain loaded for
+quiescence/identity probes; the retained operator `pin-unit-exec.py` holds a
+DBus unit reference without enabling or starting it. Use the canonical environment
+path and an accessible working directory under `runuser`.
+
+The procedures below include historical artifact checkpoints. Their former
+next actions do not restart the paused qualification.
 
 ## Previous accepted architecture checkpoint
 

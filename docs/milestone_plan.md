@@ -1,6 +1,24 @@
 # Milestone Plan
 
-## Current milestone — M22.9 V5 implementation candidate (2026-09-30)
+## Current checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
+
+PR #78 merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`; independent
+implementation review accepted head `227b09aa3e328f890e8178603bf493013d8d91f5`
+with P0=0, P1=0, P2=1, P3=0. Exact merged-main local gates and dual-platform
+CI passed. V5 is deployed on Tokyo, but the owner stopped the baseline before
+`audit-root.json` publication. No V5 Formal T0 or duration stage was started.
+Recorder and audit are stopped; the continuation monitor is paused; normal
+archive and OS maintenance authority is restored. Evidence is retained.
+`12H_STARTED=NO`; `PRODUCTION_READY=NO`.
+
+Next work: agree on the qualification approach with the owner, using retained
+partial production measurements to assess the open
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY` P2. No automatic live continuation is
+scheduled. See [current state](CURRENT_PRODUCTION_STATE.md),
+[developer guide](developer_guide.md), and
+[owner-stop record](milestone_acceptance/M22.9-v5-deployment-owner-stop.md).
+
+## Previous implementation checkpoint — M22.9 V5 implementation candidate (2026-09-30)
 
 Implementation follows accepted ADR-0034 from exact main
 `8c3bb8a80e8a4ef2ef3939dfce43f92dab64a280`, tree
@@ -1192,54 +1210,25 @@ RECORDER=STOPPED
 NEXT=FORMAL_M22_9_PREPARATION_REQUIRES_SEPARATE_AUTHORIZATION
 ```
 
-### Execution, review and CI rules for every continuation
+### Development workflow
 
-- Recommended implementation model: Luna, max. Astra owns final independent
-  review and architecture decisions. Sol-medium is optional only when the owner
-  explicitly chooses it; no extra agents or background tasks are implied.
-- At run start read this ledger and Git status; choose the first authorized
-  unfinished package in the current milestone. Complete routine steps without
-  repeated permission questions. At a review boundary deliver one evidence
-  bundle; after review the next run reads the revised queue from this document.
-- An implementer may mark work IMPLEMENTED / AWAITING REVIEW, never approve its
-  own independent review. A reviewer marks CLOSED only when the stated exit is
-  met. Record new findings here with file, trigger, impact, minimal change and
-  test, so the next Luna run has a concrete task rather than another redesign.
-- Keep one milestone per run/commit. This document's future planning is not
-  future implementation. Preserve user files and these uncommitted planning
-  edits; do not demand a globally clean checkout by deleting unrelated files.
-- Documentation-only changes require diff/link/status checks, not test/CI
-  reruns. Code/test changes require focused regression and applicable repository
-  offline gates; report unrun tests. Do not manually trigger/retry/cancel/wait on
-  CI, bypass required checks, or disable workflows. Normal pushes may naturally
-  trigger configured CI; the owner supervises it.
-- GitHub mutations run only through the user's local Luna execution prompt.
-  Do not merge without the review/authorization gate. Branch cleanup is separate
-  maintenance: only proven merged tips with no later work, no active worktree,
-  no protected/default/current branch; preserve restoration SHAs, use a remote
-  expected-tip condition, and retain local branches when `git branch -d` fails.
-- Return milestone/package, base/head/tree, changed files, tests, unrun reasons,
-  findings resolved/open, compatibility, NEXT and execution machine. Include
-  concrete missing inputs only when they actually block the next authorized step.
+Use the current owner task and [agent workflow](../AGENTS.md#development-workflow).
+Keep commits coherent, preserve unrelated work, and run checks relevant to the
+change. Historical model assignments and one-milestone-per-run rules are retired.
+Independent review remains independent; report implementation, review and actual
+production qualification as separate results.
 
 ## Universal gate
 
-Before every milestone, read `AGENTS.md`, this plan, and the milestone's ADRs
-and contracts; inspect Git status; verify the previous milestone acceptance;
-and preserve unrelated changes. At completion, run the stated gates, record
-unrun tests without lowering standards, update risks/compatibility, make one
-local commit containing only that milestone, require a clean worktree, report,
-and stop.
+Read the current handoff and relevant contracts, inspect Git status, implement
+the requested scope, and verify it. Update behavior/status documentation and
+record material limitations. Routine fixes do not require a new architecture
+milestone or a full live qualification run. Data-format and architecture changes
+need explicit compatibility analysis and an ADR where appropriate.
 
-If official API semantics, macOS permission, or platform behavior cannot meet a
-gate, stop implementation, capture evidence, and update the risk register. No
-plausible but semantically different substitute is acceptable. Every milestone
-inherits the bans on trading/accounts/keys, GUI, filesystem format/repair, and
-modifying external consumer repositories. A future named-consumer validation is
-read-only and optional unless separately authorized.
-
-Rollback always preserves immutable data. “Revert commit” below means revert
-code/config/schema additions; it never means delete or rewrite captured Raw.
+Rollback preserves captured Raw and existing evidence. The milestone descriptions
+below retain the original delivery sequence and acceptance records; completed
+steps are not prerequisites to repeat for every new task.
 
 ## Dependency graph
 
@@ -1252,7 +1241,7 @@ M0 -> M0.1 -> M0.2 -> M1 -> M2 -> M3 -> M4 -> M5 -> M6 -> M7 -> M8 -> M9 -> M10
                                   all implemented/fault gates -> M17 -> M18
 ```
 
-Sequential execution remains mandatory even where the graph permits a weaker
+The original delivery sequence was sequential even where the graph permits a weaker
 technical dependency.
 
 ## M0 — Repository audit, boundary freeze, and complete plan

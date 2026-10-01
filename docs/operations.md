@@ -1,87 +1,16 @@
 # Operations
 
-Current implementation status and approved future architecture are distinct.
-macOS LaunchAgent and Ubuntu ARM64/RK3588 systemd procedures below describe
-implemented/local validation profiles. The primary production deployment
-profile is Ubuntu 24.04 LTS x86_64. The P2 host has 4 vCPU and
-6,163,615,744 bytes RAM; active `/dev/vda1` is 61,285,326,848 bytes and
-archive `/dev/vdb1` is 2,163,348,520,960 bytes. See
-[`vps_operations.md`](vps_operations.md). The earlier reviewed MS4-B stopped deployment
-is installed from source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
-`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`) and was run in the bounded MS4-C/R3
-core qualification; that is historical. The original two-hour window remains
-partial, while the R3 supplement closes the recovery gate for review with zero
-Formal M22.9 duration credit. The P2 registered VPS archive target was
-exercised through the verified ArchiveManager/Catalog path; external-media
-production certification and the Formal M22.9 chain remain pending.
+Use [current production state](CURRENT_PRODUCTION_STATE.md) for exact artifact
+and service status. V5 from PR #78 is deployed on Ubuntu 24.04 x86_64. The
+owner stopped qualification during its baseline on October 1, 2026. Recorder is
+stopped/disabled; archive and OS update timers are restored. Operational
+qualification is incomplete; this document describes available commands.
 
-The current milestone is `M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE`. The
-owner-authorized Formal 2-hour attempt remains
-`FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0`: its immutable T0 existed, but the
-observer failed before its first sample with 24 blockers and receives zero
-duration credit. Post-stop exact reconciliation covered 26 implicated chunks;
-the full installed read-only audit covered 112,817 manifests with zero Catalog
-or integrity findings. This supports, but does not prove, a concurrent
-observer/archive snapshot race. Recorder remains stopped; the archive timer is
-enabled/active with zero backlog. See
-[`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md).
-
-The exact deployment basis remains the reviewed P2 artifact.
-The exact P2 deployment source/review base
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`) was installed and deployment
-verified. The four canonical ProductKeys reached readiness with 12 core stream
-contexts; Recorder was gracefully stopped and is currently inactive/dead with
-`MainPID=0`, `Result=success`, and `NRestarts=0`. The registered archive target
-`ef852751-721c-4145-9083-f6fd48718480` was drained through the existing
-verified ArchiveManager/Catalog transaction path; full verification reported
-112,570 verified files, zero failed, and zero pending. The managed timer is
-enabled and active/waiting with a future monotonic trigger. The evidence bundle
-is under `/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`;
-see [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md).
-
-`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact installed identity
-verification. After this docs-only merge,
-`CURRENT_MAIN_DEPLOYED=NO`; the docs-only merge descendant is not installed.
-The installed P2 artifact remains the evidence basis for the failed attempt,
-but is not retry-eligible until the scoped observer fix is reviewed and a
-later exact artifact is separately authorized and deployed.
-`PRODUCTION_READY=NO`; 12 hours and all later stages are not started. The
-conservative archive projection has approximately 1.772 TB of
-target margin, while active-root runway above the 10 GiB hard reserve is only
-about 26.46 hours. Every future Formal stage must recheck timer, backlog,
-target capacity, and active-root runway. P1 remains reviewed complete as a
-documentation-only systemd-detached observation preparation.
-
-NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST
-
-Current operational authority is consolidated in
-[`CURRENT_PRODUCTION_STATE.md`](CURRENT_PRODUCTION_STATE.md) and takeover
-context in [`PROJECT_HANDOFF.md`](PROJECT_HANDOFF.md). GitHub `main` at MS4-C
-review start was `efae0135ed5272d18d800af0ac247b70ece07422` (tree
-`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`), and later merges may change live
-`main`. The P2 deployment source/review base for this checkpoint is
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`). The earlier MS4-B deployment
-source `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` is historical. The MS1 merge
-`d38180074b5f76ab6b7778eea7fc505160c671ae` (tree
-`95f16f05b30b7db23e43ebb6439ed0d055081902`) is historical foundation lineage
-only. The recorded MS4-C review-start `main` snapshot was a documentation-only
-descendant and was not deployed.
-The pre-MS1 source `c421605e…` remains the independently qualified deployed
-single-symbol artifact; its clean 24-hour non-formal stage is complete. MS3-B
-is merged, and the MS4-B exact target deployment is reviewed complete. The
-original MS4-C window was partial; the R3 supplement closes the recovery gate
-for review with zero Formal M22.9 duration credit. The service is stopped, the
-archive timer is enabled/active for verified draining, and MS4-D has closed the non-formal bounded
-four-ProductKey qualification. Formal M22.9 has a failed-at-T0 2-hour attempt
-with zero credit; later stages have not started and Production Ready remains
-NO.
-
-Ubuntu ARM64/RK3588 systemd, explicit proxy, update/rollback, mounted external
-directory, and M21 soak procedures are in
-[`ubuntu_rk3588_operations.md`](ubuntu_rk3588_operations.md). Ubuntu is an M20
-Developer Preview / Soak Candidate, not the primary production authority.
+Platform procedures are in [macOS operations](macos_operations.md),
+[Ubuntu ARM64 operations](ubuntu_rk3588_operations.md), and
+[VPS operations](vps_operations.md). Heavy replay, normalization and historical
+imports run in offline profiles. The archive protocol/library is implemented;
+portable archive-client rollout remains unfinished.
 
 ## Proxy status
 

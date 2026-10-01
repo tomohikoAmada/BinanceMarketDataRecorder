@@ -1,7 +1,8 @@
 # M22.9 acceptance evidence V5 implementation contract
 
 Policy authority is [accepted ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md).
-This describes the implementation candidate, not deployment or live authorization.
+This describes the implementation merged through PR #78. Deployment status and
+the owner-stopped qualification are recorded in [current state](CURRENT_PRODUCTION_STATE.md).
 V1/V2/V3/V4 readers and their historical decisions retain their existing routing.
 `CURRENT_SCHEMA_VERSION` and `V5_SCHEMA_VERSION` are
 `m22.9-acceptance-evidence.v5`; the historical `SCHEMA_VERSION` alias remains V3.

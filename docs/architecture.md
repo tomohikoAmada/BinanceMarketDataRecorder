@@ -1,29 +1,32 @@
 # Architecture
 
-This document describes the implemented Recorder, the approved future
-deployment topology, and the implemented configurable product set.
-The exact installed behavior/deployment authority is the P2 source
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` (tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`). Later documentation-only
-descendants are not deployed. MS2 and MS3-B are implemented, offline-accepted,
-and merged; MS4 is reviewed complete for the non-formal bounded
-four-ProductKey core. The owner-authorized Formal M22.9 2-hour observer then
-created T0 and failed before its first sample, so the 2-hour stage is not passed
-and receives zero credit. A quiescent review reconciled the affected archive
-lifecycle and supports, but does not prove, a concurrent observer/archive
-snapshot race. Recorder is stopped, the archive timer is enabled and
-active/waiting, 12h is not started, and Production Ready is not authorized.
-See `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PRODUCTION_STATE.md`, and
-`docs/milestone_acceptance/M22.9-2h.md`.
+This document describes the implemented Recorder and its deployment roles.
+Configurable Spot/USD-M products and V5 acceptance are merged through PR #78.
+The installed code is `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`; qualification
+was stopped by the owner during the baseline on 2026-10-01. Exact current
+operational status is in [current state](CURRENT_PRODUCTION_STATE.md).
+The [developer guide](developer_guide.md) maps these components to source files.
+
+## V5 acceptance architecture
+
+Ordinary observations consume bounded durable Catalog deltas and indexed causal
+companions rather than scanning all historical manifests. A stopped baseline
+provides starting cursors and continuation state. At the timed online target,
+an operator stops Recorder and drains/pauses archive mutation. A frozen private
+manifest corpus and Catalog backup then support streamed full Raw/archive audit
+and independent LIVE Raw verification before final publication. Completed
+historical verification reconstructs frozen controls/proofs. V1–V4 readers and
+Raw v1 remain unchanged. See [V5 contract](acceptance_evidence_v5.md) and
+[ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md).
 
 ## M19 recovery boundary
 
-Each core market owns a depth capture session and resync coordinator. A depth
-lifecycle break, sequence gap, or bounded bootstrap overflow restarts only that
-market's connections and snapshot bridge. A terminal core task records
-evidence, seals the other core market, exits nonzero, and lets launchd perform
-whole-process recovery. Auxiliary public datasets restart independently and
-can degrade status without stopping core Raw.
+Each configured ProductKey owns a depth capture session and resync coordinator.
+A depth lifecycle break, sequence gap, or bounded bootstrap overflow restarts only that
+product's connections and snapshot bridge. A terminal core task records
+evidence, drains the remaining core collectors, exits nonzero, and lets the
+service manager perform whole-process recovery. Auxiliary public datasets restart
+independently and can degrade status without stopping core Raw.
 
 Historical Importer is an offline sibling of Live collection. It writes below
 `data/historical`, uses official archive checksums/revisions, and publishes
@@ -163,8 +166,8 @@ capture; verified reinsertion reactivates allocation.
 M14 implements the native process boundary under ADR-0019. One logged-in-user
 LaunchAgent owns a kernel `flock`, runs M3 startup recovery, supervises isolated
 Spot/USD-M workers, writes an atomic PID/freshness-validated state heartbeat,
-and maps SIGTERM to Collector drain/seal. All core workers stopping makes the
-process fail for launchd restart; one market failure remains isolated.
+and maps SIGTERM to Collector drain/seal. Current supervision isolates recoverable
+product failures; a terminal core failure stops the process for service-manager restart.
 NSWorkspace notifications plus wall/monotonic discontinuity evidence mark
 sleep gaps. Optional `caffeinate -i -w <pid>` is scoped to the service lifetime
 and never changes persistent power policy.

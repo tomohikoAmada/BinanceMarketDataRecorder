@@ -1,0 +1,1211 @@
+> Archived snapshot through 2026-09-30. Statements of current status and next actions below are time-local. See [current state](CURRENT_PRODUCTION_STATE.md) and [handoff](PROJECT_HANDOFF.md) for the 2026-10-01 checkpoint.
+
+# BinanceMarketDataRecorder — Project Handoff
+
+This handoff is self-contained for a new development team. It separates
+current GitHub engineering authority, the older deployed/qualified artifact,
+and the current multi-symbol qualification program. Documentation is not deployment or live
+traffic authorization.
+
+## Current milestone — M22.9 V5 implementation candidate (2026-09-30)
+
+Implementation follows accepted ADR-0034 from exact main
+`8c3bb8a80e8a4ef2ef3939dfce43f92dab64a280`, tree
+`99f2a80de09f222b60eada49a288d8ca2a5306c1`, in a separate clean worktree.
+The candidate implements the additive operational sequence migration, bounded
+online deltas and causal replay, stopped baseline, immutable target, private
+quiescence corpus, streamed full terminal audit, both resume paths, independent
+verification and CLI. Offline qualification is recorded in the
+[V5 implementation record](milestone_acceptance/M22.9-v5-implementation.md).
+Implementation review remains separate; this is not deployment qualification.
+
+V4 2h remains historical ACCEPT, final SHA-256
+`59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`.
+V4 12h remains historical INCOMPLETE, final SHA-256
+`49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`,
+zero accepted seconds; its `627.60286927s` gap remains rejected.
+The 300/600/900-second authorities and V1–V4 semantics are unchanged.
+
+`V5_IMPLEMENTED=YES` (offline candidate); `V5_DEPLOYED=NO`;
+`FORMAL_V5_STARTED=NO`; `VPS_TOUCHED=NO`; `PRODUCTION_READY=NO`.
+The implementation task starts no Recorder or Formal stage and authorizes no
+production baseline, deployment or retry. A fresh artifact still requires
+identity → baseline → readiness → 2h → 12h → 24h → 72h → 168h;
+V4 duration cannot transfer. The production-corpus throughput P2
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY` remains OPEN.
+`NEXT=M22_9_V5_INDEPENDENT_IMPLEMENTATION_REVIEW`.
+
+## Previous architecture checkpoint — M22.9 V5 architecture reviewed complete (2026-09-30)
+
+Verified live GitHub `main` is
+`354f5199eda687dfe2223b0b481c8de669dfdabf` / tree
+`101703dbd6a6da6f8633f2a46e1323ab5b87188c`. V4 2h remains historical
+`ACCEPT` (final SHA-256 `59bf31036069029ca48c94c2f0f225820e1843e11c783604c9a405348d5a760f`,
+`7676.600247655` accepted seconds). V4 12h remains `INCOMPLETE` (final
+SHA-256 `49f1e6e610edbc7e4ebfa5a52d92ffb26867dcbef1e6e18a9c6af6025d7dd5de`,
+zero accepted seconds): sample 96→97 took `627.60286927` seconds and the
+installed verifier rejects its gap. No historical result is revised.
+
+V4's AcceptanceObserver repeats O(total historical manifests) work per sample;
+the Recorder, scheduler, and archive were not found defective. Accepted ADR-0034
+freezes `m22.9-acceptance-evidence.v5`: it separates bounded 300/600-second online
+observation from a post-target, quiescent exact full-integrity audit. Any old
+manifest mutation/loss present in the exact private control corpus frozen at
+quiescence must fail before stage eligibility. This is a declared V5 detection
+timing change. ADR-0033's 900-second global readiness episode
+is retained. Independent review accepted PR #77 at head
+`0a03bd2f54af2d516ea6f3ef7861f524c72f17da` (`P0=0`, `P1=0`,
+`P2=1`, `P3=0`), including corpus freeze and cross-cursor causality.
+`TERMINAL_FULL_RAW_AUDIT_SCALABILITY` is a nonblocking P2 requiring measured
+audit throughput, Raw/archive bytes/sec, peak RSS, and total duration before
+implementation qualification. The architecture closeout is docs-only; V5 is
+not implemented or deployed, the VPS was not touched, and no Formal retry is
+authorized. A future V5 artifact will require a fresh identity, baseline
+audit, readiness, and full
+2h→12h→24h→72h→168h chain. See [ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md)
+and the [V5 architecture record](milestone_acceptance/M22.9-v5-bounded-online-terminal-audit-architecture.md).
+
+```text
+MILESTONE=M22_9_V5_BOUNDED_ONLINE_TERMINAL_AUDIT_ARCHITECTURE
+MILESTONE_STATUS=REVIEWED_COMPLETE
+ARCHITECTURE=ACCEPT
+V5_IMPLEMENTED=NO
+V5_DEPLOYED=NO
+FORMAL_V5_STARTED=NO
+VPS_TOUCHED=NO
+FORMAL_RETRY_STARTED=NO
+V4_2H_HISTORICAL_ACCEPT=YES
+V4_12H_HISTORICAL_INCOMPLETE=YES
+V5_FRESH_CHAIN_REQUIRED=YES
+NEXT=M22_9_V5_IMPLEMENTATION
+```
+
+## Previous milestone — M22_9 acceptance evidence V4 reviewed closeout (2026-09-26)
+
+ADR-0033 policy authority remains frozen and unchanged. V4 is implemented as
+`m22.9-acceptance-evidence.v4` with explicit V1/V2/V3/V4 dispatch, a
+constant-space global readiness episode, independent streaming verification,
+and resume continuity. Offline validation and the final independent review are
+complete for PR #76. It does not authorize deployment, VPS work, Recorder
+start, or Formal execution.
+
+Current status chronology (the detailed historical records below remain
+immutable):
+
+- 2026-09-12: root-home / host-maintenance incident.
+- 2026-09-13: host-maintenance preflight completed.
+- 2026-09-20: V3 Formal 2h accepted.
+- 2026-09-21: V3 12h attempt #1 and #2 both failed; credit=0.
+
+The live GitHub `main` base was verified exactly before authoring this policy:
+
+```text
+POLICY_BASE_SOURCE_SHA=6e5dd91575d53e226a20d1873eafa3e06ca64329
+POLICY_BASE_SOURCE_TREE=3262aa4ea46156631358a1002b7833d37325eb87
+```
+
+ADR-0033 freezes one global, acceptance-observed in-stage recovery episode at
+900 seconds (15 minutes) on integer Linux `CLOCK_BOOTTIME` nanoseconds. The
+episode begins at the first observed recoverable ProductKey core `NOT_READY`
+sample after valid READY/T0 authority and closes at the first subsequent
+`READY` sample. It does not use the 300-second deployment-readiness timeout,
+does not infer an unobserved start, and does not change the 300-second sample
+cadence or 600-second evidence-gap bound. A recoverable episode that remains
+`NOT_READY` beyond 900 seconds produces sticky
+`readiness_recovery_deadline_exceeded`; any terminal `NOT_READY` independently
+produces `readiness_not_ready` and fails the final.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V4_IMPLEMENTATION
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_REVIEWED_COMPLETE
+V4_POLICY_DEADLINE_AUTHORITY=FROZEN
+V4_SCHEMA=m22.9-acceptance-evidence.v4
+V4_IMPLEMENTED=YES
+V4_DEPLOYED=NO
+FORMAL_V4_STARTED=NO
+V4_DURATION_CREDIT_SECONDS=0
+VPS_TOUCHED=NO
+CURRENT_RECORDER=STOPPED
+RECORDER=STOPPED
+V3_2H_HISTORICAL_ACCEPT=YES
+V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032
+V3_12H_ATTEMPT_COUNT=2
+V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE
+V3_12H_ATTEMPT_1_CREDIT_SECONDS=0
+V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY
+V3_12H_ATTEMPT_2_CREDIT_SECONDS=0
+V3_12H_ELIGIBLE=NO
+24H_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+RETRY_V3_12H_UNCHANGED=NO
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=EXACT_V4_ARTIFACT_BUILD_AND_STOPPED_DEPLOYMENT
+```
+
+The full policy authority is [`ADR-0033`](adr/0033-m22-9-in-stage-readiness-recovery-deadline.md).
+V3 evidence and semantics remain historical and immutable. See
+[`M22.9 acceptance evidence V4`](milestone_acceptance/M22.9-acceptance-evidence-v4.md)
+for the implementation and offline-validation record.
+
+## Previous milestone — M22_9 acceptance evidence V3 (2026-09-18)
+
+The frozen P1 acceptance-policy defect is corrected in the acceptance-only V3
+implementation on branch `fix/m22-9-acceptance-evidence-v3`. Valid Catalog
+OPEN is retained in compact causal transitions during intermediate samples and
+is not a blocker; a Catalog OPEN remaining after the terminal sample derives
+`unresolved_discontinuity` and fails closed. V1/V2 historical semantics and
+immutable files remain unchanged, and mixed V2/V3 predecessor chains are
+rejected explicitly.
+
+```text
+MILESTONE=M22_9_ACCEPTANCE_EVIDENCE_V3
+MILESTONE_STATUS=IMPLEMENTED_OFFLINE_VALIDATED_PENDING_INDEPENDENT_REVIEW
+VPS_TOUCHED=NO
+DEPLOYED=NO
+FORMAL_V3_STARTED=NO
+FORMAL_M22_9_CREDIT_SECONDS=0
+PRODUCTION_READY=NO
+NEXT=INDEPENDENT_REVIEW_EXACT_ARTIFACT_REBUILD_AND_SEPARATELY_AUTHORIZED_DEPLOYMENT
+```
+
+Offline pytest, Ruff, strict MyPy, M0 contracts, and build validation pass.
+This source is not installed on the VPS and does not authorize deployment,
+live traffic, or Formal acceptance. The implementation record is
+[`M22.9 acceptance evidence V3`](milestone_acceptance/M22.9-acceptance-evidence-v3.md).
+
+## Previous milestone — M22_9 Formal 2-hour quiet-window retry closeout (2026-09-13)
+
+The quiet-window retry produced a canonical final after 14 samples and more
+than the required two hours, but finalized `INCOMPLETE`. Full observer evidence
+grew to approximately 223 MB per later sample; audit plus durable publication
+eventually exceeded the mandatory 600-second observation cadence. The first
+blocker appeared in `sample-00000005.json`, the maximum observed gap was
+`696.438246769` seconds, and the final retained
+`acceptance_observation_gap`.
+
+Recorder remained stable at PID `35683`, InvocationID
+`cd5d1dcc7ce54c10a15c166c893af609`, service instance
+`4829aec5-4a34-41cd-94ef-bb972c31446c`, unchanged boot ID, and
+`NRestarts=0`. Controlled closeout stopped and disabled Recorder, drained
+archive work, verified Catalog and storage, kept the archive timer
+enabled/active, and restored OS update authority.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_QUIET_WINDOW_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_QUIET_WINDOW_RETRY=EXECUTED_INCOMPLETE_OBSERVATION_GAP
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=M22_9_ACCEPTANCE_OBSERVER_BOUNDED_EVIDENCE_FIX
+```
+
+Do not repeat the unchanged live test or start 12 hours. The next development
+milestone is limited to bounded repeated evidence and bounded-memory chain
+verification while preserving the existing integrity semantics. Full evidence,
+hashes, four preserved pre-T0 setup records, the monitoring-side OOM incident,
+and closeout state are in the
+[`Formal 2-hour quiet-window retry closeout`](milestone_acceptance/M22.9-formal-2h-quiet-window-retry.md).
+
+### V3 development queue at that historical checkpoint
+
+1. Independently review and rebuild the exact M22.9 acceptance-evidence V3
+   artifact.
+2. Deploy that exact reviewed artifact through a separately authorized stopped
+   redeploy/readiness milestone.
+3. Run a fresh V3 Formal 2-hour stage only after deployment; start 12h, 24h,
+   72h, and 168h independently and in order only after each preceding eligible
+   final.
+4. Keep the closed MS1–MS4 configurable-product implementation frozen unless
+   evidence identifies a concrete Recorder defect. Four ProductKeys are the
+   bounded qualification workload, not a hard-coded allowlist.
+5. Treat GitHub issue #59 (`Possible exposed API Key / Secret`) as a separate
+   security-triage task; never reproduce possible secret material.
+
+The 2026-09-13 GitHub audit found no open PR, running Action, or remote branch
+other than `main` in Recorder or Contracts. Contracts remains compatible: its
+symbol identity is opaque and already includes market/symbol attribution.
+
+## Previous milestone — M22_9 host-maintenance quiet-window preflight (2026-09-13)
+
+The restarted preflight is complete. The six pending Ubuntu packages were
+installed before any T0; the post-maintenance simulation reports zero pending
+upgrades, `dpkg --audit` is empty, and no reboot is required. A bounded
+runtime-only mask of `apt-daily`/`apt-daily-upgrade` timers and services plus
+`unattended-upgrades.service` was tested. All five units were inactive and
+`masked-runtime`, an explicit start probe was rejected, and the 60-second hold
+had no systemd reexecution or boot change. Persistent update authority was then
+restored and all three normal timer/service authorities are enabled and active.
+
+Recorder remained inactive and disabled throughout; no observer, acceptance
+stage, or Formal T0 was created. The archive timer is enabled/active, Catalog
+integrity is `ok`, active partial count and archive backlog/pending are zero,
+and the registered archive target is READY.
+
+```text
+MILESTONE=M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_AT_PREFLIGHT_SHA=3fbf59c276583ed0d7c9b46909f6fc644c9296f3
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+OS_UPDATE_AUTHORITY=RESTORED
+PENDING_UPGRADES=0
+REBOOT_REQUIRED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=YES_CONDITIONAL_ON_FRESH_PRESTART_GATES
+NEXT=FORMAL_M22_9_2H_QUIET_WINDOW_RETRY
+```
+
+The evidence root is
+`/srv/recorder-data/recorder-archive/evidence/M22.9-host-maintenance-quiet-window-preflight-20260913T0533Z-BClBDtHq`;
+its evidence-index SHA-256 is
+`7db53fd6f05b7f8125b2c69e63d8b1888f963b0707602b6068ec4599a3b52458`.
+The installed verifier's known `Unit ... not loaded` result while Recorder is
+disabled remains a mandatory pre-start check: the next authorized 2-hour
+procedure must explicitly enable/load the unit and rerun exact identity,
+readiness, archive and capacity gates before creating one new T0. See
+[`M22.9 host-maintenance quiet-window preflight`](milestone_acceptance/M22.9-host-maintenance-quiet-window-preflight.md).
+
+### Development queue at that checkpoint
+
+1. Run one new `FORMAL_M22_9_2H_QUIET_WINDOW_RETRY`; this is the only next
+   Recorder milestone.
+2. Only after an eligible 2-hour final record, run independent 12h, 24h, 72h,
+   and 168h stages in order. No stage starts automatically and no historical
+   duration transfers.
+3. Keep the already closed MS1–MS4 configurable-product implementation frozen
+   unless the Formal evidence identifies a concrete product-isolation or
+   resource defect. The runtime already supports operator-configured finite
+   Spot/USD-M symbol sets; the four-ProductKey profile is the bounded production
+   qualification workload, not a hard-coded allowlist.
+4. Treat GitHub issue #59 (`Possible exposed API Key / Secret`) as a separate
+   security-triage task. Do not copy possible secret material into prompts,
+   logs, commits, or milestone evidence.
+
+The 2026-09-13 GitHub audit found no open PR, no running Action, and no remote
+branch other than `main` in Recorder or Contracts. There is currently no
+completed branch to delete. Contracts needs no change for Recorder
+multi-symbol work: its symbol identity is already opaque and market/symbol
+attribution is part of the public contract surface. Gateway's fixed two-product
+runtime is a separate repository concern and does not block Recorder M22.9.
+
+## Previous milestone — M22_9 VPS root-home recovery and handoff (2026-09-12)
+
+The attempted host-maintenance quiet-window preflight is aborted and
+unaccepted. A remote cleanup command crossed local/remote variable-expansion
+boundaries with an unset target and recursively removed `/root/` contents,
+including SSH authorization. Recovery used the GreenCloud password reset and
+VNC console without rebuilding the VPS. `/root` is restored as `root:root`
+`0700`; exactly one dedicated VPS key remains in `authorized_keys`, a new SSH
+session passed, and the owner confirmed VNC was disabled. Anything previously
+stored only under `/root` is no longer an authority.
+
+The owner reboot immediately before this incident created boot ID
+`bf2d01cf96b24268a6c94bccbcc49b3f` on Ubuntu 24.04.4, kernel
+`6.8.0-139-generic`. The enabled Recorder automatically ran from
+`2026-09-12T11:32:36.869172Z` until a successful stop at
+`11:38:59.343979Z`. No observer or stage root was created, so the short run is
+non-formal and earns zero credit. Recorder is now inactive and disabled; the
+archive timer remains enabled/active.
+
+```text
+MILESTONE=M22_9_VPS_ROOT_HOME_RECOVERY_AND_HANDOFF
+MILESTONE_STATUS=COMPLETE
+HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=ABORTED_UNACCEPTED
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_AT_AUDIT_START_SHA=4615df5e8d046a0aa70b94a4c8ffb0de6bf5d44b
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCUMENTATION_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+RECORDER_ENABLED=NO
+ARCHIVE_TIMER=ENABLED_ACTIVE
+ROOT_HOME_RECOVERY=COMPLETE
+SSH_KEY_RECOVERY=VERIFIED
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT_RESTART_FROM_SCRATCH
+```
+
+The installed artifact and deployment files survived, Catalog integrity is
+`ok`, active `.partial` count is zero, archive backlog/pending are zero, and
+the registered 2 TB target is READY. Deployment verification passed before
+the unit was disabled. The installed verifier cannot inspect the inactive
+disabled unit after systemd garbage-collects it, so the next authorized run
+must explicitly enable/load the unit and re-run verification before start.
+
+The first aborted preflight root contains zero files. The second contains 17
+raw captures only, with no summary, checksum authority, completion marker, or
+acceptance decision. Preserve both, but never resume or accept them. Start the
+next preflight from a fresh root. Full incident, recovery, hashes, capacity,
+package state, and permanent cleanup rules are in
+[`M22.9 VPS root-home recovery`](milestone_acceptance/M22.9-vps-root-home-recovery.md).
+
+## Previous milestone — M22_9 Formal 2-hour retry closeout (2026-09-12)
+
+The owner-authorized retry created one valid Formal T0 and ten samples from the
+exact current-main deployment. It did not reach two hours: the VPS unattended
+upgrade of glibc and Python 3.12 reexecuted systemd at approximately 85 minutes
+and stopped/restarted Recorder and the observer. The immutable original root
+has no `stage-final.json` and cannot be resumed because the Recorder process,
+InvocationID, and service instance changed.
+
+Recorder has been stopped gracefully. Deployment verification still passes;
+the archive timer is enabled/active, archive backlog and pending are zero,
+Catalog integrity is `ok`, and active `.partial` count is zero. Do not restart,
+resume, create another T0, or start 12 hours from this record.
+
+```text
+MILESTONE=M22_9_FORMAL_2H_RETRY_CLOSEOUT
+MILESTONE_STATUS=REVIEWED_COMPLETE
+FORMAL_M22_9_2H_RETRY=EXECUTED_INCOMPLETE_HOST_MAINTENANCE_INTERRUPTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+DEPLOYED_RUNTIME_SOURCE_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_CLOSEOUT_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+RETRY_ELIGIBLE=NO
+NEXT=FORMAL_M22_9_HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT
+```
+
+See [`M22.9 Formal 2-hour retry closeout`](milestone_acceptance/M22.9-2h-retry.md).
+
+## Previous milestone — M22_9 exact-artifact stopped redeploy and readiness (2026-09-12)
+
+At that milestone, the exact current main artifact was installed and verified
+on the Tokyo VPS:
+source `e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d`, tree
+`e968ede54d9f110ef7371a4847a54940177a1a19`, wheel
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb`,
+and deployment identity
+`582bf645dea0c6ad2c409880d44a68b97a55ddbe0c9bfb68d930e12daa0d75a6`.
+The prior P2 venv and identity are retained and rollback-compatible.
+
+Recorder was `RUNNING_READY`: both BTCUSDT and ETHUSDT on Spot and USD-M
+perpetual had all three core streams connected and persisted, plus snapshots
+and synchronized books. The archive timer was enabled/active. The acceptance
+root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-retry-20260912T032409Z-98a352df322a-e267ae38`.
+No Formal stage child or T0 had been created; duration credit remained zero.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+MILESTONE_STATUS=COMPLETE
+CURRENT_MAIN_DEPLOYED=YES
+RECORDER=RUNNING_READY
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H_RETRY=NOT_STARTED
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=FORMAL_M22_9_2H_RETRY_START
+```
+
+The detailed record is
+[`M22.9 exact-artifact stopped redeploy and readiness`](milestone_acceptance/M22.9-exact-artifact-redeploy-readiness.md).
+
+## Previous milestone — M22_9 exact-artifact redeploy preflight (2026-09-12)
+
+The exact GitHub main candidate is now preflighted on
+`greencloud-tokyo-01` without deployment or live-run authorization. A fresh
+detached clean source workspace at commit
+`e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d` / tree
+`e968ede54d9f110ef7371a4847a54940177a1a19` produced exactly one wheel in a
+fresh build environment. The wheel was installed into a uniquely named
+staging-only venv with the exact hashed runtime lock; dependency, pip, package
+RECORD, and isolated offline CLI checks passed. The candidate is staged only.
+
+The bounded VPS gate passed before evidence creation and remained passing after
+staging: Recorder is inactive/dead with PID 0, the archive timer is
+enabled/active/waiting, there are no active partial files, the registered
+archive target is READY, archive backlog and remote pending are zero, Catalog
+integrity is OK, the installed P2 deployment verifies VERIFIED, and legacy
+reconnect preflight has no ambiguity, conflict, contradiction, or degraded
+authority. Active and archive free space safely exceed the conservative 2-hour
+projection plus a 1-hour safety envelope.
+
+```text
+MILESTONE=M22_9_EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+MILESTONE_STATUS=PREFLIGHT_COMPLETE
+GITHUB_MAIN_SHA=e267ae38bdbb206c8f54dcb5fa338b8f1c54c61d
+GITHUB_MAIN_TREE=e968ede54d9f110ef7371a4847a54940177a1a19
+OLD_P2_ARTIFACT_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+NEW_CANDIDATE_STAGED=YES
+NEW_CANDIDATE_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+NEW_FORMAL_RUN_STARTED=NO
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_STOPPED_REDEPLOY_AND_READINESS
+DEPLOYMENT_AUTHORIZATION=NOT_GRANTED
+LIVE_RUN_AUTHORIZATION=NOT_GRANTED
+```
+
+Evidence is retained under
+`/srv/recorder-data/recorder-archive/evidence/M22.9-redeploy-preflight-20260912T022735Z`
+with root custody `root:root` mode `0700`. Its `SHA256SUMS` digest is
+`44254c9a609e19e8504ca2e57114c1aab81ca7150d710f43382db6f4e0e6dd2f`; the
+wheel digest is
+`9bb924ad7cc38466d2b79c291f1b864890d5d071413dce1047eaf06d76532fdb` and the
+runtime lock digest is
+`44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335`.
+The complete inventory and command-boundary record are in the
+[exact-artifact redeploy preflight acceptance record](milestone_acceptance/M22.9-exact-artifact-redeploy-preflight.md).
+
+The local branch is based exactly on the candidate; no GitHub state was mutated.
+The six unrelated untracked artifacts remain preserved and excluded.
+
+## Previous local milestone — M22_9 post-merge macOS CI reconnect-layout repair (2026-09-12)
+
+This milestone is a test-and-documentation-only repair. GitHub main push
+offline-ci run `34663566549` failed only the macOS Python 3.12 job
+`103470852952`; its pytest result was `1 failed, 1651 passed, 24 skipped,
+4 deselected`. The failure was
+`tests/integration/test_spot_ingress_backpressure.py::test_session_restart_post_close_timeout_recovers_same_gap_without_fabrication`
+at the old line 794, where the test required one manifest although two legal
+manifests were produced. Ubuntu job `103470853142` passed all gates.
+
+PR #68 exact-head run `34663191565` passed on both macOS and Ubuntu, and the
+main squash did not change the old test. Twenty repetitions of the exact Spot
+node on macOS arm64 Python 3.12.14 also passed, establishing schedule
+sensitivity rather than a deterministic product regression. The valid second
+layout is already defined by `assert_old_ingress_boundary_layout`: at most one
+earlier ordinary complete manifest may precede exactly one incomplete
+`reconnect_gap` manifest, with the original connection identity and exact
+payload prefix preserved. The analogous USD-M session-restart test retained
+the same brittle assumption and is repaired symmetrically.
+
+The implementation changes only the two ingress backpressure tests. Each
+session-restart test now obtains the lifecycle STARTED evidence first and
+passes its exact `original_connection_id` to the existing strict helper. All
+boundary hash, missing-frame, gap-id, recovery, post-sync completion,
+ordering, no-fabrication, and fail-closed assertions remain in place. No
+production code, Binance source record, public contract, dependency, CI
+workflow, deployment, VPS state, or archive data changes.
+Independent lead review found P0=0, P1=0, and P2=0; the production/test delta
+is independently reviewed complete, while GitHub merge remains a separate
+operation.
+
+```text
+MILESTONE=M22_9_POST_MERGE_MACOS_CI_RECONNECT_LAYOUT_REPAIR
+MILESTONE_STATUS=REVIEWED_COMPLETE
+BASE_MAIN_SHA=bed826909e1a53089289981e9ea435c7ddbf07f0
+BASE_MAIN_TREE=a85a39f5096f834a95bae11f9d047fac18602bc6
+BRANCH=codex/m22-9-main-macos-ci-reconnect-layout
+GITHUB_MAIN_PUSH_RUN=34663566549
+MACOS_PYTHON312_JOB=103470852952
+UBUNTU_PYTHON312_JOB=103470853142
+PR_68_EXACT_HEAD_RUN=34663191565
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The last four VPS status values are carried forward from the authoritative
+stopped deployment state; this milestone did not connect to or mutate
+the VPS. The acceptance record is [`M22.9 main macOS CI reconnect-layout repair`](milestone_acceptance/M22.9-main-macos-ci-reconnect-layout.md).
+After GitHub merge, the next gate remains exact-artifact redeploy
+preflight; deployment or Formal retry still requires separate authorization.
+
+## Previous local milestone — AcceptanceObserver/archive concurrency fix reviewed complete (2026-09-12)
+
+The narrowly scoped offline diagnosis and fix is complete. The observer now
+freezes one Catalog lifecycle boundary before the long manifest scan, makes
+one authoritative membership comparison from that boundary, defers later
+rows, and re-reads fresh exact-chunk archive state when local Raw disappears.
+Existing ArchiveManager verification and fail-closed safety semantics remain
+unchanged. Offline regression coverage includes post-boundary deferral,
+`LOCAL_DELETE_PENDING` unlink/validation races, unauthorized absence,
+external corruption, and observer read-only behavior.
+Independent Luna Max review of exact code-review commit
+`31cabe4445ee699ad284aa707d24333c78cf8d21` against base
+`e214120a25a5aff28fad4903c9510920a25738d3` found P0=0, P1=0, and P2=0 and
+confirmed boundary deferral, resume-subset validation, the bounded terminal
+`LOCAL_DELETED` path, fail-closed active-deletion-race verification, observer
+read-only behavior, and registered READY/LOW_SPACE archive-root resolution.
+The reviewer could not rerun pytest because its read-only sandbox had no usable
+temporary directory; this is not a product failure.
+
+```text
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+VPS_TOUCHED=NO
+CURRENT_MAIN_DEPLOYED=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The detailed record is [`M22.9 observer/archive concurrency fix`](milestone_acceptance/M22.9-observer-archive-concurrency-fix.md).
+The next gate is exact-artifact redeploy preflight; any redeploy or Formal
+retry requires separate authorization.
+
+## Historical current-stage record — Formal M22.9 2h failed closeout reviewed complete (2026-09-11)
+
+The owner-authorized Formal 2-hour attempt on greencloud-tokyo-01 failed
+before its first observer sample. T0 was
+`2026-09-11T13:41:32.831837Z` / `1789134092831837314` ns with BOOTTIME
+`789457702764089`, boot ID
+`f2720022-bc39-4e22-bc68-af6bfce92274`, and observer InvocationID
+`ee05ad7a73f04dec867629767439bc82`. The observer unit
+`binance-market-data-acceptance-2h-20260911T132845Z-5b4fd719.service`
+exited 1 before the first sample.
+
+The failed root is
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T132845Z-5b4fd719-646792f2`
+with stage root
+`.../2h-a8b45b7e1da640c497213b172c235815` and immutable stage-start SHA-256
+`1c35f62e0673488c441374971e8e8552212e9693aacfba35820ea613ae4a08f6`.
+Stage-start failed with 24 blockers (23 Catalog/manifest disagreements and
+one unexplained raw absence), so Formal duration credit is zero. The earlier
+pre-T0 aborted setup root
+`/srv/recorder-data/recorder-archive/acceptance/m22.9/formal-2h-20260911T130258Z-646792f2`
+is preserved as a distinct zero-credit setup record.
+
+After the requested graceful stop and archive drain, exact lifecycle checks
+found all 26 unique chunk IDs named by those findings currently complete in
+the verified archive state. This supports, but does not prove, a concurrent
+AcceptanceObserver filesystem/Catalog snapshot race; the review has no
+per-read interleaving trace. The compact forensic JSON, summary, and hashes
+are under the failed root's `operator-evidence/closeout-review/` and are
+listed in [`M22.9-2h acceptance`](milestone_acceptance/M22.9-2h.md). The full
+installed read-only post-stop audit completed over 112,817 manifests in 115.95
+seconds with zero Catalog findings, zero integrity findings, and zero chunks
+with scan issues. An additive correction preserves the original closeout
+files and supersedes only their mistaken no-result statement.
+
+```text
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+```
+
+No redeploy or retry was authorized by this historical closeout. The offline
+fix is recorded in the current section above; independent code review and
+exact-artifact redeploy preflight remain the next gate, with redeploy/retry
+authorization separate.
+
+## P2 deployment basis — reviewed complete (2026-09-11)
+
+P2 executed the exact deployment, archive, and capacity preflight. The review
+record is [`M22.9-P2 acceptance`](milestone_acceptance/M22.9-P2.md), with VPS
+evidence under
+`/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z`.
+P2 deployment source/review base `646792f2e5fc5b7195ea58541d3f1dfda6555b7f`
+and tree
+`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c` were installed and deployment
+verified with exact artifact hashes. The four canonical ProductKeys reached
+readiness with 12 core stream contexts; the Recorder was gracefully stopped
+and is now `inactive/dead`, `MainPID=0`, `Result=success`, `NRestarts=0`.
+
+The registered archive target is storage ID
+`ef852751-721c-4145-9083-f6fd48718480` at
+`/srv/recorder-data/recorder-archive` on ext4 `/dev/vdb1`. Existing verified
+ArchiveManager/Catalog transactions drained the backlog to zero, and the full
+archive verification reported 112,570 verified files with zero failures or
+pending files. `binance-market-data-archive.timer` is enabled and
+active/waiting with a future monotonic trigger and successful last service
+result. `/dev/vdb1` is archive storage; the active writer root remains
+`/var/lib/binance-market-data-recorder` on `/dev/vda1`.
+
+The conservative historical generation rate is `349910.017730 B/s`; the
+bounded 278-hour archive projection leaves approximately 1.772 TB of target
+free-space margin, while active-root runway above the 10 GiB reserve is only
+about 26.46 hours. `P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES` records exact
+installed identity verification. After this docs-only merge,
+`CURRENT_MAIN_DEPLOYED=NO`; the reason is
+`DOCS_ONLY_DESCENDANT_NOT_INSTALLED`. At P2 completion the artifact was the
+Formal candidate; after the failed T0 it remains only the installed evidence
+basis pending the scoped fix, review, and separately authorized redeploy.
+`PRODUCTION_READY=NO`.
+The Formal 2-hour attempt subsequently failed at T0 before its first sample;
+duration credit remains zero. The separate 12-hour stage is not started.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
+MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
+M22_9_P1=REVIEWED_COMPLETE;
+M22_9_P2=REVIEWED_COMPLETE;
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE;
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0; FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0;
+FORMAL_M22_9_CREDIT_SECONDS=0; 12H=NOT_STARTED;
+PRODUCTION_READY=NO; P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES;
+CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED;
+ARCHIVE_TIMER=ENABLED_ACTIVE;
+NEXT=ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_DIAGNOSIS_FIX_OFFLINE_TEST;
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION.
+
+P2 used only unsigned public Binance market-data eligibility endpoints. No
+account, order, key, or credential endpoint was accessed, and no manual Raw
+deletion was used. The short live interaction is non-formal and grants no
+Formal duration credit. P2 itself created no Formal T0, P1 observer, long soak,
+or automatic stage advancement; the later Formal 2-hour attempt did create T0
+and failed there.
+
+### Historical MS4 and P1 checkpoints (not current authority)
+
+MS4-A local preparation and MS4-B target preflight/stopped-deployment review
+remain complete. The owner-authorized MS4-C attempt started the reviewed
+four-ProductKey artifact on the Tokyo VPS, reached authoritative `READY` for
+all four ProductKeys, and completed the bounded two-hour steady interval. That
+first window remains `EXECUTED_PARTIAL_NOT_ACCEPTED` because controlled
+recovery was not executed in the approved window; it is not retroactively
+reclassified by the later supplement. The MS4-B private bundle's
+`PRIVATE_EVIDENCE_BUNDLE_DIRECT_INSPECTION=NOT_RUN_LOCAL` is a historical
+MS4-B local-review limitation, not an MS4-C evidence limitation. The MS4-C VPS
+evidence was directly inspected by the primary agent; both records are listed
+in [`MS4-C evidence`](milestone_evidence/MS4-C-20260910.md).
+
+The separate 2026-09-11 R3 evidence is a passing
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`. It used fresh official eligibility,
+an exact-MainPID socket disconnect, and bounded post-fault observations; all
+four ProductKeys remained ready and receiving, 12 core contexts passed sealed
+validation, Catalog integrity was clean, and no active partial remained. It
+closes the MS4-C recovery gate for review, but grants
+`formal_m22_9_credit_seconds=0`.
+
+The service was gracefully stopped and remains stopped. A receiver-only SSH
+archive cycle to the explicitly authorized MacBook Downloads internal-folder
+test target was verified; it created no remote pending authority, did not
+delete or retire the VPS source, and did not produce a formal receipt-bound
+Catalog snapshot. MS4-D reviewed the bounded evidence and closes the
+multi-symbol qualification for the exact four-ProductKey profile. The archive
+timer is explicitly `disabled`; Formal M22.9 remains separate and unstarted,
+and `PRODUCTION_READY=NO`. The current M22.9-P1 package documents an external
+systemd-detached observer for one explicitly selected stage and is reviewed
+complete; it did not deploy or start the Recorder.
+
+The historical MS4-D review base was `main` commit
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` (tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`). It includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d` with the same tree; base CI run
+`34551834444` completed successfully. These are historical review authorities
+only. P1 was based on main at its historical checkpoint
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; at that checkpoint the current
+main was not deployed. This is historical, not the current P2 state.
+
+The historical MS4-D final read-only VPS check at `2026-09-11T06:39:23Z`
+passed: Recorder was
+`inactive/dead` with `MainPID=0`, `Result=success`, `NRestarts=0`, and the
+archive timer was `disabled/inactive`. It observed `/dev/vdb1` (`ext4`) mounted
+at `/srv/recorder-data` with `2163348520960` total bytes,
+`19120271360` used, `2122221260800` available and `1%` used. The active writer
+root remains `/var/lib/binance-market-data-recorder`; this mounted disk is an
+archive target, not the active writer root. No start, mutation or live traffic
+occurred during the check.
+
+The P1 current read-only VPS check at `2026-09-11T07:27:40Z` recorded systemd
+255; Recorder `inactive/dead` with `MainPID=0`, `Result=success`,
+`NRestarts=0`; and `binance-market-data-archive.timer`
+`loaded/disabled/inactive`. The active `/dev/vda1` writer filesystem was
+approximately 57.1 GB total with 41.2 GB available. The archive `/dev/vdb1`
+filesystem was ext4, approximately 2 TB with approximately 1.9 TB available;
+Catalog storage ID `ef852751-721c-4145-9083-f6fd48718480` resolved `READY` at
+`/srv/recorder-data/recorder-archive`. P1 performed only these read-only checks
+and the two harmless transient-unit lifecycle probes: it did not deploy or
+start Recorder, enable the timer, archive or delete Raw, or send Binance
+traffic. The probes changed only their ephemeral systemd test units.
+
+MS4_A=REVIEWED_COMPLETE; MS4_B=REVIEWED_COMPLETE;
+MS4_C=REVIEWED_COMPLETE; RECOVERY_GATE=REVIEWED_COMPLETE;
+MS4_D=REVIEWED_COMPLETE; MS4=REVIEWED_COMPLETE;
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS;
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE;
+M22_9_P1=REVIEWED_COMPLETE;
+FORMAL_M22_9=NOT_STARTED; FORMAL_M22_9_CREDIT_SECONDS=0;
+PRODUCTION_READY=NO; CURRENT_MAIN_DEPLOYED=NO; RECORDER=STOPPED;
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT.
+
+## Original MS4-C attempt disposition — 2026-09-10
+
+The attempt ran from `T0=2026-09-10T15:10:26.637211Z` to
+`T1=2026-09-10T17:10:33.156829Z`, with recorded monotonic duration
+`7206.519615476` seconds. The recovery observation ended at
+`2026-09-10T17:25:33.300961Z`; controlled recovery was not executed in the
+approved window. The explicit stop returned success at
+`2026-09-10T17:26:04.819925Z`, with systemd `inactive/dead`, `MainPID=0`, and
+`Result=success`. The receive-only archive source remained present with its
+original stored SHA-256 after the stop; its manifest was sealed before T0 and
+is not steady-period archive-throughput evidence.
+
+## MS4-C R3 recovery supplement — 2026-09-11
+
+The R3 supplement's historical VPS path was
+`/root/MS4-C-RECOVERY-20260911-R3/evidence/recovery-audit.json`. That root-only
+copy was lost in the later root-home incident; the operator-side Downloads
+mirror recorded in the current recovery closeout survives. Its reviewed status
+is `PASS`, classification
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT`, and Formal M22.9 credit is zero. Fresh
+official eligibility was captured at 2026-09-11T01:01:49Z. MainPID 685913 was
+`READY` before the exact owned socket was disconnected. The only durable gap
+was `um_perpetual:BTCUSDT/book_ticker`, completed in `0.436024210` seconds
+with a new connection. Fifteen post-fault observations kept all four expected
+ProductKeys ready with receive progress; 12 core contexts passed sealed
+validation (`validated_chunks=23`). Catalog integrity was `ok`, with no
+malformed, degraded, unclosed, active, or `.partial` artifacts. Final systemd
+state was `inactive/dead`, `MainPID=0`, `Result=success`. Historical continuity
+is not claimed restored, duration credit is zero, and source retirement was not
+authorized.
+
+## Historical stage closeout — MS4-A local preparation
+
+MS3 is merged. MS4-A local preparation and its document review are complete;
+PR #58 carries the reviewed closeout. No MS4-B/C/D development, VPS access,
+deployment or live qualification is authorized. The owner requested a rest
+after merging current completed work and cleaning its branches.
+MS4_A=REVIEWED_COMPLETE; NEXT=OWNER_RESUME_REQUIRED.
+Historical next-step fields below describe their recorded checkpoint only.
+
+## MS3 merge closeout — 2026-09-10
+
+PR #56 is CLOSED/MERGED through the normal repository rule. Astra approved head
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`; exact-head CI run `34436773366`
+passed every macOS and Ubuntu step, including build and clean-wheel smoke. The
+actual merge commit is `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. MS3-R1, MS3-CI1 and MS3-CI2 are
+closed. The historical CI1/CI2 failures remain recorded in the milestone plan
+and MS3 acceptance; they do not describe the current state.
+
+MS3 is not deployed. Formal M22.9 has not started and Production Ready remains
+NO. This historical checkpoint recorded `NEXT=MS4_A_LOCAL_PREPARATION`; at that
+historical checkpoint the follow-up field was
+`OWNER_RESUME_REQUIRED_MS4_C`. It is not the current project next action.
+
+## MS3-CI1 update — 2026-09-10 (historical handoff; now closed)
+
+**MS3-CI1 was IMPLEMENTED / AWAITING REVIEW at handoff and is now
+CLOSED/MERGED.**
+The Ubuntu failure was a fixture executor-scheduling cycle: fake snapshot SDK
+workers synchronously waited for depth writer work queued in the same executor.
+Profile D now uses real-persistence async phase events before SDK submission,
+thread-safe worker-to-loop signals and separate hang watchdogs. The local
+default/six-worker repeat, focused/full offline suites and static/build/wheel
+gates pass. No production code or capacity setting changed. The exact candidate
+later passed required CI and was merged in PR #56. No deployment or online
+qualification is implied.
+
+## Current review update — 2026-09-10 (historical approval, now merged)
+
+Astra approved the offline MS3 candidate at
+`66e036a07f422818f5e3f54f0216d4083b443698` (tree
+`1413ec705db3fd9f214499c57696bcab2da2e8b9`). MS3-R1 and the original
+coverage findings are CLOSED. The approved exact candidate was subsequently
+validated by run `34436773366` and merged in PR #56 as
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). No deployment is authorized.
+The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
+was the detailed continuation queue at that historical cut; the candidate
+submission summaries below retain their evidence context. The current P2
+authority is the opening section of this handoff.
+
+## Start here: the boundary
+
+MS2 implementation/offline acceptance, independent review, and merge are
+**CLOSED**. **MS3-A and MS3-B are merged**; MS3-B is merged through PR #56 at
+`303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. MS1 remains merged and closed.
+See [MS2 acceptance](milestone_acceptance/MS2.md)
+and [MS3 acceptance](milestone_acceptance/MS3.md). Do not restart or
+reopen the historical M23 optimization, BBO, Storage Forecast, remote-delete,
+single-symbol shared USD-M gate, prior burn-in campaigns, clean 24h campaign,
+MS1 migration design, Raw v1, Contracts, or the closed MS1 review findings
+unless new MS2+ evidence creates a concrete contradiction.
+
+The following pre-MS2 authority checks were completed before implementation.
+They are historical/time-local lineage, not current behavior or deployment
+authority:
+
+1. Fetch live GitHub `main`.
+2. Verify that `d38180074b5f76ab6b7778eea7fc505160c671ae` remains an ancestor.
+3. Inspect every commit after `d38180074b5f76ab6b7778eea7fc505160c671ae`.
+4. At that historical checkpoint, if those commits were only post-MS1
+   documentation synchronization, retain
+   `d38180074b5f76ab6b7778eea7fc505160c671ae` and tree
+   `95f16f05b30b7db23e43ebb6439ed0d055081902` as MS1 foundation lineage.
+5. If any later commit changes source or behavior, **STOP** and establish the
+   new implementation authority for that historical checkpoint before MS2.
+6. Read `AGENTS.md`, `docs/CURRENT_PRODUCTION_STATE.md`, this handoff,
+   `docs/milestone_plan.md`, and `docs/architecture.md`.
+7. Read ADR-0032, retain ADR-0031 as superseded history, and read
+   `docs/milestone_acceptance/MS1.md`.
+8. Inspect the current single-symbol runtime assembly.
+9. Obtain explicit MS2 implementation authorization.
+
+## Historical authority split before exact-current-main redeploy
+
+### P2 deployment/archive authority at that checkpoint
+
+```text
+P2_REVIEW_BASE_MAIN_SHA=646792f2e5fc5b7195ea58541d3f1dfda6555b7f
+P2_REVIEW_BASE_MAIN_TREE=c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c
+EVIDENCE_ROOT=/srv/recorder-data/recorder-archive/evidence/M22.9-P2-20260911T090741Z
+STORAGE_ID=ef852751-721c-4145-9083-f6fd48718480
+P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES
+CURRENT_MAIN_DEPLOYED=NO
+CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_DESCENDANT_NOT_INSTALLED
+RECORDER=STOPPED
+ARCHIVE_TIMER=ENABLED_ACTIVE
+M22_9_P2=REVIEWED_COMPLETE
+ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE
+M22_9_2H_CLOSEOUT=REVIEWED_COMPLETE
+FORMAL_M22_9_2H=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9=EXECUTED_FAILED_AT_T0
+FORMAL_M22_9_CREDIT_SECONDS=0
+12H=NOT_STARTED
+PRODUCTION_READY=NO
+NEXT=EXACT_ARTIFACT_REDEPLOY_PREFLIGHT
+REDEPLOY_RETRY_AUTHORIZATION=SEPARATE_AUTHORIZATION
+```
+
+The exact deployment passed identity/readiness verification for four
+ProductKeys and 12 core stream contexts. The existing archive transaction path
+drained the registered target to backlog zero; full verification reported
+112,570 verified files with zero failures or pending files. The archive timer
+is enabled and active/waiting with a future monotonic trigger. The active
+writer root remains `/var/lib/binance-market-data-recorder`; the approximately
+2 TB `/dev/vdb1` filesystem is archive storage only. Capacity margin and the
+active-root runway limitation are recorded in the P2 acceptance file. This
+block is historical authority; the opening closeout section is the current
+authority, and the following A/B sections preserve older lineage.
+
+### A. Historical GitHub main and behavior/deployment source
+
+```text
+HISTORICAL_MS4_C_REVIEW_BASE_MAIN_SHA=efae0135ed5272d18d800af0ac247b70ece07422
+HISTORICAL_MS4_C_REVIEW_BASE_MAIN_TREE=53342ac880cc36d65eba6f5e9b49fa722cc9d56b
+MS4_D_REVIEW_BASE_MAIN_SHA=e11d5cbdf861ab82bb110ead8e98a1f9498f3c55
+MS4_D_REVIEW_BASE_MAIN_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+MS4_D_REVIEW_BASE_PR=61
+MS4_D_REVIEW_BASE_PR_COMMIT_SHA=013e20d6b911fde2f443aa6c855039599483ef7d
+MS4_D_REVIEW_BASE_PR_COMMIT_TREE=9fcf3e4128706938ffd02ef5a6af80c558cb234b
+MS4_D_REVIEW_BASE_CI_RUN=34551834444
+MS4_D_REVIEW_BASE_CI_STATUS=COMPLETED_SUCCESS
+MS4_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS4_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+CURRENT_BEHAVIOR_DEPLOYMENT_SOURCE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS1_FOUNDATION_LINEAGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+MS1_FOUNDATION_LINEAGE_TREE=95f16f05b30b7db23e43ebb6439ed0d055081902
+MS1_MERGE_SHA=d38180074b5f76ab6b7778eea7fc505160c671ae
+MS1_IMPLEMENTATION_MERGED=YES
+MS1_PR=51
+MS1_POST_MERGE_CI_RUN=33955915046
+MS1_POST_MERGE_CI_PASS=YES
+CURRENT_MAIN_DEPLOYED=NO
+MS2_PR=54
+MS2_MERGED=YES
+MS3=CLOSED_MERGED
+MS3_A_MERGED=YES
+MS3_A_PR=55
+MS3_B=CLOSED_MERGED_PR_56
+MS3_B_CANDIDATE=feat/ms3b-shared-resource-acceptance
+MS3_B_CANDIDATE_BRANCH_STATUS=DELETED_AFTER_MERGE
+MS3_B_CANDIDATE_TIP=2a701fe79b78d3c63dd5959efecd20a2369d58e5
+MS3_B_MERGED=YES
+MS3_R1=CLOSED
+MS3_INDEPENDENT_RE_REVIEW=APPROVED
+MS3_CI1=CLOSED
+MS3_CI2=CLOSED
+MS3_R2=CLOSED
+MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50
+MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee
+MS4=REVIEWED_COMPLETE
+MS4_A=REVIEWED_COMPLETE
+MS4_B=REVIEWED_COMPLETE
+MS4_C=REVIEWED_COMPLETE
+RECOVERY_GATE=REVIEWED_COMPLETE
+MS4_D=REVIEWED_COMPLETE
+BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS
+QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE
+M22_9_P1=REVIEWED_COMPLETE
+NEXT=M22_9_P2_EXACT_DEPLOYMENT_ARCHIVE_CAPACITY_PREFLIGHT
+FORMAL_M22_9_CREDIT_SECONDS=0
+RECORDER=STOPPED
+```
+
+The MS3-A merge parents are `52bf086dd240556b054821f33bf1e2840fdcf912` and
+`ad1e941af3cd2bd3922eac239ba92a47058e9875`. PR #51 is merged, PR #54 is the
+merged MS2 behavior authority, and PR #55 is the merged MS3-A authority on
+current `main`; none is deployed as current production. The MS3-B implementation
+is merged through PR #56 at `303e073e25d5ed53d7cf6e26a9c6c6e879013b50`, tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. It adds only the shared-resource
+acceptance work recorded in `docs/milestone_acceptance/MS3.md`, including the
+real production-path Collector/Poller supplement, its minimal in-flight REST
+cancellation lifecycle correction, the MS3-R1 waiter barrier correction and
+the CI1/CI2 fixture repairs. The former candidate tip
+`2a701fe79b78d3c63dd5959efecd20a2369d58e5` is retained as restoration evidence;
+the candidate branch was removed after merge and worktree checks.
+
+MS1 merged the durable identity foundation. It did not implement runtime
+fan-out, multi-symbol startup, or a new readiness policy. The MS1 merge SHA
+above is historical foundation lineage; historical MS4-C behavior/deployment
+authority was `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` with tree
+`2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`. The historical GitHub `main` at
+MS4-C review start was `efae0135ed5272d18d800af0ac247b70ece07422` with tree
+`53342ac880cc36d65eba6f5e9b49fa722cc9d56b`; it is the PR #60 merge,
+documentation-only relative to the deployed source, and not production
+deployed. The historical MS4-D review base is
+`e11d5cbdf861ab82bb110ead8e98a1f9498f3c55` with tree
+`9fcf3e4128706938ffd02ef5a6af80c558cb234b`; it includes the merged MS4-C
+evidence closeout PR #61 at commit
+`013e20d6b911fde2f443aa6c855039599483ef7d`, and base CI run `34551834444`
+completed successfully. The current M22.9-P1 documentation base is main
+`83a063f5bb9f91508238c9fd86d21aa45d1bd501`; later GitHub merges may change
+live `main`.
+
+### B. Deployed and clean-24h authority
+
+The last independently qualified deployed artifact before MS1 is:
+
+```text
+SOURCE_SHA=c421605e302d2ad46acdb2466627f64644181c9a
+SOURCE_TREE=a521dd61f8a090b4930cce5254985383f8893a3f
+WHEEL_SHA256=278ee0b0df1e7766e205684ad1e401b12fb98341296164edc1c0de9b6d58c9c6
+LOCK_SHA256=44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335
+CONFIG_SHA256=5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb
+SYSTEMD_UNIT_SHA256=d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6
+DEPLOYMENT_ID=bdda546432bcaf6d29f281cd2a281b4d684bc447b2fafa382ffd1948f39a107f
+```
+
+That pre-MS1 artifact completed the single-symbol current-main non-formal
+clean-24h stage with verdict
+`A — CLEAN_24H_PASS_CURRENT_NONFORMAL_STAGE_COMPLETE`. Its evidence is
+artifact-specific. It is not Formal M22.9 evidence, MS1 live qualification,
+or a 14-product result. No 72h or 168h burn-in is required before beginning
+multi-symbol development, and no old duration credit transfers to a new
+multi-symbol artifact.
+
+Accepted watches for later qualification are capacity cadence tail jitter
+(p99 about 16.0819 s; max 27.3311 s; no events above 30 s) and RSS
+early-growth-then-plateau (maximum 377339904 bytes, with the final segment
+approximately flat). They are not MS2 blockers.
+
+### C. MS2 implemented target
+
+ADR-0032 supersedes ADR-0031. The future target is Binance-specific Spot and
+USD-M perpetual capture with an operator-configured finite symbol list for
+each market. There is no fixed symbol allowlist, automatic all-symbol
+discovery, exchange/plugin framework, or hot runtime topology reload; changed
+configuration takes effect on normal process restart. The project is not
+becoming a multi-exchange framework.
+
+The implemented `[recorder]` surface is `spot_symbols = [...]` and
+`usdm_symbols = [...]`. Only when both fields are absent does legacy
+compatibility mode resolve to the historical BTCUSDT/BTCUSDT profile. If either
+field is present, explicit product-selection mode uses each supplied list
+exactly and resolves an omitted sibling to an empty list; both resolved lists
+empty is invalid. `ProductKey = (market, symbol)`; one process owns one durable
+Catalog and one existing market Collector per configured ProductKey. The
+The GitHub `main` snapshot at MS4-C review start contains that runtime; it was
+not deployed as production, and later merges may change live `main`.
+
+An empty resolved USD-M set means zero USD-M Collectors, zero product-specific
+USD-M side-data managers, no process-global USD-M side-data owner, and no
+USD-M REST or WebSocket traffic. The global owner exists only when a USD-M
+ProductKey exists and at least one global kind is enabled. An empty Spot set
+similarly creates no Spot Collector or Spot side-data traffic. The legacy
+`GLOBAL_SIDE_DATA_SYMBOL="BTCUSDT"` sentinel never creates a ProductKey.
+
+## MS1 accepted architecture
+
+Implemented now:
+
+- durable discontinuity identity `(market, symbol, stream)`, with `gap_id`
+  included for lifecycle matching;
+- symbol-specific side-data cursor identity `(kind, symbol)`;
+- legacy Catalog migration to `BTCUSDT`, atomic, idempotent, restart-safe, and
+  fail-closed;
+- in-memory `BTCUSDT` normalization for historical symbol-less seal intents,
+  without rewriting persisted historical intents;
+- explicit-symbol new normal APIs;
+- Raw v1 and external Contracts unchanged.
+
+Cross-symbol gap collision is not possible under the accepted matching logic.
+Global side-data remains global; the six persisted 5-minute statistic cursor
+families are symbol-specific. Runtime fan-out is not part of MS1.
+
+## Roadmap: MS2 → MS3 → MS4
+
+### MS2 — Configurable product runtime
+
+Implemented, independently reviewed, merged through PR #54, and offline-accepted. Includes explicit
+finite Spot/USD-M product lists,
+ProductKey propagation through existing WS/REST/schema/envelope/spool paths,
+dynamic one-process Collector assembly, product-aware service state and
+configuration-bound readiness, product-aware hard-reserve discontinuity
+evidence, the shared USD-M REST authority, and one process-global USD-M
+side-data owner. Preserve product ownership, per-product reconnect/resync and
+backpressure isolation, and the MS1 durable identities.
+
+Acceptance is primarily deterministic/offline: actual runtime ProductKeys equal
+the configured expected set; identities cannot collide; product failure does
+not alter another; product readiness is observable; global readiness is
+configuration-bound and fail-closed; shared REST gating is not multiplied;
+global side-data is not duplicated; cursors remain independent; and one-process
+restart/shutdown remains coherent.
+
+MS2 does not change Raw v1 or Contracts, add another exchange, implement
+automatic all-symbol discovery, redesign archive format, optimize unrelated
+hot paths, run a long burn-in, or
+declare Production Ready.
+
+### MS3 — Shared resources / rotation / observability
+
+**MS3 CLOSED/MERGED.** MS3-A is merged through PR #55 and MS3-B is merged
+through PR #56.
+The candidate retains the deterministic F1–F10 model evidence and now adds
+real `UsdMCollector`/`RestSideDataPoller` gate, pagination/cursor, rate-limit,
+cancel/stop, and mixed 14-product/42-core-stream running-path evidence. The
+existing sequential storage Profile D test is labeled as storage-layer proof;
+the new running-path test proves simultaneous activity and sibling progress
+under target backpressure. It adds no generic scheduler, persisted metrics
+migration, or speculative optimization. Independent re-review/merge is closed;
+see `docs/milestone_acceptance/MS3.md`. MS4-B stopped-deployment review, the
+MS4-C recovery-gate review and the MS4-D bounded stage closure are complete.
+
+### MS4 — Configurable-product integration / deployment qualification
+
+MS4-B stopped-deployment review is complete after the exact source/artifact,
+configuration, rollback and identity gates. The original owner-authorized
+MS4-C window used the representative mixed Spot/USD-M profile and remains
+`EXECUTED_PARTIAL_NOT_ACCEPTED` because its controlled recovery was not run in
+that window. The separate passing R3
+`NONFORMAL_MS4_RECOVERY_SUPPLEMENT` closes the MS4-C recovery gate for review
+with zero Formal M22.9 credit; it does not retroactively grant the original
+window duration. The receiver-only Mac archive cycle did not authorize source
+retirement. The resulting qualification is non-formal and bounded to the
+four-product core; do not automatically schedule 72h or 168h, and keep Formal
+M22.9 separate.
+
+## Non-negotiable boundaries
+
+The Recorder captures Binance public market data only. It has no account
+endpoints, API keys, credentials, orders, trading, strategies, or external
+consumer repository dependency. Raw payload bytes and Raw v1 framing remain
+recoverable and unchanged. Do not write production data under the repository
+or use an external volume as an active Collector target.
+
+`HISTORICAL_FORMAL_M22_9_ACTIVITY=YES`,
+`V3_2H_HISTORICAL_ACCEPT=YES`,
+`V3_2H_FINAL_SHA256=b33c2596b01546835ed4092e07b864b8076b378a0accec73e03e1c04c5988032`,
+`V3_12H_ATTEMPT_COUNT=2`,
+`V3_12H_ATTEMPT_1=OPERATOR_MONITOR_FALSE_POSITIVE`,
+`V3_12H_ATTEMPT_1_CREDIT_SECONDS=0`,
+`V3_12H_ATTEMPT_2=STICKY_READINESS_NOT_READY`,
+`V3_12H_ATTEMPT_2_CREDIT_SECONDS=0`,
+`V3_12H_ELIGIBLE=NO`,
+`V4_DURATION_CREDIT_SECONDS=0`, `24H_STARTED=NO`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`,
+`PRODUCTION_READY=NO`,
+`V4_POLICY_DEADLINE_AUTHORITY=FROZEN`,
+`V4_IMPLEMENTED=NO`, `V4_DEPLOYED=NO`, `FORMAL_V4_STARTED=NO`,
+`STOPPED_DEPLOYMENT_INSTALLED=YES`, `LIVE_START_AUTHORIZED=NO`,
+`DEPLOYMENT_AUTHORIZED=NO` (future live start only),
+`P2_EXACT_DEPLOYMENT_SOURCE_INSTALLED=YES`,
+`DEPLOYED_RUNTIME_SOURCE_SHA=6e5dd91575d53e226a20d1873e06ca64329`,
+`DEPLOYED_RUNTIME_SOURCE_TREE=3262aa4ea46156631358a1002b7833d37325eb87`,
+`DEPLOYED_RUNTIME_WHEEL_SHA256=7201625525dc7780d2d8bada3865cccf2e6fb8895625cfc2e9e474656fcc70db`,
+`DEPLOYMENT_IDENTITY_SHA256=6bace053fa6bf74f14cc3a30f3356f189988b273b0d5acad2f817fe8fca51467`,
+`CURRENT_MAIN_DEPLOYED=NO`,
+`CURRENT_MAIN_DEPLOYMENT_REASON=DOCS_ONLY_MERGE_DESCENDANT_NOT_INSTALLED`,
+`MS2_IMPLEMENTATION_STARTED=YES`, `MS2=CLOSED`,
+`MS3_A_MERGED=YES`, `MS3=CLOSED_MERGED`,
+`MS3_B=CLOSED_MERGED_PR_56`,
+`MS3_B_MERGED=YES`, `MS3_R1=CLOSED`, `MS3_CI1=CLOSED`, `MS3_CI2=CLOSED`,
+`MS3_INDEPENDENT_RE_REVIEW=APPROVED`,
+`MS3_MERGE_SHA=303e073e25d5ed53d7cf6e26a9c6c6e879013b50`,
+`MS3_MERGE_TREE=2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`,
+`MS4=REVIEWED_COMPLETE`,
+`MS4_B=REVIEWED_COMPLETE`, `MS4_C=REVIEWED_COMPLETE`,
+`RECOVERY_GATE=REVIEWED_COMPLETE`, `MS4_D=REVIEWED_COMPLETE`,
+`BOUNDED_MULTI_SYMBOL_QUALIFICATION=PASS`,
+`QUALIFICATION_SCOPE=NONFORMAL_BOUNDED_FOUR_PRODUCT_CORE`,
+`M22_9_P1=REVIEWED_COMPLETE`, `M22_9_P2=REVIEWED_COMPLETE`,
+`ACCEPTANCE_OBSERVER_ARCHIVE_CONCURRENCY_FIX=REVIEWED_COMPLETE`,
+`FORMAL_M22_9_CREDIT_SECONDS=0`, `RECORDER=STOPPED`,
+`RECORDER_ENABLED=NO`,
+`ARCHIVE_TIMER=ENABLED_ACTIVE`,
+`RETRY_V3_12H_UNCHANGED=NO`,
+`RETRY_ELIGIBLE=NO_PENDING_V4_IMPLEMENTATION_AND_REVIEW`,
+`HOST_MAINTENANCE_QUIET_WINDOW_PREFLIGHT=PASS`,
+`OS_UPDATE_AUTHORITY=RESTORED`,
+`PENDING_UPGRADES=0`,
+`REBOOT_REQUIRED=NO`,
+`ROOT_HOME_RECOVERY=COMPLETE`,
+`CURRENT_RECORDER=STOPPED`,
+`NEXT=V4_IMPLEMENTATION_AND_OFFLINE_VALIDATION`.
+
+The deployed identity fields above describe the last deployed runtime
+behavior/artifact, not the exact PR #75 docs-only merge descendant. Any future
+V4 live traffic or Formal stage requires the V4 implementation, its fresh
+source/Wheel/lock/config/unit/deployment identities, independent review,
+explicit separate authorization, and a fresh readiness/capacity decision. The
+historical V3 2-hour result and both V3 12-hour attempts provide no V4 credit.
+
+M22.9-P1 is reviewed-complete, documentation-only preparation for an external systemd 255
+transient `Type=exec` unit around the existing foreground acceptance observer.
+It uses `Restart=no`, `SIGINT`/120-second clean stop, non-root `bmdr:bmdr`,
+`UMask=0027`, `NoNewPrivileges=yes`, and journal output. The unit is detached
+from SSH but never schedules, restarts, or advances stages. The exact
+registered archive-subdirectory root, detached probe evidence, same-stage
+resume rules, and final-review command are in
+[`docs/milestone_acceptance/M22.9-P1.md`](milestone_acceptance/M22.9-P1.md).
+P1 did not deploy, start Recorder, enable the archive timer, archive/delete
+Raw, or begin Formal M22.9. P2 and the original failed-at-T0 attempt remain
+reviewed historical records. The observer fix was included in the last
+deployed runtime artifact identified above and was verified; the exact PR #75
+docs-only merge descendant is not deployed. In chronological order, the
+2026-09-12 root-home / host-maintenance incident preceded the completed
+2026-09-13 host-maintenance preflight; V3 Formal 2h was accepted on 2026-09-20;
+and V3 12-hour attempts #1 and #2 both failed on 2026-09-21 with zero credit.
+Attempt #1 was an operator-monitor false positive and attempt #2 failed on
+sticky `readiness_not_ready`; V3 12-hour eligibility is `NO`. Recorder remains
+stopped/disabled. The next milestone is the V4 implementation and offline
+validation described by ADR-0033; only after independent review, a fresh
+identity/readiness decision, explicit deployment authorization, and a fresh
+full Formal chain may live work resume. V3 must not be retried unchanged, and
+no V4 implementation, deployment, Formal stage, or automatic stage advancement
+is authorized by this handoff.

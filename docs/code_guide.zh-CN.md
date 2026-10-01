@@ -3,6 +3,8 @@
 > 本文档面向需要理解、审查或修改此项目代码的开发者。
 > 本文为纯文档追加，不改变任何运行行为、接口或数据格式。
 
+当前代码与 V5 接手说明见 [Developer Guide](developer_guide.md)。本文保留早期代码讲解；部署和验收状态以 [当前状态](CURRENT_PRODUCTION_STATE.md) 为准。
+
 ## 1. 项目解决的问题
 
 Binance Market Data Recorder 是一个独立的、无 API 密钥的 Binance 公共市场数据录制器。
@@ -10,8 +12,8 @@ Binance Market Data Recorder 是一个独立的、无 API 密钥的 Binance 公�
 和 REST 快照（depth snapshot、exchange info 等）持久化为不可变的原始数据（Raw），
 再派生为规范化的 Parquet 数据集和确定性重放（Replay）。
 
-批准的未来生产 profile 是 Ubuntu 24.04 LTS x86_64、Python 3.12、systemd
-和非 root Recorder 服务，运行于共享的 2 vCPU / 4 GiB / 40 GB-class VPS。
+生产目标 profile 是 Ubuntu 24.04 LTS x86_64、Python 3.12、systemd
+和非 root Recorder 服务，运行于Tokyo VPS（当前工件和配置见交接文档）。
 macOS Apple Silicon 是开发/本地 profile；Ubuntu ARM64/RK3588 是独立的
 Linux 验证和历史证据 profile。VPS 归档传输协议/library、Archive Set 和
 Offline Workspace 已有实现与合同；实际归档机器的命令冻结和跨平台客户端

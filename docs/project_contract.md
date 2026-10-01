@@ -1,21 +1,15 @@
 # Project Contract
 
-Status: frozen by M0, identity-corrected by ADR-0007/M0.2, extended to Ubuntu
-ARM64 Developer Preview / Soak Candidate by M20, and prospectively extended to
-the VPS/offline architecture by ADR-0028/0029/0030 on 2026-08-17.
-Changes require a dedicated ADR and must retain traceability in
-`requirements_traceability.md`.
+This is the current implemented project scope through PR #78. Substantial
+architecture and data-contract changes are recorded in ADRs and
+`requirements_traceability.md`; routine development and documentation fixes
+follow the current task. See [handoff](PROJECT_HANDOFF.md) for status and next work.
 
 ## Purpose and certified environment
 
-Binance Market Data Recorder is an independent, unofficial project. It is not
-affiliated with, maintained by, sponsored by, or endorsed by Binance.
-
-It is a stateful infrastructure service specifically for Binance public market
-data. The name identifies the connected data source and APIs; it does not imply
-an official relationship. The project must not use Binance logos, official
-visual identity, or identifiers that suggest Binance ownership. The primary
-production target is Ubuntu 24.04 LTS x86_64 with Python 3.12,
+Binance Market Data Recorder is a stateful infrastructure service specifically
+for Binance public market data. It uses its own branding and identifiers.
+The primary production target is Ubuntu 24.04 LTS x86_64 with Python 3.12,
 systemd, and a non-root service. macOS Apple Silicon remains a development/local
 profile; Ubuntu ARM64/RK3588 remains a distinct Linux validation and historical
 evidence profile. Docker is not the production deployment.
@@ -48,8 +42,9 @@ exactly and resolves an omitted sibling to an empty list; both resolved lists
 empty is invalid. Symbols are canonicalized once to uppercase at the
 configuration boundary; empty, control/whitespace-invalid, and within-market
 duplicate symbols are rejected. Parsing does not query Binance. MS2 implements
-these fields and runtime, and MS3-B is merged; live qualification remains a
-separate MS4-C gate and is not authorized by this contract.
+these fields and runtime, and MS3-B is merged. The bounded MS4 review is complete;
+the deployed V5 baseline was stopped before publication. Full production
+qualification remains incomplete; see [current state](CURRENT_PRODUCTION_STATE.md).
 
 An empty resolved USD-M set creates no USD-M Collector, product-specific
 side-data manager, process-global USD-M side-data owner, REST polling, or
@@ -67,8 +62,8 @@ The Recorder core owns:
 - crash recovery, gap/resync quality state, local spool, Catalog, and reports;
 - normalized/versioned datasets and deterministic replay;
 - registered external-directory discovery and verified archival;
-- future VPS-to-local archive transfer, receipt authorization, and Archive Set
-  custody as defined by ADR-0029/0030;
+- VPS-to-local archive transfer, receipt authorization, and Archive Set custody
+  as defined by ADR-0029/0030; portable client rollout remains unfinished;
 - a generic, versioned, read-only consumer contract.
 
 Consumers own computation, factors, research, strategies, target generation,

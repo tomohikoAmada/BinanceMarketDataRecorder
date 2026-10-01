@@ -1,27 +1,12 @@
 from __future__ import annotations
 
 import tomllib
+import unicodedata
 from pathlib import Path
 
 from binance_market_data_recorder.version import FALLBACK_VERSION
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_LONG_RUN_NOTICE = (
-    "原始M21.4正式72小时窗口的进程稳定性PASS，但reconnect-boundary数据完整性合同FAIL；"  # noqa: RUF001
-    "随后部署的M21.4.11工件`f659895…`已通过独立正式72小时观测门。\n"
-    "该工件随后因restart-only orphan-intent缺陷被判定`ELIGIBLE_FOR_168H=false`，"  # noqa: RUF001
-    "因此168小时验收未运行。\n"
-    "PR #11的进一步修复后来进入M22.9 incident artifact；当前本地continuity修复\n"  # noqa: RUF001
-    "尚未部署，新的修复工件必须从"  # noqa: RUF001
-    "2h→12h→24h→72h→168h重新开始验收。\n"
-    "M22.9 exact-VPS 24小时阶段结果为INCOMPLETE；已确认 fatal post-close\n"  # noqa: RUF001
-    "handoff 路径会遗漏持久 gap 证据。修复仅在本地完成、尚未部署；"  # noqa: RUF001
-    "72小时不具备资格。\n"
-    "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
-    "当前版本为Mac Developer Preview;"
-    "Ubuntu ARM64/RK3588为Developer Preview / Soak Candidate;"
-    "不得用于真实资金交易。"
-)
 HISTORICAL_RELEASE_LONG_RUN_NOTICE = (
     "连续72小时和168小时长期运行验收尚未执行。\n"
     "静态审查、单元测试、故障注入和短期在线测试不能替代长期运行证明。\n"
@@ -53,13 +38,16 @@ def test_developer_preview_identity_and_version_are_frozen() -> None:
     assert FALLBACK_VERSION == "0.1.0a1"
 
 
-def test_current_living_surfaces_carry_the_same_long_run_warning() -> None:
+def test_readme_is_english_and_links_current_handoff() -> None:
+    readme = _normalized(ROOT / "README.md")
+    assert not any("CJK" in unicodedata.name(character, "") for character in readme)
     for relative in (
-        "README.md",
-        "docs/known_limitations.md",
-        "docs/risk_register.md",
+        "docs/PROJECT_HANDOFF.md",
+        "docs/CURRENT_PRODUCTION_STATE.md",
+        "docs/developer_guide.md",
     ):
-        assert CURRENT_LONG_RUN_NOTICE in _normalized(ROOT / relative), relative
+        assert f"]({relative})" in readme
+        assert (ROOT / relative).is_file()
 
 
 def test_current_living_surfaces_no_longer_claim_72h_was_never_executed() -> None:

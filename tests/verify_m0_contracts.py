@@ -180,6 +180,7 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/repository_audit.md",
     "docs/requirements_traceability.md",
     "docs/risk_register.md",
+    "docs/risk_register_history.md",
     "tests/verify_m0_contracts.py",
 }
 
@@ -208,7 +209,7 @@ def verify() -> None:
     for phrase in (
         "Never place trades",
         "Do not add deprecated `binance-futures-connector-python`",
-        "Exactly one milestone",
+        "preserve unrelated changes",
         "Binance public APIs",
         "llms-full.txt",
     ):
@@ -275,16 +276,10 @@ def verify() -> None:
             assert "Alpha101" not in content, f"unclassified Alpha reference in {name}"
 
     readme = text_files["README.md"]
-    normalized_readme = " ".join(readme.split())
-    for phrase in (
-        "independent, unofficial project",
-        "not affiliated with",
-        "maintained by",
-        "sponsored by",
-        "endorsed by Binance",
-    ):
-        assert phrase in normalized_readme, f"README disclaimer missing: {phrase}"
-    assert "does not use Binance logos" in normalized_readme
+    assert readme.startswith("# Binance Market Data Recorder\n")
+    assert "Python 3.12" in readme
+    for document in ("docs/PROJECT_HANDOFF.md", "docs/CURRENT_PRODUCTION_STATE.md"):
+        assert f"]({document})" in readme, f"README entry point missing: {document}"
 
     current_docs = "\n".join(
         content
@@ -318,7 +313,7 @@ def verify() -> None:
         assert stale_positioning not in active_boundary, (
             f"stale V1 positioning: {stale_positioning}"
         )
-    assert "specifically for Binance public market data" in active_boundary
+    assert "specifically for Binance public market data" in " ".join(active_boundary.split())
     assert "another exchange requires a separate" in active_boundary.casefold()
 
     history = text_files["docs/milestone_acceptance/M0.2.md"]

@@ -1,18 +1,18 @@
 # Requirements Traceability
 
-This matrix maps every requirement family from the M0 charter to an
-authoritative contract and delivery/verification milestone. Detailed acceptance
-steps are in `milestone_plan.md`; a row never weakens those steps.
+This matrix maps implemented requirements to contracts and verification records.
+The current task and handoff define new work; historical milestone procedures
+describe their original deliveries.
 
 | ID | Requirement family | Contract / decision | Delivery and proof |
 | --- | --- | --- | --- |
-| WF-01 | Exactly one milestone/run; read prerequisites/status; report and stop; use multiple logical commits only when a milestone explicitly requires them | `AGENTS.md`, milestone universal gate | Every M0-M20; acceptance record per milestone |
+| WF-01 | Coherent task scope and commits; preserve unrelated work; relevant verification and current documentation | `AGENTS.md`, milestone universal gate | Current development workflow; historical M0-M20 acceptance records retained |
 | WF-02 | Stop with evidence on official API/platform/permission semantic blocker; no fake substitute | `AGENTS.md`, risks R-002/R-020/R-022 | M2/M9/M12 and any affected milestone |
 | WF-03 | No real trading, account API, API key or credential reads | project/security contract, ADR-0005 | Static/config tests M1; transport tests M2+ |
 | WF-04 | No format/repair of external disk; no GUI/web/trading/factor/backtest in Recorder | project/storage/macOS contracts | Boundary tests/reviews every milestone |
 | IDN-01 | Binance-scoped display/repository/distribution/import/CLI/application-data identity and final workspace | ADR-0007, `AGENTS.md` | M0.2 search/path/history tests; M1 packaging |
 | IDN-02 | M0/M0.1 identities and paths only in classified history; both commits preserved | ADR-0006/0007, M0.1/M0.2 acceptance | M0.2 Git object and `rg` checks |
-| IDN-03 | Independent unofficial project; no affiliation/sponsorship/endorsement/logo or Binance-owned-looking service namespace | ADR-0007, project contract | M0.2 disclaimer/forbidden-string tests; M14/M18 release checks |
+| IDN-03 | Project-owned branding and service namespace; established package identity | ADR-0007, project contract | Identity and misleading-claim checks; README no longer requires disclaimer boilerplate |
 | BND-01 | Recorder independent of all consumers; one-way generic contracts | ADR-0001/0007, architecture | M0.2; generic consumer proof M16 |
 | BND-02 | Alpha101Crypto remains an untouched historical audit object and optional ordinary consumer only | project contract, repository audit | M0-M0.2 and optional M16 read-only review |
 | BND-03 | Recorder is Binance-specific with separate Spot/USD-M modules; no speculative other-exchange framework | ADR-0007, architecture/data contract | M0.2 contract check; M2/M4/M5 collectors; M6 market-specific reconstruction tests |
@@ -144,15 +144,10 @@ These paths are local to the RK3588 host. Only the documentation in this
 repository is published to GitHub; the run, review, and archive evidence
 themselves are not uploaded.
 
-The M21.4 table above is historical evidence. The M21.4/M23.4 deployment
-references in the rows above are artifact-specific historical evidence. Current
-installed behavior/deployment source is P2 source
-`646792f2e5fc5b7195ea58541d3f1dfda6555b7f` with tree
-`c7bcd5efbd9601e1dcef8c5e000435f2e0f82a6c`; later documentation-only
-descendants are not installed. Formal M22.9 2h created T0 and failed before its
-first sample, so no duration credit is awarded and later stages remain not
-started. The pre-MS1 deployed artifact's clean 24h non-formal evidence remains
-artifact-specific and transfers no credit.
-See `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PRODUCTION_STATE.md`, and
-historical `docs/milestone_acceptance/M22.9.md`. Update this matrix whenever a
-requirement, ADR, or milestone acceptance changes.
+The M21.4 table above preserves artifact-specific historical evidence. The current
+implementation includes the V5 bounded-delta/full-audit workflow merged in PR #78;
+its exact deployed source is `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`.
+The owner stopped baseline qualification before publication on 2026-10-01.
+No V5 Formal stage began. Current state and outstanding gates are in
+[handoff](PROJECT_HANDOFF.md), [current state](CURRENT_PRODUCTION_STATE.md),
+and [V5 contract](acceptance_evidence_v5.md).
