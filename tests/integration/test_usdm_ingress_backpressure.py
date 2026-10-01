@@ -585,13 +585,31 @@ def test_short_burst_above_capacity_is_lossless_and_ordered(tmp_path: Path) -> N
         (UsdMStream.AGG_TRADE, agg_trade),
     ],
 )
+@pytest.mark.parametrize("rotate_first_chunk", [False, True], ids=["normal", "early-rotation"])
 def test_sustained_overload_rotates_generation_with_persistent_gap(
     tmp_path: Path,
     stream: UsdMStream,
     payload_factory: Callable[[int], bytes],
     caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    rotate_first_chunk: bool,
 ) -> None:
     caplog.set_level(logging.WARNING)
+    if rotate_first_chunk:
+        original_should_rotate = RawChunkWriter.should_rotate
+        rotated = False
+
+        def first_chunk_boundary(
+            writer: RawChunkWriter, *, now_monotonic: float | None = None
+        ) -> bool:
+            nonlocal rotated
+            if not rotated and writer.record_count:
+                rotated = True
+                now_monotonic = writer._rotation_deadline_monotonic
+            return original_should_rotate(writer, now_monotonic=now_monotonic)
+
+        monkeypatch.setattr(RawChunkWriter, "should_rotate", first_chunk_boundary)
+
     async def exercise() -> tuple[int, list[BurstSocket]]:
         stop = asyncio.Event()
         attempts = 0
@@ -678,15 +696,36 @@ def test_sustained_overload_rotates_generation_with_persistent_gap(
     non_empty_gap_manifests = [
         document for document in gap_manifests if document["connection_ids"]
     ]
-    assert non_empty_gap_manifests[0]["capture_flags"] == ["reconnect_gap"]
+    reconnect_connection_id = str(envelopes[0].connection_id)
+    overload_connection_ids = {
+        str(envelopes[first_new - 1].connection_id),
+        str(envelopes[first_new].connection_id),
+    }
+    assert len(overload_connection_ids) == 2
+    assert reconnect_connection_id not in overload_connection_ids
+    # The first generation's reconnect evidence can be in a zero-record marker
+    # after ordinary rotation. Check flags against their generation, not the
+    # position of the first non-empty gap manifest.
+    assert any(document["capture_flags"] == ["reconnect_gap"] for document in gap_manifests)
     assert all(
-        document["capture_flags"] == ["sequence_gap"]
-        for document in non_empty_gap_manifests[1:]
+        document["capture_flags"] == (
+            ["reconnect_gap"]
+            if document["connection_ids"] == [reconnect_connection_id]
+            else ["sequence_gap"]
+        )
+        for document in non_empty_gap_manifests
     )
-    assert len(non_empty_gap_manifests[-1]["connection_ids"]) == 1
-    assert set(non_empty_gap_manifests[0]["connection_ids"]).isdisjoint(
-        non_empty_gap_manifests[-1]["connection_ids"]
-    )
+    assert {
+        document["connection_ids"][0]
+        for document in non_empty_gap_manifests
+        if document["capture_flags"] == ["sequence_gap"]
+    } == overload_connection_ids
+    if rotate_first_chunk:
+        assert marker_manifests
+        assert all(
+            reconnect_connection_id not in document["connection_ids"]
+            for document in non_empty_gap_manifests
+        )
 
     with Catalog(tmp_path / "state/catalog.sqlite", read_only=True) as catalog:
         events = catalog.operational_events()

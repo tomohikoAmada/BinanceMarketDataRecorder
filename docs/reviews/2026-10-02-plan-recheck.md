@@ -118,3 +118,18 @@ GitHub 双平台 CI/build/fresh-wheel 以推送 PR 的实际运行记录为准�
 Q1 实施不在此次发布操作中。双平台 CI 包含 build/fresh-wheel/dependency gates；
 独立实施审查、online/stress、完整云端预热/基线与 38h 正式阶段按 Q1–Q6 执行。
 GitHub 发布不关闭未完成门，不启动暂停的自动化。后续开发只从当前 Q1 顺序推进。
+
+### 发布 CI 发现的旧测试假设
+
+首次 [CI 36899008382](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/36899008382)
+macOS 全部通过，Ubuntu 在已有 `test_sustained_overload_rotates_generation_with_persistent_gap`
+的一项断言失败：首个非空 gap manifest 为 sequence_gap，而旧断言要求 reconnect_gap。
+该测试原注释已承认普通 rotation 可先封存首个 chunk，使随后重连使用零记录 marker；
+断言却仍依赖“第一个非空”的位置。相关 Collector/spool 生产代码在此分支未改变。
+
+以真实 writer 的既有 rotation deadline 强制第一块提前封存，两个流都稳定复现
+原断言失败。修正后按 Raw connection ID 区分重连代和两代 overload，仍要求重连
+证据存在、两代 sequence_gap 帧/manifest 精确对应、所有 gap incomplete、marker
+零记录，以及原有 Catalog 起止/超时/无重复/队列容量断言。额外覆盖正常/提前封存
+两种路径，不放宽生产验收。模块本地 **41 PASS、1 stress deselected，6.26s**；
+Ruff/mypy/diff 再检 PASS。运行双平台 CI 验证此最终测试修正，结果以 PR 当前 head 为准。
