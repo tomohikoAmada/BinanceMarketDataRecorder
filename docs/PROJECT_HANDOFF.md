@@ -49,6 +49,17 @@ AcceptanceObserver remains the sole stage authority. Helpers cannot restart
 Recorder, create another T0 or grant credit. Historical automation stays paused.
 No Formal V5 target/final or duration credit currently exists.
 
+ADR-0038's minimal startup-boundary source is independently ACCEPTed locally;
+new complete checks/release/cloud gates are in progress. Retained engineering
+cache is `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`;
+new prepared evidence root is
+`/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
+It does not replace the failed605bc16 evidence or count as a deployment.
+The newly owner-authorized current-chat task `vps-2h` wakes at actual five-hour
+quota reset+60s, updates its next dated wakeup, resumes idle work and marks real
+completed plan gates. It does not duplicate active units/T0; pause after reviewed
+eligible2h. Earlier historical automations stay paused.
+
 See [current state](CURRENT_PRODUCTION_STATE.md) and
 [correction](milestone_acceptance/Q3-raw-retirement-correction.md) for exact
 artifacts, paths and evidence. Original nonformal failures and unpublished
@@ -128,4 +139,3 @@ those checkpoints, not to the current paused workflow.
 Earlier pause/reboot/offline-only instructions were time-local and are
 superseded by the owner's restored-access continuation. Their evidence remains
 in the Q3 acceptance records. Current operational authority is current state.
-

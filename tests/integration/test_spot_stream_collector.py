@@ -152,7 +152,9 @@ def test_duplicates_and_out_of_order_messages_are_all_written(tmp_path: Path) ->
     asyncio.run(exercise())
     documents = manifests(tmp_path)
     assert sum(int(document["record_count"]) for document in documents) == 3
-    assert documents[0]["sequence_ranges"] == {
+    assert documents[0]["record_count"] == 0
+    assert documents[0]["capture_flags"] == ["reconnect_gap"]
+    assert documents[1]["sequence_ranges"] == {
         "U": {"min": 8, "max": 10},
         "u": {"min": 8, "max": 10},
     }
@@ -194,11 +196,12 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
     }
     assert sum(int(document["record_count"]) for document in documents) == 2
     assert len(connection_ids) == 2
-    assert len(documents) == 2
+    assert len(documents) == 3  # One initial boundary plus two capture chunks.
     assert all(document["complete"] is False for document in documents)
     assert all(document["gap"] is True for document in documents)
     assert "reconnect_gap" in documents[0]["capture_flags"]
-    assert "sequence_gap" in documents[1]["capture_flags"]
+    assert "reconnect_gap" in documents[1]["capture_flags"]
+    assert "sequence_gap" in documents[2]["capture_flags"]
 
 
 def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
@@ -333,7 +336,8 @@ def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> 
     assert len(captured) == 2
     assert captured[0].capture_flags == ("server_shutdown",)
     documents = manifests(tmp_path)
-    assert len(documents) == 2
+    assert len(documents) == 3
     assert all(document["complete"] is False for document in documents)
     assert "reconnect_gap" in documents[0]["capture_flags"]
-    assert "sequence_gap" in documents[1]["capture_flags"]
+    assert "reconnect_gap" in documents[1]["capture_flags"]
+    assert "sequence_gap" in documents[2]["capture_flags"]

@@ -77,6 +77,7 @@ from .seal import (
     RECONNECT_GAP_FLAG,
     SEAL_INTENT_EVIDENCE_KEY,
     SealError,
+    durable_forced_flags,
     seal_partial,
     validate_sealed_artifact,
 )
@@ -819,12 +820,17 @@ def _derived_seal_flags(
         raise RecoveryConflictError(
             f"RECOVERY_SEAL_INTENT_MALFORMED chunk={chunk_id}"
         )
-    required: frozenset[str] = frozenset()
+    try:
+        required = durable_forced_flags(evidence or {})
+    except SealError as exc:
+        raise RecoveryConflictError(
+            f"RECOVERY_SEAL_FORCED_FLAGS_MALFORMED chunk={chunk_id}"
+        ) from exc
     if intent is not None:
         intent = legacy_seal_intent_for_read(intent)
         validate_seal_intent(intent, chunk_id)
         flags = intent["required_forced_flags"]
-        required = (
+        required |= (
             frozenset(str(flag) for flag in flags)
             if isinstance(flags, list)
             else frozenset()

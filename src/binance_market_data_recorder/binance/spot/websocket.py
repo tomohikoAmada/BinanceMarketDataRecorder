@@ -182,6 +182,7 @@ class SpotStreamCollector:
         self._server_shutdown = asyncio.Event()
         self._backpressure_active = False
         self._generation = 0
+        self._capture_startup_recorded = False
         self._recovery_flag_pending = False
         self._recovery_marker_enqueued = False
         self._pending_gap: dict[str, object] | None = None
@@ -933,6 +934,12 @@ class SpotStreamCollector:
                 await asyncio.wait_for(stop.wait(), timeout=delay)
         return "stopped"
 
+    def _record_capture_startup(self) -> None:
+        self.spool.seal_capture_startup()
+        # Keep successful persistence and this owner's once-only state in the
+        # same owned call, even if its awaiting task is cancelled.
+        self._capture_startup_recorded = True
+
     async def run(
         self,
         stop: asyncio.Event,
@@ -947,6 +954,9 @@ class SpotStreamCollector:
         partial fail-closed (reconnect_gap) instead of claiming
         complete=true.
         """
+
+        if not stop.is_set() and not self._capture_startup_recorded:
+            await run_owned_blocking_call(self._record_capture_startup)
 
         while not stop.is_set():
             producer_done = asyncio.Event()

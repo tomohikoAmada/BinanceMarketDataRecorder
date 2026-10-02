@@ -52,6 +52,19 @@ from binance_market_data_recorder.storage.catalog import (
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 
+@pytest.fixture(autouse=True)
+def capture_startup_already_completed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This module injects faults after startup, at real network boundaries.
+
+    Isolate the new initial seal so an old network-seal fault does not fire at
+    the wrong lifecycle phase. Network intent, Raw, Catalog and all boundary
+    assertions remain real. Actual startup and its crash/reconnect composition
+    are covered separately by test_capture_startup_boundary.py.
+    """
+
+    monkeypatch.setattr(StreamSpool, "seal_capture_startup", lambda _spool: {})
+
+
 class ScriptedSocket:
     def __init__(
         self,

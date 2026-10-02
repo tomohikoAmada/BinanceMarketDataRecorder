@@ -31,6 +31,10 @@ from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from tests.integration.test_reconnect_boundary_integrity import (
+    # These fault hooks target ingress after capture startup has completed.
+    capture_startup_already_completed as capture_startup_already_completed,
+)
 
 
 class BurstSocket:
@@ -938,9 +942,11 @@ def test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap(
 
     asyncio.run(exercise())
     envelopes, manifests = captured(tmp_path)
-    assert len(manifests) == 1
-    assert manifests[0]["gap"] is False
-    assert manifests[0]["complete"] is True
+    # Ordinary idle rotation may split the same connection at its rotation
+    # deadline. Global stop must still produce no incomplete/gap chunk.
+    assert manifests
+    assert all(manifest["gap"] is False for manifest in manifests)
+    assert all(manifest["complete"] is True for manifest in manifests)
     assert [envelope.raw_payload for envelope in envelopes] == source_payloads[
         : len(envelopes)
     ]

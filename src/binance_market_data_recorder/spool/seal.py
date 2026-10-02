@@ -85,6 +85,10 @@ INCOMPLETE_FLAGS = frozenset(
 #: STREAM_DISCONTINUITY_STARTED event itself failed to commit (P1-A).
 SEAL_INTENT_EVIDENCE_KEY = "seal_intent"
 
+# Ordinary forced manifest flags must survive a failed seal just like the
+# network seal intent. This field does not manufacture a network gap identity.
+FORCED_FLAGS_EVIDENCE_KEY = "seal_forced_flags"
+
 #: Current durable reconnect-intent contract version (M21.4.11-R3.3).
 #:
 #: Every seal intent emitted by the R3.3+ runtime carries this exact string
@@ -103,6 +107,22 @@ RECONNECT_INTENT_SCHEMA_V2 = "reconnect-seal-intent.v2"
 
 class SealError(RuntimeError):
     """Raised when a partial cannot be proven safe to seal."""
+
+
+def durable_forced_flags(evidence: Mapping[str, object]) -> frozenset[str]:
+    """Read optional durable flags; absent means the original seal contract."""
+
+    if FORCED_FLAGS_EVIDENCE_KEY not in evidence:
+        return frozenset()
+    flags = evidence[FORCED_FLAGS_EVIDENCE_KEY]
+    if (
+        not isinstance(flags, list)
+        or not flags
+        or not all(isinstance(flag, str) and flag for flag in flags)
+        or flags != sorted(set(flags))
+    ):
+        raise SealError("durable SEALING forced flags are malformed")
+    return frozenset(flags)
 
 
 MANIFEST_REQUIRED_FIELDS = frozenset(
@@ -453,6 +473,8 @@ def _seal_verified(
         transition_evidence: dict[str, object] = {
             "verified_frames": verified.statistics.record_count,
         }
+        if forced_flags:
+            transition_evidence[FORCED_FLAGS_EVIDENCE_KEY] = sorted(forced_flags)
         if seal_intent is not None:
             transition_evidence[SEAL_INTENT_EVIDENCE_KEY] = dict(seal_intent)
         catalog.transition(
@@ -461,14 +483,19 @@ def _seal_verified(
             idempotency_key=f"sealing:{chunk_id}",
             evidence=transition_evidence,
         )
-    elif current is ChunkState.SEALING and seal_intent is not None:
+    elif current is ChunkState.SEALING:
         # A previous seal attempt already made this chunk durable SEALING
         # evidence (possibly with a different intent). A conflicting intent
         # on re-seal is a double-fault: fail closed rather than silently
         # adopting a second boundary identity.
         existing = catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING) or {}
+        # A direct seal_partial retry must retain these flags too, even when
+        # the caller does not pass them again. Recovery may add further flags.
+        forced_flags |= durable_forced_flags(existing)
         prior = existing.get(SEAL_INTENT_EVIDENCE_KEY)
-        if prior is not None and (not isinstance(prior, dict) or dict(prior) != dict(seal_intent)):
+        if seal_intent is not None and prior is not None and (
+            not isinstance(prior, dict) or dict(prior) != dict(seal_intent)
+        ):
             raise SealError("durable SEALING evidence conflicts with the requested seal intent")
 
     sealed = layout.sealed / f"{verified.header.chunk_id.hex}.bmdr.zst"

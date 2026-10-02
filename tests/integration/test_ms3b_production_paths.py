@@ -1298,6 +1298,12 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
         ]
         assert len(documents) >= len(PROFILE_D_PRODUCTS) * 4
         assert len(documents) == len(sealed)
+        startup = [document for document in documents if document["record_count"] == 0]
+        assert len(startup) == len(PROFILE_D_PRODUCTS) * 3
+        assert all(document["capture_flags"] == ["reconnect_gap"] for document in startup)
+        assert all(document["gap"] and not document["complete"] for document in startup)
+        assert all(document["connection_ids"] == [] for document in startup)
+        documents = [document for document in documents if document["record_count"] > 0]
         assert {document["market"] for document in documents} == {
             "spot",
             "um_perpetual",

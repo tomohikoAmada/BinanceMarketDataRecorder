@@ -259,6 +259,24 @@ class StreamSpool:
             self._seal_observer(manifest)
         return manifest
 
+    def seal_capture_startup(self) -> dict[str, object]:
+        """Seal this process's stream boundary before any connection can open.
+
+        A sparse stream may receive its first payload long after startup. The
+        empty, incomplete marker separates prior-process capture without
+        inventing a payload, connection ID or network-discontinuity event.
+        """
+
+        if self._writer is not None or self.queue.depth:
+            raise RuntimeError("capture startup requires an unused stream spool")
+        self._writer = self._new_writer()
+        # Do not drain_all here: idle rotation could seal this empty writer
+        # with ordinary complete semantics before applying the boundary flag.
+        manifest = self._seal_current(forced_flags=frozenset({RECONNECT_GAP_FLAG}))
+        if manifest is None:
+            raise RuntimeError("capture startup marker was not sealed")
+        return manifest
+
     def close_and_seal(
         self,
         forced_flags: frozenset[str] = frozenset(),

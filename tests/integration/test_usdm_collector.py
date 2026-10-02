@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -53,12 +54,17 @@ class RestApi:
 
 
 class SnapshotSequenceRestApi:
-    def __init__(self, last_update_ids: list[int]) -> None:
+    def __init__(self, last_update_ids: list[int], *, depth_ready: threading.Event) -> None:
         self.last_update_ids = iter(last_update_ids)
         self.request_count = 0
+        self.depth_ready = depth_ready
 
     def order_book(self, symbol: str, limit: int) -> DepthResponse:
         assert (symbol, limit) == ("BTCUSDT", 1000)
+        # This regression tests retrying a snapshot that cannot bridge already
+        # buffered depth, not the scheduling race between initial socket/seal
+        # startup and the first REST response.
+        assert self.depth_ready.wait(3), "depth fixture was not persisted"
         self.request_count += 1
         return Response(next(self.last_update_ids))
 
@@ -175,7 +181,8 @@ def test_active_usdm_collector_retries_snapshot_that_cannot_bridge(
             b'"b":"1","B":"1","a":"2","A":"1"}'
         ),
     }
-    rest_api = SnapshotSequenceRestApi([50, 100])
+    depth_ready = threading.Event()
+    rest_api = SnapshotSequenceRestApi([50, 100], depth_ready=depth_ready)
 
     async def exercise() -> None:
         stop = asyncio.Event()
@@ -201,6 +208,15 @@ def test_active_usdm_collector_retries_snapshot_that_cannot_bridge(
             rest_api=rest_api,
             websocket_opener=opener,
         )
+        depth_stream = next(
+            stream for stream in collector.streams if stream.stream_name == "diff_depth"
+        )
+        observed = depth_stream.envelope_observer
+        assert observed is not None
+        def observe_depth(envelope: Any) -> None:
+            observed(envelope)
+            depth_ready.set()
+        depth_stream.envelope_observer = observe_depth
         task = asyncio.create_task(collector.run(stop))
         for _ in range(100):
             if collector.readiness_snapshot().ready:

@@ -183,6 +183,7 @@ class UsdMStreamCollector:
         self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
         self._backpressure_active = False
         self._generation = 0
+        self._capture_startup_recorded = False
         self._recovery_flag_pending = False
         self._recovery_marker_enqueued = False
         self._pending_gap: dict[str, object] | None = None
@@ -969,6 +970,10 @@ class UsdMStreamCollector:
                 await asyncio.wait_for(stop.wait(), timeout=self.backoff.delay(max(1, failures)))
         return "stopped"
 
+    def _record_capture_startup(self) -> None:
+        self.spool.seal_capture_startup()
+        self._capture_startup_recorded = True
+
     async def run(
         self,
         stop: asyncio.Event,
@@ -983,6 +988,9 @@ class UsdMStreamCollector:
         partial fail-closed (reconnect_gap) instead of claiming
         complete=true.
         """
+        if not stop.is_set() and not self._capture_startup_recorded:
+            await _run_owned_blocking_call(self._record_capture_startup)
+
         while not stop.is_set():
             producer_done = asyncio.Event()
             self._forced_seal_flags = frozenset()

@@ -3,8 +3,11 @@
 Updated October2,2026. Restored SSH after the owner's local VPN/proxy correction.
 Exact independently accepted605bc16 is installed/verified;1970 local tests,
 exact-source dual-platform CI, clean locked wheel and112 cloud V5 tests PASS.
-697 retained new chunks are archived; a new exact-artifact engineering baseline
-is executing. Earlier source48 baseline/completed verify PASS on637 chunks.
+1182 retained new chunks are archived; Recorder inactive AND disabled. Source605
+engineering baseline/completed verify passed on697 with both LIVE passes, but
+actual catch-up failed a sparse initial-process boundary. ADR-0038 source is
+independently accepted with1991 offline tests; new release/cloud gates remain.
+Earlier source48 baseline/completed verify PASS on637 chunks.
 Actual all-enabled throughput/catch-up and cumulative forecasts remain OPEN.
 Original nonformal failures and historical R-078 retain their dispositions.
 Owner resumes through completed Formal2h, stopping before12h.
@@ -14,6 +17,8 @@ Owner resumes through completed Formal2h, stopping before12h.
 | Risk | Current control and evidence | Remaining work |
 |---|---|---|
 | R-076: ordinary observations grow with historical corpus | V5 uses bounded durable deltas; implementation review and offline gates passed | Complete production qualification |
+| Sparse initial WS boundary |605bc16 failed nonformal catch-up on a pre-T0-connected sparse liquidation stream's first post-T0 payload; ADR-0038 records an authentic initial boundary without relaxing the classifier | New exact review/release/cloud gates; no unchanged repeat |
+| Very long consecutive WS failure backoff | Offline unlimited-failure fixture exposes existing exponent OverflowError at1025 failures before the configured cap can apply; separate from the observed startup failure | Proportionate bounded-exponent follow-up; no claim that these attempts occurred on the VPS |
 | R-077: incomplete or inconsistent terminal authority | Private manifest freeze, Catalog snapshot, causal replay and independent verification are implemented and reviewed | Complete baseline and terminal production verification |
 | R-078: full Raw/archive audit takes too long | Production baseline stopped after more than 14 hours, with 87,423 of 143,362 first-pass records published | Assess full-audit practicality and qualification scope; P2 remains open pending complete measurements and independent review |
 | R-034: Spot bootstrap source conflict | ADR-0011 retains exact Raw and the `lastUpdateId + 1` interpretation; offline evaluator compares boundaries | Resolve normative-source conflict before changing that behavior |

@@ -47,6 +47,10 @@ from binance_market_data_recorder.spool.stream import StreamSpool
 from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from tests.integration.test_reconnect_boundary_integrity import (
+    # These fault hooks target ingress after capture startup has completed.
+    capture_startup_already_completed as capture_startup_already_completed,
+)
 
 
 class BurstSocket:

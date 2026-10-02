@@ -80,6 +80,9 @@ from tests.integration.test_reconnect_boundary_integrity import (
     manifests,
     sealing_intent,
 )
+from tests.integration.test_reconnect_boundary_integrity import (
+    capture_startup_already_completed as capture_startup_already_completed,
+)
 
 
 def _make_spot_collector(

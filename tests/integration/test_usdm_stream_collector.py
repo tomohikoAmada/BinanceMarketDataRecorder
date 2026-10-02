@@ -202,9 +202,11 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
     documents.sort(key=lambda item: int(item["created_at_utc_ns"]))
     reconnect = [
         document
-        for document in documents
+        for document in documents[1:]  # First is the separate startup marker.
         if "reconnect_gap" in document["capture_flags"]
     ]
+    assert documents[0]["record_count"] == 0
+    assert documents[0]["capture_flags"] == [RECONNECT_GAP_FLAG]
     recovery = [
         document
         for document in documents
@@ -245,7 +247,7 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
     assert sequence_frames[0].connection_id == new_connection_id
     ordinary = [
         document
-        for document in documents
+        for document in documents[1:]
         if document not in (reconnect_manifest, recovery_manifest)
     ]
     assert len(ordinary) <= 1

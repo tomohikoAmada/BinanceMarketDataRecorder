@@ -29,6 +29,14 @@ cloud source48ca920 evidence. Subsequent documentation commits are not replaceme
 Spot and USD-M BTCUSDT/ETHUSDT remain configured. All14 auxiliary flags are true;
 42 Raw contexts/16WS/26REST is topology, with live coverage separately measured.
 
+ADR-0038 replacement source has independent LOCAL/OFFLINE ACCEPT; complete
+source/release checks are in progress. The currently installed605bc16 wheel above
+remains unchanged. New prepared evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
+Current-chat continuation `vps-2h` is active at actual five-hour quota reset+60s;
+each wakeup updates its next dated schedule and resumes only idle work. Old
+automations remain paused. Neither automation is Formal acceptance authority.
+
 ## Current operation and gates
 
 Recorder is inactive AND disabled, MainPID0, Resultsuccess and NRestarts0.
@@ -87,4 +95,3 @@ in [Q3 fresh-corpus](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md) a
 [all-enabled candidate](milestone_acceptance/Q3-all-enabled-candidate.md).
 Historical paused automation remains paused. Only local/remote main remains;
 unrelated stash/untracked review bundles and detached worktrees are retained.
-

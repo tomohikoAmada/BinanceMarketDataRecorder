@@ -76,7 +76,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; exact605bc16 installed;697-chunk engineering baseline/verify passed; catch-up warm-up failed on prior-process sparse-stream boundary; startup-boundary correction/review and remaining gates required |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;605bc16 installed;697-chunk engineering baseline/verify passed; sparse-startup failure corrected with independent source ACCEPT/1991 offline tests; new release/cloud and remaining gates required |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -153,12 +153,35 @@ c87d580 passed its earlier review/release gates; subsequent Raw retirement and
 empty/gap event corrections are independently accepted in exact605bc16, now
 installed with passing CI/clean wheel/cloud98 newly affected tests. See the
 [current correction](milestone_acceptance/Q3-empty-recovery-correction.md).
+Its sparse-stream startup failure now has the minimal
+[ADR-0038 correction](milestone_acceptance/Q3-startup-boundary-correction.md)
+under review: seal an authentic empty boundary before opening each capture
+owner's first connection, preserving initially forced flags across seal crashes.
+The current installed wheel remains605bc16 until the new exact release gates pass.
 Shared exact companions and
 final-reference accounting preserve the frozen byte/page/proof bounds and old
 replay/resume. Actual all-enabled warm-up remains required; do not raise caps or
 relax cadence. Existing warm-up data remains part of the growing corpus. Check
 a finite future archive-timer deadline and actual automatic recurrence after
 rebind/start; explicitly prime the existing verified worker when needed.
+
+Current Q3 checklist (each box is evidence-based, not Formal credit):
+
+- [x] Preserve the old scope; keep the distinct new corpus and archive identity.
+- [x] Install/verify605bc16 and retain engineering baseline/both LIVE/verify PASS.
+- [x] Diagnose the failed sparse-startup boundary independently; retain all1182 chunks.
+- [x] Implement ADR-0038 and obtain independent source ACCEPT; release gates remain.
+- [ ] Complete the new exact-source full checks/CI/locked wheel/cloud deployment gates.
+- [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
+- [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
+- [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.
+
+The owner's new in-thread continuation task `vps-2h` uses the account's actual
+five-hour reset timestamp plus60s, with a single dated wakeup updated after each
+run. It resumes idle work through completed eligible2h and records completed gates
+here. It neither duplicates active work nor restarts an existing observer/T0.
+VPS code performs economical monitoring independently of model quota. Historical
+automations remain paused; this continuation pauses when reviewed2h completes.
 
 1. Keep Recorder inactive AND disabled. Inventory exact project-owned active
    paths, manifests, Catalog, registrations, archived Raw and evidence. Drain

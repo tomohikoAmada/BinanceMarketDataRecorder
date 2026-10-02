@@ -52,8 +52,9 @@ LIVE passes and independent ACCEPT. Nonformal normal/missed observations fit240s
 but catch-up-1 failed unmarked_reconnect: a sparse ETH liquidation initial
 connection before T0 produced its first message after T0 and was compared to a
 prior-process baseline tail. No completion marker/target or Formal credit exists.
-Archive/OS authority is active; resource monitor stopped. Next: minimal startup-
-boundary correction and review, affected release/cloud checks, actual convergence
+Archive/OS authority is active; resource monitor stopped. ADR-0038's minimal
+startup-boundary source is independently ACCEPTed with1991 offline tests.
+Next: new exact CI/wheel and affected release/cloud checks, actual convergence
 and forecasts, then authoritative post-warm-up baseline/quiet window and Formal2h
 with terminal/completed/independent verification.12H_STARTED=NO;PRODUCTION_READY=NO.
 
@@ -64,6 +65,9 @@ unique evidence, or repeat an unchanged failed live run. CurrentQ0–Q6 plan is
 Q1/Q2 gates complete; F4/portable archive follow-ups remain separate. Economical
 read-only monitoring is authorized; it cannot invent a T0 or restart Recorder.
 Historical automation remains paused.
+New owner-authorized current-chat continuation vps-2h wakes at actual five-hour
+quota reset+60s, then updates its next dated schedule. If work is already advancing,
+only reschedule and exit; do not duplicate active work/T0. Pause after reviewed2h.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is
@@ -334,4 +338,3 @@ identity, receipt binding, and deletion authorization remain portable. The
 archive protocol/library is implemented; the operator-selected archive-machine
 receive/readback/receipt command freeze and cross-platform production
 certification remain pending.
-
