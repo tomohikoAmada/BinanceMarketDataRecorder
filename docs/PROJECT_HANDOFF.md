@@ -4,14 +4,16 @@ Updated October 2, 2026. This is the entry point for the next development team.
 
 ## Current code
 
-PR #78 is merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`,
-tree `039f8fefaeefe116a3a464b7d2bffae8d05e7d9c`. This is still the deployed base.
+PR #79 is merged at `8c9310554a559369c8708a30e6a79fdcb379d8e2`.
+Only local and remote main remains, with no open PR; merged review history,
+the original stash/untracked review bundles and detached worktrees are retained.
 The reviewed release is frozen at `d0f455c1a417cc1a184c47b6ff766a60f3dc0159`,
 tree `cf3854d7fc032de79096dced8e002a6cd55e65c3`, wheel SHA-256
 `b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921`.
 [Q2 acceptance](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md)
 records independent ACCEPT, exact-source dual-platform CI and cloud release checks.
-It is staged, not installed. Subsequent documentation is not a replacement wheel.
+The exact wheel is now installed through Q3. Subsequent documentation is not a
+replacement wheel. The actual Q3 cloud observer gate failed before Formal T0.
 
 The Recorder implements finite configurable Spot/USD-M products, immutable Raw,
 Catalog lifecycle/recovery, gap evidence, order-book reconstruction, verified
@@ -44,9 +46,12 @@ and v2 build identity; legacy immutable v1 builds remain readable.
 
 The owner selected safe old-data cleanup followed by an independent fresh corpus.
 The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h all PASS
-with complete terminal/independent verification. Next is Q3 safe custody/new
-canonical Catalog, exact deployment and measured cloud warm-up/baseline/readiness; no old archive is
-implicitly destroyed or imported into the new corpus.
+with complete terminal/independent verification. Q3 custody, new canonical
+Catalog/archive registration and deployment are done. Its nonformal observer
+hit the causal-reference cap after byte-budget starvation; Q3 is incomplete.
+Next is a measured observer correction/review and repeated cloud gates, then
+the authoritative post-warm-up baseline/readiness. No old archive was destroyed
+or imported into the new corpus. See [Q3 evidence](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
 
 [Cloud performance analysis](reviews/2026-10-02-cloud-performance-and-38h.md) records
 ~21% scanner time reduction and compact status output with identical proofs/totals.
@@ -54,19 +59,23 @@ implicitly destroyed or imported into the new corpus.
 and retains old one-page replay/resume. The default CLI archive status omits full
 transaction details; use `--details --limit 100 --offset 0` for a page. Code,
 dependency set, Raw and Catalog format remain Python/compatible; no native engine
-was added. Installed source and stopped operational checkpoint are unchanged.
+was added. Current installed source is d0f455c; historical throughput probes
+must not be substituted for the failed actual cloud gate.
 
 ## Current operations
 
-The merged V5 artifact is installed on `greencloud-tokyo-01`. On October 1 the
-owner stopped all qualification work during the baseline audit. Recorder is
-inactive and disabled; the baseline and its resource sampler are stopped.
-The continuation automation is paused. Archive and OS update timers have been
-restored. No V5 Formal T0, 2-hour stage, or 12-hour stage was created.
+The exact Q2 artifact is installed on `greencloud-tokyo-01`. Q3 retains old
+metadata/archive and captures a separate new corpus at the same canonical
+writer root. After the failed NONFORMAL warm-up, Recorder is inactive and
+disabled, the resource sampler is stopped, and all 448 new chunks/transactions
+are verified archived/LOCAL_DELETED. Catalog is ok with zero active partials or
+archive backlog. Archive timer and normal OS update authorities are enabled
+and active. No Formal V5 T0, 2-hour stage or 12-hour stage was created.
 
-The baseline has no published `audit-root.json`, so it is incomplete and cannot
-be used as a passing predecessor. Existing data and partial audit evidence are
-retained. No data reset or empty-directory test was performed.
+The historical October 1 143,362-chunk baseline remains unpublished; old data
+and audit evidence remain retained. The separate engineering-only Q3 empty
+baseline cannot be reused as the authoritative post-warm-up predecessor. New
+warm-up data must be preserved for baseline and cumulative forecasts.
 
 [Current production state](CURRENT_PRODUCTION_STATE.md) contains exact artifacts,
 paths and verified closeout state. The
@@ -77,8 +86,9 @@ contains gates and audit progress.
 
 Use a clean checkout of current `main`, Python 3.12, and a virtual environment.
 Install `.[dev]`; run the offline checks listed in the [developer guide](developer_guide.md).
-Use temporary roots for tests. The original workspace's WIP branch, stash,
-backup branch, and untracked review bundles remain preserved.
+Use temporary roots for tests. The original stash and untracked review bundles
+remain preserved. Completed ancestor-only WIP/backup branch references have
+been removed after merge; local and remote main are the only branches.
 
 Follow the current task and implemented contracts. Old one-milestone-per-run,
 fixed-model assignments and mandatory README disclaimer text are retired.
@@ -98,10 +108,13 @@ Read these documents in order:
 - Review the practical cost of full baseline/terminal audits using retained
   production measurements. The stopped audit gives partial measurements only;
   it establishes neither a full integrity PASS nor completed throughput.
-- Q2 release gates are complete. Execute the reviewed Q3 procedure for retained
-  old-data custody, a fresh corpus and exact frozen wheel deployment. Measure live
-  capacity/RSS/complete observations and cumulative audit forecasts. Warm-up
-  precedes the authoritative stopped baseline. Do not resume the unchanged old audit.
+- Q2 release gates are complete. Q3 custody/new corpus/deployment are done,
+  but the cloud observer byte/causal-cap gate failed. Reproduce cloud-sized
+  repeated companions and intermediate replay cap behavior, make a small
+  reviewed correction and refreeze any changed wheel. Repeat steady/missed-
+  cadence gates; do not merely widen limits or blame hardware without evidence.
+  Complete live forecasts and the authoritative stopped baseline afterward.
+  Preserve all new capture and the interrupted old audit.
 - The owner authorizes continuation through Q4 eligible 2h, then stop before Q5
   cloud 12h. Do not silently start 12h or count engineering warm-up as Formal.
 - If qualification is restarted, verify the exact artifact and data scope,

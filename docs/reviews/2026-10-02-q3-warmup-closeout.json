@@ -1,0 +1,687 @@
+{
+  "additive_deployment_verification": {
+    "path": "/srv/recorder-data/recorder-archive/evidence/Q3-fresh-d0f455c-20261002-YgstkmRP/NONFORMAL-WARMUP/attempt-2/deployment-verify-closeout.json",
+    "sha256": "ec551e409121585afe941cdba04e36ec7c5a12aad50d055a4ab7e1f142cfe1ec",
+    "status": "VERIFIED"
+  },
+  "closeout_path": "/srv/recorder-data/recorder-archive/evidence/Q3-fresh-d0f455c-20261002-YgstkmRP/NONFORMAL-WARMUP/attempt-2/closeout.json",
+  "closeout_sha256": "b6bb1fac567403044f7c38f74c565fded374efb139fa11a1f8ff389796f56eb9",
+  "summary": {
+    "12h_started": false,
+    "active_partials": 0,
+    "archive_free_bytes": 2102692376576,
+    "archive_marker": {
+      "created_at_utc_ns": 1790905796043624544,
+      "marker_nonce": "c2f7a682f0f349af8280185dba147ada",
+      "registered_relative_path": "recorder-archive-qualification-q3-d0f455c-lg427ebp",
+      "schema": "registered-storage.v1",
+      "storage_id": "57512e1d-59cc-4aff-bf3b-49ae84a7a44e",
+      "volume_uuid": "95A2CE20-BF7A-4FAE-98E8-D208517AE318"
+    },
+    "archive_states": {
+      "LOCAL_DELETED": 448
+    },
+    "authoritative_baseline_completed": false,
+    "boot_id": "11b990f3-68bb-43fa-ac82-03e94ea6962a",
+    "catalog_integrity": [
+      "ok"
+    ],
+    "chunk_states": {
+      "LOCAL_DELETED": 448
+    },
+    "complete_observations": [
+      {
+        "archive_backlog": {
+          "COPYING": 0,
+          "LOCAL_DELETE_PENDING": 0,
+          "VERIFIED": 0,
+          "VERIFYING": 0
+        },
+        "blocking_findings": [],
+        "delta_bytes": 464274,
+        "delta_pending": false,
+        "document_bytes": 512523,
+        "formal_credit_seconds": 0,
+        "high_water": {
+          "archive": 0,
+          "chunk": 229,
+          "operational": 1
+        },
+        "independent_chain_replay_seconds": 0.059107522,
+        "observed_at_boottime_ns": 1241160709229,
+        "page_rows": {
+          "archive": 0,
+          "chunk": 229,
+          "operational": 1
+        },
+        "pending_causal_references": 0,
+        "phase": "engineering-start",
+        "processed": {
+          "archive": 0,
+          "chunk": 229,
+          "operational": 1
+        },
+        "producer_seconds": 47.981483905,
+        "sha256": "c123d0ef7d8225cdeffef95cf4fe13347cc05e20292e5fc3b1f6068eeace6041",
+        "total_seconds": 48.040591427
+      },
+      {
+        "archive_backlog": {
+          "COPYING": 0,
+          "LOCAL_DELETE_PENDING": 0,
+          "VERIFIED": 0,
+          "VERIFYING": 0
+        },
+        "blocking_findings": [],
+        "delta_bytes": 55035,
+        "delta_pending": false,
+        "document_bytes": 102128,
+        "formal_credit_seconds": 0,
+        "high_water": {
+          "archive": 0,
+          "chunk": 256,
+          "operational": 1
+        },
+        "independent_chain_replay_seconds": 0.070183023,
+        "observed_at_boottime_ns": 1289221639564,
+        "page_rows": {
+          "archive": 0,
+          "chunk": 27,
+          "operational": 0
+        },
+        "pending_causal_references": 0,
+        "phase": "immediate",
+        "processed": {
+          "archive": 0,
+          "chunk": 256,
+          "operational": 1
+        },
+        "producer_seconds": 12.411323311,
+        "sha256": "252be311631e2cefd1620f63be1a1ba5dc228a4406b8ed701bcf4b24e40b367f",
+        "total_seconds": 12.481506334
+      },
+      {
+        "archive_backlog": {
+          "COPYING": 0,
+          "LOCAL_DELETE_PENDING": 0,
+          "VERIFIED": 0,
+          "VERIFYING": 0
+        },
+        "blocking_findings": [],
+        "delta_bytes": 7334466,
+        "delta_pending": true,
+        "document_bytes": 7491191,
+        "formal_credit_seconds": 0,
+        "high_water": {
+          "archive": 670,
+          "chunk": 1106,
+          "operational": 1
+        },
+        "independent_chain_replay_seconds": 1.283098654,
+        "observed_at_boottime_ns": 1589223630102,
+        "page_rows": {
+          "archive": 327,
+          "chunk": 831,
+          "operational": 0
+        },
+        "pending_causal_references": 343,
+        "phase": "normal",
+        "processed": {
+          "archive": 327,
+          "chunk": 1086,
+          "operational": 1
+        },
+        "producer_seconds": 53.102061176,
+        "sha256": "9a28919eeedf80f2fee36f8693440cf1bfa215dbd25f41b9ab5d5732f961f8ca",
+        "total_seconds": 54.38515983
+      },
+      {
+        "archive_backlog": {
+          "COPYING": 0,
+          "LOCAL_DELETE_PENDING": 0,
+          "VERIFIED": 0,
+          "VERIFYING": 0
+        },
+        "blocking_findings": [],
+        "delta_bytes": 7334365,
+        "delta_pending": true,
+        "document_bytes": 7601340,
+        "formal_credit_seconds": 0,
+        "high_water": {
+          "archive": 1230,
+          "chunk": 1999,
+          "operational": 1
+        },
+        "independent_chain_replay_seconds": 2.922009495,
+        "observed_at_boottime_ns": 2139228833891,
+        "page_rows": {
+          "archive": 218,
+          "chunk": 897,
+          "operational": 0
+        },
+        "pending_causal_references": 685,
+        "phase": "missed-cadence",
+        "processed": {
+          "archive": 545,
+          "chunk": 1982,
+          "operational": 1
+        },
+        "producer_seconds": 84.423730324,
+        "sha256": "26d04399ed822e08925899c6381456776e7ed6a20c67483d369f879ddaaa979f",
+        "total_seconds": 87.345739819
+      }
+    ],
+    "deployment_identity": {
+      "capacity_profile_id": "vps-production-v1",
+      "catalog_compatibility": {
+        "remote_archive_states": [
+          "REMOTE_DELETE_PENDING",
+          "REMOTE_DELETED"
+        ]
+      },
+      "config": {
+        "path": "/etc/binance-market-data-recorder/recorder.toml",
+        "sha256": "4dbbb6bf415b209635857df6cf537478b03f262b2c3a88553ac77bb9c1c0d781"
+      },
+      "dependency_lock": {
+        "path": "/opt/binance-market-data-recorder/release-q3-d0f455c-c_aqk1x4/linux-x86_64-python312.lock",
+        "sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335"
+      },
+      "package_version": "0.1.0a1",
+      "python": {
+        "exact_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+        "executable": "/opt/binance-market-data-recorder/venv/bin/python"
+      },
+      "schema_version": "deployment-identity.v1",
+      "source_git_sha": "d0f455c1a417cc1a184c47b6ff766a60f3dc0159",
+      "startup_sidecars": {
+        "legacy_reconnect_classifications": {
+          "path": "/etc/binance-market-data-recorder/legacy_reconnect_classifications.json",
+          "sha256": null,
+          "state": "ABSENT"
+        }
+      },
+      "systemd_effective": {
+        "after": [
+          "-.mount",
+          "basic.target",
+          "network-online.target",
+          "sysinit.target",
+          "system.slice",
+          "systemd-journald.socket"
+        ],
+        "drop_in_paths": [],
+        "environment": [
+          "ALL_PROXY=",
+          "HTTPS_PROXY=",
+          "HTTP_PROXY=",
+          "NO_PROXY=",
+          "PYTHONUNBUFFERED=1",
+          "all_proxy=",
+          "http_proxy=",
+          "https_proxy=",
+          "no_proxy="
+        ],
+        "environment_files": [],
+        "exec_start": [
+          "/opt/binance-market-data-recorder/venv/bin/python",
+          "-m",
+          "binance_market_data_recorder",
+          "--config",
+          "/etc/binance-market-data-recorder/recorder.toml",
+          "_service",
+          "run"
+        ],
+        "fragment_path": "/etc/systemd/system/binance-market-data-recorder.service",
+        "group": "bmdr",
+        "kill_signal": "SIGTERM",
+        "no_new_privileges": true,
+        "pass_environment": [],
+        "requires": [
+          "-.mount",
+          "sysinit.target",
+          "system.slice"
+        ],
+        "restart": "on-failure",
+        "restart_sec_usec": 10000000,
+        "service_type": "simple",
+        "standard_error": "journal",
+        "standard_output": "journal",
+        "timeout_stop_sec_usec": 90000000,
+        "umask": "0027",
+        "user": "bmdr",
+        "wants": [
+          "network-online.target"
+        ],
+        "working_directory": "/var/lib/binance-market-data-recorder"
+      },
+      "systemd_unit": {
+        "path": "/etc/systemd/system/binance-market-data-recorder.service",
+        "sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6"
+      },
+      "wheel": {
+        "path": "/opt/binance-market-data-recorder/release-q3-d0f455c-c_aqk1x4/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+        "sha256": "b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921"
+      }
+    },
+    "deployment_identity_sha256": "6ab685ed3bc51c9787a52e461607aafe99c35312d2f6e3a489ac1ae4ab79f40e",
+    "evidence_root": "/srv/recorder-data/recorder-archive/evidence/Q3-fresh-d0f455c-20261002-YgstkmRP",
+    "failure": "AcceptanceError: pending causal reference cap exceeded",
+    "forecasts_completed": false,
+    "formal_credit_seconds": 0,
+    "formal_started": false,
+    "kernel": "6.8.0-146-generic",
+    "kind": "Q3_NONFORMAL_WARMUP_FAILED_GATE_STOPPED_CLOSEOUT",
+    "metrics_market_stream_product_aggregated": {
+      "spot/agg_trade": {
+        "gauges_max": {
+          "cpu_percent": 103.53373570421272,
+          "internal_free_bytes": 34210435072,
+          "queue_depth": 44,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "spot/book_ticker": {
+        "gauges_max": {
+          "cpu_percent": 103.53373570421272,
+          "internal_free_bytes": 34210435072,
+          "queue_depth": 255,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "spot/depth_snapshot": {
+        "gauges_max": {
+          "cpu_percent": 103.53373570421272,
+          "internal_free_bytes": 34232143872,
+          "queue_depth": 0,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "spot/diff_depth": {
+        "gauges_max": {
+          "cpu_percent": 103.53373570421272,
+          "internal_free_bytes": 34210435072,
+          "queue_depth": 4,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "um_perpetual/agg_trade": {
+        "gauges_max": {
+          "cpu_percent": 103.63173279464095,
+          "internal_free_bytes": 34231799808,
+          "queue_depth": 51,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "um_perpetual/book_ticker": {
+        "gauges_max": {
+          "cpu_percent": 103.63173279464095,
+          "internal_free_bytes": 34231799808,
+          "queue_depth": 255,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "um_perpetual/depth_snapshot": {
+        "gauges_max": {
+          "cpu_percent": 103.63173279464095,
+          "internal_free_bytes": 34232369152,
+          "queue_depth": 0,
+          "rss_memory_bytes": 228569088
+        }
+      },
+      "um_perpetual/diff_depth": {
+        "gauges_max": {
+          "cpu_percent": 103.63173279464095,
+          "internal_free_bytes": 34231799808,
+          "queue_depth": 4,
+          "rss_memory_bytes": 228569088
+        }
+      }
+    },
+    "next": "Q3_OBSERVER_BYTE_AND_CAUSAL_CAP_OPTIMIZATION_REVIEW",
+    "production_ready": false,
+    "raw_growth_by_product_stream": [
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906076008820215,
+        "frames": 18611,
+        "largest_uncompressed_chunk_bytes": 891741,
+        "last_updated_utc_ns": 1790908256481579060,
+        "market": "spot",
+        "stored_bytes": 918991,
+        "stream": "agg_trade",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 13125031
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075543142352,
+        "frames": 225059,
+        "largest_uncompressed_chunk_bytes": 6631921,
+        "last_updated_utc_ns": 1790908256925092551,
+        "market": "spot",
+        "stored_bytes": 6400990,
+        "stream": "book_ticker",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 137986058
+      },
+      {
+        "chunks": 1,
+        "first_created_utc_ns": 1790906075376822507,
+        "frames": 7,
+        "largest_uncompressed_chunk_bytes": 1055353,
+        "last_updated_utc_ns": 1790906597367205840,
+        "market": "spot",
+        "stored_bytes": 85076,
+        "stream": "depth_snapshot",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 1055353
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075538557747,
+        "frames": 21606,
+        "largest_uncompressed_chunk_bytes": 1440493,
+        "last_updated_utc_ns": 1790908256442408047,
+        "market": "spot",
+        "stored_bytes": 4365160,
+        "stream": "diff_depth",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 34451032
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075580027376,
+        "frames": 15728,
+        "largest_uncompressed_chunk_bytes": 648417,
+        "last_updated_utc_ns": 1790908256315085809,
+        "market": "spot",
+        "stored_bytes": 748913,
+        "stream": "agg_trade",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 11077411
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075585970319,
+        "frames": 121927,
+        "largest_uncompressed_chunk_bytes": 3608713,
+        "last_updated_utc_ns": 1790908256846970989,
+        "market": "spot",
+        "stored_bytes": 3533520,
+        "stream": "book_ticker",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 74516122
+      },
+      {
+        "chunks": 1,
+        "first_created_utc_ns": 1790906075391780412,
+        "frames": 9,
+        "largest_uncompressed_chunk_bytes": 1318789,
+        "last_updated_utc_ns": 1790906597439236457,
+        "market": "spot",
+        "stored_bytes": 106257,
+        "stream": "depth_snapshot",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 1318789
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075543776681,
+        "frames": 21411,
+        "largest_uncompressed_chunk_bytes": 1064896,
+        "last_updated_utc_ns": 1790908256886109177,
+        "market": "spot",
+        "stored_bytes": 3869501,
+        "stream": "diff_depth",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 28945694
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075651765560,
+        "frames": 29100,
+        "largest_uncompressed_chunk_bytes": 1343428,
+        "last_updated_utc_ns": 1790908256567757774,
+        "market": "um_perpetual",
+        "stored_bytes": 1369621,
+        "stream": "agg_trade",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 20979822
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075544598077,
+        "frames": 884291,
+        "largest_uncompressed_chunk_bytes": 32170433,
+        "last_updated_utc_ns": 1790908256808037664,
+        "market": "um_perpetual",
+        "stored_bytes": 29188752,
+        "stream": "book_ticker",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 619544091
+      },
+      {
+        "chunks": 1,
+        "first_created_utc_ns": 1790906075141653717,
+        "frames": 4,
+        "largest_uncompressed_chunk_bytes": 173675,
+        "last_updated_utc_ns": 1790908255948882850,
+        "market": "um_perpetual",
+        "stored_bytes": 17602,
+        "stream": "depth_snapshot",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 173675
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075544321379,
+        "frames": 21204,
+        "largest_uncompressed_chunk_bytes": 2870914,
+        "last_updated_utc_ns": 1790908256389123342,
+        "market": "um_perpetual",
+        "stored_bytes": 13137420,
+        "stream": "diff_depth",
+        "symbol": "BTCUSDT",
+        "uncompressed_bytes": 70067444
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075547186097,
+        "frames": 28832,
+        "largest_uncompressed_chunk_bytes": 900732,
+        "last_updated_utc_ns": 1790908256529758262,
+        "market": "um_perpetual",
+        "stored_bytes": 1526957,
+        "stream": "agg_trade",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 20761650
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075564302856,
+        "frames": 769867,
+        "largest_uncompressed_chunk_bytes": 21128229,
+        "last_updated_utc_ns": 1790908256686341693,
+        "market": "um_perpetual",
+        "stored_bytes": 27550522,
+        "stream": "book_ticker",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 539250830
+      },
+      {
+        "chunks": 1,
+        "first_created_utc_ns": 1790906075577698167,
+        "frames": 7,
+        "largest_uncompressed_chunk_bytes": 294546,
+        "last_updated_utc_ns": 1790906598200573392,
+        "market": "um_perpetual",
+        "stored_bytes": 41542,
+        "stream": "depth_snapshot",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 294546
+      },
+      {
+        "chunks": 37,
+        "first_created_utc_ns": 1790906075545993682,
+        "frames": 21143,
+        "largest_uncompressed_chunk_bytes": 2275206,
+        "last_updated_utc_ns": 1790908256265683813,
+        "market": "um_perpetual",
+        "stored_bytes": 12383402,
+        "stream": "diff_depth",
+        "symbol": "ETHUSDT",
+        "uncompressed_bytes": 59182916
+      }
+    ],
+    "resource_samples": {
+      "min_available_memory_bytes": 4991655936,
+      "min_swap_free_bytes": 2147479552,
+      "peak_combined_process_rss_bytes": 742944768,
+      "peak_observer_combined_process_rss_bytes": 399953920,
+      "peak_recorder_process_rss_bytes": 228929536,
+      "sample_count": 155
+    },
+    "retained_evidence": {
+      "NONFORMAL-WARMUP/archive-prime-and-recurrence-journal.txt": {
+        "bytes": 10478,
+        "sha256": "5ee7f53c358159f0d6d7627f7ad8b629b977bd4d1861f7a7661daaae17baf884"
+      },
+      "NONFORMAL-WARMUP/attempt-2/observation-costs.jsonl": {
+        "bytes": 4756,
+        "sha256": "b66a687ef9d9b56fc9a09f84f60208c607d23e18c033ca35610fdff023f50e83"
+      },
+      "NONFORMAL-WARMUP/attempt-2/observer.log": {
+        "bytes": 6406,
+        "sha256": "0b128ba8c3591732310c066ac122a5132e5d8fb27dc568dcd831f4885e77055d"
+      },
+      "NONFORMAL-WARMUP/attempt-2/resources.jsonl": {
+        "bytes": 3238855,
+        "sha256": "5fc370425e767af24be456f151383452fd54865d970e98d9e29d01764b573b6c"
+      },
+      "NONFORMAL-WARMUP/deployment-readiness.json": {
+        "bytes": 14915,
+        "sha256": "929f5c552ed84c195cd4f07cf82047f6b1d2e5db1f91d563a74ce536a9c31d0d"
+      },
+      "custody-readback.json": {
+        "bytes": 346,
+        "sha256": "57b1af07e0bfd54a66e8d330193b4d7d7898cedc75a3bc37856c49658b82915c"
+      },
+      "deployment-identity-create.json": {
+        "bytes": 3841,
+        "sha256": "012970078f1e543d25792b7a5b47d698c5e365a654d461bae6c7a0ce07063219"
+      },
+      "deployment-verify-stopped.json": {
+        "bytes": 4765,
+        "sha256": "ec551e409121585afe941cdba04e36ec7c5a12aad50d055a4ab7e1f142cfe1ec"
+      },
+      "new-storage-registration.json": {
+        "bytes": 836,
+        "sha256": "7a30f99e30203afe26c62c125bd44083aa21c811b07450113541020eca6f58cd"
+      },
+      "old-writer-inventory-summary.json": {
+        "bytes": 859,
+        "sha256": "d39adc83758630fbc49320ac7116590162bd65fe8e30f7d58e913423c5dac3fd"
+      },
+      "runtime-prepare.json": {
+        "bytes": 434,
+        "sha256": "341fd0665a5cf5cd5150f0835204a856ae094af947f823b8c02a2874cb6e8162"
+      }
+    },
+    "shared_companion_diagnostic": [
+      {
+        "correctness_or_throughput_pass": false,
+        "current_entry_bytes": 7333308,
+        "hypothetical_shared_bundle_bytes": 1908224,
+        "runtime_implemented": false,
+        "sample": "sample-00000001.json",
+        "unique_archive_bundles": 134
+      },
+      {
+        "correctness_or_throughput_pass": false,
+        "current_entry_bytes": 7333250,
+        "hypothetical_shared_bundle_bytes": 2253415,
+        "runtime_implemented": false,
+        "sample": "sample-00000002.json",
+        "unique_archive_bundles": 156
+      }
+    ],
+    "status": "PARTIAL_NOT_ACCEPTED",
+    "units": {
+      "apt-daily-upgrade.timer": {
+        "ActiveState": "active",
+        "InvocationID": "20fe91c6e2ad4538a47a4126b061fcce",
+        "LastTriggerUSec": "Thu 2026-10-01 14:20:34 UTC",
+        "NextElapseUSecMonotonic": "0",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      },
+      "apt-daily.timer": {
+        "ActiveState": "active",
+        "InvocationID": "a6036e54c74f46b899292613dbe8cdd2",
+        "LastTriggerUSec": "Thu 2026-10-01 18:10:42 UTC",
+        "NextElapseUSecMonotonic": "0",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      },
+      "binance-market-data-archive.service": {
+        "ActiveState": "inactive",
+        "InvocationID": "645c73456e8741f59f137527050451ac",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "static"
+      },
+      "binance-market-data-archive.timer": {
+        "ActiveState": "active",
+        "InvocationID": "e02a44cba96849ad8ef9ef5e8d3f83a0",
+        "LastTriggerUSec": "Fri 2026-10-02 02:36:38 UTC",
+        "NextElapseUSecMonotonic": "58min 19.535758s",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      },
+      "binance-market-data-recorder.service": {
+        "ActiveState": "inactive",
+        "InvocationID": "",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "disabled"
+      },
+      "binance-recorder-q3-warmup-observer-20261002-r2.service": {
+        "ActiveState": "failed",
+        "InvocationID": "b682f841d5384cbbbeb0743dc80c6ae0",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "exit-code",
+        "UnitFileState": "transient"
+      },
+      "binance-recorder-q3-warmup-observer-20261002.service": {
+        "ActiveState": "failed",
+        "InvocationID": "a2ff3a5342c6438c9f9b3299190fb42f",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "exit-code",
+        "UnitFileState": "transient"
+      },
+      "binance-recorder-q3-warmup-resources-20261002-r2.service": {
+        "ActiveState": "inactive",
+        "InvocationID": "",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": ""
+      },
+      "unattended-upgrades.service": {
+        "ActiveState": "active",
+        "InvocationID": "f07708b93fe743fd96b78c877e90e3b5",
+        "MainPID": "858",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      }
+    },
+    "utc_ns": 1790908640869385931,
+    "writer_free_bytes": 34227494912
+  }
+}

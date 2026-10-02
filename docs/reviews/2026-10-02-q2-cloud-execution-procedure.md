@@ -93,7 +93,10 @@ objects.
    reviewed DBus reference-holder procedure when required; do not enable
    auto-start just to avoid unit garbage collection.
 5. Explicitly enable/start for warm-up; all four products must reach READY.
-   Run archive normally. Warm-up and diagnostic observation evidence live in a
+   Run archive normally. After a long stopped/rebind interval, verify the timer
+   has a finite future deadline and actually fires automatically; if necessary,
+   explicitly prime the existing verified archive service once, then recheck
+   recurrence. An active timer alone is insufficient evidence. Warm-up and diagnostic observation evidence live in a
    distinct, explicitly labelled **NONFORMAL** root and earn zero credit. Reuse
    the real V5 observer/qualification path; do not substitute a six-chunk timing
    or inject fake ready state. If an engineering baseline/start is used solely
@@ -139,6 +142,11 @@ the end time and exact restore command before applying it; prove masked activati
 fails. Use the existing procedure in [VPS operations](../vps_operations.md).
 
 ## Authoritative baseline, Q4 and stop point
+
+The [actual Q3 warm-up](../milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md)
+failed its byte/causal-cap gate. The following steps remain unexecuted; first
+review/refreeze an actual correction and repeat the cloud gate. Preserve the
+new growing corpus and all failed-attempt evidence.
 
 After warm-up, stop/disable Recorder, drain verified archive, pause timer/worker,
 prove quiescence and freeze identity. Under the fresh maintenance gate:

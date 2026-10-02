@@ -26,14 +26,17 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed source remains PR #78 / `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`.
-Recorder is stopped/disabled; the old baseline is unpublished/incomplete, Formal
-V5 credit is zero, and the old monitor is paused. See [production state](CURRENT_PRODUCTION_STATE.md).
+Installed source is now the exact Q2 `d0f455c` wheel. Q3 retained the old
+metadata/archive, initialized a new canonical corpus and deployed this release.
+Recorder is stopped/disabled after a failed NONFORMAL warm-up. Formal V5 credit
+is zero; the old baseline remains unpublished and monitor paused. See
+[production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
 Q2 independent review, offline/online/stress, exact-source dual-platform CI and
-clean locked-wheel gates PASS. Q3 has not yet switched or deployed the corpus.
+clean locked-wheel gates PASS. The actual Q3 cloud delta-capacity gate failed;
+Q3 remains PARTIAL_NOT_ACCEPTED. See [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
 The owner authorized this execution through eligible 2h, stopping before 12h.
 
 ### Fixed MVP boundary
@@ -57,7 +60,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Measured supported load/capacity; baseline + verification PASS; all products READY |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; custody/deployment done; observer byte/causal-cap gate needs optimization/review before repeated warm-up and authoritative baseline |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Reviewed eligible final; same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | Eligible 2h predecessor; reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | Eligible 12h predecessor; reviewed eligible final; all three targets total ≥38h |
@@ -68,7 +71,8 @@ Implementation and evidence: [Q1 acceptance record](milestone_acceptance/Q1-corr
 1881 offline tests pass. The cloud synthetic F5 comparison establishes bounded
 retention with full callbacks/gaps; it is not a live-session RSS or capacity
 verdict. Selected-scope live memory measurement remains mandatory in Q3 before
-T0, and release review remains Q2. No candidate has been deployed.
+T0, and release review remains Q2. The exact reviewed release is deployed in Q3;
+its failed cloud observer gate does not undo Q1's offline checks.
 
 - F2: supervise heartbeat exceptions and unexpected return during startup and
   steady operation; drain collectors, retain the failure cause and exit FAILED.
@@ -124,6 +128,16 @@ read-only diagnostics. The plan sets the gates; live evidence must bind actual
 values/paths, not a moving GitHub branch or copied historical command.
 
 ### Q3 — Safe fresh scope and cloud qualification preparation
+
+Current [Q3 attempt](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md)
+retains all new capture and stops before Formal T0. Next, reproduce byte-budget
+starvation and intermediate causal-reference overflow using actual cloud-sized
+companions. Evaluate eliminating repeated per-transaction evidence within each
+bounded observation, with old-policy replay/resume preserved. Review/freeze any
+changed source/wheel and repeat the cloud gate; do not simply raise caps or
+relax cadence. Existing warm-up data remains part of the growing corpus. Check
+a finite future archive-timer deadline and actual automatic recurrence after
+rebind/start; explicitly prime the existing verified worker when needed.
 
 1. Keep Recorder inactive AND disabled. Inventory exact project-owned active
    paths, manifests, Catalog, registrations, archived Raw and evidence. Drain
