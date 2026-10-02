@@ -14,6 +14,7 @@ from binance_market_data_recorder.service.acceptance import (
     AcceptanceError,
     _publish,
     canonical_json,
+    sha256_bytes,
 )
 from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_available
 from binance_market_data_recorder.service.acceptance_v5_io import V5_SCHEMA_VERSION, open_exact
@@ -107,6 +108,62 @@ def test_delta_policy_cannot_change_after_t0(tmp_path: Path) -> None:
     path.write_bytes(canonical_json(sample))
     with pytest.raises(AcceptanceError, match="delta policy changed"):
         online.replay_online(observer.evidence_root, observer.identity, require_target=False)
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+def test_oversized_delta_is_deferred_without_changing_legacy_replay(
+    tmp_path: Path, legacy: bool
+) -> None:
+    observer, clock, _evaluator = observer_fixture(tmp_path)
+    start_path, _, start = observer.start()
+    assert observer.continuation is not None
+    if legacy:
+        del start["delta_policy"]
+        start_path.write_bytes(canonical_json(start))
+        observer.stage_start_sha256 = sha256_bytes(start_path.read_bytes())
+    with Catalog(observer.data_root / "state/catalog.sqlite") as catalog:
+        catalog.record_operational_event(
+            event_id="large-evidence",
+            event_type="TEST",
+            occurred_at_utc_ns=clock.utc_ns(),
+            evidence={},
+        )
+    captured = raw.capture_snapshot(
+        {
+            "catalog_path": str(observer.data_root / "state/catalog.sqlite"),
+            "processed": observer.continuation["processed"],
+            "open_chunk_bound": start["open_chunk_bound"],
+            "max_pages_per_family": 1 if legacy else 4,
+        }
+    )
+    # Exercise byte admission independently of SQLite's smaller per-row bound.
+    captured["candidates"]["operational"][0]["companions"]["padding"] = "x" * (7 * 1024 * 1024)
+    observer.snapshot_unit = lambda _task, **_kwargs: captured
+    advance(clock, 300)
+    sample_path, _, sample = observer.sample()
+    assert sample["delta_pending"] is True
+    assert sample["continuation"]["processed"]["operational"] == 0
+    assert sample["high_water"]["operational"] == 1
+    pages = sample["delta_pages"]["operational"]
+    if legacy:
+        assert len(pages) == 1
+        assert pages[0]["status"] == "budget_pending"
+    else:
+        assert pages == []
+    assert online.replay_online(
+        observer.evidence_root, observer.identity, require_target=False
+    ).continuation == sample["continuation"]
+    if not legacy:
+        sample["delta_pages"]["operational"] = [
+            {
+                **captured["candidates"]["operational"][0],
+                "unit": None,
+                "status": "budget_pending",
+            }
+        ]
+        sample_path.write_bytes(canonical_json(sample))
+        with pytest.raises(AcceptanceError, match="delta byte cap exceeded"):
+            online.replay_online(observer.evidence_root, observer.identity, require_target=False)
 
 
 @pytest.mark.parametrize("resume", [False, True])

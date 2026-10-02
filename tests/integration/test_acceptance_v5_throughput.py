@@ -11,7 +11,10 @@ from binance_market_data_recorder.archive import ArchiveManager
 from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service.acceptance import canonical_json, sha256_bytes
 from binance_market_data_recorder.service.acceptance_v5_finalize import baseline
-from binance_market_data_recorder.service.acceptance_v5_online import replay_online
+from binance_market_data_recorder.service.acceptance_v5_online import (
+    replay_online,
+    resume_v5_observer,
+)
 from binance_market_data_recorder.spool.seal import seal_partial
 from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -114,6 +117,11 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
                 assert sample["delta_pending"] is True
                 break  # The old one-page policy is intentionally not widened on replay/resume.
             else:
+                assert sum(
+                    len(canonical_json(entry))
+                    for page in sample["delta_pages"].values()
+                    for entry in page
+                ) <= 7 * 1024 * 1024
                 assert all(len(page) <= 1024 for page in sample["delta_pages"].values())
                 if window in {0, 4}:
                     assert sample["continuation"]["processed"] == sample["high_water"]
@@ -124,3 +132,29 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
     replay = replay_online(observer.evidence_root, identity, require_target=False)
     assert replay.sample_count == (1 if legacy else 4)
     assert replay.continuation == sample["continuation"]
+    if legacy:
+        resumed = resume_v5_observer(
+            evidence_root=observer.evidence_root,
+            data_root=observer.data_root,
+            identity=identity,
+            manager=observer.manager,
+            evaluator=observer.evaluator,
+            clock=clock,
+            identity_verifier=observer.identity_verifier,
+            disk_usage=observer.disk_usage,
+            snapshot_unit=observer.snapshot_unit,
+            raw_unit=observer.raw_unit,
+            archive_root_resolver=lambda: roots,
+        )
+        assert resumed.t0_boottime_ns == observer.t0_boottime_ns
+        assert resumed.continuation == replay.continuation
+        advance(clock, 300)
+        publish_ready_state(resumed, clock)
+        _, _, resumed_sample = resumed.sample()
+        assert "delta_policy" not in resumed_sample
+        assert resumed_sample["blocking_findings"] == []
+        assert len(resumed_sample["delta_pages"]["chunk"]) <= 256
+        assert all(len(page) <= 256 for page in resumed_sample["delta_pages"].values())
+        resumed_replay = replay_online(resumed.evidence_root, identity, require_target=False)
+        assert resumed_replay.sample_count == 2
+        assert resumed_replay.continuation == resumed_sample["continuation"]

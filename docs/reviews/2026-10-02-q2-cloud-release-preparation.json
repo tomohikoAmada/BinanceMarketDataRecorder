@@ -1,0 +1,45 @@
+{
+  "boot_id": "b0c05e42-299e-414a-b7c3-b8863711d680",
+  "host": "greencloud-tokyo-01",
+  "kind": "Q2_RELEASE_PREPARATION_NOT_FORMAL_ACCEPTANCE",
+  "logs": {
+    "online.log": {
+      "bytes": 100,
+      "sha256": "e12e7ddf6d8e29574b300c65d67cf09610f8a45e3d1c7c0486650bfec658ebe2",
+      "tail": ".....................                                                    [100%]\n21 passed in 28.98s\n"
+    },
+    "stress-backpressure-fixed.log": {
+      "bytes": 99,
+      "sha256": "492a26a5e35942e7bb9689f749932fe1455200e2a316883d9a7a8bd83952e449",
+      "tail": "..                                                                       [100%]\n2 passed in 15.39s\n"
+    },
+    "stress-cancellation.log": {
+      "bytes": 98,
+      "sha256": "3e05e2f5cda3a63b60b1062a946629b8cd6b4ac81a031b21490d390b5332faa2",
+      "tail": ".                                                                        [100%]\n1 passed in 6.13s\n"
+    },
+    "stress.log": {
+      "bytes": 2742,
+      "sha256": "ef38d876620f1bf12c487177f431c1b8a6afebc7d093a5fcd7f6022e8805db56",
+      "tail": " None)\n    \n            collector, catalog = make_collector(\n                tmp_path,\n                opener=opener,\n                capacity=1,\n                drain_delay_seconds=0.005,\n                put_timeout_seconds=0.0002,\n                saturation_timeout_seconds=0.001,\n            )\n            collector.logger.setLevel(logging.CRITICAL)\n            try:\n                await asyncio.wait_for(collector.run(stop), timeout=20)\n                return attempts, collector.receipt_queue_stats.high_watermark\n            finally:\n                catalog.close()\n    \n        attempts, high_watermark = asyncio.run(exercise())\n        persisted, manifests = captured(tmp_path)\n        update_ids = [int(event.source_sequence[\"u\"]) for event in persisted]\n        assert attempts == 101\n        assert update_ids == sorted(update_ids)\n        assert len(update_ids) == len(set(update_ids))\n        assert high_watermark == 1\n>       assert sum(document[\"gap\"] is True for document in manifests) == 101\nE       assert 102 == 101\nE        +  where 102 = sum(<generator object test_one_hundred_backpressure_boundaries_preserve_order_and_gap_evidence.<locals>.<genexpr> at 0x76ee27f35b10>)\n\ntests/stress/test_usdm_ingress_cycles.py:167: AssertionError\n=========================== short test summary info ============================\nFAILED tests/stress/test_usdm_ingress_cycles.py::test_one_hundred_backpressure_boundaries_preserve_order_and_gap_evidence\n1 failed, 2 passed in 453.53s (0:07:33)\n"
+    },
+    "wheel-build.log": {
+      "bytes": 42966,
+      "sha256": "86d6d7bd522f07ae7e5a7037d955f9c2b27fa77d3da2062e63556ff879c2ec1c",
+      "tail": "ata_recorder/spool/writer.py'\nadding 'binance_market_data_recorder/storage/__init__.py'\nadding 'binance_market_data_recorder/storage/acceptance_delta.py'\nadding 'binance_market_data_recorder/storage/capacity.py'\nadding 'binance_market_data_recorder/storage/catalog.py'\nadding 'binance_market_data_recorder/storage/emergency.py'\nadding 'binance_market_data_recorder/storage/forecast.py'\nadding 'binance_market_data_recorder/storage/layout.py'\nadding 'binance_market_data_recorder/storage/linux.py'\nadding 'binance_market_data_recorder/storage/platform.py'\nadding 'binance_market_data_recorder/storage/macos/__init__.py'\nadding 'binance_market_data_recorder/storage/macos/eject.py'\nadding 'binance_market_data_recorder/storage/macos/model.py'\nadding 'binance_market_data_recorder/storage/macos/registry.py'\nadding 'binance_market_data_recorder/storage/macos/volumes.py'\nadding 'binance_market_data_recorder/supervisor/__init__.py'\nadding 'binance_market_data_recorder/supervisor/blue_green.py'\nadding 'binance_market_data_recorder/supervisor/readiness.py'\nadding 'binance_market_data_recorder-0.1.0a1.dist-info/METADATA'\nadding 'binance_market_data_recorder-0.1.0a1.dist-info/WHEEL'\nadding 'binance_market_data_recorder-0.1.0a1.dist-info/entry_points.txt'\nadding 'binance_market_data_recorder-0.1.0a1.dist-info/top_level.txt'\nadding 'binance_market_data_recorder-0.1.0a1.dist-info/RECORD'\nremoving build/bdist.linux-x86_64/wheel\nSuccessfully built binance_market_data_recorder-0.1.0a1-py3-none-any.whl\n"
+    }
+  },
+  "machine": "x86_64",
+  "python": "3.12.3",
+  "runtime_source_changed": false,
+  "source_git_sha": "9e08c1d1f6434d4e9687d12163f47924456e8c09",
+  "source_tree": "ed839e92fb8663bf26d684d7e9ffc04269c38435",
+  "test_root": "/var/tmp/binance-recorder-q2-9tb0agg2",
+  "units": {
+    "binance-market-data-archive.timer": "Result=success\nActiveState=active\nSubState=waiting\nUnitFileState=enabled\n",
+    "binance-market-data-recorder.service": "MainPID=0\nResult=success\nExecMainStatus=0\nActiveState=inactive\nSubState=dead\nUnitFileState=disabled\n",
+    "binance-recorder-q2-backpressure-regression-20261002.service": "MainPID=0\nResult=success\nExecMainStatus=0\nActiveState=inactive\nSubState=dead\nUnitFileState=\n",
+    "binance-recorder-q2-public-smoke-20261002.service": "MainPID=0\nResult=success\nExecMainStatus=0\nActiveState=inactive\nSubState=dead\nUnitFileState=\n"
+  },
+  "utc_ns": 1790902734471646200
+}

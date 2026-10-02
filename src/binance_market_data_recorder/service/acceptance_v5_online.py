@@ -364,6 +364,10 @@ class V5AcceptanceObserver:
                         entry["unit"] = result
                 size = len(canonical_json(entry))
                 if used_bytes + size > byte_limit:
+                    if "delta_policy" in self.start_document:
+                        # Frozen high-waters keep omitted work pending without
+                        # admitting an over-budget descriptor or skipping it.
+                        break
                     entry = {**selected, "unit": None, "status": "budget_pending"}
                 pages[family].append(entry)
                 used_bytes += len(canonical_json(entry))
@@ -644,6 +648,12 @@ def replay_online(
             t0_utc_ns=start["t0_utc_ns"],
             row_cap=row_cap,
         )
+        if "delta_policy" in start and sum(
+            len(canonical_json(entry))
+            for page in document["delta_pages"].values()
+            for entry in page
+        ) > start["delta_policy"]["max_canonical_delta_bytes"]:
+            raise AcceptanceError("V5 delta byte cap exceeded")
         expected_continuation["open_chunks"] = document["open_chunks"]
         if document.get("snapshot_status") not in {"complete", "budget_pending"}:
             raise AcceptanceError("invalid online snapshot status")
