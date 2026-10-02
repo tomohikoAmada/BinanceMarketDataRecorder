@@ -1,0 +1,248 @@
+{
+  "kind": "READ_ONLY_CLOUD_MICROBENCHMARK_NOT_FORMAL_CREDIT",
+  "utc_ns": 1790871339258705834,
+  "host": "greencloud-tokyo-01",
+  "machine": "x86_64",
+  "python": "3.12.3",
+  "logical_cpus": 4,
+  "candidate_source_sha256": {
+    "raw": "5c21eb2fec18dafcf5e358cbba7efb84ebff4e1c0c23b30862f126af77ff611f",
+    "summary": "b1925f62bfabdd7e24917ed75affafadb92c6cab6c9b555ba7942b2ab6d0b291",
+    "status": "5afcf3bb59793e70f394e9e1f2a51bbae9db87388556bfd4026c30979a97ebb7"
+  },
+  "cache_policy": "warm both; alternate order; no OS cache dropping",
+  "sample_stored_bytes": 3868356,
+  "sample_uncompressed_bytes": 77188136,
+  "sample_events": 113325,
+  "raw_proofs_equal": true,
+  "raw_runs": [
+    {
+      "chunk_id": "001e7bbf-615a-43c7-8144-d5fffcb0c9dc",
+      "market": "um_perpetual",
+      "stream": "book_ticker",
+      "record_count": 45174,
+      "stored_bytes": 1451685,
+      "uncompressed_bytes": 30835327,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 6.623392260982655,
+            "cpu_seconds": 6.621416488000001
+          },
+          {
+            "wall_seconds": 6.588569299026858,
+            "cpu_seconds": 6.586989012000004
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 5.041205659974366,
+            "cpu_seconds": 5.039960953000001
+          },
+          {
+            "wall_seconds": 5.122106364986394,
+            "cpu_seconds": 5.120294705000003
+          }
+        ]
+      }
+    },
+    {
+      "chunk_id": "006c08c0-51b5-443a-bd58-dfbd944b3c09",
+      "market": "um_perpetual",
+      "stream": "book_ticker",
+      "record_count": 38855,
+      "stored_bytes": 1317281,
+      "uncompressed_bytes": 27220683,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 5.454533933021594,
+            "cpu_seconds": 5.453314788
+          },
+          {
+            "wall_seconds": 5.740354440989904,
+            "cpu_seconds": 5.737910869000004
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 4.372839514981024,
+            "cpu_seconds": 4.3711652969999975
+          },
+          {
+            "wall_seconds": 4.649715871026274,
+            "cpu_seconds": 4.648678418000003
+          }
+        ]
+      }
+    },
+    {
+      "chunk_id": "001eaa7c-003f-4b65-b37f-cb74c39e412b",
+      "market": "spot",
+      "stream": "book_ticker",
+      "record_count": 21305,
+      "stored_bytes": 621828,
+      "uncompressed_bytes": 13018091,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 2.8354325050022453,
+            "cpu_seconds": 2.8331972360000037
+          },
+          {
+            "wall_seconds": 2.888589037989732,
+            "cpu_seconds": 2.887788497999992
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 2.421307282987982,
+            "cpu_seconds": 2.419971325000006
+          },
+          {
+            "wall_seconds": 2.2866410199785605,
+            "cpu_seconds": 2.286303130999997
+          }
+        ]
+      }
+    },
+    {
+      "chunk_id": "00312ab5-9953-4231-a1e8-59c96af1707f",
+      "market": "spot",
+      "stream": "agg_trade",
+      "record_count": 5225,
+      "stored_bytes": 270171,
+      "uncompressed_bytes": 3639447,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 0.8613780019804835,
+            "cpu_seconds": 0.8610965660000005
+          },
+          {
+            "wall_seconds": 0.7083655300084502,
+            "cpu_seconds": 0.7074892870000014
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 0.5648798790061846,
+            "cpu_seconds": 0.564042220999994
+          },
+          {
+            "wall_seconds": 0.6457180519937538,
+            "cpu_seconds": 0.6456975600000021
+          }
+        ]
+      }
+    },
+    {
+      "chunk_id": "0051ee1f-eca1-4899-9708-35d11319a089",
+      "market": "um_perpetual",
+      "stream": "agg_trade",
+      "record_count": 2158,
+      "stored_bytes": 97099,
+      "uncompressed_bytes": 1554911,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 0.29468650004127994,
+            "cpu_seconds": 0.29468568499999037
+          },
+          {
+            "wall_seconds": 0.3298452409799211,
+            "cpu_seconds": 0.3298277580000075
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 0.261655337002594,
+            "cpu_seconds": 0.26155365799999686
+          },
+          {
+            "wall_seconds": 0.27265928097767755,
+            "cpu_seconds": 0.2724369750000051
+          }
+        ]
+      }
+    },
+    {
+      "chunk_id": "00539d6e-a613-417b-aee4-b355f7d31049",
+      "market": "spot",
+      "stream": "diff_depth",
+      "record_count": 608,
+      "stored_bytes": 110292,
+      "uncompressed_bytes": 919677,
+      "measurements": {
+        "installed": [
+          {
+            "wall_seconds": 0.10212001600302756,
+            "cpu_seconds": 0.10212029899999209
+          },
+          {
+            "wall_seconds": 0.10381998296361417,
+            "cpu_seconds": 0.10369584500000428
+          }
+        ],
+        "candidate": [
+          {
+            "wall_seconds": 0.08182843797840178,
+            "cpu_seconds": 0.08183234899999547
+          },
+          {
+            "wall_seconds": 0.0812911429675296,
+            "cpu_seconds": 0.08129563300001053
+          }
+        ]
+      }
+    }
+  ],
+  "median_sum_wall_seconds": {
+    "installed": 16.265543374494882,
+    "candidate": 12.90092392193037
+  },
+  "raw_speedup": 1.2608045340725536,
+  "archive_status": {
+    "installed": {
+      "wall_seconds": 7.764690818963572,
+      "cpu_seconds": 7.758489492999999,
+      "output_bytes": 163339213,
+      "totals": {
+        "command": "archive.status",
+        "status": "OK",
+        "transaction_count": 143362,
+        "transactions_by_state": {
+          "LOCAL_DELETED": 143362
+        },
+        "backlog_files": 0,
+        "backlog_bytes": 0,
+        "ordinary_sealed_files": 0,
+        "remote_pending_files": 0,
+        "remote_pending_source_bytes": 0,
+        "remote_deleted_files": 0,
+        "unique_copy_warning": "After LOCAL_DELETED, the registered external artifact may be the only copy."
+      }
+    },
+    "candidate": {
+      "wall_seconds": 0.1760772339766845,
+      "cpu_seconds": 0.17607328200000438,
+      "output_bytes": 416,
+      "totals": {
+        "command": "archive.status",
+        "transaction_count": 143362,
+        "transactions_by_state": {
+          "LOCAL_DELETED": 143362
+        },
+        "status": "OK",
+        "backlog_files": 0,
+        "backlog_bytes": 0,
+        "ordinary_sealed_files": 0,
+        "remote_pending_files": 0,
+        "remote_pending_source_bytes": 0,
+        "remote_deleted_files": 0,
+        "unique_copy_warning": "After LOCAL_DELETED, the registered external artifact may be the only copy."
+      }
+    }
+  },
+  "probe_exit_code": 0
+}

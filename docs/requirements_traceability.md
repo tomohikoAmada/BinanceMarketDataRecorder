@@ -4,6 +4,14 @@ This matrix maps implemented requirements to contracts and verification records.
 The current task and handoff define new work; historical milestone procedures
 describe their original deliveries.
 
+Q1 candidate correction evidence is recorded in
+[Q1 acceptance](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md):
+required heartbeat/capacity supervision, auxiliary failure visibility,
+permission-scoped CLI discovery and bounded live diagnostic retention. New
+normalized dedup/build identities follow [ADR-0036](adr/0036-product-scoped-normalized-dedup.md)
+with immutable v1 replay compatibility. Release review and deployment remain
+separate gates; these candidate changes do not grant Formal credit.
+
 | ID | Requirement family | Contract / decision | Delivery and proof |
 | --- | --- | --- | --- |
 | WF-01 | Coherent task scope and commits; preserve unrelated work; relevant verification and current documentation | `AGENTS.md`, milestone universal gate | Current development workflow; historical M0-M20 acceptance records retained |

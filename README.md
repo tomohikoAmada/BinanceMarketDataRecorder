@@ -16,6 +16,10 @@ remains incomplete.
 See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 [developer handoff](docs/PROJECT_HANDOFF.md).
 
+Development follows the current [milestone plan](docs/milestone_plan.md): small
+correctness fixes, reviewed release and fresh-corpus preparation, then separate
+2h + 12h + 24h acceptance, totaling 38 accepted hours. Audit time is additional.
+
 ## Features
 
 - Configurable Spot and USD-M products in one Recorder process.
@@ -92,12 +96,16 @@ binance-market-recorder report daily --date 2026-10-01
 binance-market-recorder storage status
 binance-market-recorder storage forecast
 binance-market-recorder archive status
+binance-market-recorder archive status --details --limit 100 --offset 0
 binance-market-recorder normalize run
 binance-market-recorder normalize status
 ```
 
 Use `--config /path/to/recorder.toml` before the command to select a configuration.
 Subcommand help lists available options.
+
+`archive status` returns compact totals and backlog. Use `--details` for a bounded
+transaction page; scripts reading the `transactions` array must request details.
 
 ## Data flow
 

@@ -16,6 +16,7 @@ LocalBookReconstructor 是深度恢复的唯一决策点:
 
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from enum import StrEnum
@@ -89,6 +90,7 @@ class LocalBookReconstructor:
         audit_observer: Callable[[QualityAudit, int | None], None] | None = None,
         bootstrap_buffer_capacity: int = 8192,
         bootstrap_buffer_warning_ratio: float = 0.75,
+        audit_history_limit: int | None = None,
     ) -> None:
         if market not in {"spot", "um_perpetual"} or not symbol:
             raise OrderBookDataError("order book requires a Binance Spot/USD-M product")
@@ -96,6 +98,8 @@ class LocalBookReconstructor:
             raise ValueError("bootstrap buffer capacity must be at least two")
         if not 0 < bootstrap_buffer_warning_ratio < 1:
             raise ValueError("bootstrap buffer warning ratio must be between zero and one")
+        if audit_history_limit is not None and audit_history_limit < 1:
+            raise ValueError("audit history limit must be positive")
         self.market = market
         self.symbol = symbol
         self.bootstrap_buffer_capacity = bootstrap_buffer_capacity
@@ -107,7 +111,9 @@ class LocalBookReconstructor:
         self._book: OrderBook | None = None
         self._bootstrap_buffer_warned = False
         self._bootstrap_buffer_overflowed = False
-        self.audits: list[QualityAudit] = []
+        self.audits: list[QualityAudit] | deque[QualityAudit] = (
+            [] if audit_history_limit is None else deque(maxlen=audit_history_limit)
+        )
         self.unreliable_intervals: list[UnreliableInterval] = []
         self.audit_observer = audit_observer
 

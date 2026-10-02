@@ -34,10 +34,12 @@ from .acceptance import (
 )
 from .acceptance_v5_corpus import catalog_available
 from .acceptance_v5_delta import (
+    BOUNDED_BATCH_POLICY,
     DELTA_WORK_BUDGET_NS,
     FAMILIES,
     DependencyPending,
     _companions,
+    delta_limits,
     empty_continuation,
     replay_delta,
 )
@@ -289,6 +291,7 @@ class V5AcceptanceObserver:
                 "catalog_path": str(self.data_root / "state" / "catalog.sqlite"),
                 "processed": self.continuation["processed"],
                 "open_chunk_bound": self.start_document["open_chunk_bound"],
+                "max_pages_per_family": delta_limits(self.start_document)[0],
             },
             remaining_ns=DELTA_WORK_BUDGET_NS - (self.clock.boottime_ns() - started),
             time_ns=self.clock.boottime_ns,
@@ -313,6 +316,9 @@ class V5AcceptanceObserver:
             else (self.archive_root_resolver() if target_authority else {})
         )
         used_bytes = 0
+        byte_limit = self.start_document.get("delta_policy", {}).get(
+            "max_canonical_delta_bytes", ONLINE_DOCUMENT_MAX_BYTES // 2
+        )
         for family in FAMILIES:
             for selected in candidates[family]:
                 entry = {**selected, "unit": None, "status": "acknowledged"}
@@ -357,7 +363,11 @@ class V5AcceptanceObserver:
                     else:
                         entry["unit"] = result
                 size = len(canonical_json(entry))
-                if used_bytes + size > ONLINE_DOCUMENT_MAX_BYTES // 2:
+                if used_bytes + size > byte_limit:
+                    if "delta_policy" in self.start_document:
+                        # Frozen high-waters keep omitted work pending without
+                        # admitting an over-budget descriptor or skipping it.
+                        break
                     entry = {**selected, "unit": None, "status": "budget_pending"}
                 pages[family].append(entry)
                 used_bytes += len(canonical_json(entry))
@@ -398,7 +408,12 @@ class V5AcceptanceObserver:
                 "snapshot_status": self.snapshot_status,
             }
         )
-        continuation = replay_delta(self.continuation, high_water, pages, t0_utc_ns=self.t0_utc_ns)
+        if "delta_policy" in self.start_document:
+            document["delta_policy"] = dict(self.start_document["delta_policy"])
+        continuation = replay_delta(
+            self.continuation, high_water, pages, t0_utc_ns=self.t0_utc_ns,
+            row_cap=delta_limits(self.start_document)[1],
+        )
         continuation["open_chunks"] = open_chunks
         document["continuation"] = continuation
         document["continuation_sha256"] = sha256_bytes(canonical_json(continuation))
@@ -458,6 +473,7 @@ class V5AcceptanceObserver:
                 "sample_interval_ns": SAMPLE_INTERVAL_NS,
                 "max_evidence_gap_ns": MAX_EVIDENCE_GAP_NS,
                 "delta_work_budget_ns": DELTA_WORK_BUDGET_NS,
+                "delta_policy": dict(BOUNDED_BATCH_POLICY),
             }
         )
         self.start_document = initial
@@ -579,6 +595,7 @@ def replay_online(
     stage = start.get("stage")
     if stage not in STAGE_DURATION_NS or start.get("evidence_kind") != "stage-start":
         raise AcceptanceError("invalid V5 stage-start")
+    _max_pages, row_cap = delta_limits(start)
     if start.get("data_root") != identity.systemd_effective.get("working_directory"):
         raise AcceptanceError("V5 stage data root differs from deployment authority")
     if (
@@ -622,12 +639,21 @@ def replay_online(
             document.get("stage") != stage or document.get("run_id") != start["run_id"]
         ):
             raise AcceptanceError("mixed V5 stage identity")
+        if document.get("delta_policy") != start.get("delta_policy"):
+            raise AcceptanceError("V5 delta policy changed after T0")
         expected_continuation = replay_delta(
             continuation,
             document["high_water"],
             document["delta_pages"],
             t0_utc_ns=start["t0_utc_ns"],
+            row_cap=row_cap,
         )
+        if "delta_policy" in start and sum(
+            len(canonical_json(entry))
+            for page in document["delta_pages"].values()
+            for entry in page
+        ) > start["delta_policy"]["max_canonical_delta_bytes"]:
+            raise AcceptanceError("V5 delta byte cap exceeded")
         expected_continuation["open_chunks"] = document["open_chunks"]
         if document.get("snapshot_status") not in {"complete", "budget_pending"}:
             raise AcceptanceError("invalid online snapshot status")

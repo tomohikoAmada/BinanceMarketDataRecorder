@@ -1,0 +1,117 @@
+{
+  "evidence_root": "/srv/recorder-data/recorder-archive/evidence/Q2-release-d0f455c-20261002-dmx0kb14",
+  "files": {
+    "2026-10-02-q2-cloud-execution-procedure.md": {
+      "bytes": 11000,
+      "sha256": "70a5272f8fcf076c81ee33df48586dfc319d7d43e2603d4a2ac19296cab2052d"
+    },
+    "2026-10-02-q2-independent-release-review.md": {
+      "bytes": 4403,
+      "sha256": "20b08e9923ffac091025349a4a453ef56d13c0a0ade4873a3cdf969e9d36ff7c"
+    },
+    "binance_market_data_recorder-0.1.0a1-py3-none-any.whl": {
+      "bytes": 501426,
+      "sha256": "b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921"
+    },
+    "final-wheel-build.log": {
+      "bytes": 42972,
+      "sha256": "87715a1bedd6a924e226f1d3f7fe0d6bb5807252a3d1f902f96562cc4758374f"
+    },
+    "final-wheel-doctor.json": {
+      "bytes": 773,
+      "sha256": "a11b63282e5687ab39f41a6f427cf0d343350972bb54bc8ea9989407b48fcd35"
+    },
+    "final-wheel-install.log": {
+      "bytes": 237,
+      "sha256": "d059e4bbe76979022a5a861f5ac67ed165d7e51799ba92df5b7aeb4e202751cc"
+    },
+    "final-wheel-lock-install.log": {
+      "bytes": 5984,
+      "sha256": "8fb25f0583f757205dcdd96b97f6fecb5ca343d7b7813f3e73168abd89d59e1d"
+    },
+    "final-wheel-status.json": {
+      "bytes": 1499,
+      "sha256": "f27a8e4b0768e25d4d5c20129eae14ab791133c9f8310ffde35e0c76cc14e4e2"
+    },
+    "linux-x86_64-python312.lock": {
+      "bytes": 110985,
+      "sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335"
+    },
+    "online.log": {
+      "bytes": 100,
+      "sha256": "e12e7ddf6d8e29574b300c65d67cf09610f8a45e3d1c7c0486650bfec658ebe2"
+    },
+    "release-source-d0f455c.tar.gz": {
+      "bytes": 1557856,
+      "sha256": "0cba4639567fb5e33c6fd4914de35889a1505c9fdfdb5364f8335ba379d259dc"
+    },
+    "stress-backpressure-fixed.log": {
+      "bytes": 99,
+      "sha256": "492a26a5e35942e7bb9689f749932fe1455200e2a316883d9a7a8bd83952e449"
+    },
+    "stress-cancellation.log": {
+      "bytes": 98,
+      "sha256": "3e05e2f5cda3a63b60b1062a946629b8cd6b4ac81a031b21490d390b5332faa2"
+    },
+    "stress.log": {
+      "bytes": 2742,
+      "sha256": "ef38d876620f1bf12c487177f431c1b8a6afebc7d093a5fcd7f6022e8805db56"
+    },
+    "test-metadata-install.log": {
+      "bytes": 1083,
+      "sha256": "15c69fd13faae8240a12c3d762c086624a0685442c2bbbf58abfa1f58b8d39b7"
+    },
+    "v5-byte-bound-final.log": {
+      "bytes": 100,
+      "sha256": "042111e2714e4c0e565e1721216e529a0d6c7ca846d3bd44044cf58fbffa8e67"
+    },
+    "v5-byte-bound-fixed-ready.log": {
+      "bytes": 113,
+      "sha256": "6bc44b3c9c7ef00cbb1234bbe190b4643659c26057660258538ece0b2daca07a"
+    },
+    "v5-byte-bound-fixed.log": {
+      "bytes": 57336,
+      "sha256": "77a9ed6022218985bfc7e24247249240ea20ca12f89137947e6fc279c55cb9d9"
+    }
+  },
+  "wheel_source_files_equal": true,
+  "kind": "Q2_REVIEWED_RELEASE_FROZEN_NOT_DEPLOYMENT",
+  "source_git_sha": "d0f455c1a417cc1a184c47b6ff766a60f3dc0159",
+  "source_tree": "cf3854d7fc032de79096dced8e002a6cd55e65c3",
+  "python": "3.12.3",
+  "builder_setuptools": "75.8.0",
+  "independent_review": "ACCEPT",
+  "independent_open_findings": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "ci": {
+    "conclusion": "success",
+    "headSha": "d0f455c1a417cc1a184c47b6ff766a60f3dc0159",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "name": "ubuntu-python312",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "name": "macos-python312",
+        "status": "completed"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/36950771722"
+  },
+  "exact_locked_runtime_distributions": 28,
+  "bootstrap_allowlist": [
+    "pip"
+  ],
+  "noneditable_recorder_wheel": true,
+  "doctor": "PASS_WITH_WARNINGS_EXISTING_X86_64_DEVELOPER_PREVIEW",
+  "supersedes_preliminary_staging": "/srv/recorder-data/recorder-archive/evidence/Q2-release-9e08c1d-20261002-4t0kqp5k",
+  "production_source": "89bc6b41c0cb7d270ca6e4d2dec9a375137c028e",
+  "formal_credit_seconds": 0
+}

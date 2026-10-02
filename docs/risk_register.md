@@ -1,6 +1,7 @@
 # Risk Register
 
-Updated October 1, 2026. Current code is merged through PR #78; current operations
+Updated October 2, 2026. Merged/deployed base is PR #78; a local optimization
+candidate is implemented and not deployed. Current operations
 are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
 
 ## Current follow-up
@@ -18,8 +19,41 @@ are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
 The owner stopped live qualification and paused its monitor. Next development
 work should use the [handoff](PROJECT_HANDOFF.md) and retained
 [partial production measurements](milestone_acceptance/M22.9-v5-deployment-owner-stop.md).
-An empty-data qualification would exercise a different starting corpus; its scope
-has not been selected. No baseline integrity PASS or FAIL was published.
+The owner selected safe cleanup and a fresh independent qualification corpus.
+Execution has not occurred; existing archive/evidence and historical R-078 remain.
+No old baseline integrity PASS or FAIL was published. See the
+[cloud diagnosis](reviews/2026-10-02-cloud-performance-and-38h.md) and [38h plan](qualification_to_24h_plan.md).
+
+## October 1 architecture-review findings
+
+These are independently reproduced review findings against main
+`d6f37576f5b044bf578501cba291fe889e45a919`, not claims of observed V5 Formal
+failure. Q2 independently accepts F1 and Q1 F2/F3/F5/F6/F7 controls and freezes the
+exact corrected wheel. Real selected-scope qualification remains Q3/Q4.
+See [Q2 evidence](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
+See [Q1 evidence](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md),
+[details and probe results](reviews/2026-10-01-architecture-review.md)
+and the [sequenced remediation plan](qualification_to_24h_plan.md).
+
+| Finding | Priority / evidence | Planned control |
+|---|---|---|
+| F1: V5 single-page service rate below normal four-product row arrival | P1; initial reproduction remains historical; ADR-0035 candidate consumes 480/300 rows and drains a missed cadence in real seal/archive fixtures | Independent review ACCEPT; complete exact-artifact cloud observations before T0; no live closure claimed |
+| F2: failed heartbeat leaves collectors running and normal shutdown status | P1; Q1 guard/wait/drain regressions pass across startup/recovery/running/drain, including real store failure | Q2 review ACCEPT; installed artifact unchanged |
+| F3: normalized keys omit product/stream identity in some event kinds | P1; Q1 namespaces all candidates and versions new build identity; old/new replay compatibility passes | ADR-0036 review ACCEPT; explicit rebuild needed for corrected derived results |
+| F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 38h qualification: bounded hierarchical fan-in |
+| F5: reconstructor retains every quality audit in memory | P2; cloud synthetic 100,000 audits remain 256 with Q1; full observer calls and gap/book facts agree | Q2 review ACCEPT; Q3 actual selected-scope live RSS; no whole-process/cloud capacity verdict yet |
+| F6: inaccessible repository-discovery cwd crashes CLI | P2; Q1 skips optional discovery failures; denied/removed-cwd installed-entry and data-permission regressions pass | Q2 exact-wheel review/CI PASS; installed artifact unchanged |
+
+October 2 [plan recheck](reviews/2026-10-02-plan-recheck.md) adds **F7 (P2)**:
+enabled auxiliary `FAILED` is visible in detail but omitted from aggregate
+DEGRADED health while cores are READY. An offline state-builder reproduction
+confirms this summary inconsistency. Q1 now corrects aggregate/stream/owner
+health without stopping cores; terminal owner isolation regressions pass.
+Q2 independent review is complete. The recheck also requires live F5 memory
+measurement (the finite component control has cloud synthetic evidence), warm-up before the
+authoritative baseline, cumulative audit/capacity forecasts and quiet-window
+protection through identity-sensitive audit publication. These are current
+[plan](milestone_plan.md) gates; none grants Formal credit.
 
 ## Existing operational controls
 

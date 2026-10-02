@@ -1,0 +1,64 @@
+{
+  "delta_single_page": [
+    {
+      "high_water": {
+        "chunk": 480,
+        "archive": 300,
+        "operational": 0
+      },
+      "processed": {
+        "archive": 256,
+        "chunk": 256,
+        "operational": 0
+      },
+      "page_lengths": {
+        "operational": 0,
+        "chunk": 256,
+        "archive": 256
+      },
+      "delta_pending": true,
+      "findings": []
+    },
+    {
+      "high_water": {
+        "chunk": 960,
+        "archive": 600,
+        "operational": 0
+      },
+      "processed": {
+        "archive": 512,
+        "chunk": 512,
+        "operational": 0
+      },
+      "page_lengths": {
+        "operational": 0,
+        "chunk": 256,
+        "archive": 256
+      },
+      "delta_pending": true,
+      "findings": []
+    }
+  ],
+  "cross_product_normalization": {
+    "input_symbols": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "output_symbols": [
+      "BTCUSDT"
+    ],
+    "duplicate_counts": [
+      2
+    ]
+  },
+  "heartbeat": {
+    "collectors_continue_after_heartbeat_failure": true,
+    "shutdown_status": "STOPPED"
+  },
+  "sort_fan_in": {
+    "run_count": 40,
+    "peak_open_run_readers": 40
+  },
+  "retained_quality_audits_after_10000_duplicates": 10000,
+  "repository_discovery_propagates_permission_error": true
+}

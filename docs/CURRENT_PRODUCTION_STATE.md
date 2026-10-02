@@ -2,6 +2,29 @@
 
 Verified October 1, 2026 following the owner's instruction to stop qualification.
 
+October 2 read-only performance checks confirmed Recorder remains inactive and
+disabled; its installed source was not replaced. The owner selected safe cleanup
+and a new independent corpus for the current [38h plan](milestone_plan.md).
+That cleanup/deployment/qualification has not occurred. The local optimization
+candidate and diagnostic-only cloud measurements are recorded in the
+[performance report](reviews/2026-10-02-cloud-performance-and-38h.md); they grant
+zero Formal credit. The historical October 1 artifact and closeout below remain
+the deployed operational basis.
+
+The October 2 Q1 implementation fixes heartbeat/dedup/cwd/auxiliary health and
+bounds live diagnostic history. A separate read-only cloud synthetic probe
+confirmed the retention bound and Recorder inactive/disabled; no deployment,
+data cleanup or service control occurred. See the
+[Q1 record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
+Q2 is complete: [reviewed frozen release](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md)
+is `d0f455c`, with wheel SHA-256
+`b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921`.
+Independent review and exact-source Ubuntu/macOS CI PASS; private staging is
+`/srv/recorder-data/recorder-archive/evidence/Q2-release-d0f455c-20261002-dmx0kb14`.
+No Q3 production switch/deployment has occurred. Next is Q3; the owner authorizes
+continuation through eligible Q4 2h, stopping before 12h. Installed artifact and
+paused historical monitor remain unchanged.
+
 ## Source and installed artifact
 
 | Item | Value |
@@ -61,7 +84,7 @@ FORMAL_V5_STARTED=NO
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
-NEXT=OWNER_DECISION_ON_QUALIFICATION_APPROACH
+NEXT=Q3_SAFE_FRESH_CORPUS_DEPLOYMENT_AND_CLOUD_GATES
 ```
 
 ## Evidence and rollback

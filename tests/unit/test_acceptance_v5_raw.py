@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import time
 from multiprocessing.connection import Connection
 from pathlib import Path
@@ -9,6 +10,8 @@ from typing import Any
 import pytest
 import zstandard
 
+from binance_market_data_recorder.audit.reconnect_boundaries import _frame_document, _frame_identity
+from binance_market_data_recorder.service import acceptance_v5_raw as raw_module
 from binance_market_data_recorder.service.acceptance import AcceptanceError
 from binance_market_data_recorder.service.acceptance_v5_raw import (
     AuditInterrupted,
@@ -103,3 +106,65 @@ def test_raw_crc_verified_even_when_outer_hashes_match(tmp_path: Path) -> None:
     )
     with pytest.raises(AcceptanceError, match="CRC disagreement"):
         scan_raw(Path(unit["data_root"]), manifest["relative_path"], manifest)
+
+
+def test_stable_chunk_materializes_only_three_boundary_identities(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    envelopes = [usdm_envelope("stable", i) for i in range(1, 1001)]
+    layout = ensure_storage_layout(tmp_path / "data")
+    with Catalog(layout.catalog) as catalog:
+        manifest = seal_chunk(layout, catalog, envelopes)
+    materialized = []
+
+    def counted(chunk_id: str, index: int, envelope: Any) -> Any:
+        materialized.append(index)
+        return _frame_identity(chunk_id, index, envelope)
+
+    monkeypatch.setattr(raw_module, "_frame_identity", counted)
+    proof = scan_raw(layout.root, manifest["relative_path"], manifest)
+    assert materialized == [0, 999, 998]
+    for key, index in (("first_frame", 0), ("last_frame", 999), ("penultimate_frame", 998)):
+        assert proof[key] == _frame_document(
+            _frame_identity(manifest["chunk_id"], index, envelopes[index])
+        )
+
+
+@pytest.mark.parametrize(
+    ("previous_flags", "new_flags", "expected"),
+    [
+        ((), (), "UNMARKED_RECONNECT"),
+        ((), ("sequence_gap",), "EXPLICIT_SEQUENCE_GAP"),
+        (("sequence_gap",), (), "EXPLICIT_SEQUENCE_GAP"),
+    ],
+)
+def test_lazy_identities_preserve_connection_boundary_evidence(
+    tmp_path: Path, previous_flags: tuple[str, ...], new_flags: tuple[str, ...], expected: str
+) -> None:
+    envelopes = [
+        usdm_envelope("old", 1),
+        usdm_envelope("old", 2, previous_flags),
+        usdm_envelope("new", 3, new_flags),
+        usdm_envelope("new", 4),
+    ]
+    layout = ensure_storage_layout(tmp_path / "data")
+    with Catalog(layout.catalog) as catalog:
+        manifest = seal_chunk(layout, catalog, envelopes)
+    proof = scan_raw(layout.root, manifest["relative_path"], manifest)
+    assert proof["intra_transition_counts"][expected] == 1
+    assert sum(proof["intra_transition_counts"].values()) == 1
+    assert proof["intra_transition_time_ranges"][expected] == {
+        "min": envelopes[2].receive_time_utc_ns,
+        "max": envelopes[2].receive_time_utc_ns,
+    }
+    assert proof["intra_transition_digest"] != "0" * 64
+
+
+def test_read_exact_fast_path_still_handles_short_reads_and_truncation() -> None:
+    class ShortReader(io.BytesIO):
+        def read(self, size: int | None = -1) -> bytes:
+            return super().read(2 if size is None or size < 0 else min(size, 2))
+
+    assert raw_module._read_exact(ShortReader(b"abcdef"), 6) == b"abcdef"
+    assert raw_module._read_exact(ShortReader(b"abc"), 6) == b"abc"
+    assert raw_module._read_exact(io.BytesIO(b"abc"), 0) == b""

@@ -76,3 +76,23 @@ def test_normal_return_is_immediate_terminal_failure() -> None:
         ]
 
     asyncio.run(exercise())
+
+
+def test_primary_failure_is_preserved_if_peer_drain_also_fails() -> None:
+    async def exercise() -> None:
+        class FailingDrain:
+            async def run(self, stop: asyncio.Event) -> None:
+                await stop.wait()
+                raise OSError("secondary drain error")
+
+        supervisor = MarketCollectorSupervisor({
+            ProductKey("spot", "BTCUSDT"): FailingCollector(),
+            ProductKey("um_perpetual", "BTCUSDT"): FailingDrain(),
+        })
+        with pytest.raises(CoreMarketTerminalFailure, match="spot") as result:
+            await asyncio.wait_for(supervisor.run(asyncio.Event()), timeout=1)
+        assert isinstance(result.value.__cause__, RuntimeError)
+        assert str(result.value.__cause__) == "injected market crash"
+        assert isinstance(supervisor.failures[ProductKey("um_perpetual", "BTCUSDT")], OSError)
+
+    asyncio.run(exercise())

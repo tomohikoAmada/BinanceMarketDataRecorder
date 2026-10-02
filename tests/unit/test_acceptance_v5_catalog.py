@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 import pytest
 
+from binance_market_data_recorder.service.acceptance_v5_raw import capture_snapshot
 from binance_market_data_recorder.storage.acceptance_delta import (
     DeltaAuthorityError,
     DeltaSnapshot,
@@ -19,6 +21,44 @@ def insert_event(connection: sqlite3.Connection, event_id: str, timestamp: int) 
         "(event_id,event_type,occurred_at_utc_ns,evidence_json) VALUES(?,?,?,?)",
         (event_id, "TEST", timestamp, "{}"),
     )
+
+
+def test_four_pages_share_one_snapshot_and_stop_at_the_declared_cap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "catalog.sqlite"
+    with Catalog(path) as catalog:
+        catalog.migrate_acceptance_sequence()
+        with catalog._transaction() as connection:
+            for ordinal in range(1050):
+                insert_event(connection, f"event-{ordinal}", ordinal)
+        original = DeltaSnapshot.page
+        inserted = False
+
+        def page(self: DeltaSnapshot, family: str, processed: int, *, limit: int = 256) -> Any:
+            nonlocal inserted
+            rows = original(self, family, processed, limit=limit)
+            if family == "operational" and not inserted:
+                inserted = True
+                insert_event(catalog._connection, "committed-after-frozen-high-water", 1050)
+            return rows
+
+        monkeypatch.setattr(DeltaSnapshot, "page", page)
+        result = capture_snapshot(
+            {
+                "catalog_path": str(path),
+                "processed": {"chunk": 0, "archive": 0, "operational": 0},
+                "open_chunk_bound": 32,
+                "max_pages_per_family": 4,
+            }
+        )
+        assert result["high_water"]["operational"] == 1050
+        assert len(result["candidates"]["operational"]) == 1024
+        assert result["candidates"]["operational"][-1]["row"]["event_seq"] == 1024
+        assert not any(
+            entry["row"]["event_id"] == "committed-after-frozen-high-water"
+            for entry in result["candidates"]["operational"]
+        )
 
 
 def test_atomic_backfill_and_trigger(tmp_path: Path) -> None:

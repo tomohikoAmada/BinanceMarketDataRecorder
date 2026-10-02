@@ -266,7 +266,10 @@ def build_parser() -> argparse.ArgumentParser:
     archive_commands = archive_command.add_subparsers(
         dest="archive_command", required=True, parser_class=_ArgumentParser
     )
-    archive_commands.add_parser("status", help="show archive transactions and backlog")
+    archive_status = archive_commands.add_parser("status", help="show archive totals and backlog")
+    archive_status.add_argument("--details", action="store_true", help="include a transaction page")
+    archive_status.add_argument("--limit", type=int, default=100, help="detail page size (1-1000)")
+    archive_status.add_argument("--offset", type=int, default=0, help="detail page offset")
     retry = archive_commands.add_parser("retry", help="advance one archive transaction")
     retry.add_argument("--storage-id")
     verify = archive_commands.add_parser("verify", help="verify committed external files")
@@ -464,33 +467,32 @@ def _identity_systemd_manager(
     )
 
 
-def _archive_status(catalog: Catalog) -> dict[str, object]:
-    transactions = catalog.archive_transactions()
+def _archive_status(
+    catalog: Catalog, *, details: bool = False, limit: int = 100, offset: int = 0
+) -> dict[str, object]:
+    if not 1 <= limit <= 1000 or offset < 0:
+        raise ValueError("archive detail limit must be 1-1000 and offset nonnegative")
+    summary = catalog.archive_transaction_summary()
     lifecycle = catalog.source_lifecycle_aggregate()
-    states: dict[str, int] = {}
-    for transaction in transactions:
-        state = str(transaction["state"])
-        states[state] = states.get(state, 0) + 1
-    return {
+    result: dict[str, object] = {
         "command": "archive.status",
-        "status": (
-            "DISAPPEARED_DURING_COPY"
-            if any("DISAPPEARED_DURING_COPY" in str(row.get("last_error")) for row in transactions)
-            else "OK"
-        ),
-        "transaction_count": len(transactions),
-        "transactions_by_state": dict(sorted(states.items())),
+        **summary,
         "backlog_files": lifecycle["unarchived_backlog_files"],
         "backlog_bytes": lifecycle["unarchived_backlog_bytes"],
         "ordinary_sealed_files": lifecycle["ordinary_sealed_files"],
         "remote_pending_files": lifecycle["remote_pending_files"],
         "remote_pending_source_bytes": lifecycle["remote_pending_source_bytes"],
         "remote_deleted_files": lifecycle["remote_deleted_files"],
-        "transactions": transactions,
+        "transactions_included": details,
         "unique_copy_warning": (
             "After LOCAL_DELETED, the registered external artifact may be the only copy."
         ),
     }
+    if details:
+        result["transactions"] = catalog.archive_transactions(limit=limit, offset=offset)
+        result["transaction_limit"] = limit
+        result["transaction_offset"] = offset
+    return result
 
 
 def _launchd_environment(loaded: LoadedConfig) -> dict[str, str]:
@@ -1562,7 +1564,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         try:
             with Catalog(catalog_path, read_only=archive_command == "status") as catalog:
                 if archive_command == "status":
-                    _write_json(_archive_status(catalog))
+                    _write_json(
+                        _archive_status(
+                            catalog, details=args.details, limit=args.limit, offset=args.offset
+                        )
+                    )
                     return 0
                 if archive_command == "drain":
                     drain_result = archive_drain(

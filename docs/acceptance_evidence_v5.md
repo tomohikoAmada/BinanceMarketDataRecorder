@@ -1,7 +1,9 @@
 # M22.9 acceptance evidence V5 implementation contract
 
 Policy authority is [accepted ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md).
-This describes the implementation merged through PR #78. Deployment status and
+New-start batching follows [ADR-0035](adr/0035-v5-bounded-delta-batches.md), an
+implemented candidate pending independent review and deployment. The previously
+deployed implementation is PR #78. Deployment status and
 the owner-stopped qualification are recorded in [current state](CURRENT_PRODUCTION_STATE.md).
 V1/V2/V3/V4 readers and their historical decisions retain their existing routing.
 `CURRENT_SCHEMA_VERSION` and `V5_SCHEMA_VERSION` are
@@ -16,7 +18,9 @@ V1/V2/V3/V4 readers and their historical decisions retain their existing routing
 | ADR-0033 global readiness recovery | 900000000000 ns |
 | SQL page cap per family | 256 |
 | Delta work budget from observation start | 240000000000 BOOTTIME ns |
-| Pending causal references | 256 |
+| SQL pages per family per observation | Original start: 1; declared bounded-batch start: at most 4 |
+| Pending causal references | Original start: 256; bounded-batch start: 1024 |
+| Canonical delta-entry budget | Original start: 4 MiB; bounded-batch start: 7 MiB |
 | Manifest freeze shard | 512 records / 1048576 canonical bytes |
 | Terminal audit shard | 512 records / 1048576 canonical bytes |
 | Audit forward-progress publication | 60 seconds |
@@ -41,8 +45,13 @@ never migrate or run the full one-to-one/integrity scans.
 
 Cursor families are `chunk_transitions.transition_id`,
 `archive_transaction_events.event_id`, and the new operational `event_seq`.
-One read transaction captures their high-waters, ordered pages of at most 256
-rows each, bounded exact companions, and indexed open/backlog projections. It
+One read transaction captures their high-waters, ordered SQL pages of at most 256
+rows each, bounded exact companions, and indexed open/backlog projections. A new
+stage freezes the exact `bounded-batches.v1` policy in `delta_policy` at T0 and
+repeats it in every sample. At most four pages/family are captured in the same
+snapshot; the existing evidence lists contain at most 1024 ordered entries/family.
+Missing `delta_policy` retains the original one-page policy on read/resume;
+unknown or changed policy fails. It
 ends before Raw/filesystem qualification. Indexed unfinished archive-state
 aggregates may depend on unfinished backlog B; they exclude retired historical
 transactions and share the cancellable work budget. There is no full manifest

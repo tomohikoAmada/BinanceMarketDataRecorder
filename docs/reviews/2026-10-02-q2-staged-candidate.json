@@ -1,0 +1,46 @@
+{
+  "evidence_root": "/srv/recorder-data/recorder-archive/evidence/Q2-release-9e08c1d-20261002-4t0kqp5k",
+  "record": {
+    "files": {
+      "binance_market_data_recorder-0.1.0a1-py3-none-any.whl": {
+        "bytes": 501288,
+        "sha256": "de7c488576425c6cbdb910aaa71adca61f199316c53ebb66f30bc7cb2e0dcf6b"
+      },
+      "linux-x86_64-python312.lock": {
+        "bytes": 110985,
+        "sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335"
+      },
+      "online.log": {
+        "bytes": 100,
+        "sha256": "e12e7ddf6d8e29574b300c65d67cf09610f8a45e3d1c7c0486650bfec658ebe2"
+      },
+      "release-source-9e08c1d.tar.gz": {
+        "bytes": 1545914,
+        "sha256": "fb1146c782bb8c96d84bd56831a263093f3ef252be58f9e689d3ffcfb3846e52"
+      },
+      "stress-backpressure-fixed.log": {
+        "bytes": 99,
+        "sha256": "492a26a5e35942e7bb9689f749932fe1455200e2a316883d9a7a8bd83952e449"
+      },
+      "stress-cancellation.log": {
+        "bytes": 98,
+        "sha256": "3e05e2f5cda3a63b60b1062a946629b8cd6b4ac81a031b21490d390b5332faa2"
+      },
+      "stress-initial.log": {
+        "bytes": 2742,
+        "sha256": "ef38d876620f1bf12c487177f431c1b8a6afebc7d093a5fcd7f6022e8805db56"
+      },
+      "wheel-build.log": {
+        "bytes": 42966,
+        "sha256": "86d6d7bd522f07ae7e5a7037d955f9c2b27fa77d3da2062e63556ff879c2ec1c"
+      }
+    },
+    "independent_review": "PENDING",
+    "installed_source": "89bc6b41c0cb7d270ca6e4d2dec9a375137c028e",
+    "kind": "Q2_CANDIDATE_STAGING_NOT_DEPLOYMENT",
+    "source_git_sha": "9e08c1d1f6434d4e9687d12163f47924456e8c09",
+    "source_tree": "ed839e92fb8663bf26d684d7e9ffc04269c38435",
+    "utc_ns": 1790902821382957600
+  },
+  "staged_record_sha256": "d6b5726a0cfc096cd2688fc6c94fad73ca6087a3c9b396489178630f517e230d"
+}

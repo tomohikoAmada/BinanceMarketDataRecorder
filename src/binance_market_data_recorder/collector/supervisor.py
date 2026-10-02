@@ -54,6 +54,7 @@ class MarketCollectorSupervisor:
             for name, collector in self.collectors.items()
         }
         stop_task = asyncio.create_task(stop.wait(), name="GLOBAL:collector-supervisor-stop")
+        primary_failure = False
         try:
             while tasks and not stop.is_set():
                 done, _pending = await asyncio.wait(
@@ -96,8 +97,20 @@ class MarketCollectorSupervisor:
                 raise AllMarketCollectorsStopped(
                     f"all core market Collectors stopped; failed={failed}"
                 )
+        except BaseException:
+            primary_failure = True
+            raise
         finally:
             stop_task.cancel()
             for child_stop in child_stops.values():
                 child_stop.set()
-            await asyncio.gather(*tasks.values(), return_exceptions=True)
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+            for name, result in zip(tasks, results, strict=True):
+                if isinstance(result, BaseException):
+                    self.failures[name] = result
+                    if not primary_failure:
+                        if self.terminal_failure_observer is not None:
+                            self.terminal_failure_observer(name, result)
+                        raise CoreMarketTerminalFailure(
+                            f"core market Collector failed while draining: {name}"
+                        ) from result

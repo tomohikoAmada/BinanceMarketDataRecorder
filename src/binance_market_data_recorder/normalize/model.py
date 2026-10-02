@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pyarrow as pa  # type: ignore[import-untyped]
 
 DATASET_VERSION = "normalized-dataset.v1"
-DEDUP_VERSION = "normalized-dedup.v1"
+DEDUP_VERSION = "normalized-dedup.v2"
 PARQUET_PROFILE = "bmdr-parquet.v1"
 
 SUPPORTED_STREAMS: dict[str, frozenset[str]] = {

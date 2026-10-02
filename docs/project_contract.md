@@ -5,6 +5,13 @@ architecture and data-contract changes are recorded in ADRs and
 `requirements_traceability.md`; routine development and documentation fixes
 follow the current task. See [handoff](PROJECT_HANDOFF.md) for status and next work.
 
+The undeployed Q1 candidate additionally corrects required-task supervision and
+auxiliary health, bounds live diagnostic history without truncating gap facts,
+and implements [ADR-0036](adr/0036-product-scoped-normalized-dedup.md).
+New normalized build identity binds product-scoped `normalized-dedup.v2`;
+the public reader retains immutable v1 compatibility. Q2 review and subsequent
+cloud qualification remain pending.
+
 ## Purpose and certified environment
 
 Binance Market Data Recorder is a stateful infrastructure service specifically

@@ -4,6 +4,10 @@
 - Date: 2026-07-24
 - Milestone: M15
 
+New Q1 builds use the superseding product-scoped dedup/build identity in
+[ADR-0036](0036-product-scoped-normalized-dedup.md). The v1 rules below remain
+the authority for existing immutable v1 builds.
+
 ## Context
 
 Raw chunk v1 is the immutable system of record. It already seals active

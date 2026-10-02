@@ -1,6 +1,250 @@
 # Milestone Plan
 
-## Current checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
+## Current plan — 38 accepted hours on the cloud server
+
+Updated October 2, 2026. **This section is the single current development plan.**
+It supersedes the October 1/2 proposals and time-local NEXT instructions below.
+The owner selected safe old-data cleanup followed by a fresh independent corpus.
+The [recheck](reviews/2026-10-02-plan-recheck.md) records corrections, evidence and
+limits. The [original review](reviews/2026-10-01-architecture-review.md),
+[cloud measurements](reviews/2026-10-02-cloud-performance-and-38h.md) and
+[ADR-0035](adr/0035-v5-bounded-delta-batches.md) remain supporting records.
+
+### Outcome and current status
+
+Done means **Formal 2h + 12h + 24h**, each independently verified and reviewed
+eligible, on the same frozen artifact/profile and growing corpus lineage:
+at least **136,800 accepted target seconds (38h)**. This is three stages, with
+stops/audits between them, not one uninterrupted 38h uptime. Audit, readiness,
+maintenance and retries add wall time and earn no credit. The 24h stage checks
+ordinary connection rotation and recovery. No mandatory 30m/4h/72h/168h chain
+is added to this scope; broader production certification remains separate.
+
+The existing final uses `result=PASS_CANDIDATE`, no blocking findings and
+`eligible_for_next_stage=true`. Successful completed-stage verification and
+review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
+closeout record binding all three finals; no new runtime status/protocol is needed.
+This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
+
+Installed source remains PR #78 / `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`.
+Recorder is stopped/disabled; the old baseline is unpublished/incomplete, Formal
+V5 credit is zero, and the old monitor is paused. See [production state](CURRENT_PRODUCTION_STATE.md).
+Candidate `7877082` improves scanner/status and declares bounded delta batches;
+its reviewed descendant is frozen as `d0f455c` in the
+[Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
+Q2 independent review, offline/online/stress, exact-source dual-platform CI and
+clean locked-wheel gates PASS. Q3 has not yet switched or deployed the corpus.
+The owner authorized this execution through eligible 2h, stopping before 12h.
+
+### Fixed MVP boundary
+
+Keep Python 3.12, one Recorder process, one Collector per ProductKey, SQLite,
+Raw v1, verified archive and non-root systemd. Target is greencloud-tokyo-01,
+Ubuntu 24.04 x86_64, currently 4 logical CPUs/about 6 GB RAM. Configured products
+are Spot BTCUSDT/ETHUSDT and USD-M BTCUSDT/ETHUSDT, twelve core stream contexts.
+Keep 60s/128 MiB chunk rotation and 1s durability initially. Freeze exact enabled
+auxiliary kinds, intervals and network/proxy settings with the release.
+
+Preserve original payload bytes, CRC/hashes/statistics, sequence/gap evidence,
+verified archive-before-retirement, deterministic replay and consumer separation.
+No GUI, trading, new exchange framework, queue platform, whole-language rewrite,
+or speculative service split. Heavy normalization/replay stays offline.
+
+### Milestones and gates
+
+| ID | Deliverable | Gate / status |
+|---|---|---|
+| Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
+| Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
+| Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Measured supported load/capacity; baseline + verification PASS; all products READY |
+| Q4 | Formal 2h plus full terminal audit and completed verification | Reviewed eligible final; same frozen release/corpus |
+| Q5 | Formal 12h plus full terminal audit and completed verification | Eligible 2h predecessor; reviewed eligible final |
+| Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | Eligible 12h predecessor; reviewed eligible final; all three targets total ≥38h |
+
+### Q1 — Fix known behavior with existing structures
+
+Implementation and evidence: [Q1 acceptance record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
+1881 offline tests pass. The cloud synthetic F5 comparison establishes bounded
+retention with full callbacks/gaps; it is not a live-session RSS or capacity
+verdict. Selected-scope live memory measurement remains mandatory in Q3 before
+T0, and release review remains Q2. No candidate has been deployed.
+
+- F2: supervise heartbeat exceptions and unexpected return during startup and
+  steady operation; drain collectors, retain the failure cause and exit FAILED.
+  Normal stop stays STOPPED. Check capacity-task early return as part of the same
+  required-task handling; do not build a new supervisor framework.
+  Q1 shutdown review also propagates collector drain/seal failures and preserves
+  the primary exception when a peer fails during cleanup.
+- F3: namespace normalized semantic identity by venue/market/symbol/stream.
+  Cross-product equal records remain separate; genuine duplicates still merge.
+  Version dedup/build semantics and retain old immutable outputs/readers.
+- F6: skip inaccessible optional Git discovery, including unusable cwd; retain
+  real data-root permission/path checks. Verify installed CLI behavior.
+- F7: enabled auxiliary FAILED and unexpected owner termination appear degraded
+  in aggregate and detailed health. Auxiliary failure stays isolated from core.
+- F5: cloud synthetic duplicate growth confirms unbounded retained history.
+  Q1 bounds live diagnostic history to 256 while preserving observer/counters
+  and durable gap/checkpoint facts. Review this control in Q2 and measure actual
+  live RSS in Q3 before T0; this is an explicit remaining gate, not a claim of
+  complete live memory stability. Do not infer Collector memory from stopped
+  audit-process measurements.
+
+Test startup/steady failure and normal cancellation, multi-product/multi-stream
+dedup, inaccessible-cwd CLI and auxiliary failure isolation. Review existing
+shutdown/error paths while touching them. F4 bounded normalization fan-in is a
+separate offline follow-up after this endpoint; do not normalize the full growing
+qualification corpus on the VPS. A reproducible selected-scope P0/P1 blocks T0;
+other findings require an explicit disposition, not speculative fixes.
+
+### Q2 — Review and freeze one release
+
+Independently review Q1 and candidate `7877082`, especially full Raw proof
+equivalence, short/truncated input, reconnect boundaries, frozen multi-page SQL
+snapshots, causal references, byte/time limits, cancellation and old-start replay
+AND resume. ADR-0035 retains old one-page semantics; new policy remains four
+256-row pages/family, 1024 references, 7 MiB delta entries and 8 MiB total.
+300s cadence, 600s maximum gap, 240s work budget and 900s readiness recovery stay.
+The CLI status detail-array change must be reflected in operator scripts.
+
+Run focused/full offline pytest, Ruff, mypy, M0 and Go Raw golden; dual-platform
+CI, locked wheel build, clean-wheel smoke and exact production dependency checks.
+Reuse one passing CI build/check result for the exact source; do not rebuild or
+rerun identical checks without a changed input/failure. Run public online smoke
+and existing relevant stress/fault gates in their explicit test environment.
+Recheck only the official Binance semantics needed by changed transport code;
+this plan requires no transport rewrite or broad dependency upgrade.
+
+Freeze source/tree, wheel, lock/interpreter and selected workload/profile. Q3 binds
+the actual new archive identity, final config/effective unit/timer and deployment
+identity before baseline; required tuning returns to review before Formal T0.
+Prepare the exact Q3 inventory, custody,
+rollback, stop/start and performance commands; use existing tooling and small
+read-only diagnostics. The plan sets the gates; live evidence must bind actual
+values/paths, not a moving GitHub branch or copied historical command.
+
+### Q3 — Safe fresh scope and cloud qualification preparation
+
+1. Keep Recorder inactive AND disabled. Inventory exact project-owned active
+   paths, manifests, Catalog, registrations, archived Raw and evidence. Drain
+   verified archive; prove no active partials/unarchived source awaiting deletion.
+   Briefly stop only the project archive mutator for a coherent custody snapshot.
+2. Preserve old Catalog/manifests/registrations/config and archived Raw/evidence
+   in recoverable custody. Hash/read back the metadata snapshot and record its
+   binding to retained archive identities. Do not call the interrupted old full
+   audit PASS. R-078 remains open; resetting scope does not fix historical audit
+   scalability. No second full scan of all old Raw is needed merely to retain it.
+3. Retire the old active scope and initialize a new layout/Catalog at the SAME
+   canonical writer root `/var/lib/binance-market-data-recorder`. Register a
+   distinct directory on the mounted archive volume, outside the old registered
+   scope; freeze exact UUID/path/marker/storage ID and timer binding. No symlink
+   exception, mount/format operation or multi-root framework. Never import old
+   rows or clear the new corpus between stages.
+4. Physical deletion is limited to inventoried redundant/test files with a
+   verified remaining copy where required. Resolve/print exact canonical child
+   paths, reject protected/mount roots and keep variables in the same remote
+   shell. Prefer retaining uncertain objects. Never delete unarchived Raw or a
+   unique archive/evidence copy. Restore old metadata only with Recorder stopped
+   and after preserving any new capture; never overlay a new corpus with an old
+   Catalog. These are bounded operations, not recursive host cleanup.
+5. Install the reviewed wheel/lock in canonical paths and verify exact effective
+   identity. Run a NONFORMAL warm-up until representative core/auxiliary load,
+   seal/archive cycles, size-triggered rotation and missed-cadence recovery can
+   be assessed. It earns zero credit and adds data to this same new corpus.
+6. Stop/disable, drain archive and establish quiescence after warm-up. Then run
+   the authoritative stopped full baseline and its completed verification. This
+   avoids feeding all warm-up deltas from an empty baseline into Formal T0.
+   Fresh package/lock/reboot/boot/capacity/identity checks precede identity-sensitive
+   baseline and start under the bounded maintenance quiet window. Enable/load
+   Recorder at pre-start, prove all four
+   products READY and start Q4 promptly. Any intervening mutator is documented
+   and its deltas handled; do not reuse a stale baseline/profile blindly.
+
+Cloud gate measures COMPLETE observations with Recorder and archive work active:
+SQL/companion capture, Raw qualification, identity/readiness, replay and publication.
+Normal backlog must remain stable, complete work must fit 240s with measured
+headroom, and one missed cadence must drain while ongoing input continues before
+target. Include auxiliary/size/reconnect bursts and actual total document sizes.
+Measure Recorder and Observer/worker CPU/RSS separately plus their combined
+pressure; record steal, iowait/latency, swap/PSI and co-resident load as available.
+Mac timings, tiny-frame fixtures and a six-chunk microbenchmark do not pass this gate.
+
+Forecast stage/cumulative ingest, Catalog/manifests/evidence/logs, archive backlog,
+root reserve and archive capacity from measured growth and relevant observed peaks.
+Forecast complete audits at cumulative ≥2h, ≥14h and ≥38h including warm-up,
+failed-run data and inter-stage capture. Baseline/finalize already perform producer
+Raw scanning plus independent LIVE reconstruction BEFORE root publication;
+completed CLI `verify` replays immutable controls/proofs, not a third LIVE scan.
+Include both live passes, freeze/SQL/shard and verification costs. Record practical
+wall-time estimates and review the schedule before T0; no invented two-hour audit
+cap, omitted records, reduced symbols or discarded validation to make it pass.
+
+If the gate fails, attribute the cause before changing stack/configuration:
+reduce measured redundant work first; compare two bounded Raw workers when CPU
+parallelism helps, preserving ordered results/cancellation and single-writer
+Catalog/evidence authority. Only then benchmark an isolated Go/C++/Rust scanner
+if residual parser/object CPU dominates. Hardware changes require evidence of
+CPU/steal, RAM/swap/PSI or I/O limits. No fixed speedup or server sufficiency is
+claimed. Review/freeze any change and repeat affected gates before Formal T0.
+
+### Q4–Q6 — Three separately eligible stages
+
+Each stage binds its passing predecessor, exact artifact/profile/corpus and fresh
+readiness, with one T0 and one target. Process/service/boot identity stays stable
+WITHIN that stage; a controlled restart between stages is ordinary operation.
+Keep the new corpus growing through the whole chain. Monitor compact evidence,
+delta progress, reserve/backpressure, CPU/RSS, archive backlog and every configured
+product. Report enabled auxiliary counts/coverage/failures; do not describe an
+absent or unreliable side stream as complete. Persistent FAILED at pre-start is
+resolved, not silently hidden or disabled to ease qualification.
+
+At target, stop accruing time; operator stop/disable and verified archive drain
+precede frozen quiescence, full terminal audit, completed verification and reviewed
+final eligibility. Keep archive mutation paused during the frozen audit and restore
+it afterward. Core gaps/recovery use existing rules; inspect ~23h50m planned
+connection rotation for all configured products during 24h. Existing offline
+kill/disk/network tests remain; no destructive injection is added inside Formal.
+
+Failed/incomplete stages retain evidence and earn no credit. Diagnose before a
+new stage; no host-maintenance auto-restart or paused monitor may invent a T0.
+Same-stage resume obeys existing process/boot/service constraints. A code/lock/
+configuration/profile or corpus-identity change starts a new frozen qualification
+chain; duration cannot transfer. An interrupted attempt on an unchanged artifact
+does not invalidate earlier eligible stages, but its own duration is never added.
+
+Bounded OS-maintenance quiet windows cover identity-sensitive baseline, timed
+observation and frozen terminal audit through final publication, with a recorded
+end/restore procedure derived from the measured schedule. Do not let maintenance
+mutate the pinned interpreter or reactivate a sanctioned mutator mid-audit.
+Restore normal update authority between completed stages; recheck package/reboot
+state and exact identity before the next stage or audit resume. If maintenance
+changes the frozen artifact/profile, re-review and start a new chain. No indefinite
+mask or new maintenance service is introduced. Preserve unrelated host services.
+Stopped handoff records inactive AND disabled, archive/OS authority restored,
+Catalog integrity, no active partials, archive backlog and exact retained evidence.
+
+Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
+≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
+limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
+F4/R-078 separate. Q1 is implemented/offline verified; the next development
+milestone is **Q3**, safe fresh corpus/deployment and measured cloud gates.
+
+### How subsequent development proceeds
+
+Work on one coherent milestone at a time. Read this current section and handoff,
+preserve unrelated changes, implement the smallest adequate change and run checks
+appropriate to it. Record changed files, decisions, tests/unrun gates, evidence,
+limitations, rollback and next milestone; update this table/handoff when a gate
+actually closes. GitHub publication is development authority, not deployment or
+permission to replay old live instructions. Current operational status comes from
+fresh evidence, not this plan or a historical NEXT value.
+
+## Historical records — time-local and superseded as execution instructions
+
+Records below preserve their original identity, status and acceptance. They do
+not override the current Q0–Q6 plan or authorize operations.
+
+## Historical checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
 
 PR #78 merged at `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`; independent
 implementation review accepted head `227b09aa3e328f890e8178603bf493013d8d91f5`

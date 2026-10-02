@@ -2806,17 +2806,46 @@ class Catalog:
         return dict(row) if row else None
 
     def archive_transactions(
-        self, *, storage_id: str | None = None
+        self, *, storage_id: str | None = None, limit: int | None = None, offset: int = 0
     ) -> list[dict[str, object]]:
+        if offset < 0 or (limit is not None and not 1 <= limit <= 1000):
+            raise ValueError("invalid archive transaction page")
+        if offset and limit is None:
+            raise ValueError("archive transaction offset requires a limit")
         query = "SELECT * FROM archive_transactions"
         parameters: tuple[object, ...] = ()
         if storage_id is not None:
             query += " WHERE storage_id = ?"
             parameters = (storage_id,)
         query += " ORDER BY created_at_utc_ns, transaction_id"
+        if limit is not None:
+            query += " LIMIT ? OFFSET ?"
+            parameters += (limit, offset)
         with self._lock:
             rows = self._connection.execute(query, parameters).fetchall()
         return [dict(row) for row in rows]
+
+    def archive_transaction_summary(
+        self, *, storage_id: str | None = None
+    ) -> dict[str, object]:
+        """Aggregate status in SQLite without materializing historical transactions."""
+        where = " WHERE storage_id = ?" if storage_id is not None else ""
+        parameters = (storage_id,) if storage_id is not None else ()
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT state, COUNT(*) AS count, "
+                "MAX(CASE WHEN instr(last_error, 'DISAPPEARED_DURING_COPY') > 0 "
+                "THEN 1 ELSE 0 END) AS disappeared "
+                "FROM archive_transactions" + where + " GROUP BY state",
+                parameters,
+            ).fetchall()
+        return {
+            "transaction_count": sum(row["count"] for row in rows),
+            "transactions_by_state": {row["state"]: row["count"] for row in rows},
+            "status": (
+                "DISAPPEARED_DURING_COPY" if any(row["disappeared"] for row in rows) else "OK"
+            ),
+        }
 
     def remote_archive_transaction(
         self, receipt_id: str

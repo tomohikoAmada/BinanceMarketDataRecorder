@@ -1,0 +1,39 @@
+{
+  "kind": "READ_ONLY_CLOUD_SQL_SNAPSHOT_NOT_FORMAL_CREDIT",
+  "candidate_source_sha256": "1e97c09c8d2233536418a652048ed7bb1dc1086cc20cff176fcbf05e31612b75",
+  "utc_ns": 1790872521546882498,
+  "results": {
+    "installed_one_page": {
+      "wall_seconds": 0.9251472940086387,
+      "cpu_seconds": 0.48699049199999944,
+      "rows": {
+        "operational": 8,
+        "chunk": 256,
+        "archive": 256
+      },
+      "high_water": {
+        "chunk": 1146950,
+        "archive": 716810,
+        "operational": 1615
+      },
+      "serialized_snapshot_bytes": 3264004
+    },
+    "candidate_four_pages": {
+      "wall_seconds": 0.44461354095255956,
+      "cpu_seconds": 0.40237025299999996,
+      "rows": {
+        "operational": 8,
+        "chunk": 480,
+        "archive": 300
+      },
+      "high_water": {
+        "chunk": 1146950,
+        "archive": 716810,
+        "operational": 1615
+      },
+      "serialized_snapshot_bytes": 5014033
+    }
+  },
+  "max_rss_kib": 144256,
+  "probe_exit_code": 0
+}

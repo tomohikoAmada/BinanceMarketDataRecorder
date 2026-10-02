@@ -38,6 +38,22 @@ continuation automation is paused. Preserve existing data and evidence.
 `12H_STARTED=NO`; `PRODUCTION_READY=NO`. Production full-audit scalability
 remains an open P2. Do not restart live work from old continuation instructions.
 
+The owner's October 2 plan recheck sets the current Q0–Q6 sequence in the first
+section of `docs/milestone_plan.md`: small correctness fixes, reviewed release,
+safe cleanup/new independent corpus, cloud warm-up/baseline, then separate
+2h + 12h + 24h acceptance (38 accepted hours). Q1 is implemented/offline verified.
+The performance candidate and Q1 fixes are not deployed; historical NEXT values are not current
+execution authority. The old `qualification_to_24h_plan.md` is only a link.
+
+Q1 has 1881 passing tests and a read-only cloud synthetic retention probe.
+Its record is `docs/milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md`.
+Q2 independent review and exact release gates are complete. Frozen source is
+`d0f455c1a417cc1a184c47b6ff766a60f3dc0159`; see the Q2 acceptance record.
+Current development NEXT is Q3 retained old custody/fresh corpus, exact deployment
+and measured cloud gates. The owner authorizes continuation through eligible Q4
+2h, stopping before Q5 cloud 12h. ADR-0036 versions new normalized dedup/build identity; old v1
+outputs remain readable. Live RSS/capacity and all Formal credit gates remain.
+
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is
 `docs/developer_guide.md`; project scope is `docs/project_contract.md`; delivery
