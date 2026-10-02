@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -17,6 +18,7 @@ from binance_market_data_recorder.service.acceptance_v5_online import (
     replay_online,
     resume_v5_observer,
 )
+from binance_market_data_recorder.service.acceptance_v5_raw import capture_snapshot
 from binance_market_data_recorder.spool.seal import seal_partial
 from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import Catalog
@@ -117,6 +119,51 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
             if window == 1:
                 continue  # One missed target cadence; next gap is exactly 600s.
             publish_ready_state(observer, clock)
+            if policy == "compact" and window == 0:
+                # Real archived bundles plus real SQL rows fill exactly the
+                # admission cap. Per-bundle newline rounding must not reject
+                # the final archive row or create a fictitious pending tail.
+                assert observer.continuation is not None
+                processed = observer.continuation["processed"]
+                _high, pages, _open, bundles = observer._delta(clock.boottime_ns())
+                assert len(bundles) == 60
+                base_bytes = delta_bytes({"delta_policy": start["delta_policy"],
+                                          "delta_pages": pages, "archive_companions": bundles})
+                limit = start["delta_policy"]["max_canonical_delta_bytes"]
+                catalog.record_operational_event(
+                    event_id="budget-0", event_type="TEST",
+                    occurred_at_utc_ns=clock.utc_ns(), evidence={"pad": "x" * 60000},
+                )
+                def operational_rows(processed: dict[str, int] = processed) -> list[dict[str, Any]]:
+                    captured = capture_snapshot({
+                        "catalog_path": str(catalog.path),
+                        "processed": processed,
+                        "open_chunk_bound": start["open_chunk_bound"],
+                        "max_pages_per_family": 4,
+                    })
+                    return cast(list[dict[str, Any]], captured["candidates"]["operational"])
+                first = operational_rows()[0]
+                first_bytes = len(canonical_json({**first, "unit": None,
+                                                   "status": "acknowledged"}))
+                count = (limit - base_bytes - 500) // first_bytes
+                for index in range(1, count):
+                    catalog.record_operational_event(
+                        event_id=f"budget-{index}", event_type="TEST",
+                        occurred_at_utc_ns=clock.utc_ns(), evidence={"pad": "x" * 60000},
+                    )
+                rows = operational_rows()
+                occupied = sum(len(canonical_json({**entry, "unit": None,
+                                                     "status": "acknowledged"})) for entry in rows)
+                row = {**rows[-1]["row"], "event_seq": rows[-1]["row"]["event_seq"] + 1,
+                       "event_id": "budget-last", "evidence_json": '{"pad":""}'}
+                empty_entry = {"row": row, "companions": {}, "unit": None,
+                               "status": "acknowledged"}
+                padding = limit - base_bytes - occupied - len(canonical_json(empty_entry))
+                assert 0 < padding < 60000
+                catalog.record_operational_event(
+                    event_id="budget-last", event_type="TEST",
+                    occurred_at_utc_ns=clock.utc_ns(), evidence={"pad": "x" * padding},
+                )
             _, _, sample = observer.sample()
             assert sample["blocking_findings"] == []
             if legacy:
@@ -125,6 +172,8 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
                 break  # The old one-page policy is intentionally not widened on replay/resume.
             else:
                 assert delta_bytes(sample) <= 7 * 1024 * 1024
+                if policy == "compact" and window == 0:
+                    assert delta_bytes(sample) == 7 * 1024 * 1024
                 assert all(len(page) <= 1024 for page in sample["delta_pages"].values())
                 if window in {0, 4}:
                     assert sample["continuation"]["processed"] == sample["high_water"]

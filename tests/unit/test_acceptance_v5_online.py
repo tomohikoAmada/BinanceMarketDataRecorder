@@ -16,6 +16,7 @@ from binance_market_data_recorder.service.acceptance import (
     canonical_json,
     sha256_bytes,
 )
+from binance_market_data_recorder.service.acceptance_v5_codec import delta_bytes
 from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_available
 from binance_market_data_recorder.service.acceptance_v5_io import V5_SCHEMA_VERSION, open_exact
 from binance_market_data_recorder.service.acceptance_v5_raw import qualify_task
@@ -104,10 +105,76 @@ def test_delta_policy_cannot_change_after_t0(tmp_path: Path) -> None:
     observer.start()
     advance(clock, 300)
     path, _, sample = observer.sample()
-    sample["delta_policy"] = {**sample["delta_policy"], "max_pages_per_family":1}
+    sample["delta_policy"] = {**sample["delta_policy"], "max_pages_per_family": 1}
     path.write_bytes(canonical_json(sample))
     with pytest.raises(AcceptanceError, match="delta policy changed"):
         online.replay_online(observer.evidence_root, observer.identity, require_target=False)
+
+
+@pytest.mark.parametrize("excess", [0, 1])
+def test_real_sql_delta_admission_counts_empty_table_newline(tmp_path: Path, excess: int) -> None:
+    observer, clock, _evaluator = observer_fixture(tmp_path)
+    _, _, start = observer.start()
+    assert observer.continuation is not None
+    limit = start["delta_policy"]["max_canonical_delta_bytes"]
+    with Catalog(observer.data_root / "state/catalog.sqlite") as catalog:
+        for index in range(121):
+            catalog.record_operational_event(
+                event_id=f"budget-{index}",
+                event_type="TEST",
+                occurred_at_utc_ns=clock.utc_ns(),
+                evidence={"pad": "x" * 60000},
+            )
+        captured = raw.capture_snapshot(
+            {
+                "catalog_path": str(catalog.path),
+                "processed": observer.continuation["processed"],
+                "open_chunk_bound": start["open_chunk_bound"],
+                "max_pages_per_family": 4,
+            }
+        )
+        candidates = captured["candidates"]["operational"]
+        size = sum(
+            len(canonical_json({**entry, "unit": None, "status": "acknowledged"}))
+            for entry in candidates
+        )
+        row = {
+            **candidates[-1]["row"],
+            "event_seq": 122,
+            "event_id": "budget-last",
+            "evidence_json": '{"pad":""}',
+        }
+        empty_entry = {"row": row, "companions": {}, "unit": None, "status": "acknowledged"}
+        padding = limit + excess - len(canonical_json({})) - size - len(canonical_json(empty_entry))
+        assert 0 < padding < 60000
+        catalog.record_operational_event(
+            event_id="budget-last",
+            event_type="TEST",
+            occurred_at_utc_ns=clock.utc_ns(),
+            evidence={"pad": "x" * padding},
+        )
+    advance(clock, 300)
+    _, _, sample = observer.sample()
+    assert len(sample["delta_pages"]["operational"]) == 122 - excess
+    assert delta_bytes(sample) <= limit
+    assert sample["delta_pending"] is bool(excess)
+    assert (
+        online.replay_online(
+            observer.evidence_root, observer.identity, require_target=False
+        ).continuation
+        == sample["continuation"]
+    )
+    if excess:
+        advance(clock, 300)
+        _, _, drained = observer.sample()
+        assert len(drained["delta_pages"]["operational"]) == 1
+        assert drained["delta_pending"] is False
+        assert (
+            online.replay_online(
+                observer.evidence_root, observer.identity, require_target=False
+            ).continuation
+            == drained["continuation"]
+        )
 
 
 @pytest.mark.parametrize("legacy", [False, True])
@@ -150,9 +217,12 @@ def test_oversized_delta_is_deferred_without_changing_legacy_replay(
         assert pages[0]["status"] == "budget_pending"
     else:
         assert pages == []
-    assert online.replay_online(
-        observer.evidence_root, observer.identity, require_target=False
-    ).continuation == sample["continuation"]
+    assert (
+        online.replay_online(
+            observer.evidence_root, observer.identity, require_target=False
+        ).continuation
+        == sample["continuation"]
+    )
     if not legacy:
         sample["delta_pages"]["operational"] = [
             {

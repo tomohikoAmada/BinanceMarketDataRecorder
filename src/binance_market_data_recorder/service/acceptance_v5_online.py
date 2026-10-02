@@ -321,7 +321,8 @@ class V5AcceptanceObserver:
         )
         compact = self.start_document.get("delta_policy") == COMPACT_BATCH_POLICY
         archive_bundles: dict[str, dict[str, Any]] = {}
-        used_bytes = 2 if compact else 0  # Empty companion table's canonical braces.
+        empty_table_bytes = len(canonical_json({}))
+        used_bytes = empty_table_bytes if compact else 0
         byte_limit = self.start_document.get("delta_policy", {}).get(
             "max_canonical_delta_bytes", ONLINE_DOCUMENT_MAX_BYTES // 2
         )
@@ -373,7 +374,7 @@ class V5AcceptanceObserver:
                     entry, additions = compact_entry(entry, archive_bundles)
                 entry_size = len(canonical_json(entry))
                 table_size = (
-                    len(canonical_json(additions)) - 2 + int(bool(archive_bundles))
+                    len(canonical_json(additions)) - empty_table_bytes + int(bool(archive_bundles))
                     if additions else 0
                 )
                 size = entry_size + table_size

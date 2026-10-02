@@ -504,8 +504,11 @@ class ServiceRuntime:
                 for name, item in global_side_status.items()
             }
         side_items.extend(global_side_status.values())
+        degraded_side_states = {"RETRYING", "STALE", "FAILED"}
+        if self._status == "RUNNING":
+            degraded_side_states.add("STOPPED")
         if any(
-            item.get("enabled") and item.get("status") in {"RETRYING", "STALE", "FAILED"}
+            item.get("enabled") and item.get("status") in degraded_side_states
             for item in side_items
         ) or self._global_side_failure is not None:
             network_status = "DEGRADED"

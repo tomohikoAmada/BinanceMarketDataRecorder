@@ -119,8 +119,10 @@ Read these documents in order:
   cadence gates; do not merely widen limits or blame hardware without evidence.
   Complete live forecasts and the authoritative stopped baseline afterward.
   Preserve all new capture and the interrupted old audit.
-- The owner authorizes continuation through Q4 eligible 2h, then stop before Q5
-  cloud 12h. Do not silently start 12h or count engineering warm-up as Formal.
+- The owner authorizes continuation through Q4 eligible 2h and Q5 eligible 12h,
+  then stop before Q6 cloud 24h. Do not count engineering warm-up as Formal.
+  Use existing observation and lightweight read-only monitoring to save model
+  usage; preserve full evidence and intervene on meaningful changes/failures.
 - If qualification is restarted, verify the exact artifact and data scope,
   complete its baseline, obtain fresh readiness for every configured product,
   then execute the selected stage and terminal audit. V5 online observation

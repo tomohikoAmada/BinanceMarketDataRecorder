@@ -231,6 +231,15 @@ supplementary check blocks owner-reviewed qualification even if core readiness
 is READY. Preserve all transient failures/gaps and their recovery evidence; do not
 invent full liquidation-market coverage from this snapshot-style stream.
 
+The owner permits economical long-run monitoring. Keep AcceptanceObserver as
+the measurement/evidence authority and use a lightweight read-only sampler for
+resources, exact process identity and auxiliary coverage. Retain compact JSONL;
+do not repeatedly replay whole chains or load full historical documents just to
+poll status. Model attention is needed at meaningful transitions, anomalies,
+target and review. A monitoring helper cannot start a new stage, change settings,
+restart Recorder or grant duration credit. Existing paused automation remains
+paused; no extra monitoring service or model agent is required.
+
 At target, stop accruing time; operator stop/disable and verified archive drain
 precede frozen quiescence, full terminal audit, completed verification and reviewed
 final eligibility. Keep archive mutation paused during the frozen audit and restore

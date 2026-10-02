@@ -64,3 +64,49 @@ blocked drain/sync, storage-error priority, no early cursor/readiness advance,
 ban/slot/in-flight stop, empty/sparse coverage and failure-health regressions pass.
 Prior unchanged million-frame/transport stress results are retained; changed
 cloud capture/observer checks and long duration tests remain pending.
+
+## Additive candidate recheck
+
+The independent reviewer verified `1fa4b0f7504ce99ae20f4be3110a58016aa52cd6`
+and independently passed 182 focused tests, actual old/new original and v1
+replay/resume differential checks, and forty owned SDK stop/cancellation races.
+It found one new P3: initial v2 table admission omitted the canonical newline
+and overcharged multiple bundles. A real 122-row SQL probe produced 7 MiB+1
+and was rejected by the strict reader. The correction uses canonical empty-table
+bytes consistently; empty-table exact/+1 and real 60-bundle exact-cap regressions
+pass. Initial source dual-platform CI also passed; the changed source still needs
+its own CI and final independent verdict.
+
+Corrected source/test/tool manifest (canonical sorted JSON plus newline):
+`bf15176251886a4751789938a3e5a675748289405199f7d7e9a6b6e15fa4eb25`.
+The earlier manifest remains the immutable initial review input.
+
+Conservative steady five-minute bound at the default intervals is 118 sealed
+chunks / 944 chunk-transition rows and 590 archive rows, below 1024 per family.
+Depth snapshots are startup/resync-driven. Cold catch-up, size/reconnect bursts
+and a missed cadence consume additional headroom. This arithmetic is not a cloud
+PASS: measure real stable growth and drain backlog while input continues.
+
+A final independent aggregate-owner probe found a P2: canceling a real product
+auxiliary owner drains children as STOPPED, but aggregate health originally
+ignored enabled STOPPED. The earlier ACCEPT message was preliminary, not the
+final verdict. The narrow correction treats enabled STOPPED as degraded only
+while the service is RUNNING; core readiness and normal shutdown semantics
+remain unchanged. Real supervisor-owner cancellation plus aggregate-health
+regression and enabled/disabled STOPPED cases pass.
+
+Final 18-path input manifest:
+`e8c57aea64dcbca31464e8a921ce731e12da6e0fd0cd250fa47ad23a23e7e501`.
+This adds runtime/aggregate tests and only typing/closure annotations in the
+60-bundle regression. Ruff and strict mypy286 PASS; 62 affected tests PASS14.20s.
+Previous full candidate suite was 1931 PASS163.03s. Final full run:1934 PASS,
+24 public-online SKIP,5 stress deselected,13 existing fork warnings,166.30s.
+Ruff,mypy286,M0,Go golden and diff-check PASS.
+
+Final independent verdict for that exact 18-path manifest: **ACCEPT**;
+open P0/P1/P2/P3=0/0/0/0. Independent final focused run77 PASS15.13s,
+including actual owner cancellation/aggregate, lifecycle/snapshot ownership,
+auxiliary gate, real SQL exact/+1-byte and60-bundle admission. Across this review,
+the four original P1, two P2 and one P3 findings are CLOSED. Earlier preliminary
+messages do not replace this final verdict. This is local source acceptance;
+changed-source CI/wheel, cloud warm-up and Formal stage acceptance remain separate.

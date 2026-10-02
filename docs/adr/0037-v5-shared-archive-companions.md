@@ -1,6 +1,6 @@
 # ADR-0037: Share exact archive companions within bounded V5 observations
 
-- Status: Implemented candidate; independent review and cloud qualification pending
+- Status: Implemented; exact-input independent review ACCEPT; cloud qualification pending
 - Date: 2026-10-02
 - Scope: Q3 correction to ADR-0035; no Raw/Catalog/full-audit format change
 
@@ -23,7 +23,7 @@ Each observation has an `archive_companions` table keyed by transaction ID.
 A row's `companions.archive` is that ID instead of another complete copy of
 its transaction/chunk/event/transition bundle. The table exists only within
 that document. Admission counts canonical entries AND the complete table,
-including braces, keys and commas; additions are committed only with an admitted
+including braces, keys, commas and the canonical trailing newline; additions are committed only with an admitted
 entry. Identical IDs with differing bundles fail. Replay rejects missing,
 misidentified, inline or unused table entries, expands exact original companions,
 and performs the ordinary row/digest/causal proof checks. No row or Raw proof is
@@ -50,6 +50,11 @@ remains V5 with an explicitly declared policy extension.
 Regression tests preserve exact expanded rows, compare repeated vs shared byte
 cost, reject table/digest tampering, discharge a transient 1080-reference burst
 into a 56-reference continuation, reject genuinely excessive final references,
-and exercise original/v1/v2 real-writer/archive throughput and resume. Cloud
+and exercise original/v1/v2 real-writer/archive throughput and resume. Real SQL
+rows at exactly 7 MiB and one byte above, plus 60 actual archive bundles with
+SQL rows filling the exact cap, cover producer/reader byte-accounting equality.
+Independent review found the initial candidate undercounted an empty table by
+one byte and overcounted multiple bundles by N-1; the correction consistently
+uses the canonical empty table's three bytes. Cloud
 all-enabled observations and full terminal verification remain required before
 Formal T0. This ADR grants no throughput, duration or production-ready credit.

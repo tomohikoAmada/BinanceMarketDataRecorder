@@ -13,7 +13,11 @@ from typing import Any, cast
 import pytest
 
 import binance_market_data_recorder.service.runtime as runtime_module
-from binance_market_data_recorder.collector.usdm_side_data import UsdMRestCooldown
+from binance_market_data_recorder.collector.usdm_side_data import (
+    SideDataStats,
+    SideDataSupervisor,
+    UsdMRestCooldown,
+)
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import Market
 from binance_market_data_recorder.domain.product import ProductKey
@@ -372,23 +376,79 @@ def test_global_side_owner_failure_degrades_without_stopping_core(
 
 
 @pytest.mark.parametrize("enabled, expected", [(True, "DEGRADED"), (False, "ALL_MARKETS_READY")])
+@pytest.mark.parametrize("status", ["FAILED", "STOPPED"])
 def test_enabled_failed_side_stream_is_in_aggregate_health(
     tmp_path: Path,
     enabled: bool,
     expected: str,
+    status: str,
 ) -> None:
     runtime = ServiceRuntime(
         config=_config(tmp_path), logger=logging.getLogger("test.side.summary")
     )
+    runtime._status = "RUNNING"
     collectors = {
         ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
         ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
     }
     for item in collectors.values():
         item.started = True
-        item.side_data_status = lambda: {"mark_price": {"enabled": enabled, "status": "FAILED"}}  # type: ignore[attr-defined]
+        item.side_data_status = lambda: {"mark_price": {"enabled": enabled, "status": status}}  # type: ignore[attr-defined]
     runtime._collectors = cast(Mapping[ProductKey, RuntimeCollector], collectors)
     assert runtime._state_document()["network_status"] == expected
+
+
+def test_cancelled_product_auxiliary_owner_is_degraded_while_core_stays_ready(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        core_stop, entered = asyncio.Event(), asyncio.Event()
+        stats = SideDataStats(True)
+        drained = False
+
+        class Extension:
+            terminal_on_failure = True
+
+            async def run(self, stop: asyncio.Event) -> None:
+                nonlocal drained
+                entered.set()
+                await stop.wait()
+                drained = True
+
+        supervisor = SideDataSupervisor(
+            {"mark_price": Extension()}, {"mark_price": stats},
+            logging.getLogger("test.owner-aggregate"),
+        )
+        owner = asyncio.create_task(supervisor.run(core_stop))
+        await asyncio.wait_for(entered.wait(), timeout=1)
+        owner.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(owner, timeout=1)
+        assert drained and not core_stop.is_set()
+        assert stats.status == "STOPPED" and not stats.running
+        runtime = ServiceRuntime(
+            config=_config(tmp_path), logger=logging.getLogger("test.owner-aggregate")
+        )
+        runtime._status = "RUNNING"
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+        for item in collectors.values():
+            item.started = True
+        collectors[ProductKey("um_perpetual", "BTCUSDT")].side_data_status = (  # type: ignore[attr-defined]
+            lambda: {"mark_price": stats.public_dict(degraded_after_seconds=900)}
+        )
+        runtime._collectors = cast(Mapping[ProductKey, RuntimeCollector], collectors)
+        state = runtime._state_document()
+        assert state["core_ready"] is True
+        assert state["network_status"] == "DEGRADED"
+        # Normal owner shutdown keeps STOPPED meaningful; stopped service
+        # summaries do not treat this intentional state as auxiliary failure.
+        runtime._status = "STOPPED"
+        assert runtime._state_document()["network_status"] == "ALL_MARKETS_READY"
+
+    asyncio.run(exercise())
 
 
 def test_process_lock_rejects_a_second_service(tmp_path: Path) -> None:
