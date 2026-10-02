@@ -139,3 +139,9 @@ those checkpoints, not to the current paused workflow.
 Earlier pause/reboot/offline-only instructions were time-local and are
 superseded by the owner's restored-access continuation. Their evidence remains
 in the Q3 acceptance records. Current operational authority is current state.
+
+The3d05282 exact-source CI37027577424 and affected cloud run retained the same
+Profile D empty-idle-drain fixture timeout (cloud265 PASS/1 FAIL). Release remains
+blocked until the minimal test-only admitted-batch gate correction passes new
+exact CI/cloud checks. Runtime startup correction remains independently ACCEPTed
+locally; installed605bc16 and stopped/disabled Recorder are unchanged.

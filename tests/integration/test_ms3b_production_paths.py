@@ -1170,7 +1170,10 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
 
         def blocked_drain() -> int:
             nonlocal first_drain
-            if first_drain:
+            # The writer also checks idle rotation before all 42 sockets open.
+            # Block a real admitted batch, leaving the receipt queue free for
+            # the second frame and backpressure on the third frame.
+            if first_drain and target_stream.spool.queue.depth:
                 first_drain = False
                 harness.loop.call_soon_threadsafe(target_drain_started.set)
                 if not release_target_drain.wait(
@@ -1180,6 +1183,11 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             return original_drain()
 
         target_stream.spool.drain_all = blocked_drain  # type: ignore[method-assign]
+        # Exercise an empty check explicitly; startup scheduling must not
+        # choose the phase that is intended to block the first real batch.
+        assert blocked_drain() == 0
+        assert first_drain
+        assert not target_drain_started.is_set()
         tasks = [asyncio.create_task(collector.run(stop)) for collector in collectors]
 
         async def wait_for_phase(event: asyncio.Event, phase: str) -> None:

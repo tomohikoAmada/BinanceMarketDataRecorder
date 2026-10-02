@@ -33,12 +33,18 @@ clean locked wheel,98 newly affected cloud tests and exact stopped deployment PA
 It adds minimal empty/gap event identity fixes and precise bounded typed-empty
 recovery during observations; pre-start/target stay strict. Earlier637-chunk
 engineering full baseline at48ca920 PASS, then auxiliary pre-start blocked its
-empty-event conflict.697 captured chunks are now archived and retained. A new
-605bc16 engineering full baseline is executing; actual normal/missed/catch-up,
-forecasts and authoritative post-warm-up baseline remain required. Original
-failures retain zero credit; no Formal T0. Owner resumes through completed
-Formal2h, before12h. Historical old baseline remains unpublished and automation
-paused. See [production state](CURRENT_PRODUCTION_STATE.md).
+empty-event conflict. The605bc16 engineering baseline/completed verification
+passed on697 chunks with both LIVE passes. Its later nonformal catch-up failed a
+sparse startup boundary; all1182 captured chunks are archived and retained.
+ADR-0038 source3d05282 has independent local/offline aggregate ACCEPT, but its
+CI/cloud Profile D fixture selected an empty idle drain and timed out. A minimal
+test-only gate correction passed7 affected tests; new exact CI/cloud gates are
+required before deployment. Actual normal/missed/catch-up convergence, forecasts
+and authoritative post-warm-up baseline remain required. Original failures earn
+zero credit; no Formal T0. Owner resumes through reviewed completed Formal2h,
+before12h. Historical old baseline remains unpublished and its automations
+paused; current-chat reset-time continuation is active.
+See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
@@ -155,7 +161,7 @@ installed with passing CI/clean wheel/cloud98 newly affected tests. See the
 [current correction](milestone_acceptance/Q3-empty-recovery-correction.md).
 Its sparse-stream startup failure now has the minimal
 [ADR-0038 correction](milestone_acceptance/Q3-startup-boundary-correction.md)
-under review: seal an authentic empty boundary before opening each capture
+independently accepted locally: seal an authentic empty boundary before opening each capture
 owner's first connection, preserving initially forced flags across seal crashes.
 The current installed wheel remains605bc16 until the new exact release gates pass.
 Shared exact companions and

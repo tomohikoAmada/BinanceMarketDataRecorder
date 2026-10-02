@@ -95,3 +95,9 @@ in [Q3 fresh-corpus](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md) a
 [all-enabled candidate](milestone_acceptance/Q3-all-enabled-candidate.md).
 Historical paused automation remains paused. Only local/remote main remains;
 unrelated stash/untracked review bundles and detached worktrees are retained.
+
+The3d05282 exact-source CI37027577424 and affected cloud run retained the same
+Profile D empty-idle-drain fixture timeout (cloud265 PASS/1 FAIL). Release remains
+blocked until the minimal test-only admitted-batch gate correction passes new
+exact CI/cloud checks. Runtime startup correction remains independently ACCEPTed
+locally; installed605bc16 and stopped/disabled Recorder are unchanged.

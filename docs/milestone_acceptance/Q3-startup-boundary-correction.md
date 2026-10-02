@@ -30,6 +30,18 @@ retaining exact2-request readiness; ordinary idle rotation may split global-stop
 capture, but EVERY resulting chunk must remain complete/gap-free with original
 payload/order/no-discontinuity assertions. The final small fixture delta passed
 13 focused tests4.02s; exact-source CI runs the complete final tree.
+Final aggregate local/offline review ACCEPT binds source3d05282/treebc1a71a,
+all21 changed paths and the three operator helpers; report SHA
+f567246a874815f85703e09481daa359b5d013f29bb40d3ccd6f59f499315cfe.
+Exact-source CI37027577424 FAILED Profile D on both platforms; affected cloud
+run retained265 PASS/1 FAIL/1 stress deselected. Neither run qualifies release.
+The first drain hook could block an empty idle check before the42-socket barrier,
+leaving the first receipt queued and preventing the third receive. The fixture
+now blocks only a real admitted Raw batch and explicitly proves an initial empty
+check cannot select that gate. Queue sizes, all42-stream/sibling/backpressure,
+payload/count/completeness assertions and watchdogs remain unchanged. The full
+production-path module passes7 tests1.58s locally; new exact-source CI/cloud
+checks and independent review of this test-only correction remain required.
 Current deployed source remains605bc16; Recorder inactive AND disabled,
 1182 chunks/transactions LOCAL_DELETED, Catalogok and0partials at last check.
 Archive/normal OS authority is active. No Formal T0 or credit exists.
