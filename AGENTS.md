@@ -49,8 +49,11 @@ MainPID0/Resultsuccess/NRestarts0,1182 chunks/transactions LOCAL_DELETED,
 Catalogok/0partials/backlog. Archive actual finite recurrence passed after deploy,
 now timer/worker paused solely for stopped engineering baseline; normal OS
 updates restored, no live monitor. Prior605bc16 engineering baseline/both LIVE/
-verify passed697; failed catch-up preserved. New exact4e engineering baseline/
-completed verify is running1182, not yetPASS. Next actual warm-up/convergence,
+verify passed697; failed catch-up preserved. New exact4e engineering attempt2
+FAILED before publication on real discontinuity-array serialization. Retain failed
+controls and do not resume their prefix under a changed identity. Minimal local
+private-index correction is independently ACCEPTed; replacement release/fresh baseline remain;
+see docs/milestone_acceptance/Q3-discontinuity-array-correction.md. Next actual warm-up/convergence,
 resources/cumulative forecasts, authoritative post-warm-up baseline under a finite
 quiet window, strict readiness, Formal2h plus terminal/completed/independent
 verification. No Formal T0/credit;12H_STARTED=NO;PRODUCTION_READY=NO.

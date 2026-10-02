@@ -18,6 +18,7 @@ from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.unit.test_acceptance_v5_catalog import insert_event
 from tests.unit.test_acceptance_v5_io import fixture, stopped
 from tests.unit.test_acceptance_v5_online import advance, observer_fixture
+from tests.unit.test_historical_reconnect_audit import seal_chunk, usdm_envelope
 
 
 def raw_unit(task: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
@@ -123,3 +124,53 @@ def test_multiple_shards_and_interrupted_baseline_resume(tmp_path: Path) -> None
     assert audit["shards"]["shard_count"] == 2
     assert audit["counts_by_family"]["operational_event"] == 600
     assert audit["result"] == "PASS_CANDIDATE"
+
+
+@pytest.mark.parametrize("mode", ["open", "completed", "malformed"])
+def test_full_baseline_reconstructs_real_discontinuity_pair(
+    tmp_path: Path, mode: str
+) -> None:
+    observer, _clock, _evaluator = observer_fixture(tmp_path)
+    layout = ensure_storage_layout(observer.data_root)
+    gap = dict(market="um_perpetual", symbol="BTCUSDT", stream="book_ticker", gap_id="gap-a")
+    completed = mode != "open"
+    start = {**gap, "original_connection_id": "old",
+             "original_generation": "invalid" if mode == "malformed" else 0,
+             "gap_started_at_utc_ns": 1_000_000_001}
+    with Catalog(layout.catalog) as catalog:
+        seal_chunk(layout, catalog, [usdm_envelope("old", 1)])
+        catalog.record_operational_event(
+            event_id="gap-start", event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=1_000_000_001, evidence=start, symbol="BTCUSDT",
+        )
+        if completed:
+            catalog.record_operational_event(
+                event_id="gap-complete", event_type="STREAM_DISCONTINUITY_COMPLETED",
+                occurred_at_utc_ns=1_000_000_002, symbol="BTCUSDT",
+                evidence={**gap, "new_connection_id": "new", "new_generation": 1,
+                          "gap_ended_at_utc_ns": 1_000_000_002},
+            )
+            seal_chunk(layout, catalog, [usdm_envelope("new", 2, ("sequence_gap",))])
+    root = tmp_path / "discontinuity-baseline"
+    _path, _sha, audit = baseline(
+        data_root=observer.data_root, evidence_root=root, identity=observer.identity,
+        products=[["um_perpetual", "BTCUSDT"]], archive_roots={}, probe=stopped,
+        identity_verifier=lambda _identity: None, raw_unit=raw_unit, boot_id="boot-a",
+    )
+    if mode == "malformed":
+        assert audit["result"] == "FAIL"
+        assert "operational_discontinuity_authority_malformed" in audit["blocking_findings"]
+    else:
+        assert audit["result"] == "PASS_CANDIDATE"
+        assert audit["blocking_findings"] == []
+    assert audit["counts_by_family"]["operational_event"] == 1 + int(completed)
+    assert audit["counts_by_family"]["manifest"] == 1 + int(completed)
+    assert audit["formal_duration_credit_ns"] == 0
+    pending = audit["continuation_seed"]["open_discontinuities"]
+    assert set(pending) == (set() if completed else {"um_perpetual:BTCUSDT:book_ticker"})
+    if not completed:
+        assert pending["um_perpetual:BTCUSDT:book_ticker"]["event_id"] == "gap-start"
+    assert verify_audit(root=root, identity=observer.identity, archive_roots={},
+                        raw_unit=raw_unit)[0] == audit
+    assert verify_audit(root=root, identity=observer.identity, archive_roots={},
+                        historical_control_only=True)[0] == audit

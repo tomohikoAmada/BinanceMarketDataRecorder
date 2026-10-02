@@ -34,7 +34,10 @@ and durable forced flags; no classifier or readiness relaxation. The original
 3d05282 CI/cloud fixture failures are retained; its admitted-batch gate correction
 preserves all42-stream/backpressure/payload/count/completeness assertions.
 All1182 growing-corpus chunks/transactions are archived/retained. Recorder is
-inactive AND disabled; new exact engineering baseline/verify is executing.
+inactive AND disabled; new exact engineering attempt2 FAILED before publication
+on a real discontinuity array passed to the mapping-only encoder. The minimal
+[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md)
+is reproduced locally and independently ACCEPTed; replacement release gates remain.
 Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
 sparse-startup failure earns zero credit. Actual convergence/forecasts and the
 post-warm-up authoritative baseline remain required; no Formal T0.
@@ -77,7 +80,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;4e1cf32 installed/VERIFIED with independent review/dual-platform CI/cloud266 PASS; new1182-chunk engineering baseline executing; actual warm-up/forecasts/post-warm-up baseline/readiness remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;4e1cf32 installed/VERIFIED with independent review/dual-platform CI/cloud266 PASS; new1182-chunk engineering attempt2 FAILED; private-array correction independently ACCEPTed; replacement release pending; actual warm-up/forecasts/post-warm-up baseline/readiness remain |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -173,6 +176,8 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [x] Diagnose the failed sparse-startup boundary independently; retain all1182 chunks.
 - [x] Implement ADR-0038 and obtain independent source ACCEPT; release gates remain.
 - [x] Complete4e1cf32 exact-source full CI/locked wheel/cloud266/stopped deployment gates.
+- [x] Reproduce/correct the private discontinuity-array error and obtain independent source-only ACCEPT.
+- [ ] Complete replacement exact CI/wheel/cloud/deployment gates and pass a fresh engineering baseline/both LIVE/completed verify; retain both failed attempts.
 - [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.
@@ -187,7 +192,7 @@ automations remain paused; this continuation pauses when reviewed2h completes.
 1. Keep Recorder inactive AND disabled. Inventory exact project-owned active
    paths, manifests, Catalog, registrations, archived Raw and evidence. Drain
    verified archive; prove no active partials/unarchived source awaiting deletion.
-   Briefly stop only the project archive mutator for a coherent custody snapshot.
+   Stop the project archive timer first, wait for its existing worker to finish, then verify inactive/MainPID0 for a coherent custody snapshot.
 2. Preserve old Catalog/manifests/registrations/config and archived Raw/evidence
    in recoverable custody. Hash/read back the metadata snapshot and record its
    binding to retained archive identities. Do not call the interrupted old full

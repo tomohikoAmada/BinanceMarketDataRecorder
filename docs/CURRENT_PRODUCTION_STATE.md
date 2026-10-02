@@ -52,11 +52,15 @@ the archive worker solely for the stopped engineering baseline. OS update
 permission remains restored. No live sampler is running. All14 flags remain true;
 no Formal T0 or credited duration exists.
 
-New exact4e1cf32 engineering baseline plus completed verification is executing
-under `binance-recorder-q3-startup-engineering-baseline.service`, invocation
-ab29cc66759242708c270a965ac38ca1, against all1182 retained chunks. This is not the
-post-warm-up authoritative baseline and is not a PASS until both LIVE passes,
-publication and verification actually complete.
+New exact4e1cf32 engineering attempt2 FAILED16:40:53 UTC before publication,
+unit `binance-recorder-q3-startup-engineering-baseline-2.service`, invocation
+ec9cbd60f5d04a3480090d1ed1415a99. The mapping-only canonical encoder received
+a real discontinuity-event array and raised ValueError. No completed verification
+or audit root exists. Failed controls/prefix remain retained; no failed prefix
+can be resumed under a replacement identity. The locally reproduced minimal
+private-index correction is independently ACCEPTed; replacement release/cloud gates
+remain; see
+[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 Source605bc16's engineering baseline/completed verification passed on697 archived
 chunks, with both LIVE passes and no blockers. Root SHA
@@ -83,7 +87,7 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=NEW_ENGINEERING_BASELINE_THEN_ACTUAL_WARMUP_AND_FORECASTS
+NEXT=REVIEW_ARRAY_CORRECTION_AND_REPLACEMENT_RELEASE_THEN_NEW_ENGINEERING_BASELINE
 ```
 
 ## Retained custody and evidence
@@ -109,3 +113,12 @@ in [Q3 fresh-corpus](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md) a
 [all-enabled candidate](milestone_acceptance/Q3-all-enabled-candidate.md).
 Historical paused automation remains paused. Only local/remote main remains;
 unrelated stash/untracked review bundles and detached worktrees are retained.
+
+The first new engineering attempt failed strict quiescence before publishing
+any baseline file: simultaneous timer/worker stop sent SIGTERM to a just-triggered
+archive worker at16:24:41 UTC and systemd recorded failed/signal. Retained journal
+and read-only Catalog1182LOCAL_DELETED/ok/zero-partials verification establish
+intentional operator termination; the failed worker status was then cleared.
+Attempt2 started16:31:34 UTC with all sanctioned mutators inactive, retaining the
+original failed logs. Future archive pauses stop the timer first and let the
+existing worker finish before asserting quiescence. No gate is relaxed.

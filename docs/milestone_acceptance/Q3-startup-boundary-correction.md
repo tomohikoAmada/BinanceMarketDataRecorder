@@ -90,9 +90,20 @@ inactive AND disabled,MainPID0/Resultsuccess/NRestarts0;1182LOCAL_DELETED/0parti
 Archive enabled/active finite recurrence verified after deployment, then paused
 for new engineering baseline. OS authority restored; no Formal T0/credit.
 
-New exact engineering baseline plus completed verification is executing on1182
-retained chunks, unit `binance-recorder-q3-startup-engineering-baseline.service`,
-invocationab29cc66759242708c270a965ac38ca1. Both LIVE/publication/verification are
-required before PASS. This engineering predecessor cannot replace the required
-authoritative post-warm-up baseline. Actual warm-up/forecasts/readiness and Q4
-remain pending; stop before12h.
+New engineering attempt1 was rejected by strict preflight; attempt2 subsequently
+failed16:40:53 UTC before publication on a real discontinuity array passed to a
+mapping-only encoder. See [minimal audit correction](Q3-discontinuity-array-correction.md).
+Both failed attempts are retained; neither is a PASS. A new reviewed exact release
+and fresh engineering baseline/both LIVE/completed verify are required, followed
+by actual warm-up/forecasts and the authoritative post-warm-up baseline. Q4 remains
+pending; stop before12h.
+
+The first engineering attempt was rejected before baseline publication by strict
+quiescence: simultaneous stop raced a16:24:39 timer trigger;16:24:41 operator
+SIGTERM left archive failed/signal. Journal, original zero-credit logs and
+Catalog1182LOCAL_DELETED/ok/0partials are retained. After diagnosing intentional
+termination, only that worker failed status was cleared. Attempt2, unchanged
+runtime/strict gates, started16:31:34 UTC under
+`binance-recorder-q3-startup-engineering-baseline-2.service`, invocation
+ec9cbd60f5d04a3480090d1ed1415a99. Future pauses stop timer first and await worker
+completion. Attempt2 failed before publication; its controls remain retained.

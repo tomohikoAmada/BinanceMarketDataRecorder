@@ -1,6 +1,24 @@
 # VPS Operations
 
-## Current checkpoint — October 1, 2026
+## Current checkpoint — October2 UTC / October3 Shanghai,2026
+
+Frozen4e1cf32 is installed/VERIFIED with independent review, exact dual-platform
+CI and cloud266/locked-wheel PASS. Recorder remains inactive AND disabled; new
+1182-chunk engineering attempt2 FAILED before publication on the reproduced
+private discontinuity-array encoding bug; reviewed replacement release/fresh
+baseline remain. Archive timer/worker paused,
+normal OS update authority restored. No Formal T0/credit. Read current state and
+handoff below before using historical commands; continue only through reviewed
+eligible2h, then stop before12h. Current-chat quota-reset continuation is active;
+historical automations remain paused.
+
+For every audit pause, stop the archive timer first and wait for the existing
+worker to finish. Killing an activating oneshot can leave ActiveState=failed and
+correctly blocks quiescence; preserve its result/journal and establish actual
+Catalog/partial integrity before any status reset. Do not clear an unexplained
+worker failure to obtain a passing certificate.
+
+## Historical checkpoint — October 1, 2026
 
 V5 is merged in PR #78 and deployed from exact source
 `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`. The owner stopped its baseline

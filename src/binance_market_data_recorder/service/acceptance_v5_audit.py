@@ -757,7 +757,10 @@ class AuditRecords:
                             complete_body.get("new_connection_id"),
                             start_body["gap_started_at_utc_ns"],
                             complete_body.get("gap_ended_at_utc_ns"),
-                            canonical_json(pair),
+                            # The private index stores an array, whereas the
+                            # authoritative-document encoder requires a mapping.
+                            json.dumps(pair, sort_keys=True, separators=(",", ":"),
+                                       ensure_ascii=False).encode("utf-8"),
                         ),
                     )
             except AcceptanceError:
