@@ -20,8 +20,12 @@ from binance_market_data_recorder.binance.usdm.side_data_rest import (
 from binance_market_data_recorder.config import RecorderConfig, load_config
 
 
-def check(state: dict[str, Any], config: RecorderConfig, *, now_ns: int) -> dict[str, Any]:
+def check(
+    state: dict[str, Any], config: RecorderConfig, *, now_ns: int,
+    allow_empty_recovery: bool = False,
+) -> dict[str, Any]:
     reasons: list[str] = []
+    recovering_contexts: list[str] = []
     flags = [
         name
         for name in RecorderConfig.model_fields
@@ -63,12 +67,20 @@ def check(state: dict[str, Any], config: RecorderConfig, *, now_ns: int) -> dict
     grace = config.side_degraded_after_seconds
     for context, item in expected.items():
         kind = context.rsplit(":", 1)[-1]
+        recovering = (
+            allow_empty_recovery
+            and kind in {entry.value for entry in FIVE_MINUTE_KINDS}
+            and item.get("status") == "RETRYING"
+            and item.get("last_error_type") == "EmptySideDataResponse"
+        )
         if (
             item.get("enabled") is not True
             or item.get("running") is not True
-            or item.get("status") != "RUNNING"
+            or (item.get("status") != "RUNNING" and not recovering)
         ):
             reasons.append(f"auxiliary_not_running:{context}")
+        if recovering:
+            recovering_contexts.append(context)
         if kind in {"mark_price", "liquidation"} and item.get("connected") is not True:
             reasons.append(f"auxiliary_not_connected:{context}")
         if kind == "liquidation":
@@ -110,6 +122,8 @@ def check(state: dict[str, Any], config: RecorderConfig, *, now_ns: int) -> dict
         "observed_at_utc_ns": now_ns,
         "expected_auxiliary_contexts": 26,
         "contexts": expected,
+        "allow_empty_recovery": allow_empty_recovery,
+        "recovering_contexts": recovering_contexts,
         "reasons": reasons,
     }
 
@@ -118,9 +132,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--allow-empty-recovery", action="store_true")
     args = parser.parse_args()
     config = load_config(config_file=args.config, environ={}).config
-    result = check(json.loads(args.state.read_text()), config, now_ns=time.time_ns())
+    result = check(
+        json.loads(args.state.read_text()), config, now_ns=time.time_ns(),
+        allow_empty_recovery=args.allow_empty_recovery,
+    )
     print(json.dumps(result, sort_keys=True))
     return 0 if result["result"] == "PASS" else 1
 

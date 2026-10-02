@@ -498,3 +498,15 @@ No CAPTCHA, downloaded code execution or nonallowlisted source was used. These
 schema bytes establish the health semantics without substituting SDK examples.
 The documentation updater's old selected detail URLs need a separate future
 refresh; landing HTML must continue to fail validation.
+
+
+## Q3 repeated-empty operational identity correction — October2,2026
+
+No Binance endpoint, request range, SDK dependency, period/retention, schema or
+rate-limit semantics changed. Reuse the official source inventory above.
+The retained public Raw responses under Q3-retirement-48ca920 show leading
+allowed overlap and requestedRecordCount0; they establish actual observed
+responses, not a new normative publication-latency guarantee. The correction
+changes local operational-event identity and explicitly bounded diagnostic
+recovery; it never advances a missing-period cursor or substitutes different data.
+No new external document retrieval or downloaded code execution occurred.

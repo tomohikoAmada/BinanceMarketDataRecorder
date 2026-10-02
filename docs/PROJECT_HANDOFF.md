@@ -2,98 +2,67 @@
 
 Updated October 2, 2026. This is the entry point for the next development team.
 
-## Current code
+## Current code and authorization
 
-PR #79 is merged at `8c9310554a559369c8708a30e6a79fdcb379d8e2`.
-Only local and remote main remains, with no open PR; merged review history,
-the original stash/untracked review bundles and detached worktrees are retained.
-The reviewed release is frozen at `d0f455c1a417cc1a184c47b6ff766a60f3dc0159`,
-tree `cf3854d7fc032de79096dced8e002a6cd55e65c3`, wheel SHA-256
-`b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921`.
-[Q2 acceptance](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md)
-records independent ACCEPT, exact-source dual-platform CI and cloud release checks.
-That Q2 wheel was installed through the first Q3 attempt, whose cloud gate
-failed before Formal T0; it is now retained in inert custody. Current runtime
-is independently accepted c87d580/tree d610184, wheel SHA-256
-`6fa0491363a146f4d4b1af59f65b81c0724be77390721964a942aa47dd32342a`.
-All14 flags are installed true. Local1934 tests, exact dual-platform CI,
-clean locked wheel, cloud252 changed-path and21 public-smoke tests PASS.
-Subsequent documentation is not a replacement runtime wheel.
+Only local and remote main remains, with no open PR. Preserve the unrelated
+stash/untracked bundles and detached historical worktrees. Frozen runtime
+source is48ca9202a20a068b878cd71c416c8132a04bdf8c, tree65690e8c3abc82442f02d5e18bee2c9be1a3fd25;
+subsequent documentation commits are not deployed wheels. Independent local
+GPT-6.1 Sol xhigh review ACCEPT with no open source findings,1942 offline tests
+and exact-source dual-platform CI36993322333 PASS.
 
-The Recorder implements finite configurable Spot/USD-M products, immutable Raw,
-Catalog lifecycle/recovery, gap evidence, order-book reconstruction, verified
-archive, normalization, replay, historical imports, and native service management.
-MS1–MS3 and the bounded MS4 review are complete. See the
-[developer guide](developer_guide.md) for source locations and commands.
+The owner restored their local VPN/proxy and resumed VPS execution through
+reviewed eligible Formal2h, then stop before12h. All14 applicable public
+auxiliary flags remain true on four Spot/USD-M BTCUSDT/ETHUSDT ProductKeys.
+The broader [plan](milestone_plan.md) remains2h+12h+24h,38 accepted hours.
 
-V5 implements bounded online delta observations, cross-cursor causal replay,
-a stopped full baseline, immutable online target, private frozen control corpus,
-streamed terminal Raw/archive audit, resume paths, and independent verification.
-The final implementation review accepted head
-`227b09aa3e328f890e8178603bf493013d8d91f5` with P0=0, P1=0, P2=1, P3=0.
-P2 is `TERMINAL_FULL_RAW_AUDIT_SCALABILITY` and remains open.
+## Current cloud checkpoint
 
-## Current development plan
+The corrected single wheel is installed at the canonical root-controlled venv.
+Wheel SHA91608cf0883610cb9c41e16ec90584e17df65da2ddff4e9e9428e59e6bc37c2b;
+deployment identitya5fa76f3cc1042f50fc82a28a40a7f889f295968d9181b0a8578c7dc04ba03ed.
+Clean wheel/28 exact dependencies and cloud112 affected V5 tests PASS.
+Fresh boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive/disabled,
+Catalogok,637 chunks/transactions allLOCAL_DELETED,0partials/backlog/pending.
+Old/new capture remains retained; c87 runtime is inert custody.
 
-The October 1 owner-requested [architecture review](reviews/2026-10-01-architecture-review.md)
-reproduces three P1 issues: inadequate per-observation delta capacity, unsupervised
-heartbeat failure and cross-product normalized deduplication. Three P2 findings
-cover normalization fan-in, retained quality audits and inaccessible-cwd CLI
-discovery. F1 now has a local implemented candidate. Q1 implements F2/F3/F6,
-bounded F5 retention and F7 health; independent Q2 review accepts those changes and F4
-stays a separate offline follow-up. The [October 2 recheck](reviews/2026-10-02-plan-recheck.md)
-adds F7, an enabled auxiliary FAILED omitted from aggregate degraded health.
-The independent review has no open P0/P1/P2/P3 findings; its original P3 byte-bound finding is corrected. The
-[Q1 acceptance record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md)
-records 1881 passing offline tests and a read-only cloud synthetic memory probe.
-New normalized builds use [ADR-0036](adr/0036-product-scoped-normalized-dedup.md)
-and v2 build identity; legacy immutable v1 builds remain readable.
+Engineering-only full baseline and completed verify PASS on637 retained
+chunks, with two LIVE passes. Archive authority is restored; normal OS update authority remains active. Next: actual all-enabled
+normal/missed/catch-up gates, resource/cumulative capacity and complete-audit
+forecasts, then authoritative post-warm-up baseline under a finite maintenance
+quiet window, fresh readiness/coverage and one Formal2h. At target, stop/disable,
+drain/pause, full terminal audit, completed verification and independent local
+eligibility review. Restore archive/OS authority and stop before12h.
 
-The owner selected safe old-data cleanup followed by an independent fresh corpus.
-The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h all PASS
-with complete terminal/independent verification. Q3 custody, new canonical
-Catalog/archive registration and deployment are done. Its nonformal observer
-hit the causal-reference cap after byte-budget starvation; Q3 is incomplete.
-The latest owner instruction retains all fourteen auxiliary flags and resumes
-through reviewed eligible Formal2h, stopping before12h. Offline work is requested
-first while owner handles VPS SSH/VNC diagnostics.
-Uncovered stop/cancellation/durability/health paths and compact v2 evidence have
-independently accepted fixes and a replaced exact release. The separate
-engineering baseline/completed verification passed; next are measured all-enabled
-warm-up/forecast gates, then
-the authoritative post-warm-up baseline/readiness. No old archive was destroyed
-or imported into the new corpus. See [Q3 evidence](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
+The read-only30s sampler and AcceptanceObserver save monitoring usage;
+AcceptanceObserver remains the sole stage authority. Helpers cannot restart
+Recorder, create another T0 or grant credit. Historical automation stays paused.
+No Formal V5 target/final or duration credit currently exists.
 
-[Cloud performance analysis](reviews/2026-10-02-cloud-performance-and-38h.md) records
-~21% scanner time reduction and compact status output with identical proofs/totals.
-[ADR-0035](adr/0035-v5-bounded-delta-batches.md) freezes finite new-start batches
-and retains old one-page replay/resume. The default CLI archive status omits full
-transaction details; use `--details --limit 100 --offset 0` for a page. Code,
-dependency set, Raw and Catalog format remain Python/compatible; no native engine
-was added. Current installed source is c87d580; historical throughput probes
-must not be substituted for the failed actual cloud gate.
+See [current state](CURRENT_PRODUCTION_STATE.md) and
+[correction](milestone_acceptance/Q3-raw-retirement-correction.md) for exact
+artifacts, paths and evidence. Original nonformal failures and unpublished
+143362-chunk historical baseline stay unchanged; R-078 remains OPEN.
 
-## Current operations
+## Implemented module and boundaries
 
-The exact all-enabled c87d580 artifact is installed on `greencloud-tokyo-01`. Q3 retains old
-metadata/archive and captures a separate new corpus at the same canonical
-writer root. The448 retained chunks passed a separate engineering full baseline
-and completed verification. Archive scheduling has been restored with actual
-automatic recurrence; Recorder ran an all-enabled NONFORMAL warm-up, then stopped/disabled after
-Raw identity qualification failed.
-All26 auxiliary owners passed after cold catch-up. Normal OS updates remain active,
-and lightweight resource monitoring runs as bmdr. No Formal V5 T0, 2-hour stage
-or 12-hour stage was created.
+Recorder implements configurable Spot/USD-M public capture, immutable Raw,
+Catalog lifecycle/recovery, gap evidence, verified archive, normalization and
+replay plus native service management. No trading/accounts/GUI or external
+consumer imports. Python3.12, non-root systemd, one Collector per ProductKey.
 
-The historical October 1 143,362-chunk baseline remains unpublished; old data
-and audit evidence remain retained. The separate engineering-only Q3 empty
-baseline cannot be reused as the authoritative post-warm-up predecessor. New
-warm-up data must be preserved for baseline and cumulative forecasts.
+V5 uses bounded online observations and frozen controls plus streamed stopped
+full baseline/terminal audit and independent verification. Raw/proof/Catalog
+formats and old-policy replay/resume remain compatible. The local retirement
+correction defers otherwise exact unlinked Raw to frozen archive authority;
+all hashes/CRC/statistics and both LIVE qualification passes remain required.
+Original VPS per-read interleaving is unproved.
 
-[Current production state](CURRENT_PRODUCTION_STATE.md) contains exact artifacts,
-paths and verified closeout state. The
-[deployment and owner-stop record](milestone_acceptance/M22.9-v5-deployment-owner-stop.md)
-contains gates and audit progress.
+Q1/Q2 correctness/release gates are complete. Product-scoped normalized
+dedup/build identity is ADR-0036; old immutable v1 outputs remain readable.
+ADR-0035/0037 bound new v2 deltas and preserve old starts. F4 normalization
+fan-in, historical audit scalability and portable archive rollout stay separate
+follow-ups; no speculative native rewrite or hardware change is introduced.
 
 ## Development setup
 
@@ -118,28 +87,11 @@ Read these documents in order:
 
 ## Remaining work
 
-- Review the practical cost of full baseline/terminal audits using retained
-  production measurements. The stopped audit gives partial measurements only;
-  it establishes neither a full integrity PASS nor completed throughput.
-- Q2 release gates are complete. Q3 custody/new corpus/deployment are done.
-  The original cloud byte/causal-cap failure has an independently accepted
-  correction and replacement release. Measure all-enabled steady/missed-
-  cadence gates; do not widen limits or blame hardware without evidence.
-  Complete live forecasts and the authoritative stopped baseline afterward.
-  Preserve all new capture and the interrupted old audit.
-- The owner authorizes continuation through Q4 eligible 2h and Q5 eligible 12h,
-  but the current turn stops after Q4 eligible2h, before12h. Do not count
-  engineering warm-up as Formal.
-  Use existing observation and lightweight read-only monitoring to save model
-  usage; preserve full evidence and intervene on meaningful changes/failures.
-- If qualification is restarted, verify the exact artifact and data scope,
-  complete its baseline, obtain fresh readiness for every configured product,
-  then execute the selected stage and terminal audit. V5 online observation
-  does not stop Recorder; an operator owns stop/drain/quiescence/finalize.
-- Keep the production-corpus P2 open until real measurements and independent
-  review support closure. No V5 duration has been accepted.
-- Complete the portable archive-client rollout and remaining platform/long-run
-  qualification as separately scoped work.
+Complete the current Q3 actual cloud gates and Q4 eligible2h on the frozen
+release/growing corpus. No 12h in this turn. Each gate's result must be evidenced;
+failed/incomplete time receives zero credit. Preserve both full LIVE audit
+passes and completed control verification. Old historical corpus performance
+remains a separate open P2, never a new-scope PASS.
 
 ## Compatibility to preserve
 
@@ -163,25 +115,15 @@ Previous operations are in [production state history](CURRENT_PRODUCTION_STATE_H
 and `milestone_acceptance/`. Their status and next-action statements apply to
 those checkpoints, not to the current paused workflow.
 
-Owner paused work after the quota warning. Last verified Recorder is inactive/disabled,
-and the archive drain command succeeded. Full final counts and sampler stop remain
-unconfirmed after SSH transport interruption. Next session first reconciles VPS state,
-then reproduces/reviews the Raw identity/archive-retirement hypothesis locally.
-Formal2h remains NOT_STARTED; see the latest Q3 candidate closeout.
+Earlier pause/reboot/offline-only instructions were time-local and are
+superseded by the owner's restored-access continuation. Their evidence remains
+in the Q3 acceptance records. Current operational authority is current state.
 
-## Resumed offline correction checkpoint
 
-Exact source48ca920/tree65690e8 is locally independently ACCEPTed,1942 offline
-tests PASS; source archive, lock and exact review inputs are frozen. It fixes
-validated local source unlink during Raw scan without weakening content or
-frozen retirement authority. VPS original interleaving remains unproved.
-See [correction](milestone_acceptance/Q3-raw-retirement-correction.md).
-The owner rebooted the host after independently confirming SSH failure. SSH
-still timed out on the five-minute recheck. No new cloud deployment/test/start
-was performed; obtain owner VNC diagnostics and fresh state first. The current
-turn's requested endpoint is eligible Formal2h, before12h.
-
-Exact48ca920 dual-platform CI36993322333 is SUCCESS, including clean wheel/
-locked-runtime smoke. The reviewed source-only handoff package and deployment
-checklist are prepared/readback verified. Production wheel, stopped replacement
-deploy and actual Q3 cloud gates remain pending VPS access.
+Latest Q3 checkpoint: engineering637-chunk baseline and completed verification
+PASS; auxiliary pre-start blocked repeated empty-response event identity conflicts.
+Recorder stopped/disabled,697 chunks/transactions LOCAL_DELETED,0partials/Catalogok.
+The [minimal empty-response correction](milestone_acceptance/Q3-empty-recovery-correction.md)
+and precise typed-empty observation recovery policy are independently ACCEPTed;
+replacement release and actual cloud gates remain. Pre-start/target are strict,
+no flag is disabled, no Formal T0/credit. Continue through eligible2h, before12h.

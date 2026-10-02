@@ -384,6 +384,10 @@ class SideWebSocketExtension:
         await self.collector.run(stop)
 
 
+class EmptySideDataResponse(RuntimeError):
+    """A persisted REST response contains none of the requested periods."""
+
+
 class RestSideDataPoller:
     """Stateless REST poller: retryable by the supervisor (no transport).
 
@@ -615,13 +619,14 @@ class RestSideDataPoller:
             )
         if next_period < earliest_recoverable:
             gap_end = earliest_recoverable - FIVE_MINUTE_PERIOD_MS
+            gap_observed_at_utc_ns = self.utc_clock_ns()
             self.catalog.record_operational_event(
                 event_id=(
                     f"side-data-unrecoverable-gap:{self.kind.value}:"
-                    f"{self.symbol}:{next_period}:{gap_end}"
+                    f"{self.symbol}:{next_period}:{gap_end}:{gap_observed_at_utc_ns}"
                 ),
                 event_type="SIDE_DATA_UNRECOVERABLE_GAP",
-                occurred_at_utc_ns=self.utc_clock_ns(),
+                occurred_at_utc_ns=gap_observed_at_utc_ns,
                     evidence={
                         "kind": self.kind.value,
                         "symbol": self.symbol,
@@ -656,7 +661,7 @@ class RestSideDataPoller:
                 self.catalog.record_operational_event(
                     event_id=(
                         f"side-data-empty-response:{self.kind.value}:"
-                        f"{self.symbol}:{next_period}"
+                        f"{self.symbol}:{next_period}:{envelope.connection_id}"
                     ),
                     event_type="SIDE_DATA_EMPTY_RESPONSE",
                     occurred_at_utc_ns=envelope.receive_time_utc_ns,
@@ -669,7 +674,7 @@ class RestSideDataPoller:
                     },
                     symbol=self.symbol,
                 )
-                raise RuntimeError("EMPTY_RESPONSE")
+                raise EmptySideDataResponse("EMPTY_RESPONSE")
             last_timestamp = int(
                 envelope.source_sequence["lastRequestedTimestamp"]
             )

@@ -77,3 +77,75 @@ This is source-only staging, not a certified production wheel or deployment.
 No fresh VPS result, new T0, warm-up PASS or duration credit is asserted.
 The owner currently requests offline completion first while resolving SSH via
 VNC. Required replacement/cloud gates stay explicit; no gate was silently lowered.
+
+## Restored access and stopped corrected deployment
+
+The owner identified the SSH interruption as their local VPN/proxy and resumed
+cloud execution through completed Formal2h. Fresh SSH reconciliation on October2
+verified boot `59bb1735-ac48-408d-b3ec-bda79fc49b41`, Recorder inactive/disabled,
+Catalog integrity `ok`,637 chunks/transactions all `LOCAL_DELETED`, zero active
+partials, and the archive timer enabled/active with a finite deadline. The earlier
+resource/observer transient units disappeared across the owner reboot. No
+provider/sshd/resource fault is inferred from the earlier transport failure.
+
+One production wheel was built from the exact48ca920 Git archive with
+build1.3.0/setuptools75.8.0/wheel0.45.1. Wheel bytes504331; SHA-256
+`91608cf0883610cb9c41e16ec90584e17df65da2ddff4e9e9428e59e6bc37c2b`.
+All packaged source bytes match the reviewed source. Clean noneditable wheel
+installation, doctor/status, pip check and28 exact locked distributions PASS.
+Cloud affected V5 suite112 PASS116.89s; the SSH command connection closed before
+its final tail, but the complete retained pytest log records100% and PASS. No
+host reboot/OOM occurred. Existing unchanged capture/public/stress checks retain
+their earlier source binding and are not claimed as new executions.
+
+Stopped replacement preserved c87d580 in inert custody
+`/opt/binance-market-data-recorder/venv-custody-q3-retirement-20261002-48ca920`.
+The new root-controlled release is
+`/opt/binance-market-data-recorder/release-48ca920-dTW2eTBS`; canonical venv and
+writer/archive registrations stay unchanged. Exact deployed source48ca920,
+config5b73db1b… and unitd5afc4c2… verify, including130 package RECORD files,
+28/28 runtime distributions and protected root-controlled installation.
+New deployment identity:
+`a5fa76f3cc1042f50fc82a28a40a7f889f295968d9181b0a8578c7dc04ba03ed`.
+All14 auxiliary flags remain true. No Raw/Catalog reset or physical deletion.
+
+Evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q3-retirement-48ca920-20261002-HBSMg1fa`.
+The operator warm-up and sampler change only this root; independent local
+review ACCEPT, P0/P1/P2/P3=0, manifest SHA365370444038e88ea4d39a8c80d6d81007894905eaafa84cd83af2447e740363.
+Sampler SHAfbf258a4772284834d847abad41d3d8250a1fe5d77a40846574e49050b7f77fc;
+warm-up SHA209d6206e12600783697f3f85a8e5893885286ca77ea90af9996b70514e6f005.
+All deadlines, actual V5/replay, auxiliary checks and failure-stop rules remain.
+
+Engineering baseline/completed verification over all637 retained chunks PASS,
+with both LIVE passes retained. Actual normal/missed/catch-up,
+forecasts, authoritative baseline and Formal2h are still pending; zero Formal
+credit. Current task stops before12h.
+
+
+## Completed engineering baseline and subsequent pre-start blocker
+
+Baseline root SHA722b91fe72cc5c44e53b36624f15f510f96dbd2bdfac85c573664c0de155ec28;
+result SHAf004adf37ac9277fbe052dd75ff399321b6b4721b714f1ff026a9855b3febffa;
+completed verify SHA76fca6f7837bba4faa8e2fc3b220b7262a09edab1a727724f9a10bf7f36cdb28.
+Production plus independent LIVE reader took683s; completed control verify10s.
+Unit CPU682.137s, memory peak446.2MiB, swap0.637 manifests,23 shards/10833 records,
+136415240 archived bytes verified; zero blocking findings, COMPLETE/PASS_CANDIDATE.
+Local independent historical-control reconstruction PASS,637 object hashes,
+Catalog/shards/root equality verified,0 LIVE Raw calls/production-path opens.
+Review bundle SHA84801e5de5638c1154a6637cd6dbb819a99062e19a1237c182f0bd895492876f;
+independent review SHA535cbbef6f70ea9f8884da191f6b13497bea48fa77d03fdc6ed5341ef196f9b9.
+This remains an engineering-only predecessor, zero Formal credit.
+
+After Recorder start, all four core products READY but the supplementary gate
+blocked two taker-volume owners. Retained Raw shows each symbol captured one
+successful57-period response, followed by16 leading-overlap-only responses
+with requestedRecordCount0. The first empty attempt reportsRuntimeError;
+subsequent15 attempts reportCatalogStateError. Local independent reproduction
+confirms the fixed empty-event ID with changing observed time conflicts under
+Catalog's exact immutable identity check. No cursor was falsely advanced.
+Recorder was stopped/disabled, archive drained, Catalogok,697 chunks/transactions
+LOCAL_DELETED and0partials. No warm-up observer or Formal T0 was created.
+Actual archive automatic recurrence succeeded; an infinity deadline sampled
+while its worker was firing was transient, with a later finite deadline. No timer
+change is needed. See [empty recovery correction](Q3-empty-recovery-correction.md).

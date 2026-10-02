@@ -26,19 +26,19 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed source is now the independently accepted all-enabled `c87d580` wheel,
-superseding the retained Q2 `d0f455c` runtime. Q3 retained the old
-metadata/archive and initialized the growing new canonical corpus.
-The earlier failed NONFORMAL warm-up is retained. A448-chunk engineering
-baseline/completed verification passed; all-enabled NONFORMAL warm-up failed
-at the first normal observation with Raw changed during qualification. The owner
-resumes through completed Formal2h, stopping before12h. The local source-retirement
-correction is independently accepted with1942 tests and exact-source CI PASS;
-replacement-release/cloud gates are
-pending. Reconcile the owner-rebooted VPS and repeat affected Q3 gates.
+Installed source is now the independently accepted correction `48ca920`,
+wheel91608cf0883610cb9c41e16ec90584e17df65da2ddff4e9e9428e59e6bc37c2b.
+It supersedes retained c87d580. Exact deployment, clean locked wheel and112
+cloud affected V5 tests PASS. SSH interruption was the owner's local VPN/proxy;
+fresh reboot reconciliation verified stopped/disabled Recorder,637 retained
+archived chunks, Catalogok and zero active partials. Engineering full baseline/completed verification on637 blocks PASS. Auxiliary
+pre-start found repeated empty-event identity conflicts; the small reviewed
+correction and precise typed-empty observation recovery are being finalized.
+Recorder is stopped/disabled with697 archived blocks. Actual normal/missed/catch-up, forecasts and
+authoritative post-warm-up baseline remain gates. Original nonformal failures
+retain zero credit. Owner resumes through completed Formal2h, stopping before12h.
 Formal V5 credit is zero; the old baseline remains unpublished and historical
-automation paused. See
-[production state](CURRENT_PRODUCTION_STATE.md).
+automation paused. See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
@@ -234,7 +234,16 @@ pre-start/online coverage check: exact 26 enabled/running owners; 22 successful
 REST contexts; two fresh connected mark-price streams; two connected liquidation
 streams; and twelve correctly symbol-bound, caught-up five-minute cursors.
 Liquidation may have zero messages; fundingInfo may return an empty list. Existing
-poll intervals plus degraded grace determine freshness/cursor-lag bounds. A failed
+poll intervals plus degraded grace determine freshness/cursor-lag bounds.
+Pre-start and target require all owners RUNNING. During observations only, an
+explicit gate mode may accept five-minute REST RETRYING caused specifically by
+EmptySideDataResponse, with prior actual success and the same freshness/correct
+cursor-lag bounds. Preserve status/error and recovering_contexts. Generic errors,
+Catalog conflicts, missing/old data, terminal/STALE/stopped owners and WS failures
+remain blocked. No recovering context may remain at the strict endpoint. This
+addresses observed empty-period publication delay without claiming absent data
+complete; see the [Q3 correction](milestone_acceptance/Q3-empty-recovery-correction.md).
+ A failed
 supplementary check blocks owner-reviewed qualification even if core readiness
 is READY. Preserve all transient failures/gaps and their recovery evidence; do not
 invent full liquidation-market coverage from this snapshot-style stream.

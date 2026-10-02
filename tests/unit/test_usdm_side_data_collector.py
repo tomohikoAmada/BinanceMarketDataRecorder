@@ -18,6 +18,7 @@ from binance_market_data_recorder.binance.usdm.side_data_rest import (
 )
 from binance_market_data_recorder.binance.usdm.side_data_schema import UsdMSideStream
 from binance_market_data_recorder.collector.usdm_side_data import (
+    EmptySideDataResponse,
     RestSideDataPoller,
     SideDataStats,
     SideDataSupervisor,
@@ -423,6 +424,110 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
             await fsync_failure._catch_up_five_minute(asyncio.Event())
         assert fsync_catalog.side_data_cursor(kind.value, "BTCUSDT") is None
         fsync_catalog.close()
+
+    asyncio.run(exercise())
+
+
+
+@pytest.mark.parametrize("kind", sorted(FIVE_MINUTE_KINDS, key=str))
+def test_repeated_empty_periods_survive_restart_and_recover_without_cursor_skip(
+    tmp_path: Path, kind: RestSideDataKind
+) -> None:
+    async def exercise() -> None:
+        path = tmp_path / "repeated-empty.sqlite"
+        now_ms = 50 * 24 * 60 * 60 * 1000 + 1
+        api = CursorApi(kind, empty=True)
+        spool = CursorSpool()
+        catalog = Catalog(path)
+        poller = _cursor_poller(
+            kind=kind, tmp_path=tmp_path, catalog=catalog,
+            api=api, spool=spool, now_ms=now_ms,
+        )
+        for _attempt in range(2):
+            with pytest.raises(RuntimeError, match=r"^EMPTY_RESPONSE$") as error:
+                await poller._catch_up_five_minute(asyncio.Event())
+            assert type(error.value) is EmptySideDataResponse
+            assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        events = catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")
+        assert len(events) == len(spool.envelopes) == 2
+        assert len({event["event_id"] for event in events}) == 2
+        assert {
+            cast(str, event["event_id"]).rsplit(":", 1)[-1] for event in events
+        } == {envelope.connection_id for envelope in spool.envelopes}
+        original_start = api.calls[0][0]
+        assert api.calls[1][0] == original_start
+        catalog.close()
+
+        # Restart retains the missing start; a new empty request is a new fact.
+        catalog = Catalog(path)
+        poller = _cursor_poller(
+            kind=kind, tmp_path=tmp_path, catalog=catalog,
+            api=api, spool=spool, now_ms=now_ms + 1_000,
+        )
+        with pytest.raises(RuntimeError, match=r"^EMPTY_RESPONSE$"):
+            await poller._catch_up_five_minute(asyncio.Event())
+        assert api.calls[-1][0] == original_start
+        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        assert len(catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")) == 3
+        api.empty = False
+        await poller._catch_up_five_minute(asyncio.Event())
+        assert api.calls[-poller.catchup_batches_per_attempt][0] == original_start
+        cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
+        assert cursor is not None
+        assert cursor["last_persisted_period_timestamp"] == (
+            spool.envelopes[-1].source_sequence["lastRequestedTimestamp"]
+        )
+        assert len(catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")) == 3
+        catalog.close()
+
+    asyncio.run(exercise())
+
+
+
+@pytest.mark.parametrize("kind", sorted(FIVE_MINUTE_KINDS, key=str))
+def test_retention_gap_then_empty_retry_preserves_facts_and_reaches_rest_again(
+    tmp_path: Path, kind: RestSideDataKind,
+) -> None:
+    async def exercise() -> None:
+        catalog = Catalog(tmp_path / "gap-empty-retry.sqlite")
+        original_cursor = 0
+        catalog.advance_side_data_cursor(
+            kind=kind.value, symbol="BTCUSDT",
+            last_persisted_period_timestamp=original_cursor, updated_at_utc_ns=0,
+            source_retention_window=FIVE_MINUTE_RETENTION[kind][0],
+            retention_window_ms=FIVE_MINUTE_RETENTION[kind][1],
+        )
+        now = [50 * 24 * 60 * 60 * 1000 + 1]
+        api = CursorApi(kind, empty=True)
+        spool = CursorSpool()
+        poller = _cursor_poller(
+            kind=kind, tmp_path=tmp_path, catalog=catalog,
+            api=api, spool=spool, now_ms=now[0],
+        )
+        poller.utc_clock_ns = lambda: now[0] * 1_000_000
+        for _attempt in range(2):
+            with pytest.raises(EmptySideDataResponse, match=r"^EMPTY_RESPONSE$"):
+                await poller._catch_up_five_minute(asyncio.Event())
+            cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
+            assert cursor is not None
+            assert cursor["last_persisted_period_timestamp"] == original_cursor
+            now[0] += 1_000
+        assert len(api.calls) == len(spool.envelopes) == 2
+        assert api.calls[0][0] == api.calls[1][0]
+        gaps = catalog.operational_events(event_type="SIDE_DATA_UNRECOVERABLE_GAP")
+        assert len(gaps) == 2
+        assert len({gap["event_id"] for gap in gaps}) == 2
+        assert len({gap["occurred_at_utc_ns"] for gap in gaps}) == 2
+        assert gaps[0]["evidence"] == gaps[1]["evidence"]
+        api.empty = False
+        await poller._catch_up_five_minute(asyncio.Event())
+        cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
+        assert cursor is not None
+        assert cursor["last_persisted_period_timestamp"] == (
+            spool.envelopes[-1].source_sequence["lastRequestedTimestamp"]
+        )
+        assert len(catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")) == 2
+        catalog.close()
 
     asyncio.run(exercise())
 

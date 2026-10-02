@@ -1,13 +1,12 @@
 # Risk Register
 
-Updated October 2, 2026. PR #79 is merged; the independently accepted all-enabled
-c87d580 wheel supersedes retained Q2 d0f455c. A448-chunk engineering baseline
-and completed verification passed; all-enabled NONFORMAL warm-up failed with
-Raw changed during qualification. Owner paused work. Archive-retirement
-concurrency is unproven; reconcile stopped VPS state and reproduce before fixing. The original Q3 nonformal failure
-remains unchanged; measured all-enabled cloud throughput is still OPEN.
-Current operations
-are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
+Updated October2,2026. Restored SSH after the owner's local VPN/proxy correction.
+Exact independently accepted48ca920 is installed/verified;1942 local tests,
+exact-source dual-platform CI, clean locked wheel and112 cloud V5 tests PASS.
+637 retained new chunks are archived; engineering full baseline/completed verification PASS.
+Actual all-enabled throughput/catch-up and cumulative forecasts remain OPEN.
+Original nonformal failures and historical R-078 retain their dispositions.
+Owner resumes through completed Formal2h, stopping before12h.
 
 ## Current follow-up
 
@@ -104,7 +103,16 @@ conflict was found in the health behavior changed here.
 The exact original VPS interleaving is unproved. Local real ArchiveManager
 source-unlink during Raw scan reproduces the failure. A minimal independently
 accepted correction preserves every content check and frozen authority, deferring
-local absence without advancing its cursor. Local1942 tests PASS; actual cloud
-repeat and exact replacement release remain gates. See
+local absence without advancing its cursor. Local1942 and cloud112 V5 tests PASS; exact replacement release is installed/
+VERIFIED. Actual cloud normal/missed/catch-up remain gates. See
 [correction record](milestone_acceptance/Q3-raw-retirement-correction.md).
 Owner resumes only through completed Formal2h, stopping before12h.
+
+
+Latest Q3 checkpoint: engineering637-chunk baseline and completed verification
+PASS; auxiliary pre-start blocked repeated empty-response event identity conflicts.
+Recorder stopped/disabled,697 chunks/transactions LOCAL_DELETED,0partials/Catalogok.
+The [minimal empty-response correction](milestone_acceptance/Q3-empty-recovery-correction.md)
+and precise typed-empty observation recovery policy are independently ACCEPTed;
+replacement release and actual cloud gates remain. Pre-start/target are strict,
+no flag is disabled, no Formal T0/credit. Continue through eligible2h, before12h.
