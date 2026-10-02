@@ -1,6 +1,6 @@
 # Q2 — Reviewed release candidate and cloud execution design
 
-Date: October 2, 2026. **Implementation review ACCEPT; revised release gates in progress.**
+Date: October 2, 2026. **COMPLETE: independently reviewed and exact release frozen.**
 Predecessor: [Q1 offline acceptance](Q1-correctness-and-bounded-diagnostics.md).
 The owner authorized continuation through reviewed eligible cloud 2h, stopping
 before 12h, and explicitly authorized a GPT-6.1 Sol / xhigh independent read-only
@@ -135,7 +135,34 @@ public endpoint smoke ran, and selected-scope real service warm-up is a separate
 mandatory Q3 gate. Physical-media certification and broader soak remain outside
 this release review. Formal/12h/24h and live resource gates are **not run** yet.
 
-Independent implementation review is complete. Revised exact-source CI, final
-wheel freeze and additive release evidence remain required before Q2 closes or
-Q3 mutates the production scope. `PRODUCTION_READY=NO`;
+## Final frozen release and Q2 closeout
+
+[Frozen release authority](../reviews/2026-10-02-q2-frozen-release.json) binds:
+
+| Authority | Final value |
+|---|---|
+| Source | `d0f455c1a417cc1a184c47b6ff766a60f3dc0159` |
+| Tree | `cf3854d7fc032de79096dced8e002a6cd55e65c3` |
+| One final wheel SHA-256 | `b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921` |
+| Source archive SHA-256 | `0cba4639567fb5e33c6fd4914de35889a1505c9fdfdb5364f8335ba379d259dc` |
+| Exact-source CI | [36950771722](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/36950771722), Ubuntu/macOS PASS |
+| Private final staging | `/srv/recorder-data/recorder-archive/evidence/Q2-release-d0f455c-20261002-dmx0kb14` |
+
+All wheel package source files equal the clean exact Git archive. The final clean
+wheel environment again passes all 28 locked dependencies, noneditable Recorder,
+`pip check`, version/doctor/status; only bootstrap pip is extra. Existing doctor
+platform warning remains explicit. The old preliminary wheel stays preserved and
+superseded. Production source/config/data and service state remain unchanged.
+
+Q2 uses two milestone-pure logical commits: reviewed implementation/test inputs,
+then this additive post-build/CI artifact authority. The documentation descendant
+is not a newly built deployment candidate; Q3 installs the frozen wheel above.
+No release identity is inferred from moving `main`. No transport semantics or
+new dependency changed, so no unrelated official-source refresh was required.
+Compatibility: declared-policy byte admission is stricter; legacy policy, Raw,
+Catalog and normalized formats retain their reviewed semantics. Default compact
+archive CLI still requires `--details` for full transaction pages.
+
+`Q2=COMPLETE`; next is **Q3_SAFE_FRESH_CORPUS_DEPLOYMENT_AND_CLOUD_GATES**.
+Q3/Q4 live prerequisites and all Formal durations remain unrun. `PRODUCTION_READY=NO`;
 `FORMAL_V5_CREDIT_SECONDS=0`; `12H_STARTED=NO`.

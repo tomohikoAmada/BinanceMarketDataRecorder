@@ -47,8 +47,11 @@ execution authority. The old `qualification_to_24h_plan.md` is only a link.
 
 Q1 has 1881 passing tests and a read-only cloud synthetic retention probe.
 Its record is `docs/milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md`.
-Current development NEXT is Q2 independent implementation review and release
-preparation. ADR-0036 versions new normalized dedup/build identity; old v1
+Q2 independent review and exact release gates are complete. Frozen source is
+`d0f455c1a417cc1a184c47b6ff766a60f3dc0159`; see the Q2 acceptance record.
+Current development NEXT is Q3 retained old custody/fresh corpus, exact deployment
+and measured cloud gates. The owner authorizes continuation through eligible Q4
+2h, stopping before Q5 cloud 12h. ADR-0036 versions new normalized dedup/build identity; old v1
 outputs remain readable. Live RSS/capacity and all Formal credit gates remain.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and

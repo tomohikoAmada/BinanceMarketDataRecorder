@@ -16,8 +16,14 @@ bounds live diagnostic history. A separate read-only cloud synthetic probe
 confirmed the retention bound and Recorder inactive/disabled; no deployment,
 data cleanup or service control occurred. See the
 [Q1 record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
-Next development is Q2 independent review/release preparation; the installed
-artifact and paused monitor remain unchanged.
+Q2 is complete: [reviewed frozen release](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md)
+is `d0f455c`, with wheel SHA-256
+`b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921`.
+Independent review and exact-source Ubuntu/macOS CI PASS; private staging is
+`/srv/recorder-data/recorder-archive/evidence/Q2-release-d0f455c-20261002-dmx0kb14`.
+No Q3 production switch/deployment has occurred. Next is Q3; the owner authorizes
+continuation through eligible Q4 2h, stopping before 12h. Installed artifact and
+paused historical monitor remain unchanged.
 
 ## Source and installed artifact
 
@@ -78,7 +84,7 @@ FORMAL_V5_STARTED=NO
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
-NEXT=Q2_REVIEW_AND_FREEZE_RELEASE_CANDIDATE
+NEXT=Q3_SAFE_FRESH_CORPUS_DEPLOYMENT_AND_CLOUD_GATES
 ```
 
 ## Evidence and rollback

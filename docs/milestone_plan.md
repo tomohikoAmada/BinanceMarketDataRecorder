@@ -30,7 +30,11 @@ Installed source remains PR #78 / `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`.
 Recorder is stopped/disabled; the old baseline is unpublished/incomplete, Formal
 V5 credit is zero, and the old monitor is paused. See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
-it is not deployed or independently accepted. Plan publication starts no live run.
+its reviewed descendant is frozen as `d0f455c` in the
+[Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
+Q2 independent review, offline/online/stress, exact-source dual-platform CI and
+clean locked-wheel gates PASS. Q3 has not yet switched or deployed the corpus.
+The owner authorized this execution through eligible 2h, stopping before 12h.
 
 ### Fixed MVP boundary
 
@@ -50,9 +54,9 @@ or speculative service split. Heavy normalization/replay stays offline.
 
 | ID | Deliverable | Gate / status |
 |---|---|---|
-| Q0 | Review, performance candidate and this consolidated plan | Offline gates PASS; independent code review pending; publication CI tracked on PR |
-| Q1 | Small correctness fixes and focused regressions | Implemented/offline verified: F2/F3/F6/F7, bounded F5; independent review pending |
-| Q2 | Reviewed release candidate and cloud test design | Passing offline/build/CI gates; exact candidate; executable Q3 procedure and forecasts |
+| Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
+| Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
+| Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Measured supported load/capacity; baseline + verification PASS; all products READY |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Reviewed eligible final; same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | Eligible 2h predecessor; reviewed eligible final |
@@ -223,7 +227,7 @@ Q6 closes only with three reviewed eligible finals, their hashes/predecessor cha
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
 F4/R-078 separate. Q1 is implemented/offline verified; the next development
-milestone is **Q2**, independent review and release preparation.
+milestone is **Q3**, safe fresh corpus/deployment and measured cloud gates.
 
 ### How subsequent development proceeds
 
