@@ -26,24 +26,19 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed source is now independently accepted605bc16/treeb10fea2, wheel
-690327fc0b6c8d241d7d95a806d0b9c34cb665ece26c214074ae65e03a5a336f,
-deployment identity1ecd42ca….1970 local tests, exact dual-platform CI37002357094,
-clean locked wheel,98 newly affected cloud tests and exact stopped deployment PASS.
-It adds minimal empty/gap event identity fixes and precise bounded typed-empty
-recovery during observations; pre-start/target stay strict. Earlier637-chunk
-engineering full baseline at48ca920 PASS, then auxiliary pre-start blocked its
-empty-event conflict. The605bc16 engineering baseline/completed verification
-passed on697 chunks with both LIVE passes. Its later nonformal catch-up failed a
-sparse startup boundary; all1182 captured chunks are archived and retained.
-ADR-0038 source3d05282 has independent local/offline aggregate ACCEPT, but its
-CI/cloud Profile D fixture selected an empty idle drain and timed out. A minimal
-test-only gate correction passed7 affected tests; new exact CI/cloud gates are
-required before deployment. Actual normal/missed/catch-up convergence, forecasts
-and authoritative post-warm-up baseline remain required. Original failures earn
-zero credit; no Formal T0. Owner resumes through reviewed completed Formal2h,
-before12h. Historical old baseline remains unpublished and its automations
-paused; current-chat reset-time continuation is active.
+Installed frozen source4e1cf32/treeafd041f6 and wheel2905d30e… have independent
+startup/source/helper ACCEPT, exact-source dual-platform CI37031972497 PASS,
+clean locked wheel and cloud266 affected tests PASS, exact stopped deployment
+identity1be38a7d… VERIFIED. This adds ADR-0038's authentic empty initial boundary
+and durable forced flags; no classifier or readiness relaxation. The original
+3d05282 CI/cloud fixture failures are retained; its admitted-batch gate correction
+preserves all42-stream/backpressure/payload/count/completeness assertions.
+All1182 growing-corpus chunks/transactions are archived/retained. Recorder is
+inactive AND disabled; new exact engineering baseline/verify is executing.
+Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
+sparse-startup failure earns zero credit. Actual convergence/forecasts and the
+post-warm-up authoritative baseline remain required; no Formal T0.
+Current-chat reset-time continuation is active; historical automations paused.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
@@ -82,7 +77,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;605bc16 installed;697-chunk engineering baseline/verify passed; sparse-startup failure corrected with independent source ACCEPT/1991 offline tests; new release/cloud and remaining gates required |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;4e1cf32 installed/VERIFIED with independent review/dual-platform CI/cloud266 PASS; new1182-chunk engineering baseline executing; actual warm-up/forecasts/post-warm-up baseline/readiness remain |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -157,13 +152,13 @@ retains all new capture and stops before Formal T0. The current Q3 correction im
 and fixes uncovered all-enabled lifecycle/durability/health behavior. Exact
 c87d580 passed its earlier review/release gates; subsequent Raw retirement and
 empty/gap event corrections are independently accepted in exact605bc16, now
-installed with passing CI/clean wheel/cloud98 newly affected tests. See the
+previously installed with passing CI/clean wheel/cloud98 tests. See the
 [current correction](milestone_acceptance/Q3-empty-recovery-correction.md).
 Its sparse-stream startup failure now has the minimal
 [ADR-0038 correction](milestone_acceptance/Q3-startup-boundary-correction.md)
 independently accepted locally: seal an authentic empty boundary before opening each capture
 owner's first connection, preserving initially forced flags across seal crashes.
-The current installed wheel remains605bc16 until the new exact release gates pass.
+The exact4e1cf32 wheel is now installed/VERIFIED with passing CI/cloud/review; actual Q3 gates remain.
 Shared exact companions and
 final-reference accounting preserve the frozen byte/page/proof bounds and old
 replay/resume. Actual all-enabled warm-up remains required; do not raise caps or
@@ -177,7 +172,7 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [x] Install/verify605bc16 and retain engineering baseline/both LIVE/verify PASS.
 - [x] Diagnose the failed sparse-startup boundary independently; retain all1182 chunks.
 - [x] Implement ADR-0038 and obtain independent source ACCEPT; release gates remain.
-- [ ] Complete the new exact-source full checks/CI/locked wheel/cloud deployment gates.
+- [x] Complete4e1cf32 exact-source full CI/locked wheel/cloud266/stopped deployment gates.
 - [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.

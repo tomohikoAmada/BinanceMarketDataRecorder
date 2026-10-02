@@ -31,32 +31,29 @@ Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
 are implemented.
 
 Only local/remote main remains; unrelated stash/untracked bundles and historical
-worktrees stay retained. Exact deployed605bc16/treeb10fea2 includes the reviewed
-Raw retirement and small empty/gap event identity corrections. Independent
-ACCEPT,1970 offline tests, exact dual-platform CI37002357094, clean locked wheel,
-cloud98 newly affected tests and deployment verification PASS. Wheel690327fc…;
-identity1ecd42ca…. Documentation descendants are not replacement wheels.
-Pre-start/target auxiliary gate is strict. During observations only, typed
-EmptySideDataResponse five-minute REST retry may recover within unchanged
-actual-success/correct-cursor freshness bounds; original status/error and recovery
-list stay visible. Generic/Catalog/terminal/WS failures remain blocked. No cursor
-advance or complete-period claim for missing data.
+worktrees stay retained. Installed frozen4e1cf32/treeafd041f6 implements reviewed
+ADR-0038 startup boundaries/durable forced flags after605bc16's sparse-startup
+nonformal failure. Independent aggregate/source/helper and test-only Profile D
+supplement ACCEPT; exact CI37031972497 bothPASS, cloud266/clean locked wheel PASS,
+actual canonical deployment VERIFIED. Wheel2905d30e…; identity1be38a7d….
+Later documentation commits are not replacement wheels. Pre-start/target auxiliary
+gate is strict. During observations only typed EmptySideDataResponse retry may
+recover within unchanged actual-success/correct-cursor freshness bounds; original
+error/status stays visible. Generic/Catalog/terminal/WS failures stay blocked.
+No cursor advance or complete-period claim for missing data.
 
-The owner identified SSH interruption as local VPN/proxy and resumes through
-completed reviewed eligible Formal2h, then stop before12h. All14 auxiliary
-flags remain true, BTCUSDT/ETHUSDT on both markets, with growing new corpus
-unchanged. Fresh boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive AND
-disabled,1182 chunks/transactions LOCAL_DELETED, Catalogok,0partials/backlog.
-The605bc16 engineering baseline/completed verification passed on697 with both
-LIVE passes and independent ACCEPT. Nonformal normal/missed observations fit240s,
-but catch-up-1 failed unmarked_reconnect: a sparse ETH liquidation initial
-connection before T0 produced its first message after T0 and was compared to a
-prior-process baseline tail. No completion marker/target or Formal credit exists.
-Archive/OS authority is active; resource monitor stopped. ADR-0038's minimal
-startup-boundary source is independently ACCEPTed with1991 offline tests.
-Next: new exact CI/wheel and affected release/cloud checks, actual convergence
-and forecasts, then authoritative post-warm-up baseline/quiet window and Formal2h
-with terminal/completed/independent verification.12H_STARTED=NO;PRODUCTION_READY=NO.
+The owner resumes through reviewed eligible Formal2h, then stop before12h.
+All14 flags/four Spot/USD-M BTCUSDT/ETHUSDT products and growing corpus remain.
+Boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive AND disabled,
+MainPID0/Resultsuccess/NRestarts0,1182 chunks/transactions LOCAL_DELETED,
+Catalogok/0partials/backlog. Archive actual finite recurrence passed after deploy,
+now timer/worker paused solely for stopped engineering baseline; normal OS
+updates restored, no live monitor. Prior605bc16 engineering baseline/both LIVE/
+verify passed697; failed catch-up preserved. New exact4e engineering baseline/
+completed verify is running1182, not yetPASS. Next actual warm-up/convergence,
+resources/cumulative forecasts, authoritative post-warm-up baseline under a finite
+quiet window, strict readiness, Formal2h plus terminal/completed/independent
+verification. No Formal T0/credit;12H_STARTED=NO;PRODUCTION_READY=NO.
 
 Old metadata/archive, failed attempts and unpublished143362-chunk baseline
 remain retained; R-078 stays OPEN. Do not reset the new corpus, physically delete

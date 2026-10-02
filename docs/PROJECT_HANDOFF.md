@@ -1,69 +1,67 @@
 # Project Handoff
 
-Updated October 2, 2026. This is the entry point for the next development team.
+Updated October2 UTC / October3 Shanghai,2026. This is the current entry point.
 
 ## Current code and authorization
 
-Only local and remote main remains, with no open PR. Preserve the unrelated
-stash/untracked bundles and detached historical worktrees. Frozen runtime
-source is605bc169cb9d9bbc886b01c548a10c16d35b67be, treeb10fea2beac6eb8adf52dfa4f7f0ff2445fa5d9a;
-subsequent documentation commits are not deployed wheels. Independent local
-GPT-6.1 Sol xhigh review ACCEPT with no open source findings;1970 offline tests and exact-source
-dual-platform CI37002357094 PASS.
+Only local/remote main remains, with no open PR. Preserve unrelated stash,
+untracked bundles and detached historical worktrees. Frozen installed runtime
+source4e1cf320e0eec3eb69880744dd24609fa85df35b,
+treeafd041f64633f3f6e1d7a037e08ed1672aca3a9c. Independent GPT-6.1 Sol xhigh
+LOCAL/OFFLINE aggregate startup/helper ACCEPT and test-only Profile D supplement
+ACCEPT; exact-source CI37031972497 PASS on both platforms; cloud266 affected tests
+and clean hash-locked wheel/CLI/source match PASS. Later documentation commits
+are not replacement wheels. Retained3d05282 CI/cloud fixture failures do not
+qualify release. The corrected fixture blocks actual Raw admission, preserving
+all42-stream/backpressure/payload/count/completeness assertions.
 
-The owner restored their local VPN/proxy and resumed VPS execution through
-reviewed eligible Formal2h, then stop before12h. All14 applicable public
-auxiliary flags remain true on four Spot/USD-M BTCUSDT/ETHUSDT ProductKeys.
-The broader [plan](milestone_plan.md) remains2h+12h+24h,38 accepted hours.
+The owner's continuation ends at actual reviewed eligible Formal2h, then stops
+before12h. All14 auxiliary flags remain true on Spot/USD-M BTCUSDT/ETHUSDT.
+The broader [plan](milestone_plan.md) is2h+12h+24h,38 accepted hours.
 
 ## Current cloud checkpoint
 
-The corrected single wheel is installed at the canonical root-controlled venv.
-Wheel SHA690327fc0b6c8d241d7d95a806d0b9c34cb665ece26c214074ae65e03a5a336f;
-deployment identity1ecd42ca420e7a9d74f69e9618c0e9fb0f7a3be06d41364391769f805dde4458.
-Clean wheel/28 exact dependencies and cloud98 newly affected tests PASS;
-unchanged V5 Raw paths retain source48 cloud112-test evidence.
-Fresh boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Recorder is inactive AND disabled,
-MainPID0/Resultsuccess/NRestarts0.1182 chunks/transactions are LOCAL_DELETED,
-Catalogok,0partials/backlog/pending. Archive timer is enabled/active with actual
-finite recurrence; normal OS update authority remains restored; monitor stopped.
+Installed wheel2905d30e24ddd53708f50318e4dac74f8c6f183a7fb012c089a7cb25841e83e8,
+identity1be38a7d12082e17cf532b887d3f346fea9a436529bd7a9bba26c9681060f477,
+release `/opt/binance-market-data-recorder/release-4e1cf32-20r7YLY4`.
+Actual canonical root-control/130 RECORD/28 dependencies verification PASS.
+Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Recorder inactive AND disabled,
+MainPID0/Resultsuccess/NRestarts0;1182 chunks/transactions allLOCAL_DELETED,
+Catalogok,0partials/backlog. Archive finite actual recurrence passed after
+installation; timer/worker are currently paused for the engineering baseline.
+Normal OS update authority is restored; no live monitor is running.
 
-Corrected engineering baseline and completed verify passed on697 chunks with
-both LIVE passes; independent frozen-control review ACCEPT. Actual nonformal
-start/immediate/normal/missed550 observations completed in18.463/11.448/43.464/
-82.028s. Catch-up-1 failed unmarked_reconnect, so Q3 is not accepted.
-Independent diagnosis identifies the sparse ETH liquidation initial connection,
-already established before T0, whose first message arrived after T0 and was
-compared to a prior-process baseline tail. No Formal stage has started.
-
-Next: minimal capture startup-boundary correction, independent review and affected
-release/cloud checks. Keep real unmarked-reconnect detection and legacy replay.
-Then actual warm-up convergence, growth/resource/complete-audit forecasts,
-stopped authoritative post-warm-up baseline under a finite quiet window, fresh
-readiness/coverage and one Formal2h. At target stop/disable, drain/pause, full
-terminal audit, completed verification and independent eligibility review.
-Restore archive/OS authority and stop before12h. Never reset the growing corpus.
-
-The read-only30s sampler and AcceptanceObserver save monitoring usage;
-AcceptanceObserver remains the sole stage authority. Helpers cannot restart
-Recorder, create another T0 or grant credit. Historical automation stays paused.
-No Formal V5 target/final or duration credit currently exists.
-
-ADR-0038's minimal startup-boundary source is independently ACCEPTed locally;
-new complete checks/release/cloud gates are in progress. Retained engineering
-cache is `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`;
-new prepared evidence root is
+New exact4e1cf32 engineering baseline and completed verification is running on
+all1182 chunks under `binance-recorder-q3-startup-engineering-baseline.service`,
+invocationab29cc66759242708c270a965ac38ca1. Await actual both LIVE/publication/verify;
+this is not a PASS or the authoritative post-warm-up baseline. New evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
-It does not replace the failed605bc16 evidence or count as a deployment.
-The newly owner-authorized current-chat task `vps-2h` wakes at actual five-hour
-quota reset+60s, updates its next dated wakeup, resumes idle work and marks real
-completed plan gates. It does not duplicate active units/T0; pause after reviewed
-eligible2h. Earlier historical automations stay paused.
+Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
 
-See [current state](CURRENT_PRODUCTION_STATE.md) and
-[correction](milestone_acceptance/Q3-raw-retirement-correction.md) for exact
-artifacts, paths and evidence. Original nonformal failures and unpublished
-143362-chunk historical baseline stay unchanged; R-078 remains OPEN.
+Prior605bc16 baseline/both LIVE/verify passed on697. Its nonformal catch-up failed
+unmarked_reconnect on a sparse ETH initial connection established before T0 but
+first delivering after T0 against a prior-process tail. Original failure and all
+capture remain retained; ADR-0038 now records authentic zero-frame startup
+boundaries and durable forced flags before any socket, without relaxing replay.
+Prior605bc16 canonical venv/identity/release stay inert custody.
+
+Next after successful new engineering predecessor: restore/verify archive
+recurrence; strict fresh core4/aux26 readiness; actual all-enabled normal/missed/
+catch-up convergence, resource/cumulative audit/capacity forecasts. Then stop/
+disable, drain/pause and publish authoritative post-warm-up baseline under a
+measured finite quiet window. Fresh strict readiness precedes one Formal2h.
+At target stop/disable, drain/pause, both full LIVE terminal passes, completed
+verification and independent eligibility review. Restore archive/OS authority
+and stop before12h. Never reset the growing corpus or delete unique evidence.
+No Formal T0/target/final or duration credit exists; Q3=PARTIAL_NOT_ACCEPTED.
+
+Current-chat task `vps-2h` wakes at actual five-hour quota reset+60s; if work is
+advancing, only reschedule and exit. Resume only idle work and mark actual plan
+completions; pause after reviewed eligible2h. Historical automations stay paused.
+Read-only30s sampler/AcceptanceObserver are economical; helpers cannot restart
+Recorder, invent a second T0 or grant credit. See [current state](CURRENT_PRODUCTION_STATE.md)
+and [startup correction](milestone_acceptance/Q3-startup-boundary-correction.md).
+Unpublished143362-chunk old baseline remains retained; R-078 OPEN.
 
 ## Implemented module and boundaries
 
@@ -139,9 +137,3 @@ those checkpoints, not to the current paused workflow.
 Earlier pause/reboot/offline-only instructions were time-local and are
 superseded by the owner's restored-access continuation. Their evidence remains
 in the Q3 acceptance records. Current operational authority is current state.
-
-The3d05282 exact-source CI37027577424 and affected cloud run retained the same
-Profile D empty-idle-drain fixture timeout (cloud265 PASS/1 FAIL). Release remains
-blocked until the minimal test-only admitted-batch gate correction passes new
-exact CI/cloud checks. Runtime startup correction remains independently ACCEPTed
-locally; installed605bc16 and stopped/disabled Recorder are unchanged.

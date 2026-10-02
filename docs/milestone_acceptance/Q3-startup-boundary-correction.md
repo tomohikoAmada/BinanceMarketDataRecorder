@@ -42,7 +42,7 @@ check cannot select that gate. Queue sizes, all42-stream/sibling/backpressure,
 payload/count/completeness assertions and watchdogs remain unchanged. The full
 production-path module passes7 tests1.58s locally; new exact-source CI/cloud
 checks and independent review of this test-only correction remain required.
-Current deployed source remains605bc16; Recorder inactive AND disabled,
+At that initial review checkpoint deployed source remained605bc16; Recorder inactive AND disabled,
 1182 chunks/transactions LOCAL_DELETED, Catalogok and0partials at last check.
 Archive/normal OS authority is active. No Formal T0 or credit exists.
 
@@ -61,3 +61,38 @@ freshness using a current timestamp after reading service state, avoiding a
 false future heartbeat caused by its earlier resource-query timestamp. Actual
 future/stale checks and all auxiliary predicates remain unchanged. Local cache:
 `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
+
+## Exact replacement release and stopped deployment
+
+Frozen source4e1cf320e0eec3eb69880744dd24609fa85df35b,
+treeafd041f64633f3f6e1d7a037e08ed1672aca3a9c. Independent fixture supplement
+ACCEPT,94 PASS11.69s (stress included), no file changes/network; report SHA
+325054df3dd57a9a5682fbefd3059da3f353b64c06d579c21cab0243dc8c280a.
+Exact CI37031972497 PASS both: macOS1991/24skips/5deselected287.15s;
+Ubuntu1987/28skips/5deselected371.63s; all lint/type/M0/Go/build/install steps PASS.
+Cloud affected266 PASS/1stress deselected54.62s. An earlier command with incorrect
+test paths collected zero tests and remains retained separately; it is not PASS.
+Clean wheel505280B SHA2905d30e24ddd53708f50318e4dac74f8c6f183a7fb012c089a7cb25841e83e8,
+121 package Python files match clean source;28 exact dependencies/pip check and
+isolated CLI version/doctor/status PASS. Source archive SHA
+4c1030518f813567963eb2bf7471b74d6a80ffe9a672ef870629853fd1ea6c72.
+
+Stopped deployment script independent static ACCEPT SHA4fa11304…; pin helper
+SHAebe6da40…; report SHAc8c44142a526701bc102f65731e3b00dab89915d2e6b697fdd230bfc5f0b21c9.
+New release `/opt/binance-market-data-recorder/release-4e1cf32-20r7YLY4`;
+canonical venv/config/unit/data/archive remain. Prior605bc16 venv retained at
+`/opt/binance-market-data-recorder/venv-custody-q3-startup-605bc16-ggMjcbMJ/venv`.
+Actual root and bmdr deployment verification PASS:130 RECORD,28 exact dependencies,
+4859 protected files/407 directories, root-controlled canonical venv/identity.
+Identity SHA1be38a7d12082e17cf532b887d3f346fea9a436529bd7a9bba26c9681060f477.
+All14 flags/four products/config/lock/unit hashes unchanged. Recorder remains
+inactive AND disabled,MainPID0/Resultsuccess/NRestarts0;1182LOCAL_DELETED/0partials.
+Archive enabled/active finite recurrence verified after deployment, then paused
+for new engineering baseline. OS authority restored; no Formal T0/credit.
+
+New exact engineering baseline plus completed verification is executing on1182
+retained chunks, unit `binance-recorder-q3-startup-engineering-baseline.service`,
+invocationab29cc66759242708c270a965ac38ca1. Both LIVE/publication/verification are
+required before PASS. This engineering predecessor cannot replace the required
+authoritative post-warm-up baseline. Actual warm-up/forecasts/readiness and Q4
+remain pending; stop before12h.
