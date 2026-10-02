@@ -31,12 +31,16 @@ Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
 are implemented.
 
 PR #79 merged at `8c9310554a559369c8708a30e6a79fdcb379d8e2`; only local/remote
-main remains with no open PR. Exact Q2 d0f455c wheel is deployed on Tokyo.
-Q3 retained old custody/archive, initialized a separate new corpus and deployed
-that release. Its NONFORMAL observer failed with pending causal reference cap
+main remains with no open PR. Exact all-enabled c87d580 wheel is deployed on Tokyo;
+it supersedes the retained Q2 d0f455c runtime after independent ACCEPT, exact CI,
+clean locked-wheel and cloud changed-path/public-smoke gates PASS.
+Q3 retained old custody/archive and initialized a separate new corpus. Its earlier
+d0f455c NONFORMAL observer failed with pending causal reference cap
 overflow after byte-budget starvation; Q3 remains PARTIAL_NOT_ACCEPTED.
-Recorder is stopped and disabled, all 448 new chunks are verified archived,
-normal archive/maintenance timers are active, and the old automation is paused.
+The448 retained chunks passed an engineering full baseline and completed
+verification. Recorder now runs an all-enabled NONFORMAL warm-up with restored
+archive automatic recurrence. Normal OS maintenance is active, and the old
+automation remains paused.
 No Formal V5 T0 or 2h stage exists. Preserve old and new data/evidence.
 `12H_STARTED=NO`; `PRODUCTION_READY=NO`. Production full-audit scalability
 remains an open P2. Do not restart live work from old continuation instructions.
@@ -53,12 +57,14 @@ Q1 has 1881 passing tests and a read-only cloud synthetic retention probe.
 Its record is `docs/milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md`.
 Q2 independent review and exact release gates are complete. Frozen source is
 `d0f455c1a417cc1a184c47b6ff766a60f3dc0159`; see the Q2 acceptance record.
-Current development NEXT is Q3 observer byte/causal-cap optimization review,
-refreezing any changed release, repeated cloud gates and authoritative baseline.
+Current development NEXT is Q3 all-enabled measured warm-up/catch-up/forecast
+gates, then the authoritative post-warm-up baseline.
 See `docs/milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md`. Do not repeat
 the unchanged failed live run. The owner authorizes continuation through reviewed eligible Q4 2h and Q5 12h, stopping before Q6 cloud 24h.
 The new qualification profile enables all fourteen auxiliary capture flags;
-unchanged reviews are reused and uncovered combinations/changed paths rereviewed. ADR-0036 versions new normalized dedup/build identity; old v1
+unchanged reviews are reused and uncovered combinations/changed paths independently
+accepted at c87d580. Economical read-only code monitoring is owner-authorized;
+it cannot invent a T0 or duration credit. ADR-0036 versions new normalized dedup/build identity; old v1
 outputs remain readable. Live RSS/capacity and all Formal credit gates remain.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and

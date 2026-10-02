@@ -26,10 +26,13 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed source is now the exact Q2 `d0f455c` wheel. Q3 retained the old
-metadata/archive, initialized a new canonical corpus and deployed this release.
-Recorder is stopped/disabled after a failed NONFORMAL warm-up. Formal V5 credit
-is zero; the old baseline remains unpublished and monitor paused. See
+Installed source is now the independently accepted all-enabled `c87d580` wheel,
+superseding the retained Q2 `d0f455c` runtime. Q3 retained the old
+metadata/archive and initialized the growing new canonical corpus.
+The earlier failed NONFORMAL warm-up is retained. A448-chunk engineering
+baseline/completed verification passed; all-enabled NONFORMAL warm-up now runs.
+Formal V5 credit is zero; the old baseline remains unpublished and historical
+automation paused. See
 [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
@@ -139,12 +142,11 @@ values/paths, not a moving GitHub branch or copied historical command.
 
 Current [Q3 attempt](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md)
 retains all new capture and stops before Formal T0. The current Q3 correction implements [ADR-0037](adr/0037-v5-shared-archive-companions.md)
-and fixes uncovered all-enabled lifecycle/durability/health behavior. Independent
-frozen-candidate review and a replacement exact release remain pending. Reproduce byte-budget
-starvation and intermediate causal-reference overflow using actual cloud-sized
-companions. Evaluate eliminating repeated per-transaction evidence within each
-bounded observation, with old-policy replay/resume preserved. Review/freeze any
-changed source/wheel and repeat the cloud gate; do not simply raise caps or
+and fixes uncovered all-enabled lifecycle/durability/health behavior. Exact
+c87d580 is independently ACCEPTed and deployed after passing CI/clean wheel/
+cloud252 changed-path and21 public-smoke gates. Shared exact companions and
+final-reference accounting preserve the frozen byte/page/proof bounds and old
+replay/resume. Actual all-enabled warm-up remains required; do not raise caps or
 relax cadence. Existing warm-up data remains part of the growing corpus. Check
 a finite future archive-timer deadline and actual automatic recurrence after
 rebind/start; explicitly prime the existing verified worker when needed.

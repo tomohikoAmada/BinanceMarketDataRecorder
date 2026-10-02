@@ -1,7 +1,9 @@
 # Risk Register
 
-Updated October 2, 2026. PR #79 is merged and the exact Q2 d0f455c wheel is
-deployed. Q3's nonformal cloud observer gate failed; Recorder is stopped/disabled.
+Updated October 2, 2026. PR #79 is merged; the independently accepted all-enabled
+c87d580 wheel supersedes retained Q2 d0f455c. A448-chunk engineering baseline
+and completed verification passed; all-enabled NONFORMAL warm-up now runs. The original Q3 nonformal failure
+remains unchanged; measured all-enabled cloud throughput is still OPEN.
 Current operations
 are recorded in [production state](CURRENT_PRODUCTION_STATE.md).
 
@@ -23,10 +25,11 @@ custody, installed the exact release and exercised a new corpus. Its observer
 failed with `pending causal reference cap exceeded`; this blocks Formal T0.
 Previous cloud documents approached 7 MiB delta admission while archive cursors
 lagged and pending references grew. Repeated lifecycle bundles are a measured
-optimization opportunity; no representation change is implemented or accepted.
-No RAM/swap exhaustion supports a hardware-upgrade diagnosis. Reproduce both
-byte starvation and transient family-replay cap behavior, review the smallest
-correction and repeat actual concurrent Recorder/archive gates. Do not repeat
+optimization opportunity; ADR-0037's bounded shared representation is now
+implemented, independently accepted and installed as c87d580.
+No RAM/swap exhaustion supports a hardware-upgrade diagnosis. Both
+byte starvation and transient family-replay cap behavior were reproduced and
+corrected; repeat actual concurrent Recorder/archive gates. Do not repeat
 the unchanged live run. Existing archive/evidence and historical R-078 remain;
 no old baseline integrity PASS or FAIL was published. See the
 [cloud diagnosis](reviews/2026-10-02-cloud-performance-and-38h.md) and [38h plan](qualification_to_24h_plan.md).
@@ -44,7 +47,7 @@ and the [sequenced remediation plan](qualification_to_24h_plan.md).
 
 | Finding | Priority / evidence | Planned control |
 |---|---|---|
-| F1: V5 online service capacity below four-product row arrival | P1; ADR-0035 offline fixtures PASS, but actual Q3 byte budget starves archive rows and the next catch-up raises causal-cap error | Cloud gate OPEN; reproduce actual companion sizes, optimize finite evidence/admission/replay, review/refreeze and repeat before T0 |
+| F1: V5 online service capacity below four-product row arrival | P1; original Q3 byte starvation/causal error preserved; ADR-0037 exact shared v2 representation and strict boundaries independently accepted at c87d580 | Actual all-enabled cloud throughput/catch-up gate OPEN; measure before T0 |
 | F2: failed heartbeat leaves collectors running and normal shutdown status | P1; Q1 guard/wait/drain regressions pass across startup/recovery/running/drain, including real store failure | Q2 review ACCEPT; exact reviewed artifact deployed in Q3 |
 | F3: normalized keys omit product/stream identity in some event kinds | P1; Q1 namespaces all candidates and versions new build identity; old/new replay compatibility passes | ADR-0036 review ACCEPT; explicit rebuild needed for corrected derived results |
 | F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 38h qualification: bounded hierarchical fan-in |
@@ -80,9 +83,11 @@ control changes.
 The supplementary independent configuration review reproduced fourP1 findings
 (limiter-stop wait, invisible auxiliary termination, unowned Raw mutations,
 idle snapshot/metadata durability) and oneP2 (sparse/terminal health). Narrow
-candidate fixes and42-context offline coverage pass; frozen independent rereview
-and replacement cloud gates remain pending. See the all-enabled review/candidate
-records. F1 now has a shared-companion v2 candidate; actual all-enabled cloud
+fixes and42-context offline coverage pass. The final review additionally closed
+enabled STOPPED aggregate-health P2 and table-newline P3. Exact c87d580 final
+independent ACCEPT has zero open source findings;1934 local tests, dual-platform
+CI, clean locked wheel,252 cloud changed-path tests and21 public-smoke tests PASS.
+See the all-enabled review/candidate records. Actual all-enabled cloud
 throughput/catch-up remains OPEN and Formal credit remains zero.
 
 Official USD-M detail `.md` routes have moved to the catalog. Current browser-

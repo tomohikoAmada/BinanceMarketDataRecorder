@@ -12,8 +12,13 @@ tree `cf3854d7fc032de79096dced8e002a6cd55e65c3`, wheel SHA-256
 `b286923d3dc777bf2e3d63ea661effd7cf389137aaf81883519c3a071d449921`.
 [Q2 acceptance](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md)
 records independent ACCEPT, exact-source dual-platform CI and cloud release checks.
-The exact wheel is now installed through Q3. Subsequent documentation is not a
-replacement wheel. The actual Q3 cloud observer gate failed before Formal T0.
+That Q2 wheel was installed through the first Q3 attempt, whose cloud gate
+failed before Formal T0; it is now retained in inert custody. Current runtime
+is independently accepted c87d580/tree d610184, wheel SHA-256
+`6fa0491363a146f4d4b1af59f65b81c0724be77390721964a942aa47dd32342a`.
+All14 flags are installed true. Local1934 tests, exact dual-platform CI,
+clean locked wheel, cloud252 changed-path and21 public-smoke tests PASS.
+Subsequent documentation is not a replacement runtime wheel.
 
 The Recorder implements finite configurable Spot/USD-M products, immutable Raw,
 Catalog lifecycle/recovery, gap evidence, order-book reconstruction, verified
@@ -51,9 +56,10 @@ Catalog/archive registration and deployment are done. Its nonformal observer
 hit the causal-reference cap after byte-budget starvation; Q3 is incomplete.
 The latest owner instruction requires all fourteen auxiliary flags enabled and
 execution through reviewed eligible 2h + 12h, stopping before cloud 24h.
-Uncovered stop/cancellation/durability/health paths and compact v2 evidence now
-have local fixes; the replacement release/review/cloud gates are pending.
-Next is a measured observer correction/review and repeated cloud gates, then
+Uncovered stop/cancellation/durability/health paths and compact v2 evidence have
+independently accepted fixes and a replaced exact release. The separate
+engineering baseline/completed verification passed; next are measured all-enabled
+warm-up/forecast gates, then
 the authoritative post-warm-up baseline/readiness. No old archive was destroyed
 or imported into the new corpus. See [Q3 evidence](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
 
@@ -63,18 +69,19 @@ or imported into the new corpus. See [Q3 evidence](milestone_acceptance/Q3-fresh
 and retains old one-page replay/resume. The default CLI archive status omits full
 transaction details; use `--details --limit 100 --offset 0` for a page. Code,
 dependency set, Raw and Catalog format remain Python/compatible; no native engine
-was added. Current installed source is d0f455c; historical throughput probes
+was added. Current installed source is c87d580; historical throughput probes
 must not be substituted for the failed actual cloud gate.
 
 ## Current operations
 
-The exact Q2 artifact is installed on `greencloud-tokyo-01`. Q3 retains old
+The exact all-enabled c87d580 artifact is installed on `greencloud-tokyo-01`. Q3 retains old
 metadata/archive and captures a separate new corpus at the same canonical
-writer root. After the failed NONFORMAL warm-up, Recorder is inactive and
-disabled, the resource sampler is stopped, and all 448 new chunks/transactions
-are verified archived/LOCAL_DELETED. Catalog is ok with zero active partials or
-archive backlog. Archive timer and normal OS update authorities are enabled
-and active. No Formal V5 T0, 2-hour stage or 12-hour stage was created.
+writer root. The448 retained chunks passed a separate engineering full baseline
+and completed verification. Archive scheduling has been restored with actual
+automatic recurrence; Recorder now runs an all-enabled NONFORMAL warm-up.
+All26 auxiliary owners passed after cold catch-up. Normal OS updates remain active,
+and lightweight resource monitoring runs as bmdr. No Formal V5 T0, 2-hour stage
+or 12-hour stage was created.
 
 The historical October 1 143,362-chunk baseline remains unpublished; old data
 and audit evidence remain retained. The separate engineering-only Q3 empty
@@ -112,11 +119,10 @@ Read these documents in order:
 - Review the practical cost of full baseline/terminal audits using retained
   production measurements. The stopped audit gives partial measurements only;
   it establishes neither a full integrity PASS nor completed throughput.
-- Q2 release gates are complete. Q3 custody/new corpus/deployment are done,
-  but the cloud observer byte/causal-cap gate failed. Reproduce cloud-sized
-  repeated companions and intermediate replay cap behavior, make a small
-  reviewed correction and refreeze any changed wheel. Repeat steady/missed-
-  cadence gates; do not merely widen limits or blame hardware without evidence.
+- Q2 release gates are complete. Q3 custody/new corpus/deployment are done.
+  The original cloud byte/causal-cap failure has an independently accepted
+  correction and replacement release. Measure all-enabled steady/missed-
+  cadence gates; do not widen limits or blame hardware without evidence.
   Complete live forecasts and the authoritative stopped baseline afterward.
   Preserve all new capture and the interrupted old audit.
 - The owner authorizes continuation through Q4 eligible 2h and Q5 eligible 12h,
