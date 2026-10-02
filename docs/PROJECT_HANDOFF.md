@@ -78,7 +78,8 @@ The exact all-enabled c87d580 artifact is installed on `greencloud-tokyo-01`. Q3
 metadata/archive and captures a separate new corpus at the same canonical
 writer root. The448 retained chunks passed a separate engineering full baseline
 and completed verification. Archive scheduling has been restored with actual
-automatic recurrence; Recorder now runs an all-enabled NONFORMAL warm-up.
+automatic recurrence; Recorder ran an all-enabled NONFORMAL warm-up, then stopped/disabled after
+Raw identity qualification failed.
 All26 auxiliary owners passed after cold catch-up. Normal OS updates remain active,
 and lightweight resource monitoring runs as bmdr. No Formal V5 T0, 2-hour stage
 or 12-hour stage was created.
@@ -159,3 +160,9 @@ Earlier handoff snapshots are preserved in [handoff history](PROJECT_HANDOFF_HIS
 Previous operations are in [production state history](CURRENT_PRODUCTION_STATE_HISTORY.md)
 and `milestone_acceptance/`. Their status and next-action statements apply to
 those checkpoints, not to the current paused workflow.
+
+Owner paused work after the quota warning. Last verified Recorder is inactive/disabled,
+and the archive drain command succeeded. Full final counts and sampler stop remain
+unconfirmed after SSH transport interruption. Next session first reconciles VPS state,
+then reproduces/reviews the Raw identity/archive-retirement hypothesis locally.
+Formal2h remains NOT_STARTED; see the latest Q3 candidate closeout.

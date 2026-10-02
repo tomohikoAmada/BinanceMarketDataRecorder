@@ -30,7 +30,10 @@ Installed source is now the independently accepted all-enabled `c87d580` wheel,
 superseding the retained Q2 `d0f455c` runtime. Q3 retained the old
 metadata/archive and initialized the growing new canonical corpus.
 The earlier failed NONFORMAL warm-up is retained. A448-chunk engineering
-baseline/completed verification passed; all-enabled NONFORMAL warm-up now runs.
+baseline/completed verification passed; all-enabled NONFORMAL warm-up failed
+at the first normal observation with Raw changed during qualification. Owner
+paused work. Reconcile the last stopped VPS state, reproduce/review the suspected
+archive-retirement race, then repeat affected release and nonformal gates.
 Formal V5 credit is zero; the old baseline remains unpublished and historical
 automation paused. See
 [production state](CURRENT_PRODUCTION_STATE.md).

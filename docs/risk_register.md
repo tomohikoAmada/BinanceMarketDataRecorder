@@ -2,7 +2,9 @@
 
 Updated October 2, 2026. PR #79 is merged; the independently accepted all-enabled
 c87d580 wheel supersedes retained Q2 d0f455c. A448-chunk engineering baseline
-and completed verification passed; all-enabled NONFORMAL warm-up now runs. The original Q3 nonformal failure
+and completed verification passed; all-enabled NONFORMAL warm-up failed with
+Raw changed during qualification. Owner paused work. Archive-retirement
+concurrency is unproven; reconcile stopped VPS state and reproduce before fixing. The original Q3 nonformal failure
 remains unchanged; measured all-enabled cloud throughput is still OPEN.
 Current operations
 are recorded in [production state](CURRENT_PRODUCTION_STATE.md).

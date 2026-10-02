@@ -1,8 +1,8 @@
 # Current Production State
 
 Verified October 2, 2026: all-enabled stopped redeploy and exact deployment
-verification; engineering baseline and completed verification passed, and
-all-enabled NONFORMAL warm-up is running. This is the current
+verification; engineering baseline/completed verification passed; all-enabled
+NONFORMAL warm-up failed and the owner paused further work. This is the current
 operational authority; [history](CURRENT_PRODUCTION_STATE_HISTORY.md) preserves
 the previous October 1/2 installed-artifact checkpoint.
 
@@ -57,11 +57,11 @@ are not installed wheels.
 
 ## Current nonformal engineering preparation
 
-- Recorder: active/running and enabled solely for NONFORMAL warm-up,
-  MainPID16736, InvocationID `39d89a726ce041d98310fddf95801186`, NRestarts0.
-  Exact installed identity/dependencies/effective unit VERIFIED before start.
+- Recorder last verified inactive/disabled, MainPID0, Resultsuccess, NRestarts0
+  after the failed NONFORMAL attempt. Its prior capture invocation was
+  `39d89a726ce041d98310fddf95801186`.
 - At stopped deployment: active partials0 and Catalog `ok`. New warm-up capture
-  now grows this corpus; those stopped counts are not a live claim.
+  grew this corpus. Final new counts are unconfirmed after SSH interruption.
 - Pre-start retained corpus:448 chunks/transactions, all `LOCAL_DELETED`,
   backlog/pending/failed0. These rows and all new warm-up capture are retained,
   with zero Formal credit.
@@ -71,13 +71,15 @@ are not installed wheels.
 - Both apt timers and unattended upgrades: enabled/active. Normal update
   authority is restored; no quiet-window runtime masks are applied to the
   current NONFORMAL warm-up. Repeat fresh maintenance gates before a future baseline/T0.
-- Lightweight all-enabled diagnostic resource sampler: RUNNING as bmdr,
+- Lightweight all-enabled diagnostic resource sampler: termination UNCONFIRMED
+  after the sampler-stop command lost SSH connectivity; previously running as bmdr,
   bounded RuntimeMaxSec10800. Engineering full baseline over448 archived chunks
   is COMPLETE/PASS_CANDIDATE with completed verification, no blocking findings.
   Both LIVE passes took approximately530s together, control verification10s.
   All26 auxiliary owners passed after cold catch-up. NONFORMAL observer
   `7c27a0c18406435e8d2206d208562a5a` runs with RuntimeMaxSec7200, Restartno,
-  SIGINT and TimeoutStop120s. Its measured normal/missed/recovery gate is pending.
+  SIGINT and TimeoutStop120s. It failed exit1 on the first normal observation
+  with `Raw changed during qualification`; no normal/missed/recovery gate passed.
   Failed nonformal observer units and
   all original logs/documents remain available. Historical automation remains
   paused; no automatic continuation was created.
@@ -109,7 +111,8 @@ FORMAL_V5_STARTED=NO
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
-NEXT=Q3_ALL_ENABLED_MEASURED_WARMUP_THEN_AUTHORITATIVE_BASELINE
+OWNER_WORK_STATE=PAUSED
+NEXT=RECONCILE_STOPPED_STATE_THEN_Q3_RAW_IDENTITY_CONCURRENCY_REPRODUCTION
 ```
 
 Current additive evidence: `/srv/recorder-data/recorder-archive/evidence/Q3-all-enabled-20261002-xyeeHH0o`.
@@ -117,3 +120,9 @@ Frozen release SHA-256 `2bd68c4d394f76c66b039fec8c19c3643fce61a55e25e018b2ad8f7b
 Root-controlled release: `/opt/binance-market-data-recorder/release-c87d580-O0wAuYCt`.
 Replaced d0f455c venv retained at `/opt/binance-market-data-recorder/venv-custody-q3-all-enabled-20261002-56d4ede49e54`.
 No Raw/Catalog reset, physical deletion or new Formal T0 occurred.
+
+Verified archive worker drain command completed Resultsuccess/ExecMainStatus0.
+Full closeout Catalog/partial/backlog snapshot was not confirmed: SSH closed and
+a bounded read-only recheck timed out at banner exchange. Preserve this limitation;
+see the owner-paused section in [Q3 candidate](milestone_acceptance/Q3-all-enabled-candidate.md).
+No OS maintenance masks were applied. No Formal2h was started.

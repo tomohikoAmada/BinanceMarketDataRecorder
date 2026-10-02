@@ -12,7 +12,8 @@ All14 flags are installed true,12 intervals and900s grace explicit. Deployment
 identity `ffe30115f438ab0dc6c82af15c6c95070251a175a37ec1d6e71890d5c404e15c`
 was VERIFIED while Recorder was stopped/disabled. A separate engineering
 full baseline over448 retained chunks and completed verification passed;
-actual all-enabled NONFORMAL warm-up now runs. Its throughput gate is pending.
+actual all-enabled NONFORMAL warm-up subsequently failed; owner paused further
+work. Its throughput gate remains unmet.
 
 One wheel SHA-256 `6fa0491363a146f4d4b1af59f65b81c0724be77390721964a942aa47dd32342a`;
 config `5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419`;
@@ -124,3 +125,36 @@ Invocation7c27a0c18406435e8d2206d208562a5a. Its first real observation plus
 independent replay took19.71s,654942 document bytes,568690 delta bytes, no blocking
 findings or pending references. Normal/missed-cadence/recovery measurements remain
 pending. No Formal target, credit or complete warm-up PASS is claimed.
+
+## Owner-paused checkpoint — October2
+
+The owner stopped further work after the five-hour allowance reached3%.
+All-enabled NONFORMAL attempt1 failed during the first normal300s observation:
+`AcceptanceError: Raw changed during qualification`, raised by scan_raw's
+descriptor identity comparison through the online qualification worker.
+The preceding `normal-before` auxiliary gate PASSed, all four cores remained
+READY, and all auxiliary statuses were RUNNING. Luna's read-only monitor
+confirmed exact observer identity/exit1, peak239.1MiB, no swap or OOM.
+Only engineering-start/immediate observations completed (19.71s/18.69s);
+there is no complete normal/missed-cadence/recovery gate or warm-up completion.
+Archive-retirement concurrency is a hypothesis, not a proved interleaving or
+corruption finding. Do not repeat unchanged live work or start Formal2h.
+
+Recorder stop/disable was confirmed: inactive, disabled, MainPID0,
+NRestarts0, Resultsuccess. The verified archive worker then completed
+Resultsuccess/ExecMainStatus0. Existing data and all failure evidence remain.
+A subsequent sampler-stop/full closeout snapshot command lost SSH connectivity;
+a bounded read-only recheck timed out during banner exchange. The full new
+Catalog/partial/backlog counts and sampler termination are therefore UNCONFIRMED,
+not reported clean. The sampler was already bounded to10800s. The archive timer
+was last verified enabled/active with finite automatic recurrence; no OS
+maintenance masks were applied. The Luna monitor has exited, and the independent
+reviewer is idle. Do not infer a reboot, deletion or SSH recovery requirement
+from this transport error alone.
+
+Formal2h/12h/24h=NOT_STARTED; credit0; PRODUCTION_READY=NO.
+Next session: first reconcile current VPS stopped/archive/sampler state and
+preserve exact failure evidence, then reproduce the Raw identity/retirement
+interleaving locally, review a minimal correction and repeat affected release
+and nonformal gates before Formal2h. No source correction was made in this
+paused closeout; installed source remainsc87d580.
