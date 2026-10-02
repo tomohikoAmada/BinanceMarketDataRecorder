@@ -22,6 +22,10 @@ Mutation/replacement/hardlink changes still fail; archive-copy deletion still fa
 Same-ctime-resolution retirement remains pending. Raw/Catalog/proof format and
 old-policy replay/resume remain unchanged; no collection/schema/network behavior changes.
 
+Frozen candidate source `48ca9202a20a068b878cd71c416c8132a04bdf8c`,
+tree `65690e8c3abc82442f02d5e18bee2c9be1a3fd25`; CI36993322333 SUCCESS on both Ubuntu/macOS.
+Documentation descendants are not a replacement runtime.
+
 Frozen three-path input manifest SHA-256:
 `e9a34bd98d9b338aa1257c906c049d22e5613721d4bd4afd3f15e706958ec929`.
 Source SHA-256:24874be5b127538efa2802ef939ad1af615737802f9f80e7b77e30bba279f21c.
@@ -31,8 +35,8 @@ adversarial probes PASS. No independent reviewer SSH or cloud mutation occurred.
 
 Full offline suite1942 PASS,24 online SKIP,5 stress deselected,13 existing warnings,
 165.62s. Ruff, strict mypy286, M0 contracts, Go Raw golden and diff-check PASS.
-No identical passing checks are repeated without changed inputs. Cloud changed-
-path tests, exact-source dual-platform CI, replacement clean locked wheel, actual
+No identical passing checks are repeated without changed inputs. Exact-source dual-platform CI also PASS. Cloud changed-
+path tests, replacement clean locked wheel, actual
 concurrent normal/missed/recovery gates, cumulative capacity/audit forecasts and
 authoritative post-warm-up baseline are still required before Formal T0.
 
@@ -46,3 +50,30 @@ verified; no Formal stage or credit exists.
 NEXT: reconcile rebooted host, freeze exact corrected release, repeat affected
 Q3 gates, then one Formal2h and its stopped full terminal/completed verification
 and independent eligibility review. Stop before Formal12h.
+
+Independent review record SHAd3aacddfed0ee928d14a9c31f3de58f2e445dde9a93bed2ae55b3496b14b86a4;
+probe record SHA3861734fcad81a71ffb1e47cf4aff964ffdba643659216a7f950303a1bfc75fc.
+Final exact-manifest independent focused rerun23 PASS2.52s after test import correction.
+
+The owner's five-minute SSH retry was attempted after10:04:05UTC and still
+timed out before banner. Owner then requested completion of work not requiring
+VPS testing, while planning VNC diagnostics. Further SSH/cloud actions are
+deferred until access/state is reconciled. Canonical source archive SHA-256
+715defee89869ae1d8a9aa148c6dff2a420560e3270beed97e3fbe729cbc3902;
+Linux runtime lock44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335.
+No production wheel/deployment identity is fabricated from this source-only package.
+
+## Offline checkpoint complete
+
+CI36993322333 SUCCESS on macos-python312 and ubuntu-python312 for exact
+48ca920 source, including complete offline checks and clean wheel/runtime smoke.
+[Exact-source CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/36993322333).
+Canonical source archive bytes agree with all three reviewed source/test hashes.
+Source, Linux lock, input manifest, independent review/probe evidence, exact CI
+and next-cloud checklist are readback verified in the local handoff package:
+`/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-raw-retirement-20261002/`.
+Reviewed-source handoff SHA-256: 6d871658808088908d5fa51d95a61d8371b5b4f5418dcb0467f6d651555b5649.
+This is source-only staging, not a certified production wheel or deployment.
+No fresh VPS result, new T0, warm-up PASS or duration credit is asserted.
+The owner currently requests offline completion first while resolving SSH via
+VNC. Required replacement/cloud gates stay explicit; no gate was silently lowered.

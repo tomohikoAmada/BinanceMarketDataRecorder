@@ -40,7 +40,8 @@ overflow after byte-budget starvation; Q3 remains PARTIAL_NOT_ACCEPTED.
 The448 retained chunks passed an engineering full baseline and completed
 verification. The all-enabled NONFORMAL warm-up failed its first normal observation with
 Raw changed during qualification. Recorder was verified stopped/disabled, and
-archive drain succeeded. Owner paused further work; final counts/sampler stop
+archive drain succeeded. The owner resumed through completed Formal2h, then requested offline work first
+while SSH is unavailable; final counts/sampler stop
 are unconfirmed following SSH interruption. Normal OS maintenance is active, and the old
 automation remains paused.
 No Formal V5 T0 or 2h stage exists. Preserve old and new data/evidence.
@@ -59,11 +60,16 @@ Q1 has 1881 passing tests and a read-only cloud synthetic retention probe.
 Its record is `docs/milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md`.
 Q2 independent review and exact release gates are complete. Frozen source is
 `d0f455c1a417cc1a184c47b6ff766a60f3dc0159`; see the Q2 acceptance record.
-Current development is owner-paused. NEXT first reconciles stopped VPS state,
-then reproduces/reviews the Raw identity/archive-retirement hypothesis and
-repeats the nonformal gate; Formal2h is not authorized past its unmet gates.
+Current task stops after reviewed eligible Formal2h, before12h. The local
+Raw retirement correction at48ca920 is independently ACCEPTed with1942 tests
+passing. Exact-source dual-platform CI36993322333 PASS; replacement release and cloud
+gates remain. Owner
+rebooted the VPS after independently confirming SSH failure; SSH still timed
+out on the requested five-minute recheck. Work is currently offline only pending
+owner VNC diagnostics; reconcile host state before deploy or Formal T0.
 See `docs/milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md`. Do not repeat
-the unchanged failed live run. The owner authorizes continuation through reviewed eligible Q4 2h and Q5 12h, stopping before Q6 cloud 24h.
+the unchanged failed live run. The current owner instruction stops after reviewed eligible Q4 2h, before Q5
+12h; offline work comes first while VPS access is unavailable.
 The new qualification profile enables all fourteen auxiliary capture flags;
 unchanged reviews are reused and uncovered combinations/changed paths independently
 accepted at c87d580. Economical read-only code monitoring is owner-authorized;

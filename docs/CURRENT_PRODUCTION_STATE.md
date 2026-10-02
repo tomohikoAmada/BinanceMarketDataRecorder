@@ -2,7 +2,8 @@
 
 Verified October 2, 2026: all-enabled stopped redeploy and exact deployment
 verification; engineering baseline/completed verification passed; all-enabled
-NONFORMAL warm-up failed and the owner paused further work. This is the current
+NONFORMAL warm-up failed. The owner resumed through Formal2h, then requested
+offline work first while SSH is unavailable. This is the current
 operational authority; [history](CURRENT_PRODUCTION_STATE_HISTORY.md) preserves
 the previous October 1/2 installed-artifact checkpoint.
 
@@ -35,7 +36,7 @@ See [candidate record](milestone_acceptance/Q3-all-enabled-candidate.md).
 |---|---|
 | Host | `greencloud-tokyo-01`, Ubuntu 24.04 x86_64 |
 | Kernel / Python | `6.8.0-146-generic` / 3.12.3 |
-| Boot ID | `11b990f3-68bb-43fa-ac82-03e94ea6962a` |
+| Last verified boot before owner reboot | `11b990f3-68bb-43fa-ac82-03e94ea6962a` |
 | Deployed source | `c87d58072e309b13dd9979d8fbff1b33b041fe0c` |
 | Source tree | `d610184647da8ba0ddea2bec623a787564597323` |
 | Wheel SHA-256 | `6fa0491363a146f4d4b1af59f65b81c0724be77390721964a942aa47dd32342a` |
@@ -111,8 +112,8 @@ FORMAL_V5_STARTED=NO
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
-OWNER_WORK_STATE=PAUSED
-NEXT=RECONCILE_STOPPED_STATE_THEN_Q3_RAW_IDENTITY_CONCURRENCY_REPRODUCTION
+OWNER_WORK_STATE=OFFLINE_FIRST_PENDING_VPS_ACCESS
+NEXT=FRESH_POST_REBOOT_STATE_THEN_REVIEWED_CORRECTION_CLOUD_GATES
 ```
 
 Current additive evidence: `/srv/recorder-data/recorder-archive/evidence/Q3-all-enabled-20261002-xyeeHH0o`.
@@ -126,3 +127,11 @@ Full closeout Catalog/partial/backlog snapshot was not confirmed: SSH closed and
 a bounded read-only recheck timed out at banner exchange. Preserve this limitation;
 see the owner-paused section in [Q3 candidate](milestone_acceptance/Q3-all-enabled-candidate.md).
 No OS maintenance masks were applied. No Formal2h was started.
+
+Owner authorized/performed a reboot after also failing to connect by SSH.
+The agent's five-minute SSH retry still timed out at banner exchange. Fresh
+post-reboot service/boot/interpreter/identity/custody state is UNVERIFIED.
+Source48ca920 is an independently accepted local correction (1942 tests and
+exact-source dual-platform CI36993322333 PASS),
+not a deployed replacement. Exact release, actual cloud gate and Formal2h remain
+pending. Owner asks to complete offline work while waiting for VNC diagnostics.

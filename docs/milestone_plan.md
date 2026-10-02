@@ -31,9 +31,11 @@ superseding the retained Q2 `d0f455c` runtime. Q3 retained the old
 metadata/archive and initialized the growing new canonical corpus.
 The earlier failed NONFORMAL warm-up is retained. A448-chunk engineering
 baseline/completed verification passed; all-enabled NONFORMAL warm-up failed
-at the first normal observation with Raw changed during qualification. Owner
-paused work. Reconcile the last stopped VPS state, reproduce/review the suspected
-archive-retirement race, then repeat affected release and nonformal gates.
+at the first normal observation with Raw changed during qualification. The owner
+resumes through completed Formal2h, stopping before12h. The local source-retirement
+correction is independently accepted with1942 tests and exact-source CI PASS;
+replacement-release/cloud gates are
+pending. Reconcile the owner-rebooted VPS and repeat affected Q3 gates.
 Formal V5 credit is zero; the old baseline remains unpublished and historical
 automation paused. See
 [production state](CURRENT_PRODUCTION_STATE.md).
@@ -44,7 +46,8 @@ Q2 independent review, offline/online/stress, exact-source dual-platform CI and
 clean locked-wheel gates PASS. The actual Q3 cloud delta-capacity gate failed;
 Q3 remains PARTIAL_NOT_ACCEPTED. See [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
 The owner's latest October 2 instruction authorizes this execution through
-reviewed eligible **2h and 12h**, stopping when the next step is VPS **24h**.
+reviewed eligible **2h**, stopping before VPS **12h**. The broader38h chain stays
+planned;12h is outside this turn.
 All fourteen applicable public auxiliary capture flags must be true throughout
 the newly frozen chain. Reuse unchanged prior reviews; supplement uncovered
 configuration combinations and changed paths. Existing disabled-auxiliary cloud

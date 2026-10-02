@@ -54,8 +54,9 @@ The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h a
 with complete terminal/independent verification. Q3 custody, new canonical
 Catalog/archive registration and deployment are done. Its nonformal observer
 hit the causal-reference cap after byte-budget starvation; Q3 is incomplete.
-The latest owner instruction requires all fourteen auxiliary flags enabled and
-execution through reviewed eligible 2h + 12h, stopping before cloud 24h.
+The latest owner instruction retains all fourteen auxiliary flags and resumes
+through reviewed eligible Formal2h, stopping before12h. Offline work is requested
+first while owner handles VPS SSH/VNC diagnostics.
 Uncovered stop/cancellation/durability/health paths and compact v2 evidence have
 independently accepted fixes and a replaced exact release. The separate
 engineering baseline/completed verification passed; next are measured all-enabled
@@ -127,7 +128,8 @@ Read these documents in order:
   Complete live forecasts and the authoritative stopped baseline afterward.
   Preserve all new capture and the interrupted old audit.
 - The owner authorizes continuation through Q4 eligible 2h and Q5 eligible 12h,
-  then stop before Q6 cloud 24h. Do not count engineering warm-up as Formal.
+  but the current turn stops after Q4 eligible2h, before12h. Do not count
+  engineering warm-up as Formal.
   Use existing observation and lightweight read-only monitoring to save model
   usage; preserve full evidence and intervene on meaningful changes/failures.
 - If qualification is restarted, verify the exact artifact and data scope,
@@ -166,3 +168,20 @@ and the archive drain command succeeded. Full final counts and sampler stop rema
 unconfirmed after SSH transport interruption. Next session first reconciles VPS state,
 then reproduces/reviews the Raw identity/archive-retirement hypothesis locally.
 Formal2h remains NOT_STARTED; see the latest Q3 candidate closeout.
+
+## Resumed offline correction checkpoint
+
+Exact source48ca920/tree65690e8 is locally independently ACCEPTed,1942 offline
+tests PASS; source archive, lock and exact review inputs are frozen. It fixes
+validated local source unlink during Raw scan without weakening content or
+frozen retirement authority. VPS original interleaving remains unproved.
+See [correction](milestone_acceptance/Q3-raw-retirement-correction.md).
+The owner rebooted the host after independently confirming SSH failure. SSH
+still timed out on the five-minute recheck. No new cloud deployment/test/start
+was performed; obtain owner VNC diagnostics and fresh state first. The current
+turn's requested endpoint is eligible Formal2h, before12h.
+
+Exact48ca920 dual-platform CI36993322333 is SUCCESS, including clean wheel/
+locked-runtime smoke. The reviewed source-only handoff package and deployment
+checklist are prepared/readback verified. Production wheel, stopped replacement
+deploy and actual Q3 cloud gates remain pending VPS access.
