@@ -187,6 +187,8 @@ class SideDataStats:
     last_success_at_utc_ns: int | None = None
     last_error_type: str | None = None
     next_retry_at_utc_ns: int | None = None
+    connected: bool = False
+    event_sparse: bool = False
 
     def observe_envelope(self, envelope: EventEnvelope) -> None:
         if "malformed" in envelope.capture_flags:
@@ -215,6 +217,8 @@ class SideDataStats:
             stale_after_seconds += self.expected_interval_seconds
         if (
             self.enabled
+            and status == "RUNNING"
+            and not self.event_sparse
             and self.last_success_at_utc_ns is not None
             and time.time_ns() - self.last_success_at_utc_ns
             > int(stale_after_seconds * 1_000_000_000)
@@ -224,6 +228,7 @@ class SideDataStats:
             "status": status,
             "enabled": self.enabled,
             "running": self.running,
+            "connected": self.connected,
             "attempts": self.attempts,
             "accepted": self.accepted,
             "malformed": self.malformed,
@@ -508,7 +513,7 @@ class RestSideDataPoller:
                 except TimeoutError:
                     continue
         finally:
-            await asyncio.to_thread(self.spool.close_and_seal)
+            await run_owned_blocking_call(self.spool.close_and_seal)
 
     async def _capture_and_persist(self) -> EventEnvelope:
         envelope = await self._request()
@@ -563,8 +568,8 @@ class RestSideDataPoller:
 
     async def _persist(self, envelope: EventEnvelope) -> None:
         self.spool.enqueue(envelope)
-        await asyncio.to_thread(self.spool.drain_all)
-        await asyncio.to_thread(self.spool.sync)
+        await run_owned_blocking_call(self.spool.drain_all)
+        await run_owned_blocking_call(self.spool.sync)
 
     async def _catch_up_five_minute(self, stop: asyncio.Event) -> bool:
         retention_name, retention_ms = FIVE_MINUTE_RETENTION[self.kind]
@@ -734,17 +739,29 @@ class SideDataSupervisor:
             stats.attempts += 1
             stats.running = True
             stats.status = "RUNNING"
-            extension = factory()
+            extension: SideDataExtension | None = None
             try:
+                extension = factory()
                 await extension.run(stop)
                 if not stop.is_set():
                     raise RuntimeError("side-data task returned before service stop")
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as exc:
+                if stop.is_set():
+                    stats.status = "STOPPED"
+                else:
+                    self.failures[name] = exc
+                    stats.observe_failure(type(exc).__name__)
+                    stats.status = "FAILED"
+                    log_event(
+                        self.logger, logging.CRITICAL, "side_task_cancelled",
+                        "Side-data task cancelled unexpectedly; core remains active",
+                        **self.log_context, stream=name, outcome="FAILED",
+                    )
                 raise
             except Exception as exc:
                 self.failures[name] = exc
                 stats.observe_failure(type(exc).__name__)
-                if getattr(extension, "terminal_on_failure", False):
+                if extension is None or getattr(extension, "terminal_on_failure", False):
                     # Transport-integrity task: the old WebSocket and writer
                     # cannot be proven safely reconciled, so a replacement
                     # connection must not receive frames without a durable
@@ -791,13 +808,18 @@ class SideDataSupervisor:
                     continue
             finally:
                 stats.running = False
+                stats.connected = False
         if stop.is_set():
             stats.status = "STOPPED"
 
     async def run(self, stop: asyncio.Event) -> None:
+        # Owner cancellation must drain its children without stopping core capture.
+        local_stop = asyncio.Event()
+        if stop.is_set():
+            local_stop.set()
         tasks = [
             asyncio.create_task(
-                self._run_one(name, factory, stop),
+                self._run_one(name, factory, local_stop),
                 name=f"{self.task_name_prefix}:{name}",
             )
             for name, factory in self.factories.items()
@@ -805,6 +827,7 @@ class SideDataSupervisor:
         try:
             await stop.wait()
         finally:
+            local_stop.set()
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -921,11 +944,18 @@ class UsdMSideDataManager:
             )
 
         def lifecycle_observer(stream: str) -> Callable[[str], None] | None:
-            if metrics is None:
-                return None
-
             def observe(event: str) -> None:
-                if event in {"connected", "disconnected"}:
+                stats = self.stats[stream]
+                if event == "connected":
+                    stats.connected = True
+                    stats.status = "RUNNING"
+                    return
+                if event == "disconnected":
+                    stats.connected = False
+                    if stats.status == "RUNNING":
+                        stats.status = "RETRYING"
+                    return
+                if metrics is None:
                     return
                 metrics.safely_observe_lifecycle(
                     market="um_perpetual", stream=stream, event=event
@@ -940,6 +970,7 @@ class UsdMSideDataManager:
             if not settings.stream_enabled(spec.stream):
                 continue
             stream_stats = self.stats[spec.stream.value]
+            stream_stats.event_sparse = spec.stream is UsdMSideStream.LIQUIDATION
 
             def stream_factory(
                 stream_spec: UsdMSideStreamSpec = spec,

@@ -33,6 +33,7 @@ from ..binance.usdm.rest import (
 from ..binance.usdm.schema import USDM_STREAMS
 from ..binance.usdm.side_data_rest import UsdMSideRestApi
 from ..binance.usdm.websocket import ConnectionOpener, UsdMStreamCollector, open_usdm_websocket
+from ..binance.websocket_common import run_owned_blocking_call
 from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
@@ -361,7 +362,8 @@ class UsdMCollector:
                 return
             self.public_rest_cooldown.observe_success()
             self.snapshot_spool.enqueue(envelope)
-            await asyncio.to_thread(self.snapshot_spool.drain_all)
+            await run_owned_blocking_call(self.snapshot_spool.drain_all)
+            await run_owned_blocking_call(self.snapshot_spool.sync)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
                 recovered_update_id = self.readiness.reliable_update_id
@@ -580,7 +582,7 @@ class UsdMCollector:
                         **product_log_fields("um_perpetual", self.settings.symbol),
                         error_type=type(side_result[0]).__name__,
                     )
-            await asyncio.to_thread(self.snapshot_spool.close_and_seal)
+            await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
             batch_id = await asyncio.to_thread(self.metrics.safely_flush)
             reporter = DailyReporter(

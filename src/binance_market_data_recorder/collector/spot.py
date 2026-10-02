@@ -40,6 +40,7 @@ from ..binance.spot.websocket import (
     SpotStreamCollector,
     open_spot_websocket,
 )
+from ..binance.websocket_common import run_owned_blocking_call
 from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
@@ -349,7 +350,8 @@ class SpotCollector:
                     stop_task.cancel()
                     await asyncio.gather(stop_task, return_exceptions=True)
             self.snapshot_spool.enqueue(envelope)
-            await asyncio.to_thread(self.snapshot_spool.drain_all)
+            await run_owned_blocking_call(self.snapshot_spool.drain_all)
+            await run_owned_blocking_call(self.snapshot_spool.sync)
             result = self.readiness.observe_snapshot_persisted(envelope)
             if self.readiness.snapshot().orderbook_synchronized:
                 recovered_update_id = self.readiness.reliable_update_id
@@ -470,7 +472,7 @@ class SpotCollector:
             if "side_task" in locals():
                 await asyncio.gather(side_task, return_exceptions=True)
             await self.snapshot_requester.wait_for_idle()
-            await asyncio.to_thread(self.snapshot_spool.close_and_seal)
+            await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
             batch_id = await asyncio.to_thread(self.metrics.safely_flush)
             reporter = DailyReporter(

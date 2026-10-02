@@ -25,6 +25,12 @@ BOUNDED_BATCH_POLICY = {
     "causal_reference_cap": 4 * SQL_PAGE_CAP,
     "max_canonical_delta_bytes": 7 * 1024 * 1024,
 }
+COMPACT_BATCH_POLICY = {
+    **BOUNDED_BATCH_POLICY,
+    "version": "bounded-batches.v2",
+    "archive_companions": "shared-transaction.v1",
+    "causal_reference_bound": "observation-final",
+}
 DELTA_WORK_BUDGET_NS = 240_000_000_000
 FAMILIES = ("operational", "chunk", "archive")
 BACKLOG_STATES = ("COPYING", "VERIFYING", "VERIFIED", "LOCAL_DELETE_PENDING")
@@ -45,7 +51,7 @@ def delta_limits(start: Mapping[str, Any]) -> tuple[int, int]:
     """Old starts retain one-page semantics; new policy is frozen at T0."""
     if "delta_policy" not in start:
         return 1, SQL_PAGE_CAP
-    if start["delta_policy"] != BOUNDED_BATCH_POLICY:
+    if start["delta_policy"] not in (BOUNDED_BATCH_POLICY, COMPACT_BATCH_POLICY):
         raise AcceptanceError("unsupported V5 delta policy")
     return 4, 4 * SQL_PAGE_CAP
 
@@ -280,6 +286,7 @@ def replay_delta(
     *,
     t0_utc_ns: int | None = None,
     row_cap: int = SQL_PAGE_CAP,
+    causal_cap_at_end: bool = False,
 ) -> dict[str, Any]:
     """Replay bounded acknowledged rows plus explicit first pending row per family.
 
@@ -451,13 +458,18 @@ def replay_delta(
                         raise AcceptanceError("conflicting causal reference")
                 else:
                     refs.append(bound)
-                if len(refs) > row_cap:
+                if not causal_cap_at_end and len(refs) > row_cap:
                     raise AcceptanceError("pending causal reference cap exceeded")
             state["rolling"][family] = sha256_bytes(
                 bytes.fromhex(state["rolling"][family]) + bytes.fromhex(row_digest(row))
             )
             last = numeric_id
             state["processed"][family] = last
+    # The v2 cap applies to persisted continuation. Intra-observation references
+    # are still finite: <= three bounded row batches times fixed companion fan-out.
+    # Later families must corroborate/discharge them, never silently discard them.
+    if len(state["pending_causal_references"]) > row_cap:
+        raise AcceptanceError("pending causal reference cap exceeded")
     state["observed_high_water"] = dict(high_water)
     state["pending_causal_references"].sort(key=lambda item: (item["family"], item["numeric_id"]))
     return state

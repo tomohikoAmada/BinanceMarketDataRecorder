@@ -74,3 +74,20 @@ The [historical register](risk_register_history.md) preserves the full risk IDs,
 mitigations and incident chronology. Closed or superseded historical findings
 are not new task prerequisites. Update this register when a current finding or
 control changes.
+
+## Q3 all-enabled supplement — October2
+
+The supplementary independent configuration review reproduced fourP1 findings
+(limiter-stop wait, invisible auxiliary termination, unowned Raw mutations,
+idle snapshot/metadata durability) and oneP2 (sparse/terminal health). Narrow
+candidate fixes and42-context offline coverage pass; frozen independent rereview
+and replacement cloud gates remain pending. See the all-enabled review/candidate
+records. F1 now has a shared-companion v2 candidate; actual all-enabled cloud
+throughput/catch-up remains OPEN and Formal credit remains zero.
+
+Official USD-M detail `.md` routes have moved to the catalog. Current browser-
+downloaded official REST/WS schemas establish required unchanged public semantics
+with exact hashes in binance_sources.md. The updater correctly rejects landing
+HTML; updating its selection is a separate documentation-tool follow-up, not
+permission to accept HTML as endpoint documentation. No blocked normative
+conflict was found in the health behavior changed here.

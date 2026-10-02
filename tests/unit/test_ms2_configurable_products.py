@@ -659,6 +659,11 @@ def test_vps_evaluator_independently_checks_exact_products(
         {"spot_symbols": ["ETHUSDT"]},
         {"usdm_symbols": ["SOLUSDT"]},
         {"spot_symbols": ["ETHUSDT", "SOLUSDT"], "usdm_symbols": ["ETHUSDT", "SOLUSDT"]},
+        {
+            "spot_symbols": ["BTCUSDT", "ETHUSDT"],
+            "usdm_symbols": ["BTCUSDT", "ETHUSDT"],
+            "all_enabled": True,
+        },
     ],
 )
 def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
@@ -671,6 +676,18 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
 
     from binance_market_data_recorder.service.power import NoopSleepObserver
 
+    all_enabled = values.get("all_enabled", False)
+    values = {k: v for k, v in values.items() if k != "all_enabled"}
+    synced: set[tuple[str, str, str]] = set()
+    from binance_market_data_recorder.spool.stream import StreamSpool
+
+    original_sync = StreamSpool.sync
+
+    def observe_sync(spool: StreamSpool) -> None:
+        original_sync(spool)
+        synced.add((spool.market, spool.symbol, spool.stream))
+
+    monkeypatch.setattr(StreamSpool, "sync", observe_sync)
     opened: set[tuple[str, str]] = set()
     requested: list[tuple[str, str]] = []
 
@@ -717,6 +734,8 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
             "depth@100ms": "diff_depth",
             "aggTrade": "agg_trade",
             "bookTicker": "book_ticker",
+            "markPrice@1s": "mark_price",
+            "forceOrder": "liquidation",
         }[suffix]
         opened.add((market, wire))
         fixture_market = "usdm" if market == "um_perpetual" else "spot"
@@ -727,15 +746,92 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
     monkeypatch.setattr(runtime_module, "open_usdm_websocket", opener)
     monkeypatch.setattr(runtime_module, "PublicSpotRestApi", lambda **_: Api())
     monkeypatch.setattr(runtime_module, "create_usdm_rest_api", lambda **_: Api())
-    monkeypatch.setattr(runtime_module, "create_usdm_side_rest_api", lambda **_: object())
-    monkeypatch.setattr(runtime_module, "create_spot_exchange_info_api", lambda **_: object())
+
+    class SideApi:
+        def exchange_info(self, symbol: str) -> Any:
+            return Response(
+                {
+                    "symbols": [
+                        {"symbol": symbol, "filters": [], "orderTypes": [], "status": "TRADING"}
+                    ]
+                }
+            )
+
+        def exchange_information(self) -> Any:
+            return Response(json.loads((FIXTURES / "usdm" / "exchange_info.json").read_text()))
+
+        def get_funding_rate_info(self) -> Any:
+            return Response([])  # A successful empty adjustment list is valid.
+
+        def mark_price(self, symbol: str) -> Any:
+            return self.fixture("premium_index", symbol)
+
+        def open_interest(self, symbol: str) -> Any:
+            return self.fixture("open_interest", symbol)
+
+        def get_funding_rate_history(self, symbol: str, *args: Any, **kwargs: Any) -> Any:
+            return self.fixture("funding_history", symbol)
+
+        def fixture(self, name: str, symbol: str) -> Any:
+            return Response(
+                json.loads(
+                    (FIXTURES / "usdm" / f"{name}.json").read_text().replace("BTCUSDT", symbol)
+                )
+            )
+
+        def periods(self, kind: Any, symbol: str, *args: Any) -> Any:
+            from tests.unit.test_usdm_side_data_collector import _cursor_model
+
+            start = int(args[-2])
+            model = _cursor_model(kind, start)
+            model["symbol"] = symbol
+            if "pair" in model:
+                model["pair"] = symbol
+            return Response([model])
+
+        def open_interest_statistics(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("open_")), symbol, *args
+            )
+
+        def taker_buy_sell_volume(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("taker_")), symbol, *args
+            )
+
+        def long_short_ratio(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("global_")), symbol, *args
+            )
+
+        def top_trader_long_short_ratio_accounts(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("top_long_short_account")),
+                symbol,
+                *args,
+            )
+
+        def top_trader_long_short_ratio_positions(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("top_long_short_position")),
+                symbol,
+                *args,
+            )
+
+        def basis(self, symbol: str, *args: Any) -> Any:
+            return self.periods(
+                next(k for k in FIVE_MINUTE_KINDS if k.value.startswith("basis_")), symbol, *args
+            )
+
+    monkeypatch.setattr(runtime_module, "create_usdm_side_rest_api", lambda **_: SideApi())
+    monkeypatch.setattr(runtime_module, "create_spot_exchange_info_api", lambda **_: SideApi())
     disabled: dict[str, Any] = {
-        name: False
+        name: all_enabled
         for name in RecorderConfig.model_fields
         if name.startswith("side_") and name.endswith("_enabled")
     }
     config = RecorderConfig(
-        data_root=tmp_path, spot_exchange_info_enabled=False, **disabled, **values
+        data_root=tmp_path, spot_exchange_info_enabled=all_enabled, **disabled, **values
     )
     runtime = ServiceRuntime(
         config=config,
@@ -747,13 +843,44 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
         task = asyncio.create_task(runtime.run())
         try:
             for _ in range(500):
-                if runtime._state_document()["core_ready"]:
+                auxiliary = [
+                    item
+                    for collector in runtime._collectors.values()
+                    for item in cast(Any, collector).side_data_status().values()
+                ]
+                if runtime.global_side_data is not None:
+                    auxiliary += list(runtime.global_side_data.status().values())
+                if runtime._state_document()["core_ready"] and (
+                    not all_enabled
+                    or (len(auxiliary) == 26 and all(item["accepted"] >= 1 for item in auxiliary))
+                ):
                     break
                 if task.done():
                     await task
                 await asyncio.sleep(0.01)
             assert runtime._state_document()["core_ready"] is True
-            assert len(opened) == 3 * len(runtime.expected_products)
+            assert len(opened) == (16 if all_enabled else 3 * len(runtime.expected_products))
+            if all_enabled:
+                assert len(auxiliary) == 26
+                assert all(item["accepted"] >= 1 and item["failures"] == 0 for item in auxiliary), (
+                    auxiliary,
+                    {
+                        str(k): repr(cast(Any, v.side_data).supervisor.failures)
+                        for k, v in runtime._collectors.items()
+                        if isinstance(v, UsdMCollector)
+                    },
+                )
+                assert runtime.global_side_data is not None
+                assert set(runtime.global_side_data.supervisor.factories) == {
+                    "funding_info",
+                    "exchange_info",
+                }
+                for collector in runtime._collectors.values():
+                    if isinstance(collector, UsdMCollector):
+                        assert collector.side_data is not None
+                        assert collector.side_data.rest_request_lock is runtime.usdm_request_lock
+                        assert collector.side_data.rest_cooldown is runtime.usdm_cooldown
+                        assert all(collector.side_data.cursor_state.values())
             assert set(requested) == {(key.market, key.symbol) for key in runtime.expected_products}
         finally:
             runtime.request_stop("test-complete")
@@ -762,11 +889,37 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
     asyncio.run(exercise())
     assert runtime.state_store.read()["status"] == "STOPPED"  # type: ignore[index]
     manifests = [json.loads(path.read_text()) for path in runtime.layout.manifests.glob("*.json")]
-    assert {(doc["market"], doc["symbol"], doc["stream"]) for doc in manifests} == {
+    actual = {(doc["market"], doc["symbol"], doc["stream"]) for doc in manifests}
+    core = {
         (key.market, key.symbol, stream)
         for key in runtime.expected_products
         for stream in (*CORE_STREAMS, "depth_snapshot")
     }
+    assert core <= actual
+    if all_enabled:
+        from binance_market_data_recorder.binance.usdm.side_data_rest import RestSideDataKind
+
+        product_kinds = {kind.value for kind in RestSideDataKind} - {
+            "exchange_info",
+            "funding_info",
+        }
+        expected = core | {("spot", symbol, "exchange_info") for symbol in config.spot_symbols}
+        expected |= {
+            ("um_perpetual", symbol, stream)
+            for symbol in config.usdm_symbols
+            for stream in product_kinds | {"mark_price", "liquidation"}
+        }
+        expected |= {
+            ("um_perpetual", GLOBAL_SIDE_DATA_SYMBOL, kind)
+            for kind in ("exchange_info", "funding_info")
+        }
+        assert actual == expected and len(actual) == 42
+        assert {
+            item for item in expected if item[2] not in {*CORE_STREAMS, "mark_price", "liquidation"}
+        } <= synced
+        assert not list(runtime.layout.active.rglob("*.partial"))
+    else:
+        assert actual == core
 
 
 def test_wrong_symbol_frames_cannot_satisfy_readiness() -> None:

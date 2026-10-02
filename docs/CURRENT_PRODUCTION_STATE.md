@@ -20,6 +20,12 @@ authoritative post-warm-up baseline has not run. Q3 is PARTIAL_NOT_ACCEPTED;
 no Formal V5 T0, target or final exists. Do not repeat the unchanged live run
 or start 2h/12h until optimization/review and cloud gates pass.
 
+The latest owner instruction resumes Q3 with all fourteen auxiliary capture flags
+enabled in the replacement profile, then eligible Formal 2h and 12h, stopping
+before Formal 24h. Local fixes and review are in progress; installed config still
+has auxiliaries disabled. This instruction has not changed installed artifacts
+or created duration credit.
+
 ## Installed artifact and data scope
 
 | Item | Value |

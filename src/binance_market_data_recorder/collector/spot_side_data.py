@@ -12,7 +12,9 @@ from ..binance.spot.exchange_info import (
     SpotExchangeInfoApi,
     capture_spot_exchange_info,
 )
-from ..binance.spot.rate_limit import shared_spot_ip_rate_limiter
+from ..binance.spot.rate_limit import SpotIpRateLimiter, shared_spot_ip_rate_limiter
+from ..binance.websocket_common import run_owned_blocking_call
+from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..spool.stream import StreamSpool
@@ -54,33 +56,62 @@ class SpotExchangeInfoPoller:
             while not stop.is_set():
                 try:
                     limiter = shared_spot_ip_rate_limiter()
-                    await limiter.acquire_weight(weight=20)
-                    async with limiter.request_slot():
-                        try:
-                            envelope = await asyncio.to_thread(
-                                capture_spot_exchange_info,
-                                symbol=self.spool.symbol,
-                                rest_api=self.rest_api,
-                                collector_instance_id=self.collector_instance_id,
-                                collector_version=self.collector_version,
-                                timeout_ms=self.timeout_ms,
-                            )
-                        except (RateLimitBanError, TooManyRequestsError) as exc:
-                            status = 418 if isinstance(exc, RateLimitBanError) else 429
-                            await limiter.observe_weight_rejection(
-                                status=status,
-                                weight=20,
-                                headers={},
-                                body_text=str(exc),
-                            )
-                            raise
+
+                    async def capture(
+                        rate_limiter: SpotIpRateLimiter = limiter,
+                    ) -> EventEnvelope | None:
+                        await rate_limiter.acquire_weight(weight=20)
+                        async with rate_limiter.request_slot():
+                            if stop.is_set():
+                                return None
+                            try:
+                                return await run_owned_blocking_call(
+                                    capture_spot_exchange_info,
+                                    symbol=self.spool.symbol,
+                                    rest_api=self.rest_api,
+                                    collector_instance_id=self.collector_instance_id,
+                                    collector_version=self.collector_version,
+                                    timeout_ms=self.timeout_ms,
+                                )
+                            except (RateLimitBanError, TooManyRequestsError) as exc:
+                                status = 418 if isinstance(exc, RateLimitBanError) else 429
+                                await rate_limiter.observe_weight_rejection(
+                                    status=status, weight=20, headers={}, body_text=str(exc),
+                                )
+                                raise
+
+                    request_task = asyncio.create_task(capture())
+                    stop_task = asyncio.create_task(stop.wait())
+                    try:
+                        done, _pending = await asyncio.wait(
+                            {request_task, stop_task}, return_when=asyncio.FIRST_COMPLETED,
+                        )
+                        if stop_task in done and stop.is_set():
+                            request_task.cancel()
+                            # Cancellation waits for an already-started SDK worker;
+                            # no slot/worker can outlive the spool/Catalog shutdown.
+                            (outcome,) = await asyncio.gather(request_task, return_exceptions=True)
+                            if isinstance(outcome, BaseException) and not isinstance(
+                                outcome, asyncio.CancelledError
+                            ):
+                                raise outcome
+                            break
+                        envelope = await request_task
+                    finally:
+                        for task in (request_task, stop_task):
+                            if not task.done():
+                                task.cancel()
+                        await asyncio.gather(request_task, stop_task, return_exceptions=True)
+                    if envelope is None:
+                        break
                     provenance = json.loads(envelope.raw_payload)
                     await limiter.observe_success_weight(
                         weight=20,
                         headers=provenance["response"]["headers"],
                     )
                     self.spool.enqueue(envelope)
-                    await asyncio.to_thread(self.spool.drain_all)
+                    await run_owned_blocking_call(self.spool.drain_all)
+                    await run_owned_blocking_call(self.spool.sync)
                     self.stats.accepted += 1
                     self.stats.observe_success()
                 except (RateLimitBanError, TooManyRequestsError) as exc:
@@ -115,4 +146,4 @@ class SpotExchangeInfoPoller:
                 except TimeoutError:
                     continue
         finally:
-            await asyncio.to_thread(self.spool.close_and_seal)
+            await run_owned_blocking_call(self.spool.close_and_seal)

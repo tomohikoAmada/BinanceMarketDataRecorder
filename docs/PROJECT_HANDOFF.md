@@ -49,6 +49,10 @@ The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h a
 with complete terminal/independent verification. Q3 custody, new canonical
 Catalog/archive registration and deployment are done. Its nonformal observer
 hit the causal-reference cap after byte-budget starvation; Q3 is incomplete.
+The latest owner instruction requires all fourteen auxiliary flags enabled and
+execution through reviewed eligible 2h + 12h, stopping before cloud 24h.
+Uncovered stop/cancellation/durability/health paths and compact v2 evidence now
+have local fixes; the replacement release/review/cloud gates are pending.
 Next is a measured observer correction/review and repeated cloud gates, then
 the authoritative post-warm-up baseline/readiness. No old archive was destroyed
 or imported into the new corpus. See [Q3 evidence](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).

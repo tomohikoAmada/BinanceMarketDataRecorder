@@ -10,6 +10,8 @@ import pytest
 from binance_market_data_recorder.archive import ArchiveManager
 from binance_market_data_recorder.domain.product import ProductKey
 from binance_market_data_recorder.service.acceptance import canonical_json, sha256_bytes
+from binance_market_data_recorder.service.acceptance_v5_codec import delta_bytes
+from binance_market_data_recorder.service.acceptance_v5_delta import BOUNDED_BATCH_POLICY
 from binance_market_data_recorder.service.acceptance_v5_finalize import baseline
 from binance_market_data_recorder.service.acceptance_v5_online import (
     replay_online,
@@ -26,9 +28,9 @@ from tests.unit.test_acceptance_v5_online import advance, observer_fixture
 from tests.v5_support import production_readiness, publish_ready_state
 
 
-@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize("policy", ["compact", "bounded-v1", "original"])
 def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
-    tmp_path: Path, legacy: bool
+    tmp_path: Path, policy: str
 ) -> None:
     prepared = prepare_archive(tmp_path / "archive", chunk_count=0)
     observer, clock, evaluator = observer_fixture(tmp_path / "observer")
@@ -68,9 +70,14 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
     observer.evaluator = production_readiness(observer, clock)
     publish_ready_state(observer, clock)
     path, _, start = observer.start()
-    if legacy:
+    legacy = policy == "original"
+    if policy != "compact":
         # Reconstruct an empty old-format T0. No duration/cursor authority changes.
-        del start["delta_policy"]
+        start.pop("archive_companions")
+        if legacy:
+            del start["delta_policy"]
+        else:
+            start["delta_policy"] = dict(BOUNDED_BATCH_POLICY)
         path.write_bytes(canonical_json(start))
         observer.start_document = start
         observer.last_document = start
@@ -117,11 +124,7 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
                 assert sample["delta_pending"] is True
                 break  # The old one-page policy is intentionally not widened on replay/resume.
             else:
-                assert sum(
-                    len(canonical_json(entry))
-                    for page in sample["delta_pages"].values()
-                    for entry in page
-                ) <= 7 * 1024 * 1024
+                assert delta_bytes(sample) <= 7 * 1024 * 1024
                 assert all(len(page) <= 1024 for page in sample["delta_pages"].values())
                 if window in {0, 4}:
                     assert sample["continuation"]["processed"] == sample["high_water"]
@@ -132,7 +135,7 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
     replay = replay_online(observer.evidence_root, identity, require_target=False)
     assert replay.sample_count == (1 if legacy else 4)
     assert replay.continuation == sample["continuation"]
-    if legacy:
+    if policy != "compact":
         resumed = resume_v5_observer(
             evidence_root=observer.evidence_root,
             data_root=observer.data_root,
@@ -151,10 +154,13 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
         advance(clock, 300)
         publish_ready_state(resumed, clock)
         _, _, resumed_sample = resumed.sample()
-        assert "delta_policy" not in resumed_sample
+        if legacy:
+            assert "delta_policy" not in resumed_sample
+        else:
+            assert resumed_sample["delta_policy"] == BOUNDED_BATCH_POLICY
         assert resumed_sample["blocking_findings"] == []
-        assert len(resumed_sample["delta_pages"]["chunk"]) <= 256
-        assert all(len(page) <= 256 for page in resumed_sample["delta_pages"].values())
+        row_cap = 256 if legacy else 1024
+        assert all(len(page) <= row_cap for page in resumed_sample["delta_pages"].values())
         resumed_replay = replay_online(resumed.evidence_root, identity, require_target=False)
-        assert resumed_replay.sample_count == 2
+        assert resumed_replay.sample_count == (2 if legacy else 5)
         assert resumed_replay.continuation == resumed_sample["continuation"]

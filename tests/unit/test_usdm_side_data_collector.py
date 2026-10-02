@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Any, ClassVar, cast
@@ -573,5 +574,89 @@ def test_cursor_records_unrecoverable_retention_gap_before_catchup(
         assert isinstance(gap_end, int)
         assert api.calls[0][0] == gap_end + FIVE_MINUTE_PERIOD_MS
         catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("operation", ["drain_all", "sync"])
+@pytest.mark.parametrize("io_failure", [False, True])
+def test_cursor_mutation_owned_until_complete_before_seal_and_cursor_advance(
+    tmp_path: Path,
+    operation: str,
+    io_failure: bool,
+) -> None:
+    entered, release = threading.Event(), threading.Event()
+    active = False
+
+    class BlockingSpool(CursorSpool):
+        def block(self) -> None:
+            nonlocal active
+            active = True
+            entered.set()
+            try:
+                assert release.wait(3)
+                if io_failure:
+                    raise OSError("durable cursor write failed")
+            finally:
+                active = False
+
+        def drain_all(self) -> int:
+            if operation == "drain_all":
+                self.block()
+            return super().drain_all()
+
+        def sync(self) -> None:
+            if operation == "sync":
+                self.block()
+            super().sync()
+
+        def close_and_seal(self) -> None:
+            assert not active
+            super().close_and_seal()
+
+    async def exercise() -> None:
+        kind = RestSideDataKind.OPEN_INTEREST_STATISTICS
+        catalog = Catalog(tmp_path / "cursor.sqlite")
+        spool = BlockingSpool()
+        poller = _cursor_poller(
+            kind=kind,
+            tmp_path=tmp_path,
+            catalog=catalog,
+            api=CursorApi(kind),
+            spool=spool,
+            now_ms=50 * 24 * 60 * 60 * 1000 + 1,
+        )
+
+        async def owner() -> None:
+            try:
+                await poller._catch_up_five_minute(asyncio.Event())
+            finally:
+                from binance_market_data_recorder.binance.websocket_common import (
+                    run_owned_blocking_call,
+                )
+
+                await run_owned_blocking_call(spool.close_and_seal)
+
+        task = asyncio.create_task(owner())
+        try:
+            for _ in range(1000):
+                if entered.is_set():
+                    break
+                await asyncio.sleep(0.001)
+            assert entered.is_set()
+            for _ in range(3):
+                task.cancel()
+                await asyncio.sleep(0.005)
+                assert not task.done() and not spool.closed
+                assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+            release.set()
+            with pytest.raises(OSError if io_failure else asyncio.CancelledError):
+                await asyncio.wait_for(task, 1)
+            assert spool.closed and not active
+            assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        finally:
+            release.set()
+            await asyncio.gather(task, return_exceptions=True)
+            catalog.close()
 
     asyncio.run(exercise())

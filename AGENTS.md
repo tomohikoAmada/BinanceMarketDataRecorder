@@ -56,8 +56,9 @@ Q2 independent review and exact release gates are complete. Frozen source is
 Current development NEXT is Q3 observer byte/causal-cap optimization review,
 refreezing any changed release, repeated cloud gates and authoritative baseline.
 See `docs/milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md`. Do not repeat
-the unchanged failed live run. The owner authorizes continuation through eligible Q4
-2h, stopping before Q5 cloud 12h. ADR-0036 versions new normalized dedup/build identity; old v1
+the unchanged failed live run. The owner authorizes continuation through reviewed eligible Q4 2h and Q5 12h, stopping before Q6 cloud 24h.
+The new qualification profile enables all fourteen auxiliary capture flags;
+unchanged reviews are reused and uncovered combinations/changed paths rereviewed. ADR-0036 versions new normalized dedup/build identity; old v1
 outputs remain readable. Live RSS/capacity and all Formal credit gates remain.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and

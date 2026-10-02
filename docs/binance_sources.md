@@ -476,3 +476,25 @@ or private endpoint was used.
 The raw responses and compact conclusion are retained in the Formal acceptance
 root. Eligibility passed, but the later host-maintenance interruption leaves
 the stage incomplete and provides no 12-hour or Production Ready authority.
+
+## All-enabled qualification health refresh — 2026-10-02
+
+Only official public documentation was read; downloaded content was never executed.
+Selected text/schema bytes are retained under the local cache
+`~/Library/Caches/BinanceMarketDataRecorder/binance-docs-all-enabled-20261002/`.
+
+| Source | URL | Retrieval UTC | Content SHA-256 | Conclusion |
+|---|---|---|---|---|
+| Agent Native index | `https://developers.binance.com/en/docs/llms.txt` | `2026-10-02T04:53:43.647725Z` | `7474dd19d22fc523ea20709c1dffa44d3fda9209006409ce3296d275b59a155c` | USD-M public REST/stream operations remain listed; API detail moved to catalog |
+| Official USD-M WS schema1.0.0 | `https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/1.0.0/schema.yaml` | `2026-10-02T05:00:24.828598Z` | `b81aab5381fa00f25e86c9d8c7c24a822493edef2a291097f5e9319a460fb48f` | Symbol liquidation pushes latest snapshot within1000ms and no message without liquidation; mark price supports1s/3s; existing market/public routes and st fields retained |
+| Official USD-M REST schema1.0.0 | `https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/1.0.0/schema.yaml` | `2026-10-02T05:01:02.225017Z` | `9c3f92d02d8b84f6c209286b601058bea66e98016c0f47757fb253337bd59d2c` | fundingInfo covers only adjusted symbols, so empty list is valid; shares500/5min/IP funding-history limit. Six statistical routes retain5m/500 limits and explicit endpoint timestamp semantics; Raw preserves source timestamps |
+
+Old selected USD-M `.md` paths returned identical65,590-byte portal landing HTML
+SHA-256 `1c9f731787466a2e31b03034fb707b97a1fe0c75e73bf46749618a4d77d11234`
+at04:54:25–26UTC, not normative Markdown. Direct catalog/schema updater requests
+received202 WAF challenges. Visible official browser navigation exposed the
+catalog's exact Download schema links; downloading their inert text succeeded.
+No CAPTCHA, downloaded code execution or nonallowlisted source was used. These
+schema bytes establish the health semantics without substituting SDK examples.
+The documentation updater's old selected detail URLs need a separate future
+refresh; landing HTML must continue to fail validation.

@@ -32,19 +32,26 @@ Recorder is stopped/disabled after a failed NONFORMAL warm-up. Formal V5 credit
 is zero; the old baseline remains unpublished and monitor paused. See
 [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
-its reviewed descendant is frozen as `d0f455c` in the
+its previously reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
 Q2 independent review, offline/online/stress, exact-source dual-platform CI and
 clean locked-wheel gates PASS. The actual Q3 cloud delta-capacity gate failed;
 Q3 remains PARTIAL_NOT_ACCEPTED. See [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
-The owner authorized this execution through eligible 2h, stopping before 12h.
+The owner's latest October 2 instruction authorizes this execution through
+reviewed eligible **2h and 12h**, stopping when the next step is VPS **24h**.
+All fourteen applicable public auxiliary capture flags must be true throughout
+the newly frozen chain. Reuse unchanged prior reviews; supplement uncovered
+configuration combinations and changed paths. Existing disabled-auxiliary cloud
+measurements do not qualify the expanded profile.
 
 ### Fixed MVP boundary
 
 Keep Python 3.12, one Recorder process, one Collector per ProductKey, SQLite,
 Raw v1, verified archive and non-root systemd. Target is greencloud-tokyo-01,
 Ubuntu 24.04 x86_64, currently 4 logical CPUs/about 6 GB RAM. Configured products
-are Spot BTCUSDT/ETHUSDT and USD-M BTCUSDT/ETHUSDT, twelve core stream contexts.
+are Spot BTCUSDT/ETHUSDT and USD-M BTCUSDT/ETHUSDT: twelve core WebSocket
+contexts, four depth snapshots and twenty-six auxiliary contexts (42 total;
+16 WebSocket connections and 26 REST contexts).
 Keep 60s/128 MiB chunk rotation and 1s durability initially. Freeze exact enabled
 auxiliary kinds, intervals and network/proxy settings with the release.
 
@@ -106,8 +113,9 @@ other findings require an explicit disposition, not speculative fixes.
 Independently review Q1 and candidate `7877082`, especially full Raw proof
 equivalence, short/truncated input, reconnect boundaries, frozen multi-page SQL
 snapshots, causal references, byte/time limits, cancellation and old-start replay
-AND resume. ADR-0035 retains old one-page semantics; new policy remains four
-256-row pages/family, 1024 references, 7 MiB delta entries and 8 MiB total.
+AND resume. ADR-0035 retains old one-page semantics; new v2 policy remains four
+256-row pages/family, 1024 persisted references, 7 MiB entries plus shared companion
+table and 8 MiB total; old-policy replay/resume remain frozen. See ADR-0037.
 300s cadence, 600s maximum gap, 240s work budget and 900s readiness recovery stay.
 The CLI status detail-array change must be reflected in operator scripts.
 
@@ -130,7 +138,9 @@ values/paths, not a moving GitHub branch or copied historical command.
 ### Q3 — Safe fresh scope and cloud qualification preparation
 
 Current [Q3 attempt](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md)
-retains all new capture and stops before Formal T0. Next, reproduce byte-budget
+retains all new capture and stops before Formal T0. The current Q3 correction implements [ADR-0037](adr/0037-v5-shared-archive-companions.md)
+and fixes uncovered all-enabled lifecycle/durability/health behavior. Independent
+frozen-candidate review and a replacement exact release remain pending. Reproduce byte-budget
 starvation and intermediate causal-reference overflow using actual cloud-sized
 companions. Evaluate eliminating repeated per-transaction evidence within each
 bounded observation, with old-policy replay/resume preserved. Review/freeze any
@@ -210,7 +220,16 @@ Keep the new corpus growing through the whole chain. Monitor compact evidence,
 delta progress, reserve/backpressure, CPU/RSS, archive backlog and every configured
 product. Report enabled auxiliary counts/coverage/failures; do not describe an
 absent or unreliable side stream as complete. Persistent FAILED at pre-start is
-resolved, not silently hidden or disabled to ease qualification.
+resolved, not silently hidden or disabled to ease qualification. Bind the read-only
+`tools/qualification_auxiliary_gate.py` result and compact service state to every
+pre-start/online coverage check: exact 26 enabled/running owners; 22 successful
+REST contexts; two fresh connected mark-price streams; two connected liquidation
+streams; and twelve correctly symbol-bound, caught-up five-minute cursors.
+Liquidation may have zero messages; fundingInfo may return an empty list. Existing
+poll intervals plus degraded grace determine freshness/cursor-lag bounds. A failed
+supplementary check blocks owner-reviewed qualification even if core readiness
+is READY. Preserve all transient failures/gaps and their recovery evidence; do not
+invent full liquidation-market coverage from this snapshot-style stream.
 
 At target, stop accruing time; operator stop/disable and verified archive drain
 precede frozen quiescence, full terminal audit, completed verification and reviewed
