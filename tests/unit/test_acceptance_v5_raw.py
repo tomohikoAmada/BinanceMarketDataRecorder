@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import os
 import time
 from multiprocessing.connection import Connection
 from pathlib import Path
@@ -13,6 +14,7 @@ import zstandard
 from binance_market_data_recorder.audit.reconnect_boundaries import _frame_document, _frame_identity
 from binance_market_data_recorder.service import acceptance_v5_raw as raw_module
 from binance_market_data_recorder.service.acceptance import AcceptanceError
+from binance_market_data_recorder.service.acceptance_v5_io import _file_identity
 from binance_market_data_recorder.service.acceptance_v5_raw import (
     AuditInterrupted,
     cancellable_unit,
@@ -91,7 +93,8 @@ def test_terminal_watchdog_is_interruption_not_integrity_pass() -> None:
         cancellable_unit({}, remaining_ns=None, time_ns=lambda: next(ticks), worker=blocked_worker)
 
 
-def test_raw_crc_verified_even_when_outer_hashes_match(tmp_path: Path) -> None:
+@pytest.mark.parametrize("retire", [False, True])
+def test_raw_crc_verified_even_when_outer_hashes_match(tmp_path: Path, retire: bool) -> None:
     unit = task(tmp_path / "data")
     manifest = unit["manifest"]
     path = Path(unit["data_root"]) / manifest["relative_path"]
@@ -104,8 +107,79 @@ def test_raw_crc_verified_even_when_outer_hashes_match(tmp_path: Path) -> None:
         stored_bytes=len(stored),
         uncompressed_sha256=hashlib.sha256(decoded).hexdigest(),
     )
+    calls = 0
+
+    def progress(_size: int) -> None:
+        nonlocal calls
+        calls += 1
+        if retire and calls == 2:
+            path.unlink()
+
     with pytest.raises(AcceptanceError, match="CRC disagreement"):
-        scan_raw(Path(unit["data_root"]), manifest["relative_path"], manifest)
+        scan_raw(Path(unit["data_root"]), manifest["relative_path"], manifest, progress=progress)
+
+
+def test_retirement_does_not_depend_on_ctime_resolution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unit = task(tmp_path / "data")
+    root = Path(unit["data_root"])
+    path = root / unit["manifest"]["relative_path"]
+    monkeypatch.setattr(raw_module, "_file_identity", lambda st: (*_file_identity(st)[:4], 0))
+    calls = 0
+
+    def unlink(_size: int) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            path.unlink()
+
+    with pytest.raises(raw_module.RawAuthorityPending, match="unauthorized Raw absence"):
+        qualify_unit(unit, unlink)
+
+
+@pytest.mark.parametrize("mutation", ["chmod", "replacement", "hardlink"])
+def test_metadata_replacement_and_link_changes_are_not_retirement(
+    tmp_path: Path, mutation: str
+) -> None:
+    unit = task(tmp_path / "data")
+    root = Path(unit["data_root"])
+    path = root / unit["manifest"]["relative_path"]
+    original = path.read_bytes()
+    if mutation == "hardlink":
+        os.link(path, path.with_suffix(".retained"))
+    calls = 0
+
+    def mutate(_size: int) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            if mutation == "chmod":
+                path.chmod(0o400)
+            else:
+                path.unlink()
+                if mutation == "replacement":
+                    path.write_bytes(original)
+
+    with pytest.raises(AcceptanceError, match="Raw changed during qualification"):
+        scan_raw(root, unit["manifest"]["relative_path"], unit["manifest"], progress=mutate)
+
+
+def test_unlink_cannot_hide_statistics_disagreement(tmp_path: Path) -> None:
+    unit = task(tmp_path / "data")
+    root = Path(unit["data_root"])
+    manifest = {**unit["manifest"], "record_count": unit["manifest"]["record_count"] + 1}
+    path = root / manifest["relative_path"]
+    calls = 0
+
+    def unlink(_size: int) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            path.unlink()
+
+    with pytest.raises(AcceptanceError, match="statistics/manifest disagreement"):
+        scan_raw(root, manifest["relative_path"], manifest, progress=unlink)
 
 
 def test_stable_chunk_materializes_only_three_boundary_identities(

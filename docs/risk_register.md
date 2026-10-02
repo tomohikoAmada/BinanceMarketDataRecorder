@@ -98,3 +98,13 @@ with exact hashes in binance_sources.md. The updater correctly rejects landing
 HTML; updating its selection is a separate documentation-tool follow-up, not
 permission to accept HTML as endpoint documentation. No blocked normative
 conflict was found in the health behavior changed here.
+
+## Q3 open-descriptor source retirement correction
+
+The exact original VPS interleaving is unproved. Local real ArchiveManager
+source-unlink during Raw scan reproduces the failure. A minimal independently
+accepted correction preserves every content check and frozen authority, deferring
+local absence without advancing its cursor. Local1942 tests PASS; actual cloud
+repeat and exact replacement release remain gates. See
+[correction record](milestone_acceptance/Q3-raw-retirement-correction.md).
+Owner resumes only through completed Formal2h, stopping before12h.

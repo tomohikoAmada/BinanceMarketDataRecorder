@@ -99,6 +99,13 @@ an observation/audit. Budget exhaustion or unresolved retirement authority
 acknowledges no unfinished unit and advances no cursor over it. A missing local
 Raw file cannot be combined with an archive commit after the frozen boundary;
 only a later coherent snapshot may qualify its exact authorized retirement.
+A local inode unlinked during its open-descriptor scan takes this same absence
+path only after stored/decompressed hashes, every CRC and all manifest statistics
+validate. Device/inode/size/mtime and pre-scan identities must remain exact, link
+count must fall1→0, and the no-follow pathname must be absent. A changed ctime
+alone is not accepted. Content/metadata mutation, replacement, hardlinks and
+archive-copy deletion retain failure behavior. No live Catalog requery authorizes
+retirement. Proof/evidence bytes and original/v1/v2 replay contracts are unchanged.
 Unresolved target work is `INCOMPLETE` and cannot be filled by terminal audit.
 
 ## Baseline, target and frozen controls

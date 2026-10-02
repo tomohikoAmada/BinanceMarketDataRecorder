@@ -22,7 +22,11 @@ from binance_market_data_recorder.service.acceptance_v5_finalize import (
     verify_audit,
     verify_completed_v5_stage,
 )
-from binance_market_data_recorder.service.acceptance_v5_raw import qualify_unit
+from binance_market_data_recorder.service.acceptance_v5_raw import (
+    RawAuthorityPending,
+    RawRetiredDuringQualification,
+    qualify_unit,
+)
 from binance_market_data_recorder.storage.acceptance_delta import DeltaSnapshot
 from binance_market_data_recorder.storage.catalog import Catalog
 from tests.archive_support import prepare_archive
@@ -120,6 +124,77 @@ def test_post_snapshot_archive_retirement_is_not_mixed_with_old_rows(tmp_path: P
         assert qualify_unit(task)["archive"] is not None
 
 
+def test_archive_unlinks_open_raw_waits_for_frozen_retirement_authority(tmp_path: Path) -> None:
+    prepared = prepare_archive(tmp_path)
+    with Catalog(prepared.layout.catalog) as catalog:
+        catalog.migrate_acceptance_sequence()
+        snapshot = DeltaSnapshot(catalog._connection)
+        row = snapshot.exact("chunks", "chunk_id", prepared.chunk_ids[0])
+        assert row is not None
+        body = (prepared.layout.root / row["manifest_path"]).read_bytes()
+        task: dict[str, Any] = {
+            "data_root": str(prepared.layout.root),
+            "manifest": json.loads(body),
+            "manifest_sha256": sha256_bytes(body),
+            "manifest_path": row["manifest_path"],
+            "chunk": row,
+            "archive": None,
+        }
+        calls = 0
+
+        def retire_after_decoded_frame(_size: int) -> None:
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                ArchiveManager(
+                    layout=prepared.layout, catalog=catalog, target=prepared.target
+                ).run_once()
+
+        # Hash has finished; the source descriptor is open when the real archive
+        # transaction verifies its copy and unlinks the source during frame scan.
+        with pytest.raises(RawAuthorityPending, match="unauthorized Raw absence"):
+            qualify_unit(task, retire_after_decoded_frame)
+        assert calls == 2
+        fresh = DeltaSnapshot(catalog._connection)
+        transaction = fresh.exact("archive_transactions", "chunk_id", prepared.chunk_ids[0])
+        assert transaction is not None
+        task.update(
+            chunk=fresh.exact("chunks", "chunk_id", prepared.chunk_ids[0]),
+            archive=fresh.archive_lifecycle(transaction["transaction_id"]),
+            archive_root=str(prepared.target.root),
+        )
+        proof = qualify_unit(task)
+        assert proof["local"] is None and proof["archive"] is not None
+
+
+def test_archive_copy_unlinked_during_scan_does_not_become_local_pending(tmp_path: Path) -> None:
+    prepared = prepare_archive(tmp_path)
+    with Catalog(prepared.layout.catalog) as catalog:
+        catalog.migrate_acceptance_sequence()
+        ArchiveManager(layout=prepared.layout, catalog=catalog, target=prepared.target).run_once()
+        snapshot = DeltaSnapshot(catalog._connection)
+        row = snapshot.exact("chunks", "chunk_id", prepared.chunk_ids[0])
+        tx = snapshot.exact("archive_transactions", "chunk_id", prepared.chunk_ids[0])
+        assert row is not None and tx is not None
+        body = (prepared.layout.root / row["manifest_path"]).read_bytes()
+        task: dict[str, Any] = {
+            "data_root": str(prepared.layout.root), "manifest": json.loads(body),
+            "manifest_sha256": sha256_bytes(body), "manifest_path": row["manifest_path"],
+            "chunk": row, "archive": snapshot.archive_lifecycle(tx["transaction_id"]),
+            "archive_root": str(prepared.target.root),
+        }
+        calls = 0
+
+        def unlink_archive(_size: int) -> None:
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                (prepared.target.root / tx["target_relative_path"]).unlink()
+
+        with pytest.raises(RawRetiredDuringQualification):
+            qualify_unit(task, unlink_archive)
+
+
 def test_completed_stage_survives_later_authorized_archive_retirement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -210,10 +285,20 @@ def test_completed_stage_survives_later_authorized_archive_retirement(
     monkeypatch.setattr(cli, "load_deployment_identity", lambda _path: identity)
     monkeypatch.setattr(cli, "enforce_vps_paths", lambda _identity: None)
     monkeypatch.setattr(cli, "_acceptance_archive_root_resolver", no_live_raw)
-    assert cli.main([
-        "--config", str(config), "deployment", "acceptance", "verify",
-        "--evidence-root", str(observer.evidence_root),
-    ]) == 0
+    assert (
+        cli.main(
+            [
+                "--config",
+                str(config),
+                "deployment",
+                "acceptance",
+                "verify",
+                "--evidence-root",
+                str(observer.evidence_root),
+            ]
+        )
+        == 0
+    )
     objects = observer.evidence_root / "terminal-audit" / "manifest-objects"
     frozen = next(objects.glob("*.manifest"))
     frozen.write_bytes(b"corrupt historical control after retirement")

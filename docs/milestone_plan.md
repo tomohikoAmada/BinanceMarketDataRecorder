@@ -2992,3 +2992,8 @@ connection rotations, notifications, and a separately reviewed Web UI. Future
 work has no production implementation in this documentation milestone and
 does not include strategy, backtest, or trading implementation without a new
 human-approved project scope.
+
+Current October2 scope update: owner resumes through VPS Formal2h plus complete
+terminal/independent acceptance, then stops before12h. See
+[Raw retirement correction](milestone_acceptance/Q3-raw-retirement-correction.md).
+The broader38h plan remains; this turn must not start12h.

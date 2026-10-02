@@ -60,6 +60,10 @@ class RawAuthorityPending(AcceptanceError):
     """No acknowledgement until a later snapshot proves exact retirement authority."""
 
 
+class RawRetiredDuringQualification(AcceptanceError):
+    """Validated bytes lost their local pathname; snapshot authority still applies."""
+
+
 class AuditInterrupted(AcceptanceError):
     """A liveness/interruption failure is not evidence of data corruption."""
 
@@ -110,7 +114,8 @@ def scan_raw(
     capture_flags = set(manifest["capture_flags"])
     sequence_keys = set(manifest["sequence_ranges"])
     with open_exact(root, relative) as source:
-        before_scan = _file_identity(os.fstat(source.fileno()))
+        before_scan_stat = os.fstat(source.fileno())
+        before_scan = _file_identity(before_scan_stat)
         with zstandard.ZstdDecompressor().stream_reader(source, closefd=False) as decoded:
             header, header_bytes = decode_chunk_header(decoded)
             chunk_id = str(header.chunk_id)
@@ -202,9 +207,8 @@ def scan_raw(
                 size += len(prefix) + len(body)
                 if progress:
                     progress(len(prefix) + len(body))
-        after_scan = _file_identity(os.fstat(source.fileno()))
-    if not before == after_hash == before_scan == after_scan:
-        raise AcceptanceError("Raw changed during qualification")
+        after_scan_stat = os.fstat(source.fileno())
+        after_scan = _file_identity(after_scan_stat)
     expected_stats = {
         "record_count": stats.record_count,
         "receive_time_utc_range_ns": {
@@ -228,6 +232,27 @@ def scan_raw(
     }
     if any(manifest.get(key) != value for key, value in expected_stats.items()):
         raise AcceptanceError("Raw statistics/manifest disagreement")
+    if (
+        not before == after_hash == before_scan == after_scan
+        or before_scan_stat.st_nlink != after_scan_stat.st_nlink
+    ):
+        # POSIX unlink changes ctime on the still-open inode. This is neither a
+        # content proof failure nor authorization to acknowledge a retired source.
+        # Only a fully validated, otherwise unchanged, newly unlinked inode may
+        # take the local-absence path; replacement and metadata/content mutation
+        # keep the strict failure path.
+        if (
+            before == after_hash == before_scan
+            and before_scan[:4] == after_scan[:4]
+            and before_scan_stat.st_nlink == 1
+            and after_scan_stat.st_nlink == 0
+        ):
+            try:
+                with open_exact(root, relative):
+                    pass
+            except FileNotFoundError as exc:
+                raise RawRetiredDuringQualification("Raw unlinked during qualification") from exc
+        raise AcceptanceError("Raw changed during qualification")
     return {
         "stored_bytes": stored_size,
         "stored_sha256": stored_sha,
@@ -266,7 +291,7 @@ def qualify_unit(
             raise AcceptanceError("Catalog/manifest disagreement")
     local_root = Path(task["data_root"])
     result: dict[str, Any] = {"local": None, "archive": None}
-    with suppress(FileNotFoundError):
+    with suppress(FileNotFoundError, RawRetiredDuringQualification):
         result["local"] = scan_raw(
             local_root, manifest["relative_path"], manifest, progress=progress
         )
