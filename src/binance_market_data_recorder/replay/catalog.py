@@ -183,6 +183,11 @@ def _build_identity(document: Mapping[str, object]) -> str:
             for item in checkpoints
         ],
     }
+    dedup_version = document.get("dedup_version")
+    if dedup_version == "normalized-dedup.v2":
+        identity["dedup_version"] = dedup_version
+    elif dedup_version != "normalized-dedup.v1":
+        raise ReplayCatalogError("unsupported normalized dedup version")
     return _sha256_json(identity)
 
 

@@ -201,6 +201,196 @@ def _vps_identity() -> RuntimeDeploymentIdentity:
     )
 
 
+@pytest.mark.parametrize("phase", ["startup", "recovery", "running"])
+@pytest.mark.parametrize("returns", [False, True])
+def test_heartbeat_terminal_failure_drains_and_preserves_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    phase: str,
+    returns: bool,
+) -> None:
+    async def exercise() -> None:
+        recovery_entered = threading.Event()
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+
+        def recovery(**kwargs: Any) -> list[RecoveryAction]:
+            recovery_entered.set()
+            if phase == "recovery":
+                while not kwargs["stop_requested"]():
+                    threading.Event().wait(0.001)
+            return []
+
+        runtime = ServiceRuntime(
+            config=_config(tmp_path),
+            logger=logging.getLogger("test.heartbeat.failure"),
+            collector_factory=lambda *args: cast(Mapping[ProductKey, RuntimeCollector], collectors),
+            power_assertion=FakePowerAssertion(),
+            sleep_observer_factory=FakeSleepObserver,
+        )
+
+        async def heartbeat(stop: asyncio.Event) -> None:
+            if phase == "recovery":
+                assert await asyncio.to_thread(recovery_entered.wait, 2)
+            elif phase == "running":
+                while not all(item.started for item in collectors.values()):
+                    await asyncio.sleep(0)
+            if not returns:
+                raise OSError("injected heartbeat publication failure")
+
+        monkeypatch.setattr(runtime_module, "recover_storage", recovery)
+        monkeypatch.setattr(runtime, "_heartbeat", heartbeat)
+        expected = RuntimeError if returns else OSError
+        with pytest.raises(expected):
+            await asyncio.wait_for(runtime.run(), timeout=3)
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        assert state["failure"] == {"task": "service-heartbeat", "error_type": expected.__name__}
+        assert state["shutdown_reason"] == "HEARTBEAT_FAILURE"
+        assert all(item.stopped for item in collectors.values() if item.started)
+        if phase != "running":
+            assert not any(item.started for item in collectors.values())
+        assert runtime._catalog is None and runtime._stop is None
+        lock = ServiceProcessLock(runtime.layout.state / "service.lock")
+        lock.acquire()
+        lock.release()
+        with Catalog(runtime.layout.catalog) as catalog:
+            assert len(catalog.operational_events(event_type="SERVICE_FAILED")) == 1
+            assert not catalog.operational_events(event_type="SERVICE_STOPPED")
+
+    asyncio.run(exercise())
+
+
+def test_unexpected_capacity_return_fails_and_drains_collectors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+        runtime = ServiceRuntime(
+            config=RecorderConfig(
+                data_root=tmp_path,
+                capacity_profile="vps-production-v1",
+                side_funding_info_enabled=False,
+                side_exchange_info_enabled=False,
+            ),
+            deployment_identity=_vps_identity(),
+            logger=logging.getLogger("test.capacity.return"),
+            collector_factory=lambda *args: cast(Mapping[ProductKey, RuntimeCollector], collectors),
+            power_assertion=FakePowerAssertion(),
+            sleep_observer_factory=FakeSleepObserver,
+        )
+
+        async def early_return(stop: asyncio.Event) -> None:
+            return
+
+        monkeypatch.setattr(
+            runtime, "_observe_vps_capacity", lambda: {"actual_hard_reserve_reached": False}
+        )
+        monkeypatch.setattr(runtime, "_capacity_monitor", early_return)
+        with pytest.raises(RuntimeError, match="capacity monitor returned before stop"):
+            await asyncio.wait_for(runtime.run(), timeout=3)
+        assert all(item.started and item.stopped for item in collectors.values())
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        assert state["failure"] == {"task": "capacity-monitor", "error_type": "RuntimeError"}
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("returns,cancels", [(False, False), (True, False), (False, True)])
+def test_global_side_owner_failure_degrades_without_stopping_core(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    returns: bool,
+    cancels: bool,
+) -> None:
+    async def exercise() -> None:
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+        runtime = ServiceRuntime(
+            config=_config(tmp_path),
+            logger=logging.getLogger("test.global.failure"),
+            collector_factory=lambda *args: cast(Mapping[ProductKey, RuntimeCollector], collectors),
+            power_assertion=FakePowerAssertion(),
+            sleep_observer_factory=FakeSleepObserver,
+        )
+
+        async def side_run(stop: asyncio.Event) -> None:
+            if cancels:
+                raise asyncio.CancelledError("injected owner cancellation")
+            if not returns:
+                raise OSError("injected side owner failure")
+
+        owner = SimpleNamespace(
+            run=side_run,
+            status=lambda: {
+                "funding_info": {"enabled": True, "status": "RUNNING"},
+                "exchange_info": {"enabled": False, "status": "DISABLED"},
+            },
+        )
+        monkeypatch.setattr(
+            runtime, "_create_global_side_data", lambda: setattr(runtime, "global_side_data", owner)
+        )
+        task = asyncio.create_task(runtime.run())
+        try:
+            async with asyncio.timeout(3):
+                while not (
+                    runtime._global_side_failure
+                    and all(item.started for item in collectors.values())
+                ):
+                    await asyncio.sleep(0)
+            await runtime._write_state()
+            state = runtime.state_store.read()
+            assert state is not None
+            assert state["status"] == "RUNNING" and state["core_ready"] is True
+            assert state["network_status"] == "DEGRADED"
+            assert (
+                cast(dict[str, object], state["global_usdm_side_data_owner"])["status"] == "FAILED"
+            )
+            sides = cast(dict[str, dict[str, object]], state["global_usdm_side_data"])
+            assert sides["funding_info"]["status"] == "FAILED"
+            assert sides["exchange_info"]["status"] == "DISABLED"
+            assert not any(item.stopped for item in collectors.values())
+        finally:
+            runtime.request_stop("test-complete")
+            await asyncio.wait_for(task, timeout=3)
+        assert all(item.stopped for item in collectors.values())
+        with Catalog(runtime.layout.catalog) as catalog:
+            assert (
+                len(catalog.operational_events(event_type="GLOBAL_SIDE_DATA_TERMINAL_FAILURE")) == 1
+            )
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("enabled, expected", [(True, "DEGRADED"), (False, "ALL_MARKETS_READY")])
+def test_enabled_failed_side_stream_is_in_aggregate_health(
+    tmp_path: Path,
+    enabled: bool,
+    expected: str,
+) -> None:
+    runtime = ServiceRuntime(
+        config=_config(tmp_path), logger=logging.getLogger("test.side.summary")
+    )
+    collectors = {
+        ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+        ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+    }
+    for item in collectors.values():
+        item.started = True
+        item.side_data_status = lambda: {"mark_price": {"enabled": enabled, "status": "FAILED"}}  # type: ignore[attr-defined]
+    runtime._collectors = cast(Mapping[ProductKey, RuntimeCollector], collectors)
+    assert runtime._state_document()["network_status"] == expected
+
+
 def test_process_lock_rejects_a_second_service(tmp_path: Path) -> None:
     first = ServiceProcessLock(tmp_path / "service.lock")
     second = ServiceProcessLock(tmp_path / "service.lock")
@@ -212,6 +402,113 @@ def test_process_lock_rejects_a_second_service(tmp_path: Path) -> None:
         first.release()
     second.acquire()
     second.release()
+
+
+def test_heartbeat_state_store_failure_is_not_swallowed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime = ServiceRuntime(
+        config=_config(tmp_path), logger=logging.getLogger("test.heartbeat.store"),
+        collector_factory=lambda *args: pytest.fail("failed startup must not create collectors"),
+        power_assertion=FakePowerAssertion(), sleep_observer_factory=FakeSleepObserver,
+    )
+    writes = 0
+    original = runtime.state_store.write
+
+    def write(document: dict[str, object]) -> None:
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            raise OSError("injected actual heartbeat store failure")
+        original(document)
+
+    monkeypatch.setattr(runtime.state_store, "write", write)
+    with pytest.raises(OSError, match="actual heartbeat store failure"):
+        asyncio.run(asyncio.wait_for(runtime.run(), timeout=3))
+    state = runtime.state_store.read()
+    assert state is not None and state["status"] == "FAILED"
+    assert state["failure"] == {"task": "service-heartbeat", "error_type": "OSError"}
+
+
+def test_heartbeat_failure_while_draining_cannot_publish_stopped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): FakeCollector("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+        runtime = ServiceRuntime(
+            config=_config(tmp_path), logger=logging.getLogger("test.heartbeat.drain"),
+            collector_factory=lambda *args: cast(Mapping[ProductKey, RuntimeCollector], collectors),
+            power_assertion=FakePowerAssertion(), sleep_observer_factory=FakeSleepObserver,
+        )
+
+        async def heartbeat(stop: asyncio.Event) -> None:
+            await stop.wait()
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            raise OSError("injected heartbeat drain failure")
+
+        monkeypatch.setattr(runtime, "_heartbeat", heartbeat)
+        task = asyncio.create_task(runtime.run())
+        async with asyncio.timeout(3):
+            while not all(item.started for item in collectors.values()):
+                await asyncio.sleep(0)
+        runtime.request_stop("SIGTERM")
+        with pytest.raises(OSError, match="heartbeat drain failure"):
+            await asyncio.wait_for(task, timeout=3)
+        assert all(item.stopped for item in collectors.values())
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        assert runtime._catalog is None
+
+    asyncio.run(exercise())
+
+
+def test_normal_heartbeat_exit_does_not_hide_collector_drain_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def exercise() -> None:
+        class DrainFailure(FakeCollector):
+            async def run(self, stop: asyncio.Event) -> None:
+                self.started = True
+                await stop.wait()
+                await asyncio.sleep(0)
+                self.stopped = True
+                raise OSError("injected seal failure during stop")
+
+        collectors = {
+            ProductKey("spot", "BTCUSDT"): DrainFailure("spot", "spot"),
+            ProductKey("um_perpetual", "BTCUSDT"): FakeCollector("um_perpetual", "um"),
+        }
+        runtime = ServiceRuntime(
+            config=_config(tmp_path), logger=logging.getLogger("test.collector.drain"),
+            collector_factory=lambda *args: cast(Mapping[ProductKey, RuntimeCollector], collectors),
+            power_assertion=FakePowerAssertion(), sleep_observer_factory=FakeSleepObserver,
+        )
+
+        async def heartbeat(stop: asyncio.Event) -> None:
+            await stop.wait()
+
+        monkeypatch.setattr(runtime, "_heartbeat", heartbeat)
+        task = asyncio.create_task(runtime.run())
+        async with asyncio.timeout(3):
+            while not all(item.started for item in collectors.values()):
+                await asyncio.sleep(0)
+        runtime.request_stop("SIGTERM")
+        with pytest.raises(RuntimeError, match="failed while draining") as result:
+            await asyncio.wait_for(task, timeout=3)
+        assert isinstance(result.value.__cause__, OSError)
+        assert all(item.stopped for item in collectors.values())
+        state = runtime.state_store.read()
+        assert state is not None and state["status"] == "FAILED"
+        assert state["failure"] == {
+            "task": "collector-supervisor", "error_type": "CoreMarketTerminalFailure",
+        }
+        assert runtime._catalog is None
+
+    asyncio.run(exercise())
 
 
 def test_starting_heartbeat_advances_during_recovery_and_stop_is_cooperative(

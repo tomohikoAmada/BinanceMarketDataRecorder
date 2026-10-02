@@ -11,10 +11,13 @@ candidate and diagnostic-only cloud measurements are recorded in the
 zero Formal credit. The historical October 1 artifact and closeout below remain
 the deployed operational basis.
 
-The October 2 plan recheck sets next development to Q1 correctness fixes and
-release review before a new qualification. Its publication does not change this
-last measured VPS state or resume the paused monitor; no VPS operation occurred
-in the plan recheck itself.
+The October 2 Q1 implementation fixes heartbeat/dedup/cwd/auxiliary health and
+bounds live diagnostic history. A separate read-only cloud synthetic probe
+confirmed the retention bound and Recorder inactive/disabled; no deployment,
+data cleanup or service control occurred. See the
+[Q1 record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
+Next development is Q2 independent review/release preparation; the installed
+artifact and paused monitor remain unchanged.
 
 ## Source and installed artifact
 
@@ -75,7 +78,7 @@ FORMAL_V5_STARTED=NO
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
-NEXT=Q1_CORRECTNESS_FIXES_BEFORE_NEW_QUALIFICATION
+NEXT=Q2_REVIEW_AND_FREEZE_RELEASE_CANDIDATE
 ```
 
 ## Evidence and rollback

@@ -285,6 +285,10 @@ class ServiceRuntime:
         self._startup_recovery_complete = False
         self._capacity_evidence: dict[str, object] | None = None
         self._state_write_lock = asyncio.Lock()
+        self._heartbeat_failure: BaseException | None = None
+        self._failure_task: str | None = None
+        self._failure_type: str | None = None
+        self._global_side_failure: str | None = None
 
     def _create_global_side_data(self) -> None:
         if not self.config.usdm_symbols or not (
@@ -492,12 +496,18 @@ class ServiceRuntime:
             side_data = product_state.get("side_data")
             if isinstance(side_data, dict):
                 side_items.extend(item for item in side_data.values() if isinstance(item, dict))
-        if self.global_side_data is not None:
-            side_items.extend(self.global_side_data.status().values())
+        global_side_status = self.global_side_data.status() if self.global_side_data else {}
+        if self._global_side_failure is not None:
+            global_side_status = {
+                name: {**item, "status": "FAILED", "error_type": self._global_side_failure}
+                if item.get("enabled") else item
+                for name, item in global_side_status.items()
+            }
+        side_items.extend(global_side_status.values())
         if any(
-            item.get("enabled") and item.get("status") in {"RETRYING", "STALE"}
+            item.get("enabled") and item.get("status") in {"RETRYING", "STALE", "FAILED"}
             for item in side_items
-        ):
+        ) or self._global_side_failure is not None:
             network_status = "DEGRADED"
         heartbeat = self.utc_clock_ns()
         return {
@@ -519,9 +529,15 @@ class ServiceRuntime:
             "expected_product_count": len(self.expected_products),
             "ready_product_count": ready_count,
             "core_ready": core_ready,
-            "global_usdm_side_data": self.global_side_data.status()
-            if self.global_side_data
-            else {},
+            "failure": {
+                "task": self._failure_task,
+                "error_type": self._failure_type,
+            } if self._failure_type is not None else None,
+            "global_usdm_side_data_owner": {
+                "status": "FAILED" if self._global_side_failure else self._status,
+                "error_type": self._global_side_failure,
+            } if self.global_side_data is not None else None,
+            "global_usdm_side_data": global_side_status,
             "shutdown_reason": self.shutdown_reason,
             "prevent_sleep_enabled": self.config.prevent_sleep,
             "power_assertion_active": self.power_assertion.active,
@@ -572,6 +588,69 @@ class ServiceRuntime:
                 self._record_sleep_gap(gap)
             await self._write_state()
             await self._wait_for_heartbeat_interval(stop)
+
+    async def _guard_heartbeat(self, stop: asyncio.Event) -> None:
+        try:
+            await self._heartbeat(stop)
+            if not stop.is_set():
+                raise RuntimeError("service heartbeat returned before stop")
+        except BaseException as exc:
+            self._heartbeat_failure = exc
+            self.shutdown_reason = "HEARTBEAT_FAILURE"
+            stop.set()
+            if self._recovery_stop is not None:
+                self._recovery_stop.set()
+            raise
+
+    def _check_heartbeat_failure(self) -> None:
+        if self._heartbeat_failure is not None:
+            self._failure_task = "service-heartbeat"
+            raise self._heartbeat_failure
+
+    async def _run_global_side_data(self, stop: asyncio.Event) -> None:
+        assert self.global_side_data is not None
+        try:
+            await self.global_side_data.run(stop)
+            if not stop.is_set():
+                raise RuntimeError("global side-data owner returned before stop")
+        except (Exception, asyncio.CancelledError) as exc:
+            if isinstance(exc, asyncio.CancelledError) and stop.is_set():
+                raise
+            self._global_side_failure = type(exc).__name__
+            if self._catalog is not None:
+                occurred_at = self.utc_clock_ns()
+                self._catalog.record_operational_event(
+                    event_id=f"global-side-failed:{self.service_instance_id}:{occurred_at}",
+                    event_type="GLOBAL_SIDE_DATA_TERMINAL_FAILURE",
+                    occurred_at_utc_ns=occurred_at,
+                    evidence={"error_type": self._global_side_failure},
+                )
+            log_event(
+                self.logger, logging.ERROR, "global_side_data_terminal_failure",
+                "global side-data owner terminated; core capture continues degraded",
+                error_type=self._global_side_failure,
+            )
+
+    async def _publish_failure(self, exc: BaseException) -> None:
+        self._status = "FAILED"
+        self._failure_type = type(exc).__name__
+        log_event(
+            self.logger, logging.ERROR, "service_terminal_failure",
+            "service failed; draining capture tasks",
+            task=self._failure_task, error_type=self._failure_type,
+        )
+        if self._catalog is not None:
+            occurred_at = self.utc_clock_ns()
+            # A broken failure journal must not prevent draining or replace the cause.
+            with suppress(Exception):
+                self._catalog.record_operational_event(
+                    event_id=f"service-failed:{self.service_instance_id}:{occurred_at}",
+                    event_type="SERVICE_FAILED",
+                    occurred_at_utc_ns=occurred_at,
+                    evidence={"error_type": self._failure_type, "task": self._failure_task},
+                )
+        with suppress(BaseException):
+            await self._write_state()
 
     async def _wait_for_heartbeat_interval(self, stop: asyncio.Event) -> None:
         with suppress(TimeoutError):
@@ -759,9 +838,10 @@ class ServiceRuntime:
             self._catalog_open = True
             await self._write_state()
             heartbeat_task = asyncio.create_task(
-                self._heartbeat(stop), name="GLOBAL:service-heartbeat"
+                self._guard_heartbeat(stop), name="GLOBAL:service-heartbeat"
             )
             await asyncio.sleep(0)
+            self._check_heartbeat_failure()
             if recovery_stop.is_set():
                 return
             recovery_actions = await asyncio.to_thread(
@@ -772,11 +852,13 @@ class ServiceRuntime:
                 stop_requested=recovery_stop.is_set,
             )
             self._recovery_action_count = len(recovery_actions)
+            self._check_heartbeat_failure()
             if recovery_stop.is_set():
                 return
             self._startup_recovery_complete = True
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
                 capacity = await asyncio.to_thread(self._observe_vps_capacity)
+                self._check_heartbeat_failure()
                 if recovery_stop.is_set():
                     return
                 if capacity["actual_hard_reserve_reached"] is True:
@@ -845,7 +927,7 @@ class ServiceRuntime:
             )
             if self.global_side_data is not None:
                 global_side_task = asyncio.create_task(
-                    self.global_side_data.run(stop),
+                    self._run_global_side_data(stop),
                     name="GLOBAL:usdm-side-data-owner",
                 )
             supervisor_task = asyncio.create_task(
@@ -853,103 +935,114 @@ class ServiceRuntime:
             )
             await asyncio.sleep(0)
             await self._write_state()
+            required_tasks: set[asyncio.Task[Any]] = {supervisor_task, heartbeat_task}
             if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
                 capacity_task = asyncio.create_task(
                     self._capacity_monitor(stop), name="GLOBAL:capacity-monitor"
                 )
-                done, _pending = await asyncio.wait(
-                    {supervisor_task, capacity_task},
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                if supervisor_task in done:
-                    await supervisor_task
-                else:
-                    runtime_capacity = capacity_task.result()
-                    if runtime_capacity is not None:
-                        self.request_stop("HARD_RESERVE_SAFETY_STOP")
-                        await supervisor_task
-                        self._record_hard_reserve_stop(runtime_capacity)
-            else:
-                await supervisor_task
+                required_tasks.add(capacity_task)
+            done, _pending = await asyncio.wait(
+                required_tasks, return_when=asyncio.FIRST_COMPLETED,
+            )
+            self._check_heartbeat_failure()
+            runtime_capacity = None
+            if capacity_task is not None and capacity_task in done:
+                self._failure_task = "capacity-monitor"
+                runtime_capacity = capacity_task.result()
+                if runtime_capacity is not None:
+                    self.request_stop("HARD_RESERVE_SAFETY_STOP")
+                elif not stop.is_set():
+                    raise RuntimeError("capacity monitor returned before stop")
+                self._failure_task = None
+            self._failure_task = "collector-supervisor"
+            await supervisor_task
+            self._check_heartbeat_failure()
+            if not stop.is_set():
+                raise RuntimeError("collector supervisor returned before stop")
+            self._failure_task = None
+            if runtime_capacity is not None:
+                self._record_hard_reserve_stop(runtime_capacity)
         except BaseException as exc:
             failure = exc
-            self._status = "FAILED"
             stop.set()
-            if self._catalog is not None:
-                occurred_at = self.utc_clock_ns()
-                self._catalog.record_operational_event(
-                    event_id=f"service-failed:{self.service_instance_id}:{occurred_at}",
-                    event_type="SERVICE_FAILED",
-                    occurred_at_utc_ns=occurred_at,
-                    evidence={"error_type": type(exc).__name__},
-                )
-            with suppress(BaseException):
-                await self._write_state()
+            recovery_stop.set()
+            await self._publish_failure(exc)
             raise
         finally:
-            stop.set()
-            if heartbeat_task is not None:
-                await asyncio.gather(heartbeat_task, return_exceptions=True)
-            if capacity_task is not None:
-                if not capacity_task.done():
-                    capacity_task.cancel()
-                await asyncio.gather(capacity_task, return_exceptions=True)
-            if supervisor_task is not None and not supervisor_task.done():
-                await asyncio.gather(supervisor_task, return_exceptions=True)
-            if global_side_task is not None:
-                await asyncio.gather(global_side_task, return_exceptions=True)
-                if self._global_side_metrics is not None and self._catalog is not None:
-                    days = {day for day, _, _ in self._global_side_metrics.pending_keys()}
-                    batch = await asyncio.to_thread(self._global_side_metrics.safely_flush)
-                    if batch is not None:
-                        reporter = DailyReporter(
-                            catalog=self._catalog, daily_directory=self.layout.daily_reports
-                        )
-                        for day in sorted(days):
-                            try:
-                                await asyncio.to_thread(reporter.write, day)
-                            except Exception as exc:
-                                log_event(
-                                    self.logger,
-                                    logging.ERROR,
-                                    "global_side_report_failed",
-                                    "global side-data daily report could not be written",
-                                    **global_log_fields(
-                                        "um_perpetual", owner="usdm_side_data"
-                                    ),
-                                    error_type=type(exc).__name__,
-                                )
             try:
-                observer.stop()
-            except RuntimeError as exc:
-                log_event(
-                    self.logger,
-                    logging.ERROR,
-                    "sleep_observer_stop_failed",
-                    "sleep observer cleanup failed",
-                    error_type=type(exc).__name__,
-                )
-            self.power_assertion.stop()
-            if failure is None:
-                self._status = "STOPPED"
-                if self._catalog is not None:
-                    stopped_at = self.utc_clock_ns()
-                    self._catalog.record_operational_event(
-                        event_id=f"service-stopped:{self.service_instance_id}:{stopped_at}",
-                        event_type="SERVICE_STOPPED",
-                        occurred_at_utc_ns=stopped_at,
-                        evidence={"reason": self.shutdown_reason or "completed"},
+                stop.set()
+                recovery_stop.set()
+                cleanup_failure: BaseException | None = None
+                if heartbeat_task is not None:
+                    await asyncio.gather(heartbeat_task, return_exceptions=True)
+                    if failure is None and self._heartbeat_failure is not None:
+                        failure = cleanup_failure = self._heartbeat_failure
+                        self._failure_task = "service-heartbeat"
+                        await self._publish_failure(failure)
+                if capacity_task is not None:
+                    if not capacity_task.done():
+                        capacity_task.cancel()
+                    await asyncio.gather(capacity_task, return_exceptions=True)
+                if supervisor_task is not None and not supervisor_task.done():
+                    await asyncio.gather(supervisor_task, return_exceptions=True)
+                if global_side_task is not None:
+                    await asyncio.gather(global_side_task, return_exceptions=True)
+                    if self._global_side_metrics is not None and self._catalog is not None:
+                        days = {day for day, _, _ in self._global_side_metrics.pending_keys()}
+                        batch = await asyncio.to_thread(self._global_side_metrics.safely_flush)
+                        if batch is not None:
+                            reporter = DailyReporter(
+                                catalog=self._catalog, daily_directory=self.layout.daily_reports
+                            )
+                            for day in sorted(days):
+                                try:
+                                    await asyncio.to_thread(reporter.write, day)
+                                except Exception as exc:
+                                    log_event(
+                                        self.logger,
+                                        logging.ERROR,
+                                        "global_side_report_failed",
+                                        "global side-data daily report could not be written",
+                                        **global_log_fields(
+                                            "um_perpetual", owner="usdm_side_data"
+                                        ),
+                                        error_type=type(exc).__name__,
+                                    )
+                try:
+                    observer.stop()
+                except RuntimeError as exc:
+                    log_event(
+                        self.logger,
+                        logging.ERROR,
+                        "sleep_observer_stop_failed",
+                        "sleep observer cleanup failed",
+                        error_type=type(exc).__name__,
                     )
+                self.power_assertion.stop()
+                if failure is None:
+                    self._status = "STOPPED"
+                    if self._catalog is not None:
+                        stopped_at = self.utc_clock_ns()
+                        self._catalog.record_operational_event(
+                            event_id=f"service-stopped:{self.service_instance_id}:{stopped_at}",
+                            event_type="SERVICE_STOPPED",
+                            occurred_at_utc_ns=stopped_at,
+                            evidence={"reason": self.shutdown_reason or "completed"},
+                        )
+                    self._catalog_open = False
+                    await self._write_state()
+                if cleanup_failure is not None:
+                    raise cleanup_failure
+            finally:
+                if self._catalog is not None:
+                    self._catalog.close()
+                    self._catalog = None
                 self._catalog_open = False
-                await self._write_state()
-            if self._catalog is not None:
-                self._catalog.close()
-                self._catalog = None
-            for selected in installed_signals:
-                loop.remove_signal_handler(selected)
-            self._stop = None
-            self._recovery_stop = None
-            self.process_lock.release()
+                for selected in installed_signals:
+                    loop.remove_signal_handler(selected)
+                self._stop = None
+                self._recovery_stop = None
+                self.process_lock.release()
 
 
 async def run_service(

@@ -29,23 +29,27 @@ No old baseline integrity PASS or FAIL was published. See the
 These are independently reproduced review findings against main
 `d6f37576f5b044bf578501cba291fe889e45a919`, not claims of observed V5 Formal
 failure. F1 has an implemented candidate pending review/cloud qualification;
-others remain open. See [details and probe results](reviews/2026-10-01-architecture-review.md)
+Q1 implements F2/F3/F5/F6/F7 controls pending independent release review.
+See [Q1 evidence](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md),
+[details and probe results](reviews/2026-10-01-architecture-review.md)
 and the [sequenced remediation plan](qualification_to_24h_plan.md).
 
 | Finding | Priority / evidence | Planned control |
 |---|---|---|
 | F1: V5 single-page service rate below normal four-product row arrival | P1; initial reproduction remains historical; ADR-0035 candidate consumes 480/300 rows and drains a missed cadence in real seal/archive fixtures | Independent review and complete exact-artifact cloud observations before T0; no live closure claimed |
-| F2: failed heartbeat leaves collectors running and normal shutdown status | P1; injected state-write failure through ServiceRuntime | Q1: supervise required task failure and unexpected return; preserve orderly stop and FAILED reason |
-| F3: normalized keys omit product/stream identity in some event kinds | P1; two distinct-symbol snapshots collapse to one output | Q1: consistent namespaced dedup identity and versioned immutable builds |
+| F2: failed heartbeat leaves collectors running and normal shutdown status | P1; Q1 guard/wait/drain regressions pass across startup/recovery/running/drain, including real store failure | Q2 independent review; installed artifact unchanged |
+| F3: normalized keys omit product/stream identity in some event kinds | P1; Q1 namespaces all candidates and versions new build identity; old/new replay compatibility passes | Q2 review of ADR-0036; explicit rebuild needed for corrected derived results |
 | F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 38h qualification: bounded hierarchical fan-in |
-| F5: reconstructor retains every quality audit in memory | P2; 10,000 duplicate updates retain 10,000 audits | Measure stable-session growth; bounded production history must preserve durable gap/checkpoint facts |
-| F6: inaccessible repository-discovery cwd crashes CLI | P2; PermissionError reproduction and owner-stop operator incident | Q1: skip inaccessible optional Git candidates, retain data-root permission checks |
+| F5: reconstructor retains every quality audit in memory | P2; cloud synthetic 100,000 audits remain 256 with Q1; full observer calls and gap/book facts agree | Q2 review and Q3 actual selected-scope live RSS; no whole-process/cloud capacity verdict yet |
+| F6: inaccessible repository-discovery cwd crashes CLI | P2; Q1 skips optional discovery failures; denied/removed-cwd installed-entry and data-permission regressions pass | Q2 exact-wheel review/CI; installed artifact unchanged |
 
 October 2 [plan recheck](reviews/2026-10-02-plan-recheck.md) adds **F7 (P2)**:
 enabled auxiliary `FAILED` is visible in detail but omitted from aggregate
 DEGRADED health while cores are READY. An offline state-builder reproduction
-confirms this summary inconsistency. Q1 corrects health without stopping cores.
-The recheck also requires live F5 memory disposition, warm-up before the
+confirms this summary inconsistency. Q1 now corrects aggregate/stream/owner
+health without stopping cores; terminal owner isolation regressions pass.
+Independent review remains Q2. The recheck also requires live F5 memory
+measurement (the finite component control has cloud synthetic evidence), warm-up before the
 authoritative baseline, cumulative audit/capacity forecasts and quiet-window
 protection through identity-sensitive audit publication. These are current
 [plan](milestone_plan.md) gates; none grants Formal credit.

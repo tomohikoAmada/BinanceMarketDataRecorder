@@ -7,6 +7,7 @@ import pytest
 from binance_market_data_recorder.paths import (
     UnsafeDataRootError,
     default_data_root,
+    discover_repository_root,
     validate_data_root,
 )
 
@@ -67,3 +68,41 @@ def test_safe_absolute_root_is_normalized(tmp_path: Path) -> None:
 def test_relative_root_is_rejected() -> None:
     with pytest.raises(UnsafeDataRootError, match="path_must_be_absolute"):
         validate_data_root("relative/data")
+
+
+@pytest.mark.parametrize("error", [PermissionError, FileNotFoundError])
+def test_optional_repository_discovery_tolerates_unusable_cwd(
+    monkeypatch: pytest.MonkeyPatch,
+    error: type[OSError],
+) -> None:
+    def unavailable_cwd() -> Path:
+        raise error("inaccessible cwd")
+
+    monkeypatch.setattr(Path, "cwd", unavailable_cwd)
+    assert discover_repository_root() is not None  # Module's checkout still discoverable.
+    from binance_market_data_recorder.cli import build_parser
+
+    with pytest.raises(SystemExit) as result:
+        build_parser().parse_args(["--version"])
+    assert result.value.code == 0
+
+
+def test_optional_git_probe_skips_permission_denial_but_data_probe_does_not(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    denied = tmp_path / "denied"
+    denied.mkdir()
+    original = Path.exists
+
+    def exists(path: Path) -> bool:
+        if path == denied / ".git":
+            raise PermissionError("injected denied Git probe")
+        return original(path)
+
+    monkeypatch.setattr(Path, "exists", exists)
+    assert discover_repository_root(denied) is not None
+    with pytest.raises(PermissionError):
+        validate_data_root(
+            denied, repository_root=tmp_path / "other" / "repo", home=tmp_path / "home"
+        )

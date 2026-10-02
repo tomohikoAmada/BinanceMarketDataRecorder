@@ -41,9 +41,15 @@ remains an open P2. Do not restart live work from old continuation instructions.
 The owner's October 2 plan recheck sets the current Q0–Q6 sequence in the first
 section of `docs/milestone_plan.md`: small correctness fixes, reviewed release,
 safe cleanup/new independent corpus, cloud warm-up/baseline, then separate
-2h + 12h + 24h acceptance (38 accepted hours). Next development is Q1. The local
-performance candidate is not deployed; historical NEXT values are not current
+2h + 12h + 24h acceptance (38 accepted hours). Q1 is implemented/offline verified.
+The performance candidate and Q1 fixes are not deployed; historical NEXT values are not current
 execution authority. The old `qualification_to_24h_plan.md` is only a link.
+
+Q1 has 1881 passing tests and a read-only cloud synthetic retention probe.
+Its record is `docs/milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md`.
+Current development NEXT is Q2 independent implementation review and release
+preparation. ADR-0036 versions new normalized dedup/build identity; old v1
+outputs remain readable. Live RSS/capacity and all Formal credit gates remain.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is

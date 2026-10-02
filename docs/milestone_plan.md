@@ -51,7 +51,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | ID | Deliverable | Gate / status |
 |---|---|---|
 | Q0 | Review, performance candidate and this consolidated plan | Offline gates PASS; independent code review pending; publication CI tracked on PR |
-| Q1 | Small correctness fixes and focused regressions | Next: F2 heartbeat, F3 dedup, F6 cwd, F7 auxiliary summary; disposition F5 memory |
+| Q1 | Small correctness fixes and focused regressions | Implemented/offline verified: F2/F3/F6/F7, bounded F5; independent review pending |
 | Q2 | Reviewed release candidate and cloud test design | Passing offline/build/CI gates; exact candidate; executable Q3 procedure and forecasts |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Measured supported load/capacity; baseline + verification PASS; all products READY |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Reviewed eligible final; same frozen release/corpus |
@@ -60,10 +60,18 @@ or speculative service split. Heavy normalization/replay stays offline.
 
 ### Q1 — Fix known behavior with existing structures
 
+Implementation and evidence: [Q1 acceptance record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
+1881 offline tests pass. The cloud synthetic F5 comparison establishes bounded
+retention with full callbacks/gaps; it is not a live-session RSS or capacity
+verdict. Selected-scope live memory measurement remains mandatory in Q3 before
+T0, and release review remains Q2. No candidate has been deployed.
+
 - F2: supervise heartbeat exceptions and unexpected return during startup and
   steady operation; drain collectors, retain the failure cause and exit FAILED.
   Normal stop stays STOPPED. Check capacity-task early return as part of the same
   required-task handling; do not build a new supervisor framework.
+  Q1 shutdown review also propagates collector drain/seal failures and preserves
+  the primary exception when a peer fails during cleanup.
 - F3: namespace normalized semantic identity by venue/market/symbol/stream.
   Cross-product equal records remain separate; genuine duplicates still merge.
   Version dedup/build semantics and retain old immutable outputs/readers.
@@ -71,10 +79,12 @@ or speculative service split. Heavy normalization/replay stays offline.
   real data-root permission/path checks. Verify installed CLI behavior.
 - F7: enabled auxiliary FAILED and unexpected owner termination appear degraded
   in aggregate and detailed health. Auxiliary failure stays isolated from core.
-- F5: measure live audit-retention growth and RSS before the release is frozen.
-  If growth threatens the 38h profile, bound recent diagnostic history through
-  the existing observer/counters, retaining durable gap/checkpoint facts. Do not
-  infer Collector memory from stopped audit-process measurements.
+- F5: cloud synthetic duplicate growth confirms unbounded retained history.
+  Q1 bounds live diagnostic history to 256 while preserving observer/counters
+  and durable gap/checkpoint facts. Review this control in Q2 and measure actual
+  live RSS in Q3 before T0; this is an explicit remaining gate, not a claim of
+  complete live memory stability. Do not infer Collector memory from stopped
+  audit-process measurements.
 
 Test startup/steady failure and normal cancellation, multi-product/multi-stream
 dedup, inaccessible-cwd CLI and auxiliary failure isolation. Review existing
@@ -212,7 +222,8 @@ Catalog integrity, no active partials, archive backlog and exact retained eviden
 Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
-F4/R-078 separate. The next development milestone is **Q1**.
+F4/R-078 separate. Q1 is implemented/offline verified; the next development
+milestone is **Q2**, independent review and release preparation.
 
 ### How subsequent development proceeds
 

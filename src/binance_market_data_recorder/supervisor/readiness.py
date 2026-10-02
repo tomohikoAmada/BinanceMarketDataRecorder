@@ -107,6 +107,7 @@ class CollectorReadiness:
             symbol,
             audit_observer=audit_observer,
             bootstrap_buffer_capacity=bootstrap_buffer_capacity,
+            audit_history_limit=256,
         )
         self._lock = RLock()
 
@@ -169,6 +170,7 @@ class CollectorReadiness:
                 self._symbol,
                 audit_observer=self._audit_observer,
                 bootstrap_buffer_capacity=self._bootstrap_buffer_capacity,
+                audit_history_limit=256,
             )
 
     def snapshot(self) -> ReadinessSnapshot:

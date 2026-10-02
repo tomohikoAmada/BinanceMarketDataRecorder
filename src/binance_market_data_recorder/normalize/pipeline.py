@@ -275,7 +275,15 @@ def _provenance(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
 def _candidate(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
     envelope = record.envelope
     receive_date, receive_hour = _partition_time(envelope.receive_time_utc_ns)
-    semantic_hash = sha256_json(parsed.semantic_identity)
+    semantic_hash = sha256_json(
+        {
+            "venue": envelope.venue,
+            "market": envelope.market,
+            "symbol": envelope.symbol,
+            "stream": envelope.stream,
+            "identity": parsed.semantic_identity,
+        }
+    )
     logical_hash = sha256_json(
         {
             "event_kind": parsed.event_kind,
@@ -624,6 +632,7 @@ def _build_id(
 ) -> str:
     identity = {
         "dataset_version": DATASET_VERSION,
+        "dedup_version": DEDUP_VERSION,
         "raw_sources": [
             {
                 "chunk_id": chunk.chunk_id,

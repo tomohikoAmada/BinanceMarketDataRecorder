@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections import deque
 
 import pytest
 
@@ -49,6 +50,42 @@ def snapshot(market: str, last: int = 160) -> BookSnapshot:
         bids=(("99", "1"),),
         asks=(("101", "1"),),
     )
+
+
+def test_bounded_diagnostic_history_keeps_observer_and_gap_facts() -> None:
+    observed = []
+    book = LocalBookReconstructor(
+        "spot",
+        audit_history_limit=16,
+        audit_observer=lambda audit, timestamp: observed.append((audit, timestamp)),
+    )
+    book.offer(update("spot", 161, 170))
+    assert book.synchronize(snapshot("spot")) is SynchronizeResult.SYNCHRONIZED
+    assert not book.offer(update("spot", 180))
+    assert book.synchronize(snapshot("spot", 179)) is SynchronizeResult.SYNCHRONIZED
+    intervals = list(book.unreliable_intervals)
+    assert len(intervals) == 1
+    for _ in range(1000):
+        assert book.offer(update("spot", 180))
+    assert len(book.audits) == 16
+    assert len(observed) > 1000
+    assert book.unreliable_intervals == intervals
+    assert any(audit.kind == "sequence_gap" for audit, _ in observed)
+
+
+def test_readiness_history_remains_bounded_after_bootstrap_restart() -> None:
+    from binance_market_data_recorder.supervisor.readiness import CollectorReadiness
+
+    readiness = CollectorReadiness(
+        market="spot",
+        symbol="BTCUSDT",
+        collector_instance_id="test",
+        collector_version="test",
+    )
+    for _ in range(2):
+        assert isinstance(readiness._book.audits, deque)
+        assert readiness._book.audits.maxlen == 256
+        readiness.restart_bootstrap()
 
 
 def test_official_spot_buffer_snapshot_bridge_and_live_rule() -> None:

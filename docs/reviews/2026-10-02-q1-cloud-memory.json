@@ -1,0 +1,96 @@
+{
+  "candidate_source_sha256": "df01bd5022b2f2d32691295c3ce6972b620f2a7f40d7f973d72e7fcfd8276dcb",
+  "results": [
+    {
+      "book_hash": "05993d7a8f726ddee141301a6a5841b659c8fd73357f3e6fe0e86e9088f2eee9",
+      "elapsed_seconds_with_tracemalloc": 1.0998300099745393,
+      "gap_count": 1,
+      "host": "greencloud-tokyo-01",
+      "machine": "x86_64",
+      "mode": "installed",
+      "observer_calls_after_gap": 100001,
+      "python": "3.12.3",
+      "retrieved_at_utc": "2026-10-02T00:09:39.494910+00:00",
+      "samples": [
+        {
+          "events": 10000,
+          "observer_calls": 10000,
+          "retained_audits": 10000,
+          "rss_bytes": 33779712,
+          "traced_current_bytes": 1047984,
+          "traced_peak_bytes": 1048032
+        },
+        {
+          "events": 50000,
+          "observer_calls": 50000,
+          "retained_audits": 50000,
+          "rss_bytes": 46215168,
+          "traced_current_bytes": 5247730,
+          "traced_peak_bytes": 5247778
+        },
+        {
+          "events": 100000,
+          "observer_calls": 100000,
+          "retained_audits": 100000,
+          "rss_bytes": 61239296,
+          "traced_current_bytes": 10404913,
+          "traced_peak_bytes": 10404961
+        }
+      ],
+      "service_after": {
+        "is-active": "inactive",
+        "is-enabled": "disabled"
+      },
+      "service_before": {
+        "is-active": "inactive",
+        "is-enabled": "disabled"
+      }
+    },
+    {
+      "book_hash": "05993d7a8f726ddee141301a6a5841b659c8fd73357f3e6fe0e86e9088f2eee9",
+      "elapsed_seconds_with_tracemalloc": 0.8701788720209152,
+      "gap_count": 1,
+      "host": "greencloud-tokyo-01",
+      "machine": "x86_64",
+      "mode": "bounded",
+      "observer_calls_after_gap": 100001,
+      "python": "3.12.3",
+      "retrieved_at_utc": "2026-10-02T00:09:41.862911+00:00",
+      "samples": [
+        {
+          "events": 10000,
+          "observer_calls": 10000,
+          "retained_audits": 256,
+          "rss_bytes": 31711232,
+          "traced_current_bytes": 26792,
+          "traced_peak_bytes": 29664
+        },
+        {
+          "events": 50000,
+          "observer_calls": 50000,
+          "retained_audits": 256,
+          "rss_bytes": 31715328,
+          "traced_current_bytes": 27310,
+          "traced_peak_bytes": 37515
+        },
+        {
+          "events": 100000,
+          "observer_calls": 100000,
+          "retained_audits": 256,
+          "rss_bytes": 31715328,
+          "traced_current_bytes": 27737,
+          "traced_peak_bytes": 38017
+        }
+      ],
+      "service_after": {
+        "is-active": "inactive",
+        "is-enabled": "disabled"
+      },
+      "service_before": {
+        "is-active": "inactive",
+        "is-enabled": "disabled"
+      }
+    }
+  ],
+  "scope": "synthetic_cloud_diagnostic_not_live_capacity"
+}

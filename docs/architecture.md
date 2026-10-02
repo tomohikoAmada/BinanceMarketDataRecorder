@@ -168,6 +168,15 @@ LaunchAgent owns a kernel `flock`, runs M3 startup recovery, supervises isolated
 Spot/USD-M workers, writes an atomic PID/freshness-validated state heartbeat,
 and maps SIGTERM to Collector drain/seal. Current supervision isolates recoverable
 product failures; a terminal core failure stops the process for service-manager restart.
+Q1 also supervises the required heartbeat through startup recovery and steady
+operation; heartbeat/capacity task failure or an unexpected early return drains
+capture and exits FAILED. Failure task/type are additive state fields. Enabled
+auxiliary FAILED and a terminated global side-data owner explicitly degrade
+health while core capture continues. Live readiness retains the latest 256
+diagnostic audits; every audit still reaches its observer, and gap/checkpoint
+intervals remain intact. Offline reconstructors retain full history by default.
+Collector drain/seal errors also propagate as FAILED; cleanup does not replace
+an earlier primary terminal cause with a peer's later failure.
 NSWorkspace notifications plus wall/monotonic discontinuity evidence mark
 sleep gaps. Optional `caffeinate -i -w <pid>` is scoped to the service lifetime
 and never changes persistent power policy.
@@ -489,6 +498,10 @@ is atomically committed only after Parquet logical readback.
 `consumer-contract.v1`/`replay-order.v1` selects one such build and exposes
 deterministic read-only events without filesystem-order or mountpoint semantics.
 Neither derived layer rewrites Raw.
+New normalized writes use [ADR-0036](adr/0036-product-scoped-normalized-dedup.md):
+semantic keys include venue/market/symbol/stream, and build identity includes
+`normalized-dedup.v2`. The public reader verifies both legacy v1 and v2 builds
+with their own hash rules; existing immutable outputs are preserved.
 
 ## Internal directory contract
 

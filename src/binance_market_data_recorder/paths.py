@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 APPLICATION_DIRECTORY = "BinanceMarketDataRecorder"
@@ -37,12 +38,23 @@ def default_data_root(
 def discover_repository_root(start: Path | None = None) -> Path | None:
     """Find the nearest Git worktree without invoking Git or changing state."""
 
-    candidates = [start or Path.cwd(), Path(__file__).resolve()]
+    candidates = []
+    # Source revision discovery is optional, even from a removed cwd.
+    with suppress(OSError):
+        candidates.append(start if start is not None else Path.cwd())
+    with suppress(OSError):
+        candidates.append(Path(__file__).resolve())
     for candidate in candidates:
-        current = candidate if candidate.is_dir() else candidate.parent
+        try:
+            current = candidate if candidate.is_dir() else candidate.parent
+        except OSError:
+            continue
         for directory in (current, *current.parents):
-            if (directory / ".git").exists():
-                return directory.resolve()
+            try:
+                if (directory / ".git").exists():
+                    return directory.resolve()
+            except OSError:
+                continue
     return None
 
 

@@ -27,15 +27,20 @@ The October 1 owner-requested [architecture review](reviews/2026-10-01-architect
 reproduces three P1 issues: inadequate per-observation delta capacity, unsupervised
 heartbeat failure and cross-product normalized deduplication. Three P2 findings
 cover normalization fan-in, retained quality audits and inaccessible-cwd CLI
-discovery. F1 now has a local implemented candidate; F2–F6 remain open fixes or
-follow-up resource work. The [October 2 recheck](reviews/2026-10-02-plan-recheck.md)
+discovery. F1 now has a local implemented candidate. Q1 implements F2/F3/F6,
+bounded F5 retention and F7 health; independent review remains pending and F4
+stays a separate offline follow-up. The [October 2 recheck](reviews/2026-10-02-plan-recheck.md)
 adds F7, an enabled auxiliary FAILED omitted from aggregate degraded health.
-No new independent implementation review is claimed.
+No new independent implementation review is claimed. The
+[Q1 acceptance record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md)
+records 1881 passing offline tests and a read-only cloud synthetic memory probe.
+New normalized builds use [ADR-0036](adr/0036-product-scoped-normalized-dedup.md)
+and v2 build identity; legacy immutable v1 builds remain readable.
 
 The owner selected safe old-data cleanup followed by an independent fresh corpus.
 The single current [milestone plan](milestone_plan.md) requires 2h + 12h + 24h all PASS
-with complete terminal/independent verification. Next is Q1 correctness fixes,
-release review and Q3 safe cleanup/new canonical Catalog; no old archive is
+with complete terminal/independent verification. Next is Q2 independent release
+review and then Q3 safe cleanup/new canonical Catalog; no old archive is
 implicitly destroyed or imported into the new corpus.
 
 [Cloud performance analysis](reviews/2026-10-02-cloud-performance-and-38h.md) records
@@ -88,7 +93,7 @@ Read these documents in order:
 - Review the practical cost of full baseline/terminal audits using retained
   production measurements. The stopped audit gives partial measurements only;
   it establishes neither a full integrity PASS nor completed throughput.
-- Implement Q1, independently review the optimization/ADR candidate, and pass
+- Independently review Q1 and the optimization/ADR candidate in Q2, and pass
   exact-artifact release/cloud gates. The owner has selected safe cleanup/new
   corpus; it has not been executed. Warm-up precedes the authoritative stopped
   baseline. Do not resume the unchanged interrupted audit.
