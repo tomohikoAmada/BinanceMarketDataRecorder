@@ -1,9 +1,10 @@
 # Risk Register
 
 Updated October2,2026. Restored SSH after the owner's local VPN/proxy correction.
-Exact independently accepted48ca920 is installed/verified;1942 local tests,
+Exact independently accepted605bc16 is installed/verified;1970 local tests,
 exact-source dual-platform CI, clean locked wheel and112 cloud V5 tests PASS.
-637 retained new chunks are archived; engineering full baseline/completed verification PASS.
+697 retained new chunks are archived; a new exact-artifact engineering baseline
+is executing. Earlier source48 baseline/completed verify PASS on637 chunks.
 Actual all-enabled throughput/catch-up and cumulative forecasts remain OPEN.
 Original nonformal failures and historical R-078 retain their dispositions.
 Owner resumes through completed Formal2h, stopping before12h.
@@ -116,3 +117,25 @@ The [minimal empty-response correction](milestone_acceptance/Q3-empty-recovery-c
 and precise typed-empty observation recovery policy are independently ACCEPTed;
 replacement release and actual cloud gates remain. Pre-start/target are strict,
 no flag is disabled, no Formal T0/credit. Continue through eligible2h, before12h.
+
+
+Q3 empty-response identity and the independently reproduced retention-gap
+identity P2 are closed in exact605bc16. Precise typed-empty recovery is explicit,
+with unchanged actual-data freshness/cursor limits and strict endpoints; generic
+errors/conflicts stay blocked. Final56 independent tests and1970 local tests PASS;
+CI/clean locked wheel/cloud98/deployment PASS. Actual cloud throughput/catch-up
+and cumulative full-audit practicality remain OPEN, no Formal credit.
+
+
+## Q3 sparse initial capture boundary — OPEN
+
+Actual normal/missed observations fit240s, but catch-up fails unmarked_reconnect
+for ETH liquidation: its initial socket was connected before T0 with no messages,
+then its first current-process message was compared to the prior-process tail.
+Independent replay proves this cause, distinct from later network drops. A minimal
+capture startup-boundary correction must retain true unmarked-reconnect detection,
+crash consistency and legacy replay. No Formal start or credit; Recorder stopped/
+disabled,1182 chunks archived, Catalogok/0partials, archive/OS authority restored.
+Measured live resource records do not establish a hardware bottleneck: Recorder
+RSS peak269643776B, minMemAvailable4869464064B, swap0, aggregate steal1.715%,
+iowait0.516% over1443.562s. These are this nonformal window, not a38h certificate.

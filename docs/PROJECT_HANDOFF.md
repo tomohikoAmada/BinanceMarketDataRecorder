@@ -6,10 +6,10 @@ Updated October 2, 2026. This is the entry point for the next development team.
 
 Only local and remote main remains, with no open PR. Preserve the unrelated
 stash/untracked bundles and detached historical worktrees. Frozen runtime
-source is48ca9202a20a068b878cd71c416c8132a04bdf8c, tree65690e8c3abc82442f02d5e18bee2c9be1a3fd25;
+source is605bc169cb9d9bbc886b01c548a10c16d35b67be, treeb10fea2beac6eb8adf52dfa4f7f0ff2445fa5d9a;
 subsequent documentation commits are not deployed wheels. Independent local
-GPT-6.1 Sol xhigh review ACCEPT with no open source findings,1942 offline tests
-and exact-source dual-platform CI36993322333 PASS.
+GPT-6.1 Sol xhigh review ACCEPT with no open source findings;1970 offline tests and exact-source
+dual-platform CI37002357094 PASS.
 
 The owner restored their local VPN/proxy and resumed VPS execution through
 reviewed eligible Formal2h, then stop before12h. All14 applicable public
@@ -19,20 +19,30 @@ The broader [plan](milestone_plan.md) remains2h+12h+24h,38 accepted hours.
 ## Current cloud checkpoint
 
 The corrected single wheel is installed at the canonical root-controlled venv.
-Wheel SHA91608cf0883610cb9c41e16ec90584e17df65da2ddff4e9e9428e59e6bc37c2b;
-deployment identitya5fa76f3cc1042f50fc82a28a40a7f889f295968d9181b0a8578c7dc04ba03ed.
-Clean wheel/28 exact dependencies and cloud112 affected V5 tests PASS.
-Fresh boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive/disabled,
-Catalogok,637 chunks/transactions allLOCAL_DELETED,0partials/backlog/pending.
-Old/new capture remains retained; c87 runtime is inert custody.
+Wheel SHA690327fc0b6c8d241d7d95a806d0b9c34cb665ece26c214074ae65e03a5a336f;
+deployment identity1ecd42ca420e7a9d74f69e9618c0e9fb0f7a3be06d41364391769f805dde4458.
+Clean wheel/28 exact dependencies and cloud98 newly affected tests PASS;
+unchanged V5 Raw paths retain source48 cloud112-test evidence.
+Fresh boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Recorder is inactive AND disabled,
+MainPID0/Resultsuccess/NRestarts0.1182 chunks/transactions are LOCAL_DELETED,
+Catalogok,0partials/backlog/pending. Archive timer is enabled/active with actual
+finite recurrence; normal OS update authority remains restored; monitor stopped.
 
-Engineering-only full baseline and completed verify PASS on637 retained
-chunks, with two LIVE passes. Archive authority is restored; normal OS update authority remains active. Next: actual all-enabled
-normal/missed/catch-up gates, resource/cumulative capacity and complete-audit
-forecasts, then authoritative post-warm-up baseline under a finite maintenance
-quiet window, fresh readiness/coverage and one Formal2h. At target, stop/disable,
-drain/pause, full terminal audit, completed verification and independent local
-eligibility review. Restore archive/OS authority and stop before12h.
+Corrected engineering baseline and completed verify passed on697 chunks with
+both LIVE passes; independent frozen-control review ACCEPT. Actual nonformal
+start/immediate/normal/missed550 observations completed in18.463/11.448/43.464/
+82.028s. Catch-up-1 failed unmarked_reconnect, so Q3 is not accepted.
+Independent diagnosis identifies the sparse ETH liquidation initial connection,
+already established before T0, whose first message arrived after T0 and was
+compared to a prior-process baseline tail. No Formal stage has started.
+
+Next: minimal capture startup-boundary correction, independent review and affected
+release/cloud checks. Keep real unmarked-reconnect detection and legacy replay.
+Then actual warm-up convergence, growth/resource/complete-audit forecasts,
+stopped authoritative post-warm-up baseline under a finite quiet window, fresh
+readiness/coverage and one Formal2h. At target stop/disable, drain/pause, full
+terminal audit, completed verification and independent eligibility review.
+Restore archive/OS authority and stop before12h. Never reset the growing corpus.
 
 The read-only30s sampler and AcceptanceObserver save monitoring usage;
 AcceptanceObserver remains the sole stage authority. Helpers cannot restart
@@ -119,11 +129,3 @@ Earlier pause/reboot/offline-only instructions were time-local and are
 superseded by the owner's restored-access continuation. Their evidence remains
 in the Q3 acceptance records. Current operational authority is current state.
 
-
-Latest Q3 checkpoint: engineering637-chunk baseline and completed verification
-PASS; auxiliary pre-start blocked repeated empty-response event identity conflicts.
-Recorder stopped/disabled,697 chunks/transactions LOCAL_DELETED,0partials/Catalogok.
-The [minimal empty-response correction](milestone_acceptance/Q3-empty-recovery-correction.md)
-and precise typed-empty observation recovery policy are independently ACCEPTed;
-replacement release and actual cloud gates remain. Pre-start/target are strict,
-no flag is disabled, no Formal T0/credit. Continue through eligible2h, before12h.

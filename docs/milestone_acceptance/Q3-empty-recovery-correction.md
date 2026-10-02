@@ -3,7 +3,8 @@
 October2,2026. Current task: reviewed eligible Formal2h, then stop before12h.
 All14 auxiliary flags, four ProductKeys, growing corpus and Raw/Catalog/archive
 contracts remain unchanged. This is one Q3 correction, not a new milestone or
-Formal attempt. Current deployed source48ca920 is stopped; replacement pending.
+Formal attempt. Exact reviewed605bc16 is installed/verified; its engineering baseline and
+fresh readiness pass. Nonformal cloud warm-up is running; remaining gates pending. Source48ca920 remains inert custody.
 
 ## Defect and narrow correction
 
@@ -82,3 +83,70 @@ modified same-ID evidence still fails Catalog identity. Three empty requests
 reach REST with unchanged cursor; subsequent real requested data advances only
 after persistence. No new source finding remains; historical full-audit scalability
 P2 is separate and OPEN. Exact-source CI/build/redeploy/cloud gates remain.
+
+
+## Exact release and stopped redeploy
+
+Source605bc169cb9d9bbc886b01c548a10c16d35b67be, treeb10fea2beac6eb8adf52dfa4f7f0ff2445fa5d9a;
+[exact-source CI37002357094](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/37002357094)
+SUCCESS on Ubuntu/macOS. One clean Git-archive wheel504417B, SHA
+690327fc0b6c8d241d7d95a806d0b9c34cb665ece26c214074ae65e03a5a336f.
+Source archive SHA0e150e8bee633287be590bdac9fa955cf91d545fdc39c9742c95abde92b0c8f9;
+Linux lock44cd3733… unchanged. Packaged Python source equals clean archive.
+Noneditable clean installation,28 exact runtime distributions, pip check and
+isolated doctor/status PASS. Cloud98 changed capture/gate/integration tests
+PASS8.65s. Existing unchanged V5/public/stress results retain original bindings.
+
+Stopped deployment preserved source48 venv in
+/opt/binance-market-data-recorder/venv-custody-q3-empty-recovery-20261002-48ca920.
+New root-controlled release /opt/binance-market-data-recorder/release-605bc16-aiW0UvIt;
+canonical venv/writer/archive/config/unit remain. Exact deployment identity
+1ecd42ca420e7a9d74f69e9618c0e9fb0f7a3be06d41364391769f805dde4458 VERIFIED,
+including130 package RECORDs,28/28 locked dependencies and protected installation.
+All14 actual flags and four selected ProductKeys rechecked true; no corpus reset.
+Frozen reviewed release SHA2077d5413bae96d7b6e429a953f1094f1898fe438a280df6a13741b90aeb2a35.
+
+Engineering full baseline/completed verify over697 retained archived chunks PASS,
+no blockers, both LIVE passes. Root157e01d3dda930d2e5e889bb770fd2fd55111f9b9f80d8b8e6ba60bfe1c98795.
+Baseline subprocess wall envelope670s and completed verify12s; unit CPU687.857s,
+memory peak307.9MiB including cache, swap peak0. Archive authority restored with
+actual automatic recurrence. Recorder enabled/running for NONFORMAL only; core
+READY and strict26-context auxiliary gate PASS before warm-up.
+No Formal T0/credit. New baseline is needed to bind this exact deployment, not
+a rerun of the unchanged source48 proof. Afterwards: actual nonformal gates,
+forecasts and authoritative post-warm-up baseline. Stop before12h.
+
+
+Independent completed engineering review ACCEPT, SHA
+cfd81f2f867a046bfa9eed623ba1f247b3e2c9db662a616b5857f945305e295c.
+Frozen-control reconstruction PASS0.811s with Raw calls0/production opens0.
+697 manifests/transactions,25 shards/11857 records and exact deployment bindings
+agree; this grants no Formal credit and does not replace the post-warm-up baseline.
+
+
+## Subsequent actual cloud gate — not accepted
+
+Fresh strict26-context pre-start PASS and all four products READY. Actual
+complete observations: start18.463s, immediate11.448s, normal43.464s,
+missed550 cadence82.028s; all below240s. Catch-up-1 fails unmarked_reconnect;
+no completion or target,0 Formal credit. Bundle SHA
+8fb18b3427dc68581a455dfda910a67e0e38adfc90fae0fd749f1d56b59c7129.
+Independent online chain reconstruction localizes one finding at transition7723,
+um_perpetual:ETHUSDT:liquidation. Prior baseline chunk5d08586e-7ae2-4198-acf5-be3122899e18
+last receive1790938867199992725; first current chunk444ad598-6067-41d1-9214-a3ce0be9b376
+first receive1790943882125252977 (12:24:42.125UTC). Current collector identity
+0371e595-8245-4b5b-94de-7c2d20f6b1a0:um_perpetual:ETHUSDT matches the frozen
+service instance, started1790942976692667264 before T0. Liquidation connected
+with attempts1/failures0 throughout, but had no message at T0. Later real
+12:31 network reconnects are separate and do not cause this finding.
+
+Stop/disable and verified archive drain complete:1182 chunks/transactions all
+LOCAL_DELETED,4762557 frames,238437460 stored bytes,3624723275 uncompressed
+bytes, Catalogok,0 active partials. Archive timer enabled/active with actual
+finite recurrence; OS authority restored. RecorderResultsuccess/NRestarts0.
+Resource monitor stopped;90 records/3492808B SHA
+de80d755a0adac77a282195e940f3500aa7d054512bde02f7be523c772a273c2.
+Actual capture remains in this same growing corpus. Source605bc16 stays installed;
+no unchanged repeat or Formal start. Next is a minimal startup-boundary correction
+and independent review preserving real unmarked-reconnect detection and legacy
+replay, then affected release and cloud gates. Q3 remains PARTIAL_NOT_ACCEPTED.

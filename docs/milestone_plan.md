@@ -26,19 +26,19 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed source is now the independently accepted correction `48ca920`,
-wheel91608cf0883610cb9c41e16ec90584e17df65da2ddff4e9e9428e59e6bc37c2b.
-It supersedes retained c87d580. Exact deployment, clean locked wheel and112
-cloud affected V5 tests PASS. SSH interruption was the owner's local VPN/proxy;
-fresh reboot reconciliation verified stopped/disabled Recorder,637 retained
-archived chunks, Catalogok and zero active partials. Engineering full baseline/completed verification on637 blocks PASS. Auxiliary
-pre-start found repeated empty-event identity conflicts; the small reviewed
-correction and precise typed-empty observation recovery are being finalized.
-Recorder is stopped/disabled with697 archived blocks. Actual normal/missed/catch-up, forecasts and
-authoritative post-warm-up baseline remain gates. Original nonformal failures
-retain zero credit. Owner resumes through completed Formal2h, stopping before12h.
-Formal V5 credit is zero; the old baseline remains unpublished and historical
-automation paused. See [production state](CURRENT_PRODUCTION_STATE.md).
+Installed source is now independently accepted605bc16/treeb10fea2, wheel
+690327fc0b6c8d241d7d95a806d0b9c34cb665ece26c214074ae65e03a5a336f,
+deployment identity1ecd42ca….1970 local tests, exact dual-platform CI37002357094,
+clean locked wheel,98 newly affected cloud tests and exact stopped deployment PASS.
+It adds minimal empty/gap event identity fixes and precise bounded typed-empty
+recovery during observations; pre-start/target stay strict. Earlier637-chunk
+engineering full baseline at48ca920 PASS, then auxiliary pre-start blocked its
+empty-event conflict.697 captured chunks are now archived and retained. A new
+605bc16 engineering full baseline is executing; actual normal/missed/catch-up,
+forecasts and authoritative post-warm-up baseline remain required. Original
+failures retain zero credit; no Formal T0. Owner resumes through completed
+Formal2h, before12h. Historical old baseline remains unpublished and automation
+paused. See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
@@ -76,10 +76,10 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; custody/deployment done; observer byte/causal-cap gate needs optimization/review before repeated warm-up and authoritative baseline |
-| Q4 | Formal 2h plus full terminal audit and completed verification | Reviewed eligible final; same frozen release/corpus |
-| Q5 | Formal 12h plus full terminal audit and completed verification | Eligible 2h predecessor; reviewed eligible final |
-| Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | Eligible 12h predecessor; reviewed eligible final; all three targets total ≥38h |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; exact605bc16 installed;697-chunk engineering baseline/verify passed; catch-up warm-up failed on prior-process sparse-stream boundary; startup-boundary correction/review and remaining gates required |
+| Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
+| Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
+| Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
 ### Q1 — Fix known behavior with existing structures
 
@@ -149,8 +149,11 @@ values/paths, not a moving GitHub branch or copied historical command.
 Current [Q3 attempt](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md)
 retains all new capture and stops before Formal T0. The current Q3 correction implements [ADR-0037](adr/0037-v5-shared-archive-companions.md)
 and fixes uncovered all-enabled lifecycle/durability/health behavior. Exact
-c87d580 is independently ACCEPTed and deployed after passing CI/clean wheel/
-cloud252 changed-path and21 public-smoke gates. Shared exact companions and
+c87d580 passed its earlier review/release gates; subsequent Raw retirement and
+empty/gap event corrections are independently accepted in exact605bc16, now
+installed with passing CI/clean wheel/cloud98 newly affected tests. See the
+[current correction](milestone_acceptance/Q3-empty-recovery-correction.md).
+Shared exact companions and
 final-reference accounting preserve the frozen byte/page/proof bounds and old
 replay/resume. Actual all-enabled warm-up remains required; do not raise caps or
 relax cadence. Existing warm-up data remains part of the growing corpus. Check
