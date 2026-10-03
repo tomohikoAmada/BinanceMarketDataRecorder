@@ -1,28 +1,28 @@
 # Risk Register
 
-Updated October3,2026. Q4 actual reviewedeligible2h PASS, both LIVE/completed
-verification and independent eligibility/restored-authority handoff ACCEPT.
-3868chunks archived/Catalogok/0partials/backlog; RecorderinactiveANDdisabled,
-normalarchive/OSauthorityrestored. All14flags/fourproducts/corpus preserved.
-Actualfullaudit34m22s; generic snapshot misses, typed-empty retries, marked WS gap
-and sampling limits remain explicit. Q5/Q6 notstarted; historical R078 staysOPEN.
-See [actual2h record](milestone_acceptance/Q4-formal2h-20261003.md).
-Post-closeout R-079 has a reviewed source correction and actual corrected deployment; renewed2h
-and its own reviewed Formal2h remain gates before12h. See the
-[correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
+Updated October4,2026 (Shanghai). Corrected source23ea5c4 Q4 actual reviewed
+eligible2h PASS, both full LIVE/completed verification and independent eligibility/
+actual restored-authority handoff ACCEPT. All6718 chunks archived/Catalogok/FKok/
+0partials/backlog; RecorderinactiveANDdisabled, normal archive/OSauthority restored.
+All14 flags/four products/growing corpus and old evidence preserved. Actual full
+terminal50m05.516s; three in-period typed-empty retries/two missed snapshots and
+sampling limits remain explicit. Q5/Q6 notstarted; R078 staysOPEN.
+See [current2h record](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md).
+R079's minimal correction has passed its own exact release/cloud/baseline/warm-up/
+Formal2h/terminal/review gates; the old cf3909e9 PASS remains historical only.
 
 ## Current follow-up
 
 | Risk | Current control and evidence | Remaining work |
 |---|---|---|
-| R-079: Spot snapshot idle cleanup starves the event loop | P1; latest macOS CI diagnostic and deterministic old-method regression prove completed workers can remain queued for removal; source23ea5c4 explicitly reclaims exact awaited workers, local1998 PASS/independent ACCEPT/exact CI37130186751 BOTH PASS | Source fixed/actual23ea5c4 wheelbb7e357e canonical identity0ea93b2c VERIFIED/cloud233/independent deployer ACCEPT; engineering baseline/bothLIVE/verify/independent ACCEPT; NONFORMAL warm-up RUNNING. Own reviewed2h gates remain before12h; old cf3909e9 Q4/custody retained for its identity |
+| R-079: Spot snapshot idle cleanup starves the event loop | Deterministic old-method regression and CI diagnostic establish the bug; source23ea5c4 reclaims exact awaited workers. Local1998/exact CI37130186751 bothPASS/independent source ACCEPT; exact wheel/cloud233/canonical deploy/engineering+authoritative baseline/warm-up/own Formal2h/bothLIVE/verify/independent eligibility+handoff ACCEPT | CLOSED for this correction and selected2h scope; preserve exact regressions/old evidence, later stages remain separate |
 | R-076: ordinary observations grow with historical corpus | Bounded deltas/offline review and actual reviewed2h online chain pass | Complete later12h/24h qualification |
-| Sparse initial WS boundary |605bc16 failed nonformal catch-up on a pre-T0-connected sparse liquidation stream's first post-T0 payload; ADR-0038 records an authentic initial boundary without relaxing the classifier | Exact cf3909e9 review/release/cloud and actual warm-up ACCEPT; preserve failures, finish Formal qualification |
+| Sparse initial WS boundary |605bc16 failed nonformal catch-up; ADR-0038 authentic initial-boundary correction retained in the independently accepted corrected artifact | Actual corrected warm-up/2h/terminal ACCEPT; preserve original failure/strict classifier and repeat later-stage gates |
 | Very long consecutive WS failure backoff | Offline unlimited-failure fixture exposes existing exponent OverflowError at1025 failures before the configured cap can apply; separate from the observed startup failure | Proportionate bounded-exponent follow-up; no claim that these attempts occurred on the VPS |
-| R-077: incomplete or inconsistent terminal authority | Actual1640 baseline and3868 terminal both LIVE/completed verification/independent review pass | Retain exact authority and repeat gates for later stages |
-| R-078: full Raw/archive audit takes too long | Historical143362 scope remains unfinished/retained; new3868 selected-scope complete both LIVE+verify wall34m22s | OPEN; actual2h scaling gives14h152/361min,38h386/1007min mean/peak scenarios; review later full-audit practicality/capacity before those stages |
+| R-077: incomplete or inconsistent terminal authority | Corrected4434 baseline/6718 terminal both fullLIVE/completed verification/independent review PASS | Retain exact authority and repeat gates for later stages |
+| R-078: full Raw/archive audit takes too long | Historical143362 scope remains unfinished/retained; corrected6718 scope complete bothLIVE+verify wall50m05.516s | OPEN; reforecast larger actual scope, capacity/temp/staging/controls and practical full-audit windows before12h/24h; prior38h peak reserve failure unresolved |
 | R-034: Spot bootstrap source conflict | ADR-0011 retains exact Raw and the `lastUpdateId + 1` interpretation; offline evaluator compares boundaries | Resolve normative-source conflict before changing that behavior |
-| Long-run resources and capacity | Historical bounded measurements and current partial audit samples are retained | Actual2h resources/eligibility ACCEPT; prior38h peak/staging scenario below10GiB reserve remains unresolved; reforecast actual temp/staging/backlog/controls before later stages |
+| Long-run resources and capacity | Corrected2h sampled host execution15.78%/minavailable4.43GiB/wholehostswap268KiB with0 pagesinout; native full audit cgroup1182.3MiB/swap0 | Selected2h ACCEPT only; later stages require current reserve/temp/staging/backlog/control and schedule admission; unresolved38h peak scenario remains explicit |
 | Auxiliary REST availability | All-enabled reviewed2h strict/sampled checks pass; two missed polling snapshots and actual recovery retained | Cooldown remains process-local; inter-sample failures and snapshot market-time coverage limits remain explicit |
 | Portable archive rollout | Transfer, receipt binding and verified source retirement are implemented | Complete chosen client/platform and external-media certification |
 

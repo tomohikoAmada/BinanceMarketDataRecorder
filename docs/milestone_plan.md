@@ -2,7 +2,7 @@
 
 ## Current plan — 38 accepted hours on the cloud server
 
-Updated October 3, 2026 (Shanghai). **This section is the single current development plan.**
+Updated October 4, 2026 (Shanghai). **This section is the single current development plan.**
 It supersedes the October 1/2 proposals and time-local NEXT instructions below.
 The owner selected safe old-data cleanup followed by a fresh independent corpus.
 The [recheck](reviews/2026-10-02-plan-recheck.md) records corrections, evidence and
@@ -12,25 +12,28 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
-Current owner continuation: perform the corrected-source release/Q3 gates and
-one new reviewed VPS Formal2h, then stop before12h. Hourly `vps-2h` is ACTIVE.
-This supersedes the previous local fix/analysis-only scope. Source23ea5c4 has
-local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS;
-docs-only4285240 CI37130990463 PASS. Corrected cloud233 affected tests/locked wheel121 source files/all28 dependencies/
-independent deployer/helper/actual canonical deployment VERIFY PASS. Source23ea5c4,
-wheelbb7e357e…52a0, identity0ea93b2c…fbee. Engineering baseline COMPLETE/both LIVE/completed verify/independent ACCEPT,
-rootd983a3bb…189c996/wall34m15.551s. Archive recurrence+strict core4/aux26PASS;
-NONFORMAL warm-up COMPLETE/invocation32732dde…b72fd, start29.480s/
-immediate17.035s/normal22.831s/missed30.815s/catch-up31.062s+28.423s,
-pending193→0/delta_pendingfalse/no blockers. Recorder inactiveANDdisabled,
-archive naturally drained then paused. Independent warm/resource/helper/actualarm ACCEPT; newauthoritativebaseline
-COMPLETE/bothLIVE/verify18:21:53UTC roota31e9571…69c18ce/75458records/159shards;
-independentreviewACCEPT. Explicitprestart+freshcore/strict26PASS18:27UTC.
-Absoluteexpiry23:31:19UTC/noextension.
-Formal target COMPLETE7200.001928737s/strictendpointPASS/RecorderinactiveANDdisabled;
-terminal bothLIVE+completedverify RUNNING21:04:36UTC/invocatione03d18ea…f0eccd.
-Online/control independent review RUNNING; credit0 until final review and restored
-handoff. Absoluteexpiry23:31:19UTC unchanged.
+Latest owner continuation is COMPLETE: corrected-source release/Q3 gates and
+one new reviewed VPS Formal2h PASS, then stop before12h. Source23ea5c4 has
+local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS.
+Corrected cloud233/locked wheel121 source files/all28 dependencies, independent
+deployer/helper and actual stopped canonical deployment VERIFY PASS;
+wheelbb7e357e…52a0/identity0ea93b2c…fbee. Engineering baseline, all-enabled
+normal/missed/catch-up warm-up/resource admission/finite quiet arm and authoritative
+post-warm-up baselinea31e9571…69c18ce were independently accepted before T0.
+
+Own corrected stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27 actually reached
+7200.001928737s, strict endpoint PASS/automatic stopANDdisable. Both full LIVE
+terminal passes/completed verification/independent eligibility plus actual
+restored handoff ACCEPT. Final64889189…b00c2/terminald7b460fb…eb5574,
+114303 records/241 shards/6718 archived chunks, actual terminal50m05.516s;
+independent frozen-control reconstruction36.722126s/Raw+network+productionopens0.
+All239 in-period auxiliary checks PASS. Preserve three in-period typed-empty
+retries/two missed premium snapshots (~5s recovery), historical gap flags and
+sampling limits. OS RESTORED22:00:16UTC BEFORE absolute-expiry cancellation;
+archive actual recurrence/natural success/future deadline and RecorderinactiveAND
+disabled/PID0/NRestarts0 verified. No expiry extension, newT0 or corpus reset.
+See [corrected Q4 acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md).
+Pause hourly `vps-2h` after this closeout is pushed; historical tasks stay paused.
 
 The same new frozen identity must bind affected Q3, new2h and later stages.
 Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
@@ -72,14 +75,14 @@ controlled quiet-window exit; no corpus reset/unique deletion. Earlier failed
 attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
-The original live execution ended before12h. The newest owner request above
-resumes corrected-source qualification; current-chat hourly `vps-2h` is ACTIVE,
-while historical tasks stay paused. Q5/Q6 remain NOT_STARTED; original artifact accepted2h/38h,
-corrected artifact0/38h. Actual2h audit scaling gives
-advisory full-audit mean/observed-peak scenarios14h152/361min and38h386/1007min.
-Before later T0 reforecast actual reserve/temp/staging/backlog/retained controls
-and practical finite audit windows; prior38hpeak reserve scenario failed and is
-not resolved by these time estimates. No speculative language/server change.
+Both original and corrected authorized executions ended before12h. Q5/Q6 remain
+NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
+its own historical PASS without transferring credit. Original14h152/361min and
+38h386/1007min full-audit scenarios are historical advisory arithmetic. Before
+later T0 reforecast from the corrected actual50m05.516s/6718-chunk audit and
+current reserve/temp/staging/backlog/retained controls/practical finite windows;
+prior38h peak reserve failure remains unresolved. R078OPEN; no speculative
+language/server change or later-stage capacity admission.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 
 Corrected-source continuation checklist (old completed checklist below is historical):
@@ -91,7 +94,7 @@ Corrected-source continuation checklist (old completed checklist below is histor
 - [x] Independent warm-up/resource/forecast/helper+actual finite quiet arm ACCEPT;345min window expires23:31:19UTC, no extension. [Review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
 - [x] New authoritative post-warm-up baseline/both LIVE/completed verify/independent control ACCEPT: roota31e9571…69c18ce.
 - [x] Fresh strict readiness PASS and sole corrected-identity Formal2h actual target7200.001928737s/endpointPASS/stopANDdisable/archive drain;stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
-- [ ] Both full LIVE terminal audits/completed verification/independent eligibility and restored handoff, mark PASS/push/pause hourly task: terminal RUNNING21:04:36UTC/invocatione03d18ea…f0eccd.
+- [x] Both full LIVE terminal audits/completed verification/independent eligibility and actual restored handoff ACCEPT; corrected Q4 PASS/final64889189…b00c2, terminal50m05.516s/invocatione03d18ea…f0eccd. Closeout push/pause hourly task; no12h.
 
 ### Fixed MVP boundary
 
@@ -116,8 +119,8 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/3868-chunk engineering baseline+independent review COMPLETE; all-enabled warm-up COMPLETE; independent forecast/actual quiet arm ACCEPT; new authoritative baseline COMPLETE/bothLIVE/verify/independent ACCEPT; freshstrict PASS; retain existing corpus and reforecast actual larger audit scope |
-| Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact actualtarget7200.001928737s/endpointPASS; bothLIVEterminal+verify RUNNING, independent final+restoredhandoff remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
+| Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 

@@ -1,5 +1,10 @@
 # Post-Q4 Spot snapshot idle correction
 
+Current disposition, October4,2026 (Shanghai): corrected-source release/Q3 and
+its own reviewed Formal2h/terminal/actual restored-handoff PASS. The sections below
+retain their chronological checkpoints; see the [final acceptance](Q4-formal2h-spot-idle-20261004.md)
+for current status. Old cf3909e9 duration/identity was not reused.
+
 Updated October 3, 2026. Owner scope: fix the macOS CI hang and assess whether
 the corrected deployment needs another Formal2h. No VPS deployment, collection,
 new T0 or automation resume is performed in this scope.
@@ -281,3 +286,25 @@ After complete terminal/nativeverify, independent eligible-final review plus
 controlled OS RESTORED before cancelling expiry and actual resumed archive
 recurrence/worker success/finitefuture deadline are required. Stopbefore12h.
 No final PASS, newformalcredit or automationpause is recorded yet.
+
+## Completed corrected Formal2h and restored handoff
+
+Source23ea5c4/wheelbb7e357e…52a0/identity0ea93b2c…fbee own stage
+2h-e77218f9d1fa4c78a8a48ce8bafdaf27 actual7200.001928737s PASS. Both full LIVE
+terminal passes/completed verification/independent GPT-6.1 Sol xhigh LOCAL/OFFLINE
+eligibility and actual restored-authority handoff ACCEPT. Final64889189…b00c2,
+terminald7b460fb…eb5574,114303 records/241 shards/6718 archived chunks;
+actual50m05.516s/CPU2899.089s/cgroup1182.3MiB/swap0. Independent original frozen
+verifier36.722126s/Raw+network+productionopens0. Strict endpoints/239 in-period
+auxiliary checks PASS; current typed-empty/missed polls/historical gaps/sampling
+limits remain visible in the [current record](Q4-formal2h-spot-idle-20261004.md).
+
+Controlled OS RESTORED22:00:16.698841510UTC before expiry cancellation22:00:53.894653775UTC,
+no23:31:19 extension; five masks removed/original three enabled-active.
+Actual resumed archive recurrence/four successful natural workers/finite future
+deadline ACCEPT. Handoff22:04:51.880189757UTC RecorderinactiveANDdisabled/PID0/
+NRestarts0/same verified identity-config-boot/Catalogok/0partials/backlog.
+Growing corpus/all14 flags/four products/all old evidence retained. Corrected
+accepted2h/38h, Q0–Q4 COMPLETE/Q5Q6 NOT_STARTED/PRODUCTION_READY=NO. Complete
+closeout push/pause hourly continuation; stopbefore12h. R078/prior38h peak reserve
+failure stayOPEN; no speculative architecture/hardware change or later admission.

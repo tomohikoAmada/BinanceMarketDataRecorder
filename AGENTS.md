@@ -23,137 +23,64 @@ The project uses its own branding and author-controlled service namespaces.
 
 ## Project goal and current checkpoint
 
-Current owner authorization (October3,2026): continue corrected Spot idle
-source23ea5c4 through a new VPS Formal2h, both full LIVE terminal audits,
-completed verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE ACCEPT;
-then stop before12h. The owner explicitly resumed hourly `vps-2h` (ACTIVE).
-This supersedes the previous fix/analysis-only no-rerun/no-resume scope.
-Source23ea5c4 local1998/exact CI37130186751 BOTH PASS/independent ACCEPT remain
-valid; docs-only4285240 CI37130990463 PASS. Installed cf3909e9/identityeacada17
-and its genuine old Q4 PASS cannot transfer corrected-artifact credit.
-Retain all14 flags/four products/growing corpus/old evidence; freeze one new
-locked wheel/identity and repeat affected release/Q3/new Formal2h gates.
-Current evidence root: `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
-Corrected cloud233/clean locked wheel/source121/all28 dependencies PASS;
-independent helper/deployer ACCEPT. Actual canonical corrected deployment VERIFY
-PASS: wheelbb7e357e…52a0/identity0ea93b2c…fbee/release23ea5c4-Uw4OjyEu. Old
-cf3909e9 venv/identity retained custody; no reset/unique deletion. Engineering baseline
-COMPLETE/bothLIVE/verify/independentACCEPT rootd983a3bb…189c996/65834records/
-138shards/wall34m15.551s. Archive actual recurrence/natural success/finite future
-PASS; Recorder explicitly started16:28UTC for NONFORMAL core4/strictaux26PASS.
-Warm-up COMPLETE invocation32732dde…b72fd, pending193→0/delta_pendingfalse/no blockers; native every-exit stop/disable
-and7200s BOOTTIME deadline. Recorder inactiveANDdisabled/PID0/NRestarts0; archive
-naturally drained then paused,4434chunks. Warm/resource/helper/actualarm independent ACCEPT; finiteabsoluteexpiry23:31:19UTC
-(noextension). Newauthoritativebaseline COMPLETE/bothLIVE/verify18:21:53UTC roota31e9571…69c18ce,
-75458records/159shards/4434chunks; independentreviewACCEPT. Explicitprestart
-Recorderenabled/active18:27UTC PID68629/invocation42ba1999…e7c960/strictcore+aux26PASS;
-archiverecurrence18:27:37UTC/naturalsuccess/finitefuturedeadline.
-bothLIVE/verify/independentACCEPT and freshstrict+remainingwindow precedeFormalT0. All14/fourproducts/growingcorpus unchanged; FormalRUNNING 2h-e77218f9d1fa4c78a8a48ce8bafdaf27/T0UTC18:34:56.795853724/
-observercee0971f…97a48/target20:34:56.796UTC; endpointautoStopDisable,30ssampler+
-LunaMaxreadonlymonitor. Credit0untilbothLIVE/verify/independent+restoredhandoff.
+Latest owner-authorized corrected-source continuation is COMPLETE, October4,
+2026 (Shanghai): source23ea5c4/wheelbb7e357e…52a0/identity0ea93b2c…fbee own
+VPS Formal2h7200.001928737s, both full LIVE terminal audits, completed verification,
+independent GPT-6.1 Sol xhigh LOCAL/OFFLINE eligibility and actual restored-handoff
+ACCEPT. Final64889189…b00c2/terminald7b460fb…eb5574/stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
+Exact CI37130186751 both platforms/local1998/cloud233/clean locked wheel/actual
+canonical deployment VERIFY and corrected engineering/warm-up/authoritative
+baseline gates independently PASS/ACCEPT. All14 flags/four products/growing corpus
+and previous cf3909e9 genuine PASS/custody remain retained; no old credit transfer.
+Evidence root `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
+Full terminal114303 records/241 shards/6718 archived chunks/10151154 frames,
+actual50m05.516s/CPU2899.089s/cgroup1182.3MiB/swap0. Independent guarded
+reconstruction36.722126s/Raw+network+productionopens0. Strict endpoints/239 in-period
+auxiliary samples PASS. Retain current three typed-empty retries/two missed REST
+snapshots (~5s recovery), historical1269 gap-incomplete/64 zero-frame manifests,
+and30s sampling limits; no every-event/continuous completeness claim.
 
+Actual controlled OS RESTORED October3,22:00:16.698841510UTC BEFORE expiry
+cancellation22:00:53.894653775UTC/readbackinactive, no23:31:19 window extension.
+Five approved runtime masks removed/original three units enabled-active; archive
+actual recurrence/four natural successful workers/finite future deadline PASS.
+Handoff22:04:51.880189757UTC RecorderinactiveANDdisabled/MainPID0/NRestarts0,
+same verified config/identity/boot; Catalogok/0partials/backlog/all6718LOCAL_DELETED.
+Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5/Q6 NOT_STARTED/PRODUCTION_READY=NO.
+Stop before12h. Completion requires pausing hourly `vps-2h` after closeout push;
+if an old hourly wake remains active, only pause it, never start another test.
+Historical tasks stay paused. Latest acceptance/review are in
+`docs/milestone_acceptance/Q4-formal2h-spot-idle-20261004.md` and current handoff.
 
-Latest execution checkpoint (October3,21:05UTC / Shanghai October4,05:05):
-Formal target actually reached7200.001928737s, targetSHA
-30fd63c456420de7e027feab5e623c88f2416797641068a82965d891eda573f9/blockers[].
-Reviewed root endpoint matches target SHA and strict26 PASS; automatic Recorder
-inactive AND disabled/MainPID0/NRestarts0. No restart/newT0. Model/Luna quota
-interruption left native observer and30s sampler running independently; sampler
-naturally completed with Resultsuccess. Online/target/control independent review
-RUNNING (not final eligibility). Archive naturally drained, then timer paused;
-Catalogok/0partials/all6718 chunks+transactionsLOCAL_DELETED,10151154frames/
-552193809storedB/7833293106uncompressedB retained.
+Build a stateful Python3.12 recorder for Binance public market data. Production
+is Ubuntu24.04 x86_64/non-root systemd; macOS Apple Silicon is development/local,
+Ubuntu ARM64/RK3588 has separate evidence. Configurable Spot/USD-M products,
+immutable Raw, recovery/gaps, verified archive, normalization, replay and V5
+acceptance are implemented. Keep the existing one-process/per-ProductKey
+Collector architecture, SQLite, and published consumer contracts.
 
-Both LIVE terminal finalize+completed verification RUNNING since21:04:36UTC:
-`binance-recorder-q4-spot-idle-formal2h-terminal.service`, invocation
-e03d18ea4bf444a9a7cea0b142f0eccd/MainPID72099. Infinite total timeout/native
-900s no-progress authority; no retry/newT0. Operator helperSHA
-2d12d5d1bef17f9e789ffb75fc99444e8e6c1349f38245e7c6e9f8cb5170a97b changes only
-old scope/UUID binding. Exact stage remains2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
-Read-only Luna monitor active throughcompletion/failure or22:40UTC; Solxhigh
-reviews private frozen online controls SHAef5d8441ae654b6bcddaad523554467b91b56153f15843625906380876570358.
-Original absolute quietexpiry23:31:19UTC unchanged; all5 runtime masks remain.
-After complete terminal/nativeverify, independent eligible-final review plus
-controlled OS RESTORED before cancelling expiry and actual resumed archive
-recurrence/worker success/finitefuture deadline are required. Stopbefore12h.
-No final PASS, newformalcredit or automationpause is recorded yet.
+Later documentation commits are not replacement wheels. Pre-start/target
+auxiliary gate is strict. During observations only typed EmptySideDataResponse
+retry may recover within unchanged actual-success/correct-cursor freshness bounds;
+original error/status stays visible. Generic/Catalog/terminal/WS failures at
+observed checks stay blocked. No cursor advance or complete-period claim for
+missing data. Historical ADR-0038 startup and private-array/CI corrections remain
+accepted and documented; old evidence is not current operational authority.
 
-See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
-
-Build a stateful Python 3.12 recorder for Binance public market data. The
-production target is Ubuntu 24.04 x86_64 with a non-root systemd service;
-macOS Apple Silicon is the development/local profile, and Ubuntu ARM64/RK3588
-has separate validation evidence. Configurable Spot/USD-M products, immutable
-Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
-are implemented.
-
-Only local/remote main remains; unrelated stash/untracked bundles and historical
-worktrees stay retained. Historical frozencf3909e9/tree2ac585d0 implements reviewed
-ADR-0038 startup boundaries/durable forced flags after605bc16's sparse-startup
-nonformal failure. Independent aggregate/source/helper and test-only Profile D
-supplement plus private-array/CI/helper supplements ACCEPT; exact CI37083270715
-bothPASS, cloud168/clean locked wheel PASS, actual canonical deployment VERIFIED.
-Wheel7e15bbd9…; identityeacada17….
-Later documentation commits are not replacement wheels. Pre-start/target auxiliary
-gate is strict. During observations only typed EmptySideDataResponse retry may
-recover within unchanged actual-success/correct-cursor freshness bounds; original
-error/status stays visible. Generic/Catalog/terminal/WS failures stay blocked.
-No cursor advance or complete-period claim for missing data.
-
-The owner continues through reviewed eligible Formal2h, then stops before12h.
-All14 flags/four products/growing corpus unchanged. Engineering1182/both LIVE/verify
-and independent ACCEPT; actual all-enabled warm-up/independent resource-forecast
-admission PASS. Authoritative1640 post-warm-up baseline COMPLETE/both LIVE/verify/
-independent ACCEPT, root564beacd…ed1ebff/27908records/59shards, wall21m7.882s.
-Q4 reviewedeligibleFormal2h PASS:7200.002178843s/bothLIVE/completedverify/
-independentGPT-6.1SolxhighLOCAL/OFFLINEeligibility+handoffACCEPT. Stage
-Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571/finalc81a37ea…06aa21da,
-terminald78ea55c…7dd910fd8/65834records/139shards/3868archivedchunks.
-Actualterminalwall34m22.051s/CPU2042.548s/cgroup820.2MiB/swap0; independent
-controlreconstruction23.084s/Raw/network/productionopens0. Report8551c2ae…bac205a,
-identity7daffd1a…f37c67. Strict endpoints/239sampledauxPASS; retain46typedempty
-retries/twogenericmissedRESTsnapshots~5srecovery/one0.418664smarkedWSgap/30s
-samplinglimits. Noeveryexchangeeventclaim/policyrelaxation/newT0/restart.
-ControlledOSRESTORED06:57:08UTC BEFOREabsoluteexpirycancel; noextension.
-Originalrelative→absolutequietcorrection+actualrestoredhandoffindependentlyACCEPT.
-FiveOSmasksremoved/original3unitsenabledactive; archiveenabledactive/actualrecurrence/
-workernaturalsuccess/finitefuturedeadline. RecorderinactiveANDdisabled/MainPID0/
-NRestarts0; Catalogok/0partials/backlog/all3868LOCAL_DELETED,7612527frames,
-401254798storedB/5842258936uncompressedB. See docs/milestone_acceptance/Q4-formal2h-20261003.md.
-Q0–Q4COMPLETE/accepted2honly/Q5Q6NOTSTARTED/PRODUCTION_READYNO. Originalcf3909e9objective
-fulfilled; corrected-sourcecontinuationaboveiscurrent. Originalvps-2hPAUSEafterrecordcdc616eissupersededbycurrentACTIVEcontinuation.
-Actual14hfullauditschedule152/361min and38h386/1007min areadvisoryscenarios;
-beforeQ5/Q6reforecastactualreserve/temp/staging/backlog/controlsandfinitewindows.
-Prior38hpeakcapacityscenariofailed; R078OPEN, no speculativehardware/stackchange.
-
-Old metadata/archive, failed attempts and unpublished143362-chunk baseline
-remain retained; R-078 stays OPEN. Do not reset the new corpus, physically delete
-unique evidence, or repeat an unchanged failed live run. CurrentQ0–Q6 plan is
-2h+12h+24h=38 accepted hours, with stage audits outside credited duration.
-Q1/Q2 gates complete; F4/portable archive follow-ups remain separate. Economical
-read-only monitoring is authorized; it cannot invent a T0 or restart Recorder.
-Historical automation remains paused.
-Owner-authorized current-chat continuation vps-2h checks actual quota and existing
-work once per hour. If work is already advancing, end the check without intervening
-or duplicating operations/T0. Resume idle work only when quota permits; otherwise
-wait for the next hourly check. Originalcf2hreviewedPASS; currentvps-2hACTIVEforcorrectedsource, historicaltasksstaypaused.
+Only local/remote main remains; preserve unrelated stash/untracked bundles and
+historical worktrees. Old metadata/archive, failed attempts and unpublished143362
+scope remain retained; no corpus reset/unique physical deletion/unchanged failed
+live rerun. Current plan is2h+12h+24h=38 accepted target hours, with audits outside
+credit. R-078 and prior38h peak reserve failure remain OPEN. Before later stages
+reforecast actual reserve/temp/staging/backlog/controls and practical full-audit
+windows from the larger current measured scope. No speculative hardware/stack
+change. F4/portable archive follow-ups remain separate. Economical read-only
+monitoring cannot invent a T0 or restart Recorder; healthy native tests survive
+model quota interruptions.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
-`docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is
-`docs/developer_guide.md`; project scope is `docs/project_contract.md`; delivery
-and acceptance gates are in `docs/milestone_plan.md`. Historical evidence retains
-its time-local status and is not current operational authority.
-
-Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
-macOS reached the existing45-minute limit without a diagnostic stack. A test-only
-normal/rotation correction preserves all Raw/handoff assertions; CI adds a
-120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT; corrected
-cf3909e9/tree2ac585d0 exact CI37083270715 bothPASS (macOS1995,Ubuntu1991), cloud168
-affected tests and clean locked wheel PASS. Actual stopped replacement deployment
-PASS; engineering baseline/both LIVE/completed verify PASS, actual warm-up COMPLETE;
-authoritative post-warm-up baseline COMPLETE/independently ACCEPTed. See the
-record docs/milestone_acceptance/Q3-discontinuity-array-correction.md.
+`docs/CURRENT_PRODUCTION_STATE.md`. Implementation map: `docs/developer_guide.md`;
+project scope: `docs/project_contract.md`; gates: `docs/milestone_plan.md`.
 
 ## Non-goals
 

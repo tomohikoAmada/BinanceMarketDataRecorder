@@ -1,116 +1,45 @@
 # Current Production State
 
-Updated October3,2026,21:05UTC: owner explicitly resumed corrected-source VPS
-qualification and hourly `vps-2h` (ACTIVE), through new reviewed2h only.
+Updated October 4, 2026 (Shanghai).
 
-Current execution checkpoint (October3,21:05UTC / Shanghai October4,05:05):
-Formal target actually reached7200.001928737s, targetSHA
-30fd63c456420de7e027feab5e623c88f2416797641068a82965d891eda573f9/blockers[].
-Reviewed root endpoint matches target SHA and strict26 PASS; automatic Recorder
-inactive AND disabled/MainPID0/NRestarts0. No restart/newT0. Model/Luna quota
-interruption left native observer and30s sampler running independently; sampler
-naturally completed with Resultsuccess. Online/target/control independent review
-RUNNING (not final eligibility). Archive naturally drained, then timer paused;
-Catalogok/0partials/all6718 chunks+transactionsLOCAL_DELETED,10151154frames/
-552193809storedB/7833293106uncompressedB retained.
+Corrected-source Q4 PASS, October 4, 2026 (Shanghai). Source23ea5c4,
+wheelbb7e357e…52a0 and deployment identity0ea93b2c…fbee completed their own
+7200.001928737-second Formal2h, both full LIVE terminal audits, completed
+verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE eligibility plus
+actual restored-handoff ACCEPT. Final64889189…b00c2/terminald7b460fb…eb5574,
+stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27. No identity/time credit transfer,
+restart, duplicate T0, policy relaxation or corpus reset.
 
-Both LIVE terminal finalize+completed verification RUNNING since21:04:36UTC:
-`binance-recorder-q4-spot-idle-formal2h-terminal.service`, invocation
-e03d18ea4bf444a9a7cea0b142f0eccd/MainPID72099. Infinite total timeout/native
-900s no-progress authority; no retry/newT0. Operator helperSHA
-2d12d5d1bef17f9e789ffb75fc99444e8e6c1349f38245e7c6e9f8cb5170a97b changes only
-old scope/UUID binding. Exact stage remains2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
-Read-only Luna monitor active throughcompletion/failure or22:40UTC; Solxhigh
-reviews private frozen online controls SHAef5d8441ae654b6bcddaad523554467b91b56153f15843625906380876570358.
-Original absolute quietexpiry23:31:19UTC unchanged; all5 runtime masks remain.
-After complete terminal/nativeverify, independent eligible-final review plus
-controlled OS RESTORED before cancelling expiry and actual resumed archive
-recurrence/worker success/finitefuture deadline are required. Stopbefore12h.
-No final PASS, newformalcredit or automationpause is recorded yet.
+All14 auxiliary flags and Spot/USD-M BTCUSDT/ETHUSDT four products retained.
+Whole growing corpus:6718 archived chunks/10151154 frames/552193809 storedB/
+7833293106 uncompressedB, Catalogok/FKok/0partials/backlog. Full terminal
+114303 records/241 shards, actual wall50m05.516s/CPU2899.089s/cgroup1182.3MiB/
+swap0. Independent frozen-control reconstruction36.722126s, Raw/network/
+production opens0. Retain1269 gap/incomplete and64 zero-frame manifests plus
+historical completed discontinuities, three current in-period typed-empty
+retries, two missed REST premium snapshots (~5s recovery), and30s sampling limits.
+All239 in-period auxiliary checks and strict endpoints PASS; this is captured
+frame integrity and sampled-policy qualification, not every-event completeness.
 
-## Corrected-source work in progress
+Actual controlled OS RESTORED October3,22:00:16.698841510UTC, before expiry
+cancellation22:00:53.894653775UTC and inactive readback. Five runtime masks
+removed/original three units enabled-active; no extension of23:31:19 expiry.
+Archive resumed with actual recurrence/four natural successful workers/finite
+future deadline. Handoff22:04:51.880189757UTC: Recorder inactive AND disabled,
+MainPID0/NRestarts0; same verified artifact/config/boot. Old Raw/archive/failures/
+venv custody and unpublished143362-chunk scope remain retained.
 
-Source23ea5c4 local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; docs-only
-4285240 CI37130990463 PASS. Cloud233PASS/clean locked wheel/source121/all28 dependencies PASS; independent
-helper/deployer ACCEPT. Evidence root:
-`/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
-Actual stopped deployment PASS at15:24UTC (native invocation4cca3edf…f6aad1);
-canonical source23ea5c4/tree8e038727/wheelbb7e357e…52a0, identity
-0ea93b2c15e35e949e3bd5dc4cb1c8cee96aa5544f5d51e6ace33ba3d965fbee.
-Noneditable130 RECORD files/all28 locked dependencies/root-controlled canonical
-venv/config/unit VERIFIED as bmdr. Old cf3909e9 venv retained in
-`/opt/binance-market-data-recorder/venv-custody-q4-spot-idle-cf3909e9-j6lzEApv/venv`;
-old identity retained in the new evidence scope. Archive restored, then its timer
-stopped and existing worker waited to natural success before engineering audit.
-Stopped deployment/engineering checkpoint: all3868 chunks+archive
-transactions LOCAL_DELETED/Catalogok/0partials; retained7612527frames/5842258936
-uncompressedB. Rootfree29398269952B/archivefree2101791215616B after new build/custody.
-Engineering baseline COMPLETE/both LIVE/completed verify/independent GPT-6.1
-Sol xhigh LOCAL/OFFLINE ACCEPT, rootd983a3bb…189c996/65834records/138shards.
-Native wall2055.550707s/CPU2029.937691s/cgroup502411264B/swap0; independent
-historical reconstruction5.520s/Raw+network+productionopens0. Review
-[record](reviews/2026-10-04-spot-idle-engineering-independent-review.md).
-Archive actual recurrence16:31:44UTC/natural success/finite future deadline PASS.
-All-enabled NONFORMAL warm-up COMPLETE at~17:00UTC, invocation
-32732ddea5834e32b83fc3eacb7b72fd. Start29.480s/immediate17.035s/normal22.831s/
-missed30.815s/catch-up31.062s and28.423s; pending193→0 and delta_pendingfalse,
-no blockers/recovering contexts. Native exit stopped/disabled Recorder;
-MainPID0/NRestarts0. Archive timer subsequently paused after worker natural
-success for the new stopped baseline. Catalogok/all4434 chunks+transactions
-LOCAL_DELETED,8054480frames/428247717storedB/6191382187uncompressedB.
-Fresh actual growth566 chunks over1802.264s; hostexecution15.97%/steal2.90%,
-minavailableRAM4851113984B, wholehostswap274432B with0 swapin/out pages.
-2h peak reserve scenario13.64GiB exceeds10GiB; measured-scope baseline estimate
-39.27min/terminal84.71min, finite absolute quiet-window plan345min. Warm-up,
-forecast/helper/actual arm independently ACCEPTed; [review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
-Absolute quiet expiry23:31:19UTC, armed17:46:19UTC; masks5/negativeprobe/locks/
-before-after reload same deadline verified. No extension; controlled RESTORED
-before timer cancellation. New authoritative stopped baseline COMPLETE/both LIVE/completed verify
-18:21:53UTC, roota31e957190380a911e78e97e623011abf59a6f7d247c93cbaf7d9722b69c18ce,
-75458records/159shards/4434chunks/blockers[]/credit0. Wall35m18.403s/
-CPU2086.805s/cgroup503.5MiB/swap0; controls bundle9769d140…87acb5.
-Independent LOCAL/OFFLINE review ACCEPT. Invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
-`binance-recorder-q4-spot-idle-post-warmup-baseline.service`. Typeoneshot/
-TimeoutStartinfinity/native900s no-progress authority; no total audit cap.
-Luna Max read-only monitor active through18:50UTC. Warm-up premium poll has one
-NetworkError/5.060s actual-success recovery; missed polling snapshot retained.
-Native baseline must complete both LIVE/verify and independent ACCEPT before
-fresh strict readiness and Formal T0. Check sufficient remaining finite window;
-do not start if the complete measured schedule no longer fits. If quota interrupts,
-leave healthy native baseline alone and use actual artifacts to continue.
-14h/38h are advisory only;38h peak reserve FAIL/R078 remainsOPEN.
-Recorder explicitly enabled/running for pre-start since18:27UTC, PID68629/
-invocation42ba1999d8a74b01ba40a37a37e7c960/NRestarts0. Fresh installed verify/
-core readiness/strict26 auxiliary PASS. Archive timer enabled/active, actual
-recurrence18:27:37UTC/worker natural success18:27:43UTC/finite future deadline.
-Formal RUNNING/new credit0 until full reviewed completion. All14 flags/four products/growing corpus retained.
-Corrected artifact still needs independently reviewed resource admission, identity-bound stopped baseline,
-strict readiness and its own Formal2h/terminal/review.
-See [correction and decision](milestone_acceptance/Q4-spot-idle-correction.md).
+Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5/Q6 NOT_STARTED and
+PRODUCTION_READY=NO. Stop before12h. This checkpoint completes the latest owner
+scope; pause hourly `vps-2h` after the closeout reaches main. Historical tasks
+remain paused. R-078 and prior38h peak reserve failure remain OPEN; before any
+later owner-authorized T0 reforecast actual capacity/temp/staging/backlog/controls
+and full-audit schedule using the larger current measured scope. F4/portable
+archive follow-ups remain separate. No speculative server or language change.
 
-Authoritative baseline independently ACCEPTed; [review](reviews/2026-10-04-spot-idle-postwarm-baseline-independent-review.md),
-SHA65cfeb6a8fdcb747ecb9479dc6e409bebfbf82ea68cd90cf1b450eba147e125c. Independent
-reconstruction6.975792s, Raw/network/productionopens0; native wall2118.402811s/
-CPU2086.805172s/memory527966208B/swap0, retained807gap/incomplete and48zero-frame
-manifests. These flags remain visible; no every-event/continuous completeness claim.
-
-Formal2h RUNNING, stage `Formal2h/2h-e77218f9d1fa4c78a8a48ce8bafdaf27`, runid
-1eec7d8fc0f24f959ec973933c103ff0. Native T0UTC18:34:56.795853724/Shanghai
-October4,02:34:56.795853724/BOOTTIME117390976389278; target~20:34:56.796UTC.
-Stage-start SHA71a8fe11b3b6ae38430a31f5aeb7a86dd81c24e8c9f2ba46de29fc3264bebf06.
-Observerunit `binance-recorder-q4-spot-idle-formal2h.service`, invocation
-cee0971f77774169b083b99fa4297a48/PID68923/RuntimeMax9000s/TimeoutStop150s.
-Root ExecStopPost reviewed strict endpoint helper always stops/disables Recorder.
-30s read-only sampler invocationa954589b8552481f82f72862bbf208a8/PID68925,
-inner7800s/outer8100s; Luna Max economical read-only monitor through target/failure
-or20:50UTC. Freshstrict all26PASS; actualremaining17791.070s>required16253.182s
-before sole T0, actualexpiry23:31:19UTC unchanged. No duplicateT0/restart/12h.
-Target alone is insufficient: after target auto-stop, stop readonly sampler,
-naturally drain archive then pause its timer/waitidle; finalize+completedverify
-this exact stage under pin-unit-exec, nativeoneshot/no totalcap/900s noprogress.
-Then independent immutable controls and restored actual OS/archive handoff,
-mark milestone/pushmain/pause vps-2h. Controlled RESTORED must precede expiry
-timer cancellation. Native healthy tests must survive model quota interruptions.
+See [current acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md),
+[final independent review](reviews/2026-10-04-spot-idle-formal2h-independent-review.md)
+and [milestone plan](milestone_plan.md).
 
 ## Current installed corrected artifact
 
@@ -148,8 +77,9 @@ Retained installed/failed-engineering evidence root:
 Current corrected release and engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
-Current-chat continuation `vps-2h` is ACTIVE for the latest corrected-source
-owner request; old cf3909e9 closeout/recordcdc616e is retained. Historical automations remain paused; no12h is started.
+The corrected-source continuation is now complete; pause `vps-2h` after the
+closeout push. Old cf3909e9 closeout/recordcdc616e is historical and retained.
+Historical automations remain paused; no12h is started.
 
 Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
