@@ -1,15 +1,16 @@
 # Project Handoff
 
-Updated October3,2026,09:10 Shanghai after read-only VPS verification. This is the current entry point.
+Updated October3,2026 after corrected deployment and engineering-baseline start. This is the current entry point.
 
 ## Current code and authorization
 
 Only local/remote main remains, with no open PR. Preserve unrelated stash,
 untracked bundles and detached historical worktrees. Frozen installed runtime
-source4e1cf320e0eec3eb69880744dd24609fa85df35b,
-treeafd041f64633f3f6e1d7a037e08ed1672aca3a9c. Independent GPT-6.1 Sol xhigh
+sourcecf3909e9ee6da3862c03b4bef609cc4a4a049cc7,
+tree2ac585d0f397abc6e9f0e588aab81b14d423e11e. Independent GPT-6.1 Sol xhigh
 LOCAL/OFFLINE aggregate startup/helper ACCEPT and test-only Profile D supplement
-ACCEPT; exact-source CI37031972497 PASS on both platforms; cloud266 affected tests
+ACCEPT plus private-array/CI/helper supplements; exact-source CI37083270715 PASS
+on both platforms; cloud168 affected tests
 and clean hash-locked wheel/CLI/source match PASS. Later documentation commits
 are not replacement wheels. Retained3d05282 CI/cloud fixture failures do not
 qualify release. The corrected fixture blocks actual Raw admission, preserving
@@ -26,20 +27,24 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 PASS (macOS1995,Ubuntu1991 tests),
 cloud168 affected tests and clean locked wheel PASS. Deployment script static
-ACCEPT; actual replacement installation and engineering baseline remain. See the
+ACCEPT; actual corrected installation/verification PASS; engineering baseline
+is running, not yet accepted. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current cloud checkpoint
 
-Installed wheel2905d30e24ddd53708f50318e4dac74f8c6f183a7fb012c089a7cb25841e83e8,
-identity1be38a7d12082e17cf532b887d3f346fea9a436529bd7a9bba26c9681060f477,
-release `/opt/binance-market-data-recorder/release-4e1cf32-20r7YLY4`.
+Installed wheel7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
+identityeacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc,
+release `/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB`.
 Actual canonical root-control/130 RECORD/28 dependencies verification PASS.
 Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Recorder inactive AND disabled,
 MainPID0/Resultsuccess/NRestarts0;1182 chunks/transactions allLOCAL_DELETED,
 Catalogok,0partials/backlog. Archive finite actual recurrence passed after
 installation; timer/worker are currently paused for the engineering baseline.
-Normal OS update authority is restored; no live monitor is running.
+Normal OS update authority is restored. Economical read-only baseline monitoring
+is running. Full engineering baseline unit
+`binance-recorder-q3-array-engineering-baseline.service`, invocation
+553523c11dc1486a8a8e92a3a8b96f85, is active on all1182 chunks; no PASS yet.
 
 New exact4e1cf32 engineering attempt2 FAILED at16:40:53 UTC before publication
 or completed verification, unit `binance-recorder-q3-startup-engineering-baseline-2.service`,
@@ -47,11 +52,11 @@ invocationec9cbd60f5d04a3480090d1ed1415a99. Real discontinuity companions are an
 array passed incorrectly to the mapping-only canonical encoder; the exact error
 is reproduced locally. The minimal private scratch-index correction and valid/
 malformed integration regressions have independent LOCAL/OFFLINE ACCEPT;
-replacement exact CI/locked-wheel/cloud gates now PASS, but installation and
-a fresh engineering baseline remain pending.
+replacement exact CI/locked-wheel/cloud and actual stopped deployment now PASS;
+fresh engineering baseline is running.
 See [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md). Retained failed evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
-Prepared replacement evidence root:
+Current corrected release/engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
 

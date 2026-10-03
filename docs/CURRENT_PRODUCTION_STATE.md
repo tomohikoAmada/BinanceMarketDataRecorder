@@ -1,6 +1,6 @@
 # Current Production State
 
-Verified October3,2026,09:10 Shanghai by read-only SSH; replacement is prepared, not installed.
+Updated October3,2026 after corrected canonical deployment and engineering-baseline start.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -10,12 +10,12 @@ continuation through reviewed eligible Formal2h, stopping before12h.
 |---|---|
 | Host / boot | greencloud-tokyo-01, Ubuntu24.04 x86_64 /59bb1735-ac48-408d-b3ec-bda79fc49b41 |
 | Kernel / Python |6.8.0-146-generic /3.12.3 |
-| Source / tree |4e1cf320e0eec3eb69880744dd24609fa85df35b /afd041f64633f3f6e1d7a037e08ed1672aca3a9c |
-| Wheel SHA-256 |2905d30e24ddd53708f50318e4dac74f8c6f183a7fb012c089a7cb25841e83e8 |
+| Source / tree |cf3909e9ee6da3862c03b4bef609cc4a4a049cc7 /2ac585d0f397abc6e9f0e588aab81b14d423e11e |
+| Wheel SHA-256 |7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b |
 | Dependency lock SHA-256 |44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335 |
 | Config SHA-256 |5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419 |
-| Deployment identity |1be38a7d12082e17cf532b887d3f346fea9a436529bd7a9bba26c9681060f477 |
-| Release |/opt/binance-market-data-recorder/release-4e1cf32-20r7YLY4 |
+| Deployment identity |eacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc |
+| Release |/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB |
 | Runtime / config |/opt/binance-market-data-recorder/venv / /etc/binance-market-data-recorder/recorder.toml |
 | Writer root |/var/lib/binance-market-data-recorder |
 | New archive |/srv/recorder-data/recorder-archive-qualification-q3-d0f455c-lg427ebp |
@@ -25,8 +25,8 @@ Exact deployment verification PASS: noneditable frozen wheel,130 package RECORD
 files,28 locked distributions,4859 protected files/407 directories and canonical
 root-controlled venv/identity. Source3d05282/core/helper aggregate and4e1cf32's
 test-only fixture supplement have independent GPT-6.1 Sol xhigh LOCAL/OFFLINE
-ACCEPT. Exact-source dual-platform CI37031972497 PASS (macOS1991,Ubuntu1987;
-platform-specific skips); cloud266 affected tests PASS/1 stress deselected;
+ACCEPT. Current exact-source dual-platform CI37083270715 PASS (macOS1995,Ubuntu1991;
+platform-specific skips); cloud168 affected tests PASS/1 stress deselected;
 clean locked wheel/121 package Python source matches and CLI smoke PASS.
 All14 flags, four ProductKeys,42 contexts/16WS/26REST remain unchanged.
 Original3d05282 CI37027577424 and cloud265 PASS/1 FAIL are retained as failures;
@@ -35,7 +35,7 @@ correction retains all queue/backpressure/payload/count/completeness assertions.
 
 Retained installed/failed-engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
-Prepared replacement evidence root:
+Current corrected release and engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
 Current-chat continuation `vps-2h` is active hourly. It checks actual quota and
@@ -53,9 +53,13 @@ cf3909e9/tree2ac585d0 CI37083270715 PASS (macOS1995,Ubuntu1991 tests), cloud168
 affected tests and clean locked wheel PASS. Wheel SHA
 7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
 121 Python files match the frozen archive and all28 locked dependencies match.
-The deployer has independent static ACCEPT but has not run; installed identity
-remains4e1cf32. No replacement deployment/baseline result or native stage marker
-exists in the prepared root. See the
+The deployer has independent static ACCEPT and actual canonical installation/
+bmdr verification PASS (invocation420230b74af04240bd93cc0afe98c4dd, exit0).
+Prior4e1cf32 venv is inert custody at
+`/opt/binance-market-data-recorder/venv-custody-q3-array-4e1cf32-Sw6lnM1j/venv`.
+Fresh full engineering unit `binance-recorder-q3-array-engineering-baseline.service`,
+invocation553523c11dc1486a8a8e92a3a8b96f85, is running on all1182 retained chunks;
+no completed baseline or native Formal stage marker exists yet. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current operation and gates
@@ -76,7 +80,8 @@ a real discontinuity-event array and raised ValueError. No completed verificatio
 or audit root exists. Failed controls/prefix remain retained; no failed prefix
 can be resumed under a replacement identity. The locally reproduced minimal
 private-index correction is independently ACCEPTed; replacement exact CI/wheel/
-cloud gates PASS, while installation and fresh engineering baseline remain; see
+cloud and actual stopped deployment gates PASS; fresh engineering baseline is
+running and not yet accepted; see
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 Source605bc16's engineering baseline/completed verification passed on697 archived
@@ -104,7 +109,7 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=INSTALL_VERIFIED_CF3909E_REPLACEMENT_THEN_NEW_ENGINEERING_BASELINE
+NEXT=COMPLETE_CF3909E_ENGINEERING_BASELINE_THEN_ALL_ENABLED_WARMUP
 ```
 
 ## Retained custody and evidence

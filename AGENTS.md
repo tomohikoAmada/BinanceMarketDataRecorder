@@ -31,11 +31,12 @@ Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
 are implemented.
 
 Only local/remote main remains; unrelated stash/untracked bundles and historical
-worktrees stay retained. Installed frozen4e1cf32/treeafd041f6 implements reviewed
+worktrees stay retained. Installed frozencf3909e9/tree2ac585d0 implements reviewed
 ADR-0038 startup boundaries/durable forced flags after605bc16's sparse-startup
 nonformal failure. Independent aggregate/source/helper and test-only Profile D
-supplement ACCEPT; exact CI37031972497 bothPASS, cloud266/clean locked wheel PASS,
-actual canonical deployment VERIFIED. Wheel2905d30e…; identity1be38a7d….
+supplement plus private-array/CI/helper supplements ACCEPT; exact CI37083270715
+bothPASS, cloud168/clean locked wheel PASS, actual canonical deployment VERIFIED.
+Wheel7e15bbd9…; identityeacada17….
 Later documentation commits are not replacement wheels. Pre-start/target auxiliary
 gate is strict. During observations only typed EmptySideDataResponse retry may
 recover within unchanged actual-success/correct-cursor freshness bounds; original
@@ -48,13 +49,13 @@ Boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive AND disabled,
 MainPID0/Resultsuccess/NRestarts0,1182 chunks/transactions LOCAL_DELETED,
 Catalogok/0partials/backlog. Archive actual finite recurrence passed after deploy,
 now timer/worker paused solely for stopped engineering baseline; normal OS
-updates restored, no live monitor. Prior605bc16 engineering baseline/both LIVE/
+updates restored, economical read-only baseline monitor running. Prior605bc16 engineering baseline/both LIVE/
 verify passed697; failed catch-up preserved. New exact4e engineering attempt2
 FAILED before publication on real discontinuity-array serialization. Retain failed
 controls and do not resume their prefix under a changed identity. Minimal local
 private-index correction is independently ACCEPTed; corrected cf3909e9 exact
-CI37083270715/locked-wheel/cloud168 PASS and deployer static ACCEPT, not installed;
-actual replacement deployment/fresh engineering baseline remain;
+CI37083270715/locked-wheel/cloud168/deployer static and actual deployment PASS;
+fresh1182-chunk engineering baseline running, not PASS (invocation553523c11dc1486a8a8e92a3a8b96f85);
 see docs/milestone_acceptance/Q3-discontinuity-array-correction.md. Next actual warm-up/convergence,
 resources/cumulative forecasts, authoritative post-warm-up baseline under a finite
 quiet window, strict readiness, Formal2h plus terminal/completed/independent
@@ -85,7 +86,7 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT; corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 bothPASS (macOS1995,Ubuntu1991), cloud168
 affected tests and clean locked wheel PASS. Actual stopped replacement deployment
-and fresh engineering baseline remain. See the
+PASS; fresh engineering baseline running, not yet accepted. See the
 record docs/milestone_acceptance/Q3-discontinuity-array-correction.md.
 
 ## Non-goals

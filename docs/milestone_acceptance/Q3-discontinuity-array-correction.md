@@ -148,3 +148,25 @@ inactive/enabled and worker inactive/Resultsuccess; no new baseline or native
 stage-start/target/final exists. Next is actual stopped replacement installation,
 fresh engineering baseline/both LIVE/completed verify, then warm-up and the
 remaining Q3 gates. Q4 Formal2h NOT_STARTED; duration credit0; stop before12h.
+
+
+## Actual stopped deployment and new engineering run
+
+Reviewed deployer executed once as invocation420230b74af04240bd93cc0afe98c4dd,
+exit0/Resultsuccess. Canonical release `/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB`;
+prior4e1cf32 venv retained inert at `/opt/binance-market-data-recorder/venv-custody-q3-array-4e1cf32-Sw6lnM1j/venv`.
+Actual bmdr deployment verification VERIFIED with identity
+eacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc,
+130 package RECORD/28 exact dependencies/4859 protected files/407 directories.
+Config/lock/unit hashes and all14 flags/four products remain unchanged. Recorder
+inactive AND disabled/MainPID0/Resultsuccess/NRestarts0. Archive timer restored
+enabled/active with finite future deadline, then paused timer-first while its
+worker finished successfully; no worker signal. Actual automatic recurrence must
+still be observed after the engineering audit before warm-up.
+
+Fresh full engineering baseline started on1182 retained chunks under
+`binance-recorder-q3-array-engineering-baseline.service`, invocation
+553523c11dc1486a8a8e92a3a8b96f85. Current status RUNNING, not PASS; both full LIVE
+passes and completed verification remain mandatory. Native audit has a900s
+no-forward-progress watchdog and no total-duration cap. Economical read-only
+Luna monitor is active. No Formal T0/target/final or credit exists.
