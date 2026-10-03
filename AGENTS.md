@@ -41,8 +41,9 @@ cf3909e9 venv/identity retained custody; no reset/unique deletion. Engineering b
 COMPLETE/bothLIVE/verify/independentACCEPT rootd983a3bb…189c996/65834records/
 138shards/wall34m15.551s. Archive actual recurrence/natural success/finite future
 PASS; Recorder explicitly started16:28UTC for NONFORMAL core4/strictaux26PASS.
-Warm-up RUNNING16:33:27UTC invocation32732dde…b72fd, native every-exit stop/disable
-and7200s BOOTTIME deadline;30s lightweight sampler active. Normal/missed/catch-up
+Warm-up COMPLETE invocation32732dde…b72fd, pending193→0/delta_pendingfalse/no blockers; native every-exit stop/disable
+and7200s BOOTTIME deadline. Recorder inactiveANDdisabled/PID0/NRestarts0; archive
+naturally drained then paused,4434chunks. Independent admission/new baseline
 remain. All14/fourproducts/growingcorpus unchanged; Formal NOT_STARTED/credit0.
 
 See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.

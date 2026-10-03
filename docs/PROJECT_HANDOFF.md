@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026,16:36UTC during corrected-source cloud qualification.
+Updated October3,2026,17:20UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
@@ -31,14 +31,19 @@ Native wall2055.550707s/CPU2029.937691s/cgroup502411264B/swap0; independent
 historical reconstruction5.520s/Raw+network+productionopens0. Review
 [record](reviews/2026-10-04-spot-idle-engineering-independent-review.md).
 Archive actual recurrence16:31:44UTC/natural success/finite future deadline PASS.
-Recorder explicitly enabled/running since16:28UTC for NONFORMAL preparation,
-PID62625/invocation5125a437bdc9451a824937fbcfda3b16/NRestarts0, strictcore4/aux26PASS.
-Warm-up RUNNING since16:33:27UTC, unit
-`binance-recorder-q4-spot-idle-nonformal-warmup.service`, invocation
-32732ddea5834e32b83fc3eacb7b72fd. Start29.480s/immediate17.035s/no blockers;
-normal/missed/catch-up remain. Native exit always stop/disables Recorder;
-TimeoutStart7800s/innerBOOTTIMEdeadline7200s/no retry. Read-only30s resource sampler
-invocatione7323ef6d31b4b37939e385bcce49052. Full helper/identity policy unchanged.
+All-enabled NONFORMAL warm-up COMPLETE at~17:00UTC, invocation
+32732ddea5834e32b83fc3eacb7b72fd. Start29.480s/immediate17.035s/normal22.831s/
+missed30.815s/catch-up31.062s and28.423s; pending193→0 and delta_pendingfalse,
+no blockers/recovering contexts. Native exit stopped/disabled Recorder;
+MainPID0/NRestarts0. Archive timer subsequently paused after worker natural
+success for the new stopped baseline. Catalogok/all4434 chunks+transactions
+LOCAL_DELETED,8054480frames/428247717storedB/6191382187uncompressedB.
+Fresh actual growth566 chunks over1802.264s; hostexecution15.97%/steal2.90%,
+minavailableRAM4851113984B, wholehostswap274432B with0 swapin/out pages.
+2h peak reserve scenario13.64GiB exceeds10GiB; measured-scope baseline estimate
+39.27min/terminal84.71min, finite absolute quiet-window plan345min. Warm-up,
+forecast and arm procedure independent review PENDING; no quiet window armed.
+14h/38h are advisory only;38h peak reserve FAIL/R078 remainsOPEN.
 Formal NOT_STARTED/new credit0. All14 flags/four products/growing corpus retained.
 No12h/24h starts in this scope; old cf3909e9 PASS below is historical only.
 See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).

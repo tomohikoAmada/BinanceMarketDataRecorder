@@ -183,3 +183,36 @@ aux26/all14/four products PASS. Actual native warm-up starts16:33:27UTC, invocat
 no blockers/pending/recovering. Normal/missed/catch-up remain; no FormalT0/credit.
 Native7800s startup timeout/inner7200s diagnostic BOOTTIME deadline/ExecStopPost
 always stops+disables Recorder. Read-only30s sampler e7323ef6…ce49052 active.
+
+
+## Corrected all-enabled warm-up completion (October3,17:00UTC)
+
+Native warm-up completed normally; all six complete observation/replay phases
+PASS, pending193→0 and final delta_pendingfalse. Normal22.831s/missed30.815s/
+catch-up31.062s then28.423s. Automatic exit leaves Recorder inactive AND disabled/
+MainPID0/NRestarts0. Archive was naturally drained then timer paused. Current
+4434 retained archived chunks/8054480frames/6191382187uncompressedB. No Formal
+T0 or credit. The original census helper erroneously searched the wrong manifest
+subdirectory; its accurate SQL counts and empty-manifest diagnostic are retained.
+The corrected read-only census follows Catalog relative manifest paths; all4434
+manifest totals match SQL, and566 new manifests match the frozen3868 predecessor
+IDs and exact SQL growth. Production data and contracts were unchanged.
+
+Warm control bundle SHA4447c2bba15aeb24771ca8c9cde31e93277ecb44c7b88a07a988532c23e2791b;
+corrected census supplied separately SHA36dfe028e89458818113534074cccfab90be8707689426b1350583e6459312a1.
+Forecast SHA58e40a320306f50970550ada12aabc140e412a649681be638c3b7038cdd10e7b.
+Measured hostexecution15.97%/steal2.90%, minavailableRAM4.52GiB; wholehost268KiB
+swap existed with0 pages in/out during sampled live interval. SummedRSS~626MiB
+is an upper bound including shared pages. 2h peak reserve scenario13.64GiB>10GiB
+with activeRaw/temp/log/metadata plus sealed-generation and observed compression
+staging allowances. Forecasts are scenarios, not guaranteed event-rate ceilings.
+14h/38h advisory only;38h peak reserve8.83GiB FAIL, R078 remainsOPEN. Actual live
+size rotation was not triggered; exact CI forced-size regression coverage remains.
+
+New finite quiet-window plan SHAa6a1d561ec21599a4e8453a89a58b6a008451c0a31c23b5c17a277dd6c077d79:
+measured2055.551s full engineering audit scaled to current corpus39.27min and
+2h peak terminal84.71min;1.25 audit margin+120min target+15min readiness+15min
+drain+30min control review=334.98min, rounded to345min. Deadline is absolute UTC
+computed once at arm, verified before masks and after daemon reload; no extension.
+Controlled restoration must succeed before timer cancellation. Independent review
+and actual arm remain pending; no OS masks applied at this checkpoint.
