@@ -67,9 +67,10 @@ verification and independent eligibility review. Restore archive/OS authority
 and stop before12h. Never reset the growing corpus or delete unique evidence.
 No Formal T0/target/final or duration credit exists; Q3=PARTIAL_NOT_ACCEPTED.
 
-Current-chat task `vps-2h` wakes at actual five-hour quota reset+60s; if work is
-advancing, only reschedule and exit. Resume only idle work and mark actual plan
-completions; pause after reviewed eligible2h. Historical automations stay paused.
+Current-chat task `vps-2h` checks actual quota and existing work once per hour.
+If work is advancing, end the check without intervening. Resume idle work only
+when quota permits; otherwise wait for the next hour. Mark actual plan completions
+and pause after reviewed eligible2h. Historical automations stay paused.
 Read-only30s sampler/AcceptanceObserver are economical; helpers cannot restart
 Recorder, invent a second T0 or grant credit. See [current state](CURRENT_PRODUCTION_STATE.md)
 and [startup correction](milestone_acceptance/Q3-startup-boundary-correction.md).

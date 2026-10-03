@@ -96,8 +96,9 @@ New exact-source CI must actually PASS before release.
 Cloud read-only check October3 confirms the same boot, inactive AND disabled
 Recorder/MainPID0/Resultsuccess/NRestarts0;1182 chunks and archive transactions
 LOCAL_DELETED, Catalogok,0partials. Archive timer/worker remain paused; OS update
-authority restored. No Formal T0, target or credit exists. The continuation's next
-actual quota-reset+60s wakeup is October3 13:26:38 Shanghai. Keep only main and
+authority restored. No Formal T0, target or credit exists. The owner has changed
+the continuation to hourly quota/work checks; it resumes only idle work when
+quota permits and does not intervene in work already advancing. Keep only main and
 preserve unrelated bundles/stash/worktrees.
 
 

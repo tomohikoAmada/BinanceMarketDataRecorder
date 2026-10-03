@@ -36,10 +36,11 @@ correction retains all queue/backpressure/payload/count/completeness assertions.
 Current evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
-Current-chat continuation `vps-2h` is active at actual five-hour reset+60s. If work
-is advancing, it only schedules the next dated wakeup and exits. Otherwise it
-resumes idle work through reviewed eligible2h; pause after completion. Historical
-automations remain paused; neither automation is Formal acceptance authority.
+Current-chat continuation `vps-2h` is active hourly. It checks actual quota and
+existing work; if work is advancing, it exits without intervening. It resumes
+idle work only when quota permits and otherwise waits for the next hour. Pause
+after reviewed eligible2h. Historical automations remain paused; the continuation
+is not Formal acceptance authority.
 
 Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only

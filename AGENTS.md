@@ -65,9 +65,10 @@ unique evidence, or repeat an unchanged failed live run. CurrentQ0–Q6 plan is
 Q1/Q2 gates complete; F4/portable archive follow-ups remain separate. Economical
 read-only monitoring is authorized; it cannot invent a T0 or restart Recorder.
 Historical automation remains paused.
-New owner-authorized current-chat continuation vps-2h wakes at actual five-hour
-quota reset+60s, then updates its next dated schedule. If work is already advancing,
-only reschedule and exit; do not duplicate active work/T0. Pause after reviewed2h.
+Owner-authorized current-chat continuation vps-2h checks actual quota and existing
+work once per hour. If work is already advancing, end the check without intervening
+or duplicating operations/T0. Resume idle work only when quota permits; otherwise
+wait for the next hourly check. Pause after reviewed2h; keep historical tasks paused.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is

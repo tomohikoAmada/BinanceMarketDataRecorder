@@ -190,10 +190,10 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.
 
-The owner's new in-thread continuation task `vps-2h` uses the account's actual
-five-hour reset timestamp plus60s, with a single dated wakeup updated after each
-run. It resumes idle work through completed eligible2h and records completed gates
-here. It neither duplicates active work nor restarts an existing observer/T0.
+The owner's in-thread continuation task `vps-2h` checks actual quota and existing
+work once per hour. If work is advancing, it exits without intervening. It resumes
+idle work only when quota permits; otherwise it waits for the next hour. It records
+completed gates here, without duplicating operations or restarting an observer/T0.
 VPS code performs economical monitoring independently of model quota. Historical
 automations remain paused; this continuation pauses when reviewed2h completes.
 
