@@ -12,16 +12,17 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
-Post-closeout correction: the owner now requests the Spot snapshot idle fix and
-its2h rerun analysis. Source23ea5c4 has local1998 PASS and independent GPT-6.1
-Sol xhigh LOCAL/OFFLINE ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994)
-including build/clean-wheel/locked Linux dependency identity.
-The corrected artifact has no cloud deployment or Formal credit. Before Q5,
-complete affected replacement release/Q3 gates and a new reviewed Formal2h:
-the plan and V5 predecessor check require the same deployment identity across
-the chain. Preserve the growing corpus and original cf3909e9 Q4 PASS as evidence
-for that artifact. No VPS rerun or automation resume is started by this local
-fix/analysis scope. See [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
+Current owner continuation: perform the corrected-source release/Q3 gates and
+one new reviewed VPS Formal2h, then stop before12h. Hourly `vps-2h` is ACTIVE.
+This supersedes the previous local fix/analysis-only scope. Source23ea5c4 has
+local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS;
+docs-only4285240 CI37130990463 PASS. Cloud affected admission is IN_PROGRESS:
+attempt1 has232 PASS/1 environment-dependent repository fixture FAIL (source
+archive lacks .git); retain it and repeat unchanged gates after isolated Git
+metadata repair. Replacement deployment/new T0/Formal credit not yet started.
+The same new frozen identity must bind affected Q3, new2h and later stages.
+Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
+as historical evidence. See [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
 Done means **Formal 2h + 12h + 24h**, each independently verified and reviewed
 eligible, on the same frozen artifact/profile and growing corpus lineage:
@@ -59,9 +60,9 @@ controlled quiet-window exit; no corpus reset/unique deletion. Earlier failed
 attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
-The latest live execution ended here, before12h. Current-chat hourly
-continuation `vps-2h` is PAUSED after completed recordcdc616e was pushed;
-historical tasks stay paused. Q5/Q6 remain NOT_STARTED; original artifact accepted2h/38h,
+The original live execution ended before12h. The newest owner request above
+resumes corrected-source qualification; current-chat hourly `vps-2h` is ACTIVE,
+while historical tasks stay paused. Q5/Q6 remain NOT_STARTED; original artifact accepted2h/38h,
 corrected artifact0/38h. Actual2h audit scaling gives
 advisory full-audit mean/observed-peak scenarios14h152/361min and38h386/1007min.
 Before later T0 reforecast actual reserve/temp/staging/backlog/retained controls
@@ -91,7 +92,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 |---|---|---|
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
-| Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; frozen replacement artifact and affected cloud release gates remain |
+| Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; frozen replacement artifact/affected cloud release gates IN_PROGRESS; isolated fixture environment repair pending |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/affected warm-up/new identity-bound baseline NOT_STARTED; retain existing corpus and reforecast actual larger audit scope |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact requires own reviewed2h, NOT_STARTED |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |

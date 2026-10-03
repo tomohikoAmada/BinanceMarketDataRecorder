@@ -1,20 +1,25 @@
 # Current Production State
 
-Updated October3,2026 after the local Spot idle source correction and rerun analysis.
-Cloud entries below retain the last verified original2h/restored-authority
-checkpoint. Current work does not start cloud qualification.
+Updated October3,2026,15:08UTC: owner explicitly resumed corrected-source VPS
+qualification and hourly `vps-2h` (ACTIVE), through new reviewed2h only.
 
-## Installed artifact
+## Corrected-source work in progress
 
-Post-Q4 local correction: source23ea5c4 fixes Spot snapshot idle starvation;
-local1998 PASS/independent GPT-6.1 Sol xhigh LOCAL/OFFLINE ACCEPT, exact
-CI37130186751 BOTH PASS (macOS1998/Ubuntu1994), build/clean-wheel/locked Linux
-dependency identity PASS. No VPS operation was performed in this scope:
-the installed values and stopped/disabled handoff below remain the last verified
-cloud checkpoint. The corrected wheel/deployment/cloud qualification are not
-started. A corrected deployment needs its own reviewed Formal2h before12h;
-original cf3909e9 PASS is retained and cannot transfer across identities.
+Source23ea5c4 local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; docs-only
+4285240 CI37130990463 PASS. Cloud admission is using isolated source archive
+33223338…bc3bd0 and staging `/var/tmp/binance-recorder-spot-idle-n8Mc2r4g`, evidence
+`/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`. Attempt1:232 PASS/1 repository-location fixture FAIL because the Git
+archive lacks .git; retain failure and repeat unchanged gates after isolated
+checkout metadata repair. No production deployment/new T0/Formal credit yet.
+Fresh cloud read-only checkpoint14:56UTC confirms the installed old artifact
+below remains stoppedANDdisabled/MainPID0/NRestarts0, Catalogok/0partials/all3868
+chunks and transactions LOCAL_DELETED. Archive enabledactive/natural worker
+success. Config/all14/four products unchanged. Corrected artifact must complete
+new locked wheel/identity, affected Q3, baseline/both LIVE/verify, fresh resource
+admission and its own Formal2h/terminal/independent acceptance. Stop before12h.
 See [correction and decision](milestone_acceptance/Q4-spot-idle-correction.md).
+
+## Last verified installed artifact (old accepted2h)
 
 | Item | Current verified value |
 |---|---|
@@ -48,8 +53,8 @@ Retained installed/failed-engineering evidence root:
 Current corrected release and engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
-Current-chat continuation `vps-2h` is PAUSED after completed2h recordcdc616e
-was pushed; the hourly rule/prompt are retained. Historical automations remain paused; no12h is started.
+Current-chat continuation `vps-2h` is ACTIVE for the latest corrected-source
+owner request; old cf3909e9 closeout/recordcdc616e is retained. Historical automations remain paused; no12h is started.
 
 Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only

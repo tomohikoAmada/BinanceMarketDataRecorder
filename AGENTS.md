@@ -23,17 +23,23 @@ The project uses its own branding and author-controlled service namespaces.
 
 ## Project goal and current checkpoint
 
-Post-Q4 owner task: repair Spot snapshot idle starvation and assess2h rerun.
-Corrected source23ea5c4 has local1998 PASS/independent GPT-6.1 Sol xhigh
-LOCAL/OFFLINE ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994),
-including locked production dependency identity/build/clean-wheel checks. Installed
-cf3909e9/identityeacada17 and its genuine Q4 PASS below are unchanged by this
-local work. Corrected production source requires new frozen wheel/identity,
-affected release/Q3 gates and its own reviewed Formal2h before12h: the current
-38h plan and V5 predecessor checks require identical deployment identity.
-Retain the growing corpus and old evidence; do not transfer credit, relax the
-identity check, start a VPS rerun or resume paused automations from this fix/
-analysis request. See docs/milestone_acceptance/Q4-spot-idle-correction.md.
+Current owner authorization (October3,2026): continue corrected Spot idle
+source23ea5c4 through a new VPS Formal2h, both full LIVE terminal audits,
+completed verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE ACCEPT;
+then stop before12h. The owner explicitly resumed hourly `vps-2h` (ACTIVE).
+This supersedes the previous fix/analysis-only no-rerun/no-resume scope.
+Source23ea5c4 local1998/exact CI37130186751 BOTH PASS/independent ACCEPT remain
+valid; docs-only4285240 CI37130990463 PASS. Installed cf3909e9/identityeacada17
+and its genuine old Q4 PASS cannot transfer corrected-artifact credit.
+Retain all14 flags/four products/growing corpus/old evidence; freeze one new
+locked wheel/identity and repeat affected release/Q3/new Formal2h gates.
+Current evidence root: `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
+Cloud affected admission attempt1:232 PASS/1 FAIL because the Git source archive
+has no .git marker required by a repository-location fixture. Repair only the
+isolated test checkout metadata and rerun unchanged gates with a distinct log;
+no production/source changes or relaxed assertions. Recorder remains inactive
+AND disabled;3868 chunks fully archived/0 partials/Catalogok. New T0 NOT_STARTED.
+See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
 
 Build a stateful Python 3.12 recorder for Binance public market data. The
 production target is Ubuntu 24.04 x86_64 with a non-root systemd service;

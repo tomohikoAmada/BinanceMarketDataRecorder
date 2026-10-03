@@ -5,16 +5,24 @@ The original reviewed Formal2h/cloud handoff remains recorded below. This is the
 
 ## Current code and authorization
 
-Latest owner scope is the post-Q4 Spot idle fix and2h rerun analysis. Corrected
-source23ea5c4: full local1998 PASS and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE
-ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994), including build/
-clean-wheel/locked Linux dependency identity. The fix reclaims the
-exact awaited snapshot workers instead of starving their queued callbacks.
-No replacement is deployed. Installed cf3909e9 and its genuine reviewed Q4 PASS
-remain recorded below; corrected source cannot inherit its identity/2h credit.
-Before12h the replacement needs affected release/Q3 gates and its own reviewed
-Formal2h on the retained growing corpus. This owner request authorizes the fix
-and analysis; no cloud test, new T0 or automation resume is performed here.
+Latest owner scope now explicitly resumes corrected-source cloud gates and a
+new reviewed Formal2h, then stops before12h. Hourly `vps-2h` is ACTIVE with the
+corrected-artifact endpoint and no duplicate-operation rule. This supersedes
+previous local fix/analysis-only authorization. Source23ea5c4/tree8e038727:
+local1998/exact CI37130186751 BOTH PASS/independent GPT-6.1 Sol xhigh ACCEPT;
+docs-only4285240 CI37130990463 PASS. No replacement is deployed yet.
+Evidence root `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`;
+source archive33223338…bc3bd0 in isolated staging
+`/var/tmp/binance-recorder-spot-idle-n8Mc2r4g`. Attempt1 cloud gates232 PASS/1
+repository-location fixture FAIL because a source archive has no .git. Preserve
+its log; repair isolated checkout metadata only and repeat identical233 tests
+with attempt2 log. No production/source/assertion changes. Formal T0 not started.
+Fresh14:56UTC checkpoint: Recorder inactiveANDdisabled/MainPID0/NRestarts0;
+Catalogok/all3868 chunks+transactions LOCAL_DELETED/0partials; archive enabled
+active/worker natural success, config/all14/four products unchanged.
+Old cf3909e9 reviewed PASS below is historical credit for that artifact. New
+identity requires affected release/Q3/warm-up/new stopped baseline and its own
+reviewed Formal2h on this growing corpus. No12h/24h starts in this scope.
 See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
 Only local/remote main remains, with no open PR. Preserve unrelated stash,
@@ -121,11 +129,10 @@ Prior605bc16 canonical venv/identity/release stay inert custody.
 
 Next owner-controlled cloud work is corrected release/Q3 and a new Formal2h,
 before Q5, with fresh capacity/schedule admission. Original Q0–Q4 COMPLETE for
-cf3909e9; its accepted2h is not corrected-artifact credit. This local correction
-and analysis does not start cloud qualification;
+cf3909e9; its accepted2h is not corrected-artifact credit. The newest corrected-source continuation above supersedes the prior local-only scope;
 12H_STARTED=NO;24H_STARTED=NO;QUALIFICATION_38H=NOT_COMPLETE;PRODUCTION_READY=NO.
-Current-chat hourly continuation `vps-2h` is PAUSED after completed recordcdc616e
-was pushed; the hourly rule/prompt are retained.
+The old cf3909e9 closeout paused `vps-2h` after recordcdc616e; the newest owner
+authorization above has reactivated it for corrected-source qualification.
 Historical automations stay paused.
 Read-only30s sampler/AcceptanceObserver are economical; helpers cannot restart
 Recorder, invent a second T0 or grant credit. See [current state](CURRENT_PRODUCTION_STATE.md)

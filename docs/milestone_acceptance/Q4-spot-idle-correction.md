@@ -105,6 +105,11 @@ Before a future authorized cloud continuation:
    products, followed by both full LIVE terminal passes, completed verification
    and independent acceptance. Only then consider Formal12h.
 
-The owner currently authorized the fix and analysis, not a cloud rerun. The
-last verified Recorder handoff remains inactiveANDdisabled; automations stay
-paused. No new Formal credit is earned by source/CI review or this record.
+The original fix/analysis-only request did not start cloud work. The owner
+subsequently explicitly authorized continuation through a new reviewed VPS2h
+and reactivated hourly `vps-2h` on October3. New evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`. Installed old cf3909e9 remains stoppedANDdisabled. Corrected cloud
+admission attempt1 retained232 PASS/1 failure: source archive has no .git marker
+required by repository-location fixture. Isolated checkout metadata repair and
+unchanged affected-gate attempt2 are in progress. No replacement/newT0/credit yet;
+old2h evidence remains genuine and cannot transfer across deployment identities.
