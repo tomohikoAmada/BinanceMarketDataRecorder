@@ -1151,14 +1151,34 @@ def test_global_stop_post_close_timeout_does_not_fabricate_reconnect_gap(
         ] == []
 
 
+@pytest.mark.parametrize("cross_rotation_boundary", [False, True], ids=["normal", "rotation"])
 def test_prior_backpressure_success_cannot_mask_later_session_restart_timeout(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cross_rotation_boundary: bool,
 ) -> None:
+    later_generation_started = False
+    boundary_observed = False
+    if cross_rotation_boundary:
+        original_should_rotate = RawChunkWriter.should_rotate
+
+        def at_rotation_boundary(
+            writer: RawChunkWriter, *, now_monotonic: float | None = None
+        ) -> bool:
+            nonlocal boundary_observed
+            if later_generation_started and not boundary_observed and writer.record_count:
+                boundary_observed = True
+                now_monotonic = writer._rotation_deadline_monotonic
+            return original_should_rotate(writer, now_monotonic=now_monotonic)
+
+        monkeypatch.setattr(RawChunkWriter, "should_rotate", at_rotation_boundary)
+
     first_generation_payloads = [book_ticker(value) for value in range(500)]
     replacement_payload = book_ticker(10_000)
     later_generation_payloads = [book_ticker(value) for value in range(20_000, 20_500)]
 
     async def exercise() -> int:
+        nonlocal later_generation_started
         stop = asyncio.Event()
         session_restart = asyncio.Event()
         attempts = 0
@@ -1200,6 +1220,7 @@ def test_prior_backpressure_success_cannot_mask_later_session_restart_timeout(
             prior_manifest_count = len(captured(tmp_path)[1])
 
             stop.clear()
+            later_generation_started = True
             cast(DelayedStreamSpool, collector.spool).drain_delay_seconds = 0.1
             collector.post_close_handoff_timeout_seconds = 0.001
 
@@ -1233,10 +1254,18 @@ def test_prior_backpressure_success_cannot_mask_later_session_restart_timeout(
         ) :
     ]
     later_manifests = manifests[prior_manifest_count:]
-    assert len(later_manifests) == 1
-    assert later_manifests[0]["gap"] is True
-    assert later_manifests[0]["complete"] is False
-    assert "reconnect_gap" in later_manifests[0]["capture_flags"]
+    # Normal rotation may seal a complete prefix before the failed handoff.
+    # Its final chunk must still retain this session's failed boundary.
+    assert later_manifests
+    if cross_rotation_boundary:
+        assert boundary_observed
+        assert len(later_manifests) >= 2
+    assert all(manifest["gap"] is False for manifest in later_manifests[:-1])
+    assert all(manifest["complete"] is True for manifest in later_manifests[:-1])
+    assert later_manifests[-1]["gap"] is True
+    assert later_manifests[-1]["complete"] is False
+    assert "reconnect_gap" in later_manifests[-1]["capture_flags"]
+    assert sum(manifest["record_count"] for manifest in later_manifests) == len(later_envelopes)
     assert [envelope.raw_payload for envelope in later_envelopes] == (
         later_generation_payloads[: len(later_envelopes)]
     )

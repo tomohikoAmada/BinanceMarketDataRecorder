@@ -29,7 +29,7 @@ jobs:
       - run: python -m pip install --require-hashes -r requirements/macos-arm64-python312.lock
       - run: python -m pip install -r requirements/ci-macos-python312.lock
       - run: python -m pip install --no-deps -e .
-      - run: python -m pytest -q
+      - run: python -m pytest -q -o faulthandler_timeout=120
       - run: python -m ruff check .
       - run: python -m mypy
       - run: python tests/verify_m0_contracts.py
@@ -64,7 +64,7 @@ jobs:
         run: python -m pip install --require-hashes -r requirements/linux-x86_64-python312.lock
       - run: python -m pip install -r requirements/ci-linux-python312.lock
       - run: python -m pip install --no-deps -e .
-      - run: python -m pytest -q
+      - run: python -m pytest -q -o faulthandler_timeout=120
       - run: python -m ruff check .
       - run: python -m mypy
       - run: python tests/verify_m0_contracts.py

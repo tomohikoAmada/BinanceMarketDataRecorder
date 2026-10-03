@@ -19,6 +19,14 @@ The owner's continuation ends at actual reviewed eligible Formal2h, then stops
 before12h. All14 auxiliary flags remain true on Spot/USD-M BTCUSDT/ETHUSDT.
 The broader [plan](milestone_plan.md) is2h+12h+24h,38 accepted hours.
 
+Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
+macOS reached the existing45-minute limit without a diagnostic stack. A test-only
+normal/rotation correction preserves all Raw/handoff assertions; CI adds a
+120-second faulthandler dump without changing runtime or test-result rules.
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
+new exact CI/cloud release gates remain. See the
+[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
+
 ## Current cloud checkpoint
 
 Installed wheel2905d30e24ddd53708f50318e4dac74f8c6f183a7fb012c089a7cb25841e83e8,

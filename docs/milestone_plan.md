@@ -57,6 +57,14 @@ the newly frozen chain. Reuse unchanged prior reviews; supplement uncovered
 configuration combinations and changed paths. Existing disabled-auxiliary cloud
 measurements do not qualify the expanded profile.
 
+Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
+macOS reached the existing45-minute limit without a diagnostic stack. A test-only
+normal/rotation correction preserves all Raw/handoff assertions; CI adds a
+120-second faulthandler dump without changing runtime or test-result rules.
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
+new exact CI/cloud release gates remain. See the
+[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
+
 ### Fixed MVP boundary
 
 Keep Python 3.12, one Recorder process, one Collector per ProductKey, SQLite,

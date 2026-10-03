@@ -41,6 +41,14 @@ is advancing, it only schedules the next dated wakeup and exits. Otherwise it
 resumes idle work through reviewed eligible2h; pause after completion. Historical
 automations remain paused; neither automation is Formal acceptance authority.
 
+Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
+macOS reached the existing45-minute limit without a diagnostic stack. A test-only
+normal/rotation correction preserves all Raw/handoff assertions; CI adds a
+120-second faulthandler dump without changing runtime or test-result rules.
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
+new exact CI/cloud release gates remain. See the
+[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
+
 ## Current operation and gates
 
 Recorder is inactive AND disabled, MainPID0, Resultsuccess and NRestarts0.
