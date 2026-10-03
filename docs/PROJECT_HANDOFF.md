@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 after accepted authoritative baseline and actual Formal2h start. This is the current entry point.
+Updated October3,2026 at06:13UTC after the actual Formal2h target and strict endpoint PASS; terminal audit is running. This is the current entry point.
 
 ## Current code and authorization
 
@@ -27,7 +27,7 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 PASS (macOS1995,Ubuntu1991 tests),
 cloud168 affected tests and clean locked wheel PASS. Deployment script static
-ACCEPT; actual corrected installation/verification PASS; engineering baseline/both LIVE/completed verify PASS; actual warm-up is running. See the
+ACCEPT; actual corrected installation/verification PASS; engineering baseline/both LIVE/completed verify PASS; actual warm-up is COMPLETE/independently accepted. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current cloud checkpoint
@@ -42,14 +42,25 @@ Authoritative1640-chunk post-warm-up baseline/both LIVE/completed verify PASS,
 root564beacd02c3b22488644ed5724b61bfa6ff97883060efe76f1b811b0ed1ebff,
 27908 records/59 shards; actual wall21m7.882s, CPU1266.877s/457.3MiB/swap0.
 Independent frozen-control ACCEPT. Fresh core4/strict aux26/deployment PASS.
-Recorder enabled/running for Formal2h, PID43133/invocationf832d492593041bb83a8f8ce4e2c5c1a,
-service instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d, NRestarts0 at pre-start.
+Formal2h reached target PASS_CANDIDATE, elapsed7200.002178843s, no blockers.
 Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, start SHA28a7e70291b72eb5d9f15fdd7cc9522db178964b2c1aa5a002da78e6fc5d110a,
-native invocationf333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451 / Shanghai10:49:23.451,
-required2h; earliest target04:49:23 UTC/12:49:23 Shanghai. No target/final/credit yet.
-Archive enabled/active with actual recurrence;30s native resource sampler and
-Luna monitor handed off to native code at98% quota. ExecStopPost strict endpoint then stop/disables
-Recorder on every observer exit; no restart/retry/newT0.
+target SHA0dcec6aee5623f51673be5df22d1e5a5316a2c53ec3e3bb42bd5ce56933b6de9.
+T0 UTC02:49:23.451 / Shanghai10:49:23.451; native observer invocation
+f333ae73277543258ce1400d5bf18380 deactivated successfully04:50UTC.
+Strict auxiliary endpoint PASS; reviewed ExecStopPost stopped/disabled Recorder,
+MainPID0/Resultsuccess/NRestarts0. Original Recorder invocation
+f832d492593041bb83a8f8ce4e2c5c1a and instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d retained.
+3868 chunks/transactions allLOCAL_DELETED,7612527 frames/401254798 stored bytes/
+5842258936 uncompressed bytes; Catalogok/0partials/backlog. Archive timer paused
+FIRST with existing worker inactive/success. Fresh same-boot/config/deployment and
+five runtime masks/absolute expiry preflight PASS. Canonical terminal finalize then
+completed verify is RUNNING in `binance-recorder-q3-formal2h-terminal.service`,
+invocationd8ef67385b764ba7a6d300e24e243ab7, start~06:09UTC, no total audit cap;
+native900s no-progress watchdog unchanged. Helper SHA7faa0429b5a36415e3586ba26dc70a286f710783724dc50c263a7c93b7359eb5.
+No stage-final or Formal credit yet. Both LIVE and completed/independent review remain.
+The30s sampler's9000s RuntimeMax timeout occurred after target/stop; preserve its
+300 rows and distinguish post-stop STOPPED/BLOCK/GC-query noise from239 sampled
+RUNNING/PASS rows within Formal. Independent local review is active; no Raw/network/production access.
 
 Five OS units remain masked-runtime/inactive. Relative OnActive expiry shifted
 after pre-start enable/daemon-reload; original receipt retained. New absolute
@@ -87,10 +98,10 @@ capture remain retained; ADR-0038 now records authentic zero-frame startup
 boundaries and durable forced flags before any socket, without relaxing replay.
 Prior605bc16 canonical venv/identity/release stay inert custody.
 
-Next: let the healthy native Formal2h reach its actual target. At target stop/
-disable, drain/pause, both full LIVE terminal passes, completed verification and
-independent eligibility review. Restore archive/OS authority and stop before12h.
-No new corpus reset or unique deletion. Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION;Q4=RUNNING;0 Formal credit.
+Next: let the existing native terminal audit complete both full LIVE passes and
+completed verification, then finish independent eligibility review. Restore archive/
+OS authority and stop before12h. Do not restart Recorder or create another T0.
+No new corpus reset or unique deletion. Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION;Q4=RUNNING_TERMINAL_AUDIT;0 Formal credit.
 
 Current-chat task `vps-2h` checks actual quota and existing work once per hour.
 If work is advancing, end the check without intervening. Resume idle work only

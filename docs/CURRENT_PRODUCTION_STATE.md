@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026 after authoritative baseline ACCEPT and actual Formal2h start.
+Updated October3,2026 at06:13UTC after actual Formal2h target/strict endpoint PASS; terminal audit running.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -79,13 +79,23 @@ Authoritative1640-chunk post-warm-up baseline COMPLETE/PASS, root564beacd…ed1e
 27908 records/59 shards, both LIVE/completed verify and independent frozen-control
 ACCEPT. Actual wall21m7.882s/CPU1266.877s/cgroup457.3MiB/swap0. Fresh exact deployment,
 core4 and strict aux26 readiness PASS. Archive resumed with actual recurrence.
-Recorder enabled/running Formal2h, PID43133/invocationf832d492593041bb83a8f8ce4e2c5c1a,
-service instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d, NRestarts0 at pre-start.
-Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`; native observer invocation
-f333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451/Shanghai10:49:23.451,
-earliest2h target04:49:23UTC/12:49:23Shanghai; no target/final/credit yet.
-Native30s resource sampler/Luna monitor handed off to native code at98% quota. Reviewed ExecStopPost
-binds strict auxiliary target then stops/disables Recorder on every observer exit.
+Formal2h target PASS_CANDIDATE with7200.002178843s and no blockers;
+strict auxiliary endpoint PASS. Native observer ended successfully04:50UTC and
+ExecStopPost stopped/disabled Recorder (MainPID0/Resultsuccess/NRestarts0).
+Target SHA0dcec6aee5623f51673be5df22d1e5a5316a2c53ec3e3bb42bd5ce56933b6de9;
+endpoint SHA81b41f62446572e38ebe58dd8f0d57a86f7b73c0df6d1e78f4eab05b5a89c1d1.
+Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`; original T0
+UTC02:49:23.451/Shanghai10:49:23.451 and invocationf333ae73277543258ce1400d5bf18380 retained.
+Stopped census3868 chunks/transactions allLOCAL_DELETED,7612527 frames/
+401254798 stored/5842258936 uncompressed bytes; Catalogok/0partials/backlog.
+Archive timer paused before frozen audit; worker already inactive/success.
+Same boot/config/canonical deployment/five masks/absolute expiry preflight PASS.
+Terminal finalize plus completed verification RUNNING under native unit
+`binance-recorder-q3-formal2h-terminal.service`, invocationd8ef67385b764ba7a6d300e24e243ab7,
+no total audit cap, unchanged900s no-progress watchdog. No final/accepted credit yet.
+Independent LOCAL/OFFLINE review active. Sampler RuntimeMax9000 timeout follows
+successful target/stop, with post-stop rows retained separately. All239 sampled
+RUNNING rows inside Formal have auxiliaryPASS; final review remains required.
 
 Five OS units stay masked-runtime/inactive under original finite window. Pre-start
 enable/daemon-reload shifted the relative OnActive expiry; actual receipt retained.
@@ -110,7 +120,7 @@ or audit root exists. Failed controls/prefix remain retained; no failed prefix
 can be resumed under a replacement identity. The locally reproduced minimal
 private-index correction is independently ACCEPTed; replacement exact CI/wheel/
 cloud/actual deployment and corrected engineering baseline/both LIVE/completed
-verify PASS; actual all-enabled warm-up is running, not accepted; see
+verify PASS; actual all-enabled warm-up is COMPLETE/independently accepted; see
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 Source605bc16's engineering baseline/completed verification passed on697 archived
@@ -138,8 +148,8 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-Q4=RUNNING_PENDING_TARGET_AND_TERMINAL_AUDIT
-NEXT=ACTUAL_2H_TARGET_STOP_DRAIN_BOTH_LIVE_TERMINAL_VERIFY_AND_INDEPENDENT_REVIEW
+Q4=RUNNING_TERMINAL_AUDIT_PENDING_COMPLETED_VERIFY_AND_INDEPENDENT_REVIEW
+NEXT=COMPLETE_EXISTING_BOTH_LIVE_TERMINAL_VERIFY_AND_INDEPENDENT_REVIEW
 ```
 
 ## Retained custody and evidence

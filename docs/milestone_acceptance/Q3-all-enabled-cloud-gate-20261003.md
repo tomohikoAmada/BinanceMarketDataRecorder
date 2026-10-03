@@ -2,8 +2,9 @@
 
 Frozen runtime remains cf3909e9/tree2ac585d0, wheel7e15bbd9… and identityeacada17….
 All14 auxiliary flags and Spot/USD-M BTCUSDT/ETHUSDT remain unchanged.
-Q3 is COMPLETE for current2h admission. Formal2h is RUNNING from10:49:23 Shanghai;
-no target/final/duration credit;12H_STARTED=NO;PRODUCTION_READY=NO.
+Q3 is COMPLETE for current2h admission. Formal2h target and strict endpoint PASS;
+terminal audit is RUNNING. No stage-final/accepted duration credit yet;
+12H_STARTED=NO;PRODUCTION_READY=NO. Later sections retain their time-local checkpoints.
 
 ## Completed real cloud gates
 
@@ -185,3 +186,28 @@ quota; after native target, terminal/frozen/completed/independent review remains
 No current2h PASS is inferred. On closeout, restore OS via accepted helper and
 prove RESTORED BEFORE stopping the absolute expiry timer, restore archive,
 Recorder inactive AND disabled, Catalogok/0partials/backlog, then pause hourly task.
+
+## Actual target and terminal handoff,06:13UTC
+
+Native target PASS_CANDIDATE with7200.002178843s and zero blockers. Target SHA
+0dcec6aee5623f51673be5df22d1e5a5316a2c53ec3e3bb42bd5ce56933b6de9. Strict
+auxiliary endpoint PASS (SHA81b41f62446572e38ebe58dd8f0d57a86f7b73c0df6d1e78f4eab05b5a89c1d1),
+Recorder stopped/disabled at04:49:59.909UTC, native observer successful end04:50UTC.
+No restart/newT0. Sampler RuntimeMax9000 subsequently times out after completion;
+all300 raw rows retained, including239 RUNNING/auxPASS samples inside Formal.
+Post-target STOPPED/BLOCK and queries of the garbage-collected observer unit are
+post-run monitoring evidence, not inferred Formal collection failures. Final review
+will verify the exact time scoping and actual recovery/identity/authority.
+
+Stopped corpus3868 chunks/transactions,7612527 frames,401254798 stored bytes and
+5842258936 uncompressed bytes, allLOCAL_DELETED, Catalogok/0partials/backlog.
+Root available30565781504B and archive2102040612864B at terminal preflight.
+Archive timer stopped first, worker already inactive/success. Exact canonical
+deployment/same boot/config/five masks/absolute expiry preflight PASS.
+Terminal operator helper SHA7faa0429b5a36415e3586ba26dc70a286f710783724dc50c263a7c93b7359eb5
+reuses the accepted pinned-unit pipeline for canonical finalize then completed verify.
+Unit `binance-recorder-q3-formal2h-terminal.service`, invocationd8ef67385b764ba7a6d300e24e243ab7,
+Typeoneshot/Restartno/TimeoutStartinfinity, native900s no-progress watchdog unchanged.
+Both LIVE passes, stage-final, completed verification and independent eligibility
+remain pending. Online control bundle5875969B SHA8077d420e1590b1263e269deed56488422e9840dfc36ced4152960d47ad148f6
+is supplied for independent LOCAL/OFFLINE review while native terminal runs.

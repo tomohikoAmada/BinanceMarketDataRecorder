@@ -34,7 +34,7 @@ and durable forced flags; no classifier or readiness relaxation. The original
 3d05282 CI/cloud fixture failures are retained; its admitted-batch gate correction
 preserves all42-stream/backpressure/payload/count/completeness assertions.
 The engineering input1182 chunks/transactions remains archived/retained; the
-corpus now grows during NONFORMAL warm-up. Prior4e1cf32 engineering attempt2 FAILED before publication
+corpus has grown through NONFORMAL warm-up and the actual Formal2h target. Prior4e1cf32 engineering attempt2 FAILED before publication
 on a real discontinuity array passed to the mapping-only encoder. The minimal
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md)
 is reproduced locally and independently ACCEPTed. Replacement cf3909e9 exact
@@ -51,15 +51,17 @@ Absolute quiet expiry08:52:46UTC preserves original390min bound after a recorded
 pre-start daemon-reload shifted the relative timer; all five OS units stay masked. See the [actual cloud gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
 sparse-startup failure earns zero credit. Convergence/current2h admission, authoritative baseline and fresh strict readiness
-PASS. Actual Formal T0 exists; target/final/credit remain pending.
+PASS. Actual Formal target/strict auxiliary endpoint PASS with7200.002178843s;
+Recorder stopped/disabled,3868 chunks archived. Both LIVE terminal audit is RUNNING;
+completed verification/independent eligibility/final credit remain pending.
 Current-chat hourly continuation is active; historical automations paused.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
 [Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
 Q2 independent review, offline/online/stress, exact-source dual-platform CI and
-clean locked-wheel gates PASS. The actual Q3 cloud delta-capacity gate failed;
-Q3 remains PARTIAL_NOT_ACCEPTED. See [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
+clean locked-wheel gates PASS. That historical Q3 cloud delta-capacity attempt failed and is retained;
+current corrected Q3 admission is COMPLETE. See the historical [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
 The owner's latest October 2 instruction authorizes this execution through
 reviewed eligible **2h**, stopping before VPS **12h**. The broader38h chain stays
 planned;12h is outside this turn.
@@ -102,7 +104,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for current2h admission; exactcf3909e9/CI/cloud/wheel/deployment, engineering, actual all-enabled warm-up/independent resources/forecast and authoritative1640 baseline/both LIVE/verify/independent ACCEPT; fresh strictcore4/aux26 PASS; future38h capacity remains a later gate |
-| Q4 | Formal 2h plus full terminal audit and completed verification | RUNNING; actualT0 Shanghai10:49:23, earliesttarget12:49:23; no target/final/credit, full terminal/completed/independent review pending |
+| Q4 | Formal 2h plus full terminal audit and completed verification | RUNNING_TERMINAL_AUDIT; actual target7200.002178843s/strict auxPASS; stopped/disabled/drained3868; native terminal invocationd8ef6738…; completed verification/independent eligibility/final credit pending |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
@@ -351,8 +353,8 @@ Catalog integrity, no active partials, archive backlog and exact retained eviden
 Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
-F4/R-078 separate. Q1 is implemented/offline verified; the next development
-milestone is **Q3**, safe fresh corpus/deployment and measured cloud gates.
+F4/R-078 separate. Q0–Q3 are complete for the current2h scope; current work is **Q4**, the
+already-running full terminal audit and reviewed eligible2h closeout.
 
 ### How subsequent development proceeds
 

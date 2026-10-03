@@ -48,23 +48,24 @@ All14 flags/four products/growing corpus unchanged. Engineering1182/both LIVE/ve
 and independent ACCEPT; actual all-enabled warm-up/independent resource-forecast
 admission PASS. Authoritative1640 post-warm-up baseline COMPLETE/both LIVE/verify/
 independent ACCEPT, root564beacd…ed1ebff/27908records/59shards, wall21m7.882s.
-Fresh deployment/core4/strict aux26 PASS; actual Formal2h RUNNING. RecorderPID43133/
-invocationf832d492593041bb83a8f8ce4e2c5c1a, instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d,
-observerinvocationf333ae73277543258ce1400d5bf18380; stageFormal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571.
-T0 UTC02:49:23.451 (Shanghai10:49:23.451), earliesttarget04:49:23UTC (12:49:23Shanghai).
-Native stage+30s sampler remain active; Luna model monitoring intentionally idle
-at98% quota. Hourly continuation resumes only when quota allows. Reviewed
-ExecStopPost strictendpoint always stop/disablesRecorder; no restart/T0/retry.
-Archive enabled/activeactualrecurrence; fiveOSunitsmasked/inactive, normalauthority
-restoration pending. Pre-startdaemonreload shifted relativeOnActive deadline;
-newabsoluteCalendar expiry08:52:46UTC armed/verified BEFORE cancellingoldtimer,
-retainingoriginalwindow bound/no maintenanceactivation/unchangedprocessT0. Final
-review must assess recorded correction. Controlled RESTORED precedes cancelling
-binance-recorder-q3-formal-quiet-absolute-expiry.timer; no extension. Q3COMPLETE
-forcurrent2h;Q4RUNNING/no target/final/credit. Current2hpeak root14.77GiB>hard10,
-future38hpeak8.26GiB fails reserve: latergates useactual2hdata/reforecast, R078OPEN.
-See docs/milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md. Next actualtarget,
-stop/disable/drain/pause/bothLIVEterminal/completed/independentreview. Do not start12h.
+Fresh deployment/core4/strict aux26 PASS; actual Formal2h target PASS_CANDIDATE,
+elapsed7200.002178843s/strictendpointPASS, observerendedsuccess04:50UTC. Same
+stageFormal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571/T0UTC02:49:23.451 retained;
+RecorderstoppedANDdisabled/MainPID0/NRestarts0. All3868chunks/transactions archived,
+7612527frames/401254798storedB/5842258936uncompressedB/Catalogok/0partials/backlog.
+Archive timerpausedFIRST/workeralreadyinactivesuccess. Terminalfinalize+verify
+RUNNING nativeunitbinance-recorder-q3-formal2h-terminal.service/invocation
+d8ef67385b764ba7a6d300e24e243ab7, no totalcap/unchanged900sno-progress. HelperSHA
+7faa0429b5a36415e3586ba26dc70a286f710783724dc50c263a7c93b7359eb5. No final/credit.
+IndependentLOCAL/OFFLINEreviewactive. SamplerRuntimeMax9000timeout follows successful
+Formaltarget/stop;239insideFormalRUNNINGauxPASS rows, poststoprowsretainedseparately.
+FiveOSunitsmasked/inactive; controlledRESTORED precedes cancellingabsoluteexpiry
+binance-recorder-q3-formal-quiet-absolute-expiry.timer, originalcutoff08:52:46UTC;
+no extension. Finalreviewassessesrecordedrelative→absolutecorrection. Q3COMPLETE
+forcurrent2h;Q4RUNNINGTERMINAL/no final/credit. Priorcurrent2hpeakroot14.77GiB>hard10,
+future38hpeak8.26GiBfailsreserve: latergates useactual2hdata/reforecast, R078OPEN.
+See docs/milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md. Next existing
+bothLIVEterminal/completed/independentreview, restoreauthorityandstopbefore12h.
 
 Old metadata/archive, failed attempts and unpublished143362-chunk baseline
 remain retained; R-078 stays OPEN. Do not reset the new corpus, physically delete
@@ -92,7 +93,7 @@ Supplemental independent fixture/diagnostic/helper-rebind ACCEPT; corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 bothPASS (macOS1995,Ubuntu1991), cloud168
 affected tests and clean locked wheel PASS. Actual stopped replacement deployment
 PASS; engineering baseline/both LIVE/completed verify PASS, actual warm-up COMPLETE;
-authoritative post-warm-up baseline running. See the
+authoritative post-warm-up baseline COMPLETE/independently ACCEPTed. See the
 record docs/milestone_acceptance/Q3-discontinuity-array-correction.md.
 
 ## Non-goals
