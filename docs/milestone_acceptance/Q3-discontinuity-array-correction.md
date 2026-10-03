@@ -50,7 +50,8 @@ Review identity `/private/var/tmp/bmdr-startup-ordinary-review-kbJkqHnV/disconti
 SHA92e0233ae052b0d5a1b60645f344ca874f30bea1281adf3e971549d45609aa6b.
 Exact runtime/test diff SHA55d82ae9575fe7d1a0a2bf161331a14fb1655df261fd2d6ff625487d2514d04b.
 The five startup runtime files remain unchanged; prior source ACCEPT is reused.
-Exact replacement CI/wheel/cloud/deployment/baseline gates remain pending.
+At that source-review checkpoint, replacement CI/wheel/cloud/deployment/baseline
+gates were pending. The October3 release checkpoint below supersedes this status.
 
 Recorder remains inactive AND disabled,1182 chunks/transactions LOCAL_DELETED,
 Catalogok/0partials/backlog. Archive authority is paused for the failed audit;
@@ -59,8 +60,8 @@ four products and the growing corpus stay unchanged. Preserve unique archive,
 old metadata and both failed attempts. Future archive pauses stop the timer
 first and wait for the current worker to finish, preserving strict quiescence.
 
-Next: independent review, freeze/push one exact replacement, dual-platform CI,
-clean locked wheel/affected cloud tests, stopped canonical deployment and fresh
+Next at that checkpoint: independent review, freeze/push one exact replacement,
+dual-platform CI, clean locked wheel/affected cloud tests, stopped deployment and fresh
 engineering baseline/both LIVE/completed verification. Then actual warm-up/
 convergence/resource forecasts, finite-window authoritative post-warm-up baseline,
 strict readiness and reviewed eligible Formal2h. Stop before12h.
@@ -91,7 +92,7 @@ deselected, no network/SSH/repository edits. Exact two-file diff SHA
 02f8832f50981cf3503edf596bdf580fd363bdac9b9eab11d9aea131948e31a6. Report SHA
 279fe55db3700811c494ed0ef9840a5b1db2ffbb34eb70f4af573d7039f0af71;
 identity SHA54f5b810b79772c5d021ea477edd3dd4c98e4c966a18c8ff32dd4eb80c7a1633.
-New exact-source CI must actually PASS before release.
+New exact-source CI must actually PASS before release; cf3909e9 subsequently passed below.
 
 Cloud read-only check October3 confirms the same boot, inactive AND disabled
 Recorder/MainPID0/Resultsuccess/NRestarts0;1182 chunks and archive transactions
@@ -110,3 +111,40 @@ children bmdr0750. No replacement wheel is installed and no live collection
 started. Four operator helpers have independently confirmed literal root rebind
 only, with previous startup/endpoint ACCEPT reused. Exact helper inputs are in
 local cache `array-release-operator-inputs/operator-helper-inputs.json`.
+
+## Verified replacement preparation — October3,09:10 Shanghai
+
+Frozen runtime candidate cf3909e9ee6da3862c03b4bef609cc4a4a049cc7,
+tree2ac585d0f397abc6e9f0e588aab81b14d423e11e, passed exact
+[CI37083270715](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/37083270715).
+macOS1995 PASS/24 SKIP/5 deselected258.17s; Ubuntu1991 PASS/28 SKIP/5 deselected374.37s.
+Ruff/mypy/M0/Go/build/locked-dependency/clean-wheel CLI checks PASS. The older
+macOS timeout remains unresolved historical evidence; the new passing run does
+not establish its cause or convert it into a PASS.
+
+Cloud admission completed with168 affected tests PASS/1 stress deselected128.37s,
+unit invocationc02bd56b7c4b4a578c6e1d48efabbc78, exit0/Resultsuccess.
+Clean noneditable wheel505407 bytes, SHA
+7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b;
+121 package Python files match the exact source archive, all28 locked dependencies
+match and pip-check/CLI smoke PASS. Lock SHA remains44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335;
+source archive SHAa5c8121975dc9be156300fb4a35764bf017e11136a2fe133a3e0f17134dbb9ce.
+Native evidence is `array-clean-wheel.json` and `cloud-array-admission.log` under
+the prepared root. This admission uses isolated staging, not the production venv.
+
+The stopped canonical deployment script has independent GPT-6.1 Sol xhigh
+LOCAL/OFFLINE static ACCEPT, SHA7ae281f35c4b892044fb876b24522a8a7ad75c1c2e4f7fa1b7e0698116998e18;
+report SHA71c0d65674cd1c744a44f021d0c7277b10976fda397f2ec416c5be9a8d026a2e,
+identity SHAb482523c514fad7f33bbf4b81248a400ae46526b2b4ee3541df59a510b7f522f.
+It stops the archive timer first and waits for actual worker success with a
+bounded read-only query/deadline; no worker SIGTERM, deletion or Recorder start.
+Six independent mocked idle/deadline cases PASS. Static ACCEPT grants no actual
+deployment or Formal eligibility.
+
+Fresh read-only SSH confirms the unchanged4e1cf32 installed identity, Recorder
+inactive AND disabled/MainPID0/Resultsuccess/NRestarts0, same boot, all1182 chunks
+and archive transactions LOCAL_DELETED, Catalogok,0partials. Archive timer remains
+inactive/enabled and worker inactive/Resultsuccess; no new baseline or native
+stage-start/target/final exists. Next is actual stopped replacement installation,
+fresh engineering baseline/both LIVE/completed verify, then warm-up and the
+remaining Q3 gates. Q4 Formal2h NOT_STARTED; duration credit0; stop before12h.

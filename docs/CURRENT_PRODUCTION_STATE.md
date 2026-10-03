@@ -1,6 +1,6 @@
 # Current Production State
 
-Verified October2 UTC / October3 Shanghai,2026 after stopped startup-corrected deployment.
+Verified October3,2026,09:10 Shanghai by read-only SSH; replacement is prepared, not installed.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -33,8 +33,10 @@ Original3d05282 CI37027577424 and cloud265 PASS/1 FAIL are retained as failures;
 its Profile D hook blocked an empty idle drain. The admitted-batch fixture
 correction retains all queue/backpressure/payload/count/completeness assertions.
 
-Current evidence root:
+Retained installed/failed-engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
+Prepared replacement evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
 Current-chat continuation `vps-2h` is active hourly. It checks actual quota and
 existing work; if work is advancing, it exits without intervening. It resumes
@@ -46,8 +48,14 @@ Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
 normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
-new exact CI/cloud release gates remain. See the
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Corrected
+cf3909e9/tree2ac585d0 CI37083270715 PASS (macOS1995,Ubuntu1991 tests), cloud168
+affected tests and clean locked wheel PASS. Wheel SHA
+7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
+121 Python files match the frozen archive and all28 locked dependencies match.
+The deployer has independent static ACCEPT but has not run; installed identity
+remains4e1cf32. No replacement deployment/baseline result or native stage marker
+exists in the prepared root. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current operation and gates
@@ -67,8 +75,8 @@ ec9cbd60f5d04a3480090d1ed1415a99. The mapping-only canonical encoder received
 a real discontinuity-event array and raised ValueError. No completed verification
 or audit root exists. Failed controls/prefix remain retained; no failed prefix
 can be resumed under a replacement identity. The locally reproduced minimal
-private-index correction is independently ACCEPTed; replacement release/cloud gates
-remain; see
+private-index correction is independently ACCEPTed; replacement exact CI/wheel/
+cloud gates PASS, while installation and fresh engineering baseline remain; see
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 Source605bc16's engineering baseline/completed verification passed on697 archived
@@ -96,7 +104,7 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=REVIEW_ARRAY_CORRECTION_AND_REPLACEMENT_RELEASE_THEN_NEW_ENGINEERING_BASELINE
+NEXT=INSTALL_VERIFIED_CF3909E_REPLACEMENT_THEN_NEW_ENGINEERING_BASELINE
 ```
 
 ## Retained custody and evidence

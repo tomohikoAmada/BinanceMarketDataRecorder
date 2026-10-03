@@ -2,7 +2,7 @@
 
 ## Current plan — 38 accepted hours on the cloud server
 
-Updated October 2, 2026. **This section is the single current development plan.**
+Updated October 3, 2026 (Shanghai). **This section is the single current development plan.**
 It supersedes the October 1/2 proposals and time-local NEXT instructions below.
 The owner selected safe old-data cleanup followed by a fresh independent corpus.
 The [recheck](reviews/2026-10-02-plan-recheck.md) records corrections, evidence and
@@ -37,11 +37,14 @@ All1182 growing-corpus chunks/transactions are archived/retained. Recorder is
 inactive AND disabled; new exact engineering attempt2 FAILED before publication
 on a real discontinuity array passed to the mapping-only encoder. The minimal
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md)
-is reproduced locally and independently ACCEPTed; replacement release gates remain.
+is reproduced locally and independently ACCEPTed. Replacement cf3909e9 exact
+dual-platform CI37083270715, clean locked wheel and cloud168 affected tests PASS;
+the stopped deployment script has independent static ACCEPT, but the replacement
+is not installed and a fresh engineering baseline remains pending.
 Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
 sparse-startup failure earns zero credit. Actual convergence/forecasts and the
 post-warm-up authoritative baseline remain required; no Formal T0.
-Current-chat reset-time continuation is active; historical automations paused.
+Current-chat hourly continuation is active; historical automations paused.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
 its previously reviewed descendant is frozen as `d0f455c` in the
@@ -61,8 +64,10 @@ Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
 normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
-new exact CI/cloud release gates remain. See the
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Replacement
+cf3909e9 CI37083270715 PASS on macOS (1995 tests) and Ubuntu (1991 tests);
+cloud168 affected tests and clean locked wheel PASS. Actual stopped deployment
+and fresh engineering baseline remain. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ### Fixed MVP boundary
@@ -88,7 +93,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;4e1cf32 installed/VERIFIED with independent review/dual-platform CI/cloud266 PASS; new1182-chunk engineering attempt2 FAILED; private-array correction independently ACCEPTed; replacement release pending; actual warm-up/forecasts/post-warm-up baseline/readiness remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED;4e1cf32 still installed; failed1182-chunk engineering attempt retained; corrected cf3909e9 independent review/dual-platform CI/cloud168/locked-wheel PASS, deployer static ACCEPT; actual replacement deployment, fresh engineering baseline, warm-up/forecasts/post-warm-up baseline/readiness remain |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -185,7 +190,8 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [x] Implement ADR-0038 and obtain independent source ACCEPT; release gates remain.
 - [x] Complete4e1cf32 exact-source full CI/locked wheel/cloud266/stopped deployment gates.
 - [x] Reproduce/correct the private discontinuity-array error and obtain independent source-only ACCEPT.
-- [ ] Complete replacement exact CI/wheel/cloud/deployment gates and pass a fresh engineering baseline/both LIVE/completed verify; retain both failed attempts.
+- [x] Complete corrected cf3909e9 exact dual-platform CI37083270715/locked-wheel/cloud168 gates and independent deployment-script static ACCEPT.
+- [ ] Install/verify the exact replacement and pass a fresh engineering baseline/both LIVE/completed verify; retain both failed attempts.
 - [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.

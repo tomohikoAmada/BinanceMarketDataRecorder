@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October2 UTC / October3 Shanghai,2026. This is the current entry point.
+Updated October3,2026,09:10 Shanghai after read-only VPS verification. This is the current entry point.
 
 ## Current code and authorization
 
@@ -23,8 +23,10 @@ Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
 normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
-new exact CI/cloud release gates remain. See the
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Corrected
+cf3909e9/tree2ac585d0 exact CI37083270715 PASS (macOS1995,Ubuntu1991 tests),
+cloud168 affected tests and clean locked wheel PASS. Deployment script static
+ACCEPT; actual replacement installation and engineering baseline remain. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current cloud checkpoint
@@ -45,9 +47,12 @@ invocationec9cbd60f5d04a3480090d1ed1415a99. Real discontinuity companions are an
 array passed incorrectly to the mapping-only canonical encoder; the exact error
 is reproduced locally. The minimal private scratch-index correction and valid/
 malformed integration regressions have independent LOCAL/OFFLINE ACCEPT;
-replacement release/cloud gates remain.
-See [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md). New evidence root:
+replacement exact CI/locked-wheel/cloud gates now PASS, but installation and
+a fresh engineering baseline remain pending.
+See [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md). Retained failed evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
+Prepared replacement evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
 
 Prior605bc16 baseline/both LIVE/verify passed on697. Its nonformal catch-up failed

@@ -52,7 +52,9 @@ updates restored, no live monitor. Prior605bc16 engineering baseline/both LIVE/
 verify passed697; failed catch-up preserved. New exact4e engineering attempt2
 FAILED before publication on real discontinuity-array serialization. Retain failed
 controls and do not resume their prefix under a changed identity. Minimal local
-private-index correction is independently ACCEPTed; replacement release/fresh baseline remain;
+private-index correction is independently ACCEPTed; corrected cf3909e9 exact
+CI37083270715/locked-wheel/cloud168 PASS and deployer static ACCEPT, not installed;
+actual replacement deployment/fresh engineering baseline remain;
 see docs/milestone_acceptance/Q3-discontinuity-array-correction.md. Next actual warm-up/convergence,
 resources/cumulative forecasts, authoritative post-warm-up baseline under a finite
 quiet window, strict readiness, Formal2h plus terminal/completed/independent
@@ -80,8 +82,10 @@ Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
 normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT;
-new exact CI/cloud release gates remain. See the
+Supplemental independent fixture/diagnostic/helper-rebind ACCEPT; corrected
+cf3909e9/tree2ac585d0 exact CI37083270715 bothPASS (macOS1995,Ubuntu1991), cloud168
+affected tests and clean locked wheel PASS. Actual stopped replacement deployment
+and fresh engineering baseline remain. See the
 record docs/milestone_acceptance/Q3-discontinuity-array-correction.md.
 
 ## Non-goals
