@@ -4,8 +4,8 @@ Updated October3,2026. Exact cf3909e9 release/deployment/engineering both LIVE/
 completed verify and independent frozen controls PASS. Actual all-enabled warm-up/
 convergence and independent current2h resource/forecast admission ACCEPT. Recorder
 inactive AND disabled;1640 chunks archived, Catalogok/0partials. Authoritative
-post-warm-up baseline runs under finite390min quiet expiry08:52:47UTC. No Formal
-T0/credit; owner continues through reviewed2h before12h. Retained failures and
+post-warm-up baseline/both LIVE/verify/independent ACCEPT; actualFormal2h T0
+10:49:23Shanghai, target/final/credit pending. Absolutequietexpiry08:52:46UTC; owner continues through reviewed2h before12h. Retained failures and
 R-078 stay OPEN/time-local. [Actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 
 ## Current follow-up
@@ -157,3 +157,9 @@ qualify future capacity. Audit scenarios14h289/700min and38h730/1829min may be
 impractical; R-078 stays OPEN. Recompute from actual2h terminal/time/backlog/
 staging and resolve the relevant later-stage gate before12h/24h, preserving Raw
 and reserve-stop behavior. Current finite quiet window is not automatically extended.
+
+Relative OnActive quiet-window timer shifted after pre-start daemon-reload.
+Correction creates/verifies absolute08:52:46UTC expiry before cancelling oldtimer,
+preserving original bound/Recorder/observer/T0 and five masked inactive units.
+Actual receipt retained; final independent eligibility review must assess it.
+Use absolute fixed cutoff for future windows, no silent extension.

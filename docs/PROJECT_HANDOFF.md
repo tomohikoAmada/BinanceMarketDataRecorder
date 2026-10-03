@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 after independently accepted all-enabled warm-up; authoritative baseline running. This is the current entry point.
+Updated October3,2026 after accepted authoritative baseline and actual Formal2h start. This is the current entry point.
 
 ## Current code and authorization
 
@@ -38,16 +38,26 @@ release `/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB`.
 Actual canonical root-control/130 RECORD/28 dependencies verification PASS.
 Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Engineering1182-chunk baseline/both LIVE/completed verify PASS and independent frozen-control ACCEPT. All-enabled NONFORMAL warm-up COMPLETE: normal25.511s/missed32.775s/catch-up30.171s, pending140→0 under ongoing input, no blockers, core4/aux26 PASS. Two durable empty REST responses recovered after~5s; cumulative failures2 retained. Independent actual chain/config/resources/forecast/helper review ACCEPT, no Formal credit.
 
-Recorder inactive AND disabled;1640 chunks/transactions LOCAL_DELETED,
-5218930 frames, Catalogok/0partials/backlog. Archive timer-first pause and natural
-worker success protect the new baseline. Fresh apt update/zero pending/empty
-dpkg audit and locks/no reboot plus deployment identity reverify PASS.
-Finite390min quiet expiry armed before five runtime masks; actual negative
-activation/mask/lock gates PASS,02:22:47–08:52:47 UTC (10:22:47–16:52:47 Shanghai).
-Authoritative `Formal2h/baseline` runs in
-`binance-recorder-q3-post-warmup-baseline.service`, invocation
-1a401460138b49c19ada13c96a09c67e. No total audit cap; native900s no-progress remains.
-Economical read-only monitor active; no Formal T0.
+Authoritative1640-chunk post-warm-up baseline/both LIVE/completed verify PASS,
+root564beacd02c3b22488644ed5724b61bfa6ff97883060efe76f1b811b0ed1ebff,
+27908 records/59 shards; actual wall21m7.882s, CPU1266.877s/457.3MiB/swap0.
+Independent frozen-control ACCEPT. Fresh core4/strict aux26/deployment PASS.
+Recorder enabled/running for Formal2h, PID43133/invocationf832d492593041bb83a8f8ce4e2c5c1a,
+service instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d, NRestarts0 at pre-start.
+Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, start SHA28a7e70291b72eb5d9f15fdd7cc9522db178964b2c1aa5a002da78e6fc5d110a,
+native invocationf333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451 / Shanghai10:49:23.451,
+required2h; earliest target04:49:23 UTC/12:49:23 Shanghai. No target/final/credit yet.
+Archive enabled/active with actual recurrence;30s native resource sampler and
+5min Luna read-only monitor active. ExecStopPost strict endpoint then stop/disables
+Recorder on every observer exit; no restart/retry/newT0.
+
+Five OS units remain masked-runtime/inactive. Relative OnActive expiry shifted
+after pre-start enable/daemon-reload; original receipt retained. New absolute
+calendar expiry08:52:46UTC was armed/verified BEFORE cancelling old relative timer,
+keeping the original02:22:47–08:52:47 finite bound. Actual correction receipt binds
+unchanged Recorder/observer invocation/T0 and no maintenance activation. Final
+eligibility review must include this operation. Controlled RESTORED precedes
+cancelling `binance-recorder-q3-formal-quiet-absolute-expiry.timer`; no extension.
 
 Actual combined summed RSS~600MiB, busy17.4%, swap0. Both LIVE full-audit
 forecasts mean/peak:2h66/130min,14h289/700min,38h730/1829min. Root budget
@@ -77,11 +87,10 @@ capture remain retained; ADR-0038 now records authentic zero-frame startup
 boundaries and durable forced flags before any socket, without relaxing replay.
 Prior605bc16 canonical venv/identity/release stay inert custody.
 
-Next: complete the running authoritative post-warm-up baseline/both LIVE/completed
-verify, fresh strict core4/aux26 readiness, then one Formal2h. At target stop/
+Next: let the healthy native Formal2h reach its actual target. At target stop/
 disable, drain/pause, both full LIVE terminal passes, completed verification and
 independent eligibility review. Restore archive/OS authority and stop before12h.
-No new corpus reset or unique deletion. Q3=PARTIAL_NOT_ACCEPTED;0 Formal credit.
+No new corpus reset or unique deletion. Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION;Q4=RUNNING;0 Formal credit.
 
 Current-chat task `vps-2h` checks actual quota and existing work once per hour.
 If work is advancing, end the check without intervening. Resume idle work only

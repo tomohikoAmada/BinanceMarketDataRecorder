@@ -43,27 +43,27 @@ recover within unchanged actual-success/correct-cursor freshness bounds; origina
 error/status stays visible. Generic/Catalog/terminal/WS failures stay blocked.
 No cursor advance or complete-period claim for missing data.
 
-The owner resumes through reviewed eligible Formal2h, then stop before12h.
-All14 flags/four Spot/USD-M BTCUSDT/ETHUSDT products and growing corpus remain.
-Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Corrected1182 engineering baseline/
-both LIVE/completed verify and independent frozen-control ACCEPT. Actual all-enabled
-warm-up COMPLETE/independent ACCEPT: normal25.511s/missed32.775s/catch-up30.171s,
-pending140→0 under input, no blockers, strict core4/aux26 PASS; two retained empty
-REST events recover~5s later. Recorder inactive AND disabled;1640chunks/transactions
-LOCAL_DELETED,5218930frames/Catalogok/0partials/backlog. Fresh apt index/0pending/
-dpkgempty/no locks/no reboot and deployment identityreverify PASS. Archive timer-first
-pause waits for natural worker success. Authoritative `Formal2h/baseline` RUNNING
-unit binance-recorder-q3-post-warmup-baseline.service, invocation
-1a401460138b49c19ada13c96a09c67e; no total audit cap/native900s no-progress.
-Finite390min quiet expiry armed BEFORE five runtime masks; actual negative probe/
-mask/lock PASS,02:22:47–08:52:47UTC. Controlled RESTORED precedes expiry cancellation;
-no extension. Independent current2h resource/forecast admission ACCEPT, peak root
-14.77GiB>10GiB with explicit sealed/staging allowance; future38h peak8.26GiB fails
-reserve, so later stage forecasts must use actual2h terminal/rates/backlog/staging.
-See docs/milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md. Next complete
-running baseline/both LIVE/verify, fresh strict readiness and one Formal2h with
-reviewed endpoint stop/disable, drain/frozen terminal/both LIVE/completed/independent
-verification. No Formal T0/credit;12H_STARTED=NO;PRODUCTION_READY=NO.
+The owner continues through reviewed eligible Formal2h, then stops before12h.
+All14 flags/four products/growing corpus unchanged. Engineering1182/both LIVE/verify
+and independent ACCEPT; actual all-enabled warm-up/independent resource-forecast
+admission PASS. Authoritative1640 post-warm-up baseline COMPLETE/both LIVE/verify/
+independent ACCEPT, root564beacd…ed1ebff/27908records/59shards, wall21m7.882s.
+Fresh deployment/core4/strict aux26 PASS; actual Formal2h RUNNING. RecorderPID43133/
+invocationf832d492593041bb83a8f8ce4e2c5c1a, instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d,
+observerinvocationf333ae73277543258ce1400d5bf18380; stageFormal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571.
+T0 UTC02:49:23.451 (Shanghai10:49:23.451), earliesttarget04:49:23UTC (12:49:23Shanghai).
+Native stage+30s sampler+5min economical read-only Luna monitor active. Reviewed
+ExecStopPost strictendpoint always stop/disablesRecorder; no restart/T0/retry.
+Archive enabled/activeactualrecurrence; fiveOSunitsmasked/inactive, normalauthority
+restoration pending. Pre-startdaemonreload shifted relativeOnActive deadline;
+newabsoluteCalendar expiry08:52:46UTC armed/verified BEFORE cancellingoldtimer,
+retainingoriginalwindow bound/no maintenanceactivation/unchangedprocessT0. Final
+review must assess recorded correction. Controlled RESTORED precedes cancelling
+binance-recorder-q3-formal-quiet-absolute-expiry.timer; no extension. Q3COMPLETE
+forcurrent2h;Q4RUNNING/no target/final/credit. Current2hpeak root14.77GiB>hard10,
+future38hpeak8.26GiB fails reserve: latergates useactual2hdata/reforecast, R078OPEN.
+See docs/milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md. Next actualtarget,
+stop/disable/drain/pause/bothLIVEterminal/completed/independentreview. Do not start12h.
 
 Old metadata/archive, failed attempts and unpublished143362-chunk baseline
 remain retained; R-078 stays OPEN. Do not reset the new corpus, physically delete

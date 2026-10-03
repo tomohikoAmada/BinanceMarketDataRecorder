@@ -2,8 +2,8 @@
 
 Frozen runtime remains cf3909e9/tree2ac585d0, wheel7e15bbd9… and identityeacada17….
 All14 auxiliary flags and Spot/USD-M BTCUSDT/ETHUSDT remain unchanged.
-Q3 is PARTIAL_NOT_ACCEPTED until the authoritative baseline and fresh readiness.
-Formal2h has not started; duration credit0;12H_STARTED=NO;PRODUCTION_READY=NO.
+Q3 is COMPLETE for current2h admission. Formal2h is RUNNING from10:49:23 Shanghai;
+no target/final/duration credit;12H_STARTED=NO;PRODUCTION_READY=NO.
 
 ## Completed real cloud gates
 
@@ -145,3 +145,33 @@ Next: actual post-warm-up baseline/both LIVE/completed verify, strict fresh
 core4/aux26 readiness and one Formal2h. Target stop/disable, verified drain,
 terminal both LIVE/completed verification and independent review remain required.
 Stop before12h.
+
+## Authoritative baseline completion and Formal start
+
+Actual baseline/both LIVE/completed verify PASS, root564beacd02c3b22488644ed5724b61bfa6ff97883060efe76f1b811b0ed1ebff,
+27908records/59shards. Native start02:22:47.860167/end02:43:55.742026UTC,
+wall1267.881859s/CPU1266.877s/cgroup457.3MiB/swap0; completedverify18.179007s.
+Independent frozen reconstruction2.272s ACCEPT/zeroRaw/network/production access,
+report SHAd6d084fd752feccb396d668057e1fc8bb659ed6c93f257a98204af9c6c67ed23,
+identity SHA86988e936ad28ad4bed3077ad65ac11c9675dcb1923f6fbeb9d5c921c7664cd0.
+Control bundle7514136B SHA225ab17ec68ad02eb72b22b031712b8026b08b7235fe68a4c8a72acdb41bf495.
+Fresh strictcore4/aux26/deployment PASS; archive actual recurrence restored.
+
+Formal stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, start SHA28a7e70291b72eb5d9f15fdd7cc9522db178964b2c1aa5a002da78e6fc5d110a,
+T0 utc_ns1790995763451078019, UTC02:49:23.451/Shanghai10:49:23.451;
+minimumtarget04:49:23UTC/12:49:23Shanghai. RecorderPID43133/invocationf832d492593041bb83a8f8ce4e2c5c1a,
+observerinvocationf333ae73277543258ce1400d5bf18380, no restarts at pre-start.
+NativeRuntimeMax9000/TimeoutStop150, reviewed strict ExecStopPost stops/disables
+Recorder on every exit;30s sampler and5min read-only Luna monitor active.
+No target/final/credit yet. No12h.
+
+Pre-start enable/daemon-reload shifted the relative OnActive expiry from its
+original deadline. Original receipt is retained. At02:52UTC an absolute calendar
+expiry08:52:46UTC was armed/verified BEFORE cancelling the relative timer,
+preserving original08:52:47 cutoff without changing Recorder/observer/T0.
+Five OS units stayed masked/inactive with no maintenance activation. Actual
+`quiet-window-absolute-expiry-correction.json` binds timer/process/start/boot values.
+Final independent eligibility review must assess this operator correction; no
+eligibility is inferred here. Controlled RESTORED precedes cancellation of
+`binance-recorder-q3-formal-quiet-absolute-expiry.timer`. Future finite windows must
+use absolute cutoff scheduling, so daemon-reload cannot silently extend them.

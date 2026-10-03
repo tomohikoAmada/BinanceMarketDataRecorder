@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026 after all-enabled warm-up ACCEPT; authoritative baseline running.
+Updated October3,2026 after authoritative baseline ACCEPT and actual Formal2h start.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -75,16 +75,25 @@ successful exit02:01:55 UTC stopped/disabled Recorder. Current1640 chunks and
 archive transactions allLOCAL_DELETED,5218930 frames/264215358 stored bytes/
 3980726667 uncompressed bytes; Catalogok/0partials. All14 flags unchanged.
 
-Fresh apt update/zero pending/empty dpkg audit and locks/no reboot and deployment
-reverify PASS. Archive paused timer-first after worker natural success. Five OS
-units masked-runtime/inactive under actual finite390min expiry armed BEFORE masks;
-negative activation PASS. Window02:22:47–08:52:47 UTC; controlled restoration
-must prove RESTORED before stopping timer; no extension/restart. Current native
-`binance-recorder-q3-post-warmup-baseline.service`, invocation
-1a401460138b49c19ada13c96a09c67e, publishes a new authoritative
-`Formal2h/baseline`, both LIVE and completed verify. It is RUNNING, not PASS;
-no total audit cap/native900s no-progress. Recorder inactive AND disabled,
-archive paused; economical read-only monitoring active. No Formal T0.
+Authoritative1640-chunk post-warm-up baseline COMPLETE/PASS, root564beacd…ed1ebff,
+27908 records/59 shards, both LIVE/completed verify and independent frozen-control
+ACCEPT. Actual wall21m7.882s/CPU1266.877s/cgroup457.3MiB/swap0. Fresh exact deployment,
+core4 and strict aux26 readiness PASS. Archive resumed with actual recurrence.
+Recorder enabled/running Formal2h, PID43133/invocationf832d492593041bb83a8f8ce4e2c5c1a,
+service instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d, NRestarts0 at pre-start.
+Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`; native observer invocation
+f333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451/Shanghai10:49:23.451,
+earliest2h target04:49:23UTC/12:49:23Shanghai; no target/final/credit yet.
+Native30s resource sampler/5min Luna read-only monitor active. Reviewed ExecStopPost
+binds strict auxiliary target then stops/disables Recorder on every observer exit.
+
+Five OS units stay masked-runtime/inactive under original finite window. Pre-start
+enable/daemon-reload shifted the relative OnActive expiry; actual receipt retained.
+Absolute calendar timer `binance-recorder-q3-formal-quiet-absolute-expiry.timer`
+was armed/verified for08:52:46UTC BEFORE stopping the relative timer, preserving
+original cutoff08:52:47 and unchanged Recorder/observer/T0. No maintenance activation
+or original window extension. Final review includes this operation; controlled
+RESTORED must precede cancellation of the absolute timer. No repeat/start12h.
 
 Independent resource/forecast admission ACCEPT for current2h:~600MiB summed
 process RSS, busy17.4%, steal0.886%, swap0; both LIVE full terminal forecast
@@ -123,13 +132,14 @@ Keep the failed record and all capture. Implement/review a minimal startup-bound
 correction before repeating affected release/cloud gates; do not repeat unchanged.
 
 ```text
-Q3=PARTIAL_NOT_ACCEPTED
-FORMAL_V5_STARTED=NO
+Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION
+FORMAL_V5_STARTED=YES
 FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=COMPLETE_RUNNING_POST_WARMUP_BASELINE_THEN_FRESH_READINESS_AND_FORMAL2H
+Q4=RUNNING_PENDING_TARGET_AND_TERMINAL_AUDIT
+NEXT=ACTUAL_2H_TARGET_STOP_DRAIN_BOTH_LIVE_TERMINAL_VERIFY_AND_INDEPENDENT_REVIEW
 ```
 
 ## Retained custody and evidence
