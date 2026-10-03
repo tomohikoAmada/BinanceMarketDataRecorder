@@ -1,28 +1,24 @@
 # Risk Register
 
-Updated October2,2026. Restored SSH after the owner's local VPN/proxy correction.
-Exact independently accepted605bc16 is installed/verified;1970 local tests,
-exact-source dual-platform CI, clean locked wheel and112 cloud V5 tests PASS.
-1182 retained new chunks are archived; Recorder inactive AND disabled. Source605
-engineering baseline/completed verify passed on697 with both LIVE passes, but
-actual catch-up failed a sparse initial-process boundary. ADR-0038 source is
-independently accepted with1991 offline tests; new release/cloud gates remain.
-Earlier source48 baseline/completed verify PASS on637 chunks.
-Actual all-enabled throughput/catch-up and cumulative forecasts remain OPEN.
-Original nonformal failures and historical R-078 retain their dispositions.
-Owner resumes through completed Formal2h, stopping before12h.
+Updated October3,2026. Exact cf3909e9 release/deployment/engineering both LIVE/
+completed verify and independent frozen controls PASS. Actual all-enabled warm-up/
+convergence and independent current2h resource/forecast admission ACCEPT. Recorder
+inactive AND disabled;1640 chunks archived, Catalogok/0partials. Authoritative
+post-warm-up baseline runs under finite390min quiet expiry08:52:47UTC. No Formal
+T0/credit; owner continues through reviewed2h before12h. Retained failures and
+R-078 stay OPEN/time-local. [Actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 
 ## Current follow-up
 
 | Risk | Current control and evidence | Remaining work |
 |---|---|---|
 | R-076: ordinary observations grow with historical corpus | V5 uses bounded durable deltas; implementation review and offline gates passed | Complete production qualification |
-| Sparse initial WS boundary |605bc16 failed nonformal catch-up on a pre-T0-connected sparse liquidation stream's first post-T0 payload; ADR-0038 records an authentic initial boundary without relaxing the classifier | New exact review/release/cloud gates; no unchanged repeat |
+| Sparse initial WS boundary |605bc16 failed nonformal catch-up on a pre-T0-connected sparse liquidation stream's first post-T0 payload; ADR-0038 records an authentic initial boundary without relaxing the classifier | Exact cf3909e9 review/release/cloud and actual warm-up ACCEPT; preserve failures, finish Formal qualification |
 | Very long consecutive WS failure backoff | Offline unlimited-failure fixture exposes existing exponent OverflowError at1025 failures before the configured cap can apply; separate from the observed startup failure | Proportionate bounded-exponent follow-up; no claim that these attempts occurred on the VPS |
 | R-077: incomplete or inconsistent terminal authority | Private manifest freeze, Catalog snapshot, causal replay and independent verification are implemented and reviewed | Complete baseline and terminal production verification |
 | R-078: full Raw/archive audit takes too long | Production baseline stopped after more than 14 hours, with 87,423 of 143,362 first-pass records published | Assess full-audit practicality and qualification scope; P2 remains open pending complete measurements and independent review |
 | R-034: Spot bootstrap source conflict | ADR-0011 retains exact Raw and the `lastUpdateId + 1` interpretation; offline evaluator compares boundaries | Resolve normative-source conflict before changing that behavior |
-| Long-run resources and capacity | Historical bounded measurements and current partial audit samples are retained | Measure memory, queues, archive backlog and capacity for the selected artifact/profile |
+| Long-run resources and capacity | Historical bounded measurements and current partial audit samples are retained | Current2h actual admission ACCEPT;38h sustained peak/staging scenario below10GiB reserve, reforecast from actual2h before later stages |
 | Auxiliary REST availability | Shared stop-aware USD-M cooldown and explicit side-data gaps | Cooldown is process-local; live auxiliary coverage remains incomplete |
 | Portable archive rollout | Transfer, receipt binding and verified source retirement are implemented | Complete chosen client/platform and external-media certification |
 
@@ -54,7 +50,7 @@ and the [sequenced remediation plan](qualification_to_24h_plan.md).
 
 | Finding | Priority / evidence | Planned control |
 |---|---|---|
-| F1: V5 online service capacity below four-product row arrival | P1; original Q3 byte starvation/causal error preserved; ADR-0037 exact shared v2 representation and strict boundaries independently accepted at c87d580 | Actual all-enabled cloud throughput/catch-up gate OPEN; measure before T0 |
+| F1: V5 online service capacity below four-product row arrival | P1; original Q3 byte starvation/causal error preserved; ADR-0037 exact shared v2 representation and strict boundaries independently accepted at c87d580 | Actual cf3909e9 all-enabled normal/missed/catch-up independent ACCEPT; Formal qualification remains |
 | F2: failed heartbeat leaves collectors running and normal shutdown status | P1; Q1 guard/wait/drain regressions pass across startup/recovery/running/drain, including real store failure | Q2 review ACCEPT; exact reviewed artifact deployed in Q3 |
 | F3: normalized keys omit product/stream identity in some event kinds | P1; Q1 namespaces all candidates and versions new build identity; old/new replay compatibility passes | ADR-0036 review ACCEPT; explicit rebuild needed for corrected derived results |
 | F4: normalization merge opens every run concurrently | P2; 40 runs retain 40 readers | Offline follow-up after 38h qualification: bounded hierarchical fan-in |
@@ -144,3 +140,20 @@ disabled,1182 chunks archived, Catalogok/0partials, archive/OS authority restore
 Measured live resource records do not establish a hardware bottleneck: Recorder
 RSS peak269643776B, minMemAvailable4869464064B, swap0, aggregate steal1.715%,
 iowait0.516% over1443.562s. These are this nonformal window, not a38h certificate.
+
+## October3 current cloud disposition
+
+ADR-0038 corrected sparse initial startup boundary passes actual all-enabled
+normal/missed/catch-up; earlier OPEN section records its time-local failure.
+Private discontinuity-array error is minimally corrected and exact release plus
+engineering both LIVE/verify PASS. Current Q3 resource/forecast admission ACCEPT,
+no Formal credit. Two durable empty responses recover~5s with correct cursors;
+all26 owners pass strict/phase gates, failures2 retained. No arbitrary native
+rewrite or hardware upgrade is supported by current17.4%busy/~600MiB summedRSS/
+swap0 measurements. The2h forecast includes all retained new corpus, both LIVE
+passes and explicit sealed/compression staging; peak root14.77GiB>10GiB.
+The38h sustained observed-peak/staging scenario leaves8.26GiB<10GiB; it cannot
+qualify future capacity. Audit scenarios14h289/700min and38h730/1829min may be
+impractical; R-078 stays OPEN. Recompute from actual2h terminal/time/backlog/
+staging and resolve the relevant later-stage gate before12h/24h, preserving Raw
+and reserve-stop behavior. Current finite quiet window is not automatically extended.

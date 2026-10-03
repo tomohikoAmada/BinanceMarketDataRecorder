@@ -42,11 +42,14 @@ dual-platform CI37083270715, clean locked wheel and cloud168 affected tests PASS
 the stopped deployment script has independent static ACCEPT and actual deployment
 verification PASS. Fresh1182-chunk engineering baseline/both LIVE/completed verify
 PASS, root422b1436…; wall18m20s/CPU1109.493s/cgroup memory328MiB/swap0.
-Strict core4+aux26 readiness and actual archive recurrence PASS; NONFORMAL
-warm-up and30s resource sampling are running. No warm-up completion yet.
+Strict core4+aux26 readiness/archive recurrence PASS; actual NONFORMAL warm-up
+and independent chain/config/resource/forecast review ACCEPT. Pending140 clears
+to0 during continued capture; complete normal/missed/catch-up25.511/32.775/30.171s.
+New authoritative1640-chunk post-warm-up baseline is RUNNING under verified390min
+quiet window, expiry08:52:47 UTC. See the [actual cloud gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
-sparse-startup failure earns zero credit. Actual convergence/forecasts and the
-post-warm-up authoritative baseline remain required; no Formal T0.
+sparse-startup failure earns zero credit. Convergence/current2h forecast admission now PASS; the authoritative baseline
+and fresh strict readiness remain required, no Formal T0.
 Current-chat hourly continuation is active; historical automations paused.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 Candidate `7877082` improves scanner/status and declares bounded delta batches;
@@ -96,7 +99,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; corrected cf3909e9 installed/VERIFIED with independent review/dual-platform CI/cloud168/locked-wheel PASS; fresh1182-chunk engineering baseline/both LIVE/completed verify PASS; failed attempts retained; strict core4/aux26+archive recurrence PASS and NONFORMAL warm-up running; convergence/forecasts/post-warm-up baseline/readiness remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; corrected cf3909e9 installed/VERIFIED with independent review/dual-platform CI/cloud168/locked-wheel PASS; fresh1182-chunk engineering baseline/both LIVE/completed verify PASS; failed attempts retained; strict core4/aux26+archive recurrence and actual all-enabled warm-up/independent resource-forecast admission PASS; authoritative1640-chunk post-warm-up baseline RUNNING, fresh readiness remains |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -197,7 +200,7 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [x] Install/verify the exact corrected cf3909e9 wheel in canonical paths, retaining prior identity/venv.
 - [x] Pass corrected1182-chunk engineering baseline/both LIVE/completed verify, root422b1436…; retain both failed attempts.
 - [x] Confirm actual automatic archive recurrence and strict core4/aux26 readiness before NONFORMAL warm-up; this grants no Formal credit.
-- [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
+- [x] Pass actual all-enabled normal/missed/catch-up and independently reviewed resource/cumulative forecast admission for current2h; future38h sustained-peak/staging capacity scenario fails reserve and remains a later gate.
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.
 
@@ -269,6 +272,16 @@ Catalog/evidence authority. Only then benchmark an isolated Go/C++/Rust scanner
 if residual parser/object CPU dominates. Hardware changes require evidence of
 CPU/steal, RAM/swap/PSI or I/O limits. No fixed speedup or server sufficiency is
 claimed. Review/freeze any change and repeat affected gates before Formal T0.
+
+October3 actual forecast limitation: full audits include both LIVE passes and
+completed verification; current2h mean66min/observed-peak130min. Later14/38h
+estimates289/700min and730/1829min respectively are schedule scenarios, not
+qualification. Explicit sealed-backlog and observed-max compression staging
+allowances leave2hpeak14.77GiB above10GiB reserve, but38hpeak8.26GiB below it.
+Before12h or24h, use actual2h terminal cost, ingestion/backlog/staging and all
+additional retained capture to reforecast; resolve a failed relevant capacity/
+practicality gate before that stage. Keep R-078 OPEN; no speculative rewrite or
+server upgrade in the current2h scope.
 
 ### Q4–Q6 — Three separately eligible stages
 

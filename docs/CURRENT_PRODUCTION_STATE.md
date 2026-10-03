@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026 after engineering PASS, strict readiness and NONFORMAL warm-up start.
+Updated October3,2026 after all-enabled warm-up ACCEPT; authoritative baseline running.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -62,24 +62,36 @@ invocation553523c11dc1486a8a8e92a3a8b96f85, completed PASS with both LIVE passes
 and completed verification. Root422b14368787746f41be8447c421810ee42fffe07915561a25c98cefdb30ad1e,
 20118 records/42 shards,1182 manifests/Raw locations,0 blockers/0 Formal credit.
 Actual wall18m20s (baseline18m05s plus verify15s), CPU1109.493s, cgroup memory
-peak328MiB including cache, swap0. Independent local frozen-control review is
-running; this engineering predecessor does not replace the post-warm-up baseline. See the
+peak328MiB including cache, swap0. Independent local frozen-control review ACCEPT; this engineering predecessor does not replace the post-warm-up baseline. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current operation and gates
 
-Recorder is enabled/running ONLY for NONFORMAL warm-up, MainPID37218,
-invocation756c109fa6ae4a128048e8683387c42f, Resultsuccess/NRestarts0 at start.
-The stopped engineering input had1182 chunks/transactions all
-LOCAL_DELETED;4762557 frames,238437460 stored bytes,3624723275 uncompressed
-bytes, Catalogok/0partials/backlog. The corpus is now growing; live-owned partials
-are expected during capture. Archive timer is enabled/active with a finite actual
-future deadline; fresh automatic trigger01:40:04 UTC and successful worker
-exit01:40:13 establish recurrence. Strict core4+aux26 readiness PASS before
-NONFORMAL warm-up invocationf1c8e255a89d4a5b85fc65e191599e91. The30s sampler
-invocation823b24e87a3a477aba0aff86685d5b18 is active. Warm-up ExecStopPost stops
-and disables Recorder on every exit; deadline7200s/RuntimeMax7800s, no retry.
-Normal OS updates remain restored. All14 flags remain true; no Formal T0/credit.
+All-enabled NONFORMAL warm-up COMPLETE/independent ACCEPT; normal25.511s,
+missed32.775s/pending140, catch-up30.171s/pending0, no blockers/recovering/backlog.
+Strict pre-start26 and all phase checks PASS, four products ready. Two recorded
+empty REST responses recover~5s later; cumulative failures2 retained. Native
+successful exit02:01:55 UTC stopped/disabled Recorder. Current1640 chunks and
+archive transactions allLOCAL_DELETED,5218930 frames/264215358 stored bytes/
+3980726667 uncompressed bytes; Catalogok/0partials. All14 flags unchanged.
+
+Fresh apt update/zero pending/empty dpkg audit and locks/no reboot and deployment
+reverify PASS. Archive paused timer-first after worker natural success. Five OS
+units masked-runtime/inactive under actual finite390min expiry armed BEFORE masks;
+negative activation PASS. Window02:22:47–08:52:47 UTC; controlled restoration
+must prove RESTORED before stopping timer; no extension/restart. Current native
+`binance-recorder-q3-post-warmup-baseline.service`, invocation
+1a401460138b49c19ada13c96a09c67e, publishes a new authoritative
+`Formal2h/baseline`, both LIVE and completed verify. It is RUNNING, not PASS;
+no total audit cap/native900s no-progress. Recorder inactive AND disabled,
+archive paused; economical read-only monitoring active. No Formal T0.
+
+Independent resource/forecast admission ACCEPT for current2h:~600MiB summed
+process RSS, busy17.4%, steal0.886%, swap0; both LIVE full terminal forecast
+66min mean/130min sustained observed peak scenario. Additional sealed/staging
+budget leaves2hpeak14.77GiB>hard10GiB, but38hpeak8.26GiB falls below reserve;
+future stages require actual2h rates/backlog/staging reforecast. No38h certificate.
+Details/hashes/limits: [actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 
 New exact4e1cf32 engineering attempt2 FAILED16:40:53 UTC before publication,
 unit `binance-recorder-q3-startup-engineering-baseline-2.service`, invocation
@@ -117,7 +129,7 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=COMPLETE_ALL_ENABLED_WARMUP_AND_FORECASTS_THEN_POST_WARMUP_BASELINE
+NEXT=COMPLETE_RUNNING_POST_WARMUP_BASELINE_THEN_FRESH_READINESS_AND_FORMAL2H
 ```
 
 ## Retained custody and evidence

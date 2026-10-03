@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 after engineering PASS and NONFORMAL warm-up start. This is the current entry point.
+Updated October3,2026 after independently accepted all-enabled warm-up; authoritative baseline running. This is the current entry point.
 
 ## Current code and authorization
 
@@ -36,18 +36,25 @@ Installed wheel7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
 identityeacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc,
 release `/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB`.
 Actual canonical root-control/130 RECORD/28 dependencies verification PASS.
-Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Corrected engineering baseline on1182
-archived chunks PASS, root422b14368787746f41be8447c421810ee42fffe07915561a25c98cefdb30ad1e;
-20118 records/42 shards, both LIVE/completed verify,0 blockers/0 credit. Actual
-wall18m20s, CPU1109.493s, cgroup/cache328MiB, swap0. Independent local frozen
-control review is running. Prior stopped Catalogok/0partials/backlog.
-Recorder enabled/running ONLY for NONFORMAL warm-up, PID37218/invocation
-756c109fa6ae4a128048e8683387c42f, NRestarts0 at start; live corpus grows.
-Strict core4+aux26 readiness PASS. Archive enabled/active actual automatic
-01:40:04 trigger/01:40:13 successful worker exit PASS; normal OS authority restored.
-Warm-up unit invocationf1c8e255a89d4a5b85fc65e191599e91 and30s sampler
-823b24e87a3a477aba0aff86685d5b18 run economical monitoring. Warm-up exit always
-stops/disables Recorder;7200s diagnostic deadline/7800s unit limit, no automatic retry.
+Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Engineering1182-chunk baseline/both LIVE/completed verify PASS and independent frozen-control ACCEPT. All-enabled NONFORMAL warm-up COMPLETE: normal25.511s/missed32.775s/catch-up30.171s, pending140→0 under ongoing input, no blockers, core4/aux26 PASS. Two durable empty REST responses recovered after~5s; cumulative failures2 retained. Independent actual chain/config/resources/forecast/helper review ACCEPT, no Formal credit.
+
+Recorder inactive AND disabled;1640 chunks/transactions LOCAL_DELETED,
+5218930 frames, Catalogok/0partials/backlog. Archive timer-first pause and natural
+worker success protect the new baseline. Fresh apt update/zero pending/empty
+dpkg audit and locks/no reboot plus deployment identity reverify PASS.
+Finite390min quiet expiry armed before five runtime masks; actual negative
+activation/mask/lock gates PASS,02:22:47–08:52:47 UTC (10:22:47–16:52:47 Shanghai).
+Authoritative `Formal2h/baseline` runs in
+`binance-recorder-q3-post-warmup-baseline.service`, invocation
+1a401460138b49c19ada13c96a09c67e. No total audit cap; native900s no-progress remains.
+Economical read-only monitor active; no Formal T0.
+
+Actual combined summed RSS~600MiB, busy17.4%, swap0. Both LIVE full-audit
+forecasts mean/peak:2h66/130min,14h289/700min,38h730/1829min. Root budget
+with additional sealed/staging scenario leaves2hpeak14.77GiB>10GiB;38hpeak8.26GiB
+falls below reserve, so future stages require actual2h remeasurement/forecast.
+No hardware/language change or future38h capacity certificate. See the
+[actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
 
 New exact4e1cf32 engineering attempt2 FAILED at16:40:53 UTC before publication
 or completed verification, unit `binance-recorder-q3-startup-engineering-baseline-2.service`,
@@ -70,15 +77,11 @@ capture remain retained; ADR-0038 now records authentic zero-frame startup
 boundaries and durable forced flags before any socket, without relaxing replay.
 Prior605bc16 canonical venv/identity/release stay inert custody.
 
-Next after successful new engineering predecessor: restore/verify archive
-recurrence; strict fresh core4/aux26 readiness; actual all-enabled normal/missed/
-catch-up convergence, resource/cumulative audit/capacity forecasts. Then stop/
-disable, drain/pause and publish authoritative post-warm-up baseline under a
-measured finite quiet window. Fresh strict readiness precedes one Formal2h.
-At target stop/disable, drain/pause, both full LIVE terminal passes, completed
-verification and independent eligibility review. Restore archive/OS authority
-and stop before12h. Never reset the growing corpus or delete unique evidence.
-No Formal T0/target/final or duration credit exists; Q3=PARTIAL_NOT_ACCEPTED.
+Next: complete the running authoritative post-warm-up baseline/both LIVE/completed
+verify, fresh strict core4/aux26 readiness, then one Formal2h. At target stop/
+disable, drain/pause, both full LIVE terminal passes, completed verification and
+independent eligibility review. Restore archive/OS authority and stop before12h.
+No new corpus reset or unique deletion. Q3=PARTIAL_NOT_ACCEPTED;0 Formal credit.
 
 Current-chat task `vps-2h` checks actual quota and existing work once per hour.
 If work is advancing, end the check without intervening. Resume idle work only

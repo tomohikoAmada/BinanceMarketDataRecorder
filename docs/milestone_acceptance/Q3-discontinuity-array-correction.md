@@ -207,3 +207,14 @@ Seven pure mocks/AST PASS. Controlled exit restores and proves RESTORED before
 cancelling the expiry timer, retaining protection across a connection/quota loss.
 The finite window/timer is NOT active yet; its length must bind actual measured
 complete audits and new ingestion forecasts. No persistent masks/automatic extension.
+
+## October3 actual all-enabled gate continuation
+
+Engineering frozen-control review ACCEPT; actual warm-up completes with pending140
+cleared to0 and core4/aux26 PASS. Independent resource/forecast/helper admission
+ACCEPT for current2h.1640 chunks retained/archived, Recorder stopped/disabled.
+Authoritative post-warm-up baseline is RUNNING under verified390min quiet expiry
+08:52:47UTC. Formal not started/0credit. Current limits and hashes are in the
+[actual cloud gate](Q3-all-enabled-cloud-gate-20261003.md); future38h peak/staging
+capacity scenario below hard reserve is not certified. Earlier RUNNING/pending
+statements above retain their original checkpoint meanings.
