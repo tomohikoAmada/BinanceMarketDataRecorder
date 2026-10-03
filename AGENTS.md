@@ -23,6 +23,18 @@ The project uses its own branding and author-controlled service namespaces.
 
 ## Project goal and current checkpoint
 
+Post-Q4 owner task: repair Spot snapshot idle starvation and assess2h rerun.
+Corrected source23ea5c4 has local1998 PASS/independent GPT-6.1 Sol xhigh
+LOCAL/OFFLINE ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994),
+including locked production dependency identity/build/clean-wheel checks. Installed
+cf3909e9/identityeacada17 and its genuine Q4 PASS below are unchanged by this
+local work. Corrected production source requires new frozen wheel/identity,
+affected release/Q3 gates and its own reviewed Formal2h before12h: the current
+38h plan and V5 predecessor checks require identical deployment identity.
+Retain the growing corpus and old evidence; do not transfer credit, relax the
+identity check, start a VPS rerun or resume paused automations from this fix/
+analysis request. See docs/milestone_acceptance/Q4-spot-idle-correction.md.
+
 Build a stateful Python 3.12 recorder for Binance public market data. The
 production target is Ubuntu 24.04 x86_64 with a non-root systemd service;
 macOS Apple Silicon is the development/local profile, and Ubuntu ARM64/RK3588

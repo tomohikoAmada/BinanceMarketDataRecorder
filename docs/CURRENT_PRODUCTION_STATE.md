@@ -1,10 +1,20 @@
 # Current Production State
 
-Updated October3,2026 after reviewed eligible2h and actual restored normal authority.
-The owner identified the access problem as local VPN/proxy and authorizes
-continuation through reviewed eligible Formal2h, stopping before12h.
+Updated October3,2026 after the local Spot idle source correction and rerun analysis.
+Cloud entries below retain the last verified original2h/restored-authority
+checkpoint. Current work does not start cloud qualification.
 
 ## Installed artifact
+
+Post-Q4 local correction: source23ea5c4 fixes Spot snapshot idle starvation;
+local1998 PASS/independent GPT-6.1 Sol xhigh LOCAL/OFFLINE ACCEPT, exact
+CI37130186751 BOTH PASS (macOS1998/Ubuntu1994), build/clean-wheel/locked Linux
+dependency identity PASS. No VPS operation was performed in this scope:
+the installed values and stopped/disabled handoff below remain the last verified
+cloud checkpoint. The corrected wheel/deployment/cloud qualification are not
+started. A corrected deployment needs its own reviewed Formal2h before12h;
+original cf3909e9 PASS is retained and cannot transfer across identities.
+See [correction and decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
 | Item | Current verified value |
 |---|---|
@@ -145,9 +155,11 @@ FORMAL_V5_STARTED=YES
 FORMAL_V5_CREDIT_SECONDS=7200.002178843
 12H_STARTED=NO
 PRODUCTION_READY=NO
-OWNER_WORK_STATE=COMPLETED_REVIEWED_2H_STOPPED_BEFORE_12H
-Q4=PASS_REVIEWED_ELIGIBLE
-NEXT=Q5_FRESH_CAPACITY_SCHEDULE_ADMISSION_THEN_OWNER_CONTROLLED_12H
+OWNER_WORK_STATE=POST_Q4_LOCAL_SPOT_IDLE_FIX_AND_RERUN_ANALYSIS
+Q4=PASS_REVIEWED_ELIGIBLE_FOR_INSTALLED_CF3909E9_ONLY
+CORRECTED_ARTIFACT_FORMAL_CREDIT_SECONDS=0
+CORRECTED_ARTIFACT_CLOUD_TESTS_STARTED=NO
+NEXT=CORRECTED_RELEASE_GATES_THEN_Q3_AND_OWN_FORMAL2H_BEFORE_Q5
 ```
 
 ## Retained custody and evidence

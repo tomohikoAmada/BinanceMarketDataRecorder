@@ -12,6 +12,17 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
+Post-closeout correction: the owner now requests the Spot snapshot idle fix and
+its2h rerun analysis. Source23ea5c4 has local1998 PASS and independent GPT-6.1
+Sol xhigh LOCAL/OFFLINE ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994)
+including build/clean-wheel/locked Linux dependency identity.
+The corrected artifact has no cloud deployment or Formal credit. Before Q5,
+complete affected replacement release/Q3 gates and a new reviewed Formal2h:
+the plan and V5 predecessor check require the same deployment identity across
+the chain. Preserve the growing corpus and original cf3909e9 Q4 PASS as evidence
+for that artifact. No VPS rerun or automation resume is started by this local
+fix/analysis scope. See [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
+
 Done means **Formal 2h + 12h + 24h**, each independently verified and reviewed
 eligible, on the same frozen artifact/profile and growing corpus lineage:
 at least **136,800 accepted target seconds (38h)**. This is three stages, with
@@ -26,7 +37,7 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Q0–Q4 are COMPLETE for the current2h scope. Frozen sourcecf3909e9/tree2ac585d0,
+Q0–Q4 are COMPLETE for the original installed cf3909e9 2h scope. Frozen sourcecf3909e9/tree2ac585d0,
 wheel7e15bbd9… and identityeacada17… have independent startup/private-array/CI
 supplements ACCEPT, exact-source CI37083270715 PASS on both platforms, clean
 locked wheel/cloud168/deployment gates PASS. All14 auxiliary flags and four
@@ -48,9 +59,10 @@ controlled quiet-window exit; no corpus reset/unique deletion. Earlier failed
 attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
-The latest authorized execution ends here, before12h. Current-chat hourly
+The latest live execution ended here, before12h. Current-chat hourly
 continuation `vps-2h` is PAUSED after completed recordcdc616e was pushed;
-historical tasks stay paused. Q5/Q6 remain NOT_STARTED, accepted2h/38h. Actual2h audit scaling gives
+historical tasks stay paused. Q5/Q6 remain NOT_STARTED; original artifact accepted2h/38h,
+corrected artifact0/38h. Actual2h audit scaling gives
 advisory full-audit mean/observed-peak scenarios14h152/361min and38h386/1007min.
 Before later T0 reforecast actual reserve/temp/staging/backlog/retained controls
 and practical finite audit windows; prior38hpeak reserve scenario failed and is
@@ -79,10 +91,10 @@ or speculative service split. Heavy normalization/replay stays offline.
 |---|---|---|
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
-| Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; current2h live admission PASS, future capacity remains a later gate |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for current2h admission; exactcf3909e9/CI/cloud/wheel/deployment, engineering, actual all-enabled warm-up/independent resources/forecast and authoritative1640 baseline/both LIVE/verify/independent ACCEPT; fresh strictcore4/aux26 PASS; future38h capacity remains a later gate |
-| Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS; actual7200.002178843s, both LIVE/verify/independent eligibility and restored handoff ACCEPT; finalc81a37ea…/3868chunks/65834records/139shards; actualwall34m22.051s |
-| Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
+| Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; frozen replacement artifact and affected cloud release gates remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/affected warm-up/new identity-bound baseline NOT_STARTED; retain existing corpus and reforecast actual larger audit scope |
+| Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact requires own reviewed2h, NOT_STARTED |
+| Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
 ### Q1 — Fix known behavior with existing structures

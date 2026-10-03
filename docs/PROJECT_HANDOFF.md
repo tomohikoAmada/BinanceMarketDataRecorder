@@ -1,8 +1,21 @@
 # Project Handoff
 
-Updated October3,2026 after reviewed eligible Formal2h and restored normal authority. This is the current entry point.
+Updated October3,2026 after the post-Q4 Spot idle source fix and rerun analysis.
+The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
+
+Latest owner scope is the post-Q4 Spot idle fix and2h rerun analysis. Corrected
+source23ea5c4: full local1998 PASS and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE
+ACCEPT; exact CI37130186751 BOTH PASS (macOS1998/Ubuntu1994), including build/
+clean-wheel/locked Linux dependency identity. The fix reclaims the
+exact awaited snapshot workers instead of starving their queued callbacks.
+No replacement is deployed. Installed cf3909e9 and its genuine reviewed Q4 PASS
+remain recorded below; corrected source cannot inherit its identity/2h credit.
+Before12h the replacement needs affected release/Q3 gates and its own reviewed
+Formal2h on the retained growing corpus. This owner request authorizes the fix
+and analysis; no cloud test, new T0 or automation resume is performed here.
+See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
 Only local/remote main remains, with no open PR. Preserve unrelated stash,
 untracked bundles and detached historical worktrees. Frozen installed runtime
@@ -106,8 +119,10 @@ capture remain retained; ADR-0038 now records authentic zero-frame startup
 boundaries and durable forced flags before any socket, without relaxing replay.
 Prior605bc16 canonical venv/identity/release stay inert custody.
 
-Next owner-controlled milestone is Q5 after fresh capacity/schedule admission;
-this execution is complete and stops before12h. Q0–Q4 COMPLETE; accepted2h only,
+Next owner-controlled cloud work is corrected release/Q3 and a new Formal2h,
+before Q5, with fresh capacity/schedule admission. Original Q0–Q4 COMPLETE for
+cf3909e9; its accepted2h is not corrected-artifact credit. This local correction
+and analysis does not start cloud qualification;
 12H_STARTED=NO;24H_STARTED=NO;QUALIFICATION_38H=NOT_COMPLETE;PRODUCTION_READY=NO.
 Current-chat hourly continuation `vps-2h` is PAUSED after completed recordcdc616e
 was pushed; the hourly rule/prompt are retained.
@@ -160,8 +175,9 @@ Read these documents in order:
 
 ## Remaining work
 
-Q3 current-scope preparation and Q4 reviewed eligible2h are COMPLETE. The next
-Q5/12h requires fresh capacity/schedule admission; it is not started here. Each
+Original cf3909e9 Q3 preparation and Q4 reviewed eligible2h are COMPLETE.
+Corrected source23ea5c4 needs replacement cloud gates and a new reviewed2h before
+Q5/12h; those runs are not started here. Each
 gate's result must be evidenced;
 failed/incomplete time receives zero credit. Preserve both full LIVE audit
 passes and completed control verification. Old historical corpus performance
