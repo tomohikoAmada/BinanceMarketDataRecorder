@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026,15:30UTC during corrected-source cloud qualification.
+Updated October3,2026,16:36UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
@@ -22,14 +22,24 @@ venv/config/unit VERIFIED as bmdr. Old cf3909e9 venv retained in
 `/opt/binance-market-data-recorder/venv-custody-q4-spot-idle-cf3909e9-j6lzEApv/venv`;
 old identity retained in the new evidence scope. Archive restored, then its timer
 stopped and existing worker waited to natural success before engineering audit.
-Recorder remains inactiveANDdisabled/MainPID0/NRestarts0, all3868 chunks+archive
+Stopped deployment/engineering checkpoint: all3868 chunks+archive
 transactions LOCAL_DELETED/Catalogok/0partials; retained7612527frames/5842258936
 uncompressedB. Rootfree29398269952B/archivefree2101791215616B after new build/custody.
-Engineering baseline is RUNNING since15:26:10UTC, unit
-`binance-recorder-q4-spot-idle-engineering-baseline.service`, invocation
-5b66d9c272e846c8b165199bee434710. Both LIVE/completed verify still pending.
-Native progress watchdog remains authoritative; economical GPT-6 Luna Max
-read-only monitoring active. Warm-up/Formal NOT_STARTED, new Formal credit0.
+Engineering baseline COMPLETE/both LIVE/completed verify/independent GPT-6.1
+Sol xhigh LOCAL/OFFLINE ACCEPT, rootd983a3bb…189c996/65834records/138shards.
+Native wall2055.550707s/CPU2029.937691s/cgroup502411264B/swap0; independent
+historical reconstruction5.520s/Raw+network+productionopens0. Review
+[record](reviews/2026-10-04-spot-idle-engineering-independent-review.md).
+Archive actual recurrence16:31:44UTC/natural success/finite future deadline PASS.
+Recorder explicitly enabled/running since16:28UTC for NONFORMAL preparation,
+PID62625/invocation5125a437bdc9451a824937fbcfda3b16/NRestarts0, strictcore4/aux26PASS.
+Warm-up RUNNING since16:33:27UTC, unit
+`binance-recorder-q4-spot-idle-nonformal-warmup.service`, invocation
+32732ddea5834e32b83fc3eacb7b72fd. Start29.480s/immediate17.035s/no blockers;
+normal/missed/catch-up remain. Native exit always stop/disables Recorder;
+TimeoutStart7800s/innerBOOTTIMEdeadline7200s/no retry. Read-only30s resource sampler
+invocatione7323ef6d31b4b37939e385bcce49052. Full helper/identity policy unchanged.
+Formal NOT_STARTED/new credit0. All14 flags/four products/growing corpus retained.
 No12h/24h starts in this scope; old cf3909e9 PASS below is historical only.
 See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 

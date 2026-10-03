@@ -160,3 +160,26 @@ Engineering baseline is RUNNING since15:26:10UTC, unit
 5b66d9c272e846c8b165199bee434710. Both LIVE/completed verify still pending.
 Native progress watchdog remains authoritative; economical GPT-6 Luna Max
 read-only monitoring active. Warm-up/Formal NOT_STARTED, new Formal credit0.
+
+## Completed engineering review and actual NONFORMAL preparation
+
+Engineering rootd983a3bb6c8879fa1215a98ea0609088df60500df9b4f7b134041ff16189c996,
+65834 records/138shards, both LIVE and completed verification PASS. Native journal
+wall2055.550707s/CPU2029.937691s/cgroup502411264B/swap0. Independent guarded
+LOCAL/OFFLINE reconstruction5.520s ACCEPT, exact source/identity/authority/proofs,
+zero Raw/network/production opens/outside-private writes. Bundle17938937B
+SHA3d9428d78cdf4cc2d2e2c226964b3bb410a71df7c805e9c224bb598ea8bafbbd;
+[review](../reviews/2026-10-04-spot-idle-engineering-independent-review.md), report
+63839ec374ae8ce0bb55d730d9e7df58e96ac9c41dbf1cc6d5cb329daa3136ba.
+This baseline is an engineering predecessor, not the authoritative post-warm-up
+root. Old gap metadata/687 flagged-incomplete manifests/32 zero-frame chunks/
+eight paired arrays remain visible; no perfect historical capture claim.
+
+Archive actual automatic trigger16:31:44UTC/natural worker success/finite future
+deadline PASS. Recorder explicitly started16:28UTC for NONFORMAL preparation,
+PID62625/invocation5125a437bdc9451a824937fbcfda3b16/NRestarts0. Strict core4 and
+aux26/all14/four products PASS. Actual native warm-up starts16:33:27UTC, invocation
+32732ddea5834e32b83fc3eacb7b72fd; start29.479943884s/immediate17.034715997s,
+no blockers/pending/recovering. Normal/missed/catch-up remain; no FormalT0/credit.
+Native7800s startup timeout/inner7200s diagnostic BOOTTIME deadline/ExecStopPost
+always stops+disables Recorder. Read-only30s sampler e7323ef6…ce49052 active.

@@ -37,11 +37,13 @@ Current evidence root: `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idl
 Corrected cloud233/clean locked wheel/source121/all28 dependencies PASS;
 independent helper/deployer ACCEPT. Actual canonical corrected deployment VERIFY
 PASS: wheelbb7e357e…52a0/identity0ea93b2c…fbee/release23ea5c4-Uw4OjyEu. Old
-cf3909e9 venv/identity retained custody; no reset/unique deletion. New engineering
-baseline RUNNING since15:26:10UTC, invocation5b66d9c2…434710, both LIVE/verify
-pending; archive timer paused after natural worker success, Recorder inactive
-ANDdisabled/MainPID0/NRestarts0/all3868 archived/0partials/Catalogok. Read-only
-GPT-6 Luna Max monitoring active. Warm-up/Formal NOT_STARTED/new credit0.
+cf3909e9 venv/identity retained custody; no reset/unique deletion. Engineering baseline
+COMPLETE/bothLIVE/verify/independentACCEPT rootd983a3bb…189c996/65834records/
+138shards/wall34m15.551s. Archive actual recurrence/natural success/finite future
+PASS; Recorder explicitly started16:28UTC for NONFORMAL core4/strictaux26PASS.
+Warm-up RUNNING16:33:27UTC invocation32732dde…b72fd, native every-exit stop/disable
+and7200s BOOTTIME deadline;30s lightweight sampler active. Normal/missed/catch-up
+remain. All14/fourproducts/growingcorpus unchanged; Formal NOT_STARTED/credit0.
 
 See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
 
