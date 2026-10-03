@@ -33,14 +33,17 @@ PASS, exact stopped deployment identityeacada17… VERIFIED. This adds ADR-0038'
 and durable forced flags; no classifier or readiness relaxation. The original
 3d05282 CI/cloud fixture failures are retained; its admitted-batch gate correction
 preserves all42-stream/backpressure/payload/count/completeness assertions.
-All1182 growing-corpus chunks/transactions are archived/retained. Recorder is
-inactive AND disabled; prior4e1cf32 engineering attempt2 FAILED before publication
+The engineering input1182 chunks/transactions remains archived/retained; the
+corpus now grows during NONFORMAL warm-up. Prior4e1cf32 engineering attempt2 FAILED before publication
 on a real discontinuity array passed to the mapping-only encoder. The minimal
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md)
 is reproduced locally and independently ACCEPTed. Replacement cf3909e9 exact
 dual-platform CI37083270715, clean locked wheel and cloud168 affected tests PASS;
 the stopped deployment script has independent static ACCEPT and actual deployment
-verification PASS. A fresh full engineering baseline is running, not yet PASS.
+verification PASS. Fresh1182-chunk engineering baseline/both LIVE/completed verify
+PASS, root422b1436…; wall18m20s/CPU1109.493s/cgroup memory328MiB/swap0.
+Strict core4+aux26 readiness and actual archive recurrence PASS; NONFORMAL
+warm-up and30s resource sampling are running. No warm-up completion yet.
 Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
 sparse-startup failure earns zero credit. Actual convergence/forecasts and the
 post-warm-up authoritative baseline remain required; no Formal T0.
@@ -67,7 +70,7 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Replacement
 cf3909e9 CI37083270715 PASS on macOS (1995 tests) and Ubuntu (1991 tests);
 cloud168 affected tests and clean locked wheel PASS. Actual stopped deployment
-PASS; fresh full engineering baseline is running. See the
+PASS; fresh full engineering baseline/both LIVE/completed verification PASS. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ### Fixed MVP boundary
@@ -93,7 +96,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
 | Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; corrected cf3909e9 installed/VERIFIED with independent review/dual-platform CI/cloud168/locked-wheel PASS; fresh1182-chunk engineering baseline running, not PASS; failed attempts retained; warm-up/forecasts/post-warm-up baseline/readiness remain |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | PARTIAL_NOT_ACCEPTED; corrected cf3909e9 installed/VERIFIED with independent review/dual-platform CI/cloud168/locked-wheel PASS; fresh1182-chunk engineering baseline/both LIVE/completed verify PASS; failed attempts retained; strict core4/aux26+archive recurrence PASS and NONFORMAL warm-up running; convergence/forecasts/post-warm-up baseline/readiness remain |
 | Q4 | Formal 2h plus full terminal audit and completed verification | NOT_STARTED; requires Q3 acceptance and a reviewed eligible final on the same frozen release/corpus |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
@@ -192,7 +195,8 @@ Current Q3 checklist (each box is evidence-based, not Formal credit):
 - [x] Reproduce/correct the private discontinuity-array error and obtain independent source-only ACCEPT.
 - [x] Complete corrected cf3909e9 exact dual-platform CI37083270715/locked-wheel/cloud168 gates and independent deployment-script static ACCEPT.
 - [x] Install/verify the exact corrected cf3909e9 wheel in canonical paths, retaining prior identity/venv.
-- [ ] Pass a fresh engineering baseline/both LIVE/completed verify; retain both failed attempts. New1182-chunk run started, not PASS yet.
+- [x] Pass corrected1182-chunk engineering baseline/both LIVE/completed verify, root422b1436…; retain both failed attempts.
+- [x] Confirm actual automatic archive recurrence and strict core4/aux26 readiness before NONFORMAL warm-up; this grants no Formal credit.
 - [ ] Pass actual all-enabled normal/missed/catch-up and resource/cumulative forecast gates.
 - [ ] Publish the authoritative post-warm-up baseline/both LIVE/completed verify under the quiet window.
 - [ ] Confirm strict fresh readiness for Q4; no Formal V5 T0 or duration exists yet.

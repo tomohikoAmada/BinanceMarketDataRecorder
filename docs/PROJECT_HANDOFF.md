@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 after corrected deployment and engineering-baseline start. This is the current entry point.
+Updated October3,2026 after engineering PASS and NONFORMAL warm-up start. This is the current entry point.
 
 ## Current code and authorization
 
@@ -27,8 +27,7 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 PASS (macOS1995,Ubuntu1991 tests),
 cloud168 affected tests and clean locked wheel PASS. Deployment script static
-ACCEPT; actual corrected installation/verification PASS; engineering baseline
-is running, not yet accepted. See the
+ACCEPT; actual corrected installation/verification PASS; engineering baseline/both LIVE/completed verify PASS; actual warm-up is running. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current cloud checkpoint
@@ -37,14 +36,18 @@ Installed wheel7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
 identityeacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc,
 release `/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB`.
 Actual canonical root-control/130 RECORD/28 dependencies verification PASS.
-Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Recorder inactive AND disabled,
-MainPID0/Resultsuccess/NRestarts0;1182 chunks/transactions allLOCAL_DELETED,
-Catalogok,0partials/backlog. Archive finite actual recurrence passed after
-installation; timer/worker are currently paused for the engineering baseline.
-Normal OS update authority is restored. Economical read-only baseline monitoring
-is running. Full engineering baseline unit
-`binance-recorder-q3-array-engineering-baseline.service`, invocation
-553523c11dc1486a8a8e92a3a8b96f85, is active on all1182 chunks; no PASS yet.
+Boot59bb1735-ac48-408d-b3ec-bda79fc49b41. Corrected engineering baseline on1182
+archived chunks PASS, root422b14368787746f41be8447c421810ee42fffe07915561a25c98cefdb30ad1e;
+20118 records/42 shards, both LIVE/completed verify,0 blockers/0 credit. Actual
+wall18m20s, CPU1109.493s, cgroup/cache328MiB, swap0. Independent local frozen
+control review is running. Prior stopped Catalogok/0partials/backlog.
+Recorder enabled/running ONLY for NONFORMAL warm-up, PID37218/invocation
+756c109fa6ae4a128048e8683387c42f, NRestarts0 at start; live corpus grows.
+Strict core4+aux26 readiness PASS. Archive enabled/active actual automatic
+01:40:04 trigger/01:40:13 successful worker exit PASS; normal OS authority restored.
+Warm-up unit invocationf1c8e255a89d4a5b85fc65e191599e91 and30s sampler
+823b24e87a3a477aba0aff86685d5b18 run economical monitoring. Warm-up exit always
+stops/disables Recorder;7200s diagnostic deadline/7800s unit limit, no automatic retry.
 
 New exact4e1cf32 engineering attempt2 FAILED at16:40:53 UTC before publication
 or completed verification, unit `binance-recorder-q3-startup-engineering-baseline-2.service`,
@@ -53,7 +56,7 @@ array passed incorrectly to the mapping-only canonical encoder; the exact error
 is reproduced locally. The minimal private scratch-index correction and valid/
 malformed integration regressions have independent LOCAL/OFFLINE ACCEPT;
 replacement exact CI/locked-wheel/cloud and actual stopped deployment now PASS;
-fresh engineering baseline is running.
+fresh engineering baseline now PASS with both LIVE/completed verification.
 See [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md). Retained failed evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-startup-boundary-20261002-mfJDVr8h`.
 Current corrected release/engineering evidence root:

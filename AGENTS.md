@@ -45,17 +45,21 @@ No cursor advance or complete-period claim for missing data.
 
 The owner resumes through reviewed eligible Formal2h, then stop before12h.
 All14 flags/four Spot/USD-M BTCUSDT/ETHUSDT products and growing corpus remain.
-Boot59bb1735-ac48-408d-b3ec-bda79fc49b41; Recorder inactive AND disabled,
-MainPID0/Resultsuccess/NRestarts0,1182 chunks/transactions LOCAL_DELETED,
-Catalogok/0partials/backlog. Archive actual finite recurrence passed after deploy,
-now timer/worker paused solely for stopped engineering baseline; normal OS
-updates restored, economical read-only baseline monitor running. Prior605bc16 engineering baseline/both LIVE/
+Boot59bb1735-ac48-408d-b3ec-bda79fc49b41; corrected full engineering on1182
+archived chunks/both LIVE/completed verify PASS, root422b1436…,20118records/42shards,
+wall18m20s/CPU1109.493s/cgroup cache328MiB/swap0,0credit. Independent local
+frozen-control review running. Recorder enabled/running ONLY for NONFORMAL
+warm-up (PID37218/invocation756c109fa6ae4a128048e8683387c42f/NRestarts0 at start);
+strict core4+aux26 and actual archive recurrence PASS, growing corpus retained.
+Warm-up invocationf1c8e255a89d4a5b85fc65e191599e91/30s sampler823b24e87a3a477aba0aff86685d5b18
+active; warm-up exit stops/disables Recorder, diagnostic deadline7200/Runtime7800,
+no automatic retry. Normal OS authority restored; no Formal T0. Prior605bc16 engineering baseline/both LIVE/
 verify passed697; failed catch-up preserved. New exact4e engineering attempt2
 FAILED before publication on real discontinuity-array serialization. Retain failed
 controls and do not resume their prefix under a changed identity. Minimal local
 private-index correction is independently ACCEPTed; corrected cf3909e9 exact
 CI37083270715/locked-wheel/cloud168/deployer static and actual deployment PASS;
-fresh1182-chunk engineering baseline running, not PASS (invocation553523c11dc1486a8a8e92a3a8b96f85);
+corrected1182-chunk engineering baseline/both LIVE/completed verify PASS (invocation553523c11dc1486a8a8e92a3a8b96f85);
 see docs/milestone_acceptance/Q3-discontinuity-array-correction.md. Next actual warm-up/convergence,
 resources/cumulative forecasts, authoritative post-warm-up baseline under a finite
 quiet window, strict readiness, Formal2h plus terminal/completed/independent
@@ -86,7 +90,7 @@ normal/rotation correction preserves all Raw/handoff assertions; CI adds a
 Supplemental independent fixture/diagnostic/helper-rebind ACCEPT; corrected
 cf3909e9/tree2ac585d0 exact CI37083270715 bothPASS (macOS1995,Ubuntu1991), cloud168
 affected tests and clean locked wheel PASS. Actual stopped replacement deployment
-PASS; fresh engineering baseline running, not yet accepted. See the
+PASS; engineering baseline/both LIVE/completed verify PASS, actual warm-up running. See the
 record docs/milestone_acceptance/Q3-discontinuity-array-correction.md.
 
 ## Non-goals

@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026 after corrected canonical deployment and engineering-baseline start.
+Updated October3,2026 after engineering PASS, strict readiness and NONFORMAL warm-up start.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -57,21 +57,29 @@ The deployer has independent static ACCEPT and actual canonical installation/
 bmdr verification PASS (invocation420230b74af04240bd93cc0afe98c4dd, exit0).
 Prior4e1cf32 venv is inert custody at
 `/opt/binance-market-data-recorder/venv-custody-q3-array-4e1cf32-Sw6lnM1j/venv`.
-Fresh full engineering unit `binance-recorder-q3-array-engineering-baseline.service`,
-invocation553523c11dc1486a8a8e92a3a8b96f85, is running on all1182 retained chunks;
-no completed baseline or native Formal stage marker exists yet. See the
+Full engineering unit `binance-recorder-q3-array-engineering-baseline.service`,
+invocation553523c11dc1486a8a8e92a3a8b96f85, completed PASS with both LIVE passes
+and completed verification. Root422b14368787746f41be8447c421810ee42fffe07915561a25c98cefdb30ad1e,
+20118 records/42 shards,1182 manifests/Raw locations,0 blockers/0 Formal credit.
+Actual wall18m20s (baseline18m05s plus verify15s), CPU1109.493s, cgroup memory
+peak328MiB including cache, swap0. Independent local frozen-control review is
+running; this engineering predecessor does not replace the post-warm-up baseline. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 ## Current operation and gates
 
-Recorder is inactive AND disabled, MainPID0, Resultsuccess and NRestarts0.
-Verified archive drain completed:1182 chunks and1182 transactions are all
+Recorder is enabled/running ONLY for NONFORMAL warm-up, MainPID37218,
+invocation756c109fa6ae4a128048e8683387c42f, Resultsuccess/NRestarts0 at start.
+The stopped engineering input had1182 chunks/transactions all
 LOCAL_DELETED;4762557 frames,238437460 stored bytes,3624723275 uncompressed
-bytes. Catalog integrity isok, active partials/backlog/pending are0. Archive timer
-passed enabled/active finite recurrence after deployment; it is now paused with
-the archive worker solely for the stopped engineering baseline. OS update
-permission remains restored. No live sampler is running. All14 flags remain true;
-no Formal T0 or credited duration exists.
+bytes, Catalogok/0partials/backlog. The corpus is now growing; live-owned partials
+are expected during capture. Archive timer is enabled/active with a finite actual
+future deadline; fresh automatic trigger01:40:04 UTC and successful worker
+exit01:40:13 establish recurrence. Strict core4+aux26 readiness PASS before
+NONFORMAL warm-up invocationf1c8e255a89d4a5b85fc65e191599e91. The30s sampler
+invocation823b24e87a3a477aba0aff86685d5b18 is active. Warm-up ExecStopPost stops
+and disables Recorder on every exit; deadline7200s/RuntimeMax7800s, no retry.
+Normal OS updates remain restored. All14 flags remain true; no Formal T0/credit.
 
 New exact4e1cf32 engineering attempt2 FAILED16:40:53 UTC before publication,
 unit `binance-recorder-q3-startup-engineering-baseline-2.service`, invocation
@@ -80,8 +88,8 @@ a real discontinuity-event array and raised ValueError. No completed verificatio
 or audit root exists. Failed controls/prefix remain retained; no failed prefix
 can be resumed under a replacement identity. The locally reproduced minimal
 private-index correction is independently ACCEPTed; replacement exact CI/wheel/
-cloud and actual stopped deployment gates PASS; fresh engineering baseline is
-running and not yet accepted; see
+cloud/actual deployment and corrected engineering baseline/both LIVE/completed
+verify PASS; actual all-enabled warm-up is running, not accepted; see
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
 Source605bc16's engineering baseline/completed verification passed on697 archived
@@ -109,7 +117,7 @@ FORMAL_V5_CREDIT_SECONDS=0
 12H_STARTED=NO
 PRODUCTION_READY=NO
 OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-NEXT=COMPLETE_CF3909E_ENGINEERING_BASELINE_THEN_ALL_ENABLED_WARMUP
+NEXT=COMPLETE_ALL_ENABLED_WARMUP_AND_FORECASTS_THEN_POST_WARMUP_BASELINE
 ```
 
 ## Retained custody and evidence

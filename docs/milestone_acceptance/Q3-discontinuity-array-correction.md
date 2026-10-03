@@ -170,3 +170,40 @@ Fresh full engineering baseline started on1182 retained chunks under
 passes and completed verification remain mandatory. Native audit has a900s
 no-forward-progress watchdog and no total-duration cap. Economical read-only
 Luna monitor is active. No Formal T0/target/final or credit exists.
+
+
+## Completed engineering predecessor and live NONFORMAL warm-up
+
+The corrected1182-chunk engineering baseline published root
+422b14368787746f41be8447c421810ee42fffe07915561a25c98cefdb30ad1e,
+COMPLETE/PASS_CANDIDATE/0 blockers/0credit, with20118 records/42 shards. Both full
+LIVE passes completed before root publication; completed CLI verification matched
+the exact same root. Counts:1182 manifest/chunk/archive_transaction/raw_location,
+9456 chunk_transition,5910 archive_event,24 operational_event. Actual unit wall
+01:15:52.140–01:34:12.147 UTC, baseline18m05s plus verify15s; CPU1109.493s,
+328MiB cgroup including cache, swap0. Old failures remain retained. Frozen control
+bundle5506190B SHA3d7d39d35b3908e412a9881a85167c7552331991e34471eef0790a1ecfda356d
+was transferred for independent LOCAL/OFFLINE reconstruction; review is running.
+This is an engineering predecessor, not the post-warm-up authoritative baseline.
+
+Archive resumed and actual automatic trigger01:40:04 UTC/successful exit01:40:13
+with finite future deadline PASS. Recorder enabled/running only for NONFORMAL
+preparation, PID37218/invocation756c109fa6ae4a128048e8683387c42f. Actual strict
+core4+aux26 readiness passed; all14 flags/four products unchanged. Warm-up unit
+invocationf1c8e255a89d4a5b85fc65e191599e91 and30s resource sampler
+823b24e87a3a477aba0aff86685d5b18 started; engineering-start/immediate observations
+completed without blockers, immediate16.150s total. Remaining real normal/missed/
+catch-up/forecast/post-warm-up gates remain. Warm-up exit always stop/disables
+Recorder; native diagnostic deadline7200s/Runtime7800s, no automatic retry.
+No Formal target/credit; Q3 PARTIAL_NOT_ACCEPTED.
+
+A minimal finite-window restoration helper was independently ACCEPTed locally,
+SHA58af69f97937e399fbd7e020ab11685378d89cab534cc2daa3279d17a10642e2,
+report SHA855ea39d69c572f1649e6f92be3121a0b7d040827517b8bd30ced74bf0e8de84,
+identity SHA88b9007f6e920643706a9ed8560bf4950836f5b2fdb31ce623838b2544ce1d83.
+It restores only the five approved runtime OS maintenance exclusions, checks
+normal enabled/active authority, and never controls Recorder or grants credit.
+Seven pure mocks/AST PASS. Controlled exit restores and proves RESTORED before
+cancelling the expiry timer, retaining protection across a connection/quota loss.
+The finite window/timer is NOT active yet; its length must bind actual measured
+complete audits and new ingestion forecasts. No persistent masks/automatic extension.
