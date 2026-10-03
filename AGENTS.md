@@ -43,8 +43,9 @@ COMPLETE/bothLIVE/verify/independentACCEPT rootd983a3bb…189c996/65834records/
 PASS; Recorder explicitly started16:28UTC for NONFORMAL core4/strictaux26PASS.
 Warm-up COMPLETE invocation32732dde…b72fd, pending193→0/delta_pendingfalse/no blockers; native every-exit stop/disable
 and7200s BOOTTIME deadline. Recorder inactiveANDdisabled/PID0/NRestarts0; archive
-naturally drained then paused,4434chunks. Independent admission/new baseline
-remain. All14/fourproducts/growingcorpus unchanged; Formal NOT_STARTED/credit0.
+naturally drained then paused,4434chunks. Warm/resource/helper/actualarm independent ACCEPT; finiteabsoluteexpiry23:31:19UTC
+(noextension). Newauthoritativebaseline RUNNING17:46:34UTC invocation6e1c8cbe…8d1f;
+bothLIVE/verify/independentACCEPT and freshstrict+remainingwindow precedeFormalT0. All14/fourproducts/growingcorpus unchanged; Formal NOT_STARTED/credit0.
 
 See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
 

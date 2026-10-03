@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026,17:20UTC during corrected-source cloud qualification.
+Updated October3,2026,17:54UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
@@ -42,7 +42,19 @@ Fresh actual growth566 chunks over1802.264s; hostexecution15.97%/steal2.90%,
 minavailableRAM4851113984B, wholehostswap274432B with0 swapin/out pages.
 2h peak reserve scenario13.64GiB exceeds10GiB; measured-scope baseline estimate
 39.27min/terminal84.71min, finite absolute quiet-window plan345min. Warm-up,
-forecast and arm procedure independent review PENDING; no quiet window armed.
+forecast/helper/actual arm independently ACCEPTed; [review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
+Absolute quiet expiry23:31:19UTC, armed17:46:19UTC; masks5/negativeprobe/locks/
+before-after reload same deadline verified. No extension; controlled RESTORED
+before timer cancellation. New authoritative stopped baseline RUNNING since
+17:46:34UTC, invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
+`binance-recorder-q4-spot-idle-post-warmup-baseline.service`. Typeoneshot/
+TimeoutStartinfinity/native900s no-progress authority; no total audit cap.
+Luna Max read-only monitor active through18:50UTC. Warm-up premium poll has one
+NetworkError/5.060s actual-success recovery; missed polling snapshot retained.
+Native baseline must complete both LIVE/verify and independent ACCEPT before
+fresh strict readiness and Formal T0. Check sufficient remaining finite window;
+do not start if the complete measured schedule no longer fits. If quota interrupts,
+leave healthy native baseline alone and use actual artifacts to continue.
 14h/38h are advisory only;38h peak reserve FAIL/R078 remainsOPEN.
 Formal NOT_STARTED/new credit0. All14 flags/four products/growing corpus retained.
 No12h/24h starts in this scope; old cf3909e9 PASS below is historical only.

@@ -216,3 +216,19 @@ drain+30min control review=334.98min, rounded to345min. Deadline is absolute UTC
 computed once at arm, verified before masks and after daemon reload; no extension.
 Controlled restoration must succeed before timer cancellation. Independent review
 and actual arm remain pending; no OS masks applied at this checkpoint.
+
+
+Warm-up/resource/forecast/helper and actual arm have independent GPT-6.1 Sol
+xhigh LOCAL/OFFLINE ACCEPT: [review](../reviews/2026-10-04-spot-idle-warmup-independent-review.md),
+SHA b4281751c90acd2db8e719ecda15a427e5d9ee32f4d0f56f2a4ad2d08dbab702. Actual
+arm17:46:19.274595079UTC/expiry23:31:19UTC, both deadline readbacks unchanged
+through daemon reload; masked5/original3/negativeprobe/no locks verified.
+Actual receipt SHA989c08a4…87c47, no extension or T0. Journal
+SHA5929a6d7f9391303dffd1b3f40158e1d8e3431680c72c5750d51303b7a6f8708 binds the
+warm Recorder invocation. One BTC premium NetworkError at16:40:03.382539UTC
+recovers with actual success16:40:08.442377608UTC,5.059838608s later. One polling
+snapshot is missed, retained as a failure; no backfill or blanket empty-response
+exception. Independent guarded online reconstruction0.778376s, zero Raw/network/
+production opens/outside-private writes. Native authoritative baseline started
+17:46:34UTC, invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, oneshot/infinite total
+timeout/native900s no-progress rule. Formal remains NOT_STARTED/credit0.
