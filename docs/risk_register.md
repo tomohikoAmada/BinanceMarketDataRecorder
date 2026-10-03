@@ -7,7 +7,7 @@ normalarchive/OSauthorityrestored. All14flags/fourproducts/corpus preserved.
 Actualfullaudit34m22s; generic snapshot misses, typed-empty retries, marked WS gap
 and sampling limits remain explicit. Q5/Q6 notstarted; historical R078 staysOPEN.
 See [actual2h record](milestone_acceptance/Q4-formal2h-20261003.md).
-Post-closeout R-079 has a reviewed local source correction; corrected deployment
+Post-closeout R-079 has a reviewed source correction and actual corrected deployment; renewed2h
 and its own reviewed Formal2h remain gates before12h. See the
 [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
@@ -15,7 +15,7 @@ and its own reviewed Formal2h remain gates before12h. See the
 
 | Risk | Current control and evidence | Remaining work |
 |---|---|---|
-| R-079: Spot snapshot idle cleanup starves the event loop | P1; latest macOS CI diagnostic and deterministic old-method regression prove completed workers can remain queued for removal; source23ea5c4 explicitly reclaims exact awaited workers, local1998 PASS/independent ACCEPT/exact CI37130186751 BOTH PASS | Source fixed; complete replacement artifact/cloud/own reviewed2h gates before12h. Installed cf3909e9 is not replaced; original Q4 remains authentic for that identity |
+| R-079: Spot snapshot idle cleanup starves the event loop | P1; latest macOS CI diagnostic and deterministic old-method regression prove completed workers can remain queued for removal; source23ea5c4 explicitly reclaims exact awaited workers, local1998 PASS/independent ACCEPT/exact CI37130186751 BOTH PASS | Source fixed/actual23ea5c4 wheelbb7e357e canonical identity0ea93b2c VERIFIED/cloud233/independent deployer ACCEPT; engineering baseline RUNNING. Own reviewed2h gates remain before12h; old cf3909e9 Q4/custody retained for its identity |
 | R-076: ordinary observations grow with historical corpus | Bounded deltas/offline review and actual reviewed2h online chain pass | Complete later12h/24h qualification |
 | Sparse initial WS boundary |605bc16 failed nonformal catch-up on a pre-T0-connected sparse liquidation stream's first post-T0 payload; ADR-0038 records an authentic initial boundary without relaxing the classifier | Exact cf3909e9 review/release/cloud and actual warm-up ACCEPT; preserve failures, finish Formal qualification |
 | Very long consecutive WS failure backoff | Offline unlimited-failure fixture exposes existing exponent OverflowError at1025 failures before the configured cap can apply; separate from the observed startup failure | Proportionate bounded-exponent follow-up; no claim that these attempts occurred on the VPS |

@@ -34,11 +34,15 @@ and its genuine old Q4 PASS cannot transfer corrected-artifact credit.
 Retain all14 flags/four products/growing corpus/old evidence; freeze one new
 locked wheel/identity and repeat affected release/Q3/new Formal2h gates.
 Current evidence root: `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
-Cloud affected admission attempt1:232 PASS/1 FAIL because the Git source archive
-has no .git marker required by a repository-location fixture. Repair only the
-isolated test checkout metadata and rerun unchanged gates with a distinct log;
-no production/source changes or relaxed assertions. Recorder remains inactive
-AND disabled;3868 chunks fully archived/0 partials/Catalogok. New T0 NOT_STARTED.
+Corrected cloud233/clean locked wheel/source121/all28 dependencies PASS;
+independent helper/deployer ACCEPT. Actual canonical corrected deployment VERIFY
+PASS: wheelbb7e357e…52a0/identity0ea93b2c…fbee/release23ea5c4-Uw4OjyEu. Old
+cf3909e9 venv/identity retained custody; no reset/unique deletion. New engineering
+baseline RUNNING since15:26:10UTC, invocation5b66d9c2…434710, both LIVE/verify
+pending; archive timer paused after natural worker success, Recorder inactive
+ANDdisabled/MainPID0/NRestarts0/all3868 archived/0partials/Catalogok. Read-only
+GPT-6 Luna Max monitoring active. Warm-up/Formal NOT_STARTED/new credit0.
+
 See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
 
 Build a stateful Python 3.12 recorder for Binance public market data. The
@@ -49,7 +53,7 @@ Raw, recovery/gaps, verified archive, normalization, replay, and V5 acceptance
 are implemented.
 
 Only local/remote main remains; unrelated stash/untracked bundles and historical
-worktrees stay retained. Installed frozencf3909e9/tree2ac585d0 implements reviewed
+worktrees stay retained. Historical frozencf3909e9/tree2ac585d0 implements reviewed
 ADR-0038 startup boundaries/durable forced flags after605bc16's sparse-startup
 nonformal failure. Independent aggregate/source/helper and test-only Profile D
 supplement plus private-array/CI/helper supplements ACCEPT; exact CI37083270715
@@ -81,8 +85,8 @@ FiveOSmasksremoved/original3unitsenabledactive; archiveenabledactive/actualrecur
 workernaturalsuccess/finitefuturedeadline. RecorderinactiveANDdisabled/MainPID0/
 NRestarts0; Catalogok/0partials/backlog/all3868LOCAL_DELETED,7612527frames,
 401254798storedB/5842258936uncompressedB. See docs/milestone_acceptance/Q4-formal2h-20261003.md.
-Q0–Q4COMPLETE/accepted2honly/Q5Q6NOTSTARTED/PRODUCTION_READYNO. Currentownerobjective
-fulfilled; stopbefore12h. Currentchatcontinuationvps-2hPAUSEDaftercompletedrecordcdc616epush.
+Q0–Q4COMPLETE/accepted2honly/Q5Q6NOTSTARTED/PRODUCTION_READYNO. Originalcf3909e9objective
+fulfilled; corrected-sourcecontinuationaboveiscurrent. Originalvps-2hPAUSEafterrecordcdc616eissupersededbycurrentACTIVEcontinuation.
 Actual14hfullauditschedule152/361min and38h386/1007min areadvisoryscenarios;
 beforeQ5/Q6reforecastactualreserve/temp/staging/backlog/controlsandfinitewindows.
 Prior38hpeakcapacityscenariofailed; R078OPEN, no speculativehardware/stackchange.
@@ -97,7 +101,7 @@ Historical automation remains paused.
 Owner-authorized current-chat continuation vps-2h checks actual quota and existing
 work once per hour. If work is already advancing, end the check without intervening
 or duplicating operations/T0. Resume idle work only when quota permits; otherwise
-wait for the next hourly check. Current2h reviewedPASS; vps-2hPAUSEDafterfinalrecordpush, historicaltasksstaypaused.
+wait for the next hourly check. Originalcf2hreviewedPASS; currentvps-2hACTIVEforcorrectedsource, historicaltasksstaypaused.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is

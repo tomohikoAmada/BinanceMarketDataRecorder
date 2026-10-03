@@ -1,40 +1,52 @@
 # Current Production State
 
-Updated October3,2026,15:08UTC: owner explicitly resumed corrected-source VPS
+Updated October3,2026,15:30UTC: owner explicitly resumed corrected-source VPS
 qualification and hourly `vps-2h` (ACTIVE), through new reviewed2h only.
 
 ## Corrected-source work in progress
 
 Source23ea5c4 local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; docs-only
-4285240 CI37130990463 PASS. Cloud admission is using isolated source archive
-33223338…bc3bd0 and staging `/var/tmp/binance-recorder-spot-idle-n8Mc2r4g`, evidence
-`/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`. Attempt1:232 PASS/1 repository-location fixture FAIL because the Git
-archive lacks .git; retain failure and repeat unchanged gates after isolated
-checkout metadata repair. No production deployment/new T0/Formal credit yet.
-Fresh cloud read-only checkpoint14:56UTC confirms the installed old artifact
-below remains stoppedANDdisabled/MainPID0/NRestarts0, Catalogok/0partials/all3868
-chunks and transactions LOCAL_DELETED. Archive enabledactive/natural worker
-success. Config/all14/four products unchanged. Corrected artifact must complete
-new locked wheel/identity, affected Q3, baseline/both LIVE/verify, fresh resource
-admission and its own Formal2h/terminal/independent acceptance. Stop before12h.
+4285240 CI37130990463 PASS. Cloud233PASS/clean locked wheel/source121/all28 dependencies PASS; independent
+helper/deployer ACCEPT. Evidence root:
+`/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
+Actual stopped deployment PASS at15:24UTC (native invocation4cca3edf…f6aad1);
+canonical source23ea5c4/tree8e038727/wheelbb7e357e…52a0, identity
+0ea93b2c15e35e949e3bd5dc4cb1c8cee96aa5544f5d51e6ace33ba3d965fbee.
+Noneditable130 RECORD files/all28 locked dependencies/root-controlled canonical
+venv/config/unit VERIFIED as bmdr. Old cf3909e9 venv retained in
+`/opt/binance-market-data-recorder/venv-custody-q4-spot-idle-cf3909e9-j6lzEApv/venv`;
+old identity retained in the new evidence scope. Archive restored, then its timer
+stopped and existing worker waited to natural success before engineering audit.
+Recorder remains inactiveANDdisabled/MainPID0/NRestarts0, all3868 chunks+archive
+transactions LOCAL_DELETED/Catalogok/0partials; retained7612527frames/5842258936
+uncompressedB. Rootfree29398269952B/archivefree2101791215616B after new build/custody.
+Engineering baseline is RUNNING since15:26:10UTC, unit
+`binance-recorder-q4-spot-idle-engineering-baseline.service`, invocation
+5b66d9c272e846c8b165199bee434710. Both LIVE/completed verify still pending.
+Native progress watchdog remains authoritative; economical GPT-6 Luna Max
+read-only monitoring active. Warm-up/Formal NOT_STARTED, new Formal credit0.
+Corrected artifact still needs affected warm-up, identity-bound stopped baseline,
+resource admission, strict readiness and its own Formal2h/terminal/review.
 See [correction and decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
-## Last verified installed artifact (old accepted2h)
+## Current installed corrected artifact
 
 | Item | Current verified value |
 |---|---|
 | Host / boot | greencloud-tokyo-01, Ubuntu24.04 x86_64 /59bb1735-ac48-408d-b3ec-bda79fc49b41 |
 | Kernel / Python |6.8.0-146-generic /3.12.3 |
-| Source / tree |cf3909e9ee6da3862c03b4bef609cc4a4a049cc7 /2ac585d0f397abc6e9f0e588aab81b14d423e11e |
-| Wheel SHA-256 |7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b |
+| Source / tree |23ea5c40541b93563f5bda414c6691ba44af5b04 /8e038727b4260cacb7aa3fa151d6143f624ed515 |
+| Wheel SHA-256 |bb7e357edfb4a20b09bcda64f5df18bcf59f096bdd290b7ba8010bb4645e52a0 |
 | Dependency lock SHA-256 |44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335 |
 | Config SHA-256 |5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419 |
-| Deployment identity |eacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc |
-| Release |/opt/binance-market-data-recorder/release-cf3909e-UmHzaUrB |
+| Deployment identity |0ea93b2c15e35e949e3bd5dc4cb1c8cee96aa5544f5d51e6ace33ba3d965fbee |
+| Release |/opt/binance-market-data-recorder/release-23ea5c4-Uw4OjyEu |
 | Runtime / config |/opt/binance-market-data-recorder/venv / /etc/binance-market-data-recorder/recorder.toml |
 | Writer root |/var/lib/binance-market-data-recorder |
 | New archive |/srv/recorder-data/recorder-archive-qualification-q3-d0f455c-lg427ebp |
 | Storage ID |57512e1d-59cc-4aff-bf3b-49ae84a7a44e |
+
+## Historical cf3909e9 qualification (retained)
 
 Exact deployment verification PASS: noneditable frozen wheel,130 package RECORD
 files,28 locked distributions,4859 protected files/407 directories and canonical
@@ -77,7 +89,7 @@ Actual wall18m20s (baseline18m05s plus verify15s), CPU1109.493s, cgroup memory
 peak328MiB including cache, swap0. Independent local frozen-control review ACCEPT; this engineering predecessor does not replace the post-warm-up baseline. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
-## Current operation and gates
+## Historical cf3909e9 operation and gates
 
 All-enabled NONFORMAL warm-up COMPLETE/independent ACCEPT; normal25.511s,
 missed32.775s/pending140, catch-up30.171s/pending0, no blockers/recovering/backlog.

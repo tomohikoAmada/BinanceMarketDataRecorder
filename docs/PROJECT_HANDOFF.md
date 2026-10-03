@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 after the post-Q4 Spot idle source fix and rerun analysis.
+Updated October3,2026,15:30UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
@@ -10,23 +10,31 @@ new reviewed Formal2h, then stops before12h. Hourly `vps-2h` is ACTIVE with the
 corrected-artifact endpoint and no duplicate-operation rule. This supersedes
 previous local fix/analysis-only authorization. Source23ea5c4/tree8e038727:
 local1998/exact CI37130186751 BOTH PASS/independent GPT-6.1 Sol xhigh ACCEPT;
-docs-only4285240 CI37130990463 PASS. No replacement is deployed yet.
-Evidence root `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`;
-source archive33223338…bc3bd0 in isolated staging
-`/var/tmp/binance-recorder-spot-idle-n8Mc2r4g`. Attempt1 cloud gates232 PASS/1
-repository-location fixture FAIL because a source archive has no .git. Preserve
-its log; repair isolated checkout metadata only and repeat identical233 tests
-with attempt2 log. No production/source/assertion changes. Formal T0 not started.
-Fresh14:56UTC checkpoint: Recorder inactiveANDdisabled/MainPID0/NRestarts0;
-Catalogok/all3868 chunks+transactions LOCAL_DELETED/0partials; archive enabled
-active/worker natural success, config/all14/four products unchanged.
-Old cf3909e9 reviewed PASS below is historical credit for that artifact. New
-identity requires affected release/Q3/warm-up/new stopped baseline and its own
-reviewed Formal2h on this growing corpus. No12h/24h starts in this scope.
+docs-only4285240 CI37130990463 PASS. Actual corrected release/cloud gates PASS; independent deployer/helper ACCEPT.
+Evidence root `/srv/recorder-data/recorder-archive/evidence/Q4-spot-idle-20261003-Xo1tH7WN`.
+Cloud233PASS/clean locked wheel121 source files/all28 dependencies PASS; both
+environmental fixture/smoke-path failures retained and independently explained.
+Actual stopped deployment PASS at15:24UTC (native invocation4cca3edf…f6aad1);
+canonical source23ea5c4/tree8e038727/wheelbb7e357e…52a0, identity
+0ea93b2c15e35e949e3bd5dc4cb1c8cee96aa5544f5d51e6ace33ba3d965fbee.
+Noneditable130 RECORD files/all28 locked dependencies/root-controlled canonical
+venv/config/unit VERIFIED as bmdr. Old cf3909e9 venv retained in
+`/opt/binance-market-data-recorder/venv-custody-q4-spot-idle-cf3909e9-j6lzEApv/venv`;
+old identity retained in the new evidence scope. Archive restored, then its timer
+stopped and existing worker waited to natural success before engineering audit.
+Recorder remains inactiveANDdisabled/MainPID0/NRestarts0, all3868 chunks+archive
+transactions LOCAL_DELETED/Catalogok/0partials; retained7612527frames/5842258936
+uncompressedB. Rootfree29398269952B/archivefree2101791215616B after new build/custody.
+Engineering baseline is RUNNING since15:26:10UTC, unit
+`binance-recorder-q4-spot-idle-engineering-baseline.service`, invocation
+5b66d9c272e846c8b165199bee434710. Both LIVE/completed verify still pending.
+Native progress watchdog remains authoritative; economical GPT-6 Luna Max
+read-only monitoring active. Warm-up/Formal NOT_STARTED, new Formal credit0.
+No12h/24h starts in this scope; old cf3909e9 PASS below is historical only.
 See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
 Only local/remote main remains, with no open PR. Preserve unrelated stash,
-untracked bundles and detached historical worktrees. Frozen installed runtime
+untracked bundles and detached historical worktrees. Previous frozen runtime
 sourcecf3909e9ee6da3862c03b4bef609cc4a4a049cc7,
 tree2ac585d0f397abc6e9f0e588aab81b14d423e11e. Independent GPT-6.1 Sol xhigh
 LOCAL/OFFLINE aggregate startup/helper ACCEPT and test-only Profile D supplement
@@ -51,7 +59,7 @@ cloud168 affected tests and clean locked wheel PASS. Deployment script static
 ACCEPT; actual corrected installation/verification PASS; engineering baseline/both LIVE/completed verify PASS; actual warm-up is COMPLETE/independently accepted. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
 
-## Current cloud checkpoint
+## Historical cf3909e9 cloud qualification (retained)
 
 Installed wheel7e15bbd9e9d84f92868481bc0cbd995248c4d139cb10c7ddca949f15cb78f82b,
 identityeacada170e9a3b113c9cc9b1166a63cb5d71a35da758ec2f997e8eb5f2ae54cc,

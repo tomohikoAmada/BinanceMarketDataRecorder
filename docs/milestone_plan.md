@@ -16,10 +16,12 @@ Current owner continuation: perform the corrected-source release/Q3 gates and
 one new reviewed VPS Formal2h, then stop before12h. Hourly `vps-2h` is ACTIVE.
 This supersedes the previous local fix/analysis-only scope. Source23ea5c4 has
 local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS;
-docs-only4285240 CI37130990463 PASS. Cloud affected admission is IN_PROGRESS:
-attempt1 has232 PASS/1 environment-dependent repository fixture FAIL (source
-archive lacks .git); retain it and repeat unchanged gates after isolated Git
-metadata repair. Replacement deployment/new T0/Formal credit not yet started.
+docs-only4285240 CI37130990463 PASS. Corrected cloud233 affected tests/locked wheel121 source files/all28 dependencies/
+independent deployer/helper/actual canonical deployment VERIFY PASS. Source23ea5c4,
+wheelbb7e357e…52a0, identity0ea93b2c…fbee. Engineering baseline RUNNING since15:26:10UTC,
+invocation5b66d9c2…434710; both LIVE/completed verify pending. Recorder remains
+inactiveANDdisabled; archive paused after natural worker success. New Formal0.
+
 The same new frozen identity must bind affected Q3, new2h and later stages.
 Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
 as historical evidence. See [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
@@ -70,6 +72,17 @@ and practical finite audit windows; prior38hpeak reserve scenario failed and is
 not resolved by these time estimates. No speculative language/server change.
 See [production state](CURRENT_PRODUCTION_STATE.md).
 
+Corrected-source continuation checklist (old completed checklist below is historical):
+
+- [x] Exact23ea5c4 CI/local/source review and affected cloud233/clean locked wheel.
+- [x] Independent helper/deployer review and actual stopped canonical deployment VERIFY; retain old identity/venv.
+- [ ] New3868-chunk engineering baseline, both LIVE/completed verify/independent control review (RUNNING).
+- [ ] Archive recurrence, strict core4/aux26 and all-enabled NONFORMAL normal/missed/catch-up warm-up.
+- [ ] Fresh retained-corpus resource/capacity/audit forecast admission and finite absolute quiet window.
+- [ ] New authoritative post-warm-up baseline/both LIVE/completed verify/independent control review.
+- [ ] Fresh strict readiness and one corrected-identity Formal2h, target stop/disable/archive drain.
+- [ ] Both full LIVE terminal audits/completed verification/independent eligibility and restored handoff, mark PASS/push/pause hourly task.
+
 ### Fixed MVP boundary
 
 Keep Python 3.12, one Recorder process, one Collector per ProductKey, SQLite,
@@ -92,8 +105,8 @@ or speculative service split. Heavy normalization/replay stays offline.
 |---|---|---|
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
-| Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; frozen replacement artifact/affected cloud release gates IN_PROGRESS; isolated fixture environment repair pending |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/affected warm-up/new identity-bound baseline NOT_STARTED; retain existing corpus and reforecast actual larger audit scope |
+| Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment VERIFIED/3868-chunk engineering baseline RUNNING; affected warm-up/new authoritative baseline remain; retain existing corpus and reforecast actual larger audit scope |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact requires own reviewed2h, NOT_STARTED |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |

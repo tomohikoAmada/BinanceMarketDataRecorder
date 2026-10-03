@@ -113,3 +113,50 @@ admission attempt1 retained232 PASS/1 failure: source archive has no .git marker
 required by repository-location fixture. Isolated checkout metadata repair and
 unchanged affected-gate attempt2 are in progress. No replacement/newT0/credit yet;
 old2h evidence remains genuine and cannot transfer across deployment identities.
+
+## Corrected cloud release gates, owner continuation October3
+
+Hourly current-chat `vps-2h` ACTIVE; historical automations remain paused.
+Exact source23ea5c4/tree8e038727, archive332233388e07ed9beb59df391956cf5da22f33037f5996358067341f74bc3bd0.
+Cloud affected attempt1 retained232 PASS/1 fixture FAIL177.58s: an archive has no
+.git. Independently reproduced FAIL without.git/PASS after isolated git init.
+Attempt2 identical tests233 PASS/1stress deselected172.38s; wheel build and
+pip check PASS. Doctor then correctly refused smoke data inside the new checkout
+workspace. A separate mktemp smoke directory fixes only that environment:
+CLI version/doctor/status and exact clean-wheel checks PASS; native cloud-smoke
+unit exit0. Doctor's x86_64 preview warning is retained, not platform certification.
+No production source/test/assertion/config change. Failed logs are retained.
+
+Frozen wheelbb7e357edfb4a20b09bcda64f5df18bcf59f096bdd290b7ba8010bb4645e52a0,
+505506B;121 Python files match exact archive, all28 locked production dependencies
+match Linux lock44cd3733…f335. Clean receipt SHA2cf920f905528a0e8a10d055b6c494065b6c54f3ecd226b6a39e8dfd7a2201ef.
+Independent GPT-6.1 Sol xhigh LOCAL/OFFLINE helper rebind ACCEPT: eight helpers
+match prior reviewed bytes after only nine evidence-root substitutions; six
+Python/Bash syntax and39 auxiliary/path tests PASS. Manifest
+e292787ba34e9f0b81b4ff2dad86f1d70a50b0dc84129fc8475753560d380982.
+New deployment script5f66f31057e951f937b6bac188597695014b9631a2bdee1eb0ee13e1ce33e48e
+retains old stopped/disabled, archive natural-drain, canonical locked identity
+verification and recoverable old venv custody; independent LOCAL/OFFLINE
+ACCEPT, no actionable findings. Reviewer corroborated actual cloud logs and exact
+receipt: admission7cf518ad…d8044/continuation7e6c1cfa…0fb8c. Production deployment
+is now started as a native oneshot; engineering/warm-up/Formal not yet started.
+Docs2cacae6 exact CI37132398767 success; these docs are not replacement wheels.
+
+## Actual corrected deployment and engineering checkpoint
+
+Actual stopped deployment PASS at15:24UTC (native invocation4cca3edf…f6aad1);
+canonical source23ea5c4/tree8e038727/wheelbb7e357e…52a0, identity
+0ea93b2c15e35e949e3bd5dc4cb1c8cee96aa5544f5d51e6ace33ba3d965fbee.
+Noneditable130 RECORD files/all28 locked dependencies/root-controlled canonical
+venv/config/unit VERIFIED as bmdr. Old cf3909e9 venv retained in
+`/opt/binance-market-data-recorder/venv-custody-q4-spot-idle-cf3909e9-j6lzEApv/venv`;
+old identity retained in the new evidence scope. Archive restored, then its timer
+stopped and existing worker waited to natural success before engineering audit.
+Recorder remains inactiveANDdisabled/MainPID0/NRestarts0, all3868 chunks+archive
+transactions LOCAL_DELETED/Catalogok/0partials; retained7612527frames/5842258936
+uncompressedB. Rootfree29398269952B/archivefree2101791215616B after new build/custody.
+Engineering baseline is RUNNING since15:26:10UTC, unit
+`binance-recorder-q4-spot-idle-engineering-baseline.service`, invocation
+5b66d9c272e846c8b165199bee434710. Both LIVE/completed verify still pending.
+Native progress watchdog remains authoritative; economical GPT-6 Luna Max
+read-only monitoring active. Warm-up/Formal NOT_STARTED, new Formal credit0.
