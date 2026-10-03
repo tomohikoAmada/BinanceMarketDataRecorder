@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
+import sys
 import threading
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import ClassVar
 
@@ -228,6 +231,75 @@ def test_snapshot_cancellation_reclaims_singleflight_worker() -> None:
         assert api.calls == 1
 
     asyncio.run(exercise())
+
+
+async def _exercise_idle_completion_race(outcome: str) -> None:
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    class ControlledLimiter(SpotIpRateLimiter):
+        async def observe_success(self, *, limit: int, headers: Mapping[str, str]) -> None:
+            await super().observe_success(limit=limit, headers=headers)
+            started.set()
+            await release.wait()
+            if outcome == "failure":
+                raise RuntimeError("injected snapshot completion failure")
+
+    api = SequencedApi([Response()])
+    requester = SpotSnapshotRequester(
+        rest_api=api,
+        rate_limiter=ControlledLimiter(weight_budget_per_minute=1_000_000_000),
+    )
+    capture = asyncio.create_task(
+        requester.capture(
+            symbol="BTCUSDT",
+            collector_instance_id="collector",
+            collector_version="test",
+            limit=1000,
+            timeout_ms=1000,
+        )
+    )
+    await asyncio.wait_for(started.wait(), timeout=2)
+    if outcome == "cancelled_caller":
+        capture.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await capture
+    assert requester.inflight_count() == 1
+
+    # Queue worker completion first, then idle waiting, ahead of the worker's
+    # registry cleanup callback. No sleeps or registry mutation are needed.
+    release.set()
+    idle = asyncio.create_task(requester.wait_for_idle())
+    await idle
+    assert requester.inflight_count() == 0
+    assert api.calls == 1
+    if outcome == "failure":
+        with pytest.raises(RuntimeError, match="injected snapshot completion failure"):
+            await capture
+    elif outcome == "success":
+        envelope = await capture
+        assert envelope.source_sequence["lastUpdateId"] == 42
+        assert json.loads(envelope.raw_payload)["response"]["status"] == 200
+
+
+@pytest.mark.parametrize("outcome", ["success", "failure", "cancelled_caller"])
+def test_snapshot_idle_returns_before_deferred_cleanup_callback(outcome: str) -> None:
+    # A starved event loop cannot run an asyncio timeout. Bound the regression
+    # with a parent-process deadline so a recurrence fails instead of hanging CI.
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import asyncio; "
+            "from tests.unit.test_spot_rate_limit import _exercise_idle_completion_race; "
+            f"asyncio.run(_exercise_idle_completion_race({outcome!r}))",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_requester_classifies_429_418_and_5xx_without_retry_loop() -> None:

@@ -361,10 +361,14 @@ class SpotSnapshotRequester:
 
         while True:
             async with self._inflight_lock:
-                tasks = tuple(self._inflight.values())
-            if not tasks:
+                inflight = tuple(self._inflight.items())
+            if not inflight:
                 return
-            await asyncio.gather(*tasks, return_exceptions=True)
+            await asyncio.gather(*(task for _key, task in inflight), return_exceptions=True)
+            # Gathering already-completed tasks need not yield to their queued
+            # cleanup callbacks. Reclaim the exact workers we just awaited.
+            for key, task in inflight:
+                self._remove_inflight(key, task)
 
     def inflight_count(self) -> int:
         return len(self._inflight)
