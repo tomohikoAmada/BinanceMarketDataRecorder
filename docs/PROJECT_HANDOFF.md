@@ -109,7 +109,8 @@ Prior605bc16 canonical venv/identity/release stay inert custody.
 Next owner-controlled milestone is Q5 after fresh capacity/schedule admission;
 this execution is complete and stops before12h. Q0–Q4 COMPLETE; accepted2h only,
 12H_STARTED=NO;24H_STARTED=NO;QUALIFICATION_38H=NOT_COMPLETE;PRODUCTION_READY=NO.
-Current-chat hourly continuation will pause after this completed record is pushed.
+Current-chat hourly continuation `vps-2h` is PAUSED after completed recordcdc616e
+was pushed; the hourly rule/prompt are retained.
 Historical automations stay paused.
 Read-only30s sampler/AcceptanceObserver are economical; helpers cannot restart
 Recorder, invent a second T0 or grant credit. See [current state](CURRENT_PRODUCTION_STATE.md)

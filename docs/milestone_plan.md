@@ -49,8 +49,8 @@ attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
 The latest authorized execution ends here, before12h. Current-chat hourly
-continuation will pause after this completed record is pushed; historical tasks
-stay paused. Q5/Q6 remain NOT_STARTED, accepted2h/38h. Actual2h audit scaling gives
+continuation `vps-2h` is PAUSED after completed recordcdc616e was pushed;
+historical tasks stay paused. Q5/Q6 remain NOT_STARTED, accepted2h/38h. Actual2h audit scaling gives
 advisory full-audit mean/observed-peak scenarios14h152/361min and38h386/1007min.
 Before later T0 reforecast actual reserve/temp/staging/backlog/retained controls
 and practical finite audit windows; prior38hpeak reserve scenario failed and is

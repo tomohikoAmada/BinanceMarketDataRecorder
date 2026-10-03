@@ -38,8 +38,8 @@ Retained installed/failed-engineering evidence root:
 Current corrected release and engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
-Current-chat continuation `vps-2h` will pause after this completed2h record is
-pushed. Historical automations remain paused; no12h is started.
+Current-chat continuation `vps-2h` is PAUSED after completed2h recordcdc616e
+was pushed; the hourly rule/prompt are retained. Historical automations remain paused; no12h is started.
 
 Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only

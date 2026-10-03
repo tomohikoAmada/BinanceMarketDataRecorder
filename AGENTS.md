@@ -64,7 +64,7 @@ workernaturalsuccess/finitefuturedeadline. RecorderinactiveANDdisabled/MainPID0/
 NRestarts0; Catalogok/0partials/backlog/all3868LOCAL_DELETED,7612527frames,
 401254798storedB/5842258936uncompressedB. See docs/milestone_acceptance/Q4-formal2h-20261003.md.
 Q0–Q4COMPLETE/accepted2honly/Q5Q6NOTSTARTED/PRODUCTION_READYNO. Currentownerobjective
-fulfilled; stopbefore12h. Currentchatcontinuationpausesaftercompletedrecordpush.
+fulfilled; stopbefore12h. Currentchatcontinuationvps-2hPAUSEDaftercompletedrecordcdc616epush.
 Actual14hfullauditschedule152/361min and38h386/1007min areadvisoryscenarios;
 beforeQ5/Q6reforecastactualreserve/temp/staging/backlog/controlsandfinitewindows.
 Prior38hpeakcapacityscenariofailed; R078OPEN, no speculativehardware/stackchange.
@@ -79,7 +79,7 @@ Historical automation remains paused.
 Owner-authorized current-chat continuation vps-2h checks actual quota and existing
 work once per hour. If work is already advancing, end the check without intervening
 or duplicating operations/T0. Resume idle work only when quota permits; otherwise
-wait for the next hourly check. Current2h is reviewedPASS; pause after finalrecordpush, keep historical tasks paused.
+wait for the next hourly check. Current2h reviewedPASS; vps-2hPAUSEDafterfinalrecordpush, historicaltasksstaypaused.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is
