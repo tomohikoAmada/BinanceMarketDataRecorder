@@ -84,7 +84,7 @@ service instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d, NRestarts0 at pre-start.
 Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`; native observer invocation
 f333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451/Shanghai10:49:23.451,
 earliest2h target04:49:23UTC/12:49:23Shanghai; no target/final/credit yet.
-Native30s resource sampler/5min Luna read-only monitor active. Reviewed ExecStopPost
+Native30s resource sampler/Luna monitor handed off to native code at98% quota. Reviewed ExecStopPost
 binds strict auxiliary target then stops/disables Recorder on every observer exit.
 
 Five OS units stay masked-runtime/inactive under original finite window. Pre-start

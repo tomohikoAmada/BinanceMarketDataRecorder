@@ -175,3 +175,13 @@ Final independent eligibility review must assess this operator correction; no
 eligibility is inferred here. Controlled RESTORED precedes cancellation of
 `binance-recorder-q3-formal-quiet-absolute-expiry.timer`. Future finite windows must
 use absolute cutoff scheduling, so daemon-reload cannot silently extend them.
+
+At02:58UTC, native sample00000001 has no blockers/delta_pending=false; latest
+30s resource gatePASS/core4/RUNNING. Five-hour quota98% used, reset13:25:38Shanghai.
+Luna read-only model monitor is intentionally interrupted to preserve quota;
+Recorder/native2h observer/30s sampler and fixed absolute expiry are untouched.
+Hourly continuation remains ACTIVE, respecting existing advancing work and actual
+quota; after native target, terminal/frozen/completed/independent review remains.
+No current2h PASS is inferred. On closeout, restore OS via accepted helper and
+prove RESTORED BEFORE stopping the absolute expiry timer, restore archive,
+Recorder inactive AND disabled, Catalogok/0partials/backlog, then pause hourly task.

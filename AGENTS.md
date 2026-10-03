@@ -52,7 +52,8 @@ Fresh deployment/core4/strict aux26 PASS; actual Formal2h RUNNING. RecorderPID43
 invocationf832d492593041bb83a8f8ce4e2c5c1a, instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d,
 observerinvocationf333ae73277543258ce1400d5bf18380; stageFormal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571.
 T0 UTC02:49:23.451 (Shanghai10:49:23.451), earliesttarget04:49:23UTC (12:49:23Shanghai).
-Native stage+30s sampler+5min economical read-only Luna monitor active. Reviewed
+Native stage+30s sampler remain active; Luna model monitoring intentionally idle
+at98% quota. Hourly continuation resumes only when quota allows. Reviewed
 ExecStopPost strictendpoint always stop/disablesRecorder; no restart/T0/retry.
 Archive enabled/activeactualrecurrence; fiveOSunitsmasked/inactive, normalauthority
 restoration pending. Pre-startdaemonreload shifted relativeOnActive deadline;

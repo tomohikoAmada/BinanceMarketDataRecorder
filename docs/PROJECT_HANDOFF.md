@@ -48,7 +48,7 @@ Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, start SHA28a7e70291b72eb5d
 native invocationf333ae73277543258ce1400d5bf18380. T0 UTC02:49:23.451 / Shanghai10:49:23.451,
 required2h; earliest target04:49:23 UTC/12:49:23 Shanghai. No target/final/credit yet.
 Archive enabled/active with actual recurrence;30s native resource sampler and
-5min Luna read-only monitor active. ExecStopPost strict endpoint then stop/disables
+Luna monitor handed off to native code at98% quota. ExecStopPost strict endpoint then stop/disables
 Recorder on every observer exit; no restart/retry/newT0.
 
 Five OS units remain masked-runtime/inactive. Relative OnActive expiry shifted
