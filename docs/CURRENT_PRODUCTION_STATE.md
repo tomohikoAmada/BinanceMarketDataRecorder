@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026,17:54UTC: owner explicitly resumed corrected-source VPS
+Updated October3,2026,18:30UTC: owner explicitly resumed corrected-source VPS
 qualification and hourly `vps-2h` (ACTIVE), through new reviewed2h only.
 
 ## Corrected-source work in progress
@@ -40,8 +40,11 @@ minavailableRAM4851113984B, wholehostswap274432B with0 swapin/out pages.
 forecast/helper/actual arm independently ACCEPTed; [review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
 Absolute quiet expiry23:31:19UTC, armed17:46:19UTC; masks5/negativeprobe/locks/
 before-after reload same deadline verified. No extension; controlled RESTORED
-before timer cancellation. New authoritative stopped baseline RUNNING since
-17:46:34UTC, invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
+before timer cancellation. New authoritative stopped baseline COMPLETE/both LIVE/completed verify
+18:21:53UTC, roota31e957190380a911e78e97e623011abf59a6f7d247c93cbaf7d9722b69c18ce,
+75458records/159shards/4434chunks/blockers[]/credit0. Wall35m18.403s/
+CPU2086.805s/cgroup503.5MiB/swap0; controls bundle9769d140…87acb5.
+Independent LOCAL/OFFLINE review RUNNING. Invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
 `binance-recorder-q4-spot-idle-post-warmup-baseline.service`. Typeoneshot/
 TimeoutStartinfinity/native900s no-progress authority; no total audit cap.
 Luna Max read-only monitor active through18:50UTC. Warm-up premium poll has one
@@ -51,6 +54,10 @@ fresh strict readiness and Formal T0. Check sufficient remaining finite window;
 do not start if the complete measured schedule no longer fits. If quota interrupts,
 leave healthy native baseline alone and use actual artifacts to continue.
 14h/38h are advisory only;38h peak reserve FAIL/R078 remainsOPEN.
+Recorder explicitly enabled/running for pre-start since18:27UTC, PID68629/
+invocation42ba1999d8a74b01ba40a37a37e7c960/NRestarts0. Fresh installed verify/
+core readiness/strict26 auxiliary PASS. Archive timer enabled/active, actual
+recurrence18:27:37UTC/worker natural success18:27:43UTC/finite future deadline.
 Formal NOT_STARTED/new credit0. All14 flags/four products/growing corpus retained.
 Corrected artifact still needs independently reviewed resource admission, identity-bound stopped baseline,
 strict readiness and its own Formal2h/terminal/review.

@@ -24,7 +24,9 @@ NONFORMAL warm-up COMPLETE/invocation32732dde…b72fd, start29.480s/
 immediate17.035s/normal22.831s/missed30.815s/catch-up31.062s+28.423s,
 pending193→0/delta_pendingfalse/no blockers. Recorder inactiveANDdisabled,
 archive naturally drained then paused. Independent warm/resource/helper/actualarm ACCEPT; newauthoritativebaseline
-RUNNING17:46:34UTC invocation6e1c8cbe…8d1f. Absoluteexpiry23:31:19UTC/noextension.
+COMPLETE/bothLIVE/verify18:21:53UTC roota31e9571…69c18ce/75458records/159shards;
+independentreviewRUNNING. Explicitprestart+freshcore/strict26PASS18:27UTC.
+Absoluteexpiry23:31:19UTC/noextension.
 Formal NOT_STARTED/credit0.
 
 The same new frozen identity must bind affected Q3, new2h and later stages.
@@ -84,7 +86,7 @@ Corrected-source continuation checklist (old completed checklist below is histor
 - [x] New3868-chunk engineering baseline, both LIVE/completed verify/independent control ACCEPT (rootd983a3bb…).
 - [x] Archive recurrence/strict core4+aux26 PASS; all-enabled NONFORMAL normal/missed/catch-up warm-up COMPLETE, pending193→0/delta_pendingfalse/no blockers. Independent admission remains below.
 - [x] Independent warm-up/resource/forecast/helper+actual finite quiet arm ACCEPT;345min window expires23:31:19UTC, no extension. [Review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
-- [ ] New authoritative post-warm-up baseline/both LIVE/completed verify/independent control review: RUNNING17:46:34UTC/invocation6e1c8cbe…8d1f.
+- [ ] New authoritative post-warm-up baseline/both LIVE/completed verify/independent control review: native COMPLETE/bothLIVE/verify roota31e9571…69c18ce, independent review RUNNING.
 - [ ] Fresh strict readiness and one corrected-identity Formal2h, target stop/disable/archive drain.
 - [ ] Both full LIVE terminal audits/completed verification/independent eligibility and restored handoff, mark PASS/push/pause hourly task.
 
@@ -111,7 +113,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
-| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/3868-chunk engineering baseline+independent review COMPLETE; all-enabled warm-up COMPLETE; independent forecast/actual quiet arm ACCEPT; new authoritative baseline RUNNING; retain existing corpus and reforecast actual larger audit scope |
+| Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/3868-chunk engineering baseline+independent review COMPLETE; all-enabled warm-up COMPLETE; independent forecast/actual quiet arm ACCEPT; new authoritative baseline native COMPLETE/independent review RUNNING; retain existing corpus and reforecast actual larger audit scope |
 | Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact requires own reviewed2h, NOT_STARTED |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
