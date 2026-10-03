@@ -45,10 +45,12 @@ Warm-up COMPLETE invocation32732dde…b72fd, pending193→0/delta_pendingfalse/n
 and7200s BOOTTIME deadline. Recorder inactiveANDdisabled/PID0/NRestarts0; archive
 naturally drained then paused,4434chunks. Warm/resource/helper/actualarm independent ACCEPT; finiteabsoluteexpiry23:31:19UTC
 (noextension). Newauthoritativebaseline COMPLETE/bothLIVE/verify18:21:53UTC roota31e9571…69c18ce,
-75458records/159shards/4434chunks; independentreviewRUNNING. Explicitprestart
+75458records/159shards/4434chunks; independentreviewACCEPT. Explicitprestart
 Recorderenabled/active18:27UTC PID68629/invocation42ba1999…e7c960/strictcore+aux26PASS;
 archiverecurrence18:27:37UTC/naturalsuccess/finitefuturedeadline.
-bothLIVE/verify/independentACCEPT and freshstrict+remainingwindow precedeFormalT0. All14/fourproducts/growingcorpus unchanged; Formal NOT_STARTED/credit0.
+bothLIVE/verify/independentACCEPT and freshstrict+remainingwindow precedeFormalT0. All14/fourproducts/growingcorpus unchanged; FormalRUNNING 2h-e77218f9d1fa4c78a8a48ce8bafdaf27/T0UTC18:34:56.795853724/
+observercee0971f…97a48/target20:34:56.796UTC; endpointautoStopDisable,30ssampler+
+LunaMaxreadonlymonitor. Credit0untilbothLIVE/verify/independent+restoredhandoff.
 
 See docs/milestone_acceptance/Q4-spot-idle-correction.md and current handoff.
 

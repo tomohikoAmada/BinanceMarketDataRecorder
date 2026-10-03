@@ -232,3 +232,27 @@ exception. Independent guarded online reconstruction0.778376s, zero Raw/network/
 production opens/outside-private writes. Native authoritative baseline started
 17:46:34UTC, invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, oneshot/infinite total
 timeout/native900s no-progress rule. Formal remains NOT_STARTED/credit0.
+
+Authoritative baseline independently ACCEPTed; [review](../reviews/2026-10-04-spot-idle-postwarm-baseline-independent-review.md),
+SHA65cfeb6a8fdcb747ecb9479dc6e409bebfbf82ea68cd90cf1b450eba147e125c. Independent
+reconstruction6.975792s, Raw/network/productionopens0; native wall2118.402811s/
+CPU2086.805172s/memory527966208B/swap0, retained807gap/incomplete and48zero-frame
+manifests. These flags remain visible; no every-event/continuous completeness claim.
+
+Formal2h RUNNING, stage `Formal2h/2h-e77218f9d1fa4c78a8a48ce8bafdaf27`, runid
+1eec7d8fc0f24f959ec973933c103ff0. Native T0UTC18:34:56.795853724/Shanghai
+October4,02:34:56.795853724/BOOTTIME117390976389278; target~20:34:56.796UTC.
+Stage-start SHA71a8fe11b3b6ae38430a31f5aeb7a86dd81c24e8c9f2ba46de29fc3264bebf06.
+Observerunit `binance-recorder-q4-spot-idle-formal2h.service`, invocation
+cee0971f77774169b083b99fa4297a48/PID68923/RuntimeMax9000s/TimeoutStop150s.
+Root ExecStopPost reviewed strict endpoint helper always stops/disables Recorder.
+30s read-only sampler invocationa954589b8552481f82f72862bbf208a8/PID68925,
+inner7800s/outer8100s; Luna Max economical read-only monitor through target/failure
+or20:50UTC. Freshstrict all26PASS; actualremaining17791.070s>required16253.182s
+before sole T0, actualexpiry23:31:19UTC unchanged. No duplicateT0/restart/12h.
+Target alone is insufficient: after target auto-stop, stop readonly sampler,
+naturally drain archive then pause its timer/waitidle; finalize+completedverify
+this exact stage under pin-unit-exec, nativeoneshot/no totalcap/900s noprogress.
+Then independent immutable controls and restored actual OS/archive handoff,
+mark milestone/pushmain/pause vps-2h. Controlled RESTORED must precede expiry
+timer cancellation. Native healthy tests must survive model quota interruptions.

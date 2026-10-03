@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026,18:30UTC during corrected-source cloud qualification.
+Updated October3,2026,18:36UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
 
 ## Current code and authorization
@@ -49,7 +49,7 @@ before timer cancellation. New authoritative stopped baseline COMPLETE/both LIVE
 18:21:53UTC, roota31e957190380a911e78e97e623011abf59a6f7d247c93cbaf7d9722b69c18ce,
 75458records/159shards/4434chunks/blockers[]/credit0. Wall35m18.403s/
 CPU2086.805s/cgroup503.5MiB/swap0; controls bundle9769d140…87acb5.
-Independent LOCAL/OFFLINE review RUNNING. Invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
+Independent LOCAL/OFFLINE review ACCEPT. Invocation6e1c8cbeff3346cdb2b00bcd728c8d1f, unit
 `binance-recorder-q4-spot-idle-post-warmup-baseline.service`. Typeoneshot/
 TimeoutStartinfinity/native900s no-progress authority; no total audit cap.
 Luna Max read-only monitor active through18:50UTC. Warm-up premium poll has one
@@ -63,7 +63,7 @@ Recorder explicitly enabled/running for pre-start since18:27UTC, PID68629/
 invocation42ba1999d8a74b01ba40a37a37e7c960/NRestarts0. Fresh installed verify/
 core readiness/strict26 auxiliary PASS. Archive timer enabled/active, actual
 recurrence18:27:37UTC/worker natural success18:27:43UTC/finite future deadline.
-Formal NOT_STARTED/new credit0. All14 flags/four products/growing corpus retained.
+Formal RUNNING/new credit0 until full reviewed completion. All14 flags/four products/growing corpus retained.
 No12h/24h starts in this scope; old cf3909e9 PASS below is historical only.
 See [correction/rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
@@ -92,6 +92,30 @@ cf3909e9/tree2ac585d0 exact CI37083270715 PASS (macOS1995,Ubuntu1991 tests),
 cloud168 affected tests and clean locked wheel PASS. Deployment script static
 ACCEPT; actual corrected installation/verification PASS; engineering baseline/both LIVE/completed verify PASS; actual warm-up is COMPLETE/independently accepted. See the
 [audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
+
+Authoritative baseline independently ACCEPTed; [review](reviews/2026-10-04-spot-idle-postwarm-baseline-independent-review.md),
+SHA65cfeb6a8fdcb747ecb9479dc6e409bebfbf82ea68cd90cf1b450eba147e125c. Independent
+reconstruction6.975792s, Raw/network/productionopens0; native wall2118.402811s/
+CPU2086.805172s/memory527966208B/swap0, retained807gap/incomplete and48zero-frame
+manifests. These flags remain visible; no every-event/continuous completeness claim.
+
+Formal2h RUNNING, stage `Formal2h/2h-e77218f9d1fa4c78a8a48ce8bafdaf27`, runid
+1eec7d8fc0f24f959ec973933c103ff0. Native T0UTC18:34:56.795853724/Shanghai
+October4,02:34:56.795853724/BOOTTIME117390976389278; target~20:34:56.796UTC.
+Stage-start SHA71a8fe11b3b6ae38430a31f5aeb7a86dd81c24e8c9f2ba46de29fc3264bebf06.
+Observerunit `binance-recorder-q4-spot-idle-formal2h.service`, invocation
+cee0971f77774169b083b99fa4297a48/PID68923/RuntimeMax9000s/TimeoutStop150s.
+Root ExecStopPost reviewed strict endpoint helper always stops/disables Recorder.
+30s read-only sampler invocationa954589b8552481f82f72862bbf208a8/PID68925,
+inner7800s/outer8100s; Luna Max economical read-only monitor through target/failure
+or20:50UTC. Freshstrict all26PASS; actualremaining17791.070s>required16253.182s
+before sole T0, actualexpiry23:31:19UTC unchanged. No duplicateT0/restart/12h.
+Target alone is insufficient: after target auto-stop, stop readonly sampler,
+naturally drain archive then pause its timer/waitidle; finalize+completedverify
+this exact stage under pin-unit-exec, nativeoneshot/no totalcap/900s noprogress.
+Then independent immutable controls and restored actual OS/archive handoff,
+mark milestone/pushmain/pause vps-2h. Controlled RESTORED must precede expiry
+timer cancellation. Native healthy tests must survive model quota interruptions.
 
 ## Historical cf3909e9 cloud qualification (retained)
 
