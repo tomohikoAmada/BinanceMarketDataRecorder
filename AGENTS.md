@@ -48,24 +48,26 @@ All14 flags/four products/growing corpus unchanged. Engineering1182/both LIVE/ve
 and independent ACCEPT; actual all-enabled warm-up/independent resource-forecast
 admission PASS. Authoritative1640 post-warm-up baseline COMPLETE/both LIVE/verify/
 independent ACCEPT, root564beacd…ed1ebff/27908records/59shards, wall21m7.882s.
-Fresh deployment/core4/strict aux26 PASS; actual Formal2h target PASS_CANDIDATE,
-elapsed7200.002178843s/strictendpointPASS, observerendedsuccess04:50UTC. Same
-stageFormal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571/T0UTC02:49:23.451 retained;
-RecorderstoppedANDdisabled/MainPID0/NRestarts0. All3868chunks/transactions archived,
-7612527frames/401254798storedB/5842258936uncompressedB/Catalogok/0partials/backlog.
-Archive timerpausedFIRST/workeralreadyinactivesuccess. Terminalfinalize+verify
-RUNNING nativeunitbinance-recorder-q3-formal2h-terminal.service/invocation
-d8ef67385b764ba7a6d300e24e243ab7, no totalcap/unchanged900sno-progress. HelperSHA
-7faa0429b5a36415e3586ba26dc70a286f710783724dc50c263a7c93b7359eb5. No final/credit.
-IndependentLOCAL/OFFLINEreviewactive. SamplerRuntimeMax9000timeout follows successful
-Formaltarget/stop;239insideFormalRUNNINGauxPASS rows, poststoprowsretainedseparately.
-FiveOSunitsmasked/inactive; controlledRESTORED precedes cancellingabsoluteexpiry
-binance-recorder-q3-formal-quiet-absolute-expiry.timer, originalcutoff08:52:46UTC;
-no extension. Finalreviewassessesrecordedrelative→absolutecorrection. Q3COMPLETE
-forcurrent2h;Q4RUNNINGTERMINAL/no final/credit. Priorcurrent2hpeakroot14.77GiB>hard10,
-future38hpeak8.26GiBfailsreserve: latergates useactual2hdata/reforecast, R078OPEN.
-See docs/milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md. Next existing
-bothLIVEterminal/completed/independentreview, restoreauthorityandstopbefore12h.
+Q4 reviewedeligibleFormal2h PASS:7200.002178843s/bothLIVE/completedverify/
+independentGPT-6.1SolxhighLOCAL/OFFLINEeligibility+handoffACCEPT. Stage
+Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571/finalc81a37ea…06aa21da,
+terminald78ea55c…7dd910fd8/65834records/139shards/3868archivedchunks.
+Actualterminalwall34m22.051s/CPU2042.548s/cgroup820.2MiB/swap0; independent
+controlreconstruction23.084s/Raw/network/productionopens0. Report8551c2ae…bac205a,
+identity7daffd1a…f37c67. Strict endpoints/239sampledauxPASS; retain46typedempty
+retries/twogenericmissedRESTsnapshots~5srecovery/one0.418664smarkedWSgap/30s
+samplinglimits. Noeveryexchangeeventclaim/policyrelaxation/newT0/restart.
+ControlledOSRESTORED06:57:08UTC BEFOREabsoluteexpirycancel; noextension.
+Originalrelative→absolutequietcorrection+actualrestoredhandoffindependentlyACCEPT.
+FiveOSmasksremoved/original3unitsenabledactive; archiveenabledactive/actualrecurrence/
+workernaturalsuccess/finitefuturedeadline. RecorderinactiveANDdisabled/MainPID0/
+NRestarts0; Catalogok/0partials/backlog/all3868LOCAL_DELETED,7612527frames,
+401254798storedB/5842258936uncompressedB. See docs/milestone_acceptance/Q4-formal2h-20261003.md.
+Q0–Q4COMPLETE/accepted2honly/Q5Q6NOTSTARTED/PRODUCTION_READYNO. Currentownerobjective
+fulfilled; stopbefore12h. Currentchatcontinuationpausesaftercompletedrecordpush.
+Actual14hfullauditschedule152/361min and38h386/1007min areadvisoryscenarios;
+beforeQ5/Q6reforecastactualreserve/temp/staging/backlog/controlsandfinitewindows.
+Prior38hpeakcapacityscenariofailed; R078OPEN, no speculativehardware/stackchange.
 
 Old metadata/archive, failed attempts and unpublished143362-chunk baseline
 remain retained; R-078 stays OPEN. Do not reset the new corpus, physically delete
@@ -77,7 +79,7 @@ Historical automation remains paused.
 Owner-authorized current-chat continuation vps-2h checks actual quota and existing
 work once per hour. If work is already advancing, end the check without intervening
 or duplicating operations/T0. Resume idle work only when quota permits; otherwise
-wait for the next hourly check. Pause after reviewed2h; keep historical tasks paused.
+wait for the next hourly check. Current2h is reviewedPASS; pause after finalrecordpush, keep historical tasks paused.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. The implementation map is

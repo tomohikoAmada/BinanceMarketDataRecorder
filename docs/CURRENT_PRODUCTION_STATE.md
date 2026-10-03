@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October3,2026 at06:13UTC after actual Formal2h target/strict endpoint PASS; terminal audit running.
+Updated October3,2026 after reviewed eligible2h and actual restored normal authority.
 The owner identified the access problem as local VPN/proxy and authorizes
 continuation through reviewed eligible Formal2h, stopping before12h.
 
@@ -38,11 +38,8 @@ Retained installed/failed-engineering evidence root:
 Current corrected release and engineering evidence root:
 `/srv/recorder-data/recorder-archive/evidence/Q3-discontinuity-array-20261003-ik5UgdqY`.
 Local cache: `/Users/amada/Library/Caches/BinanceMarketDataRecorder/q3-startup-boundary-20261002`.
-Current-chat continuation `vps-2h` is active hourly. It checks actual quota and
-existing work; if work is advancing, it exits without intervening. It resumes
-idle work only when quota permits and otherwise waits for the next hour. Pause
-after reviewed eligible2h. Historical automations remain paused; the continuation
-is not Formal acceptance authority.
+Current-chat continuation `vps-2h` will pause after this completed2h record is
+pushed. Historical automations remain paused; no12h is started.
 
 Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
 macOS reached the existing45-minute limit without a diagnostic stack. A test-only
@@ -79,38 +76,39 @@ Authoritative1640-chunk post-warm-up baseline COMPLETE/PASS, root564beacd…ed1e
 27908 records/59 shards, both LIVE/completed verify and independent frozen-control
 ACCEPT. Actual wall21m7.882s/CPU1266.877s/cgroup457.3MiB/swap0. Fresh exact deployment,
 core4 and strict aux26 readiness PASS. Archive resumed with actual recurrence.
-Formal2h target PASS_CANDIDATE with7200.002178843s and no blockers;
-strict auxiliary endpoint PASS. Native observer ended successfully04:50UTC and
-ExecStopPost stopped/disabled Recorder (MainPID0/Resultsuccess/NRestarts0).
-Target SHA0dcec6aee5623f51673be5df22d1e5a5316a2c53ec3e3bb42bd5ce56933b6de9;
-endpoint SHA81b41f62446572e38ebe58dd8f0d57a86f7b73c0df6d1e78f4eab05b5a89c1d1.
-Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`; original T0
-UTC02:49:23.451/Shanghai10:49:23.451 and invocationf333ae73277543258ce1400d5bf18380 retained.
-Stopped census3868 chunks/transactions allLOCAL_DELETED,7612527 frames/
-401254798 stored/5842258936 uncompressed bytes; Catalogok/0partials/backlog.
-Archive timer paused before frozen audit; worker already inactive/success.
-Same boot/config/canonical deployment/five masks/absolute expiry preflight PASS.
-Terminal finalize plus completed verification RUNNING under native unit
-`binance-recorder-q3-formal2h-terminal.service`, invocationd8ef67385b764ba7a6d300e24e243ab7,
-no total audit cap, unchanged900s no-progress watchdog. No final/accepted credit yet.
-Independent LOCAL/OFFLINE review active. Sampler RuntimeMax9000 timeout follows
-successful target/stop, with post-stop rows retained separately. All239 sampled
-RUNNING rows inside Formal have auxiliaryPASS; final review remains required.
+Q4 PASS with actual7200.002178843s, both full LIVE terminal passes, completed
+verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE ACCEPT.
+Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, final
+c81a37ea2d65a3c5601929d9d4f7bd175a7d1d543771bc8b1b8a98e906aa21da;
+terminal rootd78ea55cfa663a34ba3b7238d62e8838967da7839be2e222fdbe2147dd910fd8,
+65834 records/139shards/3868chunks. Both native wrappersPASS_CANDIDATE/eligibletrue/
+blockers[]. Actual terminalwall34m22.051s, CPU2042.548s/cgroup820.2MiB/swap0;
+completedverify125.510s. Independent reconstruction23.084s, Raw/network/production
+calls0, exact predecessor/seed/control matches. ReviewSHA8551c2ae…bac205a,
+identity7daffd1a…f37c67. See [Q4 record](milestone_acceptance/Q4-formal2h-20261003.md).
 
-Five OS units stay masked-runtime/inactive under original finite window. Pre-start
-enable/daemon-reload shifted the relative OnActive expiry; actual receipt retained.
-Absolute calendar timer `binance-recorder-q3-formal-quiet-absolute-expiry.timer`
-was armed/verified for08:52:46UTC BEFORE stopping the relative timer, preserving
-original cutoff08:52:47 and unchanged Recorder/observer/T0. No maintenance activation
-or original window extension. Final review includes this operation; controlled
-RESTORED must precede cancellation of the absolute timer. No repeat/start12h.
+Recorded exceptions are preserved:46 typed-empty retries, two generic REST
+snapshot misses (~5s recovery), one0.418664s marked WS gap. Actual23930s checks and
+strict auxiliary endpoints PASS. Sampling does not certify continuous absence of
+inter-sample failures or every exchange event; no frozen policy was relaxed.
+Sampler9000s timeout is after target/stop; all300 rows retained.
 
-Independent resource/forecast admission ACCEPT for current2h:~600MiB summed
-process RSS, busy17.4%, steal0.886%, swap0; both LIVE full terminal forecast
-66min mean/130min sustained observed peak scenario. Additional sealed/staging
-budget leaves2hpeak14.77GiB>hard10GiB, but38hpeak8.26GiB falls below reserve;
-future stages require actual2h rates/backlog/staging reforecast. No38h certificate.
-Details/hashes/limits: [actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
+Normal authority restored: controlledOS RESTORED06:57:08.437877UTC BEFORE
+absolute-expiry cancellation; allfive masksremoved/original3unitsenabledactive.
+Original fixed-window correction and restored handoff independently ACCEPTed.
+Archive timer enabled/active with actual06:59:29 trigger/worker natural success/
+finite next deadline. Recorder inactiveANDdisabled/MainPID0/NRestarts0; Catalogok/
+0partials/backlog/all3868LOCAL_DELETED,7612527frames/401254798storedB/
+5842258936uncompressedB. Rootfree30565695488B/archivefree2101875875840B;
+handoffSHA3d3265a613721216b3d63a557170ee75d9ee46a7f33f882fcd269bd8fd4bc41c.
+Original Raw/archive/failed evidence remains retained; no reset or unique deletion.
+
+Actualhost execution16.6%/steal1.52%, RecorderRSS274MiB, minavailableRAM4.5GiB,
+wholehostswap12KiB/3pagesout. Future full-audit schedule estimates14h152/361min,
+38h386/1007min (mean/observed-peak scenario) are advisory only. BeforeQ5/Q6,
+reforecast actual reserve/temp/staging/backlog/retained controls and audit window;
+prior38hpeak capacity scenario failed. R078OPEN; no hardware/stack change or
+future capacity admission is inferred. Q5/Q6 not started; stop here.
 
 New exact4e1cf32 engineering attempt2 FAILED16:40:53 UTC before publication,
 unit `binance-recorder-q3-startup-engineering-baseline-2.service`, invocation
@@ -144,12 +142,12 @@ correction before repeating affected release/cloud gates; do not repeat unchange
 ```text
 Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION
 FORMAL_V5_STARTED=YES
-FORMAL_V5_CREDIT_SECONDS=0
+FORMAL_V5_CREDIT_SECONDS=7200.002178843
 12H_STARTED=NO
 PRODUCTION_READY=NO
-OWNER_WORK_STATE=RESUMED_THROUGH_COMPLETED_2H_BEFORE_12H
-Q4=RUNNING_TERMINAL_AUDIT_PENDING_COMPLETED_VERIFY_AND_INDEPENDENT_REVIEW
-NEXT=COMPLETE_EXISTING_BOTH_LIVE_TERMINAL_VERIFY_AND_INDEPENDENT_REVIEW
+OWNER_WORK_STATE=COMPLETED_REVIEWED_2H_STOPPED_BEFORE_12H
+Q4=PASS_REVIEWED_ELIGIBLE
+NEXT=Q5_FRESH_CAPACITY_SCHEDULE_ADMISSION_THEN_OWNER_CONTROLLED_12H
 ```
 
 ## Retained custody and evidence

@@ -2,9 +2,10 @@
 
 Frozen runtime remains cf3909e9/tree2ac585d0, wheel7e15bbd9… and identityeacada17….
 All14 auxiliary flags and Spot/USD-M BTCUSDT/ETHUSDT remain unchanged.
-Q3 is COMPLETE for current2h admission. Formal2h target and strict endpoint PASS;
-terminal audit is RUNNING. No stage-final/accepted duration credit yet;
-12H_STARTED=NO;PRODUCTION_READY=NO. Later sections retain their time-local checkpoints.
+Q3 is COMPLETE for current2h admission. Q4 reviewedeligible2h is now PASS with
+both full LIVE/completed verification and independent eligibility/restored handoff
+ACCEPT; see [Q4 record](Q4-formal2h-20261003.md).12H_STARTED=NO;PRODUCTION_READY=NO.
+Later sections retain their time-local checkpoints.
 
 ## Completed real cloud gates
 

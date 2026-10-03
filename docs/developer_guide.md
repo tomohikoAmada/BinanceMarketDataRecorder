@@ -103,8 +103,11 @@ Completed verification uses frozen controls/proofs, so later authorized archive
 retirement does not invalidate completed evidence. A producer summary alone is
 not sufficient for publication or eligibility.
 
-Limits: 300s samples, 600s evidence gap, 240s delta work budget, 900s global
-recoverable-readiness episode, 256-row pages and 256 pending causal references.
+Limits: 300s samples, 600s evidence gap, 240s delta work budget and 900s global
+recoverable-readiness episode. SQL pages hold at most256 rows; declared bounded
+starts allow four pages per family and1024 pending causal references. New v2
+starts apply that reference cap at observation end and share archive companions.
+Original starts retain their one-page/256-reference policy on replay/resume.
 Full audit has 60s progress publication and a separate 900s no-progress watchdog;
 there is no total audit-duration cap. Audit duration earns no Formal credit.
 A legitimate active partial is expected online; stopped quiescence requires zero.

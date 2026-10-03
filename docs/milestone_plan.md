@@ -26,59 +26,36 @@ review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
 closeout record binding all three finals; no new runtime status/protocol is needed.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
-Installed frozen sourcecf3909e9/tree2ac585d0 and wheel7e15bbd9… have independent
-startup/source/helper and private-array/CI supplements ACCEPT, exact-source
-dual-platform CI37083270715 PASS, clean locked wheel and cloud168 affected tests
-PASS, exact stopped deployment identityeacada17… VERIFIED. This adds ADR-0038's authentic empty initial boundary
-and durable forced flags; no classifier or readiness relaxation. The original
-3d05282 CI/cloud fixture failures are retained; its admitted-batch gate correction
-preserves all42-stream/backpressure/payload/count/completeness assertions.
-The engineering input1182 chunks/transactions remains archived/retained; the
-corpus has grown through NONFORMAL warm-up and the actual Formal2h target. Prior4e1cf32 engineering attempt2 FAILED before publication
-on a real discontinuity array passed to the mapping-only encoder. The minimal
-[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md)
-is reproduced locally and independently ACCEPTed. Replacement cf3909e9 exact
-dual-platform CI37083270715, clean locked wheel and cloud168 affected tests PASS;
-the stopped deployment script has independent static ACCEPT and actual deployment
-verification PASS. Fresh1182-chunk engineering baseline/both LIVE/completed verify
-PASS, root422b1436…; wall18m20s/CPU1109.493s/cgroup memory328MiB/swap0.
-Strict core4+aux26 readiness/archive recurrence PASS; actual NONFORMAL warm-up
-and independent chain/config/resource/forecast review ACCEPT. Pending140 clears
-to0 during continued capture; complete normal/missed/catch-up25.511/32.775/30.171s.
-Authoritative1640-chunk post-warm-up baseline/both LIVE/verify/independent ACCEPT.
-Fresh core4/strictaux26 PASS; Formal2h started10:49:23 Shanghai, earliest target12:49:23.
-Absolute quiet expiry08:52:46UTC preserves original390min bound after a recorded
-pre-start daemon-reload shifted the relative timer; all five OS units stay masked. See the [actual cloud gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
-Earlier605bc16 engineering baseline/both LIVE/verify passed on697; its nonformal
-sparse-startup failure earns zero credit. Convergence/current2h admission, authoritative baseline and fresh strict readiness
-PASS. Actual Formal target/strict auxiliary endpoint PASS with7200.002178843s;
-Recorder stopped/disabled,3868 chunks archived. Both LIVE terminal audit is RUNNING;
-completed verification/independent eligibility/final credit remain pending.
-Current-chat hourly continuation is active; historical automations paused.
-See [production state](CURRENT_PRODUCTION_STATE.md).
-Candidate `7877082` improves scanner/status and declares bounded delta batches;
-its previously reviewed descendant is frozen as `d0f455c` in the
-[Q2 release record](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
-Q2 independent review, offline/online/stress, exact-source dual-platform CI and
-clean locked-wheel gates PASS. That historical Q3 cloud delta-capacity attempt failed and is retained;
-current corrected Q3 admission is COMPLETE. See the historical [Q3 record](milestone_acceptance/Q3-fresh-corpus-and-cloud-warmup.md).
-The owner's latest October 2 instruction authorizes this execution through
-reviewed eligible **2h**, stopping before VPS **12h**. The broader38h chain stays
-planned;12h is outside this turn.
-All fourteen applicable public auxiliary capture flags must be true throughout
-the newly frozen chain. Reuse unchanged prior reviews; supplement uncovered
-configuration combinations and changed paths. Existing disabled-auxiliary cloud
-measurements do not qualify the expanded profile.
+Q0–Q4 are COMPLETE for the current2h scope. Frozen sourcecf3909e9/tree2ac585d0,
+wheel7e15bbd9… and identityeacada17… have independent startup/private-array/CI
+supplements ACCEPT, exact-source CI37083270715 PASS on both platforms, clean
+locked wheel/cloud168/deployment gates PASS. All14 auxiliary flags and four
+Spot/USD-M BTCUSDT/ETHUSDT products remain unchanged. Q3 actual warm-up/catch-up,
+resource admission and authoritative1640-chunk baseline independently ACCEPT.
 
-Exact6c157fc CI37038494890 failed Ubuntu's single-manifest fixture assumption;
-macOS reached the existing45-minute limit without a diagnostic stack. A test-only
-normal/rotation correction preserves all Raw/handoff assertions; CI adds a
-120-second faulthandler dump without changing runtime or test-result rules.
-Supplemental independent fixture/diagnostic/helper-rebind ACCEPT. Replacement
-cf3909e9 CI37083270715 PASS on macOS (1995 tests) and Ubuntu (1991 tests);
-cloud168 affected tests and clean locked wheel PASS. Actual stopped deployment
-PASS; fresh full engineering baseline/both LIVE/completed verification PASS. See the
-[audit correction](milestone_acceptance/Q3-discontinuity-array-correction.md).
+Q4 actual target7200.002178843s, both full LIVE terminal passes, completed
+verification and independent eligibility/normal-authority handoff ACCEPT.
+Finalc81a37ea2d65a3c5601929d9d4f7bd175a7d1d543771bc8b1b8a98e906aa21da,
+terminald78ea55c…/65834records/139shards/3868archived chunks. Actual full-terminal
+wall34m22.051s. Strict core4/aux26 endpoints and239 in-period sampled checks PASS;
+two missed REST polling snapshots,46 typed-empty retries, one marked WS gap and
+sampling limits remain explicit. No lossless every-event coverage claim or policy
+relaxation. See [Q4 acceptance](milestone_acceptance/Q4-formal2h-20261003.md) and
+[independent final review](reviews/2026-10-03-formal2h-independent-review.md).
+
+Recorder stoppedANDdisabled, normal archive/OS authority restored after verified
+controlled quiet-window exit; no corpus reset/unique deletion. Earlier failed
+attempts/source/custody and R078 remain retained/time-local. The original fixed
+absolute cutoff correction is independently accepted, with no window extension.
+
+The latest authorized execution ends here, before12h. Current-chat hourly
+continuation will pause after this completed record is pushed; historical tasks
+stay paused. Q5/Q6 remain NOT_STARTED, accepted2h/38h. Actual2h audit scaling gives
+advisory full-audit mean/observed-peak scenarios14h152/361min and38h386/1007min.
+Before later T0 reforecast actual reserve/temp/staging/backlog/retained controls
+and practical finite audit windows; prior38hpeak reserve scenario failed and is
+not resolved by these time estimates. No speculative language/server change.
+See [production state](CURRENT_PRODUCTION_STATE.md).
 
 ### Fixed MVP boundary
 
@@ -101,10 +78,10 @@ or speculative service split. Heavy normalization/replay stays offline.
 | ID | Deliverable | Gate / status |
 |---|---|---|
 | Q0 | Review, performance candidate and this consolidated plan | COMPLETE; independent review ACCEPT through Q2 |
-| Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; live RSS remains Q3 |
-| Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; actual live forecasts remain Q3 |
+| Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
+| Q2 | Reviewed release candidate and cloud test design | COMPLETE; exact d0f455c wheel/CI/review bound; executable Q3 procedure; current2h live admission PASS, future capacity remains a later gate |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for current2h admission; exactcf3909e9/CI/cloud/wheel/deployment, engineering, actual all-enabled warm-up/independent resources/forecast and authoritative1640 baseline/both LIVE/verify/independent ACCEPT; fresh strictcore4/aux26 PASS; future38h capacity remains a later gate |
-| Q4 | Formal 2h plus full terminal audit and completed verification | RUNNING_TERMINAL_AUDIT; actual target7200.002178843s/strict auxPASS; stopped/disabled/drained3868; native terminal invocationd8ef6738…; completed verification/independent eligibility/final credit pending |
+| Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS; actual7200.002178843s, both LIVE/verify/independent eligibility and restored handoff ACCEPT; finalc81a37ea…/3868chunks/65834records/139shards; actualwall34m22.051s |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible 2h predecessor and reviewed eligible final |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
@@ -353,8 +330,8 @@ Catalog integrity, no active partials, archive backlog and exact retained eviden
 Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
-F4/R-078 separate. Q0–Q3 are complete for the current2h scope; current work is **Q4**, the
-already-running full terminal audit and reviewed eligible2h closeout.
+F4/R-078 separate. Q0–Q4 are complete for the current2h scope. Next is **Q5** after fresh capacity/
+schedule admission and owner-controlled continuation; this execution stops before12h.
 
 ### How subsequent development proceeds
 

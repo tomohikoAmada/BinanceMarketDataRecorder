@@ -1,6 +1,6 @@
 # Project Handoff
 
-Updated October3,2026 at06:13UTC after the actual Formal2h target and strict endpoint PASS; terminal audit is running. This is the current entry point.
+Updated October3,2026 after reviewed eligible Formal2h and restored normal authority. This is the current entry point.
 
 ## Current code and authorization
 
@@ -42,40 +42,48 @@ Authoritative1640-chunk post-warm-up baseline/both LIVE/completed verify PASS,
 root564beacd02c3b22488644ed5724b61bfa6ff97883060efe76f1b811b0ed1ebff,
 27908 records/59 shards; actual wall21m7.882s, CPU1266.877s/457.3MiB/swap0.
 Independent frozen-control ACCEPT. Fresh core4/strict aux26/deployment PASS.
-Formal2h reached target PASS_CANDIDATE, elapsed7200.002178843s, no blockers.
-Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, start SHA28a7e70291b72eb5d9f15fdd7cc9522db178964b2c1aa5a002da78e6fc5d110a,
-target SHA0dcec6aee5623f51673be5df22d1e5a5316a2c53ec3e3bb42bd5ce56933b6de9.
-T0 UTC02:49:23.451 / Shanghai10:49:23.451; native observer invocation
-f333ae73277543258ce1400d5bf18380 deactivated successfully04:50UTC.
-Strict auxiliary endpoint PASS; reviewed ExecStopPost stopped/disabled Recorder,
-MainPID0/Resultsuccess/NRestarts0. Original Recorder invocation
-f832d492593041bb83a8f8ce4e2c5c1a and instance2bdc7fbe-39ff-45da-8cea-e40173e5e56d retained.
-3868 chunks/transactions allLOCAL_DELETED,7612527 frames/401254798 stored bytes/
-5842258936 uncompressed bytes; Catalogok/0partials/backlog. Archive timer paused
-FIRST with existing worker inactive/success. Fresh same-boot/config/deployment and
-five runtime masks/absolute expiry preflight PASS. Canonical terminal finalize then
-completed verify is RUNNING in `binance-recorder-q3-formal2h-terminal.service`,
-invocationd8ef67385b764ba7a6d300e24e243ab7, start~06:09UTC, no total audit cap;
-native900s no-progress watchdog unchanged. Helper SHA7faa0429b5a36415e3586ba26dc70a286f710783724dc50c263a7c93b7359eb5.
-No stage-final or Formal credit yet. Both LIVE and completed/independent review remain.
-The30s sampler's9000s RuntimeMax timeout occurred after target/stop; preserve its
-300 rows and distinguish post-stop STOPPED/BLOCK/GC-query noise from239 sampled
-RUNNING/PASS rows within Formal. Independent local review is active; no Raw/network/production access.
+Q4 PASS: actual7200.002178843s, both full LIVE terminal passes, completed
+verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE eligibility ACCEPT.
+Stage `Formal2h/2h-9575ca86a96f44c6a2ffd7d5be73b571`, final
+c81a37ea2d65a3c5601929d9d4f7bd175a7d1d543771bc8b1b8a98e906aa21da;
+terminal rootd78ea55cfa663a34ba3b7238d62e8838967da7839be2e222fdbe2147dd910fd8,
+65834records/139shards/3868archived chunks,7612527frames. Both native wrappers
+PASS_CANDIDATE/eligible=true/blockers[]. Baseline/terminal audit roots retain0
+credit; the reviewed stage earns2h. Original T0UTC02:49:23.451/Shanghai10:49:23.451
+and process identities are retained; no retry/restart/newT0.
 
-Five OS units remain masked-runtime/inactive. Relative OnActive expiry shifted
-after pre-start enable/daemon-reload; original receipt retained. New absolute
-calendar expiry08:52:46UTC was armed/verified BEFORE cancelling old relative timer,
-keeping the original02:22:47–08:52:47 finite bound. Actual correction receipt binds
-unchanged Recorder/observer invocation/T0 and no maintenance activation. Final
-eligibility review must include this operation. Controlled RESTORED precedes
-cancelling `binance-recorder-q3-formal-quiet-absolute-expiry.timer`; no extension.
+Native terminal unit invocationd8ef67385b764ba7a6d300e24e243ab7 successfully completes
+06:09:16.843416–06:43:38.894563UTC, wall34m22.051s/CPU2042.548s/cgroup820.2MiB/swap0.
+Independent completed-control reconstruction23.084s matches all records and exact
+predecessor/seed/final, Rawcalls/network/productionopens0. Final report
+SHA8551c2ae50795a16bfc6865334c195471c75374100efdef97e37b9f06bac205a;
+identity SHA7daffd1a7abadc5ef86ba3175556f003fadfa1e0887ffe87148468cf67f37c67.
+See [Q4 record](milestone_acceptance/Q4-formal2h-20261003.md) and
+[independent report](reviews/2026-10-03-formal2h-independent-review.md).
 
-Actual combined summed RSS~600MiB, busy17.4%, swap0. Both LIVE full-audit
-forecasts mean/peak:2h66/130min,14h289/700min,38h730/1829min. Root budget
-with additional sealed/staging scenario leaves2hpeak14.77GiB>10GiB;38hpeak8.26GiB
-falls below reserve, so future stages require actual2h remeasurement/forecast.
-No hardware/language change or future38h capacity certificate. See the
-[actual gate](milestone_acceptance/Q3-all-enabled-cloud-gate-20261003.md).
+Actual two REST NetworkErrors recover~5s later but leave two missing polling
+snapshots;46 typed-empty retries and one0.418664s marked WS gap remain recorded.
+239 in-period30s checks and strict endpoints PASS; sampling does not prove no
+inter-sample transient failure or complete exchange-event coverage. The frozen
+sampled policy is unchanged; no retrospective zero-error rule or exception added.
+All300 sampler rows retained;9000s post-target timeout/STOPPED/GC noise is separate.
+
+Controlled OS helper RESTORED06:57:08.437877UTC BEFORE absolute-expiry cancellation.
+Original finite-window correction/unchanged processT0 and actual handoff are
+independently ACCEPTed; no extension. Five OS masks removed, original3 authority
+units enabled/active. Archive timer enabled/active, actual recurrence/worker
+natural success/finite next deadline. Recorder inactive AND disabled/MainPID0/
+NRestarts0, Catalogok/0partials/backlog/all3868LOCAL_DELETED. Handoff
+SHA3d3265a613721216b3d63a557170ee75d9ee46a7f33f882fcd269bd8fd4bc41c,
+rootfree30565695488B/archivefree2101875875840B. No unique deletion or corpus reset.
+
+Actual capture resources: hostexecution16.6%, steal1.52%, minavailableRAM4.5GiB,
+RecorderRSS274MiB, summedRSS~706MiB/sharedpagesupper; wholehostswap12KiB,3pagesout.
+Actual34m22s full-audit schedule estimates at14h152/361min and38h386/1007min
+(mean/observed-peak scenario) are advisory. Before12h/24h reforecast actual root/
+temp/staging/backlog/retained-controls and practical quiet-window/audit schedule.
+Prior38hpeak reserve scenario failed; no future admission/hardware/native rewrite
+or R-078 closure follows. The current2h objective is fulfilled; stop before12h.
 
 New exact4e1cf32 engineering attempt2 FAILED at16:40:53 UTC before publication
 or completed verification, unit `binance-recorder-q3-startup-engineering-baseline-2.service`,
@@ -98,15 +106,11 @@ capture remain retained; ADR-0038 now records authentic zero-frame startup
 boundaries and durable forced flags before any socket, without relaxing replay.
 Prior605bc16 canonical venv/identity/release stay inert custody.
 
-Next: let the existing native terminal audit complete both full LIVE passes and
-completed verification, then finish independent eligibility review. Restore archive/
-OS authority and stop before12h. Do not restart Recorder or create another T0.
-No new corpus reset or unique deletion. Q3=COMPLETE_FOR_CURRENT_2H_ADMISSION;Q4=RUNNING_TERMINAL_AUDIT;0 Formal credit.
-
-Current-chat task `vps-2h` checks actual quota and existing work once per hour.
-If work is advancing, end the check without intervening. Resume idle work only
-when quota permits; otherwise wait for the next hour. Mark actual plan completions
-and pause after reviewed eligible2h. Historical automations stay paused.
+Next owner-controlled milestone is Q5 after fresh capacity/schedule admission;
+this execution is complete and stops before12h. Q0–Q4 COMPLETE; accepted2h only,
+12H_STARTED=NO;24H_STARTED=NO;QUALIFICATION_38H=NOT_COMPLETE;PRODUCTION_READY=NO.
+Current-chat hourly continuation will pause after this completed record is pushed.
+Historical automations stay paused.
 Read-only30s sampler/AcceptanceObserver are economical; helpers cannot restart
 Recorder, invent a second T0 or grant credit. See [current state](CURRENT_PRODUCTION_STATE.md)
 and [startup correction](milestone_acceptance/Q3-startup-boundary-correction.md).
@@ -155,8 +159,9 @@ Read these documents in order:
 
 ## Remaining work
 
-Complete the current Q3 actual cloud gates and Q4 eligible2h on the frozen
-release/growing corpus. No 12h in this turn. Each gate's result must be evidenced;
+Q3 current-scope preparation and Q4 reviewed eligible2h are COMPLETE. The next
+Q5/12h requires fresh capacity/schedule admission; it is not started here. Each
+gate's result must be evidenced;
 failed/incomplete time receives zero credit. Preserve both full LIVE audit
 passes and completed control verification. Old historical corpus performance
 remains a separate open P2, never a new-scope PASS.

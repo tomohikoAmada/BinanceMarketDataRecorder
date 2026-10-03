@@ -2,10 +2,10 @@
 
 Policy authority is [accepted ADR-0034](adr/0034-m22-9-v5-bounded-online-terminal-audit.md).
 Original bounded batching follows [ADR-0035](adr/0035-v5-bounded-delta-batches.md).
-New-start v2 sharing follows [ADR-0037](adr/0037-v5-shared-archive-companions.md),
-an implemented candidate pending independent review and replacement deployment. The previously
-deployed implementation is PR #78. Deployment status and
-the owner-stopped qualification are recorded in [current state](CURRENT_PRODUCTION_STATE.md).
+New-start v2 sharing follows [ADR-0037](adr/0037-v5-shared-archive-companions.md)
+and is independently reviewed and deployed in the frozen cf3909e9 release.
+Current artifact and actual qualification status are recorded in
+[current state](CURRENT_PRODUCTION_STATE.md); historical PR #78 is its predecessor.
 V1/V2/V3/V4 readers and their historical decisions retain their existing routing.
 `CURRENT_SCHEMA_VERSION` and `V5_SCHEMA_VERSION` are
 `m22.9-acceptance-evidence.v5`; the historical `SCHEMA_VERSION` alias remains V3.
