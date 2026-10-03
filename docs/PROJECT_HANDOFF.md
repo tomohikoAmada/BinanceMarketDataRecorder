@@ -1,7 +1,32 @@
 # Project Handoff
 
-Updated October3,2026,18:36UTC during corrected-source cloud qualification.
+Updated October3,2026,21:05UTC during corrected-source cloud qualification.
 The original reviewed Formal2h/cloud handoff remains recorded below. This is the current entry point.
+
+Current execution checkpoint (October3,21:05UTC / Shanghai October4,05:05):
+Formal target actually reached7200.001928737s, targetSHA
+30fd63c456420de7e027feab5e623c88f2416797641068a82965d891eda573f9/blockers[].
+Reviewed root endpoint matches target SHA and strict26 PASS; automatic Recorder
+inactive AND disabled/MainPID0/NRestarts0. No restart/newT0. Model/Luna quota
+interruption left native observer and30s sampler running independently; sampler
+naturally completed with Resultsuccess. Online/target/control independent review
+RUNNING (not final eligibility). Archive naturally drained, then timer paused;
+Catalogok/0partials/all6718 chunks+transactionsLOCAL_DELETED,10151154frames/
+552193809storedB/7833293106uncompressedB retained.
+
+Both LIVE terminal finalize+completed verification RUNNING since21:04:36UTC:
+`binance-recorder-q4-spot-idle-formal2h-terminal.service`, invocation
+e03d18ea4bf444a9a7cea0b142f0eccd/MainPID72099. Infinite total timeout/native
+900s no-progress authority; no retry/newT0. Operator helperSHA
+2d12d5d1bef17f9e789ffb75fc99444e8e6c1349f38245e7c6e9f8cb5170a97b changes only
+old scope/UUID binding. Exact stage remains2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
+Read-only Luna monitor active throughcompletion/failure or22:40UTC; Solxhigh
+reviews private frozen online controls SHAef5d8441ae654b6bcddaad523554467b91b56153f15843625906380876570358.
+Original absolute quietexpiry23:31:19UTC unchanged; all5 runtime masks remain.
+After complete terminal/nativeverify, independent eligible-final review plus
+controlled OS RESTORED before cancelling expiry and actual resumed archive
+recurrence/worker success/finitefuture deadline are required. Stopbefore12h.
+No final PASS, newformalcredit or automationpause is recorded yet.
 
 ## Current code and authorization
 

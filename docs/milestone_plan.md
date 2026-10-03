@@ -27,7 +27,10 @@ archive naturally drained then paused. Independent warm/resource/helper/actualar
 COMPLETE/bothLIVE/verify18:21:53UTC roota31e9571…69c18ce/75458records/159shards;
 independentreviewACCEPT. Explicitprestart+freshcore/strict26PASS18:27UTC.
 Absoluteexpiry23:31:19UTC/noextension.
-Formal RUNNING T0UTC18:34:56.795853724/target20:34:56.796UTC;credit0 until full review.
+Formal target COMPLETE7200.001928737s/strictendpointPASS/RecorderinactiveANDdisabled;
+terminal bothLIVE+completedverify RUNNING21:04:36UTC/invocatione03d18ea…f0eccd.
+Online/control independent review RUNNING; credit0 until final review and restored
+handoff. Absoluteexpiry23:31:19UTC unchanged.
 
 The same new frozen identity must bind affected Q3, new2h and later stages.
 Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
@@ -87,8 +90,8 @@ Corrected-source continuation checklist (old completed checklist below is histor
 - [x] Archive recurrence/strict core4+aux26 PASS; all-enabled NONFORMAL normal/missed/catch-up warm-up COMPLETE, pending193→0/delta_pendingfalse/no blockers. Independent admission remains below.
 - [x] Independent warm-up/resource/forecast/helper+actual finite quiet arm ACCEPT;345min window expires23:31:19UTC, no extension. [Review](reviews/2026-10-04-spot-idle-warmup-independent-review.md).
 - [x] New authoritative post-warm-up baseline/both LIVE/completed verify/independent control ACCEPT: roota31e9571…69c18ce.
-- [ ] Fresh strict readiness PASS and one corrected-identity Formal2h RUNNING, stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27; target stop/disable/archive drain remain.
-- [ ] Both full LIVE terminal audits/completed verification/independent eligibility and restored handoff, mark PASS/push/pause hourly task.
+- [x] Fresh strict readiness PASS and sole corrected-identity Formal2h actual target7200.001928737s/endpointPASS/stopANDdisable/archive drain;stage2h-e77218f9d1fa4c78a8a48ce8bafdaf27.
+- [ ] Both full LIVE terminal audits/completed verification/independent eligibility and restored handoff, mark PASS/push/pause hourly task: terminal RUNNING21:04:36UTC/invocatione03d18ea…f0eccd.
 
 ### Fixed MVP boundary
 
@@ -114,7 +117,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q1 | Small correctness fixes and focused regressions | COMPLETE; F2/F3/F6/F7 and bounded F5 independently accepted; actual live RSS/resources measured in Q3/Q4 |
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | Original cf3909e9 admission COMPLETE; corrected deployment/3868-chunk engineering baseline+independent review COMPLETE; all-enabled warm-up COMPLETE; independent forecast/actual quiet arm ACCEPT; new authoritative baseline COMPLETE/bothLIVE/verify/independent ACCEPT; freshstrict PASS; retain existing corpus and reforecast actual larger audit scope |
-| Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact Formal2h RUNNING T0UTC18:34:56.795853724, own terminal+review remain |
+| Q4 | Formal 2h plus full terminal audit and completed verification | Original cf3909e9 COMPLETE/PASS,7200.002178843s/both LIVE/verify/independent ACCEPT; corrected artifact actualtarget7200.001928737s/endpointPASS; bothLIVEterminal+verify RUNNING, independent final+restoredhandoff remain |
 | Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
