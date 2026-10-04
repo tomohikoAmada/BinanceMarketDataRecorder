@@ -2,7 +2,7 @@
 
 ## Current plan — Q5 closeout, optimization, then 86-hour VPS qualification
 
-Updated October 4, 2026 (Shanghai). **This section is the single current development plan.**
+Updated October 5, 2026 (Shanghai). **This section is the single current development plan.**
 It supersedes the October 1/2 proposals and time-local NEXT instructions below.
 The owner's latest planning request inserts **Q6 optimization after the current
 Q5 Formal12h completes its full closeout**, followed by new VPS **2h → 12h →
@@ -35,8 +35,10 @@ closeout-monitor999-n51_b54j actually ARMED15:04:39.252568666UTC with the SAME
 12.404629488GiB reserve and19865.747431334s remaining admission independently ACCEPT.
 Native terminal service started15:05:15UTC, PID117119/inva8342d75…628dd,
 Typeoneshot/TimeoutStartinfinity; source900s no-progress watchdog unchanged.
-At15:20:31UTC its first full LIVE pass was advancing (3 audit progress records,
-546299121 bytes processed), no terminal/final/completed verify yet. Do not duplicate it.
+At16:01:18UTC its first full LIVE pass was advancing (55 audit progress records,
+13326859934 bytes processed/12829 records/52 shards), no final/completed verify yet.
+Prepared child-only closeout helpers independently ACCEPT/27 checks and root-protected;
+not executed. Main371080f CI37212831721 both platformsSUCCESS. Do not duplicate work.
 Q6/Q7 NOT_STARTED until full Q5 closeout. Existing vps-2h ACTIVE, next actual quota
 reset+1minute17:06:38UTC /Oct5 01:06:38Shanghai; checkpoint-based single wakes.
 The following checkpoints retain their historical rules/results, not current authority.
