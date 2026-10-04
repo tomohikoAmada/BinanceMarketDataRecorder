@@ -18,6 +18,19 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
+Actual Q5 result October4 22:09Shanghai: **BLOCKED / NOT ACCEPTED**, zero12h credit.
+Sole target reached43200.002463724s/PASS_CANDIDATE/no core blockers, strict26PASS.
+But one of1436 in-period auxiliary samples blocked ETHUSDT premium_index_snapshot
+NetworkError at21:40:48Shanghai (~5s recovery). Later PASS cannot waive the frozen
+ordinary-network-failure gate. Positive-eligibility fullLIVE audits/verification
+were not started. All evidence retained; exact failed-result controls/restored
+handoff are in docs/milestone_acceptance/Q5-formal12h-20261004.md.
+OS RESTORED before expiry cancellation; Recorder inactiveANDdisabled/PID0/NRestarts0,
+canonical VERIFY/same identity, normal archive recurrence/Catalogok/0partials/backlog.
+Accepted2h only; diagnose before changed reviewed retry, no unchanged rerun/Q6–Q10.
+Existing vps-2h now single next diagnostic continuation22:30Shanghai, not hourly.
+The following RUNNING checkpoint is historical, not current operational authority.
+
 Latest owner authorization October4 now continues through **Q5 Formal12h** and
 its full audits/verification/independent restored closeout; stop before24h.
 Q5 RUNNING, soleT0Oct4 09:53:49Shanghai/target21:53:49Shanghai, stage12h-1c68e5ea…4786f6.
@@ -143,7 +156,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
-| Q5 | Formal 12h plus full terminal audit and completed verification | RUNNING; fresh admission/actual arm/prestart PASS/ACCEPT, soleT0Oct4 09:53:49Shanghai/target21:53:49, stage12h-1c68e5ea…4786f6, full terminal/verification/independent closeout pending |
+| Q5 | Formal 12h plus full terminal audit and completed verification | BLOCKED / NOT ACCEPTED; sole stage reached43200.002463724s, strict endpoint26PASS; one observed premium_index_snapshot NetworkError BLOCK among1436 auxiliary samples. Safely restored/stoppedANDdisabled; full audits not started, zero12h credit; diagnose before any changed reviewed retry. |
 | Q6 | Performance optimization, compatibility verification and optimized release preparation | PLANNED/NOT_STARTED; requires complete Q5 terminal/verification/independent restored closeout; scope and gates below |
 | Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |

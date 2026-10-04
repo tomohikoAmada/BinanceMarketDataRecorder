@@ -2,6 +2,19 @@
 
 Updated October 4, 2026 (Shanghai). This is the current operational entry point.
 
+Actual Q5 result October4 22:09Shanghai: **BLOCKED / NOT ACCEPTED**, zero12h credit.
+Sole target reached43200.002463724s/PASS_CANDIDATE/no core blockers, strict26PASS.
+But one of1436 in-period auxiliary samples blocked ETHUSDT premium_index_snapshot
+NetworkError at21:40:48Shanghai (~5s recovery). Later PASS cannot waive the frozen
+ordinary-network-failure gate. Positive-eligibility fullLIVE audits/verification
+were not started. All evidence retained; exact failed-result controls/restored
+handoff are in docs/milestone_acceptance/Q5-formal12h-20261004.md.
+OS RESTORED before expiry cancellation; Recorder inactiveANDdisabled/PID0/NRestarts0,
+canonical VERIFY/same identity, normal archive recurrence/Catalogok/0partials/backlog.
+Accepted2h only; diagnose before changed reviewed retry, no unchanged rerun/Q6–Q10.
+Existing vps-2h now single next diagnostic continuation22:30Shanghai, not hourly.
+The following RUNNING checkpoint is historical, not current operational authority.
+
 Latest owner-authorized Q5 Formal12h is **RUNNING**. Sole stage
 `12h-1c68e5eaf9724cfbb26e4f5c904786f6`, T0 October4 01:53:49.145836970UTC
 (09:53:49Shanghai), target13:53:49UTC (21:53:49Shanghai). Same corrected23ea5c4/
