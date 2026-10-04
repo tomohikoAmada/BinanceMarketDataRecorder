@@ -39,5 +39,7 @@ Current and historical decisions:
 - [ADR-0035: Bounded V5 delta batches — implemented candidate; review/deployment pending](0035-v5-bounded-delta-batches.md)
 - [ADR-0036: Product-scoped normalized deduplication and build identity](0036-product-scoped-normalized-dedup.md)
 
+- [ADR-0039: Owner-approved sampled monitor pass rate](0039-sampled-monitor-qualification-rate.md)
+
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

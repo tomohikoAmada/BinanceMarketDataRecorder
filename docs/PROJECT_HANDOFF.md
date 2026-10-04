@@ -2,18 +2,27 @@
 
 Updated October 4, 2026 (Shanghai). This is the current operational entry point.
 
-Actual Q5 result October4 22:09Shanghai: **BLOCKED / NOT ACCEPTED**, zero12h credit.
-Sole target reached43200.002463724s/PASS_CANDIDATE/no core blockers, strict26PASS.
-But one of1436 in-period auxiliary samples blocked ETHUSDT premium_index_snapshot
-NetworkError at21:40:48Shanghai (~5s recovery). Later PASS cannot waive the frozen
-ordinary-network-failure gate. Positive-eligibility fullLIVE audits/verification
-were not started. All evidence retained; exact failed-result controls/restored
-handoff are in docs/milestone_acceptance/Q5-formal12h-20261004.md.
-OS RESTORED before expiry cancellation; Recorder inactiveANDdisabled/PID0/NRestarts0,
-canonical VERIFY/same identity, normal archive recurrence/Catalogok/0partials/backlog.
-Accepted2h only; diagnose before changed reviewed retry, no unchanged rerun/Q6–Q10.
-Existing vps-2h now single next diagnostic continuation22:30Shanghai, not hourly.
-The following RUNNING checkpoint is historical, not current operational authority.
+Latest owner authorization October4: complete Q5 closeout, implement the updated
+Q6 optimization/release plan, then complete optimized-artifact VPS Q7/Formal2h;
+stop before Q8/12h,24h,48h. Monitoring gate is **at least99.9% recorded PASS checks**,
+per ADR-0039; this supersedes the previous ordinary-network-error single-check veto.
+It is not a data-completeness claim or a waiver of strict endpoints/core/Raw/archive
+integrity/both complete LIVE audits/completed verify/independent restored closeout.
+Q5's sole43200.002463724s target and1435/1436 monitors=99.9303621% satisfy duration
+and new monitoring gates; Q5 CLOSEOUT_PENDING, not COMPLETE/accepted12h.
+Original BLOCK and old-policy independent rejection remain historical evidence.
+Recorder inactiveANDdisabled; normal archive timer paused for actual audits,
+worker naturally idle. No newT0 or capture restart. Audit-only leaf
+closeout-monitor999-n51_b54j actually ARMED15:04:39.252568666UTC with the SAME
+20:35:45UTC cutoff (Oct5 04:35:45Shanghai), no extension. Fresh19451-chunk census,
+12.404629488GiB reserve and19865.747431334s remaining admission independently ACCEPT.
+Native terminal service started15:05:15UTC, PID117119/inva8342d75…628dd,
+Typeoneshot/TimeoutStartinfinity; source900s no-progress watchdog unchanged.
+At15:20:31UTC its first full LIVE pass was advancing (3 audit progress records,
+546299121 bytes processed), no terminal/final/completed verify yet. Do not duplicate it.
+Q6/Q7 NOT_STARTED until full Q5 closeout. Existing vps-2h ACTIVE, next actual quota
+reset+1minute17:06:38UTC /Oct5 01:06:38Shanghai; checkpoint-based single wakes.
+The following checkpoints retain their historical rules/results, not current authority.
 
 Latest owner-authorized Q5 Formal12h is **RUNNING**. Sole stage
 `12h-1c68e5eaf9724cfbb26e4f5c904786f6`, T0 October4 01:53:49.145836970UTC

@@ -8,8 +8,9 @@ The owner's latest planning request inserts **Q6 optimization after the current
 Q5 Formal12h completes its full closeout**, followed by new VPS **2h → 12h →
 24h → 48h** stages (Q7–Q10). This replaces the previously unstarted Q6/24h
 continuation and its 38h completion target. Q0–Q5 identities and actual evidence
-remain unchanged. This request updates the plan; it does not start development,
-deploy a replacement wheel, modify the active Q5 controls, or start another T0.
+remain unchanged. Latest implementation authorization continues through Q7;
+Q8–Q10 remain planned and require later authorization. No existing duration moves
+to the optimized artifact.
 The owner selected safe old-data cleanup followed by a fresh independent corpus.
 The [recheck](reviews/2026-10-02-plan-recheck.md) records corrections, evidence and
 limits. The [original review](reviews/2026-10-01-architecture-review.md),
@@ -18,18 +19,27 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
-Actual Q5 result October4 22:09Shanghai: **BLOCKED / NOT ACCEPTED**, zero12h credit.
-Sole target reached43200.002463724s/PASS_CANDIDATE/no core blockers, strict26PASS.
-But one of1436 in-period auxiliary samples blocked ETHUSDT premium_index_snapshot
-NetworkError at21:40:48Shanghai (~5s recovery). Later PASS cannot waive the frozen
-ordinary-network-failure gate. Positive-eligibility fullLIVE audits/verification
-were not started. All evidence retained; exact failed-result controls/restored
-handoff are in docs/milestone_acceptance/Q5-formal12h-20261004.md.
-OS RESTORED before expiry cancellation; Recorder inactiveANDdisabled/PID0/NRestarts0,
-canonical VERIFY/same identity, normal archive recurrence/Catalogok/0partials/backlog.
-Accepted2h only; diagnose before changed reviewed retry, no unchanged rerun/Q6–Q10.
-Existing vps-2h now single next diagnostic continuation22:30Shanghai, not hourly.
-The following RUNNING checkpoint is historical, not current operational authority.
+Latest owner authorization October4: complete Q5 closeout, implement the updated
+Q6 optimization/release plan, then complete optimized-artifact VPS Q7/Formal2h;
+stop before Q8/12h,24h,48h. Monitoring gate is **at least99.9% recorded PASS checks**,
+per ADR-0039; this supersedes the previous ordinary-network-error single-check veto.
+It is not a data-completeness claim or a waiver of strict endpoints/core/Raw/archive
+integrity/both complete LIVE audits/completed verify/independent restored closeout.
+Q5's sole43200.002463724s target and1435/1436 monitors=99.9303621% satisfy duration
+and new monitoring gates; Q5 CLOSEOUT_PENDING, not COMPLETE/accepted12h.
+Original BLOCK and old-policy independent rejection remain historical evidence.
+Recorder inactiveANDdisabled; normal archive timer paused for actual audits,
+worker naturally idle. No newT0 or capture restart. Audit-only leaf
+closeout-monitor999-n51_b54j actually ARMED15:04:39.252568666UTC with the SAME
+20:35:45UTC cutoff (Oct5 04:35:45Shanghai), no extension. Fresh19451-chunk census,
+12.404629488GiB reserve and19865.747431334s remaining admission independently ACCEPT.
+Native terminal service started15:05:15UTC, PID117119/inva8342d75…628dd,
+Typeoneshot/TimeoutStartinfinity; source900s no-progress watchdog unchanged.
+At15:20:31UTC its first full LIVE pass was advancing (3 audit progress records,
+546299121 bytes processed), no terminal/final/completed verify yet. Do not duplicate it.
+Q6/Q7 NOT_STARTED until full Q5 closeout. Existing vps-2h ACTIVE, next actual quota
+reset+1minute17:06:38UTC /Oct5 01:06:38Shanghai; checkpoint-based single wakes.
+The following checkpoints retain their historical rules/results, not current authority.
 
 Latest owner authorization October4 now continues through **Q5 Formal12h** and
 its full audits/verification/independent restored closeout; stop before24h.
@@ -156,7 +166,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
-| Q5 | Formal 12h plus full terminal audit and completed verification | BLOCKED / NOT ACCEPTED; sole stage reached43200.002463724s, strict endpoint26PASS; one observed premium_index_snapshot NetworkError BLOCK among1436 auxiliary samples. Safely restored/stoppedANDdisabled; full audits not started, zero12h credit; diagnose before any changed reviewed retry. |
+| Q5 | Formal 12h plus full terminal audit and completed verification | CLOSEOUT_PENDING; actual43200.002463724s, strict26PASS, owner-approved monitor1435/1436=99.9303621% PASS. Both full LIVE audits natively advancing since15:05:15UTC; completed verify/independent restored closeout pending; original20:35:45UTC cutoff/old BLOCK retained. |
 | Q6 | Performance optimization, compatibility verification and optimized release preparation | PLANNED/NOT_STARTED; requires complete Q5 terminal/verification/independent restored closeout; scope and gates below |
 | Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
@@ -522,9 +532,10 @@ Catalog conflicts, missing/old data, terminal/STALE/stopped owners and WS failur
 remain blocked. No recovering context may remain at the strict endpoint. This
 addresses observed empty-period publication delay without claiming absent data
 complete; see the [Q3 correction](milestone_acceptance/Q3-empty-recovery-correction.md).
- A failed
-supplementary check blocks owner-reviewed qualification even if core readiness
-is READY. Preserve all transient failures/gaps and their recovery evidence; do not
+ Current owner qualification uses ADR-0039: every original supplemental PASS/BLOCK
+remains visible, and at least99.9% of recorded in-period checks must PASS.
+One ordinary network BLOCK no longer automatically rejects the entire stage;
+strict endpoints/core/complete data-integrity audits remain required. Preserve all transient failures/gaps and their recovery evidence; do not
 invent full liquidation-market coverage from this snapshot-style stream.
 
 The owner permits economical long-run monitoring. Keep AcceptanceObserver as
