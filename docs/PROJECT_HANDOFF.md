@@ -2,16 +2,26 @@
 
 Updated October 4, 2026 (Shanghai). This is the current operational entry point.
 
-Latest owner authorization October4,2026 (Shanghai): **Q5 Formal12h continuation
-is authorized and PREPARING**, through both complete LIVE terminal audits,
-completed verification, independent review and restored handoff; stop before24h.
-Corrected Q4 below remains accepted; accepted target credit is2h/38h so far.
-Unique Q5 scope `/srv/recorder-data/recorder-archive/evidence/Q5-formal12h-20261004-fA0AJu8H`.
-Fresh6718-chunk capacity/full-audit schedule and finite67500s plan independently
-ACCEPT; actual helper/quiet arm/prestart/T0 gates pending. No12h T0/credit yet.
-Existing hourly `vps-2h` is reactivated for12h; never interfere with healthy native
-work; pause after complete12h closeout. Historical tasks remain paused.
-See [Q5 checkpoint](milestone_acceptance/Q5-formal12h-20261004.md).
+Latest owner-authorized Q5 Formal12h is **RUNNING**. Sole stage
+`12h-1c68e5eaf9724cfbb26e4f5c904786f6`, T0 October4 01:53:49.145836970UTC
+(09:53:49Shanghai), target13:53:49UTC (21:53:49Shanghai). Same corrected23ea5c4/
+wheelbb7e357e/identity0ea93b2c and acceptedQ4 final64889189/terminald7b460fb.
+Fresh pinned/publication-aware prestart/coreREADY/strict26PASS and independent
+admission/finite actual arm/actual prestart+T0 independent ACCEPT; source
+start313b6e48…ac3e7f6, no blockers.
+Unique current scope `/srv/recorder-data/recorder-archive/evidence/Q5-formal12h-attempt3-20261004-6wnh0ts_`.
+Native observer/sampler active; RecorderPID86133/inv4ad4c1d7…459a51/NRestarts0,
+enabled-active. Preserve healthy native jobs through quota interruptions; no
+restart/repeated prestart/newT0. Finite expiry20:35:45UTC (Oct5 04:35:45Shanghai),
+no extension. Two failed no-T0 prestart scopes/controls retained and order repaired.
+Target, both full LIVE audits/completedverify/final independent restored closeout
+remain pending. Accepted credit2h/38h; Q6 NOT_STARTED/PRODUCTION_READYNO/R078OPEN.
+Existing hourly `vps-2h` continues12h; after known target inspect actual endpoint/
+continuation rather than perpetually relying on this RUNNING snapshot. Stop before24h.
+See [exact Q5 checkpoint and next operations](milestone_acceptance/Q5-formal12h-20261004.md).
+
+The following Q4 and older checkpoints are retained historical evidence; the
+Q5 block above and linked exact record govern current operations.
 
 Corrected-source Q4 PASS, October 4, 2026 (Shanghai). Source23ea5c4,
 wheelbb7e357e…52a0 and deployment identity0ea93b2c…fbee completed their own
@@ -40,7 +50,7 @@ future deadline. Handoff22:04:51.880189757UTC: Recorder inactive AND disabled,
 MainPID0/NRestarts0; same verified artifact/config/boot. Old Raw/archive/failures/
 venv custody and unpublished143362-chunk scope remain retained.
 
-Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5 PREPARING/Q6 NOT_STARTED and
+Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5 RUNNING/Q6 NOT_STARTED and
 PRODUCTION_READY=NO. Latest owner continuation now includes12h and stops before24h.
 Hourly `vps-2h` continues toward12h closeout; historical tasks remain paused.
 R-078 and prior38h peak reserve failure remain OPEN; before any

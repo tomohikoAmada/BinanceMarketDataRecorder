@@ -14,8 +14,12 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 Latest owner authorization October4 now continues through **Q5 Formal12h** and
 its full audits/verification/independent restored closeout; stop before24h.
-Q5 PREPARING, no12hT0/credit yet. Fresh measured capacity/finite-window plan
-independently ACCEPT; actual helper/arm/prestart gates pending. See
+Q5 RUNNING, soleT0Oct4 09:53:49Shanghai/target21:53:49Shanghai, stage12h-1c68e5ea…4786f6.
+Fresh forecast/helpers/actual finite arm/pinned publication-aware prestart independently
+ACCEPT including independent actual T0; coreREADY/strict26PASS/source
+start313b6e48…ac3e7f6/no blockers. First three native samples complete/no blockers
+and21 in-period auxiliary samplesPASS (at636.514s), no target/final yet. Actual12h
+target/bothLIVE/completedverify/independent restored closeout pending; no12h credit. See
 [Q5 checkpoint](milestone_acceptance/Q5-formal12h-20261004.md).
 Corrected-source release/Q3 gates and own reviewed VPS Formal2h are COMPLETE. Source23ea5c4 has
 local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS.
@@ -80,7 +84,7 @@ attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
 Both prior2h executions ended before12h. Latest owner now authorizesQ5;
-Q5 PREPARING/Q6 NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
+Q5 RUNNING/Q6 NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
 its own historical PASS without transferring credit. Original14h152/361min and
 38h386/1007min full-audit scenarios are historical advisory arithmetic. Before
 later T0 reforecast from the corrected actual50m05.516s/6718-chunk audit and
@@ -125,7 +129,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
-| Q5 | Formal 12h plus full terminal audit and completed verification | PREPARING; fresh6718-chunk forecast/finite plan ACCEPT; helper/actual arm/prestart/T0 pending, same corrected frozen identity |
+| Q5 | Formal 12h plus full terminal audit and completed verification | RUNNING; fresh admission/actual arm/prestart PASS/ACCEPT, soleT0Oct4 09:53:49Shanghai/target21:53:49, stage12h-1c68e5ea…4786f6, full terminal/verification/independent closeout pending |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
 ### Q1 — Fix known behavior with existing structures
@@ -374,7 +378,8 @@ Q6 closes only with three reviewed eligible finals, their hashes/predecessor cha
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
 F4/R-078 separate. Q0–Q4 are complete. Owner now authorizes **Q5** through full12h acceptance;
-reforecast admission independently accepted, actual helper/arm/prestart/T0 pending.
+Fresh admission/actual arm/prestart/soleT0 complete; actual target/full terminal and
+independent restored closeout remain pending.
 This continuation stops before24h.
 
 ### How subsequent development proceeds

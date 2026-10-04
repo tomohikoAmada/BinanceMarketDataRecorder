@@ -24,8 +24,12 @@ The project uses its own branding and author-controlled service namespaces.
 ## Project goal and current checkpoint
 
 Latest owner authorizes Q5 Formal12h through full terminal/verification/independent
-restored closeout; stop before24h. Q5 PREPARING, no12hT0/credit yet. Fresh6718-chunk
-forecast/finite67500s plan ACCEPT, helper/actual arm/prestart gates pending. Exact
+restored closeout; stop before24h. Q5 RUNNING, soleT0Oct4 09:53:49Shanghai,
+target21:53:49Shanghai/stage12h-1c68e5eaf9724cfbb26e4f5c904786f6. Fresh6718-chunk
+forecast/helpers/actual67500s arm/pinned publication-aware prestart/coreREADY/strict26
+PASS/ACCEPT. Native observer+sampler healthy; do not restart/createT0. Finite expiry
+Oct5 04:35:45Shanghai, no extension. Accepted2h only until actual12h target/full
+terminal/verification/independent restored closeout. Two no-T0 prep failures retained. Exact
 Q5 scope/checkpoint: docs/milestone_acceptance/Q5-formal12h-20261004.md.
 Completed corrected-source Q4, October4,
 2026 (Shanghai): source23ea5c4/wheelbb7e357e…52a0/identity0ea93b2c…fbee own
@@ -50,7 +54,7 @@ Five approved runtime masks removed/original three units enabled-active; archive
 actual recurrence/four natural successful workers/finite future deadline PASS.
 Handoff22:04:51.880189757UTC RecorderinactiveANDdisabled/MainPID0/NRestarts0,
 same verified config/identity/boot; Catalogok/0partials/backlog/all6718LOCAL_DELETED.
-Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5 PREPARING/Q6 NOT_STARTED/PRODUCTION_READY=NO.
+Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5 RUNNING/Q6 NOT_STARTED/PRODUCTION_READY=NO.
 Existing hourly `vps-2h` reactivated for12h; completion requires pausing it after
 full Q5 closeout push. Never duplicate an already advancing native stage.
 Historical tasks stay paused. Latest acceptance/review are in
