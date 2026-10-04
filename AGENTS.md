@@ -23,7 +23,11 @@ The project uses its own branding and author-controlled service namespaces.
 
 ## Project goal and current checkpoint
 
-Latest owner-authorized corrected-source continuation is COMPLETE, October4,
+Latest owner authorizes Q5 Formal12h through full terminal/verification/independent
+restored closeout; stop before24h. Q5 PREPARING, no12hT0/credit yet. Fresh6718-chunk
+forecast/finite67500s plan ACCEPT, helper/actual arm/prestart gates pending. Exact
+Q5 scope/checkpoint: docs/milestone_acceptance/Q5-formal12h-20261004.md.
+Completed corrected-source Q4, October4,
 2026 (Shanghai): source23ea5c4/wheelbb7e357e…52a0/identity0ea93b2c…fbee own
 VPS Formal2h7200.001928737s, both full LIVE terminal audits, completed verification,
 independent GPT-6.1 Sol xhigh LOCAL/OFFLINE eligibility and actual restored-handoff
@@ -46,9 +50,9 @@ Five approved runtime masks removed/original three units enabled-active; archive
 actual recurrence/four natural successful workers/finite future deadline PASS.
 Handoff22:04:51.880189757UTC RecorderinactiveANDdisabled/MainPID0/NRestarts0,
 same verified config/identity/boot; Catalogok/0partials/backlog/all6718LOCAL_DELETED.
-Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5/Q6 NOT_STARTED/PRODUCTION_READY=NO.
-Stop before12h. Completion requires pausing hourly `vps-2h` after closeout push;
-if an old hourly wake remains active, only pause it, never start another test.
+Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5 PREPARING/Q6 NOT_STARTED/PRODUCTION_READY=NO.
+Existing hourly `vps-2h` reactivated for12h; completion requires pausing it after
+full Q5 closeout push. Never duplicate an already advancing native stage.
 Historical tasks stay paused. Latest acceptance/review are in
 `docs/milestone_acceptance/Q4-formal2h-spot-idle-20261004.md` and current handoff.
 

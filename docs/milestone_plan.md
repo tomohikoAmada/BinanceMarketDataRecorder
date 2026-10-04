@@ -12,8 +12,12 @@ limits. The [original review](reviews/2026-10-01-architecture-review.md),
 
 ### Outcome and current status
 
-Latest owner continuation is COMPLETE: corrected-source release/Q3 gates and
-one new reviewed VPS Formal2h PASS, then stop before12h. Source23ea5c4 has
+Latest owner authorization October4 now continues through **Q5 Formal12h** and
+its full audits/verification/independent restored closeout; stop before24h.
+Q5 PREPARING, no12hT0/credit yet. Fresh measured capacity/finite-window plan
+independently ACCEPT; actual helper/arm/prestart gates pending. See
+[Q5 checkpoint](milestone_acceptance/Q5-formal12h-20261004.md).
+Corrected-source release/Q3 gates and own reviewed VPS Formal2h are COMPLETE. Source23ea5c4 has
 local1998/independent GPT-6.1 Sol xhigh ACCEPT/exact CI37130186751 BOTH PASS.
 Corrected cloud233/locked wheel121 source files/all28 dependencies, independent
 deployer/helper and actual stopped canonical deployment VERIFY PASS;
@@ -33,7 +37,7 @@ sampling limits. OS RESTORED22:00:16UTC BEFORE absolute-expiry cancellation;
 archive actual recurrence/natural success/future deadline and RecorderinactiveAND
 disabled/PID0/NRestarts0 verified. No expiry extension, newT0 or corpus reset.
 See [corrected Q4 acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md).
-Pause hourly `vps-2h` after this closeout is pushed; historical tasks stay paused.
+Existing hourly `vps-2h` reactivated for12h; pause after Q5 closeout push. Historical tasks stay paused.
 
 The same new frozen identity must bind affected Q3, new2h and later stages.
 Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
@@ -75,8 +79,8 @@ controlled quiet-window exit; no corpus reset/unique deletion. Earlier failed
 attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
-Both original and corrected authorized executions ended before12h. Q5/Q6 remain
-NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
+Both prior2h executions ended before12h. Latest owner now authorizesQ5;
+Q5 PREPARING/Q6 NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
 its own historical PASS without transferring credit. Original14h152/361min and
 38h386/1007min full-audit scenarios are historical advisory arithmetic. Before
 later T0 reforecast from the corrected actual50m05.516s/6718-chunk audit and
@@ -121,7 +125,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q2 | Reviewed release candidate and cloud test design | Original COMPLETE; post-Q4 Spot idle source23ea5c4/local1998/independent ACCEPT/exact CI37130186751 BOTH PASS; corrected exact wheelbb7e357e/cloud233/locked source+dependencies/independent deployer+helper ACCEPT; COMPLETE |
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
-| Q5 | Formal 12h plus full terminal audit and completed verification | NOT_STARTED; requires eligible2h under the same corrected frozen deployment identity |
+| Q5 | Formal 12h plus full terminal audit and completed verification | PREPARING; fresh6718-chunk forecast/finite plan ACCEPT; helper/actual arm/prestart/T0 pending, same corrected frozen identity |
 | Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
 
 ### Q1 — Fix known behavior with existing structures
@@ -369,8 +373,9 @@ Catalog integrity, no active partials, archive backlog and exact retained eviden
 Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
 ≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
 limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
-F4/R-078 separate. Q0–Q4 are complete for the current2h scope. Next is **Q5** after fresh capacity/
-schedule admission and owner-controlled continuation; this execution stops before12h.
+F4/R-078 separate. Q0–Q4 are complete. Owner now authorizes **Q5** through full12h acceptance;
+reforecast admission independently accepted, actual helper/arm/prestart/T0 pending.
+This continuation stops before24h.
 
 ### How subsequent development proceeds
 

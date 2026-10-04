@@ -2,6 +2,17 @@
 
 Updated October 4, 2026 (Shanghai).
 
+Latest owner authorization October4,2026 (Shanghai): **Q5 Formal12h continuation
+is authorized and PREPARING**, through both complete LIVE terminal audits,
+completed verification, independent review and restored handoff; stop before24h.
+Corrected Q4 below remains accepted; accepted target credit is2h/38h so far.
+Unique Q5 scope `/srv/recorder-data/recorder-archive/evidence/Q5-formal12h-20261004-fA0AJu8H`.
+Fresh6718-chunk capacity/full-audit schedule and finite67500s plan independently
+ACCEPT; actual helper/quiet arm/prestart/T0 gates pending. No12h T0/credit yet.
+Existing hourly `vps-2h` is reactivated for12h; never interfere with healthy native
+work; pause after complete12h closeout. Historical tasks remain paused.
+See [Q5 checkpoint](milestone_acceptance/Q5-formal12h-20261004.md).
+
 Corrected-source Q4 PASS, October 4, 2026 (Shanghai). Source23ea5c4,
 wheelbb7e357e…52a0 and deployment identity0ea93b2c…fbee completed their own
 7200.001928737-second Formal2h, both full LIVE terminal audits, completed
@@ -29,10 +40,10 @@ future deadline. Handoff22:04:51.880189757UTC: Recorder inactive AND disabled,
 MainPID0/NRestarts0; same verified artifact/config/boot. Old Raw/archive/failures/
 venv custody and unpublished143362-chunk scope remain retained.
 
-Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5/Q6 NOT_STARTED and
-PRODUCTION_READY=NO. Stop before12h. This checkpoint completes the latest owner
-scope; pause hourly `vps-2h` after the closeout reaches main. Historical tasks
-remain paused. R-078 and prior38h peak reserve failure remain OPEN; before any
+Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5 PREPARING/Q6 NOT_STARTED and
+PRODUCTION_READY=NO. Latest owner continuation now includes12h and stops before24h.
+Hourly `vps-2h` continues toward12h closeout; historical tasks remain paused.
+R-078 and prior38h peak reserve failure remain OPEN; before any
 later owner-authorized T0 reforecast actual capacity/temp/staging/backlog/controls
 and full-audit schedule using the larger current measured scope. F4/portable
 archive follow-ups remain separate. No speculative server or language change.
