@@ -15,10 +15,21 @@ enabled-active. Preserve healthy native jobs through quota interruptions; no
 restart/repeated prestart/newT0. Finite expiry20:35:45UTC (Oct5 04:35:45Shanghai),
 no extension. Two failed no-T0 prestart scopes/controls retained and order repaired.
 Target, both full LIVE audits/completedverify/final independent restored closeout
-remain pending. Accepted credit2h/38h; Q6 NOT_STARTED/PRODUCTION_READYNO/R078OPEN.
+remain pending. Current-artifact accepted credit2h; Q6–Q10 NOT_STARTED/
+PRODUCTION_READYNO/R078OPEN.
 Existing hourly `vps-2h` continues12h; after known target inspect actual endpoint/
 continuation rather than perpetually relying on this RUNNING snapshot. Stop before24h.
 See [exact Q5 checkpoint and next operations](milestone_acceptance/Q5-formal12h-20261004.md).
+
+Latest owner planning update: after complete Q5 terminal/verification/independent
+restored closeout, **Q6 performance optimization/release preparation → Q7 new VPS
+2h → Q8 new VPS 12h → Q9 new VPS 24h → Q10 new VPS 48h**. The optimized artifact
+must earn its own 86h (309600s); current Q4/Q5 credit stays with its original
+identity. This supersedes the old unstarted Q6/24h and 38h target, not the active
+Q5 run. Q6 includes reviewed 48h/new-chain support because the current CLI lacks
+48h, and preserves old 72h/168h verification/resume semantics. See the
+[current milestone plan](milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
+This planning edit does not start implementation/deployment or another live job.
 
 The following Q4 and older checkpoints are retained historical evidence; the
 Q5 block above and linked exact record govern current operations.
@@ -50,13 +61,15 @@ future deadline. Handoff22:04:51.880189757UTC: Recorder inactive AND disabled,
 MainPID0/NRestarts0; same verified artifact/config/boot. Old Raw/archive/failures/
 venv custody and unpublished143362-chunk scope remain retained.
 
-Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5 RUNNING/Q6 NOT_STARTED and
-PRODUCTION_READY=NO. Latest owner continuation now includes12h and stops before24h.
+Q0–Q4 COMPLETE, current corrected artifact accepted2h; Q5 RUNNING and
+Q6 optimization/Q7–Q10 new qualification NOT_STARTED; PRODUCTION_READY=NO.
+Current live continuation includes12h/full closeout and stops before optimization.
 Hourly `vps-2h` continues toward12h closeout; historical tasks remain paused.
 R-078 and prior38h peak reserve failure remain OPEN; before any
 later owner-authorized T0 reforecast actual capacity/temp/staging/backlog/controls
-and full-audit schedule using the larger current measured scope. F4/portable
-archive follow-ups remain separate. No speculative server or language change.
+and full-audit schedule using the larger current measured scope. F4 bounded
+normalization merge is evaluated in Q6; portable archive rollout stays separate.
+No speculative server or language change.
 
 See [current acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md),
 [final independent review](reviews/2026-10-04-spot-idle-formal2h-independent-review.md)
@@ -180,9 +193,10 @@ Original VPS per-read interleaving is unproved.
 
 Q1/Q2 correctness/release gates are complete. Product-scoped normalized
 dedup/build identity is ADR-0036; old immutable v1 outputs remain readable.
-ADR-0035/0037 bound new v2 deltas and preserve old starts. F4 normalization
-fan-in, historical audit scalability and portable archive rollout stay separate
-follow-ups; no speculative native rewrite or hardware change is introduced.
+ADR-0035/0037 bound new v2 deltas and preserve old starts. Q6 evaluates F4
+normalization fan-in and redundant audit work; historical custody and portable
+archive rollout remain separate. No speculative native rewrite or hardware
+change is introduced.
 
 ## Development setup
 
@@ -208,9 +222,12 @@ Read these documents in order:
 ## Remaining work
 
 Corrected source23ea5c4 release/Q3 and reviewed eligible Q4 are COMPLETE.
-The latest authorized continuation ends here; Q5/12h and Q6/24h are not started.
-Future stages require fresh capacity/schedule admission and owner authorization. Each
-gate's result must be evidenced;
+Latest recorded Q5/12h is RUNNING; its actual target/full terminal/verification/
+independent restored closeout remain pending. The latest plan then schedules Q6
+optimization and separately qualified optimized-artifact Q7–Q10 (2h/12h/24h/48h).
+Future stage starts require their implemented support, reviewed predecessor and
+fresh capacity/schedule admission under the applicable operational authority.
+This documentation task does not start them. Each gate's result must be evidenced;
 failed/incomplete time receives zero credit. Preserve both full LIVE audit
 passes and completed control verification. Old historical corpus performance
 remains a separate open P2, never a new-scope PASS.

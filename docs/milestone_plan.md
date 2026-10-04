@@ -1,9 +1,15 @@
 # Milestone Plan
 
-## Current plan — 38 accepted hours on the cloud server
+## Current plan — Q5 closeout, optimization, then 86-hour VPS qualification
 
 Updated October 4, 2026 (Shanghai). **This section is the single current development plan.**
 It supersedes the October 1/2 proposals and time-local NEXT instructions below.
+The owner's latest planning request inserts **Q6 optimization after the current
+Q5 Formal12h completes its full closeout**, followed by new VPS **2h → 12h →
+24h → 48h** stages (Q7–Q10). This replaces the previously unstarted Q6/24h
+continuation and its 38h completion target. Q0–Q5 identities and actual evidence
+remain unchanged. This request updates the plan; it does not start development,
+deploy a replacement wheel, modify the active Q5 controls, or start another T0.
 The owner selected safe old-data cleanup followed by a fresh independent corpus.
 The [recheck](reviews/2026-10-02-plan-recheck.md) records corrections, evidence and
 limits. The [original review](reviews/2026-10-01-architecture-review.md),
@@ -43,22 +49,29 @@ disabled/PID0/NRestarts0 verified. No expiry extension, newT0 or corpus reset.
 See [corrected Q4 acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md).
 Existing hourly `vps-2h` reactivated for12h; pause after Q5 closeout push. Historical tasks stay paused.
 
-The same new frozen identity must bind affected Q3, new2h and later stages.
+The current frozen identity binds affected Q3 and the current Q4/Q5 stages.
+Q6 produces a separately reviewed optimized artifact; Q7–Q10 must qualify that
+new frozen identity independently. Current Q4/Q5 duration cannot transfer to it.
 Preserve the growing corpus, all14 flags/four products and old cf3909e9 Q4 PASS
 as historical evidence. See [correction and rerun decision](milestone_acceptance/Q4-spot-idle-correction.md).
 
-Done means **Formal 2h + 12h + 24h**, each independently verified and reviewed
-eligible, on the same frozen artifact/profile and growing corpus lineage:
-at least **136,800 accepted target seconds (38h)**. This is three stages, with
-stops/audits between them, not one uninterrupted 38h uptime. Audit, readiness,
-maintenance and retries add wall time and earn no credit. The 24h stage checks
-ordinary connection rotation and recovery. No mandatory 30m/4h/72h/168h chain
-is added to this scope; broader production certification remains separate.
+Done means current **Q5 full closeout**, then **Q6 optimization/release gates**,
+then **new Formal 2h + 12h + 24h + 48h** on the same optimized frozen
+artifact/profile and retained growing corpus lineage: at least **309,600 accepted
+target seconds (86h)** for the optimized artifact. These are four separate stages
+with stops/audits between them, not one uninterrupted 86h uptime. Current Q4/Q5
+and older accepted runs remain their own evidence and earn no optimized-artifact
+credit. Audit, readiness, warm-up, maintenance and retries add wall time and earn
+no credit. The 24h/48h stages assess actual connection rotation/recovery and
+sustained resource/backlog behavior. No 72h/168h stage is added to this scope;
+broader production certification remains separate.
 
 The existing final uses `result=PASS_CANDIDATE`, no blocking findings and
 `eligible_for_next_stage=true`. Successful completed-stage verification and
-review make that stage PASS for this plan. `QUALIFICATION_38H=PASS` is the
-closeout record binding all three finals; no new runtime status/protocol is needed.
+review make that stage PASS for this plan. Q10's closeout records
+`OPTIMIZED_QUALIFICATION_86H=PASS`, binding all four new finals and their actual
+target durations. This is a plan-level closeout label, not an implemented CLI
+result. Q6 must implement and review explicit 48h/new-chain support before release.
 This endpoint does not silently change the broader `PRODUCTION_READY=NO` gate.
 
 Q0–Q4 are COMPLETE for the original installed cf3909e9 2h scope. Frozen sourcecf3909e9/tree2ac585d0,
@@ -84,7 +97,8 @@ attempts/source/custody and R078 remain retained/time-local. The original fixed
 absolute cutoff correction is independently accepted, with no window extension.
 
 Both prior2h executions ended before12h. Latest owner now authorizesQ5;
-Q5 RUNNING/Q6 NOT_STARTED; corrected artifact accepted2h/38h. The old cf3909e9 stage retains
+Q5 RUNNING; Q6 optimization and Q7–Q10 qualification are PLANNED/NOT_STARTED;
+the current corrected artifact has accepted2h, with Q5 credit pending. The old cf3909e9 stage retains
 its own historical PASS without transferring credit. Original14h152/361min and
 38h386/1007min full-audit scenarios are historical advisory arithmetic. Before
 later T0 reforecast from the corrected actual50m05.516s/6718-chunk audit and
@@ -130,7 +144,11 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | RUNNING; fresh admission/actual arm/prestart PASS/ACCEPT, soleT0Oct4 09:53:49Shanghai/target21:53:49, stage12h-1c68e5ea…4786f6, full terminal/verification/independent closeout pending |
-| Q6 | Formal 24h, rotation/recovery evidence and 38h closeout | NOT_STARTED; requires eligible 12h predecessor and reviewed eligible final; all three targets total ≥38h |
+| Q6 | Performance optimization, compatibility verification and optimized release preparation | PLANNED/NOT_STARTED; requires complete Q5 terminal/verification/independent restored closeout; scope and gates below |
+| Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
+| Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
+| Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
+| Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |
 
 ### Q1 — Fix known behavior with existing structures
 
@@ -285,8 +303,11 @@ Mac timings, tiny-frame fixtures and a six-chunk microbenchmark do not pass this
 
 Forecast stage/cumulative ingest, Catalog/manifests/evidence/logs, archive backlog,
 root reserve and archive capacity from measured growth and relevant observed peaks.
-Forecast complete audits at cumulative ≥2h, ≥14h and ≥38h including warm-up,
-failed-run data and inter-stage capture. Baseline/finalize already perform producer
+For Q7–Q10, forecast complete audits at optimized-chain cumulative ≥2h, ≥14h,
+≥38h and ≥86h, **in addition to the entire retained Q5-and-earlier corpus**,
+warm-up, failed-run data and inter-stage capture. These cumulative target hours
+are not a substitute for the actual larger byte/frame/chunk census.
+Baseline/finalize already perform producer
 Raw scanning plus independent LIVE reconstruction BEFORE root publication;
 completed CLI `verify` replays immutable controls/proofs, not a third LIVE scan.
 Include both live passes, freeze/SQL/shard and verification costs. Record practical
@@ -311,7 +332,160 @@ additional retained capture to reforecast; resolve a failed relevant capacity/
 practicality gate before that stage. Keep R-078 OPEN; no speculative rewrite or
 server upgrade in the current2h scope.
 
-### Q4–Q6 — Three separately eligible stages
+### Q6 — Performance optimization and optimized release preparation
+
+Dependency: current Q5 must first reach its actual 12h target, complete both full
+LIVE terminal passes and completed verification, obtain independent eligibility
+and actual restored-handoff review, and finish its evidence/doc closeout. Keep
+its artifact, T0, sampling/strict gates, finite expiry and native jobs unchanged.
+Q6 earns no Formal duration. The old unstarted Q6/24h plan is superseded.
+
+Preserve Python 3.12, one process/per-ProductKey Collector, SQLite, Raw v1,
+published consumer contracts, all14 enabled flags/four products and existing
+capture/durability/profile settings. Retain the corpus, failures and old immutable
+builds. The first implementation batch targets the following concrete work:
+
+| Direction | Required implementation boundary | Acceptance evidence |
+|---|---|---|
+| Buffered temporary NDJSON reads/writes | Bound buffers and aggregate memory; flush/close scratch writers before readers or eviction. Do not alter persistent Raw writes or fsync/rename/unlink ordering. | Exact work-file bytes, normalized/replay results and malformed-input rejection agree; measure calls, wall/CPU and memory on representative files. |
+| Indexed oldest-unowned-chunk selection | Evaluate `(state, created_at_utc_ns, chunk_id)` with actual Catalog/query plans; retain ordering, local/remote ownership exclusion and transaction checks. Review additive-index migration/schema/audit compatibility. | Same selected rows under ties and ownership transitions; query-plan/read-cost comparison plus write/migration cost and old-Catalog compatibility. |
+| Single frozen Checkpoint snapshot | Build/sort the canonical book once per save, reuse its hash and bind file/Catalog identity to that same snapshot. No cache across updates. | Byte/hash/identity equivalence, restore round trip and existing crash/invalid-state regressions. |
+| Remove repeated sorting of an already ordered dedup variant | Establish the complete input-order invariant at the existing internal boundary. Retain deterministic winner, duplicate count, all provenance and conflict behavior. | Differential normal/conflicting/cross-product/duplicate cases and actual sorting-key/allocation cost; no provenance truncation. |
+
+The future production sizing target is approximately ten operator-selected
+symbols, potentially twenty ProductKeys when both markets are selected. Include
+an isolated capacity study of that selected mix: realistic rates/payloads, bursts,
+resync/seal and auxiliary catch-up, total queue memory, REST wait, archive drain
+versus ingest, Catalog history cost and full-audit windows. The current
+supplementary gate pins BTC/ETH/four products/26 owners; future expansion needs
+reviewed profile-bound expectations (all-enabled ten+ten currently implies122
+auxiliary owners/60 five-minute cursors). This study does not change the frozen
+four-product Q5 or automatically expand the Q7–Q10 qualification profile. A
+four-product PASS is not twenty-product capacity certification. See the
+[code and local measurement review](reviews/2026-10-04-ten-symbol-optimization-review.md).
+Evaluate stream-specific rotation and backlog-aware drain only with measured
+reserve, recovery, durability and capture-impact evidence; they are not already
+proven safe speedups or mandatory configuration changes.
+
+Evaluate the remaining directions in this same milestone. Include a candidate in
+the frozen release only after its performance and safety gates pass; otherwise
+record its measured limitation and explicit deferral rather than weakening a gate.
+
+| Direction | Safety/measurement gate before inclusion |
+|---|---|
+| Fuse SHA/read/decompression work in seal/shared artifact validation, each V5 Raw pass, and normalization | Compute exact stored and uncompressed hashes/sizes in one compressed read; retain CRC, headers, counts, statistics, gap/sequence checks and fd/path identity guards. Account for every compressed byte, decoder read-ahead, EOF, trailing/multiple frames, short reads, truncation, cancellation, mutation/replacement and authorized retirement. Preserve reader error/commit contracts; no normalized/proof publication before complete validation. Both independent full LIVE audit passes remain. Compare complete proofs and actual wall/CPU/read costs, not just pass counts. |
+| Bounded hierarchical normalization merge (F4) | Reuse the established replay-style fixed fan-in; preserve the full stable sort/dedup order and reliably close readers on error/cancellation. Measure peak descriptors/RSS/temp space and large-run completion. Additional merge I/O may cost time on small inputs; document the tradeoff. |
+| Reduce small-chunk overhead with stream-specific rotation | Compare current and candidate policies on the same selected mix and arrival trace; measure chunks/hour, seal/archive/Catalog setup cost, Raw bytes, active reserve, temp/staging, archival delay and recovery time. Preserve <=1s configured durability, size/reserve limits, sequence/gap/reconnect boundaries and crash recovery. Longer intervals are a tested candidate, not an automatic default change. |
+| Backlog-aware archive drain cadence/duty cycle | Compare current bounded single-owner drain against a candidate using sustained ingest, bursts, archive pauses/outages and resumed drain. Measure actual bytes/files retired per wall second, backlog slope, reserve ETA, Recorder lag/CPU/RSS, co-resident I/O and temp space. Preserve ownership lock, finite runtime/file budgets, target identity, full readback and deletion authority; increasing workers or duty cycle alone is not acceptance. |
+| REST queue scheduling under the expanded product set | First measure shared-gate queue age/depth, core snapshot and auxiliary/catch-up wait p50/p95/p99/max, cursor lag and recovery under synchronized demand. Compare an isolated scheduler only if contention is material. Validate current official endpoint budgets, shared cooldown, fairness/no starvation, cancellation and stop behavior; preserve Raw/request/receive provenance. Retain the existing lock when the measured benefit is small. |
+| Reuse validated Decimal parsing and immutable per-chunk metadata | Bind reuse to a frozen input/snapshot; preserve constructor/reader validation, exact decimal semantics and invalid-input behavior. Measure conversion/object savings against added memory. Do not use float or a stale mutable-input cache. |
+| Replay partition/time pruning and reusable ordering | Start with verified receive-time ranges; exchange-time/fallback queries need their own valid bounds. A cache must bind build, clock, fallback and complete ordering policy. Compare exact event order/seek/gap results and cold/warm costs; preserve old immutable builds. |
+| Incremental normalization | Reuse only content-bound verified work; recalculate affected cross-chunk semantic groups, duplicate sources/counts and conflicts. Full-build equivalence and compatibility are prerequisites; simply processing new chunks is insufficient. |
+| Reuse deployment verification within one observation | Establish an explicit observation boundary, file/identity binding, mutation detection and invalidation rules. Retain strict pre-start/target and fresh checks after restart/change; no permanent trust in the first success. Measure the complete observation. |
+| Consolidate archive/source/receive-session revalidation | Assess same-session repeated source scans and post-publication target scans; preserve post-fsync full readback, exact receipt/manifest/Archive Set binding, no-clobber loser validation, restart/retry revalidation and deletion authorization. Same inode/size/timestamps alone are insufficient. Any reduced deletion/decompression check or protocol change needs explicit contract/ADR review and adversarial/crash tests before inclusion. |
+
+#### Q6 candidate testing, benefit threshold and rejection
+
+Q6 evaluates **all five requested directions**: fused hash/decompression reads,
+small-chunk reduction, bounded merge readers, archive cadence/duty cycle and REST
+queue scheduling. Evaluation does not require shipping every candidate. Complete
+this decision gate after current Q5 full closeout and before freezing the Q7
+release; Q7–Q10 qualify only the selected final implementation.
+
+1. Establish each candidate's baseline, realistic workload and practical minimum
+   benefit before comparing it. Use identical inputs and the current profile plus
+   an isolated ten-symbol capacity workload; include ordinary, peak and recovery
+   cases, repeated/cold/warm measurements and baseline variability. A minimum
+   must describe a material improvement in complete affected workflow wall/CPU,
+   resource peaks or measured capacity/headroom, in both absolute and relative
+   terms where applicable. Do not choose a universal percentage or accept a
+   microbenchmark/function-call reduction as sufficient production benefit.
+2. Test the smallest isolated prototype against the baseline. Require exact
+   bytes/hashes/order/provenance/coverage equivalence and candidate-specific
+   integrity, crash/retry, cancellation, ownership and compatibility regressions.
+   Measure sustained stability, capture/REST lag, gaps/backpressure, archive
+   backlog/reserve and resource use under normal, burst and recovery loads.
+   Use offline faults; representative VPS comparisons occur under a separate
+   controlled measurement window, outside active Formal collection, with no
+   destructive production injection or automatic ten-symbol reconfiguration.
+3. **Reject any candidate that introduces unsafe or unstable behavior regardless
+   of speedup.** Unexplained correctness differences, lost validation, new gaps,
+   starvation, growing backlog, breached budgets or unreliable recovery block
+   inclusion until resolved and retested. A faster unsafe implementation cannot
+   satisfy Q6.
+4. **Do not adopt/merge low-benefit optimization:** if a safe candidate's
+   performance improvement is negligible/noise-level and resource savings are
+   also small, retain the existing implementation. A meaningful resource bound
+   or removal of a demonstrated capacity failure may justify inclusion without
+   faster elapsed time, provided tradeoffs satisfy capture, audit and reserve
+   gates. Weigh complexity, maintenance cost and regressions against the actual
+   workload benefit; insufficient or unmeasured benefit does not pass this gate.
+5. Record each direction's outcome as ACCEPTED, REJECTED or DEFERRED, with the
+   baseline/prototype identity, workload, predetermined benefit criterion,
+   repeated results, safety/stability findings, tradeoffs and reason. Remove
+   rejected experimental changes from the release. A justified rejection or
+   deferral is a completed evaluation, not a reason to weaken gates or delay Q6
+   indefinitely. The optimized release includes only passing candidates.
+
+Broader worker concurrency, asynchronous seal, different order-book structures
+or native scanners remain measurement-led future choices; they are not required
+changes for Q6. Do not remove CRC/SHA fields, canonical
+encoding checks, archive readback-before-delete, directory durability operations,
+or either full LIVE audit to obtain a faster result. Keep portable archive
+production rollout separate.
+
+Q6 also prepares the requested **48h stage**. Current `STAGE_NAMES`, duration
+mapping and CLI accept 2h/12h/24h/72h/168h, **not 48h**. Implement/review explicit
+new-start chain `2h → 12h → 24h → 48h`, with 48h = 172800 seconds, correct
+predecessor/final eligibility, observer target, verification/replay and native
+helper/deadline binding. Record the acceptance-policy change in an ADR. Preserve
+historical V1–V5 readers and existing 72h/168h predecessor/resume semantics;
+blindly inserting 48h into the global legacy stage order is not sufficient.
+Use accelerated offline clocks to verify duration and chain boundaries. A 24h
+run with an extra unverified day cannot stand in for a native 48h stage.
+
+Q6 closes with all of the following:
+
+- Differential benchmarks use identical frozen inputs/profile and record source,
+  wheel/lock identity, machine, data/frame/chunk sizes, repetitions/cache order,
+  wall/CPU, RSS/cgroup memory, descriptors, temp/staging bytes and relevant I/O.
+  Report local microbenchmarks separately from representative VPS measurements;
+  the exploratory 2 MB reader, synthetic SQL and 200/100 output/hash comparisons
+  in the planning discussion are not production qualification.
+- Every merged optimization demonstrates reduced targeted work/cost or the
+  required resource bound, with complete output/proof equivalence and no material
+  regression in representative capture, archive, normalization/replay and audit
+  behavior, and passes the practical benefit threshold above. Complete a recorded
+  evaluation for each of the five directions; retain rejected/deferred results
+  and unrun measurements without shipping low-benefit experimental changes.
+- Focused integrity/fault/compatibility tests plus current full offline engineering
+  checks, exact dual-platform CI, independent implementation/contract review,
+  clean locked wheel and exact-source cloud checks pass. Record migrations,
+  rollback and any substantial contract ADR; no destructive production injection.
+- Freeze the optimized artifact/profile and 48h chain policy for Q7–Q10. Preserve
+  the old release/identity/custody. Q7 still requires actual canonical stopped
+  deployment verification, fresh all-enabled warm-up/resource admission, full
+  authoritative baseline and strict pre-start; a code review or doc commit is
+  not a deployed wheel or a passing live stage.
+
+### Q7–Q10 — Optimized-artifact VPS 2h, 12h, 24h and 48h
+
+| Stage | Required target | Predecessor and completion |
+|---|---|---|
+| Q7 / Formal2h | 7200s | Q6 reviewed frozen release plus newly verified deployment/baseline/readiness; complete own target, both full LIVE terminal passes, completed verify and independent restored closeout. |
+| Q8 / Formal12h | 43200s | Reviewed eligible Q7 final under the same optimized identity; fresh admission, own target and the same full closeout. |
+| Q9 / Formal24h | 86400s | Reviewed eligible Q8 final; fresh admission, actual configured-product rotation/recovery evidence and the same full closeout. |
+| Q10 / Formal48h | 172800s | Reviewed eligible Q9 final and tested native 48h/new-chain support; fresh admission, actual long-run rotation/recovery/resources/backlog evidence, full closeout and four-final 86h reconciliation. |
+
+Before **each** T0, reforecast actual retained/growing corpus, ingest and metadata,
+reserve, archive/temp/staging/backlog/controls plus both full audit passes,
+verification/review and restoration time. Establish a new finite stage-specific
+window from actual measurements; the existing Q5 67500s plan/expiry and old 38h
+forecasts cannot admit Q7–Q10. Resolve any failed applicable gate before starting
+that stage. Keep R-078 OPEN until its measured capacity/audit-practicality gate is
+actually satisfied; adding planned hours does not establish server sufficiency.
+
+### Shared stage gates — Current Q4/Q5 and future Q7–Q10
 
 Each stage binds its passing predecessor, exact artifact/profile/corpus and fresh
 readiness, with one T0 and one target. Process/service/boot identity stays stable
@@ -353,7 +527,8 @@ At target, stop accruing time; operator stop/disable and verified archive drain
 precede frozen quiescence, full terminal audit, completed verification and reviewed
 final eligibility. Keep archive mutation paused during the frozen audit and restore
 it afterward. Core gaps/recovery use existing rules; inspect ~23h50m planned
-connection rotation for all configured products during 24h. Existing offline
+connection rotation for all configured products during 24h/48h; record actual
+occurrences and recovery rather than inferring them from elapsed time. Existing offline
 kill/disk/network tests remain; no destructive injection is added inside Formal.
 
 Failed/incomplete stages retain evidence and earn no credit. Diagnose before a
@@ -374,13 +549,17 @@ mask or new maintenance service is introduced. Preserve unrelated host services.
 Stopped handoff records inactive AND disabled, archive/OS authority restored,
 Catalog integrity, no active partials, archive backlog and exact retained evidence.
 
-Q6 closes only with three reviewed eligible finals, their hashes/predecessor chain,
-≥136800 accepted target seconds, integrity/rotation/recovery and measured resource
-limits. Record `QUALIFICATION_38H=PASS`; keep broader certification and deferred
-F4/R-078 separate. Q0–Q4 are complete. Owner now authorizes **Q5** through full12h acceptance;
+Q10 closes only with four reviewed eligible optimized-artifact finals, their
+hashes/predecessor chain, ≥309600 accepted target seconds and measured
+integrity/rotation/recovery/resource limits. Record
+`OPTIMIZED_QUALIFICATION_86H=PASS`; broader certification remains separate and
+R-078 is not automatically closed. Q0–Q4 are complete. Current live authority
+continues **Q5** through full12h acceptance;
 Fresh admission/actual arm/prestart/soleT0 complete; actual target/full terminal and
 independent restored closeout remain pending.
-This continuation stops before24h.
+The current live continuation ends at Q5 full closeout. Then the planned sequence
+is Q6 optimization followed by new Q7–Q10; never skip directly to an old-artifact
+24h run or transfer Q4/Q5 credit. This planning edit starts none of those jobs.
 
 ### How subsequent development proceeds
 
@@ -395,7 +574,7 @@ fresh evidence, not this plan or a historical NEXT value.
 ## Historical records — time-local and superseded as execution instructions
 
 Records below preserve their original identity, status and acceptance. They do
-not override the current Q0–Q6 plan or authorize operations.
+not override the current Q0–Q10 plan or authorize operations.
 
 ## Historical checkpoint — V5 deployed; qualification stopped by owner (2026-10-01)
 

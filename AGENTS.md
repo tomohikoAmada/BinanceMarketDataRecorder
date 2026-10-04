@@ -31,6 +31,13 @@ PASS/ACCEPT. Native observer+sampler healthy; do not restart/createT0. Finite ex
 Oct5 04:35:45Shanghai, no extension. Accepted2h only until actual12h target/full
 terminal/verification/independent restored closeout. Two no-T0 prep failures retained. Exact
 Q5 scope/checkpoint: docs/milestone_acceptance/Q5-formal12h-20261004.md.
+Latest owner planning update inserts Q6 optimization/release preparation AFTER
+complete Q5 closeout, then new optimized-artifact VPS Q7/2h, Q8/12h, Q9/24h,
+Q10/48h. This documentation request does not start those jobs or alter activeQ5.
+The new artifact earns its own86h/309600s; no current/old duration transfers.
+Q6 must implement/review explicit48h/new-chain support (current CLI lacks48h),
+preserving historical72h/168h verification/resume semantics. Exact scope and
+performance/safety/release gates: docs/milestone_plan.md, Q6–Q10.
 Completed corrected-source Q4, October4,
 2026 (Shanghai): source23ea5c4/wheelbb7e357e…52a0/identity0ea93b2c…fbee own
 VPS Formal2h7200.001928737s, both full LIVE terminal audits, completed verification,
@@ -54,7 +61,7 @@ Five approved runtime masks removed/original three units enabled-active; archive
 actual recurrence/four natural successful workers/finite future deadline PASS.
 Handoff22:04:51.880189757UTC RecorderinactiveANDdisabled/MainPID0/NRestarts0,
 same verified config/identity/boot; Catalogok/0partials/backlog/all6718LOCAL_DELETED.
-Q0–Q4 COMPLETE/corrected accepted2h/38h; Q5 RUNNING/Q6 NOT_STARTED/PRODUCTION_READY=NO.
+Q0–Q4 COMPLETE/current corrected accepted2h; Q5 RUNNING/Q6–Q10 NOT_STARTED/PRODUCTION_READY=NO.
 Existing hourly `vps-2h` reactivated for12h; completion requires pausing it after
 full Q5 closeout push. Never duplicate an already advancing native stage.
 Historical tasks stay paused. Latest acceptance/review are in
@@ -78,11 +85,14 @@ accepted and documented; old evidence is not current operational authority.
 Only local/remote main remains; preserve unrelated stash/untracked bundles and
 historical worktrees. Old metadata/archive, failed attempts and unpublished143362
 scope remain retained; no corpus reset/unique physical deletion/unchanged failed
-live rerun. Current plan is2h+12h+24h=38 accepted target hours, with audits outside
-credit. R-078 and prior38h peak reserve failure remain OPEN. Before later stages
+live rerun. Current plan finishes Q5, then Q6 optimization and NEW optimized-artifact
+2h+12h+24h+48h=86 accepted target hours, with audits outside credit. This supersedes
+the old unstarted24h/38h continuation. R-078 and prior38h peak reserve failure
+remain OPEN. Before later stages
 reforecast actual reserve/temp/staging/backlog/controls and practical full-audit
 windows from the larger current measured scope. No speculative hardware/stack
-change. F4/portable archive follow-ups remain separate. Economical read-only
+change. F4 bounded merge is evaluated in Q6; portable archive rollout stays
+separate. Economical read-only
 monitoring cannot invent a T0 or restart Recorder; healthy native tests survive
 model quota interruptions.
 
@@ -160,6 +170,36 @@ per configured ProductKey.
    `DISK_EMERGENCY_STOP`, and mark the gap start.
 8. All replay ordering and deduplication tie-breakers must be specified and
    deterministic. Raw payload bytes remain recoverable.
+
+## Performance and meaningful SHA-256 use
+
+Avoid excessive, meaningless SHA-256 work. A new or repeated digest must serve a
+specific content identity, corruption check, trust transition or published
+contract. Explain that purpose in the change/review; do not add per-event hash
+chains, whole-corpus scans or dependency-tree hashing merely for routine metrics,
+status polling or extra reassurance.
+
+- Prefer one canonical immutable snapshot and one digest reused within the same
+  operation over rebuilding/sorting/hashing the same bytes repeatedly. Bind the
+  file, Catalog row and proof to that exact snapshot; do not cache across updates.
+- Where equivalent validation can share an unavoidable read, compute required
+  hashes/statistics together. Stored and uncompressed SHA-256 cover different
+  byte representations and remain required. CRC, canonical encoding, counts,
+  sequence/gap checks and writer poison/recovery rules also remain intact.
+- A copy-time or write-time digest cannot replace independent full target
+  readback after fsync. Preserve archive identity/receipt/manifest checks,
+  restart/retry revalidation and deletion authorization, including the required
+  source revalidation immediately before retirement.
+- Reusing validation across steps requires an explicit ownership/observation
+  boundary and mutation/replacement/retirement guards. A sealed pathname or
+  matching inode, size and timestamps alone does not prove unchanged content.
+  Preserve both independent full LIVE acceptance audit passes; completed proof
+  replay and ordinary bounded delta observations retain their existing scope.
+- Benchmark reduced reads, canonicalization, allocations and wall/CPU cost with
+  identical inputs; verify exact bytes/hashes/results and fault behavior. Report
+  local prototypes separately from representative VPS evidence. Do not claim
+  production speed or safety from fewer SHA calls alone. Substantial verification
+  or archive-protocol changes require the corresponding contract/ADR review.
 
 ## Official-source priority
 

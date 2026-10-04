@@ -15,10 +15,20 @@ enabled-active. Preserve healthy native jobs through quota interruptions; no
 restart/repeated prestart/newT0. Finite expiry20:35:45UTC (Oct5 04:35:45Shanghai),
 no extension. Two failed no-T0 prestart scopes/controls retained and order repaired.
 Target, both full LIVE audits/completedverify/final independent restored closeout
-remain pending. Accepted credit2h/38h; Q6 NOT_STARTED/PRODUCTION_READYNO/R078OPEN.
+remain pending. Current-artifact accepted credit2h; Q6–Q10 NOT_STARTED/
+PRODUCTION_READYNO/R078OPEN.
 Existing hourly `vps-2h` continues12h; after known target inspect actual endpoint/
 continuation rather than perpetually relying on this RUNNING snapshot. Stop before24h.
 See [exact Q5 checkpoint and next operations](milestone_acceptance/Q5-formal12h-20261004.md).
+
+Latest owner planning update: finish the current Q5 full closeout, then Q6
+optimization/release preparation and new optimized-artifact VPS Q7/2h → Q8/12h →
+Q9/24h → Q10/48h (86h/309600s independently accepted target time). This replaces
+the old unstarted Q6/24h and 38h target; existing Q4/Q5 evidence and the active
+Q5 controls are unchanged. Current CLI has no48h: Q6 must add/review explicit
+new-chain support with historical compatibility before that stage can run.
+See [the updated plan](milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
+This is planned work, not a replacement deployment or new live-state readback.
 
 The following Q4 and older checkpoints are retained historical evidence; the
 Q5 block above and linked exact record govern current operations.
@@ -50,13 +60,15 @@ future deadline. Handoff22:04:51.880189757UTC: Recorder inactive AND disabled,
 MainPID0/NRestarts0; same verified artifact/config/boot. Old Raw/archive/failures/
 venv custody and unpublished143362-chunk scope remain retained.
 
-Q0–Q4 COMPLETE, corrected accepted2h/38h; Q5 RUNNING/Q6 NOT_STARTED and
-PRODUCTION_READY=NO. Latest owner continuation now includes12h and stops before24h.
+Q0–Q4 COMPLETE, current corrected artifact accepted2h; Q5 RUNNING and
+Q6 optimization/Q7–Q10 new qualification NOT_STARTED; PRODUCTION_READY=NO.
+Current live continuation includes12h/full closeout and stops before optimization.
 Hourly `vps-2h` continues toward12h closeout; historical tasks remain paused.
 R-078 and prior38h peak reserve failure remain OPEN; before any
 later owner-authorized T0 reforecast actual capacity/temp/staging/backlog/controls
-and full-audit schedule using the larger current measured scope. F4/portable
-archive follow-ups remain separate. No speculative server or language change.
+and full-audit schedule using the larger current measured scope. F4 bounded
+normalization merge is evaluated in Q6; portable archive rollout stays separate.
+No speculative server or language change.
 
 See [current acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md),
 [final independent review](reviews/2026-10-04-spot-idle-formal2h-independent-review.md)
