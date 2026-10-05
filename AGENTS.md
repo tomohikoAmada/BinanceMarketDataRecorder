@@ -64,7 +64,7 @@ b8f5dff770c442bc968797ee5f96d5b9 is advancing (no Formal T0). Controls
 /var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a, result child
 q6-derived-jl1_fbqk/results.json; protocol aef5eded…b371cf and trusted source
 bundle48d8e5db…75750 frozen before comparison. LOCAL original comparison and full
-engineering checks COMPLETE; local representation supplements running. Do not start duplicate measurements or Q7 while
+engineering checks COMPLETE; local representation supplements COMPLETE. Do not start duplicate measurements or Q7 while
 this job is advancing. Initial independent source-correctness review ACCEPT,
 performance/release pending; source/test changes remain uncommitted candidates.
 Recorder last actual readback inactive AND disabled on unchanged old artifact.
@@ -81,6 +81,14 @@ measurement design independently ACCEPT, actual performance/release PENDING.
 Same controls/supplement.log publishes random child receipts. No competing
 measurements/restarts/production writes/T0. Original comparison still advancing;
 source remains uncommitted pending benefit gates. Hourly continuation stays ACTIVE.
+
+Latest Q6 follow-up: LOCAL full fresh-process supplement6471eeee…dad12a1
+COMPLETE/exact outputs; actual memory increase retained, VPS acceptance pending.
+Cloud build helper8e04e612…ccf5e5 prepared/independent draft-design ACCEPT, UNRUN;
+requires final benefit/review, frozen source commit and its exact dual CI first.
+Current checkpoint e03877a dual CI37257552586 SUCCESS is doc-only, no candidate
+release credit. Native original comparison plus waiting supplement remain the
+sole advancing VPS work; no Q7 T0. Exact helpers/gates in current Q6 record.
 
 The following checkpoints retain their historical rules/results, not current authority.
 
