@@ -2,28 +2,41 @@
 
 Updated October 5, 2026 (Shanghai).
 
-Latest owner authorization October4: complete Q5 closeout, implement the updated
-Q6 optimization/release plan, then complete optimized-artifact VPS Q7/Formal2h;
-stop before Q8/12h,24h,48h. Monitoring gate is **at least99.9% recorded PASS checks**,
-per ADR-0039; this supersedes the previous ordinary-network-error single-check veto.
-It is not a data-completeness claim or a waiver of strict endpoints/core/Raw/archive
-integrity/both complete LIVE audits/completed verify/independent restored closeout.
-Q5's sole43200.002463724s target and1435/1436 monitors=99.9303621% satisfy duration
-and new monitoring gates; Q5 CLOSEOUT_PENDING, not COMPLETE/accepted12h.
-Original BLOCK and old-policy independent rejection remain historical evidence.
-Recorder inactiveANDdisabled; normal archive timer paused for actual audits,
-worker naturally idle. No newT0 or capture restart. Audit-only leaf
-closeout-monitor999-n51_b54j actually ARMED15:04:39.252568666UTC with the SAME
-20:35:45UTC cutoff (Oct5 04:35:45Shanghai), no extension. Fresh19451-chunk census,
-12.404629488GiB reserve and19865.747431334s remaining admission independently ACCEPT.
-Native terminal service started15:05:15UTC, PID117119/inva8342d75…628dd,
-Typeoneshot/TimeoutStartinfinity; source900s no-progress watchdog unchanged.
-At16:01:18UTC its first full LIVE pass was advancing (55 audit progress records,
-13326859934 bytes processed/12829 records/52 shards), no final/completed verify yet.
-Prepared child-only closeout helpers independently ACCEPT/27 checks and root-protected;
-not executed. Main371080f CI37212831721 both platformsSUCCESS. Do not duplicate work.
-Q6/Q7 NOT_STARTED until full Q5 closeout. Existing vps-2h ACTIVE, next actual quota
-reset+1minute17:06:38UTC /Oct5 01:06:38Shanghai; checkpoint-based single wakes.
+Latest owner authorization October5: Q5 is COMPLETE; continue Q6 optimization/
+release preparation and optimized-artifact VPS Q7/Formal2h full closeout, then stop
+before Q8/12h,24h,48h. Monitoring gate is at least99.9% recorded PASS checks,
+per ADR-0039, not exchange-event completeness. Original failed monitor and
+old-policy rejection remain retained. Strict endpoints/core/Raw/archive integrity,
+both full LIVE passes, completed verify and independent restored closeout apply.
+
+Actual Q5 sole43200.002463724s/1435 of1436 monitorPASS=99.9303621%, both full LIVE
+terminal passes/completed verify and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE
+eligibility plus actual restored-handoff ACCEPT. Finalc189a5b4…e0122/terminal
+730015b5…4965d5:330771 records/697 shards/19451chunks/24128355frames/
+1356124949storedB/18696105548uncompressedB, all LOCAL_DELETED/0partials/backlog.
+Retain whole-corpus3762 gap/incomplete and80 zero-frame manifests; no every-event
+or continuous completeness claim.
+Original native source23ea5c4/wheelbb7e357e/identity0ea93b2c earns its own accepted
+Q4+Q5=14h. No source/time transfer to Q7. Actual native source wall9679.076909s/
+CPU8615.905946s/peak2103758848B/swap0, success17:46:34UTC before original cutoff.
+Independent guarded reconstruction153.087912s; Raw/network/production opens0.
+
+Fixed expiry ACTUALLY RESTORED original OS authority October4
+20:35:46.619402465UTC; no extension or timer cancellation claimed. After reviewed
+expiry-aware resumption, actual October5 00:53:26.420542158UTC handoff1064ee29…5c8ce2:
+Recorder inactive AND disabled/PID0/NRestarts0/same config/identity/boot, three
+original OS owners enabled-active/all five approved units unmasked; normal archive
+recurrence/natural successful worker/future finite deadline verified, later six
+natural successes retained. Fresh pinned canonical deployment VERIFY PASS.
+Full21071-member control-only bundle97962214…f7a0b and five-member handoff bundle
+747fc05d…0c968 privately frozen; actual scope and limitations are in
+[Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
+[Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
+Q0–Q5 COMPLETE/Q6–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
+Check actual quota/prior advancing work; never duplicate a healthy native stage.
+Historical tasks remain paused. Latest main6da5dc4 exact dual CI37216419079 SUCCESS.
+
 The following checkpoints retain their historical rules/results, not current authority.
 
 Latest owner-authorized Q5 Formal12h is **RUNNING**. Sole stage
