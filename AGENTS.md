@@ -53,10 +53,34 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](docs/milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](docs/reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q5 COMPLETE/Q6–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q5 COMPLETE/Q6 IN_PROGRESS/Q7–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
-Historical tasks remain paused. Latest main6da5dc4 exact dual CI37216419079 SUCCESS.
+Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
+
+Current Q6 checkpoint October5: native isolated VPS benchmark
+binance-recorder-q6-derived-bench-20261005.service/invocation
+b8f5dff770c442bc968797ee5f96d5b9 is advancing (no Formal T0). Controls
+/var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a, result child
+q6-derived-jl1_fbqk/results.json; protocol aef5eded…b371cf and trusted source
+bundle48d8e5db…75750 frozen before comparison. LOCAL original comparison and full
+engineering checks COMPLETE; local representation supplements running. Do not start duplicate measurements or Q7 while
+this job is advancing. Initial independent source-correctness review ACCEPT,
+performance/release pending; source/test changes remain uncommitted candidates.
+Recorder last actual readback inactive AND disabled on unchanged old artifact.
+See Q6-optimization-20261005.md (under docs/milestone_acceptance) for protocol,
+remaining decisions and release gates. Q5 closeout committed/pushed main b9ffa5c;
+no subsequent documentation commit replaces the deployed wheel.
+
+Sole queued Q6 native supplement binance-recorder-q6-supplement-20261005.service/
+invocatione1d5801e2965409bb74f903462738c08 is active, first waiting for original
+complete report then executing fresh-process RSS/retirement scratch, ready-book
+checkpoint/full Catalog commits/actual SQL and FD/hash bounds. Frozen helper
+cf8ae040…c6f97/selected source1ec10219…b9d14c/wrapper48523aa8…29c729 readback;
+measurement design independently ACCEPT, actual performance/release PENDING.
+Same controls/supplement.log publishes random child receipts. No competing
+measurements/restarts/production writes/T0. Original comparison still advancing;
+source remains uncommitted pending benefit gates. Hourly continuation stays ACTIVE.
 
 The following checkpoints retain their historical rules/results, not current authority.
 

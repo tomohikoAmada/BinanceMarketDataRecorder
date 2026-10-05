@@ -49,10 +49,39 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q5 COMPLETE/Q6–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q5 COMPLETE/Q6 IN_PROGRESS/Q7–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
-Historical tasks remain paused. Latest main6da5dc4 exact dual CI37216419079 SUCCESS.
+Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
+
+Current Q6 checkpoint October5: native isolated VPS benchmark
+binance-recorder-q6-derived-bench-20261005.service/invocation
+b8f5dff770c442bc968797ee5f96d5b9 is advancing (no Formal T0). Controls
+/var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a, result child
+q6-derived-jl1_fbqk/results.json; protocol aef5eded…b371cf and trusted source
+bundle48d8e5db…75750 frozen before comparison. LOCAL original comparison and full
+engineering checks COMPLETE; local representation supplements running. Do not start duplicate measurements or Q7 while
+this job is advancing. Initial independent source-correctness review ACCEPT,
+performance/release pending; source/test changes remain uncommitted candidates.
+Final local full engineering2024 PASS/24 online skips/5 deselected; original full
+LOCAL comparison51 workflow records COMPLETE, exact outputs equal. Selected
+source1ec10219…b9d14c supplementary fresh-process RSS/transient-scratch/complete
+Catalog commits/exact SQL plan/ready-checkpoint validation is running locally;
+VPS supplementation is pending behind its sole healthy original comparison.
+Recorder last actual readback inactive AND disabled on unchanged old artifact.
+See Q6-optimization-20261005.md (under docs/milestone_acceptance) for protocol,
+remaining decisions and release gates. Q5 closeout committed/pushed main b9ffa5c;
+no subsequent documentation commit replaces the deployed wheel.
+
+Sole queued Q6 native supplement binance-recorder-q6-supplement-20261005.service/
+invocatione1d5801e2965409bb74f903462738c08 is active, first waiting for original
+complete report then executing fresh-process RSS/retirement scratch, ready-book
+checkpoint/full Catalog commits/actual SQL and FD/hash bounds. Frozen helper
+cf8ae040…c6f97/selected source1ec10219…b9d14c/wrapper48523aa8…29c729 readback;
+measurement design independently ACCEPT, actual performance/release PENDING.
+Same controls/supplement.log publishes random child receipts. No competing
+measurements/restarts/production writes/T0. Original comparison still advancing;
+source remains uncommitted pending benefit gates. Hourly continuation stays ACTIVE.
 
 The following checkpoints retain their historical rules/results, not current authority.
 
@@ -182,7 +211,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
-| Q6 | Performance optimization, compatibility verification and optimized release preparation | PLANNED/NOT_STARTED; requires complete Q5 terminal/verification/independent restored closeout; scope and gates below |
+| Q6 | Performance optimization, compatibility verification and optimized release preparation | IN_PROGRESS after complete Q5; source/protocol correctness independently ACCEPT; local2024 PASS and51-run exact-output comparison COMPLETE; sole native VPS comparison and representation supplements pending; release not frozen/deployed |
 | Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
