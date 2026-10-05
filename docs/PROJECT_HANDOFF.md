@@ -37,7 +37,7 @@ Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeo
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
 
-Current Q6 checkpoint October5 06:27UTC: original sole VPS comparison is
+Current Q6 checkpoint October5 07:25UTC: original sole VPS comparison is
 COMPLETE/success/51 workflow records; result43efc034…22c4. Exact outputs equal
 for all nine runs per input. Selected-original-winner complete Normalizer+verified
 Replay medians:4/40k726.055→52.533s;20/40k753.105→70.402s;
@@ -46,32 +46,40 @@ or expanded-live qualification. Catalog selection saves27.590ms/call,
 601300→<100 VM steps,0.316s migration/+8.3MB fixture index. No source or wheel
 has been frozen/deployed; source/test candidates remain uncommitted.
 
-Original supplement e1d5801e…38c08 FAILED at05:31:03UTC because its helper
-referenced the later LOCAL tool's MARKETS constant absent from actual frozen
-VPS tool813cb961. Failure scope selected-supplement-qtat3cjs/result9f1584b7…e9354
-and supplement.log retained. No product-code failure, Raw change or Formal T0.
-Minimal v5 loop uses the original exact ordered two-market tuple. Independent
-LOCAL/OFFLINE compatibility/dispatch review ACCEPT; exact-old-tool LOCAL24
-ready-checkpoint/6 Catalog-workflow checks COMPLETE41940f85…b5b5a.
+Original supplement e1d5801e…38c08 FAILED at05:31:03UTC (actual frozen tool
+has no later LOCAL MARKETS constant). Corrected v5 native d91d20b3…ee207
+FAILED06:41:45UTC after24 ready-checkpoint/6 Catalog records, before any fresh
+normal resource record. Retain partial96beaa3c…51da and all failed scopes/logs.
+Actual Python3.12.3 TemporaryDirectory uses bound tempfile._rmtree; the helper
+only patched shutil.rmtree and missed Replay cleanup. Focused reproduction and
+actual v6 baseline/final tiny smoke551200e2…c4d0b1 establish this cause and fix,
+with both retirements observed and all nine original results equal. No product
+output difference or Formal T0. Checkpoint performance threshold NOT_ACCEPTED;
+retain only necessary same frozen File/Catalog snapshot correctness. Complete
+Catalog commit/actual remote-aware SQL measurements retained separately.
 
-Sole corrected native supplement binance-recorder-q6-supplement-v5-20261005.service
-invocationd91d20b3999e4390aa85248aabeee207/PID141937 started06:27:16UTC,
+Sole corrected native resource supplement binance-recorder-q6-supplement-v6-20261005.service
+invocation192e43ddbfba4360b211e38b22569775/PID144897 started07:25:20UTC,
 fixed18000s isolated budget. Controls /var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a;
-supplement-v5.log publishes random selected-supplement and bounds children.
-Frozen helper4f02f889…6a52f/wrapper6ebf4e2c…275f/selected-source1ec10219…b9d14c;
-original result43efc034…22c4/tool813cb961 readback bound. Fresh-process RSS,
-transient-scratch, complete checkpoint, Catalog commits/actual remote-aware SQL
-and FD/hash bounds remain PENDING. Do not restart or duplicate this healthy job.
-Expected measured work roughly1h; elapsed estimate is not completion.
-Recorder actual readback inactive AND disabled on old source23ea5c4.
+supplement-v6.log publishes random selected-supplement and bounds children.
+Frozen helper8f68da55…41c17c/wrapperc9762f19…cf3c647/selected-source1ec10219…b9d14c;
+original result43efc034…22c4/tool813cb961 remain bound. Native resource six cases
+plus original FD/hash bounds only; no duplicate main/checkpoint/Catalog work.
+Actual tiny smoke and independent LOCAL/OFFLINE scoped design ACCEPT5664b088…98b5e46.
+Fresh-process RSS/transient scratch/bounds/final resources/release remain PENDING.
+Do not restart or duplicate this healthy job. Review actual completed outputs after
+roughly08:50UTC; estimate is not completion. Failed v5 is no longer advancing.
+Recorder actual preflight inactive AND disabled on old source23ea5c4.
 
 LOCAL full engineering2024 PASS/24 online skips/5 deselected, Ruff/Mypy/M0/Go
 PASS; full51-row comparison and fresh-process supplement COMPLETE. Initial and
 final source/protocol correctness independently ACCEPT; representative resources,
 final benefit/release review, candidate dual CI/clean locked wheel/cloud checks,
 new stopped deployment/warm-up/full baseline and Q7 T0 remain PENDING.
-Cloud build helper8e04e612…ccf5e5 draft independently ACCEPT, UNRUN.
-Current doc-only c94c83b exact dual CI37258717201 SUCCESS is no source/wheel credit.
+Cloud build/deployer/lightwarm/nonformal-cost drafts independently ACCEPT but
+actual dispatch/artifact/phase qualification remains pending. Exact private helpers
+and minimal sole-baseline sequence are in current Q6 record. Current doc-only
+b1821be dual CI37272689526 SUCCESS is no source/wheel credit.
 Hourly continuation remains ACTIVE through complete new Q7 closeout, no Q8.
 See docs/milestone_acceptance/Q6-optimization-20261005.md for exact gates/evidence.
 
