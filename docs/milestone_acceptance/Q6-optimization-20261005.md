@@ -206,3 +206,49 @@ SHA8e04e612eda2936ab4010b3d54f0f66bc01d8577cd1c2459dfd87799fbccf5e5.
 Independent DRAFT DESIGN/BINDING ACCEPT report78282dbc7ca2e0c581b07a65d80fd737291a69c8c6749f0cc2002ddaed804d37/identity16125a4035949869c4d9f421fbf216c646fe40964f3b4af2350cd472d4be3672. See ../reviews/2026-10-05-q6-cloud-build-draft-review.md. Two initial draft blockers (archive/source provenance and reuse/truncation of prior outputs) were corrected before execution. It requires a new unique canonical q6-release child, exact accepted source/CI commit and git-archive-without-prefix PAX commit+SHA, full archive/source inventory before tests and revalidation after build, exclusive logs/receipt, own child TMPDIR/cache, no inherited PYTHONPATH, clean locked wheel/no-deps smoke/121 package Python bytes and exact28 dependency environment. No installation/deployment or service control. Execute only AFTER representative benefit/final independent implementation/contract review, selected source commit and its exact dual CI succeed. Earlier checkpoint e03877a exact workflow37257552586 SUCCESS is documentation-only, not that candidate CI gate.
 
 After those gates: preserve old artifact, stopped canonical deployment VERIFY, actual all-enabled warm-up/resource admission, fresh full authoritative baseline/independent eligibility, actual growing-corpus reserve/temp/staging and realistic two-audit window, then strict prestart and sole new Q7 own7200s T0. Do not repeat unchanged old wheel, old baseline, historical Q5 closeout or idle engineering live scans. Native existing comparison/supplement must finish before dependent performance work. Q7 NOT_STARTED/PRODUCTION_READYNO/R078OPEN.
+
+## Representative original completion and retained supplement failure
+
+October5 original native comparison completed05:30:41UTC/success with all51
+workflow records; actual result43efc0344814706d465531327fa5809b93ea4a08a742f62531b436bc0bc822c4.
+Exact persisted identities/builds/row counts/all provenance/replay orders equal
+across all nine runs for each input. Current selected code retains original
+winner sorting (`candidate_sorted`); rejected sorting removal is not shipped.
+
+| Same-input complete Normalizer + verified Replay | Baseline median wall/CPU s | Selected median wall/CPU s | Wall reduction |
+|---|---|---|---|
+|4 products/40k frames|726.054723/726.176416|52.532921/52.862335|92.764606%|
+|20 products/40k frames|753.104803/753.897028|70.402352/71.321314|90.651719%|
+|20 products/120k frames|2300.205698/2302.717743|207.340620/210.205528|90.985997%|
+
+Complete derived-work benefit/CPU thresholds PASS; representative per-variant
+memory/temp/capture/release remain pending. This study is not expanded live or
+arrival-burst certification. Catalog identical selection: median27.589989ms saved
+per call, VM601300→<100 (100-step measurement granularity), migration0.315746s,
+added8331264B. Indexed selection/migration/size thresholds PASS; full commit and
+actual remote-aware query plan supplementary measurements remain pending.
+
+Original supplement failed05:31:03UTC/exit1 before resource work: actual frozen
+VPS tool813cb961 has inline two markets, while helpercf8 used a later LOCAL
+MARKETS constant. Retain supplement.log, native failure and child
+selected-supplement-qtat3cjs/result9f1584b7535021688959566b40b27c3c29a6a52eb27e0531d59c806e3c9e9354.
+This is helper binding failure, not product failure or Formal evidence.
+
+New supplement-q6-v5.py SHA4f02f8891df798ddc6816ac02db18416e63b26efd8525bb5251933da15d6a52f
+changes only that loop to the original same-order ('spot','um_perpetual') tuple.
+New wrapper6ebf4e2c4929dea30f70ef298af95af220272516b5da11d6b0385e5be2ba275f
+uses new helper/log+noclobber, preserves old bytes. Independent exact-tool helper
+compatibility/dispatch ACCEPT; LOCAL actual frozen813cb961 tool:24 ready-checkpoint
+and6 Catalog rows COMPLETE41940f857d088f64242515839e2a0949a752ede719bacae7ca0a51cc962b5b5a.
+
+Sole new native binance-recorder-q6-supplement-v5-20261005.service/invocation
+d91d20b3999e4390aa85248aabeee207/PID141937 started06:27:16UTC; fixed18000s
+isolated budget, same controls, supplement-v5.log. Original job/result is not
+restarted. Before launch actual original successful/MainPID0, old supplementPID0,
+Recorder inactiveANDdisabled, no existing new unit/log and exact helper/wrapper/
+original report digests verified. Actual resource/performance release remains
+PENDING; no wheel/deployment/baseline/newT0. c94c83b dual CI37258717201 SUCCESS
+is doc-only. All production/old evidence/corpus retained.
+
+[Independent v5 compatibility review](../reviews/2026-10-05-q6-supplement-compatibility-review.md)
+ACCEPT, reportfe330b2c…15a26/identity1fefbd6f…5c6c4d; actual resources/release pending.

@@ -37,42 +37,43 @@ Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeo
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
 
-Current Q6 checkpoint October5: native isolated VPS benchmark
-binance-recorder-q6-derived-bench-20261005.service/invocation
-b8f5dff770c442bc968797ee5f96d5b9 is advancing (no Formal T0). Controls
-/var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a, result child
-q6-derived-jl1_fbqk/results.json; protocol aef5eded…b371cf and trusted source
-bundle48d8e5db…75750 frozen before comparison. LOCAL original comparison and full
-engineering checks COMPLETE; local representation supplements COMPLETE. Do not start duplicate measurements or Q7 while
-this job is advancing. Initial independent source-correctness review ACCEPT,
-performance/release pending; source/test changes remain uncommitted candidates.
-Final local full engineering2024 PASS/24 online skips/5 deselected; original full
-LOCAL comparison51 workflow records COMPLETE, exact outputs equal. Selected
-source1ec10219…b9d14c supplementary fresh-process RSS/transient-scratch/complete
-Catalog commits/exact SQL plan/ready-checkpoint validation COMPLETE locally;
-VPS supplementation is pending behind its sole healthy original comparison.
-Recorder last actual readback inactive AND disabled on unchanged old artifact.
-See Q6-optimization-20261005.md (under docs/milestone_acceptance) for protocol,
-remaining decisions and release gates. Q5 closeout committed/pushed main b9ffa5c;
-no subsequent documentation commit replaces the deployed wheel.
+Current Q6 checkpoint October5 06:27UTC: original sole VPS comparison is
+COMPLETE/success/51 workflow records; result43efc034…22c4. Exact outputs equal
+for all nine runs per input. Selected-original-winner complete Normalizer+verified
+Replay medians:4/40k726.055→52.533s;20/40k753.105→70.402s;
+20/120k2300.206→207.341s. Larger-volume20-product study is not arrival-burst
+or expanded-live qualification. Catalog selection saves27.590ms/call,
+601300→<100 VM steps,0.316s migration/+8.3MB fixture index. No source or wheel
+has been frozen/deployed; source/test candidates remain uncommitted.
 
-Sole queued Q6 native supplement binance-recorder-q6-supplement-20261005.service/
-invocatione1d5801e2965409bb74f903462738c08 is active, first waiting for original
-complete report then executing fresh-process RSS/retirement scratch, ready-book
-checkpoint/full Catalog commits/actual SQL and FD/hash bounds. Frozen helper
-cf8ae040…c6f97/selected source1ec10219…b9d14c/wrapper48523aa8…29c729 readback;
-measurement design independently ACCEPT, actual performance/release PENDING.
-Same controls/supplement.log publishes random child receipts. No competing
-measurements/restarts/production writes/T0. Original comparison still advancing;
-source remains uncommitted pending benefit gates. Hourly continuation stays ACTIVE.
+Original supplement e1d5801e…38c08 FAILED at05:31:03UTC because its helper
+referenced the later LOCAL tool's MARKETS constant absent from actual frozen
+VPS tool813cb961. Failure scope selected-supplement-qtat3cjs/result9f1584b7…e9354
+and supplement.log retained. No product-code failure, Raw change or Formal T0.
+Minimal v5 loop uses the original exact ordered two-market tuple. Independent
+LOCAL/OFFLINE compatibility/dispatch review ACCEPT; exact-old-tool LOCAL24
+ready-checkpoint/6 Catalog-workflow checks COMPLETE41940f85…b5b5a.
 
-Latest Q6 follow-up: LOCAL full fresh-process supplement6471eeee…dad12a1
-COMPLETE/exact outputs; actual memory increase retained, VPS acceptance pending.
-Cloud build helper8e04e612…ccf5e5 prepared/independent draft-design ACCEPT, UNRUN;
-requires final benefit/review, frozen source commit and its exact dual CI first.
-Current checkpoint e03877a dual CI37257552586 SUCCESS is doc-only, no candidate
-release credit. Native original comparison plus waiting supplement remain the
-sole advancing VPS work; no Q7 T0. Exact helpers/gates in current Q6 record.
+Sole corrected native supplement binance-recorder-q6-supplement-v5-20261005.service
+invocationd91d20b3999e4390aa85248aabeee207/PID141937 started06:27:16UTC,
+fixed18000s isolated budget. Controls /var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a;
+supplement-v5.log publishes random selected-supplement and bounds children.
+Frozen helper4f02f889…6a52f/wrapper6ebf4e2c…275f/selected-source1ec10219…b9d14c;
+original result43efc034…22c4/tool813cb961 readback bound. Fresh-process RSS,
+transient-scratch, complete checkpoint, Catalog commits/actual remote-aware SQL
+and FD/hash bounds remain PENDING. Do not restart or duplicate this healthy job.
+Expected measured work roughly1h; elapsed estimate is not completion.
+Recorder actual readback inactive AND disabled on old source23ea5c4.
+
+LOCAL full engineering2024 PASS/24 online skips/5 deselected, Ruff/Mypy/M0/Go
+PASS; full51-row comparison and fresh-process supplement COMPLETE. Initial and
+final source/protocol correctness independently ACCEPT; representative resources,
+final benefit/release review, candidate dual CI/clean locked wheel/cloud checks,
+new stopped deployment/warm-up/full baseline and Q7 T0 remain PENDING.
+Cloud build helper8e04e612…ccf5e5 draft independently ACCEPT, UNRUN.
+Current doc-only c94c83b exact dual CI37258717201 SUCCESS is no source/wheel credit.
+Hourly continuation remains ACTIVE through complete new Q7 closeout, no Q8.
+See docs/milestone_acceptance/Q6-optimization-20261005.md for exact gates/evidence.
 
 The following checkpoints retain their historical rules/results, not current authority.
 
