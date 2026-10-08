@@ -84,3 +84,17 @@ baseline6aa78342/PID253370 started19:48:47UTC and remains uncompleted. Export
 52b648aa DESIGN ACCEPT with canonical nested paths and accepted frozen resource
 prefixe196a359/747023B; exact current window/warm controls are exported only
 after actual native success/bothLIVE/completedverify. No Formal credit granted.
+
+Future NONFORMAL/Formal/automatic-terminal templates independently DESIGN
+ACCEPTfb66d26c/a30d84bf (GPT-6.1 Sol xhigh LOCAL/OFFLINE, read-only). Final
+manifest4c2d8691/formal44f3ee17 binds the current frozen census as the count floor
+and commits dispatch only after automatic-terminal launch succeeds; failure
+cleanup stops its own observer/sampler and disables Recorder. Three isolated
+launch/finally fixtures PASS. Actual baseline/NONFORMAL bindings remain explicit
+placeholders: rebind only after actual completion and independent acceptance,
+then verify exact installed helpers/unit arguments before dispatch. No new T0,
+duration or actual stage qualification is granted; baseline6aa78342 continues.
+
+Frozen reportfb66d26ce441d862165b4fc38f9520e2d2c1d1add1a9a24a060577f3f759fed3,
+identitya30d84bf5acea5e04c6d1068cc3f83f4772fda7a70902c66af88eb4a09e9b07e;
+private report `/private/var/tmp/bmdr-q7-future-template-review-td9ib45c/REPORT.md`.

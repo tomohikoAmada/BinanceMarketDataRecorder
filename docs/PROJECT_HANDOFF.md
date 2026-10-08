@@ -21,6 +21,16 @@ outer1800s/current-incarnation strict/resources/capacity precede sole7200s T0.
 Hourly continuation ACTIVE until complete Q7/push; no Q8. Accurate private controls
 are causal-retry/baseline-window2; earlier checkpoint paragraphs retain history.
 
+Future NONFORMAL/Formal/automatic-terminal templates independently DESIGN
+ACCEPTfb66d26c/a30d84bf (GPT-6.1 Sol xhigh LOCAL/OFFLINE, read-only). Final
+manifest4c2d8691/formal44f3ee17 binds the current frozen census as the count floor
+and commits dispatch only after automatic-terminal launch succeeds; failure
+cleanup stops its own observer/sampler and disables Recorder. Three isolated
+launch/finally fixtures PASS. Actual baseline/NONFORMAL bindings remain explicit
+placeholders: rebind only after actual completion and independent acceptance,
+then verify exact installed helpers/unit arguments before dispatch. No new T0,
+duration or actual stage qualification is granted; baseline6aa78342 continues.
+
 Authoritative checkpoint October8 19:41UTC (ShanghaiOctober9): corrected source
 49b4a2d/wheelc7d354be/identity7072575b remain released and deployed. Actual retry2
 warm/resources/frozen21126-chunk corpus independently ACCEPT9e16b63a/8d12316c;
