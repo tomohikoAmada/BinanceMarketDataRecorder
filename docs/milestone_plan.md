@@ -49,10 +49,10 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q5 COMPLETE/Q6 IN_PROGRESS/Q7–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
-Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
+Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
 
 Current Q6 checkpoint October8: original VPS51-workflow comparison and sole
 v6 resource supplement are COMPLETE. Native journal records October5 08:41:21UTC
@@ -80,15 +80,34 @@ LOCAL engineering2024/Ruff/Mypy/M0/Go and initial/final source/protocol correctn
 PASS/ACCEPT. Final independent source/48h/benefit/resources/qualified decisions ACCEPT
 (eb711260/02bc80ca,20 focused PASS); selected source is ready to freeze.
 Source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 exact dual CI37716337806
-BOTH SUCCESS. First bmdr cloud dispatcher failed before tests because old builder
-parent is root0700; evidence retained. Reviewed minimal root-run correction uses
-unique q6-release-e05268f-root-5zjyr94w and native
-binance-recorder-q6-cloud-root-e05268f-20261008.service/fixed1800s.
-Actual wheel/cloud/deployment and Q7 warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
+BOTH SUCCESS. First non-root cloud failed before tests (root0700 builder); root
+cloud fbd3730e failed245PASS/30FAIL before wheel because test data was inside
+its protected source workspace. Both failures retained. Same-source focused
+outside-data native06a60c9c PASS11/8.45s establishes the minimal harness fix,
+with source/tests/lock/path guards unchanged. Separate root0700 cloud controls
+q6-release-e05268f-outside-undlfufd/data q6-cloud-data-release-0gg7jtuo prepared;
+helper0f5561b5/independent96ec4e89 ACCEPT; native
+binance-recorder-q6-cloud-outside-e05268f-20261008.service/inv3c404ae5
+started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
+Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
+actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
+Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
+Fresh bound forecast49bc836b peakroot10.855GiB>10; FIRST47700s arm/warm/fullbaseline/T0 PENDING.
+Actual new wheel/cloud and stopped canonical deployment PASS; Q7 arm/warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
 CI37277972197 SUCCESS is documentation-only, not source/wheel credit.
 Recorder October8 actual inactive AND disabled; no new Formal T0 or inherited
-credit. Q6 IN_PROGRESS/Q7 NOT_STARTED. Hourly continuation targets complete new
+credit. Q6 release COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL; Formal2h NOT_STARTED. Hourly continuation targets complete new
 Q7 closeout, no Q8; accurate gates/evidence are in current Q6 acceptance record.
+
+Current live preparation October8 02:59UTC: new sourcee05268f/wheelf2e9dd1b/
+identityff7f4db6 actual canonical VERIFY PASS. FIRST quiet window ACTUAL_ACTIVE,
+fixed expiry16:13:42UTC (ShanghaiOct9 00:13:42),47700s/no extension. Sole native
+lightwarm binance-recorder-q7-lightwarm-20261008.service/inv194334c9…d0d48
+started02:59:44UTC/1200s/alwaysStopPost; read-only1200s sampler eaf4d44d…00531.
+Actual warm/resources/freeze/fullbaseline/T0 still pending; no newFormalcredit.
+At roughly03:08UTC inspect actual result/handoff; final outer deadline03:22UTC.
+Do not duplicate healthy work or let extra read-only sampler block closeout.
+Exact controls/sequence: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
 
 The following checkpoints retain their historical rules/results, not current authority.
 
@@ -218,8 +237,8 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
-| Q6 | Performance optimization, compatibility verification and optimized release preparation | IN_PROGRESS after complete Q5; source/protocol correctness independently ACCEPT; local2024 PASS and51-run exact-output comparison COMPLETE; VPS original51-run exact comparison COMPLETE; VPS resource/FD supplements complete; exact outputs and scoped resource bounds verified; checkpoint performance not accepted, necessary snapshot correctness retained; independent benefit/source ACCEPT and exact e05268f dual CI SUCCESS; root-isolated cloud build advancing; wheel/release pending |
-| Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
+| Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
+| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL; deployed sourcee05268f/identityff7f4db6; actual finite window and all-enabled lightwarm running; full baseline/NONFORMAL/own7200s T0/full closeout PENDING, zero Formal credit |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |

@@ -1,7 +1,7 @@
 # Q6 optimization and release preparation
 
 Started October 5, 2026 (Shanghai), after independently accepted Q5 closeout
-and main b9ffa5c push. Q6 is IN_PROGRESS; Q7 has no T0. Existing source23ea5c4,
+and main b9ffa5c push. Q6 release preparation is COMPLETE on October8; Q7 is IN_PROGRESS_PRE_FORMAL with no T0. Existing source23ea5c4,
 wheelbb7e357e and accepted14h remain original evidence. Recorder stays inactive
 AND disabled while isolated comparisons run. Existing hourly vps-2h is ACTIVE.
 No Q8/12h,24h,48h start is authorized in this continuation.
@@ -361,8 +361,8 @@ Current Q6 gates:
 - [x] Fresh RSS/scratch/F4 descriptor/RSS bounds and Catalog full commit costs.
 - [x] Five-direction qualified decisions,48h compatibility and independent final source review.
 - [x] Exact frozen source and dual CI.
-- [ ] Clean locked wheel/121 source+28 dependencies/actual cloud affected tests.
-- [ ] Independently bound frozen artifact/profile ready for Q7 deployment.
+- [x] Clean locked wheel/121 source+28 dependencies/actual cloud affected tests (actual275PASS).
+- [x] Independently bound frozen artifact/profile ready for Q7 deployment (bb83aae0; actual new canonical deployment/independent24af7199 ACCEPT).
 
 Q7 separate actual deployment/warm-up/sole baseline/NONFORMAL costs/new7200s
 Formal target/full terminal/verification/independent actual restored handoff remain
@@ -370,3 +370,76 @@ unstarted. Private forecast25bef20f…60f84 uses current19451 scope and actual o
 9680s full terminal cost without claiming derived speedup for Raw audits; conservative
 root reserve12.110GiB/finite13h draft includes baseline and terminal work. Actual
 new identity/forecast/window/phase dispatch independent review still pending.
+
+### Cloud runner isolation correction, October8
+
+The first non-root invocation e2a4afd9 failed before tests because the old
+builder's parent is root0700. The root invocation fbd3730e executed tests but
+FAILED with245 PASS/30 FAIL before wheel construction. Retained full log
+3e61b7f3f93b1f8616c2ebce27656158f2308c1358ff4b7d9f0ffa91eacbad50
+establishes unsafe repository/workspace temporary paths. The helper initializes
+controls/source as a Git repository, so controls is its protected workspace;
+placing test data under controls correctly triggers the production path guard.
+No source/test/lock or data-safety rule is changed.
+
+A focused same-source native run06a60c9c with only outside test-data paths
+PASSed11 tests in8.45s, journal9f3726338d14cc3f756671a0011e6a5995a46baa3c95af77cbba73b83088f221.
+The corrected external helper0f5561b5160f1e148153e794a6f66557d20762fbb642651dba4d50d27b7af11d
+requires a separate root0700 sibling q6-cloud-data-* and moves TMPDIR,
+PYTEST basetemp, default test data, pip cache and wheel-smoke data there.
+New controls q6-release-e05268f-outside-undlfufd/data q6-cloud-data-release-0gg7jtuo
+remain prepared; concrete independent review and actual dispatch/result are
+pending. Old scopes/failed logs remain retained; no wheel/deployment/T0 credit.
+
+Independent Q7 draft review corrected the first, not-yet-armed window to47700s
+(13.25h): warm-up upper budget1200s; NONFORMAL including restart1800s; baseline
+includes warm-up corpus growth, both full LIVE passes retain old measured cost.
+Forecast913b737df7c75ea313ea0fa629db92476d3081a6dba752f5a1aa366ae6ab263d
+estimates baseline10389.123s/terminal15707.549s; observed seal-minute peak root
+reserve12.098GiB exceeds10GiB. This is a scenario and pre-deployment draft, not
+an actual admission or an extended window. The freeze now checks retained19451
+IDs as a metadata subset; baseline requires its successful freeze receipt and
+root:bmdr0640 outputs. Actual new identity/capacity/window/admission remain pending.
+
+Actual corrected cloud dispatched02:37:45UTC, sole
+binance-recorder-q6-cloud-outside-e05268f-20261008.service/invocation
+3c404ae5afc1435d83bf5d244bafe88b/PID212177, root1800s. Independent concrete
+review96ec4e89db242699a2cd4a8659ad51d5f35abc5bc81fa17fc6bdd48f877f7a40/
+identity7c782fe05a631e113862ab0a880191a4dc0aedd51915fcffe7320dfed6c9ef05
+ACCEPT. Actual result/clean-wheel still pending; do not duplicate a healthy job.
+Hourly automation updated ACTIVE with accurate separate-data checkpoint.
+
+Corrected actual cloud COMPLETE:275PASS/1stress deselected,201.46s, native
+success/exit0. Clean receiptf0c13336854b915e590256187b428e8e11b23ece3c33c424c888c047224c3b2f,
+logf61aa415fe1341de5fd9de798b316428618f07cba49d84ea2bfd249409375dce,
+source inventory29e82c518240662740f17799a287cb34511da3fc4942083fb3833219e4930055,
+wheel f2e9dd1bf8db7f804ccd9b6778993a8a4da22623b8211344887a712aa98f724e/506132B.
+All121package Python bytes match exact source archive; exact28 noneditable
+dependencies/pipcheck/isolate version-doctor-status PASS. Generic interactive
+doctor retains its existing x86 developer-preview warning; frozen production
+profile/canonical deployment qualification remains separate. Native completion
+journal e286ab323778cebe68fc4a50e982796852c8e6af0d396ff140d34d395627daf1.
+
+Independent corrected Q7 preparation DESIGN ACCEPTfbf80f39/7d34749f:
+first unarmed47700s/restore180s budgets, deployed-identity fresh forecast draft,
+metadata retained subset/freeze receipt/baseline0640 and path-only read-only
+resource sampler. Actual deployment/arm/warm/fullbaseline/T0 remain PENDING.
+Minimal stopped deployer v5 27c1f180…b2a66 handles TERM through original rollback
+and timer restoration, checks actual retained venv rather than a rename flag
+and ignores TERM during finite cleanup. Independent92b2078c/ad543545 design
+ACCEPT/3isolated synthetic faults PASS. Concrete actual wheel/recipe binding
+review is pending; no production installation or collection has occurred yet.
+
+### Q6 release COMPLETE / Q7 pre-Formal qualification underway
+
+All six release gates above now have actual evidence: unchanged selected source
+e05268f, exact dual CI37716337806, representative full-workflow outputs/resources,
+qualified five decisions/48h compatibility/independent source review, corrected
+cloud275/121/28, wheelf2e9dd1b and concrete actual stopped canonical deployment
+identityff7f4db6. Independent actual deployed identity plus fresh capacity/first
+arm/lightwarm binding ACCEPT24af7199/1c9e851c. Q7's separate live gates remain
+required; Q6 release completion earns no Formal duration or production-ready claim.
+Actual Q7 FIRST47700s window expiresOctober8 16:13:42UTC/noextension, lightwarm
+194334c9 started02:59:44UTC/1200s with alwaysStopPost, resource samplereaf4d44d.
+Exact actual next checkpoint is the new Q7 acceptance record. Do not reuse prior
+cloud failures, original Q5 helpers or old14h credit as current execution authority.
