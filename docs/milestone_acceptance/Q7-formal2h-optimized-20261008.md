@@ -10,10 +10,41 @@ acceptedQ4+Q5=14h are historical and cannot earn this new stage's duration.
 
 Sole new scope:
 `/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b`.
-Recorder new window2 incarnation active on newff7f artifact; sole own7200s T0
+Historical failed window2 incarnation used newff7f artifact; sole own7200s T0
 08:45:01.944492826UTC, no completed target/accepted duration yet.
-Baseline and full NONFORMAL independently ACCEPT; Formal target still pending. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
+Historical e052 baseline/NONFORMAL independently ACCEPT; failed Formal has no target. New source retry must earn its own identity/baseline/target. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
 ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failures.
+
+Independent correction reportf5270cbe/review identity8d747b38 DESIGN ACCEPT;
+see docs/reviews/2026-10-08-q7-causal-backpressure-review.md (root-relative).
+
+Current repair checkpoint October8 15:48UTC: old Q7 EXECUTED_FAILED remains
+retained with zero accepted duration. Actual start481 and first sample897 causal
+references plus later bounded metadata snapshot91d0e7e reproduce the old cap
+failure (metadata-only reconstruction, Raw reconnect mocked; no integrity PASS).
+Producer-only continuous-prefix backpressure now prioritizes causal progress,
+keeps the final1024 cap and full independent replay, and recompact only used
+bundles. Bounded temporary cycles and the two existing independent causal groups
+avoid full-cap deadlock; original/v1/v2 policy and historical replay stay intact.
+Private auto-terminal failure handling now uses a tested same-invocation state
+check: failed or unsuccessful terminal observer exits immediately; TERM records
+failure through finally. Concrete new-scope launcher still requires review.
+LOCAL final2037 tests PASS/24offline skips/5stress deselected175.09s, Ruff/mypy297/
+M0/Go/diffcheck PASS; independent source/helper DESIGN ACCEPT48tests+2wrapperfixtures. Frozen/pushed
+source49b4a2db39b47cef5350c3791e56fa0f19bd209c/exact dualCI37797182288 BOTH SUCCESS; new locked wheel/affected cloud/current stopped
+canonical VERIFY/new identity and its own complete baseline still PENDING.
+Sole new retry preparation scope (created only, no deploy/baseline/T0):
+/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-causal-retry-20261008-prlintz2.
+Private exact controls/paths are q7-operators/causal-retry/paths.json under the
+existing /private/var/tmp/bmdr-q6-bench-controls-jkgugp82 directory. Sole cloud inv9b8006ad/PID242807 started15:39:15UTC/fixed1800s/healthy;
+q6-release-q7-causal-fne0vyby and separate data q6-cloud-data-q7-causal-7ahwhhbe
+are retained controls, not wheel/qualification PASS; do not create substitutes or duplicate healthy
+release/CI/baseline tasks. Recorder remains inactive AND disabled/PID0; archive
+normal recurrence/OS owners restored, old quiet windows closed. No new armed
+window or retry T0; new baseline/actual warm/NONFORMAL/current capacity, strict
+startup, own7200s/monitor>99.9%, both LIVE/verify/independent restored closeout
+are required. Do not transfer old identity or duration. Hourly continuation stays
+ACTIVE until full Q7 closeout/push, then pause; no Q8.
 
 Current authoritative checkpoint October8 09:00UTC: Q7 EXECUTED_FAILED, not
 RUNNING or accepted2h. Sole c11e37fb/run787ab58e/T0 08:45:01.944492826UTC retained;
@@ -72,7 +103,26 @@ continues until full Q7 closeout/push, then pause; no Q8/12h/24h/48h.
 
 Earlier preparation and closed first-window checkpoints below are retained history.
 
-## Phase sequence and evidence gates
+## Causal-failure retry gates (new source49b4a2d)
+
+- [x] Preserve failed c11e37fb start/sample/native journal, stop and disable
+  Recorder, restore actual OS authority before cancelling old protection.
+- [x] Reproduce causal cap failure using retained metadata; implement continuous
+  prefix scheduling and native failed/TERM propagation without raising caps.
+- [x] Final LOCAL2037 tests/Ruff/mypy297/M0/Go PASS; independent correction and
+  minimal release draft DESIGN ACCEPTf5270cbe/8d747b38; commit/push49b4a2d.
+- [ ] Exact source dualCI, new locked cloud wheel, actual receipt/command review,
+  stopped canonical deployment VERIFY and new installed identity.
+- [ ] New identity's actual warm/resources/drain/freeze, unique full baseline
+  bothLIVE/completed verify/independent acceptance, actual NONFORMAL costs and
+  current remaining-capacity/window/strict-start qualification.
+- [ ] Own actual7200s target/monitor>99.9%, both full LIVE terminal audits,
+  completed verification, independent restored closeout, docs/push/hourly pause.
+
+The earlier checked preparation below belongs to e052/ff7f and is retained
+history; it cannot certify the new identity or transfer duration.
+
+## Earlier e052 phase sequence and evidence gates
 
 - [x] Actual new clean locked wheel/cloud affected tests, concrete independent
   source/wheel/receipt/command review, stopped canonical deployment VERIFY;

@@ -75,6 +75,32 @@ started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
 Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
 actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
+Independent correction reportf5270cbe/review identity8d747b38 DESIGN ACCEPT;
+see docs/reviews/2026-10-08-q7-causal-backpressure-review.md (root-relative).
+
+Current repair checkpoint October8 15:48UTC: Q7 failed attempt remains retained;
+zero accepted duration. Producer causal-prefix backpressure and native observer
+failure-state handling are independently DESIGN ACCEPT (48 related tests plus
+2 actual wrapper fixtures); new source49b4a2db39b47cef5350c3791e56fa0f19bd209c
+is frozen/pushed. LOCAL2037PASS/24offline skips/5stress deselected175.09s,
+Ruff/mypy297/M0/Go/diffcheck PASS. Exact dualCI37797182288 BOTH SUCCESS;
+Actual cloud288PASS1deselected298.26s COMPLETE/success15:45:27UTC;
+clean receiptf228c28a/wheelc7d354be507918B/122sourcefiles/28exactdependencies PASS.
+Stopped deployment/new identity/baseline/own7200s still PENDING.
+Sole new preparation scope:
+/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-causal-retry-20261008-prlintz2.
+Sole cloud binance-recorder-q7-causal-cloud-20261008.service/inv9b8006ad/PID242807
+started15:39:15UTC, fixed1800s; completed/success15:45:27UTC, CPU289.944s/248.0M/swap0.
+This is cloud/wheel qualification, not a deployment or Formal PASS. Cloud children
+q6-release-q7-causal-fne0vyby/separate q6-cloud-data-q7-causal-7ahwhhbe retained. Private controls:
+/private/var/tmp/bmdr-q6-bench-controls-jkgugp82/q7-operators/causal-retry/paths.json.
+Recorder inactive AND disabled/PID0, archive normal, both old windows closed/OS
+restored. Do not duplicate progressing CI/review/native jobs or transfer prior
+identity/baseline/duration. New current resources/capacity/window, warm/baseline/
+NONFORMAL, strict own7200s, monitor>99.9%, both LIVE/verify/independent restored
+closeout remain required. Hourly vps-2h ACTIVE; no Q8. Full repair details below
+in the Q7 acceptance record; no new arm or T0.
+
 Current authoritative checkpoint October8 09:00UTC: Q7 EXECUTED_FAILED, not
 RUNNING or accepted2h. Sole c11e37fb/run787ab58e/T0 08:45:01.944492826UTC retained;
 observer9767f68c exited code2 before7200s with "pending causal reference cap exceeded".
