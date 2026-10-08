@@ -59,3 +59,11 @@ strict five-minute endpoint with typed EmptySideDataResponse and automatically
 stopped/disabled Recorder; no new full baseline or Formal credit is granted.
 A bounded private warm retry must reach actual strictPASS and current resource/
 capacity/remaining-window admission before the sole new baseline.
+
+Retry2 bounded strict endpoint recovery, measured unchanged full-baseline cost
+forecast and concrete warm/baseline argv DESIGN ACCEPT225932f7/4eaab247. Seven
+AST metadata-only fixtures PASS; all failing endpoint samples retained and
+strictPASS after300s is rejected. Old accepted baseline7322.268254s rounded7323
+and its measured corpus are used only for guarded cost forecasting; terminal
+9680s/125percent guard/fixed expiry unchanged. No identity/time transfer.
+Actual retry2 warm and subsequent full baseline/Formal remain pending.

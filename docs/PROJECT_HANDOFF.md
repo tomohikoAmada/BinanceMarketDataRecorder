@@ -1,5 +1,17 @@
 # Project Handoff
 
+Current native continuation October8 17:16UTC: retry2 private helper/forecast and
+exact warm/baseline commands independently DESIGN ACCEPT225932f7/4eaab247;
+7 endpoint fixtures PASS including generic/stale/wrongcursor/timeout rejection.
+Actual sole warm retry2 native binance-recorder-q7-causal-warm-retry2-20261008.service/
+invocationeffb5e288ea54c2fbacd47d939169471/PID248724 began17:14:42UTC,
+1200s start/150s stop/wholephase pin/always stopped-disabled handoff. Recorder
+PID248847/inv9a4bfb983d1a41e78a526c8022449354/NRestarts0 enabled-active;
+read-only startup-retry2 resource sampler is separate and adds no duration credit.
+Warm/freeze/admission outputs still PENDING; inspect actual result near17:24UTC,
+never duplicate a genuinely advancing native phase. Fixed expiryOctober9
+06:35:28UTC unchanged. Baseline/T0 remain absent; zero accepted new duration.
+
 Current corrected retry checkpoint October8 17:03UTC (ShanghaiOctober9):
 source49b4a2d/exact dualCI37797182288 BOTH SUCCESS; actual cloud288PASS and
 locked wheelc7d354be/clean receiptf228c28a, actual stopped canonical deployment
