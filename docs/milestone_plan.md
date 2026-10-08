@@ -1,5 +1,27 @@
 # Milestone Plan
 
+Authoritative checkpoint October8 22:43UTC (ShanghaiOctober9): sole corrected
+baseline6aa78342 COMPLETE/SUCCESS22:10:25UTC, both full LIVE audits/completed
+verify PASS, auditdca28756/359352records756shards/21126chunks28418777frames.
+Stored1572406097B/decoded21937780916B;4165 gap-incomplete/160zero-frame retained.
+Actual wall8497.910559s/CPU7412.560425s/peak944128000B/swap0; verify163.861921s.
+Control-only0908f941/134572753B/22711members independently reconstructed32.793937s;
+report6453f800/identity1a8ee312 ACCEPT, Raw/production/networkconnections0.
+Baseline marker7a720409 binds new707 identity/49b4 source, grants zero Formal credit.
+NF launcher781e7ec5 DESIGN ACCEPT903922e6/df4587a5, exact bound helpers/readback
+and fresh finite admission actual38162.509s>34399.613s/root10913044325B>10GiB.
+Sole restart-inclusive NONFORMAL binance-recorder-q7-causal-nonformal-20261008.service/
+invbaf074ad0d5c480bbbb0f5ffc7cc362c/PID259936 started22:41:32UTC, outer1800s/
+Stop150/wholephase pin/failure-only stopped-disabled handoff. RecorderPID260007/
+inv07803fd6287f45cf97101c5099a311ba enabled-active/NRestarts0; readonly resource
+sampler2340s has no duration authority. Actual NF costs/completion still PENDING;
+inspect real output at23:12UTC (Shanghai07:12), never repeat healthy native work.
+Fixed window expiryOctober9 09:17:35UTC unchanged, never extend. Formal T0 absent.
+Exact futureBASE/NFinv replacement DESIGN ACCEPTf8552666/545a7ff9 only; NF complete
+controls/independent qualification and fresh current strict/resources/capacity are
+required before formal-dispatch-bound.py01589739 can create the sole7200s T0.
+Private controls causal-retry/baseline-window2; all historical evidence retained.
+
 Authoritative native checkpoint October8 19:52UTC (ShanghaiOctober9): new48600s
 window DESIGN ACCEPTc5eed171/980882ae, ACTUAL ACTIVE_VERIFIEDeed8c3d3; fixed
 expiryOctober9 09:17:35UTC (Shanghai17:17:35), never extend. Nativearm65157912
@@ -466,7 +488,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment accepted; actual warm retry2/resources/frozen corpus accepted; old window restored-before-cancelled; new window actual arm/admission accepted. Sole new baseline6aa78342 running/ownT0 absent/zero accepted duration. Old e052 causal-cap failure/start/custody retained. |
+| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment accepted; actual warm retry2/resources/frozen corpus accepted; old window restored-before-cancelled; new window actual arm/admission accepted. Sole new baseline6aa78342/bothLIVE/verify/independent ACCEPT; restart-inclusive NONFORMALbaf074ad RUNNING/ownT0 absent/zero accepted duration. Old e052 causal-cap failure/start/custody retained. |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |

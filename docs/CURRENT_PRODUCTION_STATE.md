@@ -1,5 +1,27 @@
 # Current Production State
 
+Authoritative checkpoint October8 22:43UTC (ShanghaiOctober9): sole corrected
+baseline6aa78342 COMPLETE/SUCCESS22:10:25UTC, both full LIVE audits/completed
+verify PASS, auditdca28756/359352records756shards/21126chunks28418777frames.
+Stored1572406097B/decoded21937780916B;4165 gap-incomplete/160zero-frame retained.
+Actual wall8497.910559s/CPU7412.560425s/peak944128000B/swap0; verify163.861921s.
+Control-only0908f941/134572753B/22711members independently reconstructed32.793937s;
+report6453f800/identity1a8ee312 ACCEPT, Raw/production/networkconnections0.
+Baseline marker7a720409 binds new707 identity/49b4 source, grants zero Formal credit.
+NF launcher781e7ec5 DESIGN ACCEPT903922e6/df4587a5, exact bound helpers/readback
+and fresh finite admission actual38162.509s>34399.613s/root10913044325B>10GiB.
+Sole restart-inclusive NONFORMAL binance-recorder-q7-causal-nonformal-20261008.service/
+invbaf074ad0d5c480bbbb0f5ffc7cc362c/PID259936 started22:41:32UTC, outer1800s/
+Stop150/wholephase pin/failure-only stopped-disabled handoff. RecorderPID260007/
+inv07803fd6287f45cf97101c5099a311ba enabled-active/NRestarts0; readonly resource
+sampler2340s has no duration authority. Actual NF costs/completion still PENDING;
+inspect real output at23:12UTC (Shanghai07:12), never repeat healthy native work.
+Fixed window expiryOctober9 09:17:35UTC unchanged, never extend. Formal T0 absent.
+Exact futureBASE/NFinv replacement DESIGN ACCEPTf8552666/545a7ff9 only; NF complete
+controls/independent qualification and fresh current strict/resources/capacity are
+required before formal-dispatch-bound.py01589739 can create the sole7200s T0.
+Private controls causal-retry/baseline-window2; all historical evidence retained.
+
 Authoritative native checkpoint October8 19:52UTC (ShanghaiOctober9): new48600s
 window DESIGN ACCEPTc5eed171/980882ae, ACTUAL ACTIVE_VERIFIEDeed8c3d3; fixed
 expiryOctober9 09:17:35UTC (Shanghai17:17:35), never extend. Nativearm65157912

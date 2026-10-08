@@ -98,3 +98,24 @@ duration or actual stage qualification is granted; baseline6aa78342 continues.
 Frozen reportfb66d26ce441d862165b4fc38f9520e2d2c1d1add1a9a24a060577f3f759fed3,
 identitya30d84bf5acea5e04c6d1068cc3f83f4772fda7a70902c66af88eb4a09e9b07e;
 private report `/private/var/tmp/bmdr-q7-future-template-review-td9ib45c/REPORT.md`.
+
+Actual corrected-artifact full baseline independently ACCEPT6453f800/1a8ee312,
+result867633b7: full359352 records/756shards/21126manifests and Catalog matched
+the frozen census, including4165 incomplete/gap and160zero-frame manifests.
+Guarded reconstruction32.793937s performs no Raw/production/network connection;
+one import-time bind probe was blocked and recorded. Native owned6aa78342
+wall8497.910559s/CPU7412.560425s/peak944128000B/swap0, both LIVE and completed
+verify163.861921s passed. This grants only the new baseline qualification.
+Private report `/private/var/tmp/bmdr-q7-causal-baseline-independent-r516edj5/REPORT.md`.
+
+Exact NF BASE/argv binding and launch781e7ec5 DESIGN ACCEPT903922e6/df4587a5;
+three pure AST/mock fixtures cover successful dispatch, ambiguous sampler launch
+and ambiguous NF launch with a stop timeout followed by Recorder/sampler cleanup.
+Private report `/private/var/tmp/bmdr-q7-bound-nf-launcher-review-bfmjoudu/REPORT.md`.
+Actual NFbaf074ad has started; completion and independent eligibility pending.
+
+Future formal01589739/auto5f6fa4d2/export3c7de443 differ from accepted templates
+only by actualBASEdca28756/NFinvbaf074ad; all-byte comparison/AST DESIGN
+ACCEPTf8552666/545a7ff9. Actual current resource/strict/window and NF qualification
+remain required before dispatch; no Formal T0 or credit. Private report
+`/private/var/tmp/bmdr-q7-future-bound-parameters-review-08mxai9o/REPORT.md`.
