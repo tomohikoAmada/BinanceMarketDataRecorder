@@ -1,6 +1,6 @@
 # Q7 optimized-artifact VPS Formal2h qualification
 
-October8,2026 (Shanghai). Q7 FORMAL2H_RUNNING; no completed Formal credit yet. Latest owner
+October8,2026 (Shanghai). Q7 EXECUTED_FAILED; zero accepted Formal duration. Latest owner
 authorizes Q6 preparation through this complete2h closeout; stop beforeQ8.
 Q6 source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 has accepted source/benefit/
 resources/48h compatibility and exact dual CI37716337806 BOTH SUCCESS. Actual
@@ -14,6 +14,29 @@ Recorder new window2 incarnation active on newff7f artifact; sole own7200s T0
 08:45:01.944492826UTC, no completed target/accepted duration yet.
 Baseline and full NONFORMAL independently ACCEPT; Formal target still pending. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
 ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failures.
+
+Current authoritative checkpoint October8 09:00UTC: Q7 EXECUTED_FAILED, not
+RUNNING or accepted2h. Sole c11e37fb/run787ab58e/T0 08:45:01.944492826UTC retained;
+observer9767f68c exited code2 before7200s with "pending causal reference cap exceeded".
+No stage-target or completed Formal duration; monitoring percentage cannot replace
+actual7200s. Error originates in acceptance_v5_delta.py:462/472 (pending causal
+reference guard); root cause/resource bounds require diagnosis, not a blind cap bump.
+Recorder stopped AND disabled/PID0; Raw/archive/failed observations remain retained.
+Private auto wrapper kept waiting on failed OBS because it only broke on inactive;
+ownedauto6d46f8ce was explicitly stopped after preserving native failure journal.
+This operator failure-state handling also requires minimal repair/review before retry.
+Actual controlled WINDOW2 OS restoration PASS before expiry cancellation/readback
+inactive; no extension. Original OS owners restored by reviewed helper, archive
+normal recurrence retained. Failed closeout receipt formal2h-failed-closeout.json
+contains native states/journal/restoration/stop order. No new T0/retry was started.
+Q6 unchanged sourcee052/wheelf2e9/identityff7f still release-qualified; Q7 retry must
+follow affected code/identity/release/baseline/current capacity gates where changed.
+Do not erase failed stage or rerun unchanged failure. Hourly vps-2h remains ACTIVE:
+actual quota allowed then diagnose causal backlog, implement minimal safe fix,
+independent LOCAL/OFFLINE review, affected offline/cloud/release gates, and actual
+new7200s through full restored closeout. Never startQ8. Current5h97% consumed at
+08:58UTC/reset11:57:39UTC; no reset credit purchase/use or platform bypass.
+Earlier successful preparation and initial RUNNING snapshots below are historical.
 
 Current authoritative Q7 checkpoint October8 08:47UTC: new optimized Formal2h
 RUNNING, sole stage2h-c11e37fb65924fba9a48e884e6183abc/run787ab58e87424368a6d5b9471a673eb6.

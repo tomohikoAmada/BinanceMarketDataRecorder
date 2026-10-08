@@ -53,7 +53,7 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](docs/milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](docs/reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 FORMAL2H_RUNNING/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 EXECUTED_FAILED/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
@@ -96,6 +96,29 @@ started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
 Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
 actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
+Current authoritative checkpoint October8 09:00UTC: Q7 EXECUTED_FAILED, not
+RUNNING or accepted2h. Sole c11e37fb/run787ab58e/T0 08:45:01.944492826UTC retained;
+observer9767f68c exited code2 before7200s with "pending causal reference cap exceeded".
+No stage-target or completed Formal duration; monitoring percentage cannot replace
+actual7200s. Error originates in acceptance_v5_delta.py:462/472 (pending causal
+reference guard); root cause/resource bounds require diagnosis, not a blind cap bump.
+Recorder stopped AND disabled/PID0; Raw/archive/failed observations remain retained.
+Private auto wrapper kept waiting on failed OBS because it only broke on inactive;
+ownedauto6d46f8ce was explicitly stopped after preserving native failure journal.
+This operator failure-state handling also requires minimal repair/review before retry.
+Actual controlled WINDOW2 OS restoration PASS before expiry cancellation/readback
+inactive; no extension. Original OS owners restored by reviewed helper, archive
+normal recurrence retained. Failed closeout receipt formal2h-failed-closeout.json
+contains native states/journal/restoration/stop order. No new T0/retry was started.
+Q6 unchanged sourcee052/wheelf2e9/identityff7f still release-qualified; Q7 retry must
+follow affected code/identity/release/baseline/current capacity gates where changed.
+Do not erase failed stage or rerun unchanged failure. Hourly vps-2h remains ACTIVE:
+actual quota allowed then diagnose causal backlog, implement minimal safe fix,
+independent LOCAL/OFFLINE review, affected offline/cloud/release gates, and actual
+new7200s through full restored closeout. Never startQ8. Current5h97% consumed at
+08:58UTC/reset11:57:39UTC; no reset credit purchase/use or platform bypass.
+Earlier successful preparation and initial RUNNING snapshots below are historical.
+
 Current authoritative Q7 checkpoint October8 08:47UTC: new optimized Formal2h
 RUNNING, sole stage2h-c11e37fb65924fba9a48e884e6183abc/run787ab58e87424368a6d5b9471a673eb6.
 Actual source T0 2026-10-08 08:45:01.944492826UTC (Shanghai16:45:01.944492826),
