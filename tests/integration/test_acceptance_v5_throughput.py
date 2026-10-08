@@ -208,8 +208,62 @@ def test_four_products_and_archive_keep_up_without_changing_legacy_policy(
         else:
             assert resumed_sample["delta_policy"] == BOUNDED_BATCH_POLICY
         assert resumed_sample["blocking_findings"] == []
+
         row_cap = 256 if legacy else 1024
         assert all(len(page) <= row_cap for page in resumed_sample["delta_pages"].values())
         resumed_replay = replay_online(resumed.evidence_root, identity, require_target=False)
         assert resumed_replay.sample_count == (2 if legacy else 5)
         assert resumed_replay.continuation == resumed_sample["continuation"]
+
+
+def test_large_prestart_archive_backlog_drains_with_bounded_causal_references(
+    tmp_path: Path,
+) -> None:
+    """Unequal 8:5 lifecycle row rates must not overflow during multi-page catchup."""
+    prepared = prepare_archive(tmp_path / "archive", chunk_count=0)
+    observer, clock, _ = observer_fixture(tmp_path / "observer")
+    identity = replace(observer.identity, systemd_effective={
+        **observer.identity.systemd_effective, "working_directory": str(prepared.layout.root),
+    })
+    roots = {prepared.target.storage_id: prepared.target.root}
+    predecessor, _, _ = baseline(
+        data_root=prepared.layout.root, evidence_root=tmp_path / "baseline",
+        identity=identity, products=[["um_perpetual", "BTCUSDT"]], archive_roots=roots,
+        probe=stopped, identity_verifier=lambda _: None, raw_unit=raw_unit, boot_id="boot-a",
+    )
+    observer = replace(observer, data_root=prepared.layout.root, identity=identity,
+                       predecessor_path=predecessor, archive_root_resolver=lambda: roots)
+    observer.evaluator = production_readiness(observer, clock)
+    with Catalog(prepared.layout.catalog) as catalog:
+        manager = ArchiveManager(layout=prepared.layout, catalog=catalog, target=prepared.target)
+        for ordinal in range(600):
+            writer = RawChunkWriter(
+                layout=prepared.layout, catalog=catalog, market="um_perpetual",
+                symbol="BTCUSDT", stream="agg_trade", collector_instance_id="collector-1",
+                collector_version="0.1.0+test", durability_interval_seconds=0,
+            )
+            writer.append(event(ordinal).model_copy(update={
+                "market": "um_perpetual", "symbol": "BTCUSDT", "stream": "agg_trade",
+            }))
+            writer.close()
+            seal_partial(writer.path, layout=prepared.layout, catalog=catalog)
+            assert manager.run_once().state == "LOCAL_DELETED"
+    publish_ready_state(observer, clock)
+    _, _, sample = observer.start()
+    for _ in range(12):
+        assert sample["blocking_findings"] == []
+        assert len(sample["continuation"]["pending_causal_references"]) <= 1024
+        assert delta_bytes(sample) <= 7 * 1024 * 1024
+        if not sample["delta_pending"]:
+            break
+        prior = sample["continuation"]["processed"]
+        advance(clock, 300)
+        publish_ready_state(observer, clock)
+        _, _, sample = observer.sample()
+        assert sample["continuation"]["processed"] != prior
+    else:
+        pytest.fail("bounded causal scheduling failed to drain a finite backlog")
+    assert sample["continuation"]["pending_causal_references"] == []
+    assert sample["continuation"]["processed"] == sample["high_water"]
+    replay = replay_online(observer.evidence_root, identity, require_target=False)
+    assert replay.continuation == sample["continuation"]

@@ -33,6 +33,7 @@ from .acceptance import (
     canonical_json,
     sha256_bytes,
 )
+from .acceptance_v5_admission import causal_prefixes
 from .acceptance_v5_codec import compact_entry, delta_bytes, expanded_pages
 from .acceptance_v5_corpus import catalog_available
 from .acceptance_v5_delta import (
@@ -370,9 +371,10 @@ class V5AcceptanceObserver:
                     else:
                         entry["unit"] = result
                 additions: dict[str, dict[str, Any]] = {}
+                wire_entry = entry
                 if compact:
-                    entry, additions = compact_entry(entry, archive_bundles)
-                entry_size = len(canonical_json(entry))
+                    wire_entry, additions = compact_entry(entry, archive_bundles)
+                entry_size = len(canonical_json(wire_entry))
                 table_size = (
                     len(canonical_json(additions)) - empty_table_bytes + int(bool(archive_bundles))
                     if additions else 0
@@ -390,6 +392,17 @@ class V5AcceptanceObserver:
                 used_bytes += size
                 if entry["status"] != "acknowledged":
                     break
+        if compact:
+            pages = causal_prefixes(
+                self.continuation, high_water, pages,
+                reference_cap=delta_limits(self.start_document)[1],
+            )
+            archive_bundles = {}
+            for family in FAMILIES:
+                for index, entry in enumerate(pages[family]):
+                    wire_entry, additions = compact_entry(entry, archive_bundles)
+                    pages[family][index] = wire_entry
+                    archive_bundles.update(additions)
         return high_water, pages, open_chunks, archive_bundles
 
     def _observe(self, *, starting: bool) -> dict[str, Any]:

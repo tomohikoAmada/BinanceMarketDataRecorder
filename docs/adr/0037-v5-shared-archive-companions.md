@@ -39,6 +39,26 @@ conflicting digests fail, final continuation above 1024 fails, and target pendin
 work still prevents eligibility. This fixes family-order overflow without
 increasing persisted caps or deleting causal evidence.
 
+October8 Q7 correction: equal 1024-row chunk/archive pages advanced the archive
+family faster through a large pre-start backlog (chunk lifecycles have additional
+non-archive transitions). Retained observations had481 then897 unresolved
+references; the next bounded snapshot reproduces the cap error using metadata
+only. Compact producers now schedule continuous prefixes by the smallest next-row
+unresolved-reference count, keeping the last within-cap prefix checkpoint.
+The bounded speculative walk may temporarily exceed1024 to close a mutually
+referencing lifecycle, but only a final within-cap checkpoint is published.
+If that walk yields no advancing checkpoint, the two existing independent
+causal groups (operational pairs and chunk/archive lifecycles) are tried
+separately so an unclosed pair cannot starve a closed archive lifecycle.
+This scheduling uses numeric reference identities, introduces no new digests,
+does not acknowledge lookup companions, and does not replace exact independent
+replay. Existing byte/time/Raw admission happens first; pruning can only remove
+admitted descriptors, then the exact used shared table is rebuilt. A blocked
+prefix stays pending and cannot qualify a target. The envelope, v2 policy,
+persisted cap and original/v1 replay/resume remain unchanged. Real600-chunk
+writer/archive backlog and full-cap mutual-reference/group-isolation tests cover progress and
+finite-input bounds; representative cloud qualification remains required.
+
 ## Compatibility and tests
 
 Missing-policy original starts and exact v1 starts retain their previous bytes,
