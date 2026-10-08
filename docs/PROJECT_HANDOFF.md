@@ -75,22 +75,35 @@ started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
 Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
 actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
-Fresh bound forecast49bc836b peakroot10.855GiB>10; FIRST47700s arm/warm/fullbaseline/T0 PENDING.
-Actual new wheel/cloud and stopped canonical deployment PASS; Q7 arm/warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
+Fresh bound forecast49bc836b peakroot10.855GiB>10; FIRST47700s arm and actual warm/freeze PASS; sole fullbaseline advancing, T0 PENDING.
+Actual new wheel/cloud/stopped canonical deployment/first arm/warm-up/freeze PASS; Q7 full baseline advancing, T0 remains PENDING. Historical main0043d5e dual
 CI37277972197 SUCCESS is documentation-only, not source/wheel credit.
 Recorder October8 actual inactive AND disabled; no new Formal T0 or inherited
 credit. Q6 release COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL; Formal2h NOT_STARTED. Hourly continuation targets complete new
 Q7 closeout, no Q8; accurate gates/evidence are in current Q6 acceptance record.
 
-Current live preparation October8 02:59UTC: new sourcee05268f/wheelf2e9dd1b/
-identityff7f4db6 actual canonical VERIFY PASS. FIRST quiet window ACTUAL_ACTIVE,
-fixed expiry16:13:42UTC (ShanghaiOct9 00:13:42),47700s/no extension. Sole native
-lightwarm binance-recorder-q7-lightwarm-20261008.service/inv194334c9…d0d48
-started02:59:44UTC/1200s/alwaysStopPost; read-only1200s sampler eaf4d44d…00531.
-Actual warm/resources/freeze/fullbaseline/T0 still pending; no newFormalcredit.
-At roughly03:08UTC inspect actual result/handoff; final outer deadline03:22UTC.
-Do not duplicate healthy work or let extra read-only sampler block closeout.
-Exact controls/sequence: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
+Current native checkpoint October8 03:24UTC: new sourcee05268f/wheelf2e9dd1b/
+identityff7f4db6 canonical VERIFY PASS. FIRST47700s window remains ACTIVE with
+fixed expiry16:13:42UTC (ShanghaiOct9 00:13:42), never extended. Actual all-enabled
+lightwarm PASS8a9f2e1d: core4READY/strict26 startup+five-minute,359.464316003s;
+stopped-disabled handoff0d01467b. Representative warm RSS267489280B/host available
+>=4674039808B; host swap798720B retained, delta swapin/out0; steal8.822%/iowait
+1.596%/nonzeroPSI retained. First STARTING diagnostic BLOCK is not a PASS.
+Natural archive10 successful recurrences, stopped-disabled/drained/frozen receipt
+58f1abea at19598chunks, all prior19451manifest objects retained exactly. Postwarm
+censusec0b6961/admission9a8ce1d4 root-after11696157794B>10GiB and remaining44615s
+requirement independently ACCEPT93ea5296/e800cd18. Sole authoritative baseline
+binance-recorder-q7-authoritative-baseline-20261008.service/invocation
+198daa9be27140f09fe8514814061f54/PID216691 started03:17:28UTC, wholephase pin,
+infinite total start/150s stop/source900s no-progress watchdog. Actual03:24 progress
+shows freeze complete and advancing LIVE audit metadata; launch is not PASS.
+Baseline bothLIVE/verify/independent acceptance remain pending. Estimate near06:01UTC
+is a check point, not completion; inspect actual outputs when reached. Recorder
+inactive AND disabled while baseline advances; do not restart/duplicate it.
+No Formal T0/credit. Baseline acceptance precedes same-baseline NONFORMAL costs
+(1800s including restart), fresh strict/resources/fixed-window admission and sole
+own7200s T0. Source/identity/time never transfer. Extra readonly sampler does not
+block qualification. Exact controls/sequence: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
 
 The following checkpoints retain their historical rules/results, not current authority.
 

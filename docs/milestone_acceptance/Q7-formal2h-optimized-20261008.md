@@ -4,25 +4,26 @@ October8,2026 (Shanghai). Q7 IN_PROGRESS_PRE_FORMAL; no Formal T0/credit. Latest
 authorizes Q6 preparation through this complete2h closeout; stop beforeQ8.
 Q6 source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 has accepted source/benefit/
 resources/48h compatibility and exact dual CI37716337806 BOTH SUCCESS. Actual
-locked cloud wheel/canonical deployment remain pending; old23ea5c4 identity and
+locked cloud wheel/canonical deployment/first arm/actual warm/resources/freeze PASS;
+sole authoritative baseline is advancing. Old23ea5c4 identity and
 acceptedQ4+Q5=14h are historical and cannot earn this new stage's duration.
 
 Sole new scope:
 `/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b`.
-Recorder actual inactive AND disabled/PID0 on old artifact. No baseline/target/
-prestart has been created. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
+Recorder actual inactive AND disabled/PID0 on newff7f artifact. Sole baseline
+started03:17:28UTC; no Formal target/T0 has been created. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
 ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failures.
 
 ## Phase sequence and evidence gates
 
-- [ ] Actual new clean locked wheel/cloud affected tests, concrete independent
+- [x] Actual new clean locked wheel/cloud affected tests, concrete independent
   source/wheel/receipt/command review, stopped canonical deployment VERIFY;
   retain old canonical venv/identity and natural archive recurrence.
-- [ ] Fresh new-identity metadata/capacity snapshot and independent finite quiet
+- [x] Fresh new-identity metadata/capacity snapshot and independent finite quiet
   plan/admission; arm once with an absolute expiry, never extend an armed window.
-- [ ] All-enabled actual light warm-up/current publication/coreREADY/strict26,
+- [x] All-enabled actual light warm-up/current publication/coreREADY/strict26,
   host/process resource admission and natural archive worker recurrence.
-- [ ] Recorder inactive AND disabled, natural drain, archive timer paused after
+- [x] Recorder inactive AND disabled, natural drain, archive timer paused after
   worker success; metadata retained IDs subset/floor and successful freeze receipt.
 - [ ] Sole authoritative baseline with both independent full LIVE Raw passes,
   completed verification and independent LOCAL/OFFLINE acceptance. No separate
@@ -43,7 +44,7 @@ ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failure
   disabled; independent actual restored closeout. Update plan/state/handoff,
   pushmain, then pause hourly vps-2h. NoQ8 start.
 
-## Current draft capacity/window (not armed)
+## Prior unarmed draft capacity/window (retained history)
 
 Prior metadata census e2201c51…88ac8:19451chunks/24128355frames/1356124949storedB/
 18696105548uncompressedB,0partial/backlog/allLOCAL_DELETED. Root free28645597184B;
@@ -66,8 +67,8 @@ window/resource qualifications must pass at each applicable phase.
 
 Private operator drafts and exact commands are under
 `/private/var/tmp/bmdr-q6-bench-controls-jkgugp82/q7-operators`.
-Current phase: finish corrected separate-data cloud build, then actual wheel/
-deployment parameter review. No current Q7 credit; Q6 record retains both cloud
+At this earlier draft checkpoint, separate-data build and actual deployment
+review were pending. They subsequently passed; no current Q7 Formal credit; Q6 record retains both cloud
 runner failures and the11PASS focused directory correction.
 
 ## Actual new release deployed, not collecting
@@ -94,7 +95,7 @@ OS units.47700s; no actual arm yet and no window extension. Concrete actual
 deployment/firstarm/warm qualification independent review pending; warm/baseline/
 NONFORMAL/T0 not started. Original cloud runner failures stay in the Q6 record.
 
-## FIRST actual window and owned lightwarm running
+## FIRST actual window and owned lightwarm dispatch (retained)
 
 Independent actual new deployment+firstarm/lightwarm binding ACCEPT24af7199/1c9e851c.
 Actual quiet receipt862c905d41afa86fd9d370d14e6cf009ac16c0154fbc6d0c7574bd3bf82ec886
@@ -115,3 +116,54 @@ stopped handoff remain pending. Reasonable completion checkpoint03:08UTC,
 outer maximum03:22UTC; inspect actual rather than assume startup means success.
 The extra read-only postwarm sampler period does not block freeze/baseline.
 No Formal T0/baseline/duration exists; do not duplicate work.
+
+## Actual warm/freeze accepted; sole baseline advancing
+
+Actual warm result8a9f2e1d2b52af2554b19da9567f2a22134cf26e999f836698966ab3710545cf:
+ACTUAL_ALL_ENABLED_LIGHT_WARMUP_PASS, four coreREADY/strict26 startup+five-minute,
+359.464316003s capture; alwaysStopPost handoff0d01467b9b66e2f078a9528b7afaf17dc9506a76a977240482f62790d46baf3d
+Recorder inactive AND disabled/PID0/NRestarts0. No Formal credit.
+
+Readonly resource complete-newline prefixac81fa88 has12 current Recorder samples:
+first STARTING/diagnosticBLOCK then11 RUNNING/diagnosticPASS, not12PASS or Formal
+monitor rate. RSS maximum267489280B, host available minimum4674039808B; host swap
+798720B retained, delta pswpin/out0. Host steal8.822%, iowait1.596%, nonzeroCPU/IO
+PSI retained; no continuous pressure-absence claim. Ten natural successful archive
+recurrences retained in journal15691f9f. Sampler extra postwarm period does not
+block baseline or act as timing authority.
+
+Successful freeze58f1abea0cc6a8d4ed7983438493c7614d16d75871d6dfd78351c6e15bda80d3:
+19598chunks, allLOCAL_DELETED/equaltransactions/integrity+FK/no partials;
+all19451 prior manifest objects retained exactly. Recorder inactive-disabled,
+archive timer paused only after natural worker success/PID0. Postwarm census
+ec0b696167cc084b2cd6ba057dc88c8170bb3a0a1a2b19c55f775711947a354d:
+24394689frames/1369586034storedB/18900140639uncompressedB.
+
+Actual admission9a8ce1d46cfdae3cedc907cc7fe38a1bed3369c63d6b4347432d5abdd40759bf
+binds census/freeze/window/source/id. Estimated baseline9786.849933201s,
+terminal peak15105.275329379063s; required remaining44615.15657822508s includes
+125% audit allowance,1800s NONFORMAL including restart,7200s Formal,900s drain,
+3600s review/handoff. Actual03:13:15UTC remaining46826.43864488602s leaves2211s.
+Root after all allowances11696157794B>10737418240B; archive2093931455912B.
+No derived-processing speedup was applied to Raw audits. Independently recomputed
+actual phase/baseline command ACCEPT93ea529619534b96d9fdd24de2bb8373db6aa0e88133ba11c432024288012ee3/
+identitye800cd1869d0bb57538fdd7491d8554367a864dab0bef6eefa45c4fb3b99dfb1;
+validationeb034d73e74af6e3cf51cb141edb846a374c3c380dff6a85d4869825e8ecb62e.
+
+Sole baseline unitbinance-recorder-q7-authoritative-baseline-20261008.service,
+invocation198daa9be27140f09fe8514814061f54/PID216691, started03:17:28UTC.
+ROOT/groupbmdr/UMask0027/oneshot/infinite total start/150s stop, outerwholephase
+pinebe6da40 and helperfb6fa34e51e23a7949bcc1ab3a31cf706a64a476a4aaaacb4364225b730b958b.
+Source900s no-progress watchdog stays intact. Dispatch required actualstoppeddisabled,
+freeze/noexistingbaseline/quietACTIVE withremaining>44615s and unitnot-found.
+Actual03:24UTC metadata shows freeze complete and advancing full LIVE audit;
+MainPID remains216691, CPU252.481s/memory832008192B. Empty in-progress stdout
+baseline-result.json is not a completed receipt. Estimate near06:01UTC is a check
+point, not PASS. Never duplicate/restart a healthy baseline. BothLIVE+completed
+verify+independent acceptance remain pending; no Formal T0 exists.
+
+After actual baseline acceptance, restore natural archive/restart to healthy fresh
+publication; same-baseline isolated NONFORMAL costs must pass within1800s including
+restart. Reforecast actual growing corpus/resources/strict/current incarnation and
+remaining absolute window before sole own7200s T0. Fixed16:13:42UTC expiry is not
+extended; actual RESTORED before protection cancellation remains mandatory.

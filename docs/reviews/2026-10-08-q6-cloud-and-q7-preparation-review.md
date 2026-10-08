@@ -1,8 +1,8 @@
 # Independent Q6 cloud release and Q7 preparation review
 
 GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only. ACCEPT for actual cloud/source/wheel/
-lock and concrete stopped-deployment parameters; actual canonical deployment,
-new identity verification and Q7 running phase qualifications remain pending.
+lock, actual canonical deployment/new identity, FIRST arm/warm/freeze and sole
+baseline admission. Actual baseline audits, NONFORMAL and Formal remain pending.
 This supplements the accepted final source/benefit review; no new source change.
 
 Concrete stopped deployment review bb83aae04b360f49f7843d5652a158b7f7865e9d0132e0200ef3e8b06e3534ea,
@@ -58,3 +58,16 @@ Private reports remain under /private/var/tmp/bmdr-q6-cloud-wheel-binding-review
 bmdr-q6-deployer-term-review-E8I508, bmdr-q7-preparation-review-nIy6w8 and
 bmdr-q6-outside-data-review-Xmrjkr. No network, VPS/service command, production
 Raw open, live build or dependency install occurred in this independent review.
+
+Actual canonical deployment/new identity/fresh firstarm parameters subsequently
+ACCEPT24af719940d7cf073635ccb90fa82ca468b354cf6ae843ed6b9aa947d4eb40dc/
+identity1c9e851c6e16b2b9628251c930c149465e33edf4e66b12d6ffc1c8543fe1c4fe.
+Actual warm/resources/natural archive/freeze and concrete sole baseline admission
+ACCEPT93ea529619534b96d9fdd24de2bb8373db6aa0e88133ba11c432024288012ee3/
+identitye800cd1869d0bb57538fdd7491d8554367a864dab0bef6eefa45c4fb3b99dfb1,
+validationeb034d73e74af6e3cf51cb141edb846a374c3c380dff6a85d4869825e8ecb62e.
+Review independently recomputes actual capacity/window and preserves startup
+BLOCK/hostswap/nonzero pressure facts; all19451 retained manifest objects match.
+No change required before unique baseline dispatch. Actual baseline bothLIVE,
+completedverify/independent closeout, NONFORMAL and own7200s remain pending.
+Report /private/var/tmp/bmdr-q7-baseline-admission-review-g9jqjQ/report.md.
