@@ -2,7 +2,7 @@
 
 GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only. ACCEPT for actual cloud/source/wheel/
 lock, actual canonical deployment/new identity, FIRST arm/warm/freeze and sole
-baseline admission. Actual baseline audits, NONFORMAL and Formal remain pending.
+baseline admission. Actual baseline audits/completed verification/independent reconstruction now ACCEPT; NONFORMAL and Formal remain pending.
 This supplements the accepted final source/benefit review; no new source change.
 
 Concrete stopped deployment review bb83aae04b360f49f7843d5652a158b7f7865e9d0132e0200ef3e8b06e3534ea,
@@ -71,3 +71,28 @@ BLOCK/hostswap/nonzero pressure facts; all19451 retained manifest objects match.
 No change required before unique baseline dispatch. Actual baseline bothLIVE,
 completedverify/independent closeout, NONFORMAL and own7200s remain pending.
 Report /private/var/tmp/bmdr-q7-baseline-admission-review-g9jqjQ/report.md.
+
+Actual baseline independent ACCEPT7cbb098b7096c28b2ca586cb98a4802ee5a6bd211985e2bfb07dc53a4936570b/
+identity27af910be54baebd4459c52d51fd32ee2cc6209d366a8aa001581f89e36db670.
+All21062 frozen control members unchanged; exact source/lock guarded35.172596208s
+reconstructs333280 records/701shards/19598 manifests, full Catalog/SQL transitions
+and continuation; Raw/network/production opens0. Native completion has successful
+start-job/deactivation/CPU/boot evidence, both independent full LIVE producer
+passes, completed verification177.956683s and identityc6e0fd11/ff7f4db6 binding.
+No third live Raw read was performed in the independent review.
+
+Control-only export guard design ACCEPT430367c8/18c46186; six private fixtures
+include alias/stop-only/wrong invocation/wrong boot/failed job/Raw suffix refusal.
+Final helper7023f14d retains canonical no-link and native start-success+CPU checks.
+Actual bundle6a38bbc8 and completed reconstruction are separate actual evidence.
+
+Restart-inclusive NONFORMAL wrapper DESIGN ACCEPT6e2deacf/14eaad39 for exact
+8077043d; outer1800s includes restart, successful stage preserves healthy
+incarnation, failure-only StopPost stops/disables. Bodyca820a52 remains unchanged.
+Remaining-budget DESIGN ACCEPT098eb9781efe7769b1e236e9632202c4f379cc1d73f5fc37b309d95631a90297/
+identity3e0aafbd7a8b594d6114ee95a273862c4a9e031353cc751abb34008f9fe36b01.
+Future review/handoff3000s is supported by concrete completed baseline/export/
+guarded review/restore costs; original conservative terminal15105.275329s×1.25
+is retained. Actual NF dispatch separately passed remaining31811.336>31781.594s
+and projected root11687257186B>10GiB; no fixed expiry extension. Complete NONFORMAL,
+Formal target and restored closeout remain pending.

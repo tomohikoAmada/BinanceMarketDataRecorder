@@ -4,7 +4,7 @@ Updated October 8, 2026 (Shanghai). This is the current operational entry point.
 
 Latest owner authorization October5: Q5 is COMPLETE; continue Q6 optimization/
 release preparation and optimized-artifact VPS Q7/Formal2h full closeout, then stop
-before Q8/12h,24h,48h. Monitoring gate is at least99.9% recorded PASS checks,
+before Q8/12h,24h,48h. Current Q7 monitoring gate is strictly more than99.9% recorded PASS checks,
 per ADR-0039, not exchange-event completeness. Original failed monitor and
 old-policy rejection remain retained. Strict endpoints/core/Raw/archive integrity,
 both full LIVE passes, completed verify and independent restored closeout apply.
@@ -75,35 +75,42 @@ started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
 Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
 actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
-Fresh bound forecast49bc836b peakroot10.855GiB>10; FIRST47700s arm and actual warm/freeze PASS; sole fullbaseline advancing, T0 PENDING.
-Actual new wheel/cloud/stopped canonical deployment/first arm/warm-up/freeze PASS; Q7 full baseline advancing, T0 remains PENDING. Historical main0043d5e dual
+Fresh bound forecast49bc836b peakroot10.855GiB>10; FIRST47700s arm/warm/freeze/full baseline independently PASS; sole NONFORMAL advancing, T0 PENDING.
+Actual new wheel/cloud/stopped canonical deployment/first arm/warm-up/freeze PASS; Q7 full baseline COMPLETE/independent ACCEPT, NONFORMAL advancing; T0 remains PENDING. Historical main0043d5e dual
 CI37277972197 SUCCESS is documentation-only, not source/wheel credit.
-Recorder October8 actual inactive AND disabled; no new Formal T0 or inherited
+Recorder October8 actual healthy NF incarnation active; no new Formal T0 or inherited
 credit. Q6 release COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL; Formal2h NOT_STARTED. Hourly continuation targets complete new
 Q7 closeout, no Q8; accurate gates/evidence are in current Q6 acceptance record.
 
-Current native checkpoint October8 03:24UTC: new sourcee05268f/wheelf2e9dd1b/
-identityff7f4db6 canonical VERIFY PASS. FIRST47700s window remains ACTIVE with
-fixed expiry16:13:42UTC (ShanghaiOct9 00:13:42), never extended. Actual all-enabled
-lightwarm PASS8a9f2e1d: core4READY/strict26 startup+five-minute,359.464316003s;
-stopped-disabled handoff0d01467b. Representative warm RSS267489280B/host available
->=4674039808B; host swap798720B retained, delta swapin/out0; steal8.822%/iowait
-1.596%/nonzeroPSI retained. First STARTING diagnostic BLOCK is not a PASS.
-Natural archive10 successful recurrences, stopped-disabled/drained/frozen receipt
-58f1abea at19598chunks, all prior19451manifest objects retained exactly. Postwarm
-censusec0b6961/admission9a8ce1d4 root-after11696157794B>10GiB and remaining44615s
-requirement independently ACCEPT93ea5296/e800cd18. Sole authoritative baseline
-binance-recorder-q7-authoritative-baseline-20261008.service/invocation
-198daa9be27140f09fe8514814061f54/PID216691 started03:17:28UTC, wholephase pin,
-infinite total start/150s stop/source900s no-progress watchdog. Actual03:24 progress
-shows freeze complete and advancing LIVE audit metadata; launch is not PASS.
-Baseline bothLIVE/verify/independent acceptance remain pending. Estimate near06:01UTC
-is a check point, not completion; inspect actual outputs when reached. Recorder
-inactive AND disabled while baseline advances; do not restart/duplicate it.
-No Formal T0/credit. Baseline acceptance precedes same-baseline NONFORMAL costs
-(1800s including restart), fresh strict/resources/fixed-window admission and sole
-own7200s T0. Source/identity/time never transfer. Extra readonly sampler does not
-block qualification. Exact controls/sequence: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
+Current native checkpoint October8 07:29UTC: authoritative baseline COMPLETE,
+not still running. Native198daa9b succeeded05:19:31UTC; wall7322.268254s/
+CPU6568.940968s/peak832262144B/swap0, both full independent LIVE passes and
+separate177.956683s completed verification PASS. Auditc6e0fd11…ca9adf binds333280
+records/701shards/19598chunks;3808 gap-incomplete and96 zero-frame manifests remain
+visible. Control-only bundle6a38bbc8 (21062members/124514378B) independently
+reconstructed in35.172596208s, Raw/network/production opens0; report7cbb098b/
+identity27af910b ACCEPT, bound markerface80dd. No third Raw scan or rebuilt baseline.
+
+Sole restart-inclusive NONFORMAL nativebinance-recorder-q7-nonformal-20261008.service,
+invocation9d93da068fd8414fb86649f88c259c71/PID224373, started07:23:30UTC.
+Outer1800s includes canonical VERIFY/archive recurrence/restart/publication/strict
+startup and all cost checks; fixed maximum07:53:31UTC. Actual RecorderPID224445/
+invocation7bb79dbe94d045ebb6dc4e19e4a43642/NRestarts0 is active; startup coreREADY/
+strict26 and first two complete producer+independent replay observations PASS
+(17.859s/14.465s). Normal/missed/catchup and final qualification remain pending.
+Readonly samplerinv80e79fe64d9241aaadb9aead5e0e23c8/PID224641 has no time/PASS
+authority; its extra period cannot delay Formal admission. No Formal T0/credit.
+
+FIRST47700s window retains its absolute16:13:42UTC expiry, never extended.
+Independent remaining-budget review098eb978/3e0aafbd ACCEPT3000s future review/
+handoff reserve after completed baseline work, retaining terminal15105.275329s×1.25,
+NF1800/Formal7200/drain900. Actual NF dispatch remaining31811.336s exceeds
+required31781.594s; projected writer11687257186B>10GiB. Fresh actual admission
+and independent complete NONFORMAL qualification still precede sole own7200s T0.
+Latest owner October8 requires current Q7 monitor PASS ratio strictly>999/1000;
+retain fixed denominator/raw failures and all strict integrity/terminal/restored
+closeout gates. This does not change historical Q5 acceptance. Exact controls and
+next steps: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
 
 The following checkpoints retain their historical rules/results, not current authority.
 

@@ -5,13 +5,13 @@ authorizes Q6 preparation through this complete2h closeout; stop beforeQ8.
 Q6 source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 has accepted source/benefit/
 resources/48h compatibility and exact dual CI37716337806 BOTH SUCCESS. Actual
 locked cloud wheel/canonical deployment/first arm/actual warm/resources/freeze PASS;
-sole authoritative baseline is advancing. Old23ea5c4 identity and
+sole authoritative baseline is COMPLETE/independently ACCEPT; NONFORMAL is advancing. Old23ea5c4 identity and
 acceptedQ4+Q5=14h are historical and cannot earn this new stage's duration.
 
 Sole new scope:
 `/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b`.
-Recorder actual inactive AND disabled/PID0 on newff7f artifact. Sole baseline
-started03:17:28UTC; no Formal target/T0 has been created. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
+Recorder actual healthy NONFORMAL PID224445/inv7bb79dbe/NRestarts0 on newff7f artifact.
+Baseline independently ACCEPT; no Formal target/T0 has been created. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
 ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failures.
 
 ## Phase sequence and evidence gates
@@ -25,7 +25,7 @@ ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failure
   host/process resource admission and natural archive worker recurrence.
 - [x] Recorder inactive AND disabled, natural drain, archive timer paused after
   worker success; metadata retained IDs subset/floor and successful freeze receipt.
-- [ ] Sole authoritative baseline with both independent full LIVE Raw passes,
+- [x] Sole authoritative baseline with both independent full LIVE Raw passes,
   completed verification and independent LOCAL/OFFLINE acceptance. No separate
   unchanged engineering whole-corpus scan. Native total audit timeout infinity;
   source900s no-progress watchdog remains authoritative.
@@ -34,7 +34,7 @@ ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failure
   within1800s including restart. No copied NONFORMAL time/target credit.
 - [ ] Fresh actual current incarnation readiness/strict endpoints/new identity/
   growing-corpus reserve/practical remaining fixed window. Only then one own7200s T0.
-- [ ] Actual7200s target, monitoring>=999/1000 PASS on retained fixed denominator,
+- [ ] Actual7200s target, monitoring>999/1000 PASS (latest owner October8) on retained fixed denominator,
   strict endpoint/core pass and stopped-disabled handoff. Monitoring is sampled
   health, not exchange-event completeness; preserve original failed checks/gaps.
 - [ ] Natural drain/freeze; both full LIVE terminal audits, completed verification,
@@ -117,7 +117,7 @@ outer maximum03:22UTC; inspect actual rather than assume startup means success.
 The extra read-only postwarm sampler period does not block freeze/baseline.
 No Formal T0/baseline/duration exists; do not duplicate work.
 
-## Actual warm/freeze accepted; sole baseline advancing
+## Actual warm/freeze and baseline dispatch (retained checkpoint)
 
 Actual warm result8a9f2e1d2b52af2554b19da9567f2a22134cf26e999f836698966ab3710545cf:
 ACTUAL_ALL_ENABLED_LIGHT_WARMUP_PASS, four coreREADY/strict26 startup+five-minute,
@@ -167,3 +167,43 @@ publication; same-baseline isolated NONFORMAL costs must pass within1800s includ
 restart. Reforecast actual growing corpus/resources/strict/current incarnation and
 remaining absolute window before sole own7200s T0. Fixed16:13:42UTC expiry is not
 extended; actual RESTORED before protection cancellation remains mandatory.
+
+## Actual completed baseline and sole NONFORMAL dispatch
+
+Current native checkpoint October8 07:29UTC: authoritative baseline COMPLETE,
+not still running. Native198daa9b succeeded05:19:31UTC; wall7322.268254s/
+CPU6568.940968s/peak832262144B/swap0, both full independent LIVE passes and
+separate177.956683s completed verification PASS. Auditc6e0fd11…ca9adf binds333280
+records/701shards/19598chunks;3808 gap-incomplete and96 zero-frame manifests remain
+visible. Control-only bundle6a38bbc8 (21062members/124514378B) independently
+reconstructed in35.172596208s, Raw/network/production opens0; report7cbb098b/
+identity27af910b ACCEPT, bound markerface80dd. No third Raw scan or rebuilt baseline.
+
+Sole restart-inclusive NONFORMAL nativebinance-recorder-q7-nonformal-20261008.service,
+invocation9d93da068fd8414fb86649f88c259c71/PID224373, started07:23:30UTC.
+Outer1800s includes canonical VERIFY/archive recurrence/restart/publication/strict
+startup and all cost checks; fixed maximum07:53:31UTC. Actual RecorderPID224445/
+invocation7bb79dbe94d045ebb6dc4e19e4a43642/NRestarts0 is active; startup coreREADY/
+strict26 and first two complete producer+independent replay observations PASS
+(17.859s/14.465s). Normal/missed/catchup and final qualification remain pending.
+Readonly samplerinv80e79fe64d9241aaadb9aead5e0e23c8/PID224641 has no time/PASS
+authority; its extra period cannot delay Formal admission. No Formal T0/credit.
+
+FIRST47700s window retains its absolute16:13:42UTC expiry, never extended.
+Independent remaining-budget review098eb978/3e0aafbd ACCEPT3000s future review/
+handoff reserve after completed baseline work, retaining terminal15105.275329s×1.25,
+NF1800/Formal7200/drain900. Actual NF dispatch remaining31811.336s exceeds
+required31781.594s; projected writer11687257186B>10GiB. Fresh actual admission
+and independent complete NONFORMAL qualification still precede sole own7200s T0.
+Latest owner October8 requires current Q7 monitor PASS ratio strictly>999/1000;
+retain fixed denominator/raw failures and all strict integrity/terminal/restored
+closeout gates. This does not change historical Q5 acceptance. Exact controls and
+next steps: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
+
+Private completed baseline review: /private/var/tmp/bmdr-q7-baseline-independent-j9Dg31/REPORT.md.
+Wrapper design review6e2deacf/14eaad39 accepts8077043d with no duplicate scope,
+actual identity check and failure-only stopped-disabled cleanup; successful cost
+phase leaves the same healthy incarnation for Formal. Remaining-budget review
+/private/var/tmp/bmdr-q7-remaining-budget-review-thpud2oi/REPORT.md accepts3000s
+future review/handoff; actual launch receiptnonformal-native-launch.json records
+time/capacity admission. Current NF completion must be observed, not inferred.
