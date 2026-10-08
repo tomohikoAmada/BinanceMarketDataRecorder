@@ -79,8 +79,12 @@ No twenty-product live certification or server/language change.
 LOCAL engineering2024/Ruff/Mypy/M0/Go and initial/final source/protocol correctness
 PASS/ACCEPT. Final independent source/48h/benefit/resources/qualified decisions ACCEPT
 (eb711260/02bc80ca,20 focused PASS); selected source is ready to freeze.
-Exact source CI/wheel/cloud/deployment
-and Q7 warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
+Source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 exact dual CI37716337806
+BOTH SUCCESS. First bmdr cloud dispatcher failed before tests because old builder
+parent is root0700; evidence retained. Reviewed minimal root-run correction uses
+unique q6-release-e05268f-root-5zjyr94w and native
+binance-recorder-q6-cloud-root-e05268f-20261008.service/fixed1800s.
+Actual wheel/cloud/deployment and Q7 warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
 CI37277972197 SUCCESS is documentation-only, not source/wheel credit.
 Recorder October8 actual inactive AND disabled; no new Formal T0 or inherited
 credit. Q6 IN_PROGRESS/Q7 NOT_STARTED. Hourly continuation targets complete new
@@ -214,7 +218,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q3 | Safe cleanup, fresh corpus, exact deployment, cloud warm-up, stopped baseline and fresh readiness | COMPLETE for corrected23ea5c4: canonical deployment/engineering baseline/all-enabled warm-up/resource+finite-window admission/authoritative baseline/bothLIVE/verify/independent ACCEPT/freshstrict PASS; existing growing corpus retained |
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
-| Q6 | Performance optimization, compatibility verification and optimized release preparation | IN_PROGRESS after complete Q5; source/protocol correctness independently ACCEPT; local2024 PASS and51-run exact-output comparison COMPLETE; VPS original51-run exact comparison COMPLETE; VPS resource/FD supplements complete; exact outputs and scoped resource bounds verified; checkpoint performance not accepted, necessary snapshot correctness retained; final independent benefit/source review ACCEPT, exact source release gates pending |
+| Q6 | Performance optimization, compatibility verification and optimized release preparation | IN_PROGRESS after complete Q5; source/protocol correctness independently ACCEPT; local2024 PASS and51-run exact-output comparison COMPLETE; VPS original51-run exact comparison COMPLETE; VPS resource/FD supplements complete; exact outputs and scoped resource bounds verified; checkpoint performance not accepted, necessary snapshot correctness retained; independent benefit/source ACCEPT and exact e05268f dual CI SUCCESS; root-isolated cloud build advancing; wheel/release pending |
 | Q7 | Optimized-artifact VPS Formal 2h | PLANNED/NOT_STARTED; new reviewed identity, actual stopped deployment, warm-up, full baseline and fresh strict readiness; zero inherited duration |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |

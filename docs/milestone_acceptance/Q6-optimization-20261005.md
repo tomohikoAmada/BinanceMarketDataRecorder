@@ -332,3 +332,41 @@ dual CI/new locked wheel/cloud/deployment/Q7 still require actual evidence.
 Prepared sole Q7 root /srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b;
 no T0. Prior canonical VERIFYc19c1e6e…a8164 PASS;19451 retained chunks/0backlog,
 28645597184 root-free B/~2.10TB archive-free, Recorder inactive AND disabled.
+
+## Frozen source and exact dual CI
+
+Selected source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 pushed main,
+exact [dual CI37716337806](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/37716337806)
+both macOS/Ubuntu SUCCESS:2024 offline tests on each platform, Ruff/Mypy293/M0/
+Go/build/wheel smoke; Ubuntu exact production28 dependency environment PASS.
+Source archivef319c60eeb2bbb2eee413a9899f6e3aa904d1f775b48743e0841281c83db7a37
+PAX exact commit/544 files/121 package py=7 reviewed+114 old. Independent build
+parameter reviewa84ca0e4…aa8bd/identityc15d7aee…dda0 ACCEPT.
+
+First cloud scopeq6-release-e05268f-1ar49xvt inv e2a4afd9 failed02:16:42UTC
+after exact source validation, before tests/log/wheel: old dev builder parent
+root:root0700 is inaccessible to bmdr. No source/test/product failure. Retain
+source inventory/nativejournal/namei evidence81bad8b4…5a3c0 and scope; no cleanup.
+Minimal operation correction uses new ROOT-controlled0700 scope
+/var/tmp/binance-recorder/q6-release-e05268f-root-5zjyr94w and same helper/source.
+Builder3.12.3 remains unchanged/no chmod to old venv. Native root cloud unit
+binance-recorder-q6-cloud-root-e05268f-20261008.service, fixed1800s; isolated
+test data/pytest roots supplied as native environment. Exact repair/args independent
+ACCEPT927f126f…437e6/identity82eee02e…f019. This job is advancing; actual
+cloud/wheel/clean receipt/deployment still pending. Recorder inactive AND disabled.
+
+Current Q6 gates:
+
+- [x] Same-input representative complete benefit and output equality.
+- [x] Fresh RSS/scratch/F4 descriptor/RSS bounds and Catalog full commit costs.
+- [x] Five-direction qualified decisions,48h compatibility and independent final source review.
+- [x] Exact frozen source and dual CI.
+- [ ] Clean locked wheel/121 source+28 dependencies/actual cloud affected tests.
+- [ ] Independently bound frozen artifact/profile ready for Q7 deployment.
+
+Q7 separate actual deployment/warm-up/sole baseline/NONFORMAL costs/new7200s
+Formal target/full terminal/verification/independent actual restored handoff remain
+unstarted. Private forecast25bef20f…60f84 uses current19451 scope and actual old
+9680s full terminal cost without claiming derived speedup for Raw audits; conservative
+root reserve12.110GiB/finite13h draft includes baseline and terminal work. Actual
+new identity/forecast/window/phase dispatch independent review still pending.
