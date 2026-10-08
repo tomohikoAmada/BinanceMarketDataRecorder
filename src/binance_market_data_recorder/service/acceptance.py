@@ -57,13 +57,22 @@ V4_SCHEMA_VERSION = "m22.9-acceptance-evidence.v4"
 V5_SCHEMA_VERSION = "m22.9-acceptance-evidence.v5"
 CURRENT_SCHEMA_VERSION = V5_SCHEMA_VERSION
 V4_DEADLINE_NS = 900 * 1_000_000_000
-STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h")
+# Membership only: predecessor authority is explicit, never tuple/dict position.
+STAGE_NAMES = ("2h", "12h", "24h", "72h", "168h", "48h")
+STAGE_PREDECESSORS = {
+    "12h": "2h",
+    "24h": "12h",
+    "48h": "24h",
+    "72h": "24h",
+    "168h": "72h",
+}
 STAGE_DURATION_NS = {
     "2h": 7_200_000_000_000,
     "12h": 43_200_000_000_000,
     "24h": 86_400_000_000_000,
     "72h": 259_200_000_000_000,
     "168h": 604_800_000_000_000,
+    "48h": 172_800_000_000_000,
 }
 SAMPLE_INTERVAL_NS = 300 * 1_000_000_000
 MAX_EVIDENCE_GAP_NS = 600 * 1_000_000_000
@@ -3930,7 +3939,7 @@ def _resolve_stage_predecessor(
             expected_schema=required_schema,
         )
 
-    previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
+    previous_stage = STAGE_PREDECESSORS[stage]
     evidence_root = stage_root.parent
     candidates = sorted(evidence_root.glob(f"{previous_stage}-*/stage-final.json"))
     matches: list[tuple[dict[str, object], str]] = []
@@ -3967,7 +3976,7 @@ def verify_prior_stage(
         return _verify_readiness_predecessor(
             path, identity, expected_schema=schema_version
         )
-    previous_stage = STAGE_NAMES[STAGE_NAMES.index(stage) - 1]
+    previous_stage = STAGE_PREDECESSORS[stage]
     if path.name != "stage-final.json":
         raise AcceptanceError("duration predecessor must be canonical stage-final.json")
     predecessor, _predecessor_sha = _read_published(path)

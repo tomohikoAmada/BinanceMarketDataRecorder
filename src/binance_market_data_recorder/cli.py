@@ -383,7 +383,7 @@ def build_parser() -> argparse.ArgumentParser:
         "stage", help="observe one independent duration stage"
     )
     stage_mode = stage_acceptance.add_mutually_exclusive_group(required=True)
-    stage_mode.add_argument("--stage", choices=("2h", "12h", "24h", "72h", "168h"))
+    stage_mode.add_argument("--stage", choices=("2h", "12h", "24h", "48h", "72h", "168h"))
     stage_mode.add_argument("--resume", type=Path)
     stage_acceptance.add_argument("--previous-evidence", type=Path)
     stage_acceptance.add_argument("--evidence-root", type=Path)

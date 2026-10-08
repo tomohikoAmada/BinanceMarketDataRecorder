@@ -485,6 +485,8 @@ class Catalog:
                 evidence_json TEXT NOT NULL,
                 idempotency_key TEXT NOT NULL UNIQUE
             );
+            CREATE INDEX IF NOT EXISTS chunks_by_state_created_id
+                ON chunks(state, created_at_utc_ns, chunk_id);
             CREATE TABLE IF NOT EXISTS quarantined_artifacts (
                 artifact_id TEXT PRIMARY KEY,
                 relative_path TEXT NOT NULL,

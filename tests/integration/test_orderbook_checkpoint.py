@@ -12,7 +12,7 @@ from binance_market_data_recorder.orderbook.checkpoint import (
 from binance_market_data_recorder.orderbook.model import BookSnapshot, DepthUpdate
 from binance_market_data_recorder.orderbook.reconstructor import LocalBookReconstructor
 from binance_market_data_recorder.storage.catalog import Catalog
-from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.layout import ensure_storage_layout, fsync_directory
 
 
 def depth(sequence: int) -> DepthUpdate:
@@ -62,6 +62,34 @@ def test_checkpoint_restore_and_origin_replay_converge(tmp_path: Path) -> None:
             origin.offer(event)
             restored.offer(event)
         assert restored.book.logical_hash() == origin.book.logical_hash()
+
+
+def test_file_and_catalog_bind_the_same_snapshot_across_persistence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from binance_market_data_recorder.orderbook import checkpoint
+
+    origin = synchronized()
+    expected = origin.book.canonical_mapping()
+    expected_hash = origin.book.logical_hash()
+    original_fsync = fsync_directory
+
+    def advance_during_persistence(path: Path) -> None:
+        original_fsync(path)
+        origin.offer(depth(12))
+
+    monkeypatch.setattr(checkpoint, "fsync_directory", advance_during_persistence)
+    layout = ensure_storage_layout(tmp_path)
+    with Catalog(layout.catalog) as catalog:
+        store = OrderBookCheckpointStore(layout, catalog)
+        path = store.save(origin, collector_version="test", source_chunk_hashes=("a" * 64,))
+        document = json.loads(path.read_bytes())
+        row = catalog.orderbook_checkpoint(document["checkpoint_id"])
+        assert document["book"] == expected and document["book_hash"] == expected_hash
+        assert row is not None
+        assert row["book_hash"] == expected_hash and row["update_id"] == expected["update_id"]
+        assert origin.book.update_id != expected["update_id"]
+        assert store.restore(path).book.logical_hash() == expected_hash
 
 
 def test_checkpoint_hash_corruption_is_rejected(tmp_path: Path) -> None:

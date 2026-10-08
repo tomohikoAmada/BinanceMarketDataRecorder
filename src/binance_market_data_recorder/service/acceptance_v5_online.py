@@ -20,6 +20,7 @@ from .acceptance import (
     MAX_EVIDENCE_GAP_NS,
     SAMPLE_INTERVAL_NS,
     STAGE_DURATION_NS,
+    STAGE_PREDECESSORS,
     AcceptanceError,
     Clock,
     LinuxClock,
@@ -106,9 +107,8 @@ def predecessor_reference(path: Path, identity: DeploymentIdentity, stage: str) 
     if document.get("evidence_kind") != expected_kind or document.get("result") != "PASS_CANDIDATE":
         raise AcceptanceError("V5 predecessor is not eligible")
     if stage != "2h":
-        stages = list(STAGE_DURATION_NS)
         if (
-            document.get("stage") != stages[stages.index(stage) - 1]
+            document.get("stage") != STAGE_PREDECESSORS[stage]
             or document.get("eligible_for_next_stage") is not True
         ):
             raise AcceptanceError("V5 predecessor stage is invalid")

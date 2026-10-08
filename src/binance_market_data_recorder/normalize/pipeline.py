@@ -30,7 +30,8 @@ import json
 import os
 import shutil
 from collections import OrderedDict
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
+from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -65,6 +66,8 @@ BUILD_MANIFEST_SCHEMA = "normalized-build-manifest.v1"
 PARTITION_MANIFEST_SCHEMA = "normalized-partition-manifest.v1"
 PARQUET_ROWS_PER_GROUP = 10_000
 SORT_ROWS_PER_RUN = 10_000
+WORK_BUFFER_BYTES = 64 * 1024
+MERGE_FAN_IN = 32
 
 
 class NormalizationError(RuntimeError):
@@ -175,7 +178,7 @@ class _PartitionSpools:
             self.paths[key] = path
         handle = self._open.pop(key, None)
         if handle is None:
-            handle = path.open("ab", buffering=0)
+            handle = path.open("ab", buffering=WORK_BUFFER_BYTES)
         self._open[key] = handle
         if len(self._open) > self.maximum_open:
             _old_key, old_handle = self._open.popitem(last=False)
@@ -183,9 +186,11 @@ class _PartitionSpools:
         handle.write((canonical_json(row) + "\n").encode())
 
     def close(self) -> None:
-        for handle in self._open.values():
-            handle.close()
-        self._open.clear()
+        # Closing a buffered writer can fail while flushing. Close every owner.
+        with ExitStack() as stack:
+            for handle in self._open.values():
+                stack.callback(handle.close)
+            self._open.clear()
 
 
 def _sha256_file(path: Path) -> str:
@@ -367,24 +372,75 @@ def _candidate_sort_key(document: dict[str, object]) -> tuple[object, ...]:
 
 def _write_sorted_run(path: Path, rows: list[dict[str, object]]) -> None:
     rows.sort(key=_candidate_sort_key)
-    with path.open("wb", buffering=0) as target:
+    with path.open("wb", buffering=WORK_BUFFER_BYTES) as target:
         for row in rows:
             target.write((canonical_json(row) + "\n").encode())
 
 
 def _read_documents(path: Path) -> Iterator[dict[str, object]]:
-    with path.open("rb", buffering=0) as source:
-        for line in source:
+    with path.open("rb", buffering=WORK_BUFFER_BYTES) as source:
+        yield from _document_iterator(source, path)
+
+
+def _document_iterator(source: BinaryIO, path: Path) -> Iterator[dict[str, object]]:
+    for line in source:
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise NormalizationError(f"invalid normalization work file {path}") from exc
+        if not isinstance(value, dict):
+            raise NormalizationError(f"normalization work row is not an object: {path}")
+        yield value
+
+
+def _merge_runs(paths: list[Path]) -> Generator[dict[str, object], None, None]:
+    with ExitStack() as stack:
+        iterators = [
+            _document_iterator(
+                stack.enter_context(path.open("rb", buffering=WORK_BUFFER_BYTES)), path
+            )
+            for path in paths
+        ]
+        heap: list[tuple[tuple[object, ...], int, dict[str, object]]] = []
+        for index, iterator in enumerate(iterators):
             try:
-                value = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise NormalizationError(f"invalid normalization work file {path}") from exc
-            if not isinstance(value, dict):
-                raise NormalizationError(f"normalization work row is not an object: {path}")
-            yield value
+                document = next(iterator)
+            except StopIteration:
+                continue
+            heapq.heappush(heap, (_candidate_sort_key(document), index, document))
+        while heap:
+            _key, index, document = heapq.heappop(heap)
+            yield document
+            try:
+                following = next(iterators[index])
+            except StopIteration:
+                continue
+            heapq.heappush(heap, (_candidate_sort_key(following), index, following))
 
 
-def _external_sort(source_path: Path, run_directory: Path) -> Iterator[dict[str, object]]:
+def _collapse_runs(paths: list[Path], root: Path) -> list[Path]:
+    generation = 0
+    while len(paths) > MERGE_FAN_IN:
+        following: list[Path] = []
+        for start in range(0, len(paths), MERGE_FAN_IN):
+            group = paths[start : start + MERGE_FAN_IN]
+            target = root / f"merge-{generation:04d}-{len(following):08d}.ndjson"
+            with closing(_merge_runs(group)) as merged, target.open(
+                "wb", buffering=WORK_BUFFER_BYTES
+            ) as output:
+                for document in merged:
+                    output.write((canonical_json(document) + "\n").encode())
+            following.append(target)
+            for path in group:
+                path.unlink()
+        paths = following
+        generation += 1
+    return paths
+
+
+def _external_sort(
+    source_path: Path, run_directory: Path
+) -> Generator[dict[str, object], None, None]:
     run_directory.mkdir(mode=0o700)
     runs: list[Path] = []
     batch: list[dict[str, object]] = []
@@ -401,24 +457,7 @@ def _external_sort(source_path: Path, run_directory: Path) -> Iterator[dict[str,
         runs.append(run)
     if not runs:
         return
-    iterators = [_read_documents(path) for path in runs]
-    heap: list[tuple[tuple[object, ...], int, dict[str, object]]] = []
-    for index, iterator in enumerate(iterators):
-        try:
-            document = next(iterator)
-        except StopIteration:
-            continue
-        heapq.heappush(heap, (_candidate_sort_key(document), index, document))
-    while heap:
-        _key, index, document = heapq.heappop(heap)
-        yield document
-        try:
-            following = next(iterators[index])
-        except StopIteration:
-            continue
-        heapq.heappush(
-            heap, (_candidate_sort_key(following), index, following)
-        )
+    yield from _merge_runs(_collapse_runs(runs, run_directory))
 
 
 def _winner(variant: list[dict[str, object]], *, conflict: bool) -> dict[str, object]:
@@ -722,17 +761,17 @@ class Normalizer:
         partitions = _PartitionSpools(run_root / "partitions")
         partitions.root.mkdir(mode=0o700)
         try:
-            with candidates_path.open("wb", buffering=0) as candidates:
+            with candidates_path.open("wb", buffering=WORK_BUFFER_BYTES) as candidates:
                 for chunk in chunks:
                     for record in iter_source_records(chunk):
                         for parsed in parse_envelope(record.envelope):
                             candidates.write(
                                 (canonical_json(_candidate(record, parsed)) + "\n").encode()
                             )
-            sorted_candidates = _external_sort(
-                candidates_path, run_root / "sort-runs"
-            )
-            _deduplicate_to_partitions(sorted_candidates, partitions)
+            with closing(
+                _external_sort(candidates_path, run_root / "sort-runs")
+            ) as sorted_candidates:
+                _deduplicate_to_partitions(sorted_candidates, partitions)
             partitions.close()
             results = [
                 self._commit_partition(key, path)

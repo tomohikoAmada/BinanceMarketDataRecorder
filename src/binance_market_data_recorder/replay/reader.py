@@ -41,6 +41,7 @@ from .model import (
 
 REPLAY_BATCH_ROWS = 10_000
 MERGE_FAN_IN = 32
+WORK_BUFFER_BYTES = 64 * 1024
 
 
 def _canonical_json(value: object) -> str:
@@ -103,7 +104,7 @@ def _document_key(document: Mapping[str, object]) -> tuple[int | str, ...]:
 
 def _write_run(path: Path, documents: list[dict[str, object]]) -> None:
     documents.sort(key=_document_key)
-    with path.open("wb", buffering=0) as target:
+    with path.open("wb", buffering=WORK_BUFFER_BYTES) as target:
         for document in documents:
             target.write((_canonical_json(document) + "\n").encode())
 
@@ -123,7 +124,7 @@ def _merge_documents(paths: Sequence[Path]) -> Iterator[dict[str, object]]:
     with ExitStack() as stack:
         iterators: list[Iterator[dict[str, object]]] = []
         for path in paths:
-            handle = stack.enter_context(path.open("rb", buffering=0))
+            handle = stack.enter_context(path.open("rb", buffering=WORK_BUFFER_BYTES))
             iterators.append(_iterator(handle, path))
         heap: list[
             tuple[tuple[int | str, ...], int, dict[str, object]]
@@ -156,7 +157,7 @@ def _collapse_runs(paths: list[Path], root: Path) -> list[Path]:
             target = root / (
                 f"merge-{generation:04d}-{len(following):08d}.ndjson"
             )
-            with target.open("wb", buffering=0) as output:
+            with target.open("wb", buffering=WORK_BUFFER_BYTES) as output:
                 for document in _merge_documents(group):
                     output.write((_canonical_json(document) + "\n").encode())
             following.append(target)

@@ -264,3 +264,71 @@ Ready20/1000 VPS old1.040638/new1.310539s and20/5000 old5.606299/new4.086449s. O
 Independent scoped helper/design ACCEPT: ../reviews/2026-10-05-q6-resource-helper-and-q7-preparation-review.md; report5664b088…98b5e46/identity21b699df…01dce8/18 isolated checks. Representative release remains PENDING.
 
 Prepared next-phase helpers (private controls, all UNRUN) are deploy-q6-release-v3.pyfc2871ac…effc34aa, q7-light-warmup-v2.py39f72b80…4b36e80, q7-stop-recorder.pyd924fc97…555400f, q7-nonformal-cost.pyca820a52…129d443, build-q6-release.sh8e04e612…ccf5e5. Deployment draft review reportdb760348…329844f/identityf79faedf…dc94b3b accepts frozen-copy binding/old-venv custody/failure restoration including attempted timer stop. Phase-sequence review reportf35b79a2…27bcf0/identity2659c44f…5607c6 accepts the minimal sequence: actual all-enabled light warm/resources → stop/disable/drain/freeze → sole full authoritative baseline (both LIVE+verify+independent) → healthy restart/fresh publication → separately labelled NONFORMAL start/immediate/normal/missed/catch-up cost using same baseline → fresh strict/current healthy-incarnation dispatch/own unique Formal7200s T0. No duplicate engineering full Raw scan or second unchanged baseline. NONFORMAL path/run earns0 credit; cannot become predecessor or transfer T0. Actual launcher, profile/current-corpus forecast/finite-window, artifact and phase qualification still require review/readback.
+
+## October8 actual completed representative resource readback
+
+The sole corrected supplement completed October5 08:41:21UTC, native journal
+success/CPU4571.418s/565.3M cgroup peak/0 swap. October8 readback shows inactive,
+not an advancing job. Six child exit0/all original nine-reference identities equal.
+Resource resulta5cffbcf151507c24d3b273270fd9fd275e85f65166ce7b0e61fa93c8db00410,
+selected-supplement-hirhc6s4/result.json; finish1791189666002515478UTCns.
+FD/hash result9cda0b2a39ed2f072953d7aea8945946eceaf1a598f8d869089746a398585911,
+bounds-evaluation-3qs95wo0/result.json. Original parent/sources/tool unchanged.
+Private exact copies and native readback are under
+/private/var/tmp/bmdr-q6-bench-controls-jkgugp82.
+
+|Fresh-process case|Baseline RSS B|Final RSS B|Normalizer scratch B|Replay scratch B|
+|---|---|---|---|---|
+|4/40k|343105536|338690048|254350272|37522668|
+|20/40k|315797504|312463360|254052960|7495868|
+|20/120k|356216832|363884544|763376160|22538268|
+
+Scratch is measured after flush at all actual retirement boundaries, not continuous
+filesystem sampling. Sizes equal for baseline/final.20/120k final RSS increases
+7667712B/2.15%; includes fresh imports and fixture clone, with substantial absolute
+headroom on the5.7GiB VPS. Supplement instrumentation timing is not substituted
+for original three-repeat benefit timing. All reference results remain exact.
+
+F4: three original128-run/64FD failures errno24, three candidate exact1024-row
+completions/33 owned handles/all closed, peak tree913704→1027961B; one extra
+complete scratch generation. Bounds source AST proofcdee2557…7c57 binds current
+selected merge and helper original-candidate code; only winner differs and merge
+does not call it. Original source/Raw writers/archive/full validators untouched.
+Hash fixture median stored-only0.006870s versus full validation0.114333s on four
+chunks1.319MB stored/23.876MB decoded; this scoped upper-bound work does not
+meet the predeclared10%/0.5s complete-batch fusion gate. No fusion shipped.
+
+Proposed final decisions: buffering ACCEPTED for complete derived benefit;
+Catalog index ACCEPTED for selection benefit with explicit small commit costs;
+F4 ACCEPTED for descriptor bound; checkpoint performance NOT_ACCEPTED, necessary
+snapshot correctness retained; variant-sort removal REJECTED/reverted. Of the
+five directions, fusion/rotation/archive cadence/REST scheduling DEFERRED for
+the already independently reviewed measured limitations and missing expanded
+live/outage traces, not falsely labelled passing comparisons. R078 stays OPEN.
+Final independent benefit/source release review is advancing. Exact candidate
+CI/locked wheel/cloud/deployment/new Q7 qualification remain pending.
+
+Independent final review requested one narrowly affected F4 RSS measurement.
+New helperc4a8a4f92ff66c389b2b37d3eb32fc2f710f3818d2418b4bd6a617e332c39c65
+is byte-equivalent to original bounds helper after removing the single fresh-child
+ru_maxrss field; independently accepted design. New six FD child cases only,
+no main/normal/hash repetition: binance-recorder-q6-f4-rss-20261008.service
+inv2c93acc0f8964ee68575996e2df3a326/300s finite budget. Complete result
+8d525724cf7adbb570a90df1eb7ff9c45601c2a26119bc28bfa44f19bf72fcd4.
+Baseline RSS74350592/74350592/74223616B (original errno24 failures), candidate
+74608640/74743808/74493952B (three exact stable outputs,33 handles/all closed).
+Adds ~0.4MiB at the measured collapse fixture; ordinary workflows remain covered
+by the six full fresh-process measurements. Explicit helper/bundle/tool/selected
+merge AST binding is retained in private vps-bounds-rss-binding.json.
+Benchmark shared environment is original canonical identity0ea93b2c and lock
+44cd3733…6f335, exact28 dependencies per final Q5 handoff VERIFYc19c1e6e…a8164;
+new clean locked wheel qualification remains separate and pending.
+
+Final independent SOURCE/48h/benefit/resources/qualified decisions ACCEPT, October8.
+Reporteb711260…ce3efb/identity02bc80ca…818f1/20 focused PASS; see
+../reviews/2026-10-08-q6-final-benefit-release-review.md. No necessary source change.
+The decisions above are now accepted for candidate freeze. Source commit/exact
+dual CI/new locked wheel/cloud/deployment/Q7 still require actual evidence.
+Prepared sole Q7 root /srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b;
+no T0. Prior canonical VERIFYc19c1e6e…a8164 PASS;19451 retained chunks/0backlog,
+28645597184 root-free B/~2.10TB archive-free, Recorder inactive AND disabled.

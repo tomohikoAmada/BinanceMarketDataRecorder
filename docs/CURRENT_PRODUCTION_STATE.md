@@ -1,6 +1,6 @@
 # Current Production State
 
-Updated October 5, 2026 (Shanghai).
+Updated October 8, 2026 (Shanghai).
 
 Latest owner authorization October5: Q5 is COMPLETE; continue Q6 optimization/
 release preparation and optimized-artifact VPS Q7/Formal2h full closeout, then stop
@@ -37,51 +37,37 @@ Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeo
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 candidate CI not yet earned.
 
-Current Q6 checkpoint October5 07:25UTC: original sole VPS comparison is
-COMPLETE/success/51 workflow records; result43efc034…22c4. Exact outputs equal
-for all nine runs per input. Selected-original-winner complete Normalizer+verified
-Replay medians:4/40k726.055→52.533s;20/40k753.105→70.402s;
-20/120k2300.206→207.341s. Larger-volume20-product study is not arrival-burst
-or expanded-live qualification. Catalog selection saves27.590ms/call,
-601300→<100 VM steps,0.316s migration/+8.3MB fixture index. No source or wheel
-has been frozen/deployed; source/test candidates remain uncommitted.
+Current Q6 checkpoint October8: original VPS51-workflow comparison and sole
+v6 resource supplement are COMPLETE. Native journal records October5 08:41:21UTC
+successful completion, CPU4571.418s/565.3M cgroup peak/swap0; no task is still
+advancing. Frozen original result43efc034…22c4, resourcea5cffbcf…00410 and
+FD/hash-bound9cda0b2a…85911. Six fresh children exit0 and match all nine original
+identities. Four-product40k RSS343105536→338690048B,20/40k315797504→312463360B,
+20/120k356216832→363884544B (+2.15%,7.3MiB); affected scratch sizes equal.
+Original complete derived medians4/40k726.055→52.533s;20/40k753.105→70.402s;
+20/120k2300.206→207.341s. This is derived processing, not live capture or V5
+full-Raw audit acceleration;20/120k is larger volume, not an arrival burst.
+Catalog selection saves27.590ms/call with0.316s migration/+8.3MB index;
+complete INSERT+COMMIT adds0.371ms, UPDATE+COMMIT adds2.151ms in this fixture.
+F4 removes three64-FD/128-run failures: all three final runs have exact1024 rows,
+33 owned handles/all closed and measured extra scratch generation.
 
-Original supplement e1d5801e…38c08 FAILED at05:31:03UTC (actual frozen tool
-has no later LOCAL MARKETS constant). Corrected v5 native d91d20b3…ee207
-FAILED06:41:45UTC after24 ready-checkpoint/6 Catalog records, before any fresh
-normal resource record. Retain partial96beaa3c…51da and all failed scopes/logs.
-Actual Python3.12.3 TemporaryDirectory uses bound tempfile._rmtree; the helper
-only patched shutil.rmtree and missed Replay cleanup. Focused reproduction and
-actual v6 baseline/final tiny smoke551200e2…c4d0b1 establish this cause and fix,
-with both retirements observed and all nine original results equal. No product
-output difference or Formal T0. Checkpoint performance threshold NOT_ACCEPTED;
-retain only necessary same frozen File/Catalog snapshot correctness. Complete
-Catalog commit/actual remote-aware SQL measurements retained separately.
+Both earlier helper failures and their partial results remain retained. Checkpoint
+performance NOT_ACCEPTED; retain only necessary same-frozen File/Catalog snapshot
+correctness. Repeated winner-sort removal REJECTED and reverted. Proposed five
+direction outcomes: F4 ACCEPTED; fused reads, rotation, archive cadence and REST
+scheduling DEFERRED with scoped measured limitations/unrun expanded-live studies.
+No twenty-product live certification or server/language change.
 
-Sole corrected native resource supplement binance-recorder-q6-supplement-v6-20261005.service
-invocation192e43ddbfba4360b211e38b22569775/PID144897 started07:25:20UTC,
-fixed18000s isolated budget. Controls /var/tmp/binance-recorder/q6-derived-controls-j6wkiz6a;
-supplement-v6.log publishes random selected-supplement and bounds children.
-Frozen helper8f68da55…41c17c/wrapperc9762f19…cf3c647/selected-source1ec10219…b9d14c;
-original result43efc034…22c4/tool813cb961 remain bound. Native resource six cases
-plus original FD/hash bounds only; no duplicate main/checkpoint/Catalog work.
-Actual tiny smoke and independent LOCAL/OFFLINE scoped design ACCEPT5664b088…98b5e46.
-Fresh-process RSS/transient scratch/bounds/final resources/release remain PENDING.
-Do not restart or duplicate this healthy job. Review actual completed outputs after
-roughly08:50UTC; estimate is not completion. Failed v5 is no longer advancing.
-Recorder actual preflight inactive AND disabled on old source23ea5c4.
-
-LOCAL full engineering2024 PASS/24 online skips/5 deselected, Ruff/Mypy/M0/Go
-PASS; full51-row comparison and fresh-process supplement COMPLETE. Initial and
-final source/protocol correctness independently ACCEPT; representative resources,
-final benefit/release review, candidate dual CI/clean locked wheel/cloud checks,
-new stopped deployment/warm-up/full baseline and Q7 T0 remain PENDING.
-Cloud build/deployer/lightwarm/nonformal-cost drafts independently ACCEPT but
-actual dispatch/artifact/phase qualification remains pending. Exact private helpers
-and minimal sole-baseline sequence are in current Q6 record. Current doc-only
-b1821be dual CI37272689526 SUCCESS is no source/wheel credit.
-Hourly continuation remains ACTIVE through complete new Q7 closeout, no Q8.
-See docs/milestone_acceptance/Q6-optimization-20261005.md for exact gates/evidence.
+LOCAL engineering2024/Ruff/Mypy/M0/Go and initial/final source/protocol correctness
+PASS/ACCEPT. Final independent source/48h/benefit/resources/qualified decisions ACCEPT
+(eb711260/02bc80ca,20 focused PASS); selected source is ready to freeze.
+Exact source CI/wheel/cloud/deployment
+and Q7 warm-up/full baseline/T0 remain PENDING. Current main0043d5e dual
+CI37277972197 SUCCESS is documentation-only, not source/wheel credit.
+Recorder October8 actual inactive AND disabled; no new Formal T0 or inherited
+credit. Q6 IN_PROGRESS/Q7 NOT_STARTED. Hourly continuation targets complete new
+Q7 closeout, no Q8; accurate gates/evidence are in current Q6 acceptance record.
 
 The following checkpoints retain their historical rules/results, not current authority.
 

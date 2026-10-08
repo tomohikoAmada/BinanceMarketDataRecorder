@@ -17,9 +17,10 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
+from ..domain.event import Market
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, fsync_directory
 from .model import OrderBook, OrderBookDataError
@@ -56,14 +57,18 @@ class OrderBookCheckpointStore:
         book = reconstructor.book
         checkpoint_id = str(uuid4())
         created_at = utc_clock_ns()
+        snapshot = book.canonical_mapping()
+        book_hash = hashlib.sha256(
+            json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
         document: dict[str, object] = {
             "schema_version": CHECKPOINT_SCHEMA,
             "algorithm_version": reconstructor.algorithm_version,
             "checkpoint_id": checkpoint_id,
             "created_at_utc_ns": created_at,
             "collector_version": collector_version,
-            "book": book.canonical_mapping(),
-            "book_hash": book.logical_hash(),
+            "book": snapshot,
+            "book_hash": book_hash,
             "source_chunk_hashes": sorted(set(source_chunk_hashes)),
             "unreliable_intervals": [
                 asdict(interval) for interval in reconstructor.unreliable_intervals
@@ -87,10 +92,10 @@ class OrderBookCheckpointStore:
         fsync_directory(self.layout.checkpoints)
         self.catalog.register_orderbook_checkpoint(
             checkpoint_id=checkpoint_id,
-            market=book.market,
-            symbol=book.symbol,
-            update_id=book.update_id,
-            book_hash=book.logical_hash(),
+            market=cast(Market, snapshot["market"]),
+            symbol=cast(str, snapshot["symbol"]),
+            update_id=cast(int, snapshot["update_id"]),
+            book_hash=book_hash,
             relative_path=self.layout.relative(final),
             created_at_utc_ns=created_at,
         )
