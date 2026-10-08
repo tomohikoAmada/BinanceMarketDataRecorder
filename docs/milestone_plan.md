@@ -1,5 +1,25 @@
 # Milestone Plan
 
+Current corrected retry checkpoint October8 17:03UTC (ShanghaiOctober9):
+source49b4a2d/exact dualCI37797182288 BOTH SUCCESS; actual cloud288PASS and
+locked wheelc7d354be/clean receiptf228c28a, actual stopped canonical deployment
+receiptd90aeb4b/newidentity7072575b independently ACCEPT. Only completed isolated
+synthetic pytest fixture31917members was removed after reviewed path/boot guards;
+cleanup797e092d, postcleanup55b4f407 retain all20764 production chunks/manifests.
+Fresh forecast0cbda71d/root peak10896747785B>10GiB independently ACCEPT.
+Actual51300s quiet window ACTIVE_VERIFIED; fixed expiryOctober9 06:35:28UTC
+(Shanghai14:35:28), never extend. First native warm inva3d5dc70 FAILED16:27:50UTC
+at strict five-minute endpoint: BTC/ETH taker5m typed EmptySideDataResponse;
+first startup strict26 PASS and eleven earlier RUNNING samples remain retained.
+No generic-error allowance or artificial cursor advance. Automatic stopped handoff
+Recorder inactive AND disabled/PID0/NRestarts0. No baseline or new Formal T0;
+zero accepted corrected-artifact duration. Minimal private warm retry2 helper
+review is progressing: bounded existing typed-empty recovery diagnostic followed
+by actual strictPASS; old failure remains immutable. Sole retry2 controls child
+Q7-optimized2h-causal-retry-20261008-prlintz2/WARM-RETRY2-pEYTIB2g.
+Full baseline/NONFORMAL/current strict capacity/own7200s/full terminal/independent
+restored closeout remain required. Hourly continuation remains ACTIVE; no Q8.
+
 ## Current plan — Q5 closeout, optimization, then 86-hour VPS qualification
 
 Updated October 8, 2026 (Shanghai). **This section is the single current development plan.**
@@ -49,7 +69,7 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 EXECUTED_FAILED/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
@@ -94,6 +114,17 @@ actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
 Independent correction reportf5270cbe/review identity8d747b38 DESIGN ACCEPT;
 see docs/reviews/2026-10-08-q7-causal-backpressure-review.md (root-relative).
+
+Current repair continuation October8 16:01UTC: exact source49b4a2d/wheelc7d354be
+cloud independently ACCEPT60b84c3d; actual stopped canonical deployment
+inv923a3a75 COMPLETE/success15:53:49UTC, receiptd90aeb4b/newidentity7072575b.
+131 installed RECORD files/28 exact protected noneditable dependencies VERIFY PASS;
+Recorderinactive AND disabled/PID0/NRestarts0, archive enabled-active/natural
+success. Oldff7f venv retained in custody ov8aaman. Fresh20764chunk/27262676frame
+capacity peak writer-after10551352585B fails10GiB by186065655B, retained REJECTED.
+Only finished isolated synthetic pytest345444352B is proposed for bounded cleanup;
+no Raw/archive/evidence/venv removal. Actual deployment/startup/cleanup review is
+progressing. No new arm, complete baseline or Formal T0/credit.
 
 Current repair checkpoint October8 15:48UTC: Q7 failed attempt remains retained;
 zero accepted duration. Producer causal-prefix backpressure and native observer
@@ -372,7 +403,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | EXECUTED_FAILED; causal reference cap exceeded/no target; earlier start retained: sourcee05268f/identityff7f; sole T0 Oct8 08:45:01UTC/own7200s target10:45:01UTC; observer failed/owned auto stopped/OS restored; source repair and new-artifact retry PENDING/no accepted duration |
+| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment accepted; first actual warm failed typed-empty strict endpoint/stopped-disabled; bounded warm retry under review. Sole new baseline/T0 pending/zero accepted duration. Old e052 causal-cap failure/start/custody retained. |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |

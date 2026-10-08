@@ -49,3 +49,13 @@ Actual sole cloud inv9b8006ad completed15:45:27UTC,288PASS1deselected298.26s,
 CPU289.944s/248.0M peak/swap0. Clean receiptf228c28a and wheelc7d354be507918B
 match122 package Python files and28 exact locked dependencies. This adds cloud
 release evidence; concrete stopped-deployment acceptance and execution are pending.
+
+Actual stopped deployment d90aeb4b/identity7072575b was independently ACCEPTED
+(60b84c3d/622d2896). Boot-format cleanup guard fixf76de186, actual bounded
+synthetic-only cleanup/new census/forecast/arm inputsfe1a44a7 and removal of
+outer kill timeout1be85790 are independently ACCEPTED. Actual fixed51300s
+window expiryOctober9 06:35:28UTC is unchanged. First actual warm failed at
+strict five-minute endpoint with typed EmptySideDataResponse and automatically
+stopped/disabled Recorder; no new full baseline or Formal credit is granted.
+A bounded private warm retry must reach actual strictPASS and current resource/
+capacity/remaining-window admission before the sole new baseline.
