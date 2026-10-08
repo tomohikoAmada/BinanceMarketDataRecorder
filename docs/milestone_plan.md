@@ -49,7 +49,7 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 FORMAL2H_RUNNING/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
@@ -92,6 +92,39 @@ started02:37:45UTC/fixed1800s, COMPLETE/success275PASS1deselected201.46s.
 Actual cleanf0c13336/wheelf2e9dd1b/121sourcefiles/exact28dependencies PASS;
 actual canonical deployed+VERIFY PASS/sourcee052/wheelf2e9/newidentityff7f4db6.
 Recorderinactive AND disabled/PID0/NRestarts0; oldvenv retained.
+Current authoritative Q7 checkpoint October8 08:47UTC: new optimized Formal2h
+RUNNING, sole stage2h-c11e37fb65924fba9a48e884e6183abc/run787ab58e87424368a6d5b9471a673eb6.
+Actual source T0 2026-10-08 08:45:01.944492826UTC (Shanghai16:45:01.944492826),
+BOOTTIME513996125030909; own7200s target10:45:01.944492826UTC (Shanghai18:45:01).
+Start SHA3ae05741d07e92c9f3b191b56ebb8c7daf6a50d7874d55232e41a18c302bbadc,
+no blocking findings. Accepted baselinec6e0/NF costs retained; no duration transfer.
+Observerbinance-recorder-q7-formal2h-20261008.service/inv9767f68c2baa487299386ce744571ecd/
+PID229914 active/NRestarts0. RecorderPID228836/inv946ec87d65ed4c0491891036b6cc922f/
+NRestarts0/enabled-active. Nativeauto binance-recorder-q7-auto-terminal-20261008.service/
+inv6d46f8ce71c9475ea6d8c2a81eab200b/PID229915 is healthy activating/oneshot, waiting
+for its pinned observer. It never creates T0 or grants final PASS. Target success,
+strict stopped endpoint and frozen recordedmonitor>999/1000 precede automatic
+natural drain/freeze/both full LIVE finalize/completed verify; infinite total audit
+retains source900s no-progress watchdog. Its extra post-target resource sampler
+cannot block terminal work. No model or SSH session is needed for native progress.
+
+Fresh actual dispatch47c40df8/prestarta9422739 independently designed b4cdfd29/
+auto506aec6c; source current coreREADY/strict26/current heartbeat and exact
+new incarnation PASS. Actual counts20637/26875509frames/1493180922stored/
+20765030586decodedB;12 current resource samples RSSmax275152896B/availablemin
+4771086336B/pswpin5-out22 unchanged. Remaining34990.840s>required30260.884s,
+projected root11618134029B>10GiB/archive2092973760996B. Actual freshwarm independent
+ACCEPT35858953/identity1db6cc1f/result948b028e,15 samples and two strict26 endpoints
+300.063s apart. Hostswap1060864B/steal13.523%/iowait1.904%/nonzeroPSI retained.
+All14 flags/four ProductKeys/growing corpus and every previous failure retained.
+WINDOW2 actual absolute expiry18:28:06UTC (ShanghaiOct9 02:28:06), never extend.
+At target/known completion check actual native output; do not perpetually rely on
+RUNNING or restart/create T0. Target/bothLIVE/completed verify/independent LOCAL-
+OFFLINE final eligibility/actual OS restoration-before-cancellation/natural archive
+handoff remain PENDING. Accepted Formal duration not yet claimed. Hourly vps-2h
+continues until full Q7 closeout/push, then pause; no Q8/12h/24h/48h.
+
+Earlier preparation and closed first-window checkpoints below are retained history.
 Fresh deployed forecast/first arm/lightwarm/freeze and sole full baseline independently
 PASS/ACCEPT. Q6 release COMPLETE; Q7 IN_PROGRESS_PRE_FORMAL; Formal2h NOT_STARTED,
 no T0 or duration credit. Baseline and complete NONFORMAL are accepted and retained;
@@ -123,11 +156,26 @@ enabled-active; restored APT worker naturally finished, no locks08:08UTC. Natura
 archive drain/freeze3bfbeab2 retains20316chunks/allLOCAL_DELETED/no partials; archive
 paused only after successful natural worker. No data/evidence removed.
 
-Separate finite formal-only window2 controls created but UNARMED:
+Current window2 checkpoint October8 08:29UTC: actual ACTIVE_VERIFIED, not an
+extension. Canonical sourcee052/identityff7f VERIFY PASS again. Arm08:28:06.184355613UTC/
+receiptb7bb740f; new36000s absolute expiry18:28:06UTC (ShanghaiOct9 02:28:06), never
+extend. Concrete plan/arm/warm/capacity DESIGN ACCEPT71f841ac/identityab0536fe/
+five pure fixtures PASS. Sole freshwarm native6b8c416c86fb410d92821a5571bc14ed/
+PID228715 launched08:29:03UTC, outer1200s/stop150s/failure-only StopPost; successful
+phase preserves new incarnation for Formal. Readonly sampler71201156d4fc45cb88c504c354bafae0/
+PID228719 has no time/PASS authority. Actual freshwarm135cba1c COMPLETE08:36:25UTC/438.864s, core start/endREADY/
+strict26 including five-minute PASS; new RecorderPID228836/inv946ec87d65ed4c0491891036b6cc922f/
+NRestarts0. Fifteen current samples RSSmax267759616B/hostavailablemin4743368704B;
+hostswap1060864B retained/pswpin5-out22 unchanged. Control-only7-member bundle
+23f4b8ca exported; actual independent qualification pending. Formal/native-auto
+concrete DESIGN ACCEPT7d29e622/identityac39b957/13 private fixtures PASS, including
+exact observer lifetime pin, systemPython/locked terminal child and failure-only
+stopped-disabled cleanup. No live source/artifact change. Formal2h T0 still NOT_STARTED. No restart/duplicate of healthy warm. New window scope:
 /srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b/FORMAL-WINDOW2-eiCsNo.
 Independent scope ACCEPT195f6a6b/identity61f33a0d allows same-artifact canonical
 VERIFY plus accepted baseline/NF representative costs to be reused, not prior PID,
-strict/core/resources/time. Concrete commands/actual arm remain pending. Fresh correct identity-bound census
+strict/core/resources/time. Actual arm has passed; final Formal/automatic-terminal DESIGN is accepted; actual new warm and
+Formal dispatch qualification remain pending. Fresh correct identity-bound census
 c95d30b3 retains20316 chunks/26201290frames/1458657759stored/20254233361decodedB.
 Earlier bb9b1950 census used a stale helper source label23ea5c4 despite actual
 ff7f identity; retained as inaccurate label evidence, not source authority. New
@@ -137,10 +185,10 @@ Formal,9300s conservative capture scenario,125% full terminal estimate,900s drai
 and2700s future review/handoff; required32009.178s/margin3990.822s and projected root11628918467B>10GiB.
 Capacity retains fixed42 active+42 sealed generations and grows only metadata/
 audit temporary/staging terms as applicable; original9300s peak scenario retained. Never
-extend this or the closed first window. New actual identity/capacity/time and
+extend this or the closed first window. Fresh actual identity/capacity/time and
 healthy incarnation strict admission precede one own7200s T0. Native observer owns
-Formal duration/health evidence; automatic target-to-terminal continuation is a
-review-pending operator draft, not an already completed or certified feature.
+Formal duration/health evidence; automatic target-to-terminal continuation DESIGN is accepted, actual execution
+not yet started; it cannot grant independent/final PASS.
 Current Q7 monitor PASS ratio strictly>999/1000; preserve denominator/raw failures
 and strict integrity/both full LIVE/completed verify/independent restored gates.
 Hourly vps-2h remains ACTIVE until complete Q7 closeout/push; no Q8. Exact controls:
@@ -275,7 +323,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL; deployed sourcee05268f/identityff7f4db6; actual finite window/lightwarm/resources/freeze accepted; full baseline and NONFORMAL independently ACCEPT; first window closed without T0; new finite formal-only preparation/own7200s T0/full closeout PENDING, zero Formal credit |
+| Q7 | New optimized-artifact VPS Formal 2h | FORMAL2H_RUNNING; sourcee05268f/identityff7f; sole T0 Oct8 08:45:01UTC/own7200s target10:45:01UTC; nativeobserver+automatic terminal advancing; full closeout PENDING/no accepted duration yet |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |
