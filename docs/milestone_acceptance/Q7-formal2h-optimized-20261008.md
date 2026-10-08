@@ -5,12 +5,12 @@ authorizes Q6 preparation through this complete2h closeout; stop beforeQ8.
 Q6 source e05268fe50f404c2287c60d90311cf9ddbd5c2e9 has accepted source/benefit/
 resources/48h compatibility and exact dual CI37716337806 BOTH SUCCESS. Actual
 locked cloud wheel/canonical deployment/first arm/actual warm/resources/freeze PASS;
-sole authoritative baseline is COMPLETE/independently ACCEPT; NONFORMAL is advancing. Old23ea5c4 identity and
+sole authoritative baseline is COMPLETE/independently ACCEPT; NONFORMAL is COMPLETE/independently ACCEPT; FIRST window closed without T0. Old23ea5c4 identity and
 acceptedQ4+Q5=14h are historical and cannot earn this new stage's duration.
 
 Sole new scope:
 `/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b`.
-Recorder actual healthy NONFORMAL PID224445/inv7bb79dbe/NRestarts0 on newff7f artifact.
+Recorder inactive AND disabled/PID0/NRestarts0 on newff7f artifact; window2 UNARMED.
 Baseline independently ACCEPT; no Formal target/T0 has been created. Keep all14 auxiliary flags, Spot and USD-M BTCUSDT/
 ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failures.
 
@@ -29,7 +29,7 @@ ETHUSDT four ProductKeys, existing19451+growth corpus and all historical failure
   completed verification and independent LOCAL/OFFLINE acceptance. No separate
   unchanged engineering whole-corpus scan. Native total audit timeout infinity;
   source900s no-progress watchdog remains authoritative.
-- [ ] Healthy restart/current publication; same baseline separate NONFORMAL normal,
+- [x] Healthy restart/current publication; same baseline separate NONFORMAL normal,
   missed-cadence and catch-up complete producer plus independent replay costs,
   within1800s including restart. No copied NONFORMAL time/target credit.
 - [ ] Fresh actual current incarnation readiness/strict endpoints/new identity/
@@ -168,42 +168,61 @@ restart. Reforecast actual growing corpus/resources/strict/current incarnation a
 remaining absolute window before sole own7200s T0. Fixed16:13:42UTC expiry is not
 extended; actual RESTORED before protection cancellation remains mandatory.
 
-## Actual completed baseline and sole NONFORMAL dispatch
+## Current accepted baseline/NONFORMAL and closed first window
 
-Current native checkpoint October8 07:29UTC: authoritative baseline COMPLETE,
-not still running. Native198daa9b succeeded05:19:31UTC; wall7322.268254s/
-CPU6568.940968s/peak832262144B/swap0, both full independent LIVE passes and
-separate177.956683s completed verification PASS. Auditc6e0fd11…ca9adf binds333280
-records/701shards/19598chunks;3808 gap-incomplete and96 zero-frame manifests remain
-visible. Control-only bundle6a38bbc8 (21062members/124514378B) independently
-reconstructed in35.172596208s, Raw/network/production opens0; report7cbb098b/
-identity27af910b ACCEPT, bound markerface80dd. No third Raw scan or rebuilt baseline.
+Fresh deployed forecast/first arm/lightwarm/freeze and sole full baseline independently
+PASS/ACCEPT. Q6 release COMPLETE; Q7 IN_PROGRESS_PRE_FORMAL; Formal2h NOT_STARTED,
+no T0 or duration credit. Baseline and complete NONFORMAL are accepted and retained;
+neither is a Formal2h run. No unchanged full baseline or full NONFORMAL rerun.
 
-Sole restart-inclusive NONFORMAL nativebinance-recorder-q7-nonformal-20261008.service,
-invocation9d93da068fd8414fb86649f88c259c71/PID224373, started07:23:30UTC.
-Outer1800s includes canonical VERIFY/archive recurrence/restart/publication/strict
-startup and all cost checks; fixed maximum07:53:31UTC. Actual RecorderPID224445/
-invocation7bb79dbe94d045ebb6dc4e19e4a43642/NRestarts0 is active; startup coreREADY/
-strict26 and first two complete producer+independent replay observations PASS
-(17.859s/14.465s). Normal/missed/catchup and final qualification remain pending.
-Readonly samplerinv80e79fe64d9241aaadb9aead5e0e23c8/PID224641 has no time/PASS
-authority; its extra period cannot delay Formal admission. No Formal T0/credit.
+Current actual checkpoint October8 08:08UTC: baseline native198daa9b succeeded
+05:19:31UTC, wall7322.268254s/CPU6568.940968s/peak832262144B/swap0. Both full LIVE
+passes and completed verify177.956683s PASS; auditc6e0fd11 binds333280 records/
+701shards/19598chunks, retaining3808 gap-incomplete/96 zero-frame manifests.
+Control-only bundle6a38bbc8/21062members independently reconstructed35.172596208s,
+Raw/network/production opens0; report7cbb098b/identity27af910b ACCEPT/markerface80dd.
 
-FIRST47700s window retains its absolute16:13:42UTC expiry, never extended.
-Independent remaining-budget review098eb978/3e0aafbd ACCEPT3000s future review/
-handoff reserve after completed baseline work, retaining terminal15105.275329s×1.25,
-NF1800/Formal7200/drain900. Actual NF dispatch remaining31811.336s exceeds
-required31781.594s; projected writer11687257186B>10GiB. Fresh actual admission
-and independent complete NONFORMAL qualification still precede sole own7200s T0.
-Latest owner October8 requires current Q7 monitor PASS ratio strictly>999/1000;
-retain fixed denominator/raw failures and all strict integrity/terminal/restored
-closeout gates. This does not change historical Q5 acceptance. Exact controls and
-next steps: docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
+Sole restart-inclusive NONFORMAL native9d93da068fd8414fb86649f88c259c71 succeeded
+07:50:42UTC within1800s; actual outer1631.719680s/CPU350.029009s/peak401121280B/
+swap0. Result6b919618 complete producer+independent replay costs: startup17.859s,
+immediate14.465s, normal59.257s, missed550s79.673s/pending71, catch-up69.358s/
+delta17 then56.272s/all0. Independent guarded exact17-member reconstruction
+0.876755s ACCEPTe9d6e99d/identitya5585acf/marker2851bf77. Fifty-two live PID samples
+RSSmax280289280B/availablemin4450963456B; hostswap1060864B retained, pswpin5/out22
+unchanged. Old NF PID224445/inv7bb79dbe is now stopped; never reuse its readiness,
+resources, incarnation or time as current evidence.
 
-Private completed baseline review: /private/var/tmp/bmdr-q7-baseline-independent-j9Dg31/REPORT.md.
-Wrapper design review6e2deacf/14eaad39 accepts8077043d with no duplicate scope,
-actual identity check and failure-only stopped-disabled cleanup; successful cost
-phase leaves the same healthy incarnation for Formal. Remaining-budget review
-/private/var/tmp/bmdr-q7-remaining-budget-review-thpud2oi/REPORT.md accepts3000s
-future review/handoff; actual launch receiptnonformal-native-launch.json records
-time/capacity admission. Current NF completion must be observed, not inferred.
+FIRST47700s window CLOSED without any Formal T0. Insufficient remaining full
+closeout budget prevented dispatch; no failed or shortened Formal run is claimed.
+Recorder inactive AND disabled/PID0/NRestarts0; actual OS RESTORED08:03:20.816862248UTC
+before old expiry cancellation/readbackinactive. Closed receipt3a0943e4 binds actual
+restoration and zero T0. All five approved units unmasked, original three owners
+enabled-active; restored APT worker naturally finished, no locks08:08UTC. Natural
+archive drain/freeze3bfbeab2 retains20316chunks/allLOCAL_DELETED/no partials; archive
+paused only after successful natural worker. No data/evidence removed.
+
+Separate finite formal-only window2 controls created but UNARMED:
+/srv/recorder-data/recorder-archive/evidence/Q7-optimized2h-20261008-iu99yb8b/FORMAL-WINDOW2-eiCsNo.
+Independent scope ACCEPT195f6a6b/identity61f33a0d allows same-artifact canonical
+VERIFY plus accepted baseline/NF representative costs to be reused, not prior PID,
+strict/core/resources/time. Concrete commands/actual arm remain pending. Fresh correct identity-bound census
+c95d30b3 retains20316 chunks/26201290frames/1458657759stored/20254233361decodedB.
+Earlier bb9b1950 census used a stale helper source label23ea5c4 despite actual
+ff7f identity; retained as inaccurate label evidence, not source authority. New
+helper reads actual deployment identity/e052 and changes no production code/data.
+Unarmed plan36000s finite window includes fresh restart>=5min/current resources,7200s
+Formal,9300s conservative capture scenario,125% full terminal estimate,900s drain
+and2700s future review/handoff; required32009.178s/margin3990.822s and projected root11628918467B>10GiB.
+Capacity retains fixed42 active+42 sealed generations and grows only metadata/
+audit temporary/staging terms as applicable; original9300s peak scenario retained. Never
+extend this or the closed first window. New actual identity/capacity/time and
+healthy incarnation strict admission precede one own7200s T0. Native observer owns
+Formal duration/health evidence; automatic target-to-terminal continuation is a
+review-pending operator draft, not an already completed or certified feature.
+Current Q7 monitor PASS ratio strictly>999/1000; preserve denominator/raw failures
+and strict integrity/both full LIVE/completed verify/independent restored gates.
+Hourly vps-2h remains ACTIVE until complete Q7 closeout/push; no Q8. Exact controls:
+docs/milestone_acceptance/Q7-formal2h-optimized-20261008.md.
+
+Private actual NONFORMAL review: /private/var/tmp/bmdr-q7-nonformal-independent-5h5nyvxj/REPORT.md.
+New-window scope review: /private/var/tmp/bmdr-q7-new-window-scope-review-hagcmqjp/REPORT.md.

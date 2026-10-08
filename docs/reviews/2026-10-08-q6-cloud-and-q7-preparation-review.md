@@ -2,7 +2,7 @@
 
 GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only. ACCEPT for actual cloud/source/wheel/
 lock, actual canonical deployment/new identity, FIRST arm/warm/freeze and sole
-baseline admission. Actual baseline audits/completed verification/independent reconstruction now ACCEPT; NONFORMAL and Formal remain pending.
+baseline admission. Actual baseline audits/completed verification/independent reconstruction now ACCEPT; complete NONFORMAL independently ACCEPT; new Formal remains pending.
 This supplements the accepted final source/benefit review; no new source change.
 
 Concrete stopped deployment review bb83aae04b360f49f7843d5652a158b7f7865e9d0132e0200ef3e8b06e3534ea,
@@ -96,3 +96,7 @@ guarded review/restore costs; original conservative terminal15105.275329s×1.25
 is retained. Actual NF dispatch separately passed remaining31811.336>31781.594s
 and projected root11687257186B>10GiB; no fixed expiry extension. Complete NONFORMAL,
 Formal target and restored closeout remain pending.
+
+Actual complete NONFORMAL independent ACCEPTe9d6e99d087faa941aca8bc10c8cb7215f204e2d37eb93f95aab3d9d2ab24033/identitya5585acf75a68e086ca4e70789f7cdb8fe7cc9aa4e2964ef02438e55389369c7. Exact17 frozen controls/source/lock guarded replay0.876755s, Raw/network/production opens0; result6b919618 complete normal/missed/catch-up costs and actual native1631.719680s within1800s. No Formal time.
+
+Separate new9h formal-only SCOPE ACCEPT195f6a6b60bfd966ce58c0c7597b7ea617ff1a77f10ce6a981d19a2a91c02163/identity61f33a0dd0e0dd0d18feb88cb287b04635bb4f02d5dea5ec96089af8117b6daa. Old FIRST actuallyRESTORED then cancelled/closed without T0; same-artifact baseline/NF representative evidence may be reused after canonicalVERIFY. Fresh PID/invocation,>=5min core/strict/resources and growing9300s capacity/current finite time admission are still required; concrete new arm/T0 pending. No window extension, no copied timing or prior incarnation.
