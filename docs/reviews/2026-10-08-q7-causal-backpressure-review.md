@@ -67,3 +67,20 @@ strictPASS after300s is rejected. Old accepted baseline7322.268254s rounded7323
 and its measured corpus are used only for guarded cost forecasting; terminal
 9680s/125percent guard/fixed expiry unchanged. No identity/time transfer.
 Actual retry2 warm and subsequent full baseline/Formal remain pending.
+
+Actual retry2 historical preparation independently ACCEPT9e16b63a/8d12316c:
+strict26 endpoints300.024585652s apart, core4READY,17 resource samples and exact
+retained20764 manifests within21126 fully archived chunks. Hostswap/steal/iowait/
+PSI and failed startup checks are retained. This does not grant current remaining
+window qualification. Model quota interrupted the actual review; old fixed
+window is actually restored-before-cancelled with no baseline/T0. New finite
+window rebinding is under review; no source/wheel/warm rerun or time transfer.
+
+New finite-window rebinding independently DESIGN ACCEPTc5eed171/980882ae;
+actual arm/admission/native launch binding ACCEPTe3df8c6c/e431b98c. New fixed
+expiryOctober9 09:17:35UTC, remaining48528.523>45063.343/margin3465.180, root
+10921867109B>10GiB; old window restored-before-cancelled and retained. Sole new
+baseline6aa78342/PID253370 started19:48:47UTC and remains uncompleted. Export
+52b648aa DESIGN ACCEPT with canonical nested paths and accepted frozen resource
+prefixe196a359/747023B; exact current window/warm controls are exported only
+after actual native success/bothLIVE/completedverify. No Formal credit granted.

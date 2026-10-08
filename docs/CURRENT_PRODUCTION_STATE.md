@@ -1,5 +1,56 @@
 # Current Production State
 
+Authoritative native checkpoint October8 19:52UTC (ShanghaiOctober9): new48600s
+window DESIGN ACCEPTc5eed171/980882ae, ACTUAL ACTIVE_VERIFIEDeed8c3d3; fixed
+expiryOctober9 09:17:35UTC (Shanghai17:17:35), never extend. Nativearm65157912
+completed success. Immediate admissionbe152f36 remaining48528.523s>45063.343s,
+margin3465.180s/root10921867109B>10GiB. Actual frozen21126-chunk corpus and
+accepted warm/resources retained; old window restored-before-cancelled.
+Actual arm/admission/native-launch binding independently ACCEPTe3df8c6c/e431b98c;
+control-only export52b648aa DESIGN ACCEPT, actual export/full baseline pending.
+Sole new complete baseline native binance-recorder-q7-causal-authoritative-baseline-
+20261008.service/inv6aa78342291c48b7909cba5b94e6090c/PID253370 started19:48:47UTC;
+wholephase pin/StartInfinity/Stop150/source900s no-progress watchdog. Launch
+5ab0f191 binds new7072575b identity/49b4 source/new window/admission and no
+Formal credit. Recorder inactive AND disabled/PID0/NRestarts0; archive drained
+and paused after natural success. Do not duplicate/restart healthy baseline.
+Expected actual result/progress checkpoint22:10UTC (Shanghai06:10), not a PASS
+promise. BothLIVE/completedverification/export/independent baseline qualification
+remain pending; source Formal T0 NOT_STARTED. Same-baseline fresh restart/NONFORMAL
+outer1800s/current-incarnation strict/resources/capacity precede sole7200s T0.
+Hourly continuation ACTIVE until complete Q7/push; no Q8. Accurate private controls
+are causal-retry/baseline-window2; earlier checkpoint paragraphs retain history.
+
+Authoritative checkpoint October8 19:41UTC (ShanghaiOctober9): corrected source
+49b4a2d/wheelc7d354be/identity7072575b remain released and deployed. Actual retry2
+warm/resources/frozen21126-chunk corpus independently ACCEPT9e16b63a/8d12316c;
+17 samples RSS267231232B/available4750151680B, hostswap1060864B retained and
+pswpin5/out22 unchanged. Strict26 endpoints300.024585652s apart/core4READY.
+All20764 prior manifest objects are unchanged; all21126LOCAL_DELETED.
+Quota interruption prevented the actual review before the old45063.343s budget
+expired. Old window is ACTUALLY RESTORED before cancellation, no extension;
+quiet-window-prebaseline-closeout.json records remaining39471.272s<required.
+Recorder inactive AND disabled/PID0/NRestarts0; archive paused after natural
+successful drain/freeze. No baseline or Formal T0/accepted duration exists.
+New48600s finite window is PREPARED, not armed, within same artifact/frozen corpus
+child BASELINE-WINDOW2-pvBxZSlJ. Fresh census21126/28418777frames/1572406097stored/
+21937780916decodedB; required45063.343s/margin3536.657s/root10921867109B>10GiB.
+Forecast195f6e72/plan8d50d984 and limited helper rebinding independent review
+are progressing. Do not rebuild source/wheel/CI or rerun unchanged warm. New
+actual arm/remaining admission precede the sole baseline; same-baseline fresh
+NONFORMAL/current-incarnation strict/resource admission precede own7200s.
+Hourly vps-2h ACTIVE; full Q7 closeout only, no Q8. Previous checkpoint paragraphs
+are retained history, not current operational authority. Private exact controls:
+/private/var/tmp/bmdr-q6-bench-controls-jkgugp82/q7-operators/causal-retry/baseline-window2.
+
+Actual retry2 continuation October8 17:25UTC: strict light warm PASS; native
+ACTUAL_WARM_FROZEN_AND_ADMITTED; Recorder stopped-disabled, natural archive
+drain/freeze21126chunks. Fresh postwarm admission actual remaining47430.251s,
+required45063.343s/margin2366.909s, root-after10922116965B>10GiB. Fixed
+expiryOctober9 06:35:28UTC unchanged. Actual warm/resources/freeze independent
+review progressing; sole new baseline remains unstarted until ACCEPT.
+Private actual evidence causal-retry/warm-retry2/actual; no Formal T0 or credit.
+
 Current native continuation October8 17:16UTC: retry2 private helper/forecast and
 exact warm/baseline commands independently DESIGN ACCEPT225932f7/4eaab247;
 7 endpoint fixtures PASS including generic/stale/wrongcursor/timeout rejection.
