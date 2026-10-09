@@ -1,5 +1,48 @@
 # Milestone Plan
 
+Authoritative checkpoint October9 02:29UTC (Shanghai10:29): original corrected
+Q7 actually reached7200.002002669s at01:56:09.956795UTC. Native targete7880aa5
+is INCOMPLETE/target_delta_pending: chunk processed195632/high-water196630,
+998 unprocessed lifecycle rows and621 pending causal references; no observed
+sample blocking findings, all25 snapshots complete, cursors advancing. Sampled
+monitor239/239 PASS=100%, a separate metric, not saved-record correctness.
+Strict stopa32f3d9c succeeded; OBS609f186c and AUTO3948b2ca exited before any full
+terminal audit. Recorder inactive AND disabled/PID0. Parent first status read
+was02:01UTC, after automatic stop; no parent inspection stop/restart occurred.
+Simply waiting cannot continue exited workers.
+
+Latest human policy October9: actual saved-data correctness strictly>99.9% can
+satisfy this2h test. Finish checking existing data instead of blindly repeating
+2h for metadata lag. Preserve original INCOMPLETE target/observations and zero
+canonical V5 final eligibility. Existing actual duration belongs only to same
+49b4a2d/c7d354be/7072575b/run d0be; no newT0 or source/time transfer.
+Supplementary stopped whole-corpus dualLIVE+completedverify in a separate
+POSTTARGET-DATA-AUDIT child is DESIGN ACCEPTe23cfb22/da03d864; exact wrapper
+and nativeargv independently ACCEPTa62e9027/ff62e955. Actual native
+binance-recorder-q7-posttarget-data-audit-20261009.service/inv90900303865241b9800cb1b89111b447/
+PID269749 started02:27:54UTC, StartInfinity/Stop150/wholephasepin/source900s
+no-progress; do not duplicate/restart healthy work. Frozen admission66dbf15f
+PASS:24625chunks/37312872frames/28590721600decodedB, remaining24574.238s>
+required17666.829s/margin6907.410s/projectedwriter23749892826B>10GiB.
+Terminal-freezec5e25e6f actual stopped-disabled/natural drain/archive paused;
+launchc687f18d and frozen monitor036167c3 bind239/239PASS. Same current source/
+identity preserved, old target unchanged. Current work is full corpus freeze/
+audit, not final PASS. Reasonable completion/progress checkpoint06:15UTC
+(Shanghai14:15); before it let healthy native work proceed without extra VPS
+checks. After it inspect actual full dualLIVE/verify output, not staleRUNNING.
+Exact P under BASELINE-WINDOW2-pvBxZSlJ/POSTTARGET-DATA-AUDIT-20261009;
+private controls /private/var/tmp/bmdr-q7-target-pending-failure-jxr4pjqt/posttarget-design.
+Final full audit/independent reconstruction/restored handoff remain PENDING. Full successful
+audit can establish observed100% saved-frame contract conformance; monitor
+samples/metadata rows cannot supply that denominator or establish every Binance
+event completeness. Independent reconstruction and actual restored archive/OS
+handoff still precede owner-adjusted completion. Do not impersonate canonical
+stage-final, grant a next-stage predecessor or start Q8.
+Fixed existing expiryOctober9 09:17:35UTC NEVER EXTEND; original owners must be
+actually restored before expiry guard cancellation. Hourly vps-2h remains ACTIVE.
+See docs/reviews/2026-10-09-q7-posttarget-data-audit-review.md. Older checkpoints
+below are retained history, not current operational authority.
+
 Authoritative checkpoint October8 23:58UTC (ShanghaiOctober9): corrected Q7
 Formal2h RUNNING, sole stage2h-4c303fb942ec49d6a5c040edae20bf84/run
 d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
@@ -519,7 +562,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | RUNNING_CORRECTED_FORMAL2H: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment, baseline dca28756 and same-baseline NONFORMAL independently accepted. Fresh strict/resources/capacity PASS; sole stage4c303fb9 actual T0 October8 23:56:09.954789776UTC, own7200s targetOctober9 01:56:09.954789776UTC; native OBS+automatic terminal healthy. Target/monitor>99.9%/full terminal/independent restored closeout PENDING; zero final accepted duration. Old failures/custody retained. |
+| Q7 | New optimized-artifact VPS Formal 2h | ACTUAL_7200_SAVED_DATA_AUDIT_PENDING: same corrected run4c303fb9/d0be elapsed7200.002002669s, monitor239/239PASS; original V5 target remains INCOMPLETE with998 lifecycle rows/621 references pending. October9 owner criterion is strictly>99.9% saved-record correctness; supplemental native90900303 started02:27:54UTC with actual frozen admission PASS; full dualLIVE/verify/independent restored closeout pending, without repeating2h or granting canonical next-stage eligibility. |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |
@@ -854,7 +897,7 @@ Q6 closes with all of the following:
 
 | Stage | Required target | Predecessor and completion |
 |---|---|---|
-| Q7 / Formal2h | 7200s | Q6 reviewed frozen release plus newly verified deployment/baseline/readiness; complete own target, both full LIVE terminal passes, completed verify and independent restored closeout. |
+| Q7 / Formal2h | 7200s | October9 owner override: same-artifact actual duration plus saved-record correctness strictly>99.9%. Exhaustive stopped supplementary dualLIVE/verify and independent restored closeout may establish the saved-record criterion even when original target has metadata lag; retain original INCOMPLETE and do not impersonate an eligible canonical V5 final. |
 | Q8 / Formal12h | 43200s | Reviewed eligible Q7 final under the same optimized identity; fresh admission, own target and the same full closeout. |
 | Q9 / Formal24h | 86400s | Reviewed eligible Q8 final; fresh admission, actual configured-product rotation/recovery evidence and the same full closeout. |
 | Q10 / Formal48h | 172800s | Reviewed eligible Q9 final and tested native 48h/new-chain support; fresh admission, actual long-run rotation/recovery/resources/backlog evidence, full closeout and four-final 86h reconciliation. |

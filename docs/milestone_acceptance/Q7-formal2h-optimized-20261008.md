@@ -1,5 +1,48 @@
 # Q7 optimized-artifact VPS Formal2h qualification
 
+Authoritative checkpoint October9 02:29UTC (Shanghai10:29): original corrected
+Q7 actually reached7200.002002669s at01:56:09.956795UTC. Native targete7880aa5
+is INCOMPLETE/target_delta_pending: chunk processed195632/high-water196630,
+998 unprocessed lifecycle rows and621 pending causal references; no observed
+sample blocking findings, all25 snapshots complete, cursors advancing. Sampled
+monitor239/239 PASS=100%, a separate metric, not saved-record correctness.
+Strict stopa32f3d9c succeeded; OBS609f186c and AUTO3948b2ca exited before any full
+terminal audit. Recorder inactive AND disabled/PID0. Parent first status read
+was02:01UTC, after automatic stop; no parent inspection stop/restart occurred.
+Simply waiting cannot continue exited workers.
+
+Latest human policy October9: actual saved-data correctness strictly>99.9% can
+satisfy this2h test. Finish checking existing data instead of blindly repeating
+2h for metadata lag. Preserve original INCOMPLETE target/observations and zero
+canonical V5 final eligibility. Existing actual duration belongs only to same
+49b4a2d/c7d354be/7072575b/run d0be; no newT0 or source/time transfer.
+Supplementary stopped whole-corpus dualLIVE+completedverify in a separate
+POSTTARGET-DATA-AUDIT child is DESIGN ACCEPTe23cfb22/da03d864; exact wrapper
+and nativeargv independently ACCEPTa62e9027/ff62e955. Actual native
+binance-recorder-q7-posttarget-data-audit-20261009.service/inv90900303865241b9800cb1b89111b447/
+PID269749 started02:27:54UTC, StartInfinity/Stop150/wholephasepin/source900s
+no-progress; do not duplicate/restart healthy work. Frozen admission66dbf15f
+PASS:24625chunks/37312872frames/28590721600decodedB, remaining24574.238s>
+required17666.829s/margin6907.410s/projectedwriter23749892826B>10GiB.
+Terminal-freezec5e25e6f actual stopped-disabled/natural drain/archive paused;
+launchc687f18d and frozen monitor036167c3 bind239/239PASS. Same current source/
+identity preserved, old target unchanged. Current work is full corpus freeze/
+audit, not final PASS. Reasonable completion/progress checkpoint06:15UTC
+(Shanghai14:15); before it let healthy native work proceed without extra VPS
+checks. After it inspect actual full dualLIVE/verify output, not staleRUNNING.
+Exact P under BASELINE-WINDOW2-pvBxZSlJ/POSTTARGET-DATA-AUDIT-20261009;
+private controls /private/var/tmp/bmdr-q7-target-pending-failure-jxr4pjqt/posttarget-design.
+Final full audit/independent reconstruction/restored handoff remain PENDING. Full successful
+audit can establish observed100% saved-frame contract conformance; monitor
+samples/metadata rows cannot supply that denominator or establish every Binance
+event completeness. Independent reconstruction and actual restored archive/OS
+handoff still precede owner-adjusted completion. Do not impersonate canonical
+stage-final, grant a next-stage predecessor or start Q8.
+Fixed existing expiryOctober9 09:17:35UTC NEVER EXTEND; original owners must be
+actually restored before expiry guard cancellation. Hourly vps-2h remains ACTIVE.
+See docs/reviews/2026-10-09-q7-posttarget-data-audit-review.md. Older checkpoints
+below are retained history, not current operational authority.
+
 Authoritative checkpoint October8 23:58UTC (ShanghaiOctober9): corrected Q7
 Formal2h RUNNING, sole stage2h-4c303fb942ec49d6a5c040edae20bf84/run
 d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
