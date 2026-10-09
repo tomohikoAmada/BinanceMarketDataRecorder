@@ -37,7 +37,15 @@ identity9ae87f82a8e99f66675ad1a7fba67e11fb6825cd6e6278009f74baae137f9e18.
 No source/dependency/wheel/baseline/NONFORMAL changes or repeats.
 Actual successful dispatchaaf4d5af/prestartdad9224b/start6bcf8a31/nativebindingc86b1078
 retain current strict/core/resources/capacity and initial fivePASS samples only.
-Actual start binding independent result remains pending; full final review is separate.
+Actual start/admission/native binding independently ACCEPT: frozen report
+6fe0342eb65648f5b830571a26b8a662219273f8b3b629c79f42631cf3c40d32,
+identity7bb2c319fac91f9c7340c99d07ccbacb6d52eac978118ad7f001c47f3bf5147c.
+Private report /private/var/tmp/bmdr-q7-actual-formal-start-review-5zzpdxke/REPORT.md.
+Run/T0/native binding is independently verified; stage-directory label remains
+parent-reported until the final allowlisted chain package. Start pending449/
+delta_pendingtrue is allowed bounded continuation, not a complete-chain claim.
+No whole baseline/NONFORMAL reconstruction, Raw/VPS access or final PASS; full
+terminal eligibility and actual restored-closeout review remain separate pending gates.
 Earlier design/pending statements below are retained historical scope.
 
 GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only: source correction, native auto failure

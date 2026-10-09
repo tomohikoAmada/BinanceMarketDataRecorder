@@ -7,6 +7,8 @@ d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
 568664135326402; own7200s targetOctober9 01:56:09.954789776UTC (Shanghai09:56:09).
 Start6bcf8a31/blockingfindings0 binds source49b4a2d/wheelc7d354be/newidentity7072575b/
 accepted baselinedca28756; no old source/baseline/duration transfer.
+Actual start/admission/native binding independently ACCEPT6fe0342e/7bb2c319;
+run/T0 verified, directory label parent-reported pending final bundle binding.
 Same-baseline NONFORMALbaf074ad SUCCESS/independently ACCEPT6eee090d/b18c0b71;
 complete five producer/replay costs all<240s, final pending0/deltafalse.
 Fresh strict26/coreREADY/current-incarnation12-resource gate PASS: RSSmax295165952B,
