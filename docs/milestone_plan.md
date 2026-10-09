@@ -524,6 +524,14 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |
 
+Owner-requested read-only CPU diagnosis October9: current Recorder95.63% of one
+core versus original Q5's52.38%, while sealed-frame throughput323.07→812.80/s
+(~2.516×), primarily book ticker268.19→744.44/s. This is a differing-workload
+observation, not a same-input regression or proof of live optimization speedup.
+The unchanged current Formal/native terminal continues without a source/config/
+identity change or restart. See [CPU diagnosis](reviews/2026-10-09-q7-recorder-cpu-diagnosis.md)
+for process separation, metadata measurement limits and shared-host steal evidence.
+
 ### Q1 — Fix known behavior with existing structures
 
 Implementation and evidence: [Q1 acceptance record](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md).
