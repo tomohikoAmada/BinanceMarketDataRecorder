@@ -1,5 +1,32 @@
 # Milestone Plan
 
+Current authoritative closeout October9 06:47UTC (Shanghai14:47): **Q7 COMPLETE_OWNER_ADJUSTED**.
+The corrected existing run d0be/49b4a2d/c7d354be/7072575b actually completed
+7200.002002669s. Under the latest human saved-data criterion strictly>99.9%,
+complete supplementary dualLIVE/completed verification and independent guarded
+reconstruction ACCEPT37312872/37312872 saved frames (observed contract conformance100%).
+All24625 chunks and all21126 accepted predecessor manifests remain preserved.
+Monitor239/239PASS is a separate metric. Historical4852 gap/incomplete and176
+zero-frame manifests remain disclosed; no every-exchange-event completeness claim.
+
+Supplementary audit5b4474b0/full verificationd8f985b4 finished05:45:28UTC;
+independent report33b8bfa0/identityed6daa0c ACCEPT. Actual OS restoration6dbc3ff4
+occurred06:36:43UTC before expiry cancellation; original three OS owners enabled-active,
+all five approved units unmasked. Natural archive recurrence/owned success/future
+finite deadline, stopped-disabled Recorder/PID0/NRestarts0/same boot/config/identity,
+and fresh canonical VERIFY944c7692 are independently ACCEPT2aba6b49/a5b1b4ca.
+Actual handoffe26f98a2 and separately published owner-adjusted receipt4ed481af
+close this2h request. No new capture/T0/source/wheel/CI or blind2h rerun was needed.
+
+Original targete7880aa5 remains INCOMPLETE/target_delta_pending (998 lifecycle rows,
+621 references); it was not rewritten. Supplementary high-water197000 covers
+original196630. Canonical V5 final and next-stage predecessor eligibility remain
+false. Q8/12h,24h,48h NOT_STARTED; PRODUCTION_READY=NO/R-078 OPEN. Stop here.
+Hourly vps-2h completion trigger is reached; pause it after this main closeout push.
+See [owner-adjusted Q7 acceptance](milestone_acceptance/Q7-owner-adjusted2h-20261009.md)
+and [final independent restored review](reviews/2026-10-09-q7-posttarget-restored-independent-review.md).
+Older checkpoints below are retained history, not current operational authority.
+
 Authoritative checkpoint October9 02:29UTC (Shanghai10:29): original corrected
 Q7 actually reached7200.002002669s at01:56:09.956795UTC. Native targete7880aa5
 is INCOMPLETE/target_delta_pending: chunk processed195632/high-water196630,
@@ -228,8 +255,8 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 RUNNING_CORRECTED_FORMAL2H/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
-Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
+Q0–Q6 COMPLETE/Q7 COMPLETE_OWNER_ADJUSTED/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Existing vps-2h completion trigger reached; pause after this Q7 closeout main push.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
 
@@ -562,7 +589,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | ACTUAL_7200_SAVED_DATA_AUDIT_PENDING: same corrected run4c303fb9/d0be elapsed7200.002002669s, monitor239/239PASS; original V5 target remains INCOMPLETE with998 lifecycle rows/621 references pending. October9 owner criterion is strictly>99.9% saved-record correctness; supplemental native90900303 started02:27:54UTC with actual frozen admission PASS; full dualLIVE/verify/independent restored closeout pending, without repeating2h or granting canonical next-stage eligibility. |
+| Q7 | New optimized-artifact VPS Formal 2h | COMPLETE_OWNER_ADJUSTED: same corrected run4c303fb9/d0be actually7200.002002669s; complete saved-frame audit37312872/37312872=100% >99.9%, dualLIVE/completedverify/independent data reconstruction and actual restored handoff ACCEPT. Owner receipt4ed481af. Monitor239/239 is separate. Original targete788 remains INCOMPLETE; no canonical V5 next-stage eligibility, no repeat2h. See [acceptance](milestone_acceptance/Q7-owner-adjusted2h-20261009.md). |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |

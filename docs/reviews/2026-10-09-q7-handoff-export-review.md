@@ -1,0 +1,3 @@
+# Exact restored-handoff control export
+
+DESIGN ACCEPT for export-restored-handoff.py SHA6c864ab2d2a956782a4f80102e442c9e3e8611cbc8262d53220ebad5f8f8717f. Static/AST review confirms all nine named canonical regular files are validated before content reads, each below4MiB; only restored/verify/helper/native control evidence is read. Relative Q names, exclusive root:bmdr0640 tar creation and fsync preserve existing evidence. No Raw roots, recursive production scans or service commands are present. Actual handoff eligibility remains pending independent verification of the exported receipts/order/journal and canonical identity.

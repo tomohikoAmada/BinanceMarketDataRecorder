@@ -1,0 +1,5 @@
+# Restored-handoff capture optional native CPU field
+
+DESIGN ACCEPT for capture-restored-handoff.py SHA8976b76b6bae5725967de56052fa4da56205538e079fc5d24e5f1a79394058f4. Exact one-expression difference from accepted a4817964 was verified by reversing the removed CPU_USAGE_NSEC condition and reproducing the original full SHA. AST parse passes.
+
+A native short successful job may omit optional CPU-accounting output. Completion authority remains the nonempty exact owned invocation, JOB_TYPE=start/JOB_RESULT=done, no failed job, and actual inactive/PID0/success worker readback after archive resumption. The capture retains actual RESTORED-before-cancel ordering, approved owners, same identity/config/boot, stopped-disabled Recorder, future natural archive timer and exact retained corpus. Missing CPU is unavailable, not asserted zero. Full supplemental audit is independently ACCEPT; actual restored handoff still awaits captured controls and independent review. This is a local/offline design review only, with no production or service operations.
