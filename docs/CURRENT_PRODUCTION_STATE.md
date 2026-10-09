@@ -1,5 +1,11 @@
 # Current Production State
 
+Latest owner authorization October9: continue through the optimized VPS **Q8 owner-policy12h** full closeout, then stop before Q9/24h. Q7 remains COMPLETE_OWNER_ADJUSTED; its owner receipt/full saved-data audit are accepted historical anchors, not canonical V5 predecessor eligibility or inherited time. [ADR-0041](adr/0041-owner-policy-long-run-qualification.md) records this continuation without changing production source/wheel/configuration.
+
+Current Q8 NATIVE_WARMUP_RUNNING: one unique scope `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-20261009-WLXKDBUM`, unchanged49b4a2d/c7d354be/7072575b, all14 flags/four products/retained corpus. Exact native helpers/design independently ACCEPTcc33ea13/488e8a23, actual arm/release ACCEPT8fb734fc/99708cca. Windowc27cdd53 ACTIVE_VERIFIED has fixed expiryOctober10 18:18:11UTC (ShanghaiOctober11 02:18:11), never extend; postarm6751691e has5842.188s margin/root12160737043B>10GiB. Captureinva8358103/PID291180 and RecorderPID291340/inv2b32fe98/NRestarts0 are actually warming; initial3strict26PASS samples are startup only. Own owner-start.json after full warm-up/admission defines the new43200s T0; no accepted12h duration yet. Warm reasonable checkpoint12:41UTC; healthy native work is not duplicated. Hourlyvps-2h ACTIVE now continues through Q8 full closeout. Saved-frame correctness strictly>99.9% is distinct from monitoring availability and every-exchange-event completeness. See [Q8 qualification](milestone_acceptance/Q8-owner12h-20261009.md).
+
+Prior Q7 checkpoints below are retained history; the new Q8 authorization supersedes their stop/pause instructions. Production readiness remains NO/R-078 OPEN.
+
 Current authoritative closeout October9 06:47UTC (Shanghai14:47): **Q7 COMPLETE_OWNER_ADJUSTED**.
 The corrected existing run d0be/49b4a2d/c7d354be/7072575b actually completed
 7200.002002669s. Under the latest human saved-data criterion strictly>99.9%,

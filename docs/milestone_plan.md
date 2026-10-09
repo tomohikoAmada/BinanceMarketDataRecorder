@@ -1,5 +1,11 @@
 # Milestone Plan
 
+Latest owner authorization October9: continue through the optimized VPS **Q8 owner-policy12h** full closeout, then stop before Q9/24h. Q7 remains COMPLETE_OWNER_ADJUSTED; its owner receipt/full saved-data audit are accepted historical anchors, not canonical V5 predecessor eligibility or inherited time. [ADR-0041](adr/0041-owner-policy-long-run-qualification.md) records this continuation without changing production source/wheel/configuration.
+
+Current Q8 NATIVE_WARMUP_RUNNING: one unique scope `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-20261009-WLXKDBUM`, unchanged49b4a2d/c7d354be/7072575b, all14 flags/four products/retained corpus. Exact native helpers/design independently ACCEPTcc33ea13/488e8a23, actual arm/release ACCEPT8fb734fc/99708cca. Windowc27cdd53 ACTIVE_VERIFIED has fixed expiryOctober10 18:18:11UTC (ShanghaiOctober11 02:18:11), never extend; postarm6751691e has5842.188s margin/root12160737043B>10GiB. Captureinva8358103/PID291180 and RecorderPID291340/inv2b32fe98/NRestarts0 are actually warming; initial3strict26PASS samples are startup only. Own owner-start.json after full warm-up/admission defines the new43200s T0; no accepted12h duration yet. Warm reasonable checkpoint12:41UTC; healthy native work is not duplicated. Hourlyvps-2h ACTIVE now continues through Q8 full closeout. Saved-frame correctness strictly>99.9% is distinct from monitoring availability and every-exchange-event completeness. See [Q8 qualification](milestone_acceptance/Q8-owner12h-20261009.md).
+
+Prior Q7 checkpoints below are retained history; the new Q8 authorization supersedes their stop/pause instructions. Production readiness remains NO/R-078 OPEN.
+
 Current authoritative closeout October9 06:47UTC (Shanghai14:47): **Q7 COMPLETE_OWNER_ADJUSTED**.
 The corrected existing run d0be/49b4a2d/c7d354be/7072575b actually completed
 7200.002002669s. Under the latest human saved-data criterion strictly>99.9%,
@@ -590,7 +596,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
 | Q7 | New optimized-artifact VPS Formal 2h | COMPLETE_OWNER_ADJUSTED: same corrected run4c303fb9/d0be actually7200.002002669s; complete saved-frame audit37312872/37312872=100% >99.9%, dualLIVE/completedverify/independent data reconstruction and actual restored handoff ACCEPT. Owner receipt4ed481af. Monitor239/239 is separate. Original targete788 remains INCOMPLETE; no canonical V5 next-stage eligibility, no repeat2h. See [acceptance](milestone_acceptance/Q7-owner-adjusted2h-20261009.md). |
-| Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
+| Q8 | Same optimized-artifact VPS owner-policy 12h | NATIVE_WARMUP_RUNNING; October9 owner authorizes new43200s under ADR-0041 after accepted Q7 owner receipt/full audit; fresh capacity, strict warm-up and native automatic full closeout; no canonical predecessor fabrication. |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |
 
@@ -925,7 +931,7 @@ Q6 closes with all of the following:
 | Stage | Required target | Predecessor and completion |
 |---|---|---|
 | Q7 / Formal2h | 7200s | October9 owner override: same-artifact actual duration plus saved-record correctness strictly>99.9%. Exhaustive stopped supplementary dualLIVE/verify and independent restored closeout may establish the saved-record criterion even when original target has metadata lag; retain original INCOMPLETE and do not impersonate an eligible canonical V5 final. |
-| Q8 / Formal12h | 43200s | Reviewed eligible Q7 final under the same optimized identity; fresh admission, own target and the same full closeout. |
+| Q8 / Owner-policy12h | 43200s | October9 authorization and ADR-0041: accepted Q7 owner receipt/full data audit as historical anchors; unchanged optimized identity, fresh admission/strict warm-up, its own native43200s target, full dualLIVE/completedverify/independent restored closeout. Separate saved-frame correctness>99.9%; no inherited time or fabricated canonical V5 final/predecessor. |
 | Q9 / Formal24h | 86400s | Reviewed eligible Q8 final; fresh admission, actual configured-product rotation/recovery evidence and the same full closeout. |
 | Q10 / Formal48h | 172800s | Reviewed eligible Q9 final and tested native 48h/new-chain support; fresh admission, actual long-run rotation/recovery/resources/backlog evidence, full closeout and four-final 86h reconciliation. |
 
@@ -1009,8 +1015,9 @@ hashes/predecessor chain, ≥309600 accepted target seconds and measured
 integrity/rotation/recovery/resource limits. Record
 `OPTIMIZED_QUALIFICATION_86H=PASS`; broader certification remains separate and
 R-078 is not automatically closed. Q0–Q5 are complete. The current authorized
-continuation is Q6 preparation through the new Q7 full2h closeout, then stop
-before Q8. Q8–Q10 remain planned later stages. Do not transfer Q4/Q5 credit.
+continuation is the newly authorized Q8 owner-policy12h full closeout under ADR-0041,
+then stop before Q9/24h. Q7 remains COMPLETE_OWNER_ADJUSTED; no blind2h repeat
+or Q4/Q5 time transfer. Q9–Q10 remain planned and require explicit later chain reconciliation.
 
 ### How subsequent development proceeds
 

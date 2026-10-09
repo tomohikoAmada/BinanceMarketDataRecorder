@@ -41,5 +41,7 @@ Current and historical decisions:
 
 - [ADR-0039: Owner-approved sampled monitor pass rate](0039-sampled-monitor-qualification-rate.md)
 
+- [ADR-0041: Owner-policy long-run qualification after Q7 acceptance](0041-owner-policy-long-run-qualification.md)
+
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.
