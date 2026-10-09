@@ -1,5 +1,34 @@
 # Binance Market Data Recorder Agent Contract
 
+Authoritative checkpoint October8 23:58UTC (ShanghaiOctober9): corrected Q7
+Formal2h RUNNING, sole stage2h-4c303fb942ec49d6a5c040edae20bf84/run
+d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
+23:56:09.954789776UTC (ShanghaiOctober9 07:56:09.954789776), BOOTTIME
+568664135326402; own7200s targetOctober9 01:56:09.954789776UTC (Shanghai09:56:09).
+Start6bcf8a31/blockingfindings0 binds source49b4a2d/wheelc7d354be/newidentity7072575b/
+accepted baselinedca28756; no old source/baseline/duration transfer.
+Same-baseline NONFORMALbaf074ad SUCCESS/independently ACCEPT6eee090d/b18c0b71;
+complete five producer/replay costs all<240s, final pending0/deltafalse.
+Fresh strict26/coreREADY/current-incarnation12-resource gate PASS: RSSmax295165952B,
+hostavailablemin5047488512B/pswpin11-out1336 unchanged. Actual admission
+remaining33691.179s>required32449.744s/margin1241.435s/projectedroot10832798266B>10GiB.
+Native observer binance-recorder-q7-causal-formal2h-20261008.service/inv
+609f186c74c64ede80f5d95de2b5e242/PID263044 active; auto-terminal inv
+3948b2ca207848f3973fa50030f7cc43/PID263046 healthy oneshot waiting on pinned OBS;
+formal resources inv0d4a3f9c0ddc4823b60d29f176344160/PID263041 read-only.
+RecorderPID260007/inv07803fd6287f45cf97101c5099a311ba enabled-active/NRestarts0.
+Actual startup bindingc86b1078 has fivePASS samples; these do not establish full
+monitor rate or accepted duration. Native target-to-terminal requires strict stopped
+endpoint, fixed monitor prefix>999/1000, natural drain/freeze, both complete LIVE
+passes/completed verify; infinite total/source900s no-progress remains intact.
+Fixed window expiryOctober9 09:17:35UTC (Shanghai17:17:35) NEVER EXTEND.
+Do not duplicate/restart healthy native work or poll VPS before known target.
+After target check actual OBS/AUTO/terminal progress; a healthy full audit continues
+without LLM/SSH. Final independent LOCAL/OFFLINE eligibility/actual OS restoration
+before guard cancellation/archive handoff/docs push remain PENDING; no final PASS.
+Hourly task remains ACTIVE until complete Q7 closeout; no Q8/12h/24h/48h.
+Earlier checkpoints below retain history, not current operational authority.
+
 Authoritative checkpoint October8 22:43UTC (ShanghaiOctober9): sole corrected
 baseline6aa78342 COMPLETE/SUCCESS22:10:25UTC, both full LIVE audits/completed
 verify PASS, auditdca28756/359352records756shards/21126chunks28418777frames.
@@ -158,7 +187,7 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](docs/milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](docs/reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 RUNNING_CORRECTED_FORMAL2H/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.

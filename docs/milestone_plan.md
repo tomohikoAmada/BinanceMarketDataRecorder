@@ -1,5 +1,34 @@
 # Milestone Plan
 
+Authoritative checkpoint October8 23:58UTC (ShanghaiOctober9): corrected Q7
+Formal2h RUNNING, sole stage2h-4c303fb942ec49d6a5c040edae20bf84/run
+d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
+23:56:09.954789776UTC (ShanghaiOctober9 07:56:09.954789776), BOOTTIME
+568664135326402; own7200s targetOctober9 01:56:09.954789776UTC (Shanghai09:56:09).
+Start6bcf8a31/blockingfindings0 binds source49b4a2d/wheelc7d354be/newidentity7072575b/
+accepted baselinedca28756; no old source/baseline/duration transfer.
+Same-baseline NONFORMALbaf074ad SUCCESS/independently ACCEPT6eee090d/b18c0b71;
+complete five producer/replay costs all<240s, final pending0/deltafalse.
+Fresh strict26/coreREADY/current-incarnation12-resource gate PASS: RSSmax295165952B,
+hostavailablemin5047488512B/pswpin11-out1336 unchanged. Actual admission
+remaining33691.179s>required32449.744s/margin1241.435s/projectedroot10832798266B>10GiB.
+Native observer binance-recorder-q7-causal-formal2h-20261008.service/inv
+609f186c74c64ede80f5d95de2b5e242/PID263044 active; auto-terminal inv
+3948b2ca207848f3973fa50030f7cc43/PID263046 healthy oneshot waiting on pinned OBS;
+formal resources inv0d4a3f9c0ddc4823b60d29f176344160/PID263041 read-only.
+RecorderPID260007/inv07803fd6287f45cf97101c5099a311ba enabled-active/NRestarts0.
+Actual startup bindingc86b1078 has fivePASS samples; these do not establish full
+monitor rate or accepted duration. Native target-to-terminal requires strict stopped
+endpoint, fixed monitor prefix>999/1000, natural drain/freeze, both complete LIVE
+passes/completed verify; infinite total/source900s no-progress remains intact.
+Fixed window expiryOctober9 09:17:35UTC (Shanghai17:17:35) NEVER EXTEND.
+Do not duplicate/restart healthy native work or poll VPS before known target.
+After target check actual OBS/AUTO/terminal progress; a healthy full audit continues
+without LLM/SSH. Final independent LOCAL/OFFLINE eligibility/actual OS restoration
+before guard cancellation/archive handoff/docs push remain PENDING; no final PASS.
+Hourly task remains ACTIVE until complete Q7 closeout; no Q8/12h/24h/48h.
+Earlier checkpoints below retain history, not current operational authority.
+
 Authoritative checkpoint October8 22:43UTC (ShanghaiOctober9): sole corrected
 baseline6aa78342 COMPLETE/SUCCESS22:10:25UTC, both full LIVE audits/completed
 verify PASS, auditdca28756/359352records756shards/21126chunks28418777frames.
@@ -154,7 +183,7 @@ Full21071-member control-only bundle97962214…f7a0b and five-member handoff bun
 747fc05d…0c968 privately frozen; actual scope and limitations are in
 [Q5 acceptance](milestone_acceptance/Q5-formal12h-20261004.md).
 [Final independent Q5 review](reviews/2026-10-05-q5-completed-independent-review.md) ACCEPT; report5ae1559c/identity02f04b05.
-Q0–Q6 COMPLETE/Q7 IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
+Q0–Q6 COMPLETE/Q7 RUNNING_CORRECTED_FORMAL2H/Q8–Q10 NOT_STARTED/PRODUCTION_READY=NO/R078 OPEN.
 Existing vps-2h ACTIVE every hour, ending only after new-artifact Q7 full closeout.
 Check actual quota/prior advancing work; never duplicate a healthy native stage.
 Historical tasks remain paused. Q5 closeout main b9ffa5c exact dual CI37250651479 SUCCESS; Q6 source e05268f exact dual CI37716337806 BOTH SUCCESS.
@@ -488,7 +517,7 @@ or speculative service split. Heavy normalization/replay stays offline.
 | Q4 | Formal 2h plus full terminal audit and completed verification | COMPLETE/PASS for corrected23ea5c4:7200.001928737s/both fullLIVE/completedverify/independent eligibility+actual restoredhandoff ACCEPT, final64889189…b00c2. Original cf3909e9 PASS remains historical |
 | Q5 | Formal 12h plus full terminal audit and completed verification | COMPLETE: actual43200.002463724s; strict26PASS/monitor1435/1436=99.9303621%; both full LIVE, completed verify and independent eligibility/actual expiry-restored handoff ACCEPT. Finalc189a5b4/terminal730015b5; original failure/cutoff retained. |
 | Q6 | Performance optimization and optimized release preparation | COMPLETE; same-input benefit/resources/five qualified decisions/48h compatibility independently ACCEPT; exact e05268f dual CI SUCCESS; cloud275/121 source+28 locked dependencies PASS; frozen wheelf2e9dd1b and actual new canonical identityff7f4db6 VERIFIED/independent ACCEPT |
-| Q7 | New optimized-artifact VPS Formal 2h | IN_PROGRESS_PRE_FORMAL_CORRECTED_RETRY: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment accepted; actual warm retry2/resources/frozen corpus accepted; old window restored-before-cancelled; new window actual arm/admission accepted. Sole new baseline6aa78342/bothLIVE/verify/independent ACCEPT; restart-inclusive NONFORMALbaf074ad RUNNING/ownT0 absent/zero accepted duration. Old e052 causal-cap failure/start/custody retained. |
+| Q7 | New optimized-artifact VPS Formal 2h | RUNNING_CORRECTED_FORMAL2H: source49b4a2d/wheelc7d354be/identity7072575b exact CI/cloud/deployment, baseline dca28756 and same-baseline NONFORMAL independently accepted. Fresh strict/resources/capacity PASS; sole stage4c303fb9 actual T0 October8 23:56:09.954789776UTC, own7200s targetOctober9 01:56:09.954789776UTC; native OBS+automatic terminal healthy. Target/monitor>99.9%/full terminal/independent restored closeout PENDING; zero final accepted duration. Old failures/custody retained. |
 | Q8 | Same optimized-artifact VPS Formal 12h | PLANNED/NOT_STARTED; reviewed eligible Q7 predecessor and fresh growing-corpus capacity/audit-window admission |
 | Q9 | Same optimized-artifact VPS Formal 24h | PLANNED/NOT_STARTED; reviewed eligible Q8 predecessor; actual rotation/recovery and sustained resource evidence |
 | Q10 | Same optimized-artifact VPS Formal 48h and 86h closeout | PLANNED/NOT_STARTED; reviewed eligible Q9 predecessor; implemented 48h support, fresh capacity/schedule admission and four eligible finals totaling ≥309600s |

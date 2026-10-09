@@ -1,5 +1,34 @@
 # Q7 optimized-artifact VPS Formal2h qualification
 
+Authoritative checkpoint October8 23:58UTC (ShanghaiOctober9): corrected Q7
+Formal2h RUNNING, sole stage2h-4c303fb942ec49d6a5c040edae20bf84/run
+d0be1407ef8f441dbeb4e0ab3f093a1d. Actual source T0 October8
+23:56:09.954789776UTC (ShanghaiOctober9 07:56:09.954789776), BOOTTIME
+568664135326402; own7200s targetOctober9 01:56:09.954789776UTC (Shanghai09:56:09).
+Start6bcf8a31/blockingfindings0 binds source49b4a2d/wheelc7d354be/newidentity7072575b/
+accepted baselinedca28756; no old source/baseline/duration transfer.
+Same-baseline NONFORMALbaf074ad SUCCESS/independently ACCEPT6eee090d/b18c0b71;
+complete five producer/replay costs all<240s, final pending0/deltafalse.
+Fresh strict26/coreREADY/current-incarnation12-resource gate PASS: RSSmax295165952B,
+hostavailablemin5047488512B/pswpin11-out1336 unchanged. Actual admission
+remaining33691.179s>required32449.744s/margin1241.435s/projectedroot10832798266B>10GiB.
+Native observer binance-recorder-q7-causal-formal2h-20261008.service/inv
+609f186c74c64ede80f5d95de2b5e242/PID263044 active; auto-terminal inv
+3948b2ca207848f3973fa50030f7cc43/PID263046 healthy oneshot waiting on pinned OBS;
+formal resources inv0d4a3f9c0ddc4823b60d29f176344160/PID263041 read-only.
+RecorderPID260007/inv07803fd6287f45cf97101c5099a311ba enabled-active/NRestarts0.
+Actual startup bindingc86b1078 has fivePASS samples; these do not establish full
+monitor rate or accepted duration. Native target-to-terminal requires strict stopped
+endpoint, fixed monitor prefix>999/1000, natural drain/freeze, both complete LIVE
+passes/completed verify; infinite total/source900s no-progress remains intact.
+Fixed window expiryOctober9 09:17:35UTC (Shanghai17:17:35) NEVER EXTEND.
+Do not duplicate/restart healthy native work or poll VPS before known target.
+After target check actual OBS/AUTO/terminal progress; a healthy full audit continues
+without LLM/SSH. Final independent LOCAL/OFFLINE eligibility/actual OS restoration
+before guard cancellation/archive handoff/docs push remain PENDING; no final PASS.
+Hourly task remains ACTIVE until complete Q7 closeout; no Q8/12h/24h/48h.
+Earlier checkpoints below retain history, not current operational authority.
+
 Authoritative checkpoint October8 22:43UTC (ShanghaiOctober9): sole corrected
 baseline6aa78342 COMPLETE/SUCCESS22:10:25UTC, both full LIVE audits/completed
 verify PASS, auditdca28756/359352records756shards/21126chunks28418777frames.
@@ -243,9 +272,9 @@ Earlier preparation and closed first-window checkpoints below are retained histo
   old window restored-before-cancelled, new finite window actual arm/admission
   and native launch independently accepted. No source or duration transfer.
 - [x] Unique full baseline bothLIVE/completed verify/independent acceptance: dca28756/6453f800.
-- [ ] Complete same-baseline NONFORMAL/current-incarnation Formal qualification;
-  actual same-baseline NONFORMAL costs and current remaining-capacity/window/
-  current-incarnation strict-start qualification.
+- [x] Complete same-baseline NONFORMAL independently ACCEPT6eee090d/b18c0b71;
+  current-incarnation strict/resources/capacity/finite-window admission PASS.
+  Unique own7200s source T0 created: stage4c303fb9/run d0be1407; target pending.
 - [ ] Own actual7200s target/monitor>99.9%, both full LIVE terminal audits,
   completed verification, independent restored closeout, docs/push/hourly pause.
 

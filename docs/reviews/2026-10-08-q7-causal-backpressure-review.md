@@ -1,5 +1,45 @@
 # Independent Q7 causal backlog correction review
 
+Current actual execution update October8 23:58UTC: corrected artifact7072575b
+has its own Formal2h RUNNING stage4c303fb9/run d0be1407, actual T0
+23:56:09.954789776UTC/7200s targetOctober9 01:56:09.954789776UTC. No final acceptance
+is granted by this start. Native target/strict stop/full monitor denominator/both
+LIVE terminal/verify/independent restored closeout remain pending.
+
+Same-baseline corrected NONFORMAL nativebaf074ad COMPLETE/SUCCESS: actual wrapper
+1301.288229912s/CPU204.813628s/cgroup peak293101568B/cgroup swap0, within outer1800s.
+Five complete producer+independent replay costs11.311820297/13.030618756/
+30.270977065/49.013227274/60.872678077s all<240s; missed pending75 retained and
+catch-up all0/deltafalse/no recovery/no blockers. Independent guarded complete
+control replay0.699328417s/16-member bundle58607f53 accepts exact baseline dca28756,
+source49b4/new707/nativebaf/result9614aeba. Frozen report6eee090d922982eb77ffe67527dcff9639d4d98d5d9e29f004787555ee72ae11,
+identityb18c0b71b832b332fc4817aa9eb592305ff00e5e5d3cc9992312e7bcf5e2f3b5,
+actual marker9dba7136; no Raw/network/production opens or Formal duration credit.
+
+Resource review preserves historical shared-host swapout1084→1336 (+252pages)
+across43 NONFORMAL samples, unchanged swapin11; this is not claimed as zero host
+swap or attributed to Recorder. An initial copied old-review assertion requiring
+whole-host zero delta failed and remains retained. The plan requires recording
+NONFORMAL host conditions and bounded complete costs; current Formal12-sample
+unchanged-swap gate was not weakened. Separate fresh diagnostic e24b8687 binds
+same Recorder07803/current+peak cgroup swap0 and hostpswpin11/out1336 unchanged;
+actual dispatch fresh12 gate also PASS. Historical resource evidence is not reused
+as current freshness and no healthy Recorder/NONFORMAL was restarted.
+
+Only expired resource-prefix replacement changes formal helper01589739→25288f79;
+old prefix is preserved, new read-only prestart sampler uses an exclusive file.
+Independent limited resource binding DESIGN ACCEPTed7e5325. Dispatcher runs with
+system /usr/bin/python3.12 for its already-required dbus; its project CLI/gate/
+sampler children remain in the locked venv. Parent first invoked it with the venv,
+which failed dbus import before any preflight/native unit/T0. That failure is
+retained; exact corrected entrypoint DESIGN ACCEPT2d28bd7475c27c0463dbd5c96c3620d2c90d288329c35552b0e74d1f2d20233e/
+identity9ae87f82a8e99f66675ad1a7fba67e11fb6825cd6e6278009f74baae137f9e18.
+No source/dependency/wheel/baseline/NONFORMAL changes or repeats.
+Actual successful dispatchaaf4d5af/prestartdad9224b/start6bcf8a31/nativebindingc86b1078
+retain current strict/core/resources/capacity and initial fivePASS samples only.
+Actual start binding independent result remains pending; full final review is separate.
+Earlier design/pending statements below are retained historical scope.
+
 GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only: source correction, native auto failure
 handling and minimal cloud/stopped-deployment drafts DESIGN ACCEPT. This grants
 no new wheel, deployment, baseline, Formal duration or final qualification.
