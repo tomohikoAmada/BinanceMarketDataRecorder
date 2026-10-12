@@ -1,6 +1,22 @@
 # Q8 new-data-only owner-policy twelve-hour qualification
 
-Status: **CAPTURE_COMPLETE_AUDIT_FAILED; own twelve-hour target reached, selected-data/restored final acceptance pending.** Latest owner instruction October12: restart12h and do not analyze historical data. Preserve all existing Raw/archive/failure evidence/venvs and unrelated modifications. Production49b4a2d/c7d354be/7072575b/config5b73, all14 features and four Spot/USD-M BTCUSDT/ETHUSDT products remain unchanged.
+Authoritative checkpoint October12 17:58:50UTC (ShanghaiOctober13 01:58:50): **Q8 CAPTURE_COMPLETE_SELECTED_AUDIT_RUNNING**. Preserve sole run9e048bb5665345d0a6518495aeba70af/own43200.136582231s and original target/freeze/failure. No recapture, newT0, historical Raw/manifests/failure analysis or production rebuild. All14/four products/49b4a2d-c7d354be-7072575b-config5b73 remain unchanged.
+
+Only affected selected-data closeout resumes in exclusive child `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-recovery-20261012-im8wwpyk/AUDIT-CONTINUATION-V2-20261013-spawn`; audit root is its `work/audit`. The immutable13129-chunk/33723537-frame/25316255874-decodedB selection is copied without reselection/refreeze. Original Catalog/mapping/selected objects and preflight/receipt/source hashes are retained; child corpus581eebd5 records a genuine fresh quiescence certificate plus original-source provenance. These frame counts are not yet a completed correctness denominator.
+
+Repair helper main9809a7d/exact dual CI38282860090 BOTH SUCCESS. Guarded entry/default real nested-spawn fixtures and selected continuation/native rollback/copy controls independently ACCEPT5654d4f3. First continuation's private `operator.py` shadowed the standard library and failed before preparation/Raw; actual audit-exit OS/archive restoration completed17:26:06.022681582UTC/errors[] before its guard cancellation. This failed child is retained. Minimal filename rename to `arm_audit.py` and exclusive V2 path/unit bindings independently ACCEPT9f1d2a7d; actual installed-venv complete-directory clean import passes, no operator preload/stubs/isolated paths. Full report locations are in docs/reviews/2026-10-13-q8-selected-audit-continuation-review.md.
+
+Actual V2 native arm completed SUCCESS17:56:19UTC; early actual arm/native binding independently ACCEPT81c43ab6. New audit-only guard946d83be ACTIVE_VERIFIED, absolute deadline **October13 03:03:21UTC / Shanghai11:03:21**, unchanged original cap; never extend or reuse a closed window. Fresh dispatch admissiond31134ac: remaining32821.715s > required22191.837s/margin10629.878s, projectedwriter26018467840B/archive2083985133492B >10GiB and hostavailable4791803904B. Approved5 OS owners masked-runtime/inactive; naturally successful archive worker a0f7d8a drained, archive timer paused. Recorder inactive AND disabled/PID0/NRestarts0.
+
+Sole healthy native audit `binance-recorder-q8-selected-audit-continuation-v2-20261013.service`/inv58881b637d8e4ef7aed80c18e43093df/PID404126 started17:56:19UTC. Actual17:58:50 immutable copy completed and nested default spawn controller404224/worker404232 are active under entry404130; exact corpus/provenance/actual worker binding independently ACCEPT25857fe5; CPU96.914s/cgroup577122304B. Infinity total/Stop600/whole-phase pin/source900s no-progress control remain intact. No audit-root or final saved-data result exists at this checkpoint. Do not rerun arm/entry/prepare/capture or duplicate this audit; quota/SSH interruption does not stop healthy native work.
+
+DualLIVE plus completed immutable verification estimate13529.469s (~3h46m), not a completion promise. Reasonable actual result/progress checkpoint **October12 23:00UTC / ShanghaiOctober13 07:00**. Before that let healthy native work proceed; at/after it check actual service/progress/result once, not a stale RUNNING label. Outputs are `work/audit/audit-root.json` and `work/audit/owner-selected-result.json`; the latter is published only after both released LIVE passes and completed verify_audit(historical_control_only=True) return the same hash/result with no findings. No separate audit-verification.json is required by this exact wrapper. Native audit-exit/expiry restores approved OS/archive before own guard cancellation; source900s detects stalled execution.
+
+Final full selected frames strictly>99.9%, independent LOCAL/OFFLINE completed-control reconstruction, actual restoration-before-cancel, natural archive success/future finite deadline/fresh canonicalVERIFY/stopped-disabled same-identity handoff and owner receipt remain pending. Monitor1434/1440=99.5833333% stays separate and unchanged. Hourlyvps-2h ACTIVE/quiet while healthy; pause only after full owner receipt/docs main push. No canonicalV5/predecessor/every-exchange-event/24h/48h/production-ready credit; R-078 remains OPEN.
+
+Previous checkpoints below are retained history and are not current execution authority.
+
+Status: **CAPTURE_COMPLETE_SELECTED_AUDIT_RUNNING; own twelve-hour target reached, selected-data/restored final acceptance pending.** Latest owner instruction October12: restart12h and do not analyze historical data. Preserve all existing Raw/archive/failure evidence/venvs and unrelated modifications. Production49b4a2d/c7d354be/7072575b/config5b73, all14 features and four Spot/USD-M BTCUSDT/ETHUSDT products remain unchanged.
 
 Sole scope `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-recovery-20261012-im8wwpyk`; private checkpoint `/private/var/tmp/bmdr-q8-recovery-retry-20261012-im8wwpyk/CONTINUATION.md`.
 
@@ -31,7 +47,7 @@ Selected dualLIVE/completed-control forecast26769.408s (~7.44h),125% allowance33
 - [x] Actual fresh canonicalVERIFY/finite93600s arm/current budget admission.
 - [x] Independent actual arm/native binding ACCEPTd1d8ff08.
 - [x] Actual all-enabled warm/current strict resources/sole own43200 T0; independent actual-start ACCEPTbbe7ca2d.
-- [ ] Complete43200s strict target/full monitoring evidence, separate metric.
+- [x] Complete43200s strict target/full monitoring evidence, separate metric (monitor1434/1440 is not saved-frame correctness).
 - [ ] Natural freeze/two fullLIVE/completedverify/full new saved-frame denominator.
 - [ ] Independent selected-control-only reconstruction/target and scope coverage.
 - [ ] Actual OS restoration before guard cancel/normal archive/fresh VERIFY/handoff.
