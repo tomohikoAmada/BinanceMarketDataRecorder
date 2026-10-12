@@ -1,0 +1,23 @@
+# Q8 new capture scope review
+
+Verdict: **ACCEPT design, implementation and saved copy qualification only**. Reviewer: authorized independent GPT-6.1 Sol xhigh, LOCAL/OFFLINE/read-only. No VPS/network/production Raw/manifest analysis or production SQLite connection. Actual arm/start, own43200s, full selected-data and restoration acceptance remain separate.
+
+[ADR-0043](../adr/0043-new-capture-only-owner-audit.md) implements the latest owner request: preserve old data and audit only this attempt's new chunks, including warm-up. A frozen start Catalog/three cursors and exact terminal-start chunk difference bind the selection. Original selected lifecycle/archive/operational IDs, schema, registered storage authority and hashes are retained. Production Catalog is never filtered or modified. Old Raw and manifest contents are not opened.
+
+The review caught private SQLite backup WAL inheritance: committed changes could reside in WAL while the main-file SHA and immutable view stayed unchanged. Every private backup now explicitly uses DELETE journaling and closes before hashing; a third metadata snapshot and stable quiescence surround selected-manifest freeze. All zero-frame/gap chunks remain disclosed and aggregate saved frames must be positive.
+
+Two released full LIVE passes precede explicit completed immutable-control reconstruction; no redundant third Raw traversal. Saved-frame conformance and monitor availability use separate denominators. No canonical V5 online, pre-start context, predecessor, inherited duration or every-exchange-event completeness credit is granted.
+
+Validation: 11 submitted real-scope tests, 17 independent selection boundaries, 23 recovery cases, 15 capture/restoration cases and 3 synthetic Raw cases =69 LOCAL PASS under network/production-file/production-SQLite guards. Saved actual Linux23+15+3=41 PASS; exact copy15helpers and all18 binding inputs match. Archive TMP/SQLite device64785 and bmdrUID999 agree. Repo focused56 tests/Ruff/mypy/diff check PASS. Old poison ignored; new corruption fails; missing creation/history membership/zero denominator/changed terminal metadata fail.
+
+Frozen evidence:
+
+- Report `/private/var/tmp/q8-scoped-corpus-review-_mw5j26f/REPORT.md`, SHA `dd376fa04f93da9da95acfb73e77493950fe758141ef50da31ad4f304204837e`.
+- Qualification summary SHA `2d1a1ca8f5e1b2065c75225e25e0e8d62ec32639fc54a3861b2324b8a09bbd02`.
+- Final candidate manifest SHA `034f25013a8fde9d9d3746bcfb298b300524ea03924814f2dabff193c64e8be5`; output manifest SHA `12046abe7abb0f8333f25c1bf43e3dcc47749e28bde4886a16a0f127f332bcd0`.
+- Adapter `936e614aefe7e3f0e128dd4f0317a955afcaff61240410a8683b8e5e5ba12588`; private controller `c7cef6c7efa0ae59fbf7892d6ea24a6fc28d27facc242ba96702842260ab2f90`; scoped terminal `cacbcf0a0e377f975e7ba61d7437e5aa4a89166e7e1699b36a00d287ccec6bd9`.
+- Binding manifest `4e3f4b3ba5e0e78141c31175dc2f4f3a7b7c97d9b7a9ed19db70903b2f98544d`.
+
+Production49b4a2d/c7d354be/7072575b/config5b73 is unchanged. New first finite93600s window forecast required83441.759784s/margin10158.240216s/projectedwriter11739087765B>10GiB. Actual admissions must recompute current remaining budget; forecasts are not data/elapsed credit. Stop before24h/48h; production readiness remains NO/R-078 OPEN.
+
+Actual arm separately ACCEPT: report `/private/var/tmp/q8-actual-arm-review-no1dhmlb/REPORT.md` SHA `d1d8ff08d2464bf03be8dec9ba4cb917773128d7dfd3fb00fdc6aed8b56a6491`; result `cbac0d28a70f068def38a143c5a2f156cc9acaf10103b2f6e3fdc758dd82c6a4`, output manifest `1e2b36fa177f502c6c95e11be6bd80b0c57b4496306715c90ad7584388c58b30`. Reconstructed four exact current receipts/all18 manifest inputs/native outer argv. Actual window immutable93600s expiry2026-10-13T03:03:21UTC, unchanged canonical identity, both admissions/reserves and stopped-disabled Recorder agree. Complete controls SHA `5aefbfb81fa7714199732efc41a42793432416858f875d3be3883da353d821b6`, command receipt `0a4806d731ed62d9cbae0ddba72ccb24d61d29604a49a90b625f87257af4940a`. This grants no launch/start/12h/data/restoration credit.

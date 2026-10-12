@@ -1,0 +1,15 @@
+# ADR-0043: Audit only a new owner-policy capture
+
+Status: accepted design/implementation/copy qualification, October12,2026. Actual capture/target/data/restoration qualification remains separate.
+
+The owner requested a fresh12h test without analyzing historical data. The Recorder deployment and data directory remain unchanged. Existing data is retained; the private test controller defines a new capture boundary before enabling Recorder.
+
+The boundary contains the three Catalog cursors and a hash-bound, read-only metadata backup. Terminal membership must equal both the start/end chunk-ID set difference and the post-boundary initial creation transitions. Missing initial rows or missing prior identities reject qualification. A private Catalog copy retains original selected chunk/lifecycle/archive/operational row IDs and values, schema and storage authority. Old metadata is copied only to prove selection; old Raw and manifest contents are not traversed. Every selected chunk, including zero-frame and gap/incomplete chunks, remains disclosed. Total selected saved frames must be positive.
+
+All private SQLite snapshots use DELETE journaling and close before fsync/hash or immutable reads. Consistent terminal snapshots and stopped-mutator quiescence surround the selected manifest freeze. Production Catalog is not modified by this adapter.
+
+The released run_audit performs producer LIVE and independent LIVE qualification on the exact selected manifests/Raw. Its complete PASS_CANDIDATE with no findings is followed by hash-bound immutable-control verification, matching the released completed-baseline CLI semantics. That final verification does not perform an unnecessary third Raw traversal. The owner receipt labels two LIVE passes and its verification mode explicitly.
+
+Saved-frame contract conformance uses the complete selected frame denominator (including this attempt's warm-up and12h capture); monitoring availability has a separate denominator. No claim is made about every exchange event, pre-start stream context, canonical V5 online reconnect enforcement, or next-stage predecessor eligibility. Full final independent control reconstruction and actual restored handoff are still required. This scope does not change the production transport, configuration, wheel or language.
+
+Independent GPT-6.1 Sol xhigh LOCAL/OFFLINE review ACCEPT: report SHA `dd376fa04f93da9da95acfb73e77493950fe758141ef50da31ad4f304204837e`, LOCAL69 and saved Linux41 cases PASS. Exact adapter SHA `936e614aefe7e3f0e128dd4f0317a955afcaff61240410a8683b8e5e5ba12588`; scoped binding SHA `4e3f4b3ba5e0e78141c31175dc2f4f3a7b7c97d9b7a9ed19db70903b2f98544d`. See [review](../reviews/2026-10-12-q8-new-capture-scope-review.md).
