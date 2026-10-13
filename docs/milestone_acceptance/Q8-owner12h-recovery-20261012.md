@@ -1,5 +1,15 @@
 # Q8 new-data-only owner-policy twelve-hour qualification
 
+Authoritative accepted closeout October12 23:58UTC: **Q8 COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run9e048bb5665345d0a6518495aeba70af completed its own43200.136582231s. Both complete released LIVE passes, completed immutable-control verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE reconstruction ACCEPT33723537/33723537 saved frames (observed contract conformance100%, meeting the owner's strictly>99.9% criterion). Selected13129chunks/25316255874decodedB/1672427937storedB; audit48c93196/result7c266607. No recapture/newT0/history audit or production rebuild.
+
+The2645 retained gap/incomplete manifests include all16 zero-frame manifests; no manifest has the overlap flag. These counts are not additive missing-frame denominators. Selection includes this attempt's warm-up, own12h and original orderly stop/drain tail:15 manifests extend up to6.266588672s after target, granting zero additional duration credit. Monitor1434/1440PASS=99.5833333% is separate from saved-frame correctness. No claim that every Binance event was captured.
+
+Actual OS/archive restoration ended October12 20:34:53.189673295UTC/errors[] before guard cancellation20:34:53.241014250UTC; the window is CLOSED, never rearm or extend it. Fresh canonicalVERIFY19cdfb4f and actual handoff4e1d3074 independently ACCEPT: sameboot/config/identity, RecorderinactiveANDdisabled/PID0/NRestarts0, original3 OS owners enabled-active/all5 unmasked, natural archive worker success/backlog0 and finite futuremonotonic deadline. Definition-only pin holds the stopped unit for verification without starting Recorder.
+
+Separately published owner new-data-only12h receipt2ce08333 binds the original run/target, full selected audit, independent reportb6a4c8ce/result9920f34b and restored handoff. All14 features/four Spot+USD-M BTCUSDT/ETHUSDT products/production49b4a2d-c7d354be-7072575b-config5b73 and all prior data/evidence/venvs remain preserved. Q9/24h and Q10/48h NOT_STARTED; canonicalV5 final/predecessor and production-ready remain false/R-078 OPEN. Stop here; completion trigger reached, pause hourlyvps-2h after this main closeout push. See [Q8 final acceptance](../milestone_acceptance/Q8-owner12h-recovery-20261012.md) and [final independent review](../reviews/2026-10-13-q8-new-data-final-independent-review.md).
+
+Previous checkpoints below are retained history, not current operational authority.
+
 Authoritative checkpoint October12 17:58:50UTC (ShanghaiOctober13 01:58:50): **Q8 CAPTURE_COMPLETE_SELECTED_AUDIT_RUNNING**. Preserve sole run9e048bb5665345d0a6518495aeba70af/own43200.136582231s and original target/freeze/failure. No recapture, newT0, historical Raw/manifests/failure analysis or production rebuild. All14/four products/49b4a2d-c7d354be-7072575b-config5b73 remain unchanged.
 
 Only affected selected-data closeout resumes in exclusive child `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-recovery-20261012-im8wwpyk/AUDIT-CONTINUATION-V2-20261013-spawn`; audit root is its `work/audit`. The immutable13129-chunk/33723537-frame/25316255874-decodedB selection is copied without reselection/refreeze. Original Catalog/mapping/selected objects and preflight/receipt/source hashes are retained; child corpus581eebd5 records a genuine fresh quiescence certificate plus original-source provenance. These frame counts are not yet a completed correctness denominator.
@@ -16,7 +26,7 @@ Final full selected frames strictly>99.9%, independent LOCAL/OFFLINE completed-c
 
 Previous checkpoints below are retained history and are not current execution authority.
 
-Status: **CAPTURE_COMPLETE_SELECTED_AUDIT_RUNNING; own twelve-hour target reached, selected-data/restored final acceptance pending.** Latest owner instruction October12: restart12h and do not analyze historical data. Preserve all existing Raw/archive/failure evidence/venvs and unrelated modifications. Production49b4a2d/c7d354be/7072575b/config5b73, all14 features and four Spot/USD-M BTCUSDT/ETHUSDT products remain unchanged.
+Status: **COMPLETE_OWNER_NEW_DATA_ONLY; own twelve-hour target/full selected saved-data/independent restored closeout ACCEPT.** Latest owner instruction October12: restart12h and do not analyze historical data. Preserve all existing Raw/archive/failure evidence/venvs and unrelated modifications. Production49b4a2d/c7d354be/7072575b/config5b73, all14 features and four Spot/USD-M BTCUSDT/ETHUSDT products remain unchanged.
 
 Sole scope `/srv/recorder-data/recorder-archive/evidence/Q8-owner12h-recovery-20261012-im8wwpyk`; private checkpoint `/private/var/tmp/bmdr-q8-recovery-retry-20261012-im8wwpyk/CONTINUATION.md`.
 
@@ -48,9 +58,19 @@ Selected dualLIVE/completed-control forecast26769.408s (~7.44h),125% allowance33
 - [x] Independent actual arm/native binding ACCEPTd1d8ff08.
 - [x] Actual all-enabled warm/current strict resources/sole own43200 T0; independent actual-start ACCEPTbbe7ca2d.
 - [x] Complete43200s strict target/full monitoring evidence, separate metric (monitor1434/1440 is not saved-frame correctness).
-- [ ] Natural freeze/two fullLIVE/completedverify/full new saved-frame denominator.
-- [ ] Independent selected-control-only reconstruction/target and scope coverage.
-- [ ] Actual OS restoration before guard cancel/normal archive/fresh VERIFY/handoff.
-- [ ] Owner receipt/plan-state-handoff main push/hourly task pause.
+- [x] Natural freeze/two fullLIVE/completedverify/full new saved-frame denominator (audit48c93196/result7c266607).
+- [x] Independent selected-control-only reconstruction/target and scope coverage.
+- [x] Actual OS restoration before guard cancel/normal archive/fresh VERIFY/handoff.
+- [x] Owner receipt and final plan/state/handoff prepared for this closeout main push; pause hourly task immediately after push.
 
 Actual startup is not accepted12h. ProductionreadyNO/R-078 OPEN. Stop before24h/48h. Healthy native capture/audit survives quota/SSH and must not be duplicated; if a valid target exists and only audit/closeout fails, continue affected closeout rather than blindly rerunning12h.
+
+## Accepted current-attempt evidence
+
+The separate remote receipt is `AUDIT-CONTINUATION-V2-20261013-spawn/owner-new-data-only12h-acceptance-20261013.json`, SHA `2ce08333539ec8102bcc1bcac4e070ce6472403b960569e66de83aabbdaed851`. Full original target SHA `d347e622738727b72b5ee53eb05d998dc1300f0ef93b838cb6c666fce40bd986` retains the actual43200.136582231s. Full audit SHA `48c93196f7bb687bdb982f0fa4d86c23dc4ef0f3d5f20a9c113fe05a1364716c` equals the completed-control verification hash; owner-selected result SHA `7c26660751013438c0354e29b8c905af2e560d6b6447e29baf510c572f99fdf8` binds both complete LIVE passes and all selected saved frames. Original selected Catalog/26 manifest-freeze shards/13129 selected objects remain byte-identical; no whole-history Catalog/Raw export or analysis occurred.
+
+Control-only export SHA `2fbdb6832da44f53c4daf87d1b75a0ac987dc41ab27b5023fedac0552ef38ca3` has14200 verified members. Independent report `/private/var/tmp/q8-current-terminal-review-rpwaxoew/FINAL_SELECTED_OWNER12H_REVIEW.md` SHA `b6a4c8ce9ab9da6b0c85113ae9dd9e67ce81da149b85a94b9afa9043ab214b39` and result `/private/var/tmp/q8-current-terminal-review-rpwaxoew/final-owner12h-result.json` SHA `9920f34bc22bc085fd94951bbfbc62b287647d597cf05d27128d0cecf7099904` accept full223462-record/470-shard control reconstruction, selected frame/byte totals, original source preservation, strict target/same identity and actual restored handoff. No Raw/production/network connections were opened. Exact independent counters and the denied import capability probe are retained in that report.
+
+Actual handoff SHA `4e1d3074d402c4814e37df893ad950e1cac5510755ef0bda249d492a2311977c` and fresh canonicalVERIFY SHA `19cdfb4ff870891cdaba38ebd2891f1adcf574ce729d6979bf8e1370a953d957` prove stopped-disabled Recorder and restored OS/archive authority. Natural archive workerd36afc384fa5496e8fc1aad4935c3c2a completed successfully/backlog0; deadline912387510277us was finite and later than observedBOOTTIME912326022664us. Audit/native/guard are settled; no second window or source/time transfer is granted.
+
+Native audit58881b63 ended20:34:53UTC, CPU9050.218s/cgroup peak2.5GiB/swap0 per native journal. Both earlier affected closeout failures, original target/freeze/failure and all production data/venvs are preserved. This receipt meets the owner saved-data criterion for this12h request; it is not canonical V5 stage-final/predecessor eligibility, every-exchange-event completeness, production readiness or permission to start24h/48h.
