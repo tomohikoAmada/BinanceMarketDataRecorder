@@ -1,0 +1,162 @@
+{
+  "verdict": "ACCEPT_EXACT_KERNEL_MARKER_IMPLEMENTATION_DESIGN_COPY_LINUX_SYNTHETIC",
+  "helper_sha256": "f9ccf06d1c5bdfa7e97b67c942d705b000c3fecd6933f09b7d7f20e5ffd6bdab",
+  "wrapper_sha256": "fa216b3700500ea1be477bdc829467107db202ef370d7dff2a84e8fd2543a5b4",
+  "argv_sha256": "57427f98f4041ea2fb90c9ec9a020bcccbec1278a8ecad44ba2ca162f19cd50b",
+  "source_member_count": 17,
+  "unchanged_prior_members": 15,
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R1-owner2h-20261014-e56ed32114ca",
+  "source_git_sha": "8fa54d18ac08f515362229d7f9c739b45767c2b7",
+  "wheel_sha256": "26c6c5c73c3a23f1459331389cb0297c90f7e0a1636c582c44625f1521e6fdc7",
+  "identity_sha256": "d804a02f14e1f80faa8bceed8eeaef41931ab986db7db60812157f4ed879ebeb",
+  "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+  "running_kernel": "6.8.0-146-generic",
+  "target_seconds": 7200,
+  "finite_window_seconds": 28800,
+  "actual_copy_qualified": true,
+  "actual_arm_accepted": false,
+  "actual_t0_accepted": false,
+  "accepted_duration_ns": 0,
+  "saved_frame_denominator_accepted": 0,
+  "canonical_v5_final_eligible": false,
+  "pending_147_kernel_qualified": false,
+  "unresolved_findings": [],
+  "resolved_finding": "Exact installed pending package version/status revalidation added before and after masking",
+  "synthetic_case_count": 22,
+  "synthetic_cases": [
+    {
+      "case": "unset-default-false",
+      "result": "PASS",
+      "rejected": false
+    },
+    {
+      "case": "explicit-false",
+      "result": "PASS",
+      "rejected": false
+    },
+    {
+      "case": "changed-boot",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "changed-kernel",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "changed-marker-hash",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "non-root-marker",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "group-writable-marker",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "other-writable-marker",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "symlink-marker",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "nonregular-marker",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "auto-reboot-true",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "unknown-auto-value",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "scheduled-shutdown",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "changed-pending-version",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "pending-package-removed",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "dpkg-dirty",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "clock-not-synchronized",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "full-main-single-receipt",
+      "result": "PASS",
+      "rejected": false
+    },
+    {
+      "case": "post-mask-marker-change",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "post-mask-package-change",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "post-mask-reboot-scheduled",
+      "result": "PASS",
+      "rejected": true
+    },
+    {
+      "case": "active-updater-rejected",
+      "result": "PASS"
+    }
+  ],
+  "fixture_sha256": "e22025b5b7907ddc5694d061ab07b6b525ec8c03d1d6174f1393176b7233bd47",
+  "fixture_result_sha256": "72b662f0e9dee626fdb803000aea9ddb0e8b192689a938c274d36139eb426f50",
+  "minimal_diff_bindings_sha256": "6c7ae40e4ee9445b608a5d271492b77021dca838e204eeab4ab04db3b2de4f3c",
+  "report_sha256": "938475496ec78dd999ecea89ecd2b4631be2955ad70c31d9cbdfd0b413dbb57d",
+  "policy_report_sha256": "fc854c2242daaa922ff05918a23de5c22b37178d9694c8b1b368f687c3c185ff",
+  "input_hashes": {
+    "owner2h-kernel-notice-arm-argv.json": "57427f98f4041ea2fb90c9ec9a020bcccbec1278a8ecad44ba2ca162f19cd50b",
+    "owner2h-proposed-arm-argv-v2.json": "1f2b1697440df97617f59bbc5b949565f0c400187be660020b9753a9331bc9b7",
+    "actual-owner2h-arm-result.json": "9792c0f3ada4f7be6c7e90f273ed08942eef8207f3f5c3c33221990dbc3c9893",
+    "actual-r1-prearm-reboot-marker.json": "db1fcaf617cbba1608ef972b50ce5ce3ea8e8766849bd34c8ab2de569713e047",
+    "actual-r1-auto-reboot-config.json": "f80aa51bce5270a837dab0a9eff4c874bfd725a14d0b16954f6cc39cd459a72a",
+    "ubuntu-reboot-marker-research.md": "ea927b4cc925e92ca3cdc1fb2b3a6fd8e2c53e1a8b8b57c1aaedd4e3aaedf9b7",
+    "actual-owner2h-kernel-entry-copy-linux.json": "79a76197766b8668085d0af2dd8b5326c503df3517c16534866766308b4e2fe4"
+  },
+  "network_connections": 0,
+  "production_data_opens": 0,
+  "limits": [
+    "Exact design/new-file copy/Linux synthetic qualification only; actualarm/current admission/launch remain future qualifications.",
+    "Known current marker retained; no reboot, marker deletion, setting or production source/wheel change.",
+    "No new duration/saved-data/canonicalV5/productionready/12h credit.",
+    "Frozen current boot/kernel/package/marker assumption only; mismatch or unknown evidence rejects conservatively."
+  ],
+  "linux_synthetic_case_count": 22,
+  "actual_copy_linux_sha256": "79a76197766b8668085d0af2dd8b5326c503df3517c16534866766308b4e2fe4",
+  "pre_copy_implementation_report_sha256": "44b343bda7253e7cae080144f2ba354d2c70fcbc030ec94a9ac933adfa119047"
+}

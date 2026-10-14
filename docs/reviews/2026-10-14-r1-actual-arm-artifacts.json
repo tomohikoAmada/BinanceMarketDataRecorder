@@ -1,0 +1,47 @@
+{
+  "kind": "INDEPENDENT_R1_ACTUAL_ARM_ARTIFACTS",
+  "members": {
+    "R1_ACTUAL_ARM_REVIEW.md": {
+      "sha256": "dcb7c0cfd25b35039d84ba487f6e221c988b98f1ec8b71a7491b9f86dda2da7a",
+      "bytes": 5571
+    },
+    "R1_ACTUAL_ARM_RESULT.json": {
+      "sha256": "040166a171017de3eb4edc79fac1c9cb82dde35c48ebc9adf481b13ee47d3279",
+      "bytes": 4794
+    },
+    "ACTUAL_ARM_RECONSTRUCTION.json": {
+      "sha256": "b004e86208cbb5b2221144b46d30783da49d12c2f36411ac4c41d0357339a2b0",
+      "bytes": 4612
+    },
+    "reconstruct_actual_arm.py": {
+      "sha256": "973fbcad59f558f500bfbe4ede8b793c741129a4661f505a360757c36b2ce3de",
+      "bytes": 11220
+    }
+  },
+  "input_hashes": {
+    "actual-owner2h-kernel-notice-arm-result.json": {
+      "sha256": "8e7b77dcbd1f4271333c44863e4f64be93eaee168be0b3ee44fdf6180c734cba",
+      "bytes": 20044
+    },
+    "actual-owner2h-kernel-notice-arm-dispatch.json": {
+      "sha256": "08626ed2b5449d0dbf2cacff935d658836a98031deeb848e7db060772ac9f607",
+      "bytes": 2304
+    },
+    "owner2h-kernel-notice-arm-argv.json": {
+      "sha256": "57427f98f4041ea2fb90c9ec9a020bcccbec1278a8ecad44ba2ca162f19cd50b",
+      "bytes": 3348
+    },
+    "actual-owner2h-kernel-entry-copy-linux.json": {
+      "sha256": "79a76197766b8668085d0af2dd8b5326c503df3517c16534866766308b4e2fe4",
+      "bytes": 2488
+    }
+  },
+  "published_hashes": {
+    "quiet-window-actual.json": "5a98770c5d9c76dce371f39f6a6caf9a741722f27521c2dadbf8f93a6c8d5176",
+    "prearm-admission.json": "67453fa9994b1ceaf4f2d203112a342609d5b7b046c814a41cf7ec05ca3c7114",
+    "postarm-admission.json": "8068411e31ad055d242b60096cb47b25b77e6686d49d8f133e4c0fac9a7df9f0",
+    "canonical-verification.json": "de1e1c376e6d9e216948db2d658f261ee290c35d9c7a424cec4ab1c7021d37ea",
+    "kernel-update-pending.json": "e20d7ec45570fc97e890192f932b999d13c46c0175ae4852652ea2a60ac37edb",
+    "restoration.jsonl": "4f55e5119684c63d2599ddd58edfd533ada183ed479e0eaf061266e9fadd2917"
+  }
+}
