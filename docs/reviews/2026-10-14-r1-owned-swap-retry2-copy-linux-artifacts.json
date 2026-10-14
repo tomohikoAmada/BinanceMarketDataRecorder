@@ -1,0 +1,42 @@
+{
+  "kind": "INDEPENDENT_R1_RETRY2_COPY_LINUX_ARTIFACTS",
+  "members": {
+    "R1_RETRY2_COPY_LINUX_REVIEW.md": {
+      "sha256": "e8986b6a295a07652fbe45adf8c4c384e6d83085dbcdc31e6d3e6e5b8c329282",
+      "bytes": 2164
+    },
+    "R1_RETRY2_COPY_LINUX_RESULT.json": {
+      "sha256": "ad70675494a40d94bb47707a3e0210868bda5cd15ebf26a0fb20dfa883560c3a",
+      "bytes": 2694
+    },
+    "R1_RETRY2_OWNED_SWAP_DESIGN_REVIEW.md": {
+      "sha256": "5ebf8f9f2c7296e8a9adc8d5440002a694ec6cf30dea9b17adcc1f6cb5547dfc",
+      "bytes": 5719
+    },
+    "R1_RETRY2_OWNED_SWAP_DESIGN_RESULT.json": {
+      "sha256": "96b3aec9f9a452aec0d697bfb5fbc162e73336eaadd5daf1dc0daedc114e4ea7",
+      "bytes": 4931
+    },
+    "R1_RETRY2_OWNED_SWAP_DESIGN_ARTIFACTS.json": {
+      "sha256": "c900bb06a96016f311a63bee76f74b34aec5c54249b14552ea48f1129b653c9d",
+      "bytes": 3451
+    },
+    "RETRY2_EXACT_DESIGN_RECONSTRUCTION.json": {
+      "sha256": "eb8a3637c2852cf02c1cd8a0b3b83d5952fa97892922627a909f51f9854f859a",
+      "bytes": 3437
+    },
+    "WARM_FAILURE_RECONSTRUCTION.json": {
+      "sha256": "08fb6530a9eabf227e41bbab3e0b22d53b1233830c5b839b38621cdb83f385c9",
+      "bytes": 2176
+    },
+    "OWNED_SWAP_BOUNDARIES_RESULT.json": {
+      "sha256": "4af993ba58d3903ceba73bae8454fefdd53c3f7900e12130a86fabae2d57147b",
+      "bytes": 3057
+    },
+    "independent_owned_swap_boundaries.py": {
+      "sha256": "6347819a18ca469d0695a5e3910ff7b8651e13abe803ab16dbdf46c58d6b87a6",
+      "bytes": 5914
+    }
+  },
+  "actual_copy_input_sha256": "7b8d91655eb8f6caf4bee06cec9dd236b8ac02a1bd6f0f12a3b1709e47640dd6"
+}

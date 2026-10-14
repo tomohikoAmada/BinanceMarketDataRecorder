@@ -1,0 +1,15 @@
+# R1 retry3 actual copy/arm qualification
+
+**ACTUAL COPY / ARM / FIXED WINDOW / CURRENT ADMISSION ACCEPT**, limited to this actual snapshot. No unresolved finding remains; no capture/T0, own7200 duration, saved data, restored closeout or12h credit is granted.
+
+All18 actual readback hashes/lengths match the accepted proposal. Files are root:9880640; Q root:9880750 and tmp999:9880700 share archive device64785. Controllerdc85030b and commonff19378b are bound, with unchanged source8fa/wheel26c6/identityd804/config5b73. No unaffected source/test/Raw proof was repeated.
+
+Actual dispatch ed21c19f exactly matches accepted argv17e90b72. Initial live properties bind inv58195091e3754bd181542ed097b00d36/MainPID451717, oneshot/Start40min/Stop25min/UMask0027, whole-phase definition pin/canonical interpreter/new wrapper and failure-only restoration. Native journal starts12:52:06.508092UTC and finishes SUCCESS12:52:27.533005, with16.907s CPU/literal104.4M memory peak/0B swap peak. The later12:53:17 GC lookup warning and post-GC default properties are excluded from original execution-property evidence and are not failures.
+
+Allfive raw publication text hashes reconstruct. Window72e3ce3b is ACTIVE_VERIFIED on the same boot/source/identity; its active expiry invocation5bfc1d09947a445e941a75e994024ec4 has fixed deadline1792011140, **October14 20:52:20UTC / ShanghaiOctober15 04:52:20**. Fixed28800 is newly armed and must not be extended/reused. Original three OS owners are enabled-active, then allfive are inactive/masked-runtime with a rejected masked apt-start probe. The before/after kernel notices match except UTC: running146, same exact marker bytes/mtime, installed147+linux-base, unset/default-false automatic reboot and no shutdown, marker change or reboot. Pending147 is not claimed active.
+
+Fresh canonicalde1e is VERIFIED8fa/d804/26c6/config5b73. Pre2cdaa769/postca05d50c are ADMITTED at unchanged62878 census/zero backlogs. Post remaining28792.721167087555s exceeds required20849.632803396667s by7943.0883636908875s. Projected writer10857422563B exceeds10GiB by exactly120004323B; archive2079394429391B also exceeds the reserve, on distinct devices. These are snapshot admission estimates and baseline metadata, not duration or saved-frame correctness.
+
+Actual Recorder is inactive-disabled/PID0/NRestarts0; archive timer is enabled-active. NewQ has no start/restoration/cancellation in the supplied controls. Priorretry2 is separately CLOSED/restored-beforecancel, and its interrupted actual arm was never independently accepted; no old time is transferred. Future unique launch repeats exact current admission, then strict warm/newT0, owned cgroup current/peak0 and own7200 target; complete selected dualLIVE/controlverify/independent data and actual restored handoff remain mandatory.
+
+Only four supplied current local metadata/binding inputs were used. No network/VPS, production Raw/manifest/Catalog content, candidate/source edit, actual arm/launch operation or repeated fixture occurred. The result binds exact inputs/publications; acceptance is only at the provided postarm snapshot.

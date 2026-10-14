@@ -72,3 +72,12 @@ Newactualarm19b4e58d SUCCESS07:50:09UTC: fixed28800 expiry15:50:03UTC, quiet5a98
 
 
 October14 08:15UTC actual warm closeout: original63352f72 failed08:11:35UTC, no owner-start/T0; blanket hostswap delta57pages veto was the immediate cause.19 observed Recorder current-swap values0/strictPASS7, lifetime peak unknown, no oldwarm PASS. Native actual restoration-before-cancel succeeded08:12:57; window CLOSED,178 newchunks preserved. Proposed retry2 exclusive8ae2482a37c4 preserves release/all14/fourproducts, uses mandatory Recorder current+peak0 with path/PID binding and original strict/resource/time/data bounds. Parent15+23+17 fixtures PASS; exact independent qualification/Linux affectedfixtures/copy/native current admission still pending. No newT0 or 12h started.
+
+
+Retry2 DESIGN [ACCEPT5ebf8f9f](../reviews/2026-10-14-r1-owned-swap-retry2-design-review.md), independent24 exact boundary cases. Physical18members/canonicalLinux15+23+17 [ACCEPTe8986b6a](../reviews/2026-10-14-r1-owned-swap-retry2-copy-linux-review.md). Actualarmc98d1c54 success08:33:41UTC/newquiet542617c4/fixeddeadlineOct14 16:33:37UTC; post6f5da66b capacity/time pass/current62878counts and strict preserved. Actualbinding qualification pending, no capture/T0 yet; newown2h and12h remain pending.
+
+
+Oct14 12:44UTC quota-resume actuale42d797d confirms retry2 never launched capture/T0 and remaining13729s<required20849.633. Actual closeout627240c2 restored OS/archive12:45:25UTC/errors[] before guard cancellation; oldwindow CLOSED. Fresh exclusive retry3ecaadc0d8dca is only scope/unit rebinding, counts62878 unchanged, production/controller unchanged. Current preflight9f40f0f3 capacity/time PASS; new exactbinding/copy/nativearm/warm/T0 qualification pending. No new2h/12h credit.
+
+
+Current retry3 exact path/unit binding [ACCEPTd82acb62](../reviews/2026-10-14-r1-retry3-binding-review.md), actual18copy/arm/currentwindow/canonical/reserves [ACCEPTe62b6fad](../reviews/2026-10-14-r1-retry3-actual-arm-review.md). Fixed window20:52:20UTC, neverextended. Unique nativecapture92ed25ba launched12:57:30UTC; actual0f892f23 shows Typeexec/Runtime10080/Stop1500, launch-admissioncdc99136 and capture-launch479d6573. It owns newmetadata boundary/warm/actualstrict and then own7200T0; launch is expresslyNOT_YET_T0. Reasonablewarm/startcheckpoint13:12:30UTC; new2h actualduration/data/finalindependent-restored receipt and subsequent new12h remainpending. No extraVPS checks/duplicate healthywork.

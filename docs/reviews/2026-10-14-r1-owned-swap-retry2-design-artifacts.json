@@ -1,0 +1,57 @@
+{
+  "kind": "INDEPENDENT_R1_RETRY2_OWNED_SWAP_DESIGN_ARTIFACTS",
+  "members": {
+    "R1_RETRY2_OWNED_SWAP_DESIGN_REVIEW.md": {
+      "sha256": "5ebf8f9f2c7296e8a9adc8d5440002a694ec6cf30dea9b17adcc1f6cb5547dfc",
+      "bytes": 5719
+    },
+    "R1_RETRY2_OWNED_SWAP_DESIGN_RESULT.json": {
+      "sha256": "96b3aec9f9a452aec0d697bfb5fbc162e73336eaadd5daf1dc0daedc114e4ea7",
+      "bytes": 4931
+    },
+    "RETRY2_EXACT_DESIGN_RECONSTRUCTION.json": {
+      "sha256": "eb8a3637c2852cf02c1cd8a0b3b83d5952fa97892922627a909f51f9854f859a",
+      "bytes": 3437
+    },
+    "WARM_FAILURE_RECONSTRUCTION.json": {
+      "sha256": "08fb6530a9eabf227e41bbab3e0b22d53b1233830c5b839b38621cdb83f385c9",
+      "bytes": 2176
+    },
+    "OWNED_SWAP_BOUNDARIES_RESULT.json": {
+      "sha256": "4af993ba58d3903ceba73bae8454fefdd53c3f7900e12130a86fabae2d57147b",
+      "bytes": 3057
+    },
+    "independent_owned_swap_boundaries.py": {
+      "sha256": "6347819a18ca469d0695a5e3910ff7b8651e13abe803ab16dbdf46c58d6b87a6",
+      "bytes": 5914
+    }
+  },
+  "input_hashes": {
+    "actual-owner2h-start-checkpoint-0815.json": "126035c0daf3cf998179f3c9e5391ebedfcef88fc6add16794e1b311f93e0d0b",
+    "actual-r1-warm-swap-diagnosis.json": "fd38dd5c1d7b8c91e21edc1bef1a01590afac1f6caed3168c805b3d7fbcdf36f",
+    "owner2h-retry2-proposal.json": "fc3039bd309e1d1baa28f2c43e15814593fd817baff3e209df84af1579d77b2f",
+    "owner2h-retry2-arm-argv.json": "f5cadafdc8f8484829888e583a150f2490b54b110ccef5c5196761f929d526e7",
+    "actual-owner2h-retry2-preflight.json": "681277b433b12c5e53c678b1b11a24115c10c3631be662d65485fb81a7a9c2c5",
+    "owner2h-retry2-local-fixtures.json": "b9382cf1522730e24a534cfb12c4e8178342df52871358ccc24e47e9e0bf3e50"
+  },
+  "candidate_members": {
+    "arm-natural-kernel-pending.py": "fa216b3700500ea1be477bdc829467107db202ef370d7dff2a84e8fd2543a5b4",
+    "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+    "arm.py": "39f4bd9e5544d17119b968e425260a71778d5e84bf64dc611c3c1a992abe46e3",
+    "arm_kernel_pending.py": "f9ccf06d1c5bdfa7e97b67c942d705b000c3fecd6933f09b7d7f20e5ffd6bdab",
+    "common.py": "cb8384d19c38753d521323909b087b2ab000b3da28104c9bf66795477a0624ab",
+    "controller.py": "dc85030b39d250887fb49e6ecb10a2351177c9d6e2acd36c25386ab9b5e252ae",
+    "fixtures.py": "9a434be793200bd4c12fd18944a0db56d6156908f3a030706951789450b78399",
+    "launch.py": "789ba373140964c88f9ab7b90c6769e5b5387cad87e1e4786c6af305ddb26e65",
+    "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+    "qualification_auxiliary_gate.py": "648bd65dd56bcd80da4601534d836640bbac1c2347ce1bc9a5ab8ab2d0f87670",
+    "qualification_core_recovery.py": "dfb252a63fcb5e511e1cfb967bee6609f97c8b1f2936c91eee78d3c03db4f844",
+    "qualification_monitor_rate.py": "da19d4968e2978390d5e3a8ea9ceefee289549d108c8be10ac05e605d26896ba",
+    "qualification_scoped_corpus.py": "936e614aefe7e3f0e128dd4f0317a955afcaff61240410a8683b8e5e5ba12588",
+    "recovery_fixtures.py": "73165b7906afc7f736104eadeda7933a4cefcc0210965822a2a79665466cf5dd",
+    "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+    "scoped-linux-fixtures.py": "f9687e7cd611f0c284ee469dfe446c8e0dd94fe5f86692c55e42bf9028fb84eb",
+    "scoped-terminal.py": "af26508b7a543c8856905b42853de36373d53c716ffd1d984f3d505a0ace8fd0",
+    "swap_gate_fixtures.py": "d22357dd0225d880977b4895fc7caa3ce550f2365385f093f77887f7b0388ad7"
+  }
+}
