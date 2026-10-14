@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production is new8fa54d18/26c6c5c7/d804a02f/config5b73; old49b4/c7d/707 is retained.
-Recorder inactive AND disabled. R1 wheel/cloud and stopped canonical deployment are independently accepted. First new2h native warm failed before T0 on whole-host swap counter change; its finite window was actually restored and closed. A fresh exclusive retry with Recorder-owned current/peak swap admission is prepared for independent review. New2h and new12h remain pending.
+Current operating checkpoint: retry3 native92ed25ba is preparing its metadata boundary and actual warm/strict startup, launchedOctober14 12:57:30UTC. Its own2h T0 is not yet confirmed; new2h and12h remain pending. The R1 wheel/cloud/stopped deployment and corrected owned current/peak swap gate are independently accepted. Earlier stopped states and failed/closed preparation windows below are historical; use the current AGENTS/production-state/handoff heads and actual native output for continuation.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
