@@ -1,0 +1,210 @@
+{
+  "verdict": "ACCEPT_DESIGN_EXACT_CONTROL_COPY_LINUX_SYNTHETIC_QUALIFICATION",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R1-owner2h-20261014-e56ed32114ca",
+  "source_git_sha": "8fa54d18ac08f515362229d7f9c739b45767c2b7",
+  "wheel_sha256": "26c6c5c73c3a23f1459331389cb0297c90f7e0a1636c582c44625f1521e6fdc7",
+  "identity_sha256": "d804a02f14e1f80faa8bceed8eeaef41931ab986db7db60812157f4ed879ebeb",
+  "accepted_stopped_deployment_sha256": "6e98b14d0b02c9ecb8ea11a451d84ff4d9fdedae62a0cbea4d8c94cc5290a758",
+  "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "target_seconds": 7200,
+  "window_seconds": 28800,
+  "actual_arm_accepted": false,
+  "owner_start_exists": false,
+  "guard_exists": false,
+  "accepted_duration_ns": 0,
+  "saved_frame_denominator_accepted": 0,
+  "canonical_v5_final_eligible": false,
+  "production_ready": false,
+  "unresolved_findings": [],
+  "resolved_findings": [
+    {
+      "finding": "Initial writer reserve deficit14953517B",
+      "correction": "Retain completed-cloud generated pip-cache only, fresh strict reserve margin58033107B"
+    },
+    {
+      "finding": "Outer Start900 below aggregate declared preparation call bounds",
+      "correction": "v2 argv Start2400 only, no finite-window or helper changes"
+    }
+  ],
+  "verification": {
+    "local_cache_custody_cases": 5,
+    "local_exact_entry_cases": 4,
+    "linux_boundary_mock_cases": 15,
+    "linux_recovery_diagnostic_mock_cases": 23,
+    "linux_exact_entry_cases": 4,
+    "linux_released_default_raw_passes": 2,
+    "synthetic_saved_frames": 2,
+    "control_members": 15,
+    "linux_synthetic_members": 17,
+    "linux_controller_pid": 441266,
+    "linux_raw_pids": [
+      441272,
+      441279
+    ]
+  },
+  "forecast": {
+    "forecast_capture_seconds": 9300,
+    "peak_seal_minute_rates": [
+      0.6833333333333333,
+      1472.9666666666667,
+      62685.933333333334,
+      1076286.2833333334
+    ],
+    "future_growth": [
+      6355,
+      13698590,
+      582979180,
+      10009462436
+    ],
+    "projected_total": [
+      69055,
+      130142013,
+      6674159706,
+      98524888713
+    ],
+    "projected_selected_capture": [
+      6355,
+      13698590,
+      582979180,
+      10009462436
+    ],
+    "audit_scope": "only chunks created after new capture boundary including warm-up",
+    "estimated_full_dual_live_verify_seconds": 5495.706242717334,
+    "audit_budget_125percent_seconds": 6869.632803396667,
+    "metadata_growth_bytes": 47705325,
+    "audit_scratch_bytes_on_archive": 3730151015,
+    "two_generations_writer_bytes": 12683575296,
+    "writer_staging_bytes": 1508650816,
+    "projected_writer_free_bytes": 10795451347,
+    "projected_archive_free_bytes": 2079805442861,
+    "reserve_bytes_per_filesystem": 10737418240
+  },
+  "required_seconds": 20849.632803396667,
+  "time_margin_seconds": 7950.367196603333,
+  "open_counters": {
+    "reviewed_local_inputs": 28,
+    "production_data_opens": 0,
+    "raw_opens": 0,
+    "network_connections": 0
+  },
+  "input_manifest": {
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-design-binding-post-cache.json": {
+      "sha256": "1fd947879fef6b6864c490b8671bb9671b67c72ed3c4c1ea0cc5e26c6b85c150",
+      "bytes": 3153
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/post-cache-owner2h-preflight.json": {
+      "sha256": "28f4a894d84700af16be958685e08e30d6ae826314e62e89fe8295a073eca650",
+      "bytes": 717
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-design-binding.json": {
+      "sha256": "eb26f2cda8f31a733ad072d63c891d779c029c11faf8d009cf9fc75c43edc0c6",
+      "bytes": 3058
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/actual-owner2h-linux-qualification.json": {
+      "sha256": "b4068c066a192ff94b61bee2d9a63aae0164dba32b0751865a648c0f5d318424",
+      "bytes": 8995
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/actual-owner2h-synthetic-copy.json": {
+      "sha256": "f37d0fae9def77b0144cc499ddf249ba5f5262ac6268421e49bee18293a7799d",
+      "bytes": 1806
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-proposed-arm-argv.json": {
+      "sha256": "1098fffc3a1bbc5c7f691e61d539da917dfe9c24cf67f06a26e6fd9133a15aec",
+      "bytes": 2926
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-proposed-arm-argv-v2.json": {
+      "sha256": "1f2b1697440df97617f59bbc5b949565f0c400187be660020b9753a9331bc9b7",
+      "bytes": 3081
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/actual-owner2h-copy-readback.json": {
+      "sha256": "1c2570f80875d5f81c8b590a724738805ea917c91e4562bb93266bc35a350305",
+      "bytes": 3183
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/actual-owner2h-directory-readback.json": {
+      "sha256": "38de84cd475a5792beacf7919febddae22241707e3a8a4766f3833ba1e319821",
+      "bytes": 714
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/actual-cloud-cache-custody.json": {
+      "sha256": "394bcd9e6b2633dc2efab2d9a8e88082a0a0d7fbb57686146c554caa9a39a931",
+      "bytes": 131802
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/qualification_scoped_corpus.py": {
+      "sha256": "936e614aefe7e3f0e128dd4f0317a955afcaff61240410a8683b8e5e5ba12588",
+      "bytes": 13763
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/controller.py": {
+      "sha256": "4bb153268026c9c236177704decc0e16768a40660a6f39e86998c8b23292b6b5",
+      "bytes": 17850
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/recovery_fixtures.py": {
+      "sha256": "233b6f70f032986583f1d1b1b91211365ee7e398e07e91628de448e5863adeef",
+      "bytes": 6519
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/scoped-terminal.py": {
+      "sha256": "af26508b7a543c8856905b42853de36373d53c716ffd1d984f3d505a0ace8fd0",
+      "bytes": 1830
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/qualification_core_recovery.py": {
+      "sha256": "dfb252a63fcb5e511e1cfb967bee6609f97c8b1f2936c91eee78d3c03db4f844",
+      "bytes": 3250
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/scoped-linux-fixtures.py": {
+      "sha256": "f9687e7cd611f0c284ee469dfe446c8e0dd94fe5f86692c55e42bf9028fb84eb",
+      "bytes": 10374
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/arm.py": {
+      "sha256": "39f4bd9e5544d17119b968e425260a71778d5e84bf64dc611c3c1a992abe46e3",
+      "bytes": 3887
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/launch.py": {
+      "sha256": "789ba373140964c88f9ab7b90c6769e5b5387cad87e1e4786c6af305ddb26e65",
+      "bytes": 1347
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/common.py": {
+      "sha256": "e3c227a63334855ad8228aae9a2735e36c23e0c8b1f62aea21a1555e373583c2",
+      "bytes": 7958
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/pin-unit-exec.py": {
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "bytes": 329
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/arm-natural-wait.py": {
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "bytes": 738
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/qualification_monitor_rate.py": {
+      "sha256": "da19d4968e2978390d5e3a8ea9ceefee289549d108c8be10ac05e605d26896ba",
+      "bytes": 4177
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/qualification_auxiliary_gate.py": {
+      "sha256": "648bd65dd56bcd80da4601534d836640bbac1c2347ce1bc9a5ab8ab2d0f87670",
+      "bytes": 6499
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/restore.py": {
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "bytes": 3400
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/owner2h-bound/fixtures.py": {
+      "sha256": "eea309a0c3097508beb67b816fe4fa4ca3792abee3683829c2a8a1a622a23093",
+      "bytes": 10239
+    },
+    "/private/var/tmp/bmdr-r1-release-20261014-rioikh96/qualify-r1-selected-spawn-v3.py": {
+      "sha256": "50262a041608d8c65a67ff8fdfb41535288a278d94dfbce11092136c345de6ed",
+      "bytes": 5288
+    },
+    "/private/var/tmp/recorder-r1-owner2h-design-review-m7EtWLxW/exact_scoped_terminal_spawn_regression.py": {
+      "sha256": "3ed17edc62ff8206627e4db7c00d4e29e19b51bd6cb70b70c05459e5b96f071f",
+      "bytes": 8927
+    }
+  },
+  "report_sha256": "3cbcb9ada5fbd48c0af289d3e4f292dc6a76a972f0ef3c0e52c454e84ad3be05",
+  "reconstruction_sha256": "75ee9a6fec24ed3d5f2f8b60a48aec831653d30c34933fd04637dbcebb299385",
+  "local_exact_entry_result_sha256": "31abf4188e82ec76b8c0acf1c9e2e5e7bcfe0d6858a0f003eb387b271d990e8d",
+  "fixture_sha256": "3ed17edc62ff8206627e4db7c00d4e29e19b51bd6cb70b70c05459e5b96f071f",
+  "limitations": [
+    "Prepared/copy/design/synthetic qualification only; no real arm, newT0, duration, data, restored-handoff or12h credit.",
+    "Future arm must use exact v2 argv, freshly strict admitted current state and own fixed window, with no inherited time or deadline extension.",
+    "No production/historical data content or remote connection was used by this reviewer.",
+    "All14/fourproducts are bound to the unchanged accepted config/current identity; synthetic fixtures alone do not establish live product availability."
+  ]
+}

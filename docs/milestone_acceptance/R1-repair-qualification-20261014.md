@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production is new8fa54d18/26c6c5c7/d804a02f/config5b73; old49b4/c7d/707 is retained.
-Recorder inactive AND disabled. New wheel/cloud is independently qualified and actual stopped canonical deployment result6e98b14d VERIFIED; independent actualdeployment ACCEPTc478ca38/result1146baba. No window/T0.
+Recorder inactive AND disabled. New wheel/cloud is independently qualified and actual stopped canonical deployment result6e98b14d VERIFIED; independent actualdeployment ACCEPTc478ca38/result1146baba. New singleton native prestart armc2341568 is advancing; actual window/current admission pending, no capture/T0.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -63,3 +63,5 @@ and never extended.
 Release controls draft (not operational authority):
 `/private/var/tmp/bmdr-r1-release-20261014-rioikh96`.
 Hourly `vps-2h` is ACTIVE at the existing hourly frequency for this new request.
+
+New2h control/design qualification ACCEPT3cbcb9ad/result9a5aecbd: [frozen review](../reviews/2026-10-14-r1-owner2h-design-review.md). Exact v2 outer armStart2400/Stop1500, own7200/fixed28800, current selected-only full audits. Linux installed-wheel38mock+4exactentry+actual nestedspawn twoRawpasses succeeded. Fresh forecast reserve10795451347B>10GiB; only the completed R1 cloud generatedpipcache112files/71815559B was fully retained on archive after copy/source readback, sourcepath kept as symlink. No production Raw/manifest/venv moved. Actual singleton armc2341568 started07:29:07UTC; this grants no window/T0/duration/data credit. Current scopeR1-owner2h-20261014-e56ed32114ca; subsequent actual arm/admission and capture warm/T0 remain pending.
