@@ -5,8 +5,8 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
-Current production remains old49b4a2d/c7d354be/7072575b/config5b73,
-Recorder inactive AND disabled. New wheel/cloud release is independently qualified; no canonical deployment/window/T0 exists.
+Current production is new8fa54d18/26c6c5c7/d804a02f/config5b73; old49b4/c7d/707 is retained.
+Recorder inactive AND disabled. New wheel/cloud is independently qualified and actual stopped canonical deployment result6e98b14d VERIFIED; independent actualdeployment acceptance pending. No window/T0.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -41,8 +41,10 @@ archive timer enabled-active and both disks available; no production mutation.
   nested command groups settle before rollback, unresolved cleanup blocks it.
   Actual Linux child-ready v3 cec2e7b5 tests3PASS; native canonical deploy
   c98ce736/429343 is running, actual result/independent verificationPENDING.
-- [ ] Canonical stopped deployment and fresh identity verification accepted;
-  old venv/config/data/evidence retained.
+- [x] Actual stopped canonical deploymentc98ce736 SUCCESS/result6e98b14d;
+  freshidentityd804a02f VERIFIED, old venv/config/data/evidence retained,
+  archive restored and Recorder stopped-disabled.
+- [ ] Independent actual canonical deployment and handoff qualification accepted.
 - [ ] Fresh2h own7200s, selected doubleLIVE/completed immutable verification,
   saved-frame conformance strictly>99.9%, independent restored closeout.
 - [ ] Same release fresh12h own43200s and complete selected saved-data/
