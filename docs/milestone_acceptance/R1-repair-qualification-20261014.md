@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production is new8fa54d18/26c6c5c7/d804a02f/config5b73; old49b4/c7d/707 is retained.
-Recorder inactive AND disabled. New wheel/cloud is independently qualified and actual stopped canonical deployment result6e98b14d VERIFIED; independent actualdeployment ACCEPTc478ca38/result1146baba. New singleton native prestart armc2341568 is advancing; actual window/current admission pending, no capture/T0.
+Recorder inactive AND disabled. R1 wheel/cloud and stopped canonical deployment are independently accepted. First new2h native warm failed before T0 on whole-host swap counter change; its finite window was actually restored and closed. A fresh exclusive retry with Recorder-owned current/peak swap admission is prepared for independent review. New2h and new12h remain pending.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -69,3 +69,6 @@ New2h control/design qualification ACCEPT3cbcb9ad/result9a5aecbd: [frozen review
 Actual preparation correction: firstc2341568 stopped before anywindow/T0 because a kernel-only reboot notice had appeared. Its successful07:29 restoration/failure are retained. Pending147+linux-base remains a notice; currentboot59bb/kernel146 unchanged. No OS reboot/marker deletion/settings/production release change. Exact f9cc/fa216 entry and LOCAL+Linux22 boundary cases independentlyACCEPT93847549/bf8c6c0b ([entry review](../reviews/2026-10-14-r1-kernel-notice-entry-review.md)).
 
 Newactualarm19b4e58d SUCCESS07:50:09UTC: fixed28800 expiry15:50:03UTC, quiet5a98770c/canonicalde1e1c37/post8068411e. Actualremaining28793.4969>required20849.6328s/margin7943.8641; writerpeak10793247699B>10GiB. Independent actualarm/window/admission ACCEPTdcb7c0cf/040166a1 ([arm review](../reviews/2026-10-14-r1-actual-arm-review.md)); old07:29 restore is not this window's closure. Newcapture63352f72/PID443263 launched08:01:57UTC; full ownmetadata boundary/warm/currentstrict/prestart runs natively. Startup is not T0; actualown7200/data/finalhandoff still pending. Reasonablewarm/startcheckpoint08:15UTC. Do not duplicatearm/capture or restart healthyRecorder.
+
+
+October14 08:15UTC actual warm closeout: original63352f72 failed08:11:35UTC, no owner-start/T0; blanket hostswap delta57pages veto was the immediate cause.19 observed Recorder current-swap values0/strictPASS7, lifetime peak unknown, no oldwarm PASS. Native actual restoration-before-cancel succeeded08:12:57; window CLOSED,178 newchunks preserved. Proposed retry2 exclusive8ae2482a37c4 preserves release/all14/fourproducts, uses mandatory Recorder current+peak0 with path/PID binding and original strict/resource/time/data bounds. Parent15+23+17 fixtures PASS; exact independent qualification/Linux affectedfixtures/copy/native current admission still pending. No newT0 or 12h started.
