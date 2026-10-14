@@ -54,7 +54,9 @@ def test_raw_stream_statistics_and_worker(tmp_path: Path) -> None:
     assert expected["local"]["first_frame"]["frame_index"] == 0
     assert expected["local"]["last_frame"]["frame_index"] == 1
     assert expected["local"]["intra_transition_counts"]["UNMARKED_RECONNECT"] == 0
-    assert cancellable_unit(unit, remaining_ns=10_000_000_000) == expected
+    # This checks worker correctness, including cold spawn/import overhead.
+    # Deadline behavior is covered separately with deterministic BOOTTIME ticks.
+    assert cancellable_unit(unit, remaining_ns=60_000_000_000) == expected
 
 
 def test_raw_loss_and_corruption_fail_closed(tmp_path: Path) -> None:
