@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production remains old49b4a2d/c7d354be/7072575b/config5b73,
-Recorder inactive AND disabled. No new wheel/deployment/window/T0 exists.
+Recorder inactive AND disabled. New native cloud build is running; no qualified wheel/deployment/window/T0 exists.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -28,8 +28,12 @@ archive timer enabled-active and both disks available; no production mutation.
   source manifest55972918/input326dab05; guarded140/56/3/18PASS phases overlap.
   No network/production/history reads; no CI/deploy/live credit.
   [Frozen review](../reviews/2026-10-14-r1-source-review.md).
-- [ ] Exact frozen source double-platform CI PASS; new Linux locked wheel and
-  affected cloud tests/install/source correspondence PASS.
+- [x] Exact frozen source8fa54d18 dualCI38502452866 BOTH SUCCESS.
+- [x] Build helper independentDESIGN ACCEPTaabf9b3c/3a734882; actual exclusive
+  dirs/archive/helper copy readback verified and unique cloud native9c8b9877
+  is advancing affected tests. Its controller timeout did not stop the native;
+  do not repeat. Result checkpointOctober14 03:10UTC.
+- [ ] New Linux locked wheel and affected cloud tests/install/source correspondence PASS.
 - [ ] Canonical stopped deployment and fresh identity verification accepted;
   old venv/config/data/evidence retained.
 - [ ] Fresh2h own7200s, selected doubleLIVE/completed immutable verification,
