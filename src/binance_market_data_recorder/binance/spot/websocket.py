@@ -650,6 +650,14 @@ class SpotStreamCollector:
                 try:
                     receipt = receive_task.result()
                     await self._accept(receipt, writer_task, stop)
+                    # A ready frame and stop can complete together. Preserve
+                    # this frame, then stop instead of letting continuous recv
+                    # readiness starve shutdown (including stop during handoff).
+                    if stop.is_set():
+                        await websocket.close(code=1000, reason="collector shutdown")
+                        if self._is_session_restart(session_restart):
+                            return "session_restart"
+                        return "graceful_shutdown"
                 except IngressBackpressureTimeout:
                     self._log_ingress_state(
                         logging.ERROR,
