@@ -1,0 +1,80 @@
+{
+  "members": [
+    {
+      "bytes": 7757,
+      "path": "R1_ACTUAL_DEPLOYMENT_RESULT.json",
+      "sha256": "1146baba1fa653afda398f21c149156a0fde6838ae899bc1f9dda5479a71921c"
+    },
+    {
+      "bytes": 8749,
+      "path": "R1_ACTUAL_DEPLOYMENT_REVIEW.md",
+      "sha256": "c478ca388c9e331710ffb856c489fb8c44d82ffd993238d7fc4d09aa57868e31"
+    },
+    {
+      "bytes": 6763,
+      "path": "actual-canonical-custody-readback.json",
+      "sha256": "585fa1390409696f848d358907bd9bb82f1a89b52338c8655e6ca6035ee82c3d"
+    },
+    {
+      "bytes": 91668,
+      "path": "actual-canonical-deployment-0335.json",
+      "sha256": "1c626b2499be3960b56df504206dfb372322ceffdd0ac4ef3357a40cff41d4d1"
+    },
+    {
+      "bytes": 1753,
+      "path": "actual-deploy-dispatch.json",
+      "sha256": "befd51999feab428c6e8c6b2f36b25a3889fd41d12c2829ad375d79a4ea7ac58"
+    },
+    {
+      "bytes": 928,
+      "path": "actual-linux-command-group-v3.json",
+      "sha256": "74a7b4cec3d325e652cd105d5b0a9e30e21c693d978a5cb1572ff43fc318c084"
+    },
+    {
+      "bytes": 2185,
+      "path": "clean-wheel.json",
+      "sha256": "64026b122e77c5a63ed58e61264898ed2534bbbe7b281b45b6819e553d03ee3a"
+    },
+    {
+      "bytes": 1665,
+      "path": "core-deployment-reconstruction.json",
+      "sha256": "dd163fb3743ef7b51f50e50a5cdd1b821c90d6abe2de54183ac129bd014f623e"
+    },
+    {
+      "bytes": 753,
+      "path": "custody-software-reconstruction.json",
+      "sha256": "b17f2a333f6a9fb9e92bcab5c61c632c47272e33c93ae8fd9d46d0bc72240638"
+    },
+    {
+      "bytes": 569,
+      "path": "deploy-design-bindings.json",
+      "sha256": "372cb463b3ec4fb540755c028fb999ca84e8168467dbf731dca7173590ad7045"
+    },
+    {
+      "bytes": 989,
+      "path": "deploy-proposed-argv.json",
+      "sha256": "567270c6bbd3e06e6f763fedf57022e695c29925221231186a71f97d6d245fda"
+    },
+    {
+      "bytes": 12894,
+      "path": "deploy-release.py",
+      "sha256": "17176648a0d85690b8896ba932c1bf9685507c1e53250f4f350d25efbc4f22da"
+    },
+    {
+      "bytes": 300,
+      "path": "deployment-remote-scope.json",
+      "sha256": "7341b8fbf53f92c64f0f0dcb5e682f51d27ab6ee807beef188409a4d8a9eb83f"
+    },
+    {
+      "bytes": 329,
+      "path": "pin-unit-exec.py",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 3541,
+      "path": "qualify_corrected_command_group_v3.py",
+      "sha256": "cec2e7b521c29ee9b04fe926ae2f419e0d414dce9782247eaff65dfd08fdb1d9"
+    }
+  ],
+  "schema": "r1-actual-deployment-review-artifacts.v1"
+}
