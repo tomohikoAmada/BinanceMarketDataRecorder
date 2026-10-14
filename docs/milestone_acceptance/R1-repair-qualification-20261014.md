@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production is new8fa54d18/26c6c5c7/d804a02f/config5b73; old49b4/c7d/707 is retained.
-Current operating checkpoint: retry3 native92ed25ba is preparing its metadata boundary and actual warm/strict startup, launchedOctober14 12:57:30UTC. Its own2h T0 is not yet confirmed; new2h and12h remain pending. The R1 wheel/cloud/stopped deployment and corrected owned current/peak swap gate are independently accepted. Earlier stopped states and failed/closed preparation windows below are historical; use the current AGENTS/production-state/handoff heads and actual native output for continuation.
+Current operating checkpoint: repair release own2h RUNNING, sole runc1989145/T0October14 13:09:12.641778065UTC; own7200 target15:09:12.641778065UTC (Shanghai23:09:12). Warm/strict/current prestart actually passed; actualstartup independent reconstruction and final duration/data/restored ownerreceipt remain pending. New12h NOT_STARTED. Earlier checkpoints below are retained history.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -30,21 +30,22 @@ archive timer enabled-active and both disks available; no production mutation.
   [Frozen review](../reviews/2026-10-14-r1-source-review.md).
 - [x] Exact frozen source8fa54d18 dualCI38502452866 BOTH SUCCESS.
 - [x] Build helper independentDESIGN ACCEPTaabf9b3c/3a734882; actual exclusive
-  dirs/archive/helper copy readback verified and unique cloud native9c8b9877
-  is advancing affected tests. Its controller timeout did not stop the native;
-  do not repeat. Result checkpointOctober14 03:10UTC.
+  dirs/archive/helper copy readback verified; cloud native9c8b9877 completed
+  its affected tests. Initial controller timeout did not stop native execution;
+  final result is accepted in the following item.
 - [x] Actual421cloudtestsPASS/1stressdeselected; new wheel26c6c5c7 and
   receipt64026b12 qualify122sourcefiles/28exactlocked dependencies. Native
  9c8b9877 SUCCESS03:02:22UTC; actual cloud independent ACCEPT4d8a40e5/87112839.
   Post-GC systemctl default properties are not original unit evidence.
 - [x] Stopped deployment helper17176648 design ACCEPT27974421/da1cfe5f;
   nested command groups settle before rollback, unresolved cleanup blocks it.
-  Actual Linux child-ready v3 cec2e7b5 tests3PASS; native canonical deploy
-  c98ce736/429343 is running, actual result/independent verificationPENDING.
+  Actual Linux child-ready v3 cec2e7b5 tests3PASS; final native deploy and
+  independent actual qualification are accepted in the following items.
 - [x] Actual stopped canonical deploymentc98ce736 SUCCESS/result6e98b14d;
   freshidentityd804a02f VERIFIED, old venv/config/data/evidence retained,
   archive restored and Recorder stopped-disabled.
 - [x] Independent actual stopped canonical deployment ACCEPTc478ca38/result1146baba; physical helper/release/oldvenv and prior707 identity custody verified. [Frozen actual review](../reviews/2026-10-14-r1-actual-deployment-review.md).
+- [x] Fresh actual warm/strict-start/current admission and independent run-T0/native binding ACCEPTce939aa6/fc4dcf56. Final Catalog contents/membership and duration/data/restoration remain pending.
 - [ ] Fresh2h own7200s, selected doubleLIVE/completed immutable verification,
   saved-frame conformance strictly>99.9%, independent restored closeout.
 - [ ] Same release fresh12h own43200s and complete selected saved-data/
@@ -81,3 +82,9 @@ Oct14 12:44UTC quota-resume actuale42d797d confirms retry2 never launched captur
 
 
 Current retry3 exact path/unit binding [ACCEPTd82acb62](../reviews/2026-10-14-r1-retry3-binding-review.md), actual18copy/arm/currentwindow/canonical/reserves [ACCEPTe62b6fad](../reviews/2026-10-14-r1-retry3-actual-arm-review.md). Fixed window20:52:20UTC, neverextended. Unique nativecapture92ed25ba launched12:57:30UTC; actual0f892f23 shows Typeexec/Runtime10080/Stop1500, launch-admissioncdc99136 and capture-launch479d6573. It owns newmetadata boundary/warm/actualstrict and then own7200T0; launch is expresslyNOT_YET_T0. Reasonablewarm/startcheckpoint13:12:30UTC; new2h actualduration/data/finalindependent-restored receipt and subsequent new12h remainpending. No extraVPS checks/duplicate healthywork.
+
+
+Actual owner-startaa8cf54a establishes only this8fa/26c6/d804 release ownT0, native92ed25ba/RECfdbef6c9 sameincarnation. Fullmetadata4d88d15f: warm684.547s/strict26/332.6506s endpoints/currentandpeakswap0, postnativeprestart1a3a6a85 currenttime/capacity PASS. Formal95/95PASSprefix at13:56 is partialavailability, notdata correctness orfull2h. Complete target/fullselecteddualLIVE/completedverify/independentrestored receipt and new12h remainpending. Native self progresses, no extraVPS checks beforeknown15:09:12UTC target.
+
+
+[Limited actual startup independent ACCEPTce939aa6/fc4dcf56](../reviews/2026-10-14-r1-retry3-actual-start-review.md): all8 closed control text SHA and95 immutable prefix rows rebuilt;119 warm/end/start/prefix observations keep sameinv/PID/cgroup/currentandpeakswap0, no clock violation.95 fixedslots/no skips onlypartialavailability. Exact24 warm/end/start RSSmax285253632B/availablemin4723032064B;95prefix RSSmax326103040B/availablemin4498997248B. OriginalstartCatalog3a209c1c onlydeclared remote metadata atthisphase; final fullmetadata export binds its bytes/selection membership. Actualown7200 target15:09:12.641778065UTC, finalduration/data/restored/12h remainpending.

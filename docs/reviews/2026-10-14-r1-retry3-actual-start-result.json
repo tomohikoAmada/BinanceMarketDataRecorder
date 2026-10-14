@@ -1,0 +1,109 @@
+{
+  "verdict": "ACCEPT_LIMITED_ACTUAL_WARM_STRICT_START_RUN_T0_NATIVE_BINDING",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R1-owner2h-retry3-20261014-ecaadc0d8dca",
+  "run_id": "c1989145c4a9443fb79f71bb9d86cf52",
+  "owner_start_sha256": "aa8cf54ac09ec0d6bf4bf9931eaed53d7c79a7396ea2b635719fd9298d42dcdd",
+  "t0_utc_ns": 1791983352641778065,
+  "t0_boottime_ns": 1048246822314447,
+  "target_duration_ns": 7200000000000,
+  "target_utc_ns": 1791990552641778065,
+  "target_boottime_ns": 1055446822314447,
+  "fixed_window_deadline_epoch_seconds": 1792011140,
+  "native_capture_invocation": "92ed25ba53ef4b2eb9d46dadaf8582c4",
+  "native_capture_pid": 452151,
+  "recorder_invocation": "fdbef6c9fedc4f8ea450ea458175af36",
+  "recorder_pid": 452216,
+  "warm_rows": 22,
+  "warm_pass_rows": 5,
+  "warm_block_rows_retained": 17,
+  "warm_elapsed_seconds": 684.5472541870549,
+  "strict_endpoint_delta_ns": 332650648977,
+  "warm_plus_end_start_metrics": {
+    "observations": 24,
+    "rss_max_bytes": 285253632,
+    "host_available_min_bytes": 4723032064,
+    "owned_swap_current_values": [
+      0
+    ],
+    "owned_swap_peak_values": [
+      0
+    ]
+  },
+  "closed_warm_metrics": {
+    "observations": 22,
+    "rss_max_bytes": 284680192,
+    "host_available_min_bytes": 4744626176,
+    "owned_swap_current_values": [
+      0
+    ],
+    "owned_swap_peak_values": [
+      0
+    ]
+  },
+  "monitor_prefix_metrics": {
+    "observations": 95,
+    "rss_max_bytes": 326103040,
+    "host_available_min_bytes": 4498997248,
+    "owned_swap_current_values": [
+      0
+    ],
+    "owned_swap_peak_values": [
+      0
+    ]
+  },
+  "monitor_prefix_rows": 95,
+  "monitor_prefix_pass_rows": 95,
+  "monitor_prefix_sha256": "37369c66746df053418102da355939773b5db27e07deb793f617c6d58c906de7",
+  "final_monitor_rate_accepted": false,
+  "accepted_duration_ns": 0,
+  "saved_frame_denominator_accepted": 0,
+  "canonical_v5_final_eligible": false,
+  "declared_start_catalog_sha256": "3a209c1c003847ad4a4456ed65ec0344eef2cbadae1f30a7979d487a4d778590",
+  "start_catalog_bytes_independently_verified": false,
+  "scope_boundary_content_membership_accepted": false,
+  "prestart_required_seconds": 18708.799431208634,
+  "prestart_remaining_seconds": 27787.486535310745,
+  "prestart_time_margin_seconds": 9078.687104102111,
+  "prestart_writer_reserve_margin_bytes": 94711014,
+  "live_backlog_chunks": 30,
+  "live_backlog_archive_transactions": 1,
+  "published_hashes": {
+    "capture-admission.json": "a981ba3d57ff0014d7b73087ae2f5cf35a52985ab4a82abfda04c0007c899d18",
+    "data-scope-start.json": "6df8da6c90abd48dca2e8b81336e6ad8591d7c85cb4c84f70a7cec33e4eb0f31",
+    "owner-start.json": "aa8cf54ac09ec0d6bf4bf9931eaed53d7c79a7396ea2b635719fd9298d42dcdd",
+    "prestart-admission.json": "1a3a6a8550462e4eb9b4682cefc1f5c2723accbaa9f515b7777f5f28818037f6",
+    "start-observation.json": "f3a9084f7da1578383a829ccc1e355787ff7247ab9f2b362255a37ede0f4e02f",
+    "warmup-end-observation.json": "b4f5ae2e447b83eb7f70dc6bd111663084b7920d0e273a84d8c45a644fd8147e",
+    "warmup-result.json": "f6d3bd1fa995c634d049cb87477177492dd2a1bf9087c05036d6aef9cb56ea2f",
+    "warmup.jsonl": "d395118fd960badf4c09c342a74f76c2f3741303d4472987ccdbf7238053657e"
+  },
+  "input_hashes": {
+    "actual-owner2h-retry3-start-checkpoint-1355.json": {
+      "sha256": "4d88d15f211d4cf6c10d271a46a6ad59043dd7b0767eef6e9915cf5842f1cc62",
+      "bytes": 3441396
+    },
+    "r1-retry3-actual-start-summary.json": {
+      "sha256": "505186eaebf9311441a61173d64f75729e73422c8f5193aa59e19da45c59654e",
+      "bytes": 3546
+    },
+    "actual-owner2h-retry3-arm-result.json": {
+      "sha256": "e8612530464f953a6ce75e8c2106ecbacd03b46ee27da241924d0345b276653c",
+      "bytes": 17576
+    }
+  },
+  "unresolved_findings": [],
+  "production_data_opens": 0,
+  "network_connections": 0,
+  "tests_repeated": false,
+  "limits": [
+    "Startup metadata qualification only; no completed own7200/data/monitor-rate/restored-handoff/12h credit.",
+    "StartCatalog remote SHA/path/cursors are linked metadata declarations; local bytes and full boundary/selected membership await final control export.",
+    "WarmBLOCK rows are preserved outside the formal monitoring prefix; strict endpoint pair does not claim continuous all-enabled300s.",
+    "Live backlogs are disclosed, not described as a frozen corpus.",
+    "No network/VPS/Raw/history/source edits or extra runtime operations; healthy native should continue until target."
+  ],
+  "report_sha256": "ce939aa65dceb31ac488ca0effdd14fce247206e2b351120453f42adc99b6a43",
+  "reconstruction_sha256": "9307a7550e297e7aa047af91084f6e4fc5840a092b6b3d49909b45d02ff273bc",
+  "actual_warm_start_accepted": true,
+  "actual_t0_accepted": true
+}

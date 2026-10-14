@@ -1,0 +1,46 @@
+{
+  "kind": "INDEPENDENT_R1_RETRY3_ACTUAL_START_ARTIFACTS",
+  "members": {
+    "R1_RETRY3_ACTUAL_START_REVIEW.md": {
+      "sha256": "ce939aa65dceb31ac488ca0effdd14fce247206e2b351120453f42adc99b6a43",
+      "bytes": 4678
+    },
+    "R1_RETRY3_ACTUAL_START_RESULT.json": {
+      "sha256": "fc4dcf5658de1eb3b3b04caf19adc1c1326c5b99141783054bf58e3b32a6d70d",
+      "bytes": 4701
+    },
+    "STARTUP_RECONSTRUCTION.json": {
+      "sha256": "9307a7550e297e7aa047af91084f6e4fc5840a092b6b3d49909b45d02ff273bc",
+      "bytes": 4451
+    },
+    "reconstruct_start.py": {
+      "sha256": "2736b454e9ba350009953da6f670ffcb5c9a136cb96a6eceb06bad71562c32bf",
+      "bytes": 11919
+    }
+  },
+  "input_hashes": {
+    "actual-owner2h-retry3-start-checkpoint-1355.json": {
+      "sha256": "4d88d15f211d4cf6c10d271a46a6ad59043dd7b0767eef6e9915cf5842f1cc62",
+      "bytes": 3441396
+    },
+    "r1-retry3-actual-start-summary.json": {
+      "sha256": "505186eaebf9311441a61173d64f75729e73422c8f5193aa59e19da45c59654e",
+      "bytes": 3546
+    },
+    "actual-owner2h-retry3-arm-result.json": {
+      "sha256": "e8612530464f953a6ce75e8c2106ecbacd03b46ee27da241924d0345b276653c",
+      "bytes": 17576
+    }
+  },
+  "published_hashes": {
+    "capture-admission.json": "a981ba3d57ff0014d7b73087ae2f5cf35a52985ab4a82abfda04c0007c899d18",
+    "data-scope-start.json": "6df8da6c90abd48dca2e8b81336e6ad8591d7c85cb4c84f70a7cec33e4eb0f31",
+    "owner-start.json": "aa8cf54ac09ec0d6bf4bf9931eaed53d7c79a7396ea2b635719fd9298d42dcdd",
+    "prestart-admission.json": "1a3a6a8550462e4eb9b4682cefc1f5c2723accbaa9f515b7777f5f28818037f6",
+    "start-observation.json": "f3a9084f7da1578383a829ccc1e355787ff7247ab9f2b362255a37ede0f4e02f",
+    "warmup-end-observation.json": "b4f5ae2e447b83eb7f70dc6bd111663084b7920d0e273a84d8c45a644fd8147e",
+    "warmup-result.json": "f6d3bd1fa995c634d049cb87477177492dd2a1bf9087c05036d6aef9cb56ea2f",
+    "warmup.jsonl": "d395118fd960badf4c09c342a74f76c2f3741303d4472987ccdbf7238053657e"
+  },
+  "monitor_prefix_sha256": "37369c66746df053418102da355939773b5db27e07deb793f617c6d58c906de7"
+}
