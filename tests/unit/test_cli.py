@@ -455,7 +455,7 @@ def test_normalize_status_is_structured_and_non_mutating(
         "build_count": 0,
         "builds": [],
         "command": "normalize.status",
-        "dataset_version": "normalized-dataset.v1",
+        "dataset_version": "normalized-dataset.v2",
         "status": "NO_BUILDS",
     }
     assert not data_root.exists()

@@ -20,7 +20,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
-from ..normalize.model import DATASET_VERSION
+from ..normalize.model import DATASET_VERSION, READABLE_DATASET_VERSIONS
 from ..orderbook.model import OrderBook, OrderBookDataError
 from ..orderbook.reconstructor import LocalBookReconstructor
 from .model import BuildSummary, CheckpointDescriptor, PartitionDescriptor
@@ -191,8 +191,8 @@ def _build_identity(document: Mapping[str, object]) -> str:
     return _sha256_json(identity)
 
 
-def _summary(document: Mapping[str, object]) -> BuildSummary:
-    if document.get("dataset_version") != DATASET_VERSION:
+def _summary(document: Mapping[str, object], dataset_version: str) -> BuildSummary:
+    if document.get("dataset_version") != dataset_version:
         raise ReplayCatalogError("unsupported normalized dataset version")
     build_id = _sha256(document, "build_id")
     if _build_identity(document) != build_id:
@@ -205,7 +205,7 @@ def _summary(document: Mapping[str, object]) -> BuildSummary:
         raise ReplayCatalogError("normalized partition count mismatch")
     return BuildSummary(
         build_id=build_id,
-        dataset_version=DATASET_VERSION,
+        dataset_version=dataset_version,
         dedup_version=_text(document, "dedup_version"),
         parquet_profile=_text(document, "parquet_profile"),
         partition_count=partition_count,
@@ -340,17 +340,20 @@ def _checkpoint(
 class ManifestCatalog:
     """Read-only entry point for published normalized builds."""
 
-    def __init__(self, data_root: Path) -> None:
+    def __init__(self, data_root: Path, *, dataset_version: str = DATASET_VERSION) -> None:
+        if dataset_version not in READABLE_DATASET_VERSIONS:
+            raise ReplayCatalogError("unsupported normalized dataset version")
+        self.dataset_version = dataset_version
         self.data_root = data_root.expanduser().resolve()
         self.builds_root = (
-            self.data_root / "data" / "normalized" / DATASET_VERSION / "builds"
+            self.data_root / "data" / "normalized" / dataset_version / "builds"
         )
 
     def list_builds(self) -> tuple[BuildSummary, ...]:
         summaries: list[BuildSummary] = []
         for path in sorted(self.builds_root.glob("*.manifest.json")):
             document = _decode(path, BUILD_MANIFEST_SCHEMA)
-            summary = _summary(document)
+            summary = _summary(document, self.dataset_version)
             if path.name != f"{summary.build_id}.manifest.json":
                 raise ReplayCatalogError("build manifest filename/identity mismatch")
             summaries.append(summary)
@@ -365,7 +368,7 @@ class ManifestCatalog:
         if not path.is_file():
             raise ReplayCatalogError(f"normalized build is unavailable: {build_id}")
         document = _decode(path, BUILD_MANIFEST_SCHEMA)
-        summary = _summary(document)
+        summary = _summary(document, self.dataset_version)
         if summary.build_id != build_id:
             raise ReplayCatalogError("selected build identity mismatch")
         partitions = tuple(

@@ -23,6 +23,8 @@ import asyncio
 from collections.abc import Callable
 from enum import StrEnum
 
+DEFAULT_RECEIPT_BYTE_CAPACITY = 64 * 1024 * 1024
+
 #: Reconnect boundary reasons that require persistent gap evidence.
 RECONNECT_REASONS = frozenset(
     {
@@ -43,6 +45,19 @@ class ReconnectReason(StrEnum):
     PLANNED_ROTATION = "planned_rotation"
     SERVER_SHUTDOWN = "server_shutdown"
     SESSION_RESTART = "session_restart"
+
+
+def capped_backoff_seconds(initial: float, maximum: float, failures: int) -> float:
+    """Double only until the cap, even for an arbitrarily large failure count."""
+
+    delay = initial
+    remaining = failures - 1
+    while remaining > 0 and delay < maximum:
+        if delay >= maximum / 2:
+            return maximum
+        delay *= 2
+        remaining -= 1
+    return delay
 
 
 async def run_owned_blocking_call[**BlockingParams, BlockingResult](

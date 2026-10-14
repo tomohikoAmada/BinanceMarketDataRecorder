@@ -25,15 +25,21 @@ annotations are available to static type checkers.
 | Contract | Current value | Meaning |
 | --- | --- | --- |
 | Consumer API | `consumer-contract.v1` | Public types and behavior in this document |
-| Dataset | `normalized-dataset.v1` | Selected immutable normalized build |
+| Dataset | `normalized-dataset.v2` | Selected immutable normalized build |
 | Replay order | `replay-order.v1` | Clock and total-order semantics |
-| Deduplication | `normalized-dedup.v1` | M15 duplicate/conflict semantics |
+| Deduplication | `normalized-dedup.v2` | Product/stream namespace and duplicate/conflict semantics |
 | Parquet profile | `bmdr-parquet.v1` | Physical writer/readback profile |
 | Stream schema | `normalized-binance-<market>-<stream>.v1` | Typed row fields |
 
 Callers record at least the exact distribution version, build ID, dataset
 version, replay-order version, query and policies with every derived result.
 Unsupported major versions fail rather than being guessed.
+
+Legacy `normalized-dataset.v1` builds remain readable by explicitly passing
+`dataset_version="normalized-dataset.v1"` to `ManifestCatalog`. Their recorded
+timestamps and hashes retain their old meaning. v2 derives USD-M core E/T from
+Raw payloads: depth/bookTicker use transaction T; aggTrade uses trade T. No
+automatic historical rebuild or cross-version catalog mixing occurs. See ADR-0044.
 
 ## Dataset discovery
 

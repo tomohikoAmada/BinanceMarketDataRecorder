@@ -490,7 +490,7 @@ one read-only Soak observer—not three writers or arbitrary writer fan-out.
 
 ### Derived plane
 
-`normalized-dataset.v1` is rebuildable and contains source chunk hashes,
+`normalized-dataset.v2` is rebuildable and contains source chunk hashes,
 dataset/stream-schema/dedup/writer-profile versions, deterministic
 dedup/conflict decisions, propagated gap state, and UTC partitions. Candidate
 sorting and partition spooling use bounded batches on internal storage; output

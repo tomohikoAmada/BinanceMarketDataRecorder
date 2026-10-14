@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 from ..domain.event import EventEnvelope
@@ -645,6 +646,16 @@ def _invalid(envelope: EventEnvelope, error: str) -> list[ParsedEvent]:
             valid=False,
             error_code=error,
             event_kind="malformed",
+            exchange_times=(
+                {
+                    "exchange_event_time_ms": None,
+                    "exchange_transaction_time_ms": None,
+                    "exchange_trade_time_ms": None,
+                }
+                if envelope.market == "um_perpetual"
+                and envelope.stream in {"diff_depth", "book_ticker", "agg_trade"}
+                else None
+            ),
         )
     ]
 
@@ -662,7 +673,31 @@ def parse_envelope(envelope: EventEnvelope) -> list[ParsedEvent]:
         decoded = _decode(envelope)
         payload = _object(decoded, "payload")
         if envelope.stream in {"diff_depth", "agg_trade", "book_ticker"}:
-            return _core_websocket(envelope, payload)
+            events = _core_websocket(envelope, payload)
+            if envelope.market == "um_perpetual":
+                # Raw v1 put depth/bookTicker T into the trade slot. Derive v2
+                # timestamps from the retained payload, without rewriting Raw.
+                event_time = _integer(payload, "E")
+                transaction_or_trade = (
+                    None if payload.get("e") == "serverShutdown"
+                    else _integer(payload, "T")
+                )
+                if event_time > 2**63 - 1 or (
+                    transaction_or_trade is not None
+                    and transaction_or_trade > 2**63 - 1
+                ):
+                    raise NormalizedSchemaError("exchange timestamp exceeds int64 milliseconds")
+                times = {
+                    "exchange_event_time_ms": event_time,
+                    "exchange_transaction_time_ms": (
+                        transaction_or_trade if envelope.stream != "agg_trade" else None
+                    ),
+                    "exchange_trade_time_ms": (
+                        transaction_or_trade if envelope.stream == "agg_trade" else None
+                    ),
+                }
+                return [replace(event, exchange_times=times) for event in events]
+            return events
         if envelope.stream == "depth_snapshot":
             return _depth_snapshot(envelope, payload)
         if envelope.stream == "mark_price":

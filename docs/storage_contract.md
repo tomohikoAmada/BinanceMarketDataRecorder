@@ -76,7 +76,7 @@ hashes and is refused for an unreliable book. It may be deleted and rebuilt;
 Raw chunks remain immutable and authoritative.
 
 M15 normalized outputs are derived files below
-`data/normalized/normalized-dataset.v1/`. Work files stay under its `.work`
+`data/normalized/normalized-dataset.v2/`. Work files stay under its `.work`
 directory and are disposable after interruption. Final Parquet partitions and
 their manifests are content-addressed, written through in-directory unique
 partials, fsynced, reopened for logical verification, atomically renamed, and

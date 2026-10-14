@@ -13,6 +13,8 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from ..websocket_common import capped_backoff_seconds
+
 SPOT_WEIGHT_PER_MINUTE_BUDGET = 6_000
 _BAN_UNTIL_PATTERN = re.compile(r"\buntil\s+(\d{13})\b", re.IGNORECASE)
 
@@ -282,10 +284,7 @@ class FullJitterBackoff:
             raise ValueError("failures must be positive")
         if self.initial_seconds <= 0 or self.maximum_seconds < self.initial_seconds:
             raise ValueError("invalid backoff bounds")
-        ceiling = min(
-            self.maximum_seconds,
-            self.initial_seconds * (2.0 ** (failures - 1)),
-        )
+        ceiling = capped_backoff_seconds(self.initial_seconds, self.maximum_seconds, failures)
         sample = random.random() if random_value is None else random_value
         if not 0 <= sample <= 1:
             raise ValueError("random value must be between zero and one")

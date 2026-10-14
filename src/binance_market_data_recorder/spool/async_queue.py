@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import math
 import time
+from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TypeVar
 
@@ -39,6 +41,10 @@ class AsyncQueueStats:
     wait_p95_ns: int | str
     wait_p99_ns: int | str
     saturation_seconds: float | None
+    byte_capacity: int | None = None
+    queued_bytes: int = 0
+    owned_bytes: int = 0
+    high_watermark_bytes: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +62,8 @@ class BoundedAsyncQueue[T]:
         *,
         put_timeout_seconds: float,
         saturation_timeout_seconds: float,
+        byte_capacity: int | None = None,
+        size_of: Callable[[T], int] | None = None,
     ) -> None:
         if capacity < 1:
             raise ValueError("queue capacity must be positive")
@@ -63,11 +71,22 @@ class BoundedAsyncQueue[T]:
             raise ValueError("put timeout must be positive")
         if saturation_timeout_seconds < put_timeout_seconds:
             raise ValueError("saturation timeout must be at least the put timeout")
+        if (byte_capacity is None) != (size_of is None):
+            raise ValueError("byte capacity and item size function must be supplied together")
+        if byte_capacity is not None and byte_capacity < 1:
+            raise ValueError("byte capacity must be positive")
         self.capacity = capacity
+        self.byte_capacity = byte_capacity
+        self._size_of = size_of
         self.low_watermark = max(0, capacity // 2)
         self.put_timeout_seconds = put_timeout_seconds
         self.saturation_timeout_seconds = saturation_timeout_seconds
-        self._queue: asyncio.Queue[T] = asyncio.Queue(maxsize=capacity)
+        self._queue: asyncio.Queue[tuple[T, int]] = asyncio.Queue(maxsize=capacity)
+        self._queued_bytes = 0
+        self._owned_bytes = 0
+        self._high_watermark_bytes = 0
+        self._inflight: dict[int, deque[int]] = {}
+        self._space_changed = asyncio.Event()
         self._high_watermark = 0
         self._wait_count = 0
         self._wait_total_ns = 0
@@ -84,13 +103,59 @@ class BoundedAsyncQueue[T]:
         return self._queue.empty()
 
     async def get(self) -> T:
-        return await self._queue.get()
+        return self._take(await self._queue.get())
 
     def get_nowait(self) -> T:
-        return self._queue.get_nowait()
+        return self._take(self._queue.get_nowait())
 
-    def task_done(self) -> None:
+    def _take(self, entry: tuple[T, int]) -> T:
+        item, size = entry
+        self._queued_bytes -= size
+        if self.byte_capacity is not None:
+            self._inflight.setdefault(id(item), deque()).append(size)
+        self._space_changed.set()
+        return item
+
+    def task_done(self, item: T | None = None) -> None:
+        """Release a weighted item only after its consumer has finished using it."""
+
+        sizes = None if item is None else self._inflight.get(id(item))
+        if self.byte_capacity is not None and not sizes:
+            raise ValueError("weighted task_done requires an in-flight item")
         self._queue.task_done()
+        if sizes is not None:
+            self._owned_bytes -= sizes.popleft()
+            if not sizes:
+                del self._inflight[id(item)]
+            self._space_changed.set()
+
+    def _size(self, item: T) -> int:
+        size = 0 if self._size_of is None else self._size_of(item)
+        if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+            raise ValueError("item size must be a non-negative integer")
+        return size
+
+    def would_block(self, item: T) -> bool:
+        return self._full(self._size(item))
+
+    def _full(self, size: int) -> bool:
+        return self._queue.full() or (
+            self.byte_capacity is not None and self._owned_bytes + size > self.byte_capacity
+        )
+
+    def _insert(self, item: T, size: int) -> None:
+        self._queue.put_nowait((item, size))
+        self._queued_bytes += size
+        self._owned_bytes += size
+        self._high_watermark_bytes = max(self._high_watermark_bytes, self._owned_bytes)
+
+    async def _put_when_space(self, item: T, size: int) -> None:
+        while True:
+            self._space_changed.clear()
+            if not self._full(size):
+                self._insert(item, size)
+                return
+            await self._space_changed.wait()
 
     async def put(
         self,
@@ -103,8 +168,11 @@ class BoundedAsyncQueue[T]:
 
         if writer_task.done():
             self._raise_writer(writer_task)
-        if not self._queue.full():
-            self._queue.put_nowait(item)
+        size = self._size(item)
+        if self.byte_capacity is not None and size > self.byte_capacity:
+            raise IngressBackpressureTimeout("frame exceeds the receipt byte capacity")
+        if not self._full(size):
+            self._insert(item, size)
             self._observe_depth()
             return PutResult(waited_ns=0, saturation_started=False)
 
@@ -123,6 +191,7 @@ class BoundedAsyncQueue[T]:
                 )
             inserted = await self._put_waiting(
                 item,
+                size=size,
                 writer_task=writer_task,
                 timeout_seconds=min(self.put_timeout_seconds, saturation_remaining),
                 timeout_type=None,
@@ -146,9 +215,13 @@ class BoundedAsyncQueue[T]:
 
         if timeout_seconds <= 0:
             raise ValueError("post-close put timeout must be positive")
+        size = self._size(item)
+        if self.byte_capacity is not None and size > self.byte_capacity:
+            raise IngressPostCloseHandoffTimeout("boundary frame exceeds receipt byte capacity")
         started_ns = time.monotonic_ns()
         inserted = await self._put_waiting(
             item,
+            size=size,
             writer_task=writer_task,
             timeout_seconds=timeout_seconds,
             timeout_type=IngressPostCloseHandoffTimeout,
@@ -164,12 +237,13 @@ class BoundedAsyncQueue[T]:
         self,
         item: T,
         *,
+        size: int,
         writer_task: asyncio.Task[None],
         timeout_seconds: float,
         timeout_type: type[IngressPostCloseHandoffTimeout] | None,
         stop: asyncio.Event | None = None,
     ) -> bool:
-        put_task = asyncio.create_task(self._queue.put(item))
+        put_task = asyncio.create_task(self._put_when_space(item, size))
         stop_task = asyncio.create_task(stop.wait()) if stop is not None else None
         try:
             watched: set[asyncio.Task[object]] = {put_task, writer_task}
@@ -214,7 +288,14 @@ class BoundedAsyncQueue[T]:
     def note_consumer_progress(self) -> bool:
         """Return true once when saturation falls below the low watermark."""
 
-        if self._saturation_started_ns is None or self.depth > self.low_watermark:
+        if (
+            self._saturation_started_ns is None
+            or self.depth > self.low_watermark
+            or (
+                self.byte_capacity is not None
+                and self._owned_bytes > self.byte_capacity // 2
+            )
+        ):
             return False
         self._saturation_started_ns = None
         return True
@@ -236,6 +317,10 @@ class BoundedAsyncQueue[T]:
                 if self._saturation_started_ns is None
                 else (now_ns - self._saturation_started_ns) / 1_000_000_000
             ),
+            byte_capacity=self.byte_capacity,
+            queued_bytes=self._queued_bytes,
+            owned_bytes=self._owned_bytes,
+            high_watermark_bytes=self._high_watermark_bytes,
         )
 
     def _observe_depth(self) -> None:

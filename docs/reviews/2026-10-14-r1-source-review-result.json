@@ -1,0 +1,128 @@
+{
+  "access": {
+    "blocked_import_loopback_bind_probes": 2,
+    "forbidden_production_data_open_attempts": 0,
+    "network_connections": 0,
+    "network_guard": "all socket.connect/bind/DNS events denied before action",
+    "production_or_historical_raw_reads": 0,
+    "repository_edits": 0,
+    "synthetic_data_root": "/private/var/tmp/recorder-r1-independent-review-pXCpf3C2",
+    "vps_connections": 0
+  },
+  "base": "9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b",
+  "candidate_root": "/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder",
+  "changed_source_hashes": {
+    "src/binance_market_data_recorder/binance/spot/rate_limit.py": "bf06b3e1755a1ac5777ab6ef8d7222cb135fc8698b102181c5795a273bba4a44",
+    "src/binance_market_data_recorder/binance/spot/websocket.py": "93c6021e213b563187f52104e6d5483938f9a1bdf73394c4f342783764446cea",
+    "src/binance_market_data_recorder/binance/usdm/schema.py": "0e7799efd74c94b19ec3cdeb2ca30b35dbd7a399afdfee98aa51a5762c2d8ea2",
+    "src/binance_market_data_recorder/binance/usdm/websocket.py": "51401fca4606a869fa7c3c14e6b7ebd6c688c166b34778b22d6722ea71af6863",
+    "src/binance_market_data_recorder/binance/websocket_common.py": "fbb546b532dd0938d020c3b1d096ca574fddf26e66d8b2159a7dd7f7bfe2acbd",
+    "src/binance_market_data_recorder/normalize/model.py": "9d50728a1b396aeb3290d89862059026a94f2de1698563f2b9d3b455d0f29f0b",
+    "src/binance_market_data_recorder/normalize/parser.py": "ce137da327bde34df124901904b85843ee6ababb37e2a62351dd74a25c80b2aa",
+    "src/binance_market_data_recorder/normalize/pipeline.py": "2412b3333d8675941605c9262b6e658e3850b850eace778f4926d9c10ec3a1d7",
+    "src/binance_market_data_recorder/replay/catalog.py": "9183a2984c92ec543e88352a3c45f352cb50ec54fa49e385f96e436b124911f5",
+    "src/binance_market_data_recorder/spool/async_queue.py": "ac518b01a6c5644e14166b487d2ff2a926edc27894f9e923aa506fafa09a2d95"
+  },
+  "extra_independent_fixtures": {
+    "cases_passed": 3,
+    "default_owned_byte_budget": 67108864,
+    "messages_per_market": 6,
+    "near_16mib_payload_bytes": 16775168,
+    "path": "test_r1_review_owned_boundaries.py",
+    "sha256": "c2a52dede364c5ca825889b08c00eadb5896b08ebb7fe37380d5a689f1b502f1"
+  },
+  "head_at_review": "9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b",
+  "input_manifest_sha256": "326dab05b779beebd41cc4e38999ed18b8f8a6ec40e55f9738522709385a155d",
+  "limitations": [
+    "Source review applies only to exact bytes in the frozen source manifest; no release CI/wheel/deployment/native runtime qualification is granted.",
+    "No 2h/12h or inherited-duration credit; old production acceptance does not qualify R1.",
+    "Payload ownership budget is per collector, not process RSS or total transport/decoder memory.",
+    "Transport 16MiB acceptance is distinct from Raw encoded-body max_frame_bytes; Raw includes envelope overhead and preserves existing fail-closed size limits.",
+    "Phase counts overlap and are not a unique-suite sum."
+  ],
+  "parent_reported_unrerun": {
+    "full_pytest_initial": "2108 PASS /24 online SKIP /5 stress deselected; sole M0 root override error subsequently passes supported override",
+    "m0_go": "PASS",
+    "real_fragmented_transport": "6 PASS according to parent; not run independently under zero-network scope",
+    "ruff_mypy": "PASS"
+  },
+  "phases": [
+    {
+      "blocked": [
+        {
+          "address": "(('::1', 0),)",
+          "event": "socket.bind"
+        }
+      ],
+      "deselected": 3,
+      "elapsed_seconds": 11.883832667022943,
+      "exit_code": 0,
+      "guard_counters": {
+        "socket.bind": 1
+      },
+      "passed": 140,
+      "result": "focused-pass-result.json",
+      "result_sha256": "77218f8d18b36e36d57393a48575b207aefd8df74d15ee8441f5e9d3bd32bc5d",
+      "stdout": "focused.stdout",
+      "stdout_sha256": "cedc64c3c48f9c75be0262e8d66fc04451834d91ceb344a352750a2dd70559b3"
+    },
+    {
+      "blocked": [],
+      "deselected": 0,
+      "elapsed_seconds": 5.3392139580100775,
+      "exit_code": 0,
+      "guard_counters": {},
+      "passed": 56,
+      "result": "boundary-contract-result.json",
+      "result_sha256": "4b93d7736ea8d2f1a39f490943a4fd1051b2a2d2f291d429b299a537f661c044",
+      "stdout": "boundary-contract.stdout",
+      "stdout_sha256": "ef9df93ccdceaee1e31ab53362b87d0537b421bcd477b42562b1d575bbe85cb3"
+    },
+    {
+      "blocked": [
+        {
+          "address": "(('::1', 0),)",
+          "event": "socket.bind"
+        }
+      ],
+      "deselected": 0,
+      "elapsed_seconds": 2.4842044170945883,
+      "exit_code": 0,
+      "guard_counters": {
+        "socket.bind": 1
+      },
+      "passed": 3,
+      "result": "owned-boundary-result.json",
+      "result_sha256": "5e8d06a0f234664255a1376e17f7fe0e9fb2eb806073d4cda8b90f4730a4bdb9",
+      "stdout": "owned-boundary.stdout",
+      "stdout_sha256": "f64c7262f6a4e6bd260b2fdb6bccd39632093bd495944ab660f37d941931d816"
+    },
+    {
+      "blocked": [],
+      "deselected": 0,
+      "elapsed_seconds": 0.5175439170561731,
+      "exit_code": 0,
+      "guard_counters": {},
+      "passed": 18,
+      "result": "legacy-boundary-fixed-result.json",
+      "result_sha256": "0f3b68f501c1c1d0222aeea1c7afcf09d0edae01bf6d75df0e67ec47b83162fb",
+      "stdout": "legacy-boundary-fixed.stdout",
+      "stdout_sha256": "4ab328a8a09b7abc4076e84e5b777b2120cb1667ea8d0501b2237a4b2a76b8a5"
+    }
+  ],
+  "resolved_finding": {
+    "fix": "invalid USD-M core rows explicitly null all three exchange-time columns; no envelope fallback",
+    "id": "R1-LEGACY-TIME-OVERFLOW",
+    "independent_recheck_passes": 18,
+    "original_failures": 2,
+    "original_reproduction": "legacy-boundary.stdout",
+    "original_reproduction_sha256": "41f7e0e96bc1d8beff50962796acddc6db342535ef4b89bfdabafed930cee3c6",
+    "reproduction": "test_r1_review_boundaries.py",
+    "reproduction_sha256": "32e14470fb19acd734e284d9a8ae1f366fa14b4d857948fb5b71622c5caa69d2"
+  },
+  "schema": "r1-source-independent-review.v1",
+  "source_manifest_sha256": "559729184f97a45e52c9f86220fbcacba5f89d43f132d92454e1eb6bbbef33a2",
+  "source_member_count": 122,
+  "unresolved_findings": [],
+  "verdict": "ACCEPT_SOURCE_CORRECTNESS_LOCAL_OFFLINE"
+}

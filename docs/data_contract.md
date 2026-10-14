@@ -2,7 +2,7 @@
 
 Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
-the rebuildable `normalized-dataset.v1` contract under ADR-0020.
+the rebuildable `normalized-dataset.v2` contract under ADR-0020.
 
 The approved VPS/local archive topology changes physical custody and execution
 roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
@@ -96,7 +96,7 @@ must not be admitted to receive-time replay.
 
 ### M19 Live normalized consumer contract
 
-M19 Live Raw additions are consumable through `normalized-dataset.v1` without
+M19 Live Raw additions are consumable through `normalized-dataset.v2` without
 changing any pre-existing stream field or dataset meaning. Spot
 `exchange_info` uses a market-specific v1 schema containing symbol presence,
 server time, trading status, canonical filters/order-types/rate-limits and
@@ -350,7 +350,12 @@ M15 must use explicit versioned semantics and preserve source-chunk lineage.
 
 ### Normalized
 
-`normalized-dataset.v1` is rebuildable and immutable. One explicit build
+ADR-0044 selects v2 for corrected USD-M stream-specific E/T derivation. Legacy
+v1 artifacts remain immutable and explicitly readable; existing Raw is never
+rewritten. New builds rederive valid core times from payloads, keeping exact Raw
+provenance.
+
+`normalized-dataset.v2` is rebuildable and immutable. One explicit build
 manifest selects an exact sorted Raw/checkpoint source set and the exact
 content-addressed partitions belonging to that build. Consumers must not glob
 all artifact files, because builds may share or supersede partitions.
@@ -358,7 +363,7 @@ all artifact files, because builds may share or supersede partitions.
 Partitions live below
 `market=<market>/stream=<stream>/date=<receive UTC date>/hour=<HH>` and use
 explicit Arrow schemas. Every row carries the dataset, stream schema and
-`normalized-dedup.v1` versions; receive/exchange clocks with units in their
+`normalized-dedup.v2` versions; receive/exchange clocks with units in their
 names; Collector/connection provenance; source chunk ID/SHA and record
 ordinal; source sequence/capture flags; exact Raw payload SHA; and semantic and
 logical identity hashes. Decimal exchange values remain strings. Complex level
@@ -390,7 +395,7 @@ the same deterministic book hash.
 
 ### Replay
 
-`consumer-contract.v1` exposes one explicit `normalized-dataset.v1` build
+`consumer-contract.v1` exposes one explicit `normalized-dataset.v2` build
 through `ManifestCatalog`; it never infers “latest” or globs across builds.
 Replay query bounds are half-open Unix nanoseconds in the selected clock.
 

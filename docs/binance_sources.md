@@ -510,3 +510,19 @@ responses, not a new normative publication-latency guarantee. The correction
 changes local operational-event identity and explicitly bounded diagnostic
 recovery; it never advances a missing-period cursor or substitutes different data.
 No new external document retrieval or downloaded code execution occurred.
+
+## R1 USD-M E/T semantic correction (2026-10-14)
+
+USD-M public depth/bookTicker T is Transaction Time; market aggTrade T is
+Trade Time. ADR-0044 maps these separately and versions Normalize rederivation
+without changing old Raw. E remains Event Time. The current Agent Native
+index selected the official USD-M streams, and their current catalog pages
+were inspected through the browser source reader.
+
+| Source | URL | Retrieval UTC | Content SHA-256 and representation |
+| --- | --- | --- | --- |
+| Agent Native index | https://developers.binance.com/en/docs/llms.txt | 2026-10-14T02:33:26.224998+00:00 | `b92c275f8d8aed4f403235a354d2ac6681261480e2f579d043b3c79ed4f00ef1` raw text response |
+| Official USD-M stream page | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public | 2026-10-14T02:37:02.366345+00:00 | `9a8c54bf50e85e99a4bd4fd5c6125cfbe5862fa1263032cd37d022dd261b67d2` combined browser-extracted E/T excerpts, not HTTP response bytes |
+| Official USD-M stream page | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market | 2026-10-14T02:37:02.366345+00:00 | `9a8c54bf50e85e99a4bd4fd5c6125cfbe5862fa1263032cd37d022dd261b67d2` combined browser-extracted E/T excerpts, not HTTP response bytes |
+
+Direct HTML/schema requests returned HTTP202 empty bodies, so their response hashes provide no semantic evidence. The nonempty browser-extracted official pages identify stream-specific T semantics and int64 types. Downloaded text was not executed. Shared Contracts fixture origin/check date and copied SHA remain in tests/fixtures/contracts/README.md.

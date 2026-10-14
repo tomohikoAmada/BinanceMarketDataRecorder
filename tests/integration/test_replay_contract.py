@@ -63,7 +63,7 @@ def test_manifest_catalog_is_explicit_verified_and_location_independent(
     catalog = ManifestCatalog(prepared.layout.root)
     assert [item.build_id for item in catalog.list_builds()] == [prepared.build_id]
     dataset = catalog.open_build(prepared.build_id)
-    assert dataset.summary.dataset_version == "normalized-dataset.v1"
+    assert dataset.summary.dataset_version == "normalized-dataset.v2"
     assert dataset.summary.source_chunk_count == 7
     assert dataset.summary.checkpoint_count == 1
     assert len(dataset.partitions()) == 4
@@ -255,7 +255,7 @@ def test_unselected_orphan_artifact_cannot_enter_replay(tmp_path: Path) -> None:
     expected = _digest(list(dataset.replay(query)))
     orphan = (
         prepared.layout.root
-        / "data/normalized/normalized-dataset.v1/artifacts/orphan.parquet"
+        / "data/normalized/normalized-dataset.v2/artifacts/orphan.parquet"
     )
     orphan.write_bytes(b"not selected by a build manifest")
     observed = _digest(
@@ -268,7 +268,7 @@ def test_partition_corruption_is_rejected_before_replay(tmp_path: Path) -> None:
     prepared = build_replay_fixture(tmp_path)
     build_path = (
         prepared.layout.root
-        / "data/normalized/normalized-dataset.v1/builds"
+        / "data/normalized/normalized-dataset.v2/builds"
         / f"{prepared.build_id}.manifest.json"
     )
     build = json.loads(build_path.read_text(encoding="utf-8"))
