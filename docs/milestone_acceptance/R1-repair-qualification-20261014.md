@@ -6,7 +6,7 @@ then qualify this release's own VPS 2h and 12h. Stop before24h/48h.
 Candidate: `codex/recorder-r1`, base `9e8ec37`, isolated worktree
 `/Users/amada/.codex/worktrees/recorder-r1/BinanceMarketDataRecorder`.
 Current production remains old49b4a2d/c7d354be/7072575b/config5b73,
-Recorder inactive AND disabled. New native cloud build is running; no qualified wheel/deployment/window/T0 exists.
+Recorder inactive AND disabled. New wheel/cloud release is independently qualified; no canonical deployment/window/T0 exists.
 Read-only VPS preflight October14 confirms original boot/config, natural
 archive timer enabled-active and both disks available; no production mutation.
 
@@ -33,7 +33,14 @@ archive timer enabled-active and both disks available; no production mutation.
   dirs/archive/helper copy readback verified and unique cloud native9c8b9877
   is advancing affected tests. Its controller timeout did not stop the native;
   do not repeat. Result checkpointOctober14 03:10UTC.
-- [ ] New Linux locked wheel and affected cloud tests/install/source correspondence PASS.
+- [x] Actual421cloudtestsPASS/1stressdeselected; new wheel26c6c5c7 and
+  receipt64026b12 qualify122sourcefiles/28exactlocked dependencies. Native
+ 9c8b9877 SUCCESS03:02:22UTC; actual cloud independent ACCEPT4d8a40e5/87112839.
+  Post-GC systemctl default properties are not original unit evidence.
+- [x] Stopped deployment helper17176648 design ACCEPT27974421/da1cfe5f;
+  nested command groups settle before rollback, unresolved cleanup blocks it.
+  Actual Linux child-ready v3 cec2e7b5 tests3PASS; native canonical deploy
+  c98ce736/429343 is running, actual result/independent verificationPENDING.
 - [ ] Canonical stopped deployment and fresh identity verification accepted;
   old venv/config/data/evidence retained.
 - [ ] Fresh2h own7200s, selected doubleLIVE/completed immutable verification,
