@@ -1,0 +1,35 @@
+# New same-release owner12h exact design qualification
+
+**DESIGN ACCEPT.** No blocking finding remains in the exact parameter changes, copy helper or native argv. This is an authorized GPT-6.1 Sol xhigh LOCAL/OFFLINE read-only review. It grants no actual copy/arm/start/duration/data/restored-handoff credit.
+
+Scope `/srv/recorder-data/recorder-archive/evidence/R1-owner12h-stopfix-20261015-ac1d0a6518e1` is a new exclusive child. Source `8f4e5dc70668207e07ed3d906b4f891eeba4085f`, wheel `bbcb54aef70c7b5136e3ee8902128d22795ad1956d22aa7f0868f79fab26aec3`, identity `b7abd4017176e850b04057a462bee1bb513931a1e1cf1dedd9e286aa30a3bcec`, config `5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419` remain the accepted release. The prior owner2h receipt `7a9eeea0254550afb77d7c8d7672c73951fd858db554056ff9bbae3d8e582239` and all3 independent report/result/manifest publication hashes and root0:988/0640 readback agree. Prior2h time is not inherited; new own target is43200s and its new fixed finite window93600s.
+
+## Exact minimal changes
+
+All18 candidate files match `owner12h-prepared.json` SHA`805f98847fd8dc23dbdccebbef3678cd7b8fad89be47a45963158f7acebaddbc`. Exactly5 files differ from the accepted own2h controls: common.py, arm.py, arm_kernel_pending.py, controller.py, launch.py. The13 other helpers are byte-identical, including guarded scoped-terminal, released selected-corpus adapter, recovery/monitor policies, pin, restore and fixtures. All13 common functions are AST-identical. Controller resource reader/gate, validate_capture, validate_warm, sample, drain and terminal functions are AST-identical. Changes are scope/three unit identities, target/window/counts, 12H evidence kinds, forecast/admission duration tuples and capture runtime.
+
+Common SHA`4677834f2175846eae867fd17e83970c017135c6cb1902996e637bb19129c654`; controller`91d119654826147aa680f814db25c8542547d94d8481549972d160725e737003`. Counts bind67863chunks/126277987frames/6906066875storedB/97309229513decodedB/max35520800. Boundary creation remains before enabling Recorder; exact new selection is unchanged. No source/wheel rebuild, historical Raw or history-manifest audit is introduced. Strict26 endpoints, same boot/PID/incarnation, owned swap.current AND swap.peak0, RSS<1GiB, host MemAvailable>2GiB, both filesystem10GiB bounds, per-episode60s recovery, fixed30s monitoring, separate5s diagnostics and full dualLIVE/completed verification remain unchanged.
+
+## Time and capacity
+
+The unchanged forecast function independently reproduces fresh metadata preflight`9f188acbad90205f16ff5726abbe5f34510f5881b8f23e92d1ea813e52ff0a7c`. Capture forecast45300s, remaining own43200s, warm1200s; required **83441.75978428699s**, fresh provisional93600s margin **10158.240215713013s**. Projected writer **10871707096B**, **134288856B above10GiB**; archive2070751833952B. Audit estimate26769.407827429593s with125% budget33461.759784286995s remains an estimate, not completion credit. Thresholds/rates/two writer generations/staging/full selected audit scratch were not reduced.
+
+This is a prospective forecast, not ACTIVE_VERIFIED or permission to reuse a closed window. Supplied preflight Recorder is inactive+disabled/PID0; normal archive timer enabled-active and a natural worker activating at that read. Existing natural-wait entry must observe successful natural settlement, then fresh canonical verification/admission/counts/marker/OS preconditions under its unchanged finite controls. Native launch/prestart repeat live admission, so the small writer margin is never treated as guaranteed future capacity.
+
+## Meaningful affected fixture and bounded native plan
+
+One independent synthetic fixture executed the exact candidate capture function under a fake clock with **TARGET43200 unchanged**. It produced exactly **1440 regular30s slots**, no skipped/synthesized slots or probes, one fresh T0, exact43200000000000ns strict target, and one native terminal dispatch after mocked normal stop/drain. Admission tuples were (45000,43200,1200), (43800,43200,0), then(0,0,0). Kind fields are12H and canonical eligibility false. No service/network/Raw operation ran; all fixture paths are private synthetic. Unchanged real nested-spawn/auditor/strict/fault fixture qualification is reused rather than repeated.
+
+Capture RuntimeMax46080/Stop1500 increases the prior10080 runtime by exactly36000, matching the added target duration. It retains420s allowance beyond warm1200+own43200+drain900+two150s stop calls+terminal-start wait60; this arithmetic is an allowance, not an execution-time guarantee. The independent absolute expiry remains the final bound; terminal full audit keeps its already-reviewed native arrangement, source no-progress watchdog and mandatory restoration.
+
+Exact arm argv SHA`7e176c8e66e058feec2c8067577d82098d2b89fe7ec9ba1f41ad099a2608ed64`: new unique unit, --no-block/oneshot/Start2400/Stop1500/UMask0027/CPU+MemoryAccounting, failure-only restore, TMPDIR+SQLITE_TMPDIR on new archive scope; systemPython → accepted whole-phase pin → systemPython arm-natural-kernel-pending.py. Launch argv SHA`6fd6aeb1c7b3ec1d3173124d1be93fa6480e2ce7096921a1ae69020df8c796a8` invokes systemPython launch.py; capture uses systemPython pin → accepted locked-venv controller. No stale2h path or old expiry is retained.
+
+## Direct exclusive copy
+
+Copier SHA`906a7d1b9a5045ef46c5693ffff43d88a7623a95f3393379fab0b3c3244a46aa` is accepted for exact prepared18-file payload only. It verifies each local SHA, accepted remote2h receipt/hash/decision/source/identity/duration, and current installed identity before creating new Q exclusively under the canonical archive evidence parent. It creates Q root:bmdr0750, tmp actual bmdr UID/GID0770 and18 root:bmdr0640 helpers with O_EXCL/O_NOFOLLOW and explicit chown/chmod, fsyncs each helper and tmp/Q/parent, then fully rehashes and reads actual ownership/modes/devices/no-window/no-start back. It has no rsync/local directory attribute inheritance, service operation or production-data action. This directly addresses the previous stale-root-attribute problem.
+
+Actual remote root/tmp types, canonical resolution, physical hashes and archive device still require exact returned readback before actual native qualification. A failed exclusive copy remains evidence; no automatic overwrite/reuse is authorized by this design. No copy/native command was executed by this reviewer.
+
+## Boundaries and next action
+
+Only exclusive private review artifacts and synthetic clock files were written; no repository edit, network/SSH/VPS, production Raw/manifest, service/config/deployment or unrelated storage action occurred. All guard counters are zero. Full input hashes and fixture result are frozen here. Parent may perform the reviewed exclusive copy and provide exact physical/current admission evidence for the actual arm stage. A new own12h still needs its own actual T0/43200s/full saved-data/restored closeout. No inherited duration, canonicalV5/every-event/production-ready or24h/48h credit is granted.
