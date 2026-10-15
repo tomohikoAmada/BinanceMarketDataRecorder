@@ -43,5 +43,7 @@ Current and historical decisions:
 
 - [ADR-0041: Owner-policy long-run qualification after Q7 acceptance](0041-owner-policy-long-run-qualification.md)
 
+- [ADR-0045: Sparse OI statistics use durable evaluated query windows](0045-sparse-open-interest-evaluated-windows.md)
+
 ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.

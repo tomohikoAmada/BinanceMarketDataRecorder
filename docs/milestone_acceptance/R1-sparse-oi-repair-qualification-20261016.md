@@ -1,0 +1,16 @@
+# Sparse OI repair and new source qualification
+
+Current development checkpoint October15 16:15UTC (ShanghaiOctober16 00:15): **SPARSE_OI_IMPLEMENTATION_ACCEPTED; EXACT_SOURCE_FREEZE_AND_RELEASE_PENDING**. Latest human authorization is diagnose/fix/restart12h. Original77fe failure remains failed6h37m/closed-restored; prior8f own2h receipt7a9 remains accepted for8f only. No capture/window/T0 is currently active and production has not changed.
+
+The current primary [Open Interest Statistics contract](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#open-interest-statistics) explicitly permits omitted periods without backfill and describes timestamps as period ends. The client's generic exact-start/continuous300000ms requirement was not valid for this feed. This establishes a client contract defect; it does not establish why each original response was empty or the transport disconnected. Original independent failure diagnosis86386b7d and later bounded public probes remain preserved.
+
+OI-only candidate source preserves exact SDKmodel/endtimestamps/Raw, evaluates complete bounded closed query windows with500-row limit, durably records RANGE_EVALUATED and explicitEMPTY before query-window cursor/success; saturated500 responses keep the cursor and success unchanged and shrink only the existing bounded query ceiling. Every new poller conservatively rechecks its stored legacy cursor window once. Other dense feeds, strict qualification/recovery, all14 flags/fourproducts/resources/OS restoration remain unchanged. No values/timestamps are fabricated or gaps labelled permanently unrecoverable. Design independently ACCEPTa35fc890/3c11a5b1/81666d47; [ADR-0045](../adr/0045-sparse-open-interest-evaluated-windows.md) records the feed-specific cursor meaning.
+
+- [x] Diagnose actual automatic failure and preservation/restoration; retain both monitor-prefix metrics and zero12h credit.
+- [x] Reconcile the primary OI sparse/endtimestamp contract; independently qualify the minimum design.
+- [x] Implement candidate and focused121PASS, including two recorded current API response regressions/empty/sparse/endtimestamp/range/saturation/restart/fsync/event-commit cases; Ruff/fullmypy306/M0/Go PASS.
+- [x] FullLOCAL2130PASS/24onlineSKIP/5stressDESELECTED plus Ruff/mypy306/M0/Go; independent exact7 implementation and8 additional fault cases ACCEPT9770e252/852a4cc8/5aeff7fc, no unresolved finding.
+- [ ] Freeze/commit repaired source; exact dualCI/newlockedwheel/affectedcloud/stopped canonical deployment and independent installed qualification.
+- [ ] New source's own2h full saved-data/independent restored receipt, then separate own43200s12h/full new-data audit/restored acceptance. Prior8f source duration cannot transfer.
+
+Exact LOCAL control root `/private/var/tmp/bmdr-r1-sparse-oi-release-20261016-gluar6tw/CONTINUATION.md`; accepted candidate7 hashes are implementation-candidate.json and frozen independent IMPLEMENTATION_RESULT.json. Next freeze exact source commit, then qualify exact CI/wheel/affected cloud/stopped deployment; do not repeat accepted tests or old failed12h/closedarm. All data/failures/venvs/worktrees/unrelated modifications remain preserved. No24h/48h/production-ready credit; hourlyACTIVE unchanged.

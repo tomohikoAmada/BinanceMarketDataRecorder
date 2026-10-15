@@ -132,7 +132,7 @@ REST_SIDE_DATA_SPECS: dict[RestSideDataKind, RestSideDataSpec] = {
     RestSideDataKind.OPEN_INTEREST_STATISTICS: RestSideDataSpec(
         RestSideDataKind.OPEN_INTEREST_STATISTICS,
         "/futures/data/openInterestHist",
-        "latest_closed_5m_period_no_forward_fill_latest_one_month",
+        "sparse_period_end_observations_closed_query_windows_no_forward_fill",
         "IP weight 0; IP rate limit 1000 requests per 5 minutes",
     ),
     RestSideDataKind.TAKER_BUY_SELL_VOLUME: RestSideDataSpec(
@@ -512,11 +512,12 @@ def _call(
         or period_end % FIVE_MINUTE_PERIOD_MS != FIVE_MINUTE_PERIOD_MS - 1
     ):
         raise ValueError("five-minute request range is not period aligned")
-    api_limit = (
-        min(period_limit + 1, 500)
-        if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
-        else period_limit
-    )
+    if kind is RestSideDataKind.OPEN_INTEREST_STATISTICS:
+        api_limit = 500
+    elif kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME:
+        api_limit = min(period_limit + 1, 500)
+    else:
+        api_limit = period_limit
     api_end = (
         period_end + FIVE_MINUTE_PERIOD_MS
         if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
@@ -685,7 +686,8 @@ def capture_rest_side_data(
             raise SideDataSchemaError(
                 "five-minute response contains an unexpected out-of-range timestamp"
             )
-        if requested_timestamps and (
+        sparse_oi = kind is RestSideDataKind.OPEN_INTEREST_STATISTICS
+        if not sparse_oi and requested_timestamps and (
             requested_timestamps[0] != requested_start
             or any(
                 current - previous != FIVE_MINUTE_PERIOD_MS
@@ -699,6 +701,16 @@ def capture_rest_side_data(
         if requested_timestamps:
             source_sequence["firstRequestedTimestamp"] = requested_timestamps[0]
             source_sequence["lastRequestedTimestamp"] = requested_timestamps[-1]
+        if sparse_oi:
+            # The endpoint documents omitted, non-backfilled periods and period
+            # END timestamps. Keep those values exact; a bounded, unsaturated
+            # response evaluates a query interval, not a dense set of rows.
+            source_sequence["cursorSemantics"] = "evaluated_closed_query_windows.v1"
+            source_sequence["requestedRangeComplete"] = int(len(_array(model)) < 500)
+            if source_sequence["requestedRangeComplete"] == 1:
+                source_sequence["evaluatedThroughPeriodStart"] = (
+                    requested_end - (FIVE_MINUTE_PERIOD_MS - 1)
+                )
     spec = REST_SIDE_DATA_SPECS[kind]
     provenance = {
         "schema_version": "binance-usdm-side-rest-provenance.v1",
