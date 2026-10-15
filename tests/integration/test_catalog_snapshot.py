@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import shutil
+import signal
 import sqlite3
 import threading
 from pathlib import Path
@@ -470,11 +472,22 @@ def test_remote_sigkill_residue_is_not_authority_and_retry_cleans_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     prepared, inprocess, receipt_id = _pending(tmp_path)
+    # Keep the real snapshot larger than normal platform pipe buffers so the
+    # exporter retains its owned stage while the test observes and kills it.
+    with Catalog(prepared.layout.catalog) as writer:
+        writer.record_operational_event(
+            event_id="kill-fixture-backpressure",
+            event_type="TEST_ONLY",
+            occurred_at_utc_ns=0,
+            evidence={"padding": "x" * (1024 * 1024)},
+        )
     config = tmp_path / "remote.toml"
     config.write_text(f'[recorder]\ndata_root = "{prepared.layout.root}"\n')
     stage_root = prepared.layout.state / "catalog-snapshot-staging"
     monkeypatch.setenv("BMDR_SSH_SHIM_FAULT", "catalog_snapshot_kill")
     monkeypatch.setenv("BMDR_SSH_SHIM_REMOTE_STAGE_ROOT", str(stage_root))
+    kill_proof = tmp_path / "kill-proof.json"
+    monkeypatch.setenv("BMDR_SSH_SHIM_KILL_PROOF", str(kill_proof))
     store = CatalogSnapshotStore(workspace_root=(tmp_path / "offline").resolve())
     before = inprocess.inspect_authority(receipt_id)
     with pytest.raises(CatalogSnapshotError):
@@ -483,6 +496,12 @@ def test_remote_sigkill_residue_is_not_authority_and_retry_cleans_it(
             receipt_id=receipt_id,
             required_state=RemoteArchiveState.REMOTE_DELETE_PENDING,
         )
+    proof = json.loads(kill_proof.read_bytes())
+    assert proof["owned_active_stage_observed"] is True
+    assert proof["kill_issued"] is True
+    assert proof["returncode"] == -signal.SIGKILL
+    if proof["stdout_pipe_capacity_bytes"] is not None:
+        assert proof["stdout_pipe_capacity_bytes"] <= 4096
     assert store.current_retention().latest is None
     assert before == inprocess.inspect_authority(receipt_id)
     assert stage_root.is_dir() and list(stage_root.iterdir())
