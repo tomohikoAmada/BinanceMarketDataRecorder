@@ -1,0 +1,13 @@
+# Complete pip HTTP cache COPYONLY custody — ACCEPT
+
+**ACTUAL COMPLETE COPY ACCEPT**, no unresolved finding. Exact manifest `bb7d949483addde1d02d782c25056bae6879ced62b88f9c3054b5865bb8fab27` is byte-identical to the fullmanifesttext in actual resultfdfcd174 and is published by exacte792 native9aadbcc3/PID518552.
+
+Full reconstruction checked **all628 source-before +628 source-after +628 destination rows**, not a sample: **210 regularfiles,418directories includingroot,126002703 logicalfile bytes**. Every member ID is canonical/relative, every parent exists as directory, root andcomplete keysets match, all directory nlinks agree with direct childdirectories, all regular nlinks are1, and each snapshot has628 distinct device/inode pairs. Source64769 and archive64785 are separated. No symlink, special, hardlinkedregular or unexplained member is accepted.
+
+Every tracked source field before/after is identical, including inode/device/ctime/allocated plus UID/GID/mode/mtime/nlink/size/SHA. Every destination portable attribute and all210 exact fileSHA/size values match corresponding source rows. Cachefile content was not opened by this reviewer: this is complete reconstruction of the native before/after/independent-readback metadata. Exact reviewed helper provenance binds actual archive syncfsreturn0 before readback, repeated noactivepip/noFDusers/current7276/boot59/stopped checks before durable EXCL manifest publication. No live scan or extra production/cache read was performed by the reviewer.
+
+Original exact dispatch9d432595 matches new singleton Typeexec/no-block/300s/Stop60s/0027/accounting. Owned/manager journal records establish completion within3.776844s wall/3.150669s CPU and bind emitted628-member manifest summary/hash. Later not-found/default show and any post-GC lookup warning are not execution outcome/property proof. Successful manager records and manifest provide authority.
+
+**Original cache remains unchanged/unaliased/unlinked** in all tracked fields. Accepted custody grants **0 freed bytes**, no reserve/forecast admission and no newwindow/T0/duration. The duplicate-removal helper remains unwritten/unqualified: next may be a separately reviewed fresh complete source+destination hash/stat/noUsers/stopped-identity guarded **cacheFILE-only unlink**, retaining all immutable archivecopy/manifest/directories. No productiondata or oldvenv deletion is included. Only actual measuredfreedspace plus freshsameforecast strictlyover10GiB may unblock newown2h.
+
+LOCAL/OFFLINE supplied current metadata only:0 network/VPS/cachecontent/productionRaw opens,0 copy/pip/service/test actions,0 source/candidate edits. Prior design was reused, not repeated.
