@@ -1,5 +1,29 @@
 # R1 repair and new release qualification
 
+Current actual owner-requested check October15 15:39UTC (Shanghai23:39): **R1_REPAIRED_OWN2H_ACCEPTED; OWN12H_FAILED_BEFORE_TARGET**. Sole run77fe286f88e143f0ab318246eab4d399 automatically failed **October15 13:11:05.519916474UTC / Shanghai21:11:05**, at own23825.334553061s (6h37m5.335s), short19374.665446939s of43200. Failure2bc89bea is `core_recovery_requires_fresh_strict_auxiliary_PASS`. No owner-target/terminal/full saved-data audit exists; **this attempt has no accepted12h or saved-frame correctness denominator**. Old target18:34UTC/ShanghaiOctober16 02:34 is no longer an active completion estimate. Parent's first current read15:39UTC was after automatic failure; the status read did not stop this run.
+
+Confirmed trigger: USD-M BTCUSDT book_ticker disconnected13:10:55UTC; sampled corefalse13:11:00→coretrue13:11:05 under the same incarnation. At the recovery check, both BTC/ETH open_interest_statistics_5m were still RETRYING/EmptySideDataResponse (204 recorded consecutive failures), last persisted12:40 period. Their first strict monitor BLOCKs were12:52:30/12:53UTC, before the core disconnect. The private recovery gate requires a fresh full strictPASS to close a core episode; the core recovered but those auxiliary contexts prevented closure. This establishes the immediate causal chain, **not yet whether the empty responses originate upstream or from request-window semantics**. No HTTP429/418/network-origin/data-corruption attribution is made without evidence. The795-row regular prefix retains auxiliary_gate783PASS/12BLOCK (the official monitor evaluator input), separately strict_auxiliary_gate753PASS/42BLOCK, plus5 recovery probes outside that denominator; no final whole-run monitoring rate or saved-data correctness is established.
+
+Native actual restoration978e194a reports **RESTORED13:12:00.905808250UTC/errors[] before cancellation13:12:00.936075423UTC**. This93600s window is CLOSED and cannot be extended/reused. Current actual RecorderinactiveANDdisabled/PID0/NRestarts0/Resultsuccess; CAPc009 failed/status1/PID0; archive timerenabled-active/latest workerResultsuccess, approvedOSowners unmasked/restored. Existing files/failure/target estimate/controls are immutable; no restart/newT0/production change/extra restore occurred. Exact metadata-only current-attempt export3c8ffaf7 contains full795-row prefix and failure; current-only ownedRecorderjournal/all6 same-read diagnostic publications/restoration/cancellation are in719515d3. Both are under /private/var/tmp/bmdr-r1-stop-release-20261014-n7x57tez.
+
+Six bounded same-VPS credential-free diagnostic GETs after failure, saved as f706a50a, all returned HTTP200. Retrospective12:45-13:09 OI queries returned off-five-minute-grid seconds-spaced timestamps and zero sumOpenInterestValue; latest reference mixed anomalous and regular rows. This is evidence of responses observed now, not proof of original at-failure content or a confirmed root cause. Preserve exact bodies/headers/parameters; do not relabel or silently accept irregular periods. Independent diagnosis will assess it before any code/policy change. Independent LOCAL/OFFLINE diagnosis is progressing on this attempt only; do not duplicate it or blindly relaunch the unchanged controller.
+
+**Current completion markers (owner requested October15):**
+
+- [x] R1 USD-M E/T mapping, overflow-safe reconnect and owned-byte/backpressure fixes; targeted tests/independent review.
+- [x] Shutdown-starvation correction and frozen8f4e5dc/bbcb54ae/b7abd401 release: exact dualCI/lockedwheel/cloud/stopped deployment accepted.
+- [x] Repaired release's own2h complete saved-data qualification:5634629/5634629 frames/two fullLIVE/completedverify/independent restored ownerreceipt7a9eeea0, already published/main.
+- [x] Separate12h actual warm/strict resources/admission/T0/native binding independently ACCEPT640d3399/0596ce4d/884edcee (startup only); original run/failure preserved.
+- [x] This failed12h automatically stopped normally and restored OS/archive before guard cancellation; current stopped-disabled state confirmed read-only.
+- [ ] Diagnose/qualify the actual current auxiliary empty-response/recovery interaction; implement only a justified affected correction before any fresh run.
+- [ ] Complete a valid own43200s12h; this failed6h37m must not be concatenated or retrospectively accepted.
+- [ ] Complete that valid attempt's current-only saved-frame doubleLIVE/immutableverify, independent full controls and actual restored handoff/ownerreceipt; update docs/main then pause hourly.
+- [ ] R3 joint Gateway/API-budget/co-deployment qualification and Q9/24h/Q10/48h remain uncompleted and outside this authorized12h run; no production-ready/R-078 closure.
+
+All14/fourproducts/source8f-wheelbbcb-identityb7-config5b73/all production Raw/archive/oldderived/failures/venvs/worktrees/unrelated changes remain preserved. Do not open historical Raw/manifests for new qualification, lower strict gates blindly, reuse the closed window or transfer prior source/run time. See latest independent failure review when frozen; CONTINUATION.md is the exact next-operation handoff. No capture currently runs.
+
+Earlier08:32 RUNNING checkpoint below is historical; actual13:11 failure supersedes its operational instructions.
+
 Current actual checkpoint October15 08:32UTC (Shanghai16:32): **R1_REPAIRED_OWN12H_RUNNING**. Sole run77fe286f88e143f0ab318246eab4d399/owner-startd9ff1738 binds frozen8f4e5dc/bbcb54ae/b7abd401/config5b73 and its own T0 **October15 06:34:00.185375590UTC / Shanghai14:34:00**, BOOTTIME1110934365910859. Independent own43200s target is **October15 18:34:00.185375590UTC / ShanghaiOctober16 02:34:00**. No repaired2h or historical-source time is inherited. Native CAPTUREc0096a01/PID492208 and Recorder67aa24aae35740eba5e9dfcd1937b8f2/PID492285/NRestarts0 are genuinely active-running. There is no target/failure/terminal output at this checkpoint. Exact scope remains `/srv/recorder-data/recorder-archive/evidence/R1-owner12h-stopfix-20261015-ac1d0a6518e1`.
 
 Actual warm620.865364s/20 complete warm rows:11 BLOCKs retained/9 strictPASS; first/end strict26 endpoints418.853931541s apart/coreREADY and fresh strictstartPASS. Across22 startup observations owned current AND lifetime-peak cgroup swap0/RSSmax283037696B/hostAvailablemin4895920128B; hostswap20860928B retained, pswpin2410 unchanged/hostpswpout8643→8646 disclosed as host diagnostic. Actual prestart e1b008a8 ADMITTEDremaining92859.263060s>required81296.846333s/margin11562.416727s/projectedwriter10833047334B>10GiB. Boundary26ecab7a is published; full startCatalog/selected-membership binding remains for final control export. Startup is not final12h saved-data qualification.
@@ -166,8 +190,7 @@ archive timer enabled-active and both disks available; no production mutation.
   archive restored and Recorder stopped-disabled.
 - [x] Independent actual stopped canonical deployment ACCEPTc478ca38/result1146baba; physical helper/release/oldvenv and prior707 identity custody verified. [Frozen actual review](../reviews/2026-10-14-r1-actual-deployment-review.md).
 - [x] Fresh actual warm/strict-start/current admission and independent run-T0/native binding ACCEPTce939aa6/fc4dcf56. Final Catalog contents/membership and duration/data/restoration remain pending.
-- [ ] Fresh2h own7200s, selected doubleLIVE/completed immutable verification,
-  saved-frame conformance strictly>99.9%, independent restored closeout.
+- [x] Repaired8f own2h complete:7200.136475171s,5634629 savedframes/twoLIVE/completedverify/independent restored ownerreceipt7a9eeea0. Original8fa shutdown failure remains retained without complete2h credit.
 - [ ] Same release fresh12h own43200s and complete selected saved-data/
   independent restored closeout; update plan/state/handoff and pause hourly job.
 
@@ -220,4 +243,4 @@ Actual owner-startaa8cf54a establishes only this8fa/26c6/d804 release ownT0, nat
 - [x] Minimal source9744842 independentlyACCEPT a34f5c8d/89bb7cbd; exactdualCI38597255154 BOTH SUCCESS.
 - [x] Reviewed six-tail released sealing/native6ecbe396/resultb842b7e6, independent maintenance81a44546 and natural archive success/backlogs0 completed; this is not full2h credit.
 - [x] New8f correction source/independent review/exact dualCI38615679477/lockedbbcb wheel/affectedcloud429composite/stoppedb7 deployment and exact installed qualification accepted.
-- [x] Full five-root cloud-copy custody independently accepted a9c1f5ad; actual resource relocation/admission and OWN new2h/12h remain pending.
+- [x] Full five-root cloud-copy custody a9c1f5ad, actual verified-duplicate relocation/admission9447e3e1 and repaired own2h receipt7a9eeea0 completed; new12h remains unaccepted.
