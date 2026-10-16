@@ -1,0 +1,7 @@
+# Actual new12h capture dispatch: limited ACCEPT
+
+Supplied actual bundle324bdd3e binds the exact reviewed launcher and sole native25c2a29cb6cd49f682b2bcab307e59fc/PID529094, active-running atOctober16 04:06:37UTC. Complete capture-launch arguments retain Typeexec/Runtime46080/Stop1500, whole-phase system-Python pin, locked-venv controller, failure-only restoration and both archive temporary-directory variables. Controller91d11965 and actual windowfc41e149 match the accepted design/arm. Fixed expiry remainsOctober17 06:03:39UTC; it is never extended.
+
+Fresh launch admission is ADMITTED:93,421.47662973404s remaining exceeds83,441.75978428699s required by9,979.716845447052s. Independent current-cost math gives writer10,879,720,561B (142,302,321B above10GiB) and archive2,065,471,698,110B. Census77592/151081620 and both backlogs0 match the prelaunch gate. Native launch publication and current properties agree; stdout explicitly says NOT_YET_T0 and owner-start is absent. Publication body hashes are derived from the supplied complete JSON bodies; this reader did not supply separate remote byte hashes for those two files.
+
+**ACCEPT actual launch binding only.** No actual warm, strict start, T0, completed duration, target, saved-data correctness or restored-handoff credit is granted. Parent's planned first meaningful checkpoint is04:31:37UTC; healthy native work remains unimpeded. Review used supplied local metadata only, with no network/VPS/Raw/candidate execution, tests or edits.
