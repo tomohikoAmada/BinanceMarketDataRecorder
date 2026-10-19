@@ -37,7 +37,7 @@ See [R2 execution](milestone_acceptance/R2-remaining-owner-qualification-2026101
 and [startup independent review](reviews/2026-10-19-r2-own24h-startup-independent-review.md).
 Private authority `/private/var/tmp/bmdr-r2-20261019-6vmbye1j/CONTINUATION.md`.
 R-078/broaderProductionReady and R3 live20keys remain separateOPEN;
-R3-a offline is COMPLETE / MERGED (PR #81; closeout below). Earlier warm/
+R3-a and R3-b offline are COMPLETE / MERGED (PR #81/#82; closeouts below). Earlier warm/
 pending/stop-before24h checkpoints below are historical.
 
 Authoritative final acceptance **October18 05:43UTC / Shanghai13:43**: **R1_REPAIRED_OWN12H_COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run18776666c80c4dc698da194eaa67823d actually completed its own43200.113724685s, strict26/coreREADY at the actual endpoint. Production sourceca760c09/wheelc2eeb219/identity7276c9fa/config5b73 and previously accepted own2h receiptf45fbbc6 remain unchanged. No inherited old duration or recapture was used.
@@ -4261,7 +4261,11 @@ the R2 operational authority above is preserved, not refreshed.
   Spot5000/min, USD-M1800/min, WS240/300s per market, funding400/statistics800.
 - [x] New scoped independent review APPROVED; actual opener/requester/transport
   cancellation and bounded metadata regressions pass. Gateway Release27/27 PASS.
-- [ ] Final remaining checks and PR/CI/merge delivery.
+- [x] Complete checks/review/CI and merge delivery: Recorder#82 `d98821c`
+  (macOS2160/Ubuntu2156) and Gateway#39 `8d171c1` (seven ordinary jobs,
+  Linux production25/25). Local Gateway Release27/27, ASan27/27, TSan4/4,
+  UBSan4/4 and Recorder Ruff/mypy314/contracts/golden pass. Both merge trees
+  equal the tested technical heads. R3-b/G3-b offline COMPLETE / MERGED.
 
 [Acceptance](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md) records the
 precise proof scope, current validation and deployment assumptions. This local

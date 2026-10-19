@@ -33,3 +33,10 @@ outside this offline acceptance.
 The reviewer checked implementation, new tests and saved arithmetic; full suite
 and sanitizer runs are parent validation, not independently rerun claims. See
 [acceptance and current validation](../milestone_acceptance/R3-b-G3-b-shared-api-20261019.md).
+
+
+Final parent validation/delivery: Recorder2160 macOS/2156 Ubuntu full CI;
+Gateway seven ordinary jobs/Linux production25/25; local Release27/27,
+ASan27/27, focusedTSan4/4 andUBSan4/4. PR#82/#39 merged asd98821c/8d171c1,
+with tested/merge trees identical. This does not expand the review to live
+production or repeat the independent code review.

@@ -1,7 +1,7 @@
 # R3-b + G3-b / BMD-RL-01 offline shared-IP admission
 
-2026-10-19 — implementation and joint policy proof complete; final checks,
-independent review and PR delivery are recorded below as they finish.
+2026-10-19 — **R3-b/G3-b offline COMPLETE / REVIEWED / CI PASSED / MERGED**.
+Actual production observation remains a separate G3-c/BMD-4 gate.
 Scope: one Recorder + one Gateway, 10 Spot + 10 USD-M research products, all14
 Recorder features. No VPS or Binance API calls, deployment, R2 service/config,
 frozen gates, data/evidence or automation changes.
@@ -80,7 +80,9 @@ python tools/verify_shared_api_budget.py --gateway-probe <Gateway-build>/bmd_gat
 
 ## Deployment boundary and remaining work
 
-This proof requires one process of each role and no overlapping generations.
+This proof requires both new role-budget implementations (`45866af`/`1c93304`),
+not an older unlimited-role version, and one process of each role with no
+overlapping generations.
 Rolling counters are in memory: after stopping/replacing a role, wait a full300s
 quiet interval before its replacement sends requests; preserve any longer known
 server ban. Set the future service restart delay accordingly. A third process
@@ -109,5 +111,17 @@ pending; never deliberately trigger a real429/418.
   changed to suppress the verifier. Final GitHub full-suite result follows below.
 - [x] New [independent scoped review](../reviews/2026-10-19-shared-api-budget-review.md)
   APPROVED, all concrete findings closed; Gateway full ASan27/27 and focused
-  TSan4/4 PASS. UBSan result follows below.
-- [ ] PR/CI/merge closeout.
+  TSan4/4 and UBSan4/4 PASS.
+- [x] Final Recorder `45866af` [CI39250190008](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/39250190008)
+  passed both complete jobs:macOS2160/Ubuntu2156, including M0 contracts,
+  Ruff/mypy314/Go golden/build/locked-dependency and clean-wheel/CLI checks.
+- [x] Gateway `1c93304` passed all seven ordinary jobs on push/PR
+  [39250188012](https://github.com/tomohikoAmada/BinanceMarketDataGateway/actions/runs/39250188012)/
+  [39250228864](https://github.com/tomohikoAmada/BinanceMarketDataGateway/actions/runs/39250228864);
+  Linux production25/25. Manual dependency preparation was correctly skipped.
+- [x] [Recorder PR #82](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/82)
+  merged as `d98821c20ea45e8821e7c6dac1b1b7be56d5d3eb` at20:18:48 Shanghai;
+  [Gateway PR #39](https://github.com/tomohikoAmada/BinanceMarketDataGateway/pull/39)
+  merged as `8d171c1304d1f02d7f02365307dad94de4dc9f84` at20:18:53 Shanghai.
+  Each merge tree exactly equals its tested technical head. Plans and current
+  handoffs mark the offline scope complete.
