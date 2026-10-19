@@ -1,26 +1,40 @@
 # Binance Market Data Recorder Agent Contract
 
-Authoritative owner continuation **2026-10-19**: **R2_REMAINING_24H_48H_AUTHORIZED / CAPACITY_REPAIRED / QA_PENDING / NO_NEW_T0**.
-The owner now authorizes finishing the remaining four-product R2 qualification.
-[ADR-0047](docs/adr/0047-r2-owner-policy-24h-48h-continuation.md) explicitly binds
-same-source ca760c09/c2eeb219/7276c9fa/config5b73 own2h receiptf45fbbc6 → own12h
-aff063c3 → separate own86400s24h → separate own172800s48h. Existing2h/12h stay
-accepted; no old49b4 duration transfers. Canonical V5 final/predecessor flags
-remain false. Full selected saved-data dualLIVE/immutable verification,
-independent reconstruction and actual restored handoff remain required for
-both new stages. Each needs fresh capacity and its own finite, never-extended
-window/T0;48h starts only after full24h acceptance. Actual per-product rotation/
-recovery must be recorded. R3/20keys and shared Gateway VPS load are separate.
+Authoritative actual **2026-10-19 00:58:33UTC / Shanghai08:58:33**:
+**R2_OWN24H_NATIVE_WARMING / NOT_YET_T0_AT_DISPATCH**.
+The sole native capture `binance-recorder-r2-owner24h-20261019-capture.service`
+(inv9cc4721a/PID620361) was launched once with Runtime89280/Stop1500,
+whole-phase pin, archiveTMP and failure restoration. Actual strict warm/start/T0
+qualification remains pending; dispatch grants zero completed24h credit.
 
-Code/contract review and22 full-clock boundary fixtures are accepted. Actual
-capacity initially blocked24h by80959766B below the unchanged10GiB floor.
-Closed synthetic test-tree custody29375members is actually complete and
-independently accepted; fresh24h projected writer10967795434B passes. Linux
-QA1 lab timeout remains retained; QA2 isolates fixture fsync only, with all
-production runtime persistence unchanged; its actual result remains pending. No production source/config/deployment change or capture
-has occurred. [R2 execution record](docs/milestone_acceptance/R2-remaining-owner-qualification-20261019.md)
-is current; older stop-before24h paragraphs below are retained history. R-078
-and broader Production Ready remain OPEN/false.
+- [x] Same ca760c09/c2eeb219/7276c9fa/config5b73, all14/four products;
+  accepted own2h f45fbbc6 and own12h aff063c3 preserved. ADR-0047 explicitly
+  reconciles separate owner-policy24h then48h; no canonical V5 predecessor or
+  old-source duration is manufactured.
+- [x] Independent code/contract, actual complete29375-member closed-test custody,
+  Linux QA2 complete-directory import/22 clock cases, physical12-control copy,
+  fresh canonicalVERIFY and actual finiteARM/launch-only bindings ACCEPT.
+  QA1 lab timeout remains retained; QA2's fsync stub is fixture-only and
+  production runtime persistence is unchanged.
+- [x] New fixed window ends **October20 22:56:49UTC / ShanghaiOctober21 06:56:49**;
+  never extend/reuse/rearm after closure. Actual postarm remaining165593.677s
+  >required158656.632s; projectedwriter10967750378B>10GiB. Native OS/archive
+  restoration remains mandatory before own guard cancellation.
+- [ ] Actual strict warm/T0/own86400 endpoint/rotation-recovery-resource evidence,
+  full current-selection dualLIVE/completed immutableverify/independent full
+  saved-frame reconstruction/restored handoff/owner24h receipt remain pending.
+- [ ] Only after full24h acceptance: new48h actual capacity/time/bindings/window/
+  own172800 and complete closeout; initial48h forecast remains BLOCKED.
+
+Leave healthy native work alone until the **01:23:33UTC / Shanghai09:23:33**
+warm/start checkpoint; at/after it inspect actual output once and independently
+qualify startup and its real target. No repeated copy/ARM/warm/launch or old Raw
+proofs. Hourly `vps-2h` is ACTIVE on this chat for the authorized full R2 closeout,
+quiet while healthy. Current record: [R2 execution](docs/milestone_acceptance/R2-remaining-owner-qualification-20261019.md),
+[actual independent review](docs/reviews/2026-10-19-r2-actual-preparation-and-launch-review.md).
+Private authority `/private/var/tmp/bmdr-r2-20261019-6vmbye1j/CONTINUATION.md`.
+R-078/broaderProductionReady and R3/20keys remain separate OPEN gates.
+Earlier preflight/pending/stop-before24h paragraphs below retain history.
 
 Authoritative final acceptance **October18 05:43UTC / Shanghai13:43**: **R1_REPAIRED_OWN12H_COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run18776666c80c4dc698da194eaa67823d actually completed its own43200.113724685s, strict26/coreREADY at the actual endpoint. Production sourceca760c09/wheelc2eeb219/identity7276c9fa/config5b73 and previously accepted own2h receiptf45fbbc6 remain unchanged. No inherited old duration or recapture was used.
 
