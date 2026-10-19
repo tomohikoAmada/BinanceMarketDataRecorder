@@ -36,7 +36,8 @@ precede guard cancellation. Hourlyvps-2h ACTIVE/quiet through full R2 closeout.
 See [R2 execution](milestone_acceptance/R2-remaining-owner-qualification-20261019.md)
 and [startup independent review](reviews/2026-10-19-r2-own24h-startup-independent-review.md).
 Private authority `/private/var/tmp/bmdr-r2-20261019-6vmbye1j/CONTINUATION.md`.
-R-078/broaderProductionReady and R3/20keys remain separateOPEN. Earlier warm/
+R-078/broaderProductionReady and R3 live20keys remain separateOPEN;
+R3-a offline is COMPLETE / MERGED (PR #81; closeout below). Earlier warm/
 pending/stop-before24h checkpoints below are historical.
 
 Authoritative final acceptance **October18 05:43UTC / Shanghai13:43**: **R1_REPAIRED_OWN12H_COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run18776666c80c4dc698da194eaa67823d actually completed its own43200.113724685s, strict26/coreREADY at the actual endpoint. Production sourceca760c09/wheelc2eeb219/identity7276c9fa/config5b73 and previously accepted own2h receiptf45fbbc6 remain unchanged. No inherited old duration or recapture was used.
@@ -1199,14 +1200,20 @@ original failed logs. Future archive pauses stop the timer first and let the
 existing worker finish before asserting quiescence. No gate is relaxed.
 
 
-## 2026-10-19 R3 offline development (no production status read)
+## 2026-10-19 R3-a offline COMPLETE / MERGED (no production status read)
 
-R3-a/all-feature twenty-product and storage/retention/budget offline work is
-complete on `codex/recorder-r3-offline`; new independent subagent APPROVED,
-214 affected tests/full Ruff/mypy311 PASS. See
-[R3 acceptance](milestone_acceptance/R3-offline-20261019.md) and
+- [x] [PR #81](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/81)
+  merged as `83bb945` at14:56:29 Shanghai; merge tree equals tested `c24a4b2`.
+- [x] Full CI39208638454: macOS2151/Ubuntu2147 tests, Ruff/mypy311,
+  contracts/Raw golden/build/clean-wheel checks PASS. Local closeout165 PASS;
+  10+10/all14 and existing four-product configuration compatibility checked.
+- [x] Existing independent review/supplement APPROVED; reused without another
+  large review. Production source/dependencies/frozen four-product gate unchanged.
+
+All-feature twenty-product runtime and storage/retention/budget offline delivery
+is closed. See [R3 acceptance](milestone_acceptance/R3-offline-20261019.md) and
 [retention/capacity runbook](runbooks/R3-offline-capacity.md).
-This is local synthetic proof and explicit scenario planning only. R3-b/G3-b
-joint quotas, final symbols/current metadata, real archived samples and VPS
-shared-load qualification remain OPEN. No VPS/service/capture/automation changes
-were made; the R2 operational authority above is preserved, not refreshed.
+Synthetic proof and explicit scenarios do not qualify production capacity.
+R3-b/G3-b joint quotas, final symbols/current metadata, real archived samples and
+shared-VPS/BMD-4 remain OPEN. No VPS/service/capture/automation changes were made;
+the R2 operational authority above is preserved, not refreshed.

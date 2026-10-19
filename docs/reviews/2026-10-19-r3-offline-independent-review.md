@@ -54,5 +54,10 @@ all actual fault/fsync/Raw/Catalog/recovery assertions; production source and
 the separate phase-rotation tests are unchanged. Both agents independently ran
 the reconnect module, R3 delivery and rotation-attribution checks: **63 PASS**;
 Ruff/mypy passed. Supplemental review **APPROVED**, no open findings. The
-original CI failure and forced-phase reproduction are retained; a final-head
-CI result is required before claiming ordinary CI success.
+original CI failure and forced-phase reproduction are retained.
+
+Parent closeout, 2026-10-19: final head `c24a4b2` passed both complete CI jobs
+in run39208638454 (macOS2151/Ubuntu2147 tests), and the local six-module closeout
+rerun passed165 tests. PR #81 merged as `83bb945` with the same tested tree.
+This records verification of the existing review outcome, not a new review round;
+see the [closeout record](../milestone_acceptance/R3-offline-20261019.md).
