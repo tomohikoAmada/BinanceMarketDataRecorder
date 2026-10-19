@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from ..request_budget import shared_request_budget
 from ..websocket_common import capped_backoff_seconds
 
 SPOT_WEIGHT_PER_MINUTE_BUDGET = 6_000
@@ -123,7 +124,7 @@ class SpotIpRateLimiter:
                 await self._sleep(delay)
 
     @asynccontextmanager
-    async def request_slot(self) -> AsyncIterator[None]:
+    async def request_slot(self, *, weight: int = 1) -> AsyncIterator[None]:
         """Permit one Spot request after a final block-only gate check.
 
         Weight admission happens before this context is entered.  The second
@@ -142,6 +143,8 @@ class SpotIpRateLimiter:
                         self._blocked_until_monotonic
                         - self._monotonic_clock(),
                     )
+                if delay <= 0:
+                    delay = shared_request_budget().take({"spot_weight": weight})
                 if delay <= 0:
                     yield
                     return

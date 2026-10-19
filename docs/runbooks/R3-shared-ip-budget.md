@@ -1,7 +1,7 @@
 # R3 / G3 共享出口预算：离线 inventory 与待关闭项
 
 2026-10-19。仅代码、官方文档与静态算术；没有 Binance API 调用或 VPS 操作。
-此表完成 R3 的端点盘点/负面容量裁决，**BMD-RL-01 联合恢复资格仍 OPEN**。
+此表完成 R3 的端点盘点/负面容量裁决，**R3-b/G3-b离线准入实现与联合策略证明已完成；最终审查/交付进度见下文**。
 Spot 与 USD-M 的 IP weight 分开，专门次数窗再单独累计。
 官方来源、检索表示和 SHA 在 [来源记录](../milestone_evidence/r3-official-sources-20261019.json)。
 REST 分钟额度6000/2400只是官方 exchangeInfo 示例/当前代码预算，正式准入必须读取真实
@@ -65,3 +65,29 @@ Recorder Spot每产品三条、USD-M每产品三条核心加mark/liquidation两�
 
 不新增协调进程或Redis，不为了本机合成PASS降低14功能。
 本轮没有改Gateway源码、生产限流或正在运行的R2环境；这里的OPEN是联合阶段的真实阻断。
+
+
+## R3-b/G3-b 实现与部署准入（2026-10-19）
+
+原6220>6000与320>300负面算术保留。现在两个进程分别在实际HTTP发送/WS连接前执行
+滚动窗口：Recorder Spot2000/min、USD-M1200/min、funding400/5min、六统计路由合计800/5min、
+每市场WS180/5min；Gateway Spot3000/min、USD-M600/min、每市场WS60/5min。
+所以合计最多5000/1800 weight与每市场240 attempts；额外请求等待。
+两分钟weight参考6000/2400，余量1000/600；Spot300 attempts余量60。
+USD-M240 attempts是本地保守政策，不假称官方300限制。统计800合计比每路由公开1000更严。
+没有降低snapshot档位/14功能，也没有用退避代替窗口总量。
+
+完整[实现/测试/联合策略结果](../milestone_acceptance/R3-b-G3-b-shared-api-20261019.md)区分
+生产入口回归、既有恢复测试与两个独立进程的虚拟时钟准入证明，不冒充真实网络恢复或VPS验收。
+Recorder REST429/418保持REST冷却；WS HTTP429/418令该市场WS/REST等待。
+Gateway HTTP/WS拒绝共享市场冷却；metadata配额不足立即明确失败，避免启动无限等候。
+
+部署前必须确认当前metadata真实额度、used-weight、最终名单和所有同IP调用者；最多一个
+Recorder及一个Gateway，禁止蓝绿/双实例重叠。计数在进程内：停止/替换后完整安静300s再建连，
+已知更长Retry-After/ban仍优先，未来systemd自动重启也须执行这个间隔。其他消费者仅能使用已明确
+预留的余额，不得再各领整份额度。上述条件未满足，不授予该组合的部署准入。
+这轮没有访问VPS或修改正在运行的R2/重启参数，真实普通观察仍属G3-c/BMD-4。
+
+最新官方Agent Native索引/Spot REST/Spot WS/USD-M General/WS已重新下载文本并记录
+[UTC/字节数/SHA](../milestone_evidence/shared-api-official-sources-20261019.json)；端点专门窗口仍以
+上文当前官方Market Data页为依据。不得把参考分钟额度当永久常量。

@@ -23,6 +23,7 @@ from pathlib import Path
 from binance_common.errors import Error as BinanceSdkError
 from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
+from ..binance.request_budget import usdm_request_charges
 from ..binance.spot.websocket import ReconnectBackoff
 from ..binance.usdm.rest import (
     UsdMRestApi,
@@ -256,12 +257,14 @@ class UsdMCollector:
         failures = 0
         while not stop.is_set():
             try:
-                await self.public_rest_cooldown.wait(stop)
-                if stop.is_set():
-                    return
-                async with self.public_rest_request_lock:
-                    await self.public_rest_cooldown.wait(stop)
-                    if stop.is_set():
+                async with self.public_rest_cooldown.request_slot(
+                    self.public_rest_request_lock,
+                    stop,
+                    usdm_request_charges(
+                        "depth_snapshot", depth_limit=self.settings.snapshot_limit
+                    ),
+                ) as admitted:
+                    if not admitted:
                         return
                     request_task = asyncio.create_task(
                         asyncio.to_thread(

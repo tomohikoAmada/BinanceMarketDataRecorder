@@ -279,7 +279,7 @@ class SpotCollector:
                 if stop_task in done and stop_task.result():
                     request_task.cancel()
                     await asyncio.gather(request_task, return_exceptions=True)
-                    await self.snapshot_requester.wait_for_idle()
+                    await self.snapshot_requester.wait_for_idle(cancel_queued=True)
                     return
                 stop_task.cancel()
                 await asyncio.gather(stop_task, return_exceptions=True)
@@ -471,7 +471,7 @@ class SpotCollector:
             stop.set()
             if "side_task" in locals():
                 await asyncio.gather(side_task, return_exceptions=True)
-            await self.snapshot_requester.wait_for_idle()
+            await self.snapshot_requester.wait_for_idle(cancel_queued=True)
             await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
             days = {day for day, _market, _stream in self.metrics.pending_keys()}
             batch_id = await asyncio.to_thread(self.metrics.safely_flush)
