@@ -11,7 +11,7 @@ from typing import Any
 
 RECOVERY_LIMIT_NS = 60_000_000_000
 RECOVERY_POLL_NS = 5_000_000_000
-POLICY = "max60s_per_observed_episode_same_incarnation"
+POLICY = "max60s_per_core_episode_independent_auxiliary_freshness_v2"
 
 
 class CoreRecovery:
@@ -37,8 +37,12 @@ class CoreRecovery:
             if elapsed < 0 or checked_elapsed < elapsed or checked_elapsed > RECOVERY_LIMIT_NS:
                 raise RuntimeError("core_heartbeat_recovery_deadline_exceeded")
             if not bad:
-                if row["strict_auxiliary_gate"]["result"] != "PASS":
-                    raise RuntimeError("core_recovery_requires_fresh_strict_auxiliary_PASS")
+                # A recent, bounded five-minute publication retry is already
+                # admitted by the capture gate. It must not turn a recovered
+                # core connection into a fatal fault. Strict endpoints remain
+                # separate and still require every auxiliary context RUNNING.
+                if row["auxiliary_gate"]["result"] != "PASS":
+                    raise RuntimeError("core_recovery_requires_fresh_auxiliary_PASS")
                 if row["heartbeat_at_utc_ns"] < self.first_bad_utc_ns:
                     raise RuntimeError("core_recovery_publication_predates_fault")
                 self.total_ns += elapsed
