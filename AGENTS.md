@@ -1,5 +1,34 @@
 # Binance Market Data Recorder Agent Contract
 
+Authoritative owner-requested status **October19 20:48 Shanghai**:
+**OWN24H_FAILED_BEFORE_TARGET; MINIMAL_CONTROL_REPAIR_IN_PROGRESS**.
+Run6bacd298 automatically failed at17:00:50 Shanghai after28295.688676650s
+(7h51m35.689), not24h. The original target is obsolete; no target/full data audit
+or24h receipt exists. Recorder is inactiveANDdisabled/PID0/NRestarts0, original
+OS/archive RESTORED before guard cancellation, window CLOSED. Failed data kept.
+
+- [x] Current failure diagnosed independently: recovered ETH book_ticker/core
+  collided with a recent, cursor-bounded BTC taker empty-window retry. The test
+  controller's extra strict auxiliary condition initiated normal shutdown.
+  EmptySideDataResponse does not establish HTTP[] or corrupted saved data.
+- [x] Prospective smallest fix selected in ADR0048: close core recovery with the
+  existing capture auxiliary PASS, retaining every freshness/cursor/60s/resource/
+  identity guard and strict warm/start/actual-stop endpoints. Production poller
+  continues bounded retry without advancing unseen periods; no wheel/config change.
+- [ ] Independent implementation/targeted tests/current Linux bindings, new
+  current capacity/time admission, new finite window/strictwarm/own86400T0.
+- [ ] Full new24h selected dualLIVE/completedverify/independent saved-frame
+  denominator/restored handoff/owner receipt.48h remains pending; no duration credit.
+
+Accepted own2h f45fbbc6/own12h aff063c3 and all14/fourproducts/data/venvs remain
+preserved. R3 offline code/CI acceptance is preserved and is not deployed.
+See `docs/adr/0048-independent-core-and-auxiliary-recovery.md` and
+`docs/reviews/2026-10-19-r2-own24h-failure-diagnosis.md`.
+Current repair branch `codex/recorder-r2-core-recovery`; private authority
+`/private/var/tmp/bmdr-r2-corefix-20261019-j3elbmzf/CONTINUATION.md`.
+Earlier RUNNING paragraphs are retained history, not current operations.
+
+
 Authoritative actual **October19 01:15:28UTC / Shanghai09:15:28**:
 **R2_OWN24H_RUNNING / ACTUAL_STARTUP_INDEPENDENT_ACCEPTED**.
 Sole run`6bacd29815a0448e8e6b1700f7b7a9c2` has actual **T0 October19

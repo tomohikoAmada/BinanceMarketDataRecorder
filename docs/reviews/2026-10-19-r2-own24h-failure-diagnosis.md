@@ -1,0 +1,43 @@
+# R2 own24h empty-response failure: independent LOCAL/OFFLINE diagnosis
+
+**Immediate failure and policy inconsistency confirmed; production request defect not established.** No candidate implementation is accepted by this diagnosis. No network, SSH, production service or Raw/history-manifest access occurred. Source was read only; this new private report is the sole write.
+
+## Actual causal facts
+
+The exact current metadata input SHA54c7464a910de2ce53d0c1e84472d0fa4da5e2f13ba596a886fdccdc6a3d5fb3 records run6bacd29815a0448e8e6b1700f7b7a9c2 failing at2026-10-19T09:00:50.231079354UTC / Shanghai17:00:50.231079354. Own elapsed28295.688676650s is below86400; no target/audit/final24h qualification exists. Original failure and closed restoration-before-cancel remain immutable.
+
+All944 formal rows reconstruct to940 official gate PASS and932 strict PASS;4 rows corefalse. The7 earlier strict-only auxiliary BLOCK rows are ETH taker at08:05:14–08:07:44UTC (6 rows), and08:13:14UTC (1 row), followed by recovery. BTC taker is strict BLOCK only at09:00:14 and09:00:44UTC. Four separately recorded core-recovery probes all have officialPASS, with three strictPASS and the last strictBLOCK. These are partial monitoring counts, not a saved-frame denominator or final availability claim.
+
+BTC taker had a successful durable observed cursor update/success at09:00:03.901386UTC, cursor1792399800000=08:50UTC. At the final recovered-core probe09:00:49.987049UTC, latestclosed is08:55UTC, cursor lag is exactly300000ms and success age46.085662926s. Status RETRYING/EmptySideDataResponse/consecutive8 is the sole strict reason; official gate PASS has no reasons. The preceding corefalse sample is5.281839424s earlier and the recovery heartbeat is post-fault. Core recovery had actually reached READY within the existing60s episode bound; fresh strict auxiliaryPASS was absent because a separate latest statistics request was waiting.
+
+## Code facts and causal limits
+
+1. `collector/usdm_side_data.py:582–588,598–612,654–675` selects lastclosed and starts after the real persisted cursor. At this failure it is asking08:55, not repeatedly skipping an old unfilled bin. `:671–676` persists the real response before cursor work. `:703–725` writes SIDE_DATA_EMPTY_RESPONSE then raises while holding the cursor; `:726–758` advances and marks success only for actual requested records (OI has its distinct durable evaluated-window semantics). `:476–520` contains the error and retries no faster than5s; core collectors remain active. No production self-termination is established.
+2. **EmptySideDataResponse does not prove an HTTP[] body.** It is raised for `requestedRecordCount==0`. The taker adapter `binance/usdm/side_data_rest.py:676–688` permits the previous-period leading row, so a nonempty leading-only array can produce the same error. Original Raw was not opened; current metadata cannot distinguish these possibilities.
+3. Taker already has a special API-boundary adapter: `side_data_rest.py:515–555` reserves one extra response row and extends API endTime by one5m period while preserving requestedStart/End separately. `:689–703` retains dense start/continuity checks and real requested timestamps. No supplied evidence proves that adapter incorrect. Do not change boundaries, forward-fill, relabel timestamps, or adopt OI sparse coverage for taker without endpoint-specific evidence.
+4. `tools/qualification_auxiliary_gate.py:68–83,102–119` already permits typed empty-response recovery between strict endpoints only while enabled/running and real success/cursor remain within the existing freshness bounds. No success/cursor is fabricated. The exact private controller `owner24h-bound/controller.py:80–82` computes both this official monitoring gate and strict gate from the same publication.
+5. The deterministic termination is `owner24h-bound/qualification_core_recovery.py:40–42` (same repository helper `tools/qualification_core_recovery.py:39–41`): the first READY core sample is immediately rejected unless every auxiliary context is strictPASS. `controller.py:208–218` durably records the probe then invokes this check. Thus a transient auxiliary condition explicitly permitted in normal monitoring becomes fatal solely when an unrelated core reconnection happens simultaneously. Existing tests deliberately assert that old policy, and ADR0042 currently requires it; any correction must update prospective policy/tests honestly, not rewrite historical failures.
+6. Strict actual endpoint/warm/start, boot/config/identity/clock/resources, original continuous60s core deadline, nominal monitor denominator and full saved-data audit are separate constraints; no evidence justifies relaxing them. The transport closure origin and source publication guarantee remain unknown.
+
+## Minimal recommendation
+
+Prefer a **private qualification policy correction**, keeping the production source/wheel frozen and reusing its accepted2h/12h receipts. A core episode may close on a fresh post-fault core/heartbeat publication whose existing official all-context auxiliary gate is PASS (including its narrow typed-empty recovery), instead of requiring strict status for unrelated latest-period statistics. Keep the strict actual start/endpoints, all hard gates, original episode60s timing, monitor/probe separation and full data audit. A stale cursor, missing initial success, generic/schema/Catalog failure or disconnected auxiliary stream must not become an accepted recovery publication. This makes the measurement match the already accepted between-endpoint policy rather than treating an observed late statistical publication as a production transport failure.
+
+This is not a proposal to mark empty periods as complete, extend freshness budgets, reset the core deadline, erase BLOCK rows or suppress real gaps. Do not blind-restart the failed scope/window. The failed attempt remains zero accepted24h; only a fresh independently bound/admitted own86400 run can qualify.
+
+If a production-side optimization is desired, first establish a reproducible request/publishing defect. The existing bounded retry/durable request evidence/cursor hold is already the correct conservative production behavior for delayed dense data. Adding new persistence schemas, an auxiliary supervisor, a new service, longer StopSec or a generic retry framework is unnecessary for this supplied failure.
+
+## Official-contract questions for parent verification
+
+This reviewer was deliberately OFFLINE. Verify using official Binance USD-M Taker Buy/Sell Volume documentation/SDK, not OI inference: whether timestamp represents start/end; exact startTime/endTime inclusion; whether latest closed-bin publication has a guaranteed latency; whether a zero/no-trade period is omitted or zero-valued; whether limit applies before filtering and the previous-period overlap is contractual. The old OI official sparse-period-end contract is feed-specific and does not itself answer these taker questions. Later public probes are current observations, not proof of the original failed response.
+
+## Meaningful regression cases
+
+- Replay actual badcore→5.281839424s post-fault READY, officialPASS/strictBLOCK/typed-empty with46.085662926s real success and1-bin cursor lag: prospective helper closes under the new policy and preserves strictBLOCK in records. Reproduce the original helper error as the before case.
+- No real success, future/oldsuccess, wrongsymbol/kind, stale/futurecursor, FAILED/STOPPED, disabled/notrunning, generic/schema/Catalog failure or disconnected auxiliary must not close as healthy.
+- Core stillbad at60s or recovered only after60s, stale pre-fault heartbeat, backward/slow checked clock must retain the original rejection; no second fault resets a running episode.
+- Strict warm/start/actual endpoint still reject typed-empty recovering status; fixed nominal monitor rows and separate probes remain unchanged. Target finalization must not silently add a new auxiliary grace period.
+- Real collector empty or leading-only taker response retains original Raw provenance and EMPTY evidence, never advances cursor or lastsuccess; a later actual requested row persists/syncs before real cursor advance. Permanent empty eventually violates freshness rather than synthesizing progress. Disk/fsync/Catalog faults cannot advance cursor or success.
+- Other REST kinds and the separate accepted OI evaluated-window branch remain unchanged; actual leading overlap and saturated limit behavior should retain their existing source evidence.
+
+Candidate diff and its exact tests still require the requested independent implementation review.

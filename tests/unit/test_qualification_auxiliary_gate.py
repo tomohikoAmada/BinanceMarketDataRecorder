@@ -13,6 +13,7 @@ from binance_market_data_recorder.binance.usdm.side_data_rest import (
 )
 from binance_market_data_recorder.config import RecorderConfig
 from tools.qualification_auxiliary_gate import check
+from tools.qualification_core_recovery import CoreRecovery
 
 
 def ready(tmp_path: Path) -> tuple[dict[str, Any], RecorderConfig, int]:
@@ -145,3 +146,43 @@ def test_empty_recovery_does_not_hide_absent_or_failed_auxiliary_data(
         item["running"] = False
     result = check(state, config, now_ns=now, allow_empty_recovery=True)
     assert result["result"] == "BLOCK" and result["reasons"]
+
+
+@pytest.mark.parametrize(
+    "mutation", ["publication_pending", "old_success", "old_cursor", "malformed"],
+)
+def test_core_recovery_uses_the_full_existing_capture_freshness_gate(
+    tmp_path: Path, mutation: str,
+) -> None:
+    state, config, now = ready(tmp_path)
+    item = state["products"]["um_perpetual"]["BTCUSDT"]["side_data"]["taker_buy_sell_volume_5m"]
+    item.update(status="RETRYING", last_error_type="EmptySideDataResponse")
+    item["last_success_at_utc_ns"] = now - 46_085_662_926
+    item["cursor"]["last_persisted_period_timestamp"] -= FIVE_MINUTE_PERIOD_MS
+    if mutation == "old_success":
+        item["last_success_at_utc_ns"] = now - 1200 * 10**9 - 1
+    elif mutation == "old_cursor":
+        item["cursor"]["last_persisted_period_timestamp"] -= 1_500_000
+    elif mutation == "malformed":
+        item["last_error_type"] = "SideDataSchemaError"
+    before = copy.deepcopy(state)
+    before["core_ready"] = False
+    recovery = CoreRecovery()
+    def row(value: dict[str, Any], bt: int) -> dict[str, Any]:
+        return dict(
+            core_ready=value["core_ready"], boottime_ns=bt, utc_ns=now - 5*10**9 + bt,
+            heartbeat_at_utc_ns=now,
+            auxiliary_gate=check(value, config, now_ns=now, allow_empty_recovery=True),
+            strict_auxiliary_gate=check(value, config, now_ns=now),
+        )
+    recovery.check(row(before, 0))
+    current = row(state, 5*10**9)
+    if mutation == "publication_pending":
+        assert recovery.check(current) is False
+        assert recovery.first_bad is None
+        with pytest.raises(RuntimeError, match="strict_target_endpoint_failed"):
+            recovery.endpoint(current)
+    else:
+        with pytest.raises(RuntimeError, match="fresh_auxiliary_PASS"):
+            recovery.check(current)
+        assert recovery.first_bad == 0

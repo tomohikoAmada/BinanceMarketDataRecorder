@@ -15,7 +15,8 @@ def observation(seconds: float, *, bad: bool = False, strict: bool = True) -> di
         "utc_ns": round(seconds * SECOND),
         "heartbeat_at_utc_ns": round(seconds * SECOND),
         "core_ready": not bad,
-        "auxiliary_gate": {"reasons": ["core_not_ready"] if bad else []},
+        "auxiliary_gate": {"result": "BLOCK" if bad else "PASS",
+                           "reasons": ["core_not_ready"] if bad else []},
         "strict_auxiliary_gate": {"result": "PASS" if strict and not bad else "BLOCK"},
     }
 
@@ -59,11 +60,30 @@ def test_a_new_fault_during_one_open_episode_cannot_reset_its_deadline() -> None
         recovery.check(observation(60, bad=True))
 
 
-def test_recovery_requires_the_existing_strict_auxiliary_gate() -> None:
+def test_bounded_empty_publication_retry_does_not_fail_recovered_core() -> None:
     recovery = CoreRecovery()
     recovery.check(observation(0, bad=True))
-    with pytest.raises(RuntimeError, match="strict_auxiliary_PASS"):
-        recovery.check(observation(2, strict=False))
+    recovering = observation(5, strict=False)
+    recovering["auxiliary_gate"]["recovering_contexts"] = [
+        "um_perpetual:BTCUSDT:taker_buy_sell_volume_5m"
+    ]
+    assert recovery.check(recovering) is False
+    assert recovery.first_bad is None
+    assert recovery.total_ns == 5 * SECOND
+    # Capture recovery is not permission to accept a non-strict endpoint.
+    with pytest.raises(RuntimeError, match="strict_target_endpoint_failed"):
+        recovery.endpoint(recovering)
+
+
+def test_recovery_still_rejects_non_admitted_auxiliary_failure() -> None:
+    recovery = CoreRecovery()
+    recovery.check(observation(0, bad=True))
+    failed = observation(2, strict=False)
+    failed["auxiliary_gate"] = {
+        "result": "BLOCK", "reasons": ["auxiliary_capture_not_fresh:context"]
+    }
+    with pytest.raises(RuntimeError, match="fresh_auxiliary_PASS"):
+        recovery.check(failed)
     assert recovery.first_bad == 0
 
 
