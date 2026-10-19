@@ -1,6 +1,6 @@
 # ADR-0048: Independent core recovery and auxiliary publication readiness
 
-Date: 2026-10-19. Status: repair design accepted; implementation qualification pending.
+Date: 2026-10-19. Status: exact implementation/independent review, actual Linux qualification and dualCI accepted; actualARM accepted, fresh warm/T0/full86400s pending.
 
 The owner asked to diagnose the failed24h, make the smallest stability correction,
 and start a separate new24h through complete saved-data and restored acceptance.

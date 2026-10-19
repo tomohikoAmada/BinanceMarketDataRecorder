@@ -1,5 +1,46 @@
 # R2 remaining four-product qualification
 
+Authoritative new recovery checkpoint **October19 21:16:15 Shanghai**:
+**CORE_AUX_REPAIR_COMPLETE / FRESH_OWN24H_NATIVE_WARMING / NOT_YET_T0**.
+
+- [x] Root-cause diagnosis, minimal independent-core/auxiliary recovery repair,
+  code7e1cfac/PR83 merged17b8d4f, exact dualCI39256499775 BOTH SUCCESS;
+  mac2165PASS/Ubuntu2161PASS, focused40 tests/Ruff/mypy, independent14fault+948row replay.
+- [x] Native installed-Linux24 full-clock cases/import and exact12-file physical
+  copy accepted; actual finite ARM/canonicalVERIFY/prepostadmission independently
+  ACCEPTd2f1c019. All original endpoint/resource/identity/clock/60s/data gates remain.
+- [x] SINGLE new nativecapture at21:16:15 Shanghai,
+  inv70177c7df7e742fead421ede6201c4e2/PID636585 active; requested Typeexec/
+  Runtime89280/Stop1500/wholephasepin/archiveTMP. Actual launch7d9ceed6 explicitly
+  **NATIVE_CAPTURE_LAUNCHED_NOT_YET_T0**. Current work is boundary+strictwarm,
+  not accepted24h duration. Effective runtime/launchadmission and actual warm/T0
+  will be reconstructed from the actual startup controls, not inferred from dispatch.
+- [ ] Actual strictwarm/end+start/ownedcurrentANDpeakswap0/currentprestart/own86400T0
+  and independent startup binding; then its own24h strict endpoint/rotation evidence.
+- [ ] Complete new selected dualreleasedLIVE/completedimmutableverify/full saved-frame
+  denominator strictly>99.9%/independent final/actual restored-beforecancel/fresh
+  stopped-disabled sameidentityhandoff/naturalarchive+futurefiniteCLOCK_MONOTONIC/
+  owner24receipt/final docs-main, then pause the hourly task.48h is pending here.
+
+New sole scope `/srv/recorder-data/recorder-archive/evidence/R2-owner24h-corefix-20261019-j3elbmzf`.
+Fresh copy projectedwriter10869581716B>10GiB; postarm10869548948B>10GiB,
+remaining165594.651s>required158656.632s. Fixed quietexpiry **October21 19:11:12
+Shanghai / epoch1792581072**, never extend/reuse/rearm. Productionca760c09/
+c2eeb219/7276c9fa/config5b73/all14/fourproducts/accepted2hf45+12haff unchanged;
+R3 code in main stays offline, not deployed. All failed/old data/software retained.
+The old6bacd298 attempt remains FAILED/zero24h/closedwindow; no time/data transfer.
+
+Warm/start checkpoint **October19 21:41:15 Shanghai /13:41:15UTC**.
+Before it leave healthy native alone; no extraSSH/copy/ARM/launch/warm/restart/refreeze.
+At/after it read the real owner-start/warm/failure outputs once via NEWPN/stage-operator.py
+read, derive target from actualT0+86400, and independently bind actual startup.
+Hourlyvps-2h ACTIVE/quiethealthy, now follows this original repair chat. Only full
+new24h data/restored acceptance completes this request. Monitor and saved-frame
+conformance separate; no everyexchangeevent/canonicalV5/ProductionReady credit;
+R078OPEN. Exact authority NEWPN `/private/var/tmp/bmdr-r2-corefix-20261019-j3elbmzf/CONTINUATION.md`.
+Earlier FAILED/RUNNING/pending checkpoints below are retained history.
+
+
 Authoritative owner-requested status **October19 20:48 Shanghai**:
 **OWN24H_FAILED_BEFORE_TARGET; MINIMAL_CONTROL_REPAIR_IN_PROGRESS**.
 Run6bacd298 automatically failed at17:00:50 Shanghai after28295.688676650s
@@ -15,8 +56,14 @@ OS/archive RESTORED before guard cancellation, window CLOSED. Failed data kept.
   existing capture auxiliary PASS, retaining every freshness/cursor/60s/resource/
   identity guard and strict warm/start/actual-stop endpoints. Production poller
   continues bounded retry without advancing unseen periods; no wheel/config change.
-- [ ] Independent implementation/targeted tests/current Linux bindings, new
-  current capacity/time admission, new finite window/strictwarm/own86400T0.
+- [x] Exact code7e1cfac/independent14fault+948row replay ACCEPT36e3dc3c;
+  focused40/Ruff/mypy and local24full-clock cases PASS. Actual Linux24cases/import/
+  native normal exit/result197d2c95 independently ACCEPTa76a5f54. New12-file
+  physicalcopy b87745bd/attrs/currentadmission independently ACCEPT281f1012.
+- [x] Exact dualCI39256499775 BOTH SUCCESS at7e1cfac: mac2165PASS/24SKIP,
+  Ubuntu2161PASS/28SKIP; Ruff/mypy/M0/Go/build/smokes PASS. PR83 merged17b8d4f.
+- [ ] New actualARM/currentadmission/launch, finite165600s window/strictwarm/
+  separate own86400T0. ARM dispatched once; no formal time credit yet.
 - [ ] Full new24h selected dualLIVE/completedverify/independent saved-frame
   denominator/restored handoff/owner receipt.48h remains pending; no duration credit.
 
