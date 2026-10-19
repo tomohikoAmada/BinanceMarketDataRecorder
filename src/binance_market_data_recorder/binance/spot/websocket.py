@@ -36,7 +36,7 @@ from urllib.parse import quote
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
-from websockets.exceptions import WebSocketException
+from websockets.exceptions import InvalidStatus, WebSocketException
 
 from ...domain.event import EventEnvelope
 from ...domain.product import product_log_fields
@@ -111,16 +111,25 @@ async def open_spot_websocket(
 ) -> AsyncIterator[WebSocketConnection]:
     """Open a raw stream with finite library buffering and no client Ping loop."""
 
-    async with connect(
-        url,
-        proxy=proxy,
-        compression=None,
-        ping_interval=None,
-        max_queue=(4, 1),
-        max_size=16 * 1024 * 1024,
-        close_timeout=10,
-    ) as websocket:
-        yield websocket
+    from ..request_budget import observe_websocket_rejection, shared_request_budget
+
+    await shared_request_budget().acquire({"spot_connections": 1})
+    try:
+        async with connect(
+            url,
+            proxy=proxy,
+            compression=None,
+            ping_interval=None,
+            max_queue=(4, 1),
+            max_size=16 * 1024 * 1024,
+            close_timeout=10,
+        ) as websocket:
+            yield websocket
+    except InvalidStatus as exc:
+        observe_websocket_rejection(
+            "spot", exc.response.status_code, exc.response.headers
+        )
+        raise
 
 
 class SpotStreamCollector:

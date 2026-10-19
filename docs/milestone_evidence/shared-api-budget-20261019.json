@@ -1,0 +1,197 @@
+{
+  "scope": "OFFLINE_TWO_PROCESS_PRODUCTION_POLICY_COMPOSITION",
+  "production_network_calls": 0,
+  "passed": true,
+  "scenarios": [
+    {
+      "scenario": "cold_start",
+      "recorder_attempts": 262,
+      "gateway_attempts": 42,
+      "maxima": {
+        "spot_weight": {
+          "recorder": 700,
+          "gateway": 2520,
+          "combined": 3220
+        },
+        "usdm_weight": {
+          "recorder": 221,
+          "gateway": 201,
+          "combined": 422
+        },
+        "usdm_funding": {
+          "recorder": 11,
+          "gateway": 0,
+          "combined": 11
+        },
+        "usdm_statistics": {
+          "recorder": 120,
+          "gateway": 0,
+          "combined": 120
+        },
+        "spot_connections": {
+          "recorder": 30,
+          "gateway": 10,
+          "combined": 40
+        },
+        "usdm_connections": {
+          "recorder": 50,
+          "gateway": 10,
+          "combined": 60
+        }
+      },
+      "last_admission_ms": 0
+    },
+    {
+      "scenario": "single_key_repeated",
+      "recorder_attempts": 1162,
+      "gateway_attempts": 402,
+      "maxima": {
+        "spot_weight": {
+          "recorder": 2000,
+          "gateway": 3000,
+          "combined": 5000
+        },
+        "usdm_weight": {
+          "recorder": 1200,
+          "gateway": 600,
+          "combined": 1800
+        },
+        "usdm_funding": {
+          "recorder": 11,
+          "gateway": 0,
+          "combined": 11
+        },
+        "usdm_statistics": {
+          "recorder": 120,
+          "gateway": 0,
+          "combined": 120
+        },
+        "spot_connections": {
+          "recorder": 180,
+          "gateway": 60,
+          "combined": 240
+        },
+        "usdm_connections": {
+          "recorder": 180,
+          "gateway": 60,
+          "combined": 240
+        }
+      },
+      "last_admission_ms": 627000
+    },
+    {
+      "scenario": "all_keys_short_live",
+      "recorder_attempts": 1362,
+      "gateway_attempts": 482,
+      "maxima": {
+        "spot_weight": {
+          "recorder": 2000,
+          "gateway": 3000,
+          "combined": 5000
+        },
+        "usdm_weight": {
+          "recorder": 1200,
+          "gateway": 600,
+          "combined": 1800
+        },
+        "usdm_funding": {
+          "recorder": 11,
+          "gateway": 0,
+          "combined": 11
+        },
+        "usdm_statistics": {
+          "recorder": 120,
+          "gateway": 0,
+          "combined": 120
+        },
+        "spot_connections": {
+          "recorder": 180,
+          "gateway": 60,
+          "combined": 240
+        },
+        "usdm_connections": {
+          "recorder": 180,
+          "gateway": 60,
+          "combined": 240
+        }
+      },
+      "last_admission_ms": 901000
+    },
+    {
+      "scenario": "side_catchup",
+      "recorder_attempts": 3231,
+      "gateway_attempts": 82,
+      "maxima": {
+        "spot_weight": {
+          "recorder": 1200,
+          "gateway": 2770,
+          "combined": 3970
+        },
+        "usdm_weight": {
+          "recorder": 421,
+          "gateway": 401,
+          "combined": 822
+        },
+        "usdm_funding": {
+          "recorder": 400,
+          "gateway": 0,
+          "combined": 400
+        },
+        "usdm_statistics": {
+          "recorder": 800,
+          "gateway": 0,
+          "combined": 800
+        },
+        "spot_connections": {
+          "recorder": 60,
+          "gateway": 20,
+          "combined": 80
+        },
+        "usdm_connections": {
+          "recorder": 100,
+          "gateway": 20,
+          "combined": 120
+        }
+      },
+      "last_admission_ms": 600000
+    },
+    {
+      "scenario": "429_418_cooldown",
+      "recorder_attempts": 476,
+      "gateway_attempts": 136,
+      "maxima": {
+        "spot_weight": {
+          "recorder": 1800,
+          "gateway": 3000,
+          "combined": 4570
+        },
+        "usdm_weight": {
+          "recorder": 621,
+          "gateway": 581,
+          "combined": 1202
+        },
+        "usdm_funding": {
+          "recorder": 11,
+          "gateway": 0,
+          "combined": 11
+        },
+        "usdm_statistics": {
+          "recorder": 120,
+          "gateway": 0,
+          "combined": 120
+        },
+        "spot_connections": {
+          "recorder": 90,
+          "gateway": 30,
+          "combined": 120
+        },
+        "usdm_connections": {
+          "recorder": 150,
+          "gateway": 30,
+          "combined": 180
+        }
+      },
+      "last_admission_ms": 162000
+    }
+  ]
+}

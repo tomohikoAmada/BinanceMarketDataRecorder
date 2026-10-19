@@ -1217,3 +1217,18 @@ Synthetic proof and explicit scenarios do not qualify production capacity.
 R3-b/G3-b joint quotas, final symbols/current metadata, real archived samples and
 shared-VPS/BMD-4 remain OPEN. No VPS/service/capture/automation changes were made;
 the R2 operational authority above is preserved, not refreshed.
+
+
+## 2026-10-19 R3-b/G3-b offline shared-IP implementation
+
+- [x] Fixed shares and rolling-window admission at actual Spot/USD-M REST,
+  dedicated funding/statistics and WS attempt paths. All14 features unchanged.
+- [x] Five two-process production-policy composition scenarios PASS; combined
+  Spot5000/min, USD-M1800/min, WS240/300s per market, funding400/statistics800.
+- [x] New scoped independent review APPROVED; actual opener/requester/transport
+  cancellation and bounded metadata regressions pass. Gateway Release27/27 PASS.
+- [ ] Final remaining checks and PR/CI/merge delivery.
+
+[Acceptance](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md) records the
+precise proof scope, current validation and deployment assumptions. This local
+work does not refresh R2/VPS state or grant live20keys/BMD-4/R-078 completion.

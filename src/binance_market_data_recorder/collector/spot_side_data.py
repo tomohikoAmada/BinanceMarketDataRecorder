@@ -61,7 +61,7 @@ class SpotExchangeInfoPoller:
                         rate_limiter: SpotIpRateLimiter = limiter,
                     ) -> EventEnvelope | None:
                         await rate_limiter.acquire_weight(weight=20)
-                        async with rate_limiter.request_slot():
+                        async with rate_limiter.request_slot(weight=20):
                             if stop.is_set():
                                 return None
                             try:

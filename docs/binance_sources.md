@@ -548,3 +548,17 @@ frames. The [R3 inventory](runbooks/R3-shared-ip-budget.md) records calculations
 process-local cooldown coverage and the still-open joint recovery gate.
 Official example rateLimits must be replaced by actual metadata before live
 admission; none of these sources qualifies twenty-product VPS capacity.
+
+
+## 2026-10-19 R3-b/G3-b shared-IP admission
+
+Re-read the Agent Native index first, then the selected official Spot REST/WS
+and USD-M general/WS text. Exact URLs, UTC retrieval times, content SHA-256 and
+bytes are in [the source record](milestone_evidence/shared-api-official-sources-20261019.json).
+Selected current [USD-M market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
+confirms depth1000 weight20, funding500/5min shared and statistics1000/5min;
+[Spot market data](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)
+retains the depth limit/weight tiers. The source record hashes downloaded
+upstream text, not a hash claim for rendered excerpts. No Binance API was called.
+Static role shares, reference6000/2400 admission limits and remaining live checks
+are explicit in [the closeout](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md).

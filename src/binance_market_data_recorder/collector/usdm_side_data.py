@@ -33,7 +33,8 @@ import asyncio
 import logging
 import random
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
 from typing import Literal, Protocol
@@ -41,6 +42,7 @@ from typing import Literal, Protocol
 from binance_common.errors import Error as BinanceSdkError
 from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
+from ..binance.request_budget import shared_request_budget, usdm_request_charges
 from ..binance.usdm.side_data_rest import (
     FIVE_MINUTE_KINDS,
     FIVE_MINUTE_PERIOD_MS,
@@ -350,6 +352,26 @@ class UsdMRestCooldown:
                         task.cancel()
                 await asyncio.gather(stop_task, changed_task, return_exceptions=True)
 
+    @asynccontextmanager
+    async def request_slot(
+        self, lock: asyncio.Lock, stop: asyncio.Event, charges: Mapping[str, int]
+    ) -> AsyncIterator[bool]:
+        budget = shared_request_budget()
+        while not stop.is_set():
+            # A statistics window must not hold the shared wire lock while
+            # waiting: depth and ordinary polling have independent allowances.
+            await budget.wait_ready(charges, stop)
+            await self.wait(stop)
+            async with lock:
+                await self.wait(stop)
+                if stop.is_set():
+                    break
+                if budget.take(charges) > 0:
+                    continue
+                yield True
+                return
+        yield False
+
 
 class SideDataExtension(Protocol):
     """One side-data task owned by the supervisor.
@@ -553,12 +575,10 @@ class RestSideDataPoller:
         stop = getattr(self, "_active_stop", None)
         if stop is None:
             stop = asyncio.Event()
-        await self.cooldown.wait(stop)
-        if stop.is_set():
-            raise asyncio.CancelledError
-        async with self.request_lock:
-            await self.cooldown.wait(stop)
-            if stop.is_set():
+        async with self.cooldown.request_slot(
+            self.request_lock, stop, usdm_request_charges(self.kind.value)
+        ) as admitted:
+            if not admitted:
                 raise asyncio.CancelledError
             envelope = await run_owned_blocking_call(
                 capture_rest_side_data,
