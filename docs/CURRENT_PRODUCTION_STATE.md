@@ -1,5 +1,27 @@
 # Current Production State
 
+Authoritative owner continuation **2026-10-19**: **R2_REMAINING_24H_48H_AUTHORIZED / CAPACITY_REPAIRED / QA_PENDING / NO_NEW_T0**.
+The owner now authorizes finishing the remaining four-product R2 qualification.
+[ADR-0047](adr/0047-r2-owner-policy-24h-48h-continuation.md) explicitly binds
+same-source ca760c09/c2eeb219/7276c9fa/config5b73 own2h receiptf45fbbc6 → own12h
+aff063c3 → separate own86400s24h → separate own172800s48h. Existing2h/12h stay
+accepted; no old49b4 duration transfers. Canonical V5 final/predecessor flags
+remain false. Full selected saved-data dualLIVE/immutable verification,
+independent reconstruction and actual restored handoff remain required for
+both new stages. Each needs fresh capacity and its own finite, never-extended
+window/T0;48h starts only after full24h acceptance. Actual per-product rotation/
+recovery must be recorded. R3/20keys and shared Gateway VPS load are separate.
+
+Code/contract review and22 full-clock boundary fixtures are accepted. Actual
+capacity initially blocked24h by80959766B below the unchanged10GiB floor.
+Closed synthetic test-tree custody29375members is actually complete and
+independently accepted; fresh24h projected writer10967795434B passes. Linux
+QA1 lab timeout remains retained; QA2 isolates fixture fsync only, with all
+production runtime persistence unchanged; its actual result remains pending. No production source/config/deployment change or capture
+has occurred. [R2 execution record](milestone_acceptance/R2-remaining-owner-qualification-20261019.md)
+is current; older stop-before24h paragraphs below are retained history. R-078
+and broader Production Ready remain OPEN/false.
+
 Authoritative final acceptance **October18 05:43UTC / Shanghai13:43**: **R1_REPAIRED_OWN12H_COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run18776666c80c4dc698da194eaa67823d actually completed its own43200.113724685s, strict26/coreREADY at the actual endpoint. Production sourceca760c09/wheelc2eeb219/identity7276c9fa/config5b73 and previously accepted own2h receiptf45fbbc6 remain unchanged. No inherited old duration or recapture was used.
 
 - [x] R1 correctness/reconnect/backpressure/stop/sparse-OI repairs, frozen release/independent review/exact CI/lockedwheel/cloud/stoppedcanonicaldeployment and this source's own2h remain accepted.
