@@ -39,3 +39,20 @@ connection windows remain OPEN; the 6220>6000 Spot scenario is a disclosed
 negative budget, not an observed production ban. Final symbols/metadata,
 representative real archive samples and same-VPS resources/recovery/BMD-4 remain
 unqualified. The active R2 four-product 24h and R-078 authority are unchanged.
+
+## Full-CI fixture supplement
+
+The first PR #81 run `39207812573` reported one macOS test failure with
+2150 passed /24 skipped /5 deselected. The failing pre-existing reconnect test
+required one sealed file and an ACTIVE first-new partial at its Catalog fault.
+The independent reviewer loaded the original committed case and forced only
+the old writer's deadline to expire immediately: it reproduced the exact CI
+signature, one malformed old-frame manifest plus an empty reconnect-gap marker.
+Thus natural phase rotation can invalidate that fixture's physical-file premise.
+The local patch fixes only that case's first period at opened+period, retaining
+all actual fault/fsync/Raw/Catalog/recovery assertions; production source and
+the separate phase-rotation tests are unchanged. Both agents independently ran
+the reconnect module, R3 delivery and rotation-attribution checks: **63 PASS**;
+Ruff/mypy passed. Supplemental review **APPROVED**, no open findings. The
+original CI failure and forced-phase reproduction are retained; a final-head
+CI result is required before claiming ordinary CI success.
