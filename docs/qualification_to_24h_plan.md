@@ -1,11 +1,12 @@
 # Qualification plan — compatibility link
 
-The single current plan is [docs/milestone_plan.md](milestone_plan.md#current-plan--38-accepted-hours-on-the-cloud-server).
+The active remaining qualification is [R2 four-product24h/48h](milestone_acceptance/R2-remaining-owner-qualification-20261019.md),
+authorized by the owner on2026-10-19 and reconciled in [ADR-0047](adr/0047-r2-owner-policy-24h-48h-continuation.md).
+The same repaired release has accepted own2h and own12h. Each remaining stage
+requires its own T0, admission, complete selected saved-data and restored closeout.
+No stage has new duration credit until actual acceptance.
 
-The October 2 review consolidated the prior proposals there. The endpoint is
-three separately eligible Formal stages: 2h + 12h + 24h, totaling at least 38
-accepted hours, with full audits and verification outside that duration.
-
-This filename is retained for existing links. It contains no separate active
-milestone sequence. See the [plan recheck](reviews/2026-10-02-plan-recheck.md)
-for changes and reasoning. Historical plan versions remain in Git history.
+The [repository milestone plan](milestone_plan.md) retains historical38h and
+86h canonical proposals and their evidence. Those historical proposals do not
+replace the explicitly reconciled owner-policy chain, manufacture canonical V5
+eligibility or establish20-product capacity/Production Ready.
