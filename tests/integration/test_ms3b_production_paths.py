@@ -52,6 +52,7 @@ from binance_market_data_recorder.spool.writer import RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog, ChunkState
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 from tests.integration.test_usdm_stream_collector import envelopes
+from tests.r3_support import R3_SYMBOLS
 
 FIXED_NOW_MS = 50 * 24 * 60 * 60 * 1000 + 1
 
@@ -315,9 +316,7 @@ def _profile_d_frame(
             first, last = (101, 102) if ordinal == 1 else (103, 104)
             previous = None
         else:
-            first, last, previous = (
-                (100, 101, 99) if ordinal == 1 else (102, 103, 101)
-            )
+            first, last, previous = (100, 101, 99) if ordinal == 1 else (102, 103, 101)
         payload: dict[str, object] = {
             "e": "depthUpdate",
             "E": ordinal,
@@ -400,7 +399,10 @@ class _ProfileDWebSocket:
 
 
 class _ProfileDWebSocketHarness:
-    def __init__(self, stop: asyncio.Event) -> None:
+    def __init__(self, stop: asyncio.Event, symbols: tuple[str, ...] = PROFILE_D_SYMBOLS) -> None:
+        self.products = tuple(
+            (market, symbol) for market in ("spot", "um_perpetual") for symbol in symbols
+        )
         self.stop = stop
         self.loop = asyncio.get_running_loop()
         self.all_opened = asyncio.Event()
@@ -431,9 +433,9 @@ class _ProfileDWebSocketHarness:
             stream = UsdMStream.BOOK_TICKER.value
         else:
             raise AssertionError(f"unexpected market wire name: {wire_name}")
-        assert (market, symbol) in PROFILE_D_PRODUCTS
+        assert (market, symbol) in self.products
         self.opened_count += 1
-        if self.opened_count == len(PROFILE_D_PRODUCTS) * 3:
+        if self.opened_count == len(self.products) * 3:
             self.all_opened.set()
         yield _ProfileDWebSocket(self, market, symbol, stream)
 
@@ -443,13 +445,17 @@ class _ProfileDWebSocketHarness:
         self.counts[key] = self.counts.get(key, 0) + 1
         if event.stream == UsdMStream.DIFF_DEPTH.value and self.counts[key] == 1:
             self.depth_persisted.add((str(event.market), str(event.symbol)))
-            if len(self.depth_persisted) == len(PROFILE_D_PRODUCTS):
+            if len(self.depth_persisted) == len(self.products):
                 self.all_depth_persisted.set()
-        if key == (
-            self.target_market,
-            self.target_symbol,
-            UsdMStream.AGG_TRADE.value,
-        ) and self.counts[key] >= 3:
+        if (
+            key
+            == (
+                self.target_market,
+                self.target_symbol,
+                UsdMStream.AGG_TRADE.value,
+            )
+            and self.counts[key] >= 3
+        ):
             self.target_third_persisted.set()
         if not self.missing_siblings():
             self.siblings_second_wave_persisted.set()
@@ -460,7 +466,7 @@ class _ProfileDWebSocketHarness:
         # of making the loop consume another default-executor worker to wait.
         with self._snapshot_guard:
             self.snapshot_persisted.add((market, symbol))
-            complete = len(self.snapshot_persisted) == len(PROFILE_D_PRODUCTS)
+            complete = len(self.snapshot_persisted) == len(self.products)
         if complete:
             self.loop.call_soon_threadsafe(self.all_snapshots_persisted.set)
 
@@ -472,7 +478,7 @@ class _ProfileDWebSocketHarness:
                 core_stream.value,
                 self.counts.get((market, symbol, core_stream.value), 0),
             )
-            for market, symbol in PROFILE_D_PRODUCTS
+            for market, symbol in self.products
             for core_stream in UsdMStream
             if (market, symbol, core_stream.value)
             != (
@@ -1065,12 +1071,16 @@ def test_production_finite_usdm_gate_cohort_covers_products_global_and_pages(
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize(
+    "symbols", [PROFILE_D_SYMBOLS, R3_SYMBOLS], ids=["14-products", "20-products"]
+)
 @pytest.mark.parametrize("executor_workers", [None, 6], ids=["default-executor", "six-workers"])
 def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
     tmp_path: Path,
     executor_workers: int | None,
+    symbols: tuple[str, ...],
 ) -> None:
-    """Keep the mixed 14-product Profile D and all 42 core streams live."""
+    """Keep mixed 14/20-product profiles live with bounded backpressure."""
 
     async def exercise() -> None:
         if executor_workers is not None:
@@ -1078,7 +1088,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
                 ThreadPoolExecutor(max_workers=executor_workers)
             )
         stop = asyncio.Event()
-        harness = _ProfileDWebSocketHarness(stop)
+        harness = _ProfileDWebSocketHarness(stop, symbols)
         spot_api = _ProfileDDepthApi(harness, "spot")
         usdm_api = _ProfileDDepthApi(harness, "um_perpetual")
         spot_limiter = _ProfileDSpotRateLimiter(harness)
@@ -1088,7 +1098,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
         cooldown = UsdMRestCooldown()
         spot_collectors: list[SpotCollector] = []
         usdm_collectors: list[UsdMCollector] = []
-        for symbol in PROFILE_D_SYMBOLS:
+        for symbol in symbols:
             spot_collector = _spot_collector(
                 tmp_path,
                 api=spot_api,
@@ -1100,7 +1110,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
                 snapshot_rate_limiter=spot_limiter,
             )
             spot_collectors.append(spot_collector)
-        for symbol in PROFILE_D_SYMBOLS:
+        for symbol in symbols:
             usdm_collector = _collector(
                 tmp_path,
                 request_lock=request_lock,
@@ -1214,7 +1224,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
 
         try:
             await wait_for_phase(harness.all_opened, "all streams opened")
-            assert harness.opened_count == len(PROFILE_D_PRODUCTS) * 3
+            assert harness.opened_count == len(harness.products) * 3
             await wait_for_phase(target_drain_started, "target writer blocked")
             await wait_for_phase(harness.all_depth_persisted, "all initial depth persisted")
             request_lock.release()
@@ -1234,7 +1244,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             assert target_stream.receipt_queue_stats.depth == 1
             assert all(
                 harness.counts[(market, symbol, core_stream.value)] >= 2
-                for market, symbol in PROFILE_D_PRODUCTS
+                for market, symbol in harness.products
                 for core_stream in UsdMStream
                 if (market, symbol, core_stream.value)
                 != (
@@ -1261,7 +1271,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
 
             expected_counts = {
                 (market, symbol, core_stream.value): 2
-                for market, symbol in PROFILE_D_PRODUCTS
+                for market, symbol in harness.products
                 for core_stream in UsdMStream
             }
             expected_counts[
@@ -1291,7 +1301,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
         catalog = Catalog(layout.catalog)
         try:
             sealed = catalog.chunks_in_states(ChunkState.SEALED)
-            assert len(sealed) >= len(PROFILE_D_PRODUCTS) * 4
+            assert len(sealed) >= len(harness.products) * 4
             assert not catalog.chunks_in_states(ChunkState.ACTIVE, ChunkState.SEALING)
         finally:
             catalog.close()
@@ -1304,10 +1314,10 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             json.loads(path.read_text(encoding="utf-8"))
             for path in layout.manifests.glob("*.json")
         ]
-        assert len(documents) >= len(PROFILE_D_PRODUCTS) * 4
+        assert len(documents) >= len(harness.products) * 4
         assert len(documents) == len(sealed)
         startup = [document for document in documents if document["record_count"] == 0]
-        assert len(startup) == len(PROFILE_D_PRODUCTS) * 3
+        assert len(startup) == len(harness.products) * 3
         assert all(document["capture_flags"] == ["reconnect_gap"] for document in startup)
         assert all(document["gap"] and not document["complete"] for document in startup)
         assert all(document["connection_ids"] == [] for document in startup)
@@ -1322,7 +1332,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
 
         expected_manifest_counts = {
             (market, symbol, core_stream.value): 2
-            for market, symbol in PROFILE_D_PRODUCTS
+            for market, symbol in harness.products
             for core_stream in UsdMStream
         }
         expected_manifest_counts[
@@ -1333,10 +1343,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             )
         ] = 3
         expected_manifest_counts.update(
-            {
-                (market, symbol, "depth_snapshot"): 1
-                for market, symbol in PROFILE_D_PRODUCTS
-            }
+            {(market, symbol, "depth_snapshot"): 1 for market, symbol in harness.products}
         )
         assert {
             (document["market"], document["symbol"], document["stream"])
@@ -1377,9 +1384,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
         }
 
         captured = envelopes(tmp_path)
-        assert len(captured) == len(PROFILE_D_PRODUCTS) * 3 * 2 + 1 + len(
-            PROFILE_D_PRODUCTS
-        )
+        assert len(captured) == len(harness.products) * 3 * 2 + 1 + len(harness.products)
         assert {
             (envelope.market, envelope.symbol, envelope.stream)
             for envelope in captured
@@ -1395,7 +1400,7 @@ def test_profile_d_runs_fourteen_collectors_with_forty_two_active_streams(
             else:
                 assert payload["s"] == envelope.symbol
 
-        for market, symbol in PROFILE_D_PRODUCTS:
+        for market, symbol in harness.products:
             for core_stream in UsdMStream:
                 stream_events = [
                     envelope

@@ -771,6 +771,24 @@ def test_completed_write_failure_after_first_new_is_fatal_and_recoverable(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from binance_market_data_recorder.spool import writer as writer_module
+
+    def full_first_period(
+        *,
+        opened_monotonic: float,
+        period_seconds: float,
+        market: str,
+        symbol: str,
+        stream: str,
+    ) -> float:
+        return opened_monotonic + period_seconds
+
+    # This fault is specifically after a persisted first-new frame while its
+    # Raw is still ACTIVE. A default product phase may be arbitrarily close
+    # to now, naturally splitting the fixture before the injected Catalog error.
+    # Keep the fixture's first period intact; timer rotation is tested apart.
+    monkeypatch.setattr(writer_module, "_rotation_deadline", full_first_period)
+
     async def exercise() -> dict[str, Any]:
         stop = asyncio.Event()
         attempts = 0
