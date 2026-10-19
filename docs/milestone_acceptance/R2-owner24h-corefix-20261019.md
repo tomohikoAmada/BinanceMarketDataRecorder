@@ -1,5 +1,56 @@
 # R2 fresh24h after independent core/aux recovery repair
 
+Authoritative actual **October19 21:58:41 Shanghai**:
+**FRESH_OWN24H_FORMAL_RUNNING / ACTUAL_STARTUP_INDEPENDENT_ACCEPTED**.
+Sole run`2ae5dd2f46ae49dbbbbd855a4bbceb3f` has actual **T0 October19 21:25:51.838687116 Shanghai**
+(UTC1792416351838687116 / BOOTTIME1481246019223647). Its own86400 minimum target
+is **October20 21:25:51.838687116 Shanghai /13:25:51.838687116UTC**.
+This is accepted actual startup, not completed24h or saved-data acceptance.
+
+- [x] Minimal CoreRecovery/auxiliary separation repair, independent14fault/948row
+  replay, code7e1cfac/PR83/main17b8d4f, exact dualCI39256499775 and actual Linux24
+  full-clock cases accepted. All prior12runtime/physical/ARM reviews remain accepted.
+- [x] Actual strict warm562.422386671s/18rows (7BLOCK/11PASS retained, excluded
+  from formal monitor denominator); firststrict→end331.604213664s, strict26/core
+  end+start PASS. Actual launch/capture/prestart admissions and effective native
+  Runtime89280/Stop1500 independently reconstructed. PrestartADMITTED164720.284925
+  >required156480.141937s/margin8240.142988/projectedwriter10819222738B>10GiB.
+- [x] Full actual startup LOCAL/OFFLINE reportef2a14be/resultb2f1bbd3/
+  manifestcf1d60db ACCEPT. All14 originalJSON/86observations/full paired26context
+  maps/timing/resource/source/policy/native bindings reconstructed. Prestart55 live
+  backlog is not a stopped freeze; capacityCRITICAL/hardreservefalse is retained
+  as a separate runtime diagnostic, while the stage forecast remains ADMITTED. Original per-row
+  publication bytes and complete boundaryCatalog membership remain final-control gates.
+- [x] At the single read CAP70177c7d/PID636585 and REC864c173d/PID636658 are
+  active-running, Recorderenabled/NRestarts0. All66 current formal monitor rows
+  official+strictPASS/coreREADY, skipped0/recovery0; this is an honest prefix,
+  not final availability or a saved-frame denominator. Across86observations,
+  ownedcurrentANDpeakSwap0/RSSmax330170368B/hostavailablemin4613431296B;
+  hostswap33755136–34279424B/pswpin2537/pswpout11884–12009 remain host diagnostics.
+- [ ] Own86400 actual strict endpoint, configured-product planned rotation/recovery,
+  normalstop-disable/natural drain/freeze/full newdata dualreleasedLIVE+completedverify,
+  independent final saved-frame denominator strictly>99.9%/actualrestored-beforecancel/
+  freshstopped-disabledsameidentityhandoff/naturalarchive+finitefutureCLOCK_MONOTONIC/
+  owner24receipt/finalmain/hourlypause. No target/failure/terminal/fullaudit exists
+  in this read.48h remains PENDING and is not started in this repair request.
+
+Production sourceca760c09/wheelc2eeb219/identity7276c9fa/config5b73/all14/four
+Spot+USD-M BTCUSDT/ETHUSDT products and own2hf45+own12haff remain unchanged.
+R3 remains offline/not deployed. Preserve all Raw/archive/oldderived/failures/venvs/
+worktrees/unrelated edits; no inherited duration. Old6bacfailedwindow stays CLOSED.
+Fixed current quietexpiry **October21 19:11:12 Shanghai /1792581072**, NEVERextend,
+reuse orrearm. Known actual target replaces the old warm/start checkpoint: before
+October20 13:25:51UTC leave healthy native alone, hourlyquota+existingLOCALonly/
+quiet, no extraVPS/copy/ARM/launch/warm/restart/refreeze/startup-review repetitions.
+At/after target inspect actualowner-target/strictstop/native/terminal once, then
+set the audit checkpoint from actualselectedscale/progress. Native audits/restores
+withoutLLM/SSH. Explicit owner status requests/known failures permit needed reads.
+Monitor and saved-frame conformance separate; no everyexchangeevent/canonicalV5/
+predecessor/ProductionReady credit, R078OPEN. Exact NEWPN
+`/private/var/tmp/bmdr-r2-corefix-20261019-j3elbmzf/CONTINUATION.md`.
+Earlier warming/not-T0/failure/RUNNING paragraphs below are retained history.
+
+
 Authoritative new recovery checkpoint **October19 21:16:15 Shanghai**:
 **CORE_AUX_REPAIR_COMPLETE / FRESH_OWN24H_NATIVE_WARMING / NOT_YET_T0**.
 
