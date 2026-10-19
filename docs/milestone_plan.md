@@ -4231,3 +4231,16 @@ Current October2 scope update: owner resumes through VPS Formal2h plus complete
 terminal/independent acceptance, then stops before12h. See
 [Raw retirement correction](milestone_acceptance/Q3-raw-retirement-correction.md).
 The broader38h plan remains; this turn must not start12h.
+
+
+## 2026-10-19 R3 offline development (no production status read)
+
+R3-a/all-feature twenty-product and storage/retention/budget offline work is
+complete on `codex/recorder-r3-offline`; new independent subagent APPROVED,
+214 affected tests/full Ruff/mypy311 PASS. See
+[R3 acceptance](milestone_acceptance/R3-offline-20261019.md) and
+[retention/capacity runbook](runbooks/R3-offline-capacity.md).
+This is local synthetic proof and explicit scenario planning only. R3-b/G3-b
+joint quotas, final symbols/current metadata, real archived samples and VPS
+shared-load qualification remain OPEN. No VPS/service/capture/automation changes
+were made; the R2 operational authority above is preserved, not refreshed.

@@ -50,6 +50,7 @@ from binance_market_data_recorder.service import runtime as runtime_module
 from binance_market_data_recorder.service.runtime import ServiceRuntime, _collector_factory
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.supervisor.readiness import CORE_STREAMS, ReadinessSnapshot
+from tests.r3_support import R3_SYMBOLS
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "binance"
 
@@ -664,6 +665,7 @@ def test_vps_evaluator_independently_checks_exact_products(
             "usdm_symbols": ["BTCUSDT", "ETHUSDT"],
             "all_enabled": True,
         },
+        {"spot_symbols": list(R3_SYMBOLS), "usdm_symbols": list(R3_SYMBOLS), "all_enabled": True},
     ],
 )
 def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
@@ -783,6 +785,10 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
             from tests.unit.test_usdm_side_data_collector import _cursor_model
 
             start = int(args[-2])
+            # One low-activity product has legitimate empty OI windows; its
+            # saved empty response/range cursor must not fail global readiness.
+            if symbol == "LTCUSDT" and kind.value == "open_interest_statistics_5m":
+                return Response([])
             model = _cursor_model(kind, start)
             model["symbol"] = symbol
             if "pair" in model:
@@ -838,11 +844,14 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
         logger=logging.getLogger("test.ms2"),
         sleep_observer_factory=NoopSleepObserver,
     )
+    expected_auxiliary = len(config.spot_symbols) + 11 * len(config.usdm_symbols) + 2
 
     async def exercise() -> None:
         task = asyncio.create_task(runtime.run())
         try:
-            for _ in range(500):
+            # Ten Spot snapshots (weight 50) plus metadata use the real 6000/min
+            # pacer: the old four-product 5s fixture wait is too short for 20.
+            for _ in range(2000):
                 auxiliary = [
                     item
                     for collector in runtime._collectors.values()
@@ -852,16 +861,24 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
                     auxiliary += list(runtime.global_side_data.status().values())
                 if runtime._state_document()["core_ready"] and (
                     not all_enabled
-                    or (len(auxiliary) == 26 and all(item["accepted"] >= 1 for item in auxiliary))
+                    or (
+                        len(auxiliary) == expected_auxiliary
+                        and all(item["accepted"] >= 1 for item in auxiliary)
+                    )
                 ):
                     break
                 if task.done():
                     await task
                 await asyncio.sleep(0.01)
-            assert runtime._state_document()["core_ready"] is True
-            assert len(opened) == (16 if all_enabled else 3 * len(runtime.expected_products))
+            assert runtime._state_document()["core_ready"] is True, json.dumps(
+                runtime._state_document(), indent=2
+            )
+            assert len(opened) == (
+                3 * len(runtime.expected_products)
+                + (2 * len(config.usdm_symbols) if all_enabled else 0)
+            )
             if all_enabled:
-                assert len(auxiliary) == 26
+                assert len(auxiliary) == expected_auxiliary
                 assert all(item["accepted"] >= 1 and item["failures"] == 0 for item in auxiliary), (
                     auxiliary,
                     {
@@ -913,7 +930,21 @@ def test_real_runtime_fake_transports_ready_shutdown_and_raw_identity(
             ("um_perpetual", GLOBAL_SIDE_DATA_SYMBOL, kind)
             for kind in ("exchange_info", "funding_info")
         }
-        assert actual == expected and len(actual) == 42
+        assert actual == expected
+        if "LTCUSDT" in config.usdm_symbols:
+            with Catalog(runtime.layout.catalog) as catalog:
+                sparse = [
+                    row
+                    for row in catalog.operational_events(event_type="SIDE_DATA_RANGE_EVALUATED")
+                    if cast(dict[str, Any], row["evidence"]).get("symbol") == "LTCUSDT"
+                ]
+                assert sparse
+                assert all(
+                    cast(dict[str, Any], row["evidence"])["range_complete"]
+                    and cast(dict[str, Any], row["evidence"])["response_record_count"] == 0
+                    for row in sparse
+                )
+        assert len(actual) == 5 * len(config.spot_symbols) + 15 * len(config.usdm_symbols) + 2
         assert {
             item for item in expected if item[2] not in {*CORE_STREAMS, "mark_price", "liquidation"}
         } <= synced

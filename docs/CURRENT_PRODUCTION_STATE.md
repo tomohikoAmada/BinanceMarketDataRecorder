@@ -1178,3 +1178,16 @@ intentional operator termination; the failed worker status was then cleared.
 Attempt2 started16:31:34 UTC with all sanctioned mutators inactive, retaining the
 original failed logs. Future archive pauses stop the timer first and let the
 existing worker finish before asserting quiescence. No gate is relaxed.
+
+
+## 2026-10-19 R3 offline development (no production status read)
+
+R3-a/all-feature twenty-product and storage/retention/budget offline work is
+complete on `codex/recorder-r3-offline`; new independent subagent APPROVED,
+214 affected tests/full Ruff/mypy311 PASS. See
+[R3 acceptance](milestone_acceptance/R3-offline-20261019.md) and
+[retention/capacity runbook](runbooks/R3-offline-capacity.md).
+This is local synthetic proof and explicit scenario planning only. R3-b/G3-b
+joint quotas, final symbols/current metadata, real archived samples and VPS
+shared-load qualification remain OPEN. No VPS/service/capture/automation changes
+were made; the R2 operational authority above is preserved, not refreshed.

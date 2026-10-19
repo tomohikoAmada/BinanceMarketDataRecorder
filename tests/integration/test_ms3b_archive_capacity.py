@@ -39,6 +39,7 @@ from tests.integration.test_ms3b_multi_product_load import (
     _Identity,
     _spool,
 )
+from tests.r3_support import R3_SYMBOLS
 
 
 class _NoVolumes:
@@ -65,8 +66,22 @@ def _seal_archive_candidate(
     return seal_partial(writer.path, layout=layout, catalog=catalog)
 
 
+@pytest.mark.parametrize(
+    "identities",
+    [
+        PROFILE_D_IDENTITIES,
+        tuple(
+            (market, symbol, stream)
+            for market in ("spot", "um_perpetual")
+            for symbol in R3_SYMBOLS
+            for stream in ("diff_depth", "agg_trade", "book_ticker")
+        ),
+    ],
+    ids=["14-products", "20-products"],
+)
 def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity(
     tmp_path: Path,
+    identities: tuple[tuple[str, str, str], ...],
 ) -> None:
     layout = ensure_storage_layout(tmp_path / "archive")
     with Catalog(layout.catalog) as catalog:
@@ -97,9 +112,7 @@ def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity
                 _Identity(market, symbol, stream),
                 ordinal,
             )
-            for ordinal, (market, symbol, stream) in enumerate(
-                PROFILE_D_IDENTITIES, start=1
-            )
+            for ordinal, (market, symbol, stream) in enumerate(identities, start=1)
         ]
         active_identity = _Identity("spot", "BTCUSDT", "diff_depth")
         active_writer = RawChunkWriter(
@@ -123,8 +136,8 @@ def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity
             root=target_root,
         )
         before = catalog.archive_aggregate(target.storage_id)
-        assert before["unassigned_sealed_files"] == 42
-        assert len(candidates) == 42
+        assert before["unassigned_sealed_files"] == len(identities)
+        assert len(candidates) == len(identities)
 
         try:
             result = archive_drain(
@@ -132,19 +145,21 @@ def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity
                 catalog=catalog,
                 storage_id=target.storage_id,
                 max_runtime_seconds=60,
-                max_files=42,
+                max_files=len(identities),
                 volumes=FixedVolumes(volume),
             )
-            assert result["processed_files"] == 42
-            assert result["successful_transactions"] == 42
+            assert result["processed_files"] == len(identities)
+            assert result["successful_transactions"] == len(identities)
             assert result["backlog_files_after"] == 0
             assert catalog.state(active_chunk_id) is ChunkState.ACTIVE
             assert active_path.is_file()
 
             transactions = catalog.archive_transactions(storage_id=target.storage_id)
-            assert len(transactions) == 42
-            assert len({str(row["chunk_id"]) for row in transactions}) == 42
-            assert len({str(row["target_relative_path"]) for row in transactions}) == 42
+            assert len(transactions) == len(identities)
+            assert len({str(row["chunk_id"]) for row in transactions}) == len(identities)
+            assert len({str(row["target_relative_path"]) for row in transactions}) == len(
+                identities
+            )
             assert all(row["state"] == "LOCAL_DELETED" for row in transactions)
             assert catalog.archive_transaction_for_chunk(active_chunk_id) is None
 
@@ -162,7 +177,7 @@ def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity
                     str(manifest["stream"]),
                 )
                 observed_identities.add(identity)
-                expected = set(PROFILE_D_IDENTITIES)
+                expected = set(identities)
                 if identity not in expected or str(transaction["chunk_id"]) != str(
                     manifest["chunk_id"]
                 ):
@@ -172,7 +187,7 @@ def test_archive_drain_finishes_one_sealed_candidate_for_each_profile_d_identity
                     manifest["stored_sha256"]
                 ):
                     hash_mismatches += 1
-            assert observed_identities == set(PROFILE_D_IDENTITIES)
+            assert observed_identities == set(identities)
             assert identity_mismatches == 0
             assert hash_mismatches == 0
             assert catalog.archive_aggregate(target.storage_id)["backlog_files"] == 0
@@ -291,14 +306,28 @@ def test_capacity_growth_is_aggregate_and_topology_decomposition_invariant(
     assert "product_count" not in first
 
 
+@pytest.mark.parametrize(
+    "identities",
+    [
+        PROFILE_D_IDENTITIES,
+        tuple(
+            (market, symbol, stream)
+            for market in ("spot", "um_perpetual")
+            for symbol in R3_SYMBOLS
+            for stream in ("diff_depth", "agg_trade", "book_ticker")
+        ),
+    ],
+    ids=["14-products", "20-products"],
+)
 def test_capacity_state_is_global_and_hard_reserve_covers_all_42_identities(
     tmp_path: Path,
+    identities: tuple[tuple[str, str, str], ...],
 ) -> None:
     layout = ensure_storage_layout(tmp_path / "hard-reserve")
     with Catalog(layout.catalog) as catalog:
         spools: list[StreamSpool] = []
-        identities = [_Identity(*item) for item in PROFILE_D_IDENTITIES]
-        for identity in identities:
+        product_identities = [_Identity(*item) for item in identities]
+        for identity in product_identities:
             spool = _spool(layout, catalog, identity)
             spool.enqueue(_event(identity, 1))
             assert spool.drain_one()
@@ -328,7 +357,7 @@ def test_capacity_state_is_global_and_hard_reserve_covers_all_42_identities(
                 seal_active=seal_active,
                 stop_collectors=lambda: calls.append("stop"),
                 open_gap=lambda _at: gap_identities.extend(
-                    (item.market, item.symbol, item.stream) for item in identities
+                    (item.market, item.symbol, item.stream) for item in product_identities
                 ),
             ),
             rotation_bytes=128 * 1024**2,
@@ -342,10 +371,10 @@ def test_capacity_state_is_global_and_hard_reserve_covers_all_42_identities(
         assert result["capacity_state"] == "HARD_RESERVE"
         assert calls == ["suspend", "archive", "seal", "stop"]
         assert len(catalog.operational_events(event_type="DISK_EMERGENCY_STOP")) == 1
-        assert len(gap_identities) == 42
-        assert len(set(gap_identities)) == 42
-        assert set(gap_identities) == set(PROFILE_D_IDENTITIES)
-        assert len(catalog.chunks_in_states(ChunkState.SEALED)) == 42
+        assert len(gap_identities) == len(identities)
+        assert len(set(gap_identities)) == len(identities)
+        assert set(gap_identities) == set(identities)
+        assert len(catalog.chunks_in_states(ChunkState.SEALED)) == len(identities)
         assert len(catalog.chunks_in_states(ChunkState.ACTIVE)) == 0
 
         document = StorageForecaster(

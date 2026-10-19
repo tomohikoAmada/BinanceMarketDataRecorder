@@ -1,0 +1,23 @@
+{
+  "writer_free_bytes": 21474836480,
+  "archive_free_bytes": 1932735283200,
+  "horizon_seconds": 86400.0,
+  "archive_unavailable_seconds": 3600.0,
+  "sealed_bytes_per_second": 200000.0,
+  "chunks_per_second": 2.0,
+  "archive_bytes_per_work_second": 1000000.0,
+  "archive_chunks_per_work_second": 20.0,
+  "archive_work_seconds": 50.0,
+  "archive_cycle_seconds": 70.0,
+  "archive_max_files_per_cycle": 1000,
+  "retained_metadata_bytes_per_second": 32768.0,
+  "archive_metadata_bytes_per_chunk": 8192,
+  "other_writer_growth_bytes_per_second": 1000.0,
+  "initial_backlog_bytes": 0,
+  "initial_backlog_chunks": 0,
+  "active_raw_peak_bytes": 536870912,
+  "seal_temporary_peak_bytes": 536870912,
+  "archive_temporary_peak_bytes": 134217728,
+  "wal_peak_bytes": 268435456,
+  "other_temporary_peak_bytes": 1073741824
+}

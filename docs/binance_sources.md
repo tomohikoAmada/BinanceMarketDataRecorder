@@ -526,3 +526,25 @@ were inspected through the browser source reader.
 | Official USD-M stream page | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market | 2026-10-14T02:37:02.366345+00:00 | `9a8c54bf50e85e99a4bd4fd5c6125cfbe5862fa1263032cd37d022dd261b67d2` combined browser-extracted E/T excerpts, not HTTP response bytes |
 
 Direct HTML/schema requests returned HTTP202 empty bodies, so their response hashes provide no semantic evidence. The nonempty browser-extracted official pages identify stream-specific T semantics and int64 types. Downloaded text was not executed. Shared Contracts fixture origin/check date and copied SHA remain in tests/fixtures/contracts/README.md.
+
+
+## R3 offline capacity / shared-IP inventory — 2026-10-19
+
+Agent Native index `https://developers.binance.com/en/docs/llms.txt` was checked
+before selected Spot REST/WS and USD-M General/WS/market endpoint pages. Full
+URL, UTC retrieval time, representation and content SHA-256 are recorded in
+[machine-readable source ledger](milestone_evidence/r3-official-sources-20261019.json).
+The documentation portal moved endpoint pages into its catalog. Direct HTTP
+endpoint fetches returned empty bodies/site shells, so endpoint evidence is an
+explicitly labelled Web-rendered excerpt snapshot, not a claimed upstream HTTP
+digest; source snapshots remain under `/private/var/tmp/r3-binance-docs-8awe6o9v`.
+No exchange market-data endpoint was called.
+
+Conclusions: depth weights differ by market and requested limit; IP budgets
+include both processes. Funding history/info share a separate request-count
+window, while zero-weight statistics still require count-window budgeting.
+WS client control and connection attempts are separate from incoming market
+frames. The [R3 inventory](runbooks/R3-shared-ip-budget.md) records calculations,
+process-local cooldown coverage and the still-open joint recovery gate.
+Official example rateLimits must be replaced by actual metadata before live
+admission; none of these sources qualifies twenty-product VPS capacity.

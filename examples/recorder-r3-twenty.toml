@@ -1,0 +1,12 @@
+# Offline candidate / research symbols only. Not an approved deployment list.
+# Do not replace the running R2 recorder.toml; live eligibility/budget is pending.
+[recorder]
+data_root = "/var/lib/binance-market-data-recorder-r3-candidate"
+capacity_profile = "vps-production-v1"
+network_proxy_mode = "direct"
+spot_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "LTCUSDT"]
+usdm_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "LTCUSDT"]
+rotation_seconds = 60.0
+rotation_bytes = 134217728
+durability_interval_seconds = 1.0
+# All fourteen existing optional feature switches retain their enabled defaults.
