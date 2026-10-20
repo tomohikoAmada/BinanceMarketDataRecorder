@@ -1,0 +1,25 @@
+# N1 final control design and software-only Linux QA bindings
+
+**ACCEPT — no remaining blocking finding.** This review is LOCAL/OFFLINE. No SSH, production Raw, operator main, software QA native, stage copy, arm or capture launch was executed. Previously accepted runtime/source/CI/cloud229 and12 fake-clock cases are reused without rerunning them.
+
+## Actual binding and forecast
+
+The accepted draft's13 runtime members are preserved; only common.py's three actual constants change to identity **db52730c27cdacf239e5131cdafe9043ee8d3ddf54a71b59d94b5d1179245c45**, accepted deployment-result **60134a374de186b9837ad38cfcd90a09bc36004762929ac438decb313f076e99**, and stopped counts `(124064,253525432,13643563650,194155846623,35520800)`. The other12 members remain byte-identical. Control manifest `634715ff…`, Linux manifest `9bb7242f…` and their runtime-member maps agree exactly. Bound fixtures only replace the private directory reference; runner fixture names/directories are the corresponding bound names.
+
+Actual read-only prospective preflight `565aee1c…` binds sourcec368/confige2/new identity/deployment, zero two backlogs, stopped-disabled Recorder/PID0/NRestarts0 and an inactive successful archive worker at that instant. Independent arithmetic reproduces all growth/scratch/two-generation/staging/reserve fields using22 spools and unchanged old four-product peak rates. Projected writer free **17,127,127,282B**, archive free **2,046,971,266,713B**, required **158,656.6323729902s** against proposed165600s, margin6943.367627s. This is a prospective admission under those inputs, not a future performance promise or an armed window. Stage copy/arm/start still recompute their current admission.
+
+## Exact operations
+
+Reviewed stage operator `22a89e71…`, Linux operator **39b00586…**, runner `e74710bb…`, and local QA-outcome acceptor **b7469b49…**. Three Linux embedded modes and four stage modes compile. Linux copy writes only18 software/control/fixture files in a new QA child of the existing release scope, with exclusive creation/full readback/root0:988/0640. Its new root/bound/tmp directories are0750. The software native uses system Python → original pin → installed canonical Python → runner, Typeexec/Runtime600/Stop120, with both TMPDIR and SQLITE_TMPDIR in the QA archive tmp directory. It performs complete-directory imports and the already reviewed fake-service/fake-clock fixtures. The runner publishes its fresh exclusive result only after checked subprocesses/log parsing, explicitly with zero real duration and durability credit.
+
+Stage copy requires the independent decision/runtime-member/control-manifest binding and a completed actual Linux result whose exact manifest/runtime map matches this stage. It copies a new scope only, then performs exact canonical/config/policy/stopped-census/device/reserve admission. Arm and launch remain separate finite/current-admission actions; design acceptance does not mean they have happened.
+
+Two gaps found during this review are fixed: QA launch and stage arm now persist/fsync an exclusive ATTEMPT_NOT_PASS marker before systemd-run, preventing same-scope repetition after a rapid failure and transient-unit GC; stage read now includes the boundary/owner-scope/quiescence selection metadata plus finish observations and full dated arm/capture/terminal UNIT journals. The original capture launch already retains its exclusive launch-admission guard.
+
+The local actual-QA acceptor now rehashes every exported content field, requires exact QA scope/unit and a same-invocation manager PID1/UNIT/exact Deactivated successfully message, verifies result/manifest/log summaries and runtime-member equality, and exclusively writes the QA result only after those checks. A missing actual result, stale manifest, different runtime, forged child success text or corrupt content cannot supply stage-copy qualification. Readers export real evidence; transient not-found defaults alone never establish success.
+
+Exact-AST component checks on private fixtures pass for marker-before-dispatch, simulated early-failure/GC followed by rejected repeat for both QA and arm, missing/wrong QA results, stale/mismatched runtime manifests, corrupt exports, wrong scope/unit, nonmanager success messages and missing result. No real subprocess/native/service/acceptance operator was executed by these checks. A first component harness missed fdopen in its private OS proxy; the corrected harness passed without candidate changes; its note remains retained.
+
+## Qualification boundary
+
+**Final design ACCEPT and exact software-only Linux QA copy/single-native/read plus local outcome-acceptance bindings ACCEPT.** Actual software QA execution/physical readback/result/manager proof remain pending. Formal stage-copy/arm/launch execution qualification still requires completed actual QA acceptance, physical stage controls and fresh current admission/finite-window/exact-native bindings. No stage scope has been created by this review; capture/T0/24h/next-stage and production-ready credit are zero. RESULT contains the exact decision/runtime_members/controls_manifest_sha256 fields required by stage copy.

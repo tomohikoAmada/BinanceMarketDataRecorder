@@ -2,7 +2,8 @@
 
 Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED**.
 Candidatec368/wheel68460be4 is deployed with BTC confige2/newidentitydb52730c.
-Recorder remains stopped-disabled; no new capture/window/T0 or24h result exists.
+N1 native capture launched October20 07:37:05UTC and is warming, with fixed
+window expiry October22 05:29:34UTC. No formal T0 or24h result exists yet.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
 
@@ -53,10 +54,20 @@ main's unrelated/offline R3 changes are not part of this production release.
 - [x] Fresh prospective N1 preflight565aee1c: exact BTC14 contexts/22 spools,
   zero backlogs, projected writer17,127,127,282B>10GiB; required158656.632s<165600s.
   This is a forecast, not an armed window, measured capacity or24h qualification.
-- [ ] Fresh capacity/time/strict warm/resource qualification/new finite window/
-  own86400T0 for BTCUSDT on both markets, then progressively larger cohorts under
-  the [owner-approved capacity plan](R2-vps-symbol-capacity-20261020.md).
-  No duration transfer from any prior run, source or configuration.
+- [x] N1 final actual identity/config/policy binding, Linux complete-control import
+  and12×86400 fake-clock cases acceptedb1113e04/16b6f103 (zero real-time credit).
+  A setup interpreter error before admission was diagnosed and fixed1bfd3ccd:
+  use canonical Python for package-dependent controls; existing copied files were
+  revalidated without rewriting. Actual physical3420039c independently ACCEPTaa337a3f.
+- [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
+  independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
+  epoch1792646974; never extend, reuse or rearm this window.
+- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
+  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
+  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
+- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
+  owner-start/warm/failure/native output once. Independently bind real T0 and its
+  own86400 target; before checkpoint let healthy native work proceed.
 - [ ] Complete new selected dualreleasedLIVE/completedimmutableverify and saved
   frames denominator strictly>99.9%, independent final controls reconstruction,
   configured strict contexts (BTC N1=14)/core and actual plannedrotation/recovery evidence, actualrestoration

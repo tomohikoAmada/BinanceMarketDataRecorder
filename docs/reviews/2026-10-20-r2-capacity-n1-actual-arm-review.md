@@ -1,0 +1,17 @@
+# Actual N1 ARM/window and exact pending capture launch
+
+**ACCEPT — completed actual ARM, fixed window and current saved admissions reconstructed; no blocking finding.** LOCAL/OFFLINE only. No SSH, repeated ARM, source/QA rerun or capture execution occurred.
+
+Actual read `f322108ba958441c908d718f28ed109b3b74327758740e030566139b93d9a713` contains all8 publications with independently verified content hashes. Canonical verification `ef9322dd…` matches the accepted deployed sourcec368/wheel6846/identitydb527/confige2 and full effective unit/installed-artifact/dependency/root-control records. The corrected canonical-Python ARM path has now executed successfully. The immutable arm-attempt argv matches the previously accepted pending ARM exactly; its ATTEMPT_NOT_PASS label remains an attempt record, not the outcome.
+
+Real ARM invocation **6f6d2b7522ff400587f7073765642b59** under the same boot has complete manager and owned UNIT evidence: owned stdout ACTIVE_VERIFIED, Deactivated successfully at **2026-10-20 07:29:42.154276 UTC**, and Finished/JOB_RESULTdone. ARM CPU22.603115s/memory154,456,064B/swap0 are ARM diagnostics. GC/not-found default service properties are not used to infer actual runtime limits or success.
+
+Actual window `f02f4e96…` is ACTIVE_VERIFIED with deadline **1792646974 =2026-10-22 05:29:34UTC**. It equals floor(armed_at seconds)+165600. The active expiry timer's exact UTC deadline/invocation agrees with the window. All5 approved OS units are runtime-masked/inactive; original3 enabled/active owners and both inactive apt services are recorded. The negative masked-start probe fails as expected. Before/after kernel preconditions retain the known146-running/147-pending notice without marker changes, reboot or automatic reboot. The fixed window must never be extended or reused.
+
+Both prearm and postarm admissions are independently recomputed from their saved census/free-space/metadata inputs,22 spools and unchanged conservative rates. Counts/backlogs are unchanged/0. Postarm `d389cc33…` records165592.49071383476s remaining >158656.6323729902s required, margin6935.85834084457s; projected writer17,126,893,810B and archive2,046,970,754,713B exceed10GiB. The recorded remaining was measured during admission before final publication; it is preserved unchanged.
+
+At the **saved read time2026-10-20 07:31:23.720240976UTC only**, deadline subtraction yields remaining165490.279759024s and margin6833.6473860338s against that same required budget. This is not a statement of present real-time remaining budget or a replacement for fresh launch admission. The code rechecks the live fixed window/OS state and current time/resources before launch.
+
+Recorder remains inactive/disabled/PID0/NRestarts0. No owner-start/T0/launch publication or capture/terminal invocation exists in this read. The exact pending canonical-Python launch helper and nested capture native argv are frozen here; operator8849 and runtime controls remain unchanged.
+
+**Actual ARM/window ACCEPT and one exact capture-launch invocation qualified**, subject to all original current-admission/strict warm/identity/resource/window/one-start guards succeeding. Do not repeat ARM, change the deadline, bypass a failed current gate, or inherit any duration. Launch is not accepted own24h: actual warm-up/start/run identity, own86400s, complete selected saved-data audits, independent result and restored handoff remain future evidence. No capture/T0/24h/next-stage/production-ready credit is granted by this pre-launch review.

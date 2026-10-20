@@ -1,6 +1,6 @@
 # Project Handoff
 
-Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / CAPACITY_RUNS_NOT_STARTED**.
+Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / N1_NATIVE_WARMING_NOT_YET_T0**.
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -33,14 +33,25 @@ capture stays PENDING. See [capacity plan](milestone_acceptance/R2-vps-symbol-ca
 - [x] Fresh prospective N1 preflight565aee1c: exact BTC14 contexts/22 spools,
   zero backlogs, projected writer17,127,127,282B>10GiB; required158656.632s<165600s.
   This is a forecast, not an armed window, measured capacity or24h qualification.
-- [x] Config-aware N1 private draft design ACCEPTed3eaee5; owner N1 policy
-  has zero inherited duration and old receipts remain historical only.
-- [ ] Final actual binding/Linux fixtures/physical review, fresh finite-window
-  admission/strict warm and N1 own86400T0.
+- [x] N1 final actual identity/config/policy binding, Linux complete-control import
+  and12×86400 fake-clock cases acceptedb1113e04/16b6f103 (zero real-time credit).
+  A setup interpreter error before admission was diagnosed and fixed1bfd3ccd:
+  use canonical Python for package-dependent controls; existing copied files were
+  revalidated without rewriting. Actual physical3420039c independently ACCEPTaa337a3f.
+- [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
+  independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
+  epoch1792646974; never extend, reuse or rearm this window.
+- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
+  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
+  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
+- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
+  owner-start/warm/failure/native output once. Independently bind real T0 and its
+  own86400 target; before checkpoint let healthy native work proceed.
 - [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.
 
 Production is now c3686dd/68460be4/db52730c/confige2f81312 stopped-disabled under
-accepted actual deployment; no capacity window/T0 or24h credit exists. Existing
+accepted actual deployment. A new fixed capacity window and warm capture exist;
+formal T0/accepted24h are still pending. Existing
 old-source2h/12h receipts remain historical, with zero transferred time. Main's
 R3 offline code stays undeployed. All Raw/archive/failed data/venvs/unrelated work
 remain preserved. Current release source is separately frozen from deployedca760

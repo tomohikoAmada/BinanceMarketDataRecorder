@@ -1,6 +1,6 @@
 # R2 VPS symbol capacity qualification
 
-Current state: **AUTHORIZED / RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / NO_CAPACITY_RUN_STARTED**.
+Current state: **AUTHORIZED / RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / N1_NATIVE_WARMING_NOT_YET_T0**.
 The owner's October20 request and explicit choice authorize the sequence below.
 This supersedes the earlier instruction to stop after the first new24h receipt.
 It does not authorize a48h capture or a wider exchange/service framework.
@@ -78,7 +78,7 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
 
 | Stage | Symbols on each market | State | Full24h receipt |
 | --- | --- | --- | --- |
-| N=1 | BTCUSDT | NOT_STARTED; repaired release/BTC deployment accepted | None |
+| N=1 | BTCUSDT | NATIVE_WARMING; formal T0 pending | None |
 | N=2 | BTCUSDT, ETHUSDT | PENDING N=1 acceptance | None |
 | N=4+ | Explicit nested eligible cohort, not selected yet | PENDING | None |
 
@@ -104,7 +104,24 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
   ACCEPT960c82ad, all20 commands0 and unchanged90s stop contract; old venv/config/
   identity preserved. Fresh prospective forecast565aee1c admits N1 with22spools,
   projected writer17,127,127,282B>10GiB and158656.632s required<165600s finite plan.
-- [ ] Final bound Linux control fixtures/physical review/actual window/admission/
-  strict warm and own86400T0. Forecast success grants no captured duration.
+- [x] N1 final actual identity/config/policy binding, Linux complete-control import
+  and12×86400 fake-clock cases acceptedb1113e04/16b6f103 (zero real-time credit).
+  A setup interpreter error before admission was diagnosed and fixed1bfd3ccd:
+  use canonical Python for package-dependent controls; existing copied files were
+  revalidated without rewriting. Actual physical3420039c independently ACCEPTaa337a3f.
+- [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
+  independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
+  epoch1792646974; never extend, reuse or rearm this window.
+- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
+  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
+  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
+- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
+  owner-start/warm/failure/native output once. Independently bind real T0 and its
+  own86400 target; before checkpoint let healthy native work proceed.
 - [ ] N=1 own24h/full data/independent/restored receipt, then successive stages.
 - [ ] Measured capacity boundary/headroom recommendation and final main closeout.
+
+The current attempt's exact status, checkpoint and full pending closeout are in
+[N1 BTC own24h acceptance](R2-capacity-n1-btc-owner24h-20261020.md). N2 and later
+cohorts require their own actual configuration/rates/admission and prior-stage
+full receipt; do not blindly reuse N1 constants or transfer its duration.
