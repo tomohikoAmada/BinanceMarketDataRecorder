@@ -38,7 +38,6 @@ from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
-from ..metrics.report import DailyReporter
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -583,27 +582,7 @@ class UsdMCollector:
                         error_type=type(side_result[0]).__name__,
                     )
             await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
-            days = {day for day, _market, _stream in self.metrics.pending_keys()}
-            batch_id = await asyncio.to_thread(self.metrics.safely_flush)
-            reporter = DailyReporter(
-                catalog=self.catalog, daily_directory=self.layout.daily_reports
-            )
-            if batch_id is not None:
-                for day in sorted(days):
-                    try:
-                        await asyncio.to_thread(reporter.write, day)
-                    except Exception as exc:
-                        log_event(
-                            self.logger,
-                            logging.ERROR,
-                            "daily_report_failed",
-                            "daily report write failed; Raw remains sealed",
-                            **product_log_fields(
-                                "um_perpetual", self.settings.symbol
-                            ),
-                            utc_date=day,
-                            error_type=type(exc).__name__,
-                        )
+            await asyncio.to_thread(self.metrics.safely_flush)
             self.catalog.close()
 
     def side_data_status(self) -> dict[str, dict[str, object]]:

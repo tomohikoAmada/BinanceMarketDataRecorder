@@ -2968,6 +2968,32 @@ class Catalog:
             ).fetchall()
         return [self._validated_remote_row(row) for row in rows]
 
+    def iter_remote_authorizations_between(
+        self, start_utc_ns: int, end_utc_ns: int,
+    ) -> Iterator[dict[str, object]]:
+        """Report-only pages, preserving the existing unique ordering."""
+        if not self._remote_schema_present:
+            return
+        if start_utc_ns < 0 or end_utc_ns <= start_utc_ns:
+            raise ValueError("invalid remote authorization time range")
+        after: tuple[int, str] = (-1, "")
+        while True:
+            with self._lock:
+                cursor = self._connection.execute(
+                    "SELECT * FROM remote_archive_transactions "
+                    "WHERE created_at_utc_ns >= ? AND created_at_utc_ns < ? "
+                    "AND (created_at_utc_ns, receipt_id) > (?, ?) "
+                    "ORDER BY created_at_utc_ns, receipt_id LIMIT 128",
+                    (start_utc_ns, end_utc_ns, *after),
+                )
+                rows = cursor.fetchall()
+                cursor.close()
+            if not rows:
+                return
+            for row in rows:
+                yield self._validated_remote_row(row)
+            after = (int(rows[-1]["created_at_utc_ns"]), str(rows[-1]["receipt_id"]))
+
     def remote_archive_events(self, receipt_id: str) -> list[dict[str, object]]:
         if not self._remote_schema_present:
             return []
@@ -4177,6 +4203,78 @@ class Catalog:
 
     def metric_batches_through(self, utc_date: str) -> list[dict[str, object]]:
         return self._metric_batch_rows("utc_date <= ?", (utc_date,))
+
+    def iter_metric_batches_through(
+        self, utc_date: str, *, start_date: str = "",
+    ) -> Iterator[dict[str, object]]:
+        """Page historical report inputs without pinning a long WAL read transaction."""
+        after = (start_date, "", "", "")
+        while True:
+            with self._lock:
+                cursor = self._connection.execute(
+                    "SELECT batch_id, utc_date, market, stream, aggregate_json, "
+                    "committed_at_utc_ns FROM metric_batches WHERE utc_date <= ? "
+                    "AND (utc_date, market, stream, batch_id) > (?, ?, ?, ?) "
+                    "ORDER BY utc_date, market, stream, batch_id LIMIT 512",
+                    (utc_date, *after),
+                )
+                rows = cursor.fetchall()
+                cursor.close()
+            if not rows:
+                return
+            for row in rows:
+                yield {
+                    "batch_id": str(row["batch_id"]), "utc_date": str(row["utc_date"]),
+                    "market": str(row["market"]), "stream": str(row["stream"]),
+                    "aggregate": json.loads(row["aggregate_json"]),
+                    "committed_at_utc_ns": int(row["committed_at_utc_ns"]),
+                }
+            last = rows[-1]
+            after = (str(last["utc_date"]), str(last["market"]),
+                     str(last["stream"]), str(last["batch_id"]))
+
+    def report_dates_before(self, utc_date: str) -> list[str]:
+        """Committed metric/remote-authority dates for the separate report process."""
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT DISTINCT utc_date FROM metric_batches WHERE utc_date < ? "
+                "ORDER BY utc_date DESC", (utc_date,),
+            ).fetchall()
+            days = {str(row[0]) for row in rows}
+            if self._remote_schema_present:
+                rows = self._connection.execute(
+                    "SELECT DISTINCT date(created_at_utc_ns / 1000000000, 'unixepoch') AS day "
+                    "FROM remote_archive_transactions WHERE day < ?", (utc_date,),
+                ).fetchall()
+                days.update(str(row[0]) for row in rows)
+        return sorted(days, reverse=True)
+
+    def daily_report_input_token(self, utc_date: str, end_utc_ns: int) -> dict[str, list[int]]:
+        """Scheduling revision only: report building still validates authority."""
+        with self._lock:
+            metrics = self._connection.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM metric_batches "
+                "WHERE utc_date <= ?", (utc_date,),
+            ).fetchone()
+            remote = (0, 0)
+            remote_events = (0, 0)
+            if self._remote_schema_present:
+                remote = self._connection.execute(
+                    "SELECT COUNT(*), COALESCE(MAX(rowid), 0) "
+                    "FROM remote_archive_transactions WHERE created_at_utc_ns < ?",
+                    (end_utc_ns,),
+                ).fetchone()
+                remote_events = self._connection.execute(
+                    "SELECT COUNT(*), COALESCE(MAX(e.event_id), 0) "
+                    "FROM remote_archive_events e JOIN remote_archive_transactions t "
+                    "ON t.receipt_id = e.receipt_id WHERE t.created_at_utc_ns < ?",
+                    (end_utc_ns,),
+                ).fetchone()
+        return {
+            "metrics": [int(v) for v in metrics],
+            "remote": [int(v) for v in remote],
+            "remote_events": [int(v) for v in remote_events],
+        }
 
     def _metric_batch_rows(
         self, where_clause: str, parameters: tuple[object, ...]

@@ -10,7 +10,7 @@ SpotCollector 拥有三条独立的 Spot WebSocket 流(diff_depth、agg_trade、
 - 任何非干净全局停止的会话退出后,run() 循环以全新的 snapshot+stream 周期
   重新进入 _run_capture_session。这是 ADR-0023 描述的完整 resync 重启路径。
 - 优雅关闭(stop.is_set())时,finally 块设置 stop 以确保 side-data 任务感知、
-  密封 snapshot spool、刷新 metrics、写入日报告并关闭 Catalog。side data 在密封
+  密封 snapshot spool、刷新 metrics 并关闭 Catalog; 日报由独立后台进程生成。side data 在密封
   之前被等待,以确保 side Raw 在核心 Collector 退出前已持久化。
 - 接收时间在 WebSocket 回调的 JSON 解析之前捕获(参见 binance.spot.websocket),
   保证解析异常不影响墙上时钟记录。
@@ -45,7 +45,6 @@ from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
-from ..metrics.report import DailyReporter
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -473,27 +472,7 @@ class SpotCollector:
                 await asyncio.gather(side_task, return_exceptions=True)
             await self.snapshot_requester.wait_for_idle()
             await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
-            days = {day for day, _market, _stream in self.metrics.pending_keys()}
-            batch_id = await asyncio.to_thread(self.metrics.safely_flush)
-            reporter = DailyReporter(
-                catalog=self.catalog, daily_directory=self.layout.daily_reports
-            )
-            if batch_id is not None:
-                for day in sorted(days):
-                    try:
-                        await asyncio.to_thread(reporter.write, day)
-                    except Exception as exc:
-                        log_event(
-                            self.logger,
-                            logging.ERROR,
-                            "daily_report_failed",
-                            "daily report write failed; Raw remains sealed",
-                            **product_log_fields(
-                                "spot", self.settings.symbol
-                            ),
-                            utc_date=day,
-                            error_type=type(exc).__name__,
-                        )
+            await asyncio.to_thread(self.metrics.safely_flush)
             self.catalog.close()
 
     def readiness_snapshot(self) -> ReadinessSnapshot:
