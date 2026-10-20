@@ -1,6 +1,6 @@
 # R2 fresh24h after independent core/aux recovery repair
 
-Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_RUNNING / CAPACITY_RUNS_NOT_STARTED**.
+Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_QA_RUNNING / CAPACITY_RUNS_NOT_STARTED**.
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -16,9 +16,14 @@ capture stays PENDING. See [capacity plan](R2-vps-symbol-capacity-20261020.md).
   proves this was the sole original initiating cause.
 - [x] Owner-approved N1 config prepared locally: only both symbol lists change
   to BTCUSDT, all14 features and all other config values preserved. Not installed.
-- [ ] Exactrelease CI39356789510/sourcec3686dd/PR84, affected Linux QA/lockedwheel/
-  independent supply chain/stopped deployment/newidentity and failed-partial byte
-  custody. Earlier39356196424 BOTH SUCCESS is merge-tree integration only.
+- [x] Exactrelease CI39356789510/sourcec3686dd BOTH SUCCESS, both actual checkout
+  HEADs verified; mac2136PASS/Ubuntu2132PASS. PR84 merged06fd84a; production release
+  still uses isolatedc368 without R3. Software-only cloud copy509064c5 complete.
+- [ ] Affected Linux QA/newlockedwheel, independent supply chain, stopped deployment/
+  newidentity and failed-partial byte custody. No new capture/T0.
+  Single native28607f26 launched02:19:41UTC for fresh14-module QA/lockedwheel;
+  runtime3600/Stop120. Actualcopy/exactCI/pendinglaunch ACCEPT12b13159; actual
+  outcome checkpoint02:26UTC, no complete cloud/wheel PASS at launch.
 - [ ] Config-aware private stage gates/forecast (old26/fourproducts/42/rates/old
   same-identity anchors cannot be reused), fresh actual admission and N1 own86400T0.
 - [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.

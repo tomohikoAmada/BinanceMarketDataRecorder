@@ -88,7 +88,10 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
 - [x] Existing config supports explicit per-market symbols; no topology rewrite
   is needed. Report isolation and bounded latent fixes are independently accepted
   locally; see [repair acceptance](R2-report-isolation-repair-20261020.md).
-- [ ] Exact release CI/Linux QA/locked wheel/stopped deployment and failed-byte
-  preservation; actual capacity admission and config-aware stage bindings.
+- [x] Exact source CI39356789510/PR84 merged; BTC-only candidate changes just both
+  symbol lists. Draft auxiliary/monitor context gates and topology independently
+  ACCEPTfcf40d5f (N1/2/4 contexts14/26/50, spools22/42/82), not VPS capacity credit.
+- [ ] Linux QA/locked wheel/stopped deployment and failed-byte preservation;
+  common/controller/terminal/forecast and actual stage admission remain unbound.
 - [ ] N=1 own24h/full data/independent/restored receipt, then successive stages.
 - [ ] Measured capacity boundary/headroom recommendation and final main closeout.

@@ -1,6 +1,6 @@
 # R2 report isolation repair and fresh24h qualification
 
-Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_PENDING**.
+Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_QA_RUNNING**.
 This candidate is not deployed. No new capture/window/T0 or24h result exists.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
@@ -33,10 +33,15 @@ main's unrelated/offline R3 changes are not part of this production release.
   members, paging output equivalence, late insertion, publication, fairness,
   scratch cleanup and real child isolation/reaping are accepted LOCAL/OFFLINE.
   See [frozen independent review](../reviews/2026-10-20-r2-report-isolation-latent-independent-review.md).
-- [ ] Final full local suite and exact dualCI. Initial PR CI39356196424 uses the
-  default merge checkout; it is not accepted as exact release-source evidence.
-  Both jobs now explicitly select the PR head, retaining main's R3 outside this
-  production release. Runtime files are unchanged by that workflow correction.
+- [x] Final full LOCAL2136PASS/24SKIP/5DESELECTED and exact dualCI39356789510
+  sourcec3686dd BOTH SUCCESS: mac2136PASS/24SKIP, Ubuntu2132PASS/28SKIP, both5
+  deselected; all lint/type/M0/Go/build/CLI steps successful. Actual checkout logs
+  prove c368 on both platforms. Initial PR CI39356196424 merge-tree success remains
+  integration evidence only. PR84 merged06fd84a; release excludes main R3.
+- [x] Independent release copy/build design14abb55e accepted, actual software-only
+  cloud copy509064c5 complete; actual physical/exactCI/pendingnative ACCEPT12b13159.
+  Single native28607f26 launched02:19:41UTC/Runtime3600/Stop120, actual complete
+  QA/wheel result pending (checkpoint02:26UTC). No Recorder start or production change.
 - [ ] Preserve failed partial bytes; frozen source/new locked wheel/affected Linux
   QA/independent full supply chain/stopped deployment/new identity.
 - [ ] Fresh capacity/time/strict warm/resource qualification/new finite window/
