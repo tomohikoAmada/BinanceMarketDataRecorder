@@ -1,6 +1,6 @@
 # R2 VPS symbol capacity qualification
 
-Current state: **AUTHORIZED / RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING / NO_CAPACITY_RUN_STARTED**.
+Current state: **AUTHORIZED / RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / NO_CAPACITY_RUN_STARTED**.
 The owner's October20 request and explicit choice authorize the sequence below.
 This supersedes the earlier instruction to stop after the first new24h receipt.
 It does not authorize a48h capture or a wider exchange/service framework.
@@ -78,7 +78,7 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
 
 | Stage | Symbols on each market | State | Full24h receipt |
 | --- | --- | --- | --- |
-| N=1 | BTCUSDT | NOT_STARTED; repaired release pending | None |
+| N=1 | BTCUSDT | NOT_STARTED; repaired release/BTC deployment accepted | None |
 | N=2 | BTCUSDT, ETHUSDT | PENDING N=1 acceptance | None |
 | N=4+ | Explicit nested eligible cohort, not selected yet | PENDING | None |
 
@@ -95,7 +95,16 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
 - [x] Linux229PASS/locked68460be4 wheel and independent actual supply chain
   ACCEPTab69ecad; current failed-tail metadata583f307c confirms zero partials
   and zero nonretired chunks/transactions, with no Raw or data mutation.
-- [ ] Stopped BTC deployment/newidentity; common/controller/terminal/forecast
-  and actual stage admission remain unbound.
+- [x] N1 config-aware common/controller/terminal/policy/forecast draft independently
+  ACCEPTed3eaee5: exact BTC products/14 contexts/22 spools including global feeds;
+  original four-product peak rates retained conservatively without halving.
+  Full12×86400 fake-clock cases preserve2880 nominal slots;7 topology and19
+  independent negative/semantic checks PASS. These grant no actual duration.
+- [x] Stopped BTC deployment60134a37/newidentitydb52730c independently
+  ACCEPT960c82ad, all20 commands0 and unchanged90s stop contract; old venv/config/
+  identity preserved. Fresh prospective forecast565aee1c admits N1 with22spools,
+  projected writer17,127,127,282B>10GiB and158656.632s required<165600s finite plan.
+- [ ] Final bound Linux control fixtures/physical review/actual window/admission/
+  strict warm and own86400T0. Forecast success grants no captured duration.
 - [ ] N=1 own24h/full data/independent/restored receipt, then successive stages.
 - [ ] Measured capacity boundary/headroom recommendation and final main closeout.

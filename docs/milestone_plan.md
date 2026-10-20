@@ -1,6 +1,6 @@
 # Milestone Plan
 
-Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING / CAPACITY_RUNS_NOT_STARTED**.
+Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / CAPACITY_RUNS_NOT_STARTED**.
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -15,7 +15,7 @@ capture stays PENDING. See [capacity plan](milestone_acceptance/R2-vps-symbol-ca
   **2136PASS/24SKIP/5DESELECTED**, Ruff/mypy309/focused30PASS. No incident stack
   proves this was the sole original initiating cause.
 - [x] Owner-approved N1 config prepared locally: only both symbol lists change
-  to BTCUSDT, all14 features and all other config values preserved. Not installed.
+  to BTCUSDT, all14 features and all other config values preserved. Now installed.
 - [x] Exactrelease CI39356789510/sourcec3686dd BOTH SUCCESS, both actual checkout
   HEADs verified; mac2136PASS/Ubuntu2132PASS. PR84 merged06fd84a; production release
   still uses isolatedc368 without R3. Software-only cloud copy509064c5 complete.
@@ -26,14 +26,21 @@ capture stays PENDING. See [capacity plan](milestone_acceptance/R2-vps-symbol-ca
 - [x] Fresh current-failure metadata inventory583f307c under the existing exclusive
   read-only service lock: partials0, nonretired chunks0/archive transactions0.
   No Raw opened or recovery/custody mutation needed; original data preserved.
-- [ ] Stopped BTC deployment/newidentity. Exact helper/config design accepted;
-  physical controls and native outcome still pending. No new capture/T0.
-- [ ] Config-aware private stage gates/forecast (old26/fourproducts/42/rates/old
-  same-identity anchors cannot be reused), fresh actual admission and N1 own86400T0.
+- [x] Actual stopped BTC deployment60134a37/newidentitydb52730c and fresh
+  canonicalVERIFY complete; native27ba9652 normally succeeded06:51:46.620547UTC,
+  all20 commands returned0. Installed124 Python files and locked28 dependencies
+  independently ACCEPT960c82ad. Old venv/config/identity retained; Stop90s unchanged.
+- [x] Fresh prospective N1 preflight565aee1c: exact BTC14 contexts/22 spools,
+  zero backlogs, projected writer17,127,127,282B>10GiB; required158656.632s<165600s.
+  This is a forecast, not an armed window, measured capacity or24h qualification.
+- [x] Config-aware N1 private draft design ACCEPTed3eaee5; owner N1 policy
+  has zero inherited duration and old receipts remain historical only.
+- [ ] Final actual binding/Linux fixtures/physical review, fresh finite-window
+  admission/strict warm and N1 own86400T0.
 - [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.
 
-Production remains oldca760/c2e/7276/config5b73 stopped-disabled under accepted
-actual closure; new wheel is verified but not deployed; no new window/T0 or24h credit exists. Existing
+Production is now c3686dd/68460be4/db52730c/confige2f81312 stopped-disabled under
+accepted actual deployment; no capacity window/T0 or24h credit exists. Existing
 old-source2h/12h receipts remain historical, with zero transferred time. Main's
 R3 offline code stays undeployed. All Raw/archive/failed data/venvs/unrelated work
 remain preserved. Current release source is separately frozen from deployedca760

@@ -1,7 +1,8 @@
 # R2 report isolation repair and fresh24h qualification
 
-Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING**.
-This candidate is not deployed. No new capture/window/T0 or24h result exists.
+Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED**.
+Candidatec368/wheel68460be4 is deployed with BTC confige2/newidentitydb52730c.
+Recorder remains stopped-disabled; no new capture/window/T0 or24h result exists.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
 
@@ -45,8 +46,13 @@ main's unrelated/offline R3 changes are not part of this production release.
 - [x] Fresh current-failure metadata inventory583f307c under the existing exclusive
   read-only service lock: partials0, nonretired chunks0/archive transactions0.
   No Raw opened or recovery/custody mutation needed; original data preserved.
-- [ ] Stopped BTC deployment/newidentity. Exact helper/config design accepted;
-  physical controls and native outcome still pending. No new capture/T0.
+- [x] Actual stopped BTC deployment60134a37/newidentitydb52730c and fresh
+  canonicalVERIFY complete; native27ba9652 normally succeeded06:51:46.620547UTC,
+  all20 commands returned0. Installed124 Python files and locked28 dependencies
+  independently ACCEPT960c82ad. Old venv/config/identity retained; Stop90s unchanged.
+- [x] Fresh prospective N1 preflight565aee1c: exact BTC14 contexts/22 spools,
+  zero backlogs, projected writer17,127,127,282B>10GiB; required158656.632s<165600s.
+  This is a forecast, not an armed window, measured capacity or24h qualification.
 - [ ] Fresh capacity/time/strict warm/resource qualification/new finite window/
   own86400T0 for BTCUSDT on both markets, then progressively larger cohorts under
   the [owner-approved capacity plan](R2-vps-symbol-capacity-20261020.md).
