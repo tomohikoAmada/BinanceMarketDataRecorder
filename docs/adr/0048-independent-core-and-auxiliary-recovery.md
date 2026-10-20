@@ -1,6 +1,6 @@
 # ADR-0048: Independent core recovery and auxiliary publication readiness
 
-Date: 2026-10-19. Status: exact implementation/independent review, actual Linux qualification and dualCI accepted; actualARM accepted, fresh warm/T0 accepted; own86400s/full data qualification running.
+Date: 2026-10-19. Status: exact core/aux implementation, independent review, Linux qualification and dualCI remain accepted. The fresh24h failed October20 after38130.113168833s with a different heartbeat/writer-backpressure failure; no24h acceptance. Actual failed-run restoration is independently accepted; current source/metrics diagnosis is pending. See [current qualification](../milestone_acceptance/R2-owner24h-corefix-20261019.md).
 
 The owner asked to diagnose the failed24h, make the smallest stability correction,
 and start a separate new24h through complete saved-data and restored acceptance.

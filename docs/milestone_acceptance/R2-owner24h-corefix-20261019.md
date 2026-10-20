@@ -1,5 +1,52 @@
 # R2 fresh24h after independent core/aux recovery repair
 
+Authoritative owner-requested status **October20 09:23:44 Shanghai**:
+**OWN24H_CORE_HEARTBEAT_FAILED_BEFORE_TARGET / ZERO24H_CREDIT**.
+Run`2ae5dd2f46ae49dbbbbd855a4bbceb3f` automatically failed at **October20
+08:01:21.951852709 Shanghai** after its own **38130.113168833s
+(10h35m30.113s)**, below86400. The old October20 21:25:51 target is obsolete.
+This owner status read occurred after the automatic failure; it did not stop capture.
+
+- [x] Preserved original start/failure/1272 nominal monitor rows/16 recovery probes,
+  all current diagnostics and full647 Recorder-owned/23 capture-owned journal rows.
+  Read`actual-stage-read-1792459428033454000.json` SHA`be53052e` and complete
+  metadata/journals`actual-current-corefix-failure-1792459501029447000.json`
+  SHA`c848571c` are retained. No Raw or historical manifest payload was opened.
+- [x] Confirmed failure chain: four book_ticker receipt queues reached8192 items;
+  writer append/drain latency rose, heartbeat became stale, USD-M handoff failed,
+  and the original60s core/heartbeat bound expired. Last observations still had
+  owned current+peak swap0. This differs from the earlier auxiliary-publication
+  predicate defect. The initiating write/processing bottleneck is not yet proven;
+  midnight coincidence does not establish a daily-rollover cause.
+- [x] Recorder normal stop then hit its90s systemd limit and was SIGKILLed.
+  The first restoration record remains FAILED; OS/archive commands returned0,
+  but failed Recorder management state prevented complete restoration acceptance.
+  Independently reviewed narrow reset-failed management cleanup followed by the
+  unchanged original restorer has now actually completed: RESTORED ended
+  `1792459694698677165` before guard cancellation
+  `1792459694727642258`. Recorder is inactive AND
+  disabled/PID0/NRestarts0. Original capture FAILED and all evidence remain intact.
+  This window is CLOSED; never extend/reuse/rearm it.
+- [x] Exact narrow recovery design ACCEPT`ac80445a`; actual complete restoration
+  independently ACCEPT`fcc832fc`/result`3dd56ffe`/manifest`b74a3a63`. This accepts
+  the failed-run restoration only, and grants no24h or saved-data qualification.
+- [ ] Independent current-failure source/metrics diagnosis and minimum evidenced
+  repair, targeted regression and code review; no blind unchanged rerun or
+  increased queue/60s/StopSec. Preserve failed partials before any startup recovery.
+- [ ] No owner-target/terminal/full saved-data audit/owner24receipt exists.
+  New24h requires a separately reviewed new scope/fresh capacity-time admission/
+  finite window/new86400T0 after the repair. Current full24h acceptance remains
+  incomplete;48h remains PENDING and is not started in this request.
+
+Partial monitor official1261/1272PASS, strict1248/1272PASS/corefalse7 and16 probes
+are not saved-frame correctness denominators. No accepted24h data claim.
+Frozen ca760c09/c2eeb219/7276c9fa/config5b73, all14/fourproducts and accepted
+own2hf45/own12haff remain unchanged. All Raw/archive/failed data/venvs/worktrees/
+unrelated R3 work are preserved; R3 stays offline. No canonicalV5/predecessor/
+everyexchangeevent/ProductionReady claim; R078OPEN. Resume from latest
+`/private/var/tmp/bmdr-r2-corefix-20261019-j3elbmzf/CONTINUATION.md`.
+Earlier RUNNING/startup/target paragraphs below are retained history.
+
 Authoritative actual **October19 21:58:41 Shanghai**:
 **FRESH_OWN24H_FORMAL_RUNNING / ACTUAL_STARTUP_INDEPENDENT_ACCEPTED**.
 Sole run`2ae5dd2f46ae49dbbbbd855a4bbceb3f` has actual **T0 October19 21:25:51.838687116 Shanghai**
