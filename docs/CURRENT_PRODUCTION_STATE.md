@@ -1,5 +1,38 @@
 # Current Production State
 
+Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_RUNNING / CAPACITY_RUNS_NOT_STARTED**.
+The owner explicitly approved progressive VPS capacity qualification: one symbol
+means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
+then nested4/8… and smaller steps near the measured capacity boundary. Every
+accepted candidate requires its own24h/full saved-data/independent/restored
+receipt. Pause only after the capacity/headroom matrix and main closeout;48h
+capture stays PENDING. See [capacity plan](milestone_acceptance/R2-vps-symbol-capacity-20261020.md).
+
+- [x] Current2ae5 failure diagnosis16434e9a and actual restored-beforecancel
+  cleanupfcc832fc complete. Old run failed10h35m30.113s, zero24h, windowCLOSED.
+- [x] Reproduced deployed report/metrics-lock blocking; minimal9-file repair and
+  latent publication/memory/retry fixes independently ACCEPT1264023f. FinalLOCAL
+  **2136PASS/24SKIP/5DESELECTED**, Ruff/mypy309/focused30PASS. No incident stack
+  proves this was the sole original initiating cause.
+- [x] Owner-approved N1 config prepared locally: only both symbol lists change
+  to BTCUSDT, all14 features and all other config values preserved. Not installed.
+- [ ] Exactrelease CI39356789510/sourcec3686dd/PR84, affected Linux QA/lockedwheel/
+  independent supply chain/stopped deployment/newidentity and failed-partial byte
+  custody. Earlier39356196424 BOTH SUCCESS is merge-tree integration only.
+- [ ] Config-aware private stage gates/forecast (old26/fourproducts/42/rates/old
+  same-identity anchors cannot be reused), fresh actual admission and N1 own86400T0.
+- [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.
+
+Production remains oldca760/c2e/7276/config5b73 stopped-disabled under accepted
+actual closure; no newwheel/deployment/window/T0 or24h credit exists. Existing
+old-source2h/12h receipts remain historical, with zero transferred time. Main's
+R3 offline code stays undeployed. All Raw/archive/failed data/venvs/unrelated work
+remain preserved. Current release source is separately frozen from deployedca760
+at `/Users/amada/.codex/worktrees/r2-report-isolation/BinanceMarketDataRecorder`;
+private continuation `/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/CONTINUATION.md`
+and actual outputs control the next step. Older checkpoints below are retained
+history. R078OPEN; no ProductionReady/every-exchange-event/canonicalV5 claim.
+
 Authoritative owner-requested status **October20 09:23:44 Shanghai**:
 **OWN24H_CORE_HEARTBEAT_FAILED_BEFORE_TARGET / ZERO24H_CREDIT**.
 Run`2ae5dd2f46ae49dbbbbd855a4bbceb3f` automatically failed at **October20
