@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import os
 import stat
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -149,10 +149,17 @@ def validated_remote_authorizations_between(
 ) -> list[dict[str, object]]:
     """Return report rows after retained-manifest descriptor revalidation."""
 
+    return list(iter_validated_remote_authorizations_between(
+        layout=layout, catalog=catalog, start_utc_ns=start_utc_ns, end_utc_ns=end_utc_ns,
+    ))
+
+
+def iter_validated_remote_authorizations_between(
+    *, layout: StorageLayout, catalog: Catalog, start_utc_ns: int, end_utc_ns: int,
+) -> Iterator[dict[str, object]]:
+    """Same per-row authority checks, with bounded historical report pages."""
     try:
-        rows = catalog.remote_authorizations_between(start_utc_ns, end_utc_ns)
-        validated: list[dict[str, object]] = []
-        for row in rows:
+        for row in catalog.iter_remote_authorizations_between(start_utc_ns, end_utc_ns):
             chunk = catalog.chunk(str(row["chunk_id"]))
             if chunk is None:
                 raise CatalogStateError("remote report source chunk is missing")
@@ -164,8 +171,7 @@ def validated_remote_authorizations_between(
                 manifest_bytes=manifest_bytes,
             )
             _require_remote_descriptor_binding(row, descriptor)
-            validated.append(row)
-        return validated
+            yield row
     except CatalogStateError:
         raise
     except (

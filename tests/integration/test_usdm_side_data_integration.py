@@ -19,7 +19,9 @@ from binance_market_data_recorder.collector.usdm_side_data import (
     UsdMSideDataManager,
     UsdMSideDataSettings,
 )
+from binance_market_data_recorder.metrics.report import DailyReporter
 from binance_market_data_recorder.spool.writer import RotationPolicy
+from binance_market_data_recorder.storage.catalog import Catalog
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "binance" / "usdm"
 
@@ -242,7 +244,14 @@ def test_side_data_failure_is_counted_without_stopping_core_capture(tmp_path: Pa
         "open_interest",
         "exchange_info",
     } <= streams
-    report_paths = sorted((tmp_path / "data" / "reports" / "daily").glob("*.json"))
+    # Shutdown persists metric batches, but does not wait for report rendering.
+    # Render them with a separate Catalog, as the independent reporting owner does.
+    directory = tmp_path / "data" / "reports" / "daily"
+    with Catalog.open_live_read_only(tmp_path / "state" / "catalog.sqlite") as catalog:
+        reporter = DailyReporter(catalog=catalog, daily_directory=directory)
+        for day in catalog.report_dates_before("9999-12-31"):
+            reporter.write(day)
+    report_paths = sorted(directory.glob("*.json"))
     assert report_paths
     report = json.loads(report_paths[-1].read_text())
     report_streams = {row["stream"]: row for row in report["streams"]}

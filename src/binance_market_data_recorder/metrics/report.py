@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import csv
+import fcntl
+import hashlib
 import io
 import json
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from threading import RLock
 from typing import cast
+from uuid import uuid4
 
 from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout, fsync_directory
@@ -162,9 +166,78 @@ class DailyReporter:
         self.layout = layout or StorageLayout.from_root(catalog.path.parent.parent)
         self.utc_clock_ns = utc_clock_ns
 
+    def write_one_pending(self) -> dict[str, str]:
+        """Render at most one closed day, including late commits and interrupted writes.
+
+        Called only in the separate report process. Receipts are published after
+        both JSON and CSV, and are scheduling hints, never archive authority.
+        """
+        with self._publication_lock():
+            return self._write_one_pending_locked()
+
+    @contextmanager
+    def _publication_lock(self) -> Iterator[None]:
+        # Manual CLI and automatic reporting are separate processes. Publish the
+        # JSON/CSV pair and its scheduling receipt under the same process lock.
+        with _REPORT_LOCK:
+            self.daily_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            with (self.daily_directory / ".report.lock").open("ab") as lock:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+    def _write_one_pending_locked(self) -> dict[str, str]:
+        today = datetime.fromtimestamp(self.utc_clock_ns() / 1e9, tz=UTC).date().isoformat()
+        days = self.catalog.report_dates_before(today)
+        cursor_path = self.daily_directory / ".maintenance-cursor.json"
+        try:
+            previous = json.loads(cursor_path.read_bytes())["last_attempt_day"]
+            position = days.index(previous) + 1
+            days = days[position:] + days[:position]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        for day in days:
+            _start, end = _utc_date_bounds(day)
+            token = self.catalog.daily_report_input_token(day, end)
+            receipt_path = self.daily_directory / f".{day}.inputs.json"
+            outputs = [self.daily_directory / f"{day}.{suffix}" for suffix in ("json", "csv")]
+            try:
+                receipt = json.loads(receipt_path.read_bytes())
+                if (
+                    isinstance(receipt, dict)
+                    and receipt.get("inputs") == token
+                    and receipt.get("outputs") == {
+                        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                        for path in outputs
+                    }
+                ):
+                    continue
+            except (OSError, ValueError):
+                pass
+            # Advance before attempting: one broken day cannot starve other days,
+            # and the broken day is retried when this single cursor cycles back.
+            self._atomic_write(cursor_path, json.dumps({"last_attempt_day": day}).encode())
+            self._write_locked(day)
+            if self.catalog.daily_report_input_token(day, end) != token:
+                return {"status": "RETRY_INPUT_CHANGED", "utc_date": day}
+            receipt = {
+                "inputs": token,
+                "outputs": {
+                    path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in outputs
+                },
+            }
+            self._atomic_write(
+                receipt_path, (json.dumps(receipt, sort_keys=True) + "\n").encode(),
+            )
+            return {"status": "COMPLETE", "utc_date": day}
+        return {"status": "IDLE"}
+
     def build(self, utc_date: str, *, generated_at_utc_ns: int | None = None) -> dict[str, object]:
         from ..archive.remote_authorization import (
-            validated_remote_authorizations_between,
+            iter_validated_remote_authorizations_between,
         )
 
         selected_date = _validate_date(utc_date)
@@ -173,7 +246,9 @@ class DailyReporter:
         aggregates: dict[tuple[str, str], MetricAggregate] = {}
         historical: dict[tuple[str, str], MetricAggregate] = {}
         batch_ids: set[str] = set()
-        for row in self.catalog.metric_batches(selected_date):
+        for row in self.catalog.iter_metric_batches_through(
+            selected_date, start_date=selected_date,
+        ):
             market = row["market"]
             stream = row["stream"]
             batch_id = row["batch_id"]
@@ -186,14 +261,14 @@ class DailyReporter:
             batch_ids.add(batch_id)
             aggregate = aggregates.setdefault((market, stream), MetricAggregate())
             aggregate.merge(MetricAggregate.from_document(row["aggregate"]))
-        for row in self.catalog.metric_batches_through(selected_date):
+        for row in self.catalog.iter_metric_batches_through(selected_date):
             market = row["market"]
             stream = row["stream"]
             if not isinstance(market, str) or not isinstance(stream, str):
                 raise ValueError("invalid historical metric row identity")
             aggregate = historical.setdefault((market, stream), MetricAggregate())
             aggregate.merge(MetricAggregate.from_document(row["aggregate"]))
-        for row in validated_remote_authorizations_between(
+        for row in iter_validated_remote_authorizations_between(
             layout=self.layout,
             catalog=self.catalog,
             start_utc_ns=start_utc_ns,
@@ -216,7 +291,7 @@ class DailyReporter:
                 if aggregate.last_event_time_utc_ns is not None
                 else occurred,
             )
-        for row in validated_remote_authorizations_between(
+        for row in iter_validated_remote_authorizations_between(
             layout=self.layout,
             catalog=self.catalog,
             start_utc_ns=0,
@@ -260,23 +335,27 @@ class DailyReporter:
 
     def _atomic_write(self, path: Path, body: bytes) -> None:
         self.daily_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
-        partial = path.with_name(f".{path.name}.{os.getpid()}.partial")
+        partial = path.with_name(f".{path.name}.{os.getpid()}.{uuid4().hex}.partial")
         descriptor = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
-            view = memoryview(body)
-            while view:
-                written = os.write(descriptor, view)
-                if written <= 0:
-                    raise OSError("daily report write returned no progress")
-                view = view[written:]
-            os.fsync(descriptor)
+            try:
+                view = memoryview(body)
+                while view:
+                    written = os.write(descriptor, view)
+                    if written <= 0:
+                        raise OSError("daily report write returned no progress")
+                    view = view[written:]
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+            os.replace(partial, path)
+            fsync_directory(self.daily_directory)
         finally:
-            os.close(descriptor)
-        os.replace(partial, path)
-        fsync_directory(self.daily_directory)
+            # This process owns only this scratch file, never the prior report.
+            partial.unlink(missing_ok=True)
 
     def write(self, utc_date: str, *, generated_at_utc_ns: int | None = None) -> dict[str, object]:
-        with _REPORT_LOCK:
+        with self._publication_lock():
             return self._write_locked(utc_date, generated_at_utc_ns=generated_at_utc_ns)
 
     def _write_locked(

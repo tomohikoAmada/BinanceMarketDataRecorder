@@ -238,6 +238,9 @@ def test_utc_midnight_rollover_flushes_previous_day_without_cross_counting(
         recorder.observe_written(
             envelope(receive_time_utc_ns=after), raw_frame_bytes=11, queue_depth=0
         )
+        assert not (layout.daily_reports / "2026-07-22.json").exists()
+        # The independent maintenance owner renders committed days, not observe_written.
+        DailyReporter(catalog=catalog, daily_directory=layout.daily_reports).write_one_pending()
         assert (layout.daily_reports / "2026-07-22.json").is_file()
         recorder.flush()
         reporter = DailyReporter(catalog=catalog, daily_directory=layout.daily_reports)
