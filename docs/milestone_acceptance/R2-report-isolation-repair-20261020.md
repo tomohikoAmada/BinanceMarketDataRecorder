@@ -1,6 +1,6 @@
 # R2 report isolation repair and fresh24h qualification
 
-Current state: **OFFLINE_REPAIR_IMPLEMENTED / INDEPENDENT_REVIEW_AND_QA_RUNNING**.
+Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_PENDING**.
 This candidate is not deployed. No new capture/window/T0 or24h result exists.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
@@ -28,16 +28,27 @@ main's unrelated/offline R3 changes are not part of this production release.
   metric rows preserve all rows: list peak57,757,741 tracedB vs paged627,553B;
   not VPS performance evidence. Total report CPU/history scaling remains an
   explicit capacity boundary, not a new readiness claim.
-- [ ] Final independent code/fault review, full local suite and exact dualCI.
+- [x] Final nine-file source/fault/latent review ACCEPT at source d5a4bae:
+  report1264023f/result702be13d/manifest5a8d1e94. Independent full source125
+  members, paging output equivalence, late insertion, publication, fairness,
+  scratch cleanup and real child isolation/reaping are accepted LOCAL/OFFLINE.
+  See [frozen independent review](../reviews/2026-10-20-r2-report-isolation-latent-independent-review.md).
+- [ ] Final full local suite and exact dualCI. Initial PR CI39356196424 uses the
+  default merge checkout; it is not accepted as exact release-source evidence.
+  Both jobs now explicitly select the PR head, retaining main's R3 outside this
+  production release. Runtime files are unchanged by that workflow correction.
 - [ ] Preserve failed partial bytes; frozen source/new locked wheel/affected Linux
   QA/independent full supply chain/stopped deployment/new identity.
 - [ ] Fresh capacity/time/strict warm/resource qualification/new finite window/
-  own86400T0. No duration transfer from any prior run or source.
+  own86400T0 for BTCUSDT on both markets, then progressively larger cohorts under
+  the [owner-approved capacity plan](R2-vps-symbol-capacity-20261020.md).
+  No duration transfer from any prior run, source or configuration.
 - [ ] Complete new selected dualreleasedLIVE/completedimmutableverify and saved
   frames denominator strictly>99.9%, independent final controls reconstruction,
   strict26/core and actual plannedrotation/recovery evidence, actualrestoration
   beforeguardcancel, naturalarchive/futurefiniteCLOCK_MONOTONIC/freshcanonicalVERIFY/
-  stopped-disabledsameidentity finalhandoff/owner24receipt/main docs, then pause.
+  stopped-disabledsameidentity finalhandoff/owner24receipt/main docs. Pause only
+  after the supported capacity boundary and headroom recommendation are recorded.
 
 Automatic reporting is now scheduled outside capture; current-day/manual reports
 remain available through the unchanged CLI. No promise of error-free indefinite

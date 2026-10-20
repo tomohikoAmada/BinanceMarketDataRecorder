@@ -1,8 +1,10 @@
 # ADR-0049: Keep daily reporting off the capture and shutdown paths
 
-Date: 2026-10-20. Status: implementation and independent review in progress;
-not released or deployed. The owner authorized a minimal stability repair and a
-new own24h qualification, preserving all14 features and four products.
+Date: 2026-10-20. Status: implementation and independent LOCAL/OFFLINE review
+accepted; exact release CI pending; not released or deployed. The owner
+authorized a minimal stability repair and progressive VPS capacity qualification,
+starting BTCUSDT on both markets with all14 functions. See the
+[capacity acceptance plan](../milestone_acceptance/R2-vps-symbol-capacity-20261020.md).
 
 Run2ae5 failed after38130.113168833s. At UTC midnight, book_ticker queues filled,
 writer/observer calls took tens of seconds, heartbeat stopped advancing, and
@@ -74,7 +76,8 @@ they supply no duration for the repaired24h.
 
 The full new saved-data dual LIVE/immutable verify, independent final review,
 strict endpoints, planned rotation evidence, actual OS/archive restoration and
-owner24 receipt remain mandatory. No48h expansion or ProductionReady claim.
+owner24 receipt remain mandatory for every accepted capacity stage. No48h
+expansion or ProductionReady claim.
 R078 remains OPEN.
 
 The isolation follows Python's documented event-loop constraint: blocking work
