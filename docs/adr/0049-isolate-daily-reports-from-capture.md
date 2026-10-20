@@ -69,7 +69,9 @@ events, partial JSON/CSV publication, input changes during building, remote-only
 days/authority failures, concurrent publication and child termination/reaping.
 Run the existing broader suite and exact CI. Release a new locked wheel and
 identity only after independent code/supply-chain review and affected Linux QA.
-Preserve current failed partial bytes before any startup recovery. Then use
+Fresh exclusive-lock metadata inventory found zero current failed partials and
+zero nonretired chunks/transactions; no recovery or byte copy is needed. Recheck
+these stopped preconditions before deployment. Then use
 fresh capacity/time admission, an independent finite window and a new86400s T0.
 Previousca760 own2h/12h receipts remain evidence for their original source only;
 they supply no duration for the repaired24h.

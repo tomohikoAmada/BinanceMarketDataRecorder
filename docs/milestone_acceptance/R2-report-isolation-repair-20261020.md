@@ -1,6 +1,6 @@
 # R2 report isolation repair and fresh24h qualification
 
-Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_QA_RUNNING**.
+Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING**.
 This candidate is not deployed. No new capture/window/T0 or24h result exists.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
@@ -20,8 +20,8 @@ main's unrelated/offline R3 changes are not part of this production release.
 - [x] Current focused30 cases PASS, Ruff and mypy309 source files PASS. First broad
   LOCAL run2132PASS/2FAIL retained: the old eager-shutdown-report assertion was
   updated to verify independent reporting, and M0 location checks were rerun in
-  the supported local CI-root mode. Corrected affected cases PASS; final exact CI
-  remains pending, and the initial broad run is not labelled final-head PASS.
+  the supported local CI-root mode. Corrected affected cases and the final full suite/exact CI below PASS;
+  the initial broad run is not labelled final-head PASS.
 - [x] Bounded latent review found and repaired all-history intermediate allocation
   (short ordered pages), fixed bad-day starvation (one retry cursor), and same-PID
   partial-file retry obstruction (unique owned scratch cleanup). Synthetic30000
@@ -38,19 +38,22 @@ main's unrelated/offline R3 changes are not part of this production release.
   deselected; all lint/type/M0/Go/build/CLI steps successful. Actual checkout logs
   prove c368 on both platforms. Initial PR CI39356196424 merge-tree success remains
   integration evidence only. PR84 merged06fd84a; release excludes main R3.
-- [x] Independent release copy/build design14abb55e accepted, actual software-only
-  cloud copy509064c5 complete; actual physical/exactCI/pendingnative ACCEPT12b13159.
-  Single native28607f26 launched02:19:41UTC/Runtime3600/Stop120, actual complete
-  QA/wheel result pending (checkpoint02:26UTC). No Recorder start or production change.
-- [ ] Preserve failed partial bytes; frozen source/new locked wheel/affected Linux
-  QA/independent full supply chain/stopped deployment/new identity.
+- [x] Actual isolated Linux QA229PASS/1DESELECTED and first new locked wheel
+  68460be4/cleanreceipt3afde832 complete; native28607f26 normally succeeded
+  02:22:31.685798UTC. Independent actual supply-chain ACCEPTab69ecad verifies
+  all649 source files,124 source/wheel/installed Python files and28 locked deps.
+- [x] Fresh current-failure metadata inventory583f307c under the existing exclusive
+  read-only service lock: partials0, nonretired chunks0/archive transactions0.
+  No Raw opened or recovery/custody mutation needed; original data preserved.
+- [ ] Stopped BTC deployment/newidentity. Exact helper/config design accepted;
+  physical controls and native outcome still pending. No new capture/T0.
 - [ ] Fresh capacity/time/strict warm/resource qualification/new finite window/
   own86400T0 for BTCUSDT on both markets, then progressively larger cohorts under
   the [owner-approved capacity plan](R2-vps-symbol-capacity-20261020.md).
   No duration transfer from any prior run, source or configuration.
 - [ ] Complete new selected dualreleasedLIVE/completedimmutableverify and saved
   frames denominator strictly>99.9%, independent final controls reconstruction,
-  strict26/core and actual plannedrotation/recovery evidence, actualrestoration
+  configured strict contexts (BTC N1=14)/core and actual plannedrotation/recovery evidence, actualrestoration
   beforeguardcancel, naturalarchive/futurefiniteCLOCK_MONOTONIC/freshcanonicalVERIFY/
   stopped-disabledsameidentity finalhandoff/owner24receipt/main docs. Pause only
   after the supported capacity boundary and headroom recommendation are recorded.

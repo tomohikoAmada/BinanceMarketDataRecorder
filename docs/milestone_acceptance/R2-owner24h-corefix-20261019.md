@@ -1,6 +1,6 @@
 # R2 fresh24h after independent core/aux recovery repair
 
-Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_QA_RUNNING / CAPACITY_RUNS_NOT_STARTED**.
+Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING / CAPACITY_RUNS_NOT_STARTED**.
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -19,17 +19,21 @@ capture stays PENDING. See [capacity plan](R2-vps-symbol-capacity-20261020.md).
 - [x] Exactrelease CI39356789510/sourcec3686dd BOTH SUCCESS, both actual checkout
   HEADs verified; mac2136PASS/Ubuntu2132PASS. PR84 merged06fd84a; production release
   still uses isolatedc368 without R3. Software-only cloud copy509064c5 complete.
-- [ ] Affected Linux QA/newlockedwheel, independent supply chain, stopped deployment/
-  newidentity and failed-partial byte custody. No new capture/T0.
-  Single native28607f26 launched02:19:41UTC for fresh14-module QA/lockedwheel;
-  runtime3600/Stop120. Actualcopy/exactCI/pendinglaunch ACCEPT12b13159; actual
-  outcome checkpoint02:26UTC, no complete cloud/wheel PASS at launch.
+- [x] Actual isolated Linux QA229PASS/1DESELECTED and first new locked wheel
+  68460be4/cleanreceipt3afde832 complete; native28607f26 normally succeeded
+  02:22:31.685798UTC. Independent actual supply-chain ACCEPTab69ecad verifies
+  all649 source files,124 source/wheel/installed Python files and28 locked deps.
+- [x] Fresh current-failure metadata inventory583f307c under the existing exclusive
+  read-only service lock: partials0, nonretired chunks0/archive transactions0.
+  No Raw opened or recovery/custody mutation needed; original data preserved.
+- [ ] Stopped BTC deployment/newidentity. Exact helper/config design accepted;
+  physical controls and native outcome still pending. No new capture/T0.
 - [ ] Config-aware private stage gates/forecast (old26/fourproducts/42/rates/old
   same-identity anchors cannot be reused), fresh actual admission and N1 own86400T0.
 - [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.
 
 Production remains oldca760/c2e/7276/config5b73 stopped-disabled under accepted
-actual closure; no newwheel/deployment/window/T0 or24h credit exists. Existing
+actual closure; new wheel is verified but not deployed; no new window/T0 or24h credit exists. Existing
 old-source2h/12h receipts remain historical, with zero transferred time. Main's
 R3 offline code stays undeployed. All Raw/archive/failed data/venvs/unrelated work
 remain preserved. Current release source is separately frozen from deployedca760

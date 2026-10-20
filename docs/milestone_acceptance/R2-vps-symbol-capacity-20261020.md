@@ -1,6 +1,6 @@
 # R2 VPS symbol capacity qualification
 
-Current state: **AUTHORIZED / RELEASE_QA_IN_PROGRESS / NO_CAPACITY_RUN_STARTED**.
+Current state: **AUTHORIZED / RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_PENDING / NO_CAPACITY_RUN_STARTED**.
 The owner's October20 request and explicit choice authorize the sequence below.
 This supersedes the earlier instruction to stop after the first new24h receipt.
 It does not authorize a48h capture or a wider exchange/service framework.
@@ -24,8 +24,9 @@ describe load. No order/account endpoints or credentials are needed.
 ## Sequence and decision
 
 1. Finish the report-isolation repair's exact-source CI, affected Linux QA,
-   locked wheel, independent review and stopped deployment/new identity. Preserve
-   the failed attempt's partial bytes before any startup recovery.
+   locked wheel and independent review (completed), then stopped deployment/new
+   identity. Fresh583f307c inventory found no remaining partial or nonretired
+   object; no old Raw recovery/copy is needed. Recheck before deployment.
 2. Start BTCUSDT only after fresh capacity/time/strict warm/resource admission;
    run its own86400s and complete saved-data/restored acceptance.
 3. After full acceptance, try the nested N=2,4,8… cohorts. Each configuration has
@@ -91,7 +92,10 @@ healthy native stage progresses.48h remains PENDING; R078 remains OPEN.
 - [x] Exact source CI39356789510/PR84 merged; BTC-only candidate changes just both
   symbol lists. Draft auxiliary/monitor context gates and topology independently
   ACCEPTfcf40d5f (N1/2/4 contexts14/26/50, spools22/42/82), not VPS capacity credit.
-- [ ] Linux QA/locked wheel/stopped deployment and failed-byte preservation;
-  common/controller/terminal/forecast and actual stage admission remain unbound.
+- [x] Linux229PASS/locked68460be4 wheel and independent actual supply chain
+  ACCEPTab69ecad; current failed-tail metadata583f307c confirms zero partials
+  and zero nonretired chunks/transactions, with no Raw or data mutation.
+- [ ] Stopped BTC deployment/newidentity; common/controller/terminal/forecast
+  and actual stage admission remain unbound.
 - [ ] N=1 own24h/full data/independent/restored receipt, then successive stages.
 - [ ] Measured capacity boundary/headroom recommendation and final main closeout.
