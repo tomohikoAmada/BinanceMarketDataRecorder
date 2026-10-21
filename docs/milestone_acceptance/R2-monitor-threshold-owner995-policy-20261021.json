@@ -1,0 +1,24 @@
+{
+  "authorization_date": "2026-10-21",
+  "changed_fields_only": [
+    "monitor.policy",
+    "monitor.threshold_numerator",
+    "monitor.threshold_comparison_numerator"
+  ],
+  "comparison": "at_least",
+  "frozen_bound_monitor_sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+  "human_instruction": "\u6211\u613f\u610f\u628a\u901a\u8fc7\u95e8\u69db\u6539\u4e3a99.5%",
+  "kind": "OWNER_AUTHORIZED_SAMPLED_MONITOR_THRESHOLD_CHANGE",
+  "new_monitor_template_sha256": "46c5bbd88b851e6b1a5fbba1b3c86c260fe20e0748e4984df9126bbd89708325",
+  "no_inherited_duration_or_full_stage_acceptance": true,
+  "old_threshold_numerator": 999,
+  "original_failed_rows_preserved": true,
+  "original_monitor_publication_immutable": true,
+  "production_source_wheel_config_identity_modified": false,
+  "running_runtime_members_modified": false,
+  "saved_frame_contract_conformance_requirement": "strictly_more_than_999_per_1000_unchanged",
+  "scope": "current N1 monitor reassessment and subsequent VPS symbol capacity stages",
+  "strict_start_finish_core_resources_recovery_and_full_audit_requirements": "unchanged",
+  "threshold_denominator": 1000,
+  "threshold_numerator": 995
+}

@@ -1,6 +1,13 @@
 # R2 capacity N1 BTCUSDT own24h qualification
 
 State: **OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
+
+October21 owner policy update: **sampled monitor >=99.5%** applies to current N1
+and later capacity stages. Current monitor99.861111% meets that new threshold;
+the original999/1000 BLOCK is retained separately. Saved-frame correctness
+remains strictly>99.9% and full final acceptance is pending. See [policy and
+supplement](R2-monitor-threshold-owner995-20261021.md).
+
 Actual read October21 08:04:24UTC (Shanghai16:04:24), SHA4babd497, supersedes
 previous warm-only status. Sole run3f127f831cc34757947574839b3c903f has T0
 October20 07:49:31.539355195UTC and reached own86400.234416692s at October21
@@ -43,8 +50,11 @@ No final saved-frame denominator, independent final handoff or receipt yet.
   Selected metadata forecast12998chunks/45893093frames is not a completed
   saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
 - [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
-  by strict recovery probes around5s later; original monitor threshold stays
-  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  by strict recovery probes around5s later. Original999/1000 monitor record
+  stays BLOCK; the owner's October21 change to>=99.5% gives a separate995/1000
+  supplement PASSc5a0c117, preserving all four failed samples and original hashes.
+  Saved-frame requirement remains strictly>99.9%; no final24h or N2 credit.
+  Strict auxiliary2870/2880 includes six taker-recovery rows with official
   PASS. No restart; all2908 observations owned current+peak swap0. These are
   separate availability and resource metrics, not saved-frame conformance.
 - [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/
@@ -97,7 +107,8 @@ Only affected closeout failures are repaired; no blind24h recapture. Audit
 outputs are `terminal-audit/audit-root.json`, `owner-selected-result.json` and
 `native-result.json`; there is no separate audit-verification.json.
 
-Monitor policy result remains **BLOCK**:2876/2880 official PASS=99.861111%,
+Original999/1000 monitor policy result remains **BLOCK**; the new owner995/1000
+supplement is **PASS**:2876/2880 official PASS=99.861111%,
 four core-not-ready samples with four subsequent strict-PASS recovery probes.
 Observed recovery accounting totals20.444715489s, not exact network downtime.
 Six further strict-only auxiliary blocks concern taker window recovery while

@@ -1,6 +1,13 @@
 # R2 report isolation repair and fresh24h qualification
 
 Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED**.
+
+October21 owner policy update: **sampled monitor >=99.5%** applies to current N1
+and later capacity stages. Current monitor99.861111% meets that new threshold;
+the original999/1000 BLOCK is retained separately. Saved-frame correctness
+remains strictly>99.9% and full final acceptance is pending. See [policy and
+supplement](R2-monitor-threshold-owner995-20261021.md).
+
 Candidatec368/wheel68460be4 is deployed with BTC confige2/newidentitydb52730c.
 N1 completed its own86400.234416692s with strict14/corePASS at October21
 07:49:31.773771269UTC. Full selected-data audit is running; final owner24h
@@ -75,8 +82,11 @@ main's unrelated/offline R3 changes are not part of this production release.
   Selected metadata forecast12998chunks/45893093frames is not a completed
   saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
 - [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
-  by strict recovery probes around5s later; original monitor threshold stays
-  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  by strict recovery probes around5s later. Original999/1000 monitor record
+  stays BLOCK; the owner's October21 change to>=99.5% gives a separate995/1000
+  supplement PASSc5a0c117, preserving all four failed samples and original hashes.
+  Saved-frame requirement remains strictly>99.9%; no final24h or N2 credit.
+  Strict auxiliary2870/2880 includes six taker-recovery rows with official
   PASS. No restart; all2908 observations owned current+peak swap0. These are
   separate availability and resource metrics, not saved-frame conformance.
 - [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/

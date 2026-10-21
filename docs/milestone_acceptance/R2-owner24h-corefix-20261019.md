@@ -1,6 +1,13 @@
 # R2 fresh24h after independent core/aux recovery repair
 
 Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
+
+October21 owner policy update: **sampled monitor >=99.5%** applies to current N1
+and later capacity stages. Current monitor99.861111% meets that new threshold;
+the original999/1000 BLOCK is retained separately. Saved-frame correctness
+remains strictly>99.9% and full final acceptance is pending. See [policy and
+supplement](R2-monitor-threshold-owner995-20261021.md).
+
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -53,8 +60,11 @@ capture stays PENDING. See [capacity plan](R2-vps-symbol-capacity-20261020.md).
   Selected metadata forecast12998chunks/45893093frames is not a completed
   saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
 - [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
-  by strict recovery probes around5s later; original monitor threshold stays
-  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  by strict recovery probes around5s later. Original999/1000 monitor record
+  stays BLOCK; the owner's October21 change to>=99.5% gives a separate995/1000
+  supplement PASSc5a0c117, preserving all four failed samples and original hashes.
+  Saved-frame requirement remains strictly>99.9%; no final24h or N2 credit.
+  Strict auxiliary2870/2880 includes six taker-recovery rows with official
   PASS. No restart; all2908 observations owned current+peak swap0. These are
   separate availability and resource metrics, not saved-frame conformance.
 - [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/

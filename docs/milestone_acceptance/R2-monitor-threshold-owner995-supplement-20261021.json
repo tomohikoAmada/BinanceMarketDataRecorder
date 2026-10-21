@@ -1,0 +1,62 @@
+{
+  "config_sha256": "e2f813123e1815a87be84d4c84cb5c96030398bb844ec3eb04554c94a7f7cad5",
+  "end_utc_ns": 1792568971539355195,
+  "failed": 4,
+  "failed_checks": [
+    {
+      "line": 759,
+      "line_sha256": "c7ac91fb52e121453983e6d44aae36a0b1a64d0b7ad078fba450dca10d94f2b9",
+      "reasons": [
+        "core_not_ready"
+      ],
+      "utc_ns": 1792505311733847656
+    },
+    {
+      "line": 839,
+      "line_sha256": "f1cf7e3c6e6cafa2d9477fe4185eebf3dfef2991ee8de755269c2d7f29e69384",
+      "reasons": [
+        "core_not_ready"
+      ],
+      "utc_ns": 1792507711600017442
+    },
+    {
+      "line": 870,
+      "line_sha256": "c8e991b03c303eec6bb2ec78913c0c92005cf9bc699119762f26551f93d673ae",
+      "reasons": [
+        "core_not_ready"
+      ],
+      "utc_ns": 1792508641663723315
+    },
+    {
+      "line": 894,
+      "line_sha256": "e9770656c5a4a3bb2ed34891da0295a835cd2cb25620a72476b81230ba331b22",
+      "reasons": [
+        "core_not_ready"
+      ],
+      "utc_ns": 1792509361706111567
+    }
+  ],
+  "jsonl_sha256": "f34abc7370a98ef19d08a651d4d01fb9551a6ef11c89a2decb199c5db7355653",
+  "kind": "OWNER_AUTHORIZED_MONITOR_995_SUPPLEMENT",
+  "maximum_sampling_gap_ns": 31197813671,
+  "note": "Only sampled monitor threshold changes to at least99.5%; all samples/hashes/failed rows retained; saved-frame requirement remains strictly>99.9%.",
+  "original_monitor_result_sha256": "ae0a7700d9b5b0a46b54f27b1c7bdf75b1967843b3269f1ce53ca7cd7cb7e300",
+  "original_policy_result": "BLOCK",
+  "original_publications_and_rows_rewritten": false,
+  "original_source_read_sha256": "4babd4971a6d71f288f1afd72bd2129ad3def9f0c54c1787f830c6b9185fba5b",
+  "original_threshold_numerator": 999,
+  "outside_period": 0,
+  "owner24h_final_acceptance": false,
+  "owner_policy_sha256": "fe1e989cf6ac5f63f7dd4055b7d654b561c879f873645a4b36f0c60b09e08fe6",
+  "pass_percent": 99.86111111111111,
+  "passed": 2876,
+  "policy": "owner-monitor-rate-995-per-1000-v1",
+  "result": "PASS",
+  "run_id": "3f127f831cc34757947574839b3c903f",
+  "saved_frame_threshold_changed": false,
+  "start_utc_ns": 1792482571539355195,
+  "strict_endpoints_resources_recovery_changed": false,
+  "threshold_denominator": 1000,
+  "threshold_numerator": 995,
+  "total": 2880
+}
