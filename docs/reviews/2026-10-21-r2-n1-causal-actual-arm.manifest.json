@@ -1,0 +1,158 @@
+{
+  "files": [
+    {
+      "bytes": 16579,
+      "path": "CHECKS.json",
+      "sha256": "c0adfad6511810355849ebc9b7e707189cdbde4840c94673106ec8129ea5e073"
+    },
+    {
+      "bytes": 3903,
+      "path": "REPORT.md",
+      "sha256": "9caa9e3ac4b6c6426213c10a2cb13b7833587f84854eb0e67ca1e09370e09780"
+    },
+    {
+      "bytes": 1886,
+      "path": "RESULT.json",
+      "sha256": "425f6b0a1da6c394e370c4fdefab5841c3feb4ec7454299ac92a69b2b0529140"
+    },
+    {
+      "bytes": 2879,
+      "path": "SERIALIZATION.json",
+      "sha256": "f18ba67736b2f06e04d1947606a82f0b229ba237096ccfeab6d965d5d98f81cf"
+    },
+    {
+      "bytes": 3191,
+      "path": "STATES.json",
+      "sha256": "5780e455a2cbcd477655237fe7bfa7e6f14d9f59e93dbe6f0f78d68964faad4d"
+    },
+    {
+      "bytes": 5155,
+      "path": "inputs/CAUSAL_OPERATIONAL_RECONSTRUCTION.json",
+      "sha256": "31c5f22d03a86932e92117348836b1214028abc27d332337c8cd041c3ffa1122"
+    },
+    {
+      "bytes": 803,
+      "path": "inputs/PENDING_ARM_ARGV.json",
+      "sha256": "ee4a476100f92dc5993cbd4cf801d186a0d9bbe67cb086991f6cef7e7ce8c498"
+    },
+    {
+      "bytes": 57642,
+      "path": "inputs/actual-n1-causal-status-1792594297956884000.json",
+      "sha256": "58d66edca7883ceafd4754e6955ff65ceeeb76512c4d2ff354cf3404c7bdea03"
+    },
+    {
+      "bytes": 700,
+      "path": "inputs/frozen-helper-manifest.json",
+      "sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774"
+    },
+    {
+      "bytes": 1080,
+      "path": "inputs/frozen-source-bindings.json",
+      "sha256": "64c2359258817a11957a99455ce1a0324fb47636973afbeae661697cd6126065"
+    },
+    {
+      "bytes": 1546,
+      "path": "inputs/original-owner-scope-receipt.json",
+      "sha256": "39d65d84cdf5dbf6dcc51ee5309e8f2fbd4eb89bd7126622e6b41b75138314a9"
+    },
+    {
+      "bytes": 5770,
+      "path": "inputs/original-quiescence-corpus.json",
+      "sha256": "03a1090ed41ded1110d76dba158c2cf339f3f9ee26399e37110904a8cd3f5034"
+    },
+    {
+      "bytes": 9163,
+      "path": "inputs/prior-code-RESULT.json",
+      "sha256": "7fa266c14719112912854c19aecc5b56c5177b95916d5e8fad42b02f0977e438"
+    },
+    {
+      "bytes": 2025,
+      "path": "inputs/prior-copy-RESULT.json",
+      "sha256": "8db8a8c2ee2c9d561604586b55b33a2d2889b341f289a893225216e45f163643"
+    },
+    {
+      "bytes": 10815,
+      "path": "journals/binance-recorder-r2-n1-causal-arm-20261021.service.jsonl",
+      "sha256": "36e4f327d81832401311afdce9b50fe1b7256d5049abc98329603cd3d836f5ad"
+    },
+    {
+      "bytes": 1448,
+      "path": "journals/binance-recorder-r2-n1-causal-audit-20261021-expiry.timer.jsonl",
+      "sha256": "a0182d05753a7411699f708b7ec3eb20c63739d0e572828f4b49af32915e387f"
+    },
+    {
+      "bytes": 2966,
+      "path": "journals/binance-recorder-r2-n1-causal-audit-20261021.service.jsonl",
+      "sha256": "7016087dde6cd6cfb1e6bf5622e9823785b559cba3ae6cd7a8dd86a3d692c96c"
+    },
+    {
+      "bytes": 971,
+      "path": "publications/arm-dispatch-request.json",
+      "sha256": "bd386e706b643eca866410af0aab361c79dde3b49cffa5895ca0a3ad496970a7"
+    },
+    {
+      "bytes": 5003,
+      "path": "publications/canonical-verification.json",
+      "sha256": "ef9322dd99cc8ad8743292dc1ff1697b2e284adb70fe0b8337251a21bfa36ff2"
+    },
+    {
+      "bytes": 1692,
+      "path": "publications/copy-readback.json",
+      "sha256": "83432af26ed2a27fb24c84f32d54d7d6a6ae60377e3bde6d35df17905b5ada6b"
+    },
+    {
+      "bytes": 901,
+      "path": "publications/dispatch-admission.json",
+      "sha256": "3cb9892b8a71c9d4ba0b36973c1bc7b7cc9df3946943d0363da98fe276ee2558"
+    },
+    {
+      "bytes": 596,
+      "path": "publications/drain-paused.json",
+      "sha256": "1929458a859e850d5099981c9667fb8ad6420eb5e03986879c1f9be65e905bfe"
+    },
+    {
+      "bytes": 700,
+      "path": "publications/helper-manifest.json",
+      "sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774"
+    },
+    {
+      "bytes": 57,
+      "path": "publications/kernel-notice.json",
+      "sha256": "2bf8356b5b8f368c34cb49188219a7ab999ccda9bfae78faa3ecac51048132cd"
+    },
+    {
+      "bytes": 1292,
+      "path": "publications/native-launch.json",
+      "sha256": "9348f1a5abf0ec57d29cd8f1d4bd85df41aaf43a22f41ae8eb45bfefa1d02290"
+    },
+    {
+      "bytes": 899,
+      "path": "publications/prearm-admission.json",
+      "sha256": "552f03a7c08ce65e3f41bc08a5b1927c1de55bb48efbf484239e2a11dc0669d9"
+    },
+    {
+      "bytes": 1080,
+      "path": "publications/source-bindings.json",
+      "sha256": "64c2359258817a11957a99455ce1a0324fb47636973afbeae661697cd6126065"
+    },
+    {
+      "bytes": 2601,
+      "path": "publications/window-actual.json",
+      "sha256": "2c7a96d8e9847056b6c416dd7cdbb0e862910f075ec8fb4e12ba80d8d6f17534"
+    },
+    {
+      "bytes": 4764,
+      "path": "publications/work/audit/owner-scope-receipt.json",
+      "sha256": "267fe69ce8c1d55df32596e1f6b90e7b8519588d55ccccc09693a2214ba5915d"
+    },
+    {
+      "bytes": 12877,
+      "path": "publications/work/audit/quiescence-corpus.json",
+      "sha256": "3d8c76341716447bbe01e923b3938c8306acf91256715f43cf9ddb0f51513b1c"
+    }
+  ],
+  "member_count": 30,
+  "prior_evidence_modified": false,
+  "schema_version": 1,
+  "scope": "LOCAL_OFFLINE_ACTUAL_ARM_CORPUS_BINDING_SUPPLEMENT"
+}

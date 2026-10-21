@@ -106,3 +106,11 @@ restoration reserves, fresh capacity and a new deadline04:30UTC before the origi
   Initial full-result checkpoint20:00UTC, updated by real progress. No duplicate audit.
 - [ ] Complete dualLIVE/completed immutable verify, independent full controls and
   final real restored handoff/owner receipt/main. N2 not started.
+
+- [x] Independent actual ARM/admission/corpus/native binding ACCEPT9caa9e3a/
+  result425f6b0a/manifestb546c740:171 checks,30 members all parent hash/size
+  read back. Limited to actual metadata and exact two original START witnesses;
+  full520 operational rows,12998 mapping/object controls and completed saved
+  frames still require final full controls reconstruction. No worker PID or
+  first Raw progress inferred. No remaining LOCAL review/development task;
+  only the unique healthy native continuation advances until its next checkpoint.

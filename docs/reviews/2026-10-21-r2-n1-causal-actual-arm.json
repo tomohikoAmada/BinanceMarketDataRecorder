@@ -1,0 +1,30 @@
+{
+  "N2_start_credit": false,
+  "actual_read_sha256": "58d66edca7883ceafd4754e6955ff65ceeeb76512c4d2ff354cf3404c7bdea03",
+  "audit_invocation_id": "20bac825bb204515b61832672377b5a2",
+  "audit_main_pid": 725747,
+  "checks_passed": 171,
+  "deadline_epoch_seconds": 1792643400,
+  "decision": "ACCEPT_ACTUAL_ARM_ADMISSION_CORPUS_BINDING_ONLY",
+  "findings": [],
+  "helper_manifest_sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774",
+  "initial_full_result_checkpoint_utc": "2026-10-21T20:00:00Z, subject to actual progress",
+  "limitations": [
+    "Read contains no SQLite or full manifest-object members: exact 520-row catalog and all12998 mapping objects are not independently reconstructed in this supplement.",
+    "Actual first progress and raw worker PIDs are not exported; mainPID and cgroup manager values are the actual evidence.",
+    "No final audit-root/owner-selected/native result or restored handoff exists in this read.",
+    "Global archive backlog numeric counters and underlying fresh statvfs samples are not separately exported; certified no-partial/stopped-paused states, natural-worker success and admission publications are checked."
+  ],
+  "local_offline_only": true,
+  "new_capture_or_duration_credit": false,
+  "new_corpus_sha256": "3d8c76341716447bbe01e923b3938c8306acf91256715f43cf9ddb0f51513b1c",
+  "new_owner_scope_receipt_sha256": "267fe69ce8c1d55df32596e1f6b90e7b8519588d55ccccc09693a2214ba5915d",
+  "next_first_progress_checkpoint_utc": "2026-10-21T15:15:00Z or later",
+  "owner_final_N1_accepted": false,
+  "prior_evidence_unchanged": true,
+  "raw_worker_pid_exported": false,
+  "read_utc_ns": 1792594297387671325,
+  "root": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0/AUDIT-CAUSAL-CONTINUATION-20261021-6ca8",
+  "saved_frame_correctness_accepted": false,
+  "ssh_network_raw_access": false
+}
