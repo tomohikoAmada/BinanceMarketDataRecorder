@@ -1,5 +1,16 @@
 # ADR-0043: Audit only a new owner-policy capture
 
+October21 correction: a post-boundary discontinuity completion may depend on a
+START recorded before the capture boundary. Retain only that exact paired START
+as causal metadata authority with its original row values and sequence ID. This
+does not add a prior chunk, Raw frame, predecessor qualification or duration.
+Missing/invalid pairs still fail the unchanged authority validator. A previously
+frozen selection can be repaired only in a new private child using hash-bound
+original frozen metadata, preserving original failed controls and the exact Raw
+membership. Sequence triggers/counters/schema and all unrelated rows stay intact.
+See [N1 repair](../milestone_acceptance/R2-n1-causal-audit-repair-20261021.md).
+
+
 Status: accepted design/implementation/copy qualification, October12,2026. Actual capture/target/data/restoration qualification remains separate.
 
 The owner requested a fresh12h test without analyzing historical data. The Recorder deployment and data directory remain unchanged. Existing data is retained; the private test controller defines a new capture boundary before enabling Recorder.

@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import sqlite3
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
 from binance_market_data_recorder.service.acceptance import AcceptanceError, canonical_json
+from binance_market_data_recorder.service.acceptance_v5_corpus import catalog_authority
 from binance_market_data_recorder.service.acceptance_v5_finalize import run_audit, verify_audit
 from binance_market_data_recorder.service.acceptance_v5_io import (
     V5_SCHEMA_VERSION,
@@ -17,13 +22,20 @@ from binance_market_data_recorder.service.acceptance_v5_io import (
 from binance_market_data_recorder.service.acceptance_v5_raw import qualify_unit
 from tests.unit.test_acceptance_v5_io import stopped
 from tests.unit.test_deployment_identity import _identity
-from tests.unit.test_qualification_scoped_corpus import fixture
+from tests.unit.test_qualification_scoped_corpus import cross_boundary_fixture, fixture
+from tools import qualification_scoped_corpus
 from tools import qualification_selected_resume as candidate
 from tools.qualification_scoped_corpus import freeze_selected_corpus
 
 
-def setup(tmp: Path) -> tuple[Any, ...]:
-    layout, old, new, boundary = fixture(tmp)
+def setup(tmp: Path, *, legacy_cross_boundary: bool = False) -> tuple[Any, ...]:
+    old: dict[str, Any]
+    new: dict[str, Any]
+    if legacy_cross_boundary:
+        layout, boundary = cross_boundary_fixture(tmp)
+        old = new = {}
+    else:
+        layout, old, new, boundary = fixture(tmp)
     identity = _identity(tmp)
     source = tmp / "source"
     child = tmp / "child"
@@ -45,15 +57,34 @@ def setup(tmp: Path) -> tuple[Any, ...]:
             "canonical_v5_final_eligible": False,
         },
     )
-    _, digest, corpus = freeze_selected_corpus(
-        data_root=layout.root,
-        root=source,
-        identity=identity,
-        boundary=boundary,
-        anchor_sha256=anchor,
-        boot_id=boot,
-        probe=stopped,
+    original_select = qualification_scoped_corpus.select_catalog
+
+    def legacy_select(*args: Any, **kwargs: Any) -> Any:
+        receipt = original_select(*args, **kwargs)
+        with sqlite3.connect(source / "catalog.sqlite") as db:
+            db.execute("DELETE FROM operational_event_sequence WHERE event_id='old-gap'")
+            db.execute("DELETE FROM operational_events WHERE event_id='old-gap'")
+            db.commit()
+            db.row_factory = sqlite3.Row
+            receipt["catalog_authority"] = catalog_authority(db)
+        receipt["selected_catalog_sha256"] = hash_file(source / "catalog.sqlite")[1]
+        return receipt
+
+    context = (
+        patch.object(qualification_scoped_corpus, "select_catalog", legacy_select)
+        if legacy_cross_boundary
+        else nullcontext()
     )
+    with context:
+        _, digest, corpus = freeze_selected_corpus(
+            data_root=layout.root,
+            root=source,
+            identity=identity,
+            boundary=boundary,
+            anchor_sha256=anchor,
+            boot_id=boot,
+            probe=stopped,
+        )
     receipt = hashlib.sha256((source / "owner-scope-receipt.json").read_bytes()).hexdigest()
     kwargs = dict(
         source=source,
@@ -73,6 +104,71 @@ def setup(tmp: Path) -> tuple[Any, ...]:
     cert = stopped(layout.root)
     cert["units"]["binance-market-data-archive.timer"]["InvocationID"] = "current-fresh-timer"
     return layout, old, new, source, child, corpus, before, cert, kwargs
+
+
+def test_causal_repair_preserves_original_sequence_schema_selection_and_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _layout, _, _, source, child, corpus, before, cert, kwargs = setup(
+        tmp_path, legacy_cross_boundary=True
+    )
+    original = source / "source-catalog.sqlite"
+    original_sha = hash_file(original)[1]
+    monkeypatch.setattr(candidate, "quiescence_probe", lambda _: cert)
+    kwargs["operational_source"] = (original, original_sha)
+    continued, _ = candidate.prepare_selected_continuation(**kwargs)
+    assert (
+        continued["owner_selected_scope"]["selected_counts"]
+        == corpus["owner_selected_scope"]["selected_counts"]
+    )
+    with (
+        sqlite3.connect(source / "catalog.sqlite") as old,
+        sqlite3.connect(child / "catalog.sqlite") as repaired,
+    ):
+        assert (
+            old.execute("SELECT * FROM sqlite_master ORDER BY name").fetchall()
+            == repaired.execute("SELECT * FROM sqlite_master ORDER BY name").fetchall()
+        )
+        assert (
+            old.execute("SELECT * FROM sqlite_sequence ORDER BY name").fetchall()
+            == repaired.execute("SELECT * FROM sqlite_sequence ORDER BY name").fetchall()
+        )
+        assert repaired.execute(
+            "SELECT * FROM operational_event_sequence ORDER BY event_seq"
+        ).fetchall() == [(2, "old-gap"), (3, "new-gap")]
+    opened = []
+
+    def raw(task: dict[str, Any], **_: Any) -> Any:
+        opened.append(task["manifest"]["chunk_id"])
+        return qualify_unit(task)
+
+    monkeypatch.setattr(
+        candidate, "run_audit", lambda **kw: run_audit(**kw, probe=lambda _: cert, raw_unit=raw)
+    )
+    monkeypatch.setattr(candidate, "verify_audit", lambda **kw: verify_audit(**kw))
+    result = candidate.run_selected_continuation(
+        root=child, identity=kwargs["identity"], archive_roots={}
+    )
+    assert result["selected_counts"]["frames"] == 1 and len(opened) == 2
+    assert hash_file(original)[1] == original_sha
+    assert before == {
+        str(p.relative_to(source)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in source.rglob("*")
+        if p.is_file()
+    }
+
+
+@pytest.mark.parametrize("hardlink", [False, True])
+def test_causal_repair_cannot_modify_its_source(tmp_path: Path, hardlink: bool) -> None:
+    *_, kwargs = setup(tmp_path)
+    original = kwargs["source"] / "source-catalog.sqlite"
+    target = tmp_path / "alias.sqlite" if hardlink else original
+    if hardlink:
+        os.link(original, target)
+    with pytest.raises(AcceptanceError, match="private"):
+        candidate.repair_discontinuity_context(
+            target, original, source_sha256=hash_file(original)[1], boundary=0
+        )
 
 
 def test_actual_prepare_and_run_preserve_selection_and_original(
@@ -166,10 +262,14 @@ def test_actual_prepare_rejects_foreign_mapping_member(
 
 
 @pytest.mark.parametrize("name", ["owner-scope-receipt.json", "baseline-preflight.json"])
+@pytest.mark.parametrize("causal_repair", [False, True])
 def test_actual_prepare_rejects_anchor_control_mutation_before_copy(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str, causal_repair: bool
 ) -> None:
     *_, cert, kwargs = setup(tmp_path)
+    if causal_repair:
+        original = kwargs["source"] / "source-catalog.sqlite"
+        kwargs["operational_source"] = (original, hash_file(original)[1])
     monkeypatch.setattr(candidate, "quiescence_probe", lambda _: cert)
     original_hash = hash_file
     changed = False

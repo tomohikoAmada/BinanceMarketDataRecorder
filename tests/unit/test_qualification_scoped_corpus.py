@@ -171,11 +171,24 @@ def test_boot_change_cannot_freeze_selected_scope(tmp_path: Path) -> None:
         )
 
 
-def test_post_start_event_cannot_import_pre_start_gap_companion(tmp_path: Path) -> None:
+def cross_boundary_fixture(tmp_path: Path) -> tuple[Any, dict[str, Any]]:
     layout = ensure_storage_layout(tmp_path / "data")
     gap = dict(market="um_perpetual", symbol="BTCUSDT", stream="book_ticker", gap_id="a")
     with Catalog(layout.catalog) as catalog:
         catalog.migrate_acceptance_sequence()
+        catalog.record_operational_event(
+            event_id="unrelated-old-gap",
+            event_type="STREAM_DISCONTINUITY_STARTED",
+            occurred_at_utc_ns=1_000_000_000,
+            symbol="BTCUSDT",
+            evidence={
+                **gap,
+                "gap_id": "unrelated",
+                "original_connection_id": "old",
+                "original_generation": 0,
+                "gap_started_at_utc_ns": 1_000_000_000,
+            },
+        )
         catalog.record_operational_event(
             event_id="old-gap",
             event_type="STREAM_DISCONTINUITY_STARTED",
@@ -204,11 +217,28 @@ def test_post_start_event_cannot_import_pre_start_gap_companion(tmp_path: Path) 
             },
         )
         seal_chunk(layout, catalog, [usdm_envelope("new", 2)])
+    return layout, boundary
+
+
+def test_completion_retains_only_its_exact_pre_boundary_start_metadata(tmp_path: Path) -> None:
+    layout, boundary = cross_boundary_fixture(tmp_path)
+    _corpus, result, _opened = audit(tmp_path, layout, boundary)
+    assert result["result"] == "PASS_CANDIDATE" and not result["blocking_findings"]
+    with sqlite3.connect(tmp_path / "evidence/catalog.sqlite") as db:
+        assert set(db.execute("SELECT event_id FROM operational_events")) == {
+            ("new-gap",),
+            ("old-gap",),
+        }
+
+
+def test_missing_causal_start_still_fails_strict_authority(tmp_path: Path) -> None:
+    layout, boundary = cross_boundary_fixture(tmp_path)
+    with sqlite3.connect(layout.catalog) as db:
+        db.execute("DELETE FROM operational_event_sequence WHERE event_id='old-gap'")
+        db.execute("DELETE FROM operational_events WHERE event_id='old-gap'")
     _corpus, result, _opened = audit(tmp_path, layout, boundary)
     assert result["result"] == "FAIL"
     assert "operational_discontinuity_authority_malformed" in result["blocking_findings"]
-    with sqlite3.connect(tmp_path / "evidence/catalog.sqlite") as db:
-        assert db.execute("SELECT event_id FROM operational_events").fetchall() == [("new-gap",)]
 
 
 def test_zero_saved_frames_cannot_establish_percentage(tmp_path: Path) -> None:

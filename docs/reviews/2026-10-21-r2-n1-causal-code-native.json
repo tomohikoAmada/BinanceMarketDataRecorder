@@ -1,0 +1,168 @@
+{
+  "N1_final_receipt_or_N2_start_credit": false,
+  "SSH_network_or_production_service_mutation": false,
+  "actual_copy_arm_launch_or_Linux_native_qualified": false,
+  "actual_full_saved_data_acceptance_or_final_handoff_qualified": false,
+  "additional_metadata_cases_passed": 12,
+  "blocking_findings": [],
+  "comparison": "at_least",
+  "correction_sha256": "e3f610693d9ee6a85a473c53dada0d15a30f604f2cc5e00027cb2e2b0b5c7f3a",
+  "decision": "ACCEPT",
+  "deterministic_metadata_defect_must_be_fixed_not_hidden": true,
+  "exact_final_source_files": [
+    {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "snapshot_path": "final-code/tools/qualification_scoped_corpus.py",
+      "source_path": "/Users/amada/.codex/worktrees/recorder-r2/BinanceMarketDataRecorder/tools/qualification_scoped_corpus.py"
+    },
+    {
+      "bytes": 14157,
+      "sha256": "10f5518ef3c87c6a470421c16b97c19fdedf65e0664945dc2fe445813feac5df",
+      "snapshot_path": "final-code/tools/qualification_selected_resume.py",
+      "source_path": "/Users/amada/.codex/worktrees/recorder-r2/BinanceMarketDataRecorder/tools/qualification_selected_resume.py"
+    },
+    {
+      "bytes": 12620,
+      "sha256": "a3b93651f64edb9238041eb730806c511f77c0404d44f89747ac616d8210de4e",
+      "snapshot_path": "final-code/tests/unit/test_qualification_scoped_corpus.py",
+      "source_path": "/Users/amada/.codex/worktrees/recorder-r2/BinanceMarketDataRecorder/tests/unit/test_qualification_scoped_corpus.py"
+    },
+    {
+      "bytes": 11349,
+      "sha256": "221fd83ce55e2acc2a51e77e0f87575f012d80cd1ff9946dc3535f39baae5417",
+      "snapshot_path": "final-code/tests/unit/test_qualification_selected_resume.py",
+      "source_path": "/Users/amada/.codex/worktrees/recorder-r2/BinanceMarketDataRecorder/tests/unit/test_qualification_selected_resume.py"
+    },
+    {
+      "bytes": 4941,
+      "sha256": "d70e95f824df8a0b35d3743c063c7a924544a671bfc30bcbe7d3b219ebdd1e21",
+      "snapshot_path": "final-native/arm_audit.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/arm_audit.py"
+    },
+    {
+      "bytes": 1939,
+      "sha256": "0fd9ebe90f3399243f8285bc6ba510dce8706027176fc862087beac1ff5ee2fe",
+      "snapshot_path": "final-native/dispatch_arm.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/dispatch_arm.py"
+    },
+    {
+      "bytes": 2429,
+      "sha256": "ada9d49264f0fc760913094178e0aaa18d593a2ef6ec4f814b790798e80997d1",
+      "snapshot_path": "final-native/entry.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/entry.py"
+    },
+    {
+      "bytes": 700,
+      "sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774",
+      "snapshot_path": "final-native/helper-manifest.json",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/helper-manifest.json"
+    },
+    {
+      "bytes": 2930,
+      "sha256": "25d0cbca306b4d6ef07f6f65dc085da7c050b941619cdae725395a0a8696a370",
+      "snapshot_path": "final-native/install_exact.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/install_exact.py"
+    },
+    {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "snapshot_path": "final-native/pin-unit-exec.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/pin-unit-exec.py"
+    },
+    {
+      "bytes": 14157,
+      "sha256": "10f5518ef3c87c6a470421c16b97c19fdedf65e0664945dc2fe445813feac5df",
+      "snapshot_path": "final-native/qualification_selected_resume.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/qualification_selected_resume.py"
+    },
+    {
+      "bytes": 2404,
+      "sha256": "6afb2c1739b749cc962bb0b2872e65db84898ddc6682475304853badeee76bf9",
+      "snapshot_path": "final-native/restore.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/restore.py"
+    },
+    {
+      "bytes": 5273,
+      "sha256": "b9933b2358c91eb19b7de2df3b52fd3c69571019bcac236450f051560e0be873",
+      "snapshot_path": "final-native/runtime.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/runtime.py"
+    },
+    {
+      "bytes": 1080,
+      "sha256": "64c2359258817a11957a99455ce1a0324fb47636973afbeae661697cd6126065",
+      "snapshot_path": "final-native/source-bindings.json",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-continuation-20261021/source-bindings.json"
+    },
+    {
+      "bytes": 1104,
+      "sha256": "3338e69db0be42915e6097e2669e04caadf75b09a098c1f5cb0d12396f855af8",
+      "snapshot_path": "final-operations/operate-n1-causal-continuation.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/operate-n1-causal-continuation.py"
+    },
+    {
+      "bytes": 3069,
+      "sha256": "83d70eef7305622a4754a99139535fc7e8ed8ccee9ba9f21217a80994c430aa7",
+      "snapshot_path": "final-operations/read-n1-causal-continuation.py",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/read-n1-causal-continuation.py"
+    },
+    {
+      "bytes": 732,
+      "sha256": "7f94eafbee8e2b93a87c7767c8936b0c9d3c8d4b806a397e8419af99dc433d14",
+      "snapshot_path": "final-operations/n1-causal-parent-qa.json",
+      "source_path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n1-causal-parent-qa.json"
+    }
+  ],
+  "focused_final_cases_passed": 28,
+  "frozen_at_utc": "2026-10-21T14:45:44.111991+00:00",
+  "helper_manifest_sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774",
+  "helper_members": {
+    "arm_audit.py": "d70e95f824df8a0b35d3743c063c7a924544a671bfc30bcbe7d3b219ebdd1e21",
+    "dispatch_arm.py": "0fd9ebe90f3399243f8285bc6ba510dce8706027176fc862087beac1ff5ee2fe",
+    "entry.py": "ada9d49264f0fc760913094178e0aaa18d593a2ef6ec4f814b790798e80997d1",
+    "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+    "qualification_selected_resume.py": "10f5518ef3c87c6a470421c16b97c19fdedf65e0664945dc2fe445813feac5df",
+    "restore.py": "6afb2c1739b749cc962bb0b2872e65db84898ddc6682475304853badeee76bf9",
+    "runtime.py": "b9933b2358c91eb19b7de2df3b52fd3c69571019bcac236450f051560e0be873",
+    "source-bindings.json": "64c2359258817a11957a99455ce1a0324fb47636973afbeae661697cd6126065"
+  },
+  "latest_owner_monitor_numerator": 995,
+  "latest_owner_saved_frame_numerator": 995,
+  "limitations": [
+    "LOCAL/OFFLINE code/synthetic proof only; actual protected VPS copy/permissions/current admission/native invocation/results/restoration need their own evidence.",
+    "Real default nested spawn was exercised locally with synthetic data and fresh-quiescence mocks, not on the deployed Linux host.",
+    "Strict validator/production package bytes are unchanged. A corrected selected audit still must return a complete passing result; owner percentage policy does not certify missing authority.",
+    "Original reports and failed records remain immutable; the new pass-count correction supersedes only prior mistaken pass-count/timing statements."
+  ],
+  "native_mocked_boundary_restoration_cases_passed": 12,
+  "new_admission_required_seconds": 22757.5,
+  "new_guard_deadline_epoch_seconds": 1792643400,
+  "original_cap_epoch_seconds": 1792646974,
+  "original_failure_audit_pass_count_correction": {
+    "actual_original_completed_dualLIVE_and_completed_control_FAIL": true,
+    "observed_full_postpreparation_upper_seconds": 13981.683471035,
+    "old_single_pass_interpretation_wrong": true,
+    "original_reports_not_overwritten": true
+  },
+  "production_captured_Raw_or_historical_manifest_opened": false,
+  "production_source_wheel_config_identity_modified": false,
+  "reader_sha256": "83d70eef7305622a4754a99139535fc7e8ed8ccee9ba9f21217a80994c430aa7",
+  "real_default_nested_spawn": {
+    "completed_immutable_control_reconstruction": true,
+    "live_passes": 2,
+    "raw_executor_mocked": false,
+    "result": "PASS",
+    "synthetic_selected_frames": 1
+  },
+  "report_sha256": "fb9b2380201a048ff804a3e7472e9445bbc48cf69d87da52b5f6c53833d3d631",
+  "required_host_available_bytes": 3466539008,
+  "resolved_findings": [
+    "nonroot native result publication moved under bmdr work with package publisher",
+    "memory admission bound to observed audit peak plus512MiB",
+    "source receipt/preflight/corpus unconditional final hash checks in repaired branch",
+    "same-inode source alias rejection"
+  ],
+  "review_directory": "/private/var/tmp/bmdr-n1-actual-independent-20261021-531qae20/causal-code-and-native-rlj7we2t",
+  "scope": "LOCAL_OFFLINE_EXACT_CAUSAL_SELECTOR_CONTINUATION_AND_PENDING_AUDIT_ONLY_NATIVE_CODE",
+  "threshold_denominator": 1000
+}

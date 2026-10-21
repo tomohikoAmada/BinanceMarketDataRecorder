@@ -1,5 +1,27 @@
 # Project Handoff
 
+Current authoritative October21 14:14UTC checkpoint: **N1 OWN24H CAPTURE COMPLETE / SELECTED AUDIT FAILED / CAUSAL METADATA REPAIR IN PROGRESS / FINAL PENDING**.
+
+The failed audit is a private selection defect: two completions in this attempt
+lost their pre-boundary START authority rows. Frozen source pairs are valid;
+retain exact original sequence4256/4258 as metadata only in a new private copy.
+No production source change, old Raw selection or24h recapture is needed.
+Independent diagnosis ACCEPT1b089065/22195e1f/019f1bfc (1714 checks).
+Actual OS/archive RESTORED13:41:50.058491266UTC before guard cancellation;
+original window CLOSED, never extend/reuse/rearm. Original failed evidence stays.
+A fresh, bounded audit-only continuation, full dualLIVE/verify, final independent
+rebuild/handoff/receipt are still pending. N2 has not started.
+
+Latest human policy supersedes earlier thresholds: **monitor PASS ratio and
+saved-frame contract conformance each >=99.5%, with separate denominators**.
+Log and retry recoverable transient faults; a rare sample failure alone does not
+stop collection. Missing trusted evidence, disk full, sustained write failure or
+inability to verify cannot be called a percentage PASS: the owner explicitly
+selected **pause affected capture and notify**. Preserve all error records and
+fix deterministic defects. Existing source/config/duration evidence is unchanged.
+Earlier checkpoint text below is retained history, not a claim of a healthy audit.
+
+
 Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
 
 October21 owner policy update: **sampled monitor >=99.5%** applies to current N1

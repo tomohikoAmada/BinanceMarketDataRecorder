@@ -11,6 +11,8 @@ import copy
 import json
 import os
 import shutil
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +22,16 @@ from binance_market_data_recorder.service.acceptance import (
     sha256_bytes,
 )
 from binance_market_data_recorder.service.acceptance_v5_corpus import (
+    catalog_authority,
     quiescence_probe,
+    read_catalog,
     verify_corpus,
 )
+from binance_market_data_recorder.service.acceptance_v5_delta import _companions
 from binance_market_data_recorder.service.acceptance_v5_finalize import run_audit, verify_audit
 from binance_market_data_recorder.service.acceptance_v5_io import (
+    FREEZE_DOMAIN,
+    ShardWriter,
     frozen_manifests,
     hash_file,
     open_exact,
@@ -32,7 +39,103 @@ from binance_market_data_recorder.service.acceptance_v5_io import (
     read_document,
 )
 from binance_market_data_recorder.service.deployment_identity import DeploymentIdentity
+from binance_market_data_recorder.storage.acceptance_delta import (
+    TRIGGER_SQL,
+    DeltaSnapshot,
+    validate_sequence,
+)
 from binance_market_data_recorder.storage.layout import fsync_directory
+
+
+def repair_discontinuity_context(
+    catalog: Path, source: Path, *, source_sha256: str, boundary: int
+) -> dict[str, Any]:
+    """Restore only exact causal start rows in a new private Catalog copy."""
+    if os.path.samefile(catalog, source):
+        raise AcceptanceError("causal repair requires a private Catalog copy")
+    if hash_file(source)[1] != source_sha256:
+        raise AcceptanceError("operational source Catalog binding changed")
+    prior_sha = hash_file(catalog)[1]
+    added = []
+    with read_catalog(source, immutable=True) as original, closing(sqlite3.connect(catalog)) as db:
+        db.row_factory = sqlite3.Row
+        validate_sequence(db)
+        counter = db.execute(
+            "SELECT seq FROM sqlite_sequence WHERE name='operational_event_sequence'"
+        ).fetchone()
+        db.execute("BEGIN IMMEDIATE")
+        # Restore original sequence IDs, rather than firing the online append trigger.
+        # DDL and both inserts are atomic; rollback also restores the original trigger.
+        db.execute("DROP TRIGGER operational_event_sequence_insert")
+        snapshot = DeltaSnapshot(original)
+        completed = [
+            dict(row)
+            for row in db.execute(
+                "SELECT s.event_seq,e.* FROM operational_event_sequence s "
+                "JOIN operational_events e ON e.event_id=s.event_id "
+                "WHERE s.event_seq>? AND e.event_type='STREAM_DISCONTINUITY_COMPLETED' "
+                "ORDER BY s.event_seq",
+                (boundary,),
+            )
+        ]
+        for row in completed:
+            source_row = snapshot.exact("operational_events", "event_id", row["event_id"])
+            sequence = snapshot.exact("operational_event_sequence", "event_id", row["event_id"])
+            if (
+                source_row is None
+                or sequence is None
+                or {**source_row, "event_seq": sequence["event_seq"]} != row
+            ):
+                raise AcceptanceError("selected completion differs from frozen source")
+            pair = snapshot.discontinuity_pair(row)
+            _companions("operational", row, {"discontinuity": pair}, snapshot.high_water)
+            for start in pair:
+                if start["event_type"] != "STREAM_DISCONTINUITY_STARTED":
+                    continue
+                present = db.execute(
+                    "SELECT s.event_seq,e.* FROM operational_event_sequence s "
+                    "JOIN operational_events e ON e.event_id=s.event_id WHERE e.event_id=?",
+                    (start["event_id"],),
+                ).fetchone()
+                if present is not None:
+                    if dict(present) != start:
+                        raise AcceptanceError("retained start differs from frozen source")
+                    continue
+                if start["event_seq"] > boundary:
+                    raise AcceptanceError("missing post-boundary start is not a causal repair")
+                event = {key: value for key, value in start.items() if key != "event_seq"}
+                columns = list(event)
+                db.execute(
+                    "INSERT INTO operational_events ("
+                    + ",".join(columns)
+                    + ") VALUES ("
+                    + ",".join("?" for _ in columns)
+                    + ")",
+                    tuple(event.values()),
+                )
+                db.execute(
+                    "INSERT INTO operational_event_sequence(event_seq,event_id) VALUES (?,?)",
+                    (start["event_seq"], start["event_id"]),
+                )
+                added.append(start)
+        db.execute(TRIGGER_SQL)
+        validate_sequence(db)
+        after = db.execute(
+            "SELECT seq FROM sqlite_sequence WHERE name='operational_event_sequence'"
+        ).fetchone()
+        if tuple(after or ()) != tuple(counter or ()):
+            raise AcceptanceError("causal repair changed operational sequence high water")
+        db.commit()
+    with catalog.open("rb") as inp:
+        os.fsync(inp.fileno())
+    if hash_file(source)[1] != source_sha256:
+        raise AcceptanceError("operational source changed during causal repair")
+    return {
+        "source_catalog_sha256": source_sha256,
+        "original_selected_catalog_sha256": prior_sha,
+        "added_operational_rows": added,
+        "new_capture": False,
+    }
 
 
 def prepare_selected_continuation(
@@ -45,6 +148,7 @@ def prepare_selected_continuation(
     target_sha256: str,
     run_id: str,
     boot_id: str,
+    operational_source: tuple[Path, str] | None = None,
 ) -> tuple[dict[str, Any], str]:
     """Copy a verified immutable selection; refresh only actual audit protection."""
     if root.exists() or root.resolve() == source.resolve():
@@ -86,8 +190,24 @@ def prepare_selected_continuation(
             raise AcceptanceError("selected control copy changed")
         fsync_directory(destination.parent)
 
-    for name in ("catalog.sqlite", "baseline-preflight.json", "owner-scope-receipt.json"):
+    for name in ("catalog.sqlite", "baseline-preflight.json"):
         exact_copy(name)
+    repair = None
+    if operational_source is not None:
+        repair = repair_discontinuity_context(
+            root / "catalog.sqlite",
+            operational_source[0],
+            source_sha256=operational_source[1],
+            boundary=receipt["boundary"]["high_water"]["operational"],
+        )
+        receipt = copy.deepcopy(receipt)
+        receipt["selected_catalog_sha256"] = hash_file(root / "catalog.sqlite")[1]
+        with read_catalog(root / "catalog.sqlite", immutable=True) as db:
+            receipt["catalog_authority"] = catalog_authority(db)
+        receipt["operational_context_repair"] = repair
+        publish(root, "owner-scope-receipt.json", receipt)
+    else:
+        exact_copy("owner-scope-receipt.json")
     # The verified freeze is an exact chained shard set; no production inventory.
     shard_names = {
         f"shard-{ordinal:08d}.json" for ordinal in range(corpus["manifest_freeze"]["shard_count"])
@@ -97,19 +217,44 @@ def prepare_selected_continuation(
         not path.is_file() or path.is_symlink() for path in members
     ):
         raise AcceptanceError("unexpected frozen mapping member")
-    for name in sorted(shard_names):
-        exact_copy("manifest-freeze/" + name)
+    if repair is None:
+        for name in sorted(shard_names):
+            exact_copy("manifest-freeze/" + name)
+    writer = (
+        ShardWriter(
+            root / "manifest-freeze",
+            domain=FREEZE_DOMAIN,
+            anchor=receipt["selected_catalog_sha256"],
+            kind="manifest-freeze-shard",
+        )
+        if repair is not None
+        else None
+    )
     for mapping, _manifest in frozen_manifests(source, corpus):
         relative = mapping["object"]
         if not (root / relative).exists():
             exact_copy(relative)
+        if writer is not None:
+            writer.add(mapping)
+    if writer is not None:
+        writer.flush()
     if (
         hash_file(root / "baseline-preflight.json")[1] != anchor
-        or hash_file(root / "owner-scope-receipt.json")[1] != receipt_sha
+        or (repair is None and hash_file(root / "owner-scope-receipt.json")[1] != receipt_sha)
+        or hash_file(source / "baseline-preflight.json")[1] != anchor
+        or hash_file(source / "owner-scope-receipt.json")[1] != receipt_sha
         or hash_file(source / "quiescence-corpus.json")[1] != corpus_sha
     ):
         raise AcceptanceError("selected source controls changed during copy")
     continued = copy.deepcopy(corpus)
+    if repair is not None:
+        assert writer is not None
+        continued.update(
+            catalog_sha256=receipt["selected_catalog_sha256"],
+            catalog_authority=receipt["catalog_authority"],
+            owner_selected_scope=receipt,
+            manifest_freeze=writer.summary(),
+        )
     continued["quiescence_certificate"] = certificate
     continued["owner_audit_continuation"] = {
         "source_root": str(source.resolve()),
@@ -123,6 +268,8 @@ def prepare_selected_continuation(
         "new_capture": False,
         "formal_duration_credit_ns": 0,
     }
+    if repair is not None:
+        continued["owner_audit_continuation"]["operational_context_repair"] = repair
     _path, digest = publish(root, "quiescence-corpus.json", continued)
     if verify_corpus(root, identity=identity, anchor_sha256=anchor) != (continued, digest):
         raise AcceptanceError("selected continuation readback changed")
