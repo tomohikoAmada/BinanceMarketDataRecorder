@@ -1,0 +1,61 @@
+{
+  "decision": "ACCEPT",
+  "kind": "INDEPENDENT_ACTUAL_CAUSAL_SOFTWARE_COPY_SUPPLEMENT",
+  "manifest_self_hash_excluded": true,
+  "member_count": 10,
+  "members": [
+    {
+      "bytes": 1765,
+      "path": "INPUTS.json",
+      "sha256": "dbbf6f2f88c63512cb9eb7d0f4e1cf28fbd890b8b9225e444e2c1955f7a5e4e1"
+    },
+    {
+      "bytes": 803,
+      "path": "PENDING_ARM_ARGV.json",
+      "sha256": "ee4a476100f92dc5993cbd4cf801d186a0d9bbe67cb086991f6cef7e7ce8c498"
+    },
+    {
+      "bytes": 1993,
+      "path": "REPORT.md",
+      "sha256": "0ff69b0afa8d12dd172945d6eb4d0a148b9f0653758668e6472bc01644ec71a4"
+    },
+    {
+      "bytes": 2025,
+      "path": "RESULT.json",
+      "sha256": "8db8a8c2ee2c9d561604586b55b33a2d2889b341f289a893225216e45f163643"
+    },
+    {
+      "bytes": 306477,
+      "path": "inputs/PRIOR_MANIFEST.json",
+      "sha256": "5a51fcea337c26c4b1c1be753217e6bf0ea9f43e9d3db7ce405f251d8ad6b3ed"
+    },
+    {
+      "bytes": 9163,
+      "path": "inputs/PRIOR_RESULT.json",
+      "sha256": "7fa266c14719112912854c19aecc5b56c5177b95916d5e8fad42b02f0977e438"
+    },
+    {
+      "bytes": 1692,
+      "path": "inputs/actual-n1-causal-copy-1792593986230999000.json",
+      "sha256": "041f5afd9980f41f93ff898612c788cfb392e5c57b29b1384952636ab662f46f"
+    },
+    {
+      "bytes": 1939,
+      "path": "inputs/dispatch_arm.py",
+      "sha256": "0fd9ebe90f3399243f8285bc6ba510dce8706027176fc862087beac1ff5ee2fe"
+    },
+    {
+      "bytes": 700,
+      "path": "inputs/helper-manifest.json",
+      "sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774"
+    },
+    {
+      "bytes": 1080,
+      "path": "inputs/source-bindings.json",
+      "sha256": "64c2359258817a11957a99455ce1a0324fb47636973afbeae661697cd6126065"
+    }
+  ],
+  "report_sha256": "0ff69b0afa8d12dd172945d6eb4d0a148b9f0653758668e6472bc01644ec71a4",
+  "result_sha256": "8db8a8c2ee2c9d561604586b55b33a2d2889b341f289a893225216e45f163643",
+  "root": "/private/var/tmp/bmdr-n1-actual-independent-20261021-531qae20/causal-code-and-native-rlj7we2t/actual-physical-copy-3cym5vk7"
+}

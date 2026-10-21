@@ -1,0 +1,45 @@
+{
+  "actual_ARM_window_native_current_admission_qualified": false,
+  "actual_audit_saved_data_final_handoff_N1_N2_credit": false,
+  "all_file_hashes_ownership_modes_exact": true,
+  "blocking_findings": [],
+  "copy_receipt_sha256": "041f5afd9980f41f93ff898612c788cfb392e5c57b29b1384952636ab662f46f",
+  "copy_utc_ns": 1792593986164526913,
+  "decision": "ACCEPT",
+  "device": 64785,
+  "frozen_at_utc": "2026-10-21T14:47:54.140111+00:00",
+  "helper_manifest_sha256": "5278220578aaf7beec918798445a02c7b8a710ede9db7e78de6b818559995774",
+  "new_deadline_epoch_seconds": 1792643400,
+  "no_SSH_network_service_Raw_or_repeated_code_fixture_review": true,
+  "pending_arm_argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-n1-causal-arm-20261021.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=900",
+    "--property=TimeoutStopSec=600",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0/AUDIT-CAUSAL-CONTINUATION-20261021-6ca8/restore.py arm-failure",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0/AUDIT-CAUSAL-CONTINUATION-20261021-6ca8/pin-unit-exec.py",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0/AUDIT-CAUSAL-CONTINUATION-20261021-6ca8/arm_audit.py"
+  ],
+  "physical_root": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0/AUDIT-CAUSAL-CONTINUATION-20261021-6ca8",
+  "report_sha256": "0ff69b0afa8d12dd172945d6eb4d0a148b9f0653758668e6472bc01644ec71a4",
+  "root_uid_gid_mode": [
+    0,
+    988,
+    "0750"
+  ],
+  "scope": "LOCAL_OFFLINE_ACTUAL_PHYSICAL_SOFTWARE_COPY_AND_ACCEPTED_PENDING_ARM_ARGV_ONLY",
+  "single_ARM_may_proceed_under_existing_authorization": true,
+  "tmp_uid_gid_mode": [
+    0,
+    988,
+    "0770"
+  ],
+  "verified_files": 9
+}

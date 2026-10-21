@@ -1,25 +1,30 @@
 # N1 existing24h causal metadata audit repair
 
-Current authoritative October21 14:14UTC checkpoint: **N1 OWN24H CAPTURE COMPLETE / SELECTED AUDIT FAILED / CAUSAL METADATA REPAIR IN PROGRESS / FINAL PENDING**.
+Latest actual October21 14:51:37UTC: **N1 OWN24H CAPTURE COMPLETE / CAUSAL AUDIT CONTINUATION ACTIVE / FINAL OWNER24H PENDING**.
 
-The failed audit is a private selection defect: two completions in this attempt
-lost their pre-boundary START authority rows. Frozen source pairs are valid;
-retain exact original sequence4256/4258 as metadata only in a new private copy.
-No production source change, old Raw selection or24h recapture is needed.
-Independent diagnosis ACCEPT1b089065/22195e1f/019f1bfc (1714 checks).
-Actual OS/archive RESTORED13:41:50.058491266UTC before guard cancellation;
-original window CLOSED, never extend/reuse/rearm. Original failed evidence stays.
-A fresh, bounded audit-only continuation, full dualLIVE/verify, final independent
-rebuild/handoff/receipt are still pending. N2 has not started.
+The private selection defect is fixed and independently acceptedfb9b2380:
+28 focused cases,12 independent metadata faults,12 native bounds/restore cases
+and genuine nested-spawn dualLIVE+verify PASS. Single softwarecopy041f5afd and
+independent physical0ff69b0a accepted; actual new ARM1a8a7ba6 completed normally.
+New exclusive audit20bac825/PID725747 is active under exact identity/config;
+original12998 chunks/45893093frames and original24h duration stay unchanged.
+Only original START4256/4258 were restored as causal metadata in the new child;
+no old Raw, new capture or production source/wheel deployment. Fresh admission
+passes actual space/time/memory. New finite guard expires October22 04:30UTC,
+earlier than the old05:29:34 cap; original guard remains CLOSED forever.
+Current read58d66edc has new genuine corpus/receipt but no completed audit result.
+First meaningful progress checkpoint15:15UTC, then actual progress sets the
+completion checkpoint (initial full-result forecast20:00UTC). Healthy work is
+not restarted or duplicated. N2 has not started; full audit/independent final/
+actual restored handoff/receipt/main precede BTC+ETH's new own24h.
 
-Latest human policy supersedes earlier thresholds: **monitor PASS ratio and
-saved-frame contract conformance each >=99.5%, with separate denominators**.
-Log and retry recoverable transient faults; a rare sample failure alone does not
-stop collection. Missing trusted evidence, disk full, sustained write failure or
-inability to verify cannot be called a percentage PASS: the owner explicitly
-selected **pause affected capture and notify**. Preserve all error records and
-fix deterministic defects. Existing source/config/duration evidence is unchanged.
-Earlier checkpoint text below is retained history, not a claim of a healthy audit.
+Latest human policy: **monitor and saved-frame conformance each >=99.5%**,
+with separate complete denominators and all failed observations retained.
+Recoverable transient faults are logged/retried; critical inability to write or
+credibly verify pauses affected capture and notifies, as explicitly selected.
+Next-stage retry policy implementation/testing remains pending before N2;
+original N1 controls and failures stay unchanged. Earlier checkpoint text below
+is history, including the original13:41 failed audit and closed protection.
 
 ## Actual diagnosis
 
@@ -47,7 +52,9 @@ Earlier checkpoint text below is retained history, not a claim of a healthy audi
   check, admission memory based on this audit's actual peak).
 - [x] Single software copy041f5afd completed14:46:26UTC; nine exact root-controlled
   files/manifest52782205 read back with expected SHA/modes/devices.
-- [ ] Independent actual-physical supplement, single fresh ARM/native dispatch.
+- [x] Independent actual-physical supplement ACCEPT0ff69b0a/8db8a8c2/86444b86.
+- [x] Single native ARM requestaa58539a at14:48:08UTC, inv1a8a7ba6/PID725630
+  actually activating-start. Actual window/audit output pending; checkpoint14:51UTC.
 - [ ] New exclusive child copies the exact12998 selected chunks/45893093frames/
   34141217654decodedB/2124766014storedB and original manifest controls. Fresh
   quiescence and finite audit-only protection no later than October22 05:29:34UTC;
@@ -80,3 +87,22 @@ A failed metadata authority result still grants no accepted saved-frame rate.
 The fresh continuation budget uses that actual cost with25% plus copy/review/
 restoration reserves, fresh capacity and a new deadline04:30UTC before the original
 05:29:34UTC cap; it does not reopen the original CLOSED protection.
+
+## Actual continuation checkpoint
+
+- [x] Single ARM1a8a7ba6 finished normally at14:48UTC; full owned/manager log
+  captured. GC default properties are not the completed unit's effective settings.
+- [x] New window2c7a96d8 ACTIVE_VERIFIED, deadline1792643400 (October22 04:30UTC).
+  Original failed window stays CLOSED. Fresh actual canonicalVERIFYef932 succeeded.
+- [x] Dispatch admission3cb9892b: remaining49297.960893s>22757.5s required,
+  actual host available5219209216B>3466539008B required; writer24857554944B and
+  archive2055604669852B each>10GiB. These are observation-time facts, not current
+  remaining estimates. Source freeze control copy is227295385B.
+- [x] Actual audit20bac825/PID725747 active; effective Infinity/Stop600, wholephase
+  pin and archive TMP. At14:51 memory peak1276919808B/current+peak swap0/CPU126.526s.
+- [x] Actual new corpus3d8c7634/receipt267fe69c binds exact selected membership,
+  both original metadata STARTs, source hashes and a genuine fresh quiescence.
+- [ ] First durable audit progress (not yet present at14:51); next checkpoint15:15UTC.
+  Initial full-result checkpoint20:00UTC, updated by real progress. No duplicate audit.
+- [ ] Complete dualLIVE/completed immutable verify, independent full controls and
+  final real restored handoff/owner receipt/main. N2 not started.

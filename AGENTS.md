@@ -1,25 +1,30 @@
 # Binance Market Data Recorder Agent Contract
 
-Current authoritative October21 14:14UTC checkpoint: **N1 OWN24H CAPTURE COMPLETE / SELECTED AUDIT FAILED / CAUSAL METADATA REPAIR IN PROGRESS / FINAL PENDING**.
+Latest actual October21 14:51:37UTC: **N1 OWN24H CAPTURE COMPLETE / CAUSAL AUDIT CONTINUATION ACTIVE / FINAL OWNER24H PENDING**.
 
-The failed audit is a private selection defect: two completions in this attempt
-lost their pre-boundary START authority rows. Frozen source pairs are valid;
-retain exact original sequence4256/4258 as metadata only in a new private copy.
-No production source change, old Raw selection or24h recapture is needed.
-Independent diagnosis ACCEPT1b089065/22195e1f/019f1bfc (1714 checks).
-Actual OS/archive RESTORED13:41:50.058491266UTC before guard cancellation;
-original window CLOSED, never extend/reuse/rearm. Original failed evidence stays.
-A fresh, bounded audit-only continuation, full dualLIVE/verify, final independent
-rebuild/handoff/receipt are still pending. N2 has not started.
+The private selection defect is fixed and independently acceptedfb9b2380:
+28 focused cases,12 independent metadata faults,12 native bounds/restore cases
+and genuine nested-spawn dualLIVE+verify PASS. Single softwarecopy041f5afd and
+independent physical0ff69b0a accepted; actual new ARM1a8a7ba6 completed normally.
+New exclusive audit20bac825/PID725747 is active under exact identity/config;
+original12998 chunks/45893093frames and original24h duration stay unchanged.
+Only original START4256/4258 were restored as causal metadata in the new child;
+no old Raw, new capture or production source/wheel deployment. Fresh admission
+passes actual space/time/memory. New finite guard expires October22 04:30UTC,
+earlier than the old05:29:34 cap; original guard remains CLOSED forever.
+Current read58d66edc has new genuine corpus/receipt but no completed audit result.
+First meaningful progress checkpoint15:15UTC, then actual progress sets the
+completion checkpoint (initial full-result forecast20:00UTC). Healthy work is
+not restarted or duplicated. N2 has not started; full audit/independent final/
+actual restored handoff/receipt/main precede BTC+ETH's new own24h.
 
-Latest human policy supersedes earlier thresholds: **monitor PASS ratio and
-saved-frame contract conformance each >=99.5%, with separate denominators**.
-Log and retry recoverable transient faults; a rare sample failure alone does not
-stop collection. Missing trusted evidence, disk full, sustained write failure or
-inability to verify cannot be called a percentage PASS: the owner explicitly
-selected **pause affected capture and notify**. Preserve all error records and
-fix deterministic defects. Existing source/config/duration evidence is unchanged.
-Earlier checkpoint text below is retained history, not a claim of a healthy audit.
+Latest human policy: **monitor and saved-frame conformance each >=99.5%**,
+with separate complete denominators and all failed observations retained.
+Recoverable transient faults are logged/retried; critical inability to write or
+credibly verify pauses affected capture and notifies, as explicitly selected.
+Next-stage retry policy implementation/testing remains pending before N2;
+original N1 controls and failures stay unchanged. Earlier checkpoint text below
+is history, including the original13:41 failed audit and closed protection.
 
 
 Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
