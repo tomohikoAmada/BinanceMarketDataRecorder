@@ -2,8 +2,9 @@
 
 Current state: **OFFLINE_REPAIR_INDEPENDENTLY_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED**.
 Candidatec368/wheel68460be4 is deployed with BTC confige2/newidentitydb52730c.
-N1 native capture launched October20 07:37:05UTC and is warming, with fixed
-window expiry October22 05:29:34UTC. No formal T0 or24h result exists yet.
+N1 completed its own86400.234416692s with strict14/corePASS at October21
+07:49:31.773771269UTC. Full selected-data audit is running; final owner24h
+acceptance is pending. Fixed window expiry October22 05:29:34UTC is unchanged.
 Source branch `codex/r2-report-isolation-20261020` starts from deployedca760;
 main's unrelated/offline R3 changes are not part of this production release.
 
@@ -62,12 +63,32 @@ main's unrelated/offline R3 changes are not part of this production release.
 - [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
   independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
   epoch1792646974; never extend, reuse or rearm this window.
-- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
-  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
-  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
-- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
-  owner-start/warm/failure/native output once. Independently bind real T0 and its
-  own86400 target; before checkpoint let healthy native work proceed.
+- [x] Actual owner-start8cfbadaa: run3f127f831cc34757947574839b3c903f,
+  T0 **October20 07:49:31.539355195UTC** (Shanghai15:49:31), warm732.039s/23rows.
+- [x] Actual targetabf1946c reached **86400.234416692s** at **October21
+  07:49:31.773771269UTC** (Shanghai15:49:31), strict14/corePASS. Normal stop/
+  disabled/PID0/NRestarts0 and natural archive drain/freeze succeededb71e56ee.
+- [x] Single owner status read4babd497 at October21 08:04:24UTC preserved complete
+  current controls/23warm/2880monitor/4recovery/1finish and UNIT journals.
+- [ ] Unique terminal3bccbc59/PID709266 started07:51:11UTC; actual read shows
+  full new-data audit running, no audit-root/owner-selected/native-result yet.
+  Selected metadata forecast12998chunks/45893093frames is not a completed
+  saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
+- [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
+  by strict recovery probes around5s later; original monitor threshold stays
+  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  PASS. No restart; all2908 observations owned current+peak swap0. These are
+  separate availability and resource metrics, not saved-frame conformance.
+- [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/
+  resultd0968c7a/manifest44164343: all73 evidence members,24JSON+4JSONL,
+  2908 original observations+3 endpoints reconstructed. This grants own-duration/
+  endpoint/control acceptance only; original state bytes/Catalog, production
+  connection/report/rotation logs, full saved data and restored final remain pending.
+- [ ] Supplementary exact Recorder-journal/progress read timed out before SSH
+  banner exchange; no remote execution or extra evidence. Preserve original
+  failure, do not interrupt native or continuously retry. Next actual result/
+  progress checkpoint **October21 14:30UTC / Shanghai22:30**; audit5h7m forecast
+  (125%6h23m) is not a completion guarantee. Fixed expiry unchanged.
 - [ ] Complete new selected dualreleasedLIVE/completedimmutableverify and saved
   frames denominator strictly>99.9%, independent final controls reconstruction,
   configured strict contexts (BTC N1=14)/core and actual plannedrotation/recovery evidence, actualrestoration

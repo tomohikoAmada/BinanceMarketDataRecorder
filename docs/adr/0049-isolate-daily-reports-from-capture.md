@@ -1,7 +1,10 @@
 # ADR-0049: Keep daily reporting off the capture and shutdown paths
 
-Date: 2026-10-20. Status: implementation and independent LOCAL/OFFLINE review
-accepted; exact release CI pending; not released or deployed. The owner
+Date: 2026-10-20. Updated October21. Status: implementation, independent
+LOCAL/OFFLINE review, exact CI39356789510, Linux229 and locked wheel68460be4
+accepted; stopped BTC deployment60134a37 independently accepted. N1 own86400
+strict target is complete; full saved-data/independent/restored24h acceptance
+is pending. The owner
 authorized a minimal stability repair and progressive VPS capacity qualification,
 starting BTCUSDT on both markets with all14 functions. See the
 [capacity acceptance plan](../milestone_acceptance/R2-vps-symbol-capacity-20261020.md).

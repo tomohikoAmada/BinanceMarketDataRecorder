@@ -1,6 +1,6 @@
 # Current Production State
 
-Current owner checkpoint October20: **REPORT_REPAIR_LOCAL_ACCEPTED / EXACT_RELEASE_CI_ACCEPTED / CLOUD_RELEASE_ACCEPTED / STOPPED_BTC_DEPLOYMENT_ACCEPTED / N1_NATIVE_WARMING_NOT_YET_T0**.
+Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
 The owner explicitly approved progressive VPS capacity qualification: one symbol
 means Spot+USD-M with all14 data functions, starting BTCUSDT, then BTC+ETH,
 then nested4/8… and smaller steps near the measured capacity boundary. Every
@@ -41,17 +41,37 @@ capture stays PENDING. See [capacity plan](milestone_acceptance/R2-vps-symbol-ca
 - [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
   independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
   epoch1792646974; never extend, reuse or rearm this window.
-- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
-  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
-  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
-- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
-  owner-start/warm/failure/native output once. Independently bind real T0 and its
-  own86400 target; before checkpoint let healthy native work proceed.
+- [x] Actual owner-start8cfbadaa: run3f127f831cc34757947574839b3c903f,
+  T0 **October20 07:49:31.539355195UTC** (Shanghai15:49:31), warm732.039s/23rows.
+- [x] Actual targetabf1946c reached **86400.234416692s** at **October21
+  07:49:31.773771269UTC** (Shanghai15:49:31), strict14/corePASS. Normal stop/
+  disabled/PID0/NRestarts0 and natural archive drain/freeze succeededb71e56ee.
+- [x] Single owner status read4babd497 at October21 08:04:24UTC preserved complete
+  current controls/23warm/2880monitor/4recovery/1finish and UNIT journals.
+- [ ] Unique terminal3bccbc59/PID709266 started07:51:11UTC; actual read shows
+  full new-data audit running, no audit-root/owner-selected/native-result yet.
+  Selected metadata forecast12998chunks/45893093frames is not a completed
+  saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
+- [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
+  by strict recovery probes around5s later; original monitor threshold stays
+  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  PASS. No restart; all2908 observations owned current+peak swap0. These are
+  separate availability and resource metrics, not saved-frame conformance.
+- [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/
+  resultd0968c7a/manifest44164343: all73 evidence members,24JSON+4JSONL,
+  2908 original observations+3 endpoints reconstructed. This grants own-duration/
+  endpoint/control acceptance only; original state bytes/Catalog, production
+  connection/report/rotation logs, full saved data and restored final remain pending.
+- [ ] Supplementary exact Recorder-journal/progress read timed out before SSH
+  banner exchange; no remote execution or extra evidence. Preserve original
+  failure, do not interrupt native or continuously retry. Next actual result/
+  progress checkpoint **October21 14:30UTC / Shanghai22:30**; audit5h7m forecast
+  (125%6h23m) is not a completion guarantee. Fixed expiry unchanged.
 - [ ] N1 full24h receipt, progressive capacity stages and measured headroom final.
 
 Production is now c3686dd/68460be4/db52730c/confige2f81312 stopped-disabled under
-accepted actual deployment. A new fixed capacity window and warm capture exist;
-formal T0/accepted24h are still pending. Existing
+accepted actual deployment. N1 completed its own86400s and strict endpoint;
+full saved-data/independent/restored owner24h acceptance remains pending. Existing
 old-source2h/12h receipts remain historical, with zero transferred time. Main's
 R3 offline code stays undeployed. All Raw/archive/failed data/venvs/unrelated work
 remain preserved. Current release source is separately frozen from deployedca760

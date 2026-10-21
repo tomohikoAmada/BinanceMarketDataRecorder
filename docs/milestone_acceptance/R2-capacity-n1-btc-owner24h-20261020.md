@@ -1,13 +1,13 @@
 # R2 capacity N1 BTCUSDT own24h qualification
 
-State: **NATIVE_WARMING / NOT_YET_T0 / FINAL_24H_PENDING**.
-Actual launch October20 07:37:05UTC (Shanghai15:37:05), capture service
-`binance-recorder-r2-capacity-n1-btc-20261020-capture.service`, invocation
-`b1e30644d7844239b4848ad6b23d4fd7`, PID667176 observedactive/NRestarts0.
-Actual launch binding is independently ACCEPT16756179 (native dispatch only).
-At dispatch Recorder itself was stillinactive before boundary/warm startup;
-this is not a Recorder failure. Warm-up is excluded from formal duration;
-there is no actual24h finish time until the native owner-start is published.
+State: **OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
+Actual read October21 08:04:24UTC (Shanghai16:04:24), SHA4babd497, supersedes
+previous warm-only status. Sole run3f127f831cc34757947574839b3c903f has T0
+October20 07:49:31.539355195UTC and reached own86400.234416692s at October21
+07:49:31.773771269UTC. Strict14/core endpoint PASS, normal stop/disabled/PID0/
+NRestarts0 and natural archive drain/freeze succeeded. Unique terminal3bccbc59
+is performing full new-data dual LIVE and completed immutable verification.
+No final saved-frame denominator, independent final handoff or receipt yet.
 
 ## Exact scope and release
 
@@ -31,13 +31,33 @@ there is no actual24h finish time until the native owner-start is published.
 - [x] Actual ARM6f6d2b75/canonicalVERIFY/windowf02f4e96 and pre/post admission
   independently ACCEPTce20e40f. Fixed expiry **October22 05:29:34UTC**,
   epoch1792646974; never extend, reuse or rearm this window.
-- [x] Sole native captureb1e30644/PID667176 launched **October20 07:37:05UTC**,
-  observedactive/NRestarts0. Requested Typeexec/Runtime89280/Stop1500/archiveTMP.
-  It is warming/NOT_YET_T0; no actual24h target, saved-frame denominator or receipt.
-- [ ] At/after **October20 08:02:05UTC** warm/start checkpoint, read actual
-  owner-start/warm/failure/native output once. Independently bind real T0 and its
-  own86400 target; before checkpoint let healthy native work proceed.
-- [ ] Own86400 minimum plus actual configured strict endpoint/core, original
+- [x] Actual owner-start8cfbadaa: run3f127f831cc34757947574839b3c903f,
+  T0 **October20 07:49:31.539355195UTC** (Shanghai15:49:31), warm732.039s/23rows.
+- [x] Actual targetabf1946c reached **86400.234416692s** at **October21
+  07:49:31.773771269UTC** (Shanghai15:49:31), strict14/corePASS. Normal stop/
+  disabled/PID0/NRestarts0 and natural archive drain/freeze succeededb71e56ee.
+- [x] Single owner status read4babd497 at October21 08:04:24UTC preserved complete
+  current controls/23warm/2880monitor/4recovery/1finish and UNIT journals.
+- [ ] Unique terminal3bccbc59/PID709266 started07:51:11UTC; actual read shows
+  full new-data audit running, no audit-root/owner-selected/native-result yet.
+  Selected metadata forecast12998chunks/45893093frames is not a completed
+  saved-frame denominator. Actual full dualLIVE/verify/independent final pending.
+- [x] Monitor2876/2880=99.861111% has four core-not-ready samples, all followed
+  by strict recovery probes around5s later; original monitor threshold stays
+  BLOCK. Strict auxiliary2870/2880 includes six taker-recovery rows with official
+  PASS. No restart; all2908 observations owned current+peak swap0. These are
+  separate availability and resource metrics, not saved-frame conformance.
+- [x] Independent actual startup/target/recovery/native review ACCEPT5e4ba2ac/
+  resultd0968c7a/manifest44164343: all73 evidence members,24JSON+4JSONL,
+  2908 original observations+3 endpoints reconstructed. This grants own-duration/
+  endpoint/control acceptance only; original state bytes/Catalog, production
+  connection/report/rotation logs, full saved data and restored final remain pending.
+- [ ] Supplementary exact Recorder-journal/progress read timed out before SSH
+  banner exchange; no remote execution or extra evidence. Preserve original
+  failure, do not interrupt native or continuously retry. Next actual result/
+  progress checkpoint **October21 14:30UTC / Shanghai22:30**; audit5h7m forecast
+  (125%6h23m) is not a completion guarantee. Fixed expiry unchanged.
+- [x] Own86400 minimum plus actual configured strict endpoint/core, original
   episode60s and absolute minimum+60s finalization rules; normalstop-disable/
   natural archive drain/freeze. No increased queue/recovery/stop bound.
 - [ ] Only this attempt's newly saved warm-up+own24h+original stop-tail data:
@@ -63,17 +83,39 @@ projected writer17126893810B>10GiB. These are observation-time forecast facts,
 not current remaining time or measured VPS capacity. Original four-product
 peak seal-minute rates are kept without halving for N1; final audit checkpoint
 must use actual selected counts/progress. Actual launch executes fresh admission;
-its numeric publication is retained for the startup read.
+its exact numeric publication and all seven admission objects were independently
+reconstructed in current review5e4ba2ac.
 
-Before08:02:05UTC, healthy native needs no extra VPS polling, restart, arm,
-copy or warm-up. At/after that checkpoint run the exact private
-`capacity-stage-operator.py read` once; inspect actual owner-start/warm/failure
-and effective native parameters. If T0 exists, calculate only its ownT0+86400.
-Then leave healthy capture alone until its actual target; native stop/freeze/
-full audit/restoration survives LLM/SSH/quota interruptions. Only affected
-closeout failures are repaired; no blind24h recapture. Audit outputs are
-`terminal-audit/audit-root.json`, `owner-selected-result.json` and
+Actual terminal admissione8afdac3 admits the frozen selection with
+remaining77910.218s>required28594.682s/margin49315.536s and projected writer
+17,283,869,002B>10GiB. Frozen selected metadata forecast12998chunks/
+45,893,093frames/2,124,766,014storedB/34,141,217,654decodedB is not a completed
+correctness denominator. Audit estimate18411.746s (about5h7m), 125%23014.682s,
+sets the next actual result/progress checkpoint October21 14:30UTC (Shanghai
+22:30). Healthy audit must continue without restart, refreeze or duplicate audit.
+Only affected closeout failures are repaired; no blind24h recapture. Audit
+outputs are `terminal-audit/audit-root.json`, `owner-selected-result.json` and
 `native-result.json`; there is no separate audit-verification.json.
+
+Monitor policy result remains **BLOCK**:2876/2880 official PASS=99.861111%,
+four core-not-ready samples with four subsequent strict-PASS recovery probes.
+Observed recovery accounting totals20.444715489s, not exact network downtime.
+Six further strict-only auxiliary blocks concern taker window recovery while
+core and official gate remain PASS. All2908 observations retain owned current
+and peak swap0/RSSmax369,819,648B/hostavailablemin4,169,261,056B. The current
+read has no Recorder-owned production journal or incident stack; it cannot
+establish the four events' initiating cause, complete planned rotations or daily
+report publication. The supplementary read failed before SSH banner exchange,
+with empty stdout and original stderr preserved. No remote script ran. These
+checks remain pending for the next checkpoint and final complete controls.
+Independent current startup/target review ACCEPT5e4ba2ac/resultd0968c7a/
+manifest44164343 reconstructs all73 evidence members and128460 checks, with no
+blocking findings. It grants no full-audit, final restoration, owner receipt
+or N2-start credit. See [full bounded independent review](../reviews/2026-10-21-r2-n1-startup-target-independent-review.md).
+Host swap37,965,824–39,014,400B/pswpin2619–2637/pswpout12990–13246 are retained
+host diagnostics; they are not represented as unchanged or as Recorder swap.
+The supplementary readerd93c5cc0 is statically accepted for the next checkpoint,
+with no remote result from the failed banner exchange.
 
 A preparation copy originally finished its17 payload writes but failed the
 following validation because system Python had no installed package. Original
