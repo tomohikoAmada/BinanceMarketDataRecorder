@@ -1,0 +1,51 @@
+{
+  "N2_start_qualified": false,
+  "actual_four_artifact_publication_readback_accepted": true,
+  "candidate_execution": false,
+  "checks_passed": 74,
+  "created_at_utc": "2026-10-22T05:25:59.347342+00:00",
+  "decision": "ACCEPT",
+  "files": {
+    "independent-final-owner24h-n1-artifact-manifest.json": {
+      "gid": 988,
+      "mode": 416,
+      "sha256": "199244a05205b6538d366bd96176753507dc6623adf498288a7c945a64e43ce9",
+      "size": 3394647,
+      "uid": 0
+    },
+    "independent-final-owner24h-n1-result.json": {
+      "gid": 988,
+      "mode": 416,
+      "sha256": "8afbe52106490aaefd31f5f6bcb08293a440b943ac7835f021bb7bdabbb86b10",
+      "size": 6058,
+      "uid": 0
+    },
+    "independent-final-owner24h-n1-review.md": {
+      "gid": 988,
+      "mode": 416,
+      "sha256": "8ac5cea3e18beb7fa905637d9b7fd85d880e4602246391cf05f5e9010daf55f2",
+      "size": 8145,
+      "uid": 0
+    },
+    "owner24h-n1-btc-acceptance-20261022.json": {
+      "gid": 988,
+      "mode": 416,
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac",
+      "size": 5318,
+      "uid": 0
+    }
+  },
+  "findings": [],
+  "fsync_evidence": "Captured success marker is emitted by the exact already accepted publisher after each file flush/fsync, directory fsync, and final hash/metadata reads. No independent runtime syscall trace or fresh remote restat was performed.",
+  "full_control_or_Raw_audit_repeated": false,
+  "independently_computed_local_receipt_sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac",
+  "network_SSH_remote_or_production_path_access": false,
+  "parent_supplied_receipt_sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac",
+  "prior_final_acceptance_reused": true,
+  "prior_static_receipt_acceptance_reused": true,
+  "published_scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n1-btc-20261020-yf61hyp0",
+  "publisher_sha256": "2859e36cdbed678fa4005a4b481ce9fbd541ad95c47d520f6ce0c54ac5429335",
+  "readback_sha256": "4234d483172adc9fd6678405b4ebfe4b861dbe7492f2f32195c2ff752e95315e",
+  "readback_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "scope": "ACTUAL_FOUR_ARTIFACT_PUBLICATION_READBACK_ONLY"
+}

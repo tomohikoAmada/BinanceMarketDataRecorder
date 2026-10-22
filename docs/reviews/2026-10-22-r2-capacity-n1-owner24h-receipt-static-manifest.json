@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "bytes": 4287,
+      "path": "CHECKS.json",
+      "sha256": "babdbfbdfcbb39276d3f47339ccbbd73eb5b08229bcf0f28715dba18b92bc870"
+    },
+    {
+      "bytes": 1681,
+      "path": "REPORT.md",
+      "sha256": "7b13a2ab4ce041936dffe4c30759619ad2aac9133b155321cc7363ce76b53adf"
+    },
+    {
+      "bytes": 856,
+      "path": "RESULT.json",
+      "sha256": "4917f355abf9388a58706075a11e180e5a5751a65674c5529ac00ab72371ce8d"
+    },
+    {
+      "bytes": 811,
+      "path": "inputs/CORRECTION.json",
+      "sha256": "c10e4e467f871d0f0e4e77d49c1280ee26c7c620643f481982357be93368af64"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/owner24h-n1-btc-acceptance-20261022.json",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    {
+      "bytes": 5071,
+      "path": "inputs/publish-capacity-n1-closeout-20261022.py",
+      "sha256": "2859e36cdbed678fa4005a4b481ce9fbd541ad95c47d520f6ce0c54ac5429335"
+    }
+  ],
+  "member_count": 6,
+  "schema_version": 1,
+  "scope": "CONCRETE_CORRECTED_RECEIPT_BINDING_ONLY"
+}

@@ -1,0 +1,11 @@
+{
+  "actual_execution_credit": false,
+  "actual_sample_jsonl_cases": 11,
+  "blocking_findings": [],
+  "controller_sha256": "990a65f029f6befbeca75eb183d749f294b8a3dcaa3c9cb8ac16864b4f22d382",
+  "prior_policy_evidence_modified": false,
+  "production_actions": false,
+  "report_sha256": "64b7cdeb283318b82acc8e50b10b14218a2ccae90cde7ecdce0aad2b0a8a1d9e",
+  "retention_tamper_rejections": 5,
+  "verdict": "ACCEPT_UNBOUND_PUBLICATION_BINDING_LOCAL_OFFLINE"
+}

@@ -1,27 +1,33 @@
 # Milestone Plan
 
-Latest actual October22 00:23UTC: **N1 OWN24H + FULL NEW-DATA AUDIT COMPLETE / RESTORED / FINAL INDEPENDENT REVIEW PENDING**.
+Latest actual October22 00:45UTC: **N1 BTC OWN24H COMPLETE_OWNER_NEW_DATA_ONLY / N2 BTC+ETH PREPARING**.
 
-- [x] Same run3f127f83 reached its own86400.234416692s; strict14/core actual endpoint PASS.
-- [x] Repaired immutable selection completed both full released LIVE passes and completed control verify:
-  audit415ae088 / owner-selected29a040b3 / native09e76989, no blocking findings;
-  12998 chunks,45893093 saved frames, observed conformance100% (independent reconstruction pending).
-- [x] Actual OS/archive RESTORED ended1792608029563205297 before guard cancellation1792608029620715279;
-  both original and continuation windows CLOSED, never extend/reuse/rearm.
-- [x] Fresh canonicalVERIFY0c621729 and actual handoff9297a05f: same boot/config/identity,
-  RecorderinactiveANDdisabled/PID0/NRestarts0, current backlogs/partials0, original OS owners restored,
-  natural archive workerf1ce47b2 success and finite future CLOCK_MONOTONIC deadline at collection.
-- [x] Helper integration CI39621473050/head79688b9 BOTH SUCCESS; unchanged production source/wheel.
-- [ ] Single complete metadata export and independent full controls/selection/Catalog/gap/tail/rotation/report review;
-  final owner24h receipt/main publication. No N2 T0 yet.
-- [ ] N2 BTC+ETH: minimal future owner995 log/retry controls in LOCAL/OFFLINE code review,24 focused cases PASS;
-  new exact config/identity/cohort forecast/window and own86400 must follow N1 final receipt/main.
+- [x] Sole N1 run3f127f83 own86400.234416692s and strict14/core actual endpoint PASS.
+- [x] Both complete released LIVE passes and completed immutable verification audit415ae088:
+  independent45893093/45893093 saved frames100%,12998chunks; monitor2876/2880=99.861111% separately.
+  Each satisfies the latest inclusive >=99.5% owner criterion; original999 BLOCK retained.
+- [x] Complete independent866893-check reconstruction ACCEPT8ac5cea3/result8afbe521/manifest199244a0;
+  all27158 exported controls and14150 review members hash/size checked. No extra Raw audit or duration.
+- [x] Actual OS/archive RESTORED before guard cancellation; both old windows CLOSED forever.
+  Fresh canonical0c621729/handoff9297a05f independently accepted, sameboot/config/identity,
+  RecorderinactiveANDdisabled/PID0/NRestarts0, backlogs/partials0, natural archive success and finite
+  future CLOCK_MONOTONIC deadline at handoff collection.
+- [x] Final owner24h N1 receipt **a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac**
+  plus three independent reports actually published/fsynced/root0:988/0640/SHA-readback on VPS.
+- [x] Future995 continuity policy reviewed5e1938cb:30 focused cases,13 complete86400 fake-clock cases,
+  14 actual sample cases; no production wheel/source change. Recoverable faults log/retry;
+  actual write/verification/trusted-evidence failure pauses affected capture and notifies.
+- [ ] N2 BTC+ETH new config/identity/forecast/runtime/finite window/strict warm and fresh own86400 T0.
+  Public Spot+USD-M eligibility confirmed; no N2 T0 or final capacity boundary yet.
 
-Monitor2876/2880=99.861111% and saved-frame conformance remain separate complete denominators,
-each >=99.5% under the latest explicit human policy. Original999 BLOCK and all failures retained.
-Recoverable faults log/retry; actual write/verification or trusted evidence failure pauses affected capture and notifies.
-Capacity/headroom matrix remains pending;48h capture PENDING/R078OPEN/no production-ready or every-event claim.
-Earlier checkpoints below are retained history and are not current RUNNING authority.
+Retained limitations:2657 gap/incomplete manifests include10 zero-frame objects, overlap0;
+7 original stop-tail manifests extend <=0.920193276s after actual target (nominal UTC tail1.154609350s),
+zero extra duration. Complete monitor rows/projections and4 failed full-state snapshots reconstruct;
+full service_state source bytes were not kept for every row. Oct20 daily report is aggregate, not
+this run's frame denominator. Four failed checks show USD-M book_ticker temporarily disconnected;
+3 recovered queue-pressure episodes and6 planned rotations remain visible, no deeper origin assumed.
+Only tested BTC traffic/VPS conditions accepted. Capacity/headroom matrix pending;48h PENDING,
+R078 OPEN/no every-event/canonicalV5/predecessor/production-ready claim. Earlier checkpoints are history.
 
 Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
 

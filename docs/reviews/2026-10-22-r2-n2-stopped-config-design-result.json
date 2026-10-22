@@ -1,0 +1,10 @@
+{
+  "actual_execution_credit": false,
+  "blocking_findings": [],
+  "operator_codegen_cases": 5,
+  "production_actions": false,
+  "real_stopped_main_synthetic_cases": 10,
+  "report_sha256": "88b88dddd3ed43365c276dd6a31f8d7e34f2e63b48d87f1a74019f59d34f1cc0",
+  "reviewer_mutated_parent_files": false,
+  "verdict": "ACCEPT_UNBOUND_STOPPED_CONFIG_DESIGN_LOCAL_OFFLINE"
+}
