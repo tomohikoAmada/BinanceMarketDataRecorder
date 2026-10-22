@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
@@ -14,7 +15,7 @@ SECOND = 10**9
 CONTEXTS = frozenset({"configured"})
 
 
-def observations(count: int = 1000, failed: int = 0) -> list[dict]:
+def observations(count: int = 1000, failed: int = 0) -> list[dict[str, Any]]:
     return [{
         "utc_ns": slot * 30 * SECOND,
         "boottime_ns": slot * 30 * SECOND,
@@ -30,7 +31,7 @@ def observations(count: int = 1000, failed: int = 0) -> list[dict]:
     } for slot in range(count)]
 
 
-def evaluate(rows: list[dict], count: int = 1000) -> dict:
+def evaluate(rows: list[dict[str, Any]], count: int = 1000) -> dict[str, Any]:
     return evaluate_fixed_slots(
         [json.dumps(row).encode() + b"\n" for row in rows],
         start_ns=0, end_ns=count * 30 * SECOND, start_boottime_ns=0,
@@ -42,13 +43,15 @@ def evaluate(rows: list[dict], count: int = 1000) -> dict:
     (1000, 5, "PASS"), (1000, 6, "BLOCK"),
     (2880, 14, "PASS"), (2880, 15, "BLOCK"),
 ])
-def test_inclusive_threshold_and_fixed_denominator(count, failed, result):
+def test_inclusive_threshold_and_fixed_denominator(
+    count: int, failed: int, result: str,
+) -> None:
     rate = evaluate(observations(count, failed), count)
     assert rate["total"] == count and rate["failed"] == failed
     assert rate["result"] == result
 
 
-def test_missing_slots_fail_without_shrinking_denominator():
+def test_missing_slots_fail_without_shrinking_denominator() -> None:
     rows = observations()
     rate = evaluate(rows[:100] + rows[106:])
     assert rate["missing_slots"] == list(range(100, 106))
@@ -56,7 +59,7 @@ def test_missing_slots_fail_without_shrinking_denominator():
     assert rate["result"] == "BLOCK"
 
 
-def test_probes_and_finish_cannot_dilute_failures():
+def test_probes_and_finish_cannot_dilute_failures() -> None:
     rows = observations(failed=6)
     probes = [{"observation_role": "recovery_probe"}] * 5000
     finish = [{"observation_role": "finish_probe"}] * 5000
@@ -65,7 +68,7 @@ def test_probes_and_finish_cannot_dilute_failures():
     assert rate["total"] == 1000 and rate["result"] == "BLOCK"
 
 
-def test_late_measurement_does_not_backfill_missing_time():
+def test_late_measurement_does_not_backfill_missing_time() -> None:
     rows = observations()
     rows[0]["boottime_ns"] = 30 * SECOND
     rows[0]["utc_ns"] = 30 * SECOND
@@ -80,7 +83,7 @@ def test_late_measurement_does_not_backfill_missing_time():
     "duplicate", "config", "schedule", "context", "contradiction", "boolslot", "clock", "role",
     "utc_missing", "utc_bool", "utc_drift", "skipped", "float_schedule",
 ])
-def test_untrusted_evidence_cannot_establish_percentage(mutation):
+def test_untrusted_evidence_cannot_establish_percentage(mutation: str) -> None:
     rows = observations()
     if mutation == "duplicate":
         rows.insert(2, rows[1])
@@ -112,7 +115,7 @@ def test_untrusted_evidence_cannot_establish_percentage(mutation):
         evaluate(rows)
 
 
-def episode_row(seconds: int, bad: bool, *, auxiliary_block: bool = False) -> dict:
+def episode_row(seconds: int, bad: bool, *, auxiliary_block: bool = False) -> dict[str, Any]:
     return {
         "boottime_ns": seconds * SECOND, "utc_ns": seconds * SECOND,
         "core_ready": not bad,
@@ -122,7 +125,7 @@ def episode_row(seconds: int, bad: bool, *, auxiliary_block: bool = False) -> di
     }
 
 
-def test_long_recoverable_episode_logs_without_quality_abort_or_busy_loop():
+def test_long_recoverable_episode_logs_without_quality_abort_or_busy_loop() -> None:
     observer = RecoveryObserver()
     assert observer.check(episode_row(0, True))
     assert observer.check(episode_row(120, True))
@@ -132,28 +135,28 @@ def test_long_recoverable_episode_logs_without_quality_abort_or_busy_loop():
     assert observer.summary()["open_episode_boottime_ns"] is None
 
 
-def test_actual_block_endpoint_is_preserved_without_fabricating_strict_pass():
+def test_actual_block_endpoint_is_preserved_without_fabricating_strict_pass() -> None:
     observer = RecoveryObserver()
     assert not observer.finish_endpoint(episode_row(86400, False, auxiliary_block=True))
     observer.endpoint(episode_row(86460, False, auxiliary_block=True))
     assert observer.summary()["episodes"] == 0
 
 
-def test_clock_reversal_remains_critical():
+def test_clock_reversal_remains_critical() -> None:
     observer = RecoveryObserver()
     observer.check(episode_row(5, True))
     with pytest.raises(ValueError):
         observer.check(episode_row(4, False))
 
 
-def safe_publication() -> dict:
+def safe_publication() -> dict[str, Any]:
     return {"failure": None, "shutdown_reason": None,
             "capacity": {"actual_hard_reserve_reached": False},
             "products": {"spot": {"BTCUSDT": {"failure": None}}}}
 
 
 @pytest.mark.parametrize("mutation", ["service", "product", "reserve", "missing", "shutdown"])
-def test_terminal_or_untrusted_write_safety_pauses(mutation):
+def test_terminal_or_untrusted_write_safety_pauses(mutation: str) -> None:
     state = safe_publication()
     if mutation == "service":
         state["failure"] = {"error_type": "OSError"}
@@ -169,14 +172,14 @@ def test_terminal_or_untrusted_write_safety_pauses(mutation):
         check_write_safety(state)
 
 
-def test_core_or_transport_degradation_is_not_inferred_write_failure():
+def test_core_or_transport_degradation_is_not_inferred_write_failure() -> None:
     state = safe_publication()
     state.update(core_ready=False, network_status="DEGRADED")
     state["products"]["spot"]["BTCUSDT"].update(ready=False)
     check_write_safety(state)
 
 
-def test_early_starting_capacity_pending_is_only_allowed_pre_t0():
+def test_early_starting_capacity_pending_is_only_allowed_pre_t0() -> None:
     state = safe_publication()
     state.update(status="STARTING", capacity=None)
     assert check_write_safety(state, allow_starting_capacity=True) is False
