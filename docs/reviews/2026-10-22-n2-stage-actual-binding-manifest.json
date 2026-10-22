@@ -1,0 +1,87 @@
+{
+  "created_at_utc_ns": 1792649895702855000,
+  "decision": "ACCEPT",
+  "files": {
+    "CHECKS.json": {
+      "bytes": 1953,
+      "sha256": "b148189e15a9c41ee26c9e3ea224e96ad575b297f6dd21b37a7740bdbd686474"
+    },
+    "PAYLOAD_SHA256.json": {
+      "bytes": 2356,
+      "sha256": "76200a8556528687e5451a423384079bada8ecb2d1f5f304fbb59c7aa1286865"
+    },
+    "REPORT.md": {
+      "bytes": 2278,
+      "sha256": "7566ce9f625ae9d48cb446922511639775f1aadf42490a55015caff59592d84c"
+    },
+    "RESULT.json": {
+      "bytes": 2410,
+      "sha256": "ea2603920be77bce96c37966d5a5928787cfb6c052a1ff0051efaf865843c5a3"
+    },
+    "generated/arm.py": {
+      "bytes": 6996,
+      "sha256": "3a98e117887e9837146501a7a735ed232082e536cbc78e2b50f9add6ab94d48f"
+    },
+    "generated/copy.py": {
+      "bytes": 189711,
+      "sha256": "8931ee3a583395ec4f1a3e3f6767af8582159b9eec51d938126c22c015e3a155"
+    },
+    "generated/launch.py": {
+      "bytes": 6252,
+      "sha256": "e571bbd8f93459f520b4b34eef33e01164c74b44ad9eed58f62dbd96acc65d62"
+    },
+    "generated/read.py": {
+      "bytes": 6137,
+      "sha256": "570d376acff15c4d31156d69238208f6b82d56354d4b0892f8a401b3a37f71bc"
+    },
+    "inputs/capacity-n2-stage-ACTUAL_LINUX_BINDING.json": {
+      "bytes": 4473,
+      "sha256": "0c79e11ce99a48f378a8fb58fbfc6f066d5895a6cedff909071a0db80f7526ac"
+    },
+    "inputs/capacity-n2-stage-controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "inputs/capacity-n2-stage-operator.py": {
+      "bytes": 17777,
+      "sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+    },
+    "inputs/independent_linux_manifest.json": {
+      "bytes": 8758,
+      "sha256": "681e88bdd9e1a995f90eca29fad35ce5818fca474eae4212abee820ac19fef09"
+    },
+    "inputs/independent_linux_report.md": {
+      "bytes": 2260,
+      "sha256": "cf5d774812ddde6e57f311fa3141d124645ea899870a63e18f6423672deeba39"
+    },
+    "inputs/independent_linux_result.json": {
+      "bytes": 2729,
+      "sha256": "b112ef7ee4a529d1fce04a862e7d5c18b19e493bcbcabbc2e574de3f7dd6676c"
+    },
+    "inputs/independent_stage_manifest.json": {
+      "bytes": 4646,
+      "sha256": "a3afeb8163174604c46e1a16e4106f522cb43aa23e7e8e7b2629bb47aed6fb42"
+    },
+    "inputs/independent_stage_report.md": {
+      "bytes": 4134,
+      "sha256": "42d3f3bd7914221f4d20d00e7735772a4e10314715380204ac2c7b3c0e8bb738"
+    },
+    "inputs/independent_stage_result.json": {
+      "bytes": 2148,
+      "sha256": "61e0f67fe8d4803d61962627968ac0a4e24d6da4773e0401616f2cee65669de1"
+    },
+    "inputs/qa_export.json": {
+      "bytes": 297580,
+      "sha256": "7d0eadd3f7c9acf02766f12286bdfd626fde3460d57e5877fbe6c2e6a1313fa8"
+    },
+    "inputs/qa_manifest.json": {
+      "bytes": 4018,
+      "sha256": "07d4c1354c48f5fa60c411581774f73391b561d9fd61b47cf2562f6d3f9f6ad8"
+    },
+    "inputs/qa_result.json": {
+      "bytes": 8527,
+      "sha256": "c5ed01332116e7a0b34465553fbccfe82782a113d0852e0faa454c9725319631"
+    }
+  },
+  "kind": "NARROW_N2_ACTUAL_BINDING_REVIEW"
+}

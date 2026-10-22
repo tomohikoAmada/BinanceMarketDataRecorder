@@ -1,0 +1,11 @@
+# N2 actual deployment binding and isolated Linux QA qualification
+
+Decision: **ACCEPT** for the exact actual deployment rebind and pending isolated software QA copy/launch only.
+
+The original accepted common814b15de changes only its one DEPLOY_SHA sentinel to actual deployment-result 9571c469a025b895d183fbb4707a573118a3f038c4cfb3f7c7a5b2f162fa3d6b. Its new hash is fbb23bd8d3789255154726a65d7b432b31407ff9855cc54fd4cb2ff07b45ceb7. All other13 payloads remain byte-identical to the accepted final N2 binding; both actual binding JSONs match all14 current hashes. Actual stopped deployment reportbd3a/result04c5/manifested1 are fully hash/size verified, and the original result bytes bind current sourcec368, identity976dfc55, config5b73, all12 command return codes0, no replaced package/venv, and Recorder inactive/disabled/PID0/NRestarts0.
+
+The QA operator54cd52d3 and runner8308129c and all8 fixture/data inputs are byte-identical to accepted Linux QA designada5/resultabb3/manifest633a. Pending QA manifest explicitly binds actual9571, exact14 runtime hashes, six fixture scripts and canonical installed Python. Copy is exclusive/newscope and O_EXCL/hash/fsync guarded,24 software payloads total. Pending native uses Typeexec,Runtime1200,Stop120,UMask0027,archiveTMP,system-Python outer pin at the copied/runtime path and canonical Python runner. Launch refuses existing unit, attempt, result or mismatched hashes/manifest. Read exports only that QA scope plus manager/Recorder state. No candidate main/import, SSH, production, Raw or network action was performed by this review. Compilation only checks15 Python source files.
+
+46 checks passed. All3 prior complete manifests were checked, without repeating previous algorithm/full-clock proof.
+
+Limits: actual QA copy physical custody, actual Linux case output/normal manager exit and effective invocation remain pending and must be assessed from real output. Post-GC default properties cannot replace real effective/manager evidence. No N2 ARM, capture or T0 is authorized by this report alone, and real-time credit is zero. QA read currently omits UID/GID/mode/directory metadata; it still supplies full file bytes/hashes, but do not claim direct readback of those omitted attributes.

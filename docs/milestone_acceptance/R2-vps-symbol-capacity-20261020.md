@@ -1,5 +1,19 @@
 # R2 VPS symbol capacity qualification
 
+Latest actual October22 06:26:14UTC (Shanghai14:26:14): **N1 FINAL ACCEPTED / N2 SINGLE CAPTURE STARTUP ACTIVE / FORMAL T0 PENDING**.
+
+- [x] N1 BTC full own24h/new saved data/independent final/restored handoff and receipt `a7938d4a` accepted; saved frames100% and monitor99.861111% separately meet >=99.5%.
+- [x] N2 BTC+ETH config-only deployment `9571c469`/identity `976dfc55`/config `5b73db1b` verified, all12 commands0; frozen source `c3686dd` and wheel `68460be4` unchanged.
+- [x] Actual Linux QA18 cases and normal native completion independently ACCEPT `cf5d7748`; exact runtime14/operator `78026179`, physical24-payload copy `48a5b215`, fresh admission, actual ARM and pending launch independently accepted. No source, wheel or old test repetition.
+- [x] New guard `5dd636b6` ACTIVE_VERIFIED, fixed expiry October24 22:21:21UTC / ShanghaiOctober25 06:21:21 (epoch1792880481). Never extend/reuse it;230400s covers24h plus audit/restoration and grants no64h capture credit.
+- [x] Sole capture native `067b71b2fc804475a3548b57311011f8`/PID748970 launched once, actual active-running/Typeexec/Runtime89280/Stop1500. Dispatch `90460606` binds current boot/window/controller and effective parameters. Initial stopped Recorder is the pre-start boundary snapshot, not a failed capture.
+- [ ] Actual strict warm/start/owner-start T0 and independent actual-start reconstruction. Reasonable warm/start checkpoint October22 06:51:15UTC / Shanghai14:51:15. Before that healthy native requires no duplicate VPS reads or restart.
+- [ ] Own86400/full new saved-data double LIVE/completed verify/final independent/restored receipt. No N2 accepted duration or actual end time yet; derive minimum target only from real owner-start T0.
+- [ ] Continue nested4/8… after complete N2 receipt; measured capacity/headroom matrix pending,48h PENDING/R078 OPEN.
+
+Monitor and saved-frame conformance keep separate complete >=99.5% denominators. Recoverable faults log/retry; disk/sustained-writing/untrusted-evidence failures pause affected capture and notify. Preserve all data and earlier evidence. Prior checkpoints below are history.
+
+
 Latest actual October22 05:36:33UTC (Shanghai13:36:33): **N1 FINAL ACCEPTED / N2 STOPPED CONFIGURATION VERIFIED / N2 QA AND STARTUP PENDING**.
 
 - [x] N1 BTC own24h/full double LIVE/completed verify/independent final/restored handoff and receipt `a7938d4a` complete; main `02fe214` actually pushed. Saved frames45893093/45893093=100%; monitor2876/2880=99.861111%, separately >=99.5%.

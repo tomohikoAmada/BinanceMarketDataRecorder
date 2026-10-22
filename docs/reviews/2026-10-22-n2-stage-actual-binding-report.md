@@ -1,0 +1,11 @@
+# N2 actual Linux binding and pending stage copy
+
+Decision: ACCEPT. This narrow supplement verifies the actual completed Linux QA artifacts and their exact binding to the accepted stage operator. It does not repeat the57 operator faultcases, policy algorithms, earlier N1 audit or production release proofs.
+
+Binding `0c79e11ce99a48f378a8fb58fbfc6f066d5895a6cedff909071a0db80f7526ac` contains exactly nine original artifacts: completed Linux QA resultc5ed0133, manifest07d4c135, complete metadata export7d0eadd3; independent actual-Linux reportcf5d7748/resultb112ef7e/manifest681e88bd; independent stage report42d3f3bd/result61e0f67f/manifesta3afeb81. All nine full bytes match their pinned SHA. Both independent decisions are ACCEPT and the corresponding manifest REPORT/RESULT entries match. Linux result binds the exact actual export/result/manifest,12 imports,6 successful fixture processes and normal manager success without post-GC-default inference.
+
+All14 current runtime bytes equal both actual Linux exported runtime bytes and the manifest/current local payload. Operator78026179 and controls manifest ae6154e4 remain unchanged. Its real approved_payload accepts this actual binding; all four resulting remote scripts compile locally without execution. The24 intended copied payloads are exactly14 runtime files plus ten compact stage/evidence files; the full QA export remains retained locally and is hash-referenced rather than duplicated into production scope.
+
+The generated copy remains exclusive to the new archive evidence scope, with O_EXCL/O_NOFOLLOW/fsync and byte/attribute readback before stopped exact deployment, census/backlog and fresh capacity/time admission. Pending ARM retains exact bounded native argv, system-Python pin/canonical inner interpreter and system-Python failure restore. The new230400s guard budget is separate from own86400 capture; no old window is reused.
+
+No findings. This accepts the exact pending single copy and its actual-Linux prerequisite binding. Actual physical copy/current admission, actual ARM/pending launch, warm/T0, real24h capture, full saved-data and restored final receipt require their own actual outputs. Reviewer used LOCAL/OFFLINE reads and compilation only; zero SSH, production actions or duration credit.

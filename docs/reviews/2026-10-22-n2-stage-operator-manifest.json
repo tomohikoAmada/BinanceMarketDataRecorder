@@ -1,0 +1,119 @@
+{
+  "controls_manifest_sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+  "created_at_utc_ns": 1792649631077500000,
+  "decision": "ACCEPT",
+  "files": {
+    "REPORT.md": {
+      "bytes": 4134,
+      "sha256": "42d3f3bd7914221f4d20d00e7735772a4e10314715380204ac2c7b3c0e8bb738"
+    },
+    "RESULT.json": {
+      "bytes": 2148,
+      "sha256": "61e0f67fe8d4803d61962627968ac0a4e24d6da4773e0401616f2cee65669de1"
+    },
+    "inputs/capacity-n2-stage-ACTUAL_LINUX_BINDING.json": {
+      "bytes": 1860,
+      "sha256": "c3955346ab36d9674fc9cf1cf82f26c58ade6e330b79ee754cd9261432937af7"
+    },
+    "inputs/capacity-n2-stage-controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "inputs/capacity-n2-stage-operator.py": {
+      "bytes": 17777,
+      "sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+    },
+    "inputs/capacity-stage-operator.py": {
+      "bytes": 9317,
+      "sha256": "8849f2a320069a7130a2dc1c13026233e2a48b15e044fe837563f1e09b8576ba"
+    },
+    "inputs/test-capacity-n2-stage-operator-design.py": {
+      "bytes": 9432,
+      "sha256": "765479c9c966ede7fdf70847cdd60f822ebfebc6325dd08318710b6a53ec8e9f"
+    },
+    "local_checks/implementer_checks.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "local_checks/implementer_checks.stdout": {
+      "bytes": 377,
+      "sha256": "2e1d700cab9a751d79b4bca9170332475f7af3ba3a2c523e4313f86c2138a792"
+    },
+    "local_checks/independent_operations_faults.py": {
+      "bytes": 7129,
+      "sha256": "ae3b2eabcce176a1ea8de841cb0992a454fb928bc750ec038abaf5a3f0a9f40d"
+    },
+    "local_checks/independent_operations_faults.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "local_checks/independent_operations_faults.stdout": {
+      "bytes": 4954,
+      "sha256": "aae9837e19dccbd67b30b703c0124ec0d36db2ef469d658747dc4faa75dda725"
+    },
+    "runtime_hash_reference/arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "runtime_hash_reference/arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "runtime_hash_reference/capacity-policy.json": {
+      "bytes": 10407,
+      "sha256": "dbd46fafb240666af8031165e797fdd422adbdded889a8f006f2ea68e408dd48"
+    },
+    "runtime_hash_reference/common.py": {
+      "bytes": 11952,
+      "sha256": "fbb23bd8d3789255154726a65d7b432b31407ff9855cc54fd4cb2ff07b45ceb7"
+    },
+    "runtime_hash_reference/controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "runtime_hash_reference/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "runtime_hash_reference/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "runtime_hash_reference/qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "runtime_hash_reference/qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "runtime_hash_reference/qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "runtime_hash_reference/qualification_owner_995.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "runtime_hash_reference/qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "runtime_hash_reference/restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "runtime_hash_reference/scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    }
+  },
+  "forbidden_access": {
+    "network_calls": 0,
+    "production_actions": 0,
+    "production_raw_reads": 0,
+    "ssh_calls": 0
+  },
+  "kind": "INDEPENDENT_LOCAL_N2_STAGE_OPERATOR_REVIEW",
+  "operator_sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+}

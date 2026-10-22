@@ -1,0 +1,18 @@
+{
+  "actual_active_running_at_dispatch": true,
+  "actual_dispatch_sha256": "90460606360c617a233f71bb5f235058c3e90e2a93df70f88280069d065536cc",
+  "actual_native_PID": 748970,
+  "actual_native_invocation": "067b71b2fc804475a3548b57311011f8",
+  "actual_startup_or_T0_credit": false,
+  "checks": 15,
+  "controls_manifest_sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+  "decision": "ACCEPT",
+  "effective_UMask": "0022",
+  "findings": [],
+  "operator_sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b",
+  "production_actions": 0,
+  "real_capture_duration_credit_ns": 0,
+  "report_sha256": "7cbf1bd21977e5b7719da2b655fa09e49aece8395903d7f906ae82226a05c1dc",
+  "scope": "ACTUAL_SINGLE_N2_CAPTURE_DISPATCH_BINDING_ONLY",
+  "ssh_calls": 0
+}

@@ -1,0 +1,26 @@
+{
+  "created_at_utc_ns": 1792650451607827000,
+  "files": {
+    "CHECKS.json": {
+      "bytes": 459,
+      "sha256": "1328403368b89b0bb539307d6ac9de56ff990aba1fed3625e565092ae4e79e36"
+    },
+    "REPORT.md": {
+      "bytes": 1799,
+      "sha256": "7cbf1bd21977e5b7719da2b655fa09e49aece8395903d7f906ae82226a05c1dc"
+    },
+    "RESULT.json": {
+      "bytes": 788,
+      "sha256": "f5225d6913de4f937fe75b33475ef32498f9468607a1bf84d390c7d16c44c5e1"
+    },
+    "inputs/actual-capture-launch.json": {
+      "bytes": 3515,
+      "sha256": "90460606360c617a233f71bb5f235058c3e90e2a93df70f88280069d065536cc"
+    },
+    "inputs/controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    }
+  },
+  "kind": "NARROW_ACTUAL_N2_CAPTURE_DISPATCH"
+}
