@@ -1,0 +1,108 @@
+{
+  "actual_target_credit": false,
+  "blocking_findings": [],
+  "checks_passed": 39002,
+  "context_entries": 25636,
+  "core_false_nominal": 3,
+  "decision": "ACCEPT",
+  "fixed_final_denominator": 2880,
+  "forbidden_access": {
+    "Raw": 0,
+    "SSH": 0,
+    "candidate_import_or_execution": 0,
+    "historical_manifest_payloads": 0,
+    "network": 0,
+    "production_actions": 0
+  },
+  "full_same_read_publication_bytes_reconstructed": 493,
+  "future_minimum_target_utc_ns": 1792737679929649179,
+  "future_unobserved_slots": 2418,
+  "journal_summary": {
+    "events": {
+      "spot_ingress_gap_recovered": 1,
+      "spot_ingress_stream_recovery": 15,
+      "spot_snapshot_bridge_pending": 2,
+      "spot_websocket_connected": 21,
+      "spot_websocket_disconnected": 15,
+      "usdm_ingress_gap_recovered": 1,
+      "usdm_ingress_stream_recovery": 50,
+      "usdm_side_rest_failed": 74,
+      "usdm_snapshot_bridge_pending": 1,
+      "usdm_websocket_connected": 60,
+      "usdm_websocket_disconnected": 53
+    },
+    "levels": {
+      "INFO": 81,
+      "WARNING": 212
+    },
+    "rest_error_contexts": {
+      "BTCUSDT|open_interest|NetworkError": 2,
+      "BTCUSDT|premium_index_snapshot|NetworkError": 1,
+      "BTCUSDT|taker_buy_sell_volume_5m|EmptySideDataResponse": 35,
+      "ETHUSDT|taker_buy_sell_volume_5m|EmptySideDataResponse": 36
+    },
+    "rest_error_types": {
+      "EmptySideDataResponse": 71,
+      "NetworkError": 3
+    },
+    "rows": 293
+  },
+  "native_active_running_at_read": true,
+  "nominal_prefix_rows": 462,
+  "observations": 493,
+  "official_prefix_PASS": 459,
+  "official_prefix_percent": 99.35064935064935,
+  "original_export_sha256": "820dfdca8d209cbc8df3612de0e3b99f4db94e0e5408917e8e014d52a0ec1099",
+  "original_members": 29,
+  "owner24receipt_credit": false,
+  "owner_start_sha256": "bf17515fcbb2ef771eea59171a22747d03e5d9612e4f872509e3848743f3cce3",
+  "paired26_maps": 986,
+  "recovery_probes_outside_monitor_denominator": 3,
+  "report_sha256": "2609228c541b8ac8dfd0aabc86046a683ac844996adfe190ba55f6888c8e9974",
+  "resource_summary": {
+    "archive_free_bytes": [
+      2058925858816,
+      2059504123904
+    ],
+    "cgroup_memory_bytes": 1354723328,
+    "host_available_bytes": [
+      4686319616,
+      5156671488
+    ],
+    "host_swap_used_bytes": [
+      26710016,
+      26710016
+    ],
+    "pswpin": [
+      4878,
+      4890
+    ],
+    "pswpout": [
+      14355,
+      14355
+    ],
+    "rss_bytes": 387940352,
+    "rss_peak_bytes": 387940352,
+    "writer_free_bytes": [
+      24903806976,
+      24981635072
+    ]
+  },
+  "restored_final_handoff_credit": false,
+  "retained_limitations": [
+    "Current availability is an incomplete prefix; no final99.5% pass granted.",
+    "Full startCatalog bytes and final selected controls are pending.",
+    "No exact deeper transport origin or permanent stability proof.",
+    "Warm-loop initial monotonic begin is not separately exported."
+  ],
+  "run_id": "344008dae022452c9bee26c1bda90ea8",
+  "saved_data_correctness_or_final_acceptance_credit": false,
+  "scope": "ACTUAL_N2_STARTUP_AND_CURRENT_PREFIX_ONLY",
+  "strict_prefix_PASS": 445,
+  "t0_boottime_ns": 1716174110184531,
+  "t0_utc_ns": 1792651279929649179,
+  "warm_elapsed_seconds": 883.1715739350766,
+  "warm_first_to_end_strict_ns": 398678505931,
+  "warm_pending_write_safety_false": 15,
+  "warm_rows": 26
+}

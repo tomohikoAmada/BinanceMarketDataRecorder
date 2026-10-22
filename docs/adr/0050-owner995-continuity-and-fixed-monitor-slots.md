@@ -1,7 +1,9 @@
 # ADR0050: owner995 continuity and fixed monitor slots
 
-Status: accepted owner policy; implementation reviewed LOCAL/OFFLINE. N2 actual
-config/identity/admission/native execution remains separately pending.
+Status: accepted owner policy; exact N2 configuration, Linux QA, actual strict
+warm/start and current formal prefix independently accepted. The native run is
+in progress; full24h monitoring and saved-data/final restored acceptance remain
+pending. See the [N2 actual acceptance](../milestone_acceptance/R2-capacity-n2-btc-eth-owner24h-20261022.md).
 
 The owner explicitly chose monitor availability and complete saved-frame contract
 conformance each >=99.5%, with separate denominators. Rare recoverable faults
@@ -50,3 +52,11 @@ reconstructed13 full86400 fake-clock controller cases,14 actual sample cases,
 entrypoint's notification receipt. This is zero real-duration credit. A later
 publication-byte retention supplement and exact N2 bindings are still required
 before copying or executing future runtime controls.
+
+October22 actual implementation checkpoint: single native067b/owner-startbf175
+establishes the new own86400 clock. Independent39002-check report2609228c
+reconstructed all493 current publication bytes and986 maps, including15 honest
+pre-T0 STARTING records without initial write-safety publication, three recovered
+core samples and14 strict-only auxiliary waits. This grants startup/current-prefix
+credit only. Official459/462=99.350649% is an incomplete prefix; final fixed2880
+monitor and saved-frame denominators remain pending.

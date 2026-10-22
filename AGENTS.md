@@ -1,5 +1,19 @@
 # Binance Market Data Recorder Agent Contract
 
+Latest actual October22 10:32:15UTC (Shanghai18:32:15): **N2 BTC+ETH FORMAL_RUNNING / OWN24H AND FINAL DATA ACCEPTANCE PENDING**.
+
+- [x] Actual owner-start `bf17515f`, sole run `344008dae022452c9bee26c1bda90ea8`: T0 **October22 06:41:19.929649179UTC / Shanghai14:41:19.929649179**, BOOTTIME1716174110184531. Own86400 minimum capture target **October23 06:41:19.929649179UTC / Shanghai14:41:19.929649179**. No inherited N1 duration.
+- [x] Single post-checkpoint metadata read `820dfdca` verifies CAP067b/PID748970 and Recorder4409fbb6/PID749037 actual active-running, NRestarts0; no failure/target/terminal result. Warm883.171574s/26 rows (15 strictBLOCK/11PASS retained, outside formal denominator), strict26 end/start PASS. Prestart229201.230694s>required218342.645680s, margin10858.585014s; projected writer21,131,644,856B>10GiB.
+- [x] Current462 nominal checks: official459PASS/3BLOCK=99.350649%, strict445PASS/17BLOCK, skipped0. Three core-not-ready samples lost book_ticker connection (SpotBTC, USD-MBTC, SpotETH), each followed by strictPASS recovery around5s later. All failed rows and three diagnostics retained. Full2880-slot >=99.5% acceptance permits at most14 failed nominal slots; this prefix is not final availability or saved-frame correctness.
+- [x] Formal+recovery465 observations retain complete trusted same-read publication bytes. Across493 warm/end/start/formal/probe observations, owned current AND lifetime peak swap0, RSSmax387,940,352B and host available minimum4,686,319,616B. Legitimate pre-T0 STARTING may lack initial write-safety publication; formal observations are trusted.
+- [x] Current owned journal retains74 REST warnings (3NetworkError,71EmptySideDataResponse on taker queries); no ERROR/CRITICAL entry in this exported journal. Auxiliary strict-only waits and transport recovery remain separate diagnostics; their deeper initiating cause is not established. Latest sample core/official/strict PASS.
+- [x] Independent actual startup/current-prefix ACCEPT `2609228c`/`12d29a59`/`a89b8d47`:39002 assertions,29 original controls,493 same-read publication bytes/serialization and986 paired maps/25636 entries reconstructed; all533 review members read back by hash/size. No blocker found. Full startCatalog membership and final Catalog/selection binding remain final-control tasks; no future24h/data acceptance credit.
+- [ ] Own86400 target, complete new-data double LIVE/completed immutable verify, final independent/restored handoff and N2 owner receipt. The target above is capture minimum, not a promised final-audit completion time.
+- [ ] After full N2 acceptance continue nested4/8… under fresh config/identity/space/time/scope/window/T0. Capacity/headroom boundary pending;48h PENDING/R078 OPEN.
+
+Fixed guard expiry1792880481 (October24 22:21:21UTC / ShanghaiOctober25 06:21:21) remains unchanged. Healthy capture before actual target needs no repeated VPS reads/restart. Preserve all data and error evidence. Earlier NOT_YET_T0/warm-checkpoint paragraphs are retained history.
+
+
 Latest actual October22 06:26:14UTC (Shanghai14:26:14): **N1 FINAL ACCEPTED / N2 SINGLE CAPTURE STARTUP ACTIVE / FORMAL T0 PENDING**.
 
 - [x] N1 BTC full own24h/new saved data/independent final/restored handoff and receipt `a7938d4a` accepted; saved frames100% and monitor99.861111% separately meet >=99.5%.
