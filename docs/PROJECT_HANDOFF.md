@@ -1,5 +1,18 @@
 # Project Handoff
 
+Latest actual October22 05:36:33UTC (Shanghai13:36:33): **N1 FINAL ACCEPTED / N2 STOPPED CONFIGURATION VERIFIED / N2 QA AND STARTUP PENDING**.
+
+- [x] N1 BTC own24h/full double LIVE/completed verify/independent final/restored handoff and receipt `a7938d4a` complete; main `02fe214` actually pushed. Saved frames45893093/45893093=100%; monitor2876/2880=99.861111%, separately >=99.5%.
+- [x] BTC+ETH config-only deployment `9571c469` complete: all12 commands returned0; current identity `976dfc55`, config `5b73db1b`, same frozen source `c3686dd`/wheel `68460be4`. Old config/identity/venvs retained. Fresh canonical VERIFY accepted; Recorder inactive AND disabled/PID0/NRestarts0, normal archive restored.
+- [x] Actual deployment independently ACCEPT `bd3a0cf1`/`04c5fe7f`/`ed1a70a5`; all27 review members hash/size checked. Native2b8c50c1 ended normally; GC defaults are not effective execution settings.
+- [x] Future owner995 helpers exact dual CI `39728230486`/head `b23279a` BOTH SUCCESS after test-only type annotation correction; no production rebuild.
+- [ ] N2 exact bound Linux QA, exclusive runtime copy, fresh capacity/time admission, new finite guard and strict warm/start.
+- [ ] N2 own86400/full new saved data/final independent/restored receipt; no N2 capture or T0 exists yet. The planned230400s guard covers24h capture plus audit/restoration; it is not64h capture or an extension of any old window.
+- [ ] Then nested4/8… candidates and measured capacity/headroom matrix.48h remains PENDING; R078 OPEN.
+
+Recoverable faults are logged/retried; monitor and saved frames use separate complete >=99.5% denominators. Untrusted evidence, sustained writing failure or disk failure pauses affected capture and notifies. See [N2 current acceptance](milestone_acceptance/R2-capacity-n2-btc-eth-owner24h-20261022.md). Earlier checkpoints below are retained history.
+
+
 Latest actual October22 00:45UTC: **N1 BTC OWN24H COMPLETE_OWNER_NEW_DATA_ONLY / N2 BTC+ETH PREPARING**.
 
 - [x] Sole N1 run3f127f83 own86400.234416692s and strict14/core actual endpoint PASS.

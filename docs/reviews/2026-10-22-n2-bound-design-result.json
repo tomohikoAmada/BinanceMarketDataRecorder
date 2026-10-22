@@ -1,0 +1,27 @@
+{
+  "actual_deployment_physical_Linux_native_ARM_T0_credit": false,
+  "actual_deployment_sha": "UNBOUND_ACTUAL_N2_DEPLOYMENT_SHA",
+  "blocking_findings": [],
+  "candidate": "/private/var/tmp/recorder-n2-binding-final-review-f7ifpyo3/candidate-final",
+  "cases": {
+    "actual_sample_calls": 8710,
+    "clean_import_binding": 24,
+    "common_topology_forecast_admission": 18,
+    "complete_86400_fakeclock_actual_sample_flows": 3
+  },
+  "common_sha256": "814b15de23e0d548223cc72edaf3bcdf1d1c45ff00f8d953573f611b05029672",
+  "controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+  "decision": "ACCEPT_UNBOUND_N2_BINDING_FORECAST_LOCAL_OFFLINE",
+  "design_margin_seconds": 8773.807903605542,
+  "new_guard_design_seconds": 230400,
+  "no_inherited_duration": true,
+  "policy_sha256": "dbd46fafb240666af8031165e797fdd422adbdded889a8f006f2ea68e408dd48",
+  "prior_actual_receipt_sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac",
+  "raw_reads": 0,
+  "report_sha256": "298045564e8a62d30ab430651fe5af71e8c7352ffe0efe5ce10e87ed51fb3f20",
+  "required_design_seconds": 221626.19209639446,
+  "runtime_payload_count": 14,
+  "scope": "necessary continuation only: N2 binding/common/topology/forecast/clean imports/actual finish dual gate fullflow",
+  "source_wheel_CI_N1_policy_reproof": false,
+  "ssh_network_production_actions": false
+}
