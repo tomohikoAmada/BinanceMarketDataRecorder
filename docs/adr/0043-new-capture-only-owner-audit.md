@@ -1,5 +1,29 @@
 # ADR-0043: Audit only a new owner-policy capture
 
+Latest actual October22 00:23UTC: **N1 OWN24H + FULL NEW-DATA AUDIT COMPLETE / RESTORED / FINAL INDEPENDENT REVIEW PENDING**.
+
+- [x] Same run3f127f83 reached its own86400.234416692s; strict14/core actual endpoint PASS.
+- [x] Repaired immutable selection completed both full released LIVE passes and completed control verify:
+  audit415ae088 / owner-selected29a040b3 / native09e76989, no blocking findings;
+  12998 chunks,45893093 saved frames, observed conformance100% (independent reconstruction pending).
+- [x] Actual OS/archive RESTORED ended1792608029563205297 before guard cancellation1792608029620715279;
+  both original and continuation windows CLOSED, never extend/reuse/rearm.
+- [x] Fresh canonicalVERIFY0c621729 and actual handoff9297a05f: same boot/config/identity,
+  RecorderinactiveANDdisabled/PID0/NRestarts0, current backlogs/partials0, original OS owners restored,
+  natural archive workerf1ce47b2 success and finite future CLOCK_MONOTONIC deadline at collection.
+- [x] Helper integration CI39621473050/head79688b9 BOTH SUCCESS; unchanged production source/wheel.
+- [ ] Single complete metadata export and independent full controls/selection/Catalog/gap/tail/rotation/report review;
+  final owner24h receipt/main publication. No N2 T0 yet.
+- [ ] N2 BTC+ETH: minimal future owner995 log/retry controls in LOCAL/OFFLINE code review,24 focused cases PASS;
+  new exact config/identity/cohort forecast/window and own86400 must follow N1 final receipt/main.
+
+Monitor2876/2880=99.861111% and saved-frame conformance remain separate complete denominators,
+each >=99.5% under the latest explicit human policy. Original999 BLOCK and all failures retained.
+Recoverable faults log/retry; actual write/verification or trusted evidence failure pauses affected capture and notifies.
+Capacity/headroom matrix remains pending;48h capture PENDING/R078OPEN/no production-ready or every-event claim.
+Earlier checkpoints below are retained history and are not current RUNNING authority.
+
+
 October21 correction: a post-boundary discontinuity completion may depend on a
 START recorded before the capture boundary. Retain only that exact paired START
 as causal metadata authority with its original row values and sequence ID. This

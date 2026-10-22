@@ -1,0 +1,19 @@
+{
+  "N2_start_credit": false,
+  "actual_read_sha256": "c80172e6edff65665cb0d1454455c04f9e9c48ba0b2056b696479fd127e4acc0",
+  "audit_sha256": "415ae0887c807d126cbb7bdb0b11c3ae04351c5865098329b076297cdbe62262",
+  "checks_passed": 123,
+  "decision": "ACCEPT_COMPLETED_RESULT_AND_ACTUAL_RESTORATION_BINDING_ONLY",
+  "existing_evidence_modified": false,
+  "final_saved_frame_reconstruction": "PENDING_COMPLETE_CONTROL_EXPORT",
+  "findings": [],
+  "fresh_restored_handoff": "PENDING",
+  "guard_cancelled_at_utc_ns": 1792608029620715279,
+  "guard_state": "CLOSED_NEVER_REUSE",
+  "native_result_sha256": "09e769894408e5025bba5595ce914f09b8d837945a0e506af64a535be73281d4",
+  "owner_final_N1_accepted": false,
+  "owner_selected_result_sha256": "29a040b3d4f3d9e09cd7d3cc1e2002a62aeae9d7f70266164458bbde181b6468",
+  "raw_or_network_access": false,
+  "restoration_ended_at_utc_ns": 1792608029563205297,
+  "source_runtime_execution": false
+}

@@ -1,0 +1,47 @@
+{
+  "files": [
+    {
+      "bytes": 3301,
+      "path": "REPORT.md",
+      "sha256": "897dd617db8d5a4fd539297c497b1ff32361da5873eb3970062fcec47d6892a3"
+    },
+    {
+      "bytes": 1425,
+      "path": "RESULT.json",
+      "sha256": "e6bb7dbd1c5c4c1527567e08b37e57871f129114b67f17c45b4db4872af6adb2"
+    },
+    {
+      "bytes": 5019,
+      "path": "STATIC_CHECKS.json",
+      "sha256": "9b30994db231401d697567e9da7246df6a0e3342d990894e823bf2b0ccae42f7"
+    },
+    {
+      "bytes": 329,
+      "path": "inputs/accepted-pin-unit-exec.py",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 5273,
+      "path": "inputs/accepted-runtime.py",
+      "sha256": "b9933b2358c91eb19b7de2df3b52fd3c69571019bcac236450f051560e0be873"
+    },
+    {
+      "bytes": 2224,
+      "path": "inputs/collect-n1-owned-journal-20261022.py",
+      "sha256": "84caa91b2f9ff764efcd39fea9e50f90f75d96e53d0ba317ed626b5d542bce74"
+    },
+    {
+      "bytes": 6188,
+      "path": "inputs/export-n1-complete-controls-20261022.py",
+      "sha256": "9eda1b721cc537b0a4a58d476404133da87a26701f46f2df8e46efa3b7cb2e1e"
+    },
+    {
+      "bytes": 6719,
+      "path": "inputs/fresh-n1-restored-handoff-20261022.py",
+      "sha256": "fd63a9a500f90b5236cd0133768c916eb916719b5c3241bbbcfca30faf1185cc"
+    }
+  ],
+  "member_count": 8,
+  "schema_version": 1,
+  "scope": "LOCAL_OFFLINE_UNEXECUTED_N1_FINAL_HANDOFF_EXPORT_STATIC"
+}

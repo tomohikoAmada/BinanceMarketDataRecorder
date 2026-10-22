@@ -1,31 +1,27 @@
 # Current Production State
 
-Latest actual October21 14:51:37UTC: **N1 OWN24H CAPTURE COMPLETE / CAUSAL AUDIT CONTINUATION ACTIVE / FINAL OWNER24H PENDING**.
+Latest actual October22 00:23UTC: **N1 OWN24H + FULL NEW-DATA AUDIT COMPLETE / RESTORED / FINAL INDEPENDENT REVIEW PENDING**.
 
-The private selection defect is fixed and independently acceptedfb9b2380:
-28 focused cases,12 independent metadata faults,12 native bounds/restore cases
-and genuine nested-spawn dualLIVE+verify PASS. Single softwarecopy041f5afd and
-independent physical0ff69b0a accepted; actual new ARM1a8a7ba6 completed normally.
-New exclusive audit20bac825/PID725747 is active under exact identity/config;
-original12998 chunks/45893093frames and original24h duration stay unchanged.
-Only original START4256/4258 were restored as causal metadata in the new child;
-no old Raw, new capture or production source/wheel deployment. Fresh admission
-passes actual space/time/memory. New finite guard expires October22 04:30UTC,
-earlier than the old05:29:34 cap; original guard remains CLOSED forever.
-Current read58d66edc has new genuine corpus/receipt but no completed audit result.
-First meaningful progress checkpoint15:15UTC, then actual progress sets the
-completion checkpoint (initial full-result forecast20:00UTC). Healthy work is
-not restarted or duplicated. N2 has not started; full audit/independent final/
-actual restored handoff/receipt/main precede BTC+ETH's new own24h.
+- [x] Same run3f127f83 reached its own86400.234416692s; strict14/core actual endpoint PASS.
+- [x] Repaired immutable selection completed both full released LIVE passes and completed control verify:
+  audit415ae088 / owner-selected29a040b3 / native09e76989, no blocking findings;
+  12998 chunks,45893093 saved frames, observed conformance100% (independent reconstruction pending).
+- [x] Actual OS/archive RESTORED ended1792608029563205297 before guard cancellation1792608029620715279;
+  both original and continuation windows CLOSED, never extend/reuse/rearm.
+- [x] Fresh canonicalVERIFY0c621729 and actual handoff9297a05f: same boot/config/identity,
+  RecorderinactiveANDdisabled/PID0/NRestarts0, current backlogs/partials0, original OS owners restored,
+  natural archive workerf1ce47b2 success and finite future CLOCK_MONOTONIC deadline at collection.
+- [x] Helper integration CI39621473050/head79688b9 BOTH SUCCESS; unchanged production source/wheel.
+- [ ] Single complete metadata export and independent full controls/selection/Catalog/gap/tail/rotation/report review;
+  final owner24h receipt/main publication. No N2 T0 yet.
+- [ ] N2 BTC+ETH: minimal future owner995 log/retry controls in LOCAL/OFFLINE code review,24 focused cases PASS;
+  new exact config/identity/cohort forecast/window and own86400 must follow N1 final receipt/main.
 
-Latest human policy: **monitor and saved-frame conformance each >=99.5%**,
-with separate complete denominators and all failed observations retained.
-Recoverable transient faults are logged/retried; critical inability to write or
-credibly verify pauses affected capture and notifies, as explicitly selected.
-Next-stage retry policy implementation/testing remains pending before N2;
-original N1 controls and failures stay unchanged. Earlier checkpoint text below
-is history, including the original13:41 failed audit and closed protection.
-
+Monitor2876/2880=99.861111% and saved-frame conformance remain separate complete denominators,
+each >=99.5% under the latest explicit human policy. Original999 BLOCK and all failures retained.
+Recoverable faults log/retry; actual write/verification or trusted evidence failure pauses affected capture and notifies.
+Capacity/headroom matrix remains pending;48h capture PENDING/R078OPEN/no production-ready or every-event claim.
+Earlier checkpoints below are retained history and are not current RUNNING authority.
 
 Current owner checkpoint October21: **N1_OWN86400_CAPTURE_COMPLETE / FULL_NEW_DATA_AUDIT_RUNNING / FINAL_OWNER24H_PENDING**.
 
