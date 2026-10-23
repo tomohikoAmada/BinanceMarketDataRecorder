@@ -1,5 +1,7 @@
 # ADR0050: owner995 continuity and fixed monitor slots
 
+Actual October23 07:14:47UTC: N2 completed own86400.144191527s and normal stop; full fixed2880 monitor2861PASS/19BLOCK=99.3402777778%, so995 remains BLOCK. The same native automatically started the separate full new-data audit; no data conformance or restored handoff has yet been granted. Keep the unchanged99.5% rule and preserve the complete failed monitor. No N4 or accepted N2 receipt from this run.
+
 Actual October23 01:51:52UTC: N2 has17 failed nominal slots, exceeding the14 allowed by the unchanged fixed2880-slot >=99.5% policy. Its monitor criterion is unreachable (maximum2863/2880=99.4097222%), while capture still runs with trusted evidence. Preserve the original run and complete the separate saved-data audit/restoration; no accepted N2 capacity receipt or N4 progression from this result. The continuity policy correctly permits recoverable faults without forcing a restart. See the current N2 acceptance for cause evidence and pending diagnosis.
 
 Status: accepted owner policy; exact N2 configuration, Linux QA, actual strict
