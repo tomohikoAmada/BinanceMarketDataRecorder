@@ -1,0 +1,265 @@
+{
+  "R078": "OPEN",
+  "acceptance_scope": "LOCAL_OFFLINE_COMPLETE_NEW_SAVED_DATA_CONTROL_AND_RESTORED_HANDOFF_RECONSTRUCTION_ONLY",
+  "accepted_n2_capacity_stage": false,
+  "assertions": 1798248,
+  "audit": {
+    "aggregate_sha256": "0344001ade3ea811a1508dc76d06e2477529c3d92efbd7a215abcd3cfe12f26b",
+    "archive_bytes_verified": 3318145280,
+    "families": {
+      "archive_event": 131620,
+      "archive_transaction": 26324,
+      "catalog_chunk": 26324,
+      "chunk_transition": 210592,
+      "manifest": 26324,
+      "operational_event": 1538,
+      "raw_location": 26324
+    },
+    "proof_frame_count": 62687921,
+    "raw_bytes_verified": 0,
+    "record_count": 449046
+  },
+  "audit_sha256": "7011d408f3d72274e9bfae0fba2f6dd913b720434a5189874e418830bccd0265",
+  "blocking_findings_for_data_or_restored_control": [],
+  "canonical_v5_final_eligible": false,
+  "complete_original_observations": 2931,
+  "context_entries": 152412,
+  "decision": "ACCEPT",
+  "declared_payload_members": 28484,
+  "final_state": "DATA_VERIFIED_MONITOR_BLOCK",
+  "forbidden_access": {
+    "historical_manifest_payload_reads": 0,
+    "network": 0,
+    "private_candidate_execution": 0,
+    "production_actions": 0,
+    "raw_calls": 0,
+    "repeat_live_audit_export_handoff": 0,
+    "ssh": 0
+  },
+  "gap_flags": {
+    "gap": 5683,
+    "gap_or_incomplete": 5683,
+    "incomplete": 5683,
+    "overlap": 0,
+    "recovered": 0,
+    "zero_frame": 20,
+    "zero_with_gap": 20
+  },
+  "input_export_manifest_sha256": "7a9d5885c2e537bf7e130423f4b7acc4570f5f92bc4251bae769ba51ac8c73c0",
+  "input_tar_sha256": "d1b4cabaca36ef87d97f6066fa21d55c969879bdf2f071ba14db53a0202152e2",
+  "limitations": [
+    "Observed contracts for saved frames, not every exchange event completeness.",
+    "No universal-symbol or permanent stability maximum inferred.",
+    "Source close-code origin and causal hardware limit remain unproven."
+  ],
+  "monitor": {
+    "bad": [
+      {
+        "line": 18,
+        "line_sha256": "d08e24563eaab2fde62c2bff167334c2875bffbb4d1ee40c6133874f5ed1ca51",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 17
+      },
+      {
+        "line": 170,
+        "line_sha256": "2656dca7697ea1e5d7ea609af981f092bd9a9a2e07448aba956f89ed0b92cf16",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 169
+      },
+      {
+        "line": 173,
+        "line_sha256": "a55db272f76b7ad877e2196c2f2c6ceb0d8cce3782cafc722bb148ac061a695f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 172
+      },
+      {
+        "line": 572,
+        "line_sha256": "e553ce6bedbf62f9df5862bfa978cc825201c42cae721a80d4cfefabfe7e7fcf",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 571
+      },
+      {
+        "line": 832,
+        "line_sha256": "eb94f0405fe3ada8fc8847e2b473f2f6e0bd63c3bbb9aa647045b9d877c21102",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 831
+      },
+      {
+        "line": 872,
+        "line_sha256": "61a0723875b742337d00d629c3f0e7d532e1c27aabd0d969b7e7c78376a504a0",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 871
+      },
+      {
+        "line": 877,
+        "line_sha256": "9fd576b01e9d3aacf8ddc296fdaa04f1ed43b9db65a317138371ea5492363d3e",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 876
+      },
+      {
+        "line": 882,
+        "line_sha256": "90281e1ec8c7a95fb360ee8d76b925979bcf2788f600e1b2ab58ca834263515c",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 881
+      },
+      {
+        "line": 914,
+        "line_sha256": "63427010ba8660d4aa3e45fffff22cefd57a3f8f878e6be6c3cd1764fcf9a0be",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 913
+      },
+      {
+        "line": 940,
+        "line_sha256": "81ec573d4d13dd234bcec17485cd79956903bf928840bc7e33e60e3f0e1efb20",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 939
+      },
+      {
+        "line": 1012,
+        "line_sha256": "6ad209b8376bfb315c3674a72b6fad2520fffbc0b061c974ad0c33d03da7478f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1011
+      },
+      {
+        "line": 1058,
+        "line_sha256": "48389d3c3777fd1aacdf1a3bc4d0dc5941d7ba2e2de716806f9f8f5f49337f24",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1057
+      },
+      {
+        "line": 1072,
+        "line_sha256": "ff78d4733337e6a99954a1aeb7b5ca0d682703627c36c75a134839e1f8664a8f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1071
+      },
+      {
+        "line": 1186,
+        "line_sha256": "02753af3032004673c02950934d46bcd4e24171e0b7e46bc22f40c16ff48c039",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1185
+      },
+      {
+        "line": 1208,
+        "line_sha256": "2bfb7322115ecd2a1f4ff560e9f40b285800a0ea4774f37445e816cf2fb8771e",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1207
+      },
+      {
+        "line": 1613,
+        "line_sha256": "176d4066d89c60bb8448d4f981ac986c09e946a451fd96f4b7d89b9e5481eef7",
+        "reasons": [
+          "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest"
+        ],
+        "slot": 1612
+      },
+      {
+        "line": 1636,
+        "line_sha256": "971104975756ed5f5caea9bbbfdd64f851af1229480e36822a17880cbd5025c6",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1635
+      },
+      {
+        "line": 2480,
+        "line_sha256": "145c5125a7eb9aea99640a92eeb592351f1c83a510bfff1ece3a4a1f2763c113",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 2479
+      },
+      {
+        "line": 2721,
+        "line_sha256": "d62ea52080d0e7f88505b8561038db17851cfef131a72ca0d06140cc12ff0b56",
+        "reasons": [
+          "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest"
+        ],
+        "slot": 2720
+      }
+    ],
+    "core_false": 17,
+    "failed": 19,
+    "passed": 2861,
+    "percent": 99.34027777777777,
+    "result": "BLOCK",
+    "strict_passed": 2826,
+    "total": 2880
+  },
+  "n2_capacity_acceptance": "BLOCK",
+  "native_result_sha256": "854ea7e42c36e0a88fd1020dd87779aacdbfcd39fd606f32ce3e12f22c23f656",
+  "next_n4_eligible": false,
+  "observed_saved_frame_contract_conformance_percent": 100.0,
+  "overall_n2_blocking_findings": [
+    "monitor2861of2880=99.3402777778% is below >=99.5%;19bad exceeds14allowed"
+  ],
+  "own_elapsed_boottime_ns": 86400144191527,
+  "owner_selected_result_sha256": "68b79a1a38a7a30d6b83a86a98aadd37b372bf8d29cf786da99d8f99bddbb37c",
+  "paired_maps": 5862,
+  "production_ready": false,
+  "qualified_minimum_duration_ns": 86400000000000,
+  "report_sha256": "06cbedecf83d8cac28655939a36c461acb2b3b36960491d1343834d7833175c2",
+  "resources": {
+    "host_available_min": 4402159616,
+    "host_swap_max": 34607104,
+    "host_swap_min": 26710016,
+    "owned_current_and_peak_swap_zero": true,
+    "rss_max": 445521920,
+    "rss_peak_max": 445521920,
+    "writer_free_min": 24561209344
+  },
+  "restored_handoff": {
+    "actual_sha256": "47e7735135d0492793a941e6bbf1fb35367fe3913de1ecf5fc6f44d8d6e1fc72",
+    "archive_worker": "171ca7b167214b27a286d98c306d9a23",
+    "cancelled": 1792771726748050701,
+    "canonical_sha256": "edb29887aeeba478913684388924be50fcfce1c4e3314c9d088ecf9a6a54574a",
+    "future_monotonic_us": 54477536,
+    "restore_ended": 1792771726715025619
+  },
+  "run_id": "344008dae022452c9bee26c1bda90ea8",
+  "saved_frames_passed": 62687921,
+  "saved_frames_total": 62687921,
+  "selected_counts": {
+    "chunks": 26324,
+    "decoded_bytes": 47682580261,
+    "frames": 62687921,
+    "stored_bytes": 3318145280
+  },
+  "tail": {
+    "created_after_actual_target": 0,
+    "duration_credit_ns": 0,
+    "manifests_with_receive_after_actual_target": 14,
+    "max_after_actual_target_ns": 938855801,
+    "max_after_nominal_target_ns": 1083048772
+  },
+  "tar_members_including_manifest": 28485
+}

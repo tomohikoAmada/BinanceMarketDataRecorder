@@ -1,0 +1,254 @@
+{
+  "assertions": 38030,
+  "checks": {
+    "binding": 8767,
+    "clock": 2931,
+    "gate": 5862,
+    "handoff": 18,
+    "monitor": 2886,
+    "publication": 11720,
+    "report": 6,
+    "resources": 2931,
+    "restore": 2,
+    "safety": 2903,
+    "target": 4
+  },
+  "context_entries": 152412,
+  "formal_trusted_observations": 2903,
+  "groups": {
+    "monitoring.jsonl": 2880,
+    "recovery-observations.jsonl": 20,
+    "target-finalization-observations.jsonl": 1,
+    "warmup.jsonl": 26
+  },
+  "handoff": {
+    "actual_sha256": "47e7735135d0492793a941e6bbf1fb35367fe3913de1ecf5fc6f44d8d6e1fc72",
+    "archive_worker": "171ca7b167214b27a286d98c306d9a23",
+    "cancelled": 1792771726748050701,
+    "canonical_sha256": "edb29887aeeba478913684388924be50fcfce1c4e3314c9d088ecf9a6a54574a",
+    "future_monotonic_us": 54477536,
+    "restore_ended": 1792771726715025619
+  },
+  "journal": {
+    "error_priority_rows": 0,
+    "event_counts": {
+      "service_stop_requested": 1,
+      "spot_depth_resync_restart": 2,
+      "spot_ingress_gap_recovered": 1,
+      "spot_ingress_stream_recovery": 95,
+      "spot_planned_rotation": 2,
+      "spot_session_restart": 4,
+      "spot_snapshot_bridge_pending": 7,
+      "spot_websocket_connected": 101,
+      "spot_websocket_disconnected": 90,
+      "usdm_depth_resync_restart": 2,
+      "usdm_ingress_gap_extended": 1,
+      "usdm_ingress_gap_recovered": 1,
+      "usdm_ingress_stream_recovery": 269,
+      "usdm_planned_rotation": 8,
+      "usdm_session_restart": 3,
+      "usdm_side_rest_failed": 224,
+      "usdm_snapshot_bridge_pending": 2,
+      "usdm_websocket_connected": 280,
+      "usdm_websocket_disconnected": 263
+    },
+    "parsed_application_rows": 1356,
+    "priorities": {
+      "6": 1356
+    }
+  },
+  "monitor": {
+    "bad": [
+      {
+        "line": 18,
+        "line_sha256": "d08e24563eaab2fde62c2bff167334c2875bffbb4d1ee40c6133874f5ed1ca51",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 17
+      },
+      {
+        "line": 170,
+        "line_sha256": "2656dca7697ea1e5d7ea609af981f092bd9a9a2e07448aba956f89ed0b92cf16",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 169
+      },
+      {
+        "line": 173,
+        "line_sha256": "a55db272f76b7ad877e2196c2f2c6ceb0d8cce3782cafc722bb148ac061a695f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 172
+      },
+      {
+        "line": 572,
+        "line_sha256": "e553ce6bedbf62f9df5862bfa978cc825201c42cae721a80d4cfefabfe7e7fcf",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 571
+      },
+      {
+        "line": 832,
+        "line_sha256": "eb94f0405fe3ada8fc8847e2b473f2f6e0bd63c3bbb9aa647045b9d877c21102",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 831
+      },
+      {
+        "line": 872,
+        "line_sha256": "61a0723875b742337d00d629c3f0e7d532e1c27aabd0d969b7e7c78376a504a0",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 871
+      },
+      {
+        "line": 877,
+        "line_sha256": "9fd576b01e9d3aacf8ddc296fdaa04f1ed43b9db65a317138371ea5492363d3e",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 876
+      },
+      {
+        "line": 882,
+        "line_sha256": "90281e1ec8c7a95fb360ee8d76b925979bcf2788f600e1b2ab58ca834263515c",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 881
+      },
+      {
+        "line": 914,
+        "line_sha256": "63427010ba8660d4aa3e45fffff22cefd57a3f8f878e6be6c3cd1764fcf9a0be",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 913
+      },
+      {
+        "line": 940,
+        "line_sha256": "81ec573d4d13dd234bcec17485cd79956903bf928840bc7e33e60e3f0e1efb20",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 939
+      },
+      {
+        "line": 1012,
+        "line_sha256": "6ad209b8376bfb315c3674a72b6fad2520fffbc0b061c974ad0c33d03da7478f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1011
+      },
+      {
+        "line": 1058,
+        "line_sha256": "48389d3c3777fd1aacdf1a3bc4d0dc5941d7ba2e2de716806f9f8f5f49337f24",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1057
+      },
+      {
+        "line": 1072,
+        "line_sha256": "ff78d4733337e6a99954a1aeb7b5ca0d682703627c36c75a134839e1f8664a8f",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1071
+      },
+      {
+        "line": 1186,
+        "line_sha256": "02753af3032004673c02950934d46bcd4e24171e0b7e46bc22f40c16ff48c039",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1185
+      },
+      {
+        "line": 1208,
+        "line_sha256": "2bfb7322115ecd2a1f4ff560e9f40b285800a0ea4774f37445e816cf2fb8771e",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1207
+      },
+      {
+        "line": 1613,
+        "line_sha256": "176d4066d89c60bb8448d4f981ac986c09e946a451fd96f4b7d89b9e5481eef7",
+        "reasons": [
+          "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest"
+        ],
+        "slot": 1612
+      },
+      {
+        "line": 1636,
+        "line_sha256": "971104975756ed5f5caea9bbbfdd64f851af1229480e36822a17880cbd5025c6",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 1635
+      },
+      {
+        "line": 2480,
+        "line_sha256": "145c5125a7eb9aea99640a92eeb592351f1c83a510bfff1ece3a4a1f2763c113",
+        "reasons": [
+          "core_not_ready"
+        ],
+        "slot": 2479
+      },
+      {
+        "line": 2721,
+        "line_sha256": "d62ea52080d0e7f88505b8561038db17851cfef131a72ca0d06140cc12ff0b56",
+        "reasons": [
+          "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest"
+        ],
+        "slot": 2720
+      }
+    ],
+    "core_false": 17,
+    "failed": 19,
+    "passed": 2861,
+    "percent": 99.34027777777777,
+    "result": "BLOCK",
+    "strict_passed": 2826,
+    "total": 2880
+  },
+  "observations": 2931,
+  "paired_maps": 5862,
+  "phase_counts": {
+    "complete": 2931
+  },
+  "report": {
+    "json_keys": [
+      "batch_count",
+      "generated_at_utc_ns",
+      "schema_version",
+      "status",
+      "stream_count",
+      "streams",
+      "utc_date"
+    ],
+    "members": [
+      ".2026-10-22.inputs.json",
+      ".maintenance-cursor.json",
+      "2026-10-22.csv",
+      "2026-10-22.json"
+    ]
+  },
+  "resources": {
+    "host_available_min": 4402159616,
+    "host_swap_max": 34607104,
+    "host_swap_min": 26710016,
+    "owned_current_and_peak_swap_zero": true,
+    "rss_max": 445521920,
+    "rss_peak_max": 445521920,
+    "writer_free_min": 24561209344
+  }
+}

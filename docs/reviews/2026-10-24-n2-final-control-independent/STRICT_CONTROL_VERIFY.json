@@ -1,0 +1,28 @@
+{
+  "audit_sha256": "7011d408f3d72274e9bfae0fba2f6dd913b720434a5189874e418830bccd0265",
+  "blocking_findings": [],
+  "copied_evidence_root": "/private/var/tmp/recorder-n2-final-control-independent-27g7ewti/strict-control-copy",
+  "counts_by_family": {
+    "archive_event": 131620,
+    "archive_transaction": 26324,
+    "catalog_chunk": 26324,
+    "chunk_transition": 210592,
+    "manifest": 26324,
+    "operational_event": 1538,
+    "raw_location": 26324
+  },
+  "elapsed_seconds": 37.67704391699226,
+  "historical_control_only": true,
+  "no_original_evidence_writes": true,
+  "permitted_local_metadata_helpers": [
+    [
+      "file",
+      "-b",
+      "/Users/amada/miniforge3/bin/python3.12"
+    ]
+  ],
+  "process_network_production_path_guard": true,
+  "raw_unit_calls": 0,
+  "result": "ACCEPT_COMPLETE_STRICT_IMMUTABLE_CONTROL_REPLAY",
+  "source_module_count": 124
+}
