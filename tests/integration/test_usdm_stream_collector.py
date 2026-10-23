@@ -9,8 +9,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
 import zstandard
 from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosedError
+from websockets.frames import Close
 
 from binance_market_data_recorder.binance.spot.websocket import ReconnectBackoff
 from binance_market_data_recorder.binance.usdm.schema import UsdMStream
@@ -32,9 +35,13 @@ from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
 
 class ScriptedSocket:
-    def __init__(self, messages: list[bytes], stop: asyncio.Event | None = None) -> None:
+    def __init__(
+        self, messages: list[bytes], stop: asyncio.Event | None = None,
+        *, disconnect_error: Exception | None = None,
+    ) -> None:
         self.messages = iter(messages)
         self.stop = stop
+        self.disconnect_error = disconnect_error
 
     async def recv(self, decode: bool | None = None) -> bytes:
         try:
@@ -43,6 +50,8 @@ class ScriptedSocket:
             if self.stop is not None:
                 self.stop.set()
                 await asyncio.Future[None]()
+            if self.disconnect_error is not None:
+                raise self.disconnect_error from None
             raise OSError("injected disconnect") from None
 
     async def close(self, code: int = 1000, reason: str = "") -> None:
@@ -142,7 +151,17 @@ def manifest_envelopes(root: Path, manifest: dict[str, Any]) -> list[Any]:
     return result
 
 
-def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "disconnect_error",
+    [
+        ConnectionResetError(104, "injected reset"),
+        ConnectionClosedError(Close(1011, "server restart"), Close(1011, "ack"), True),
+    ],
+    ids=["tcp-reset", "server-close"],
+)
+def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(
+    tmp_path: Path, disconnect_error: Exception, caplog: pytest.LogCaptureFixture,
+) -> None:
     async def exercise() -> list[dict[str, object]]:
         stop = asyncio.Event()
         attempts = 0
@@ -156,7 +175,10 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
                 if attempts == 1
                 else [depth(11, 11, 10)]
             )
-            yield ScriptedSocket(messages, stop if attempts == 2 else None)
+            yield ScriptedSocket(
+                messages, stop if attempts == 2 else None,
+                disconnect_error=disconnect_error,
+            )
 
         collector, catalog = make_stream(tmp_path, opener)
         try:
@@ -189,6 +211,20 @@ def test_usdm_duplicate_out_of_order_and_reconnect_are_lossless(tmp_path: Path) 
             catalog.close()
 
     events = asyncio.run(exercise())
+    record = next(
+        r for r in caplog.records
+        if getattr(r, "structured_event", None) == "usdm_websocket_disconnected"
+    )
+    fields = cast(dict[str, Any], getattr(record, "structured_fields", None))
+    assert fields["connection_phase"] == "established"
+    assert fields["connected_duration_seconds_at_log"] >= 0
+    if isinstance(disconnect_error, ConnectionClosedError):
+        assert fields["close_received_code"] == 1011
+        assert fields["close_received_reason"] == "server restart"
+        assert fields["close_received_then_sent"] is True
+    else:
+        assert fields["close_received_code"] is None
+        assert fields["os_errno"] == 104
     assert [event.raw_payload for event in envelopes(tmp_path)] == [
         depth(10, 10, 9),
         depth(10, 10, 9),

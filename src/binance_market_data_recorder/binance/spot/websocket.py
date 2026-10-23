@@ -58,6 +58,7 @@ from ..websocket_common import (
     capped_backoff_seconds,
     release_writer_preserving_errors,
     run_owned_blocking_call,
+    websocket_disconnect_log_fields,
 )
 from .schema import SpotStream, envelope_from_websocket_frame
 
@@ -918,6 +919,11 @@ class SpotStreamCollector:
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
                     retry=failures,
+                    **websocket_disconnect_log_fields(
+                        exc,
+                        connected_at=connected_at,
+                        observed_at=asyncio.get_running_loop().time(),
+                    ),
                 )
                 if not was_connected or self._connection_receipt_count == 0:
                     # The opener failed or the connection closed before
