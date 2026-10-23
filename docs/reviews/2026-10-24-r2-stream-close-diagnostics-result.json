@@ -1,0 +1,70 @@
+{
+  "schema": "bmdr-independent-source-review-v1",
+  "completed_at_utc": "2026-10-23T18:37:18.835812+00:00",
+  "verdict": "ACCEPT_DIAGNOSTIC_SCOPE_ONLY",
+  "actionable_findings": [],
+  "reviewed_root": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder",
+  "branch": "codex/r2-stream-close-diagnostics-20261024",
+  "base": "c3686dd76406c8d483b23eb10417349e5a1ffecd",
+  "reviewed_inputs": [
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/spot/websocket.py",
+      "relative_path": "src/binance_market_data_recorder/binance/spot/websocket.py",
+      "size": 54386,
+      "sha256": "d495519efddb68bf8be2dd70d3ede2f983ecd07d3adaffe36765bdc498958a03"
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/usdm/websocket.py",
+      "relative_path": "src/binance_market_data_recorder/binance/usdm/websocket.py",
+      "size": 55514,
+      "sha256": "c4b2dd955366ae5c0355b77afcfa174f31955de1d21a9bc3169fdfb4bca94dce"
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/websocket_common.py",
+      "relative_path": "src/binance_market_data_recorder/binance/websocket_common.py",
+      "size": 7038,
+      "sha256": "13e6be756dd84cd257273f2529496acfb0caa1e1e6e924ed01a3069df7b758f4"
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/tests/integration/test_spot_stream_collector.py",
+      "relative_path": "tests/integration/test_spot_stream_collector.py",
+      "size": 13943,
+      "sha256": "798a03f34c6780e2a47b6eec83aac2d83503eb2eb3a05caf583ce0810499d556"
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/tests/integration/test_usdm_stream_collector.py",
+      "relative_path": "tests/integration/test_usdm_stream_collector.py",
+      "size": 15413,
+      "sha256": "ffd109782452ed36acecc054ecd843adf21e2c8e22d5bb6e36866dc1bbd0ea1a"
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/tests/unit/test_websocket_diagnostics.py",
+      "relative_path": "tests/unit/test_websocket_diagnostics.py",
+      "size": 3535,
+      "sha256": "332fb7739a5519fbe90cc75e094e6345924c8b21605fdbabc4c488affb4c4526"
+    }
+  ],
+  "reviewed_inputs_unchanged_at_closeout": true,
+  "independent_offline_cases": 10,
+  "independent_offline_passed": 10,
+  "independent_offline_runtime_seconds": 0.92,
+  "websockets_version": "15.0.1",
+  "candidate_source_imports": {
+    "spot": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/spot/websocket.py",
+    "usdm": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/usdm/websocket.py",
+    "common": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/binance/websocket_common.py"
+  },
+  "primary_api_reference": "https://websockets.readthedocs.io/en/15.0.1/reference/exceptions.html",
+  "full_parent_suite": "PENDING_WITH_FAILURE_UNRESOLVED_AT_REVIEW_CLOSEOUT",
+  "candidate_edited": false,
+  "deployment_performed": false,
+  "production_or_historical_raw_accessed": false,
+  "rootcause_repaired": false,
+  "stability_or_capacity_acceptance": false,
+  "inherited_duration_credit": false,
+  "limitations": [
+    "Six-file source verdict only",
+    "Parent broader QA remains a separate gate",
+    "Pending N2 independent controls remain outside scope"
+  ]
+}

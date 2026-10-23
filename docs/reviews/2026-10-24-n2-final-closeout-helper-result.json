@@ -1,0 +1,38 @@
+{
+  "accepted_N2_capacity_stage": false,
+  "actual_fresh_handoff_credit": false,
+  "actual_full_export_credit": false,
+  "actual_native_source_read_sha256": "a8e0041c329ba9030c4794a134a8e87ec4830d344442356d7ffe9d06be84012b",
+  "actual_restore_before_cancel_verified": true,
+  "checks": 123,
+  "current_original_native_members_verified": 87,
+  "decision": "ACCEPT",
+  "design_manifest_sha256": "8faf128cee101fb9d5c699cf42559cac0bb876a47e719e0063a37c2b542eb749",
+  "final_saved_data_independent_credit": false,
+  "findings": [],
+  "forbidden_access": {
+    "Raw": 0,
+    "SSH": 0,
+    "candidate_execution": 0,
+    "production_actions": 0
+  },
+  "future_capture_credit_ns": 0,
+  "helper_files": {
+    "collect-n2-owned-journal-20261024.py": {
+      "bytes": 2517,
+      "sha256": "90ee16a9c8b4a9f02c727bb21501e5965c4f0ac155ce9253ad85d7db8caf8984"
+    },
+    "export-n2-complete-controls-20261024.py": {
+      "bytes": 5928,
+      "sha256": "6f05d5c77ea96504e8a7905a1c8f98f5d362c4c0b9d0259d6a477f8468390b77"
+    },
+    "fresh-n2-restored-handoff-20261024.py": {
+      "bytes": 7398,
+      "sha256": "e4d8f4fa5c50bb1b3e3a31c9be16d47ac178228b301b25835c52ec2483690677"
+    }
+  },
+  "monitor_acceptance": "BLOCK",
+  "native_full_data_complete_not_final_independent": true,
+  "report_sha256": "5c9f2b7aaf12944fc13a366caa847b89af4de1fa58f48cbf27356466c5181d05",
+  "scope": "UNRUN_N2_MONITOR_BLOCK_FINAL_CLOSEOUT_HELPER_QUALIFICATION"
+}

@@ -1,0 +1,26 @@
+{
+  "read_file": "actual-n2-stage-read-1792777766958617000.json",
+  "read_sha256": "a8e0041c329ba9030c4794a134a8e87ec4830d344442356d7ffe9d06be84012b",
+  "original_members_hash_size_verified": 87,
+  "native_result_sha256": "854ea7e42c36e0a88fd1020dd87779aacdbfcd39fd606f32ce3e12f22c23f656",
+  "audit_root_sha256": "7011d408f3d72274e9bfae0fba2f6dd913b720434a5189874e418830bccd0265",
+  "owner_selected_sha256": "68b79a1a38a7a30d6b83a86a98aadd37b372bf8d29cf786da99d8f99bddbb37c",
+  "selected_counts": {
+    "chunks": 26324,
+    "decoded_bytes": 47682580261,
+    "frames": 62687921,
+    "stored_bytes": 3318145280
+  },
+  "native_observed_saved_frame_conformance": "100%",
+  "independent_complete_reconstruction": "PENDING",
+  "actual_restoration_ended_utc_ns": 1792771726715025619,
+  "actual_guard_cancelled_utc_ns": 1792771726748050701,
+  "guard_closed": true,
+  "monitor_result": "BLOCK",
+  "monitor_passed": 2861,
+  "monitor_total": 2880,
+  "monitor_percent": 99.34027777777777,
+  "accepted_n2_capacity_stage": false,
+  "fresh_handoff_and_metadata_export": "PREPARED_UNRUN_UNDER_INDEPENDENT_REVIEW",
+  "source_changes": "NONE"
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "completed_at_utc": "2026-10-23T18:37:18.835812+00:00",
+  "root": "/private/var/tmp/bmdr-r2-close-diagnostics-independent-20261024-mo8g3bc9",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "AGENTS.reviewed.md",
+      "size": 138505,
+      "sha256": "d360032c10e68adcc8f195ef7644b36a2276473fbcbaa2167d48fcbd4198262e"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 2331,
+      "sha256": "d3b2f01bd43283e679d64c3c1d3caffcae8e861c9833ad906b6ea484eb197d8b"
+    },
+    {
+      "path": "INSTALLED_API_EVIDENCE.txt",
+      "size": 5504,
+      "sha256": "3733e87a9630df54035df872cd009c52d4946271754d1ace0309c1675ef987c7"
+    },
+    {
+      "path": "OFFLINE_EVIDENCE.json",
+      "size": 7192,
+      "sha256": "1651751a2ff94843ee8e484f096529e8926f31bf9da850f84f6348e3365c1f92"
+    },
+    {
+      "path": "OFFLINE_RUN.txt",
+      "size": 99,
+      "sha256": "2c0c0231e8b5a37b7d5adb769a78aa7bf9096fd9381d5724c1b13a0612776651"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 5448,
+      "sha256": "55b7cca5d8d4d52f8d2f84aad50216518094550ff7a281fcfa5cc90e369d0ca5"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 3739,
+      "sha256": "cc93f898b0e0d7176205e898c56101a75ed0b363e7cbcaac15fc9ea390f66504"
+    },
+    {
+      "path": "STATUS.after.txt",
+      "size": 403,
+      "sha256": "366df2fb1e4d11ef9a623ecc3aeebc81934dcb8738e907295af75d30d059aa42"
+    },
+    {
+      "path": "STATUS.before.txt",
+      "size": 334,
+      "sha256": "fdfbd2b1b619af9731cdb9e0033550a64d3ab15f971c6d4e728454aa445227d3"
+    },
+    {
+      "path": "candidate.diff",
+      "size": 13634,
+      "sha256": "dd400666a1df9ac24070c8e656c036da032cc8a2ec1d39510d67462576b56af3"
+    },
+    {
+      "path": "inputs/src/binance_market_data_recorder/binance/spot/websocket.py",
+      "size": 54386,
+      "sha256": "d495519efddb68bf8be2dd70d3ede2f983ecd07d3adaffe36765bdc498958a03"
+    },
+    {
+      "path": "inputs/src/binance_market_data_recorder/binance/usdm/websocket.py",
+      "size": 55514,
+      "sha256": "c4b2dd955366ae5c0355b77afcfa174f31955de1d21a9bc3169fdfb4bca94dce"
+    },
+    {
+      "path": "inputs/src/binance_market_data_recorder/binance/websocket_common.py",
+      "size": 7038,
+      "sha256": "13e6be756dd84cd257273f2529496acfb0caa1e1e6e924ed01a3069df7b758f4"
+    },
+    {
+      "path": "inputs/tests/integration/test_spot_stream_collector.py",
+      "size": 13943,
+      "sha256": "798a03f34c6780e2a47b6eec83aac2d83503eb2eb3a05caf583ce0810499d556"
+    },
+    {
+      "path": "inputs/tests/integration/test_usdm_stream_collector.py",
+      "size": 15413,
+      "sha256": "ffd109782452ed36acecc054ecd843adf21e2c8e22d5bb6e36866dc1bbd0ea1a"
+    },
+    {
+      "path": "inputs/tests/unit/test_websocket_diagnostics.py",
+      "size": 3535,
+      "sha256": "332fb7739a5519fbe90cc75e094e6345924c8b21605fdbabc4c488affb4c4526"
+    },
+    {
+      "path": "test_independent_faults.py",
+      "size": 9004,
+      "sha256": "0dad954b32211a65b8188ecc46592e816c83587912e01ca5e991d8d998e7d501"
+    }
+  ]
+}

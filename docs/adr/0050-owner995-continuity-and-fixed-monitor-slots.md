@@ -1,5 +1,9 @@
 # ADR0050: owner995 continuity and fixed monitor slots
 
+Actual October23 18:31UTC: native complete double LIVE/completed immutable verification returned62687921 saved frames100% pending full independent control reconstruction. Actual OS restoration preceded cancellation; fresh canonical/restored handoff and complete metadata export finished. Monitor2861/2880=99.3402777778% remains995 BLOCK, so no accepted N2 capacity receipt or N4. Separate bounded disconnect diagnostics candidate is LOCAL review/QA only, not a claimed stability fix or production deployment.
+
+Actual October23 17:49:05UTC: N2 native dual LIVE/completed immutable verification finished with62687921 saved frames100% observed conformance, pending independent reconstruction. OS/archive restoration actually preceded guard cancellation. Final monitor99.3402777778% remains995 BLOCK; data and availability remain separate, so no accepted N2 capacity receipt or N4 progression. Fresh handoff/final controls are pending.
+
 Actual October23 07:14:47UTC: N2 completed own86400.144191527s and normal stop; full fixed2880 monitor2861PASS/19BLOCK=99.3402777778%, so995 remains BLOCK. The same native automatically started the separate full new-data audit; no data conformance or restored handoff has yet been granted. Keep the unchanged99.5% rule and preserve the complete failed monitor. No N4 or accepted N2 receipt from this run.
 
 Actual October23 01:51:52UTC: N2 has17 failed nominal slots, exceeding the14 allowed by the unchanged fixed2880-slot >=99.5% policy. Its monitor criterion is unreachable (maximum2863/2880=99.4097222%), while capture still runs with trusted evidence. Preserve the original run and complete the separate saved-data audit/restoration; no accepted N2 capacity receipt or N4 progression from this result. The continuity policy correctly permits recoverable faults without forcing a restart. See the current N2 acceptance for cause evidence and pending diagnosis.

@@ -1,0 +1,21 @@
+{
+  "scope": "N2_NATIVE_DATA_COMPLETE_MONITOR_BLOCK_LOCAL_DIAGNOSTICS_CANDIDATE",
+  "candidate_head": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "pr": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/85",
+  "ci_run": 40005007941,
+  "ci_actual_status": "queued",
+  "ci_status_read_utc": "2026-10-23T18:39:00Z",
+  "ci_next_checkpoint_utc": "2026-10-23T19:15:00Z",
+  "production_changed": false,
+  "new_T0": false,
+  "monitor_acceptance": "BLOCK",
+  "final_independent_data_review": "RUNNING",
+  "code_review_report_sha256": "55b7cca5d8d4d52f8d2f84aad50216518094550ff7a281fcfa5cc90e369d0ca5",
+  "full_suite_log_sha256": "38b080c809ecfc852f300d64cbed889ee2425ba9f3b0193e12dfcfd95aeab24b",
+  "full_suite_passed": 2146,
+  "full_suite_skipped": 24,
+  "full_suite_deselected": 5,
+  "full_suite_failed": 1,
+  "affected_M0_recheck_passed": 1,
+  "candidate_purpose": "DIAGNOSTICS_ONLY_NOT_STABILITY_REPAIR"
+}
