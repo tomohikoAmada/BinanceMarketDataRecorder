@@ -1,0 +1,51 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "size": 2562,
+      "sha256": "061ce8328f8024642a7d8ec98ba2752790bdb6342ff3727c5e113f9cbd748dfd"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 3337,
+      "sha256": "bb1b0b23d2b92234cd93ee0d9b491abd134a558ad9b1134b1a27aa40e85b6507"
+    },
+    {
+      "path": "accepted-design-manifest.json",
+      "size": 2857,
+      "sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f"
+    },
+    {
+      "path": "inputs/actual-diagnostic-copy-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-diagnostic-copy-stdout.txt",
+      "size": 2538,
+      "sha256": "daa72b1d09a80a6d29eeaffedf8195a7969d87adf96823a121568e7805a32e05"
+    },
+    {
+      "path": "inputs/actual-diagnostic-copy.json",
+      "size": 2538,
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf"
+    },
+    {
+      "path": "inputs/actual-diagnostic-dispatch-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-diagnostic-dispatch-stdout.txt",
+      "size": 2185,
+      "sha256": "df98239abd4cc326e4502f3e532da40aa264497c18c62abdc88dcaf0cb73d6d2"
+    },
+    {
+      "path": "inputs/actual-diagnostic-dispatch.json",
+      "size": 2185,
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749"
+    }
+  ]
+}

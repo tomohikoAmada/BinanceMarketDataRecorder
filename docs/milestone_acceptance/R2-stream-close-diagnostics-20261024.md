@@ -1,9 +1,9 @@
 # R2 bounded stream-close diagnostics
 
-Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED / SHORT OBSERVATION REVIEW ACTIVE**.
+Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED / SINGLE BOUNDED OBSERVATION NATIVE STARTED**.
 Base is the exact released sourcec3686dd76406c8d483b23eb10417349e5a1ffecd,
 not main's unrelated R3 code. New canonical20e57/wheeldd2c/identity9b8ce821 deployed;
-config5b73/BTC+ETH/all14 unchanged. No diagnostic collection or formal T0 yet.
+config5b73/BTC+ETH/all14 unchanged. Single bounded diagnostic task launched; no formal T0.
 
 N2 completed its own86400.144191527s. Final fixed monitoring2861/2880
 (99.3402777778%) is below the owner99.5% threshold:17 book_ticker disconnect
@@ -45,10 +45,14 @@ The recorded exception class alone cannot identify the initiating transport caus
 - [x] Actual stopped deployment and complete independent reconstructionb329e35e
   accepted; all20 commands success/installed124/locked28/config unchanged/old venv
   preserved/normal archive restored. Recorder inactive AND disabled/PID0/NRestarts0.
-- [x] Separate short1800s observation controls prepared UNRUN; independent review
-  active. Normal OS/archive owners stay enabled; zero formal/capacity duration.
-- [ ] Execute a reviewed bounded actual diagnostic collection to obtain the
-  missing close/transport evidence. No new24h has started.
+- [x] Separate short1800s controls finally ACCEPTa0b92c29/33 isolated cases;
+  genuine Linux import-clock smoke/copy97a0a632 passed.
+- [x] Single nativec344d006 dispatched23:52:40UTC, initial activating/start;
+  normal OS/archive owners remain enabled, zero formal/capacity duration.
+- [x] Actual copy/Linux smoke/request binding independently ACCEPT061ce832;
+  only initial native state is accepted, no completed observation.
+- [ ] Read actual result/close evidence/stopped archive handoff once at/after
+  October24 00:32:40UTC. No new24h has started.
 - [ ] Choose any stability repair from actual evidence and qualify it, then a
   fresh N2 own24h/full data/restored acceptance before N4/8. Do not transfer
   N1/old-source duration or accept the failed monitor from a successful data audit.

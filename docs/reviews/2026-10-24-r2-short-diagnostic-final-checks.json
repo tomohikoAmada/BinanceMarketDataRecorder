@@ -1,0 +1,142 @@
+{
+  "checks_passed": 33,
+  "checks": [
+    {
+      "check": "trust-drift-same-invocation",
+      "result": "PASS",
+      "affected_service_only": true
+    },
+    {
+      "check": "PID0-before-binding-pending-auto-restart",
+      "result": "PASS",
+      "affected_service_only": true
+    },
+    {
+      "check": "unexpected-incarnation-exclusive-service-contract",
+      "result": "PASS",
+      "affected_service_only": true
+    },
+    {
+      "check": "real_cleanup_entry_branch_precedes_exact_trust_checks",
+      "result": "PASS"
+    },
+    {
+      "check": "completed_scope_cannot_stop_a_later_incarnation_even_after_lease_expiry",
+      "result": "PASS"
+    },
+    {
+      "check": "expired-lease-refused-before-service-actions",
+      "result": "PASS"
+    },
+    {
+      "check": "future-request-refused-before-service-actions",
+      "result": "PASS"
+    },
+    {
+      "check": "extended-deadline-refused-before-service-actions",
+      "result": "PASS"
+    },
+    {
+      "check": "wrong-boot-request-refused-before-service-actions",
+      "result": "PASS"
+    },
+    {
+      "check": "no_start_request_no_service_action",
+      "result": "PASS"
+    },
+    {
+      "check": "scope_or_boot_failure_refuses_service_actions",
+      "result": "PASS"
+    },
+    {
+      "check": "zero_backlog_does_not_mislabel_active_worker_as_completed",
+      "result": "PASS"
+    },
+    {
+      "check": "natural_worker_failure_bounded_and_retains_last_facts",
+      "result": "PASS"
+    },
+    {
+      "check": "archive_timer_failure_stops_only_affected_recorder_and_is_not_complete",
+      "result": "PASS"
+    },
+    {
+      "check": "all_payload_syntax_and_remote_literals_copy_smoke_imports_no_pin_or_main",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_healthy-request",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_early-PID0-failure",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_request-nonzero",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_request-timeout",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_request-oserror",
+      "result": "PASS"
+    },
+    {
+      "check": "native_attempt_preserved_state-read-error",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_missing-bindings",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_partial-native-binding",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_partial-owned-recorder",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_invalid-utf8-binding",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_invalid-invocation-types",
+      "result": "PASS"
+    },
+    {
+      "check": "read_export_survives_valid-owned-invocations",
+      "result": "PASS"
+    },
+    {
+      "check": "failed_resource_measurements_retained_before_guard_swap-peak",
+      "result": "PASS"
+    },
+    {
+      "check": "failed_resource_measurements_retained_before_guard_rss",
+      "result": "PASS"
+    },
+    {
+      "check": "failed_resource_measurements_retained_before_guard_host-available",
+      "result": "PASS"
+    },
+    {
+      "check": "failed_resource_measurements_retained_before_guard_writer-floor",
+      "result": "PASS"
+    },
+    {
+      "check": "failed_resource_measurements_retained_before_guard_archive-floor",
+      "result": "PASS"
+    },
+    {
+      "check": "quality_BLOCKs_retained_as_diagnostic_rows_with_original_publication",
+      "result": "PASS"
+    }
+  ],
+  "component_clock_is_stub_not_actual_Linux_or_duration_qualification": true,
+  "no_main_operator_ssh_or_production_actions": true
+}

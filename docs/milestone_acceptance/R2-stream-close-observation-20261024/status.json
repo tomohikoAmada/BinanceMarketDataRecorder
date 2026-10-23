@@ -1,0 +1,26 @@
+{
+  "status": "BOUNDED_DIAGNOSTIC_NATIVE_REQUESTED_NOT_COMPLETE",
+  "launched_at_utc_ns": 1792799560272609192,
+  "next_result_checkpoint_utc": "2026-10-24T00:32:40.272609+00:00",
+  "native": {
+    "ActiveState": "activating",
+    "InvocationID": "c344d0061f5848bab847bdf9a72d8866",
+    "LoadState": "loaded",
+    "MainPID": "815480",
+    "NRestarts": "0",
+    "Result": "success",
+    "SubState": "start",
+    "UnitFileState": "transient"
+  },
+  "formal_credit_seconds": 0,
+  "formal_T0_created": false,
+  "duration_seconds": 1800,
+  "expected_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "expected_identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "design_review_report_sha256": "a0b92c291c73d67500859f22f904f19dc2068e22367a6729416b06e815a7de17",
+  "design_review_manifest_sha256": "c44df06a726cb540abe48b90e7e5250765a630c0f102fa1c8411ac9b7a1f1ace",
+  "pending": "actual bounded observation, owned close evidence, critical/normal stop and natural archive handoff",
+  "actual_effective_timeout_properties_observed": false,
+  "actual_binding_review_manifest_sha256": "d9051f5e20b34b980812e8ca2a415a1b5cef94beb98b906595ede7342e8bb39b",
+  "actual_binding_review_members_parent_verified": 9
+}

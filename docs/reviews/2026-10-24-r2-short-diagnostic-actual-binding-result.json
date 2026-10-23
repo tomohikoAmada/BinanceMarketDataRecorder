@@ -1,0 +1,70 @@
+{
+  "schema": "bmdr-independent-actual-diagnostic-copy-and-request-binding-v1",
+  "completed_at_utc": "2026-10-23T23:54:37.534673+00:00",
+  "verdict": "ACCEPT_ACTUAL_COPY_LINUX_SMOKE_AND_INITIAL_NATIVE_REQUEST_BINDING_ONLY",
+  "blocking_findings": [],
+  "actual_copy_sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf",
+  "actual_dispatch_sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749",
+  "accepted_design_manifest_sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f",
+  "linux_import_origins_exact": true,
+  "actual_linux_boottime_ns": 1864425482406713,
+  "unit": "binance-recorder-r2-stream-close-observation-20261024-l2hr7wd9.service",
+  "invocation_id": "c344d0061f5848bab847bdf9a72d8866",
+  "pid": 815480,
+  "observed_native_state": "activating/start/NRestarts0",
+  "actual_requested_argv_equals_accepted": true,
+  "effective_timeout_properties_observed": false,
+  "healthy_recorder_observed_after_start": false,
+  "completed_observation_accepted": false,
+  "formal_credit_seconds": 0,
+  "copy_after_resources_bytes": {
+    "archive": 2051589537792,
+    "writer": 24421646336,
+    "host_available": 5219680256
+  },
+  "dispatch_resources_bytes": {
+    "archive": 2051589533696,
+    "writer": 24421642240,
+    "host_available": 5248966656
+  },
+  "no_reviewer_ssh_or_helper_execution_or_source_test_repetition": true,
+  "next_result_checkpoint_utc": "2026-10-24T00:32:40Z",
+  "inputs": [
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-copy.json",
+      "snapshot": "inputs/actual-diagnostic-copy.json",
+      "size": 2538,
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-copy-stdout.txt",
+      "snapshot": "inputs/actual-diagnostic-copy-stdout.txt",
+      "size": 2538,
+      "sha256": "daa72b1d09a80a6d29eeaffedf8195a7969d87adf96823a121568e7805a32e05"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-copy-stderr.txt",
+      "snapshot": "inputs/actual-diagnostic-copy-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-dispatch.json",
+      "snapshot": "inputs/actual-diagnostic-dispatch.json",
+      "size": 2185,
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-dispatch-stdout.txt",
+      "snapshot": "inputs/actual-diagnostic-dispatch-stdout.txt",
+      "size": 2185,
+      "sha256": "df98239abd4cc326e4502f3e532da40aa264497c18c62abdc88dcaf0cb73d6d2"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-dispatch-stderr.txt",
+      "snapshot": "inputs/actual-diagnostic-dispatch-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

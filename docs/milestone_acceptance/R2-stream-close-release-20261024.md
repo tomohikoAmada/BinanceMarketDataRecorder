@@ -57,16 +57,26 @@ This is a diagnostic release, not a proved stability repair or accepted N2 capac
   manifestba1e957a; all listed members plus manifest parent SHA/size verified.
   Old venv/config/identity backups preserved, Recorder stopped-disabled/PID0/
   NRestarts0, normal archive worker success/timer enabled-active/future deadline.
-- [x] Short1800s actual diagnostic controls prepared UNRUN (manifestf5fb7b41);
-  seven isolated cleanup-component cases/compile PASS; necessary independent review active.
-- [ ] Execute the reviewed bounded diagnostic observation, obtain actual close
-  evidence and choose any stability repair from it; no new24h T0 yet.
+- [x] Final short1800s controls ACCEPTa0b92c29/result34bd8b4a/manifestc44df06a:
+  33 independent isolated cases PASS, exact designf5fb7b41. All61 review members
+  plus manifest parent SHA/size verified; initial draft faults remain preserved.
+- [x] Single actual software copy97a0a632 and genuine Linux import/CLOCK_BOOTTIME
+  smoke passed; current stopped identity/config/resource admission passed.
+- [x] Single diagnostic nativec344d006/PID815480 dispatched3d7f4319 at23:52:40UTC,
+  initially activating/start/NRestarts0. No completed observation/stability credit.
+- [x] Actual copy/Linux smoke/request binding independently ACCEPT061ce832/
+  resultbb1b0b23/manifestd9051f5e; no effective timeout or Recorder-health claim.
+- [ ] At October24 00:32:40UTC inspect genuine diagnostic/critical result, close
+  evidence and normal archive/affected stopped handoff once. Choose any repair
+  from evidence; no new24h T0 yet.
 
-Copy/dispatch verify stopped-disabled/PID0/NRestarts0, original boot and deployed
-identity976/config5b73, writer free>10GiB/archive>2GiB; no production/Raw/OS-owner
-mutation. All build/test/temp/cache files stay on the isolated archive child.
+The earlier isolated release copy/dispatch bound stopped identity976/config5b73,
+writer free>10GiB/archive>2GiB. The new observation admission binds current
+identity9b8ce821/config5b73, stopped-disabled/PID0/NRestarts0 and both filesystems
+free>10GiB. All new control/test/temp files stay on the isolated archive child;
+normal OS/archive owners remain enabled throughout the diagnostic observation.
 New source-only deployment20e57/dd2c/identity9b8ce821 is independently accepted.
-No diagnostic collection, formal window or new24h T0 has started.
+Only a bounded diagnostic task has started; no formal window or new24h T0.
 Prior N2 finished DATA_VERIFIED_MONITOR_BLOCK: saved62687921frames100% accepted,
 monitor2861/2880=99.3402778% BLOCK. It grants no N2 capacity receipt or N4 eligibility.
 After an evidence-based minimal repair, qualify a fresh N2 own86400/full data/restored
