@@ -1,6 +1,6 @@
 # R2 stream-close diagnostic release qualification
 
-Current: **EXACT SOURCE CI PASSED / ISOLATED RELEASE DESIGN ACCEPTED / SOFTWARE COPY COMPLETE / ISOLATED CLOUD NATIVE LAUNCHED**.
+Current: **EXACT SOURCE CI PASSED / ISOLATED RELEASE DESIGN ACCEPTED / SOFTWARE COPY COMPLETE / ISOLATED CLOUD COMPLETE / SUPPLY-CHAIN REVIEW ACTIVE**.
 This is a diagnostic release, not a proved stability repair or accepted N2 capacity.
 
 - [x] Six exact changed source/test files independently ACCEPT55b7cca5;10
@@ -29,13 +29,17 @@ This is a diagnostic release, not a proved stability repair or accepted N2 capac
 - [x] Actual launch binding independently ACCEPT87409917/result844de249/
   manifestd5aaba32; all6 review members plus manifest parent SHA/size checked.
   This accepts activating/start and exact bindings only, with no cloud/wheel result.
-- [ ] Native six-module affected tests, fresh wheel, clean28 locked dependencies,
-  full source/wheel/installed bytes and real PATH/source origins. Reasonable
-  unique result checkpoint **October23 20:25UTC / ShanghaiOctober24 04:25**;
-  before it leave healthy native untouched, no extra status SSH/relaunch.
-  At/after it one unchanged reviewed read-cloud-result.py00789e8e result read;
-  actual completed receipt/normal owned manager success are required.
-- [ ] Actual cloud success and complete independent supply-chain reconstruction.
+- [x] Actual single native completed normally at October23 20:08:15UTC, owned
+  manager Deactivated successfully. Later GC/not-found is not a running failure.
+  Single post-checkpoint read86bf26a5 retained complete original software evidence.
+- [x] Six affected modules: **83PASS/1DESELECTED in38.23s**; actual real source
+  origins/PATH and clean locked28 dependencies passed. Receiptd409dd56 reports
+  all124 package Python files equal source/wheel/installed. New wheel
+  **dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c**,
+  514903B. No repeat build, QA, copy or status read.
+- [ ] Complete LOCAL/OFFLINE independent supply-chain reconstruction is active;
+  native success is not final wheel qualification. Actual source655 inventory,
+  complete124 file maps/wheel bytes/locked28/native provenance are retained.
 - [ ] Reviewed stopped deployment/new identity, retained old venv/config/evidence,
   then bounded actual disconnect diagnostics before choosing any stability repair.
 

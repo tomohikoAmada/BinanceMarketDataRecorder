@@ -1,0 +1,67 @@
+{
+  "clean_environment": {
+    "package_root": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/smoke-venv/lib/python3.12/site-packages/binance_market_data_recorder",
+    "python_executable": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/smoke-venv/bin/python",
+    "smoke_venv": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/smoke-venv",
+    "sys_prefix": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/smoke-venv"
+  },
+  "cloud_test_log": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/cloud-admission.log",
+  "dependencies": {
+    "bootstrap_allowlist": [
+      "pip"
+    ],
+    "bootstrap_present": [
+      "pip"
+    ],
+    "editable": false,
+    "exact_match": true,
+    "installed_distribution_count": 28,
+    "locked_distribution_count": 28,
+    "locked_distributions": {
+      "aiohappyeyeballs": "2.7.1",
+      "aiohttp": "3.14.3",
+      "aiosignal": "1.4.0",
+      "annotated-types": "0.8.0",
+      "attrs": "26.1.0",
+      "binance-common": "4.0.3",
+      "binance-sdk-derivatives-trading-usds-futures": "14.0.0",
+      "binance-sdk-spot": "10.0.0",
+      "cbor2": "6.1.3",
+      "certifi": "2026.7.22",
+      "charset-normalizer": "3.5.1",
+      "frozenlist": "1.8.0",
+      "google-crc32c": "1.8.0",
+      "idna": "3.19",
+      "multidict": "6.7.1",
+      "propcache": "0.5.2",
+      "pyarrow": "25.0.0",
+      "pycryptodome": "3.23.0",
+      "pydantic": "2.13.4",
+      "pydantic-core": "2.46.4",
+      "requests": "2.34.2",
+      "typing-extensions": "4.16.0",
+      "typing-inspection": "0.4.4",
+      "urllib3": "2.7.0",
+      "websocket-client": "1.9.0",
+      "websockets": "15.0.1",
+      "yarl": "1.24.5",
+      "zstandard": "0.25.0"
+    },
+    "protected_directory_count": 0,
+    "protected_file_count": 0,
+    "recorder_distribution_separate": true
+  },
+  "formal_credit_seconds": 0,
+  "formal_started": false,
+  "installed": false,
+  "lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+  "package_python_files_matched": 124,
+  "source_archive_git_comment": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "source_archive_sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "source_inventory_sha256": "4bf9334125e13697640eff59618898d5d6567575e6861eb4db914999d17875a6",
+  "status": "CLEAN_LOCKED_WHEEL_AND_AFFECTED_TESTS_PASS",
+  "wheel": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/release/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+  "wheel_bytes": 514903,
+  "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+}
