@@ -1,0 +1,8 @@
+{
+  "returncode": 0,
+  "elapsed_s": 2.146226333003142,
+  "physical_review_manifest_sha256": "b8ca3b9369e72ad9e9e44735ce6217c8703e747ab49d933a7c2543670bcbc0f8",
+  "physical_review_members_parent_verified": 18,
+  "stdout_sha256": "29eb247d8e2539ba76903406bb6c077eda06a26ac4724ec03a72723bb75c1ac3",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

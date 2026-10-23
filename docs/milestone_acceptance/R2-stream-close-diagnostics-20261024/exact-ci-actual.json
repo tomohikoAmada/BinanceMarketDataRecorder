@@ -1,0 +1,29 @@
+{
+  "kind": "EXACT_SOURCE_DUAL_CI_ACTUAL_COMPLETE",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "ci_run": 40005007941,
+  "result": "BOTH_SUCCESS",
+  "completed_utc": "2026-10-23T18:47:20Z",
+  "jobs": {
+    "macos-python312": {
+      "pytest_passed": 2147,
+      "skipped": 24,
+      "deselected": 5,
+      "result": "SUCCESS"
+    },
+    "ubuntu-python312": {
+      "pytest_passed": 2143,
+      "skipped": 28,
+      "deselected": 5,
+      "result": "SUCCESS"
+    }
+  },
+  "mypy_files": 310,
+  "all_ruff_mypy_M0_go_build_cli_success": true,
+  "actual_log": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/close-diagnostics-exact-ci-40005007941.log",
+  "actual_log_sha256": "9b014e12bca0f3ecf02fc4f2262e38b88403b616b1022eb96746e9d7905d0199",
+  "merged_pr": 85,
+  "merge_commit": "73fa05fb8e865499e2ddc3ea513a3f3c14b07af6",
+  "production_deployed": false,
+  "live_duration_credit_s": 0
+}

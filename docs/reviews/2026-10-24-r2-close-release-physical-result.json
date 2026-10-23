@@ -1,0 +1,62 @@
+{
+  "schema": "bmdr-independent-actual-release-copy-review-v1",
+  "completed_at_utc": "2026-10-23T20:03:38.177963+00:00",
+  "verdict": "ACCEPT_ACTUAL_SOFTWARE_COPY_AND_EXACT_PENDING_NATIVE_BINDING",
+  "blocking_findings": [],
+  "actual_copy_sha256": "554cb1da7af33e43199e3fea7c366bf1fa038f5a6001b8f39b26602626ee0fce",
+  "prior_design_manifest_sha256": "40a258f0aeef0a0423420557260ac65cd48c1df6bb4533e4f503f6c6fbe3bece",
+  "release_design_manifest_sha256": "28aabb660b4bee855855b388ea4db5ea3e0b961c78f6d9ae2d623d6a8131626c",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9",
+  "actual_source_members": 655,
+  "actual_inventory_sha256": "75d462898a03b8b6a2092e11d947a474b246c09a01b7f04ecbb554efae73792a",
+  "inventory_independently_reconstructed": true,
+  "actual_payloads": {
+    "source.tar.gz": {
+      "path": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/source.tar.gz",
+      "sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+      "uid": 0,
+      "gid": 988,
+      "mode": 416,
+      "bytes": 2186862
+    },
+    "build-release.sh": {
+      "path": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/build-release.sh",
+      "sha256": "cc9d4644661d0e910df23a10d38aa36d48320583dda6dd1d94a1903ede2059d5",
+      "uid": 0,
+      "gid": 988,
+      "mode": 488,
+      "bytes": 8474
+    },
+    "pin-unit-exec.py": {
+      "path": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "uid": 0,
+      "gid": 988,
+      "mode": 416,
+      "bytes": 329
+    }
+  },
+  "actual_recorder": {
+    "MainPID": "0",
+    "NRestarts": "0",
+    "ActiveState": "inactive",
+    "UnitFileState": "disabled"
+  },
+  "writer_available": 24711835648,
+  "archive_available": 2051969982464,
+  "actual_copy_accepted": true,
+  "pending_native_argv_sha256": "e20fb44709843060b627474faa6ef6c4dffd3c5f53c8816689a019cf1db40b77",
+  "independent_narrow_checks_passed": 8,
+  "inputs_unchanged_at_closeout": true,
+  "cloud_started": false,
+  "new_wheel_or_cloud_qa_accepted": false,
+  "canonical_deployment_accepted": false,
+  "formal_credit_seconds": 0,
+  "no_ssh_or_helper_execution_by_reviewer": true,
+  "pending": [
+    "actual native dispatch/incarnation/effective limits",
+    "actual isolated affected QA/new wheel/clean and installed evidence",
+    "later separately reviewed stopped deployment/new admission"
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "size": 5749,
+      "sha256": "6487db6dd9b882f8ae8e014d15b2d896a4c6d4dd9bb57ba1472106f41f80f56e"
+    },
+    {
+      "path": "CHECKS.txt",
+      "size": 59,
+      "sha256": "c5a300932ac097b2db7b5db7bdd2f48a31241559b395e789b91b3c794f3c924d"
+    },
+    {
+      "path": "EXACT_CI_REUSED.log",
+      "size": 398103,
+      "sha256": "9b014e12bca0f3ecf02fc4f2262e38b88403b616b1022eb96746e9d7905d0199"
+    },
+    {
+      "path": "HELPER_DIFF.txt",
+      "size": 11003,
+      "sha256": "7402f2799934124c0b8e14eea4634e37c76ca3ab5d19b6bd7243e510969cc9f6"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 3446,
+      "sha256": "f6b805680bd30dd7eacab9de8bb919eab3cd9f8708a3c2c8a74aeed6f1f73cc5"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 6915,
+      "sha256": "88df855f9fbfb1d7e44938bb8c202a13c3eef80f03af8f8d9168d6595e04a52e"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 4451,
+      "sha256": "fc20a2fc11d04c70a0ee3b7d8e8870d334d3dd6def7b8b2c6e5940758f0682c5"
+    },
+    {
+      "path": "check_design.py",
+      "size": 7777,
+      "sha256": "38ae19d82ae2c943c781f7a35ebf2eb9ed82d8417fe2af64f292fac3b5ebe8d3"
+    },
+    {
+      "path": "inputs/build-release.sh",
+      "size": 8474,
+      "sha256": "cc9d4644661d0e910df23a10d38aa36d48320583dda6dd1d94a1903ede2059d5"
+    },
+    {
+      "path": "inputs/cloud-native-argv.json",
+      "size": 920,
+      "sha256": "e20fb44709843060b627474faa6ef6c4dffd3c5f53c8816689a019cf1db40b77"
+    },
+    {
+      "path": "inputs/copy-release-controls.py",
+      "size": 5295,
+      "sha256": "afafa7a0669162b64b9e9dd25e2ee614308017d8bb52692aed773a073a6b6e35"
+    },
+    {
+      "path": "inputs/dispatch-cloud.py",
+      "size": 4500,
+      "sha256": "cd818e075fb27ca91b7643900d428328fe0f4a5a3169b8686ddc521a780e9921"
+    },
+    {
+      "path": "inputs/exact-ci-actual.json",
+      "size": 911,
+      "sha256": "82dc0ea258e66f04c52e555e58291206aecfaa5cf6a6e245902aab7d6f7f4a78"
+    },
+    {
+      "path": "inputs/local-preparation-note.json",
+      "size": 221,
+      "sha256": "0702368eb279656805a51351922a15193decdcb627db7c5a8baa307b4e15625e"
+    },
+    {
+      "path": "inputs/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "inputs/read-cloud-result.py",
+      "size": 3202,
+      "sha256": "00789e8e36a0998a8b4cad6e5f4f265116c85cd1394ab1ba1d8c25c10d2e4a34"
+    },
+    {
+      "path": "inputs/release-design-manifest.json",
+      "size": 647,
+      "sha256": "28aabb660b4bee855855b388ea4db5ea3e0b961c78f6d9ae2d623d6a8131626c"
+    },
+    {
+      "path": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    },
+    {
+      "path": "inputs/source.tar.gz",
+      "size": 2186862,
+      "sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf"
+    },
+    {
+      "path": "previous/build-release.sh",
+      "size": 8836,
+      "sha256": "0e5398afd9ae3b5518b20807b729fb54fc41c4ca5ae388106a3d879f7210fa04"
+    },
+    {
+      "path": "previous/cloud-native-argv.json",
+      "size": 931,
+      "sha256": "7b99d80d007a2f0f24dd66254f6dac39bca5ec4613ce7fed99ece4cc5f97119f"
+    },
+    {
+      "path": "previous/copy-release-controls.py",
+      "size": 5064,
+      "sha256": "c08c4b7a7655f663be222e8e09f6aea7310a9b9ba7181e8c324a0e5b11a06200"
+    },
+    {
+      "path": "previous/dispatch-cloud.py",
+      "size": 4225,
+      "sha256": "46beb7d26c76961dfc451b5d59d64cda12b9c579790294c54227e8e29300189d"
+    },
+    {
+      "path": "previous/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "previous/read-cloud-result.py",
+      "size": 3202,
+      "sha256": "00789e8e36a0998a8b4cad6e5f4f265116c85cd1394ab1ba1d8c25c10d2e4a34"
+    },
+    {
+      "path": "previous/release-paths.json",
+      "size": 937,
+      "sha256": "91bc2aa137031ddeadcf82f39b187ba804fd08c10f9ca805a1a689660edad256"
+    }
+  ]
+}

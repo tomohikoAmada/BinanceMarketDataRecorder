@@ -1,0 +1,102 @@
+{
+  "schema": "bmdr-independent-release-helper-design-v1",
+  "completed_at_utc": "2026-10-23T20:00:50.650144+00:00",
+  "verdict": "ACCEPT_RELEASE_HELPER_DESIGN_PENDING_PHYSICAL_AND_ACTUAL_DISPATCH",
+  "blocking_findings": [],
+  "review_root": "/private/var/tmp/bmdr-r2-close-release-design-review-20261024-vo3cy1jb",
+  "release_root": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9",
+  "design_manifest_sha256": "28aabb660b4bee855855b388ea4db5ea3e0b961c78f6d9ae2d623d6a8131626c",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "archive_sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "git_archive_byte_identical": true,
+  "source_members": 655,
+  "package_python_files": 124,
+  "locked_dependencies": 28,
+  "source_ci_run": 40005007941,
+  "exact_ci_reused_not_rerun": true,
+  "independent_identity_static_extracted_fault_checks_passed": 28,
+  "inputs_unchanged_at_closeout": true,
+  "inputs": [
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/source.tar.gz",
+      "snapshot": "inputs/source.tar.gz",
+      "size": 2186862,
+      "sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/build-release.sh",
+      "snapshot": "inputs/build-release.sh",
+      "size": 8474,
+      "sha256": "cc9d4644661d0e910df23a10d38aa36d48320583dda6dd1d94a1903ede2059d5"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/copy-release-controls.py",
+      "snapshot": "inputs/copy-release-controls.py",
+      "size": 5295,
+      "sha256": "afafa7a0669162b64b9e9dd25e2ee614308017d8bb52692aed773a073a6b6e35"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+      "snapshot": "inputs/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/release-paths.json",
+      "snapshot": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/cloud-native-argv.json",
+      "snapshot": "inputs/cloud-native-argv.json",
+      "size": 920,
+      "sha256": "e20fb44709843060b627474faa6ef6c4dffd3c5f53c8816689a019cf1db40b77"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/dispatch-cloud.py",
+      "snapshot": "inputs/dispatch-cloud.py",
+      "size": 4500,
+      "sha256": "cd818e075fb27ca91b7643900d428328fe0f4a5a3169b8686ddc521a780e9921"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/release-design-manifest.json",
+      "snapshot": "inputs/release-design-manifest.json",
+      "size": 647,
+      "sha256": "28aabb660b4bee855855b388ea4db5ea3e0b961c78f6d9ae2d623d6a8131626c"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/read-cloud-result.py",
+      "snapshot": "inputs/read-cloud-result.py",
+      "size": 3202,
+      "sha256": "00789e8e36a0998a8b4cad6e5f4f265116c85cd1394ab1ba1d8c25c10d2e4a34"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/exact-ci-actual.json",
+      "snapshot": "inputs/exact-ci-actual.json",
+      "size": 911,
+      "sha256": "82dc0ea258e66f04c52e555e58291206aecfaa5cf6a6e245902aab7d6f7f4a78"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/local-preparation-note.json",
+      "snapshot": "inputs/local-preparation-note.json",
+      "size": 221,
+      "sha256": "0702368eb279656805a51351922a15193decdcb627db7c5a8baa307b4e15625e"
+    }
+  ],
+  "readonly_reader_byte_identical_to_prior": true,
+  "physical_copy_executed": false,
+  "native_dispatch_executed": false,
+  "helper_main_executed": false,
+  "new_cloud_qa_or_wheel_accepted": false,
+  "deployment_performed": false,
+  "formal_credit_seconds": 0,
+  "ssh_or_vps_access": false,
+  "production_or_historical_raw_access": false,
+  "pending": [
+    "actual exclusive physical copy readback",
+    "fresh actual native dispatch/effective limits/incarnation",
+    "actual isolated affected Linux QA/new wheel/clean receipt/independent installed readback",
+    "separate later stopped deployment and any new duration admission"
+  ]
+}

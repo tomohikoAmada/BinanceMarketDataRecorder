@@ -1,6 +1,6 @@
 # R2 bounded stream-close diagnostics
 
-Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / NOT DEPLOYED**.
+Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / NOT DEPLOYED**.
 Base is the exact released sourcec3686dd76406c8d483b23eb10417349e5a1ffecd,
 not main's unrelated R3 code. No new wheel, deployment, identity, window or T0.
 
@@ -36,7 +36,12 @@ The recorded exception class alone cannot identify the initiating transport caus
   members and six exact input bytes checked. No stability/root-cause/capacity credit.
 - [x] Independent code review ACCEPT for diagnostics only, no actionable findings.
   [Report](../reviews/2026-10-24-r2-stream-close-diagnostics-report.md).
-- [ ] Exact-head dual-platform CI.
+- [x] Exact-head dualCI40005007941 BOTH SUCCESS: both actual checkout20e57f3;
+  macOS2147PASS/24SKIP/5DESELECTED, Ubuntu2143PASS/28SKIP/5DESELECTED;
+  Ruff/mypy310/M0/Go/build/clean wheel CLI allPASS. PR85 actually merged73fa05fb
+  at October23 19:54:13UTC. Production release remains exact20e57, not whole mainR3.
+- [x] New isolated release source archive729ae411 and seven-file helper design
+  prepared; independent review active, no physical copy/cloud tests yet.
 - [ ] Only after release qualification: stopped deployment and a bounded actual
   diagnostic collection to obtain the missing close/transport evidence.
 - [ ] Choose any stability repair from actual evidence and qualify it, then a
