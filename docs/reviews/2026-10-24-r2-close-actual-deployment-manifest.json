@@ -1,0 +1,86 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "size": 3605,
+      "sha256": "e931e031f4f95dd003273e42d66c533b672b997ed9b49ce92cf1f854c96f135a"
+    },
+    {
+      "path": "CHECKS.txt",
+      "size": 55,
+      "sha256": "33c29f0ebfa900e191bf6d8ff20d886346fa5831f6deebf52ada65a804654aa0"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 1303,
+      "sha256": "b1ef4d04c3294dc170cc7e893a8e09fe98d6906d71eb5cb4c5e3a1a3daad4997"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 3911,
+      "sha256": "b329e35eac12bd50b443b424d061a87c9079c06308ee0b39905f5a6c896e43f9"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 1701,
+      "sha256": "91d8dd125ee6a03ae2085978756d881b7012f0c9c55406d088e02ab6b08b6640"
+    },
+    {
+      "path": "export/canonical-deployment.log",
+      "size": 21421,
+      "sha256": "2138b8411a596a5b5195441b51ed63787c6f50d62dd7b1db33356968804c78eb"
+    },
+    {
+      "path": "export/current-identity.json",
+      "size": 2292,
+      "sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715"
+    },
+    {
+      "path": "export/current-recorder.toml",
+      "size": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "path": "export/deployment-result.json",
+      "size": 47370,
+      "sha256": "e148f51a26aea4d0da81d96d9700900f3f4f171e8b1c0e1f8d9aa6c03f859a7f"
+    },
+    {
+      "path": "export/prior-deployment-identity.json",
+      "size": 2292,
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    {
+      "path": "export/prior-recorder.toml",
+      "size": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "path": "inputs/actual-result.json",
+      "size": 127826,
+      "sha256": "188550dc857ae65da5597b81ccf439c99396349e05ae895fe54e2a60b37c4a6d"
+    },
+    {
+      "path": "reused/accepted-clean-wheel.json",
+      "size": 2940,
+      "sha256": "d409dd561950b883d62c0b90f225171c109d563b9c0051850e5225847a051492"
+    },
+    {
+      "path": "reused/accepted-dispatch.json",
+      "size": 1732,
+      "sha256": "84b6e7a0a03fab8bb59c6fba1fca295056631718c6f004cb7b0ab52c0992ec06"
+    },
+    {
+      "path": "reused/accepted-installed-python-files.json",
+      "size": 15330,
+      "sha256": "9424636368982876fa92dd70fee2661ddea8bee512771bb712617aac36167991"
+    },
+    {
+      "path": "verify_actual.py",
+      "size": 11481,
+      "sha256": "0b2583d79b9f503899379ad7001876c6f0ed2b6445c16478d8fb3804456ae320"
+    }
+  ]
+}

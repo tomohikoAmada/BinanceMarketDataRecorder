@@ -1,0 +1,36 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "size": 1335,
+      "sha256": "95fe96ea5f4f65db3465b40f6a2450db0053489996ea4f1ca09d3a86aed5c9bd"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 2299,
+      "sha256": "2a8fa4d2ed6681efff3b380ad4e61d0a278b7c17e879a3f41423ddc94cca43a2"
+    },
+    {
+      "path": "inputs/actual-stopped-deploy-diagnostic-dispatch.json",
+      "size": 1732,
+      "sha256": "84b6e7a0a03fab8bb59c6fba1fca295056631718c6f004cb7b0ab52c0992ec06"
+    },
+    {
+      "path": "inputs/actual-stopped-dispatch-execution.json",
+      "size": 375,
+      "sha256": "35a74a860e4defe7cc057433b7aa80979792b032823da4ffe0d46f0801cd27fe"
+    },
+    {
+      "path": "inputs/actual-stopped-dispatch-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-stopped-dispatch-stdout.txt",
+      "size": 1822,
+      "sha256": "9a5d1f5e5c0fbeb810ede6474a04b6564010ab83414cb5eb924eb6464cef2fdb"
+    }
+  ]
+}

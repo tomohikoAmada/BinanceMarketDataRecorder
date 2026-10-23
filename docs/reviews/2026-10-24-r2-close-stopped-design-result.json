@@ -1,0 +1,36 @@
+{
+  "schema": "bmdr-independent-stopped-deploy-design-v1",
+  "completed_at_utc": "2026-10-23T23:01:59.667926+00:00",
+  "verdict": "ACCEPT_STOPPED_SOURCE_DEPLOYMENT_DESIGN_PENDING_PHYSICAL_AND_NATIVE",
+  "blocking_findings": [],
+  "operations_manifest_sha256": "3c8e2d51492a15c5409e579c07c63bf808baf97c7e98c3d279ddaf611a729cde",
+  "helper_sha256": "c9df0940a989516a0823f062e6053f18f4086c76b962839b035cf03e68c29a34",
+  "argv_sha256": "112c10f26fdaa6aeca3a6a8da6091f2678c94292089f7e270c8ca7aa410240db",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "clean_receipt_sha256": "d409dd561950b883d62c0b90f225171c109d563b9c0051850e5225847a051492",
+  "prior_identity_sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452",
+  "unchanged_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "configuration_changed": false,
+  "cohort_each_market": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "design_selected_assert_checks_passed": 24,
+  "native_properties": {
+    "Type": "oneshot",
+    "TimeoutStartSec": 3600,
+    "TimeoutStopSec": 1500
+  },
+  "copy_performed": false,
+  "native_deployment_performed": false,
+  "canonical_deployment_accepted": false,
+  "formal_credit_seconds": 0,
+  "no_ssh_helper_or_candidate_execution": true,
+  "no_source_CI_cloud_QA_repetition": true,
+  "inputs_unchanged_at_closeout": true,
+  "pending": [
+    "actual one-helper exclusive copy/readback",
+    "exact pending native binding acceptance",
+    "actual canonical deployment/identity/installed artifact/owned completion/restored handoff review"
+  ]
+}

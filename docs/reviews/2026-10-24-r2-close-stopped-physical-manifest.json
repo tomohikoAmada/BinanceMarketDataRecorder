@@ -1,0 +1,51 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "size": 1927,
+      "sha256": "67c37965f72cd40bfa0a7021263025bb02f8c7210ee054adbeca4ca793309b60"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 3380,
+      "sha256": "300d031473d036a6c91181d1885d0a1262e142c9363e3713cc5f3b5f29a1dcc4"
+    },
+    {
+      "path": "inputs/actual-stopped-copy-execution.json",
+      "size": 367,
+      "sha256": "4a0c9cf8272927b8a808fdb72efc43b4c428e8daee8cba220622f6db538e50f5"
+    },
+    {
+      "path": "inputs/actual-stopped-copy-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-stopped-copy-stdout.txt",
+      "size": 704,
+      "sha256": "4e20c02394da195efd133bca457505a0ad6eeef59aa3b346823dc06bd3ec0899"
+    },
+    {
+      "path": "inputs/actual-stopped-deploy-controls-copy.json",
+      "size": 614,
+      "sha256": "d893e400b3b6e7e4a3aa74639b95f46541fe536150806ffd950c09e3a4ac1f73"
+    },
+    {
+      "path": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    },
+    {
+      "path": "inputs/stopped-deploy-argv.json",
+      "size": 1066,
+      "sha256": "112c10f26fdaa6aeca3a6a8da6091f2678c94292089f7e270c8ca7aa410240db"
+    },
+    {
+      "path": "inputs/stopped-deploy-operations-manifest.json",
+      "size": 625,
+      "sha256": "3c8e2d51492a15c5409e579c07c63bf808baf97c7e98c3d279ddaf611a729cde"
+    }
+  ]
+}

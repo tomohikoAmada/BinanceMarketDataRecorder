@@ -1,6 +1,6 @@
 # R2 stream-close diagnostic release qualification
 
-Current: **EXACT SOURCE CI PASSED / ISOLATED RELEASE DESIGN ACCEPTED / SOFTWARE COPY COMPLETE / ISOLATED CLOUD COMPLETE / SUPPLY-CHAIN REVIEW ACTIVE**.
+Current: **EXACT SOURCE CI PASSED / ISOLATED RELEASE DESIGN ACCEPTED / SOFTWARE COPY COMPLETE / ISOLATED CLOUD COMPLETE / SUPPLY-CHAIN ACCEPTED / STOPPED DEPLOYMENT COMPLETE / INDEPENDENT ACTUAL ACCEPTED**.
 This is a diagnostic release, not a proved stability repair or accepted N2 capacity.
 
 - [x] Six exact changed source/test files independently ACCEPT55b7cca5;10
@@ -37,16 +37,36 @@ This is a diagnostic release, not a proved stability repair or accepted N2 capac
   all124 package Python files equal source/wheel/installed. New wheel
   **dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c**,
   514903B. No repeat build, QA, copy or status read.
-- [ ] Complete LOCAL/OFFLINE independent supply-chain reconstruction is active;
-  native success is not final wheel qualification. Actual source655 inventory,
-  complete124 file maps/wheel bytes/locked28/native provenance are retained.
-- [ ] Reviewed stopped deployment/new identity, retained old venv/config/evidence,
-  then bounded actual disconnect diagnostics before choosing any stability repair.
+- [x] Complete independent actual supply-chain ACCEPTd8105977/result03e046e6/
+  manifestf03a4e4b: eight reconstruction groups; all19 listed witnesses plus
+  manifest parent SHA/size verified.655 source files,124Python files across
+  source/wheel/original-installed/separately-observed-installed maps,130 wheel
+  RECORD entries/125 package files, locked28 noneditable dependencies and normal
+  native provenance accepted. No checks, QA or remote work repeated when quota
+  interrupted the final report freeze; completed evidence was preserved.
+- [x] Minimal source-only stopped deployment design86de7d00 accepted; single
+  helper copyd893e400 and physical/pending argv67c37965 accepted. Operations
+  manifest3c8e2d51/helperc9df0940; config5b73/BTC+ETH/all14 retained.
+- [x] Single dispatch84b6e7a0 at October23 23:04:19UTC: invocation2c0ee9ec/
+  PID813977 activating/start, Start1h/Stop25min/UMask0027. Independent actual
+  binding95fe96ea accepted. No deployment success or new identity from startup.
+- [x] Actual canonical deployment complete23:07:06UTC; single result read188550dc
+  at23:12:27UTC. All20 commands returned0; identity9b8ce821/source20e57/wheeldd2c,
+  unchangedconfig5b73, installed124 Python files and locked28 dependencies agree.
+- [x] Complete independent actual deployment ACCEPTb329e35e/result91d8dd12/
+  manifestba1e957a; all listed members plus manifest parent SHA/size verified.
+  Old venv/config/identity backups preserved, Recorder stopped-disabled/PID0/
+  NRestarts0, normal archive worker success/timer enabled-active/future deadline.
+- [x] Short1800s actual diagnostic controls prepared UNRUN (manifestf5fb7b41);
+  seven isolated cleanup-component cases/compile PASS; necessary independent review active.
+- [ ] Execute the reviewed bounded diagnostic observation, obtain actual close
+  evidence and choose any stability repair from it; no new24h T0 yet.
 
 Copy/dispatch verify stopped-disabled/PID0/NRestarts0, original boot and deployed
 identity976/config5b73, writer free>10GiB/archive>2GiB; no production/Raw/OS-owner
 mutation. All build/test/temp/cache files stay on the isolated archive child.
-Sourcec368/wheel68460 remains deployed; no new wheel/deploy/window/capture/T0 yet.
+New source-only deployment20e57/dd2c/identity9b8ce821 is independently accepted.
+No diagnostic collection, formal window or new24h T0 has started.
 Prior N2 finished DATA_VERIFIED_MONITOR_BLOCK: saved62687921frames100% accepted,
 monitor2861/2880=99.3402778% BLOCK. It grants no N2 capacity receipt or N4 eligibility.
 After an evidence-based minimal repair, qualify a fresh N2 own86400/full data/restored

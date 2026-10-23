@@ -1,0 +1,758 @@
+{
+  "archive_timer": {
+    "ActiveState": "active",
+    "Result": "success",
+    "UnitFileState": "enabled"
+  },
+  "archive_worker": {
+    "ActiveState": "inactive",
+    "MainPID": "0",
+    "NRestarts": "0",
+    "Result": "success",
+    "UnitFileState": "static"
+  },
+  "clean_receipt_sha256": "d409dd561950b883d62c0b90f225171c109d563b9c0051850e5225847a051492",
+  "commands": [
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-recorder.service",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "MainPID=0\nResult=success\nNRestarts=0\nActiveState=inactive\nUnitFileState=disabled\n"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.12",
+        "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+        "/usr/sbin/runuser",
+        "-u",
+        "bmdr",
+        "--",
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "binance_market_data_recorder",
+        "--config",
+        "/etc/binance-market-data-recorder/recorder.toml",
+        "deployment",
+        "verify"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\"capacity_profile_id\":\"vps-production-v1\",\"command\":\"deployment.verify\",\"config_sha256\":\"5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419\",\"dependency_lock_sha256\":\"44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335\",\"identity_permissions\":{\"group_gid\":988,\"mode\":\"0640\",\"owner_uid\":0,\"parent_root_controlled\":true,\"path\":\"/etc/binance-market-data-recorder/deployment-identity.json\"},\"identity_sha256\":\"976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452\",\"install_contract\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"config_mode\":\"0640\",\"config_path\":\"/etc/binance-market-data-recorder/recorder.toml\",\"data_mode\":\"0750\",\"data_root\":\"/var/lib/binance-market-data-recorder\",\"python_executable\":\"/opt/binance-market-data-recorder/venv/bin/python\",\"service_group\":\"bmdr\",\"service_non_root\":true,\"service_user\":\"bmdr\",\"unit_mode\":\"0644\",\"unit_path\":\"/etc/systemd/system/binance-market-data-recorder.service\"},\"installed_artifact\":{\"direct_url_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json\",\"dist_info_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\",\"editable\":false,\"module_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py\",\"package_version\":\"0.1.0a1\",\"record_verified_files\":133,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"installed_dependencies\":{\"bootstrap_allowlist\":[\"pip\"],\"bootstrap_present\":[\"pip\"],\"editable\":false,\"exact_match\":true,\"installed_distribution_count\":28,\"locked_distribution_count\":28,\"locked_distributions\":{\"aiohappyeyeballs\":\"2.7.1\",\"aiohttp\":\"3.14.3\",\"aiosignal\":\"1.4.0\",\"annotated-types\":\"0.8.0\",\"attrs\":\"26.1.0\",\"binance-common\":\"4.0.3\",\"binance-sdk-derivatives-trading-usds-futures\":\"14.0.0\",\"binance-sdk-spot\":\"10.0.0\",\"cbor2\":\"6.1.3\",\"certifi\":\"2026.7.22\",\"charset-normalizer\":\"3.5.1\",\"frozenlist\":\"1.8.0\",\"google-crc32c\":\"1.8.0\",\"idna\":\"3.19\",\"multidict\":\"6.7.1\",\"propcache\":\"0.5.2\",\"pyarrow\":\"25.0.0\",\"pycryptodome\":\"3.23.0\",\"pydantic\":\"2.13.4\",\"pydantic-core\":\"2.46.4\",\"requests\":\"2.34.2\",\"typing-extensions\":\"4.16.0\",\"typing-inspection\":\"0.4.4\",\"urllib3\":\"2.7.0\",\"websocket-client\":\"1.9.0\",\"websockets\":\"15.0.1\",\"yarl\":\"1.24.5\",\"zstandard\":\"0.25.0\"},\"protected_directory_count\":407,\"protected_file_count\":4859,\"recorder_distribution_separate\":true},\"source_git_sha\":\"c3686dd76406c8d483b23eb10417349e5a1ffecd\",\"startup_sidecars\":{\"legacy_reconnect_classifications\":{\"path\":\"/etc/binance-market-data-recorder/legacy_reconnect_classifications.json\",\"sha256\":null,\"state\":\"ABSENT\"}},\"status\":\"VERIFIED\",\"systemd_effective\":{\"after\":[\"-.mount\",\"basic.target\",\"network-online.target\",\"sysinit.target\",\"system.slice\",\"systemd-journald.socket\"],\"drop_in_paths\":[],\"environment\":[\"ALL_PROXY=\",\"HTTPS_PROXY=\",\"HTTP_PROXY=\",\"NO_PROXY=\",\"PYTHONUNBUFFERED=1\",\"all_proxy=\",\"http_proxy=\",\"https_proxy=\",\"no_proxy=\"],\"environment_files\":[],\"exec_start\":[\"/opt/binance-market-data-recorder/venv/bin/python\",\"-m\",\"binance_market_data_recorder\",\"--config\",\"/etc/binance-market-data-recorder/recorder.toml\",\"_service\",\"run\"],\"fragment_path\":\"/etc/systemd/system/binance-market-data-recorder.service\",\"group\":\"bmdr\",\"kill_signal\":\"SIGTERM\",\"no_new_privileges\":true,\"pass_environment\":[],\"requires\":[\"-.mount\",\"sysinit.target\",\"system.slice\"],\"restart\":\"on-failure\",\"restart_sec_usec\":10000000,\"service_type\":\"simple\",\"standard_error\":\"journal\",\"standard_output\":\"journal\",\"timeout_stop_sec_usec\":90000000,\"umask\":\"0027\",\"user\":\"bmdr\",\"wants\":[\"network-online.target\"],\"working_directory\":\"/var/lib/binance-market-data-recorder\"},\"systemd_unit_sha256\":\"d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6\",\"venv_control_chain\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"protected_directories\":[\"/opt/binance-market-data-recorder\",\"/opt/binance-market-data-recorder/release-c3686dd-cqe5iuym\",\"/opt/binance-market-data-recorder/venv\",\"/opt/binance-market-data-recorder/venv/bin\",\"/opt/binance-market-data-recorder/venv/lib\",\"/opt/binance-market-data-recorder/venv/lib/python3.12\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\"],\"service_gid\":988,\"service_group\":\"bmdr\",\"service_uid\":999,\"service_user\":\"bmdr\",\"service_writable\":false,\"symlink_free\":true,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"wheel_sha256\":\"68460be40cff4dd5105886b5a05278a1e3a9b81a02b73e8cb48f07c74940b107\"}\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-archive.timer",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Result=success\nActiveState=active\nUnitFileState=enabled\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "stop",
+        "binance-market-data-archive.timer"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-archive.service",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "MainPID=0\nResult=success\nNRestarts=0\nActiveState=inactive\nUnitFileState=static\n"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.12",
+        "-m",
+        "venv",
+        "--copies",
+        "/opt/binance-market-data-recorder/venv"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--require-hashes",
+        "-r",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Collecting aiohappyeyeballs==2.7.1 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 7))\n  Using cached aiohappyeyeballs-2.7.1-py3-none-any.whl (15 kB)\nCollecting aiohttp==3.14.3 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 11))\n  Using cached aiohttp-3.14.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.8 MB)\nCollecting aiosignal==1.4.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 135))\n  Using cached aiosignal-1.4.0-py3-none-any.whl (7.5 kB)\nCollecting annotated-types==0.8.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 139))\n  Using cached annotated_types-0.8.0-py3-none-any.whl (13 kB)\nCollecting attrs==26.1.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 143))\n  Using cached attrs-26.1.0-py3-none-any.whl (67 kB)\nCollecting binance-common==4.0.3 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 147))\n  Using cached binance_common-4.0.3-py3-none-any.whl (25 kB)\nCollecting binance-sdk-derivatives-trading-usds-futures==14.0.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 153))\n  Using cached binance_sdk_derivatives_trading_usds_futures-14.0.0-py3-none-any.whl (588 kB)\nCollecting binance-sdk-spot==10.0.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 157))\n  Using cached binance_sdk_spot-10.0.0-py3-none-any.whl (756 kB)\nCollecting cbor2==6.1.3 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 161))\n  Using cached cbor2-6.1.3-cp312-cp312-manylinux_2_28_x86_64.whl (468 kB)\nCollecting certifi==2026.7.22 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 212))\n  Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)\nCollecting charset-normalizer==3.5.1 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 216))\n  Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)\nCollecting frozenlist==1.8.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 390))\n  Using cached frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (242 kB)\nCollecting google-crc32c==1.8.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 524))\n  Using cached google_crc32c-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl (33 kB)\nCollecting idna==3.19 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 559))\n  Using cached idna-3.19-py3-none-any.whl (68 kB)\nCollecting multidict==6.7.1 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 565))\n  Using cached multidict-6.7.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (256 kB)\nCollecting propcache==0.5.2 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 715))\n  Using cached propcache-0.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)\nCollecting pyarrow==25.0.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 840))\n  Using cached pyarrow-25.0.0-cp312-cp312-manylinux_2_28_x86_64.whl (50.1 MB)\nCollecting pycryptodome==3.23.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 885))\n  Using cached pycryptodome-3.23.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.3 MB)\nCollecting pydantic==2.13.4 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 931))\n  Using cached pydantic-2.13.4-py3-none-any.whl (472 kB)\nCollecting pydantic-core==2.46.4 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 939))\n  Using cached pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)\nCollecting requests==2.34.2 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1061))\n  Using cached requests-2.34.2-py3-none-any.whl (73 kB)\nCollecting typing-extensions==4.16.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1068))\n  Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)\nCollecting typing-inspection==0.4.4 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1077))\n  Using cached typing_inspection-0.4.4-py3-none-any.whl (14 kB)\nCollecting urllib3==2.7.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1081))\n  Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)\nCollecting websocket-client==1.9.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1089))\n  Using cached websocket_client-1.9.0-py3-none-any.whl (82 kB)\nCollecting websockets==15.0.1 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1095))\n  Using cached websockets-15.0.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (182 kB)\nCollecting yarl==1.24.5 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1170))\n  Using cached yarl-1.24.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (109 kB)\nCollecting zstandard==0.25.0 (from -r /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock (line 1276))\n  Using cached zstandard-0.25.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.5 MB)\nInstalling collected packages: zstandard, websockets, websocket-client, urllib3, typing-extensions, pycryptodome, pyarrow, propcache, multidict, idna, google-crc32c, frozenlist, charset-normalizer, certifi, cbor2, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, requests, pydantic-core, aiosignal, pydantic, aiohttp, binance-common, binance-sdk-spot, binance-sdk-derivatives-trading-usds-futures\nSuccessfully installed aiohappyeyeballs-2.7.1 aiohttp-3.14.3 aiosignal-1.4.0 annotated-types-0.8.0 attrs-26.1.0 binance-common-4.0.3 binance-sdk-derivatives-trading-usds-futures-14.0.0 binance-sdk-spot-10.0.0 cbor2-6.1.3 certifi-2026.7.22 charset-normalizer-3.5.1 frozenlist-1.8.0 google-crc32c-1.8.0 idna-3.19 multidict-6.7.1 propcache-0.5.2 pyarrow-25.0.0 pycryptodome-3.23.0 pydantic-2.13.4 pydantic-core-2.46.4 requests-2.34.2 typing-extensions-4.16.0 typing-inspection-0.4.4 urllib3-2.7.0 websocket-client-1.9.0 websockets-15.0.1 yarl-1.24.5 zstandard-0.25.0\n"
+    },
+    {
+      "argv": [
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--no-deps",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/binance_market_data_recorder-0.1.0a1-py3-none-any.whl"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Processing /opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/binance_market_data_recorder-0.1.0a1-py3-none-any.whl\nInstalling collected packages: binance-market-data-recorder\nSuccessfully installed binance-market-data-recorder-0.1.0a1\n"
+    },
+    {
+      "argv": [
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "No broken requirements found.\n"
+    },
+    {
+      "argv": [
+        "chown",
+        "-R",
+        "root:bmdr",
+        "/opt/binance-market-data-recorder/venv"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "chmod",
+        "-R",
+        "g-w,o-w",
+        "/opt/binance-market-data-recorder/venv"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "daemon-reload"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.12",
+        "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "binance_market_data_recorder",
+        "--config",
+        "/etc/binance-market-data-recorder/recorder.toml",
+        "deployment",
+        "identity-create",
+        "--source-git-sha",
+        "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+        "--wheel",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/binance_market_data_recorder-0.1.0a1-py3-none-any.whl",
+        "--dependency-lock",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s/linux-x86_64-python312.lock"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\"capacity_profile_id\":\"vps-production-v1\",\"command\":\"deployment.identity-create\",\"config_sha256\":\"5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419\",\"dependency_lock_sha256\":\"44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335\",\"identity_path\":\"/etc/binance-market-data-recorder/deployment-identity.json\",\"identity_permissions\":{\"group_gid\":988,\"mode\":\"0640\",\"owner_uid\":0,\"parent_root_controlled\":true,\"path\":\"/etc/binance-market-data-recorder/deployment-identity.json\"},\"identity_sha256\":\"9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715\",\"install_contract\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"config_mode\":\"0640\",\"config_path\":\"/etc/binance-market-data-recorder/recorder.toml\",\"data_mode\":\"0750\",\"data_root\":\"/var/lib/binance-market-data-recorder\",\"python_executable\":\"/opt/binance-market-data-recorder/venv/bin/python\",\"service_group\":\"bmdr\",\"service_non_root\":true,\"service_user\":\"bmdr\",\"unit_mode\":\"0644\",\"unit_path\":\"/etc/systemd/system/binance-market-data-recorder.service\"},\"installed_artifact\":{\"direct_url_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json\",\"dist_info_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\",\"editable\":false,\"module_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py\",\"package_version\":\"0.1.0a1\",\"record_verified_files\":133,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"installed_dependencies\":{\"bootstrap_allowlist\":[\"pip\"],\"bootstrap_present\":[\"pip\"],\"editable\":false,\"exact_match\":true,\"installed_distribution_count\":28,\"locked_distribution_count\":28,\"locked_distributions\":{\"aiohappyeyeballs\":\"2.7.1\",\"aiohttp\":\"3.14.3\",\"aiosignal\":\"1.4.0\",\"annotated-types\":\"0.8.0\",\"attrs\":\"26.1.0\",\"binance-common\":\"4.0.3\",\"binance-sdk-derivatives-trading-usds-futures\":\"14.0.0\",\"binance-sdk-spot\":\"10.0.0\",\"cbor2\":\"6.1.3\",\"certifi\":\"2026.7.22\",\"charset-normalizer\":\"3.5.1\",\"frozenlist\":\"1.8.0\",\"google-crc32c\":\"1.8.0\",\"idna\":\"3.19\",\"multidict\":\"6.7.1\",\"propcache\":\"0.5.2\",\"pyarrow\":\"25.0.0\",\"pycryptodome\":\"3.23.0\",\"pydantic\":\"2.13.4\",\"pydantic-core\":\"2.46.4\",\"requests\":\"2.34.2\",\"typing-extensions\":\"4.16.0\",\"typing-inspection\":\"0.4.4\",\"urllib3\":\"2.7.0\",\"websocket-client\":\"1.9.0\",\"websockets\":\"15.0.1\",\"yarl\":\"1.24.5\",\"zstandard\":\"0.25.0\"},\"protected_directory_count\":407,\"protected_file_count\":4859,\"recorder_distribution_separate\":true},\"source_git_sha\":\"20e57f30682e88b4090cc2f0da34aa26fca4de2e\",\"startup_sidecars\":{\"legacy_reconnect_classifications\":{\"path\":\"/etc/binance-market-data-recorder/legacy_reconnect_classifications.json\",\"sha256\":null,\"state\":\"ABSENT\"}},\"status\":\"CREATED\",\"systemd_unit_sha256\":\"d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6\",\"venv_control_chain\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"protected_directories\":[\"/opt/binance-market-data-recorder\",\"/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s\",\"/opt/binance-market-data-recorder/venv\",\"/opt/binance-market-data-recorder/venv/bin\",\"/opt/binance-market-data-recorder/venv/lib\",\"/opt/binance-market-data-recorder/venv/lib/python3.12\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\"],\"service_gid\":988,\"service_group\":\"bmdr\",\"service_uid\":999,\"service_user\":\"bmdr\",\"service_writable\":false,\"symlink_free\":true,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"wheel_sha256\":\"dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c\"}\n"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.12",
+        "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+        "/usr/sbin/runuser",
+        "-u",
+        "bmdr",
+        "--",
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "binance_market_data_recorder",
+        "--config",
+        "/etc/binance-market-data-recorder/recorder.toml",
+        "deployment",
+        "verify"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\"capacity_profile_id\":\"vps-production-v1\",\"command\":\"deployment.verify\",\"config_sha256\":\"5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419\",\"dependency_lock_sha256\":\"44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335\",\"identity_permissions\":{\"group_gid\":988,\"mode\":\"0640\",\"owner_uid\":0,\"parent_root_controlled\":true,\"path\":\"/etc/binance-market-data-recorder/deployment-identity.json\"},\"identity_sha256\":\"9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715\",\"install_contract\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"config_mode\":\"0640\",\"config_path\":\"/etc/binance-market-data-recorder/recorder.toml\",\"data_mode\":\"0750\",\"data_root\":\"/var/lib/binance-market-data-recorder\",\"python_executable\":\"/opt/binance-market-data-recorder/venv/bin/python\",\"service_group\":\"bmdr\",\"service_non_root\":true,\"service_user\":\"bmdr\",\"unit_mode\":\"0644\",\"unit_path\":\"/etc/systemd/system/binance-market-data-recorder.service\"},\"installed_artifact\":{\"direct_url_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json\",\"dist_info_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\",\"editable\":false,\"module_path\":\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py\",\"package_version\":\"0.1.0a1\",\"record_verified_files\":133,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"installed_dependencies\":{\"bootstrap_allowlist\":[\"pip\"],\"bootstrap_present\":[\"pip\"],\"editable\":false,\"exact_match\":true,\"installed_distribution_count\":28,\"locked_distribution_count\":28,\"locked_distributions\":{\"aiohappyeyeballs\":\"2.7.1\",\"aiohttp\":\"3.14.3\",\"aiosignal\":\"1.4.0\",\"annotated-types\":\"0.8.0\",\"attrs\":\"26.1.0\",\"binance-common\":\"4.0.3\",\"binance-sdk-derivatives-trading-usds-futures\":\"14.0.0\",\"binance-sdk-spot\":\"10.0.0\",\"cbor2\":\"6.1.3\",\"certifi\":\"2026.7.22\",\"charset-normalizer\":\"3.5.1\",\"frozenlist\":\"1.8.0\",\"google-crc32c\":\"1.8.0\",\"idna\":\"3.19\",\"multidict\":\"6.7.1\",\"propcache\":\"0.5.2\",\"pyarrow\":\"25.0.0\",\"pycryptodome\":\"3.23.0\",\"pydantic\":\"2.13.4\",\"pydantic-core\":\"2.46.4\",\"requests\":\"2.34.2\",\"typing-extensions\":\"4.16.0\",\"typing-inspection\":\"0.4.4\",\"urllib3\":\"2.7.0\",\"websocket-client\":\"1.9.0\",\"websockets\":\"15.0.1\",\"yarl\":\"1.24.5\",\"zstandard\":\"0.25.0\"},\"protected_directory_count\":407,\"protected_file_count\":4859,\"recorder_distribution_separate\":true},\"source_git_sha\":\"20e57f30682e88b4090cc2f0da34aa26fca4de2e\",\"startup_sidecars\":{\"legacy_reconnect_classifications\":{\"path\":\"/etc/binance-market-data-recorder/legacy_reconnect_classifications.json\",\"sha256\":null,\"state\":\"ABSENT\"}},\"status\":\"VERIFIED\",\"systemd_effective\":{\"after\":[\"-.mount\",\"basic.target\",\"network-online.target\",\"sysinit.target\",\"system.slice\",\"systemd-journald.socket\"],\"drop_in_paths\":[],\"environment\":[\"ALL_PROXY=\",\"HTTPS_PROXY=\",\"HTTP_PROXY=\",\"NO_PROXY=\",\"PYTHONUNBUFFERED=1\",\"all_proxy=\",\"http_proxy=\",\"https_proxy=\",\"no_proxy=\"],\"environment_files\":[],\"exec_start\":[\"/opt/binance-market-data-recorder/venv/bin/python\",\"-m\",\"binance_market_data_recorder\",\"--config\",\"/etc/binance-market-data-recorder/recorder.toml\",\"_service\",\"run\"],\"fragment_path\":\"/etc/systemd/system/binance-market-data-recorder.service\",\"group\":\"bmdr\",\"kill_signal\":\"SIGTERM\",\"no_new_privileges\":true,\"pass_environment\":[],\"requires\":[\"-.mount\",\"sysinit.target\",\"system.slice\"],\"restart\":\"on-failure\",\"restart_sec_usec\":10000000,\"service_type\":\"simple\",\"standard_error\":\"journal\",\"standard_output\":\"journal\",\"timeout_stop_sec_usec\":90000000,\"umask\":\"0027\",\"user\":\"bmdr\",\"wants\":[\"network-online.target\"],\"working_directory\":\"/var/lib/binance-market-data-recorder\"},\"systemd_unit_sha256\":\"d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6\",\"venv_control_chain\":{\"artifact_root\":\"/opt/binance-market-data-recorder\",\"protected_directories\":[\"/opt/binance-market-data-recorder\",\"/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s\",\"/opt/binance-market-data-recorder/venv\",\"/opt/binance-market-data-recorder/venv/bin\",\"/opt/binance-market-data-recorder/venv/lib\",\"/opt/binance-market-data-recorder/venv/lib/python3.12\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder\",\"/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info\"],\"service_gid\":988,\"service_group\":\"bmdr\",\"service_uid\":999,\"service_user\":\"bmdr\",\"service_writable\":false,\"symlink_free\":true,\"venv_root\":\"/opt/binance-market-data-recorder/venv\"},\"wheel_sha256\":\"dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c\"}\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-recorder.service",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "MainPID=0\nResult=success\nNRestarts=0\nActiveState=inactive\nUnitFileState=disabled\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "start",
+        "binance-market-data-archive.service"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "start",
+        "binance-market-data-archive.timer"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-recorder.service",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "MainPID=0\nResult=success\nNRestarts=0\nActiveState=inactive\nUnitFileState=disabled\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-archive.timer",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Result=success\nActiveState=active\nUnitFileState=enabled\n"
+    },
+    {
+      "argv": [
+        "systemctl",
+        "show",
+        "binance-market-data-archive.service",
+        "-p",
+        "ActiveState,UnitFileState,MainPID,Result,NRestarts"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "MainPID=0\nResult=success\nNRestarts=0\nActiveState=inactive\nUnitFileState=static\n"
+    }
+  ],
+  "configuration_changed": false,
+  "ended_at_utc_ns": 1792796826238858091,
+  "formal_credit_seconds": 0,
+  "formal_started": false,
+  "identity_creation": {
+    "capacity_profile_id": "vps-production-v1",
+    "command": "deployment.identity-create",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "dependency_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+    "identity_path": "/etc/binance-market-data-recorder/deployment-identity.json",
+    "identity_permissions": {
+      "group_gid": 988,
+      "mode": "0640",
+      "owner_uid": 0,
+      "parent_root_controlled": true,
+      "path": "/etc/binance-market-data-recorder/deployment-identity.json"
+    },
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "install_contract": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "config_mode": "0640",
+      "config_path": "/etc/binance-market-data-recorder/recorder.toml",
+      "data_mode": "0750",
+      "data_root": "/var/lib/binance-market-data-recorder",
+      "python_executable": "/opt/binance-market-data-recorder/venv/bin/python",
+      "service_group": "bmdr",
+      "service_non_root": true,
+      "service_user": "bmdr",
+      "unit_mode": "0644",
+      "unit_path": "/etc/systemd/system/binance-market-data-recorder.service"
+    },
+    "installed_artifact": {
+      "direct_url_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json",
+      "dist_info_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info",
+      "editable": false,
+      "module_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py",
+      "package_version": "0.1.0a1",
+      "record_verified_files": 133,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "installed_dependencies": {
+      "bootstrap_allowlist": [
+        "pip"
+      ],
+      "bootstrap_present": [
+        "pip"
+      ],
+      "editable": false,
+      "exact_match": true,
+      "installed_distribution_count": 28,
+      "locked_distribution_count": 28,
+      "locked_distributions": {
+        "aiohappyeyeballs": "2.7.1",
+        "aiohttp": "3.14.3",
+        "aiosignal": "1.4.0",
+        "annotated-types": "0.8.0",
+        "attrs": "26.1.0",
+        "binance-common": "4.0.3",
+        "binance-sdk-derivatives-trading-usds-futures": "14.0.0",
+        "binance-sdk-spot": "10.0.0",
+        "cbor2": "6.1.3",
+        "certifi": "2026.7.22",
+        "charset-normalizer": "3.5.1",
+        "frozenlist": "1.8.0",
+        "google-crc32c": "1.8.0",
+        "idna": "3.19",
+        "multidict": "6.7.1",
+        "propcache": "0.5.2",
+        "pyarrow": "25.0.0",
+        "pycryptodome": "3.23.0",
+        "pydantic": "2.13.4",
+        "pydantic-core": "2.46.4",
+        "requests": "2.34.2",
+        "typing-extensions": "4.16.0",
+        "typing-inspection": "0.4.4",
+        "urllib3": "2.7.0",
+        "websocket-client": "1.9.0",
+        "websockets": "15.0.1",
+        "yarl": "1.24.5",
+        "zstandard": "0.25.0"
+      },
+      "protected_directory_count": 407,
+      "protected_file_count": 4859,
+      "recorder_distribution_separate": true
+    },
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "startup_sidecars": {
+      "legacy_reconnect_classifications": {
+        "path": "/etc/binance-market-data-recorder/legacy_reconnect_classifications.json",
+        "sha256": null,
+        "state": "ABSENT"
+      }
+    },
+    "status": "CREATED",
+    "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+    "venv_control_chain": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "protected_directories": [
+        "/opt/binance-market-data-recorder",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s",
+        "/opt/binance-market-data-recorder/venv",
+        "/opt/binance-market-data-recorder/venv/bin",
+        "/opt/binance-market-data-recorder/venv/lib",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info"
+      ],
+      "service_gid": 988,
+      "service_group": "bmdr",
+      "service_uid": 999,
+      "service_user": "bmdr",
+      "service_writable": false,
+      "symlink_free": true,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+  },
+  "new_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "new_symbols_each_market": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "prior_archive_timer": {
+    "ActiveState": "active",
+    "Result": "success",
+    "UnitFileState": "enabled"
+  },
+  "prior_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "prior_venv_custody": "/opt/binance-market-data-recorder/venv-custody-r2-priorc3686dd-6est8c2e/venv",
+  "prior_verification": {
+    "capacity_profile_id": "vps-production-v1",
+    "command": "deployment.verify",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "dependency_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+    "identity_permissions": {
+      "group_gid": 988,
+      "mode": "0640",
+      "owner_uid": 0,
+      "parent_root_controlled": true,
+      "path": "/etc/binance-market-data-recorder/deployment-identity.json"
+    },
+    "identity_sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452",
+    "install_contract": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "config_mode": "0640",
+      "config_path": "/etc/binance-market-data-recorder/recorder.toml",
+      "data_mode": "0750",
+      "data_root": "/var/lib/binance-market-data-recorder",
+      "python_executable": "/opt/binance-market-data-recorder/venv/bin/python",
+      "service_group": "bmdr",
+      "service_non_root": true,
+      "service_user": "bmdr",
+      "unit_mode": "0644",
+      "unit_path": "/etc/systemd/system/binance-market-data-recorder.service"
+    },
+    "installed_artifact": {
+      "direct_url_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json",
+      "dist_info_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info",
+      "editable": false,
+      "module_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py",
+      "package_version": "0.1.0a1",
+      "record_verified_files": 133,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "installed_dependencies": {
+      "bootstrap_allowlist": [
+        "pip"
+      ],
+      "bootstrap_present": [
+        "pip"
+      ],
+      "editable": false,
+      "exact_match": true,
+      "installed_distribution_count": 28,
+      "locked_distribution_count": 28,
+      "locked_distributions": {
+        "aiohappyeyeballs": "2.7.1",
+        "aiohttp": "3.14.3",
+        "aiosignal": "1.4.0",
+        "annotated-types": "0.8.0",
+        "attrs": "26.1.0",
+        "binance-common": "4.0.3",
+        "binance-sdk-derivatives-trading-usds-futures": "14.0.0",
+        "binance-sdk-spot": "10.0.0",
+        "cbor2": "6.1.3",
+        "certifi": "2026.7.22",
+        "charset-normalizer": "3.5.1",
+        "frozenlist": "1.8.0",
+        "google-crc32c": "1.8.0",
+        "idna": "3.19",
+        "multidict": "6.7.1",
+        "propcache": "0.5.2",
+        "pyarrow": "25.0.0",
+        "pycryptodome": "3.23.0",
+        "pydantic": "2.13.4",
+        "pydantic-core": "2.46.4",
+        "requests": "2.34.2",
+        "typing-extensions": "4.16.0",
+        "typing-inspection": "0.4.4",
+        "urllib3": "2.7.0",
+        "websocket-client": "1.9.0",
+        "websockets": "15.0.1",
+        "yarl": "1.24.5",
+        "zstandard": "0.25.0"
+      },
+      "protected_directory_count": 407,
+      "protected_file_count": 4859,
+      "recorder_distribution_separate": true
+    },
+    "source_git_sha": "c3686dd76406c8d483b23eb10417349e5a1ffecd",
+    "startup_sidecars": {
+      "legacy_reconnect_classifications": {
+        "path": "/etc/binance-market-data-recorder/legacy_reconnect_classifications.json",
+        "sha256": null,
+        "state": "ABSENT"
+      }
+    },
+    "status": "VERIFIED",
+    "systemd_effective": {
+      "after": [
+        "-.mount",
+        "basic.target",
+        "network-online.target",
+        "sysinit.target",
+        "system.slice",
+        "systemd-journald.socket"
+      ],
+      "drop_in_paths": [],
+      "environment": [
+        "ALL_PROXY=",
+        "HTTPS_PROXY=",
+        "HTTP_PROXY=",
+        "NO_PROXY=",
+        "PYTHONUNBUFFERED=1",
+        "all_proxy=",
+        "http_proxy=",
+        "https_proxy=",
+        "no_proxy="
+      ],
+      "environment_files": [],
+      "exec_start": [
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "binance_market_data_recorder",
+        "--config",
+        "/etc/binance-market-data-recorder/recorder.toml",
+        "_service",
+        "run"
+      ],
+      "fragment_path": "/etc/systemd/system/binance-market-data-recorder.service",
+      "group": "bmdr",
+      "kill_signal": "SIGTERM",
+      "no_new_privileges": true,
+      "pass_environment": [],
+      "requires": [
+        "-.mount",
+        "sysinit.target",
+        "system.slice"
+      ],
+      "restart": "on-failure",
+      "restart_sec_usec": 10000000,
+      "service_type": "simple",
+      "standard_error": "journal",
+      "standard_output": "journal",
+      "timeout_stop_sec_usec": 90000000,
+      "umask": "0027",
+      "user": "bmdr",
+      "wants": [
+        "network-online.target"
+      ],
+      "working_directory": "/var/lib/binance-market-data-recorder"
+    },
+    "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+    "venv_control_chain": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "protected_directories": [
+        "/opt/binance-market-data-recorder",
+        "/opt/binance-market-data-recorder/release-c3686dd-cqe5iuym",
+        "/opt/binance-market-data-recorder/venv",
+        "/opt/binance-market-data-recorder/venv/bin",
+        "/opt/binance-market-data-recorder/venv/lib",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info"
+      ],
+      "service_gid": 988,
+      "service_group": "bmdr",
+      "service_uid": 999,
+      "service_user": "bmdr",
+      "service_writable": false,
+      "symlink_free": true,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "wheel_sha256": "68460be40cff4dd5105886b5a05278a1e3a9b81a02b73e8cb48f07c74940b107"
+  },
+  "readonly_exclusive_service_lock": {
+    "dev": 64769,
+    "gid": 988,
+    "ino": 870332,
+    "mode": 384,
+    "uid": 999
+  },
+  "recorder": {
+    "ActiveState": "inactive",
+    "MainPID": "0",
+    "NRestarts": "0",
+    "Result": "success",
+    "UnitFileState": "disabled"
+  },
+  "release": "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s",
+  "result": "STOPPED_CANONICAL_DEPLOYMENT_VERIFIED",
+  "retained_chunks": 163386,
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "started_at_utc_ns": 1792796660044112075,
+  "verification": {
+    "capacity_profile_id": "vps-production-v1",
+    "command": "deployment.verify",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "dependency_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+    "identity_permissions": {
+      "group_gid": 988,
+      "mode": "0640",
+      "owner_uid": 0,
+      "parent_root_controlled": true,
+      "path": "/etc/binance-market-data-recorder/deployment-identity.json"
+    },
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "install_contract": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "config_mode": "0640",
+      "config_path": "/etc/binance-market-data-recorder/recorder.toml",
+      "data_mode": "0750",
+      "data_root": "/var/lib/binance-market-data-recorder",
+      "python_executable": "/opt/binance-market-data-recorder/venv/bin/python",
+      "service_group": "bmdr",
+      "service_non_root": true,
+      "service_user": "bmdr",
+      "unit_mode": "0644",
+      "unit_path": "/etc/systemd/system/binance-market-data-recorder.service"
+    },
+    "installed_artifact": {
+      "direct_url_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info/direct_url.json",
+      "dist_info_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info",
+      "editable": false,
+      "module_path": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py",
+      "package_version": "0.1.0a1",
+      "record_verified_files": 133,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "installed_dependencies": {
+      "bootstrap_allowlist": [
+        "pip"
+      ],
+      "bootstrap_present": [
+        "pip"
+      ],
+      "editable": false,
+      "exact_match": true,
+      "installed_distribution_count": 28,
+      "locked_distribution_count": 28,
+      "locked_distributions": {
+        "aiohappyeyeballs": "2.7.1",
+        "aiohttp": "3.14.3",
+        "aiosignal": "1.4.0",
+        "annotated-types": "0.8.0",
+        "attrs": "26.1.0",
+        "binance-common": "4.0.3",
+        "binance-sdk-derivatives-trading-usds-futures": "14.0.0",
+        "binance-sdk-spot": "10.0.0",
+        "cbor2": "6.1.3",
+        "certifi": "2026.7.22",
+        "charset-normalizer": "3.5.1",
+        "frozenlist": "1.8.0",
+        "google-crc32c": "1.8.0",
+        "idna": "3.19",
+        "multidict": "6.7.1",
+        "propcache": "0.5.2",
+        "pyarrow": "25.0.0",
+        "pycryptodome": "3.23.0",
+        "pydantic": "2.13.4",
+        "pydantic-core": "2.46.4",
+        "requests": "2.34.2",
+        "typing-extensions": "4.16.0",
+        "typing-inspection": "0.4.4",
+        "urllib3": "2.7.0",
+        "websocket-client": "1.9.0",
+        "websockets": "15.0.1",
+        "yarl": "1.24.5",
+        "zstandard": "0.25.0"
+      },
+      "protected_directory_count": 407,
+      "protected_file_count": 4859,
+      "recorder_distribution_separate": true
+    },
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "startup_sidecars": {
+      "legacy_reconnect_classifications": {
+        "path": "/etc/binance-market-data-recorder/legacy_reconnect_classifications.json",
+        "sha256": null,
+        "state": "ABSENT"
+      }
+    },
+    "status": "VERIFIED",
+    "systemd_effective": {
+      "after": [
+        "-.mount",
+        "basic.target",
+        "network-online.target",
+        "sysinit.target",
+        "system.slice",
+        "systemd-journald.socket"
+      ],
+      "drop_in_paths": [],
+      "environment": [
+        "ALL_PROXY=",
+        "HTTPS_PROXY=",
+        "HTTP_PROXY=",
+        "NO_PROXY=",
+        "PYTHONUNBUFFERED=1",
+        "all_proxy=",
+        "http_proxy=",
+        "https_proxy=",
+        "no_proxy="
+      ],
+      "environment_files": [],
+      "exec_start": [
+        "/opt/binance-market-data-recorder/venv/bin/python",
+        "-m",
+        "binance_market_data_recorder",
+        "--config",
+        "/etc/binance-market-data-recorder/recorder.toml",
+        "_service",
+        "run"
+      ],
+      "fragment_path": "/etc/systemd/system/binance-market-data-recorder.service",
+      "group": "bmdr",
+      "kill_signal": "SIGTERM",
+      "no_new_privileges": true,
+      "pass_environment": [],
+      "requires": [
+        "-.mount",
+        "sysinit.target",
+        "system.slice"
+      ],
+      "restart": "on-failure",
+      "restart_sec_usec": 10000000,
+      "service_type": "simple",
+      "standard_error": "journal",
+      "standard_output": "journal",
+      "timeout_stop_sec_usec": 90000000,
+      "umask": "0027",
+      "user": "bmdr",
+      "wants": [
+        "network-online.target"
+      ],
+      "working_directory": "/var/lib/binance-market-data-recorder"
+    },
+    "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+    "venv_control_chain": {
+      "artifact_root": "/opt/binance-market-data-recorder",
+      "protected_directories": [
+        "/opt/binance-market-data-recorder",
+        "/opt/binance-market-data-recorder/release-20e57f3-v_hj_26s",
+        "/opt/binance-market-data-recorder/venv",
+        "/opt/binance-market-data-recorder/venv/bin",
+        "/opt/binance-market-data-recorder/venv/lib",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder",
+        "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder-0.1.0a1.dist-info"
+      ],
+      "service_gid": 988,
+      "service_group": "bmdr",
+      "service_uid": 999,
+      "service_user": "bmdr",
+      "service_writable": false,
+      "symlink_free": true,
+      "venv_root": "/opt/binance-market-data-recorder/venv"
+    },
+    "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+  },
+  "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+}
