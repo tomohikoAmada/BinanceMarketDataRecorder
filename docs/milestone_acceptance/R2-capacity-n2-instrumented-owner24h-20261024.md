@@ -1,7 +1,7 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **DESIGN/COPY/ARM ACCEPTED / SINGLE NATIVE CAPTURE LAUNCHED / NOT YET FORMAL T0**.
-Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Proposed unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
+Current: **OWN24H FORMALLY RUNNING / STARTUP AND CURRENT PREFIX INDEPENDENTLY ACCEPTED**.
+Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Actual unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
   independently acceptedb329e35e; complete source/CI/cloud/supply-chain proof is
@@ -74,9 +74,29 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Pr
   manifestfe7f4bc1; all14 original members parent SHA/bytes checked. This grants
   only dispatch/effective/boot/window/controller binding. Original launch-time
   admission numeric publication/full actual startup remains pending.
-- [ ] One warm/start result read at06:15:54.807UTC (Shanghai14:15:54.807), then
-  independent full actual startup controls. No extra VPS read while healthy.
-  Only a real owner-start/T0 defines the new own86400 target; none exported yet.
+- [x] Single overdue startup read e589bece at16:02:59.966UTC;136,527,697B/36
+  original metadata members parent SHA/bytes checked. Warmd1ee5f3a PASS
+  native-reported833.693442688s/25rows; independent strict span301.052814591s/
+  conservative<1200s bound verified (private begin/request counters not exported).
+  Strict endpoints and prestart0e31e153 actual ADMITTED.
+  Original owner-start17f11ac6 binds run0cf49bcd/T0October24 06:05:12.836513139UTC,
+  BOOTTIME1886807017048334 and own86400 minimum targetOctober25 06:05:12.836513139UTC
+  (ShanghaiOctober25 14:05:12.836513139). Original minimum+60s policy retained.
+- [x] Actual full startup/current prefix independently ACCEPTe7cd6598/result5d785422/
+  manifest98ad8df1,24,826 assertions; all20 original report members plus current
+  input references parent SHA/bytes checked.1229 publications/31,954 raw contexts/
+  63,908 paired gate entries reconstructed, no source/helper/Raw/SSH execution.
+  This is startup/current factual acceptance, not final monitor or saved-data PASS.
+  Current1196 nominal slots
+  include1190PASS6BLOCK (99.4983277592% prefix), missing0/6probes excluded;
+  strict1176PASS20BLOCK remains separate. Six single-book_ticker faults recovered.
+  Six known bad slots leave8 of final14 budget, no final pass/failure declaration.
+  [Full independent scope and limits](../reviews/2026-10-25-r2-instrumented-n2-startup-prefix/REPORT.md).
+  All new raw controls and63close events preserved, including20Pong timeout/5errno104/
+  38unspecified; these do not prove a unique cause or repair. Saved frames unknown.
+- [ ] At/after the actual own86400 target, one read of genuine finish/monitor/stop/
+  terminal/audit progress, then a reasonable data-audit checkpoint. Until then
+  keep the sole healthy native untouched; quota/SSH do not stop it.
 - [ ] Both complete released LIVE audits/completed immutableverify of only new
   warm+own24h+original stop-tail, full independent controls/selection/Catalog,
   actual OS/archive restoration before cancellation, stopped identity handoff,

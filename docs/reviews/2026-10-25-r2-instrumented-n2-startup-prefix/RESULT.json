@@ -1,0 +1,199 @@
+{
+  "acceptance_scope": "ACTUAL_STARTUP_AND_CURRENT_PREFIX_ONLY_NOT_FINAL24H_OR_CAPACITY",
+  "admissions": [
+    {
+      "margin_seconds": 8184.395204382978,
+      "name": "launch-admission.json",
+      "projected_archive_free_bytes": 1963180253976,
+      "projected_writer_free_bytes": 20368483266,
+      "remaining_seconds": 229810.58730077744,
+      "required_seconds": 221626.19209639446,
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe",
+      "uniform_upper_writer_diagnostic_bytes": 9116536842,
+      "utc_ns": 1792821054491641614
+    },
+    {
+      "margin_seconds": 8607.86417023599,
+      "name": "capture-admission.json",
+      "projected_archive_free_bytes": 1963234595636,
+      "projected_writer_free_bytes": 20370818122,
+      "remaining_seconds": 229799.14369177818,
+      "required_seconds": 221191.2795215422,
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5",
+      "uniform_upper_writer_diagnostic_bytes": 9118871698,
+      "utc_ns": 1792821065937268314
+    },
+    {
+      "margin_seconds": 10624.414936385409,
+      "name": "prestart-admission.json",
+      "projected_archive_free_bytes": 1962253361617,
+      "projected_writer_free_bytes": 20328319750,
+      "remaining_seconds": 228952.44133520126,
+      "required_seconds": 218328.02639881585,
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd",
+      "uniform_upper_writer_diagnostic_bytes": 9076373326,
+      "utc_ns": 1792821912740528164
+    }
+  ],
+  "assertions": 24826,
+  "bindings": {
+    "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "controls_manifest_sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "native_capture_invocation": "9537822cd4b64757b1d26744b5114a52",
+    "owner_start_sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213",
+    "read_sha256": "e589bece829dc14ae43002adaf024dd1fe831be364526e695b65ad5967abf6ac",
+    "recorder_invocation": "e038b1b4d7624081babaef33fd274a45",
+    "run_id": "0cf49bcde4a040ef9c3d60b6a5656d8c",
+    "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+  },
+  "blocking_findings": [],
+  "cohort": {
+    "contexts": 26,
+    "flags": 14,
+    "products": [
+      [
+        "spot",
+        "BTCUSDT"
+      ],
+      [
+        "spot",
+        "ETHUSDT"
+      ],
+      [
+        "um_perpetual",
+        "BTCUSDT"
+      ],
+      [
+        "um_perpetual",
+        "ETHUSDT"
+      ]
+    ],
+    "spools": 42
+  },
+  "core_episodes": {
+    "count": 6,
+    "exact_network_downtime": false,
+    "sampled_observed_recovery_total_seconds": 31.969085020999998
+  },
+  "credits": {
+    "N4_eligible": false,
+    "capacity_accepted": false,
+    "current_source_N1_pass": false,
+    "formal24h_complete": false,
+    "production_ready": false,
+    "saved_frame_correctness": false,
+    "stability_repair": false
+  },
+  "current_monitor_prefix": {
+    "failed": 6,
+    "final_995_result_established": false,
+    "final_fixed_denominator": 2880,
+    "final_still_mathematically_possible": true,
+    "late": 0,
+    "latest_official_strict_PASS": true,
+    "maximum_final_bad_at995": 14,
+    "missing_prefix": 0,
+    "nominal_recorded": 1196,
+    "passed": 1190,
+    "prefix_percent": 99.49832775919732,
+    "probes_outside_denominator": 6,
+    "remaining_bad_budget_at_observed_prefix": 8,
+    "skipped": 0,
+    "slots": [
+      0,
+      1195
+    ],
+    "strict_diagnostic_blocked": 20,
+    "strict_diagnostic_passed": 1176
+  },
+  "decision": "ACCEPT",
+  "journal": {
+    "REST_errors": {
+      "EmptySideDataResponse": 70,
+      "NetworkError": 4
+    },
+    "close_received_sent1008_Pongtimeout": 20,
+    "event_counts": {
+      "spot_ingress_stream_recovery": 28,
+      "spot_snapshot_bridge_pending": 2,
+      "spot_websocket_connected": 34,
+      "spot_websocket_disconnected": 28,
+      "usdm_ingress_stream_recovery": 35,
+      "usdm_side_rest_failed": 74,
+      "usdm_snapshot_bridge_pending": 1,
+      "usdm_websocket_connected": 45,
+      "usdm_websocket_disconnected": 35
+    },
+    "immediate_reset104": 5,
+    "no_closeframes_or_immediatecause": 38,
+    "no_unique_initiating_cause_proven": true,
+    "recovery_notices": 63,
+    "rows": 282,
+    "unexpected_closes": 63
+  },
+  "limits": [
+    "Raw data, start Catalog content and final saved-frame denominator not audited; boundary original hash/cursors accepted as current metadata provenance only.",
+    "private warm begin monotonic counter and exact Recorder request UTC were not separately exported; reported833.693442688s is not independently reconstructed to nanoseconds. Observable capture-admission-toT0 is below1200s and original strict span is independently verified.",
+    "The reader collects sequentially; envelope utc_ns is read start, individual original publication/resource and systemd observations keep their own time.",
+    "1190/1196 prefix99.4983% is neither finalPASS nor finalFAIL; fixed2880 final denominator remains authoritative.",
+    "20 real received/sent1008 Pong timeout closes and5 immediate reset104 causes narrow observed failure modes but do not uniquely identify network/exchange/client scheduling/writer/host causality.",
+    "Sampled bad-to-recovery intervals are not exact outage duration.",
+    "capacity_stateCRITICAL/FORECAST is distinct from actual_hard_reserve_reached=false; owned swap is separate from host paging counters.",
+    "The preserved measured-spool forecasts are not absolute traffic guarantees; all uniform upper writer projections are below10GiB and retained, while actual>10GiB hard pauses remain.",
+    "No SSH, network, Raw/manifest payload, private candidate import/main/helper execution, source QA/CI/build/release or operational action occurred."
+  ],
+  "publications": {
+    "all_original_publication_hashes_and_full_gates_rebuilt": true,
+    "observations": 1229,
+    "original_embedded_members": 36,
+    "paired_official_strict_context_entries": 63908,
+    "raw_context_entries": 31954
+  },
+  "resources": {
+    "archive_free_min": 2048942821376,
+    "cgroup_current_swap_max": 0,
+    "cgroup_lifetime_peak_swap_max": 0,
+    "host_available_min": 4377636864,
+    "host_pswpin_minmax": [
+      6363,
+      6376
+    ],
+    "host_pswpout_minmax": [
+      17586,
+      18091
+    ],
+    "host_swap_used_minmax": [
+      30437376,
+      32272384
+    ],
+    "rss_max": 419418112,
+    "rss_peak_max": 419418112,
+    "writer_free_min": 24228724736
+  },
+  "timing": {
+    "finalization_policy": "minimum_duration_last_trusted_endpoint_max60s_v1",
+    "finalization_reserve_seconds": 60,
+    "fixed_guard_expiry_epoch_seconds": 1793050865,
+    "last_nominal_elapsed_seconds": 35850.055653738,
+    "max_observed_UTC_BT_projection_difference_ns": 3880283,
+    "own_minimum_target_boottime_ns": 1973207017048334,
+    "own_minimum_target_utc": "2026-10-25T06:05:12.836513139Z",
+    "read_started_utc": "2026-10-24T16:02:59.965697447Z",
+    "t0_boottime_ns": 1886807017048334,
+    "t0_utc": "2026-10-24T06:05:12.836513139Z",
+    "t0_utc_ns": 1792821912836513139,
+    "target_duration_ns": 86400000000000,
+    "target_duration_semantics": "minimum"
+  },
+  "warm": {
+    "actual_end_start_strict_PASS": true,
+    "first_last_strict_span_seconds": 301.052814591,
+    "initial_STARTING_block": 14,
+    "official_strict_pass": 11,
+    "private_begin_monotonic_and_request_utc_not_separately_exported": true,
+    "reported_elapsed_seconds": 833.6934426880907,
+    "rows": 25
+  }
+}

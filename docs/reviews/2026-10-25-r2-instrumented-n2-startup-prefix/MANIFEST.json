@@ -1,0 +1,87 @@
+{
+  "kind": "INDEPENDENT_INSTRUMENTED_N2_ACTUAL_STARTUP_PREFIX_REVIEW_MANIFEST",
+  "manifest_excludes_itself": true,
+  "members": {
+    "CHECKS.json": {
+      "bytes": 2015,
+      "sha256": "3818b56db8ba74d4e5080418a28e134f82933cfd08bdc8cb885797cd29d23161"
+    },
+    "CLOSE_EVENTS.json": {
+      "bytes": 55678,
+      "sha256": "4a5e0b0936be160a0c02ab2a128abae5805d3af353c95180b73906a231639ace"
+    },
+    "CLOSE_RESOURCE_CONTEXT.json": {
+      "bytes": 66462,
+      "sha256": "5f0724067436c0af6dd50531ac8433475684bd7cb78d4c1d03a60dde79cb26a7"
+    },
+    "CORE_EPISODES.json": {
+      "bytes": 12659,
+      "sha256": "dc9c2cfdadb0460d6009f4220ea2665525331ce983b858031e86815326cc23ae"
+    },
+    "GATE_DIAGNOSTICS.json": {
+      "bytes": 7159,
+      "sha256": "4b96acee70e263a6fa683aa6db6872e995eb6788c8d745fdb3bcf187432cfbe6"
+    },
+    "INPUTS.json": {
+      "bytes": 7715,
+      "sha256": "8604dc01ceb8e95a6a4588e4e4e616205a2e854c8ddf45e275db6d4383e19a07"
+    },
+    "OBSERVATIONS.json": {
+      "bytes": 684997,
+      "sha256": "e4447da4b033a41875aa0e4991fefcbf63c1d94353564b64824e6ed096645afc"
+    },
+    "REPORT.md": {
+      "bytes": 13209,
+      "sha256": "e7cd6598f88a1f884b3e119839be8bd2568113c75975512b34c4b2ca74fa8ced"
+    },
+    "RESULT.json": {
+      "bytes": 7630,
+      "sha256": "5d78542243dc6227ed2cc2111fd9ba0f0b059650403ce3d4098dca1d57c7a4c6"
+    },
+    "current-recorder.toml": {
+      "bytes": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    "original-capture-admission.json": {
+      "bytes": 3793,
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5"
+    },
+    "original-data-scope-start.json": {
+      "bytes": 567,
+      "sha256": "5f124d7cee064711649d5a70fe27af9bafd81c0cb16ecef876890c017ad77036"
+    },
+    "original-execution.json": {
+      "bytes": 233,
+      "sha256": "aff55cd0e2f9f334c75199f23d7fbeadbc0f85495d092d537e2904ab640b48f7"
+    },
+    "original-launch-admission.json": {
+      "bytes": 3795,
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe"
+    },
+    "original-owner-start.json": {
+      "bytes": 60066,
+      "sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213"
+    },
+    "original-prestart-admission.json": {
+      "bytes": 3797,
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd"
+    },
+    "original-start-observation.json": {
+      "bytes": 46080,
+      "sha256": "8daa49ebcab8a88b8ca7667af06ea350d6d605ad2a01a3ae0f668d18fab6092e"
+    },
+    "original-warmup-end-observation.json": {
+      "bytes": 46080,
+      "sha256": "ba5fa933d43dd68548082a6a40af02ff8d3d3b6718751c02dac63e929561bde6"
+    },
+    "original-warmup-result.json": {
+      "bytes": 112473,
+      "sha256": "d1ee5f3a15d82ad6d9076736aa1c5967d455a94c711be440a7cb727eea70dd48"
+    },
+    "reconstruct.py": {
+      "bytes": 34269,
+      "sha256": "950177aabf34a0a8f51deb8523d6e4d5260268be9c089aa09ea4c2d78da99f48"
+    }
+  },
+  "scope": "ACTUAL_STARTUP_CURRENT_PREFIX_ONLY_NOT_FINAL_CAPACITY"
+}
