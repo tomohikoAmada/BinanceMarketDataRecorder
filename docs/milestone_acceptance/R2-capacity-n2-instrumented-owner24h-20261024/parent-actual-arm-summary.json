@@ -1,0 +1,162 @@
+{
+  "result": "ACTUAL_ARM_COMPLETE_INDEPENDENT_BINDING_REVIEW_ACTIVE",
+  "read_sha256": "0e2446f90829e16173a0bb20b0ca535b6fd125d8ac505d83e0097ed4f65d830c",
+  "original_members": 11,
+  "utc_ns": 1792820754787928680,
+  "window_sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199",
+  "window": {
+    "armed_at_utc_ns": 1792820465016366384,
+    "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "deadline_epoch_seconds": 1793050865,
+    "deadline_utc": "2026-10-26 21:41:05 UTC",
+    "deployment_identity": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "finite_window_seconds": 230400,
+    "formal_credit_seconds": 0,
+    "kind": "R2_FINITE_QUIET_WINDOW",
+    "masked_kernel_precondition": {
+      "automatic_reboot_config_output": "",
+      "automatic_reboot_default_source": "https://ubuntu.com/server/docs/how-to/software/automatic-updates/#reboots",
+      "automatic_reboot_effective": false,
+      "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+      "installed_pending_packages": "linux-base 4.5ubuntu9+24.04.2 install ok installed\nlinux-image-6.8.0-147-generic 6.8.0-147.147 install ok installed\n",
+      "marker_modified": false,
+      "markers": {
+        "/run/reboot-required": {
+          "mtime_ns": 1791958028494210381,
+          "sha256": "7f30167a2ab7158c539fa772a4b1eab5e374469b7c09a4abedeebe39bcf52cd4",
+          "text": "*** System restart required ***\n"
+        },
+        "/run/reboot-required.pkgs": {
+          "mtime_ns": 1791958028494210381,
+          "sha256": "72c621aa58304e95a9f418ac4ae3bd9a454735b0f9293e0541a7034e937328a2",
+          "text": "linux-image-6.8.0-147-generic\nlinux-base\n"
+        }
+      },
+      "note": "Current running kernel is the qualified environment; pending147 is not claimed active.",
+      "reboot_performed": false,
+      "result": "KNOWN_KERNEL_ONLY_NOTICE_RETAINED",
+      "running_kernel": "6.8.0-146-generic",
+      "scheduled_shutdown": false,
+      "utc_ns": 1792820466793099313
+    },
+    "masked_states": {
+      "apt-daily-upgrade.service": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "InvocationID": "",
+        "LoadState": "masked",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "masked-runtime"
+      },
+      "apt-daily-upgrade.timer": {
+        "ActiveState": "inactive",
+        "InvocationID": "5bc19e8aee8f4779b2e469221f4eafda",
+        "LoadState": "masked",
+        "NextElapseUSecRealtime": "",
+        "Result": "success",
+        "UnitFileState": "masked-runtime"
+      },
+      "apt-daily.service": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "InvocationID": "7f14b1b4c0b543269690cf838a7e1baf",
+        "LoadState": "masked",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "masked-runtime"
+      },
+      "apt-daily.timer": {
+        "ActiveState": "inactive",
+        "InvocationID": "5f3a58d9f82a429092343e3205c5c421",
+        "LoadState": "masked",
+        "NextElapseUSecRealtime": "",
+        "Result": "success",
+        "UnitFileState": "masked-runtime"
+      },
+      "unattended-upgrades.service": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "InvocationID": "4923badebcf64f94b015696ec5a8edd6",
+        "LoadState": "masked",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "masked-runtime"
+      }
+    },
+    "negative_probe": {
+      "rc": 1,
+      "stderr": "Failed to start apt-daily.service: Unit apt-daily.service is masked.\n"
+    },
+    "original_states": {
+      "apt-daily-upgrade.service": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "InvocationID": "b47bc79526bb485880ac01f73865f7f8",
+        "LoadState": "loaded",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "static"
+      },
+      "apt-daily-upgrade.timer": {
+        "ActiveState": "active",
+        "InvocationID": "5bc19e8aee8f4779b2e469221f4eafda",
+        "LoadState": "loaded",
+        "NextElapseUSecRealtime": "Sat 2026-10-24 06:31:56 UTC",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      },
+      "apt-daily.service": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "InvocationID": "7f14b1b4c0b543269690cf838a7e1baf",
+        "LoadState": "loaded",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "static"
+      },
+      "apt-daily.timer": {
+        "ActiveState": "active",
+        "InvocationID": "5f3a58d9f82a429092343e3205c5c421",
+        "LoadState": "loaded",
+        "NextElapseUSecRealtime": "Sat 2026-10-24 14:54:54 UTC",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      },
+      "unattended-upgrades.service": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/unattended-upgrades.service",
+        "InvocationID": "4923badebcf64f94b015696ec5a8edd6",
+        "LoadState": "loaded",
+        "MainPID": "801394",
+        "NRestarts": "0",
+        "Result": "success",
+        "UnitFileState": "enabled"
+      }
+    },
+    "result": "ACTIVE_VERIFIED",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "timer": {
+      "ActiveState": "active",
+      "InvocationID": "f979c1b7c7da4d58b7f7f3f26c30fece",
+      "LoadState": "loaded",
+      "NextElapseUSecRealtime": "Mon 2026-10-26 21:41:05 UTC",
+      "Result": "success",
+      "UnitFileState": "transient"
+    }
+  },
+  "postarm_admission": {
+    "remaining_seconds": 230393.63663744926,
+    "required_seconds": 221626.19209639446,
+    "margin_seconds": 8767.444541054807,
+    "projected_writer_free_bytes": 20368503746,
+    "projected_archive_free_bytes": 1963180262168
+  },
+  "capture_launched": false,
+  "formal_T0": null
+}

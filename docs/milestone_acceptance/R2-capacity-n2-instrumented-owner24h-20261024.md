@@ -1,6 +1,6 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **DESIGN AND ACTUAL COPY ACCEPTED / SINGLE ARM REQUESTED / NO CAPTURE OR T0**.
+Current: **DESIGN/COPY/ARM ACCEPTED / SINGLE NATIVE CAPTURE LAUNCHED / NOT YET FORMAL T0**.
 Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Proposed unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
@@ -61,9 +61,22 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Pr
   Actual oneshot40min/Stop25min/UMask0027/whole-phase pin/archive scratch.
   Activating-start is not completed ARM. Reasonable one result checkpoint
   05:45:45UTC (Shanghai13:45:45); no extra VPS checks before that while healthy.
-- [ ] Actual ARM/current admission/expiry/normal native outcome independent
-  acceptance, then single capture launch and strict warm-up/new own86400 T0.
-  No qualified window/deadline, capture or formal time exists at this boundary.
+- [x] Actual ARMce178987/result183f5bc2/manifest95846e80 independent ACCEPT;
+  all41 members parent SHA/bytes checked. Windowb502d4a8 ACTIVE_VERIFIED with
+  fixed expiry1793050865=October26 21:41:05UTC (ShanghaiOctober27 05:41:05),
+  never extend/reuse. Canonical5103ed98/prearm a014/postarm5ea49 and natural
+  manager50eef done05:41:11.921296UTC bind current deployment/boot/owners.
+- [x] Single launchc16fc3b7 at05:50:54.807UTC: capture9537822c/PID825147 active
+  running/NRestarts0, effective Typeexec/Runtime89280s/Stop1500s/UMask0022.
+  Requested archive TMPDIR is distinct from actual Environment, not exported.
+  Dispatch Recorder stopped state is boundary-before-start, not a failure.
+- [x] Initial actual launch-binding independent ACCEPTfd3656c5/resultc58cff1f/
+  manifestfe7f4bc1; all14 original members parent SHA/bytes checked. This grants
+  only dispatch/effective/boot/window/controller binding. Original launch-time
+  admission numeric publication/full actual startup remains pending.
+- [ ] One warm/start result read at06:15:54.807UTC (Shanghai14:15:54.807), then
+  independent full actual startup controls. No extra VPS read while healthy.
+  Only a real owner-start/T0 defines the new own86400 target; none exported yet.
 - [ ] Both complete released LIVE audits/completed immutableverify of only new
   warm+own24h+original stop-tail, full independent controls/selection/Catalog,
   actual OS/archive restoration before cancellation, stopped identity handoff,

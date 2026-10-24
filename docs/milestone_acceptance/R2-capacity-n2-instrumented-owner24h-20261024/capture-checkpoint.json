@@ -1,0 +1,10 @@
+{
+  "result": "SINGLE_NATIVE_CAPTURE_LAUNCHED_NOT_YET_FORMAL_T0",
+  "launch_file": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/actual-n2-stage-launch-1792821038109362000.json",
+  "launch_sha256": "c16fc3b733b77cd618e2b010a512a65b95cb6be0bd4120488f54791090d81691",
+  "actual_launch_utc": "2026-10-24T05:50:54.807087+00:00",
+  "reasonable_warm_start_checkpoint_utc": "2026-10-24T06:15:54.807087+00:00",
+  "fixed_guard_deadline_epoch_seconds": 1793050865,
+  "formal_T0": null,
+  "target_end_time": null
+}
