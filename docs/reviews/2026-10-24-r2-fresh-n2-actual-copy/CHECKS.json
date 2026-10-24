@@ -1,0 +1,451 @@
+{
+  "accepted_design_bindings_match": {
+    "controls_manifest_sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "operator_sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00",
+    "runtime_members": {
+      "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "arm.py": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "capacity-policy.json": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+      "common.py": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1",
+      "controller.py": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "launch.py": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "qualification_auxiliary_gate.py": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "qualification_core_recovery.py": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+      "qualification_monitor_rate.py": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+      "qualification_owner_995.py": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "qualification_scoped_corpus.py": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "scoped-terminal.py": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj",
+    "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+  },
+  "admission": {
+    "additional_publication_bytes_reserved_on_archive": 58725744000,
+    "archive_free_bytes": 2051250638848,
+    "audit_budget_125percent_seconds": 128386.19209639446,
+    "audit_device": 64785,
+    "audit_scope": "only chunks created after new capture boundary including warm-up",
+    "audit_scratch_bytes_on_archive": 13956500152,
+    "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "catalog_bytes": 999047168,
+    "census": {
+      "backlog": 0,
+      "counts": [
+        165949,
+        366770073,
+        19322816823,
+        279494935703,
+        41554929
+      ],
+      "high_water": {
+        "archive": 829745,
+        "chunk": 1327599,
+        "operational": 6416
+      },
+      "transaction_backlog": 0
+    },
+    "configured_products": [
+      [
+        "spot",
+        "BTCUSDT"
+      ],
+      [
+        "spot",
+        "ETHUSDT"
+      ],
+      [
+        "um_perpetual",
+        "BTCUSDT"
+      ],
+      [
+        "um_perpetual",
+        "ETHUSDT"
+      ]
+    ],
+    "configured_spools": 42,
+    "conservative_forecast_rates_per_second": [
+      1.0333333333333334,
+      2890.8333333333335,
+      125260.46666666666,
+      2105094.7333333334
+    ],
+    "estimated_full_dual_live_verify_seconds": 102708.95367711557,
+    "forecast_capture_seconds": 88560,
+    "future_growth": [
+      91513,
+      256012200,
+      11093066928,
+      186427189584
+    ],
+    "margin_seconds": 8773.807903605542,
+    "metadata_bytes": 1249893689,
+    "metadata_growth_bytes": 689257068,
+    "per_spool_decoded_budget_bytes": 1058978630,
+    "projected_archive_free_bytes": 1963180360472,
+    "projected_selected_capture": [
+      91513,
+      256012200,
+      11093066928,
+      186427189584
+    ],
+    "projected_total": [
+      257462,
+      622782273,
+      30415883751,
+      465922125287
+    ],
+    "projected_writer_free_bytes": 20368540610,
+    "rate_baseline": {
+      "current_chunk_metadata_rows": 2087,
+      "current_creation_minute_rates_per_second": [
+        1.0333333333333334,
+        1074.95,
+        52266.86666666667,
+        804656.4
+      ],
+      "current_diagnostic_metadata_window_utc_ns": [
+        1792804582614558469,
+        1792811808863586663
+      ],
+      "current_metadata_preflight_sha256": "bc3853bb0383f6916fd0a9d4d2142c1bbc825e83842bd631acf7541aedf22f58",
+      "current_metadata_utc_ns": 1792819004006073014,
+      "historical": {
+        "measured_symbols_each_market": [
+          "BTCUSDT"
+        ],
+        "n1_export_manifest_sha256": "3276c81d089120062994932ce9f23d4159f2e3dfd61a43e3e5bb51fbe2383a45",
+        "provenance": "componentwise max(prior four-product peak,2*current complete N1 seal-minute peak); conservative load forecast, no N2 measured-capacity credit",
+        "rates_per_second_chunks_frames_stored_decoded": [
+          0.7333333333333333,
+          2890.8333333333335,
+          125260.46666666666,
+          2105094.7333333334
+        ],
+        "source": "c3686dd76406c8d483b23eb10417349e5a1ffecd"
+      },
+      "kind": "COMPONENTWISE_HISTORICAL_SEAL_AND_CURRENT_CREATION_MINUTE_ENVELOPE",
+      "measured_symbols_each_market": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "provenance": "componentwise max(unchanged historical c368 seal-minute envelope, actual20e57 diagnostic creation-minute peaks); timestamps differ and are not relabeled as seal times; no accepted current-source duration or capacity",
+      "rates_per_second_chunks_frames_stored_decoded": [
+        1.0333333333333334,
+        2890.8333333333335,
+        125260.46666666666,
+        2105094.7333333334
+      ],
+      "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+    },
+    "remaining_seconds": 230400,
+    "required_seconds": 221626.19209639446,
+    "reserve_bytes_per_filesystem": 10737418240,
+    "result": "ADMITTED",
+    "spool_budget_policy": "min(rotation128MiB+maxframe16MiB,2*actual N1 maximum decoded chunk+maxframe16MiB); ETH uses same-market/same-feed BTC; global once. Measured-envelope forecast, not absolute worst-case. Full uniform upper diagnostic retained; actual filesystem reserve>10GiB remains hard pause. Historical envelope retained because this release changes only diagnostic logs; no new per-spool current-source measurement is claimed. Current2h aggregate chunk metadata is additional load context; actual free-space reserve remains a hard pause.",
+    "two_generations_writer_bytes": 2117957260,
+    "uniform_upper_projected_writer_free_bytes_diagnostic": 9116594186,
+    "utc_ns": 1792820082229495449,
+    "writer_device": 64769,
+    "writer_free_bytes": 24385728512,
+    "writer_staging_bytes": 1075755846
+  },
+  "all_checks_passed": true,
+  "bounds": {
+    "armed_window_observed": false,
+    "formal_credit_seconds": 0,
+    "historical_spool_envelope_is_not_current_per_spool_measurement": true,
+    "remaining_is_unarmed_proposed_window_seconds": true,
+    "uniform_upper_below_reserve": true
+  },
+  "copy_time_census": {
+    "backlog": 0,
+    "counts": [
+      165949,
+      366770073,
+      19322816823,
+      279494935703,
+      41554929
+    ],
+    "high_water": {
+      "archive": 829745,
+      "chunk": 1327599,
+      "operational": 6416
+    },
+    "transaction_backlog": 0
+  },
+  "copy_time_recorder": {
+    "ActiveState": "inactive",
+    "ControlGroup": "",
+    "InvocationID": "",
+    "LoadState": "loaded",
+    "MainPID": "0",
+    "NRestarts": "0",
+    "Result": "success",
+    "UnitFileState": "disabled"
+  },
+  "dispatched_copy_static_reconstruction": {
+    "bytes": 189303,
+    "candidate_code_executed": false,
+    "method": "AST literal strings plus independent exact payload serialization; no candidate function or module execution",
+    "sha256": "71cbee4773c550adf6f817b77d79bd64730254bd66598b8cb8f11e0f34146cc6"
+  },
+  "kind": "INDEPENDENT_LOCAL_STATIC_ACTUAL_COPY_RECONSTRUCTION",
+  "linux_binding_smoke": {
+    "boottime_ns": 1884985802542114,
+    "configured_products": [
+      [
+        "spot",
+        "BTCUSDT"
+      ],
+      [
+        "spot",
+        "ETHUSDT"
+      ],
+      [
+        "um_perpetual",
+        "BTCUSDT"
+      ],
+      [
+        "um_perpetual",
+        "ETHUSDT"
+      ]
+    ],
+    "contexts": 26,
+    "formal_credit_seconds": 0,
+    "historical_n1_source": "c3686dd76406c8d483b23eb10417349e5a1ffecd",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "imports": {
+      "arm-natural-wait.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/arm-natural-wait.py",
+      "arm.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/arm.py",
+      "common.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/common.py",
+      "controller.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/controller.py",
+      "launch.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/launch.py",
+      "qualification_auxiliary_gate.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/qualification_auxiliary_gate.py",
+      "qualification_core_recovery.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/qualification_core_recovery.py",
+      "qualification_monitor_rate.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/qualification_monitor_rate.py",
+      "qualification_owner_995.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/qualification_owner_995.py",
+      "qualification_scoped_corpus.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/qualification_scoped_corpus.py",
+      "restore.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/restore.py",
+      "scoped-terminal.py": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/scoped-terminal.py"
+    },
+    "inherited_duration_ns": 0,
+    "members": {
+      "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "arm.py": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "capacity-policy.json": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+      "common.py": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1",
+      "controller.py": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "launch.py": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "qualification_auxiliary_gate.py": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "qualification_core_recovery.py": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+      "qualification_monitor_rate.py": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+      "qualification_owner_995.py": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "qualification_scoped_corpus.py": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "scoped-terminal.py": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "package_origin": "/opt/binance-market-data-recorder/venv/lib/python3.12/site-packages/binance_market_data_recorder/__init__.py",
+    "result": "CURRENT_LINUX_CLEAN_IMPORT_AND_BINDING_SMOKE_PASS",
+    "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "spools": 42
+  },
+  "not_performed": [
+    "SSH",
+    "Raw read",
+    "candidate import/main/build_remote execution",
+    "source build/CI/QA",
+    "historical 18-case QA replay",
+    "ARM",
+    "capture or native launch"
+  ],
+  "original_receipt": {
+    "bytes": 22700,
+    "sha256": "e7102b1c843bae3157631944836adf483b1e9d0ff52acea72265aede0d569903",
+    "utc": "2026-10-24T05:34:42.233790702Z",
+    "utc_ns": 1792820082233790702
+  },
+  "physical": {
+    "all_hash_size_owner_mode_match": true,
+    "entries": 21,
+    "entries_exact": {
+      "arm-natural-wait.py": {
+        "bytes": 738,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+        "uid": 0
+      },
+      "arm.py": {
+        "bytes": 6128,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+        "uid": 0
+      },
+      "capacity-policy.json": {
+        "bytes": 12875,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+        "uid": 0
+      },
+      "common.py": {
+        "bytes": 12264,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1",
+        "uid": 0
+      },
+      "controller.py": {
+        "bytes": 21356,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+        "uid": 0
+      },
+      "historical-linux-qa-result.json": {
+        "bytes": 8527,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "c5ed01332116e7a0b34465553fbccfe82782a113d0852e0faa454c9725319631",
+        "uid": 0
+      },
+      "historical-runtime-manifest.json": {
+        "bytes": 1967,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+        "uid": 0
+      },
+      "launch.py": {
+        "bytes": 1395,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+        "uid": 0
+      },
+      "pin-unit-exec.py": {
+        "bytes": 329,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+        "uid": 0
+      },
+      "qualification_auxiliary_gate.py": {
+        "bytes": 6324,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+        "uid": 0
+      },
+      "qualification_core_recovery.py": {
+        "bytes": 4269,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+        "uid": 0
+      },
+      "qualification_monitor_rate.py": {
+        "bytes": 4385,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+        "uid": 0
+      },
+      "qualification_owner_995.py": {
+        "bytes": 7983,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+        "uid": 0
+      },
+      "qualification_scoped_corpus.py": {
+        "bytes": 14957,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+        "uid": 0
+      },
+      "restore.py": {
+        "bytes": 3400,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+        "uid": 0
+      },
+      "scoped-terminal.py": {
+        "bytes": 1804,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6",
+        "uid": 0
+      },
+      "stage-controls-manifest.json": {
+        "bytes": 2345,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+        "uid": 0
+      },
+      "stage-design-evidence.json": {
+        "bytes": 1502,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7",
+        "uid": 0
+      },
+      "stage-design-manifest.json": {
+        "bytes": 8466,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "817fda3445f2b4dade6c8f2b2e0ce48356d6a6946612bd616e8b101ca0f20167",
+        "uid": 0
+      },
+      "stage-design-report.md": {
+        "bytes": 10066,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "fb65d846311368e52a8ed33a3e8fa489d3002f5bbf4a20e3fd3eaab889d206ff",
+        "uid": 0
+      },
+      "stage-design-result.json": {
+        "bytes": 6467,
+        "gid": 988,
+        "mode": 416,
+        "sha256": "397c5b59c8aec56a976b08661f9c4cfa2b618888e2b34fdb40da16b497152c6a",
+        "uid": 0
+      }
+    },
+    "gid": 988,
+    "mode_octal": "0640",
+    "scope_stat": [
+      0,
+      988,
+      488
+    ],
+    "tmp_stat": [
+      999,
+      988,
+      504
+    ],
+    "total_bytes": 137547,
+    "uid": 0
+  },
+  "raw_execution": {
+    "execution": {
+      "error_type": null,
+      "operator_sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00",
+      "remote_retry": false,
+      "remote_sha256": "71cbee4773c550adf6f817b77d79bd64730254bd66598b8cb8f11e0f34146cc6",
+      "returncode": 0
+    },
+    "execution_bytes": 233,
+    "stderr_bytes": 0,
+    "stdout_is_original_receipt_file": true
+  },
+  "software_copy_receipt_custody": "Frozen dispatched program publishes software-copy.json before printing; rc0 and complete raw stdout attest successful path. No independent remote reread or physical syscall replay was performed."
+}

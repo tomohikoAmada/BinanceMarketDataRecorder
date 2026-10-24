@@ -1,6 +1,6 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **DESIGN ACCEPTED / SINGLE COPY AND LINUX BINDING COMPLETE / PHYSICAL REVIEW ACTIVE / NO ARM OR T0**.
+Current: **DESIGN AND ACTUAL COPY ACCEPTED / SINGLE ARM REQUESTED / NO CAPTURE OR T0**.
 Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Proposed unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
@@ -54,10 +54,16 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Pr
   stopped counts/backlogs0/26 contexts/42 spools/current20e57-historicalc368
   separation and zero inheritance observed. Copy-time admission has8773.808s
   margin/projected writer20,368,540,610B; software-copy.json persisted remotely.
-- [ ] Full actual Linux/physical independent review ACTIVE LOCAL/OFFLINE; only
-  after acceptance can qualification enable ARM/launch. Do not duplicate copy.
-- [ ] Fresh finite ARM/current admission, reviewed single native launch and
-  genuine strict warm-up/new own86400 T0. No window or formal time exists yet.
+- [x] Full actual Linux/physical independently ACCEPT4cea5e19/result26a431cb/
+  manifest4deb5686; all32 original members parent SHA/bytes verified. Exact
+  copied payload/current Linux and historical-source separation match.
+- [x] Single reviewed ARM requeste8636208 at05:40:45UTC/native50eef5ae/PID824518.
+  Actual oneshot40min/Stop25min/UMask0027/whole-phase pin/archive scratch.
+  Activating-start is not completed ARM. Reasonable one result checkpoint
+  05:45:45UTC (Shanghai13:45:45); no extra VPS checks before that while healthy.
+- [ ] Actual ARM/current admission/expiry/normal native outcome independent
+  acceptance, then single capture launch and strict warm-up/new own86400 T0.
+  No qualified window/deadline, capture or formal time exists at this boundary.
 - [ ] Both complete released LIVE audits/completed immutableverify of only new
   warm+own24h+original stop-tail, full independent controls/selection/Catalog,
   actual OS/archive restoration before cancellation, stopped identity handoff,
