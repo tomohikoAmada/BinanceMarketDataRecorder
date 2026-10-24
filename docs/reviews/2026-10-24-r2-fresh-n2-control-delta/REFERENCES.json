@@ -1,0 +1,12 @@
+{
+  "approved_readonly_survey_control": {
+    "MANIFEST.json": "f23d6fe9f60d43e84a5a64a4922a7e546d8f6d23325914d2a0f745b0e93f6398",
+    "REPORT.md": "a9c9d7ded169c3c1109dd83bbeaafd1d7f64877fe6cc5f753dd873c578787798",
+    "RESULT.json": "155055317771f67aeb82cf2b887b7984faf42eb9ea564031f5684c4abdcaad2b",
+    "root": "/private/var/tmp/bmdr-r2-current-preflight-review-20261024-pkz04e8p"
+  },
+  "completed_new2h_diagnostic_review_sha256": "37a1c195f8e14010d345f1f298425410f12435db7243e411e3d5ad1c285b8d8f",
+  "current_release_supplychain_review_sha256": "d81059777aeeda09d7b19ca5872a7ce28ef8fba0cb3493aef0890fec1cf1e5c1",
+  "historical_base_manifest_sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+  "qualification": "Existing source/release/old algorithm acceptances reused; none replayed or retested."
+}

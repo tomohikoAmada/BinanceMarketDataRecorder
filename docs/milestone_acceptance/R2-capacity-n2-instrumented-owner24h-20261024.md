@@ -1,6 +1,6 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **CURRENT PREFLIGHT COMPLETE / EXACT DELTA REVIEW ACTIVE / NO COPY, ARM OR T0**.
+Current: **DESIGN ACCEPTED / SINGLE COPY AND LINUX BINDING COMPLETE / PHYSICAL REVIEW ACTIVE / NO ARM OR T0**.
 Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Proposed unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
@@ -40,16 +40,24 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Pr
   Source/995/clock/strict/data/restore algorithms stay unchanged. Parent10 local
   mock predicate/output-custody cases and four generated programs syntax PASS;
   no actual Linux, copy, duration or launch credit from these fixtures.
-- [ ] Final exact manifest21ab1c0b/operator4792d322/current forecast/custody and
-  partial-byte/fresh-journal reader delta review ACTIVE LOCAL/OFFLINE. Keep all
-  mutating modes UNBOUND until the review accepts their exact inputs.
-- [ ] Bind fresh runtime/operator, current measured forecast and fixed finite
+- [x] Final exact manifest21ab1c0b/operator4792d322/current forecast/custody and
+  partial-byte/fresh-journal delta independently ACCEPTfb65d846/result397c5b59/
+  manifest817fda34; all47 parent members/current input bytes match. Six isolated
+  predicates passed; design-only state permits copy and refuses ARM/launch.
+- [x] Bind fresh runtime/operator, current measured forecast and fixed finite
   window; old historical N1 receipt keeps its actualc368 source, grants zero
   duration/source qualification to20e57. Old18 Linux algorithm cases stay
   historical, never relabeled as exact-new-bytes QA. Narrow delta review and
   actual current Linux import/binding smoke must qualify the new exact payloads.
-- [ ] One exclusive copy/physical acceptance, fresh finite ARM/current admission,
-  reviewed single native launch and genuine strict warm-up/new own86400 T0.
+- [x] One actual copye7102b1c at05:34:42UTC,21 root0:9880640 payloads and
+  genuine canonical Linux12 safe-import/binding/BOOTTIME smoke passed. Exact
+  stopped counts/backlogs0/26 contexts/42 spools/current20e57-historicalc368
+  separation and zero inheritance observed. Copy-time admission has8773.808s
+  margin/projected writer20,368,540,610B; software-copy.json persisted remotely.
+- [ ] Full actual Linux/physical independent review ACTIVE LOCAL/OFFLINE; only
+  after acceptance can qualification enable ARM/launch. Do not duplicate copy.
+- [ ] Fresh finite ARM/current admission, reviewed single native launch and
+  genuine strict warm-up/new own86400 T0. No window or formal time exists yet.
 - [ ] Both complete released LIVE audits/completed immutableverify of only new
   warm+own24h+original stop-tail, full independent controls/selection/Catalog,
   actual OS/archive restoration before cancellation, stopped identity handoff,
