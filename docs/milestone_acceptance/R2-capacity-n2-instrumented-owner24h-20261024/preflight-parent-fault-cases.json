@@ -1,0 +1,42 @@
+{
+  "kind": "LOCAL_MOCK_FAILURE_CUSTODY_ONLY_NO_LINUX_OR_REMOTE_CREDIT",
+  "cases": [
+    {
+      "case": "timeout_bytes",
+      "result": "PASS",
+      "raised": "TimeoutExpired",
+      "raw_bytes_preserved": true,
+      "directory": "/private/var/tmp/r2-preflight-local-timeout_bytes-30fg15qt"
+    },
+    {
+      "case": "oserror",
+      "result": "PASS",
+      "raised": "OSError",
+      "raw_bytes_preserved": true,
+      "directory": "/private/var/tmp/r2-preflight-local-oserror-ndmggsqa"
+    },
+    {
+      "case": "nonzero",
+      "result": "PASS",
+      "raised": "AssertionError",
+      "raw_bytes_preserved": true,
+      "directory": "/private/var/tmp/r2-preflight-local-nonzero-3ry7pcf_"
+    },
+    {
+      "case": "invalid_json",
+      "result": "PASS",
+      "raised": "JSONDecodeError",
+      "raw_bytes_preserved": true,
+      "directory": "/private/var/tmp/r2-preflight-local-invalid_json-p5oi0lw4"
+    },
+    {
+      "case": "success",
+      "result": "PASS",
+      "raised": null,
+      "raw_bytes_preserved": true,
+      "directory": "/private/var/tmp/r2-preflight-local-success-amt1kzya"
+    }
+  ],
+  "helper_sha256": "1a6a296b9a116aec910fa6b710eaadea346e20c6979c912f1c05dfb3e622d3e7",
+  "remote_unchanged_sha256": "dea73fd520ab38e4a0b9e56b532e369990b449d2d5d92923440aed9a5a5045fb"
+}

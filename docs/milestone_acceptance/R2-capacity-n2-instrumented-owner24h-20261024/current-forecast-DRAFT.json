@@ -1,0 +1,130 @@
+{
+  "kind": "CURRENT_METADATA_BASED_LOCAL_FORECAST_NOT_LIVE_ADMISSION",
+  "current_preflight_sha256": "bc3853bb0383f6916fd0a9d4d2142c1bbc825e83842bd631acf7541aedf22f58",
+  "created_minute_peaks": [
+    1.0333333333333334,
+    1074.95,
+    52266.86666666667,
+    804656.4
+  ],
+  "conservative_rates": [
+    1.0333333333333334,
+    2890.8333333333335,
+    125260.46666666666,
+    2105094.7333333334
+  ],
+  "counts": [
+    165949,
+    366770073,
+    19322816823,
+    279494935703,
+    41554929
+  ],
+  "proposed_finite_window_seconds": 230400,
+  "prearm_required_seconds_estimate": 221626.19209639446,
+  "unarmed_margin_seconds_estimate": 8773.807903605542,
+  "forecast": {
+    "configured_products": [
+      [
+        "spot",
+        "BTCUSDT"
+      ],
+      [
+        "spot",
+        "ETHUSDT"
+      ],
+      [
+        "um_perpetual",
+        "BTCUSDT"
+      ],
+      [
+        "um_perpetual",
+        "ETHUSDT"
+      ]
+    ],
+    "configured_spools": 42,
+    "rate_baseline": {
+      "kind": "COMPONENTWISE_HISTORICAL_SEAL_AND_CURRENT_CREATION_MINUTE_ENVELOPE",
+      "historical": {
+        "measured_symbols_each_market": [
+          "BTCUSDT"
+        ],
+        "n1_export_manifest_sha256": "3276c81d089120062994932ce9f23d4159f2e3dfd61a43e3e5bb51fbe2383a45",
+        "provenance": "componentwise max(prior four-product peak,2*current complete N1 seal-minute peak); conservative load forecast, no N2 measured-capacity credit",
+        "rates_per_second_chunks_frames_stored_decoded": [
+          0.7333333333333333,
+          2890.8333333333335,
+          125260.46666666666,
+          2105094.7333333334
+        ],
+        "source": "c3686dd76406c8d483b23eb10417349e5a1ffecd"
+      },
+      "measured_symbols_each_market": [
+        "BTCUSDT",
+        "ETHUSDT"
+      ],
+      "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+      "rates_per_second_chunks_frames_stored_decoded": [
+        1.0333333333333334,
+        2890.8333333333335,
+        125260.46666666666,
+        2105094.7333333334
+      ],
+      "current_creation_minute_rates_per_second": [
+        1.0333333333333334,
+        1074.95,
+        52266.86666666667,
+        804656.4
+      ],
+      "current_metadata_preflight_sha256": "bc3853bb0383f6916fd0a9d4d2142c1bbc825e83842bd631acf7541aedf22f58",
+      "current_metadata_utc_ns": 1792819004006073014,
+      "current_diagnostic_metadata_window_utc_ns": [
+        1792804582614558469,
+        1792811808863586663
+      ],
+      "current_chunk_metadata_rows": 2087,
+      "provenance": "componentwise max(unchanged historical c368 seal-minute envelope, actual20e57 diagnostic creation-minute peaks); timestamps differ and are not relabeled as seal times; no accepted current-source duration or capacity"
+    },
+    "forecast_capture_seconds": 88560,
+    "conservative_forecast_rates_per_second": [
+      1.0333333333333334,
+      2890.8333333333335,
+      125260.46666666666,
+      2105094.7333333334
+    ],
+    "future_growth": [
+      91513,
+      256012200,
+      11093066928,
+      186427189584
+    ],
+    "projected_total": [
+      257462,
+      622782273,
+      30415883751,
+      465922125287
+    ],
+    "projected_selected_capture": [
+      91513,
+      256012200,
+      11093066928,
+      186427189584
+    ],
+    "audit_scope": "only chunks created after new capture boundary including warm-up",
+    "estimated_full_dual_live_verify_seconds": 102708.95367711557,
+    "audit_budget_125percent_seconds": 128386.19209639446,
+    "metadata_growth_bytes": 689257068,
+    "audit_scratch_bytes_on_archive": 13956500152,
+    "uniform_upper_projected_writer_free_bytes_diagnostic": 9116647434,
+    "spool_budget_policy": "min(rotation128MiB+maxframe16MiB,2*actual N1 maximum decoded chunk+maxframe16MiB); ETH uses same-market/same-feed BTC; global once. Measured-envelope forecast, not absolute worst-case. Full uniform upper diagnostic retained; actual filesystem reserve>10GiB remains hard pause. Historical envelope retained because this release changes only diagnostic logs; no new per-spool current-source measurement is claimed. Current2h aggregate chunk metadata is additional load context; actual free-space reserve remains a hard pause.",
+    "per_spool_decoded_budget_bytes": 1058978630,
+    "additional_publication_bytes_reserved_on_archive": 58725744000,
+    "two_generations_writer_bytes": 2117957260,
+    "writer_staging_bytes": 1075755846,
+    "projected_writer_free_bytes": 20368593858,
+    "projected_archive_free_bytes": 1963180557080,
+    "reserve_bytes_per_filesystem": 10737418240
+  },
+  "qualification": "LOCAL_ARITHMETIC_WITH_STUB_COHORT_ONLY_NO_LINUX_OR_LAUNCH",
+  "formal_credit_seconds": 0
+}

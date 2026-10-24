@@ -1,0 +1,37 @@
+{
+  "state": "DESIGN_PREPARED_PENDING_INDEPENDENT_CURRENT_DELTA_REVIEW",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "actual_identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "actual_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "actual_deployment_sha256": "e148f51a26aea4d0da81d96d9700900f3f4f171e8b1c0e1f8d9aa6c03f859a7f",
+  "target_duration_seconds": 86400,
+  "finite_window_seconds": 230400,
+  "expected_stopped_counts": [
+    165949,
+    366770073,
+    19322816823,
+    279494935703,
+    41554929
+  ],
+  "members": {
+    "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+    "arm.py": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+    "capacity-policy.json": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+    "common.py": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1",
+    "controller.py": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+    "launch.py": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+    "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+    "qualification_auxiliary_gate.py": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+    "qualification_core_recovery.py": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+    "qualification_monitor_rate.py": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+    "qualification_owner_995.py": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+    "qualification_scoped_corpus.py": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+    "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+    "scoped-terminal.py": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+  },
+  "historical_base_manifest_sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+  "formal_credit_seconds": 0,
+  "operator_state": "NOT_IMPLEMENTED_NO_COPY_ARM_LAUNCH",
+  "current_preflight_sha256": "bc3853bb0383f6916fd0a9d4d2142c1bbc825e83842bd631acf7541aedf22f58"
+}

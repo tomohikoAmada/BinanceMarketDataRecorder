@@ -1,6 +1,6 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **LOCAL PREPARATION / UNBOUND / NO REMOTE SCOPE OR T0**.
+Current: **CURRENT PREFLIGHT COMPLETE / EXACT DELTA REVIEW ACTIVE / NO COPY, ARM OR T0**.
 Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Proposed unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
@@ -12,10 +12,37 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Pr
 - [x] Decision: stop chaining short tests. Prepare one fresh full N2 measurement
   under the new instrumented release, with an honestly possible failed result.
   Logging is not a demonstrated stability repair or transferred old-source pass.
-- [ ] Narrow read-only current preflight review and one metadata-only survey:
-  stopped source/identity/config, current census/free/reserves/kernel/OS owners,
-  detailed load metadata only from the completed new2h. No Raw/manifest payload,
-  canonical VERIFY, source QA, scope creation, ARM or capture in this survey.
+- [x] Exact read-only helper1a6a296b independently ACCEPTa9c9d7de/result15505531/
+  manifestf23d6fe9; all10 original review members parent SHA/bytes checked. Initial
+  unexecuted3003 lost partial timeout output; fixed before execution, five local
+  mock failure-custody cases PASS/no Linux credit. Original finding preserved.
+- [x] One actual surveybc3853bb at05:16:44UTC: stopped9b8/config5b73/source20e57,
+  counts165949chunks/366770073frames/19,322,816,823storedB/279,494,935,703decodedB,
+  max chunk41,554,929B, backlogs0. These aggregate current metadata counts supply
+  planning only, zero saved-frame correctness or formal-time denominator.
+  Writer free24,385,781,760B/archive2,051,250,835,456B/host available5,113,319,424B.
+  Known boot59bb/kernel146/pending147 marker hashes and packages unchanged,
+  NTP synchronized, no scheduled reboot. Normal OS/archive owners remain enabled;
+  no masks, reboot, deployment VERIFY, source QA, scope creation or Raw/manifest
+  payload read. [Summary](R2-capacity-n2-instrumented-owner24h-20261024/current-preflight-summary.json).
+- [x] New current2h creation-minute metadata rates combined componentwise with
+  the explicitly historicalc368 seal-minute envelope; creation time is not
+  relabeled as seal time. Historical per-spool measured budgets retain provenance,
+  not an absolute traffic guarantee. Fresh copy/ARM/current admission recheck>10GiB.
+  Unarmed arithmetic proposes230400s (ceil((221626.192096+7200)/3600)*3600),
+  margin8773.807904s/projectedwriter20,368,593,858B/archive1,963,180,557,080B.
+  This protects24h plus audit/restore; it is not64h capture or an armed deadline.
+- [x] Current14-file candidate leaves12 accepted files byte-identical. Common/
+  policy bind20e57/9b8/e148/new scope and actual stopped counts while keeping the
+  N1 receipt sourcec368 historical with zero inheritance/current-source pass.
+  New operator distinguishes old18-case algorithm proof from current copy-time
+  Linux12-clean-import/binding smoke and its later independent acceptance.
+  Source/995/clock/strict/data/restore algorithms stay unchanged. Parent10 local
+  mock predicate/output-custody cases and four generated programs syntax PASS;
+  no actual Linux, copy, duration or launch credit from these fixtures.
+- [ ] Final exact manifest21ab1c0b/operator4792d322/current forecast/custody and
+  partial-byte/fresh-journal reader delta review ACTIVE LOCAL/OFFLINE. Keep all
+  mutating modes UNBOUND until the review accepts their exact inputs.
 - [ ] Bind fresh runtime/operator, current measured forecast and fixed finite
   window; old historical N1 receipt keeps its actualc368 source, grants zero
   duration/source qualification to20e57. Old18 Linux algorithm cases stay

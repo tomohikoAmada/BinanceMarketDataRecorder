@@ -1,0 +1,58 @@
+{
+  "actual_helper_or_main_execution_by_reviewer": false,
+  "actual_observation": false,
+  "blocking_findings": [],
+  "decision": "ACCEPT_SINGLE_READ_ONLY_CURRENT_PREFLIGHT_DESIGN_PENDING_ACTUAL_OBSERVATION",
+  "formal_credit_seconds": 0,
+  "helper_bytes": 7802,
+  "helper_sha256": "1a6a296b9a116aec910fa6b710eaadea346e20c6979c912f1c05dfb3e622d3e7",
+  "initial_finding_resolved": "TimeoutExpired/OSError now preserve available original bytes and execution metadata exclusively before re-raising, without retry. Remote body unchanged.",
+  "launch_approval": false,
+  "limits": [
+    "Read-only design acceptance supplies no actual current metadata or future stage admission/window/counts.",
+    "Created-UTC interval rows support creation-minute/selected-window forecast provenance only, not peak-seal-minute rates or saved-frame correctness denominator.",
+    "Aggregate census is a SQL snapshot; later filesystem/owner/kernel reads need not form one atomic instant. The future native stage still needs fresh actual admission.",
+    "No existing stage scope, finite window, newT0/capture/arm/copy/release/VERIFY or automatic capacity progression is authorized by this report."
+  ],
+  "local_outputs": "Binary exclusive stdout/stderr and execution JSON on timeout/OSError/nonzero/success; JSON parse follows original preservation; no retry",
+  "manifest_bytes": 875,
+  "manifest_sha256": "18234ef68ae68fbd29fdb61e6ec283b2e2e13e45322add1dc19ca490d3d4de28",
+  "new_tests": 0,
+  "parent_mock_witness": {
+    "Linux_or_remote_credit": false,
+    "cases_reported_PASS": 5,
+    "kind": "LOCAL_MOCK_FAILURE_CUSTODY_ONLY_NO_LINUX_OR_REMOTE_CREDIT",
+    "rerun_by_reviewer": false,
+    "sha256": "50905be0fdaecedd4644a32e96c52330f7868e34ca111a3083b8284d7e11e627"
+  },
+  "proposed_scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj",
+  "rate_time_semantics": "created_at_utc_ns metadata window and creation-minute rates only; not seal-minute peak",
+  "remote_boundaries": {
+    "commands": [
+      "systemctl show",
+      "uname -r",
+      "apt-config shell (read Automatic-Reboot config)",
+      "dpkg --audit",
+      "dpkg-query -W",
+      "timedatectl show NTPSynchronized"
+    ],
+    "deploy_VERIFY": false,
+    "effective_user": "root",
+    "filesystem": "Metadata path/stat/free-device readings only, plus explicit config/identity/deployment and system notice/config/proc files",
+    "identity": "Exact boot59bb/source20e57/identity9b8/config5b73/native deploymente148 hashes; stopped AND disabled Recorder PID0/NRestarts0",
+    "production_service_or_deployment_actions": false,
+    "scope": "Assert absent/no symlink; no creation",
+    "scope_creation": false,
+    "service_lock": "O_RDONLY|O_NOFOLLOW, exclusive nonblocking advisory lock, exact dev/inode/uid/gid/mode assertion",
+    "sql_data_mutations": false,
+    "sqlite": "URI mode=ro, PRAGMA query_only=ON, BEGIN transaction; aggregate metadata/high-waters plus7 named created-window columns; no Raw/manifest body open"
+  },
+  "remote_bytes": 5576,
+  "remote_query_window_utc_ns": [
+    1792804582614558469,
+    1792811808863586663
+  ],
+  "remote_sha256": "dea73fd520ab38e4a0b9e56b532e369990b449d2d5d92923440aed9a5a5045fb",
+  "source_QA_or_old_live_replay": false,
+  "stage_admission": false
+}
