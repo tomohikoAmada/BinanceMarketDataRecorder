@@ -1,0 +1,985 @@
+{
+  "additional_checks": {
+    "current_backlog_not_exported": true,
+    "current_worker_completed_successfully": {
+      "ExecStart_code": "exited",
+      "ExecStart_status": 0,
+      "PID": 0,
+      "Result": "success",
+      "invocation": "495ba4f802524a59ae3bee43bd06d7ff",
+      "state": "inactive/dead"
+    },
+    "current_worker_different_from_cleanup": true,
+    "initial_effective_properties_source": "Original native-binding.json from actual launch; retained initial snapshot, not a post-GC reread.",
+    "maximum_publication_bytes": 13599,
+    "metadata_reader_utc": "2026-10-24T04:05:06.890837589Z",
+    "next_measurement_assessment": {
+      "basis": "The owner has a separately established N2 measurement objective and an independently qualified new instrumented release. A full new measurement asks whether that exact release meets unchanged criteria and captures explanatory fields if a close occurs. It does not presume any stability improvement.",
+      "conditions": [
+        "One separately reviewed fresh scope/identity/source binding and finite window/cleanup/reserves; fresh actual admission.",
+        "Use the existing predeclared owner monitor policy and saved-frame correctness/audit requirements; retain paired strict diagnostics and every original failure.",
+        "No transferred duration, previous-source pass, repair credit, changed threshold, automatic repeat or automatic N4/N8 advancement.",
+        "Accept an honestly failed N2 outcome and inspect its bounded new evidence instead of automatically retrying.",
+        "If a different governing sequence requires a demonstrated runtime repair first, this diagnostic does not satisfy that requirement."
+      ],
+      "fresh_full_N2_can_be_reasoned_measurement": true,
+      "launch_authorized_by_this_review": false,
+      "stop_indefinite_short_observation_chain": true
+    },
+    "post_GC_defaults_warning": "Current native not-found/default90s timeouts andUMask0022 do not characterize its executed transient invocation.",
+    "source_defect_limit": "Neither threeNetworkError nor39EmptySideDataResponse labels contain request/response/transport evidence sufficient to identify a source defect or causal network origin.",
+    "source_defect_proven": false
+  },
+  "all1413_current_and_peak_owned_swap_zero": true,
+  "all36738_contexts_equal_publication_and_official_strict_pairs": true,
+  "blocking_findings": [],
+  "cleanup": {
+    "archive_timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "NextElapseUSecMonotonic": "3w 17h 19min 4.535502s",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "archive_worker": {
+      "ActiveState": "inactive",
+      "ControlGroup": "",
+      "ExecMainStartTimestampMonotonic": "1876683664262",
+      "InvocationID": "25b584bbb691490f9b361224222fcb1c",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "static"
+    },
+    "backlog": [
+      0,
+      0
+    ],
+    "clock_monotonic_ns": 1876703044120677,
+    "formal_credit_seconds": 0,
+    "recorder": {
+      "ActiveState": "inactive",
+      "ControlGroup": "",
+      "ExecMainStartTimestampMonotonic": "1869476847314",
+      "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "recorder_before_cleanup": {
+      "ActiveState": "active",
+      "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+      "ExecMainStartTimestampMonotonic": "1869476847314",
+      "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+      "MainPID": "818054",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "running",
+      "UnitFileState": "disabled"
+    },
+    "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+    "utc_ns": 1792811808863586663
+  },
+  "credits": {
+    "24h_eligibility": false,
+    "capacity": false,
+    "formal_seconds": 0,
+    "production_ready": false,
+    "saved_frame_correctness": false,
+    "stability_repair": false
+  },
+  "current_read_states": {
+    "binance-market-data-archive.service": {
+      "ActiveState": "inactive",
+      "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml archive drain --storage-id 57512e1d-59cc-4aff-bf3b-49ae84a7a44e --max-runtime-seconds 50 --max-files 1000 ; ignore_errors=no ; start_time=[Sat 2026-10-24 04:04:50 UTC] ; stop_time=[Sat 2026-10-24 04:05:03 UTC] ; pid=822971 ; code=exited ; status=0 }",
+      "InvocationID": "495ba4f802524a59ae3bee43bd06d7ff",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 5s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "oneshot",
+      "UMask": "0027",
+      "UnitFileState": "static"
+    },
+    "binance-market-data-archive.timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "binance-market-data-recorder.service": {
+      "ActiveState": "inactive",
+      "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml _service run ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 30s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "simple",
+      "UMask": "0027",
+      "UnitFileState": "disabled"
+    },
+    "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service": {
+      "ActiveState": "inactive",
+      "InvocationID": "",
+      "LoadState": "not-found",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 30s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "",
+      "UMask": "0022",
+      "UnitFileState": ""
+    }
+  },
+  "decision": "ACCEPT_NEW_TWO_HOUR_DIAGNOSTIC_RECONSTRUCTION_ONLY",
+  "exec_stop_post": {
+    "original": {
+      "archive_timer": {
+        "ActiveState": "active",
+        "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+        "NextElapseUSecMonotonic": "3w 17h 19min 4.535502s",
+        "Result": "success",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      },
+      "archive_worker": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1876683664262",
+        "InvocationID": "25b584bbb691490f9b361224222fcb1c",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      },
+      "backlog": [
+        0,
+        0
+      ],
+      "clock_monotonic_ns": 1876703044120677,
+      "formal_credit_seconds": 0,
+      "recorder": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1869476847314",
+        "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "disabled"
+      },
+      "recorder_before_cleanup": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+        "ExecMainStartTimestampMonotonic": "1869476847314",
+        "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+        "MainPID": "818054",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "running",
+        "UnitFileState": "disabled"
+      },
+      "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+      "utc_ns": 1792811808863586663
+    },
+    "result": "CLEANUP_ALREADY_COMPLETE_NO_ACTION"
+  },
+  "gate_counts": {
+    "official_gate": {
+      "BLOCK": 63,
+      "PASS": 1350
+    },
+    "strict_gate": {
+      "BLOCK": 85,
+      "PASS": 1328
+    }
+  },
+  "initial_effective_native": {
+    "ActiveState": "activating",
+    "ExecStart": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py /opt/binance-market-data-recorder/venv/bin/python /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py ; ignore_errors=no ; start_time=[Sat 2026-10-24 01:16:20 UTC] ; stop_time=[n/a] ; pid=818041 ; code=(null) ; status=0/0 }",
+    "ExecStopPost": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+    "InvocationID": "e33cf116c1e843b5b5e9d7988e71cdf8",
+    "LoadState": "loaded",
+    "MainPID": "818041",
+    "NRestarts": "0",
+    "Result": "success",
+    "SubState": "start",
+    "TimeoutStartUSec": "2h 20min",
+    "TimeoutStopUSec": "15min",
+    "Type": "oneshot",
+    "UMask": "0027",
+    "UnitFileState": "transient"
+  },
+  "input_bytes": 65762036,
+  "input_sha256": "e805efd95e84a01d63fd1552a4db1d4bb93fd55009c7c6ae9f97c390a6d99d05",
+  "journal": {
+    "EmptySideDataResponse": 39,
+    "NetworkError": 3,
+    "REST_warnings": 42,
+    "WS_close_disconnect_reconnect_or_error_events_found": 0,
+    "connection_time_first": "2026-10-24T01:21:33.521376+00:00",
+    "connection_time_last": "2026-10-24T01:21:34.936521+00:00",
+    "counts": {
+      "service_stop_requested": 1,
+      "spot_snapshot_bridge_pending": 3,
+      "spot_websocket_connected": 6,
+      "usdm_side_rest_failed": 42,
+      "usdm_snapshot_bridge_pending": 2,
+      "usdm_websocket_connected": 10
+    },
+    "distinct_initial_connection_ids": 16,
+    "graceful_stop": {
+      "event": "service_stop_requested",
+      "fields": {
+        "reason": "SIGTERM"
+      },
+      "level": "INFO",
+      "logger": "binance_market_data_recorder",
+      "message": "graceful service stop requested",
+      "timestamp_utc": "2026-10-24T03:16:29.501303+00:00"
+    },
+    "initial_WS_connections": 16,
+    "owned_events": 64,
+    "rest_group_counts": {
+      "um_perpetual:BTCUSDT:premium_index_snapshot": 1,
+      "um_perpetual:BTCUSDT:taker_buy_sell_volume_5m": 20,
+      "um_perpetual:ETHUSDT:open_interest": 1,
+      "um_perpetual:ETHUSDT:premium_index_snapshot": 1,
+      "um_perpetual:ETHUSDT:taker_buy_sell_volume_5m": 19
+    },
+    "snapshot_bridge_warnings": 5
+  },
+  "limits": [
+    "No saved-frame audit, Raw inspection, formal T0, duration/capacity/24h/production-ready eligibility or stability repair credit.",
+    "Zero unexpected WS closure is an absence in this supplied bounded owned journal, not proof of all exchange/transport events or permanent stability.",
+    "No actual WS close exercised new close fields. Root cause remains unobserved.",
+    "REST exception labels and empty-response recovery states do not prove a source defect or HTTP/network origin.",
+    "Paired gate disagreement is an existing explicit empty-response-recovery policy distinction; both classifications remain preserved.",
+    "Journal warning time, publication read time and last-success timestamps do not provide exact failed-request or outage duration.",
+    "Private observer start BOOTTIME and cleanup BOOTTIME are not separately exported; exact reported7204.608260326s cannot be recomputed from the request counter alone.",
+    "Use original initial native effective properties; post-GC90s/UMask0022 defaults do not describe the executed unit."
+  ],
+  "official_PASS_strict_BLOCK_rows": [
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    199,
+    200
+  ],
+  "original_members": {
+    "cleanup-complete.json": {
+      "bytes": 1275,
+      "sha256": "357cd17050a4b7835b7e2ae0587081c5184c064f99deec1825a5be69750f96d5"
+    },
+    "diagnostic-result.json": {
+      "bytes": 1536,
+      "sha256": "81918b6429ef313c731f5b9051c953fd0f1b4683a8a58063cc9ad2dbaaebd4ff"
+    },
+    "exec-stop-post-1792811809781186139.json": {
+      "bytes": 1337,
+      "sha256": "99bdae7f06cb763eeeab58f923d2674c96cc7a1acf8ba25de2c52e9221f79727"
+    },
+    "native-attempt.json": {
+      "bytes": 2101,
+      "sha256": "933c9547348fec7cf49dbe0ae7afd9bf71723036ef11f3a355164b4e850e32b3"
+    },
+    "native-binding.json": {
+      "bytes": 3446,
+      "sha256": "27270710fbae107c2af9f7a7d903507ab5369e39a269c7b7eee642b3b7fced7f"
+    },
+    "observations.jsonl": {
+      "bytes": 62713141,
+      "sha256": "0fa29c058cdcae89281b2a0593356ab22f1c3a9dfba0d006582b9b2ac0df7160"
+    },
+    "owned-recorder.json": {
+      "bytes": 421,
+      "sha256": "7c43f9ac0c149b70aaa16d57beb0390c6e0da2755fd383fc6a5dd0addb59ccaf"
+    },
+    "software-copy.json": {
+      "bytes": 3397,
+      "sha256": "2f72c6c0493881e3a07ae5ec089e4f97638a8a57b441afd84c718cdf5fb4b06a"
+    },
+    "start-request.json": {
+      "bytes": 575,
+      "sha256": "72108c47235402d9beefa7699b4a84ead63f78c326e8c6e2e27275df5789b6bb"
+    }
+  },
+  "paired_gate_counts": {
+    "BLOCK/BLOCK": 63,
+    "PASS/BLOCK": 22,
+    "PASS/PASS": 1328
+  },
+  "partial_startup_facts": {
+    "RUNNING_initial_core_not_ready": 2,
+    "STARTING_empty_maps_and_write_safety_false": 59,
+    "row59_recovery_true_but_still_STARTING_empty_maps_write_safety_false": true,
+    "startup_recovery_complete_false_rows": 58
+  },
+  "post_core_readiness_official_PASS": 1350,
+  "post_core_readiness_samples": 1352,
+  "post_core_readiness_strict_PASS": 1328,
+  "publication_count": 1413,
+  "publication_identity_all_equal": {
+    "capacity_profile_id": "vps-production-v1",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+    "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+  },
+  "recommendation": "Close this finite diagnostic as WS_NOT_REPRODUCED and preserve its stopped handoff. Do not chain further short captures solely to wait for a close or change thresholds. Given the independently established owner N2 measurement objective and exact qualified instrumented20e57 release, one fresh full N2 can be a reasoned measurement rather than a claimed fix: it needs a separately reviewed unique scope/identity binding/fixed window and cleanup, fresh actual admission, unchanged predeclared monitor and saved-data criteria, zero inherited time or repair credit, and acceptance of an honest failed outcome. This review authorizes no launch or automatic N4/N8 progression. Treat REST recovery and monitoring-policy acceptance separately; change source only for a demonstrated defect, and use original evidence from an actual close to decide any transport repair.",
+  "recovery_evidence": "RECOVERY-EVIDENCE.json",
+  "resource": {
+    "after_core_readiness": {
+      "archive_free_min_bytes": 2051254026240,
+      "host_available_min_bytes": 4621594624,
+      "host_swap_range_bytes": [
+        30437376,
+        30437376
+      ],
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 9.62
+        },
+        "io_psi": {
+          "full": 13.71,
+          "some": 19.1
+        },
+        "memory_psi": {
+          "full": 0.29,
+          "some": 0.29
+        }
+      },
+      "rss_max_bytes": 363081728,
+      "sample_count": 1352,
+      "writer_free_min_bytes": 24335216640
+    },
+    "all": {
+      "archive_free_min_bytes": 2051254026240,
+      "host_available_min_bytes": 4621594624,
+      "host_swap_range_bytes": [
+        30437376,
+        30437376
+      ],
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 10.21
+        },
+        "io_psi": {
+          "full": 13.71,
+          "some": 19.1
+        },
+        "memory_psi": {
+          "full": 0.29,
+          "some": 0.29
+        }
+      },
+      "rss_max_bytes": 390922240,
+      "sample_count": 1413,
+      "writer_free_min_bytes": 24335216640
+    },
+    "cgroup_cpu_delta_seconds": 7797.204102,
+    "heartbeat_age_max_seconds": 5.430292965,
+    "startup_readiness": {
+      "archive_free_min_bytes": 2051516796928,
+      "host_available_min_bytes": 4667211776,
+      "host_swap_range_bytes": [
+        30437376,
+        30437376
+      ],
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 10.21
+        },
+        "io_psi": {
+          "full": 5.59,
+          "some": 11.07
+        },
+        "memory_psi": {
+          "full": 0.0,
+          "some": 0.0
+        }
+      },
+      "rss_max_bytes": 390922240,
+      "sample_count": 61,
+      "writer_free_min_bytes": 24408010752
+    }
+  },
+  "result": {
+    "cleanup": {
+      "archive_timer": {
+        "ActiveState": "active",
+        "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+        "NextElapseUSecMonotonic": "3w 17h 19min 4.535502s",
+        "Result": "success",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      },
+      "archive_worker": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1876683664262",
+        "InvocationID": "25b584bbb691490f9b361224222fcb1c",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      },
+      "backlog": [
+        0,
+        0
+      ],
+      "clock_monotonic_ns": 1876703044120677,
+      "formal_credit_seconds": 0,
+      "recorder": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1869476847314",
+        "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "disabled"
+      },
+      "recorder_before_cleanup": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+        "ExecMainStartTimestampMonotonic": "1869476847314",
+        "InvocationID": "0c6e489acbc449968de4d7ea42ad0e80",
+        "MainPID": "818054",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "running",
+        "UnitFileState": "disabled"
+      },
+      "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+      "utc_ns": 1792811808863586663
+    },
+    "ended_at_utc_ns": 1792811808892098455,
+    "formal_credit_seconds": 0,
+    "observations": 1413,
+    "own_observed_seconds": 7204.608260326,
+    "owned_recorder_invocation": "0c6e489acbc449968de4d7ea42ad0e80",
+    "result": "BOUNDED_DIAGNOSTIC_OBSERVATION_COMPLETE"
+  },
+  "reused_references": {
+    "accepted_initial_new2h_copy_and_native_binding": {
+      "MANIFEST.json": "5ba6baac6a1819d50f2f17ac3010c4284de5da9a2b4fc6b1b128aecca443751d",
+      "REPORT.md": "99b539a0b701714691857842b3d6ed194643b79d759ae3f9ade6c82da453d900",
+      "RESULT.json": "077ae5b94bbc83292595821dac9aa583a035a7f7ecf22e5b5af8b6c8e2e7fe05",
+      "root": "/private/var/tmp/bmdr-r2-two-hour-diagnostic-actual-binding-review-20261024-final-sgcXxy4N"
+    },
+    "accepted_new2h_design": {
+      "MANIFEST.json": "dbc19b4cd229bdd89c2acff840c062eb98d8657035188410567f010d9f4d8493",
+      "REPORT.md": "7eedc9a8b97fdcc176d8fef1b6cd7974e3bd7f36dd92bc663894be7fb5466d07",
+      "RESULT.json": "7a5f55f742aad39c7674a0cd6b63864a3ba726d5b763a1c3f5aa7cee6ff47e73",
+      "root": "/private/var/tmp/bmdr-r2-two-hour-diagnostic-delta-review-20261024-2fbUk2gD"
+    }
+  },
+  "segments": [
+    {
+      "core_ready": false,
+      "count": 59,
+      "first_row": 1,
+      "first_utc": "2026-10-24T01:16:33.091884622Z",
+      "last_row": 59,
+      "last_utc": "2026-10-24T01:21:28.107108776Z",
+      "official": "BLOCK",
+      "official_reasons": [
+        "core_not_ready",
+        "auxiliary_set_differs:spot:BTCUSDT",
+        "auxiliary_set_differs:spot:ETHUSDT",
+        "auxiliary_set_differs:um_perpetual:BTCUSDT",
+        "auxiliary_set_differs:um_perpetual:ETHUSDT",
+        "global_auxiliary_set_differs",
+        "auxiliary_not_running:spot:BTCUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:BTCUSDT:exchange_info",
+        "auxiliary_not_running:spot:ETHUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:ETHUSDT:exchange_info",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_not_running:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_not_running:um_perpetual:GLOBAL:exchange_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:exchange_info"
+      ],
+      "status": "STARTING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "core_not_ready",
+        "auxiliary_set_differs:spot:BTCUSDT",
+        "auxiliary_set_differs:spot:ETHUSDT",
+        "auxiliary_set_differs:um_perpetual:BTCUSDT",
+        "auxiliary_set_differs:um_perpetual:ETHUSDT",
+        "global_auxiliary_set_differs",
+        "auxiliary_not_running:spot:BTCUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:BTCUSDT:exchange_info",
+        "auxiliary_not_running:spot:ETHUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:ETHUSDT:exchange_info",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_not_running:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_not_running:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_not_running:um_perpetual:GLOBAL:exchange_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:exchange_info"
+      ]
+    },
+    {
+      "core_ready": false,
+      "count": 1,
+      "first_row": 60,
+      "first_utc": "2026-10-24T01:21:33.167771273Z",
+      "last_row": 60,
+      "last_utc": "2026-10-24T01:21:33.167771273Z",
+      "official": "BLOCK",
+      "official_reasons": [
+        "core_not_ready",
+        "auxiliary_capture_not_fresh:spot:BTCUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:ETHUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:exchange_info"
+      ],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "core_not_ready",
+        "auxiliary_capture_not_fresh:spot:BTCUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:spot:ETHUSDT:exchange_info",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:BTCUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:basis_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:funding_history",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:global_long_short_ratio_5m",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:liquidation",
+        "auxiliary_not_connected:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:mark_price",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:open_interest_statistics_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:premium_index_snapshot",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_account_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_cursor_not_caught_up:um_perpetual:ETHUSDT:top_long_short_position_ratio_5m",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:funding_info",
+        "auxiliary_capture_not_fresh:um_perpetual:GLOBAL:exchange_info"
+      ]
+    },
+    {
+      "core_ready": false,
+      "count": 1,
+      "first_row": 61,
+      "first_utc": "2026-10-24T01:21:38.590096765Z",
+      "last_row": 61,
+      "last_utc": "2026-10-24T01:21:38.590096765Z",
+      "official": "BLOCK",
+      "official_reasons": [
+        "core_not_ready"
+      ],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "core_not_ready"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 59,
+      "first_row": 62,
+      "first_utc": "2026-10-24T01:21:43.653444756Z",
+      "last_row": 120,
+      "last_utc": "2026-10-24T01:26:38.979661951Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "PASS",
+      "strict_reasons": []
+    },
+    {
+      "core_ready": true,
+      "count": 19,
+      "first_row": 121,
+      "first_utc": "2026-10-24T01:26:44.012642550Z",
+      "last_row": 139,
+      "last_utc": "2026-10-24T01:28:15.674250812Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m",
+        "auxiliary_not_running:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 1,
+      "first_row": 140,
+      "first_utc": "2026-10-24T01:28:20.868228445Z",
+      "last_row": 140,
+      "last_utc": "2026-10-24T01:28:20.868228445Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 58,
+      "first_row": 141,
+      "first_utc": "2026-10-24T01:28:25.933427106Z",
+      "last_row": 198,
+      "last_utc": "2026-10-24T01:33:16.164707809Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "PASS",
+      "strict_reasons": []
+    },
+    {
+      "core_ready": true,
+      "count": 1,
+      "first_row": 199,
+      "first_utc": "2026-10-24T01:33:21.277155563Z",
+      "last_row": 199,
+      "last_utc": "2026-10-24T01:33:21.277155563Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:taker_buy_sell_volume_5m"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 1,
+      "first_row": 200,
+      "first_utc": "2026-10-24T01:33:26.489195323Z",
+      "last_row": 200,
+      "last_utc": "2026-10-24T01:33:26.489195323Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:BTCUSDT:taker_buy_sell_volume_5m"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 436,
+      "first_row": 201,
+      "first_utc": "2026-10-24T01:33:31.554860841Z",
+      "last_row": 636,
+      "last_utc": "2026-10-24T02:10:27.322975710Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "PASS",
+      "strict_reasons": []
+    },
+    {
+      "core_ready": true,
+      "count": 1,
+      "first_row": 637,
+      "first_utc": "2026-10-24T02:10:32.355720701Z",
+      "last_row": 637,
+      "last_utc": "2026-10-24T02:10:32.355720701Z",
+      "official": "BLOCK",
+      "official_reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:premium_index_snapshot"
+      ],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:premium_index_snapshot"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 428,
+      "first_row": 638,
+      "first_utc": "2026-10-24T02:10:37.404653630Z",
+      "last_row": 1065,
+      "last_utc": "2026-10-24T02:46:46.609702087Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "PASS",
+      "strict_reasons": []
+    },
+    {
+      "core_ready": true,
+      "count": 1,
+      "first_row": 1066,
+      "first_utc": "2026-10-24T02:46:51.669219544Z",
+      "last_row": 1066,
+      "last_utc": "2026-10-24T02:46:51.669219544Z",
+      "official": "BLOCK",
+      "official_reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest"
+      ],
+      "status": "RUNNING",
+      "strict": "BLOCK",
+      "strict_reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest"
+      ]
+    },
+    {
+      "core_ready": true,
+      "count": 347,
+      "first_row": 1067,
+      "first_utc": "2026-10-24T02:46:56.693640166Z",
+      "last_row": 1413,
+      "last_utc": "2026-10-24T03:16:21.809849971Z",
+      "official": "PASS",
+      "official_reasons": [],
+      "status": "RUNNING",
+      "strict": "PASS",
+      "strict_reasons": []
+    }
+  ],
+  "status_counts": {
+    "RUNNING": 1354,
+    "STARTING": 59
+  },
+  "stored_paired_context_entries": 73476,
+  "timing": {
+    "archive_next_deadline_margin_at_cleanup_seconds": 41.491381323,
+    "cleanup_boottime_not_separately_exported": true,
+    "cleanup_monotonic_since_request_seconds": 7226.249029977,
+    "cleanup_utc": "2026-10-24T03:16:48.863586663Z",
+    "controller_reported_private_boottime_elapsed_seconds": 7204.608260326,
+    "deadline_boottime_ns": 1880276795087410,
+    "first_core_ready_utc": "2026-10-24T01:21:43.653444756Z",
+    "first_sample_utc": "2026-10-24T01:16:33.091884622Z",
+    "fixed_cleanup_lease_seconds": 10800,
+    "last_sample_lease_remaining_seconds": 3600.801508023,
+    "last_sample_utc": "2026-10-24T03:16:21.809849971Z",
+    "native_launched_utc": "2026-10-24T01:16:20.006922404Z",
+    "native_manager_finished_utc": "2026-10-24T03:16:49.859572000Z",
+    "native_manager_success_utc": "2026-10-24T03:16:49.856346000Z",
+    "owned_binding_utc": "2026-10-24T01:16:22.686981100Z",
+    "post_readiness_sample_span_boottime_seconds": 6878.150955438,
+    "private_observer_start_counter_not_exported": true,
+    "publication_process_started_utc": "2026-10-24T01:16:32.506655640Z",
+    "request_boottime_ns": 1869476795087410,
+    "request_to_first_sample_boottime_seconds": 10.483402063,
+    "request_to_last_sample_boottime_seconds": 7199.198491977,
+    "request_utc": "2026-10-24T01:16:22.614558469Z",
+    "sample_gap_max_seconds": 6.400555912,
+    "sample_gap_min_seconds": 5.019152371,
+    "sample_span_boottime_seconds": 7188.715089914
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "algorithm_files_expected_byte_identical": [
+    "arm-natural-wait.py",
+    "controller.py",
+    "launch.py",
+    "pin-unit-exec.py",
+    "qualification_auxiliary_gate.py",
+    "qualification_core_recovery.py",
+    "qualification_monitor_rate.py",
+    "qualification_owner_995.py",
+    "qualification_scoped_corpus.py",
+    "restore.py",
+    "scoped-terminal.py"
+  ],
+  "decision": "COMPLETE_READ_ONLY_BINDING_MAP_NOT_CANDIDATE_OR_LAUNCH_ACCEPTANCE",
+  "direct_reuse_blockers": [
+    "common.predecessor ties preserved c368 N1 source to current SOURCE; new20e57 would reject it. Separate historical provenance; do not relabel receipt or grant new-source N1 credit.",
+    "approved_payload requires old18-case QA runtime_manifest and deployment equal newbytes; a new truthful custody predicate/result type is required.",
+    "Old stopped counts/window/environment/cutoff/scope/unit values cannot be promoted to fresh admissions."
+  ],
+  "execution_or_candidate_edits": false,
+  "formal_credit_seconds": 0,
+  "known_current_bindings": {
+    "config": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "deployment_result_sha256": "e148f51a26aea4d0da81d96d9700900f3f4f171e8b1c0e1f8d9aa6c03f859a7f",
+    "deployment_scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9",
+    "identity": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "target_seconds": 86400,
+    "wheel": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+  },
+  "old_stage_manifest_sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e",
+  "preserve_semantics": [
+    "own86400 minimum BOOTTIME target; fixed30s nominal2880 slots; owner995 thresholds; official gate plus retained strict diagnostics; no transferred time",
+    "owner995 RecoveryObserver and evaluate_fixed_slots are active; legacy max60s core_recovery/999 monitor helpers are not the active policy and must not be swapped in",
+    "1200s bounded strict warm endpoints;5s recovery probes outside denominator; minimum target+60s actual endpoint policy; clock discontinuity checks",
+    "new-boundary selected saved-data full dualLIVE/completed immutable verify, no history Raw; full audit even monitor fails; normal restored handoff before guard cancellation"
+  ],
+  "qualification_path": [
+    "freeze actual current metadata/environment/forecast inputs, then final literal bindings and exact14runtime/operator/manifest hashes",
+    "narrow independent text/AST delta review; retain old18-case QA provenance only as historical",
+    "actual bounded Linux clean imports of12 safe modules from final complete directory under canonical interpreter (exclude top-level-action pin module); exact package/private origins; small changed-binding fixtures and original logs, no production/main/Raw actions",
+    "independent actual new smoke/export binding acceptance; then separate actual softwarecopy/physical/admission/arm/launch reviews, without rebuilding current source/CI or rerunning unrelated oldQA"
+  ],
+  "required_file_mapping": [
+    {
+      "change": "Q/SOURCE/IDENTITY/DEPLOY_SCOPE/DEPLOY_SHA/CAPTURE/TERMINAL/EXPIRY/WINDOW_SECONDS/EXPECTED_STOPPED_COUNTS/CAPACITY_POLICY_SHA; split historical predecessor source from current SOURCE. CONFIG_SHA unchanged. Wheel is transitively pinned by exact identity+deployment hashes; no old standalone wheel literal exists.",
+      "file": "common.py",
+      "lines": "4-10,16-26,45-58,82-88"
+    },
+    {
+      "change": "Bind new actual-release acceptance pointer/current measurement scope provenance; preserve old N1 receipt path/hash/actual source separately and inherited_duration_ns0. Rate baseline and N1 spool observations retain historical source, never globally replacec368. New current census/rates/envelopes and publication upper-count derivation must be explicitly bound when available.",
+      "file": "capacity-policy.json",
+      "lines": "1-44 and spool_decoded_budgets"
+    },
+    {
+      "change": "Freshly verify boot/kernel/reboot-marker/package/NTP assumptions. Change literals only to independently reviewed actual new environment if needed; never erase notice/reboot or weaken guards to fit. Uses new common window/counts/expiry.",
+      "file": "arm.py",
+      "lines": "13-48,61-66"
+    },
+    {
+      "change": "New local runtime/manifest/binding and remoteQA/scope/unitprefix literals; current release/deploy/identity guard hashes; UNBOUND window until budget chosen. Replace false oldQA==newmembers premise with explicit old historicalQA plus actual new delta/import/binding-smoke acceptance. Derive journal cutoffs from fresh scope origin and genuine invocation, not2026-10-22.",
+      "file": "capacity-n2-stage-operator.py",
+      "lines": "15-22,36-43,51-110,170-203,244-245"
+    },
+    {
+      "change": "Rebuild exact14-member hashes/source/identity/deploy/config/target/window/scope after final bindings; do not copy old actual acceptance state.",
+      "file": "capacity-n2-stage-controls-manifest.json",
+      "lines": "all"
+    },
+    {
+      "change": "Distinct new result/schema/logs/current runtime+operator+manifest exacthashes/packageorigin/identity/deploy and independent acceptances; old18-case QA remains unchanged historical evidence, not current-byte QA.",
+      "file": "new current-Linux binding and smoke manifest",
+      "lines": "not yet created"
+    }
+  ],
+  "reviewed_inputs": {
+    "arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "capacity-n2-stage-controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "capacity-n2-stage-operator.py": {
+      "bytes": 17777,
+      "sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+    },
+    "capacity-policy.json": {
+      "bytes": 10407,
+      "sha256": "dbd46fafb240666af8031165e797fdd422adbdded889a8f006f2ea68e408dd48"
+    },
+    "common.py": {
+      "bytes": 11952,
+      "sha256": "fbb23bd8d3789255154726a65d7b432b31407ff9855cc54fd4cb2ff07b45ceb7"
+    },
+    "controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "qualification_owner_995.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    }
+  },
+  "unbound": [
+    "new local runtime/binding/manifest paths",
+    "new remote stage scope and QA scope",
+    "new unit prefix/capture/terminal/expiry/arm names",
+    "finite WINDOW_SECONDS and absolute deadline",
+    "EXPECTED_STOPPED_COUNTS/current census/reserves/metadata footprint",
+    "current rate/spool-envelope provenance and final forecast admission",
+    "fresh kernel/reboot-marker/package/NTP admission values",
+    "new exact delta/import/binding-smoke results and independent acceptance hashes"
+  ]
+}

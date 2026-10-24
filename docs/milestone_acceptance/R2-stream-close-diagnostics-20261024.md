@@ -1,9 +1,9 @@
 # R2 bounded stream-close diagnostics
 
-Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED /30MIN OBSERVATION COMPLETE / SEPARATE2H COMPLETE / FINAL REVIEW ACTIVE**.
+Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED /30MIN OBSERVATION COMPLETE / SEPARATE2H COMPLETE / FINAL REVIEW ACCEPTED**.
 Base is the exact released sourcec3686dd76406c8d483b23eb10417349e5a1ffecd,
 not main's unrelated R3 code. New canonical20e57/wheeldd2c/identity9b8ce821 deployed;
-config5b73/BTC+ETH/all14 unchanged. Both30min and separate2h observations completed; actual2h final review active, no formal T0.
+config5b73/BTC+ETH/all14 unchanged. Both30min and separate2h observations completed; actual2h final review accepted, no formal T0.
 
 N2 completed its own86400.144191527s. Final fixed monitoring2861/2880
 (99.3402777778%) is below the owner99.5% threshold:17 book_ticker disconnect
@@ -61,9 +61,11 @@ The recorded exception class alone cannot identify the initiating transport caus
   result077ae5b9/manifest5ba6baac; no Recorder health or completed-observation claim.
 - [x] Once-checkpoint new2h metadatae805efd9/result81918b64 COMPLETE1413rows,
   normal cleanup357cd170 and manager completion; no WS close reproduced.
-- [ ] Independent actual2h reconstruction active LOCAL/OFFLINE; all3 network
-  warnings/39 typed empty warnings and diagnostic gates stay honest. No new24h
-  or proven stability repair; no extra VPS/read/Raw audit or old review.
+- [x] Full actual2h reconstruction ACCEPT37a1c195/resultf148a139/manifest6fa61e22;
+  all3 network/39 typed empty warnings recovered by final observation, exact gates
+  and all23 review members preserved. No source fix or formal24h credit.
+- [ ] Fresh instrumented N2 exact-binding/current admission qualification, no
+  extra diagnostic capture or blind old-source retry. No new24h has started.
 - [ ] Choose any stability repair from actual evidence and qualify it, then a
   fresh N2 own24h/full data/restored acceptance before N4/8. Do not transfer
   N1/old-source duration or accept the failed monitor from a successful data audit.

@@ -78,8 +78,11 @@ This is a diagnostic release, not a proved stability repair or accepted N2 capac
 - [x] Single new2h checkpoint e805efd9: result81918b64 COMPLETE1413 observations,
   normal cleanup357cd170/manager completion. No WS close reproduced;3 network
   errors and39 typed empty warnings retained. No formal24h or stability-fix credit.
-- [ ] Complete independent actual2h reconstruction LOCAL/OFFLINE, then decide
-  evidence-based next qualification; no repeat VPS/read/Raw audit/short-run loop.
+- [x] Full actual2h reconstruction ACCEPT37a1c195/resultf148a139/manifest6fa61e22;
+  all23 original members plus manifest parent checked. No blocking source defect
+  proven; no repeat VPS/read/Raw audit or indefinite short-run loop.
+- [ ] Separately review fresh instrumented N2 own24h bindings/current admission;
+  this is a reasoned measurement, not an assumed stability repair.
   See [completed bounded2h observation](R2-stream-close-observation-2h-20261024.md).
 - [ ] Choose any stability repair from actual evidence, then qualify fresh N2
   own24h/full data/restored acceptance before N4/8; no new24h T0 yet.
@@ -90,7 +93,7 @@ identity9b8ce821/config5b73, stopped-disabled/PID0/NRestarts0 and both filesyste
 free>10GiB. All new control/test/temp files stay on the isolated archive child;
 normal OS/archive owners remain enabled throughout the diagnostic observation.
 New source-only deployment20e57/dd2c/identity9b8ce821 is independently accepted.
-The30min and separate bounded2h observations are complete; actual2h final review is active. No formal window or new24h T0.
+The30min and separate bounded2h observations are complete; actual2h final review is accepted. No formal window or new24h T0.
 Prior N2 finished DATA_VERIFIED_MONITOR_BLOCK: saved62687921frames100% accepted,
 monitor2861/2880=99.3402778% BLOCK. It grants no N2 capacity receipt or N4 eligibility.
 After an evidence-based minimal repair, qualify a fresh N2 own86400/full data/restored

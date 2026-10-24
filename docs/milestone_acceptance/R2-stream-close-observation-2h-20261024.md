@@ -1,10 +1,11 @@
 # R2 separate bounded2h stream-close observation
 
 Actual once-checkpoint read October24 04:05:06UTC / Shanghai12:05:06:
-**NATIVE COMPLETE / NORMAL CLEANUP / FINAL INDEPENDENT RECONSTRUCTION ACTIVE**.
+**NATIVE COMPLETE / NORMAL CLEANUP / FINAL INDEPENDENT RECONSTRUCTION ACCEPTED**.
 The fresh7200s diagnostic completed; its initial launch and03:31 checkpoint below
 are retained binding history. It has not reproduced the old WebSocket close and
-has zero formal capacity or saved-data-audit credit.
+has zero formal capacity or saved-data-audit credit. Full actual reconstruction
+is now ACCEPT37a1c195/resultf148a139/manifest6fa61e22.
 
 - [x] Basefinalf5 algorithm and three gate/policy/pin files unchanged. Only fresh
   scope/unit,7200s observation,8400s temporary native Start,10800s fixed cleanup
@@ -60,13 +61,27 @@ has zero formal capacity or saved-data-audit credit.
   4,621,594,624B; writer free minimum24,335,216,640B/archive2,051,254,026,240B.
   Host swap30,437,376B remained separate. Resource/PSI observations are diagnostic,
   not proof of old network cause or a universal hardware maximum.
-- [ ] Existing independent LOCAL/OFFLINE review reconstructs all1413 observations,
-  paired contexts/recovery, raw bytes, timing/resources/journals and actual cleanup.
-  No repeated Raw audit, export, VPS read, old review, tests or service action.
-- [ ] Interpret actual close code/reason/order/phase/age/errno and contemporaneous
-  resources. No reproduction or a single code cannot prove unique cause or fix.
-- [ ] Select any minimal repair from evidence, independently qualify it, then
-  fresh N2 own86400/full saved-data/restored acceptance before larger cohorts.
+- [x] Full independent LOCAL/OFFLINE reconstruction ACCEPT37a1c195/resultf148a139/
+  manifest6fa61e22:1413 publications,36,738 raw contexts/73,476 paired entries,
+  exact byte hashes, recovery/resource/clock/journal/actual cleanup all rebuilt.
+  All23 original review members plus manifest parent SHA/bytes checked.
+  [Final review](../reviews/2026-10-24-r2-two-hour-diagnostic-result/REPORT.md).
+  No repeated Raw audit, export, VPS read, source tests or old proof review.
+- [x] All39 typed-empty and3 NetworkError contexts return RUNNING with consecutive
+  failures0 by the final publication. BTC premium warning recovered between reads
+  and did not create a sampled BLOCK. Warning count is not an outage denominator.
+  No unexpected WS close exercised the new close fields; no blocking source
+  defect or stability repair has been established.
+- [x] Close this finite diagnosis as WS_NOT_REPRODUCED. Avoid indefinite short
+  captures and do not invent a production fix. A separately qualified fresh full
+  N2 on the new instrumented release is a reasoned measurement with possible
+  failure, not a forecast of improvement or acceptance from logging changes.
+- [ ] Fresh N2 binding/current forecast/admission/finite window and controls
+  review before copy/ARM/launch. [Preparation](R2-capacity-n2-instrumented-owner24h-20261024.md).
+- [x] Interpret bounded events/resources within their limits. No actual unexpected
+  WS close occurred, so no code/reason evidence establishes the old cause or fix.
+- [ ] Qualify a fresh instrumented N2 own86400/full saved-data/restored measurement.
+  Repair only an established defect; larger cohorts still require a full N2 pass.
 
 Unique scope:
 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9.
@@ -90,6 +105,6 @@ Original [copy](R2-stream-close-observation-2h-20261024/actual-diagnostic-copy.j
 [design](R2-stream-close-observation-2h-20261024/design-manifest.json) and
 [parent status](R2-stream-close-observation-2h-20261024/status.json) are retained.
 The initial dispatch did not grant Recorder-health/completion credit; the actual
-result above now supplies completed diagnostic evidence pending final reconstruction.
+result above now supplies completed diagnostic evidence accepted within the diagnostic scope by the final reconstruction.
 Zero formal T0/24h/capacity/saved-frame-audit/stability-fix credit. Previous N2
 monitor99.3402778% BLOCK/data100% and N4false remain;48h PENDING/R078 OPEN.

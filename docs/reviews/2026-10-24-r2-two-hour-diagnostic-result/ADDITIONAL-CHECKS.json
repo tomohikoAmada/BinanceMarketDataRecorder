@@ -1,0 +1,31 @@
+{
+  "current_backlog_not_exported": true,
+  "current_worker_completed_successfully": {
+    "ExecStart_code": "exited",
+    "ExecStart_status": 0,
+    "PID": 0,
+    "Result": "success",
+    "invocation": "495ba4f802524a59ae3bee43bd06d7ff",
+    "state": "inactive/dead"
+  },
+  "current_worker_different_from_cleanup": true,
+  "initial_effective_properties_source": "Original native-binding.json from actual launch; retained initial snapshot, not a post-GC reread.",
+  "maximum_publication_bytes": 13599,
+  "metadata_reader_utc": "2026-10-24T04:05:06.890837589Z",
+  "next_measurement_assessment": {
+    "basis": "The owner has a separately established N2 measurement objective and an independently qualified new instrumented release. A full new measurement asks whether that exact release meets unchanged criteria and captures explanatory fields if a close occurs. It does not presume any stability improvement.",
+    "conditions": [
+      "One separately reviewed fresh scope/identity/source binding and finite window/cleanup/reserves; fresh actual admission.",
+      "Use the existing predeclared owner monitor policy and saved-frame correctness/audit requirements; retain paired strict diagnostics and every original failure.",
+      "No transferred duration, previous-source pass, repair credit, changed threshold, automatic repeat or automatic N4/N8 advancement.",
+      "Accept an honestly failed N2 outcome and inspect its bounded new evidence instead of automatically retrying.",
+      "If a different governing sequence requires a demonstrated runtime repair first, this diagnostic does not satisfy that requirement."
+    ],
+    "fresh_full_N2_can_be_reasoned_measurement": true,
+    "launch_authorized_by_this_review": false,
+    "stop_indefinite_short_observation_chain": true
+  },
+  "post_GC_defaults_warning": "Current native not-found/default90s timeouts andUMask0022 do not characterize its executed transient invocation.",
+  "source_defect_limit": "Neither threeNetworkError nor39EmptySideDataResponse labels contain request/response/transport evidence sufficient to identify a source defect or causal network origin.",
+  "source_defect_proven": false
+}

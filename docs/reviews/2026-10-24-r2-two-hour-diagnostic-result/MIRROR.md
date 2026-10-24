@@ -1,0 +1,3 @@
+# Selected small full2h result review mirror
+
+Complete original frozen review: `/private/var/tmp/bmdr-r2-two-hour-diagnostic-result-review-20261024-XBxg2HKZ`. Parent read all23 original manifest members plus manifest and verified full SHA256 and byte lengths. This selected Git mirror contains REPORT/RESULT/MANIFEST/ADDITIONAL-CHECKS/REFERENCES. Large metadata, raw publication/context maps and original journals remain preserved at the original complete directory; the original manifest is unchanged. Verdict accepts completed bounded diagnostic evidence, not a proven source fix, formal24h, capacity or saved-frame audit.
