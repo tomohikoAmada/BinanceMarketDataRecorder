@@ -1,0 +1,71 @@
+{
+  "decision": "ACCEPT_ACTUAL_TWO_HOUR_DIAGNOSTIC_COPY_AND_INITIAL_NATIVE_BINDING_ONLY",
+  "files": [
+    {
+      "bytes": 10178,
+      "path": "CHECKS.json",
+      "sha256": "077ae5b94bbc83292595821dac9aa583a035a7f7ecf22e5b5af8b6c8e2e7fe05"
+    },
+    {
+      "bytes": 387,
+      "path": "REFERENCES.json",
+      "sha256": "46fa9a9e9a13d9580b5c8c4ad0d552365cc983e2d15100fea7a19c5c3b5b623e"
+    },
+    {
+      "bytes": 5520,
+      "path": "REPORT.md",
+      "sha256": "99b539a0b701714691857842b3d6ed194643b79d759ae3f9ade6c82da453d900"
+    },
+    {
+      "bytes": 10178,
+      "path": "RESULT.json",
+      "sha256": "077ae5b94bbc83292595821dac9aa583a035a7f7ecf22e5b5af8b6c8e2e7fe05"
+    },
+    {
+      "bytes": 376,
+      "path": "REVIEW-NOTES.txt",
+      "sha256": "831e92f94978ca09173da7fc1ce887b4bb3b864d67d0aab360dc37ed4289d301"
+    },
+    {
+      "bytes": 0,
+      "path": "originals/actual-diagnostic-copy-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3397,
+      "path": "originals/actual-diagnostic-copy-stdout.txt",
+      "sha256": "8dd0709394476653691fc6c131f1a9d5a7207ff4bfa61ec0df06bbd67d2576c8"
+    },
+    {
+      "bytes": 3397,
+      "path": "originals/actual-diagnostic-copy.json",
+      "sha256": "2f72c6c0493881e3a07ae5ec089e4f97638a8a57b441afd84c718cdf5fb4b06a"
+    },
+    {
+      "bytes": 0,
+      "path": "originals/actual-diagnostic-dispatch-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3446,
+      "path": "originals/actual-diagnostic-dispatch-stdout.txt",
+      "sha256": "f2252e3d32535556e4d997452f6823e0a1fa5bf3a2a04a0c4d3b97bd598b8ef1"
+    },
+    {
+      "bytes": 3446,
+      "path": "originals/actual-diagnostic-dispatch.json",
+      "sha256": "27270710fbae107c2af9f7a7d903507ab5369e39a269c7b7eee642b3b7fced7f"
+    },
+    {
+      "bytes": 2897,
+      "path": "originals/design-manifest.json",
+      "sha256": "5640864446cf7ea23349e4b3016dfccae8a275864936d4c41633c4795f65082c"
+    },
+    {
+      "bytes": 14580,
+      "path": "review_and_freeze.py",
+      "sha256": "897247ca5aa249c5561404181f943e7255718087f8f80ad6e9ff579c84c6eca9"
+    }
+  ],
+  "schema": "independent-local-review-manifest-v1"
+}

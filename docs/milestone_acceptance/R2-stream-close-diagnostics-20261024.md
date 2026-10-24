@@ -1,9 +1,9 @@
 # R2 bounded stream-close diagnostics
 
-Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED / SINGLE BOUNDED OBSERVATION NATIVE STARTED**.
+Current: **IMPLEMENTED / LOCAL QA COMPLETE / INDEPENDENT REVIEW ACCEPTED / EXACT DUAL CI PASSED / DEPLOYED /30MIN OBSERVATION COMPLETE / SEPARATE2H COMPLETE / FINAL REVIEW ACTIVE**.
 Base is the exact released sourcec3686dd76406c8d483b23eb10417349e5a1ffecd,
 not main's unrelated R3 code. New canonical20e57/wheeldd2c/identity9b8ce821 deployed;
-config5b73/BTC+ETH/all14 unchanged. Single bounded diagnostic task launched; no formal T0.
+config5b73/BTC+ETH/all14 unchanged. Both30min and separate2h observations completed; actual2h final review active, no formal T0.
 
 N2 completed its own86400.144191527s. Final fixed monitoring2861/2880
 (99.3402777778%) is below the owner99.5% threshold:17 book_ticker disconnect
@@ -51,8 +51,19 @@ The recorded exception class alone cannot identify the initiating transport caus
   normal OS/archive owners remain enabled, zero formal/capacity duration.
 - [x] Actual copy/Linux smoke/request binding independently ACCEPT061ce832;
   only initial native state is accepted, no completed observation.
-- [ ] Read actual result/close evidence/stopped archive handoff once at/after
-  October24 00:32:40UTC. No new24h has started.
+- [x] Actual30min observation and normal cleanup independently ACCEPT40593125/
+  result2ef6c70e/manifest0ad6e075;352 publications and bounded journal rebuilt.
+  No unexpected WebSocket close was reproduced; one auxiliary REST warning
+  recovered. This cannot explain the old WebSocket interruption or prove a fix.
+- [x] Separate2h exact delta564086 ACCEPT7eedc9a8/8 isolated lease cases;
+  actual copy2f72c6c0 and initial nativee33cf116/dispatch27270710 bound.
+- [x] Actual physical/initial effective binding independently ACCEPT99b539a0/
+  result077ae5b9/manifest5ba6baac; no Recorder health or completed-observation claim.
+- [x] Once-checkpoint new2h metadatae805efd9/result81918b64 COMPLETE1413rows,
+  normal cleanup357cd170 and manager completion; no WS close reproduced.
+- [ ] Independent actual2h reconstruction active LOCAL/OFFLINE; all3 network
+  warnings/39 typed empty warnings and diagnostic gates stay honest. No new24h
+  or proven stability repair; no extra VPS/read/Raw audit or old review.
 - [ ] Choose any stability repair from actual evidence and qualify it, then a
   fresh N2 own24h/full data/restored acceptance before N4/8. Do not transfer
   N1/old-source duration or accept the failed monitor from a successful data audit.

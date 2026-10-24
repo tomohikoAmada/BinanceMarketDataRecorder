@@ -1,0 +1,13 @@
+{
+  "original_metadata_path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-read-1792803677663471000.json",
+  "original_metadata_sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5",
+  "original_metadata_bytes": 14662799,
+  "authoritative_independent_review_path": "/private/var/tmp/bmdr-r2-short-diagnostic-result-review-20261024-bwRjkffL",
+  "independent_report_sha256": "40593125b99c67952c61b7b9bcc6ce985b679099a4348e85bb0e4efab8ea1507",
+  "independent_result_sha256": "2ef6c70e8e582216100856673dfa7573e9241a175c2b32cf034e16d808fc761e",
+  "independent_manifest_sha256": "0ad6e075fa8f6f27324af0e99c8a788fa01d46ab48160937e9f3673985ba21a7",
+  "full_parent_manifest_members_verified": 20,
+  "publication_bytes_verified": 352,
+  "formal_credit_seconds": 0,
+  "saved_frame_audit_credit": false
+}

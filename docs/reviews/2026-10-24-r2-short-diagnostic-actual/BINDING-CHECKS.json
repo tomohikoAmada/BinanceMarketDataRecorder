@@ -1,0 +1,19 @@
+{
+  "all352_publications_boot_config_identity_trust": "Identities/config hashes present and equal in every publication; the controller also performed exact config/identity checks per sample. This export has no later independent configfile rehash.",
+  "bridge_warnings_first": "2026-10-23T23:59:35.779733+00:00",
+  "bridge_warnings_last": "2026-10-24T00:00:11.751970+00:00",
+  "copy_and_request_boot_config_identity_equal": true,
+  "current_archive_worker_final_result": "Unobserved: different invocation was activating/start at later read. Default Resultsuccess does not prove it completed.",
+  "effective_native_timeouts_exported": false,
+  "future_archive_deadline_margin_at_cleanup_seconds": 44.17265024,
+  "initial_connections_first": "2026-10-23T23:59:34.703361+00:00",
+  "initial_connections_last": "2026-10-23T23:59:36.804385+00:00",
+  "initial_native_state": "activating/start; not full active-running",
+  "native_request_bound_to_original_attempt": true,
+  "requested_native_start_seconds": 3000,
+  "requested_native_stop_seconds": 900,
+  "rest_event_timestamp": "2026-10-24T00:22:24.579580+00:00",
+  "rest_state_warning": "Publications are asynchronous snapshots: success-at00:22:29.883651146 predates the row350 read00:22:31.630. Neither one blocked row nor5s cadence is an exact outage duration.",
+  "rest_success_state_timestamp_ns": 1792801349883651146,
+  "rest_success_timestamp_precedes_captured_retrying_sample": true
+}

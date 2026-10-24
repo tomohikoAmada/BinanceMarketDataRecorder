@@ -1,0 +1,905 @@
+{
+  "cleanup": {
+    "archive_timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "NextElapseUSecMonotonic": "3w 14h 25min 51.829983s",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "archive_worker": {
+      "ActiveState": "inactive",
+      "ControlGroup": "",
+      "ExecMainStartTimestampMonotonic": "1866283807268",
+      "InvocationID": "36d24906810b4b76bc062c5e501088c9",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "static"
+    },
+    "backlog": [
+      0,
+      0
+    ],
+    "clock_monotonic_ns": 1866307657332760,
+    "formal_credit_seconds": 0,
+    "recorder": {
+      "ActiveState": "inactive",
+      "ControlGroup": "",
+      "ExecMainStartTimestampMonotonic": "1864457111263",
+      "InvocationID": "8948116f38a8483c8438d42645299e72",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "recorder_before_cleanup": {
+      "ActiveState": "active",
+      "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+      "ExecMainStartTimestampMonotonic": "1864457111263",
+      "InvocationID": "8948116f38a8483c8438d42645299e72",
+      "MainPID": "815493",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "running",
+      "UnitFileState": "disabled"
+    },
+    "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+    "utc_ns": 1792801413476783910
+  },
+  "current_read_states": {
+    "binance-market-data-archive.service": {
+      "ActiveState": "activating",
+      "InvocationID": "4e521f6505124b9fa10cad0c07766ebf",
+      "LoadState": "loaded",
+      "MainPID": "817416",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "start",
+      "UnitFileState": "static"
+    },
+    "binance-market-data-archive.timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "binance-market-data-recorder.service": {
+      "ActiveState": "inactive",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "binance-recorder-r2-stream-close-observation-20261024-l2hr7wd9.service": {
+      "ActiveState": "inactive",
+      "InvocationID": "",
+      "LoadState": "not-found",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": ""
+    }
+  },
+  "decision": "ACCEPT_BOUNDED_DIAGNOSTIC_RECONSTRUCTION_ONLY",
+  "exec_stop_post": {
+    "original": {
+      "archive_timer": {
+        "ActiveState": "active",
+        "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+        "NextElapseUSecMonotonic": "3w 14h 25min 51.829983s",
+        "Result": "success",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      },
+      "archive_worker": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1866283807268",
+        "InvocationID": "36d24906810b4b76bc062c5e501088c9",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      },
+      "backlog": [
+        0,
+        0
+      ],
+      "clock_monotonic_ns": 1866307657332760,
+      "formal_credit_seconds": 0,
+      "recorder": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "disabled"
+      },
+      "recorder_before_cleanup": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "815493",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "running",
+        "UnitFileState": "disabled"
+      },
+      "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+      "utc_ns": 1792801413476783910
+    },
+    "result": "CLEANUP_ALREADY_COMPLETE_NO_ACTION"
+  },
+  "gates": {
+    "denominator_warning": "Diagnostic sample counts only. No formal availability/duration/capacity or saved-frame correctness denominator.",
+    "official": {
+      "BLOCK": 88,
+      "PASS": 264
+    },
+    "official_strict_outcomes_and_reasons_identical": true,
+    "post_initial_readiness_BLOCK": 1,
+    "post_initial_readiness_PASS": 264,
+    "post_initial_readiness_samples": 265,
+    "segmentation": [
+      {
+        "count": 79,
+        "first_row": 1,
+        "first_utc": "2026-10-23T23:52:53.317281968Z",
+        "label": "STARTING/recovery incomplete BLOCK",
+        "last_row": 79,
+        "last_utc": "2026-10-23T23:59:28.870904875Z"
+      },
+      {
+        "count": 8,
+        "first_row": 80,
+        "first_utc": "2026-10-23T23:59:33.946542283Z",
+        "label": "RUNNING/initial core readiness BLOCK",
+        "last_row": 87,
+        "last_utc": "2026-10-24T00:00:09.727345173Z"
+      },
+      {
+        "count": 262,
+        "first_row": 88,
+        "first_utc": "2026-10-24T00:00:14.835126895Z",
+        "label": "RUNNING/core ready PASS",
+        "last_row": 349,
+        "last_utc": "2026-10-24T00:22:26.570425166Z"
+      },
+      {
+        "count": 1,
+        "first_row": 350,
+        "first_utc": "2026-10-24T00:22:31.630011908Z",
+        "label": "RUNNING/core ready REST auxiliary BLOCK",
+        "last_row": 350,
+        "last_utc": "2026-10-24T00:22:31.630011908Z"
+      },
+      {
+        "count": 2,
+        "first_row": 351,
+        "first_utc": "2026-10-24T00:22:36.790262817Z",
+        "label": "RUNNING/core ready PASS after REST recovery",
+        "last_row": 352,
+        "last_utc": "2026-10-24T00:22:41.846673932Z"
+      }
+    ],
+    "strict": {
+      "BLOCK": 88,
+      "PASS": 264
+    }
+  },
+  "journal": {
+    "absence_scope": "Only the supplied bounded owned-Recorder journal; no claim of every transport event or permanent stability.",
+    "bridge_warning_count": 11,
+    "counts": {
+      "service_stop_requested": 1,
+      "spot_snapshot_bridge_pending": 9,
+      "spot_websocket_connected": 6,
+      "usdm_side_rest_failed": 1,
+      "usdm_snapshot_bridge_pending": 2,
+      "usdm_websocket_connected": 10
+    },
+    "distinct_initial_connection_ids": 16,
+    "expected_connection_tuples_verified": true,
+    "initial_connection_count": 16,
+    "native_manager_bound_events": 4,
+    "owned_native_event_count": 2,
+    "owned_recorder_event_count": 29,
+    "rest_failure": {
+      "event": "usdm_side_rest_failed",
+      "fields": {
+        "error_type": "NetworkError",
+        "failures": 1,
+        "market": "um_perpetual",
+        "scope": "product",
+        "stream": "premium_index_snapshot",
+        "symbol": "BTCUSDT"
+      },
+      "level": "WARNING",
+      "logger": "binance_market_data_recorder",
+      "message": "USD-M side-data poll failed; core collectors remain active",
+      "timestamp_utc": "2026-10-24T00:22:24.579580+00:00"
+    },
+    "stop_request": {
+      "event": "service_stop_requested",
+      "fields": {
+        "reason": "SIGTERM"
+      },
+      "level": "INFO",
+      "logger": "binance_market_data_recorder",
+      "message": "graceful service stop requested",
+      "timestamp_utc": "2026-10-24T00:22:48.530322+00:00"
+    },
+    "websocket_disconnect_reconnect_or_error_events_found": 0
+  },
+  "limits": [
+    "No Raw or saved-frame audit; no saved-frame correctness denominator.",
+    "No root cause or stability repair established; no observed WebSocket close to evaluate new close fields.",
+    "No maximum failure count/rate, formal T0, formal duration, capacity, 24h readiness or production-ready credit.",
+    "The controller-reported duration is not independently derivable exactly: its raw start BOOTTIME was not exported.",
+    "The actual effective native timeout properties were not exported.",
+    "A different archive worker was activating at the later read; its final outcome is not in this export."
+  ],
+  "original_bytes": 14662799,
+  "original_sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5",
+  "publication_count": 352,
+  "publication_identity_all_equal": {
+    "capacity_profile_id": "vps-production-v1",
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+    "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+  },
+  "resource": {
+    "after_initial_readiness": {
+      "archive_free_min_bytes": 2051522383872,
+      "host_available_min_bytes": 4718088192,
+      "host_swap_max_bytes": 30437376,
+      "host_swap_min_bytes": 30437376,
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 9.15
+        },
+        "io_psi": {
+          "full": 16.79,
+          "some": 22.65
+        },
+        "memory_psi": {
+          "full": 0.01,
+          "some": 0.01
+        }
+      },
+      "rss_max_bytes": 344772608,
+      "rss_min_bytes": 297000960,
+      "sample_count": 265,
+      "writer_free_min_bytes": 24363888640
+    },
+    "all": {
+      "archive_free_min_bytes": 2051522383872,
+      "host_available_min_bytes": 4718088192,
+      "host_swap_max_bytes": 30437376,
+      "host_swap_min_bytes": 30437376,
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 12.0
+        },
+        "io_psi": {
+          "full": 21.23,
+          "some": 22.65
+        },
+        "memory_psi": {
+          "full": 0.44,
+          "some": 0.59
+        }
+      },
+      "rss_max_bytes": 390201344,
+      "rss_min_bytes": 168587264,
+      "sample_count": 352,
+      "writer_free_min_bytes": 24363888640
+    },
+    "cgroup_cpu_usage_delta_seconds": 2116.585951,
+    "heartbeat_age_max_seconds": 5.388309443,
+    "initial_readiness": {
+      "archive_free_min_bytes": 2051587502080,
+      "host_available_min_bytes": 4781412352,
+      "host_swap_max_bytes": 30437376,
+      "host_swap_min_bytes": 30437376,
+      "psi_avg10_max": {
+        "cpu_psi": {
+          "full": 0.0,
+          "some": 12.0
+        },
+        "io_psi": {
+          "full": 21.23,
+          "some": 21.28
+        },
+        "memory_psi": {
+          "full": 0.44,
+          "some": 0.59
+        }
+      },
+      "rss_max_bytes": 390201344,
+      "rss_min_bytes": 168587264,
+      "sample_count": 87,
+      "writer_free_min_bytes": 24399511552
+    },
+    "owned_current_and_peak_swap_zero_all_352": true,
+    "rest_event_nearby_rows": [
+      {
+        "archive_free_bytes": 2051522564096,
+        "boottime_ns": 1866235550806762,
+        "cgroup_swap_current_bytes": 0,
+        "cgroup_swap_peak_bytes": 0,
+        "core_ready": true,
+        "cpu_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 7.1,
+            "avg300": 6.07,
+            "avg60": 6.8,
+            "total": 32820127355
+          }
+        },
+        "cpu_stat": {
+          "core_sched.force_idle_usec": 0,
+          "system_usec": 386199029,
+          "usage_usec": 2097516435,
+          "user_usec": 1711317405
+        },
+        "heartbeat_age_seconds": 4.335463478,
+        "host_available_bytes": 4908732416,
+        "host_swap_bytes": 30437376,
+        "io_psi": {
+          "full": {
+            "avg10": 2.84,
+            "avg300": 2.08,
+            "avg60": 2.24,
+            "total": 22920575343
+          },
+          "some": {
+            "avg10": 4.22,
+            "avg300": 3.02,
+            "avg60": 3.33,
+            "total": 26486905144
+          }
+        },
+        "memory_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1400559416
+          },
+          "some": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1405321752
+          }
+        },
+        "official": "PASS",
+        "premium_index_snapshot": {
+          "accepted": 22,
+          "attempts": 1,
+          "connected": false,
+          "consecutive_failures": 0,
+          "enabled": true,
+          "failures": 0,
+          "last_error_type": null,
+          "last_success_at_utc_ns": 1792801280815386663,
+          "malformed": 0,
+          "next_retry_at_utc_ns": null,
+          "running": true,
+          "status": "RUNNING"
+        },
+        "publication_bytes": 13573,
+        "publication_sha256": "3692511fb4c5485a6563b0b8598b80bb3384b51155347cf4bd675e40664345fa",
+        "ready_product_count": 4,
+        "reasons": [],
+        "row": 348,
+        "rss_bytes": 344772608,
+        "startup_recovery_complete": true,
+        "status": "RUNNING",
+        "strict": "PASS",
+        "utc": "2026-10-24T00:22:21.364592721Z",
+        "utc_ns": 1792801341364592721,
+        "write_safety_verified": true,
+        "writer_free_bytes": 24384827392
+      },
+      {
+        "archive_free_bytes": 2051522519040,
+        "boottime_ns": 1866240760726056,
+        "cgroup_swap_current_bytes": 0,
+        "cgroup_swap_peak_bytes": 0,
+        "core_ready": true,
+        "cpu_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 7.27,
+            "avg300": 6.1,
+            "avg60": 6.85,
+            "total": 32820588118
+          }
+        },
+        "cpu_stat": {
+          "core_sched.force_idle_usec": 0,
+          "system_usec": 388105506,
+          "usage_usec": 2105203069,
+          "user_usec": 1717097562
+        },
+        "heartbeat_age_seconds": 4.495570845,
+        "host_available_bytes": 4910764032,
+        "host_swap_bytes": 30437376,
+        "io_psi": {
+          "full": {
+            "avg10": 1.68,
+            "avg300": 2.04,
+            "avg60": 2.06,
+            "total": 22920607213
+          },
+          "some": {
+            "avg10": 2.56,
+            "avg300": 2.97,
+            "avg60": 3.07,
+            "total": 26486963384
+          }
+        },
+        "memory_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1400559416
+          },
+          "some": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1405321752
+          }
+        },
+        "official": "PASS",
+        "premium_index_snapshot": {
+          "accepted": 22,
+          "attempts": 1,
+          "connected": false,
+          "consecutive_failures": 0,
+          "enabled": true,
+          "failures": 0,
+          "last_error_type": null,
+          "last_success_at_utc_ns": 1792801280815386663,
+          "malformed": 0,
+          "next_retry_at_utc_ns": null,
+          "running": true,
+          "status": "RUNNING"
+        },
+        "publication_bytes": 13573,
+        "publication_sha256": "8d55708151bcd1f008b69435f2b9ab56e9a17656a15dc8db798a848f9c4a73ea",
+        "ready_product_count": 4,
+        "reasons": [],
+        "row": 349,
+        "rss_bytes": 344772608,
+        "startup_recovery_complete": true,
+        "status": "RUNNING",
+        "strict": "PASS",
+        "utc": "2026-10-24T00:22:26.570425166Z",
+        "utc_ns": 1792801346570425166,
+        "write_safety_verified": true,
+        "writer_free_bytes": 24380125184
+      },
+      {
+        "archive_free_bytes": 2051522473984,
+        "boottime_ns": 1866245812732012,
+        "cgroup_swap_current_bytes": 0,
+        "cgroup_swap_peak_bytes": 0,
+        "core_ready": true,
+        "cpu_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 7.62,
+            "avg300": 6.13,
+            "avg60": 6.95,
+            "total": 32820951385
+          }
+        },
+        "cpu_stat": {
+          "core_sched.force_idle_usec": 0,
+          "system_usec": 389179734,
+          "usage_usec": 2111449783,
+          "user_usec": 1722270049
+        },
+        "heartbeat_age_seconds": 4.497570917,
+        "host_available_bytes": 4906369024,
+        "host_swap_bytes": 30437376,
+        "io_psi": {
+          "full": {
+            "avg10": 1.27,
+            "avg300": 2.02,
+            "avg60": 1.96,
+            "total": 22920668635
+          },
+          "some": {
+            "avg10": 2.16,
+            "avg300": 2.95,
+            "avg60": 2.97,
+            "total": 26487047318
+          }
+        },
+        "memory_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1400559416
+          },
+          "some": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1405321752
+          }
+        },
+        "official": "BLOCK",
+        "premium_index_snapshot": {
+          "accepted": 22,
+          "attempts": 1,
+          "connected": false,
+          "consecutive_failures": 1,
+          "enabled": true,
+          "failures": 1,
+          "last_error_type": "NetworkError",
+          "last_success_at_utc_ns": 1792801280815386663,
+          "malformed": 0,
+          "next_retry_at_utc_ns": null,
+          "running": true,
+          "status": "RETRYING"
+        },
+        "publication_bytes": 13575,
+        "publication_sha256": "c0a46059153cf313851906ea232a0c7d90e78883f09aafd1c0b758d056c4d489",
+        "ready_product_count": 4,
+        "reasons": [
+          "auxiliary_not_running:um_perpetual:BTCUSDT:premium_index_snapshot"
+        ],
+        "row": 350,
+        "rss_bytes": 344772608,
+        "startup_recovery_complete": true,
+        "status": "RUNNING",
+        "strict": "BLOCK",
+        "utc": "2026-10-24T00:22:31.630011908Z",
+        "utc_ns": 1792801351630011908,
+        "write_safety_verified": true,
+        "writer_free_bytes": 24380530688
+      },
+      {
+        "archive_free_bytes": 2051522428928,
+        "boottime_ns": 1866250974695648,
+        "cgroup_swap_current_bytes": 0,
+        "cgroup_swap_peak_bytes": 0,
+        "core_ready": true,
+        "cpu_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 6.44,
+            "avg300": 6.11,
+            "avg60": 6.77,
+            "total": 32821236732
+          }
+        },
+        "cpu_stat": {
+          "core_sched.force_idle_usec": 0,
+          "system_usec": 390458691,
+          "usage_usec": 2118389036,
+          "user_usec": 1727930345
+        },
+        "heartbeat_age_seconds": 4.438798225,
+        "host_available_bytes": 4908867584,
+        "host_swap_bytes": 30437376,
+        "io_psi": {
+          "full": {
+            "avg10": 1.15,
+            "avg300": 2.0,
+            "avg60": 1.87,
+            "total": 22920761064
+          },
+          "some": {
+            "avg10": 1.96,
+            "avg300": 2.92,
+            "avg60": 2.84,
+            "total": 26487170100
+          }
+        },
+        "memory_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1400559416
+          },
+          "some": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1405321752
+          }
+        },
+        "official": "PASS",
+        "premium_index_snapshot": {
+          "accepted": 23,
+          "attempts": 1,
+          "connected": false,
+          "consecutive_failures": 0,
+          "enabled": true,
+          "failures": 1,
+          "last_error_type": null,
+          "last_success_at_utc_ns": 1792801349883651146,
+          "malformed": 0,
+          "next_retry_at_utc_ns": null,
+          "running": true,
+          "status": "RUNNING"
+        },
+        "publication_bytes": 13573,
+        "publication_sha256": "68b45cbe05c5d78a09724b7804cf28196c6feb4c59de1aea2b7c38f18806e179",
+        "ready_product_count": 4,
+        "reasons": [],
+        "row": 351,
+        "rss_bytes": 344772608,
+        "startup_recovery_complete": true,
+        "status": "RUNNING",
+        "strict": "PASS",
+        "utc": "2026-10-24T00:22:36.790262817Z",
+        "utc_ns": 1792801356790262817,
+        "write_safety_verified": true,
+        "writer_free_bytes": 24377786368
+      },
+      {
+        "archive_free_bytes": 2051522383872,
+        "boottime_ns": 1866256029782947,
+        "cgroup_swap_current_bytes": 0,
+        "cgroup_swap_peak_bytes": 0,
+        "core_ready": true,
+        "cpu_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 0
+          },
+          "some": {
+            "avg10": 6.62,
+            "avg300": 6.12,
+            "avg60": 6.78,
+            "total": 32821584114
+          }
+        },
+        "cpu_stat": {
+          "core_sched.force_idle_usec": 0,
+          "system_usec": 392443609,
+          "usage_usec": 2126898845,
+          "user_usec": 1734455235
+        },
+        "heartbeat_age_seconds": 4.412031697,
+        "host_available_bytes": 4906463232,
+        "host_swap_bytes": 30437376,
+        "io_psi": {
+          "full": {
+            "avg10": 1.39,
+            "avg300": 2.0,
+            "avg60": 1.87,
+            "total": 22920839506
+          },
+          "some": {
+            "avg10": 2.27,
+            "avg300": 2.92,
+            "avg60": 2.85,
+            "total": 26487284382
+          }
+        },
+        "memory_psi": {
+          "full": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1400559416
+          },
+          "some": {
+            "avg10": 0.0,
+            "avg300": 0.0,
+            "avg60": 0.0,
+            "total": 1405321752
+          }
+        },
+        "official": "PASS",
+        "premium_index_snapshot": {
+          "accepted": 23,
+          "attempts": 1,
+          "connected": false,
+          "consecutive_failures": 0,
+          "enabled": true,
+          "failures": 1,
+          "last_error_type": null,
+          "last_success_at_utc_ns": 1792801349883651146,
+          "malformed": 0,
+          "next_retry_at_utc_ns": null,
+          "running": true,
+          "status": "RUNNING"
+        },
+        "publication_bytes": 13573,
+        "publication_sha256": "24990ff0958cd4adc145f6c1ca497d0558745e197508c13b77d755c181aff2bb",
+        "ready_product_count": 4,
+        "reasons": [],
+        "row": 352,
+        "rss_bytes": 344772608,
+        "startup_recovery_complete": true,
+        "status": "RUNNING",
+        "strict": "PASS",
+        "utc": "2026-10-24T00:22:41.846673932Z",
+        "utc_ns": 1792801361846673932,
+        "write_safety_verified": true,
+        "writer_free_bytes": 24380051456
+      }
+    ]
+  },
+  "result": {
+    "cleanup": {
+      "archive_timer": {
+        "ActiveState": "active",
+        "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+        "NextElapseUSecMonotonic": "3w 14h 25min 51.829983s",
+        "Result": "success",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      },
+      "archive_worker": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1866283807268",
+        "InvocationID": "36d24906810b4b76bc062c5e501088c9",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      },
+      "backlog": [
+        0,
+        0
+      ],
+      "clock_monotonic_ns": 1866307657332760,
+      "formal_credit_seconds": 0,
+      "recorder": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "disabled"
+      },
+      "recorder_before_cleanup": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "815493",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "running",
+        "UnitFileState": "disabled"
+      },
+      "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+      "utc_ns": 1792801413476783910
+    },
+    "ended_at_utc_ns": 1792801413482765086,
+    "formal_credit_seconds": 0,
+    "observations": 352,
+    "own_observed_seconds": 1803.909538731,
+    "owned_recorder_invocation": "8948116f38a8483c8438d42645299e72",
+    "result": "BOUNDED_DIAGNOSTIC_OBSERVATION_COMPLETE"
+  },
+  "startup_partial_facts": {
+    "empty_product_maps": 79,
+    "interpretation": "Initial STARTING publications have no capacity/product proof; retained as BLOCK, never counted healthy.",
+    "write_safety_verified_false": 79,
+    "write_safety_verified_true": 273
+  },
+  "timing": {
+    "cleanup_boottime_not_exported": true,
+    "cleanup_monotonic_since_request_seconds": 1850.578718354,
+    "cleanup_utc": "2026-10-24T00:23:33.476783910Z",
+    "duration_controller_reported_boottime_seconds": 1803.909538731,
+    "effective_native_timeouts_not_exported": true,
+    "first_PASS_after_request_seconds": 451.937045122,
+    "first_core_ready_and_PASS_utc": "2026-10-24T00:00:14.835126895Z",
+    "first_publication_started_utc": "2026-10-23T23:52:52.511310460Z",
+    "first_sample_utc": "2026-10-23T23:52:53.317281968Z",
+    "fixed_lease_seconds": 4800,
+    "last_sample_utc": "2026-10-24T00:22:41.846673932Z",
+    "lease_remaining_at_last_sample_seconds": 3001.048827595,
+    "native_launched_utc": "2026-10-23T23:52:40.272609192Z",
+    "native_manager_success_utc": "2026-10-24T00:23:34.119930000Z",
+    "post_readiness_sample_span_seconds": 1347.011547037,
+    "private_recorder_binding_utc": "2026-10-23T23:52:42.947884007Z",
+    "raw_start_clock_not_exported": true,
+    "request_utc": "2026-10-23T23:52:42.898081773Z",
+    "sample_gap_max_seconds": 5.968438109,
+    "sample_gap_min_seconds": 5.019586753,
+    "sample_span_boottime_seconds": 1788.530388308
+  },
+  "verified_original_members": {
+    "cleanup-complete.json": {
+      "bytes": 1276,
+      "sha256": "992549f974e2096612f486ab404b8928d383a6dc83a65cdee23123c442700465"
+    },
+    "diagnostic-result.json": {
+      "bytes": 1536,
+      "sha256": "afc069bdb3e0e6a972680b72705b6d087c844c2304bf4db4861ed82ac89c02e7"
+    },
+    "exec-stop-post-1792801414038698940.json": {
+      "bytes": 1338,
+      "sha256": "5be8cc372b11292a702a492b20c417667de8cae5e1683932e9ce64ec66a9feba"
+    },
+    "native-attempt.json": {
+      "bytes": 1661,
+      "sha256": "54c8ba6805cf49ac9c073bc5b07293f52e69c232a47bb6221eb888f4dd197751"
+    },
+    "native-binding.json": {
+      "bytes": 2185,
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749"
+    },
+    "observations.jsonl": {
+      "bytes": 13942825,
+      "sha256": "d2e179dd7b90e956dacbcb48e6a1eb9f70cdedb4f886e1196839b985dc67cb1e"
+    },
+    "owned-recorder.json": {
+      "bytes": 421,
+      "sha256": "bc0c5c5afbd34ad4f4c1ade5ac41dacd24989b6c503f8980498b1ab7615a38bf"
+    },
+    "software-copy.json": {
+      "bytes": 2538,
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf"
+    },
+    "start-request.json": {
+      "bytes": 575,
+      "sha256": "59b78accd2949952b33bfeaa73440e43e46291b86537b3951bc7c6d774540aae"
+    }
+  }
+}

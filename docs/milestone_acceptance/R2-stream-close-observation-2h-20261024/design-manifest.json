@@ -1,0 +1,58 @@
+{
+  "kind": "BOUNDED_TWO_HOUR_DIAGNOSTIC_ONLY_NOT_FORMAL_STAGE",
+  "created_utc": "2026-10-24T01:06:03.521035+00:00",
+  "base_design_manifest_sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f",
+  "base_complete_actual_metadata_sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5",
+  "duration_seconds": 7200,
+  "cleanup_lease_seconds": 10800,
+  "formal_credit_seconds": 0,
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9",
+  "unit": "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+  "payloads": {
+    "observe_stream_closes.py": {
+      "sha256": "634ee1eeca31f9015f617a3fa3bff38f27625f4d395a7d37ccc2a62b7569cfa0",
+      "size": 13380
+    },
+    "qualification_auxiliary_gate.py": {
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "size": 6324
+    },
+    "qualification_owner_995.py": {
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "size": 7983
+    },
+    "pin-unit-exec.py": {
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "size": 329
+    }
+  },
+  "argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=8400",
+    "--property=TimeoutStopSec=900",
+    "--property=UMask=0027",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py"
+  ],
+  "local_controls": {
+    "operate.py": {
+      "sha256": "aa174bb58a3d266229aee28c8bb39022ef301c83be137871128bbb8d1deedde9"
+    }
+  },
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "os_archive_policy": "normal_enabled_owners_unchanged_no_quiet_window",
+  "algorithm_changed": false,
+  "state": "LOCAL_PREPARED_UNRUN_INDEPENDENT_DELTA_REVIEW_PENDING",
+  "changes": "fresh scope and unit;7200s observation;8400s native start cap;10800s fixed cleanup lease;all other controls byte/AST-equivalent; additive read-only systemctl-show exports Type/TimeoutStart/Stop/UMask/ExecStart/StopPost without changing unit properties"
+}

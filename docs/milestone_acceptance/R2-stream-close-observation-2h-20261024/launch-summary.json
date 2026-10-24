@@ -1,0 +1,29 @@
+{
+  "status": "SINGLE_BOUNDED_2H_NATIVE_REQUESTED_NOT_COMPLETE",
+  "launched_at_utc_ns": 1792804580006922404,
+  "launch_utc": "2026-10-24T01:16:20.006922+00:00",
+  "result_checkpoint_utc": "2026-10-24T03:31:20.006922+00:00",
+  "result_checkpoint_shanghai": "2026-10-24T11:31:20.006922+08:00",
+  "unit": "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+  "native": {
+    "ActiveState": "activating",
+    "ExecStart": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py /opt/binance-market-data-recorder/venv/bin/python /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py ; ignore_errors=no ; start_time=[Sat 2026-10-24 01:16:20 UTC] ; stop_time=[n/a] ; pid=818041 ; code=(null) ; status=0/0 }",
+    "ExecStopPost": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+    "InvocationID": "e33cf116c1e843b5b5e9d7988e71cdf8",
+    "LoadState": "loaded",
+    "MainPID": "818041",
+    "NRestarts": "0",
+    "Result": "success",
+    "SubState": "start",
+    "TimeoutStartUSec": "2h 20min",
+    "TimeoutStopUSec": "15min",
+    "Type": "oneshot",
+    "UMask": "0027",
+    "UnitFileState": "transient"
+  },
+  "copy_sha256": "2f72c6c0493881e3a07ae5ec089e4f97638a8a57b441afd84c718cdf5fb4b06a",
+  "dispatch_sha256": "27270710fbae107c2af9f7a7d903507ab5369e39a269c7b7eee642b3b7fced7f",
+  "design_manifest_sha256": "5640864446cf7ea23349e4b3016dfccae8a275864936d4c41633c4795f65082c",
+  "formal_credit_seconds": 0,
+  "actual_recorder_health_unobserved": true
+}

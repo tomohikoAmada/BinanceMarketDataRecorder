@@ -1,0 +1,238 @@
+{
+  "actual_cleanup_result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+  "binding_checks": {
+    "all352_publications_boot_config_identity_trust": "Identities/config hashes present and equal in every publication; the controller also performed exact config/identity checks per sample. This export has no later independent configfile rehash.",
+    "bridge_warnings_first": "2026-10-23T23:59:35.779733+00:00",
+    "bridge_warnings_last": "2026-10-24T00:00:11.751970+00:00",
+    "copy_and_request_boot_config_identity_equal": true,
+    "current_archive_worker_final_result": "Unobserved: different invocation was activating/start at later read. Default Resultsuccess does not prove it completed.",
+    "effective_native_timeouts_exported": false,
+    "future_archive_deadline_margin_at_cleanup_seconds": 44.17265024,
+    "initial_connections_first": "2026-10-23T23:59:34.703361+00:00",
+    "initial_connections_last": "2026-10-23T23:59:36.804385+00:00",
+    "initial_native_state": "activating/start; not full active-running",
+    "native_request_bound_to_original_attempt": true,
+    "requested_native_start_seconds": 3000,
+    "requested_native_stop_seconds": 900,
+    "rest_event_timestamp": "2026-10-24T00:22:24.579580+00:00",
+    "rest_state_warning": "Publications are asynchronous snapshots: success-at00:22:29.883651146 predates the row350 read00:22:31.630. Neither one blocked row nor5s cadence is an exact outage duration.",
+    "rest_success_state_timestamp_ns": 1792801349883651146,
+    "rest_success_timestamp_precedes_captured_retrying_sample": true
+  },
+  "blocking_findings": [],
+  "credits": {
+    "24h_readiness": false,
+    "capacity": false,
+    "formal_seconds": 0,
+    "production_ready": false,
+    "saved_frame_correctness": false,
+    "stability_repair": false
+  },
+  "current_archive_worker": "different invocation activating/start; outcome unobserved",
+  "decision": "ACCEPT_BOUNDED_DIAGNOSTIC_RECONSTRUCTION_ONLY",
+  "gates": {
+    "denominator_warning": "Diagnostic sample counts only. No formal availability/duration/capacity or saved-frame correctness denominator.",
+    "official": {
+      "BLOCK": 88,
+      "PASS": 264
+    },
+    "official_strict_outcomes_and_reasons_identical": true,
+    "post_initial_readiness_BLOCK": 1,
+    "post_initial_readiness_PASS": 264,
+    "post_initial_readiness_samples": 265,
+    "segmentation": [
+      {
+        "count": 79,
+        "first_row": 1,
+        "first_utc": "2026-10-23T23:52:53.317281968Z",
+        "label": "STARTING/recovery incomplete BLOCK",
+        "last_row": 79,
+        "last_utc": "2026-10-23T23:59:28.870904875Z"
+      },
+      {
+        "count": 8,
+        "first_row": 80,
+        "first_utc": "2026-10-23T23:59:33.946542283Z",
+        "label": "RUNNING/initial core readiness BLOCK",
+        "last_row": 87,
+        "last_utc": "2026-10-24T00:00:09.727345173Z"
+      },
+      {
+        "count": 262,
+        "first_row": 88,
+        "first_utc": "2026-10-24T00:00:14.835126895Z",
+        "label": "RUNNING/core ready PASS",
+        "last_row": 349,
+        "last_utc": "2026-10-24T00:22:26.570425166Z"
+      },
+      {
+        "count": 1,
+        "first_row": 350,
+        "first_utc": "2026-10-24T00:22:31.630011908Z",
+        "label": "RUNNING/core ready REST auxiliary BLOCK",
+        "last_row": 350,
+        "last_utc": "2026-10-24T00:22:31.630011908Z"
+      },
+      {
+        "count": 2,
+        "first_row": 351,
+        "first_utc": "2026-10-24T00:22:36.790262817Z",
+        "label": "RUNNING/core ready PASS after REST recovery",
+        "last_row": 352,
+        "last_utc": "2026-10-24T00:22:41.846673932Z"
+      }
+    ],
+    "strict": {
+      "BLOCK": 88,
+      "PASS": 264
+    }
+  },
+  "journal": {
+    "absence_scope": "Only the supplied bounded owned-Recorder journal; no claim of every transport event or permanent stability.",
+    "bridge_warning_count": 11,
+    "counts": {
+      "service_stop_requested": 1,
+      "spot_snapshot_bridge_pending": 9,
+      "spot_websocket_connected": 6,
+      "usdm_side_rest_failed": 1,
+      "usdm_snapshot_bridge_pending": 2,
+      "usdm_websocket_connected": 10
+    },
+    "distinct_initial_connection_ids": 16,
+    "expected_connection_tuples_verified": true,
+    "initial_connection_count": 16,
+    "native_manager_bound_events": 4,
+    "owned_native_event_count": 2,
+    "owned_recorder_event_count": 29,
+    "rest_failure": {
+      "event": "usdm_side_rest_failed",
+      "fields": {
+        "error_type": "NetworkError",
+        "failures": 1,
+        "market": "um_perpetual",
+        "scope": "product",
+        "stream": "premium_index_snapshot",
+        "symbol": "BTCUSDT"
+      },
+      "level": "WARNING",
+      "logger": "binance_market_data_recorder",
+      "message": "USD-M side-data poll failed; core collectors remain active",
+      "timestamp_utc": "2026-10-24T00:22:24.579580+00:00"
+    },
+    "stop_request": {
+      "event": "service_stop_requested",
+      "fields": {
+        "reason": "SIGTERM"
+      },
+      "level": "INFO",
+      "logger": "binance_market_data_recorder",
+      "message": "graceful service stop requested",
+      "timestamp_utc": "2026-10-24T00:22:48.530322+00:00"
+    },
+    "websocket_disconnect_reconnect_or_error_events_found": 0
+  },
+  "limits": [
+    "No Raw or saved-frame audit; no saved-frame correctness denominator.",
+    "No root cause or stability repair established; no observed WebSocket close to evaluate new close fields.",
+    "No maximum failure count/rate, formal T0, formal duration, capacity, 24h readiness or production-ready credit.",
+    "The controller-reported duration is not independently derivable exactly: its raw start BOOTTIME was not exported.",
+    "The actual effective native timeout properties were not exported.",
+    "A different archive worker was activating at the later read; its final outcome is not in this export."
+  ],
+  "next_inference": "Only a separately reviewed bounded longer diagnostic is supported for collecting actual close evidence; no launch authority supplied by this report.",
+  "original_bytes": 14662799,
+  "original_members": {
+    "cleanup-complete.json": {
+      "bytes": 1276,
+      "sha256": "992549f974e2096612f486ab404b8928d383a6dc83a65cdee23123c442700465"
+    },
+    "diagnostic-result.json": {
+      "bytes": 1536,
+      "sha256": "afc069bdb3e0e6a972680b72705b6d087c844c2304bf4db4861ed82ac89c02e7"
+    },
+    "exec-stop-post-1792801414038698940.json": {
+      "bytes": 1338,
+      "sha256": "5be8cc372b11292a702a492b20c417667de8cae5e1683932e9ce64ec66a9feba"
+    },
+    "native-attempt.json": {
+      "bytes": 1661,
+      "sha256": "54c8ba6805cf49ac9c073bc5b07293f52e69c232a47bb6221eb888f4dd197751"
+    },
+    "native-binding.json": {
+      "bytes": 2185,
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749"
+    },
+    "observations.jsonl": {
+      "bytes": 13942825,
+      "sha256": "d2e179dd7b90e956dacbcb48e6a1eb9f70cdedb4f886e1196839b985dc67cb1e"
+    },
+    "owned-recorder.json": {
+      "bytes": 421,
+      "sha256": "bc0c5c5afbd34ad4f4c1ade5ac41dacd24989b6c503f8980498b1ab7615a38bf"
+    },
+    "software-copy.json": {
+      "bytes": 2538,
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf"
+    },
+    "start-request.json": {
+      "bytes": 575,
+      "sha256": "59b78accd2949952b33bfeaa73440e43e46291b86537b3951bc7c6d774540aae"
+    }
+  },
+  "original_sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5",
+  "publication_count": 352,
+  "resource_all": {
+    "archive_free_min_bytes": 2051522383872,
+    "host_available_min_bytes": 4718088192,
+    "host_swap_max_bytes": 30437376,
+    "host_swap_min_bytes": 30437376,
+    "psi_avg10_max": {
+      "cpu_psi": {
+        "full": 0.0,
+        "some": 12.0
+      },
+      "io_psi": {
+        "full": 21.23,
+        "some": 22.65
+      },
+      "memory_psi": {
+        "full": 0.44,
+        "some": 0.59
+      }
+    },
+    "rss_max_bytes": 390201344,
+    "rss_min_bytes": 168587264,
+    "sample_count": 352,
+    "writer_free_min_bytes": 24363888640
+  },
+  "scope": "Actual30min diagnostic evidence and normal cleanup only; LOCAL/OFFLINE reconstruction",
+  "startup_partial_facts": {
+    "empty_product_maps": 79,
+    "interpretation": "Initial STARTING publications have no capacity/product proof; retained as BLOCK, never counted healthy.",
+    "write_safety_verified_false": 79,
+    "write_safety_verified_true": 273
+  },
+  "timing": {
+    "cleanup_boottime_not_exported": true,
+    "cleanup_monotonic_since_request_seconds": 1850.578718354,
+    "cleanup_utc": "2026-10-24T00:23:33.476783910Z",
+    "duration_controller_reported_boottime_seconds": 1803.909538731,
+    "effective_native_timeouts_not_exported": true,
+    "first_PASS_after_request_seconds": 451.937045122,
+    "first_core_ready_and_PASS_utc": "2026-10-24T00:00:14.835126895Z",
+    "first_publication_started_utc": "2026-10-23T23:52:52.511310460Z",
+    "first_sample_utc": "2026-10-23T23:52:53.317281968Z",
+    "fixed_lease_seconds": 4800,
+    "last_sample_utc": "2026-10-24T00:22:41.846673932Z",
+    "lease_remaining_at_last_sample_seconds": 3001.048827595,
+    "native_launched_utc": "2026-10-23T23:52:40.272609192Z",
+    "native_manager_success_utc": "2026-10-24T00:23:34.119930000Z",
+    "post_readiness_sample_span_seconds": 1347.011547037,
+    "private_recorder_binding_utc": "2026-10-23T23:52:42.947884007Z",
+    "raw_start_clock_not_exported": true,
+    "request_utc": "2026-10-23T23:52:42.898081773Z",
+    "sample_gap_max_seconds": 5.968438109,
+    "sample_gap_min_seconds": 5.019586753,
+    "sample_span_boottime_seconds": 1788.530388308
+  }
+}

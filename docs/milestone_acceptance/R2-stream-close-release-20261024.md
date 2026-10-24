@@ -66,9 +66,23 @@ This is a diagnostic release, not a proved stability repair or accepted N2 capac
   initially activating/start/NRestarts0. No completed observation/stability credit.
 - [x] Actual copy/Linux smoke/request binding independently ACCEPT061ce832/
   resultbb1b0b23/manifestd9051f5e; no effective timeout or Recorder-health claim.
-- [ ] At October24 00:32:40UTC inspect genuine diagnostic/critical result, close
-  evidence and normal archive/affected stopped handoff once. Choose any repair
-  from evidence; no new24h T0 yet.
+- [x] Once-checkpoint actual30min read8248c7dc independently reconstructed:
+  ACCEPT40593125/result2ef6c70e/manifest0ad6e075,352 publications. Native and
+  cleanup completed normally; zero unexpected WebSocket closes in the bounded
+  journal, one recovered auxiliary REST warning. No initiating-cause/fix credit.
+- [x] Separate narrow2h design564086 ACCEPT7eedc9a8/8 isolated lease cases;
+  single physical/Linux-smoke copy2f72c6c0 and initial dispatch27270710 complete.
+  Nativee33cf116/PID818041 activating/start, effective Start8400/Stop900/UMask0027.
+- [x] Actual copy/initial effective binding independently ACCEPT99b539a0/077ae5b9/
+  5ba6baac; all13 review members plus manifest parent checked, no health/finish credit.
+- [x] Single new2h checkpoint e805efd9: result81918b64 COMPLETE1413 observations,
+  normal cleanup357cd170/manager completion. No WS close reproduced;3 network
+  errors and39 typed empty warnings retained. No formal24h or stability-fix credit.
+- [ ] Complete independent actual2h reconstruction LOCAL/OFFLINE, then decide
+  evidence-based next qualification; no repeat VPS/read/Raw audit/short-run loop.
+  See [completed bounded2h observation](R2-stream-close-observation-2h-20261024.md).
+- [ ] Choose any stability repair from actual evidence, then qualify fresh N2
+  own24h/full data/restored acceptance before N4/8; no new24h T0 yet.
 
 The earlier isolated release copy/dispatch bound stopped identity976/config5b73,
 writer free>10GiB/archive>2GiB. The new observation admission binds current
@@ -76,7 +90,7 @@ identity9b8ce821/config5b73, stopped-disabled/PID0/NRestarts0 and both filesyste
 free>10GiB. All new control/test/temp files stay on the isolated archive child;
 normal OS/archive owners remain enabled throughout the diagnostic observation.
 New source-only deployment20e57/dd2c/identity9b8ce821 is independently accepted.
-Only a bounded diagnostic task has started; no formal window or new24h T0.
+The30min and separate bounded2h observations are complete; actual2h final review is active. No formal window or new24h T0.
 Prior N2 finished DATA_VERIFIED_MONITOR_BLOCK: saved62687921frames100% accepted,
 monitor2861/2880=99.3402778% BLOCK. It grants no N2 capacity receipt or N4 eligibility.
 After an evidence-based minimal repair, qualify a fresh N2 own86400/full data/restored

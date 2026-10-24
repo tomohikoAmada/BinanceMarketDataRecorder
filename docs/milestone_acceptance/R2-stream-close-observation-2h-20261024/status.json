@@ -1,0 +1,47 @@
+{
+  "kind": "BOUNDED_2H_DIAGNOSTIC_NATIVE_COMPLETE_INDEPENDENT_ACTUAL_REVIEW_PENDING",
+  "original_metadata": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/diagnostic-2h-controls/actual-diagnostic-read-1792814703709257000.json",
+  "metadata_sha256": "e805efd95e84a01d63fd1552a4db1d4bb93fd55009c7c6ae9f97c390a6d99d05",
+  "metadata_bytes": 65762036,
+  "official_gate_counts": {
+    "BLOCK": 63,
+    "PASS": 1350
+  },
+  "strict_gate_counts": {
+    "BLOCK": 85,
+    "PASS": 1328
+  },
+  "first_pass_row": 62,
+  "post_first_pass_counts": {
+    "PASS": 1350,
+    "BLOCK": 2
+  },
+  "resources": {
+    "rss_max": 390922240,
+    "host_available_min": 4621594624,
+    "owned_swap_current_max": 0,
+    "owned_swap_peak_max": 0,
+    "writer_free_min": 24335216640,
+    "archive_free_min": 2051254026240,
+    "host_swap_min": 30437376,
+    "host_swap_max": 30437376
+  },
+  "sample_boottime_span_seconds": 7188.715089914,
+  "formal_credit_seconds": 0,
+  "no_source_repair_proven": true,
+  "all_original_members_sha256": {
+    "cleanup-complete.json": "357cd17050a4b7835b7e2ae0587081c5184c064f99deec1825a5be69750f96d5",
+    "diagnostic-result.json": "81918b6429ef313c731f5b9051c953fd0f1b4683a8a58063cc9ad2dbaaebd4ff",
+    "exec-stop-post-1792811809781186139.json": "99bdae7f06cb763eeeab58f923d2674c96cc7a1acf8ba25de2c52e9221f79727",
+    "native-attempt.json": "933c9547348fec7cf49dbe0ae7afd9bf71723036ef11f3a355164b4e850e32b3",
+    "native-binding.json": "27270710fbae107c2af9f7a7d903507ab5369e39a269c7b7eee642b3b7fced7f",
+    "observations.jsonl": "0fa29c058cdcae89281b2a0593356ab22f1c3a9dfba0d006582b9b2ac0df7160",
+    "owned-recorder.json": "7c43f9ac0c149b70aaa16d57beb0390c6e0da2755fd383fc6a5dd0addb59ccaf",
+    "software-copy.json": "2f72c6c0493881e3a07ae5ec089e4f97638a8a57b441afd84c718cdf5fb4b06a",
+    "start-request.json": "72108c47235402d9beefa7699b4a84ead63f78c326e8c6e2e27275df5789b6bb"
+  },
+  "independent_actual_result_review": "ACTIVE_LOCAL_OFFLINE",
+  "native_result_sha256": "81918b6429ef313c731f5b9051c953fd0f1b4683a8a58063cc9ad2dbaaebd4ff",
+  "cleanup_sha256": "357cd17050a4b7835b7e2ae0587081c5184c064f99deec1825a5be69750f96d5",
+  "old_launch_and_checkpoint_are_history": true
+}
