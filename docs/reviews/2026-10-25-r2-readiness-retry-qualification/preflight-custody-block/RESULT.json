@@ -1,0 +1,33 @@
+{
+  "case_outcomes": "PASS_EXPECTED_COMPONENT_BEHAVIOR",
+  "current_handoff_or_admission_accepted": false,
+  "decision": "BLOCK",
+  "design_manifest_sha256": "294785cf4f36b5bfb49568b9234a7b8425b11e427c9756e54d9f2c5d42c7b71f",
+  "formal_credit_seconds": 0,
+  "helper_main_or_whole_remote_executed": false,
+  "helper_sha256": "4f4c710c37d17e99976473387257ac3dbd89d861820b0102e3fab7a44728fda3",
+  "isolated_local_cases": 21,
+  "linux_qualification_credit": false,
+  "original_three_acceptance_blockers_corrected": true,
+  "proposed_scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt",
+  "raw_or_manifest_or_partial_payload_opened": false,
+  "real_subprocess_network_service_called": false,
+  "remaining_findings": [
+    {
+      "detail": "timed_state and timed_run check remaining() before returning the response to the attempt accumulator. The 181-second synthetic successful state is correctly rejected, but failed_attempts retains only the start time, losing the observed response. Retain an outcome with argv/timeout/timing and its response before the post-I/O deadline assertion, without accepting the late result.",
+      "id": "C1",
+      "line": 92,
+      "priority": 2,
+      "title": "A successful over-deadline I/O observation is discarded"
+    },
+    {
+      "detail": "The exception serializer decodes byte stdout/stderr with errors=replace. Exact synthetic bytes ff657861637400 and fe657272 become replacement characters; the original bytes cannot be reconstructed from the retained JSON or outer SSH output. Add lossless base64 plus byte length/SHA for byte outcomes; keep readable text as a convenience only.",
+      "id": "C2",
+      "line": 133,
+      "priority": 2,
+      "title": "Timeout byte custody is lossy"
+    }
+  ],
+  "remote_executed": false,
+  "scope": "CORRECTED_PREFLIGHT_DESIGN_ONLY_NOT_EXECUTED"
+}

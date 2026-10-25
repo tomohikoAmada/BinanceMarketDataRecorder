@@ -1,0 +1,10 @@
+{
+  "operator_functions_except_build_remote_AST_identical_to_blocked_b4c7": true,
+  "controls_manifest_and_all14_runtime_bytes_identical": true,
+  "changed_design_members": [
+    "stage-operator.py",
+    "RETRY_DESIGN.md",
+    "stage-qualification.json"
+  ],
+  "generated_delta": "Shared fail-closed bounded zero-file inventory in copy/ARM/launch, explicit NRestarts0, success/failure inventory evidence, and lossless read/missing/parse handling for new Linux QA controls. No native argv, CPU sampling, source, policy, denominator, duration, audit or restoration algorithm change."
+}

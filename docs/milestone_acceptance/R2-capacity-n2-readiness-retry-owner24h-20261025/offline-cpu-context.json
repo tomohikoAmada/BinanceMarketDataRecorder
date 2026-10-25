@@ -1,0 +1,252 @@
+{
+  "kind": "CURRENT_FAILED_ATTEMPT_OFFLINE_CPU_CONTEXT_NOT_CAUSAL_OR_QUALIFICATION",
+  "original_sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+  "resource_rows": 2880,
+  "intervals": 2879,
+  "owned_disconnect_events": 123,
+  "visible_logical_cpus": 4,
+  "cpu_stat_observed_keys": [
+    "core_sched.force_idle_usec",
+    "system_usec",
+    "usage_usec",
+    "user_usec"
+  ],
+  "nr_throttled_or_cpu_quota_missing_is_not_zero": true,
+  "all": {
+    "n": 2879,
+    "seconds": 86200.146197142,
+    "weighted_mean_host_steal_fraction": 0.20277779841099958,
+    "max_host_steal_fraction": 0.4684753534581582,
+    "mean_recorder_cpu_cores_used": 1.3188715385469882,
+    "max_recorder_cpu_cores_used": 2.027169648096296,
+    "max_cpu_psi_some_fraction": 0.14680537111565073
+  },
+  "near_close_30s": {
+    "n": 262,
+    "seconds": 7622.727713925,
+    "weighted_mean_host_steal_fraction": 0.23546358746125237,
+    "max_host_steal_fraction": 0.4684753534581582,
+    "mean_recorder_cpu_cores_used": 1.4518494326883795,
+    "max_recorder_cpu_cores_used": 2.027169648096296,
+    "max_cpu_psi_some_fraction": 0.10624254725799412
+  },
+  "other": {
+    "n": 2617,
+    "seconds": 78577.418483217,
+    "weighted_mean_host_steal_fraction": 0.19960697815685643,
+    "max_host_steal_fraction": 0.44579052292593163,
+    "mean_recorder_cpu_cores_used": 1.3059714675268712,
+    "max_recorder_cpu_cores_used": 1.9412216849311958,
+    "max_cpu_psi_some_fraction": 0.14680537111565073
+  },
+  "top20_steal_intervals": [
+    {
+      "utc_begin_ns": 1792856953031904012,
+      "utc_end_ns": 1792856958660961722,
+      "seconds": 5.629058357,
+      "host_steal_fraction": 0.4684753534581582,
+      "recorder_cpu_cores_used": 1.7832815656489027,
+      "cpu_psi_some_fraction": 0.08439724193109835,
+      "near_close_30s": true,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792896583906885451,
+      "utc_end_ns": 1792896612947194617,
+      "seconds": 29.040308094,
+      "host_steal_fraction": 0.44579052292593163,
+      "recorder_cpu_cores_used": 1.6492331226298318,
+      "cpu_psi_some_fraction": 0.11458501022885188,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792857613066759076,
+      "utc_end_ns": 1792857642895151964,
+      "seconds": 29.828393019,
+      "host_steal_fraction": 0.4331825037707391,
+      "recorder_cpu_cores_used": 1.5050926803667646,
+      "cpu_psi_some_fraction": 0.09454387965867508,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792897602876727670,
+      "utc_end_ns": 1792897633100052708,
+      "seconds": 30.215137735,
+      "host_steal_fraction": 0.4304048107949545,
+      "recorder_cpu_cores_used": 1.6548516984610728,
+      "cpu_psi_some_fraction": 0.10119023870800833,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898533044072665,
+      "utc_end_ns": 1792898563099789842,
+      "seconds": 30.055697826,
+      "host_steal_fraction": 0.42823529411764705,
+      "recorder_cpu_cores_used": 1.7496855106956852,
+      "cpu_psi_some_fraction": 0.10475391448993071,
+      "near_close_30s": true,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898353011291797,
+      "utc_end_ns": 1792898383031668007,
+      "seconds": 30.020374385,
+      "host_steal_fraction": 0.42764192764192765,
+      "recorder_cpu_cores_used": 1.7621918141844652,
+      "cpu_psi_some_fraction": 0.08632120861540014,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898383031668007,
+      "utc_end_ns": 1792898413246308969,
+      "seconds": 30.214647985,
+      "host_steal_fraction": 0.42083302832881925,
+      "recorder_cpu_cores_used": 1.738055231557582,
+      "cpu_psi_some_fraction": 0.10312329309766738,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792896523131802932,
+      "utc_end_ns": 1792896552884459177,
+      "seconds": 29.752648982,
+      "host_steal_fraction": 0.41145139813581894,
+      "recorder_cpu_cores_used": 1.6732818321527967,
+      "cpu_psi_some_fraction": 0.10602622314095367,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792897663028117002,
+      "utc_end_ns": 1792897692914296641,
+      "seconds": 29.886179542,
+      "host_steal_fraction": 0.40957009345794393,
+      "recorder_cpu_cores_used": 1.7883741521691752,
+      "cpu_psi_some_fraction": 0.10223237117699305,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792896703333821120,
+      "utc_end_ns": 1792896733039988165,
+      "seconds": 29.706164818,
+      "host_steal_fraction": 0.40582795067527894,
+      "recorder_cpu_cores_used": 1.5654842112712337,
+      "cpu_psi_some_fraction": 0.08353357005871036,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792897542863185374,
+      "utc_end_ns": 1792897573303195255,
+      "seconds": 30.440014082,
+      "host_steal_fraction": 0.40433664094083055,
+      "recorder_cpu_cores_used": 1.6995640626392532,
+      "cpu_psi_some_fraction": 0.1146910441826779,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898743025744241,
+      "utc_end_ns": 1792898773183075548,
+      "seconds": 30.157329686,
+      "host_steal_fraction": 0.4017763058858949,
+      "recorder_cpu_cores_used": 1.6598805836326527,
+      "cpu_psi_some_fraction": 0.08874515840314709,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898203152549999,
+      "utc_end_ns": 1792898233218128168,
+      "seconds": 30.065579784,
+      "host_steal_fraction": 0.4016252888988295,
+      "recorder_cpu_cores_used": 1.5693358431461006,
+      "cpu_psi_some_fraction": 0.10474921896154443,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898262855049112,
+      "utc_end_ns": 1792898293082985698,
+      "seconds": 30.227937968,
+      "host_steal_fraction": 0.39617768595041325,
+      "recorder_cpu_cores_used": 1.6068263753689864,
+      "cpu_psi_some_fraction": 0.10255257911676552,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792897453392532397,
+      "utc_end_ns": 1792897483547612054,
+      "seconds": 30.155058101,
+      "host_steal_fraction": 0.39584861375971836,
+      "recorder_cpu_cores_used": 1.5850827028721566,
+      "cpu_psi_some_fraction": 0.0886828004457175,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792897332940086843,
+      "utc_end_ns": 1792897363277584426,
+      "seconds": 30.337498384,
+      "host_steal_fraction": 0.3931461903025884,
+      "recorder_cpu_cores_used": 1.4752790567466323,
+      "cpu_psi_some_fraction": 0.09514126588375066,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792855842960751752,
+      "utc_end_ns": 1792855873420799194,
+      "seconds": 30.460048803,
+      "host_steal_fraction": 0.39244491080797483,
+      "recorder_cpu_cores_used": 1.6151249565678512,
+      "cpu_psi_some_fraction": 0.09039026883400231,
+      "near_close_30s": true,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898593084939036,
+      "utc_end_ns": 1792898623077494069,
+      "seconds": 29.992557984,
+      "host_steal_fraction": 0.3909084123311189,
+      "recorder_cpu_cores_used": 1.5724798473394526,
+      "cpu_psi_some_fraction": 0.09199492092244745,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792896973019857932,
+      "utc_end_ns": 1792897002947678040,
+      "seconds": 29.927821925,
+      "host_steal_fraction": 0.38960455362492513,
+      "recorder_cpu_cores_used": 1.656283946229742,
+      "cpu_psi_some_fraction": 0.10095726336422993,
+      "near_close_30s": false,
+      "final_row_monitor_bad": false
+    },
+    {
+      "utc_begin_ns": 1792898472906878020,
+      "utc_end_ns": 1792898503075172426,
+      "seconds": 30.16829517,
+      "host_steal_fraction": 0.38730934399526135,
+      "recorder_cpu_cores_used": 1.5482003121756116,
+      "cpu_psi_some_fraction": 0.09460779881384328,
+      "near_close_30s": true,
+      "final_row_monitor_bad": false
+    }
+  ],
+  "limitations": [
+    "Intervals from5s/30s resource observations cannot resolve exact heartbeat scheduling or outage duration.",
+    "Hypervisor steal is not proof of deliberate provider throttling; guest quota counters may be unavailable.",
+    "Event-near comparisons are observational and not independent or causal.",
+    "This analysis opens no Raw/manifest payload and grants no new source/time/capacity credit."
+  ],
+  "provider_source": "https://greencloudvps.com/terms-of-service.php",
+  "provider_policy_applicability": "Current actual account plan not independently established; shared KVM policy excludes VDS."
+}

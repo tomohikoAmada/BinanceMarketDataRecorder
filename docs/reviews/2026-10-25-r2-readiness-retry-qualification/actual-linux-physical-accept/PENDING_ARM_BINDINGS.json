@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-capacity-n2-readiness-retry-20261025-1s0kswlt-arm.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=2400",
+    "--property=TimeoutStopSec=1500",
+    "--property=UMask=0027",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/restore.py capture-failure",
+    "--setenv=TMPDIR=/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/tmp",
+    "--setenv=SQLITE_TMPDIR=/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/tmp",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/pin-unit-exec.py",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/arm-natural-wait.py"
+  ],
+  "argv_sha256": "3f7e5fcae8ac513c580f9f3849c03e95cddd2cfb68dafe2165c1141a6fbd9ddd",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt",
+  "finite_window_seconds": 230400,
+  "actual_ARM_accepted": false,
+  "absolute_expiry_not_yet_exists": true,
+  "kernel_precondition": "same boot59bb, running146, exact retained147 markers/packages, no scheduled reboot or package worker; checked again by exact arm.py",
+  "production_Stop90_unchanged": true
+}

@@ -1,0 +1,49 @@
+{
+  "all_expected_original_behaviors_reproduced": true,
+  "corrected_successor_not_assessed_in_this_report": true,
+  "current_admission_or_handoff_accepted": false,
+  "decision": "BLOCK",
+  "design_manifest_sha256": "f8e10a42807ae57cb2c80c29efdfede84b4f07359356d15b77d0921a04eec40c",
+  "findings": [
+    {
+      "detail": "os.walk has no onerror callback and silently skips scan failures; a local PermissionError fixture yields zero files and zero partials. Only the active leaf is checked against symlinks, so a symlinked data ancestor is accepted. A complete fail-closed census and trusted ancestor/entry checks are required before startup_custody_gate may be true.",
+      "id": "F1",
+      "line": 97,
+      "priority": 1,
+      "title": "Incomplete active-tree inventory can be accepted as zero partials"
+    },
+    {
+      "detail": "The deadline is checked only at loop entry, while each state/journal subprocess permits 330 seconds. A state read completing at 181 seconds is accepted without a post-I/O deadline check. Pass strictly positive remaining time into each bounded I/O and check again afterward.",
+      "id": "F2",
+      "line": 83,
+      "priority": 1,
+      "title": "The advertised 180-second worker bound is not enforced across I/O"
+    },
+    {
+      "detail": "After worker2 is observed inactive the helper reads inventory/owners/timer without a final same-invocation worker check. A synthetic timer race publishes an old inactive archive_worker while current owners reports a new active worker. Use a bounded entire-attempt bracket and retain each raced/failed attempt.",
+      "id": "F3",
+      "line": 102,
+      "priority": 1,
+      "title": "Worker proof is not coherent with later inventory, owners and timer observations"
+    },
+    {
+      "detail": "The design actually invokes canonical definition-only deployment verify; update the docstring to match that authorized read-only verification.",
+      "id": "F4",
+      "line": 3,
+      "priority": 3,
+      "title": "The module contract incorrectly denies deployment verification"
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "helper_sha256": "d103983ac1af2f14064617e708860bcb1b9ea317d8899811c100128946219365",
+  "isolated_local_case_count": 5,
+  "linux_qualification_credit": false,
+  "new_scope_created": false,
+  "pin_argv_definition_only": true,
+  "production_action_performed": false,
+  "proposed_scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt",
+  "raw_or_manifest_or_partial_payload_opened": false,
+  "remote_executed": false,
+  "scope": "ORIGINAL_UNEXECUTED_PREFLIGHT_DESIGN_ONLY",
+  "service_lock_compatible_with_deployment_verify": true
+}

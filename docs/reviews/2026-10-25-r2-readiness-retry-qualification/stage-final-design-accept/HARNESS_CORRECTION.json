@@ -1,0 +1,6 @@
+{
+  "first_fixture_attempt": "expired_entry clock cutoff4 expired at the directory-entry precheck before any file stat, so the harness assertion expecting retained file metadata failed",
+  "correction": "cutoff5 expires after the synthetic file metadata append, which is the intended evidence-retention case",
+  "candidate_changed": false,
+  "credit_from_failed_harness_attempt": false
+}

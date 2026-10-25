@@ -1,0 +1,996 @@
+{
+  "case_count": 21,
+  "cases": [
+    {
+      "attempt_count": 1,
+      "attempt_results": [
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "coherent_empty_inventory",
+      "elapsed_seconds": 0.11999999999999998,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 1,
+      "attempt_results": [
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "metadata_only_retained_partial_gates_startup_false",
+      "elapsed_seconds": 0.11999999999999998,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "partial_count": 1,
+      "result": "PASS",
+      "startup_custody_gate": false
+    },
+    {
+      "attempt_count": 1,
+      "case": "scan_error_is_fail_closed",
+      "elapsed_seconds": 0.02,
+      "error": "PermissionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "PermissionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_ancestor_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_directory_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_file_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "fifo_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "late_success_is_rejected_but_response_not_retained",
+      "elapsed_seconds": 181,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15
+      ],
+      "result": "PASS",
+      "successful_late_response_lost": true
+    },
+    {
+      "attempt_count": 1,
+      "case": "timeout_is_rejected_but_original_bytes_replaced",
+      "elapsed_seconds": 0.01,
+      "error": "TimeoutExpired",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "TimeoutExpired",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": "\ufffderr",
+        "timeout_stdout": "\ufffdexact\u0000"
+      },
+      "operation_timeouts": [
+        15
+      ],
+      "original_timeout_bytes_lost": true,
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 3,
+      "case": "busy_worker_exhausts_bounded_wait",
+      "elapsed_seconds": 184.03,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "worker_begin": {
+              "ActiveState": "active",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "999",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          },
+          {
+            "began_at_utc_ns": 1062010000000,
+            "worker_begin": {
+              "ActiveState": "active",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "999",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          },
+          {
+            "began_at_utc_ns": 1124020000000
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        15,
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 2,
+      "attempt_results": [
+        "NATURAL_ARCHIVE_RACE_RETRY",
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "natural_worker_race_is_retried",
+      "elapsed_seconds": 0.4400000000000001,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 2,
+      "attempt_results": [
+        "NATURAL_ARCHIVE_RACE_RETRY",
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "past_timer_race_is_retried",
+      "elapsed_seconds": 0.4400000000000001,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 1,
+      "case": "recorder_changed",
+      "elapsed_seconds": 0.03,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-97ouvz58/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "1",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30,
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "worker_failure",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "exit-code",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "bad_inv",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "invalid",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "masked_owner",
+      "elapsed_seconds": 0.09999999999999999,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-ib_d1cu_/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "owners": {
+              "apt-daily-upgrade.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily-upgrade.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "masked"
+              },
+              "binance-market-data-archive.service": {
+                "ActiveState": "inactive",
+                "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "MainPID": "0",
+                "Result": "success",
+                "UnitFileState": "static"
+              },
+              "binance-market-data-archive.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "unattended-upgrades.service": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              }
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "0",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "timer_disabled",
+      "elapsed_seconds": 0.09999999999999999,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-kiqdtg7c/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "owners": {
+              "apt-daily-upgrade.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily-upgrade.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "binance-market-data-archive.service": {
+                "ActiveState": "inactive",
+                "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "MainPID": "0",
+                "Result": "success",
+                "UnitFileState": "static"
+              },
+              "binance-market-data-archive.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "disabled"
+              },
+              "unattended-upgrades.service": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              }
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "0",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "journal_rc",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 1,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "journal_json",
+      "elapsed_seconds": 0.02,
+      "error": "JSONDecodeError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "JSONDecodeError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "bad-json"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "old_journal",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"0\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "inventory_timeout",
+      "elapsed_seconds": 181,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr": null,
+        "timeout_stdout": null
+      },
+      "operation_timeouts": [
+        15,
+        30
+      ],
+      "result": "PASS"
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "helper_sha256": "4f4c710c37d17e99976473387257ac3dbd89d861820b0102e3fab7a44728fda3",
+  "linux_credit": false,
+  "production_payloads_opened": false,
+  "real_network_subprocess_or_service_called": false,
+  "scope": "ISOLATED_LOCAL_HANDOFF_COMPONENT_REVIEW_ONLY",
+  "whole_remote_or_helper_main_executed": false
+}

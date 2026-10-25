@@ -1,0 +1,108 @@
+{
+  "P3": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt",
+  "current_preflight_path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/actual-current-preflight-1792912997523101000.json",
+  "current_preflight_sha256": "e7dfc0f5aea159eb3fbe8b0d19b3a9c2b6f4fcb149c836eca72578ecf9401bd9",
+  "current_preflight_bytes": 6951497,
+  "raw_payloads_opened": false,
+  "files": {
+    "actual-n2-stage-launch-1792936727176060000.execution.json": {
+      "sha256": "c53d266f0741bad6c3b4c683d27ebf386bab805da533dc4992d00fff030e2512",
+      "bytes": 233
+    },
+    "RETRY_DESIGN.md": {
+      "sha256": "37d715a17198fdecf0e78a292833af9adfa5d90653206bb12c432f5b7b1ae8b3",
+      "bytes": 3209
+    },
+    "CPU_CONTEXT_NOTE.md": {
+      "sha256": "6e279e7f8b0f3aece54332d94f561f7002eceaaa0401597f5b0307363ad5e7c1",
+      "bytes": 1580
+    },
+    "kernel-update-pending.json": {
+      "sha256": "e29dd312b1bbe30808708b9eef01bcc014e91d4d343c931aa6e10f0f55b379c1",
+      "bytes": 1080
+    },
+    "parent-actual-arm-summary.json": {
+      "sha256": "44c40c18ce86b8573991be666abd3827b7109183603629a10fca335a79156bc0",
+      "bytes": 1404
+    },
+    "actual-n2-stage-arm-1792936141508045000.json": {
+      "sha256": "25e1ae4c2a8171c4cd781d2ed241999d7c4ef87cf8a35b65bbe7b0523b724a24",
+      "bytes": 3283
+    },
+    "postarm-admission.json": {
+      "sha256": "c2d6282fdb63a8f74290dbff29f72506bc65061f95b1eb1fe00329f13e092022",
+      "bytes": 3822
+    },
+    "offline-cpu-context.json": {
+      "sha256": "c8597c44449d3e7ab39921920cbe0a379ffc3c52d37874c8ccaba08ab6993f0c",
+      "bytes": 9155
+    },
+    "stage-operator.py": {
+      "sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+      "bytes": 28223
+    },
+    "prearm-admission.json": {
+      "sha256": "9ba2196c9d27ffaf4e59d03c48a0f3bc690b4ad95fcc72e7ec4ddd27de056e31",
+      "bytes": 3810
+    },
+    "canonical-verification.json": {
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5",
+      "bytes": 5003
+    },
+    "parent-physical-independent-readback.json": {
+      "sha256": "e5720b4c5ba19d5206603a0b587305187a357eaa8a3b48c9d259343c4678d141",
+      "bytes": 259
+    },
+    "actual-n2-stage-copy-1792913610397799000.json": {
+      "sha256": "3c09dd59f8691ce3b3de1d1f692cc61a057542dd17551e8c1882edc2c59bba00",
+      "bytes": 34694
+    },
+    "actual-n2-stage-read-1792936463800261000.execution.json": {
+      "sha256": "e8eb7bbf869484fdd03789b19cb8f502b5b240a11ba25e37fd0df9235bb0356a",
+      "bytes": 233
+    },
+    "actual-n2-stage-launch-1792936727176060000.json": {
+      "sha256": "e984758985dce5387aca274367a45fbd3e0716d7582767a3034af8c0a3383c40",
+      "bytes": 4009
+    },
+    "parent-actual-copy-readback.json": {
+      "sha256": "0000185a0dfbec7d796180ec22f6dc75765bde90f553be47bd9628e79bcd5a3f",
+      "bytes": 404
+    },
+    "parent-actual-arm-independent-readback.json": {
+      "sha256": "8c901c128af746ddf5e512b648ddad4fcfa1ca5132fafe9aa83ec191537f1181",
+      "bytes": 261
+    },
+    "quiet-window-actual.json": {
+      "sha256": "194e50a2a58762a3862ef0414a1e573b36777d551bbbf4baafb14af6c3c3fc1f",
+      "bytes": 4256
+    },
+    "parent-final-design-readback.json": {
+      "sha256": "e5d2a2d7fdb0364684c44ed2cb5a34a6c7182a6d94087eb2c5c8fec1f592afbf",
+      "bytes": 350
+    },
+    "stage-controls-manifest.json": {
+      "sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+      "bytes": 2898
+    },
+    "current-forecast.json": {
+      "sha256": "21dd1355365d95cc15ce538fb6fa5eae35bb89877baed6135dbd5b77f801d76b",
+      "bytes": 4678
+    },
+    "parent-initial-launch-independent-readback.json": {
+      "sha256": "0695c1e7d6e1c832836603e6ac02144278dfb49cc1059faf8294bb74873932da",
+      "bytes": 346
+    },
+    "EXPORT_MANIFEST.json": {
+      "sha256": "aa938542845457bca4e579c3d30aa0f5a43a9cfec21dc17f0fd8ee2dfcf8f75d",
+      "bytes": 1988
+    }
+  },
+  "actual_arm_read": {
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/actual-n2-stage-read-1792936463800261000.json",
+    "sha256": "3e86b3acba325123529f6aed0848fd73e99618a4f6521c65668868605721f0fe",
+    "bytes": 2780458,
+    "original_member_count": 13,
+    "parent_all_member_SHA_bytes_PASS": true
+  }
+}

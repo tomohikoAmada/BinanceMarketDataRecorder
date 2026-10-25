@@ -1,0 +1,73 @@
+{
+  "ARM_or_launch_allowed_by_this_review": false,
+  "CPU_or_network_root_cause_or_stability_fix_claimed": false,
+  "accepted_24h_savedframes_or_capacity_credit": false,
+  "accepted_preflight_sha256": "e7dfc0f5aea159eb3fbe8b0d19b3a9c2b6f4fcb149c836eca72578ecf9401bd9",
+  "bindings": {
+    "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "controls_manifest_sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+    "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "operator_sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+    "runtime_members": {
+      "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "arm.py": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "capacity-policy.json": "db8566b8d9bd960e61e5309ccf96d7ad14635f2db940bc3b530f4a7c17b7ccf7",
+      "common.py": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526",
+      "controller.py": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "launch.py": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "qualification_auxiliary_gate.py": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "qualification_core_recovery.py": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+      "qualification_monitor_rate.py": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+      "qualification_owner_995.py": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+      "qualification_scoped_corpus.py": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "scoped-terminal.py": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt",
+    "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+  },
+  "copy_only_binding_permitted_after_parent_readback": true,
+  "current_Linux_qualification": "PENDING_NOT_RUN",
+  "current_physical_copy": "PENDING_NOT_PERFORMED",
+  "current_preflight_decision": "ACCEPT",
+  "decision": "ACCEPT",
+  "design_manifest_sha256": "bf27149d21d3dc72bb0b436a49663cbfe180d8cf2c64aaf4c3e9c46b229ba74d",
+  "findings": [],
+  "formal_credit_seconds": 0,
+  "fresh_stopped_custody_at_collection": {
+    "canonical_status": "VERIFIED",
+    "directories": 1,
+    "files": 0,
+    "future_CLOCK_MONOTONIC_seconds_at_collection": 25.932545,
+    "natural_archive_invocation": "07dc122a931f4e1f939d28ea4872e2e4",
+    "original_RESTORED_before_cancel": true,
+    "partial_count": 0,
+    "recorder_inactive_AND_disabled_PID0_NRestarts0": true
+  },
+  "future_requirements": [
+    "Bind exact report/result/manifest plus this actual preflight acceptance into DESIGN_ACCEPTED_COPY_ONLY without altering operator/runtime/control bytes.",
+    "Perform one exclusive actual copy with real canonical Linux12 import/binding smoke and exact39 classifier fixtures, retaining original QA bytes before assertions.",
+    "Independently accept all actual physical/Linux/control bindings before CURRENT_LINUX_PHYSICAL_INDEPENDENTLY_ACCEPTED.",
+    "Only then fresh current fail-closed zero-file custody, live reserves/admission, new fixed window/ARM/launch and actual new own86400 T0."
+  ],
+  "isolated_component_case_count": 22,
+  "isolated_qualification_gate_case_count": 26,
+  "old_failed_data_and_closed_guard_immutable": true,
+  "planning_reconstruction": {
+    "creation_minute_bins": 1431,
+    "live_admission": false,
+    "metadata_rows": 25639,
+    "new_finite_window_seconds": 230400,
+    "projected_archive_free_bytes": 1957747952848,
+    "projected_writer_free_bytes": 20075891662,
+    "required_seconds": 221626.19209639446
+  },
+  "production_source_or_runtime_modified": false,
+  "raw_manifest_or_partial_payload_opened": false,
+  "review_performed_SSH_or_actual_service_action": false,
+  "scope": "CURRENT_FAILED_ATTEMPT_PREFLIGHT_HANDOFF_AND_NEW_STAGE_BINDING_DESIGN_ONLY",
+  "stage_qualification_state_at_review": "UNBOUND_NO_COPY_ARM_LAUNCH",
+  "total_isolated_LOCAL_cases": 48,
+  "zero_historical_time_transfer": true
+}

@@ -1,0 +1,24 @@
+{
+  "state": "ACTUAL_ARM_COMPLETE_PENDING_INDEPENDENT_BINDING",
+  "original_sha256": "3e86b3acba325123529f6aed0848fd73e99618a4f6521c65668868605721f0fe",
+  "window_sha256": "194e50a2a58762a3862ef0414a1e573b36777d551bbbf4baafb14af6c3c3fc1f",
+  "canonical_sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5",
+  "expiry_epoch_seconds": 1793166579,
+  "actual_read_utc_ns": 1792936465708024015,
+  "manager_done": [
+    {
+      "utc_us": "1792936189305941",
+      "message": "binance-recorder-r2-capacity-n2-readiness-retry-20261025-1s0kswlt-arm.service: Deactivated successfully."
+    },
+    {
+      "utc_us": "1792936189307067",
+      "message": "Finished binance-recorder-r2-capacity-n2-readiness-retry-20261025-1s0kswlt-arm.service - /usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/pin-unit-exec.py /opt/binance-market-data-recorder/venv/bin/python /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/arm-natural-wait.py."
+    },
+    {
+      "utc_us": "1792936465735664",
+      "message": "binance-recorder-r2-capacity-n2-readiness-retry-20261025-1s0kswlt-arm.service: Failed to open /run/systemd/transient/binance-recorder-r2-capacity-n2-readiness-retry-20261025-1s0kswlt-arm.service: No such file or directory"
+    }
+  ],
+  "formal_T0": null,
+  "capture_launched": false
+}

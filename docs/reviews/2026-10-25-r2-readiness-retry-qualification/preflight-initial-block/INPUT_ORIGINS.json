@@ -1,0 +1,17 @@
+{
+  "read_current_capacity.py": {
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/initial-unexecuted-d103-history/read_current_capacity.py",
+    "sha256": "d103983ac1af2f14064617e708860bcb1b9ea317d8899811c100128946219365",
+    "bytes": 13160
+  },
+  "preflight-design-manifest.json": {
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/initial-unexecuted-d103-history/preflight-design-manifest.json",
+    "sha256": "f8e10a42807ae57cb2c80c29efdfede84b4f07359356d15b77d0921a04eec40c",
+    "bytes": 619
+  },
+  "DESIGN.md": {
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/initial-unexecuted-d103-history/DESIGN.md",
+    "sha256": "3394fb2428d4f160491682caa835a93f1b3d39c01ec481ce6027b542ecb4d4bd",
+    "bytes": 1304
+  }
+}
