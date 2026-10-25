@@ -1,0 +1,214 @@
+{
+  "dynamic_callbacks_that_must_not_be_cached": [
+    "systemd_manager",
+    "process_environment",
+    "process_alive",
+    "service_state",
+    "utc_clock_ns"
+  ],
+  "method": "Call exact source evaluator; this table documents scope, not a handported evaluator implementation.",
+  "only_cache_boundary_callbacks": [
+    "identity_verifier installed subproof only",
+    "catalog_ready integrity attestation only"
+  ],
+  "predicate_group_count": 28,
+  "predicates": [
+    {
+      "evaluation_scope": "fresh-small-files + explicit installed-static reuse",
+      "id": "P01",
+      "predicate": "identity-files",
+      "required_behavior": "Fresh real verify_identity_files(verify_installed=False, require_root_controlled=True), enforce_vps_paths, canonical load and verify_vps_identity_permissions. Rehash retained wheel/lock/config/unit and sidecars; only installed distribution/RECORD scanning is reused from the early attestation.",
+      "source_API": "_verify_vps_identity / verify_identity_files"
+    },
+    {
+      "evaluation_scope": "reused-static only",
+      "id": "P02",
+      "predicate": "installed-record-dependencies",
+      "required_behavior": "No second installed package/RECORD forest scan. Earlier full canonical READY identity evidence must contain its real exact-match/artifact proofs and agree with the current identity object and guards. Keep original evidence under a reused-static reference, never present it as newly scanned.",
+      "source_API": "verify_installed_dependencies / verify_installed_artifact"
+    },
+    {
+      "evaluation_scope": "fresh-cheap",
+      "id": "P03",
+      "predicate": "namespace-custody",
+      "required_behavior": "Call real source verify_vps_control_chain with the earlier verified installed_artifact path mapping; freshly inspect controlling directories, canonical Python, wheel/lock/module/direct_url protected files. This is fresh namespace protection, not fresh all-file content verification.",
+      "source_API": "verify_vps_control_chain"
+    },
+    {
+      "evaluation_scope": "fresh-cheap",
+      "id": "P04",
+      "predicate": "install-contract",
+      "required_behavior": "Use the real source manager; current service principal, canonical Python/config/data/unit paths, ownership, mode and root-controlled executable/deployment directories must pass.",
+      "source_API": "SystemdManager.verify_install_contract"
+    },
+    {
+      "evaluation_scope": "fresh-cheap",
+      "id": "P05",
+      "predicate": "systemd-effective",
+      "required_behavior": "Real source current effective identity, drop-ins, environment files/pass environment, dependencies, executable/user/group/restart/stop/UMask/routing constraints and equality with identity.systemd_effective. Never cache this result.",
+      "source_API": "SystemdManager.verify_effective_properties"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P06",
+      "predicate": "systemd-runtime",
+      "required_behavior": "Real runtime_properties; failed service => FAILED, not active => NOT_READY; positive integer MainPID required. Wrapper additionally binds expected invocation/NRestarts0/boot before and after.",
+      "source_API": "VpsReadinessEvaluator.evaluate systemd_runtime"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P07",
+      "predicate": "process-environment",
+      "required_behavior": "Keep the original source provider/default. Read the actual current Recorder PID environment within the source1MiB bound; malformed/duplicate/active proxy or BINANCE_MARKET_RECORDER_* operational variables fail. Preserve only source-returned names/status; do not dump environment values.",
+      "source_API": "verify_direct_process_environment(_read_process_environment(pid))"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P08",
+      "predicate": "service-state-read",
+      "required_behavior": "Keep real current source read/schema handling. Missing/invalid state cannot pass; retain source result and a matching strict raw publication witness.",
+      "source_API": "ServiceStateStore.read"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P09",
+      "predicate": "PID-and-alive",
+      "required_behavior": "Published integer PID must equal live MainPID; use original real process_alive default, never cached/alwaystrue.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P10",
+      "predicate": "heartbeat-shape",
+      "required_behavior": "Published heartbeat integer and positive numeric nonbool interval as exact source requires.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P11",
+      "predicate": "heartbeat-time",
+      "required_behavior": "Fresh source UTC now; source maximum_age=max(30s,3*published interval), future>5s and stale observations reject. Existing strict auxiliary heartbeat is still the tighter private gate.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P12",
+      "predicate": "service-status",
+      "required_behavior": "FAILED service state fails; RUNNING is required; STARTING/other states cannot grant completion.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P13",
+      "predicate": "published-identity",
+      "required_behavior": "Exact published identity map must equal current identity_sha/source_git_sha/wheel_sha/config_sha/systemd_unit_sha/capacity_profile. This closes the demonstrated mismatched-publication bypass.",
+      "source_API": "VpsReadinessEvaluator.evaluate claimed_identity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P14",
+      "predicate": "runtime-profile",
+      "required_behavior": "Current capacity_profile_id must match VPS_PRODUCTION_V1.profile_id.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P15",
+      "predicate": "catalog-open-recovery",
+      "required_behavior": "catalog_open must be True and startup_recovery_complete must be True. Do not infer them solely from an old READY result.",
+      "source_API": "VpsReadinessEvaluator.evaluate"
+    },
+    {
+      "evaluation_scope": "guarded reused-static only",
+      "id": "P16",
+      "predicate": "catalog-integrity",
+      "required_behavior": "Earlier unchanged full canonical CLI used the default real Catalog.integrity_check. Later guarded callback validates same-attestation/scope/boot/process/identity/clock and canonical same-file identity before returning its reused boolean. No fresh integrity result is claimed; no unconditional True or fake current scan.",
+      "source_API": "_catalog_ready"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P17",
+      "predicate": "topology-shape",
+      "required_behavior": "Real source validates dict/allowed market/symbol types and exact configured four-product topology, with no missing/extra product.",
+      "source_API": "VpsReadinessEvaluator.evaluate products"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P18",
+      "predicate": "product-identity",
+      "required_behavior": "Every current product object must be a dict with the correct market/symbol.",
+      "source_API": "VpsReadinessEvaluator.evaluate products"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P19",
+      "predicate": "product-failure",
+      "required_behavior": "Current product failure must be None for this source readiness endpoint. Existing private write-safety additionally rejects true FAILED and preserves recoverable warm-loop behavior; do not relax either contract.",
+      "source_API": "VpsReadinessEvaluator.evaluate products"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P20",
+      "predicate": "product-core",
+      "required_behavior": "Current ready True; connected_streams/persisted_streams typed lists containing all CORE_STREAMS; snapshot_persisted and orderbook_synchronized True.",
+      "source_API": "VpsReadinessEvaluator.evaluate products"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P21",
+      "predicate": "capacity-shape",
+      "required_behavior": "Current dict; observed timestamp/total/free are source-valid integers, total>0 and0<=free<=total.",
+      "source_API": "VpsReadinessEvaluator.evaluate capacity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P22",
+      "predicate": "capacity-time",
+      "required_behavior": "Current capacity observed_at is neither too old nor>5s future under the same source maximum_age. This closes the stale-by1h bypass.",
+      "source_API": "VpsReadinessEvaluator.evaluate capacity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P23",
+      "predicate": "capacity-profile",
+      "required_behavior": "Current capacity.capacity_profile must match the source VPS profile.",
+      "source_API": "VpsReadinessEvaluator.evaluate capacity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P24",
+      "predicate": "capacity-state",
+      "required_behavior": "State must be one of the exact source NORMAL/WARNING/CRITICAL/EMERGENCY/HARD_RESERVE values. FORECAST CRITICAL alone is not actual reserve exhaustion.",
+      "source_API": "VpsReadinessEvaluator.evaluate capacity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P25",
+      "predicate": "hard-reserve",
+      "required_behavior": "Source free<=HARD_RESERVE_BYTES or HARD_RESERVE state prevents READY. Keep private actual_hard_reserve_reached and fresh filesystem free-space guards as additional checks.",
+      "source_API": "VpsReadinessEvaluator.evaluate capacity"
+    },
+    {
+      "evaluation_scope": "fresh-dynamic",
+      "id": "P26",
+      "predicate": "source-result",
+      "required_behavior": "Only source stateREADY with no blocking source result allows conditional completion; keep exact source reasons/evidence unchanged inside an explicitly scoped wrapper. No wait_for_readiness polling or second full CLI at end/start.",
+      "source_API": "DeploymentReadinessResult.public_dict"
+    },
+    {
+      "evaluation_scope": "preserved additional private guard",
+      "id": "P27",
+      "predicate": "private-auxiliary",
+      "required_behavior": "Unchanged all14 flags/four products/26 strict auxiliary contexts, freshness/cursors and exact same raw publication witness; no dilution by completion probes.",
+      "source_API": "existing qualification_auxiliary_gate/sample/validate_warm"
+    },
+    {
+      "evaluation_scope": "preserved additional private guard",
+      "id": "P28",
+      "predicate": "private-resources-continuity",
+      "required_behavior": "Unchanged current AND peak ownedSwap0, RSS/hostavailable/filesystem reserves, trusted writes, boot/config/identity/invocation/PID/NRestarts/service-instance checks and fixed window. No birth/counter-only lineage claim.",
+      "source_API": "existing sample/validate_warm and wrapper"
+    }
+  ],
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+}

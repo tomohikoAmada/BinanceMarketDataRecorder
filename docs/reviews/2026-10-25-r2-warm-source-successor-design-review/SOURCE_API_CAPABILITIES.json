@@ -1,0 +1,185 @@
+{
+  "APIs": {
+    "SystemdManager.__init__": {
+      "keyword_defaults": {
+        "capacity_profile_id": "None",
+        "command_runner": "_run_command",
+        "config_file": "REQUIRED",
+        "data_root": "REQUIRED",
+        "git_commit": "None",
+        "group": "REQUIRED",
+        "python_executable": "None",
+        "unit_path": "Path('/etc/systemd/system') / SYSTEMD_SERVICE_NAME",
+        "user": "REQUIRED"
+      },
+      "keyword_only_parameters": [
+        "data_root",
+        "config_file",
+        "user",
+        "group",
+        "unit_path",
+        "python_executable",
+        "git_commit",
+        "capacity_profile_id",
+        "command_runner"
+      ],
+      "line": 175,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "SystemdManager.runtime_properties": {
+      "keyword_defaults": {},
+      "keyword_only_parameters": [],
+      "line": 597,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "SystemdManager.verify_effective_properties": {
+      "keyword_defaults": {
+        "expected": "None"
+      },
+      "keyword_only_parameters": [
+        "expected"
+      ],
+      "line": 528,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "SystemdManager.verify_install_contract": {
+      "keyword_defaults": {},
+      "keyword_only_parameters": [],
+      "line": 296,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "VpsReadinessEvaluator.__init__": {
+      "keyword_defaults": {
+        "catalog_ready": "_catalog_ready",
+        "data_root": "REQUIRED",
+        "expected_products": "REQUIRED",
+        "identity": "REQUIRED",
+        "identity_verifier": "None",
+        "process_alive": "_process_alive",
+        "process_environment": "_read_process_environment",
+        "systemd_manager": "REQUIRED",
+        "utc_clock_ns": "time.time_ns"
+      },
+      "keyword_only_parameters": [
+        "expected_products",
+        "data_root",
+        "identity",
+        "systemd_manager",
+        "utc_clock_ns",
+        "process_alive",
+        "catalog_ready",
+        "identity_verifier",
+        "process_environment"
+      ],
+      "line": 158,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/readiness.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "VpsReadinessEvaluator.evaluate": {
+      "keyword_defaults": {},
+      "keyword_only_parameters": [],
+      "line": 186,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/readiness.py",
+      "positional_parameters": [
+        "self"
+      ]
+    },
+    "_identity_systemd_manager": {
+      "keyword_defaults": {
+        "identity_group": "REQUIRED",
+        "identity_user": "REQUIRED"
+      },
+      "keyword_only_parameters": [
+        "identity_user",
+        "identity_group"
+      ],
+      "line": 450,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/cli.py",
+      "positional_parameters": [
+        "loaded"
+      ]
+    },
+    "enforce_vps_paths": {
+      "keyword_defaults": {},
+      "keyword_only_parameters": [],
+      "line": 1078,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py",
+      "positional_parameters": [
+        "identity"
+      ]
+    },
+    "load_deployment_identity": {
+      "keyword_defaults": {},
+      "keyword_only_parameters": [],
+      "line": 436,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py",
+      "positional_parameters": [
+        "path"
+      ]
+    },
+    "verify_identity_files": {
+      "keyword_defaults": {
+        "expected_config_path": "None",
+        "expected_profile_id": "None",
+        "require_root_controlled": "False",
+        "verify_installed": "True"
+      },
+      "keyword_only_parameters": [
+        "expected_config_path",
+        "expected_profile_id",
+        "verify_installed",
+        "require_root_controlled"
+      ],
+      "line": 959,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py",
+      "positional_parameters": [
+        "identity"
+      ]
+    },
+    "verify_vps_control_chain": {
+      "keyword_defaults": {
+        "service_group": "REQUIRED",
+        "service_user": "REQUIRED"
+      },
+      "keyword_only_parameters": [
+        "service_user",
+        "service_group"
+      ],
+      "line": 799,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py",
+      "positional_parameters": [
+        "identity",
+        "installed_artifact"
+      ]
+    },
+    "verify_vps_identity_permissions": {
+      "keyword_defaults": {
+        "expected_group": "REQUIRED"
+      },
+      "keyword_only_parameters": [
+        "expected_group"
+      ],
+      "line": 493,
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py",
+      "positional_parameters": [
+        "path"
+      ]
+    }
+  },
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "static_AST_only": true
+}

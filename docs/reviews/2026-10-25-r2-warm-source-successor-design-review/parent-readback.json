@@ -1,0 +1,67 @@
+{
+  "decision": "ACCEPT_DESIGN_ONLY_PARENT_BOUND",
+  "source_directory": "/private/var/tmp/bmdr-r2-warm-source-semantic-successor-design-20261025-6pyensia",
+  "manifest_sha256": "16243a8400db121da12339730c3aabdb991a622c6a6d63a4f2859412a1ec5b8c",
+  "manifest_bytes": 1471,
+  "complete_parent_members": 9,
+  "members": [
+    {
+      "name": "API_DESIGN.md",
+      "bytes": 9756,
+      "sha256": "b9b513c6f01fce126da9071b518bf3824ed47f138c807cdfbf2e44e59769ee43"
+    },
+    {
+      "name": "ATTESTATION_PROVENANCE.md",
+      "bytes": 4166,
+      "sha256": "0452efb4d89d1d5a568108afae3b29a2197ae4e07642f72e0b7a81cc05acfb60"
+    },
+    {
+      "name": "FULL_FLOW_FAULT_MATRIX.json",
+      "bytes": 16315,
+      "sha256": "772c78caa12d67984373efdb4c51da3913790073ab5c31bce989b2c024e81372"
+    },
+    {
+      "name": "INPUT_REFERENCES.json",
+      "bytes": 1757,
+      "sha256": "2c8235c8ea76e527cc4cd886c8febeab3d367716484076fea09464d4d98bc403"
+    },
+    {
+      "name": "PREDICATE_MAP.json",
+      "bytes": 11270,
+      "sha256": "bc1e3969dcd96248544961d882edbd1445e9226822564c6cec8fa3810d84de75"
+    },
+    {
+      "name": "REPORT.md",
+      "bytes": 5076,
+      "sha256": "41199a4332fef9f18c635fc0093fdc8ef727d5df12d8d06547f9953a7b8a2f23"
+    },
+    {
+      "name": "RESULT.json",
+      "bytes": 3190,
+      "sha256": "7907eb7dc38b54f5920eda61ec06a6f799bb55a003ca8931690a5c40abccb386"
+    },
+    {
+      "name": "SOURCE_API_CAPABILITIES.json",
+      "bytes": 6087,
+      "sha256": "9ee07f69b326c55c96088308ce39702297c34c9415ae93fc1d2906212b5bb727"
+    },
+    {
+      "name": "freeze_design.py",
+      "bytes": 11482,
+      "sha256": "2a262baf8756db333dd92cc1a02b3bf2ffaabf622dfd4c91cc863c952a0771d7"
+    }
+  ],
+  "implementation_created": false,
+  "fault_specs_executed": false,
+  "Linux_deploy_capture_T0_or_capacity_credit": false,
+  "this_wake_quota": {
+    "ordinaryUsageAllowed": true,
+    "five_hour_used_percent": 90,
+    "reset": 1792953836,
+    "reset_utc": "2026-10-25T18:43:56+00:00",
+    "weekly_used_percent": 30,
+    "weekly_reset": 1793513445,
+    "credits": 0
+  },
+  "next_step": "Implement successor after next hourly fresh quota is adequate; no extra SSH or duplicate prior review."
+}

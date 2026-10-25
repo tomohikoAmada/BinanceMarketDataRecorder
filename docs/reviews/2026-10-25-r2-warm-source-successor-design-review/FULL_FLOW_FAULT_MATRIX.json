@@ -1,0 +1,340 @@
+{
+  "case_count": 47,
+  "cases": [
+    {
+      "case": "observed-shape-overlap",
+      "full_flow_setup": "Full capture warm prefix with first strict PASS late in the original warm period,115.543440s canonical work, prior STARTING rows and real end/start calls",
+      "id": "F01",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "One full CLI; original1200 never extended;>=300 endpoints/min12; correctly bounded completion/T0 or honest failure, never synthetic time credit."
+    },
+    {
+      "case": "late-first-PASS-cadence",
+      "full_flow_setup": "Same late first PASS; exercise post-CLI final sleep rounding near300s",
+      "id": "F02",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Endpoint-aware sleep waits only to the next required real observation once min12 is met; no invented observations or relaxation of>=300."
+    },
+    {
+      "case": "minimum12",
+      "full_flow_setup": "First PASS near beginning with long CLI but fewer than12 primary warm rows",
+      "id": "F03",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Do not accelerate extra completion probes into the12 count; wait for sufficient actual primary observations."
+    },
+    {
+      "case": "middle-quality-BLOCK",
+      "full_flow_setup": "Ordinary warm rows after first PASS temporarily BLOCK and later recover",
+      "id": "F04",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Original warm-loop recovery retained; no duplicate full canonical CLI; original first/end semantics and1200 remain."
+    },
+    {
+      "case": "no-first-PASS",
+      "full_flow_setup": "No strict PASS before deadline",
+      "id": "F05",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No full CLI or T0; original failures retained and automatic parent closeout unchanged."
+    },
+    {
+      "case": "early-CLI-not-READY",
+      "full_flow_setup": "Full unchanged canonical command returns NOT_READY/FAILED/nonzero",
+      "id": "F06",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Retain exact result and reasons; no static cache or T0."
+    },
+    {
+      "case": "early-CLI-late-READY",
+      "full_flow_setup": "Canonical command says READY after remaining global deadline",
+      "id": "F07",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Retain bytes/timing; reject even if otherwise valid."
+    },
+    {
+      "case": "early-CLI-timeout-tree",
+      "full_flow_setup": "Real isolated fixture with wrapper+sleeping descendant and bounded timeout",
+      "id": "F08",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Only owned child group is terminated/reaped; original partial/final bytes retained; no orphan evaluator or unrelated signal."
+    },
+    {
+      "case": "partial-malformed-CLI",
+      "full_flow_setup": "Partial JSON/invalid UTF8/empty output/timeout byte stdout and stderr",
+      "id": "F09",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Lossless base64/length/SHA before assertions; no synthetic READY."
+    },
+    {
+      "case": "attestation-not-durable",
+      "full_flow_setup": "Original READY succeeds but receipt write/fsync fails",
+      "id": "F10",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No completion/T0; primary successful-path evidence failure is fatal."
+    },
+    {
+      "case": "diagnostic-error-secondary",
+      "full_flow_setup": "Canonical/source failure plus diagnostic publication error",
+      "id": "F11",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Retain initiating error/reasons; diagnostic error does not replace it."
+    },
+    {
+      "case": "cache-old-scope",
+      "full_flow_setup": "Valid prior receipt from failedP3/another native/run/scope",
+      "id": "F12",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Reject; old CLOSED194e never reused."
+    },
+    {
+      "case": "cache-missing-or-forged",
+      "full_flow_setup": "Missing receipt/hash mismatch/bare READY/forged catalog-ok or incomplete installed evidence",
+      "id": "F13",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Reject before callback can return a positive result."
+    },
+    {
+      "case": "cache-clock-expired",
+      "full_flow_setup": "Original1200 cache expiry, boot mismatch, UTC/BT/monotonic discontinuity or changed fixed window",
+      "id": "F14",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Reject, never reset cache expiry relative to later calls."
+    },
+    {
+      "case": "cache-path-replaced",
+      "full_flow_setup": "Catalog missing, symlinked ancestor/entry, wrong path/device/inode/type or changed ownership/permissions",
+      "id": "F15",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Guarded catalog callback rejects; no unconditional True and no hidden scan fallback."
+    },
+    {
+      "case": "legitimate-catalog-growth",
+      "full_flow_setup": "Same guarded Catalog inode with normal write/WAL size or mtime changes",
+      "id": "F16",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Record growth and retain earlier-integrity scope; do not falsely label a fresh integrity scan or reject ordinary append solely for mtime."
+    },
+    {
+      "case": "fresh-small-file-change",
+      "full_flow_setup": "Current wheel/lock/config/unit/sidecar hash or identity permissions change",
+      "id": "F17",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Real verify_identity_files(verify_installed=False)/permissions rejects; no stale installed attestation override."
+    },
+    {
+      "case": "namespace-change",
+      "full_flow_setup": "Venv/module/direct_url/control directory gains symlink/writability or moves",
+      "id": "F18",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Real fresh control-chain/install checks reject."
+    },
+    {
+      "case": "not-stock-full-ready",
+      "full_flow_setup": "Inspect successful completion receipt and all consumers",
+      "id": "F19",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Explicit conditional kind/cache references; nested source result is never labeled fresh full CLI/Catalog/installed scan atT0."
+    },
+    {
+      "case": "systemd-state",
+      "full_flow_setup": "Service inactive/failed or MainPID missing/noninteger/nonpositive",
+      "id": "F20",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Exact source evaluator state/reasons block T0."
+    },
+    {
+      "case": "systemd-effective",
+      "full_flow_setup": "Drop-in, EnvironmentFile, PassEnvironment, wrong executable/user/group/stop/UMask/routing dependencies",
+      "id": "F21",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Real current source verify_effective_properties rejects."
+    },
+    {
+      "case": "process-environment",
+      "full_flow_setup": "Real current PID environment has proxy or operational variable, duplicates/malformed/oversize read",
+      "id": "F22",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Original source provider rejects; cache is never consulted as live environment."
+    },
+    {
+      "case": "process-alive",
+      "full_flow_setup": "Expected PID disappears or current MainPID differs",
+      "id": "F23",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Real source process_alive/PID comparison and wrapper identity checks reject."
+    },
+    {
+      "case": "runtime-continuity",
+      "full_flow_setup": "Changed boot/invocation/PID/NRestarts/service instance before/after current completion",
+      "id": "F24",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Reject; no counter-only universal lineage claim."
+    },
+    {
+      "case": "state-invalid",
+      "full_flow_setup": "Missing or source-schema-invalid service publication",
+      "id": "F25",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Exact source ServiceStateStore/evaluator rejects; retain raw witness/read errors."
+    },
+    {
+      "case": "heartbeat",
+      "full_flow_setup": "Missing/invalid/nonpositive interval, future heartbeat or stale heartbeat",
+      "id": "F26",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Exact source heartbeat rules and tighter private strict freshness block T0."
+    },
+    {
+      "case": "service-status",
+      "full_flow_setup": "STARTING/FAILED/unknown runtime status at fresh end or start",
+      "id": "F27",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No T0 even when early full attestation was READY."
+    },
+    {
+      "case": "published-identity-regression",
+      "full_flow_setup": "Full warm prefix: earlier valid READY; end/start publication identity changed while current identity files stay correct",
+      "id": "F28",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Must now reject the proven d8c0 bypass through real source evaluator."
+    },
+    {
+      "case": "runtime-profile",
+      "full_flow_setup": "Wrong capacity_profile_id on current service state",
+      "id": "F29",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Source profile check rejects."
+    },
+    {
+      "case": "catalog-open-recovery",
+      "full_flow_setup": "catalog_open false or startup_recovery_complete false in fresh state",
+      "id": "F30",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Source current checks reject; cached integrity is not a substitute."
+    },
+    {
+      "case": "topology",
+      "full_flow_setup": "Missing/extra market/symbol, invalid product container/type or empty expected products",
+      "id": "F31",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Source current topology checks reject."
+    },
+    {
+      "case": "product-identity",
+      "full_flow_setup": "Wrong product market/symbol or nondict object",
+      "id": "F32",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Source current checks reject."
+    },
+    {
+      "case": "product-terminal",
+      "full_flow_setup": "Current nonnull failure/ready false, lost core stream persistence/snapshot/book sync; private true FAILED even if malformed failure text",
+      "id": "F33",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No completion/T0; original private terminal/write protections stay."
+    },
+    {
+      "case": "capacity-shape",
+      "full_flow_setup": "Missing/malformed capacity, invalid timestamp/total/free or free>total",
+      "id": "F34",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Source current shape check rejects."
+    },
+    {
+      "case": "capacity-time-regression",
+      "full_flow_setup": "Full warm prefix: earlier valid READY; fresh end/start capacity observed_at stale by1h",
+      "id": "F35",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Must now reject proven d8c0 bypass; also test future>5s."
+    },
+    {
+      "case": "capacity-profile-state",
+      "full_flow_setup": "Wrong capacity profile or invalid enum; FORECAST CRITICAL with valid free space",
+      "id": "F36",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Wrong profile/enum rejects; legitimate CRITICAL forecast alone does not become actual hard reserve."
+    },
+    {
+      "case": "actual-hard-reserve",
+      "full_flow_setup": "Current source HARD_RESERVE/free<=reserve or private actual_hard_reserve_reached; actual filesystem free fails",
+      "id": "F37",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No T0; no quality retry masks a true critical."
+    },
+    {
+      "case": "auxiliary-end-start",
+      "full_flow_setup": "Source cheap predicates READY but one of26 strict auxiliary/cursor/freshness contexts BLOCK",
+      "id": "F38",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Private strict completion still rejects; source evaluator does not replace all14 coverage."
+    },
+    {
+      "case": "publication-pair-race",
+      "full_flow_setup": "Strict raw witness and source evidence.service_state differ because a normal publication advanced",
+      "id": "F39",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Retain both; at most3 new pairs within unchanged deadline, no probe counted toward12/2880."
+    },
+    {
+      "case": "pair-race-never-settles",
+      "full_flow_setup": "All allowed pair attempts advance/mismatch or deadline expires",
+      "id": "F40",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Honest failure; no infinite polling or old-witness reuse."
+    },
+    {
+      "case": "late-current-READY",
+      "full_flow_setup": "Source current check returns READY after its min30/remaining budget",
+      "id": "F41",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Persist and reject before warm result/T0."
+    },
+    {
+      "case": "post-write-freshness-expired",
+      "full_flow_setup": "Durability or processing makes accepted strict/source timestamps stale before owner-start",
+      "id": "F42",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Revalidate decision-time horizons; bounded new pair or fail, no cached stale start."
+    },
+    {
+      "case": "remaining-prestart-budget",
+      "full_flow_setup": "Prestart admission/metadata work consumes original warm budget",
+      "id": "F43",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No new grace; no T0 past original deadline. Admission reserves remaining original warm work explicitly."
+    },
+    {
+      "case": "end-good-start-bad",
+      "full_flow_setup": "End current source+strict pair passes, current start pair changes any dynamic predicate",
+      "id": "F44",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "No T0; an end result never authorizes a later bad start."
+    },
+    {
+      "case": "unchanged-post-T0",
+      "full_flow_setup": "Static AST/byte comparisons and existing bounded synthetic owner-target model",
+      "id": "F45",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "995/2880/probes/missing/own86400/min+60/stop/full audit/restore unchanged; no old duration transfer."
+    },
+    {
+      "case": "reader-missing-control",
+      "full_flow_setup": "Reader encounters missing/partial warm-budget/attestation/end/start receipt or raw witness",
+      "id": "F46",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Original bytes retained, missing/parse errors explicit; cannot claim complete startup qualification."
+    },
+    {
+      "case": "actual-Linux-gate",
+      "full_flow_setup": "Before future ARM/capture, exact implementation/helper/runtime/reader bytes lack real affected Linux qualification",
+      "id": "F47",
+      "implementation_test_status": "NOT_RUN_DESIGN_ONLY",
+      "required_outcome": "Reject eligibility; design-only document cannot authorize copy/ARM/capture."
+    }
+  ],
+  "formal_duration_credit": 0,
+  "must_drive_actual_candidate_capture_warm_prefix_not_only_AST_presence": true,
+  "must_use_real_source_evaluator_with_only_guarded_static_callbacks_in_fixture": true,
+  "real_Linux_credit": false,
+  "scope": "FUTURE_REAL_COMPLETE_WARM_PREFIX_END_START_QUALIFICATION_SPECIFICATION",
+  "test_execution_in_this_design": false
+}

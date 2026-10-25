@@ -1,0 +1,9 @@
+# Warm source-semantic successor design
+
+Independent design ACCEPT41199a43/result7907eb7d/manifest16243a84; all9 frozen members plus manifest passed full parent SHA/bytes. This is a design for later implementation. It creates no successor code and runs none of its47 specified future full-flow faults.
+
+The design reuses exact20e57 VpsReadinessEvaluator with fresh source systemd/process/environment/service/product/capacity predicates. Only earlier installed-file and Catalog static subproofs may be reused through bounded same-warm/boot/config/identity/file/incarnation attestation. Receipts must declare that reuse; this does not assert a fresh complete installed-file or Catalog scan at T0. All28 predicate groups are mapped, including the two demonstrated stale-capacity and published-identity bypasses. Original1200s deadline,300s endpoints/min12 and995/2880/own86400 remain intact; no new grace is added.
+
+P3 remains failed before T0 and restored; d8 ordering draft remains BLOCKED and undeployed. No LOCAL review remains active. Successor implementation, complete flow faults, exact independent code review and genuine affected Linux/new-scope qualification remain pending. This wake ordinary usage is allowed but5h90% used/reset18:43:56UTC; defer the substantial implementation to an hourly wake with adequate fresh quota. No extra VPS read, service action, old review or production source change was performed.
+
+See [report](2026-10-25-r2-warm-source-successor-design-review/REPORT.md), [result](2026-10-25-r2-warm-source-successor-design-review/RESULT.json), [manifest](2026-10-25-r2-warm-source-successor-design-review/MANIFEST.json), [API design](2026-10-25-r2-warm-source-successor-design-review/API_DESIGN.md) and [predicate map](2026-10-25-r2-warm-source-successor-design-review/PREDICATE_MAP.json).
