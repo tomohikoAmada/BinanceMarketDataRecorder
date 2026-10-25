@@ -1,0 +1,80 @@
+{
+  "REST_errors": {
+    "EmptySideDataResponse": 176,
+    "NetworkError": 7
+  },
+  "close_received_1008_Pong_timeout": 37,
+  "connections_after_assertion_before_SIGTERM": 9,
+  "event_counts": {
+    "service_stop_requested": 1,
+    "spot_depth_resync_restart": 2,
+    "spot_ingress_stream_recovery": 51,
+    "spot_planned_rotation": 2,
+    "spot_session_restart": 4,
+    "spot_snapshot_bridge_pending": 5,
+    "spot_websocket_connected": 57,
+    "spot_websocket_disconnected": 45,
+    "usdm_depth_resync_restart": 2,
+    "usdm_ingress_stream_recovery": 88,
+    "usdm_planned_rotation": 6,
+    "usdm_session_restart": 4,
+    "usdm_side_rest_failed": 183,
+    "usdm_snapshot_bridge_pending": 4,
+    "usdm_websocket_connected": 98,
+    "usdm_websocket_disconnected": 78
+  },
+  "immediate_reset104": 7,
+  "no_recorded_closeframe_or_immediatecause": 79,
+  "no_unique_transport_rootcause_or_fix_claim": true,
+  "owned_rows": 630,
+  "planned_depth_resync_products": [
+    {
+      "buffered_capacity": 8192,
+      "market": "spot",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "buffered_capacity": 8192,
+      "market": "um_perpetual",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "buffered_capacity": 8192,
+      "market": "um_perpetual",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "buffered_capacity": 8192,
+      "market": "spot",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    }
+  ],
+  "service_stop_request": {
+    "event": "service_stop_requested",
+    "fields": {
+      "reason": "SIGTERM"
+    },
+    "journal_utc_ns": 1792907329275207000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "graceful service stop requested",
+    "timestamp_utc": "2026-10-25T05:48:49.273905+00:00"
+  },
+  "unexpected_closes": 123
+}

@@ -1,0 +1,191 @@
+[
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "actual_all4_planned_rotation_connecting",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "source_defined_ingress_backpressure",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_known_ingress_backpressure",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "source_defined_planned_rotation",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_known_planned_rotation",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "source_defined_sequence_gap",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_known_sequence_gap",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "source_defined_server_shutdown",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_known_server_shutdown",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "NO_TERMINAL_EVIDENCE",
+    "case": "source_defined_unexpected_disconnect",
+    "expected": "NO_TERMINAL_EVIDENCE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_known_unexpected_disconnect",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "FAILED_even_failure_none",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "unknown_failure",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "READY_with_recovery_failure",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "connecting_ready_true",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_PRODUCT",
+    "case": "unknown_status",
+    "expected": "PAUSE_UNTRUSTED_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_PRODUCT",
+    "case": "missing_status",
+    "expected": "PAUSE_UNTRUSTED_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_PRODUCT",
+    "case": "malformed_ready",
+    "expected": "PAUSE_UNTRUSTED_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "malformed_failure",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_SERVICE",
+    "case": "service_terminal",
+    "expected": "PAUSE_SERVICE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_SHUTDOWN",
+    "case": "service_shutdown",
+    "expected": "PAUSE_SHUTDOWN",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_ACTUAL_RESERVE",
+    "case": "actual_hard_reserve",
+    "expected": "PAUSE_ACTUAL_RESERVE",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_CAPACITY",
+    "case": "missing_capacity_flag",
+    "expected": "PAUSE_UNTRUSTED_CAPACITY",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_CAPACITY",
+    "case": "malformed_capacity_flag",
+    "expected": "PAUSE_UNTRUSTED_CAPACITY",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_UNTRUSTED_CAPACITY",
+    "case": "RUNNING_capacity_none",
+    "expected": "PAUSE_UNTRUSTED_CAPACITY",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PAUSE_PRODUCT",
+    "case": "STARTING_recovery_tag_not_accepted",
+    "expected": "PAUSE_PRODUCT",
+    "implementation_or_Linux_credit": false
+  },
+  {
+    "PASS": true,
+    "actual": "PENDING_STARTING",
+    "case": "bounded_genuine_STARTING_capacity_pending",
+    "expected": "PENDING_STARTING",
+    "implementation_or_Linux_credit": false
+  }
+]

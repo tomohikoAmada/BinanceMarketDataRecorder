@@ -1,0 +1,143 @@
+{
+  "all_original_members": {
+    "CHECKS.json": {
+      "bytes": 403,
+      "sha256": "d2cdc408d81640f181474f7d046b652a09ba5625e95b41b5d6c39ad62d5982fc"
+    },
+    "FAILURE_TIMELINE.json": {
+      "bytes": 39362,
+      "sha256": "5558f8f6e0a9879a41d13eb65fb17ff7666686210f417d4cadc1be20947e0c3b"
+    },
+    "INPUTS.json": {
+      "bytes": 11028,
+      "sha256": "b57cec367eb441031e0534847359d33625fb78d632e567df8e2e275a65eaebab"
+    },
+    "JOURNAL_SUMMARY.json": {
+      "bytes": 2179,
+      "sha256": "06229062a51ce6b8be5ae05508df9f0765f782948aa65043e875e62dbf53cef4"
+    },
+    "MODEL_ONLY_FAULT_CASES.json": {
+      "bytes": 5022,
+      "sha256": "3b81cef23359dda3f77475904925bd29586889c56ae2b03f03550cb023b6d42b"
+    },
+    "OBSERVATIONS.json": {
+      "bytes": 807164,
+      "sha256": "cd5d3b195740324af6c23ff18398130d54bd154a2ff7ec7b44e89ab087b9846f"
+    },
+    "REPORT.md": {
+      "bytes": 13335,
+      "sha256": "1f1630b974c265164362046c6351be28dd6b791403ab9f424d4fb54bc179a73b"
+    },
+    "RESULT.json": {
+      "bytes": 4810,
+      "sha256": "243a408b2be5de71e91ec04f491792fa6a15aaaca18a3c201013be6016917b7d"
+    },
+    "original-capture-failure.json": {
+      "bytes": 1393,
+      "sha256": "d872d8454ca1e3d2e7ef4b8c95ff6cf832aef95549c5808e4b5e644d868aaa9f"
+    },
+    "original-diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.json": {
+      "bytes": 1047,
+      "sha256": "38fdec8ae2fa76a715c1d5b1603a42995220dc5bf99628c6dd5870bd87cd8329"
+    },
+    "original-diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.state": {
+      "bytes": 13508,
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3"
+    },
+    "original-execution.json": {
+      "bytes": 233,
+      "sha256": "aff55cd0e2f9f334c75199f23d7fbeadbc0f85495d092d537e2904ab640b48f7"
+    },
+    "original-expiry-cancellation.jsonl": {
+      "bytes": 282,
+      "sha256": "9731ba3a0f01bfaa477af052af460f78a4c2edf7dae5618f1937e4343e4ed1d6"
+    },
+    "original-restoration.jsonl": {
+      "bytes": 2990,
+      "sha256": "672d6fafa2277196bd72ae80721e3ab2cb0afcc440aaac5ddf3ff75f00b8a788"
+    },
+    "private-failed-predicate.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "reconstruct_failure.py": {
+      "bytes": 29467,
+      "sha256": "215669a671871f9af065851e907e9014e7abef76ab4beb65b02c445473a6bc24"
+    },
+    "source/binance/spot/websocket.py": {
+      "bytes": 54386,
+      "sha256": "d495519efddb68bf8be2dd70d3ede2f983ecd07d3adaffe36765bdc498958a03"
+    },
+    "source/binance/usdm/websocket.py": {
+      "bytes": 55514,
+      "sha256": "c4b2dd955366ae5c0355b77afcfa174f31955de1d21a9bc3169fdfb4bca94dce"
+    },
+    "source/collector/resync.py": {
+      "bytes": 5374,
+      "sha256": "1b7862330fcd102696ec7d3cf3a3e83fe3d5676823f78a1f529a2f88aa8df550"
+    },
+    "source/collector/spot.py": {
+      "bytes": 21803,
+      "sha256": "66feb1923e2c3dd23641a9ea260dd6c4abed88b38aa60e1994c23c3254c45c18"
+    },
+    "source/collector/usdm.py": {
+      "bytes": 26373,
+      "sha256": "09566d16b3ce6b525a363452e4af8f7f1ce13fff1ed0ee464ed3ef0209510f00"
+    },
+    "source/service/runtime.py": {
+      "bytes": 46770,
+      "sha256": "0c0abc726e297293684410c5db9290044e40c25e0e0f39d751d600643f8e5020"
+    },
+    "source/supervisor/readiness.py": {
+      "bytes": 8131,
+      "sha256": "bf47d78804b1b2f80f95b76c86809a63eeb7e10d5edc13c2d656d61a9941422f"
+    }
+  },
+  "manifest_sha256": "0faf33df349b85c6a0176d6ba9d064ace5c261250e682aafdc1dff462ab152c4",
+  "mirrored_files": {
+    "CHECKS.json": {
+      "bytes": 403,
+      "sha256": "d2cdc408d81640f181474f7d046b652a09ba5625e95b41b5d6c39ad62d5982fc"
+    },
+    "FAILURE_TIMELINE.json": {
+      "bytes": 39362,
+      "sha256": "5558f8f6e0a9879a41d13eb65fb17ff7666686210f417d4cadc1be20947e0c3b"
+    },
+    "INPUTS.json": {
+      "bytes": 11028,
+      "sha256": "b57cec367eb441031e0534847359d33625fb78d632e567df8e2e275a65eaebab"
+    },
+    "JOURNAL_SUMMARY.json": {
+      "bytes": 2179,
+      "sha256": "06229062a51ce6b8be5ae05508df9f0765f782948aa65043e875e62dbf53cef4"
+    },
+    "MANIFEST.json": {
+      "bytes": 3590,
+      "sha256": "0faf33df349b85c6a0176d6ba9d064ace5c261250e682aafdc1dff462ab152c4"
+    },
+    "MODEL_ONLY_FAULT_CASES.json": {
+      "bytes": 5022,
+      "sha256": "3b81cef23359dda3f77475904925bd29586889c56ae2b03f03550cb023b6d42b"
+    },
+    "REPORT.md": {
+      "bytes": 13335,
+      "sha256": "1f1630b974c265164362046c6351be28dd6b791403ab9f424d4fb54bc179a73b"
+    },
+    "RESULT.json": {
+      "bytes": 4810,
+      "sha256": "243a408b2be5de71e91ec04f491792fa6a15aaaca18a3c201013be6016917b7d"
+    },
+    "parent-failure-independent-readback.json": {
+      "bytes": 5344,
+      "sha256": "119c5ef8ccb0f31f384bd1fa1a32afa39c81e020fc34561330d81a3a0067e531"
+    },
+    "reconstruct_failure.py": {
+      "bytes": 29467,
+      "sha256": "215669a671871f9af065851e907e9014e7abef76ab4beb65b02c445473a6bc24"
+    }
+  },
+  "no_raw_or_remote_action": true,
+  "original_directory": "/private/var/tmp/bmdr-r2-instrumented-n2-failure-policy-review-20261025-MGvkiZG6",
+  "originals_preserved": true,
+  "state": "PARENT_ALL_23_FROZEN_MEMBERS_AND_ALL_REFERENCED_CURRENT_INPUT_SHA_BYTES_PASS"
+}

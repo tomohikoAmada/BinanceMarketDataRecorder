@@ -1,6 +1,8 @@
 # Fresh instrumented N2 own24h measurement preparation
 
-Current: **OWN24H FORMALLY RUNNING / STARTUP AND CURRENT PREFIX INDEPENDENTLY ACCEPTED**.
+Current: **FAILED BEFORE OWN24H / ACTUAL FAILURE AND RESTORATION ACCEPTED / CORRECTION CODE REVIEW ACTIVE**.
+
+Current October25 06:09:20.102UTC (Shanghai14:09:20.102), with completed LOCAL review: **N2 FAILED BEFORE OWN24H / AUTOMATIC RESTORATION INDEPENDENTLY ACCEPTED / MINIMAL CLASSIFIER CODE REVIEW ACTIVE**. Sole run0cf49bcde4a040ef9c3d60b6a5656d8c failed05:48:42.923359029UTC (Shanghai13:48:42.923) at own85410.086844564s=23h43m30.087s,989.913155436s short of86400. No owner-target/full audit/saved-frame denominator/accepted24h or N4. Single current read015902c0/319802269B/all45 original members parent SHA/bytes PASS/no retry. Independent actual-failure review1f1630b9/result243a408b/manifest0faf33df ACCEPT:26,501 assertions/27 model cases; all23 members and referenced inputs parent SHA/bytes PASS. The failed publication5dcdd17d shows RUNNING service/null service failure/shutdown and all four products CONNECTING/readyfalse/failure=planned_rotation; source defines this as recoverable readiness, yet the private predicate paused on any nonnull product failure. Actual resync/reconnections preceded requested SIGTERM. This proves the immediate private-control classification defect, not an underlying network/hardware cause or source stability repair. Partial2838/2847 PASS9BLOCK remains nonfinal; the fatal write-safety sample has no resource sampling or nominal append. Actual RESTORED672d6faf ended1792907346512229095/errors[] before cancellation1792907346667877194; oldb502 CLOSED forever. Recorder inactiveANDdisabled/PID0/NRestarts0/normal archive restored/naturalworker258f success. No healthy VPS capture/audit, no repeat restore/status/old target wait. Separate LOCAL candidate621063b0/final8-member manifest2f6dfe12 changes only check_write_safety, preserves true FAILED/write/disk/untrusted pauses and fixed2880/995/full audits, permits only five exact source recovery tags under RUNNING+CONNECTING/readyfalse.39 pure LOCAL fixtures PASS/all other policy AST identical; separate exact code review by the existing authorized agent is ACTIVE, no Linux/deployment/newT0 credit. Genuine affected Linux qualification, failed-partial custody/fresh restored handoff and new current admission/scope/finite window/own86400 must precede any retry. All failed data retained; no old time/window inheritance or hardware maximum claim. Prior RUNNING/target labels are retained history.
 Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Actual unique scope: `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj`.
 
 - [x] New diagnostic release20e57/wheeldd2c/identity9b8/config5b73 deployed and
@@ -94,9 +96,17 @@ Local controls: `/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj`. Ac
   [Full independent scope and limits](../reviews/2026-10-25-r2-instrumented-n2-startup-prefix/REPORT.md).
   All new raw controls and63close events preserved, including20Pong timeout/5errno104/
   38unspecified; these do not prove a unique cause or repair. Saved frames unknown.
-- [ ] At/after the actual own86400 target, one read of genuine finish/monitor/stop/
-  terminal/audit progress, then a reasonable data-audit checkpoint. Until then
-  keep the sole healthy native untouched; quota/SSH do not stop it.
+- [x] Single after-target read015902c0 confirms actual early failure, not24h
+  completion. Preserve own85410.086844564s/989.913155436s shortfall and failure
+  d872d845. Partial2847 nominal rows/2838PASS9BLOCK are not a final denominator.
+  No owner-target/terminal audit/native result; zero accepted24h/data credit.
+- [x] Original failing publication5dcdd17d preserves all four planned_rotation
+  readiness reasons/CONNECTING/readyfalse while serviceRUNNING. Original
+  restoration672d6faf errors[] precedes guard cancellation, guard permanently CLOSED.
+- [ ] Independent exact current failure/source-semantics/automatic restoration
+  review ACTIVE LOCAL/OFFLINE, followed by only a qualified minimum classifier
+  correction and fresh stopped handoff/custody/admission/new finite own86400 run.
+  Do not resume old capture, concatenate time, repeat restoration or issue N4 credit.
 - [ ] Both complete released LIVE audits/completed immutableverify of only new
   warm+own24h+original stop-tail, full independent controls/selection/Catalog,
   actual OS/archive restoration before cancellation, stopped identity handoff,
@@ -109,3 +119,5 @@ collection. All resource/freshness/cursor/clock/start-stop guards remain. New
 window cannot extend/reuse any old closed guard. No old time or capacity credit,
 canonicalV5/every-event/production-ready claim, deletion or unrelated service
 control.48h PENDING/R078 OPEN. Previous N2 monitor99.3402778% remains failed.
+
+Current failure and actual restoration are [independently accepted](../reviews/2026-10-25-r2-instrumented-n2-failure-policy-review.md). Separate [private classifier correction](R2-readiness-classifier-repair-20261025.md) remains unqualified for Linux/deployment.

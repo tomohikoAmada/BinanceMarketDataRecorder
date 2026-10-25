@@ -1,0 +1,1 @@
+{"cancelled_at_utc_ns": 1792907346667877194, "guard": {"ActiveState": "inactive", "InvocationID": "", "LoadState": "not-found", "NextElapseUSecRealtime": "", "Result": "success", "UnitFileState": ""}, "reason": "capture-failure", "restoration_ended_at_utc_ns": 1792907346512229095}

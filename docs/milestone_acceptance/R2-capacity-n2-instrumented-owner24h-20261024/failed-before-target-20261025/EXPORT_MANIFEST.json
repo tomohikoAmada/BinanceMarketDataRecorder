@@ -1,0 +1,256 @@
+{
+  "kind": "ACTUAL_CURRENT_ATTEMPT_FAILURE_CONTROL_EXPORT",
+  "parent_read_sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+  "original_members": 45,
+  "members": {
+    "software-copy.json": {
+      "sha256": "05e162efb7951295ebf39068313ae9c38776d8dd640a5cbdd7068c54ed51db0d",
+      "bytes": 22700
+    },
+    "copy-admission.json": {
+      "sha256": "bcb41030a08128cbbb3fcf20b64e0ddb68ef9e0a349e00904d466cd086b6f70d",
+      "bytes": 3783
+    },
+    "stage-controls-manifest.json": {
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+      "bytes": 2345
+    },
+    "stage-design-evidence.json": {
+      "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7",
+      "bytes": 1502
+    },
+    "canonical-verification.json": {
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5",
+      "bytes": 5003
+    },
+    "prearm-admission.json": {
+      "sha256": "a014302e1cdf8154e39c4db0c88286db4dab1e75dabc43e9a6489fa7325b0455",
+      "bytes": 3783
+    },
+    "quiet-window-actual.json": {
+      "sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199",
+      "bytes": 4256
+    },
+    "postarm-admission.json": {
+      "sha256": "5ea49dc53567112bc6440bb66347a5586ec189b4681fe214ac558684726c9415",
+      "bytes": 3795
+    },
+    "kernel-update-pending.json": {
+      "sha256": "152f1509e0b00709f456a1720e5cceedbb28b3f05a7e9e7ab4abd5b620363cc6",
+      "bytes": 1080
+    },
+    "launch-admission.json": {
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe",
+      "bytes": 3795
+    },
+    "capture-launch.json": {
+      "sha256": "059948191e22e7098b6a91eaf58bca8abcdee96208811ccb944e661605170b3e",
+      "bytes": 1294
+    },
+    "capture-admission.json": {
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5",
+      "bytes": 3793
+    },
+    "warmup-result.json": {
+      "sha256": "d1ee5f3a15d82ad6d9076736aa1c5967d455a94c711be440a7cb727eea70dd48",
+      "bytes": 112473
+    },
+    "warmup-end-observation.json": {
+      "sha256": "ba5fa933d43dd68548082a6a40af02ff8d3d3b6718751c02dac63e929561bde6",
+      "bytes": 46080
+    },
+    "prestart-admission.json": {
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd",
+      "bytes": 3797
+    },
+    "owner-start.json": {
+      "sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213",
+      "bytes": 60066
+    },
+    "start-observation.json": {
+      "sha256": "8daa49ebcab8a88b8ca7667af06ea350d6d605ad2a01a3ae0f668d18fab6092e",
+      "bytes": 46080
+    },
+    "capture-failure.json": {
+      "sha256": "d872d8454ca1e3d2e7ef4b8c95ff6cf832aef95549c5808e4b5e644d868aaa9f",
+      "bytes": 1393
+    },
+    "restoration.jsonl": {
+      "sha256": "672d6fafa2277196bd72ae80721e3ab2cb0afcc440aaac5ddf3ff75f00b8a788",
+      "bytes": 2990
+    },
+    "expiry-cancellation.jsonl": {
+      "sha256": "9731ba3a0f01bfaa477af052af460f78a4c2edf7dae5618f1937e4343e4ed1d6",
+      "bytes": 282
+    },
+    "capacity-policy.json": {
+      "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+      "bytes": 12875
+    },
+    "arm-native-attempt.json": {
+      "sha256": "0c2c6d30d7efaa17821634a18a1cbad1b2c6e7d08754cb240dd85bb238f1cb8a",
+      "bytes": 1078
+    },
+    "stage-launch-attempt.json": {
+      "sha256": "cc616757d68ea8c965bc8342c0b906bf1cdc6811f5e8637502eb5a6f06e5748d",
+      "bytes": 229
+    },
+    "data-scope-start.json": {
+      "sha256": "5f124d7cee064711649d5a70fe27af9bafd81c0cb16ecef876890c017ad77036",
+      "bytes": 567
+    },
+    "warmup.jsonl": {
+      "sha256": "b44a1dbfd393bbd583f808373f5705fa898060f868418e876907e97d5007130b",
+      "bytes": 765477
+    },
+    "monitoring.jsonl": {
+      "sha256": "5baee1f7236f2ff7714ccbb1f77589adbf908d841c0f485d3b75c02a389499ff",
+      "bytes": 127083501
+    },
+    "recovery-observations.jsonl": {
+      "sha256": "c2d903a332df0f665c7332eaf6a903428068bbd2efb08b2df940bce1bf261df5",
+      "bytes": 356432
+    },
+    "diagnostic-0a9545bf1d0a4b128ba08976659bf3f0.json": {
+      "sha256": "f0229928f4b4e7a49b4da67bb1aafd5cf2608b1aa4e4f2a2bf81d8a1bed0e615",
+      "bytes": 46698
+    },
+    "diagnostic-28dd86b92092420ab3178eaa6d785e1a.json": {
+      "sha256": "24a7f52b80d70550bbd73abdd75557fbaeb1b3e29265d936336a8a8f9a440601",
+      "bytes": 46717
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.json": {
+      "sha256": "bd2374fa7eabe5dfcc294dc5f1d068a57308428ae077247182a49460c1c4fb6b",
+      "bytes": 46685
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.json": {
+      "sha256": "99ca834f042311bdaaa73655f342ee15c5dc959eec6ac1331885dfdd2286e5c3",
+      "bytes": 46632
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.json": {
+      "sha256": "ec46c102566884d5a68aeb201709486094b9cfb56cbd9e4c762405280241c891",
+      "bytes": 46697
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.json": {
+      "sha256": "8c51f1cc06e60eb8e763217e548b41f597c838c4c6dcf656cade71f135b92259",
+      "bytes": 46697
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.json": {
+      "sha256": "bf83a42ee4382d071322c8fb7dc461ee74cfb1a12092cbdc772c92c4db8673c5",
+      "bytes": 46697
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.json": {
+      "sha256": "a7b50f79b639816ac41a282bb432f90a37ad86a70ff7916712cd79157db1c02d",
+      "bytes": 46684
+    },
+    "diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.json": {
+      "sha256": "38fdec8ae2fa76a715c1d5b1603a42995220dc5bf99628c6dd5870bd87cd8329",
+      "bytes": 1047
+    },
+    "diagnostic-0a9545bf1d0a4b128ba08976659bf3f0.state": {
+      "sha256": "022c0df79e53377c9f7d71eeb278b552c39cb5bd72bbed0fceb24d48a075ca64",
+      "bytes": 13605
+    },
+    "diagnostic-28dd86b92092420ab3178eaa6d785e1a.state": {
+      "sha256": "cd0d39e41db2e88e99da73d1c51e3299800039c2a689459e5eb8b8cf3eca528d",
+      "bytes": 13611
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.state": {
+      "sha256": "86ac0f45b869a012cd499fab06d894a122ee745ee3f58a592efe14b5b2eb2474",
+      "bytes": 13601
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.state": {
+      "sha256": "aae48cd07492dbd8751123eac025cf7bf8c1353a27113b2e5d87c4aa9f1dae54",
+      "bytes": 13585
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.state": {
+      "sha256": "d2f11368ee45693b479c409a86515dbbe007ec912d14da6ef5209b0dadbd5a0b",
+      "bytes": 13605
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.state": {
+      "sha256": "87cfc2302bb4d17040f09c92cbecc8e9ca446f7facb30582744fe9c2b853db7e",
+      "bytes": 13605
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.state": {
+      "sha256": "21dd4a94d204c1440cb19117b8669947310f4700fd27fb4bd07b3c073fd14318",
+      "bytes": 13604
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.state": {
+      "sha256": "f7dc87d101c60238e6358336a5516142feb8991abbbff4d3e41099abb4858f86",
+      "bytes": 13601
+    },
+    "diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.state": {
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+      "bytes": 13508
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-arm.service.txt": {
+      "sha256": "7ae7103c70a22df0bff2a31fbcde58ac7387b6ac87b1dadcc52bc18be0cba76b",
+      "bytes": 11220
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-capture.service.txt": {
+      "sha256": "233c113c775fe853a82f2f00cd236fb833cf70376fc6560fcd4674d19d4ea4af",
+      "bytes": 30218
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-terminal.service.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.timer.txt": {
+      "sha256": "8531f89653329bd170580825f08d16b48fb27380be07d2e37fb0fa31019e98d8",
+      "bytes": 9564
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.service.txt": {
+      "sha256": "8ad7fa06c3eb62eb4335ad135a5be9047c1f14fc116e94de739a47bbf437bfdc",
+      "bytes": 1342
+    },
+    "unit_journals-binance-market-data-recorder.service.txt": {
+      "sha256": "87f42bfa3625a27bfb3b3446e379919ee4c7c0d6f5420815153c0aca521cc29f",
+      "bytes": 1108786
+    },
+    "unit_journals-binance-market-data-archive.timer.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "unit_journals-binance-market-data-archive.service.txt": {
+      "sha256": "963f66cab64144a4aa9a318a803b612432461d4515628cb653dfe2e486192330",
+      "bytes": 8910816
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-arm.service.txt": {
+      "sha256": "08a745cd5b7c62258c3d67970804fe811e96a8cb6943703c06c6589413641ff1",
+      "bytes": 410
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-capture.service.txt": {
+      "sha256": "52edc6cb6d2b16c71f45fc725c3c420eb8e50afbd69029ab5cf0a8b0db281152",
+      "bytes": 1184
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-terminal.service.txt": {
+      "sha256": "08a745cd5b7c62258c3d67970804fe811e96a8cb6943703c06c6589413641ff1",
+      "bytes": 410
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.timer.txt": {
+      "sha256": "7778a6a747d3c66e511e8f0d37994b62ced11c3c88cf9a5913a32ea41cc5408e",
+      "bytes": 156
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.service.txt": {
+      "sha256": "08a745cd5b7c62258c3d67970804fe811e96a8cb6943703c06c6589413641ff1",
+      "bytes": 410
+    },
+    "states-binance-market-data-recorder.service.txt": {
+      "sha256": "3f0ae832e5afe12a8f352d2985386cfe59f8f63e5fd6546010da3f25c62cf4a1",
+      "bytes": 742
+    },
+    "states-binance-market-data-archive.timer.txt": {
+      "sha256": "23d92a7041e9bdef1f27199e08fed19b4dcf1a51505356f85d671f2bf0b7c2f7",
+      "bytes": 211
+    },
+    "states-binance-market-data-archive.service.txt": {
+      "sha256": "033aba5005858525cad09b53a39deecbcb35751b8f1d9cc98ae443266b223c24",
+      "bytes": 918
+    },
+    "recorder-owned-journal.jsonl": {
+      "sha256": "7050a1fc28b5debb87d099e63110b57ffaa6bfb3cc8fbbf1669b5a2362b60323",
+      "bytes": 1102419
+    }
+  },
+  "no_raw_payload_read": true
+}

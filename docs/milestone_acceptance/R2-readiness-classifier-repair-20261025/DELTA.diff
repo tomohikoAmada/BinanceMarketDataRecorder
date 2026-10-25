@@ -1,0 +1,33 @@
+--- original/qualification_owner_995.py
++++ candidate/qualification_owner_995.py
+@@ -27,7 +27,29 @@
+         raise RuntimeError("critical_service_shutdown")
+     for products in publication["products"].values():
+         for product in products.values():
+-            if product["failure"] is not None:
++            # The production publication distinguishes supervisor termination
++            # (FAILED) from transient readiness/resync reasons (CONNECTING).
++            # Both share the legacy "failure" field; only exact source-defined
++            # recovery reasons may remain a quality fault instead of a stop.
++            status = product["status"]
++            if status == "FAILED":
++                raise RuntimeError("critical_product_terminal_failure")
++            if (type(status) is not str or status not in {"READY", "CONNECTING"}
++                    or type(product["ready"]) is not bool
++                    or (status == "READY") != product["ready"]):
++                raise ValueError("untrusted_product_readiness_state")
++            failure = product["failure"]
++            if failure is None:
++                continue
++            if not (
++                publication["status"] == "RUNNING"
++                and status == "CONNECTING" and product["ready"] is False
++                and type(failure) is str
++                and failure in {
++                    "planned_rotation", "unexpected_disconnect", "server_shutdown",
++                    "ingress_backpressure", "sequence_gap",
++                }
++            ):
+                 raise RuntimeError("critical_product_terminal_failure")
+     capacity = publication["capacity"]
+     # The collector first publishes STARTING before its initial disk census.

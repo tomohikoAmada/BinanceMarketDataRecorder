@@ -1,0 +1,1192 @@
+[
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "e8bdee00-6a2e-4c47-9fa2-7598cd0fb226",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907309093424000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:29.093042+00:00"
+  },
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "f3d90b9b-2243-434d-aaee-173fac95a04d",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907309381294000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:29.380942+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "e8bdee00-6a2e-4c47-9fa2-7598cd0fb226",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 1274,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 6,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "BTCUSDT",
+      "writer_append_max_ns": 1760639616,
+      "writer_append_ns": 1100997,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 6168277387,
+      "writer_drain_ns": 19424329,
+      "writer_fsync_max_ns": 1279974095,
+      "writer_fsync_ns": 1994431,
+      "writer_seal_max_ns": 6538656628,
+      "writer_seal_ns": 874627229,
+      "writer_write_max_ns": 1137538836,
+      "writer_write_ns": 906577
+    },
+    "journal_utc_ns": 1792907310123510000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:30.119791+00:00"
+  },
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "40e8f7de-051c-4b8c-9099-5d7df6c63e0d",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907310245739000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:30.245361+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "e1aedce2-1a89-4820-bc43-4129a4c8c57d",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907310252061000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:30.251845+00:00"
+  },
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "c801623e-d8df-4231-94fc-f722f14085b1",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907310764505000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:30.762908+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "f3d90b9b-2243-434d-aaee-173fac95a04d",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 627,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 2,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "BTCUSDT",
+      "writer_append_max_ns": 240825896,
+      "writer_append_ns": 16353435,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 2518233982,
+      "writer_drain_ns": 111785584,
+      "writer_fsync_max_ns": 934397828,
+      "writer_fsync_ns": 153014,
+      "writer_seal_max_ns": 3872629834,
+      "writer_seal_ns": 1812673953,
+      "writer_write_max_ns": 82394139,
+      "writer_write_ns": 15693313
+    },
+    "journal_utc_ns": 1792907310855587000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:30.854774+00:00"
+  },
+  {
+    "event": "spot_planned_rotation",
+    "fields": {
+      "connection_id": "58e29196-d6cf-47ea-948d-9535532f68e9",
+      "market": "spot",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907310872328000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:30.865115+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "88093433-1ef1-4154-8311-a8372746646b",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907311008398000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:31.007905+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "40e8f7de-051c-4b8c-9099-5d7df6c63e0d",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 1432,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 8,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "ETHUSDT",
+      "writer_append_max_ns": 2074416305,
+      "writer_append_ns": 2656056,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 4993142253,
+      "writer_drain_ns": 36551160,
+      "writer_fsync_max_ns": 2047681314,
+      "writer_fsync_ns": 22370142,
+      "writer_seal_max_ns": 4758526766,
+      "writer_seal_ns": 947264320,
+      "writer_write_max_ns": 1475880743,
+      "writer_write_ns": 2071394
+    },
+    "journal_utc_ns": 1792907311325562000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:31.324851+00:00"
+  },
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "d024180f-b9ac-41c8-bf58-fc710808bea7",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907311497189000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:31.495198+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "287b64cc-21fa-4474-95da-54da98d8e3b0",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "mark_price",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907311497189000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:31.497000+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "58e29196-d6cf-47ea-948d-9535532f68e9",
+      "generation": 1,
+      "market": "spot",
+      "outcome": "DEPTH_RESYNC_REQUIRED",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907311913401000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:31.913218+00:00"
+  },
+  {
+    "event": "spot_planned_rotation",
+    "fields": {
+      "connection_id": "bf800a2c-0f16-485f-bded-6e96e8fa4b9e",
+      "market": "spot",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907311994004000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:31.992671+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "c801623e-d8df-4231-94fc-f722f14085b1",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 632,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 2,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "ETHUSDT",
+      "writer_append_max_ns": 323410399,
+      "writer_append_ns": 6699543,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 2895528075,
+      "writer_drain_ns": 47292894,
+      "writer_fsync_max_ns": 1754647502,
+      "writer_fsync_ns": 7569007,
+      "writer_seal_max_ns": 4436026194,
+      "writer_seal_ns": 1882705033,
+      "writer_write_max_ns": 125884636,
+      "writer_write_ns": 6542070
+    },
+    "journal_utc_ns": 1792907312111449000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:32.111130+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "25b2ee10-5b43-4860-8c2a-d6263d46b92d",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "liquidation",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907312413818000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:32.409666+00:00"
+  },
+  {
+    "event": "usdm_planned_rotation",
+    "fields": {
+      "connection_id": "79b08f73-30fe-4080-ae5c-0eef015ba36d",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907312831127000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:32.829687+00:00"
+  },
+  {
+    "event": "usdm_session_restart",
+    "fields": {
+      "connection_id": "e9b75306-2a77-45c2-8e82-eb2f0c3e7ab1",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907312914782000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:32.914190+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "d024180f-b9ac-41c8-bf58-fc710808bea7",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "DEPTH_RESYNC_REQUIRED",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 1372695,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 63,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT",
+      "writer_append_max_ns": 2389574313,
+      "writer_append_ns": 5411298,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 6675742651,
+      "writer_drain_ns": 32327895,
+      "writer_fsync_max_ns": 2087884745,
+      "writer_fsync_ns": 3222676,
+      "writer_seal_max_ns": 6439750806,
+      "writer_seal_ns": 1225084215,
+      "writer_write_max_ns": 1603624958,
+      "writer_write_ns": 5270892
+    },
+    "journal_utc_ns": 1792907313077133000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:33.073984+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "bf800a2c-0f16-485f-bded-6e96e8fa4b9e",
+      "generation": 1,
+      "market": "spot",
+      "outcome": "DEPTH_RESYNC_REQUIRED",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907314382330000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:34.381453+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "79b08f73-30fe-4080-ae5c-0eef015ba36d",
+      "generation": 1,
+      "market": "um_perpetual",
+      "outcome": "DEPTH_RESYNC_REQUIRED",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 1227458,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 81,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT",
+      "writer_append_max_ns": 2642639383,
+      "writer_append_ns": 242716,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 5601004103,
+      "writer_drain_ns": 19911054,
+      "writer_fsync_max_ns": 1740031670,
+      "writer_fsync_ns": 30720777,
+      "writer_seal_max_ns": 5585730580,
+      "writer_seal_ns": 1902056536,
+      "writer_write_max_ns": 1895656527,
+      "writer_write_ns": 85505
+    },
+    "journal_utc_ns": 1792907315104595000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:35.102705+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "e9b75306-2a77-45c2-8e82-eb2f0c3e7ab1",
+      "generation": 38,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 539469,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 3213,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT",
+      "writer_append_max_ns": 2199173336,
+      "writer_append_ns": 187278,
+      "writer_batch_size": 2,
+      "writer_drain_max_ns": 7167106900,
+      "writer_drain_ns": 18954333,
+      "writer_fsync_max_ns": 1189137349,
+      "writer_fsync_ns": 26218076,
+      "writer_seal_max_ns": 7043017364,
+      "writer_seal_ns": 1644253440,
+      "writer_write_max_ns": 2168428286,
+      "writer_write_ns": 48345
+    },
+    "journal_utc_ns": 1792907315126567000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:35.126239+00:00"
+  },
+  {
+    "event": "spot_session_restart",
+    "fields": {
+      "connection_id": "3bfb5802-0519-4749-9521-fed2a6a0e0d6",
+      "market": "spot",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907318606460000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:38.606264+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "3bfb5802-0519-4749-9521-fed2a6a0e0d6",
+      "generation": 6,
+      "market": "spot",
+      "outcome": "STREAM_RECONNECT",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907319097593000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:39.097253+00:00"
+  },
+  {
+    "event": "spot_session_restart",
+    "fields": {
+      "connection_id": "10c6373b-e214-465c-bafa-a33297455c4d",
+      "market": "spot",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907320890517000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:40.889406+00:00"
+  },
+  {
+    "event": "spot_session_restart",
+    "fields": {
+      "connection_id": "2dcd7b6c-3ac9-4445-9025-812d0228721e",
+      "market": "spot",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907320895538000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:40.895249+00:00"
+  },
+  {
+    "event": "usdm_session_restart",
+    "fields": {
+      "connection_id": "240a7f96-7571-4ff8-aed7-6767011e0a39",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907320966773000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:40.966628+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "240a7f96-7571-4ff8-aed7-6767011e0a39",
+      "generation": 2,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 60469,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 305,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT",
+      "writer_append_max_ns": 1941803981,
+      "writer_append_ns": 2194057,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 6018037196,
+      "writer_drain_ns": 63215383,
+      "writer_fsync_max_ns": 1318323442,
+      "writer_fsync_ns": 181834,
+      "writer_seal_max_ns": 5816908728,
+      "writer_seal_ns": 389050575,
+      "writer_write_max_ns": 981472982,
+      "writer_write_ns": 1994123
+    },
+    "journal_utc_ns": 1792907321461240000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:41.460986+00:00"
+  },
+  {
+    "event": "usdm_session_restart",
+    "fields": {
+      "connection_id": "8550f428-39d7-4d3e-b59e-7c1304063d67",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907321503765000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:41.503567+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "2dcd7b6c-3ac9-4445-9025-812d0228721e",
+      "generation": 6,
+      "market": "spot",
+      "outcome": "STREAM_RECONNECT",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907321697032000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:41.696827+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "10c6373b-e214-465c-bafa-a33297455c4d",
+      "generation": 21,
+      "market": "spot",
+      "outcome": "STREAM_RECONNECT",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907321702502000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:41.699894+00:00"
+  },
+  {
+    "event": "spot_depth_resync_restart",
+    "fields": {
+      "buffered_capacity": 8192,
+      "market": "spot",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907321702502000,
+    "level": "CRITICAL",
+    "logger": "binance_market_data_recorder",
+    "message": "depth continuity invalidated; restarting Spot capture session",
+    "timestamp_utc": "2026-10-25T05:48:41.700430+00:00"
+  },
+  {
+    "event": "usdm_session_restart",
+    "fields": {
+      "connection_id": "adbe6732-1a6a-45ea-8fe9-be1d07be90a5",
+      "market": "um_perpetual",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907321784030000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:41.783758+00:00"
+  },
+  {
+    "event": "spot_session_restart",
+    "fields": {
+      "connection_id": "92422c2b-1df9-4f2f-ac02-02fa6ddb0b23",
+      "market": "spot",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907321998624000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot connection will be replaced",
+    "timestamp_utc": "2026-10-25T05:48:41.996908+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "adbe6732-1a6a-45ea-8fe9-be1d07be90a5",
+      "generation": 2,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 64216,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 289,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT",
+      "writer_append_max_ns": 2140002792,
+      "writer_append_ns": 6532068,
+      "writer_batch_size": 1,
+      "writer_drain_max_ns": 6194971737,
+      "writer_drain_ns": 153005140,
+      "writer_fsync_max_ns": 2138593319,
+      "writer_fsync_ns": 162981,
+      "writer_seal_max_ns": 6507222104,
+      "writer_seal_ns": 363002600,
+      "writer_write_max_ns": 1023431975,
+      "writer_write_ns": 5974588
+    },
+    "journal_utc_ns": 1792907322319731000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:42.319498+00:00"
+  },
+  {
+    "event": "usdm_depth_resync_restart",
+    "fields": {
+      "buffered_capacity": 8192,
+      "market": "um_perpetual",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907322320851000,
+    "level": "CRITICAL",
+    "logger": "binance_market_data_recorder",
+    "message": "depth continuity invalidated; restarting USD-M capture session",
+    "timestamp_utc": "2026-10-25T05:48:42.320576+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "3b42ffc5-2a92-45af-8a50-d7c21ce0ec09",
+      "market": "spot",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907322339706000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:42.339386+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "375e4642-876a-4144-8825-fe0577b4b0cf",
+      "market": "spot",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907322340029000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:42.339786+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "7702f8c0-9717-45ab-9ddd-a9d65ef5ccf6",
+      "market": "spot",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907322340029000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:42.339940+00:00"
+  },
+  {
+    "event": "usdm_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "8550f428-39d7-4d3e-b59e-7c1304063d67",
+      "generation": 40,
+      "market": "um_perpetual",
+      "outcome": "STREAM_RECONNECT",
+      "queue_wait_count": 0,
+      "queue_wait_max_ns": 0,
+      "queue_wait_p50_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p95_ns": "INSUFFICIENT_DATA",
+      "queue_wait_p99_ns": "INSUFFICIENT_DATA",
+      "queue_wait_total_ns": 0,
+      "receipt_byte_capacity": 67108864,
+      "receipt_owned_bytes": 0,
+      "receipt_owned_bytes_high_watermark": 1166532,
+      "receipt_queue_capacity": 8192,
+      "receipt_queue_depth": 0,
+      "receipt_queue_high_watermark": 6857,
+      "receipt_queued_bytes": 0,
+      "saturation_seconds": null,
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT",
+      "writer_append_max_ns": 2332529916,
+      "writer_append_ns": 2451591,
+      "writer_batch_size": 2,
+      "writer_drain_max_ns": 7434755577,
+      "writer_drain_ns": 69982851,
+      "writer_fsync_max_ns": 2325597264,
+      "writer_fsync_ns": 633832,
+      "writer_seal_max_ns": 6718214191,
+      "writer_seal_ns": 815645850,
+      "writer_write_max_ns": 1686744572,
+      "writer_write_ns": 2301607
+    },
+    "journal_utc_ns": 1792907322401554000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "USD-M stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:42.400375+00:00"
+  },
+  {
+    "event": "usdm_depth_resync_restart",
+    "fields": {
+      "buffered_capacity": 8192,
+      "market": "um_perpetual",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907322401554000,
+    "level": "CRITICAL",
+    "logger": "binance_market_data_recorder",
+    "message": "depth continuity invalidated; restarting USD-M capture session",
+    "timestamp_utc": "2026-10-25T05:48:42.400786+00:00"
+  },
+  {
+    "event": "spot_ingress_stream_recovery",
+    "fields": {
+      "connection_id": "92422c2b-1df9-4f2f-ac02-02fa6ddb0b23",
+      "generation": 16,
+      "market": "spot",
+      "outcome": "STREAM_RECONNECT",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907322526531000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "Spot stream is opening a new generation with persistent gap evidence",
+    "timestamp_utc": "2026-10-25T05:48:42.523672+00:00"
+  },
+  {
+    "event": "spot_depth_resync_restart",
+    "fields": {
+      "buffered_capacity": 8192,
+      "market": "spot",
+      "reason": "planned_rotation",
+      "restart": 1,
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907322526531000,
+    "level": "CRITICAL",
+    "logger": "binance_market_data_recorder",
+    "message": "depth continuity invalidated; restarting Spot capture session",
+    "timestamp_utc": "2026-10-25T05:48:42.524613+00:00"
+  },
+  {
+    "event": "spot_snapshot_bridge_pending",
+    "fields": {
+      "market": "spot",
+      "retry": 1,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "BTCUSDT",
+      "synchronize_result": "SNAPSHOT_TOO_OLD"
+    },
+    "journal_utc_ns": 1792907322983907000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains rate limited",
+    "timestamp_utc": "2026-10-25T05:48:42.983219+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "a6f6dbe5-bc24-4f5f-ac34-591c05d8b727",
+      "market": "spot",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907323879212000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:43.878209+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "ed9bbe2d-f05e-411e-9033-2473b75e6181",
+      "market": "spot",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907323885226000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:43.881191+00:00"
+  },
+  {
+    "event": "spot_websocket_connected",
+    "fields": {
+      "connection_id": "bbf0b5ea-7c68-4e6d-9121-6d3e35f347c4",
+      "market": "spot",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907323885226000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance Spot raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:43.881600+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "8fb9ed9c-1781-4b64-accc-8cdede54ece3",
+      "market": "um_perpetual",
+      "route": "public",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907324005438000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:44.000960+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "a1de5d3e-7a96-4565-8e9a-450eb4cc11cb",
+      "market": "um_perpetual",
+      "route": "public",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907324829677000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:44.826127+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "31d4ef76-ddbe-440a-9dda-169dcdcaf02e",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    "journal_utc_ns": 1792907324829677000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:44.826713+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "ca06921d-9314-4870-a5cf-df4fdaa0be13",
+      "market": "um_perpetual",
+      "route": "market",
+      "scope": "product",
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907324930823000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:44.926767+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "b5a2d6c8-2383-4f75-a38b-911f804413ee",
+      "market": "um_perpetual",
+      "route": "public",
+      "scope": "product",
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907325037192000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:45.036604+00:00"
+  },
+  {
+    "event": "usdm_websocket_connected",
+    "fields": {
+      "connection_id": "26a011be-7b63-4a6c-a173-011dcbcb82b9",
+      "market": "um_perpetual",
+      "route": "public",
+      "scope": "product",
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    "journal_utc_ns": 1792907325038843000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "Binance USD-M raw stream connected",
+    "timestamp_utc": "2026-10-25T05:48:45.038713+00:00"
+  },
+  {
+    "event": "spot_snapshot_bridge_pending",
+    "fields": {
+      "market": "spot",
+      "retry": 1,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "ETHUSDT",
+      "synchronize_result": "NEED_MORE_EVENTS"
+    },
+    "journal_utc_ns": 1792907325180472000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains rate limited",
+    "timestamp_utc": "2026-10-25T05:48:45.178305+00:00"
+  },
+  {
+    "event": "usdm_snapshot_bridge_pending",
+    "fields": {
+      "candidate_handoff": false,
+      "market": "um_perpetual",
+      "retry": 1,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "BTCUSDT",
+      "synchronize_result": "SNAPSHOT_TOO_OLD"
+    },
+    "journal_utc_ns": 1792907327511121000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains backoff bounded",
+    "timestamp_utc": "2026-10-25T05:48:47.506052+00:00"
+  },
+  {
+    "event": "usdm_snapshot_bridge_pending",
+    "fields": {
+      "candidate_handoff": false,
+      "market": "um_perpetual",
+      "retry": 1,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "ETHUSDT",
+      "synchronize_result": "NEED_MORE_EVENTS"
+    },
+    "journal_utc_ns": 1792907328293258000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains backoff bounded",
+    "timestamp_utc": "2026-10-25T05:48:48.283512+00:00"
+  },
+  {
+    "event": "spot_snapshot_bridge_pending",
+    "fields": {
+      "market": "spot",
+      "retry": 2,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "ETHUSDT",
+      "synchronize_result": "NEED_MORE_EVENTS"
+    },
+    "journal_utc_ns": 1792907328365862000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains rate limited",
+    "timestamp_utc": "2026-10-25T05:48:48.364759+00:00"
+  },
+  {
+    "event": "service_stop_requested",
+    "fields": {
+      "reason": "SIGTERM"
+    },
+    "journal_utc_ns": 1792907329275207000,
+    "level": "INFO",
+    "logger": "binance_market_data_recorder",
+    "message": "graceful service stop requested",
+    "timestamp_utc": "2026-10-25T05:48:49.273905+00:00"
+  },
+  {
+    "event": "usdm_snapshot_bridge_pending",
+    "fields": {
+      "candidate_handoff": false,
+      "market": "um_perpetual",
+      "retry": 2,
+      "scope": "product",
+      "stream": "depth_snapshot",
+      "symbol": "BTCUSDT",
+      "synchronize_result": "NEED_MORE_EVENTS"
+    },
+    "journal_utc_ns": 1792907331531308000,
+    "level": "WARNING",
+    "logger": "binance_market_data_recorder",
+    "message": "snapshot did not bridge buffered depth; retry remains backoff bounded",
+    "timestamp_utc": "2026-10-25T05:48:51.530983+00:00"
+  }
+]
