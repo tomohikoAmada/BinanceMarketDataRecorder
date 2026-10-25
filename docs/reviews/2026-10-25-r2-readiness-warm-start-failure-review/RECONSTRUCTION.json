@@ -1,0 +1,88 @@
+{
+  "CPU_network_exact_READY_downtime_cause_unproven": true,
+  "RESTORED_before_cancel_errors_empty": true,
+  "RUNNING_trusted_write_safe_rows": 11,
+  "SSH_Raw_service_actions_by_review": false,
+  "accepted_failed_read_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "actual_canonical_readiness_result_bytes_not_persisted": true,
+  "canonical_READY_condition_passed_by_original_controlflow": true,
+  "classifier621_fix_not_failure_trigger": true,
+  "current_Recorder_inactive_AND_disabled_PID0_NRestarts0": true,
+  "current_natural_archive_success_invocation": "c58d98b7bf18457ba4178c64d7cd26be",
+  "decision": "ACCEPT",
+  "exact_total_warm_elapsed_not_reconstructable": true,
+  "failure_boottime_ns": 2002953789533419,
+  "failure_error": "warmup exceeded 1200s",
+  "failure_utc_ns": 1792938059608992364,
+  "first_strict_PASS_utc_ns": 1792937642410104592,
+  "formal_credit_seconds": 0,
+  "guard194e_CLOSED_never_reuse_extend_or_reARM": true,
+  "guard_cancelled_utc_ns": 1792938079433376547,
+  "healthy_capture_or_audit_at_read": false,
+  "initial_STARTING_capacity_pending_rows": 27,
+  "last_strict_PASS_utc_ns": 1792937944034915304,
+  "last_warm_to_failure_BT_seconds": 115.574084146,
+  "last_warm_to_failure_UTC_seconds": 115.57407706,
+  "original_controls_count": 22,
+  "original_warm_loop_exit_criterion_met": true,
+  "owned_native_journal_rows": 16,
+  "owned_recorder_invocation": "f5da35711bba4d268974a73858cf1266",
+  "owned_recorder_journal_rows": 36,
+  "owned_runuser_session_PID": 878240,
+  "owned_runuser_session_seconds": 115.54344,
+  "owner_start_T0_formalmonitor_or_full_saved_data_audit_exists": false,
+  "paired_context_entries_verified": 1976,
+  "resource_bounds_observed": {
+    "archive_free_bytes": {
+      "max": 2046284587008,
+      "min": 2046275739648
+    },
+    "cgroup_swap_bytes": {
+      "max": 0,
+      "min": 0
+    },
+    "cgroup_swap_peak_bytes": {
+      "max": 0,
+      "min": 0
+    },
+    "host_available_bytes": {
+      "max": 4630089728,
+      "min": 4398583808
+    },
+    "host_swap_used_bytes": {
+      "max": 33067008,
+      "min": 32010240
+    },
+    "rss_bytes": {
+      "max": 431828992,
+      "min": 177991680
+    },
+    "rss_peak_bytes": {
+      "max": 431828992,
+      "min": 177991680
+    },
+    "writer_free_bytes": {
+      "max": 24124948480,
+      "min": 24090955776
+    }
+  },
+  "restoration_ended_utc_ns": 1792938079405053625,
+  "saved_frames_or_capacity_credit": false,
+  "scope": "ACTUAL_PRE_T0_WARM_FAILURE_SOURCE_TIMING_AND_AUTOMATIC_RESTORATION_PROOF_ONLY",
+  "source_catalog_integrity_check_possible_cost_not_unique_measured_attribution": true,
+  "source_or_private_helper_execution_or_tests": false,
+  "source_readiness_reads_service_snapshot_before_catalog_integrity": true,
+  "source_wait_deadline_not_an_intra_evaluation_interrupt": true,
+  "strict_endpoint_BT_span_seconds": 301.624809965,
+  "two_recoverable_WS_disconnects_with_null_close_cause": true,
+  "warm_begin_request_absolute_time_not_exported": true,
+  "warm_publications_verified": 38,
+  "warm_status_counts": {
+    "RUNNING": 11,
+    "STARTING": 27
+  },
+  "warm_strict_counts": {
+    "BLOCK": 27,
+    "PASS": 11
+  }
+}

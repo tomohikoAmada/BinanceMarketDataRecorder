@@ -1,0 +1,6 @@
+{
+  "first_attempt": "Harness overbroadly expected all controls to use publish() ownership0:988/0640; direct-open warmup is0:0/0644 and the cancellation append is0:0/0640.",
+  "correction": "Match exact original direct-open/append exceptions, retain all attributes, and require root ownership/no group or other write. Rerun temporary artifact directories are idempotent.",
+  "candidate_modified": false,
+  "failed_harness_attempt_grants_credit": false
+}

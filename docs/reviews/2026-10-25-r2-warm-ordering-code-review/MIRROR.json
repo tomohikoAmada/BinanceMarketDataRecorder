@@ -1,0 +1,138 @@
+{
+  "original_directory": "/private/var/tmp/bmdr-r2-warm-overlap-code-review-20261025-5wobn1hq",
+  "manifest_sha256": "9a1ca201dfbdb35a3fe4af0035c7b9c6b1319fab047f1a5045360db2cb81cf31",
+  "all_original_members": {
+    "FULL_FLOW_HARNESS_NOTES.json": {
+      "bytes": 299,
+      "sha256": "675720d44550415da70f71cbe902bbbc9ad8483ce6cab11e8a083d0f1d3584f3"
+    },
+    "FULL_WARM_FLOW_CASES.json": {
+      "bytes": 27573,
+      "sha256": "a88a6e4a7e43f19778d0c23bb0bcfbdb128199b68b0e8593e27031e1c083ba25"
+    },
+    "REPORT.md": {
+      "bytes": 4084,
+      "sha256": "882fbd115b9ce817454ebb39752fda2440f7efc4de31a0899871f6755b3105af"
+    },
+    "RESULT.json": {
+      "bytes": 2157,
+      "sha256": "5c37eb63733fda7c096b285e38b573efb4a4cce1a6d513b811d011b9da91c721"
+    },
+    "STATIC_SCOPE_AND_SOURCE_REFERENCES.json": {
+      "bytes": 761,
+      "sha256": "b7b1f8aff6b99ba7df5156b04c3d11268ec2adb3fbc8d877708d8b094d48344c"
+    },
+    "check_static_scope.py": {
+      "bytes": 2297,
+      "sha256": "7637667e4cdd3b20471aa271178c31eff94d1427f1b94b49b1b7a24474b91813"
+    },
+    "freeze_review.py": {
+      "bytes": 7666,
+      "sha256": "0e6e683ab820a3a36bf04bba4c4531b0acc2583a4172896795dc1052a9fbf04e"
+    },
+    "inputs/CANDIDATE.json": {
+      "bytes": 453,
+      "sha256": "f622d8fe486c1ce611fb50cda0eeea6e23d28d15fa89ac573db123f9d9444b96"
+    },
+    "inputs/DELTA.diff": {
+      "bytes": 8503,
+      "sha256": "6e75c7b8867511bf704edfd726e008a352122eb0a9a9da69ffe53cef235b16a7"
+    },
+    "inputs/DESIGN.md": {
+      "bytes": 1366,
+      "sha256": "fafec32c863df5263255f9315fb070387626f4bfd565de9319e7f7fadd39a3bb"
+    },
+    "inputs/DESIGN_MANIFEST.json": {
+      "bytes": 1455,
+      "sha256": "67d7eaf153cb6f5cab5dae42ffdc1cca11dad1596c0f22cf2e76f5a29555f8d6"
+    },
+    "inputs/controller-original.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "inputs/controller.py": {
+      "bytes": 26234,
+      "sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e"
+    },
+    "inputs/parent-tests.json": {
+      "bytes": 3780,
+      "sha256": "bdb2957d523453efc4da642bb6872bf9a6a34e88fa3c0175412f8d3bf355a52c"
+    },
+    "inputs/test_warm_ordering.py": {
+      "bytes": 6681,
+      "sha256": "d657852398de52b5334a90678689ebc2005e00028240d74899c570979e042bef"
+    },
+    "provided-run/CANDIDATE.json": {
+      "bytes": 453,
+      "sha256": "f622d8fe486c1ce611fb50cda0eeea6e23d28d15fa89ac573db123f9d9444b96"
+    },
+    "provided-run/DELTA.diff": {
+      "bytes": 8503,
+      "sha256": "6e75c7b8867511bf704edfd726e008a352122eb0a9a9da69ffe53cef235b16a7"
+    },
+    "provided-run/DESIGN.md": {
+      "bytes": 1366,
+      "sha256": "fafec32c863df5263255f9315fb070387626f4bfd565de9319e7f7fadd39a3bb"
+    },
+    "provided-run/controller-original.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "provided-run/controller.py": {
+      "bytes": 26234,
+      "sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e"
+    },
+    "provided-run/parent-tests.json": {
+      "bytes": 3780,
+      "sha256": "bdb2957d523453efc4da642bb6872bf9a6a34e88fa3c0175412f8d3bf355a52c"
+    },
+    "provided-run/test_warm_ordering.py": {
+      "bytes": 6681,
+      "sha256": "d657852398de52b5334a90678689ebc2005e00028240d74899c570979e042bef"
+    },
+    "test_full_warm_flow.py": {
+      "bytes": 10831,
+      "sha256": "3134e38cd9c638a22adb70d195548112041fb70118e316816c4c3504a4b7649e"
+    }
+  },
+  "parent_all23_SHA_bytes_PASS": true,
+  "mirrored_files": {
+    "check_static_scope.py": {
+      "sha256": "7637667e4cdd3b20471aa271178c31eff94d1427f1b94b49b1b7a24474b91813",
+      "bytes": 2297
+    },
+    "RESULT.json": {
+      "sha256": "5c37eb63733fda7c096b285e38b573efb4a4cce1a6d513b811d011b9da91c721",
+      "bytes": 2157
+    },
+    "REPORT.md": {
+      "sha256": "882fbd115b9ce817454ebb39752fda2440f7efc4de31a0899871f6755b3105af",
+      "bytes": 4084
+    },
+    "test_full_warm_flow.py": {
+      "sha256": "3134e38cd9c638a22adb70d195548112041fb70118e316816c4c3504a4b7649e",
+      "bytes": 10831
+    },
+    "FULL_WARM_FLOW_CASES.json": {
+      "sha256": "a88a6e4a7e43f19778d0c23bb0bcfbdb128199b68b0e8593e27031e1c083ba25",
+      "bytes": 27573
+    },
+    "freeze_review.py": {
+      "sha256": "0e6e683ab820a3a36bf04bba4c4531b0acc2583a4172896795dc1052a9fbf04e",
+      "bytes": 7666
+    },
+    "MANIFEST.json": {
+      "sha256": "9a1ca201dfbdb35a3fe4af0035c7b9c6b1319fab047f1a5045360db2cb81cf31",
+      "bytes": 3632
+    },
+    "FULL_FLOW_HARNESS_NOTES.json": {
+      "sha256": "675720d44550415da70f71cbe902bbbc9ad8483ce6cab11e8a083d0f1d3584f3",
+      "bytes": 299
+    },
+    "STATIC_SCOPE_AND_SOURCE_REFERENCES.json": {
+      "sha256": "b7b1f8aff6b99ba7df5156b04c3d11268ec2adb3fbc8d877708d8b094d48344c",
+      "bytes": 761
+    }
+  },
+  "originals_preserved": true
+}

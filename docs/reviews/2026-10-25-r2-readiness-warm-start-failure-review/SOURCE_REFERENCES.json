@@ -1,0 +1,22 @@
+{
+  "references": {
+    "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/cli.py": {
+      "bytes": 78727,
+      "sha256": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913"
+    },
+    "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/readiness.py": {
+      "bytes": 16318,
+      "sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38"
+    },
+    "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/storage/catalog.py": {
+      "bytes": 203844,
+      "sha256": "2595817b8501e8727850a8896be19072947b8b3ad42e9bdab6862f7ffb0cc972"
+    },
+    "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    }
+  },
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "source_static_only": true
+}

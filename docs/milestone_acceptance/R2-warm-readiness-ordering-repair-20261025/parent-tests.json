@@ -1,0 +1,151 @@
+{
+  "result": "LOCAL_BOUNDED_WARM_ORDERING_CASES_PASS",
+  "case_count": 24,
+  "cases": [
+    {
+      "case": "earlier_single115s_check_fits_existing1200",
+      "PASS": true,
+      "expected_ready": true,
+      "error_type": null
+    },
+    {
+      "case": "postloop115s_would_not_fit_same1200",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "check_exact_deadline_does_not_pass",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "check_below_deadline_passes",
+      "PASS": true,
+      "expected_ready": true,
+      "error_type": null
+    },
+    {
+      "case": "canonical_returncode_failure",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_NOT_READY_fails",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "partial_JSON_retained",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "invalid_UTF8_retained",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "timeout_invalid_UTF8_originals_retained",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "runtime_incarnation_changed",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "runtime_PID_changed",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "runtime_restart_counter_changed",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "runtime_inactive",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "config_changed_after_command",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_identity_sha256_mismatch",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_source_git_sha_mismatch",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_config_sha256_mismatch",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_pid_type_or_value_18",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_pid_type_or_value_True",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "canonical_pid_type_or_value_17",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "success_without_durable_evidence_pauses",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "OSError"
+    },
+    {
+      "case": "initiating_failure_not_replaced_by_evidence_error",
+      "PASS": true,
+      "expected_ready": false,
+      "error_type": "AssertionError"
+    },
+    {
+      "case": "all_other_controller_AST_unchanged",
+      "PASS": true
+    },
+    {
+      "case": "single_early_check_and_original1200_300_fresh_end_start_preserved",
+      "PASS": true
+    }
+  ],
+  "candidate_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+  "real_Linux_credit": false,
+  "formal_duration_credit_ns": 0,
+  "synthetic_clock_only": true,
+  "real_service_or_network_actions": false
+}

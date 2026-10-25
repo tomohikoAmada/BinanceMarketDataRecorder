@@ -1,6 +1,6 @@
 # Corrected readiness N2: fresh own24h retry
 
-Current: **GENUINE LINUX/PHYSICAL COPY INDEPENDENTLY ACCEPTED / FRESH ARM ACCEPTED / UNIQUE NATIVE CAPTURE ACTIVE / WARM-START CHECKPOINT PENDING**.
+Current: **FAILED IN WARMUP / NO FORMAL T0 / AUTOMATIC RESTORATION COMPLETE / ACTUAL TIMING DIAGNOSIS ACCEPTED / BOUNDED CORRECTION PENDING**.
 
 P3 `/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt`; unique new scope `/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt`. Original failed23h43m data/time/window remain immutable and supply zero accepted24h.
 
@@ -18,4 +18,12 @@ P3 `/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt`; unique new s
 
 Shared KVM is now human-confirmed. Existing CPU/PSI fields remain unchanged; observed steal is not a proved unique reconnect cause. Whole-module optimization/language evaluation is expressly deferred. See [qualification chain](../reviews/2026-10-25-r2-readiness-retry-qualification.md), [exact controls](R2-capacity-n2-readiness-retry-owner24h-20261025/stage-controls-manifest.json), [planning](R2-capacity-n2-readiness-retry-owner24h-20261025/current-forecast.json), [actual Linux copy](R2-capacity-n2-readiness-retry-owner24h-20261025/actual-n2-stage-copy-1792913610397799000.json) and [original provenance](R2-capacity-n2-readiness-retry-owner24h-20261025/PROVENANCE.json). All Raw/archive/failed/derived/venvs retained; no accepted N2/N4, universal hardware maximum or production-ready claim. R078OPEN/48hPENDING.
 
-Current work is the unique healthy VPS native; no LOCAL development/review is pending. No extra VPS check before the actual warm/start checkpoint.
+The former warm/start checkpoint is now completed: the original capture exited before T0. No healthy VPS native remains; the actual failure/timing/restoration review is independently ACCEPT469cb72b/result0ffaa9d0/manifest095323da with all80 parent members checked. No LOCAL review remains; bounded ordering correction/qualification is next.
+
+## Actual failed warm/start checkpoint
+
+The one original readf8845961 at14:32:50.623UTC captures failure65bba80f at14:20:59.609UTC: warmup exceeded1200s after the canonical readiness CLI returned READY. No owner-start or accepted24h exists.38 warm rows contain27initialBLOCK then11strictPASS over301.624810s; the following readiness subprocess session lasts115.543440s. Its full result is not separately persisted in this old controller; control flow/traceback prove READY passed, not a unique subphase or CPU cause.
+
+Actual RESTORED5f294364 ended1792938079405053625/errors[] before guard cancellation1792938079433376547. Recorder is stopped-disabled/PID0/NRestarts0, P3 guard194e CLOSED forever. No repeat restoration, oldscope/guard rearm, blind new capture or inherited time. All newly produced warm data and original failure controls remain retained. Next is independent actual diagnosis and the smallest separately qualified control-ordering correction, with new current admission/custody/fresh scope before any retry. See [parent summary](R2-capacity-n2-readiness-retry-owner24h-20261025/warm-start-failure-20261025/parent-summary.json), [original failure](R2-capacity-n2-readiness-retry-owner24h-20261025/warm-start-failure-20261025/capture-failure.json) and [original-read provenance](R2-capacity-n2-readiness-retry-owner24h-20261025/warm-start-failure-20261025/PROVENANCE.json).
+
+The current actual failure and restoration are [independently reconstructed](../reviews/2026-10-25-r2-readiness-warm-start-failure-review.md). A separate [LOCAL timing-ordering candidate](R2-warm-readiness-ordering-repair-20261025.md) has24 pure LOCAL cases PASS but independent review BLOCKED two fresh-completion-check gaps; it is not deployed. Successor source-aligned current-check design is next; no Linux qualification or new capture exists.

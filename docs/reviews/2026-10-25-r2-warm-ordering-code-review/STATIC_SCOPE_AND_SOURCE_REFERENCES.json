@@ -1,0 +1,15 @@
+{
+  "all_other_controller_AST_unchanged": true,
+  "all_capture_post_T0_monitor_duration_audit_restore_AST_unchanged": true,
+  "current_manifest_members_verified": 7,
+  "original_controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+  "candidate_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+  "source_dynamic_predicate_reference": {
+    "path": "/private/var/tmp/bmdr-r2-retry-warm-failure-review-20261025-cir8iwya/source/service/readiness.py",
+    "sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38",
+    "bytes": 16318,
+    "published_identity_check_line": 272,
+    "capacity_freshness_check_line": 342
+  },
+  "source_or_candidate_module_imported_or_executed": false
+}

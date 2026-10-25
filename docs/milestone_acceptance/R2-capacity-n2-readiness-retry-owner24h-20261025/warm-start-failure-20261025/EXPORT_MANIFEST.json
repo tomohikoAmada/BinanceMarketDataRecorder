@@ -1,0 +1,93 @@
+{
+  "original_input_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "members": {
+    "software-copy.json": {
+      "bytes": 34694,
+      "sha256": "e7bc7cc233e0ee29c38380a9fd20c426f7ba78c9061748e89cef70c849da55e6"
+    },
+    "linux-classifier-qa.json": {
+      "bytes": 10253,
+      "sha256": "8dbe082241724783c5d6184afe0e2f1a64c4ce28d4f2adfa5d263ce749eebe00"
+    },
+    "parent-tests.json": {
+      "bytes": 6602,
+      "sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81"
+    },
+    "copy-admission.json": {
+      "bytes": 3810,
+      "sha256": "614c5dcafc121e96888311d15c90d7a3a37a91f3ace02d582c0fc934a778a2a0"
+    },
+    "stage-controls-manifest.json": {
+      "bytes": 2898,
+      "sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f"
+    },
+    "stage-design-evidence.json": {
+      "bytes": 1493,
+      "sha256": "4ccb0f12cbaad685d232b62d92727d78ba5e8fc7d0b0eee7915dbc6d8989d35b"
+    },
+    "canonical-verification.json": {
+      "bytes": 5003,
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5"
+    },
+    "prearm-admission.json": {
+      "bytes": 3810,
+      "sha256": "9ba2196c9d27ffaf4e59d03c48a0f3bc690b4ad95fcc72e7ec4ddd27de056e31"
+    },
+    "quiet-window-actual.json": {
+      "bytes": 4256,
+      "sha256": "194e50a2a58762a3862ef0414a1e573b36777d551bbbf4baafb14af6c3c3fc1f"
+    },
+    "postarm-admission.json": {
+      "bytes": 3822,
+      "sha256": "c2d6282fdb63a8f74290dbff29f72506bc65061f95b1eb1fe00329f13e092022"
+    },
+    "kernel-update-pending.json": {
+      "bytes": 1080,
+      "sha256": "e29dd312b1bbe30808708b9eef01bcc014e91d4d343c931aa6e10f0f55b379c1"
+    },
+    "launch-admission.json": {
+      "bytes": 3822,
+      "sha256": "d0c31eb352e76db92b5dedbb90b1d12904cccc838e0a21181a90aad33888296c"
+    },
+    "capture-launch.json": {
+      "bytes": 1312,
+      "sha256": "5aca8477546fcbf616e6eae2d608ab44b959dfbf64c0dce829b4f2b21e57a64c"
+    },
+    "capture-admission.json": {
+      "bytes": 3820,
+      "sha256": "7eafaa4c1d5c3a46dd077d174f7ea121c48ffdfe74149cae2e97817939093008"
+    },
+    "capture-failure.json": {
+      "bytes": 767,
+      "sha256": "65bba80f600cf10855270237421acb6e02694663c4b416da3972e62f23c14cda"
+    },
+    "restoration.jsonl": {
+      "bytes": 3011,
+      "sha256": "5f294364b74f3f9b8a16c5719f18b4244d7b267131345f785549543dda8ee8ee"
+    },
+    "expiry-cancellation.jsonl": {
+      "bytes": 282,
+      "sha256": "0d1a4b0467f92910b9077ba5833d31053caa9ee275afdd47dba94fb0caeb2272"
+    },
+    "capacity-policy.json": {
+      "bytes": 13229,
+      "sha256": "db8566b8d9bd960e61e5309ccf96d7ad14635f2db940bc3b530f4a7c17b7ccf7"
+    },
+    "arm-native-attempt.json": {
+      "bytes": 1096,
+      "sha256": "729dcbfa8a1d576eb1d751580fc055fcb632a48e42f6a48732c6801efa75080c"
+    },
+    "stage-launch-attempt.json": {
+      "bytes": 232,
+      "sha256": "a645f5244604c70dfcf5629a313ce4db4759835cfb0f9152beaf2508fb610168"
+    },
+    "data-scope-start.json": {
+      "bytes": 570,
+      "sha256": "ebeca56263162ee1db71e9691b047ad8b0b97aed3144bc3c148645bcb0077c98"
+    },
+    "warmup.jsonl": {
+      "bytes": 1024962,
+      "sha256": "43e1c6c7ce6dfb6e9f15e7d2374c75ee246844896d1ee7f42630507224614234"
+    }
+  }
+}

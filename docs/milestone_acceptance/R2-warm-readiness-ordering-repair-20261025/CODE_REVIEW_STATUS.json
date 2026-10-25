@@ -1,0 +1,9 @@
+{
+  "state": "INDEPENDENT_CODE_BLOCK_NOT_DEPLOYED",
+  "candidate_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+  "design_manifest_sha256": "67d7eaf153cb6f5cab5dae42ffdc1cca11dad1596c0f22cf2e76f5a29555f8d6",
+  "review_manifest_sha256": "9a1ca201dfbdb35a3fe4af0035c7b9c6b1319fab047f1a5045360db2cb81cf31",
+  "all23_parent_SHA_bytes_PASS": true,
+  "finding": "stale final capacity timestamp or mismatched published deployment identity can reach owner-start after cached earlier READY; add fresh source-aligned cheap completion predicates",
+  "real_Linux_or_deployment_credit": false
+}
