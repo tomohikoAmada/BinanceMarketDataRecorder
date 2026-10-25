@@ -1,0 +1,17 @@
+{
+  "all_bytepack_SHA_bytes_PASS": true,
+  "bytepacks_full_readback_count": 56,
+  "candidate23unchanged": true,
+  "decision": "ACCEPT_LOCAL_DELTA_ONLY",
+  "final_matching_rows": [],
+  "known_fixture_group_ids": [
+    83379,
+    83513,
+    83517,
+    83521
+  ],
+  "no_matching_live_members": true,
+  "read_only_observation_no_signals": true,
+  "scope": "Evidence readback and LOCAL fixture cleanup only; not operational qualification",
+  "zombies_not_claimed_reaped": true
+}

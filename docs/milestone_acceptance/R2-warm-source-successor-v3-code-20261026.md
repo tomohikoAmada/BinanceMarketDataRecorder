@@ -1,6 +1,6 @@
 # V3 narrow warm-component correction
 
-Current: **105 LOCAL PASS / INDEPENDENT NARROW DELTA REVIEW ACTIVE / NOT DEPLOYED**.
+Current: **EXACT CODE/LOCAL DELTA INDEPENDENTLY ACCEPTED / INTEGRATION DESIGN ACTIVE / NOT DEPLOYED**.
 
 Distinct candidate `/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1` has frozen manifestb020d893/all23 parent SHA/bytes PASS. Warm helper9305c447 requires exact normal keeper/inner success, positive typed IDs, release/no KILL/no residual and coherent original control. Keeper moduleef2f8882 retains every bounded ps response or timeout prefix, availability/partial flags, SHA/bytes/base64, parse/exception/returncode and attempt clocks. Existing cleanup, source/dynamic/static scope, original1200/300/min12/pair caps and formal next_bt→stop/full audit remain unchanged. Controller eb8f321a and read-only child f8c7fc85 retain exact bytes.
 
@@ -9,3 +9,5 @@ Distinct candidate `/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1
 Prior [V2 is BLOCKED](../reviews/2026-10-26-r2-warm-successor-v2-block-review.md), all120 report members parent bound;2f75 and d8 prior BLOCKs also remain preserved. Neither prior nor this candidate is deployed. Future operational eligibility still requires complete new reader/warm-attempt/witness/commit exports, genuine current Linux exact runuser/group-retention/import/latency qualification, fresh stopped custody/handoff/current forecast/admission and a new finite exclusive scope/window. Retained failed-P3 common constants are OFFLINE references forbidden for execution; CLOSED194e is never reused. No new T0/end time, saved-frame denominator, capacity receipt or source stability/CPU root-cause credit. All995/2880/own86400/new-data audits/actual restore/handoff/receipt/main requirements remain.
 
 See [candidate](R2-warm-source-successor-v3-code-20261026/CANDIDATE_V3.md), [manifest](R2-warm-source-successor-v3-code-20261026/CODE_MANIFEST.json), [executions](R2-warm-source-successor-v3-code-20261026/PARENT_LOCAL_EXECUTIONS.json), [counts](R2-warm-source-successor-v3-code-20261026/CURRENT_LOCAL_COUNTS.json) and [review state](R2-warm-source-successor-v3-code-20261026/REVIEW_STATUS.json).
+
+Final [independent delta acceptance](../reviews/2026-10-26-r2-warm-successor-v3-delta-review.md) binds all95 report members. Only code/LOCAL scope is accepted. Necessary reader/manifest/Linux integration DESIGN ONLY is now ACTIVE; no old code review or VPS native remains active.

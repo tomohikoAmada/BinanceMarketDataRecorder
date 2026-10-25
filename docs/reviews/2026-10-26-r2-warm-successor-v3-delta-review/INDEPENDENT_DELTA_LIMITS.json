@@ -1,0 +1,229 @@
+{
+  "all_PASS": true,
+  "all_recorded_bytepacks_SHA_size_PASS": true,
+  "case_count": 27,
+  "cases": [
+    {
+      "PASS": true,
+      "case": "missing required success protocol:keeper_returncode",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:lease_released",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:group_KILL_used",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:keeper_control",
+      "failure": "KeyError:'keeper_control'"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:child_pid",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:inner_pid",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:owned_pgid",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:unexpected_live_descendants",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:timed_out",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:returncode",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:parse_error",
+      "failure": "KeyError:'parse_error'"
+    },
+    {
+      "PASS": true,
+      "case": "missing required success protocol:cleanup",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:lease_released",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:group_KILL_used",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:inner_pid",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:owned_pgid",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:unexpected_live_descendants",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "typed or contradictory success protocol:cleanup",
+      "failure": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "malformed lossless keeper control:ff",
+      "failure": "UnicodeDecodeError:'utf-8' codec can't decode byte 0xff in position 0: invalid start byte"
+    },
+    {
+      "PASS": true,
+      "case": "malformed lossless keeper control:7b7d",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "malformed lossless keeper control:5b5d",
+      "failure": "AttributeError:'list' object has no attribute 'get'"
+    },
+    {
+      "PASS": true,
+      "case": "malformed lossless keeper control:7b226b65657065725f706964223a747275657d",
+      "failure": "RuntimeError:warm_keeper_process_ids_invalid"
+    },
+    {
+      "PASS": true,
+      "case": "keeper control raw digest mismatch",
+      "failure": "RuntimeError:warm_command_bytes_mismatch"
+    },
+    {
+      "PASS": true,
+      "case": "128 existing records refuse I/O before attempt129",
+      "failure": "RuntimeError:owned_group_inventory_receipt_bound_exceeded"
+    },
+    {
+      "PASS": true,
+      "case": "record128 retains complete original bytes and zombie distinction",
+      "proof": {
+        "after_monotonic_ns": 275457716665666,
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "before_monotonic_ns": 275457716658125,
+        "exception": null,
+        "matching_members": [
+          {
+            "live": false,
+            "pgid": 17,
+            "pid": 17,
+            "state": "Z"
+          }
+        ],
+        "parse_error": null,
+        "partial_by_timeout": false,
+        "returncode": 0,
+        "stderr": {
+          "base64": "cmF3LWVycg==",
+          "bytes": 7,
+          "sha256": "92915662e84cd2e8bd272093a1dec161577a7c03c08afe9253d5fc9c3036d176"
+        },
+        "stderr_available": true,
+        "stdout": {
+          "base64": "MTcgMTcgWgo=",
+          "bytes": 8,
+          "sha256": "913d48b9e8cf4e10010fe6c3af7589c69d2af8e422cc907b9a04e447edde8b1c"
+        },
+        "stdout_available": true,
+        "timeout_seconds": 0.1
+      }
+    },
+    {
+      "PASS": true,
+      "case": "nonpositive inventory budget before I/O",
+      "failure": "TimeoutError:owned_group_inventory_budget_exhausted",
+      "proof": {
+        "after_monotonic_ns": 275457716675666,
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "before_monotonic_ns": 275457716672333,
+        "exception": "TimeoutError:owned_group_inventory_budget_exhausted",
+        "parse_error": null,
+        "partial_by_timeout": false,
+        "returncode": null,
+        "stderr": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr_available": false,
+        "stdout": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_available": false,
+        "timeout_seconds": 0
+      }
+    },
+    {
+      "PASS": true,
+      "case": "timeout absent stdout distinct from available empty stderr",
+      "failure": "TimeoutExpired:Command '['ps']' timed out after 0.1 seconds",
+      "proof": {
+        "after_monotonic_ns": 275457716696875,
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "before_monotonic_ns": 275457716679333,
+        "exception": "TimeoutExpired:Command '['ps']' timed out after 0.1 seconds",
+        "parse_error": null,
+        "partial_by_timeout": true,
+        "returncode": null,
+        "stderr": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr_available": true,
+        "stdout": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_available": false,
+        "timeout_seconds": 0.1
+      }
+    }
+  ],
+  "real_Linux_or_runuser_credit": false,
+  "scope": "One actual normal LOCAL owned command plus isolated receipt/inventory-provider probes; source/OS predicates are not requalified"
+}

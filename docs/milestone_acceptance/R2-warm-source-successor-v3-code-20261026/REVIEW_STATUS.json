@@ -1,5 +1,5 @@
 {
-  "state": "V3_NARROW_CODE_REVIEW_ACTIVE_NOT_DEPLOYED",
+  "state": "ACCEPTED_EXACT_CODE_LOCAL_DELTA_ONLY_NOT_DEPLOYED",
   "candidate_directory": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1",
   "code_manifest_sha256": "b020d893bb4acb01aaa46b3272d4a15b043a483cddfba234715f9736ff3fb164",
   "all23_parent_SHA_bytes_PASS": true,
@@ -7,5 +7,8 @@
   "previous_V2": "BLOCKd57f165f_ALL120_PARENT_PASS",
   "Linux_runuser_or_execution_binding_qualified": false,
   "new_T0": false,
-  "reviewer": "r2_instrumented_n2_actual_startup_review"
+  "reviewer": "r2_instrumented_n2_actual_startup_review",
+  "review_manifest_sha256": "b59d6f8f0133401f63d865e88ccf273c12f1542a09229b37aac0d50c7fbb9b2b",
+  "all95_complete_review_parent_SHA_bytes_PASS": true,
+  "next": "Necessary narrow reader/manifest/Linux binding DESIGN ONLY ACTIVE; no operational action yet"
 }

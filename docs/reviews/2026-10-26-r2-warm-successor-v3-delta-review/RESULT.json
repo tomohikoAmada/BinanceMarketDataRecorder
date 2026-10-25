@@ -1,0 +1,87 @@
+{
+  "bindings": {
+    "prior_V2_BLOCK_manifest_sha256": "d57f165fb38b59cc9ae6e347b1dae7b21e35cb8c3c70732d406f0f641d49c9d4",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "subjects": {
+      "runtime/controller.py": {
+        "bytes": 22763,
+        "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+      },
+      "runtime/owned_command.py": {
+        "bytes": 12954,
+        "sha256": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+      },
+      "runtime/warm_completion.py": {
+        "bytes": 6048,
+        "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+      },
+      "runtime/warm_readiness.py": {
+        "bytes": 23235,
+        "sha256": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988"
+      }
+    }
+  },
+  "blocking_findings": [],
+  "candidate": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1",
+  "candidate_code_manifest_sha256": "b020d893bb4acb01aaa46b3272d4a15b043a483cddfba234715f9736ff3fb164",
+  "changes_verified": {
+    "V2_abnormal_keeper_after_release_rejected": true,
+    "V2_failed_inventory_original_bytes_retained": true,
+    "controller_and_completion_exact_bytes_unchanged": true,
+    "owned_control_flow_unchanged_except_inventory_evidence_wiring": true,
+    "owned_keeper_main_AST_unchanged": true,
+    "warm_readiness_only_command_ok_changed": true
+  },
+  "created_utc": "2026-10-25T21:26:05.269115+00:00",
+  "credits": {
+    "Linux_or_exact_runuser_qualified": false,
+    "N4_eligible": false,
+    "component_code_LOCAL_delta_accepted": true,
+    "copy_ARM_launch_eligible": false,
+    "new_T0": false,
+    "own86400_accepted": false,
+    "production_changed_or_deployed": false,
+    "reader_or_fresh_bindings_qualified": false,
+    "root_cause_or_stability_fixed": false,
+    "saved_data_or_capacity_receipt": false
+  },
+  "decision": "ACCEPT",
+  "input_readback": {
+    "all_SHA_bytes_PASS": true,
+    "manifest_members": 23,
+    "runtime_references": 12,
+    "source_maps": 6
+  },
+  "kind": "INDEPENDENT_EXACT_V3_NARROW_CODE_LOCAL_DELTA_REVIEW",
+  "preservation": {
+    "SSH_network_Raw_service_actions": false,
+    "old_P3_and_guard194e": "CLOSED_NEVER_REUSE_OR_EXTEND",
+    "old_candidate_and_reports": "UNCHANGED",
+    "writes": "THIS_EXCLUSIVE_REVIEW_DIRECTORY_ONLY"
+  },
+  "report": {
+    "bytes": 7954,
+    "sha256": "d3e23a4e1746b1c2b0f373a11ab73e6de8c27bc4b53682667ab7f24ae0af1dc2"
+  },
+  "required_next": "Future exact reader/control manifests; actual Linux runuser/group retention/import/latency; fresh stopped custody/current admission/new finite scope before any capture. F47 remains a required later gate.",
+  "scope": "EXACT_CODE_LOCAL_COMPONENT_DELTA_ONLY_NOT_OPERATIONAL_QUALIFICATION",
+  "validation": {
+    "full_inventory_receipt_reconstruction": {
+      "additional_coverage_credit": 0,
+      "all_bytepacks_SHA_size_PASS": true,
+      "cases": 3
+    },
+    "independent_delta_probes": {
+      "all_PASS": true,
+      "cases": 27
+    },
+    "not_reexecuted": "Prior20 boundary and8 broader group cases, old actual failures and historical QA",
+    "parent105_is_provenance_not_current_review_execution_count": true,
+    "provided_current_V3_executed": {
+      "all_PASS": true,
+      "full_warm_prefix": 63,
+      "inventory_evidence": 3,
+      "keeper_protocol": 11
+    }
+  }
+}

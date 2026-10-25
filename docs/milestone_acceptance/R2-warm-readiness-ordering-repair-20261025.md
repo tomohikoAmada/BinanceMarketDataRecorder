@@ -21,3 +21,5 @@ The design successor is now a separate [LOCAL code candidate](R2-warm-source-suc
 Latest component2f75 is independently BLOCKED617d62c4, all100 parent SHA/bytes PASS; a [distinct V2](R2-warm-source-successor-v2-code-20261026.md) has91LOCALPASS and independent exact review ACTIVE. No code deployed or new T0.
 
 Latest V2 is independently BLOCKEDd57f165f/all120parentPASS; [V3](R2-warm-source-successor-v3-code-20261026.md) has105LOCALPASS and independent narrow review ACTIVE. No candidate deployed or new T0.
+
+V3 [exact code/LOCAL acceptance](../reviews/2026-10-26-r2-warm-successor-v3-delta-review.md) is complete with all95 parent members bound. Reader/manifest/Linux binding DESIGN ONLY is ACTIVE; no operational qualification, deployment or new T0 exists.

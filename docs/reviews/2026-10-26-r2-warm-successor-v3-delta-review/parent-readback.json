@@ -1,0 +1,10 @@
+{
+  "decision": "ACCEPT",
+  "scope": "EXACT_CODE_LOCAL_DELTA_ONLY",
+  "source_directory": "/private/var/tmp/bmdr-r2-warm-successor-v3-delta-review-20261026-k29zowez",
+  "manifest_sha256": "b59d6f8f0133401f63d865e88ccf273c12f1542a09229b37aac0d50c7fbb9b2b",
+  "all95_complete_parent_SHA_bytes_PASS": true,
+  "Linux_or_reader_or_copy_ARM_launch_qualified": false,
+  "production_source_changed": false,
+  "new_T0": false
+}
