@@ -1,0 +1,175 @@
+{
+  "case_specs": [
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL fixture + later Linux reader fixture",
+      "expected_contract": "Missing required phase member is pending/ineligible; no truncated denominator",
+      "id": "R1",
+      "requirement": "Reader enumerates all8 new fixed plus12 bounded attempts; selected receipt points to matching existing attempt/witness"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "Explicit metadata/byte fixtures",
+      "expected_contract": "Originals retained; parse errors and eligibility failure separate",
+      "id": "R2",
+      "requirement": "Partial JSON, invalidUTF8, empty-vs-missing files, invalid nested bytepack and timestamp/type faults"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "Isolated filesystem fixture",
+      "expected_contract": "No unsafe payload open; retain observations already collected and fail qualification",
+      "id": "R3",
+      "requirement": "Symlink/parent escape/permission/read exception/atomic replacement during read"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "Explicit invocation/current control fixtures",
+      "expected_contract": "Regex plus bound provenance; no arbitrary foreign owned query",
+      "id": "R4",
+      "requirement": "Valid warm binding without owner-start supplies actual owned invocation; invalid or replayed binding never supplies journal selector"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "Explicit command response fixtures",
+      "expected_contract": "Lossless command records survive; already collected file bytes still exported",
+      "id": "R5",
+      "requirement": "Unit show/journal timeout/nonzero/invalidUTF8/partial output"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL contract fixture",
+      "expected_contract": "No T0 eligibility or accepted own time",
+      "id": "C1",
+      "requirement": "owner-start exists without valid commit or wrong start hash"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL contract fixture",
+      "expected_contract": "All scope/hash/source/clock links fail closed",
+      "id": "C2",
+      "requirement": "Replay P3 budget/attestation/selected phase/source/boot/identity or wrong phase attempt"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL control/journal fixture",
+      "expected_contract": "No formal-entry credit merely from commit file presence",
+      "id": "C3",
+      "requirement": "Commit left behind after postcommit fresh check failed, with no actual CAPTURE entry"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL source-flow fixture",
+      "expected_contract": "Only original owner-start T0 is eligible after commit and entry; no warm/failed time added",
+      "id": "C4",
+      "requirement": "Valid full chain and strict>=300s/min12/original1200/phase3x30s/UTC-BT-MONO/t0-consistency"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux read-only current binding",
+      "expected_contract": "No source build/CI or duration credit; pin-unit-exec excluded from imports",
+      "id": "L1",
+      "requirement": "Canonical installed Python20e57/package/source hashes, all17 runtime bytes,15 safe imports and real CLOCK_BOOTTIME"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux owned process fixtures",
+      "expected_contract": "Same leased group retention must be observed; no daemon/escape claim",
+      "id": "L2",
+      "requirement": "Root canonical keeper -> actual runuser bmdr -> canonical helper probe, nested bmdr child, real UID/GID/PID/PGID/SID and control-FD exclusion"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux owned process fixtures",
+      "expected_contract": "No accepted residual; only newly owned group signalled; zombies truthful",
+      "id": "L3",
+      "requirement": "Normal/defaultTERM/noncooperative/closed-pipe normal,timeout,nonzero residuals and unrelated sentinel"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux owned process fixtures",
+      "expected_contract": "Success requires exact complete keeper protocol; no Recorder signal",
+      "id": "L4",
+      "requirement": "Keeper before-control death and root-driver after-real-release abnormal keeper death"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux owned process fixture",
+      "expected_contract": "Bounded own-group cleanup and no unrelated signal",
+      "id": "L5",
+      "requirement": "Parent loss/EOF and no inherited lease write endpoint"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "EXPLICIT response providers on Linux runner",
+      "expected_contract": "Do not claim real host ps fault; every attempted I/O lossless; no129th I/O",
+      "id": "L6",
+      "requirement": "InvalidUTF8/timeout/nonzero ps originals, absent-vs-empty streams,128-record refusal and exhausted budget"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "REAL Linux monotonic/BOOTTIME observations",
+      "expected_contract": "No extrapolated full warm READY latency or300s/24h credit",
+      "id": "L7",
+      "requirement": "Short actual command/control/scan cleanup latency and receipt footprint within declared finite test caps"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "Linux interpreter + EXPLICIT OS/static/current-state/clock providers",
+      "expected_contract": "Source predicates genuinely reused; no real current READY or warm-duration claim",
+      "id": "F1",
+      "requirement": "Complete V3 warm-prefix success/failure source-predicate suite under canonical installed source"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "EXPLICIT fixture publications/response providers",
+      "expected_contract": "All eligibility failures retained;995/2880/own86400 algorithms unchanged",
+      "id": "F2",
+      "requirement": "Old six readiness/static/clock counterexamples, durability/T0 and missing-commit/source-pair faults"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL builder/qualification fixture",
+      "expected_contract": "Refuse all mutations; old guards never reused/extended",
+      "id": "G1",
+      "requirement": "UNBOUND/old scope or any hardcoded failed P3 Q/unit/policy pointer"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "FUTURE ACTUAL metadata preflight",
+      "expected_contract": "No startup on current custody failure; no Raw/partial payload opens",
+      "id": "G2",
+      "requirement": "Stopped same-boot identity/source/config/Recorder PID0 NRestarts0, zero active files/partials, current coherent natural archive/future timer"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "FUTURE ACTUAL metadata admission",
+      "expected_contract": "Historical figures not live admission; reserves not lowered",
+      "id": "G3",
+      "requirement": "Current census/forecast, new evidence overhead and reserves/finite remaining time"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "FUTURE operator fault fixture + actual evidence if it occurs",
+      "expected_contract": "Preserve exclusive scope and outputs; no blind repeated copy/ARM",
+      "id": "G4",
+      "requirement": "Copy interrupted/QA fails or output partial"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "LOCAL gate fixture",
+      "expected_contract": "ARM/launch refused; old18/39/Mac not substitute",
+      "id": "G5",
+      "requirement": "New copy/Linux physical result exists but independent acceptance absent/wrong scope/runtime/operator/fixture hashes"
+    },
+    {
+      "current_execution": "NOT_EXECUTED_DESIGN_ONLY",
+      "evidence_kind": "FUTURE ACTUAL and gate fixture",
+      "expected_contract": "One fixed expiry and sole native; no newT0 until actual valid warm bundle",
+      "id": "G6",
+      "requirement": "Actual ARM accepted then remaining live admission/same epoch/one-launch exclusions"
+    }
+  ],
+  "count": 24,
+  "kind": "PLANNED_INTEGRATION_FIXTURES_NOT_EXECUTED",
+  "limits": "These24 planned integration specifications do not represent24 tests or discharge all47 previous future specifications. Required exact implemented fixtures must be frozen/reviewed before execution."
+}

@@ -1,0 +1,89 @@
+{
+  "base_runtime14_all_SHA_readback_PASS": true,
+  "implementation_tests_executed": 0,
+  "kind": "READ_ONLY_DESIGN_INPUTS_NO_IMPLEMENTATION_EXECUTED",
+  "production_or_service_actions": false,
+  "read_only_new_scope_state": "UNBOUND_NOT_CHOSEN",
+  "references": {
+    "P3/runtime/arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/arm.py"
+    },
+    "P3/runtime/capacity-policy.json": {
+      "bytes": 13229,
+      "sha256": "db8566b8d9bd960e61e5309ccf96d7ad14635f2db940bc3b530f4a7c17b7ccf7",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/capacity-policy.json"
+    },
+    "P3/runtime/common.py": {
+      "bytes": 12276,
+      "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/common.py"
+    },
+    "P3/runtime/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/launch.py"
+    },
+    "P3/runtime/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/pin-unit-exec.py"
+    },
+    "P3/stage-controls-manifest.json": {
+      "bytes": 2898,
+      "sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/stage-controls-manifest.json"
+    },
+    "P3/stage-operator.py": {
+      "bytes": 28223,
+      "sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/stage-operator.py"
+    },
+    "P3/stage-qualification.json": {
+      "bytes": 4693,
+      "sha256": "4872b0fa6c49a3b4cb5f384d81027be3ecca76a5e2c0da8b1a3a44201a508e74",
+      "source": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/stage-qualification.json"
+    },
+    "V3/CODE_MANIFEST.json": {
+      "bytes": 3590,
+      "sha256": "b020d893bb4acb01aaa46b3272d4a15b043a483cddfba234715f9736ff3fb164",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/CODE_MANIFEST.json"
+    },
+    "V3/runtime/controller.py": {
+      "bytes": 22763,
+      "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/runtime/controller.py"
+    },
+    "V3/runtime/owned_command.py": {
+      "bytes": 12954,
+      "sha256": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/runtime/owned_command.py"
+    },
+    "V3/runtime/warm_completion.py": {
+      "bytes": 6048,
+      "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/runtime/warm_completion.py"
+    },
+    "V3/runtime/warm_readiness.py": {
+      "bytes": 23235,
+      "sha256": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/runtime/warm_readiness.py"
+    },
+    "component_acceptance/MANIFEST.json": {
+      "bytes": 15093,
+      "sha256": "b59d6f8f0133401f63d865e88ccf273c12f1542a09229b37aac0d50c7fbb9b2b",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-delta-review-20261026-k29zowez/MANIFEST.json"
+    },
+    "component_acceptance/REPORT.md": {
+      "bytes": 7954,
+      "sha256": "d3e23a4e1746b1c2b0f373a11ab73e6de8c27bc4b53682667ab7f24ae0af1dc2",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-delta-review-20261026-k29zowez/REPORT.md"
+    },
+    "component_acceptance/RESULT.json": {
+      "bytes": 3364,
+      "sha256": "75823d1161c05694a007b61840f69aa6b7f17ecb7b02a0d52512ac97c3765df2",
+      "source": "/private/var/tmp/bmdr-r2-warm-successor-v3-delta-review-20261026-k29zowez/RESULT.json"
+    }
+  }
+}
