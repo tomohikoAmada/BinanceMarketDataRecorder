@@ -1,0 +1,276 @@
+{
+  "case_count": 4,
+  "cases": [
+    {
+      "case": "malformed_inventory_original_bytes_not_retained",
+      "elapsed": 0.07638404204044491,
+      "fixture_ps_stderr": {
+        "base64": "/m9yaWdpbmFsLXBzLXN0ZGVycg==",
+        "bytes": 19,
+        "sha256": "31356904476edb48a6c6435e8da40f8b3e8f0db9c5682486d4000639a6b2d449"
+      },
+      "fixture_ps_stdout": {
+        "base64": "/29yaWdpbmFsLXBzLWJ5dGVzAAo=",
+        "bytes": 20,
+        "sha256": "4b47a84c7c742e9e5493c995478ed87a9eac168217da2ee1fe0ec32465a26738"
+      },
+      "original_inventory_bytes_present_in_receipt": false,
+      "outcome": "ELIGIBILITY_FAIL_CLOSED_BUT_EVIDENCE_GAP_REPRODUCED",
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "print(\"{}\",flush=True)"
+        ],
+        "child_pid": 82706,
+        "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+        "cleanup_error": "UnicodeDecodeError:'ascii' codec can't decode byte 0xff in position 0: ordinal not in range(128)",
+        "cleanup_reserve_seconds": 0.5,
+        "control_raw": {
+          "base64": "eyJrZWVwZXJfcGlkIjogODI3MDYsICJwZ2lkIjogODI3MDYsICJpbm5lcl9waWQiOiA4MjcwNywgInJldHVybmNvZGUiOiAwfQo=",
+          "bytes": 74,
+          "sha256": "77170afb2b448e47730e946b3510f62c02b54da3401f9b83fc606bdfab606626"
+        },
+        "final_group_members": [
+          {
+            "live": false,
+            "pgid": 82706,
+            "pid": 82706,
+            "state": "Z"
+          }
+        ],
+        "group_KILL_used": true,
+        "inner_pid": 82707,
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274903315704666",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"print(\\\"{}\\\",flush=True)\"]"
+        ],
+        "keeper_returncode": -9,
+        "lease_released": false,
+        "owned_pgid": 82706,
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "returncode": 0,
+        "stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_raw": {
+          "base64": "e30K",
+          "bytes": 3,
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        },
+        "timed_out": false,
+        "timeout_prefix_stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_prefix_stdout_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_seconds": 0.5,
+        "unexpected_live_descendants": []
+      }
+    },
+    {
+      "case": "unresolved_live_inventory_is_bounded_and_ineligible",
+      "elapsed": 0.2510772499954328,
+      "inventory_scope": "Explicit synthetic D state; actual fixture process normal and checked gone",
+      "outcome": "PASS",
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "print(\"{}\",flush=True)"
+        ],
+        "child_pid": 82711,
+        "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+        "cleanup_error": "TimeoutError:owned_group_unresolved_cleanup_or_pipes; cleanup=ProcessLookupError:[Errno 3] No such process; live_owned_members_remaining",
+        "cleanup_reserve_seconds": 0.2,
+        "control_raw": {
+          "base64": "eyJrZWVwZXJfcGlkIjogODI3MTEsICJwZ2lkIjogODI3MTEsICJpbm5lcl9waWQiOiA4MjcxMiwgInJldHVybmNvZGUiOiAwfQo=",
+          "bytes": 74,
+          "sha256": "767a29aac0c9145a65d5aa12aef68e435fba58b826775e2976522b53b704b98f"
+        },
+        "final_group_members": [
+          {
+            "live": true,
+            "pgid": 82711,
+            "pid": 82711,
+            "state": "D"
+          }
+        ],
+        "group_KILL_used": false,
+        "inner_pid": 82712,
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274902803259166",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"print(\\\"{}\\\",flush=True)\"]"
+        ],
+        "keeper_returncode": 0,
+        "lease_released": true,
+        "owned_pgid": 82711,
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "returncode": 0,
+        "stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_raw": {
+          "base64": "e30K",
+          "bytes": 3,
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        },
+        "timed_out": false,
+        "timeout_prefix_stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_prefix_stdout_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_seconds": 0.2,
+        "unexpected_live_descendants": []
+      }
+    },
+    {
+      "case": "near_exhausted_command_budget_is_not_success",
+      "elapsed": 0.03357533400412649,
+      "outcome": "PASS",
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import time;time.sleep(1)"
+        ],
+        "child_pid": 82714,
+        "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+        "cleanup_error": "ProcessLookupError:[Errno 3] No such process; cleanup=ProcessLookupError:[Errno 3] No such process",
+        "cleanup_reserve_seconds": 0.2,
+        "control_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "final_group_members": [],
+        "group_KILL_used": false,
+        "inner_pid": null,
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274902888015375",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import time;time.sleep(1)\"]"
+        ],
+        "keeper_returncode": -15,
+        "lease_released": false,
+        "owned_pgid": 82714,
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "returncode": null,
+        "stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timed_out": true,
+        "timeout_prefix_stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_prefix_stdout_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_seconds": 0.001,
+        "unexpected_live_descendants": []
+      }
+    },
+    {
+      "case": "keeper_death_before_inner_control_is_rejected",
+      "outcome": "PASS",
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import os,signal;os.kill(os.getppid(),signal.SIGKILL);print(\"{}\",flush=True)"
+        ],
+        "child_pid": 82718,
+        "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+        "cleanup_error": "RuntimeError:owned_group_keeper_exited_without_result; cleanup=ProcessLookupError:[Errno 3] No such process",
+        "cleanup_reserve_seconds": 0.5,
+        "control_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "final_group_members": [],
+        "group_KILL_used": false,
+        "inner_pid": null,
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274903732879875",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import os,signal;os.kill(os.getppid(),signal.SIGKILL);print(\\\"{}\\\",flush=True)\"]"
+        ],
+        "keeper_returncode": -9,
+        "lease_released": false,
+        "owned_pgid": 82718,
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "returncode": null,
+        "stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout_raw": {
+          "base64": "e30K",
+          "bytes": 3,
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        },
+        "timed_out": false,
+        "timeout_prefix_stderr_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_prefix_stdout_raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "timeout_seconds": 0.5,
+        "unexpected_live_descendants": []
+      }
+    }
+  ],
+  "local_POSIX_plus_explicit_inventory_faults": true,
+  "real_Linux_or_runuser_credit": false
+}

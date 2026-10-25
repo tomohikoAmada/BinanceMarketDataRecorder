@@ -1,0 +1,62 @@
+{
+  "CLOCK_BOOTTIME": "explicit MONOTONIC fixture",
+  "Linux_credit": false,
+  "case": "noncooperative_descendant_closes_pipes_and_ignores_TERM",
+  "descendant_pid": 80922,
+  "descendant_ps_state_after_claimed_cleanup": "S",
+  "descendant_still_running": true,
+  "macOS_POSIX_only": true,
+  "production_or_VPS_actions": false,
+  "receipt": {
+    "after": {
+      "boottime_ns": 271161131952291,
+      "monotonic_ns": 271161131952750,
+      "utc_ns": 1792958192038488000
+    },
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-c",
+      "import json,subprocess,sys,time; p=subprocess.Popen([sys.executable,'-c',sys.argv[1]]); print(json.dumps({'descendant_pid':p.pid}),flush=True); time.sleep(30)",
+      "import os,signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); os.close(1); os.close(2); time.sleep(30)"
+    ],
+    "before": {
+      "boottime_ns": 271160125970916,
+      "monotonic_ns": 271160125970958,
+      "utc_ns": 1792958191032499000
+    },
+    "child_pid": 80921,
+    "cleanup": "owned_group_TERM_reaped",
+    "cleanup_error": null,
+    "cleanup_reserve_seconds": 2.0,
+    "owned_pgid": 80921,
+    "parse_error": null,
+    "parsed_stdout": {
+      "descendant_pid": 80922
+    },
+    "returncode": -15,
+    "stderr": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgwOTIyfQo=",
+      "bytes": 26,
+      "sha256": "4595388681180c1b02deda24760afa9fc8af888d6bc53771e6de9ea3f0c5f989"
+    },
+    "timed_out": true,
+    "timeout_prefix_stderr": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_prefix_stdout": {
+      "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgwOTIyfQo=",
+      "bytes": 26,
+      "sha256": "4595388681180c1b02deda24760afa9fc8af888d6bc53771e6de9ea3f0c5f989"
+    },
+    "timeout_seconds": 1.0
+  },
+  "result": "BUG_REPRODUCED",
+  "unrelated_sentinel_unaffected": true
+}

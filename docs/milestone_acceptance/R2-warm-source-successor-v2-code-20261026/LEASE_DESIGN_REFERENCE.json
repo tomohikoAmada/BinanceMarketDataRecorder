@@ -1,0 +1,6 @@
+{
+  "directory": "/private/var/tmp/bmdr-r2-owned-lease-design-sanity-20261026-e_f38e0l",
+  "manifest_sha256": "cde3f93b337f26cabfc70dc5cdb519a3c7c968a4f007728c227433b30c27988f",
+  "all5_parent_SHA_bytes_PASS": true,
+  "scope": "DESIGN_ONLY_NOT_CODE_OR_LINUX_QUALIFICATION"
+}

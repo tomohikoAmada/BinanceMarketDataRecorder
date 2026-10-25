@@ -1,0 +1,151 @@
+--- BLOCKEDv2/warm_readiness.py
++++ v3/warm_readiness.py
+@@ -166,8 +166,28 @@
+ 
+ 
+ def command_ok(receipt):
+-    require(not receipt['timed_out'] and receipt.get('cleanup_error') is None and not receipt.get('unexpected_live_descendants') and receipt['returncode'] == 0
+-            and receipt['parse_error'] is None, 'warm_command_failed_or_invalid')
++    require(receipt.get('timed_out') is False and receipt.get('cleanup_error') is None
++            and type(receipt.get('unexpected_live_descendants')) is list
++            and receipt['unexpected_live_descendants'] == []
++            and type(receipt.get('returncode')) is int
++            and type(receipt.get('keeper_returncode')) is int
++            and receipt['keeper_returncode'] == 0
++            and receipt.get('lease_released') is True
++            and receipt.get('group_KILL_used') is False
++            and receipt.get('cleanup') == 'LEASED_GROUP_NO_LIVE_MEMBERS'
++            and receipt['returncode'] == 0 and receipt['parse_error'] is None,
++            'warm_command_failed_or_invalid')
++    control = json.loads(decoded(receipt['keeper_control']))
++    require(all(type(receipt.get(n)) is int and receipt[n] > 0
++                for n in ['child_pid','owned_pgid','inner_pid'])
++            and all(type(control.get(n)) is int and control[n] > 0
++                    for n in ['keeper_pid','pgid','inner_pid']),
++            'warm_keeper_process_ids_invalid')
++    require(type(control.get('returncode')) is int and control['returncode'] == 0
++            and control.get('keeper_pid') == receipt['child_pid'] == receipt['owned_pgid']
++            and control.get('pgid') == receipt['owned_pgid']
++            and control.get('inner_pid') == receipt['inner_pid'],
++            'warm_keeper_success_protocol_mismatch')
+ 
+ 
+ def command_interval(receipt):
+--- BLOCKEDv2/owned_command.py
++++ v3/owned_command.py
+@@ -4,6 +4,8 @@
+ runuser/helper group retention must be qualified before any operational use.
+ """
+ import json
++import base64
++import hashlib
+ import os
+ from pathlib import Path
+ import selectors
+@@ -13,24 +15,62 @@
+ import time
+ 
+ 
+-def _members(pgid, timeout):
+-    if timeout <= 0:
+-        raise TimeoutError('owned_group_inventory_budget_exhausted')
+-    result = subprocess.run(['/bin/ps', '-axo', 'pid=,pgid=,stat='],
+-                            capture_output=True, timeout=timeout, check=True)
+-    members = []
+-    for line in result.stdout.decode('ascii', errors='strict').splitlines():
+-        fields = line.split()
+-        if len(fields) != 3 or not fields[0].isdecimal() or not fields[1].isdecimal():
+-            raise RuntimeError('owned_group_ps_malformed')
+-        pid, group = int(fields[0]), int(fields[1])
+-        if group == pgid:
+-            state = fields[2]
+-            if not state:
+-                raise RuntimeError('owned_group_ps_state_empty')
+-            members.append({'pid': pid, 'pgid': group, 'state': state,
+-                            'live': not state.startswith('Z')})
+-    return members
++def _bytepack(raw):
++    return {'base64': base64.b64encode(raw).decode('ascii'), 'bytes': len(raw),
++            'sha256': hashlib.sha256(raw).hexdigest()}
++
++
++def _members(pgid, timeout, evidence=None):
++    proof = {'argv': ['/bin/ps', '-axo', 'pid=,pgid=,stat='],
++             'timeout_seconds': timeout, 'before_monotonic_ns': time.monotonic_ns(),
++             'stdout': _bytepack(b''), 'stderr': _bytepack(b''), 'returncode': None,
++             'exception': None, 'parse_error': None, 'stdout_available': False,
++             'stderr_available': False, 'partial_by_timeout': False}
++    if evidence is not None:
++        if len(evidence) >= 128:
++            raise RuntimeError('owned_group_inventory_receipt_bound_exceeded')
++        evidence.append(proof)
++    try:
++        if timeout <= 0:
++            raise TimeoutError('owned_group_inventory_budget_exhausted')
++        try:
++            result = subprocess.run(proof['argv'], capture_output=True,
++                                    timeout=timeout, check=False)
++        except subprocess.TimeoutExpired as exc:
++            proof['stdout_available'] = exc.output is not None
++            proof['stderr_available'] = exc.stderr is not None
++            proof['partial_by_timeout'] = True
++            proof['stdout'] = _bytepack(exc.output or b'')
++            proof['stderr'] = _bytepack(exc.stderr or b'')
++            proof['exception'] = 'TimeoutExpired'
++            raise
++        proof['stdout_available'] = proof['stderr_available'] = True
++        proof['stdout'] = _bytepack(result.stdout)
++        proof['stderr'] = _bytepack(result.stderr)
++        proof['returncode'] = result.returncode
++        if result.returncode != 0:
++            raise RuntimeError('owned_group_inventory_nonzero_exit')
++        members = []
++        for line in result.stdout.decode('ascii', errors='strict').splitlines():
++            fields = line.split()
++            if len(fields) != 3 or not fields[0].isdecimal() or not fields[1].isdecimal():
++                raise RuntimeError('owned_group_ps_malformed')
++            pid, group = int(fields[0]), int(fields[1])
++            if group == pgid:
++                state = fields[2]
++                if not state:
++                    raise RuntimeError('owned_group_ps_state_empty')
++                members.append({'pid': pid, 'pgid': group, 'state': state,
++                                'live': not state.startswith('Z')})
++        proof['matching_members'] = members
++        return members
++    except BaseException as exc:
++        proof['exception'] = type(exc).__name__ + ':' + str(exc)
++        proof['parse_error'] = (type(exc).__name__ + ':' + str(exc)
++                                if proof['returncode'] == 0 else None)
++        raise
++    finally:
++        proof['after_monotonic_ns'] = time.monotonic_ns()
+ 
+ 
+ def run_owned(argv, *, python_executable, timeout, cleanup_seconds):
+@@ -50,6 +90,7 @@
+     cleanup_error = None
+     unexpected_live = []
+     final_members = []
++    inventory_receipts = []
+     timeout_prefix_stdout = timeout_prefix_stderr = b''
+     released = False
+     killed = False
+@@ -66,7 +107,7 @@
+                     raise RuntimeError('owned_group_control_oversize')
+ 
+     def inventory():
+-        values = _members(proc.pid, min(0.3, final_deadline - time.monotonic()))
++        values = _members(proc.pid, min(0.3, final_deadline - time.monotonic()), inventory_receipts)
+         if not any(x['pid'] == proc.pid for x in values):
+             raise RuntimeError('owned_keeper_missing_from_inventory_before_reap')
+         return values
+@@ -178,7 +219,7 @@
+                        else 'UNRESOLVED_OWNED_GROUP_CLEANUP',
+             'cleanup_error': cleanup_error, 'lease_released': released,
+             'group_KILL_used': killed, 'unexpected_live_descendants': unexpected_live,
+-            'final_group_members': final_members,
++            'final_group_members': final_members, 'inventory_receipts': inventory_receipts,
+             'ownership_scope': 'new leased session/group only; no universal escaped-descendant claim',
+             'stdout_raw': bytes(buffers['stdout']), 'stderr_raw': bytes(buffers['stderr']),
+             'control_raw': bytes(buffers['control']),

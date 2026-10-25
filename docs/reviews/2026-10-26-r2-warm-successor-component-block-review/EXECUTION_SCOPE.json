@@ -1,0 +1,37 @@
+{
+  "POSIX_timeout_platform": "macOS; MONOTONIC explicitly substitutes for BOOTTIME only in fixtures",
+  "executions_are_not_24h_or_995_capacity_qualification": true,
+  "independent_full_flow": {
+    "actual_final_stdout": "{\"independent_full_flow_counterexamples\": 6, \"all_reach_commit\": true}\n",
+    "all_bypasses_reproduced": true,
+    "case_count": 6,
+    "exit_code": 0,
+    "full_saved_control_bytes_preserved": true,
+    "result_file": "adversarial-run/INDEPENDENT_ADVERSARIAL_FULL_FLOW_RESULTS.json"
+  },
+  "independent_owned_group": {
+    "all_defects_reproduced": true,
+    "real_local_POSIX_cases": 2,
+    "result_files": [
+      "OWNED_GROUP_ADVERSARIAL_RESULT.json",
+      "OWNED_GROUP_NORMAL_EXIT_RESULT.json"
+    ]
+  },
+  "provided_boundaries": {
+    "all_PASS": true,
+    "case_count": 20,
+    "exit_code": 0,
+    "result_file": "provided-run/LOCAL_BOUNDARY_RESULTS.json"
+  },
+  "provided_full_flow": {
+    "all_PASS": true,
+    "case_count": 57,
+    "exit_code": 0,
+    "result_file": "provided-run/LOCAL_FULL_FLOW_RESULTS.json"
+  },
+  "python": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+  "raw_test_output_limits": "Provided suite original generated JSON results are retained. Earlier console output is witnessed through tool results; no claim that reconstructed stdout is original process bytes. The independent command receipts retain their actual lossless stdout/stderr.",
+  "real_Linux_or_BOOTTIME_qualification": false,
+  "real_source_evaluator": true,
+  "source_environment_process_systemd_and_static_providers": "Explicit fixture; no production main or source service operations"
+}

@@ -1,0 +1,196 @@
+{
+  "case_count": 20,
+  "cases": [
+    {
+      "case": "deadline",
+      "PASS": true,
+      "error": "RuntimeError:warm_original_1200s_deadline_exceeded"
+    },
+    {
+      "case": "UTCregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:utc_ns"
+    },
+    {
+      "case": "BTregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:boottime_ns"
+    },
+    {
+      "case": "MONOregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:monotonic_ns"
+    },
+    {
+      "case": "UTCjump",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_discontinuity"
+    },
+    {
+      "case": "BTMONOjump",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_discontinuity"
+    },
+    {
+      "case": "fixed_budget_extension:deadline_monotonic_ns",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "fixed_budget_extension:deadline_boottime_ns",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "budget_kind",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "boot_changed",
+      "PASS": true,
+      "error": "RuntimeError:warm_boot_changed"
+    },
+    {
+      "case": "missingbytes",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_bytes_mismatch"
+    },
+    {
+      "case": "wronghash",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_bytes_mismatch"
+    },
+    {
+      "case": "invalidbase64",
+      "PASS": true,
+      "error": "Error:Only base64 data is allowed"
+    },
+    {
+      "case": "symlink_file",
+      "PASS": true,
+      "error": "RuntimeError:warm_noncanonical_file:/private/var/tmp/warm-local-stat-ak1e7vhk/symlink.json"
+    },
+    {
+      "case": "directory_as_file",
+      "PASS": true,
+      "error": "RuntimeError:warm_not_regular_file:/private/var/tmp/warm-local-stat-ak1e7vhk"
+    },
+    {
+      "case": "replacement_inode_detected",
+      "PASS": true
+    },
+    {
+      "case": "same_inode_growth_not_fake_integrity",
+      "PASS": true
+    },
+    {
+      "case": "all_postT0_capture_and_other_controller_functions_AST_unchanged",
+      "PASS": true
+    },
+    {
+      "case": "timeout_zero_exit_is_never_success",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "case": "real_LOCAL_POSIX_nested_timeout_owned_group_and_unrelated_sentinel",
+      "PASS": true,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import json,os,signal,subprocess,sys,time\nchild=subprocess.Popen([sys.executable,'-c',sys.argv[1]])\ndef stop(sig,frame):\n child.kill(); child.wait(); print('owned wrapper reaped own descendant',file=sys.stderr,flush=True); sys.exit(0)\nsignal.signal(signal.SIGTERM,stop)\nprint(json.dumps({'descendant_pid':child.pid}),flush=True)\ntime.sleep(30)\n",
+          "import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274613321911750",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import json,os,signal,subprocess,sys,time\\nchild=subprocess.Popen([sys.executable,'-c',sys.argv[1]])\\ndef stop(sig,frame):\\n child.kill(); child.wait(); print('owned wrapper reaped own descendant',file=sys.stderr,flush=True); sys.exit(0)\\nsignal.signal(signal.SIGTERM,stop)\\nprint(json.dumps({'descendant_pid':child.pid}),flush=True)\\ntime.sleep(30)\\n\", \"import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)\"]"
+        ],
+        "child_pid": 82212,
+        "owned_pgid": 82212,
+        "inner_pid": null,
+        "returncode": null,
+        "keeper_returncode": -9,
+        "timed_out": true,
+        "timeout_seconds": 1.0,
+        "cleanup_reserve_seconds": 2.0,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82213,
+            "pgid": 82212,
+            "state": "S",
+            "live": true
+          },
+          {
+            "pid": 82214,
+            "pgid": 82212,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82212,
+            "pgid": 82212,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "before": {
+          "utc_ns": 1792962570318728000,
+          "boottime_ns": 274610321910791,
+          "monotonic_ns": 274610321910833
+        },
+        "after": {
+          "utc_ns": 1792962571415677000,
+          "boottime_ns": 274611418851000,
+          "monotonic_ns": 274611418851083
+        },
+        "stdout": {
+          "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgyMjE0fQo=",
+          "bytes": 26,
+          "sha256": "8ebbbf6456ee53fa6b2529e3b7f585e6a18cdcc6ab89583ce93a5b4cc2c24034"
+        },
+        "stderr": {
+          "base64": "b3duZWQgd3JhcHBlciByZWFwZWQgb3duIGRlc2NlbmRhbnQK",
+          "bytes": 36,
+          "sha256": "c5a50be1b131a75c9d800ed9464df3e697fb80388fabbd96129dae982e7d5b97"
+        },
+        "keeper_control": {
+          "base64": "eyJrZWVwZXJfcGlkIjogODIyMTIsICJwZ2lkIjogODIyMTIsICJpbm5lcl9waWQiOiA4MjIxMywgInJldHVybmNvZGUiOiAwfQo=",
+          "bytes": 74,
+          "sha256": "512c96e71208b0682745d74915f8c33dd6792fda9c5c7c89f4bae5a0d396c5c7"
+        },
+        "timeout_prefix_stdout": {
+          "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgyMjE0fQo=",
+          "bytes": 26,
+          "sha256": "8ebbbf6456ee53fa6b2529e3b7f585e6a18cdcc6ab89583ce93a5b4cc2c24034"
+        },
+        "timeout_prefix_stderr": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parsed_stdout": {
+          "descendant_pid": 82214
+        },
+        "parse_error": null
+      },
+      "real_Linux_credit": false,
+      "CLOCK_BOOTTIME": "explicit MONOTONIC fixture"
+    }
+  ],
+  "all_PASS": true,
+  "real_Linux_or_capture_credit": false
+}

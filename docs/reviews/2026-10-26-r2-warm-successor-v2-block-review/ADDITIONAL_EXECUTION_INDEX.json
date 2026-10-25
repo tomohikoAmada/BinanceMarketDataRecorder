@@ -1,0 +1,26 @@
+{
+  "commands": [
+    {
+      "file": "test_keeper_abnormal_after_release.py",
+      "observed_returncode": 0,
+      "result": "ADVERSARIAL_KEEPER_EXIT.json"
+    },
+    {
+      "file": "test_owned_fault_boundaries.py",
+      "observed_returncode": 0,
+      "result": "OWNED_FAULT_BOUNDARIES.json"
+    },
+    {
+      "file": "test_late_inventory_success.py",
+      "observed_returncode": 0,
+      "result": "LATE_INVENTORY_RESULT.json"
+    },
+    {
+      "file": "regression-reconstruction/test_reconstruct_six.py",
+      "observed_returncode": 0,
+      "result": "regression-reconstruction/INDEPENDENT_SIX_REGRESSION_RECONSTRUCTION.json"
+    }
+  ],
+  "note": "Commands were observed through local tool results. Provided-suite original stdout/stderr/execution artifacts are retained under execution/. Additional owned command receipts retain lossless command/control bytes; no reconstructed console output is relabelled original bytes. No Linux/runuser credit.",
+  "python": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python"
+}

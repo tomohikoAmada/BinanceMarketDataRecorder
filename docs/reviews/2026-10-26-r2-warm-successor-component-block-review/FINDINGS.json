@@ -1,0 +1,71 @@
+{
+  "decision": "BLOCK",
+  "findings": [
+    {
+      "evidence": [
+        "OWNED_GROUP_ADVERSARIAL_RESULT.json",
+        "OWNED_GROUP_NORMAL_EXIT_RESULT.json",
+        "test_owned_group_adversarial.py",
+        "test_owned_group_normal_exit.py"
+      ],
+      "file": "runtime/warm_readiness.py",
+      "id": "F1",
+      "impact": "A helper descendant can remain live after timeout TERM cleanup claims success; a normal wrapper exit with closed-pipe descendant is accepted by command_ok while the descendant is still running. Finite whole-owned-tree control is not established.",
+      "lines": [
+        143,
+        200
+      ],
+      "minimal_remedy": "Keep ownership identity long enough to terminate/reap or otherwise establish bounded empty owned tree after leader exit, including normal exit, closed pipes and noncooperative descendants. Do not infer group emptiness from communicate/reaping the direct child. Avoid PID/PGID reuse and unrelated-group signalling; preserve original command error and all byte evidence.",
+      "priority": "P1",
+      "reproduced": true,
+      "title": "Direct wrapper exit is mistaken for complete owned process-group cleanup"
+    },
+    {
+      "controller_lines": [
+        211,
+        225
+      ],
+      "evidence": [
+        "adversarial-run/INDEPENDENT_ADVERSARIAL_FULL_FLOW_RESULTS.json",
+        "adversarial-run/test_adversarial_full_flow.py"
+      ],
+      "file": "runtime/warm_readiness.py",
+      "id": "F2",
+      "impact": "After start pair selection, changed current published identity, stale capacity observation, or actual HARD_RESERVE is read by snapshot but ignored. Exact source evaluator rejects each changed publication, yet actual candidate warm/start prefix emits owner-start-commit with no failure.",
+      "lines": [
+        98,
+        122,
+        363,
+        379
+      ],
+      "minimal_remedy": "At each eligibility/commit guard compare the live publication to the selected exact-source/strict pair. Before start, publication advancement may use a fresh bounded exact pair within original limits; after start publication/commit, mismatch must prevent accepted eligibility. Do not place full live publication into the earlier static same_guard because normal heartbeat changes are legitimate. No second heavy Catalog scan or higher warm bound is required.",
+      "priority": "P1",
+      "reproduced": true,
+      "title": "T0 freshness checks read newly bad live state but continue using the cached good pair"
+    },
+    {
+      "evidence": [
+        "adversarial-run/INDEPENDENT_ADVERSARIAL_FULL_FLOW_RESULTS.json",
+        "adversarial-run/test_adversarial_full_flow.py"
+      ],
+      "file": "runtime/warm_readiness.py",
+      "id": "F3",
+      "impact": "Whole-prefix fixtures accept installed_dependencies exact_match=false/editable=true/count0, a boolean record_verified_files=True, and command after.utc earlier than before.utc. This violates the claimed malformed/forged-proof rejection, although an honest unchanged canonical verifier normally does not emit these contradictions.",
+      "lines": [
+        219,
+        225,
+        254,
+        259
+      ],
+      "minimal_remedy": "Validate exact required static proof fields/types and positive nonboolean counts, coherent complete command before/after clock ordering and bounded cross-clock interval, and matching provenance/budget references. Retain rejected originals; no new installed forest/Catalog scan is needed.",
+      "priority": "P2",
+      "reproduced": true,
+      "title": "Contradictory earlier static proof and command-clock receipts satisfy the proof validator",
+      "trust_boundary_limit": "This is structural receipt validation under explicit root-custody fixtures, not a claim that arbitrary malicious root can be defeated or that genuine installed package corruption was observed."
+    }
+  ],
+  "not_counted_as_separate_findings": [
+    "Arbitrary malicious-root resistance is outside this control trust boundary.",
+    "No untested callback-omission claim or Linux process-tree qualification is granted."
+  ]
+}

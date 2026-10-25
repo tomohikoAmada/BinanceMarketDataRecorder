@@ -1,0 +1,23 @@
+{
+  "no_matching_live_members": true,
+  "observed_rows": [],
+  "read_only_observation_no_signals": true,
+  "scanned_fixture_group_ids": [
+    82453,
+    82463,
+    82469,
+    82476,
+    82508,
+    82542,
+    82577,
+    82617,
+    82634,
+    82706,
+    82711,
+    82714,
+    82718,
+    82756
+  ],
+  "scope": "Known local test group IDs only; not a future ownership lease or Linux qualification",
+  "zombies_are_not_claimed_reaped": true
+}

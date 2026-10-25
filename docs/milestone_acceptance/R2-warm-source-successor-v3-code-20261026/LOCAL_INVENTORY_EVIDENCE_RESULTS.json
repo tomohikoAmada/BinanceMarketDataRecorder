@@ -1,0 +1,104 @@
+{
+  "case_count": 3,
+  "cases": [
+    {
+      "case": "invalid_UTF8",
+      "PASS": true,
+      "failure": "UnicodeDecodeError:'ascii' codec can't decode byte 0xff in position 0: ordinal not in range(128)",
+      "exact_original_ps_evidence": {
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "timeout_seconds": 0.3,
+        "before_monotonic_ns": 275206160543958,
+        "stdout": {
+          "base64": "/3BhcnRpYWwgb3JpZ2luYWwgcHMK",
+          "bytes": 21,
+          "sha256": "ce344b6b18cc2ad306325a98b065582a2caabee1e7f51b01eca694ecbcd9fe8e"
+        },
+        "stderr": {
+          "base64": "gG9yaWdpbmFsIHN0ZGVycg==",
+          "bytes": 16,
+          "sha256": "b8e9228dc79a480d1c05853d81e0eb902ecf8971ac8bccda5f8bdfe74279d1f3"
+        },
+        "returncode": 0,
+        "exception": "UnicodeDecodeError:'ascii' codec can't decode byte 0xff in position 0: ordinal not in range(128)",
+        "parse_error": "UnicodeDecodeError:'ascii' codec can't decode byte 0xff in position 0: ordinal not in range(128)",
+        "stdout_available": true,
+        "stderr_available": true,
+        "partial_by_timeout": false,
+        "after_monotonic_ns": 275206160598125
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "timeout_prefix",
+      "PASS": true,
+      "failure": "TimeoutExpired:Command '['/bin/ps', '-axo', 'pid=,pgid=,stat=']' timed out after 0.3 seconds",
+      "exact_original_ps_evidence": {
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "timeout_seconds": 0.3,
+        "before_monotonic_ns": 275206235783916,
+        "stdout": {
+          "base64": "/3BhcnRpYWwgb3JpZ2luYWwgcHMK",
+          "bytes": 21,
+          "sha256": "ce344b6b18cc2ad306325a98b065582a2caabee1e7f51b01eca694ecbcd9fe8e"
+        },
+        "stderr": {
+          "base64": "gG9yaWdpbmFsIHN0ZGVycg==",
+          "bytes": 16,
+          "sha256": "b8e9228dc79a480d1c05853d81e0eb902ecf8971ac8bccda5f8bdfe74279d1f3"
+        },
+        "returncode": null,
+        "exception": "TimeoutExpired:Command '['/bin/ps', '-axo', 'pid=,pgid=,stat=']' timed out after 0.3 seconds",
+        "parse_error": null,
+        "stdout_available": true,
+        "stderr_available": true,
+        "partial_by_timeout": true,
+        "after_monotonic_ns": 275206235822666
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "nonzero",
+      "PASS": true,
+      "failure": "RuntimeError:owned_group_inventory_nonzero_exit",
+      "exact_original_ps_evidence": {
+        "argv": [
+          "/bin/ps",
+          "-axo",
+          "pid=,pgid=,stat="
+        ],
+        "timeout_seconds": 0.3,
+        "before_monotonic_ns": 275206310551541,
+        "stdout": {
+          "base64": "/3BhcnRpYWwgb3JpZ2luYWwgcHMK",
+          "bytes": 21,
+          "sha256": "ce344b6b18cc2ad306325a98b065582a2caabee1e7f51b01eca694ecbcd9fe8e"
+        },
+        "stderr": {
+          "base64": "gG9yaWdpbmFsIHN0ZGVycg==",
+          "bytes": 16,
+          "sha256": "b8e9228dc79a480d1c05853d81e0eb902ecf8971ac8bccda5f8bdfe74279d1f3"
+        },
+        "returncode": 7,
+        "exception": "RuntimeError:owned_group_inventory_nonzero_exit",
+        "parse_error": null,
+        "stdout_available": true,
+        "stderr_available": true,
+        "partial_by_timeout": false,
+        "after_monotonic_ns": 275206310578916
+      },
+      "Linux_credit": false
+    }
+  ],
+  "all_PASS": true,
+  "real_lease_processes_but_PS_responses_explicit_fixtures": true,
+  "Linux_or_T0_credit": false
+}

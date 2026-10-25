@@ -1,0 +1,21 @@
+{
+  "all_known_fixture_pids_absent": true,
+  "command": [
+    "ps",
+    "-p",
+    "80921,80922,81014,81015",
+    "-o",
+    "pid=,ppid=,pgid=,stat=,command="
+  ],
+  "fixture_finally_actions": "Each fixture SIGKILLed only its newly created owned group and terminated/reaped its own unrelated sentinel. No service or Recorder PID/group was signalled.",
+  "kind": "LOCAL_FIXTURE_CLEANUP_CHECK",
+  "known_fixture_pids": [
+    80921,
+    80922,
+    81014,
+    81015
+  ],
+  "observed_exit_code": 1,
+  "observed_stdout": "",
+  "source": "Observed local tool result after both fixture runs; not a reconstructed claim of Linux process cleanup."
+}

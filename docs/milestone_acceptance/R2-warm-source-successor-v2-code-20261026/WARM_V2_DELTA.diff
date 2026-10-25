@@ -1,0 +1,185 @@
+--- blocked/warm_readiness.py
++++ v2/warm_readiness.py
+@@ -110,7 +110,9 @@
+     require(runtime == {'InvocationID': binding['invocation'], 'MainPID': binding['pid'],
+                         'NRestarts': '0', 'ActiveState': 'active'},
+             'warm_recorder_incarnation_changed')
+-    s = read(D / 'state/service_state.json')
++    publication = (D / 'state/service_state.json').read_bytes()
++    require(len(publication) <= 1024*1024, 'warm_live_publication_oversize')
++    s = json.loads(publication)
+     require(s.get('pid') == int(binding['pid']) and s.get('status') == 'RUNNING'
+             and s.get('service_instance_id') == instance and instance,
+             'warm_service_instance_changed')
+@@ -118,13 +120,14 @@
+             'native_capture_invocation': budget['native_capture_invocation'],
+             'config_sha256': sha(CONFIG), 'identity_sha256': sha(DEPLOYMENT),
+             'runtime': runtime, 'service_instance_id': instance,
++            'publication_sha256': hashlib.sha256(publication).hexdigest(),
+             'catalog_identity': file_identity(D / 'state/catalog.sqlite'),
+             'source_modules': origin_guard()}
+ 
+ 
+ def same_guard(a, b):
+-    require({k: v for k, v in a.items() if k != 'clock'} ==
+-            {k: v for k, v in b.items() if k != 'clock'},
++    require({k: v for k, v in a.items() if k not in {'clock', 'publication_sha256'}} ==
++            {k: v for k, v in b.items() if k not in {'clock', 'publication_sha256'}},
+             'warm_attestation_guard_changed')
+ 
+ 
+@@ -141,53 +144,20 @@
+ 
+ 
+ def owned_command(argv, budget, cap):
+-    """Own only this newly created process group; retain lossless timeout bytes."""
++    from owned_command import run_owned
+     available = min(cap, remaining(budget))
+     require(available > CLEANUP_SECONDS, 'warm_command_no_cleanup_reserve')
+-    timeout = available - CLEANUP_SECONDS
+     before = clocks()
+-    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+-                            start_new_session=True)
+-    pgid = os.getpgid(proc.pid)
+-    require(pgid == proc.pid, 'warm_child_group_ownership_failed')
+-    timed_out = False
+-    prefix_out = prefix_err = b''
+-    cleanup = 'normal_exit'
+-    cleanup_error = None
++    receipt = run_owned(argv, python_executable=PYTHON,
++                        timeout=available-CLEANUP_SECONDS, cleanup_seconds=CLEANUP_SECONDS)
++    receipt.update(before=before, after=clocks())
++    for raw_name, name in [('stdout_raw','stdout'),('stderr_raw','stderr'),
++                           ('control_raw','keeper_control'),
++                           ('timeout_prefix_stdout_raw','timeout_prefix_stdout'),
++                           ('timeout_prefix_stderr_raw','timeout_prefix_stderr')]:
++        receipt[name] = encoded(receipt.pop(raw_name))
+     try:
+-        stdout, stderr = proc.communicate(timeout=timeout)
+-    except subprocess.TimeoutExpired as exc:
+-        timed_out = True
+-        prefix_out, prefix_err = exc.output or b'', exc.stderr or b''
+-        try:
+-            os.killpg(pgid, signal.SIGTERM)
+-        except ProcessLookupError:
+-            pass
+-        try:
+-            stdout, stderr = proc.communicate(timeout=CLEANUP_SECONDS / 2)
+-            cleanup = 'owned_group_TERM_reaped'
+-        except subprocess.TimeoutExpired:
+-            try:
+-                os.killpg(pgid, signal.SIGKILL)
+-            except ProcessLookupError:
+-                pass
+-            try:
+-                stdout, stderr = proc.communicate(timeout=CLEANUP_SECONDS / 2)
+-                cleanup = 'owned_group_KILL_reaped'
+-            except subprocess.TimeoutExpired as cleanup_failure:
+-                stdout = cleanup_failure.output or prefix_out
+-                stderr = cleanup_failure.stderr or prefix_err
+-                cleanup = 'owned_group_KILL_NOT_REAPED'
+-                cleanup_error = type(cleanup_failure).__name__
+-    receipt = {'argv': argv, 'before': before, 'after': clocks(),
+-               'child_pid': proc.pid, 'owned_pgid': pgid, 'timeout_seconds': timeout,
+-               'cleanup_reserve_seconds': CLEANUP_SECONDS, 'cleanup': cleanup,
+-               'timed_out': timed_out, 'returncode': proc.returncode, 'cleanup_error': cleanup_error,
+-               'stdout': encoded(stdout), 'stderr': encoded(stderr),
+-               'timeout_prefix_stdout': encoded(prefix_out),
+-               'timeout_prefix_stderr': encoded(prefix_err)}
+-    try:
+-        receipt['parsed_stdout'] = json.loads(stdout)
++        receipt['parsed_stdout'] = json.loads(decoded(receipt['stdout']))
+         receipt['parse_error'] = None
+     except (ValueError, UnicodeError) as exc:
+         receipt['parsed_stdout'] = None
+@@ -196,13 +166,26 @@
+ 
+ 
+ def command_ok(receipt):
+-    require(not receipt['timed_out'] and receipt.get('cleanup_error') is None and receipt['returncode'] == 0
++    require(not receipt['timed_out'] and receipt.get('cleanup_error') is None and not receipt.get('unexpected_live_descendants') and receipt['returncode'] == 0
+             and receipt['parse_error'] is None, 'warm_command_failed_or_invalid')
++
++
++def command_interval(receipt):
++    before, after = receipt['before'], receipt['after']
++    for name in ('utc_ns','boottime_ns','monotonic_ns'):
++        require(type(before.get(name)) is int and type(after.get(name)) is int
++                and after[name] >= before[name], 'warm_command_clock_order:' + name)
++    du = after['utc_ns'] - before['utc_ns']
++    db = after['boottime_ns'] - before['boottime_ns']
++    dm = after['monotonic_ns'] - before['monotonic_ns']
++    require(abs(du-db) < 2*10**9 and abs(dm-db) < 2*10**9,
++            'warm_command_clock_interval_disagreement')
+ 
+ 
+ def full_result(receipt, binding, instance):
+     require(receipt['argv'] == CLI + ['deployment', 'readiness'], 'warm_full_argv_changed')
+     command_ok(receipt)
++    command_interval(receipt)
+     ready = json.loads(decoded(receipt['stdout']))
+     require(ready == receipt['parsed_stdout'], 'warm_parsed_stdout_changed')
+     require(ready.get('command') == 'deployment.readiness'
+@@ -216,6 +199,36 @@
+         'warm_full_release_fields_mismatch')
+     require(identity['identity_sha256'] == IDENTITY and identity['source_git_sha'] == SOURCE
+             and identity['config_sha256'] == CONFIG_SHA, 'warm_full_identity_mismatch')
++    artifact = identity['installed_artifact']; dependencies = identity['installed_dependencies']
++    require(type(artifact.get('record_verified_files')) is int
++            and artifact['record_verified_files'] > 0
++            and dependencies.get('exact_match') is True
++            and dependencies.get('editable') is False
++            and dependencies.get('recorder_distribution_separate') is True,
++            'warm_contradictory_static_attestation')
++    for n in ['locked_distribution_count','installed_distribution_count',
++              'protected_file_count','protected_directory_count']:
++        require(type(dependencies.get(n)) is int and dependencies[n] > 0,
++                'warm_static_positive_nonboolean_count:' + n)
++    locked = dependencies.get('locked_distributions')
++    require(isinstance(locked,dict) and len(locked) == dependencies['locked_distribution_count']
++            == dependencies['installed_distribution_count']
++            and all(type(k) is str and k and type(v) is str and v for k,v in locked.items()),
++            'warm_static_distribution_inventory_mismatch')
++    venv = Path(PYTHON).parent.parent
++    require(artifact.get('venv_root') == str(venv)
++            and artifact.get('package_version') == expected['package_version'],
++            'warm_static_artifact_version_or_venv_mismatch')
++    for n in ['module_path','dist_info_path','direct_url_path']:
++        require(type(artifact.get(n)) is str and Path(artifact[n]).is_absolute()
++                and Path(artifact[n]).is_relative_to(venv)
++                and '..' not in Path(artifact[n]).parts, 'warm_static_artifact_path_invalid:' + n)
++    require(Path(artifact['module_path']).name == '__init__.py'
++            and Path(artifact['module_path']).parent.name == 'binance_market_data_recorder'
++            and Path(artifact['direct_url_path']).name == 'direct_url.json'
++            and Path(artifact['direct_url_path']).parent == Path(artifact['dist_info_path'])
++            and Path(artifact['dist_info_path']).name.endswith('.dist-info'),
++            'warm_static_artifact_paths_inconsistent')
+     require(identity['installed_artifact']['record_verified_files'] > 0
+             and identity['installed_artifact']['editable'] is False
+             and identity['installed_dependencies']
+@@ -256,6 +269,11 @@
+             and att['command']['after']['monotonic_ns'] < budget['deadline_monotonic_ns']
+             and att['command']['after']['boottime_ns'] < budget['deadline_boottime_ns'],
+             'warm_attestation_outside_original_deadline')
++    command_interval(att['command'])
++    for name in ['utc_ns','boottime_ns','monotonic_ns']:
++        require(budget['begin'][name] <= att['before']['clock'][name]
++                <= att['command']['before'][name] <= att['command']['after'][name]
++                <= att['after']['clock'][name], 'warm_attestation_clock_binding:' + name)
+     same_guard(att['before'], att['after'])
+     ready = full_result(att['command'], binding, first['recorder_service_instance_id'])
+     current = snapshot(budget, binding, first['recorder_service_instance_id'])
+@@ -377,3 +395,13 @@
+                 'warm_decision_source_evidence_stale')
+         current = snapshot(self.budget, self.binding, row['recorder_service_instance_id'])
+         same_guard(self.attestation['after'], current)
++        require(current['publication_sha256'] == row['state_sha256'],
++                'warm_live_publication_advanced_after_pair')
++        # Module/custody guards also consume time under CPU contention. Recheck
++        # the accepted witnesses at the actual decision clock after those reads.
++        self.check()
++        now = time.time_ns()
++        require(check(pub, config, now_ns=now, allow_empty_recovery=False)['result'] == 'PASS'
++                and -5*10**9 <= now-pub['heartbeat_at_utc_ns'] <= maximum
++                and -5*10**9 <= now-pub['capacity']['observed_at_utc_ns'] <= maximum,
++                'warm_decision_evidence_expired_during_guard')

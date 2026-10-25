@@ -1,0 +1,91 @@
+{
+  "argv": [
+    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+    "-c",
+    "import json,os,signal,subprocess,sys,time\nchild=subprocess.Popen([sys.executable,'-c',sys.argv[1]])\ndef stop(sig,frame):\n child.kill(); child.wait(); print('owned wrapper reaped own descendant',file=sys.stderr,flush=True); sys.exit(0)\nsignal.signal(signal.SIGTERM,stop)\nprint(json.dumps({'descendant_pid':child.pid}),flush=True)\ntime.sleep(30)\n",
+    "import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)"
+  ],
+  "keeper_argv": [
+    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+    "-B",
+    "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+    "--keeper",
+    "4",
+    "274532568745500",
+    "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import json,os,signal,subprocess,sys,time\\nchild=subprocess.Popen([sys.executable,'-c',sys.argv[1]])\\ndef stop(sig,frame):\\n child.kill(); child.wait(); print('owned wrapper reaped own descendant',file=sys.stderr,flush=True); sys.exit(0)\\nsignal.signal(signal.SIGTERM,stop)\\nprint(json.dumps({'descendant_pid':child.pid}),flush=True)\\ntime.sleep(30)\\n\", \"import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)\"]"
+  ],
+  "child_pid": 82005,
+  "owned_pgid": 82005,
+  "inner_pid": null,
+  "returncode": null,
+  "keeper_returncode": -9,
+  "timed_out": true,
+  "timeout_seconds": 1.0,
+  "cleanup_reserve_seconds": 2.0,
+  "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+  "cleanup_error": "RuntimeError:owned_group_ps_state_unknown",
+  "lease_released": false,
+  "group_KILL_used": true,
+  "unexpected_live_descendants": [
+    {
+      "pid": 82006,
+      "pgid": 82005,
+      "state": "S",
+      "live": true
+    },
+    {
+      "pid": 82007,
+      "pgid": 82005,
+      "state": "S",
+      "live": true
+    }
+  ],
+  "final_group_members": [
+    {
+      "pid": 82005,
+      "pgid": 82005,
+      "state": "Z",
+      "live": false
+    }
+  ],
+  "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+  "before": {
+    "utc_ns": 1792962489564900000,
+    "boottime_ns": 274529568744333,
+    "monotonic_ns": 274529568744375
+  },
+  "after": {
+    "utc_ns": 1792962490639346000,
+    "boottime_ns": 274530643182208,
+    "monotonic_ns": 274530643182291
+  },
+  "stdout": {
+    "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgyMDA3fQo=",
+    "bytes": 26,
+    "sha256": "e816c6091b7e12f9a0a1637061535a6cc84c130f41c30163251727977e7f4937"
+  },
+  "stderr": {
+    "base64": "b3duZWQgd3JhcHBlciByZWFwZWQgb3duIGRlc2NlbmRhbnQK",
+    "bytes": 36,
+    "sha256": "c5a50be1b131a75c9d800ed9464df3e697fb80388fabbd96129dae982e7d5b97"
+  },
+  "keeper_control": {
+    "base64": "",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "timeout_prefix_stdout": {
+    "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgyMDA3fQo=",
+    "bytes": 26,
+    "sha256": "e816c6091b7e12f9a0a1637061535a6cc84c130f41c30163251727977e7f4937"
+  },
+  "timeout_prefix_stderr": {
+    "base64": "",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "parsed_stdout": {
+    "descendant_pid": 82007
+  },
+  "parse_error": null
+}

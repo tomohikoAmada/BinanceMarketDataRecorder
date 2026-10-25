@@ -1,0 +1,13 @@
+{
+  "state": "BLOCKED_NOT_DEPLOYED",
+  "candidate_directory": "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7",
+  "code_manifest_sha256": "4f73a416b00522c9afd99fb62b34a0ad981678ac6d7a7234161fa4b0081c6309",
+  "all20_parent_SHA_bytes_PASS": true,
+  "LOCAL_cases": 91,
+  "previous2f75": "BLOCK617d62c4_ALL100_PARENT_PASS",
+  "Linux_runuser_or_scope_qualified": false,
+  "new_T0": false,
+  "reviewer": "r2_instrumented_n2_actual_startup_review",
+  "review_manifest_sha256": "d57f165fb38b59cc9ae6e347b1dae7b21e35cb8c3c70732d406f0f641d49c9d4",
+  "all120_review_parent_SHA_bytes_PASS": true
+}

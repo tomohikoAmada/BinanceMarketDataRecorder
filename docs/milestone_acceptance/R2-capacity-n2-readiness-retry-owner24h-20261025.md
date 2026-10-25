@@ -29,3 +29,7 @@ Actual RESTORED5f294364 ended1792938079405053625/errors[] before guard cancellat
 The current actual failure and restoration are [independently reconstructed](../reviews/2026-10-25-r2-readiness-warm-start-failure-review.md). A separate [LOCAL timing-ordering candidate](R2-warm-readiness-ordering-repair-20261025.md) has24 pure LOCAL cases PASS but independent review BLOCKED two fresh-completion-check gaps; it is not deployed. Successor source-aligned design is now independently ACCEPT41199a43/result7907eb7d/manifest16243a84 with all9 parent SHA/bytes PASS; implementation and47 specified-but-unrun full-flow faults remain pending. No LOCAL review is active; this wake5h90% used/reset18:43:56UTC defers substantial implementation until adequate fresh quota. No Linux qualification or new capture exists. See the [design review](../reviews/2026-10-25-r2-warm-source-successor-design-review.md).
 
 Current successor [LOCAL code candidate](R2-warm-source-successor-code-20261026.md) has77 LOCAL cases PASS and independent exact review ACTIVE. Original P3/Q3 is never reused; no new VPS capture or T0 exists.
+
+Latest component2f75 is independently BLOCKED617d62c4, all100 parent SHA/bytes PASS; a [distinct V2](R2-warm-source-successor-v2-code-20261026.md) has91LOCALPASS and independent exact review ACTIVE. No code deployed or new T0.
+
+Latest V2 is independently BLOCKEDd57f165f/all120parentPASS; [V3](R2-warm-source-successor-v3-code-20261026.md) has105LOCALPASS and independent narrow review ACTIVE. No candidate deployed or new T0.

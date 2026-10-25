@@ -17,3 +17,7 @@ See the [independent BLOCK review](../reviews/2026-10-25-r2-warm-ordering-code-r
 See the [successor design review](../reviews/2026-10-25-r2-warm-source-successor-design-review.md). Earlier draft remains BLOCKED; no VPS or new T0 exists.
 
 The design successor is now a separate [LOCAL code candidate](R2-warm-source-successor-code-20261026.md),77 explicit LOCAL cases PASS and independent exact review ACTIVE. No Linux/deployment/new T0 exists; earlier d8 draft remains BLOCKED.
+
+Latest component2f75 is independently BLOCKED617d62c4, all100 parent SHA/bytes PASS; a [distinct V2](R2-warm-source-successor-v2-code-20261026.md) has91LOCALPASS and independent exact review ACTIVE. No code deployed or new T0.
+
+Latest V2 is independently BLOCKEDd57f165f/all120parentPASS; [V3](R2-warm-source-successor-v3-code-20261026.md) has105LOCALPASS and independent narrow review ACTIVE. No candidate deployed or new T0.
