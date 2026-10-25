@@ -1,0 +1,14 @@
+{
+  "candidate_current_directory": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/rotation-readiness-policy-repair-20261025",
+  "final_manifest_sha256": "2f6dfe123212e48631ccb4f60d87f7b47c42d109aab16388e37770f49bdeac9f",
+  "actual_failure_review": {
+    "path": "/private/var/tmp/bmdr-r2-instrumented-n2-failure-policy-review-20261025-MGvkiZG6",
+    "manifest_sha256": "0faf33df349b85c6a0176d6ba9d064ace5c261250e682aafdc1dff462ab152c4",
+    "scope_reused": "accepted producer/source semantics and exact actual failed-publication bytes only; no repeated failure audit"
+  },
+  "current_original_runtime_reference": {
+    "path": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/runtime/qualification_owner_995.py",
+    "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+  },
+  "large_failure_export_not_reopened_for_code_review": true
+}

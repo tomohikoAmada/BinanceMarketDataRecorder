@@ -1,0 +1,146 @@
+{
+  "all23_original_members": {
+    "INDEPENDENT_CHECKS.json": {
+      "bytes": 9656,
+      "sha256": "2f347f7c93c62f88ac2223c38c005639914939f345e9a887f5ed94af8278f14e"
+    },
+    "PROVIDED_FIXTURES_EXECUTION.json": {
+      "bytes": 505,
+      "sha256": "e3ab03e0396f0f825f10f4edc60b0d1e1bc698bd0f94a80c4cd7b7a06307e256"
+    },
+    "REFERENCES.json": {
+      "bytes": 885,
+      "sha256": "11788b13353d35e858bbcb5b1c0c44e56314016d7db8d074f43f156f9defc4a4"
+    },
+    "REPORT.md": {
+      "bytes": 8402,
+      "sha256": "8f090b8a5ba10659eb1e55fcec077714c67dc308e527eda907e2eb8b5488526e"
+    },
+    "RESULT.json": {
+      "bytes": 2924,
+      "sha256": "f0c1cc30668826dd0e78ce52b5e5715ed076bc95dc89d5a8a13fe846183d8c5d"
+    },
+    "independent_checks.py": {
+      "bytes": 9516,
+      "sha256": "fcf7035b67a2f1a2b30807cd0e5c5f2d3e425f3cb1d5760fddbff08ac6a7ecad"
+    },
+    "inputs/CANDIDATE.json": {
+      "bytes": 906,
+      "sha256": "0d8fdafbc5560c24ec60341ef4afbf30dd09b7e364a76fb39f7e004d2d0fd5f3"
+    },
+    "inputs/DELTA.diff": {
+      "bytes": 1742,
+      "sha256": "13cc9b40b242f626c205f1199e23e1a5a837870428480f849c574f8a695fc14f"
+    },
+    "inputs/DESIGN.md": {
+      "bytes": 2333,
+      "sha256": "a5991c02da597f222302a651dedf18521bdefab7cb9e56dbbe0d3ec9831f5697"
+    },
+    "inputs/DESIGN_MANIFEST.json": {
+      "bytes": 1610,
+      "sha256": "2f6dfe123212e48631ccb4f60d87f7b47c42d109aab16388e37770f49bdeac9f"
+    },
+    "inputs/parent-tests.json": {
+      "bytes": 6602,
+      "sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81"
+    },
+    "inputs/qualification_owner_995-original.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "inputs/qualification_owner_995.py": {
+      "bytes": 9161,
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+    },
+    "inputs/test_classifier.py": {
+      "bytes": 8105,
+      "sha256": "c72257d07102a0752b3388ed3f96d180085a12cb44e15847a6ed9098efa70b9e"
+    },
+    "inputs/trigger-publication.json": {
+      "bytes": 13508,
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3"
+    },
+    "provided-fixtures-execution/parent-tests.json": {
+      "bytes": 6602,
+      "sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81"
+    },
+    "provided-fixtures-execution/qualification_owner_995-original.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "provided-fixtures-execution/qualification_owner_995.py": {
+      "bytes": 9161,
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+    },
+    "provided-fixtures-execution/test_classifier.py": {
+      "bytes": 8105,
+      "sha256": "c72257d07102a0752b3388ed3f96d180085a12cb44e15847a6ed9098efa70b9e"
+    },
+    "provided-fixtures-execution/trigger-publication.json": {
+      "bytes": 13508,
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3"
+    },
+    "provided-fixtures.error": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "provided-fixtures.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "provided-fixtures.stdout": {
+      "bytes": 397,
+      "sha256": "7efe7775d25201a7751188fc014e4cc58d78026804a026f96b6d20b9357adeaf"
+    }
+  },
+  "all_parent_sha_bytes_pass": true,
+  "manifest_sha256": "7e14f0d2c3b6e51a026396b9388486abdaf78084dbc08e621aa95bcec33c4a95",
+  "mirrored_files": {
+    "INDEPENDENT_CHECKS.json": {
+      "bytes": 9656,
+      "sha256": "2f347f7c93c62f88ac2223c38c005639914939f345e9a887f5ed94af8278f14e"
+    },
+    "MANIFEST.json": {
+      "bytes": 3642,
+      "sha256": "7e14f0d2c3b6e51a026396b9388486abdaf78084dbc08e621aa95bcec33c4a95"
+    },
+    "PROVIDED_FIXTURES_EXECUTION.json": {
+      "bytes": 505,
+      "sha256": "e3ab03e0396f0f825f10f4edc60b0d1e1bc698bd0f94a80c4cd7b7a06307e256"
+    },
+    "REFERENCES.json": {
+      "bytes": 885,
+      "sha256": "11788b13353d35e858bbcb5b1c0c44e56314016d7db8d074f43f156f9defc4a4"
+    },
+    "REPORT.md": {
+      "bytes": 8402,
+      "sha256": "8f090b8a5ba10659eb1e55fcec077714c67dc308e527eda907e2eb8b5488526e"
+    },
+    "RESULT.json": {
+      "bytes": 2924,
+      "sha256": "f0c1cc30668826dd0e78ce52b5e5715ed076bc95dc89d5a8a13fe846183d8c5d"
+    },
+    "independent_checks.py": {
+      "bytes": 9516,
+      "sha256": "fcf7035b67a2f1a2b30807cd0e5c5f2d3e425f3cb1d5760fddbff08ac6a7ecad"
+    },
+    "parent-code-independent-readback.json": {
+      "bytes": 401,
+      "sha256": "63d0345fbbd1a4d5db8cabc6903a7f5ca1f3dd652e60bff42b2d94ed17bb70aa"
+    },
+    "provided-fixtures.error": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "provided-fixtures.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "provided-fixtures.stdout": {
+      "bytes": 397,
+      "sha256": "7efe7775d25201a7751188fc014e4cc58d78026804a026f96b6d20b9357adeaf"
+    }
+  },
+  "original_directory": "/private/var/tmp/bmdr-r2-rotation-readiness-code-review-20261025-wBaHknRc",
+  "originals_preserved": true
+}

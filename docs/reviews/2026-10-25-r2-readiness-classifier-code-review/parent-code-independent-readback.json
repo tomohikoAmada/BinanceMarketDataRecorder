@@ -1,0 +1,9 @@
+{
+  "state": "PARENT_ALL_23_REVIEW_MEMBERS_AND_8_CURRENT_CANDIDATE_INPUT_SHA_BYTES_PASS",
+  "manifest_sha256": "7e14f0d2c3b6e51a026396b9388486abdaf78084dbc08e621aa95bcec33c4a95",
+  "candidate_manifest_sha256": "2f6dfe123212e48631ccb4f60d87f7b47c42d109aab16388e37770f49bdeac9f",
+  "members": 23,
+  "candidate_inputs": 8,
+  "no_raw_or_remote_action": true,
+  "utc": "2026-10-25T06:33:09.594859+00:00"
+}
