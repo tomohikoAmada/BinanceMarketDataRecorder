@@ -1,6 +1,6 @@
 # Bounded warm readiness ordering correction
 
-Current: **LOCAL CANDIDATE BLOCKED / SUCCESSOR DESIGN ACCEPTED / IMPLEMENTATION PENDING / NOT DEPLOYED**.
+Current: **LOCAL CANDIDATE BLOCKED / SUCCESSOR LOCAL CODE IMPLEMENTED / INDEPENDENT CODE REVIEW ACTIVE / NOT DEPLOYED**.
 
 Accepted actual P3 diagnosis469cb72b/result0ffaa9d0/manifest095323da establishes that11 strict warm observations span301.625s, then the canonical CLI session takes115.543440s and the existing total1200s guard fails before T0. No accepted24h or current capture exists; original automatic restoration completed before guard cancellation.
 
@@ -15,3 +15,5 @@ See [design](R2-warm-readiness-ordering-repair-20261025/DESIGN.md), [candidate m
 See the [independent BLOCK review](../reviews/2026-10-25-r2-warm-ordering-code-review.md). Original7 inputs remain immutable; this blocked candidate is never copied or launched.
 
 See the [successor design review](../reviews/2026-10-25-r2-warm-source-successor-design-review.md). Earlier draft remains BLOCKED; no VPS or new T0 exists.
+
+The design successor is now a separate [LOCAL code candidate](R2-warm-source-successor-code-20261026.md),77 explicit LOCAL cases PASS and independent exact review ACTIVE. No Linux/deployment/new T0 exists; earlier d8 draft remains BLOCKED.

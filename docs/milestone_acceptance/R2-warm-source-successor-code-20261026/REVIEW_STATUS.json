@@ -1,0 +1,13 @@
+{
+  "state": "INDEPENDENT_CODE_REVIEW_ACTIVE_NOT_DEPLOYED",
+  "candidate_directory": "/private/var/tmp/bmdr-r2-warm-successor-code-20261026-lrdrj2v4",
+  "code_manifest_sha256": "2f75d522c2782144c2ddff692010c1825e874f9c06b1a442110a561543958282",
+  "all13_parent_SHA_bytes_PASS": true,
+  "parent_LOCAL_full_flow_cases": 57,
+  "parent_LOCAL_boundaries": 20,
+  "real_Linux_credit": false,
+  "source_files_modified": false,
+  "VPS_or_T0_actions": false,
+  "existing_reviewer": "r2_instrumented_n2_actual_startup_review",
+  "next": "Read actual report when complete, full parent SHA-bytes then address findings; do not repeat healthy review or execute oldP3 bindings."
+}

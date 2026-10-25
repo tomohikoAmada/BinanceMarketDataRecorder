@@ -1,0 +1,75 @@
+--- original/controller.py
++++ candidate/controller.py
+@@ -5,6 +5,7 @@
+ """
+ from common import *
+ import sys, uuid, pwd, traceback
++from warm_readiness import WarmStart
+ 
+ def write_sample(out, row):
+     try:
+@@ -176,36 +177,49 @@
+     publish('capture-admission.json',admission(TARGET_SECONDS+1860,TARGET_SECONDS+60,1200))
+     config=load_config(config_file=CONFIG,environ={}).config
+     cohort=configured_cohort(config)
+-    begin=time.monotonic();warm_deadline=begin+1200
++    warm=WarmStart();begin=time.monotonic();warm_deadline=warm.budget['deadline_monotonic_ns']/10**9
+     boundary=capture_boundary(D,inventory_root=Q,utc_ns=time.time_ns(),boot_id=boot())
+     inventory=Path(boundary['start_catalog_path']);os.chown(inventory,0,grp.getgrnam('bmdr').gr_gid);os.chmod(inventory,0o640)
+     publish('data-scope-start.json',boundary)
+-    request=time.time_ns();run(['systemctl','enable','--now',REC],120);r=state(REC)
++    request=time.time_ns();publish('warm-enable-request.json',{'utc_ns':request,'boottime_ns':bt(),'monotonic_ns':time.monotonic_ns()});run(['systemctl','enable','--now',REC],min(120,warm_deadline-time.monotonic()));r=state(REC)
+     assert r['MainPID']!='0' and r['NRestarts']=='0'
+-    inv,pid=r['InvocationID'],r['MainPID']; first=None; initial_swap=None; samples=0
++    inv,pid=r['InvocationID'],r['MainPID'];warm.bind(inv,pid,request); first=None; initial_swap=None; samples=0;ready=None
+     with (Q/'warmup.jsonl').open('x') as out:
+         while True:
+             # Publication from the new incarnation is required before any warm sample.
+             path=D/'state/service_state.json';s=read(path)
+             if s.get('pid')!=int(pid):
+-                assert time.monotonic()<warm_deadline;time.sleep(2);continue
++                warm.check();time.sleep(min(2,max(0,warm_deadline-time.monotonic())));continue
+             row=sample(config,inv,pid,True);write_sample(out,row);samples+=1
+             swap=(row['resources']['pswpin'],row['resources']['pswpout'])
+             if initial_swap is None:initial_swap=swap
+             validate_warm(row,initial_swap,request)
+             if row['auxiliary_gate']['result']=='PASS':
+-                if first is None:first=row
+-                elif row['boottime_ns']-first['boottime_ns']>=300*10**9 and samples>=12:break
+-            assert time.monotonic()<warm_deadline,'strict all-enabled warmup timeout';time.sleep(30)
+-    ready=json.loads(run(CLI+['deployment','readiness'],330));assert ready['state']=='READY'
+-    assert time.monotonic()<warm_deadline,'warmup exceeded 1200s'
+-    end=sample(config,inv,pid,True);publish('warmup-end-observation.json',dict(end));validate_warm(end,initial_swap,request,strict=True)
+-    publish('warmup-result.json',{'result':'ACTUAL_ALL_ENABLED_WARMUP_PASS','first_strict':first,'end_strict':end,'samples':samples,'core_readiness':ready,'elapsed_seconds':time.monotonic()-begin})
+-    adm=admission(TARGET_SECONDS+660,TARGET_SECONDS+60,0);publish('prestart-admission.json',adm)
+-    start_row=sample(config,inv,pid,True);publish('start-observation.json',dict(start_row));validate_warm(start_row,initial_swap,request,strict=True)
++                if first is None:
++                    first=row;ready=warm.early(first)
++                elif row['boottime_ns']-first['boottime_ns']>=300*10**9 and samples>=12:
++                    warm.check();break
++            warm.check();warm.sleep(first,samples)
++    warm.check()
++    end,end_current=warm.completion('end',config,inv,pid,sample,validate_warm,initial_swap,request)
++    publish('warmup-end-observation.json',dict(end))
++    publish('warmup-result.json',{'result':'ACTUAL_ALL_ENABLED_WARMUP_PASS','first_strict':first,'end_strict':end,'samples':samples,'earlier_full_core_readiness':ready,'completion_kind':'BOUNDED_EARLIER_STATIC_PLUS_FRESH_SOURCE_DYNAMIC','end_completion_sha256':sha(Q/'warm-completion-end.json'),'warm_budget_sha256':sha(Q/'warm-budget.json'),'elapsed_seconds':time.monotonic()-begin})
++    warm.check()
++    adm=admission(TARGET_SECONDS+660,TARGET_SECONDS+60,max(0,warm_deadline-time.monotonic()));publish('prestart-admission.json',adm)
++    warm.check()
++    start_row,start_current=warm.completion('start',config,inv,pid,sample,validate_warm,initial_swap,request)
++    publish('start-observation.json',dict(start_row))
++    warm.fresh(start_row,config,start_current)
+     t0_utc=time.time_ns();t0_bt=bt();run_id=uuid.uuid4().hex
+-    start={'kind':'R2_CAPACITY_N2_OWNER_POLICY_24H_START','run_id':run_id,'t0_utc_ns':t0_utc,'t0_boottime_ns':t0_bt,'target_duration_ns':TARGET_NS,'target_utc_ns_estimate':t0_utc+TARGET_NS,'boot_id':boot(),'source_git_sha':SOURCE,'identity_sha256':IDENTITY,'config_sha256':CONFIG_SHA,'accepted_deployment_sha256':DEPLOY_SHA,'recorder_invocation':inv,'recorder_pid':pid,'native_capture_invocation':os.environ.get('INVOCATION_ID'),'strict_start':start_row,'admission_sha256':sha(Q/'prestart-admission.json'),'canonical_v5_predecessor':False,'owner_policy_predecessor':predecessor(),'core_recovery_policy':POLICY,'target_duration_semantics':'minimum','target_finalization_policy':FINALIZATION_POLICY,'target_finalization_reserve_seconds':60,'data_scope_start_sha256':sha(Q/'data-scope-start.json'),'data_scope':boundary['scope'],'configured_products':cohort['products'],'configured_auxiliary_contexts':sorted(cohort['expected_contexts']),'configured_spools':cohort['spools']}
+-    publish('owner-start.json',start);print(json.dumps({'phase':'CAPTURE','run_id':run_id,'t0_utc_ns':t0_utc,'target_utc_ns':t0_utc+TARGET_NS}),flush=True)
++    warm.fresh(start_row,config,start_current)
++    start={'kind':'R2_CAPACITY_N2_OWNER_POLICY_24H_START','run_id':run_id,'t0_utc_ns':t0_utc,'t0_boottime_ns':t0_bt,'target_duration_ns':TARGET_NS,'target_utc_ns_estimate':t0_utc+TARGET_NS,'boot_id':boot(),'source_git_sha':SOURCE,'identity_sha256':IDENTITY,'config_sha256':CONFIG_SHA,'accepted_deployment_sha256':DEPLOY_SHA,'recorder_invocation':inv,'recorder_pid':pid,'native_capture_invocation':os.environ.get('INVOCATION_ID'),'strict_start':start_row,'warm_budget_sha256':sha(Q/'warm-budget.json'),'warm_end_completion_sha256':sha(Q/'warm-completion-end.json'),'warm_start_completion_sha256':sha(Q/'warm-completion-start.json'),'warm_readiness_kind':'BOUNDED_EARLIER_STATIC_PLUS_FRESH_SOURCE_DYNAMIC','admission_sha256':sha(Q/'prestart-admission.json'),'canonical_v5_predecessor':False,'owner_policy_predecessor':predecessor(),'core_recovery_policy':POLICY,'target_duration_semantics':'minimum','target_finalization_policy':FINALIZATION_POLICY,'target_finalization_reserve_seconds':60,'data_scope_start_sha256':sha(Q/'data-scope-start.json'),'data_scope':boundary['scope'],'configured_products':cohort['products'],'configured_auxiliary_contexts':sorted(cohort['expected_contexts']),'configured_spools':cohort['spools']}
++    start['eligibility_requires']='owner-start-commit.json'
++    warm.fresh(start_row,config,start_current)
++    publish('owner-start.json',start)
++    warm.fresh(start_row,config,start_current)
++    publish('owner-start-commit.json',{'kind':'WARM_BOUNDED_START_COMMIT_V1','start_sha256':sha(Q/'owner-start.json'),'warm_budget_sha256':sha(Q/'warm-budget.json'),'decision_utc_ns':time.time_ns(),'decision_boottime_ns':bt(),'decision_monotonic_ns':time.monotonic_ns(),'static_attestation_sha256':sha(Q/'warm-readiness-check.json'),'start_completion_sha256':sha(Q/'warm-completion-start.json')})
++    warm.fresh(start_row,config,start_current)
++    print(json.dumps({'phase':'CAPTURE','run_id':run_id,'t0_utc_ns':t0_utc,'target_utc_ns':t0_utc+TARGET_NS}),flush=True)
+     next_bt=t0_bt; recovery=CoreRecovery();target_bt=t0_bt+TARGET_NS
+     with (Q/'monitoring.jsonl').open('x') as out, (Q/'recovery-observations.jsonl').open('x') as probes:
+         while bt()<target_bt:

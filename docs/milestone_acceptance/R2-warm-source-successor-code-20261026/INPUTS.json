@@ -1,0 +1,65 @@
+{
+  "kind": "LOCAL_OFFLINE_COMPONENT_CANDIDATE_NOT_ELIGIBLE_FOR_COPY_ARM_LAUNCH",
+  "accepted_design_manifest": "16243a8400db121da12339730c3aabdb991a622c6a6d63a4f2859412a1ec5b8c",
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "original_controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+  "original_runtime_reference": {
+    "arm-natural-wait.py": {
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "bytes": 738
+    },
+    "arm.py": {
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "bytes": 6128
+    },
+    "common.py": {
+      "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526",
+      "bytes": 12276
+    },
+    "launch.py": {
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "bytes": 1395
+    },
+    "pin-unit-exec.py": {
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "bytes": 329
+    },
+    "qualification_auxiliary_gate.py": {
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "bytes": 6324
+    },
+    "qualification_core_recovery.py": {
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+      "bytes": 4269
+    },
+    "qualification_monitor_rate.py": {
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+      "bytes": 4385
+    },
+    "qualification_owner_995.py": {
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+      "bytes": 9161
+    },
+    "qualification_scoped_corpus.py": {
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "bytes": 14957
+    },
+    "restore.py": {
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "bytes": 3400
+    },
+    "scoped-terminal.py": {
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6",
+      "bytes": 1804
+    }
+  },
+  "binding_scope": "Original P3 common constants are retained only for OFFLINE component review; P3 failed Q/guard are closed and forbidden for any execution. Fresh rebinding/reader/control manifests/Linux/current custody/admission required later.",
+  "existing_source_maps": {
+    "service/readiness.py": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38",
+    "service/deployment_identity.py": "0decd8e6cb745b04e69f103b133248b15cd12a5fa6cd729d85b2de54db8744b7",
+    "service/systemd.py": "82c6d8d9195e4698f5dfb029dfc8f8db66a87fa8fb4c54f447176779f794a3a7",
+    "service/state.py": "49a575f7d3abca370b971abf6cb5814b05973635e8debd3add44d9ec37a60066",
+    "cli.py": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913",
+    "config.py": "7e5eda9773120ad83e9154116664eda07827c51891b6675fce82a235c228f506"
+  }
+}

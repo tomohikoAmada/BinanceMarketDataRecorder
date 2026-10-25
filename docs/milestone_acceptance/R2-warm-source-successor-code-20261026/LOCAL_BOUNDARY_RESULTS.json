@@ -1,0 +1,155 @@
+{
+  "case_count": 20,
+  "cases": [
+    {
+      "case": "deadline",
+      "PASS": true,
+      "error": "RuntimeError:warm_original_1200s_deadline_exceeded"
+    },
+    {
+      "case": "UTCregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:utc_ns"
+    },
+    {
+      "case": "BTregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:boottime_ns"
+    },
+    {
+      "case": "MONOregress",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_regressed:monotonic_ns"
+    },
+    {
+      "case": "UTCjump",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_discontinuity"
+    },
+    {
+      "case": "BTMONOjump",
+      "PASS": true,
+      "error": "RuntimeError:warm_clock_discontinuity"
+    },
+    {
+      "case": "fixed_budget_extension:deadline_monotonic_ns",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "fixed_budget_extension:deadline_boottime_ns",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "budget_kind",
+      "PASS": true,
+      "error": "RuntimeError:warm_budget_extension_or_invalid_kind"
+    },
+    {
+      "case": "boot_changed",
+      "PASS": true,
+      "error": "RuntimeError:warm_boot_changed"
+    },
+    {
+      "case": "missingbytes",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_bytes_mismatch"
+    },
+    {
+      "case": "wronghash",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_bytes_mismatch"
+    },
+    {
+      "case": "invalidbase64",
+      "PASS": true,
+      "error": "Error:Only base64 data is allowed"
+    },
+    {
+      "case": "symlink_file",
+      "PASS": true,
+      "error": "RuntimeError:warm_noncanonical_file:/private/var/tmp/warm-local-stat-jx16bx35/symlink.json"
+    },
+    {
+      "case": "directory_as_file",
+      "PASS": true,
+      "error": "RuntimeError:warm_not_regular_file:/private/var/tmp/warm-local-stat-jx16bx35"
+    },
+    {
+      "case": "replacement_inode_detected",
+      "PASS": true
+    },
+    {
+      "case": "same_inode_growth_not_fake_integrity",
+      "PASS": true
+    },
+    {
+      "case": "all_postT0_capture_and_other_controller_functions_AST_unchanged",
+      "PASS": true
+    },
+    {
+      "case": "timeout_zero_exit_is_never_success",
+      "PASS": true,
+      "error": "RuntimeError:warm_command_failed_or_invalid"
+    },
+    {
+      "case": "real_LOCAL_POSIX_nested_timeout_owned_group_and_unrelated_sentinel",
+      "PASS": true,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import json,os,signal,subprocess,sys,time\nchild=subprocess.Popen([sys.executable,'-c',sys.argv[1]])\ndef stop(sig,frame):\n child.kill(); child.wait(); print('owned wrapper reaped own descendant',file=sys.stderr,flush=True); sys.exit(0)\nsignal.signal(signal.SIGTERM,stop)\nprint(json.dumps({'descendant_pid':child.pid}),flush=True)\ntime.sleep(30)\n",
+          "import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)"
+        ],
+        "before": {
+          "utc_ns": 1792957981895051000,
+          "boottime_ns": 270950990220916,
+          "monotonic_ns": 270950990220958
+        },
+        "after": {
+          "utc_ns": 1792957982911342000,
+          "boottime_ns": 270952006504250,
+          "monotonic_ns": 270952006504541
+        },
+        "child_pid": 80671,
+        "owned_pgid": 80671,
+        "timeout_seconds": 1.0,
+        "cleanup_reserve_seconds": 2.0,
+        "cleanup": "owned_group_TERM_reaped",
+        "timed_out": true,
+        "returncode": 0,
+        "cleanup_error": null,
+        "stdout": {
+          "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgwNjcyfQo=",
+          "bytes": 26,
+          "sha256": "8654a597fa4a75528ebc9f68da77dd47536aa00f17c64a660260843ae2cb4dc0"
+        },
+        "stderr": {
+          "base64": "b3duZWQgd3JhcHBlciByZWFwZWQgb3duIGRlc2NlbmRhbnQK",
+          "bytes": 36,
+          "sha256": "c5a50be1b131a75c9d800ed9464df3e697fb80388fabbd96129dae982e7d5b97"
+        },
+        "timeout_prefix_stdout": {
+          "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgwNjcyfQo=",
+          "bytes": 26,
+          "sha256": "8654a597fa4a75528ebc9f68da77dd47536aa00f17c64a660260843ae2cb4dc0"
+        },
+        "timeout_prefix_stderr": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "parsed_stdout": {
+          "descendant_pid": 80672
+        },
+        "parse_error": null
+      },
+      "real_Linux_credit": false,
+      "CLOCK_BOOTTIME": "explicit MONOTONIC fixture"
+    }
+  ],
+  "all_PASS": true,
+  "real_Linux_or_capture_credit": false
+}
