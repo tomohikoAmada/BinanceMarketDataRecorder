@@ -1,0 +1,10 @@
+{
+  "state": "COMMAND_RECEIPT_ADAPTER_EXACT_LOCAL_REVIEW_ACTIVE_UNBOUND",
+  "directory": "/private/var/tmp/bmdr-r2-command-receipts-20261026-bim8tnfn",
+  "manifest_sha256": "c03168ce328d62b10acec29a8df5b0bdc33d42615054afbb7371f76abf5ac08c",
+  "all7_parent_SHA_bytes_PASS": true,
+  "LOCAL_cases": 16,
+  "reviewer": "r2_instrumented_n2_actual_startup_review",
+  "whole_reader_Linux_or_copy_qualified": false,
+  "new_T0": false
+}

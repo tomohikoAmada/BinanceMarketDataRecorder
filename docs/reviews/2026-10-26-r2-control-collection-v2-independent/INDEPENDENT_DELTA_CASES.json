@@ -1,0 +1,128 @@
+{
+  "all_PASS": true,
+  "case_count": 17,
+  "cases": [
+    {
+      "PASS": true,
+      "case": "absolute_ancestor_after_open",
+      "result_bytes": 6512,
+      "result_path": "delta-results/1.json",
+      "result_sha256": "6f54d509b04978497264939d6ad9f7e28486e9f04d094e6c33657a9927fc40d4",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "root_after_open",
+      "result_bytes": 6513,
+      "result_path": "delta-results/2.json",
+      "result_sha256": "f2bb8fe0408f8398232fc69b327883c17f250d7d52b8881bf8eebaabdbe80ec4",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "relative_parent_after_open",
+      "result_bytes": 6514,
+      "result_path": "delta-results/3.json",
+      "result_sha256": "bd8115e3de006f0af120cd0b2a6d1217510b9a96b35d95533aba62a4bbc90ca3",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "ordinary ancestor replacement between stat/open rejects before data",
+      "result_bytes": 2638,
+      "result_path": "delta-results/4.json",
+      "result_sha256": "4671b1eb10c86b5951bd93472acc5b2421f241ac83deb518a6791d318b0abb7e",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "entry replacement between stat/open rejects before bytes",
+      "result_bytes": 3221,
+      "result_path": "delta-results/5.json",
+      "result_sha256": "280e90d35eb39b3de168ea1a5ba0defcb2877cf7b7de405f25af4e11831e5d1a",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 1 limit 1 accepted True",
+      "result_bytes": 4526,
+      "result_path": "delta-results/6.json",
+      "result_sha256": "9ea69ee2aff9036a104fc97ca0bc45a2a29df018c26bc5d0ce5ca1ade16163e7",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 2 limit 1 accepted False",
+      "result_bytes": 4657,
+      "result_path": "delta-results/7.json",
+      "result_sha256": "927b2595636958c14fb17c74dae46b3e893d8b179a5f348f31833bdfcaf7a817",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 64 limit 64 accepted True",
+      "result_bytes": 4831,
+      "result_path": "delta-results/8.json",
+      "result_sha256": "2564fc078e84d3cbf0ecdc10bd01bdbe51170af9530f0ecf8dc74e2b359d4cd2",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 65 limit 64 accepted False",
+      "result_bytes": 4836,
+      "result_path": "delta-results/9.json",
+      "result_sha256": "3fcc1c9c67af32149e53884d68ea6478c4c3bf9328864896ad9be821318d80da",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 256 limit 256 accepted True",
+      "result_bytes": 5728,
+      "result_path": "delta-results/10.json",
+      "result_sha256": "1a6a1fbac98240388577eb1c8faa79844db9900174952fb5ffa3d164684427ce",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "parsed depth 257 limit 256 accepted False",
+      "result_bytes": 5349,
+      "result_path": "delta-results/11.json",
+      "result_sha256": "5ab00c4f13f988f3b8bcce1a648721c572c0284d3771cb91c87f7841e49e8d11",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "JSONL before and after deep resource error retained",
+      "result_bytes": 58157,
+      "result_path": "delta-results/12.json",
+      "result_sha256": "f4d654324bfc0f48489ec65f68f5441b7b63f2098fff78add564b18c7b401252",
+      "strict_JSON_serializable": true
+    },
+    {
+      "PASS": true,
+      "case": "invalid depth parameter True",
+      "invalid_parameter_before_collection": true
+    },
+    {
+      "PASS": true,
+      "case": "invalid depth parameter 0",
+      "invalid_parameter_before_collection": true
+    },
+    {
+      "PASS": true,
+      "case": "invalid depth parameter 257",
+      "invalid_parameter_before_collection": true
+    },
+    {
+      "PASS": true,
+      "case": "invalid depth parameter 1.5",
+      "invalid_parameter_before_collection": true
+    },
+    {
+      "PASS": true,
+      "case": "invalid depth parameter None",
+      "invalid_parameter_before_collection": true
+    }
+  ],
+  "scope": "LOCAL metadata/io-provider fixtures and parsed-view serialization only; no Linux/whole reader/T0 credit"
+}

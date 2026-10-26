@@ -1,0 +1,48 @@
+{
+  "kind": "V2_LOCAL_FILE_COLLECTION_COMPONENT_DELTA_PENDING_REVIEW",
+  "members": {
+    "DESIGN_BINDING.json": {
+      "sha256": "0298a67db9240b16d1719dd999b409736add6da76a04e21fb9bacf4f919af73b",
+      "bytes": 734
+    },
+    "PREVIOUS_BLOCK.json": {
+      "sha256": "bef185e51bd038c49f0ec6315c799f2c207db6db0806e7a52f383a80096eaf59",
+      "bytes": 365
+    },
+    "control_files.py": {
+      "sha256": "d13a30e0d007666c26d152f66d4ff5d70d6854014f3893a2c6cb87ae8b4ee263",
+      "bytes": 8344
+    },
+    "test_control_files.py": {
+      "sha256": "9d9156e09bda4c05390e1dff1184001151054aca0582d3df780a1a7211f2da99",
+      "bytes": 5370
+    },
+    "test_collection_regressions.py": {
+      "sha256": "4fb34b7eeeda6abf03f300f7a9cdffd28229457df7833e8177acba5aaf984d2a",
+      "bytes": 3020
+    },
+    "LOCAL_FILE_READER_CASES.json": {
+      "sha256": "85b85f7ade45849c55cd5fb537826236903e706daf6c8faac6bd751c9958ebb2",
+      "bytes": 95473
+    },
+    "LOCAL_COLLECTION_REGRESSIONS.json": {
+      "sha256": "9af2ad90c80bbb1defc73f9768d9d4f25012038679eccdc53f22c566922aa443",
+      "bytes": 150678
+    },
+    "PARENT_EXECUTIONS.json": {
+      "sha256": "40965eec2786dd5f8f013cba90800c2701d3c0ffd721a7f35b65e1d4979fef9b",
+      "bytes": 1716
+    },
+    "COLLECTION_DELTA.diff": {
+      "sha256": "300b54d53a2fe45e0fa818d15893aba0facbf8d80e1581a82c3171f33d3657a1",
+      "bytes": 4755
+    },
+    "SCOPE_V2.md": {
+      "sha256": "91d43ca10560ddcf86a382dae0a42ac5b833918e8852250990067ad3b157e0cc",
+      "bytes": 2207
+    }
+  },
+  "LOCAL_cases": 22,
+  "whole_reader_or_Linux_or_copy_ARM_launch_qualified": false,
+  "new_T0": false
+}

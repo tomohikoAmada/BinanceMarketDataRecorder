@@ -1,9 +1,11 @@
 # Lossless control-file collection primitive
 
-Current: **FIRST INTEGRATION COMPONENT IMPLEMENTED /16 LOCAL CASES PASS / INDEPENDENT EXACT REVIEW ACTIVE / UNBOUND**.
+Current: **INDEPENDENTLY BLOCKED / NOT OPERATIONAL**.
 
 Exclusive LOCAL directory `/private/var/tmp/bmdr-r2-warm-reader-integration-20261026-mnolxttl` has manifest892f6e5e/all6 parent SHA/bytes PASS, collector9b6107b0. This definition-only asset collects explicit allowlisted regular metadata paths through directory/file fds and O_NOFOLLOW, retaining original bytepack, lstat/fstat and races, then parses those same bytes. Missing/empty/invalidUTF8/partialJSONL/overflow/cooperative timeout remain distinct; later errors preserve earlier bytes. read_complete means only stable full byte capture, not valid parse, trusted ownership or T0 eligibility. Deadline checks do not preempt blocked kernel I/O.
 
 16 LOCAL temporary-file/provider fixtures pass, including final/parent symlink, traversal/FIFO, pinned old file after atomic replacement, growth and secondary-close failures. Independent narrow exact review is ACTIVE. These are not16 of the24 planned complete integration fixtures and supply no whole reader/Linux/runuser/T0 qualification. The remaining generated reader/command capture/owned selector/start-commit-proof consumer,17-runtime qualification builder, actual Linux and fresh scope/admission work remain pending. No new scope/unit/window is selected; all four accepted V3 subjects, source20e57 and failedP3 stay unchanged.
 
 See [scope](R2-lossless-control-collection-20261026/SCOPE.md), [manifest](R2-lossless-control-collection-20261026/COLLECTION_MANIFEST.json), [LOCAL cases](R2-lossless-control-collection-20261026/LOCAL_FILE_READER_CASES.json), [exact execution](R2-lossless-control-collection-20261026/PARENT_EXECUTION.json) and [review state](R2-lossless-control-collection-20261026/REVIEW_STATUS.json). Integration [design79044ab0](../reviews/2026-10-26-r2-warm-reader-linux-binding-design.md) is accepted only as design.
+
+Final [BLOCK8a2091f7](../reviews/2026-10-26-r2-control-collection-block-review.md) supersedes review ACTIVE. [Distinct V2](R2-lossless-control-collection-v2-20261026.md) has22LOCALPASS and a narrow review ACTIVE.

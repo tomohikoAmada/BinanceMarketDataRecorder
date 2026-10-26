@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+    "-B",
+    "test_command_receipts.py"
+  ],
+  "returncode": 0,
+  "began_utc_ns": 1792976087738045000,
+  "ended_utc_ns": 1792976088739602000,
+  "stdout": {
+    "base64": "eyJjYXNlX2NvdW50IjogMTYsICJhbGxfUEFTUyI6IHRydWV9Cg==",
+    "bytes": 37,
+    "sha256": "f408e0eb97a6276bb961f7f914a08887efc9a076717b57028ec2ff6adf80a27f"
+  },
+  "stderr": {
+    "base64": "",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "subject_sha256": "db61e6deb01c1cfa7a87ea76781746111ebe5db9c07f9d9835b04b83c0f33142",
+  "runner_sha256": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd",
+  "platform_credit": "LOCAL_MACOS_ONLY"
+}

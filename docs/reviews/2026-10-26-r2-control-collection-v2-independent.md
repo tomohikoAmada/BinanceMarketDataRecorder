@@ -1,0 +1,7 @@
+# Independent collection V2 primitive delta acceptance
+
+**ACCEPT only the exact collection primitive delta**: [report](2026-10-26-r2-control-collection-v2-independent/REPORT.md), [result](2026-10-26-r2-control-collection-v2-independent/RESULT.json), [manifest](2026-10-26-r2-control-collection-v2-independent/MANIFEST.json), [complete parent readback and mirror map](2026-10-26-r2-control-collection-v2-independent/MIRROR.json).
+
+The existing review directory resumed after its quota interruption, retaining already completed executions. Independent22 provided cases plus17 additional bounded probes passed. All50 complete original members were read and checked by the parent against SHA/bytes; the full private originals remain at the recorded directory. The10 candidate members remain unchanged. Original BLOCK8a2091f7 remains retained: tested absolute-ancestor custody and deep-parser retention defects are corrected in the distinct b42e377f candidate.
+
+This accepts a definition-only byte collector with cooperative deadlines and a non-authoritative bounded parse view. read_complete alone grants no parse/owner/T0 trust. Whole reader/command collection/invocation selection/commit plus postcommit proof,17 runtime/15 safeimports, actual Linux/current custody/fresh finite scope and copy/ARM/launch remain pending. No VPS/Raw/service operation, production source change, newT0,24h or capacity credit is granted.

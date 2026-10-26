@@ -1,0 +1,35 @@
+{
+  "decision": "BLOCK",
+  "distinct_executed_counterexamples": 3,
+  "findings": [
+    {
+      "evidence": "ADVERSARIAL_COLLECTION_RESULTS.json case1",
+      "file": "control_files.py",
+      "id": "COLLECTION-ROOT-ANCESTOR",
+      "lines": [
+        55,
+        66
+      ],
+      "mechanism": "root.resolve is checked before root.lstat/open. O_NOFOLLOW protects only the final root entry; higher ancestors are traversed by absolute lstat/open and are not pinned or rechecked. Swapping one ancestor to a symlink after resolve makes before/open/after all describe another root, yielding foreign allowed-name bytes as read_complete true and custody_race false.",
+      "minimal_remedy": "Open root by an O_DIRECTORY/O_NOFOLLOW dir-fd walk from a trusted stable anchor, recording/checking every ancestor link, or accept a separately trusted pre-opened root fd with bound identity. Do not rely on resolve followed by an absolute open; reject/mark ancestor changes and retain any observations. Extend below-root link/race discipline to the root path itself.",
+      "priority": "P1",
+      "reproduced": true,
+      "title": "Root canonicality can race before unanchored absolute-path open"
+    },
+    {
+      "evidence": "ADVERSARIAL_COLLECTION_RESULTS.json cases2-3",
+      "file": "control_files.py",
+      "id": "COLLECTION-PARSE-RESOURCE",
+      "lines": [
+        122,
+        139
+      ],
+      "mechanism": "JSON/JSONL parse runs outside collection try/finally and catches only ValueError/UnicodeError. A bounded40001-byte depth20000 JSON triggers RecursionError; JSONL with an earlier valid line similarly escapes without returning raw or earlier parsed rows.",
+      "minimal_remedy": "Retain parser resource exceptions such as RecursionError as structured parse_errors and return already captured raw/previous row evidence. Keep parsing/serialization resource bounds explicit; do not change global recursion limits or let later parsing discard earlier bytes. Whole-reader outer runtime/serialization safety remains a separate pending gate.",
+      "priority": "P2",
+      "reproduced": true,
+      "title": "Parser resource error escapes after raw capture and discards result"
+    }
+  ],
+  "whole_reader_or_Linux_inference": false
+}

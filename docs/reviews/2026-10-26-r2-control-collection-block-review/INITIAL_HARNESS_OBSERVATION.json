@@ -1,0 +1,7 @@
+{
+  "candidate_was_unchanged": true,
+  "initial_adversarial_harness_returncode": 1,
+  "reason": "Depth1500 JSON successfully decoded on this local Python; the harness incorrectly expected RecursionError at that depth. No candidate fault or PASS was inferred from that failed assertion.",
+  "correction": "Use finite40001-byte JSON at depth20000 to probe the actual parser resource error, keeping original harness file.",
+  "ancestor_scope_race_reached_before_initial_assertion": "It was asserted successfully, and will be reconstructed again in final bounded harness."
+}

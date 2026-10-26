@@ -1,0 +1,14 @@
+{
+  "state": "UNBOUND_READER_PRIMITIVE_ONLY_NOT_OPERATIONAL",
+  "design_directory": "/private/var/tmp/bmdr-r2-warm-runtime-reader-linux-design-20261026-_m64_hkg",
+  "design_manifest_sha256": "79044ab0f090b2144073f361cb1c5019c0698b55cca5d2af4ac3c108e0bd997f",
+  "all23_design_parent_SHA_bytes_PASS": true,
+  "accepted_V3_code_manifest_sha256": "b020d893bb4acb01aaa46b3272d4a15b043a483cddfba234715f9736ff3fb164",
+  "accepted_V3_review_manifest_sha256": "b59d6f8f0133401f63d865e88ccf273c12f1542a09229b37aac0d50c7fbb9b2b",
+  "planned_runtime_members": 17,
+  "planned_safe_imports": 15,
+  "new_scope_or_unit_or_window": null,
+  "whole_reader_validator_or_Linux_implemented": false,
+  "copy_ARM_launch_eligible": false,
+  "new_T0": false
+}
