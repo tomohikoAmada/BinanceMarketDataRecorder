@@ -397,6 +397,7 @@ async def measure(args, parent):
             for key, stream in stream_objects.items():
                 row = point["streams"][key]
                 row["receipt_queue"] = asdict(stream.receipt_queue_stats)
+                row["receipt_owned_payload_bytes"] = row["receipt_queue"]["owned_bytes"]
             for key, spool in spool_objects.items():
                 point["streams"][key]["spool_queue_depth"] = spool.queue.depth
             point["name"] = name

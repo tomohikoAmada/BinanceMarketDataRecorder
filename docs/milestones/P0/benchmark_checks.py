@@ -167,6 +167,7 @@ class WorkloadProgress:
                     protocol_kind="fixed_ws" if sizes is not None else "model_at_raw_ingress",
                     network_send_receive_observed=sizes is not None,
                     receipt_queue=None,
+                    receipt_owned_payload_bytes=0,
                     spool_queue_depth=0,
                     protocol_due_frames=due if sizes is not None else None,
                     total_input_frames=len(sizes) if sizes is not None else None,
@@ -206,7 +207,13 @@ def classify_steady(boundaries: list[dict[str, Any]], scheduled_end: float) -> d
         ):
             reasons.append(f"input_not_completed_in_protocol:{key}")
     # At least three separated boundaries; count append and fsync backlog independently.
-    for field in ("due_not_sent_frames", "pending_write_frames", "written_not_persisted_frames"):
+    for field in (
+        "due_not_sent_frames",
+        "pending_write_frames",
+        "written_not_persisted_frames",
+        "receipt_owned_payload_bytes",
+        "spool_owned_payload_bytes",
+    ):
         values = [sum(row[field] for row in point["streams"].values()) for point in boundaries]
         if (
             len(values) >= 3

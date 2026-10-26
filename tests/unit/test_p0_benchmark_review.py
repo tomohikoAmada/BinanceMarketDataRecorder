@@ -259,3 +259,14 @@ def test_model_ingress_accounted_without_claiming_wire_http_time() -> None:
     p.written("metadata-writer", key, 100)
     p.synced("metadata-writer", p.sync_target("metadata-writer"))
     assert p.snapshot(0.5)["streams"][key]["persisted_payload_bytes"] == 100
+
+
+def test_post_write_consumer_backlog_is_not_hidden_by_fsync() -> None:
+    p = WorkloadProgress({("spot", "BTCUSDT", "diff_depth"): [b"x"]}, {"diff_depth": 1.0})
+    points = []
+    for size in (1, 2, 3):
+        point = p.snapshot(float(size))
+        point["streams"][LABEL]["receipt_owned_payload_bytes"] = size
+        points.append(point)
+    result = classify_steady(points, 3)
+    assert "sustained_backlog_growth:receipt_owned_payload_bytes" in result["reasons"]
