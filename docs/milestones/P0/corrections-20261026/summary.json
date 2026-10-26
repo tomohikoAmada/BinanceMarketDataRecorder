@@ -1,0 +1,2105 @@
+{
+  "producer_commit": "7c07157144d400e75974adf58ab52282d19479b9",
+  "classification_commit": "a773339e4249b4105a98e84d96df0227c3dec487",
+  "classification_scope": "Pure per-source interpretation of preserved v3 boundaries; no recapture or producer JSON changes. Capture, physical verification and fsync accounting unchanged from producer commit.",
+  "runtime_tree": "392154f9fc26923f88a465800d4a0a89b1fac2df",
+  "runs": {
+    "steady-n2": {
+      "producer_classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "rule": "input by deadline; no monotonic backlog growth across >=3 boundaries"
+      },
+      "current_per_source_classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "rule": "input by deadline; per-source monotonic backlog with >=2 increases is non-steady"
+      },
+      "ws_frames": 32214,
+      "all_raw_frames": 32250,
+      "physical_chunks_verified": 99,
+      "auxiliary_instances": 26,
+      "all_accepted_and_zero_failures": true,
+      "steady_seconds": 120.00075442600064,
+      "recorder_cpu_seconds": 70.356636892,
+      "reaped_child_cpu_seconds": 58.425146000000005,
+      "boundary_totals": [
+        {
+          "name": "start",
+          "elapsed": 20.004499820061028,
+          "sent_frames": 4646,
+          "received_frames": 4646,
+          "written_frames": 4630,
+          "persisted_frames": 4461,
+          "receipt_owned_payload_bytes": 0,
+          "spool_owned_payload_bytes": 0
+        },
+        {
+          "name": "quarter-1",
+          "elapsed": 50.004553612088785,
+          "sent_frames": 11548,
+          "received_frames": 11548,
+          "written_frames": 11534,
+          "persisted_frames": 11451,
+          "receipt_owned_payload_bytes": 0,
+          "spool_owned_payload_bytes": 0
+        },
+        {
+          "name": "quarter-2",
+          "elapsed": 80.01063741301186,
+          "sent_frames": 18456,
+          "received_frames": 18456,
+          "written_frames": 18440,
+          "persisted_frames": 18315,
+          "receipt_owned_payload_bytes": 2316,
+          "spool_owned_payload_bytes": 2316
+        },
+        {
+          "name": "quarter-3",
+          "elapsed": 110.00779240811244,
+          "sent_frames": 25358,
+          "received_frames": 25358,
+          "written_frames": 25344,
+          "persisted_frames": 25231,
+          "receipt_owned_payload_bytes": 0,
+          "spool_owned_payload_bytes": 0
+        },
+        {
+          "name": "end",
+          "elapsed": 140.00579827395268,
+          "sent_frames": 32250,
+          "received_frames": 32250,
+          "written_frames": 32250,
+          "persisted_frames": 32113,
+          "receipt_owned_payload_bytes": 0,
+          "spool_owned_payload_bytes": 0
+        }
+      ],
+      "tail_seconds": {
+        "input_catchup_seconds": 0.00011765304952859879,
+        "normal_stop_drain_seconds": 0.3697714649606496,
+        "background_join_seconds": 3.2809418740216643
+      },
+      "archive_backlog_files": 0,
+      "consumers": [
+        {
+          "normalization": {
+            "status": "BUILT",
+            "dataset_version": "normalized-dataset.v2",
+            "build_id": "39563d1fa30dc32f8d46973544d3bbb62e1db8e9fbc23af26030cb080e1a0c22",
+            "build_manifest": "data/normalized/normalized-dataset.v2/builds/39563d1fa30dc32f8d46973544d3bbb62e1db8e9fbc23af26030cb080e1a0c22.manifest.json",
+            "source_chunks": 39,
+            "partitions": 10,
+            "normalized_rows": 9379,
+            "duplicate_rows_removed": 93,
+            "identity_conflicts": 0
+          },
+          "replayed_agg_trades": 205,
+          "daily_report": {
+            "schema_version": "daily-operational-report.v1",
+            "utc_date": "2026-10-26",
+            "generated_at_utc_ns": 1793026952183879730,
+            "status": "OK",
+            "batch_count": 88,
+            "stream_count": 10,
+            "streams": [
+              {
+                "market": "spot",
+                "stream": "agg_trade",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 7860,
+                  "deleted_local_bytes": 7860,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 156,
+                  "normalized_bytes": 39445
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "spot",
+                "stream": "book_ticker",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 55453,
+                  "deleted_local_bytes": 55453,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2173,
+                  "normalized_bytes": 324629
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "spot",
+                "stream": "diff_depth",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 12480,
+                  "deleted_local_bytes": 12480,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 308,
+                  "normalized_bytes": 60341
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "agg_trade",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 10381,
+                  "deleted_local_bytes": 10381,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 221,
+                  "normalized_bytes": 47842
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 6,
+                  "archived_bytes": 189002,
+                  "deleted_local_bytes": 189002,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 6168,
+                  "normalized_bytes": 883051
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "diff_depth",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 15893,
+                  "deleted_local_bytes": 15893,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 345,
+                  "normalized_bytes": 65311
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "liquidation",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 2120,
+                  "deleted_local_bytes": 2120,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 20548
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "mark_price",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 5,
+                  "archived_bytes": 4385,
+                  "deleted_local_bytes": 4385,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 17606
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "open_interest",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 2,
+                  "archived_bytes": 2275,
+                  "deleted_local_bytes": 2275,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 19379
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "premium_index_snapshot",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 2,
+                  "archived_bytes": 2480,
+                  "deleted_local_bytes": 2480,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 21353
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "performance_use": "Eligible starting observation only; compare matched per-source window_work, tail and background work in interleaved P1 A/B."
+    },
+    "profile-steady-n2": {
+      "producer_classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "input_not_completed_in_protocol:spot/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:spot/ETHUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/ETHUSDT/book_ticker"
+        ],
+        "rule": "input by deadline; no monotonic backlog growth across >=3 boundaries"
+      },
+      "current_per_source_classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "input_not_completed_in_protocol:spot/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:spot/ETHUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/ETHUSDT/book_ticker"
+        ],
+        "rule": "input by deadline; per-source monotonic backlog with >=2 increases is non-steady"
+      },
+      "ws_frames": 32214,
+      "all_raw_frames": 32250,
+      "physical_chunks_verified": 99,
+      "auxiliary_instances": 26,
+      "all_accepted_and_zero_failures": true,
+      "steady_seconds": 120.01602713600732,
+      "recorder_cpu_seconds": 63.92842237000001,
+      "reaped_child_cpu_seconds": 65.36842899999999,
+      "boundary_totals": [
+        {
+          "name": "start",
+          "elapsed": 20.013443671166897,
+          "sent_frames": 4646,
+          "received_frames": 4646,
+          "written_frames": 4611,
+          "persisted_frames": 4535,
+          "receipt_owned_payload_bytes": 2722,
+          "spool_owned_payload_bytes": 1234
+        },
+        {
+          "name": "quarter-1",
+          "elapsed": 50.024096962064505,
+          "sent_frames": 11548,
+          "received_frames": 11548,
+          "written_frames": 11529,
+          "persisted_frames": 11392,
+          "receipt_owned_payload_bytes": 918,
+          "spool_owned_payload_bytes": 294
+        },
+        {
+          "name": "quarter-2",
+          "elapsed": 80.04648517305031,
+          "sent_frames": 18440,
+          "received_frames": 18440,
+          "written_frames": 18420,
+          "persisted_frames": 18290,
+          "receipt_owned_payload_bytes": 470,
+          "spool_owned_payload_bytes": 470
+        },
+        {
+          "name": "quarter-3",
+          "elapsed": 110.023781767115,
+          "sent_frames": 25358,
+          "received_frames": 25358,
+          "written_frames": 25350,
+          "persisted_frames": 25246,
+          "receipt_owned_payload_bytes": 1507,
+          "spool_owned_payload_bytes": 1066
+        },
+        {
+          "name": "end",
+          "elapsed": 140.03322967002168,
+          "sent_frames": 32242,
+          "received_frames": 32242,
+          "written_frames": 32237,
+          "persisted_frames": 32091,
+          "receipt_owned_payload_bytes": 470,
+          "spool_owned_payload_bytes": 137
+        }
+      ],
+      "tail_seconds": {
+        "input_catchup_seconds": 0.05395751306787133,
+        "normal_stop_drain_seconds": 1.608692394103855,
+        "background_join_seconds": 0.0028325540479272604
+      },
+      "archive_backlog_files": 0,
+      "consumers": [
+        {
+          "normalization": {
+            "status": "BUILT",
+            "dataset_version": "normalized-dataset.v2",
+            "build_id": "6278cb3c06f229fc06ca30bb0977506bcd5c1278c758216c70ef1b0f92734b23",
+            "build_manifest": "data/normalized/normalized-dataset.v2/builds/6278cb3c06f229fc06ca30bb0977506bcd5c1278c758216c70ef1b0f92734b23.manifest.json",
+            "source_chunks": 37,
+            "partitions": 10,
+            "normalized_rows": 6471,
+            "duplicate_rows_removed": 63,
+            "identity_conflicts": 0
+          },
+          "replayed_agg_trades": 143,
+          "daily_report": {
+            "schema_version": "daily-operational-report.v1",
+            "utc_date": "2026-10-26",
+            "generated_at_utc_ns": 1793027113326719088,
+            "status": "OK",
+            "batch_count": 84,
+            "stream_count": 10,
+            "streams": [
+              {
+                "market": "spot",
+                "stream": "agg_trade",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 9969,
+                  "deleted_local_bytes": 9969,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 213,
+                  "normalized_bytes": 47205
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "spot",
+                "stream": "book_ticker",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 93149,
+                  "deleted_local_bytes": 93149,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 3580,
+                  "normalized_bytes": 531735
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "spot",
+                "stream": "diff_depth",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 17224,
+                  "deleted_local_bytes": 17224,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 449,
+                  "normalized_bytes": 79474
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "agg_trade",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 5,
+                  "archived_bytes": 8716,
+                  "deleted_local_bytes": 8716,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 158,
+                  "normalized_bytes": 42356
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "book_ticker",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 46850,
+                  "deleted_local_bytes": 46850,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 1578,
+                  "normalized_bytes": 226323
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "diff_depth",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 20519,
+                  "deleted_local_bytes": 20519,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 485,
+                  "normalized_bytes": 83909
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "liquidation",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 2187,
+                  "deleted_local_bytes": 2187,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 22126
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "mark_price",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 4,
+                  "archived_bytes": 3141,
+                  "deleted_local_bytes": 3141,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 17188
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "open_interest",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 2,
+                  "archived_bytes": 2277,
+                  "deleted_local_bytes": 2277,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 19371
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              },
+              {
+                "market": "um_perpetual",
+                "stream": "premium_index_snapshot",
+                "input": {
+                  "websocket_messages": 0,
+                  "websocket_payload_bytes": 0,
+                  "rest_responses": 0,
+                  "depth_bid_level_updates": 0,
+                  "depth_ask_level_updates": 0,
+                  "agg_trade_records": 0,
+                  "book_ticker_records": 0,
+                  "rest_bytes": 0
+                },
+                "quality": {
+                  "accepted": 0,
+                  "duplicate": 0,
+                  "malformed": 0,
+                  "out_of_order": 0,
+                  "sequence_gap": 0,
+                  "orderbook_resync": 0,
+                  "planned_reconnect": 0,
+                  "unexpected_disconnect": 0,
+                  "server_shutdown": 0,
+                  "checksum_failure": 0
+                },
+                "output": {
+                  "raw_records_written": 0,
+                  "raw_bytes_written": 0,
+                  "sealed_chunks": 0,
+                  "compressed_bytes": 0,
+                  "archived_files": 2,
+                  "archived_bytes": 2482,
+                  "deleted_local_bytes": 2482,
+                  "archive_backlog_bytes": 0,
+                  "normalized_rows": 2,
+                  "normalized_bytes": 21343
+                },
+                "performance": {
+                  "receive_lag_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "queue_depth_max": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "write_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "fsync_latency_ns": {
+                    "p50": null,
+                    "p95": null,
+                    "p99": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "cpu_percent": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "current_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "peak_rss_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "internal_free_bytes": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "external_free_bytes": {
+                    "value": null,
+                    "status": "NO_REGISTERED_TARGET_SAMPLE"
+                  },
+                  "oldest_unarchived_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  },
+                  "last_event_age_ns": {
+                    "value": null,
+                    "status": "INSUFFICIENT_DATA"
+                  }
+                },
+                "availability": {
+                  "input.rest_bytes": "NOT_APPLICABLE"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "performance_use": "Diagnostic profile only; excluded from CPU/throughput performance comparison."
+    }
+  },
+  "profile": {
+    "samples": 1591,
+    "sampling_errors": 2,
+    "rate_hz": 10,
+    "duration_seconds": 110,
+    "sampler_completed_before_steady_end": true,
+    "flamegraph_renderer_sha256": "088f82e6848a4f12a56e1e8e8170ee6761fccf12e5615cd64630f6b087c99ea7",
+    "flamegraph_xml_parse": "PASS"
+  },
+  "production_service_observation": {
+    "utc": "2026-10-26T15:06:33.259637+00:00",
+    "production_recorder_state": "MainPID=0\nNRestarts=0\nActiveState=inactive\nUnitFileState=disabled\n"
+  }
+}

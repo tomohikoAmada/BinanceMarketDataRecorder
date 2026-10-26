@@ -1,8 +1,30 @@
 # Official Binance Sources
 
+## P0 PR #86 review: liquidation semantics — 2026-10-26
+
+Review [R4](milestones/P0/review-20261026.md) finds conflicting USD-M sampling
+descriptions: the current catalog says latest, while the 2026-04-10 changelog
+(effective 2026-04-14) says largest within 1000ms. The changelog bytes match the
+pre-milestone research snapshot. This is an unresolved coverage-contract issue,
+not evidence of a dropped payload. Both sources describe a representative feed,
+not an exhaustive liquidation ledger. Do not infer COIN-M behavior from the USD-M
+change. D11 is now split into U/C observations with an explicit unresolved selection
+rule. Raw observation identity is retained; latest/largest is not an authority
+for completeness or derived statistics. See the [R4 correction](milestones/P0/coverage.md)
+and [fresh source record](milestones/P0/corrections-20261026/official-sources.json).
+
+| Source | Retrieval UTC | SHA-256 and representation |
+| --- | --- | --- |
+| [USD-M liquidation catalog](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market) | 2026-10-26T14:19:55Z–14:19:59Z | `14cc2220cb690489af9d9729061f67f1d5347ed8c294f22ec9c42edc610b5f1f`, serialized web-tool excerpt JSON, not original HTTP bytes; `/private/tmp/bmdr-pr86-review-market-fresh.json` |
+| [Shared derivatives changelog, USD-M entry](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md) | 2026-10-26T09:58:39.936776+00:00 | `7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`, downloaded Markdown, 113183 bytes; `/private/tmp/bmdr-pr86-review-changelog.md` |
+
+The P0 current-index record below selected the affected official sources. An empty
+direct catalog HTTP response was excluded; it supplies no semantic evidence.
+No downloaded text was executed and no exchange market-data endpoint was called.
+
 ## P0 official source refresh — 2026-10-26
 
-The [52-row first-release coverage inventory](milestones/P0/coverage.md) and
+The [52-family first-release coverage inventory (53 rows after D11 split)](milestones/P0/coverage.md) and
 [retrieval record](milestones/P0/official-sources.json) map Spot/USD-M/COIN-M
 families, frequencies, fields, sharing, permissions, deduplication and gaps.
 Current rendered USD-M market documentation requires API keys for the two top-trader
@@ -640,3 +662,23 @@ retains the depth limit/weight tiers. The source record hashes downloaded
 upstream text, not a hash claim for rendered excerpts. No Binance API was called.
 Static role shares, reference6000/2400 admission limits and remaining live checks
 are explicit in [the closeout](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md).
+
+## R4 correction adopted — 2026-10-26
+
+The independent COIN-M catalog also describes the latest snapshot, but the
+April10 changed-description entry is explicitly under USD-M. The U conflict
+is disclosed rather than resolved by guessing; do not infer a C change.
+The current contract preserves representative messages and does not use either
+selection assumption in completeness, deduplication or derived liquidation totals.
+Historical retrieval conclusions above remain their original observations and are
+superseded for current D11 interpretation by the [coverage correction](milestones/P0/coverage.md).
+
+The correction refresh follows the current index and preserves exact short U/C
+rendered excerpts in the [source record](milestones/P0/corrections-20261026/official-sources.json).
+Both were observed at 2026-10-26T15:14:16Z; each excerpt SHA-256 is
+`1ac870d670e877cf3ed117f171b01b6081c3d5131594e44698083196b0565a6f`.
+Equal short wording is not independent original-HTTP identity. The downloaded
+changelog at 2026-10-26T14:48:32Z retains SHA-256
+`7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`.
+U/C `.md` probes returned an HTML shell and are explicitly unusable; no downloaded
+content was executed and the index's full-text corpus was not loaded for this fix.

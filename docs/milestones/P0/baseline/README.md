@@ -1,6 +1,6 @@
 # P0 全现有功能稳态基准
 
-状态：**完成**。双币全现有功能稳态模型与独立稳态采样均完成。与最初的 [20e57f3核心路径基准](../../../research/2026-10-26/baseline/README.md) 分开保存，不能混合做容量或优化胜出结论。
+状态：**PR #86 历史原始测量，文件保留**。R1–R3 已在当前脚本修正，另见[v3 复测与分类](../corrections-20261026/README.md)。下列 v2 结果只支持原文内容 / 数量，不能由排序核对证明物理顺序，也不能由最终总量证明计时窗口工作相同。旧结果未重算或改写。新 v3 无 profiler 基线 STEADY；独立 profile NON_STEADY，仅作诊断。两版仪表开销不同，不直接比较 CPU。与最初的 [20e57f3 核心路径基准](../../../research/2026-10-26/baseline/README.md)分开保存。
 
 选定源 `113cdb3`（runtime tree与已接受 `01d7421`一致），在原GreenCloud VPS独立源码目录执行，复用已安装运行依赖，不替换生产venv/包，不启用生产服务。每次创建独立临时数据根与模拟注册归档目录，正常退出后只清理自己创建的测试数据；生产Raw、Catalog、evidence和归档均不打开。真实归档代码在临时目录执行，其卷发现返回fixture，物理I/O仍发生在主机ext4系统盘，不代表2TB归档盘吞吐。
 
@@ -10,11 +10,11 @@
 
 后台归档/实际回读每10s一个有界批次；日常报告worker保留默认60s周期；65s后另在独立消费者进程对非空封存数据执行一次规范化、实际aggTrade回放和当天日报生成，输出成功路径与数量，不能让初始空分片算消费者已覆盖。10s归档及这次额外消费是固定测量配置，用于覆盖功能，不能称为生产默认负载。所有生产OS/归档timer保持原状。容量forecast使用真实可用空间；生产capacity-profile身份/硬储备停采、远程归档客户端和平台GUI等非稳态路径不在此测量内。
 
-计时排除导入/fixture分配/初始准备和最终stop/全量核对。Raw核对在正常停止后完整读取本次生成的全部封存/归档文件，对WS逐帧数量、顺序、原文摘要及CRC、存储/解压哈希做核对；只此有限fixture有输入真值。输入接收/回放的完成及正常排空另有时间，不能拿120s当生产时长信用。内存含预分配fixture；root进程RSS和后台child峰值分别保留；profile另采 `/proc`后代RSS总和（含共享页重复，不是PSS）。
+计时排除导入/fixture分配/初始准备和最终stop/全量核对。Raw核对在正常停止后完整读取本次生成的全部封存/归档文件，对WS数量、按接收时间排序后的原文摘要及CRC、存储/解压哈希做核对；只此有限fixture有输入真值。物理写入顺序尚缺独立检查，不能由该排序后的比较证明。输入接收/回放的完成及正常排空另有时间，不能拿120s当生产时长信用。内存含预分配fixture；root进程RSS和后台child峰值分别保留；profile另采 `/proc`后代RSS总和（含共享页重复，不是PSS）。
 
 CPU是Recorder及已回收子进程分别计量；I/O/上下文切换、host steal/PSI、调度lag和原始样本均留存，子进程CPU在回收时计入可能略跨窗口，不能当精确逐时刻总CPU。低频profile单独执行，不混入无profiler成绩；10Hz attach仅在STEADY_BEGIN后开始，110s后在STEADY_END前结束，排除导入和最终核对。
 
-## 最终实测结果
+## PR #86 原始实测结果（v2）
 
 [完整汇总](summary.json)、[无profiler原始结果](steady-n2.json)、[独立profile运行](profile-steady-n2.json)及各自execution文件保留实际命令/时间/退出码。
 
@@ -34,7 +34,7 @@ CPU是Recorder及已回收子进程分别计量；I/O/上下文切换、host ste
 | 可选规范化实际行 / aggTrade回放 | 12,584 / 139 | 8,593 / 193 |
 | 实际日报JSON / 终点待归档 | 1 / 0 | 1 / 0 |
 
-两轮合计 **64,428 / 64,428 WS原文、顺序及数量核对通过**，全部新文件完整读取/CRC/存储及解压摘要检查通过；4个核心产品在停止前均ready。该有限fixture的正确性不是交易所每事件捕获率，也不是99.5%新连续性口径的生产资格结果。
+两轮合计 **64,428 / 64,428 WS原文及数量核对通过**；原脚本的“顺序通过”字段基于接收时间重排，不能证明物理写入未乱序。全部新文件完整读取/CRC/存储及解压摘要检查通过；4个核心产品在停止前均ready。该有限fixture的正确性不是交易所每事件捕获率，也不是99.5%新连续性口径的生产资格结果。
 
 无profiler主结果的Recorder `/proc/self/io`：`write_bytes=132,284,416`、`cancelled_write_bytes=89,272,320`增量，`read_bytes=0`（page cache并不等于没有逻辑读），`syscw=36,961`；自愿/非自愿上下文切换增量162,660/16,661。后台每次CPU/IO/RSS计数在原结果的archive_runs中，不能把上述父进程I/O称为所有子进程总量或最终介质写入量。
 
@@ -46,7 +46,7 @@ CPU是Recorder及已回收子进程分别计量；I/O/上下文切换、host ste
 
 ## 复测
 
-将当前源、必要fixtures和这两份脚本放到隔离目录，使用相同运行依赖；生产数据根不参与：
+当前脚本采用 v3：五个边界保存逐源写入 / fsync 和队列进度，单列尾部耗时；物理帧不排序，分片只按 Catalog 生命周期排列；输出冲突在写入前拒绝。将当前源、必要 fixtures、原固定输入生成器及三份脚本（包括 `benchmark_checks.py`）放到新的隔离目录，使用相同运行依赖；生产数据根不参与：
 
 ```bash
 cd /path/to/isolated-checkout
@@ -57,7 +57,7 @@ PYTHONPATH=src:. /path/to/python3.12 docs/milestones/P0/steady_baseline.py \
   --root "$PWD" --commit <selected-runtime-commit> --profiler /path/to/py-spy
 ```
 
-`profile_steady.py`启动自己的相同输入运行并在稳态窗口attach；输出路径必须未占用。运行文件在 [steady_baseline.py](../steady_baseline.py)、[profile_steady.py](../profile_steady.py)。后续P1 A/B保持同输入和后台频率交错重复，报告snapshot/chunk/REST数量与宿主steal差异；这里单轮基线不能推断规模曲线、CPU瓶颈归因或精确优化百分比。
+`profile_steady.py`启动自己的相同输入运行并在稳态窗口attach；全部七类输出路径必须未占用。运行文件在 [steady_baseline.py](../steady_baseline.py)、[benchmark_checks.py](../benchmark_checks.py)、[profile_steady.py](../profile_steady.py)。后续P1 A/B保持同输入和后台频率交错重复，报告snapshot/chunk/REST数量与宿主steal差异；这里单轮基线不能推断规模曲线、CPU瓶颈归因或精确优化百分比。
 
 ## 初测限制保留
 

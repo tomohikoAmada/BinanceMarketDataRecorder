@@ -51,7 +51,8 @@ REST U 前缀 `/fapi/v1`，C 为 `/dapi/v1`；`/futures/data` 的 host 分别为
 | D08 | U/C | `@bookTicker` | 实时价量变动 | E/T/u/b/B/a/A、st/ps | 产品 | P | u+正文哈希 | W；不存在全市场事件真值 | 是；U永续已有 |
 | D09 | U/C | `@markPrice@1s`；`premiumIndex` | 1s；REST60s | mark/index/estimatedSettle/fundingRate/nextFundingTime、st | 产品；pair index关联同标的合约 | P | 产品+发布时间+哈希 | W/F；交割无funding不能强填 | 是；U永续已有 |
 | D10 | C | `{pair}@indexPrice@1s` | 1s | indexPrice、E、pair | pair一次 | P | pair+E+哈希 | W，不能假定U mark中的index与C完全相同 | 是；P2 |
-| D11 | U/C | `@forceOrder` | 每1000ms最多最近一次清算快照 | o.s/S/o/f/q/p/ap/X/l/z/T、st | 产品 | P | 事件时间+订单内容哈希 | W；稀疏流不以无消息判缺；源自身非每清算全集 | 是；U永续已有 |
+| D11-U | U | `@forceOrder` / 等价全市场发布 | 1000ms代表性快照；选择规则存在官方冲突 | o.s/S/o/f/q/p/ap/X/l/z/T、st | 产品；全市场传输只选一次 | P | 观测身份（来源/连接/chunk/ordinal）；Raw不去重，不按最新/最大假设合并 | W；无事件可合法静默；非每笔全集 | 是；U已有原文采集；参考页latest与2026-04-10公告largest冲突，语义未解决，见下文 |
+| D11-C | C | `@forceOrder` / 等价全市场发布 | C参考页：1000ms代表性快照 | 原文含o及ps/st等实际字段 | C产品；不以U代替C身份 | P | 观测身份（来源/连接/chunk/ordinal）；不据U规则合并 | W；稀疏流，不证明每笔完整 | P2；C参考页称latest，没有此次U公告对C适用的证据；合同不依赖latest/最大选择假设 |
 | D12 | U/C永续 | `fundingRate` | 300s有界补查；发布间隔依元数据 | symbol/fundingTime/rate/markPrice | 产品 | P | fundingTime+内容 | F；事件周期按配置不固定8h | 是；U已有，交割不适用 |
 | D13 | U/C永续 | `fundingInfo` | 启动/小时 | cap/floor/intervalHours等调整 | 市场一次，稀疏清单 | P | 产品+快照哈希+时间 | F；空表是合法新观测，不捏造默认调整 | 是；U已有，C P2 |
 | D14 | U/C | `openInterest` | 60s | symbol/pair、OI、time、contractType | 产品 | P | 产品+响应time+内容 | F，无前向填充 | 是；U永续已有 |
@@ -79,7 +80,15 @@ REST U 前缀 `/fapi/v1`，C 为 `/dapi/v1`；`/futures/data` 的 host 分别为
 - Spot/U/C `ping`、`time` 为健康/时钟辅助，启动和每60s可观测；不是独立市场数据家族，也不代替持久化进度。WebSocket API 的同名 depth/ticker、JSON/SBE/FIX 是传输候选；只选择无钥 JSON 公开源。SBE/FIX 需要密钥/会话时不引入认证依赖。
 - 各市场 aggTrades REST 是流的补源；官方日/月 kline、aggTrades、trades 与适用 funding 档案由已有 backfill 独立导入，使用 archive-source 时钟，不能抹去实时接收缺口。Kline的interval集合按各市场官方枚举展开（Spot包括1s；U/C以各自枚举为准），UTC和+08:00独立日界、连续合约和不同价格类型不能相互冒充。若同一interval的REST最终bar与已收完整原生流等价，可仅用作补源；离线长周期聚合不冒充原生未收盘推送。独立价格类型、滚动窗口及连续合约语义以上均保留。
 - Spot UIKlines 是显示变体；成交/挂单账户接口、private user streams、账户ADL量化、保证金/杠杆/手续费个人配置、订单、资金划转、期权、期权大宗、Alpha、股票等独立产品不属于本次范围。公共元数据中的交易规则仍保留。
-- U/C 清算流只发布其采样窗中的最新事件，最近成交REST是有限窗口；本项目不能承诺捕获被交易所省略的事件。盘口是L2，非L3、非所有隐藏/RPI订单的完整队列。
+- U/C 清算流发布代表性快照；具体选择语义按下文分别披露，不能声称每笔全集。最近成交REST是有限窗口；本项目不能承诺捕获被交易所省略的事件。盘口是L2，非L3、非所有隐藏/RPI订单的完整队列。
 - 权限是当前官方合同，SDK方法存在或历史成功不改变当前要求。U top两种ratio的缺失**没有无钥等价替代**，必须在P2/交付报告保留受限标记；global ratio、官方历史包都不能冒充top ratio。若新官方合同解除权限限制，再在P2记录依据后纳入，不私加key。
 - REST现实现保存 SDK model provenance 的来源继续标 `official_sdk_model_no_raw_http_body`；P2须在模型转换前截取响应正文及HTTP状态/必要headers，方可写“原始HTTP正文已覆盖”。P0保持已有Raw/manifest/normalization版本不变。
 - 运行前的源合同须固定：source_id、完整产品或共享scope、选定传输、请求参数、发布/轮询周期、成功期限、合法空值、数据周期、新鲜度、恢复条件。上表中“官方周期”的流须在P2按具体endpoint参数展开；不能用一个统一超时替代所有语义。实现/官方实样证明在P2逐行填写，P0只完成定义与归宿。
+
+## D11 的官方语义冲突（R4，2026-10-26）
+
+U参考页在单产品和全市场清算流都仍使用“latest”；[官方USD-M changelog](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log) 的2026-04-10条目（2026-04-14生效）则改述为“largest”。两者均已重新核对；changelog响应SHA与原研究相同。此处**未解决交易所实际选择规则**，不能任选其一当确定合同。
+
+C的[独立参考页](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)也写latest，但上述改述明确属于USD-M，不能据此替C断言largest，亦不把U冲突宣称为已经发现C同样变更。U/C分别保留原文、来源、接收时间、连接与物理ordinal，按交易所实际发布的代表性快照解释。未取得一致资料前，不将最新/最大假设用于完备性、去重、总清算数量或派生统计；不能模拟未发布的清算全集。当前仍只承诺采集已发布消息，不承诺每笔清算完整。
+
+[R4来源记录](corrections-20261026/official-sources.json)列出检索时间、可取得的正文摘要及表示限制。此次把同一家族D11按U/C拆为两行，因此现表仍为52个家族、53行，并未增加市场范围。该合同披露不要求重跑VPS；本次新增测量是为R1–R3校验脚本修正。
