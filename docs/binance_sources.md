@@ -1,5 +1,23 @@
 # Official Binance Sources
 
+## P0 official source refresh — 2026-10-26
+
+The [52-row first-release coverage inventory](milestones/P0/coverage.md) and
+[retrieval record](milestones/P0/official-sources.json) map Spot/USD-M/COIN-M
+families, frequencies, fields, sharing, permissions, deduplication and gaps.
+Current rendered USD-M market documentation requires API keys for the two top-trader
+ratios and historical trades; COIN-M requires a key for historical trades but its
+top-ratio pages show public query parameters. Spot historical-trade pages currently
+show no key header; do not transfer derivatives permissions by analogy. P2 must use
+current per-endpoint public semantics. No authenticated request is introduced.
+
+Selected `.md` catalogue URLs returned the same HTML fallback shell and were rejected
+as semantic evidence. The current official index/full API summaries and rendered
+endpoint pages were used instead; hashes and retrieval limitations are explicit.
+Public ADL risk is symbol-level and published every 30 minutes, distinct from
+account ADL quantiles. Original model-based REST provenance remains labelled until
+P2 implements raw HTTP body capture. This refresh performs no production collection.
+
 ## Pre-milestone scope research — 2026-10-26
 
 Owner scope: original public data for Spot, USD-M and COIN-M perpetual and dated futures; options deferred. This is documentation research, not endpoint runtime qualification. The current index was read first; selected response bytes were hashed. No whole `llms-full.txt` fetch.

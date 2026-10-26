@@ -1,0 +1,17 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "python": "3.12.14",
+  "pytest": "2218 passed, 24 skipped, 5 deselected, 13 warnings in 189.17s",
+  "mypy": "Success: no issues found in 320 source files",
+  "ruff": "All checks passed",
+  "m0": "M0 contract verification passed",
+  "go_raw_golden": "Go raw-chunk.v1 golden verification passed",
+  "build": "sdist and wheel built; 126 runtime members compared to selected source",
+  "wheel_smoke": "clean venv install; --version, doctor PASS, status NOT_RUNNING; temporary data root",
+  "not_run": [
+    "opt-in online tests",
+    "stress suite",
+    "production runs",
+    "P1 implementation"
+  ]
+}

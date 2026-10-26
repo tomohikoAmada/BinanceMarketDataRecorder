@@ -1,5 +1,14 @@
 # Architecture
 
+## P0 production boundary
+
+The selected code base is the accepted `01d7421` plus preserved owner documentation,
+merged as `113cdb3`; see [P0](milestones/P0/README.md). The installed production source
+was separately observed as `20e57f3`. The old installed revision and V5 sequencing in
+historical sections below are not current deployment claims or future prerequisites.
+[ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) supplies the
+new qualification contract. P1–P3 implementation is still required.
+
 This document describes the implemented Recorder and its deployment roles.
 Configurable Spot/USD-M products and V5 acceptance are merged through PR #78.
 The installed code is `89bc6b41c0cb7d270ca6e4d2dec9a375137c028e`; qualification

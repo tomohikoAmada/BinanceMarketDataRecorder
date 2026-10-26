@@ -1,5 +1,15 @@
 # Data coverage
 
+## Current target and implemented boundary — P0, 2026-10-26
+
+Use the [first-release coverage inventory](milestones/P0/coverage.md) for the current
+52-family mapping and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md)
+for per-source continuity/new-file correctness. The inventory explicitly distinguishes
+planned families, shared/equivalent sources, authentication limitations, not-offered
+interfaces and historical alternatives. Tables below describe implemented/historical
+scope only. COIN-M and dated futures, original live kline/ticker families and additional
+public metadata are P2 work; existing SDK model re-encoding is not raw HTTP coverage.
+
 | Market/data | Live | Historical official archive | Time/retention | State and intended use |
 |---|---|---|---|---|
 | Spot diff depth 100ms | Raw + replay, resync-gated | unavailable | exchange + receive clocks; must capture continuously | L2 reconstruction, liquidity monitoring; gaps explicit |

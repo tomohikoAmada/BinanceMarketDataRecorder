@@ -1,5 +1,16 @@
 # Project Contract
 
+## Current production authority (P0)
+
+[ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) explicitly
+adopts the plan's 99.5% per-source continuity and independent new-file verification.
+[Coverage inventory](milestones/P0/coverage.md) records all first-release families,
+permissions, deduplication, gaps and current implementation destinations. It separates
+implemented Spot/USD-M perpetual support from planned COIN-M/dated markets and
+records authentication-limited sources without introducing API keys.
+[The P0 result](milestones/P0/README.md) identifies the unique development baseline.
+The historical implementation descriptions below do not confer production readiness.
+
 The target for new development is the October26,2026
 [production milestone plan](production_milestone_plan.md): design for ten assets,
 deliver BTC/ETH across selected Spot/USD-M/COIN-M perpetual and dated markets,

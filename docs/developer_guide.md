@@ -1,5 +1,16 @@
 # Developer Guide
 
+## Current workflow (P0–P6)
+
+Follow the [production plan](production_milestone_plan.md), [P0 result](milestones/P0/README.md)
+and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
+The V5 flow below documents legacy tools/artifacts; it is not the new production
+procedure and does not impose historical baseline scans or private approval helpers.
+P1–P3 implement the new capture, source-monitoring and background verification behavior
+before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
+docs/research is excluded from lint mutation; live source/tests/tools and P0's new
+benchmark remain checked. Historical scripts are evidence, not runtime dependencies.
+
 This guide maps the implementation merged in PR #78 to the code and tests.
 For deployment status, read [current production state](CURRENT_PRODUCTION_STATE.md).
 

@@ -13,6 +13,8 @@ REQUIRED_FILES = (
     "README.md",
     "docs/project_contract.md",
     "docs/architecture.md",
+    "docs/production_milestone_plan.md",
+    "docs/adr/0051-production-continuity-and-incremental-verification.md",
     "docs/data_contract.md",
     "docs/storage_contract.md",
     "docs/macos_operations.md",
@@ -239,6 +241,8 @@ def verify() -> None:
         if path.is_file()
         and ".git" not in path.parts
         and ".pytest_cache" not in path.parts
+        and ".venv" not in path.parts
+        and "__pycache__" not in path.parts
         and path.suffix in {".md", ".py"}
     }
     tracked_text = "\n".join(text_files.values())
@@ -255,6 +259,9 @@ def verify() -> None:
         assert identity in identity_contract, f"missing frozen identity: {identity}"
 
     for name, content in text_files.items():
+        if name.startswith(("docs/history/", "docs/reviews/", "docs/research/",
+                            "MS1_REVIEW_BUNDLE_026e357e/")):
+            continue  # Immutable historical evidence, not active identity declarations.
         if name not in LEGACY_HISTORY_ALLOWLIST:
             for legacy in LEGACY_RECORDER_IDENTITIES:
                 assert legacy not in content, f"legacy identity {legacy!r} in current file {name}"

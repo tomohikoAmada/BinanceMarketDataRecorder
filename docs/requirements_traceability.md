@@ -1,5 +1,14 @@
 # Requirements Traceability
 
+## P0 production requirements
+
+| Requirement | Contract / inventory | Evidence / implementation phase |
+| --- | --- | --- |
+| Unique accepted development base, preserved user work, package mapping | P0 result and package-source manifest | Local snapshot d81e7d2; accepted main01d7421 merged as113cdb3; wheel runtime-member comparison |
+| Every first-release data family has an explicit destination and permission/gap policy | [52-row inventory](milestones/P0/coverage.md), [official sources](milestones/P0/official-sources.json) | P0 definition complete; actual market/API implementation and official samples in P2 |
+| Comparable all-current-feature steady baseline, separate from original core benchmark | [P0 baseline](milestones/P0/baseline/README.md) | Fixed paced inputs/config, explicit unsupported scope, real current runtime and background paths |
+| 99.5% per-source/window continuity, saved-data correctness separately | [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) | Contract adopted P0; counters/recovery/background verifier implemented P1–P3; real qualification P4–P6 |
+
 This matrix maps implemented requirements to contracts and verification records.
 The current task and handoff define new work; historical milestone procedures
 describe their original deliveries.

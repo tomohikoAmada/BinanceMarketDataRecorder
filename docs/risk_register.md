@@ -1,5 +1,21 @@
 # Risk Register
 
+## P0 current risks — 2026-10-26
+
+- R-078 remains OPEN: no new-plan BTC/ETH full-scope production qualification exists.
+  Original core baseline and the isolated full-current-feature steady baseline are
+  separate model workloads; neither proves the VPS can sustain all P2 sources.
+- The [coverage inventory](milestones/P0/coverage.md) records current official USD-M
+  top-ratio key restrictions with no equivalent public replacement. Historical no-key
+  implementation cannot establish current coverage. P2 must retain the explicit
+  restriction and must not add API keys or relabel global ratios as top ratios.
+- P1–P3 have not yet implemented the new raw-path, market-identity, source-monitoring
+  and incremental verifier contracts of ADR-0051. P4 cannot substitute legacy sampled
+  pass rates/full-history helpers for those missing capabilities.
+- Source publication, routing and permission semantics may change before P2; refresh
+  only affected official pages and record exact differences. HTML fallback shells
+  are not successful endpoint-document retrievals.
+
 Owner direction October26, 2026: new work follows the
 [production milestone plan](production_milestone_plan.md). Current priorities are
 coverage/identity gaps(P0/P2), Raw-path cost(P1), recovery and background workload
