@@ -1,6 +1,6 @@
 # P0：整理起点（对齐代码和验收口径）
 
-日期：2026-10-26。状态：文档与开发起点整理完成，正式稳态基准证据正在收尾；P1 未开始。
+日期：2026-10-26。状态：**COMPLETE**。P0四项交付均完成；P1未开始，生产资格未授予。
 
 ## 唯一开发起点与保留的工作
 
@@ -24,6 +24,6 @@
 
 ## 验证与下阶段入口
 
-本地 macOS / Python3.12：2218 passed，24 skipped，5 deselected（189.17s）；mypy320文件、Ruff、M0、Go Raw v1 golden、sdist/wheel构建和干净wheel `--version/doctor/status`全部通过。未运行opt-in在线/压力/生产长跑。P0真实VPS测量结果和最终服务观察在基准证据中。
+本地 macOS / Python3.12：2218 passed，24 skipped，5 deselected（189.17s）；mypy320文件、Ruff、M0、Go Raw v1 golden、sdist/wheel构建和干净wheel `--version/doctor/status`全部通过。未运行opt-in在线/压力/生产长跑。P0真实VPS测量两轮共64,428条WS原文核对通过，26个辅助源实例每轮均零失败，非空规范化/回放/日报及归档排空完成；低频profile1,590样本/2采样错误，限制如实保留。最终服务inactive/disabled/PID0，已安装20e57f3源未变。双平台CI在可执行修改提交8506262通过，最终只补结果/说明文档，不重复全仓运行。详见[验证记录](verification.json)。
 
 P1从当前分支/合并后的main开始，只缩短Raw接收→落盘通路：当前已有批量线程移交，要实测真正批量系统调用、减少重复编码/任务创建和派生耦合。保留Raw/SQLite/校验兼容、有界缓冲、明确持久化进度、写失败传播和正常排空。用同口径输入交错A/B，报告snapshot/chunk数量、波动和资源差异；无实测收益的复杂化不保留。本任务不启动P1、P2或生产资格长跑。

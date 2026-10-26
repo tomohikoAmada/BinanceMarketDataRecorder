@@ -13,5 +13,17 @@
     "stress suite",
     "production runs",
     "P1 implementation"
-  ]
+  ],
+  "fixture_preflight": "All six five-minute response types decode successfully with requestedRecordCount>=1; complete service smoke has accepted>0/failures=0 on all enabled product/global sources",
+  "ci_executable_candidate": "8506262",
+  "ci": {
+    "executable_commit": "8506262",
+    "run_url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40292926043",
+    "macos": "SUCCESS",
+    "ubuntu": "SUCCESS",
+    "later_changes": "results/documentation only"
+  },
+  "production_unit_final": "inactive AND disabled, PID0, NRestarts0",
+  "benchmark": "Two complete 32214-frame WS runs; 26 auxiliary source instances each accepted>0/failures=0; full Raw reads, nonempty normalization/replay/report, archive backlog0",
+  "original_research_preservation": "37 files byte-identical to d81e7d2"
 }

@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-26T08:41:57.145636+00:00",
+  "platform": "Linux-6.8.0-146-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "logical_cpus": 4,
+  "cpu_model": "model name\t: Intel Core Processor (Broadwell, IBRS)",
+  "memory": "MemTotal:        6019104 kB\nMemFree:          750492 kB\nMemAvailable:    4731932 kB\nBuffers:          359792 kB\nCached:          1868604 kB\nSwapCached:         2444 kB\nActive:           760460 kB\nInactive:        1595488 kB\nActive(anon):     127240 kB\nInactive(anon):     9600 kB\nActive(file):     633220 kB\nInactive(file):  1585888 kB\nUnevictable:       27324 kB\nMlocked:           27324 kB\nSwapTotal:       2097148 kB\nSwapFree:        2061776 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:               320 kB\nWriteback:             0 kB\nAnonPages:        153404 kB\nMapped:           187296 kB\nShmem:               560 kB\nKReclaimable:    2059660 kB\nSlab:            2339044 kB\nSReclaimable:    2059660 kB\nSUnreclaim:       279384 kB\nKernelStack:        5440 kB\nPageTables:         4308 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     5106700 kB\nCommitted_AS:     773784 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       25916 kB\nVmallocChunk:          0 kB\nPercpu:           507904 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      135012 kB\nDirectMap2M:     5107712 kB\nDirectMap1G:     3145728 kB\n",
+  "filesystem": "Filesystem     Type 1K-blocks     Used Available Use% Mounted on\n/dev/vda1      ext4  59848952 36364056  23468512  61% /\n",
+  "production_recorder_state": "MainPID=0\nNRestarts=0\nActiveState=inactive\nSubState=dead\nUnitFileState=disabled\n",
+  "installed_source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "installed_python_sources": 124,
+  "installed_sources_equal_preserved_preplan_reference": true,
+  "selected_runtime_files": 126,
+  "selected_source_mismatches": [],
+  "isolated_import_path": "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-final/src/binance_market_data_recorder/__init__.py",
+  "production_deploy_performed": false,
+  "production_capture_started": false,
+  "production_data_opened": false
+}

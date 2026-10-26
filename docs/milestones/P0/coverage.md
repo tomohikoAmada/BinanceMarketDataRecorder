@@ -2,7 +2,7 @@
 
 核对日期：2026-10-26。此表是 P2 的范围合同，不是已实现清单。P4 开始前将本表展开为实际产品/源清单并冻结；每个必须源分别进入连续性分母。P0 不发起生产采集。
 
-官方依据：[Spot 流](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)、[Spot 市场 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)、[Spot 通用 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general)、[USD-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[USD-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/~)、[COIN-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data)、[COIN-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)。抓取哈希与无效网页回退见 [official-sources.json](official-sources.json)；不能把返回 HTML 壳的 `.md` 地址当正文证据。
+官方依据：[Spot 流](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)、[Spot 市场 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)、[Spot 通用 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general)、[USD-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[USD-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)、[COIN-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data)、[COIN-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)。抓取哈希与无效网页回退见 [official-sources.json](official-sources.json)；不能把返回 HTML 壳的 `.md` 地址当正文证据。
 
 产品选择：配置是 underlying assets 列表，至少支持 10 项；首版 BTC、ETH。S 是 `baseAsset` 为所选标的且允许现货交易的所有所选报价对（含非 USDT 报价）；不把 BTC 作为 quote 的所有其他币种引进来。U 是这些标的在 USD-M 的永续与交割，C 是 COIN-M 的永续与交割，D 表示 U 和 C **分别实例化**。身份包含市场、symbol、pair、base/quote/margin、contractType、contractSize、上市/到期时间及状态，不能只以 symbol 或 `st=1` 判断。交易所没有某合约时记 `EXCHANGE_NOT_OFFERED`，附当次目录快照，不能凭想象订阅。尚未到期的已选产品一直纳入，不因故障而移除。
 
@@ -23,9 +23,9 @@ WS 缺口 W：断连/心跳失效、已接收未持久化停滞、无法解释�
 | S07 | S | `@referencePrice`；`/api/v3/referencePrice` | 流；REST 启动/恢复 | referencePrice、时间 | 产品 | P | 时间+正文哈希 | W/F，不能拿成交价替代 | 是（交易所适用时）；P2 |
 | S08 | S | `/api/v3/referencePrice/calculation` | 启动、每小时 | 计算参数、组成与约束原文 | 产品/响应实际scope | P | 快照哈希+观测时间 | F；缺配置可解释但不能杜撰 | 是（适用时）；P2 |
 | S09 | S | `/api/v3/executionRules` | 启动、每小时 | executionRules、价格范围参数 | 市场或批次一次 | P | 产品+规则快照哈希 | F | 是（适用时）；P2 |
-| S10 | S | `@avgPrice` 或 `/api/v3/avgPrice` | 选择流（官方定期）；REST 恢复 | w/interval、价格、last trade时间 | 产品 | P | 观测时间+窗口 | W/F，窗口均价非最后成交价 | 是；P2 |
-| S11 | S | `@kline_{interval}`（UTC）；`/api/v3/klines` | 按官方更新，保存未收盘更新；启动补历史 | k.t/T/i/o/h/l/c/v/q/n/V/Q/x | 产品+interval | P | openTime+更新时间+closed | W；缺 bar单独记范围 | 是；P2；历史导入不等于直播 |
-| S12 | S | `@kline_{interval}@+08:00` | 与 UTC 独立日界语义 | 同上及timezone | 产品+timezone | P | timezone+openTime+更新 | W | 是；P2，独立时区日界的原生更新须保留 |
+| S10 | S | `@avgPrice` 或 `/api/v3/avgPrice` | 选择1000ms；REST仅恢复 | w/interval、价格、last trade时间 | 产品 | P | 观测时间+窗口 | W/F，窗口均价非最后成交价 | 是；P2 |
+| S11 | S | `@kline_{interval}`（UTC）；`/api/v3/klines` | 1s interval每1000ms，其他每2000ms；保存未收盘更新；启动补历史 | k.t/T/i/o/h/l/c/v/q/n/V/Q/x | 产品+interval | P | openTime+更新时间+closed | W；缺 bar单独记范围 | 是；P2；历史导入不等于直播 |
+| S12 | S | `@kline_{interval}@+08:00` | 同UTC推送频率；独立日界语义 | 同上及timezone | 产品+timezone | P | timezone+openTime+更新 | W | 是；P2，独立时区日界的原生更新须保留 |
 | S13 | S | `@ticker` | 1s | 24h窗口、OHLC、数量、n、首末ID | 产品 | P | 窗口时间+正文哈希 | W | 是；P2 |
 | S14 | S | `@ticker_1h` / `_4h` / `_1d` | 1s | 滚动窗口OHLC、v/q、首末时间 | 产品+window | P | window+窗口时间+哈希 | W，不以24h替代1h | 是；P2，三种窗口分别记录 |
 | S15 | S | `/api/v3/ticker/tradingDay` | 60s，UTC日界 | 当日OHLC、成交数、首末时间 | 产品+timezone | P | 日界+响应时间+哈希 | F | 是；P2；与24h滚动不同 |
@@ -61,12 +61,12 @@ REST U 前缀 `/fapi/v1`，C 为 `/dapi/v1`；`/futures/data` 的 host 分别为
 | D18 | U/C | `/futures/data/topLongShortAccountRatio` | 官方支持5m等周期 | top账户多空比例、timestamp | U产品；C pair+contractType（如参数提供） | U官方当前要求K；C页面未列key | scope+period+timestamp | U不得声称无钥覆盖；C按F+闭周期 | U受限并显式排除无钥首版；无等价公开替代；C P2按公开接口实现 |
 | D19 | U/C | `/futures/data/topLongShortPositionRatio` | 官方支持5m等周期 | top持仓多空比例、timestamp | U产品；C pair+contractType（如参数提供） | U官方当前要求K；C页面未列key | scope+period+timestamp | 同D18，不能以global ratio伪装top | U受限；C公开时必须；现有U无钥代码不证明可访问 |
 | D20 | U/C | `/futures/data/basis` | 300s，5m | pair、contractType、basis/rate、index/futures价、timestamp | pair+contractType一次 | P | pair+contractType+period+timestamp | F+闭周期；交割/永续各自独立 | 是；U永续已有，其余P2 |
-| D21 | U/C | `@kline_{interval}`；REST `klines` | 官方更新；保存未收盘和收盘 | OHLC/V/Q/n、t/T/x | 产品+interval | P | openTime+更新time+closed | W；closed bar缺口 | 是；P2 |
-| D22 | U/C | `{pair}_{contractType}@continuousKline_{interval}`；`continuousKlines` | 官方流更新 | 连续合约kline、pair/contractType | pair+contractType | P | 连续类型+openTime+更新 | W；换月语义不能以单合约替代 | 是；P2 |
-| D23 | U/C | REST `markPriceKlines`/`indexPriceKlines`/`premiumIndexKlines`；C另有mark/index kline流 | 按官方interval集合补闭合bar；有原生流时保存其更新 | 各价格OHLC、open/close time | mark/premium产品；index pair一次 | P | 价格类型+scope+openTime | F+闭bar；每秒样本不能还原bar极值 | 是；P2；保留各类型独立字段 |
+| D21 | U/C | `@kline_{interval}`；REST `klines` | 250ms（有更新时）；保存未收盘和收盘 | OHLC/V/Q/n、t/T/x | 产品+interval | P | openTime+更新time+closed | W；closed bar缺口 | 是；P2 |
+| D22 | U/C | `{pair}_{contractType}@continuousKline_{interval}`；`continuousKlines` | 250ms（有更新时） | 连续合约kline、pair/contractType | pair+contractType | P | 连续类型+openTime+更新 | W；换月语义不能以单合约替代 | 是；P2 |
+| D23 | U/C | REST `markPriceKlines`/`indexPriceKlines`/`premiumIndexKlines`；C另有mark/index kline流 | 闭bar后60s内REST补查；C原生mark/index kline250ms | 各价格OHLC、open/close time | mark/premium产品；index pair一次 | P | 价格类型+scope+openTime | F+闭bar；每秒样本不能还原bar极值 | 是；P2；保留各类型独立字段 |
 | D24 | U/C | `@ticker` | 官方周期更新（通常500ms） | 24hOHLC、成交量/数量、时间 | 产品 | P | 窗口+发布时间+哈希 | W | 是；P2 |
 | D25 | U/C | miniTicker/全市场ticker、bookTicker聚合、REST ticker/price(v1/v2)/24hr/bookTicker、Top-N depth | 对应主源等价传输 | 对应D02/D08/D24子集、last价 | 只选产品级主源；不重复全市场 | P | 主源语义键 | 主源W | 等价不另必需；不能混淆RPI版本 |
-| D26 | U/C | `constituents`；U另 `indexInfo`/`@compositeIndex` | 成分REST启动/小时；U复合指数流官方周期 | 组成exchange/symbol/weight、成分价格、指数定义 | index或pair一次，映射产品 | P | scope+时间+正文哈希 | F/W；普通index价不能替代组成权重 | 是（所选产品适用时）；P2 |
+| D26 | U/C | `constituents`；U另 `indexInfo`/`@compositeIndex` | 成分REST启动/小时；U复合指数流1000ms | 组成exchange/symbol/weight、成分价格、指数定义 | index或pair一次，映射产品 | P | scope+时间+正文哈希 | F/W；普通index价不能替代组成权重 | 是（所选产品适用时）；P2 |
 | D27 | U | `assetIndex` 或 `!assetIndex@arr` | 选官方流（约1s）；REST恢复 | asset/index/bid/ask及整合后结算资产信息 | 全局一次，关联所选margin资产 | P | asset+发布时间+哈希 | W/F | 是；P2，不能按每产品重复抓取 |
 | D28 | U | `symbolAdlRisk` | 1800s轮询（官方30分钟更新） | symbol/adlRisk/updateTime原文 | 产品/可批量scope | P | 产品+响应时间+哈希 | F | 是；P2，区别账户adlQuantile |
 | D29 | U | `insuranceBalance` | 60s查询（发布快照时间独立保留） | 保险基金余额/资产/时间原文 | 真实fund/pool scope一次 | P | pool+发布时间+内容 | F；新响应与数据发布时间分别判断 | 是；P2，勿假造C同名端点 |

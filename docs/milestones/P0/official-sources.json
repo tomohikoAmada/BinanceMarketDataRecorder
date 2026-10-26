@@ -108,7 +108,7 @@
   {
     "id": "full-index-and-api-summaries",
     "url": "https://developers.binance.com/en/docs/llms-full.txt",
-    "retrieved_utc": "2026-10-26T07:58:12.293472+00:00",
+    "retrieved_utc": "2026-10-26T07:38:03.925231+00:00",
     "sha256": "cb3b7dddbf7df2d42c2fc2d15d8e4434c50455c7413a521d09b3b72d6f0616a2",
     "bytes": 8291297,
     "usable": true,
@@ -121,7 +121,13 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:25.823822+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
   },
   {
     "id": "spot-general-rendered",
@@ -130,7 +136,13 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:25.969342+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
   },
   {
     "id": "um-market-rendered",
@@ -139,7 +151,13 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:26.119773+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
   },
   {
     "id": "cm-market-rendered",
@@ -148,7 +166,13 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:26.531483+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
   },
   {
     "id": "cm-streams-rendered",
@@ -157,7 +181,13 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:26.776039+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
   },
   {
     "id": "um-public-rendered",
@@ -166,6 +196,21 @@
     "method": "web rendered official documentation",
     "usable": true,
     "sha256": null,
-    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback"
+    "limitation": "Browser-extracted rendering has no original HTTP-byte digest; do not substitute hash of HTML fallback",
+    "http_html_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_html_bytes": 0,
+    "http_html_retrieved_utc": "2026-10-26T08:22:27.020972+00:00",
+    "http_html_is_known_fallback_shell": false,
+    "http_html_usable": false,
+    "http_html_limitation": "Empty HTTP response; only the separately retrieved web rendering supplies semantic evidence"
+  },
+  {
+    "id": "um-market-streams-rendered",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market",
+    "retrieved_date": "2026-10-26",
+    "method": "web rendered official documentation",
+    "usable": true,
+    "sha256": null,
+    "conclusion": "Regular market stream families and publishing frequencies; separate from high-frequency /public routing"
   }
 ]

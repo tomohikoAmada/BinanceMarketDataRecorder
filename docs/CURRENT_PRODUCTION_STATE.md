@@ -6,9 +6,10 @@ user changes as `d81e7d2`; the merge base for new work is `113cdb3`.
 See the [P0 result](milestones/P0/README.md) for completion evidence and limitations.
 P1 is the next implementation phase; P4–P6 production qualification has not started.
 
-The latest production observation is recorded in the P0 baseline environment evidence.
-The pre-plan observation at 2026-10-26T06:07:27Z found Recorder inactive, disabled,
-PID 0; installed source `20e57f3`, distinct from the selected development source.
+The latest observation at 2026-10-26T08:41:57Z is in the
+[P0 environment evidence](milestones/P0/baseline/environment-final.json): Recorder
+inactive, disabled, PID 0, NRestarts 0; installed source `20e57f3` still matches all
+124 Python files, distinct from the selected development source. P0 is COMPLETE.
 The P0 benchmark uses an isolated source directory and fresh temporary data only.
 It does not deploy or start the production Recorder service.
 

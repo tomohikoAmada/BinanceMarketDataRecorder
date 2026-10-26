@@ -2,7 +2,7 @@
 
 Read the [production plan](production_milestone_plan.md), [P0 result](milestones/P0/README.md),
 [coverage inventory](milestones/P0/coverage.md), and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
-Current task: complete P0 only. Next implementation: **P1, shorten Raw capture path**.
+P0 is COMPLETE; this task stops here. Next implementation: **P1, shorten Raw capture path**.
 
 P0 preserved the original local changes and research in `d81e7d2`, then merged the
 accepted `origin/main=01d7421` into `113cdb3`. Existing accepted fixes include USD-M
