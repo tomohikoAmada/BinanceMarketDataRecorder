@@ -1,0 +1,94 @@
+{
+  "schema": "p0-steady-summary.v1",
+  "runs": [
+    {
+      "run": "steady-n2",
+      "steady_seconds": 120.00252017914318,
+      "parent_cpu_seconds": 67.50657638300001,
+      "reaped_child_cpu_seconds": 65.04285300000001,
+      "parent_cpu_cores": 0.562542988949101,
+      "parent_plus_reaped_child_cpu_cores": 1.104555380879722,
+      "parent_rss_min_mib": 146.03125,
+      "parent_rss_max_mib": 165.734375,
+      "archive_child_peak_rss_mib": 292.80078125,
+      "parent_io_delta": {
+        "rchar": 320607176,
+        "wchar": 123402557,
+        "syscr": 23277,
+        "syscw": 36961,
+        "read_bytes": 0,
+        "write_bytes": 132284416,
+        "cancelled_write_bytes": 89272320
+      },
+      "parent_voluntary_context_switches": 162660,
+      "parent_involuntary_context_switches": 16661,
+      "host_steal_percent": 13.145762846006212,
+      "loop_lag_p99_ms": 43.84996579028666,
+      "loop_lag_max_ms": 162.63391613028944,
+      "fixture_ws_frames": 32214,
+      "enabled_auxiliary_source_instances": 26,
+      "all_sources_successful_without_failures": true,
+      "all_core_products_ready": true,
+      "all_ws_exact_bytes_order_count_crc_hashes": true,
+      "raw_frames_all_sources": 32250,
+      "archive_final_backlog_files": 0,
+      "normalized_rows": [
+        12584
+      ],
+      "replayed_agg_trades": [
+        139
+      ],
+      "report_files": 1
+    },
+    {
+      "run": "profile-steady-n2",
+      "steady_seconds": 120.00238078203984,
+      "parent_cpu_seconds": 62.740279248,
+      "reaped_child_cpu_seconds": 61.317337,
+      "parent_cpu_cores": 0.5228252876245437,
+      "parent_plus_reaped_child_cpu_cores": 1.033792958435764,
+      "parent_rss_min_mib": 141.62890625,
+      "parent_rss_max_mib": 160.6328125,
+      "archive_child_peak_rss_mib": 315.09765625,
+      "parent_io_delta": {
+        "rchar": 280256118,
+        "wchar": 95345037,
+        "syscr": 22211,
+        "syscw": 36636,
+        "read_bytes": 0,
+        "write_bytes": 104300544,
+        "cancelled_write_bytes": 61562880
+      },
+      "parent_voluntary_context_switches": 173257,
+      "parent_involuntary_context_switches": 22024,
+      "host_steal_percent": 14.70342356687898,
+      "loop_lag_p99_ms": 66.70087995007634,
+      "loop_lag_max_ms": 264.37695091590285,
+      "fixture_ws_frames": 32214,
+      "enabled_auxiliary_source_instances": 26,
+      "all_sources_successful_without_failures": true,
+      "all_core_products_ready": true,
+      "all_ws_exact_bytes_order_count_crc_hashes": true,
+      "raw_frames_all_sources": 32250,
+      "archive_final_backlog_files": 0,
+      "normalized_rows": [
+        8593
+      ],
+      "replayed_agg_trades": [
+        193
+      ],
+      "report_files": 1
+    }
+  ],
+  "profile": {
+    "rate_hz": 10,
+    "duration_seconds": 110,
+    "saved_stack_samples": 1590,
+    "sampling_errors": 2,
+    "sampler_finished_before_steady_end": true,
+    "observed_process_tree_rss_peak_mib": 467.85546875,
+    "rss_sum_is_not_pss": true,
+    "flamegraph_renderer_url": "https://raw.githubusercontent.com/brendangregg/FlameGraph/master/flamegraph.pl",
+    "flamegraph_renderer_sha256": "088f82e6848a4f12a56e1e8e8170ee6761fccf12e5615cd64630f6b087c99ea7"
+  }
+}

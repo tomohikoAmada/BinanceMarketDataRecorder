@@ -1,0 +1,47 @@
+MS1 candidate validation record
+
+Candidate: 026e357eb9af9b5b9fd111872dc6dcc30e9c599d
+Base: c421605e302d2ad46acdb2466627f64644181c9a
+Environment: macOS development repository, Python 3.12
+
+CLAIMED VALIDATION PRESERVED FROM docs/milestone_acceptance/MS1.md
+focused MS1 and related reconnect/side-data suites: PASS
+full offline pytest: PASS
+ruff: PASS
+mypy: PASS
+compileall: PASS
+git diff --check: PASS
+online Binance traffic: NOT RUN
+VPS/deployment: NOT RUN
+Contracts repository: NOT MODIFIED
+
+INDEPENDENT LOCAL RERUNS
+
+Focused command:
+python3.12 -m pytest -q tests/integration/test_ms1_multisymbol_durable_identity.py tests/integration/test_legacy_reconnect_r33.py tests/integration/test_orphan_extension_intent.py tests/integration/test_reconnect_boundary_integrity.py tests/unit/test_historical_reconnect_audit.py tests/unit/test_usdm_side_data_collector.py tests/unit/test_usdm_side_data_rest.py
+Result: PASS — 195 passed in 8.51s
+
+Full offline pytest command:
+python3.12 -m pytest -q
+Result: PASS — 1477 passed, 24 skipped, 4 deselected, 13 warnings in 129.52s
+Skipped tests were the repository's explicitly opt-in Binance online,
+preview, and public backfill/live smoke tests.
+
+Ruff command:
+python3.12 -m ruff check .
+Result: PASS — All checks passed!
+
+mypy command:
+python3.12 -m mypy
+Result: PASS — Success: no issues found in 247 source files
+
+Compile command:
+python3.12 -m compileall -q src tests tools
+Result: PASS — exit 0
+
+Git patch check command:
+git diff --check c421605e302d2ad46acdb2466627f64644181c9a 026e357eb9af9b5b9fd111872dc6dcc30e9c599d
+Result: PASS — exit 0
+
+No online Binance traffic, VPS access, deployment, commit mutation, push, or
+pull request creation was performed.

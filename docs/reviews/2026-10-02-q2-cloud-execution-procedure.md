@@ -3,7 +3,7 @@
 Prepared October 2, 2026 for the owner's instruction to continue until the next
 step is cloud 12h. This procedure is not a completed Q2/Q3/Q4 record. Execute
 sequentially after independent release review; stop on a failed prerequisite.
-The current [plan](../milestone_plan.md) and
+The current [plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md) and
 [V5 contract](../acceptance_evidence_v5.md) remain authoritative.
 
 ## Exact starting facts

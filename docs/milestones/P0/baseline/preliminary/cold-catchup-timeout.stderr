@@ -1,0 +1,40 @@
+Traceback (most recent call last):
+  File "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py", line 540, in <module>
+    main()
+  File "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py", line 535, in main
+    result = asyncio.run(measure(args, Path(temporary).resolve()))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py", line 366, in measure
+    await asyncio.gather(worker, monitor)
+  File "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py", line 298, in background
+    archived.append(await asyncio.to_thread(background_once))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py", line 277, in background_once
+    result = subprocess.run(
+             ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/opt/binance-market-data-recorder/venv/bin/python', '/var/tmp/bmdr-p0-20261026-yqVNkwJI/measurement-v2/docs/milestones/P0/steady_baseline.py', '--background-worker', '/var/tmp/bmdr-p0-steady-bcbisplp/internal', 'afa6a9ff-037f-4577-aabf-c8ad46b47c6c', '/var/tmp/bmdr-p0-steady-bcbisplp/external-volume/QuantData/BinanceRecorder']' timed out after 90 seconds

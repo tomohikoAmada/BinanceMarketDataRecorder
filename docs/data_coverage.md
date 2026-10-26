@@ -1,5 +1,15 @@
 # Data coverage
 
+## Current target and implemented boundary — P0, 2026-10-26
+
+Use the [first-release coverage inventory](milestones/P0/coverage.md) for the current
+52-family mapping and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md)
+for per-source continuity/new-file correctness. The inventory explicitly distinguishes
+planned families, shared/equivalent sources, authentication limitations, not-offered
+interfaces and historical alternatives. Tables below describe implemented/historical
+scope only. COIN-M and dated futures, original live kline/ticker families and additional
+public metadata are P2 work; existing SDK model re-encoding is not raw HTTP coverage.
+
 | Market/data | Live | Historical official archive | Time/retention | State and intended use |
 |---|---|---|---|---|
 | Spot diff depth 100ms | Raw + replay, resync-gated | unavailable | exchange + receive clocks; must capture continuously | L2 reconstruction, liquidity monitoring; gaps explicit |
@@ -12,6 +22,31 @@
 | Spot/USD-M 1m bars; USD-M mark/index/premium bars | derived/live inputs; no live kline stream | baseline-bars | archive source clock, UTC ns | benchmarks and model inputs that do not require receive time |
 | Spot/USD-M raw trades | deferred live | explicit microstructure-trades | archive source clock | trade-level studies |
 | L3 queue position | unavailable | unavailable | public L2 does not provide it | unsupported |
+
+## Verified coverage gaps — October 4, 2026
+
+The [read-only coverage review](reviews/2026-10-04-data-coverage-gap-review.md)
+matches the deployed four-product/all14-auxiliary configuration to current
+official sources. Within the configured Spot/USD-M products, live individual
+executions, USD-M depth including RPI, Spot block trades/reference prices/
+calculation settings/execution rules and USD-M index constituents/symbol-level
+ADL/insurance snapshots are not collected. Other symbols, delivery contracts,
+COIN-M and options have no continuous capture. Global exchangeInfo still retains
+market metadata; this does not provide those markets' live tapes.
+
+USD-M aggregate Raw already preserves `nq`; the normalized aggregate schema
+does not expose it. Mark-price capture already includes index price. Missing
+individual executions cannot be inverted from aggTrade, but official historical
+trade files may supply exchange-time records later; original live receive timing
+cannot be recovered. The implemented microstructure historical planner currently
+targets BTCUSDT and does not prove that an import has actually occurred.
+
+The current official USD-M inventory does not establish a public `@trade` stream;
+recent REST trades are bounded and key-dependent historical lookup is outside
+this project's no-key scope. Klines/tickers can be derived only under matching
+coverage/window semantics, without reproducing their original stream updates.
+The review separately records two actual Q5 OI polling misses and their later
+successful retries; it does not grant Q5 completion or every-event completeness.
 
 Historical and Live data are never silently mixed: receive-time replay rejects
 archive-only rows. Missing results are absent/GAP, never zero or forward-filled.

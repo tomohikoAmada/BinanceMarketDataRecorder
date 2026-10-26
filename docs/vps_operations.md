@@ -1,5 +1,15 @@
 # VPS Operations
 
+## Current authority: production plan P0–P6
+
+Use the [production plan](production_milestone_plan.md), [handoff](PROJECT_HANDOFF.md)
+and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
+The checkpoint and qualification commands below are retained historical procedures;
+they do not direct a new deployment, protected OS window or production capture.
+P0 runs only isolated fixed-input measurements, with production unit/data unchanged.
+Stable new start/status/stop/background-verification procedures are delivered in P3.
+Existing archive custody/deletion protections remain applicable.
+
 ## Current checkpoint — October2 UTC / October3 Shanghai,2026
 
 Frozen4e1cf32 is installed/VERIFIED with independent review, exact dual-platform

@@ -1,5 +1,22 @@
 # Data Contract
 
+## Production contract adopted in P0 (2026-10-26)
+
+[ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) and the
+[coverage inventory](milestones/P0/coverage.md) govern P0–P6. Per required source,
+continuity is 1 minus the union duration of unavailable/unknown intervals divided by
+eligible service duration, with a 99.5% minimum per run and complete 24h subwindow.
+Saved-data correctness is separately verified by reading every new sealed file;
+writer claims alone do not establish correctness. No averaging across sources,
+quiet-stream event-rate shortcut, fabricated REST success or claim of every exchange
+event is permitted. Received, queued, persisted and synchronized progress are distinct.
+
+P0 does not change EventEnvelope v1, Raw v1, manifest/Catalog or normalized/replay formats.
+Expanded market identities/raw HTTP capture are explicit P2 changes; existing SDK
+model payloads keep their provenance labels. P1–P3 must implement these future runtime
+and verification rules before P4 can qualify. Historical acceptance contracts below
+remain the rules for their original artifacts.
+
 Status: EventEnvelope v1 and Raw chunk v1 are executable and byte-frozen by M3
 and ADR-0010. M4-M7 implement current Spot/USD-M Raw mappings. M15 implements
 the rebuildable `normalized-dataset.v2` contract under ADR-0020.

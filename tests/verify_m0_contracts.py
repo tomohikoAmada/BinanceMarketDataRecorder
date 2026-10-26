@@ -13,7 +13,8 @@ REQUIRED_FILES = (
     "README.md",
     "docs/project_contract.md",
     "docs/architecture.md",
-    "docs/milestone_plan.md",
+    "docs/production_milestone_plan.md",
+    "docs/adr/0051-production-continuity-and-incremental-verification.md",
     "docs/data_contract.md",
     "docs/storage_contract.md",
     "docs/macos_operations.md",
@@ -175,7 +176,6 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M10.md",
     "docs/milestone_acceptance/M15.md",
     "docs/milestone_acceptance/M16.md",
-    "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
     "docs/requirements_traceability.md",
@@ -190,16 +190,6 @@ def verify() -> None:
 
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
     assert not missing, f"missing M0 files: {missing}"
-
-    plan = (ROOT / "docs/milestone_plan.md").read_text(encoding="utf-8")
-    for number in range(21):
-        assert f"## M{number} " in plan, f"M{number} missing from milestone plan"
-    assert "## M0.1 " in plan, "M0.1 missing from milestone plan"
-    assert "## M0.2 " in plan, "M0.2 missing from milestone plan"
-    for heading in ("Scope", "Non-scope", "Dependencies", "Acceptance", "Rollback"):
-        assert plan.count(f"- {heading}:") == 23, f"expected 23 {heading} sections"
-    assert "## M16 — Replay interface and generic consumer data contract" in plan
-    assert "named consumer is" in plan and "required for V1 completion" in plan
 
     trace = (ROOT / "docs/requirements_traceability.md").read_text(encoding="utf-8")
     for requirement_id in REQUIRED_TRACE_IDS:
@@ -251,6 +241,8 @@ def verify() -> None:
         if path.is_file()
         and ".git" not in path.parts
         and ".pytest_cache" not in path.parts
+        and ".venv" not in path.parts
+        and "__pycache__" not in path.parts
         and path.suffix in {".md", ".py"}
     }
     tracked_text = "\n".join(text_files.values())
@@ -267,6 +259,9 @@ def verify() -> None:
         assert identity in identity_contract, f"missing frozen identity: {identity}"
 
     for name, content in text_files.items():
+        if name.startswith(("docs/history/", "docs/reviews/", "docs/research/",
+                            "MS1_REVIEW_BUNDLE_026e357e/")):
+            continue  # Immutable historical evidence, not active identity declarations.
         if name not in LEGACY_HISTORY_ALLOWLIST:
             for legacy in LEGACY_RECORDER_IDENTITIES:
                 assert legacy not in content, f"legacy identity {legacy!r} in current file {name}"

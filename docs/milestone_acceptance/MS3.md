@@ -121,7 +121,7 @@ run `34421869781` failed the Profile D sibling-progress wait at line 1130
 macOS passed. The root cause is under investigation; this is not proof of a
 production integrity defect. Earlier code review and R1 closure remain historical
 facts, but do not authorize merging this failing candidate. Execute
-[MS3-CI1](../milestone_plan.md#ms3-ci1--ubuntu-profile-d-failure-implemented-awaiting-review), then independently review the repair delta.
+[MS3-CI1](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#ms3-ci1--ubuntu-profile-d-failure-implemented-awaiting-review), then independently review the repair delta.
 No merge/auto-merge, deployment or manual CI operation is authorized for the
 unreviewed repair. NEXT=MS3_CI1_REPAIR.
 
@@ -156,7 +156,7 @@ after the holder has already made count 1, so it can cancel before the waiter
 executes. The F8 waiting-cancellation claim below was the implementer's
 submitted claim, not independently accepted evidence until MS3-R1 was fixed.
 
-See [MS3-R1 in the execution plan](../milestone_plan.md#ms3-review-disposition-and-r1-repair)
+See [MS3-R1 in the execution plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#ms3-review-disposition-and-r1-repair)
 for the minimal correction and exit checks. The concurrent Profile D finding
 is closed; no production redesign is requested. Final MS3 approval is pending.
 

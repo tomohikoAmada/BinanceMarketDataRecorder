@@ -1,0 +1,190 @@
+# BBO Cache Live A/B Result — 2026-09-02
+
+Evidence-only campaign; not M22.9, not production qualification.
+
+## Required result fields
+
+LIVE_AUTHORITY_MATCH=YES
+BASE_SHA=8c83d4fd79f3af061c8b293a7bbfa537285f3300
+BASE_TREE=03b3dc32fb96c785dd5285989e785ff7f2704419
+CANDIDATE_SHA=0fecc068e369f60f3d937480f905e224c7bbf7bf
+CANDIDATE_TREE=a521dd61f8a090b4930cce5254985383f8893a3f
+CANDIDATE_PARENT=8c83d4fd79f3af061c8b293a7bbfa537285f3300
+HOST=greencloud-tokyo-01
+HOST_MATCH=YES
+OS=Ubuntu 24.04.4 LTS
+CPU_MODEL=Intel Core Processor (Broadwell, IBRS)
+VCPU_COUNT=4
+RAM=6163611648 bytes (5.7 GiB)
+SWAP=2147479552 bytes (2.0 GiB)
+INITIAL_RUNNING_SOURCE_SHA=8c83d4fd79f3af061c8b293a7bbfa537285f3300
+INITIAL_READY=YES
+CONFIG_SHA256=5aee65a7de55cf06645c70296870346004c712fc6f9cd43390e1ea8b3ffabfbb
+LOCK_SHA256=44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335
+UNIT_SHA256=d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6
+BASE_WHEEL_SHA256=a7c760a3d31d45b251d0922dae27efb03a058291aefe20cef2418ee0aa64a0e7
+BASE_DEPLOYMENT_IDENTITY=79e34cd727898d94f36885df450f4d3d40a28a3ebe8392800477fc79dee7ca5b
+CANDIDATE_WHEEL_SHA256=ed0aff2058dbd24d6828f129093d302473f7210f87c825bf1f6278f280cf084e
+CANDIDATE_DEPLOYMENT_IDENTITY=dd06ce33cf1793718d4b2224000f9e714762d339af355c6f193e6882b7ff6cda
+DEPENDENCY_ENVIRONMENT_IDENTICAL=YES
+BASE_PID=271355
+BASE_PROC_STARTTIME=32075081
+BASE_WARMUP_SECONDS=180.014149153
+BASE_DURATION_SECONDS=600.057938156
+BASE_T0=2026-09-02T02:30:09.172919Z
+BASE_T1=2026-09-02T02:40:09.230819Z
+BASE_PID_STABLE=YES
+BASE_CPU_SECONDS=286.960000000
+BASE_RAW_EVENTS=311830
+BASE_RAW_PAYLOAD_BYTES=66611588
+BASE_CPU_SEC_PER_MILLION_RAW_EVENTS=920.245005291
+BASE_CPU_SEC_PER_GIB_RAW_PAYLOAD=4625.635915106
+BASE_SPOT_DIFF_DEPTH_EVENTS=5999
+BASE_SPOT_DIFF_DEPTH_PAYLOAD_BYTES=6031864
+BASE_USDM_DIFF_DEPTH_EVENTS=5883
+BASE_USDM_DIFF_DEPTH_PAYLOAD_BYTES=14848093
+BASE_TOTAL_DIFF_DEPTH_EVENTS=11882
+BASE_TOTAL_DIFF_DEPTH_PAYLOAD_BYTES=20879957
+BASE_CPU_SEC_PER_MILLION_DIFF_DEPTH_EVENTS=24150.816360882
+BASE_CPU_SEC_PER_GIB_DIFF_DEPTH_PAYLOAD=14756.781051563
+BASE_SPOT_BOOK_TICKER_EVENTS=61766
+BASE_USDM_BOOK_TICKER_EVENTS=224361
+BASE_TOTAL_BOOK_TICKER_EVENTS=286127
+BASE_BBO_DRIVER_EVENTS=298009
+BASE_CPU_SEC_PER_MILLION_BBO_DRIVER_EVENTS=962.923938539
+CANDIDATE_PID=273033
+CANDIDATE_PROC_STARTTIME=32211713
+CANDIDATE_WARMUP_SECONDS=180.010654887
+CANDIDATE_DURATION_SECONDS=600.053025852
+CANDIDATE_T0=2026-09-02T02:48:22.359499Z
+CANDIDATE_T1=2026-09-02T02:58:22.412499Z
+CANDIDATE_PID_STABLE=YES
+CANDIDATE_CPU_SECONDS=225.980000000
+CANDIDATE_RAW_EVENTS=230161
+CANDIDATE_RAW_PAYLOAD_BYTES=49075047
+CANDIDATE_CPU_SEC_PER_MILLION_RAW_EVENTS=981.834455012
+CANDIDATE_CPU_SEC_PER_GIB_RAW_PAYLOAD=4944.349363283
+CANDIDATE_SPOT_DIFF_DEPTH_EVENTS=5995
+CANDIDATE_SPOT_DIFF_DEPTH_PAYLOAD_BYTES=4517399
+CANDIDATE_USDM_DIFF_DEPTH_EVENTS=5883
+CANDIDATE_USDM_DIFF_DEPTH_PAYLOAD_BYTES=11462149
+CANDIDATE_TOTAL_DIFF_DEPTH_EVENTS=11878
+CANDIDATE_TOTAL_DIFF_DEPTH_PAYLOAD_BYTES=15979548
+CANDIDATE_CPU_SEC_PER_MILLION_DIFF_DEPTH_EVENTS=19025.088398720
+CANDIDATE_CPU_SEC_PER_GIB_DIFF_DEPTH_PAYLOAD=15184.670892288
+CANDIDATE_SPOT_BOOK_TICKER_EVENTS=48685
+CANDIDATE_USDM_BOOK_TICKER_EVENTS=155019
+CANDIDATE_TOTAL_BOOK_TICKER_EVENTS=203704
+CANDIDATE_BBO_DRIVER_EVENTS=215582
+CANDIDATE_CPU_SEC_PER_MILLION_BBO_DRIVER_EVENTS=1048.232227180
+
+### Candidate-vs-base deltas
+
+ABSOLUTE_CPU_DELTA_PERCENT=-21.250348481%
+RAW_EVENT_VOLUME_DELTA_PERCENT=-26.190231857%
+RAW_PAYLOAD_VOLUME_DELTA_PERCENT=-26.326561979%
+EVENT_NORMALIZED_CPU_DELTA_PERCENT=6.692723065%
+PAYLOAD_NORMALIZED_CPU_DELTA_PERCENT=6.890154219%
+DIFF_DEPTH_EVENT_VOLUME_DELTA_PERCENT=-0.033664366%
+DIFF_DEPTH_PAYLOAD_VOLUME_DELTA_PERCENT=-23.469440095%
+DIFF_DEPTH_EVENT_NORMALIZED_CPU_DELTA_PERCENT=-21.223828982%
+DIFF_DEPTH_PAYLOAD_NORMALIZED_CPU_DELTA_PERCENT=2.899615026%
+BBO_DRIVER_EVENT_VOLUME_DELTA_PERCENT=-27.659231768%
+BBO_DRIVER_EVENT_NORMALIZED_CPU_DELTA_PERCENT=8.859296693%
+
+STREAM_SET_MATCH=NO (base-only: um_perpetual|liquidation)
+STREAM_MIX_COMPARABLE=NO
+SPOT_USDM_DIFF_DEPTH_MIX_COMPARABLE=YES
+BOOK_TICKER_MIX_COMPARABLE=NO
+WORKLOAD_CONFOUNDING_NOTES=Candidate whole-process Raw event volume was -26.190231857% and payload volume -26.326561979% versus base. Diff-depth event volume was -0.033664366% (nearly equal), while diff-depth payload volume was -23.469440095%. Spot/USDM diff-depth event shares were 50.4881%/49.5119% for base and 50.4715%/49.5285% for candidate; their payload shares were 28.8883%/71.1117% and 28.2699%/71.7301%. Book-ticker events changed -28.806439099%; Spot changed -21.178318169% and USD-M -30.906440959%. Side-data frames were 634 vs 637; their payload bytes were 169108 vs 171530. The normalized values are whole-process CPU workload proxies, not causal BBO CPU attribution; no exact whole-process saving is claimed.
+
+### Health and BBO correctness
+
+BASE_BACKPRESSURE_EPISODES=0
+CANDIDATE_BACKPRESSURE_EPISODES=0
+BASE_CORE_SEQUENCE_GAPS=0
+CANDIDATE_CORE_SEQUENCE_GAPS=0
+BASE_ORDERBOOK_RESYNCS=0
+CANDIDATE_ORDERBOOK_RESYNCS=0
+BASE_UNEXPECTED_RESTARTS=0
+CANDIDATE_UNEXPECTED_RESTARTS=0
+BASE_SQLITE_ERRORS=0
+CANDIDATE_SQLITE_ERRORS=0
+BASE_CROSSED_BOOK_AUDITS=0 observed; no direct V1 durable counter
+CANDIDATE_CROSSED_BOOK_AUDITS=0 observed; no direct V1 durable counter
+BASE_EMPTY_BOOK_AUDITS=0 observed; no direct V1 durable counter
+CANDIDATE_EMPTY_BOOK_AUDITS=0 observed; no direct V1 durable counter
+BASE_BOOK_TICKER_MISMATCHES=0 observed; no direct V1 durable counter
+CANDIDATE_BOOK_TICKER_MISMATCHES=0 observed; no direct V1 durable counter
+BBO_CACHE_CORRECTNESS_REGRESSION=NO
+BASE_CAPACITY_MONITOR_HEALTH=OK_WITH_PREEXISTING_CRITICAL_FORECAST (samples=117, max cadence gap=9.020660026 s, hard reserve false)
+CANDIDATE_CAPACITY_MONITOR_HEALTH=OK_WITH_PREEXISTING_CRITICAL_FORECAST (samples=118, max cadence gap=7.958476074 s, hard reserve false)
+BASE_RSS_START_END=250654720 -> 256266240 bytes
+CANDIDATE_RSS_START_END=247508992 -> 253468672 bytes
+BASE_FD_START_END=36 -> 37
+CANDIDATE_FD_START_END=43 -> 43
+BASE_THREADS_START_END=10 -> 10
+CANDIDATE_THREADS_START_END=10 -> 10
+CATALOG_INTEGRITY=['ok']
+ARCHIVE_HEALTH=OK (target READY; remote pending 0; backlog files 10862)
+FINAL_RUNNING_SOURCE_SHA=8c83d4fd79f3af061c8b293a7bbfa537285f3300
+FINAL_READY=YES
+FINAL_ARCHIVE_HEALTH=OK (target READY)
+M22_9_STARTED=NO
+BURN_IN_CREDIT_SECONDS=0
+PRODUCTION_READY_CLAIMED=NO
+SOURCE_CHANGED=NO
+GITHUB_CHANGED=NO
+PR_OPENED=NO
+MERGED=NO
+NEW_OPTIMIZATION_IMPLEMENTED=NO
+PROFILER_USED=NO
+EVIDENCE_ROOT=/root/BBO-CACHE-LIVE-AB-20260902T020856Z
+EVIDENCE_ARCHIVE=/root/BBO-CACHE-LIVE-AB-20260902T020856Z.tar.gz
+EVIDENCE_ARCHIVE_SHA256=05c519c21de2317618fa3a5631f2824402faa9132b0270cd9dc30d20ac1de791
+RESULT_DOCUMENT=/root/BBO-CACHE-LIVE-AB-20260902T020856Z/BBO_CACHE_LIVE_AB_RESULT_20260902T032232Z.md
+WHOLE_PROCESS_EXACT_CAUSAL_SAVING_CLAIMED=NO
+FINAL_EXECUTOR_VERDICT=READY_FOR_INDEPENDENT_BBO_LIVE_AB_REVIEW
+
+## Complete per-window stream table
+
+| Market | Stream/message kind | Base events | Candidate events | Base payload bytes | Candidate payload bytes | Event Δ% | Payload Δ% |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| spot | agg_trade | 5598 | 9583 | 938023 | 1608753 | 71.186137906% | 71.504643276% |
+| spot | book_ticker | 61766 | 48685 | 6608968 | 5210242 | -21.178318169% | -21.164060713% |
+| spot | diff_depth | 5999 | 5995 | 6031864 | 4517399 | -0.066677780% | -25.107744472% |
+| um_perpetual | agg_trade | 7586 | 4362 | 1270278 | 730364 | -42.499340891% | -42.503609446% |
+| um_perpetual | basis_5m | 2 | 2 | 2208 | 2208 | 0.000000000% | 0.000000000% |
+| um_perpetual | book_ticker | 224361 | 155019 | 36742832 | 25377032 | -30.906440959% | -30.933380421% |
+| um_perpetual | diff_depth | 5883 | 5883 | 14848093 | 11462149 | 0.000000000% | -22.803898117% |
+| um_perpetual | funding_history | 2 | 2 | 28034 | 28034 | 0.000000000% | 0.000000000% |
+| um_perpetual | global_long_short_ratio_5m | 2 | 2 | 2148 | 2148 | 0.000000000% | 0.000000000% |
+| um_perpetual | liquidation | 1 | 0 | 208 | 0 | -100.000000000% | -100.000000000% |
+| um_perpetual | mark_price | 600 | 600 | 109200 | 109200 | 0.000000000% | 0.000000000% |
+| um_perpetual | open_interest | 10 | 10 | 8350 | 8350 | 0.000000000% | 0.000000000% |
+| um_perpetual | open_interest_statistics_5m | 2 | 2 | 2234 | 2234 | 0.000000000% | 0.000000000% |
+| um_perpetual | premium_index_snapshot | 10 | 10 | 10180 | 10180 | 0.000000000% | 0.000000000% |
+| um_perpetual | taker_buy_sell_volume_5m | 4 | 2 | 4660 | 2446 | -50.000000000% | -47.510729614% |
+| um_perpetual | top_long_short_account_ratio_5m | 2 | 2 | 2152 | 2152 | 0.000000000% | 0.000000000% |
+| um_perpetual | top_long_short_position_ratio_5m | 2 | 2 | 2156 | 2156 | 0.000000000% | 0.000000000% |
+
+## Stream mix
+
+| Arm | Spot events | USD-M events | Spot event share | USD-M event share | Spot payload share | USD-M payload share |
+|---|---:|---:|---:|---:|---:|---:|
+| Base | 73363 | 238467 | 23.526601% | 76.473399% | 20.385124% | 79.614876% |
+| Candidate | 64263 | 165898 | 27.920890% | 72.079110% | 23.100118% | 76.899882% |
+
+## Health evidence notes
+
+Base exact-window Catalog events: {'SIDE_DATA_EMPTY_RESPONSE': 2}; candidate: {}.
+Base journal window: {'backpressure_episodes': 0, 'backpressure_timeout': 0, 'sequence_gap': 0, 'resync': 0, 'crossed_book': 0, 'empty_book_side': 0, 'book_ticker_mismatch': 0, 'duplicate_or_stale': 0, 'sqlite': 0, 'exception': 0, 'error': 4}; candidate: {'backpressure_episodes': 0, 'backpressure_timeout': 0, 'sequence_gap': 0, 'resync': 0, 'crossed_book': 0, 'empty_book_side': 0, 'book_ticker_mismatch': 0, 'duplicate_or_stale': 0, 'sqlite': 0, 'exception': 0, 'error': 0}.
+The two base empty-response Catalog events and side-data REST warnings were not core websocket continuity failures; core Spot/USD-M streams remained ready. Crossed-book, empty-book-side, and book-ticker-mismatch are not separate V1 durable counters, so the report records zero direct observed evidence and the authority limitation explicitly.
+
+## Method and limitations
+
+CPU uses `/proc/<pid>/stat` utime+stime with CLK_TCK=100 at the exact T0/T1 boundary files. Raw denominators use the existing integrity-authoritative manifest validation and streaming Raw-v1 decoder, with receive time in the half-open interval `[T0,T1)`; Raw payload bytes are `len(raw_payload)`. No profiler was used. Normalized CPU is whole-process and is not causal BBO attribution. The two windows were adjacent observations on the same host, not randomized or statistically significant.
+
+No M22.9 was started, neither arm earns future burn-in credit, no PR/merge decision was made, and the candidate was restored out of service.
+
+Archive digest is recorded after tar creation; the tar contains the complete evidence snapshot and the pre-digest report text, while this result document is the final external report.

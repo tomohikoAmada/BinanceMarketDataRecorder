@@ -1,8 +1,24 @@
 # Requirements Traceability
 
+## P0 production requirements
+
+| Requirement | Contract / inventory | Evidence / implementation phase |
+| --- | --- | --- |
+| Unique accepted development base, preserved user work, package mapping | P0 result and package-source manifest | Local snapshot d81e7d2; accepted main01d7421 merged as113cdb3; wheel runtime-member comparison |
+| Every first-release data family has an explicit destination and permission/gap policy | [52-row inventory](milestones/P0/coverage.md), [official sources](milestones/P0/official-sources.json) | P0 definition complete; actual market/API implementation and official samples in P2 |
+| Comparable all-current-feature steady baseline, separate from original core benchmark | [P0 baseline](milestones/P0/baseline/README.md) | Fixed paced inputs/config, explicit unsupported scope, real current runtime and background paths |
+| 99.5% per-source/window continuity, saved-data correctness separately | [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) | Contract adopted P0; counters/recovery/background verifier implemented P1–P3; real qualification P4–P6 |
+
 This matrix maps implemented requirements to contracts and verification records.
 The current task and handoff define new work; historical milestone procedures
 describe their original deliveries.
+
+New production work follows [P0–P6](production_milestone_plan.md). Ten-asset design
+and full BTC/ETH market coverage map to P0/P2; Raw-path efficiency to P1;
+recovery/background isolation to P3;99.5% per-source continuity and24h/72h
+qualification to P4–P6. These are target requirements, not completed features.
+Sudden power-loss work is deferred. Historical rows below retain their original
+scope and do not require repeating old milestone procedures.
 
 Q1 candidate correction evidence is recorded in
 [Q1 acceptance](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md):
@@ -92,8 +108,9 @@ separate gates; these candidate changes do not grant Formal credit.
 
 ## Milestone coverage
 
-The M0, M0.1, M0.2, and M1-M20 sections in `milestone_plan.md` each contain
-scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
+The old milestone plan was retired at the owner's request on October 26, 2026;
+its historical scope and gates remain available in Git history. The acceptance
+records below are historical evidence, not a current execution plan. M19 review-fix
 submilestones add scoped acceptance records without extending the top-level
 M0-M20 plan. M21.4 (USD-M ingress backpressure repair) was merged through
 PR #7, deployed to production, and passed 2h and 12h formal validation

@@ -1,5 +1,83 @@
 # Official Binance Sources
 
+## P0 official source refresh — 2026-10-26
+
+The [52-row first-release coverage inventory](milestones/P0/coverage.md) and
+[retrieval record](milestones/P0/official-sources.json) map Spot/USD-M/COIN-M
+families, frequencies, fields, sharing, permissions, deduplication and gaps.
+Current rendered USD-M market documentation requires API keys for the two top-trader
+ratios and historical trades; COIN-M requires a key for historical trades but its
+top-ratio pages show public query parameters. Spot historical-trade pages currently
+show no key header; do not transfer derivatives permissions by analogy. P2 must use
+current per-endpoint public semantics. No authenticated request is introduced.
+
+Selected `.md` catalogue URLs returned the same HTML fallback shell and were rejected
+as semantic evidence. The current official index/full API summaries and rendered
+endpoint pages were used instead; hashes and retrieval limitations are explicit.
+Public ADL risk is symbol-level and published every 30 minutes, distinct from
+account ADL quantiles. Original model-based REST provenance remains labelled until
+P2 implements raw HTTP body capture. This refresh performs no production collection.
+
+## Pre-milestone scope research — 2026-10-26
+
+Owner scope: original public data for Spot, USD-M and COIN-M perpetual and dated futures; options deferred. This is documentation research, not endpoint runtime qualification. The current index was read first; selected response bytes were hashed. No whole `llms-full.txt` fetch.
+
+Details: [research source manifest](research/2026-10-26/binance-sources.json). Temporary byte cache: `/private/tmp/bmdr-preplan-20261026-zcd_9dlb/sources/`.
+
+| URL | Retrieved UTC | Response SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| https://developers.binance.com/en/docs/llms.txt | 2026-10-26T03:52:44.572133+00:00 | e669de0fc0ee2030e81b56ab086211f62a74f0ab48ccd190e05d11ddaf37d63b | Current index identifies Spot, USD-M and COIN-M public data families; options deferred by owner. |
+| https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/common-definition.md | 2026-10-26T03:57:12.534030+00:00 | 2b1c74158ccaac85c0b0f2d2c4f9f1149180658f5e93a3c6c2c28eadbadac3e0 | COIN-M perpetual and quarterly dated contract identities/statuses require a separate adapter. |
+| https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/common-definition.md | 2026-10-26T03:57:12.810787+00:00 | 52706283c94a7b6c80714aee009e4c9bf1b367979612903753e52bd935c878d1 | USD-M perpetual and dated contract types are distinct; do not match every contract by symbol==underlying pair. |
+| https://developers.binance.com/en/docs/products/spot/web-socket-streams.md | 2026-10-26T03:57:13.099511+00:00 | 555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35 | Spot stream/connection lifecycle and raw capture baseline reference. |
+| https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md | 2026-10-26T03:57:13.517186+00:00 | 7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863 | Shared derivatives changelog records stream routing/data-family changes; inspect exact endpoint before implementation. |
+| https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/change-log.md | 2026-10-26T03:57:13.800877+00:00 | 7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863 | Same shared changelog response bytes as USD-M URL; not independent corroboration. |
+
+## Public data coverage review — 2026-10-04
+
+Owner-requested verification of the “归档流程说明” conversation used the current
+Agent Native index first, selected developer-portal pages and official public-data
+documentation. Findings are in
+[the coverage review](reviews/2026-10-04-data-coverage-gap-review.md).
+Evidence cache:
+`/Users/amada/Library/Caches/BinanceMarketDataRecorder/data-coverage-review-20261004`.
+
+Hashes below bind the stated representation. “Extract” means the saved web
+tool's extracted page text, not original HTTP bytes. Raw markdown/README and
+index entries bind downloaded response bytes. Empty catalog responses and generic
+HTML fallback pages were retained in the cache but are **not** semantic evidence.
+The obsolete root `/llms.txt` returned404; the current index is `/en/docs/llms.txt`.
+Only selected documentation was read; `llms-full.txt` was not downloaded.
+
+| Source / representation | URL | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- | --- |
+| Agent Native index / bytes | https://developers.binance.com/en/docs/llms.txt |2026-10-04T05:03:08.881406Z|754db774d164d0490e777ae4f89b77bafce73468863327f856e2bfd34dc314e6|Spot trade/block/reference streams and USD-M REST trade/RPI/risk/index families exist; USD-M inventory does not establish `@trade`.|
+| Spot changelog / bytes | https://developers.binance.com/en/docs/products/spot/CHANGELOG.md |2026-10-04T05:05:16.420840Z|45e96f38f0deeb44bc4e38975f74cd1ac44728fec37d68b450034ae8b326e8f2|May2026 introduced block-trade stream/history; finer SBE depth cadence is a separate transport capability.|
+| USD-M changelog / bytes | https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md |2026-10-04T05:05:16.460989Z|cfed5a72a9c270d1b5b2edf66d4d4de9908b82352cb87962bcfc291a907cfb3c|Normal depth excludes RPI; dedicated depth exists; `nq` is normal quantity in aggregates; liquidation description changed to largest per1000ms.|
+| Official public-data README / bytes | https://github.com/binance/binance-public-data/raw/refs/heads/master/README.md |2026-10-04T05:05:17.575366Z|2e133d9945a9263a02781369078e72805eff074680f305cd5460016471c6caad|Daily/monthly Spot/futures trades and bars support separate historical imports. Documented futures CSV does not promise per-trade RPI flags or live receive clocks.|
+| Spot price-range rule / bytes | https://developers.binance.com/en/docs/products/spot/faqs/price_range_execution_rules.md |2026-10-04T05:11:33.759294Z|7fd9ed8f0fd13f4bb997e022c2eca2009e96be4203c91b07a8f1b4d90e3f39c2|Reference price, calculation configuration and execution rules are separately published state; formulas require their defined inputs/rounding.|
+| Spot stream reference / extract | https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~ |2026-10-04T05:13:39.615Z|1a41287ceae85bd434c5eddd65f4fbc9f690a507368dab4b507df7b694298897|Individual trade, block-trade and reference-price streams are separate inputs.|
+| USD-M market reference / extract | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data |2026-10-04T05:13:39.625Z|939574755ab62a11f9c12c8745d1dba982f9655ba5d468c38bbe4d6ef0c3d5ed|Recent individual trades include `isRPITrade`; augmented RPI depth hides crossed levels; symbol-level ADL and normal aggregate quantity are independently defined.|
+| Options market reference / extract | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data |2026-10-04T05:13:39.625Z|5a2f963ea1136995909822372dcfe3508616f1aec8a5f74c8fda1659b649d91e|Option marks/IV/Greeks/OI are a separate unimplemented market family.|
+
+Six bounded **unsigned public GETs** from the VPS used the installed M20
+ProxyPolicy and the existing config's direct mode (environment proxies ignored).
+No API-key header, account/order endpoint, credential store, stream subscription
+or service control was used. These inspection responses were saved locally as
+review evidence, not inserted into production Raw/Catalog.
+
+| Public observation | URL | Retrieved UTC | Response-byte SHA-256 | Result |
+| --- | --- | --- | --- | --- |
+| BTC Spot reference |https://api.binance.com/api/v3/referencePrice?symbol=BTCUSDT|2026-10-04T05:10:37.133697Z|4205a383558724ab7eb453dd4bb62e7d81bdfbcbaceeeaf3d200da345a4e4a8a|HTTP200/non-null|
+| BTC reference calculation |https://api.binance.com/api/v3/referencePrice/calculation?symbol=BTCUSDT|2026-10-04T05:10:37.204081Z|c88b4e24a8fac60c24d52f723918a10e5addc8fc3645811469ec558d75484ce1|ARITHMETIC_MEAN/80×3750ms|
+| ETH Spot reference |https://api.binance.com/api/v3/referencePrice?symbol=ETHUSDT|2026-10-04T05:10:37.277966Z|5dd6f0afd71dd877d0b8984615ba5a61072fbbcfd77fa6c06ea6165a764ca656|HTTP200/non-null|
+| ETH reference calculation |https://api.binance.com/api/v3/referencePrice/calculation?symbol=ETHUSDT|2026-10-04T05:10:37.361671Z|c5e237715cfadde6b38a91a34394369fbab9d5d5f7cccaec5ff8c27b26fcb01d|ARITHMETIC_MEAN/80×3750ms|
+| BTC Spot execution rules |https://api.binance.com/api/v3/executionRules?symbol=BTCUSDT|2026-10-04T05:14:58.842435Z|e05d1c8f0221689f82a0f68e3d15e40991879c68ae1cd065dd78a57d5f72ac48|HTTP200/PRICE_RANGE|
+| ETH Spot execution rules |https://api.binance.com/api/v3/executionRules?symbol=ETHUSDT|2026-10-04T05:14:58.911081Z|519b84ff8d200e60209201219a33b9c41b97fd9b5eed9c7d5eb05e2f560c556d|HTTP200/PRICE_RANGE|
+
+Original immutable artifacts and Q5 processes were inspected read-only.
+These observations grant no formal time credit or continuous completeness claim.
+
 ## Formal M22.9 2h eligibility refresh — 2026-09-11
 
 Immediately before the owner-authorized Formal 2-hour start, direct unsigned

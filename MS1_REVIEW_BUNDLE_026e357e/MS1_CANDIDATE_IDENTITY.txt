@@ -1,0 +1,42 @@
+BASE_SHA=c421605e302d2ad46acdb2466627f64644181c9a
+BASE_TREE=a521dd61f8a090b4930cce5254985383f8893a3f
+CANDIDATE_SHA=026e357eb9af9b5b9fd111872dc6dcc30e9c599d
+CANDIDATE_TREE=25781fb8b517d7577cc6b0d4d3d858e476e13753
+PARENT_SHA=c421605e302d2ad46acdb2466627f64644181c9a
+BRANCH=feat/multisymbol-durable-identity
+COMMIT_SUBJECT=feat: add symbol-aware durable identities
+AUTHOR_NAME=tomohikoAmada
+AUTHOR_EMAIL=rockstaryyds22@gmail.com
+AUTHOR_DATE=2026-09-04T16:13:28+08:00
+COMMITTER_NAME=tomohikoAmada
+COMMITTER_EMAIL=rockstaryyds22@gmail.com
+COMMITTER_DATE=2026-09-04T16:13:28+08:00
+
+WORKING_TREE_STATUS_COMMAND=git status --short --branch --untracked-files=all
+WORKING_TREE_STATUS=
+## feat/multisymbol-durable-identity
+?? BBO_CACHE_CANDIDATE_REVIEW_BUNDLE.md
+?? BBO_CACHE_LIVE_AB_RESULT_20260902T032232Z.md
+?? STORAGE_FORECAST_LIVE_AB_RESULT_20260901T110017Z.md
+?? storage_forecast_snapshot_fix_review_bundle.md
+TRACKED_WORKTREE_DIFF=clean
+NOTE=The four untracked files predate this review bundle and were preserved untouched; they are excluded.
+
+ORIGIN_MAIN_SHA=c421605e302d2ad46acdb2466627f64644181c9a
+ORIGIN_MAIN_TREE=a521dd61f8a090b4930cce5254985383f8893a3f
+ORIGIN_MAIN_PARENT_SHA=8c83d4fd79f3af061c8b293a7bbfa537285f3300 0fecc068e369f60f3d937480f905e224c7bbf7bf
+ORIGIN_MAIN_SUBJECT=Merge pull request #50 from tomohikoAmada/perf/cache-orderbook-bbo
+ORIGIN_MAIN_AUTHOR=Tom <142194204+tomohikoAmada@users.noreply.github.com>
+ORIGIN_MAIN_AUTHOR_DATE=2026-09-02T12:54:49+08:00
+ORIGIN_MAIN_COMMITTER=GitHub <noreply@github.com>
+ORIGIN_MAIN_COMMITTER_DATE=2026-09-02T12:54:49+08:00
+ORIGIN_MAIN_VERIFIED_BY=git ls-remote origin HEAD refs/heads/main; origin/main is BASE
+
+REMOTE_BRANCH_LIST_COMMAND=git ls-remote --heads origin
+REMOTE_BRANCH_LIST=
+c421605e302d2ad46acdb2466627f64644181c9a	refs/heads/main
+REMOTE_HEAD=c421605e302d2ad46acdb2466627f64644181c9a	HEAD
+
+OPEN_PR_COUNT=0
+OPEN_PR_VERIFICATION=gh pr list --repo tomohikoAmada/BinanceMarketDataRecorder --state open --limit 100 --json number,title,headRefName,baseRefName returned []
+GITHUB_MUTATION=NO

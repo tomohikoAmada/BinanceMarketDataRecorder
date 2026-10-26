@@ -1,5 +1,20 @@
 # Storage Contract
 
+## Production verification adopted in P0 (2026-10-26)
+
+[ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) requires an
+independent full read of each new sealed file, binding count/CRC/header, stored and
+decoded size/digest and interpretable source/time/gap metadata to a durable result.
+P3 implements background work/results and backlog tracking. New checkpoints complete
+pending files within that run's frozen boundary; they do not mandate reauditing all
+history or stopping a healthy capture. A verifier failure resumes the same corpus.
+
+Archive destination readback, custody/receipt checks and source-deletion authorization
+below remain mandatory. Verification at ingestion cannot authorize deletion of the
+only copy. Periodic fsync and normal stop/drain/sync remain unchanged. Sudden-power-loss
+engineering/tests are out of scope; no new accepted loss window or zero-loss-at-power-cut
+claim is introduced. No existing data is migrated, rewritten or deleted by P0.
+
 ## Internal storage is authoritative for ingestion
 
 The Collector writes only to the internal root. The internal spool is the set

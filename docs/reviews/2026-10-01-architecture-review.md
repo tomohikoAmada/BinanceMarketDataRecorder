@@ -198,7 +198,7 @@ C++/Go 重写或更长 durability。它们不进入 24h 计划。
 文件/数据库/归档路径，对 OS、时钟与 predecessor 采用现有测试夹具；不能替代 VPS
 整体资格证明。见 [脚本](2026-10-01-review-probes.py)、
 [诊断输出](2026-10-01-review-probe-results.json) 和
-[推进计划](../qualification_to_24h_plan.md)。
+[推进计划](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/qualification_to_24h_plan.md)。
 
 本次 runtime、Raw、Catalog/schema、依赖锁、配置、service units 与 deployed identity
 均未改变；审查后的代码修复和架构取舍是后续任务。

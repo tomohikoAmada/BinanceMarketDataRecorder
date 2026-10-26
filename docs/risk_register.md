@@ -1,5 +1,28 @@
 # Risk Register
 
+## P0 current risks — 2026-10-26
+
+- R-078 remains OPEN: no new-plan BTC/ETH full-scope production qualification exists.
+  Original core baseline and the isolated full-current-feature steady baseline are
+  separate model workloads; neither proves the VPS can sustain all P2 sources.
+- The [coverage inventory](milestones/P0/coverage.md) records current official USD-M
+  top-ratio key restrictions with no equivalent public replacement. Historical no-key
+  implementation cannot establish current coverage. P2 must retain the explicit
+  restriction and must not add API keys or relabel global ratios as top ratios.
+- P1–P3 have not yet implemented the new raw-path, market-identity, source-monitoring
+  and incremental verifier contracts of ADR-0051. P4 cannot substitute legacy sampled
+  pass rates/full-history helpers for those missing capabilities.
+- Source publication, routing and permission semantics may change before P2; refresh
+  only affected official pages and record exact differences. HTML fallback shells
+  are not successful endpoint-document retrievals.
+
+Owner direction October26, 2026: new work follows the
+[production milestone plan](production_milestone_plan.md). Current priorities are
+coverage/identity gaps(P0/P2), Raw-path cost(P1), recovery and background workload
+coupling(P3), and actual shared-VPS headroom(P4–P6). No risk is closed merely by
+publishing this plan. Historical rows and plan links below preserve their original
+evidence; their old execution/approval sequences are superseded.
+
 Updated October4,2026 (Shanghai). Retained Q4 checkpoint: corrected source23ea5c4 actual reviewed
 eligible2h PASS, both full LIVE/completed verification and independent eligibility/
 actual restored-authority handoff ACCEPT. All6718 chunks archived/Catalogok/FKok/
@@ -10,7 +33,7 @@ sampling limits remain explicit. Latest recorded Q5 is RUNNING; its full closeou
 is pending. Latest owner plan schedules Q6 optimization then new optimized-artifact
 VPS Q7/2h, Q8/12h, Q9/24h, Q10/48h (86h), all NOT_STARTED. This does not deploy
 new code or grant capacity/duration credit; R078 staysOPEN. See the
-[current plan](milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
+[current plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
 See [current2h record](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md).
 R079's minimal correction has passed its own exact release/cloud/baseline/warm-up/
 Formal2h/terminal/review gates; the old cf3909e9 PASS remains historical only.
@@ -43,7 +66,7 @@ byte starvation and transient family-replay cap behavior were reproduced and
 corrected; repeat actual concurrent Recorder/archive gates. Do not repeat
 the unchanged live run. Existing archive/evidence and historical R-078 remain;
 no old baseline integrity PASS or FAIL was published. See the
-[cloud diagnosis](reviews/2026-10-02-cloud-performance-and-38h.md) and [38h plan](qualification_to_24h_plan.md).
+[cloud diagnosis](reviews/2026-10-02-cloud-performance-and-38h.md) and [38h plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/qualification_to_24h_plan.md).
 
 ## October 1 architecture-review findings
 
@@ -54,7 +77,7 @@ exact corrected wheel. Real selected-scope qualification remains Q3/Q4.
 See [Q2 evidence](milestone_acceptance/Q2-reviewed-release-and-cloud-design.md).
 See [Q1 evidence](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md),
 [details and probe results](reviews/2026-10-01-architecture-review.md)
-and the [sequenced remediation plan](qualification_to_24h_plan.md).
+and the [sequenced remediation plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/qualification_to_24h_plan.md).
 
 | Finding | Priority / evidence | Planned control |
 |---|---|---|
@@ -74,7 +97,7 @@ Q2 independent review is complete. The recheck also requires live F5 memory
 measurement (the finite component control has cloud synthetic evidence), warm-up before the
 authoritative baseline, cumulative audit/capacity forecasts and quiet-window
 protection through identity-sensitive audit publication. These are current
-[plan](milestone_plan.md) gates; none grants Formal credit.
+[plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md) gates; none grants Formal credit.
 
 ## Existing operational controls
 
