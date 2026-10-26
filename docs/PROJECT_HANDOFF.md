@@ -1,5 +1,14 @@
 # Project Handoff
 
+Owner direction October26, 2026: follow the new
+[production milestone plan](production_milestone_plan.md). **Next: P0**, align
+the development base and coverage/measurement contracts while preserving local
+changes. Design for ten assets; initial exit is BTC/ETH full selected market
+scope,99.5% per-source continuity and a final continuous72h run with48h checkpoint.
+Sudden power-loss work is deferred. Planning has not started implementation or
+production operations. Historical checkpoints and plan links below are retained
+evidence, not the new execution sequence.
+
 Authoritative accepted closeout October12 23:58UTC: **Q8 COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run9e048bb5665345d0a6518495aeba70af completed its own43200.136582231s. Both complete released LIVE passes, completed immutable-control verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE reconstruction ACCEPT33723537/33723537 saved frames (observed contract conformance100%, meeting the owner's strictly>99.9% criterion). Selected13129chunks/25316255874decodedB/1672427937storedB; audit48c93196/result7c266607. No recapture/newT0/history audit or production rebuild.
 
 The2645 retained gap/incomplete manifests include all16 zero-frame manifests; no manifest has the overlap flag. These counts are not additive missing-frame denominators. Selection includes this attempt's warm-up, own12h and original orderly stop/drain tail:15 manifests extend up to6.266588672s after target, granting zero additional duration credit. Monitor1434/1440PASS=99.5833333% is separate from saved-frame correctness. No claim that every Binance event was captured.
@@ -545,7 +554,7 @@ must earn its own 86h (309600s); current Q4/Q5 credit stays with its original
 identity. This supersedes the old unstarted Q6/24h and 38h target, not the active
 Q5 run. Q6 includes reviewed 48h/new-chain support because the current CLI lacks
 48h, and preserves old 72h/168h verification/resume semantics. See the
-[current milestone plan](milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
+[current milestone plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
 This planning edit does not start implementation/deployment or another live job.
 
 The following Q4 and older checkpoints are retained historical evidence; the
@@ -590,7 +599,7 @@ No speculative server or language change.
 
 See [current acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md),
 [final independent review](reviews/2026-10-04-spot-idle-formal2h-independent-review.md)
-and [milestone plan](milestone_plan.md).
+and [milestone plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md).
 
 ## Frozen release and preparation
 
@@ -730,7 +739,7 @@ compatibility analysis. Historical evidence stays available for diagnosis.
 
 Read these documents in order:
 
-1. The current section of [milestone plan](milestone_plan.md) and [risk register](risk_register.md).
+1. The current owner direction in [README](../README.md) and [risk register](risk_register.md).
 2. [Developer guide](developer_guide.md).
 3. [Project contract](project_contract.md) and [architecture](architecture.md).
 4. The relevant subsystem contract and ADR.

@@ -1,5 +1,14 @@
 # Current Production State
 
+Owner direction October26, 2026: the new
+[production milestone plan](production_milestone_plan.md) governs future work;
+P0 is next and production qualification remains incomplete. Latest read retained
+by this planning work:2026-10-26T06:07:27Z, Recorder inactive/disabled/PID0, installed
+Python sources match20e57f3. See [the recorded environment](research/2026-10-26/baseline/environment-final.json).
+This is a timestamped observation, not a live status query. The isolated benchmark
+did not start production or deploy changes. Historical acceptance and plan links
+below are preserved and grant no new scope/duration credit.
+
 Authoritative accepted closeout October12 23:58UTC: **Q8 COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run9e048bb5665345d0a6518495aeba70af completed its own43200.136582231s. Both complete released LIVE passes, completed immutable-control verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE reconstruction ACCEPT33723537/33723537 saved frames (observed contract conformance100%, meeting the owner's strictly>99.9% criterion). Selected13129chunks/25316255874decodedB/1672427937storedB; audit48c93196/result7c266607. No recapture/newT0/history audit or production rebuild.
 
 The2645 retained gap/incomplete manifests include all16 zero-frame manifests; no manifest has the overlap flag. These counts are not additive missing-frame denominators. Selection includes this attempt's warm-up, own12h and original orderly stop/drain tail:15 manifests extend up to6.266588672s after target, granting zero additional duration credit. Monitor1434/1440PASS=99.5833333% is separate from saved-frame correctness. No claim that every Binance event was captured.
@@ -534,7 +543,7 @@ Q9/24h → Q10/48h (86h/309600s independently accepted target time). This replac
 the old unstarted Q6/24h and 38h target; existing Q4/Q5 evidence and the active
 Q5 controls are unchanged. Current CLI has no48h: Q6 must add/review explicit
 new-chain support with historical compatibility before that stage can run.
-See [the updated plan](milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
+See [the updated plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#q6--performance-optimization-and-optimized-release-preparation).
 This is planned work, not a replacement deployment or new live-state readback.
 
 The following Q4 and older checkpoints are retained historical evidence; the
@@ -579,7 +588,7 @@ No speculative server or language change.
 
 See [current acceptance](milestone_acceptance/Q4-formal2h-spot-idle-20261004.md),
 [final independent review](reviews/2026-10-04-spot-idle-formal2h-independent-review.md)
-and [milestone plan](milestone_plan.md).
+and [milestone plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md).
 
 ## Current installed corrected artifact
 

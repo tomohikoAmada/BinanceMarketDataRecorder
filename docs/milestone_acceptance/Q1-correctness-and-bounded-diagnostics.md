@@ -1,6 +1,6 @@
 # Q1: Correctness fixes and bounded live diagnostics
 
-Date: 2026-10-02. Scope: Q1 of the current [38h plan](../milestone_plan.md).
+Date: 2026-10-02. Scope: Q1 of the current [38h plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md).
 Predecessor: `4d44902b882623c7a88025c6d222d688403583ba`, whose dual-platform
 CI/build passed in [run 36902512051](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/36902512051).
 This is implementation/self-verification, not the independent Q2 review or

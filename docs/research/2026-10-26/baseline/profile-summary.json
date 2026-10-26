@@ -1,0 +1,52 @@
+{
+  "source": "profile-python25-n2.folded",
+  "total_thread_samples": 1452,
+  "meaning": "Mutually exclusive stack categories in classification order; wall-clock thread samples, NOT percentages of process CPU. Includes startup/lifecycle and seal. Python-only sample may include syscall and lock waits.",
+  "categories": [
+    {
+      "category": "other",
+      "samples": 334,
+      "percent": 23.003
+    },
+    {
+      "category": "executor_wait_or_unresolved",
+      "samples": 293,
+      "percent": 20.179
+    },
+    {
+      "category": "raw_write_call_including_syscall_wait",
+      "samples": 234,
+      "percent": 16.116
+    },
+    {
+      "category": "imports",
+      "samples": 211,
+      "percent": 14.532
+    },
+    {
+      "category": "catalog_including_lifecycle",
+      "samples": 206,
+      "percent": 14.187
+    },
+    {
+      "category": "other_sealing",
+      "samples": 78,
+      "percent": 5.372
+    },
+    {
+      "category": "post_capture_verification",
+      "samples": 46,
+      "percent": 3.168
+    },
+    {
+      "category": "raw_fsync",
+      "samples": 25,
+      "percent": 1.722
+    },
+    {
+      "category": "canonical_cbor",
+      "samples": 25,
+      "percent": 1.722
+    }
+  ]
+}

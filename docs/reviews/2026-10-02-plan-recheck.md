@@ -11,7 +11,7 @@ GitHub main 核对为 `d6f37576f5b044bf578501cba291fe889e45a919`；复核优化�
 主要发现和已测优化方向成立；本次没有发现要求整仓重写或立即升级服务器的证据。
 当前仍有必须在冻结发布前处理的正确性问题，并发现一项辅助健康摘要遗漏。
 最终路线为小修复 → 审查/发布 → 安全清理/新范围/云端预热/基线 → 2h → 12h →
-24h。唯一当前计划入口是 [milestone_plan.md](../milestone_plan.md)；旧 24h 文件
+24h。唯一当前计划入口是 [milestone_plan.md](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md)；旧 24h 文件
 只保留跳转，历史章节明确不再是执行指令。
 
 复核沿用已有全仓模块盘点、专项复现和全离线测试，再重读实际调用链：runtime

@@ -13,6 +13,31 @@
 | Spot/USD-M raw trades | deferred live | explicit microstructure-trades | archive source clock | trade-level studies |
 | L3 queue position | unavailable | unavailable | public L2 does not provide it | unsupported |
 
+## Verified coverage gaps — October 4, 2026
+
+The [read-only coverage review](reviews/2026-10-04-data-coverage-gap-review.md)
+matches the deployed four-product/all14-auxiliary configuration to current
+official sources. Within the configured Spot/USD-M products, live individual
+executions, USD-M depth including RPI, Spot block trades/reference prices/
+calculation settings/execution rules and USD-M index constituents/symbol-level
+ADL/insurance snapshots are not collected. Other symbols, delivery contracts,
+COIN-M and options have no continuous capture. Global exchangeInfo still retains
+market metadata; this does not provide those markets' live tapes.
+
+USD-M aggregate Raw already preserves `nq`; the normalized aggregate schema
+does not expose it. Mark-price capture already includes index price. Missing
+individual executions cannot be inverted from aggTrade, but official historical
+trade files may supply exchange-time records later; original live receive timing
+cannot be recovered. The implemented microstructure historical planner currently
+targets BTCUSDT and does not prove that an import has actually occurred.
+
+The current official USD-M inventory does not establish a public `@trade` stream;
+recent REST trades are bounded and key-dependent historical lookup is outside
+this project's no-key scope. Klines/tickers can be derived only under matching
+coverage/window semantics, without reproducing their original stream updates.
+The review separately records two actual Q5 OI polling misses and their later
+successful retries; it does not grant Q5 completion or every-event completeness.
+
 Historical and Live data are never silently mixed: receive-time replay rejects
 archive-only rows. Missing results are absent/GAP, never zero or forward-filled.
 An empty 5-minute REST model is an explicit observation keyed by its requested

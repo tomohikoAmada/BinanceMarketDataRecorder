@@ -1,5 +1,31 @@
 # Binance Market Data Recorder Agent Contract
 
+Current owner direction October26, 2026: follow the new
+[production milestone plan](docs/production_milestone_plan.md), P0 through P6.
+Design for at least ten underlying assets; the initial production exit is BTC
+and ETH across their Spot quote pairs and USD-M/COIN-M perpetual and dated
+futures. Options are deferred. Capture original public data for offline research
+and backtesting. Owner selected 99.5% continuity, with honest per-source gaps and
+automatic recovery. Saved-data correctness is a separate requirement. Sudden
+power-loss engineering/tests are out of scope; retain existing periodic sync and
+normal stop/drain, without claiming a new owner-approved loss window.
+
+Research and the first core-path VPS baseline are complete; implementation
+starts at P0, with no new production run or deployment performed by the planning
+task. Use 2h checkpoints within 1/2-asset 24h runs, measured expansion/backoff, then
+48h and 72h checkpoints within the final continuous 72h run. Avoid a new generic
+fault/capacity framework, repeated whole-history audits, and private approval
+chains. Apply substantive new data/verification contracts explicitly in P0 and
+the affected implementation phase; preserve historical evidence and existing
+data. Routine authorized development does not need repeated approval.
+
+The local base 9e8ec37 predates reviewed remote main 01d7421. The first isolated
+VPS benchmark measures installed source 20e57f3, not either HEAD and not full
+production capacity. Preserve user changes while aligning the development base.
+See [research](docs/research/2026-10-26/README.md) for evidence and limits.
+All checkpoints and superseded workflow directions below are historical; they
+do not override the current owner scope or authorize old production operations.
+
 Authoritative accepted closeout October12 23:58UTC: **Q8 COMPLETE_OWNER_NEW_DATA_ONLY**. Sole run9e048bb5665345d0a6518495aeba70af completed its own43200.136582231s. Both complete released LIVE passes, completed immutable-control verification and independent GPT-6.1 Sol xhigh LOCAL/OFFLINE reconstruction ACCEPT33723537/33723537 saved frames (observed contract conformance100%, meeting the owner's strictly>99.9% criterion). Selected13129chunks/25316255874decodedB/1672427937storedB; audit48c93196/result7c266607. No recapture/newT0/history audit or production rebuild.
 
 The2645 retained gap/incomplete manifests include all16 zero-frame manifests; no manifest has the overlap flag. These counts are not additive missing-frame denominators. Selection includes this attempt's warm-up, own12h and original orderly stop/drain tail:15 manifests extend up to6.266588672s after target, granting zero additional duration credit. Monitor1434/1440PASS=99.5833333% is separate from saved-frame correctness. No claim that every Binance event was captured.
@@ -605,7 +631,9 @@ model quota interruptions.
 
 Before current-state or milestone work, read `docs/PROJECT_HANDOFF.md` and
 `docs/CURRENT_PRODUCTION_STATE.md`. Implementation map: `docs/developer_guide.md`;
-project scope: `docs/project_contract.md`; gates: `docs/milestone_plan.md`.
+project scope: `docs/project_contract.md`. The old milestone plan is retired;
+new development follows `docs/production_milestone_plan.md` from its first
+unfinished stage.
 
 ## Non-goals
 

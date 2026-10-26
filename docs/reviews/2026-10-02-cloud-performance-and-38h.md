@@ -127,7 +127,7 @@ Recorder 停止时的审计，不能证明 live Collector 的余量；它不支�
 canonical corpus 初始化。保留历史 Catalog/manifest、现有已核验归档和验收证据的
 可恢复副本；清理从验收范围移出旧数据，不隐含删除唯一归档副本。任何最终物理删除
 须对应明确的可删除对象和核验记录。未解决的旧库 full-audit scalability R-078
-仍独立保留，fresh corpus 通过不会替它关闭。详见 [38h 计划](../qualification_to_24h_plan.md)。
+仍独立保留，fresh corpus 通过不会替它关闭。详见 [38h 计划](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/qualification_to_24h_plan.md)。
 
 后续 [计划复核](2026-10-02-plan-recheck.md) 限定了上述小样本结论，并把唯一当前
-计划合并到 [milestone_plan.md](../milestone_plan.md)。旧计划文件只保留兼容链接。
+计划合并到 [milestone_plan.md](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md)。旧计划文件只保留兼容链接。

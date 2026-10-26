@@ -8,17 +8,23 @@ replay for downstream research.
 ## Status
 
 Version `0.1.0a1`. Multi-product collection and V5 acceptance evidence are
-implemented and merged. The Ubuntu x86_64 deployment uses the code merged in
-PR #78. Live qualification was stopped by the owner on October 1, 2026 during
-its baseline audit; the V5 2-hour test has not started. Production qualification
-remains incomplete.
+implemented. Production qualification remains incomplete; deployment and
+qualification records are specific to their source revision and run.
 
 See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 [developer handoff](docs/PROJECT_HANDOFF.md).
 
-Development follows the current [milestone plan](docs/milestone_plan.md): small
-correctness fixes, reviewed release and fresh-corpus preparation, then separate
-2h + 12h + 24h acceptance, totaling 38 accepted hours. Audit time is additional.
+The [current production milestone plan](docs/production_milestone_plan.md)
+replaces the retired plan as of October 26, 2026. It designs for at least ten
+assets and targets stable BTC/ETH production across Spot, USD-M and COIN-M
+perpetual/delivery markets, with 99.5% per-source continuity. Implementation
+starts at P0; expanded scope and production readiness are not yet achieved.
+Historical plans and acceptance evidence remain preserved.
+
+The [pre-milestone research](docs/research/2026-10-26/README.md) compares reusable
+projects, describes the expanded Spot/USD-M/COIN-M scope, and links the first
+reproducible VPS core-path baseline and flamegraphs. It is research evidence,
+not a full production-capacity result.
 
 ## Features
 
@@ -145,7 +151,7 @@ platform validation are described in the [test environment matrix](docs/test_env
 - [Architecture](docs/architecture.md) and [project contract](docs/project_contract.md).
 - [Data and storage](docs/data_and_storage.md) and [data contract](docs/data_contract.md).
 - [V5 acceptance contract](docs/acceptance_evidence_v5.md).
-- [Milestone plan](docs/milestone_plan.md) and [known limitations](docs/known_limitations.md).
+- [Known limitations](docs/known_limitations.md) and [risk register](docs/risk_register.md).
 
 macOS Apple Silicon is the development/local profile; Ubuntu ARM64 has separate
 validation evidence. Ubuntu 24.04 x86_64 is the production target. The portable

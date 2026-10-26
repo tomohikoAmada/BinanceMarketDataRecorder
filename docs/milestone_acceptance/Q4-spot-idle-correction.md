@@ -90,7 +90,7 @@ this race. Original Raw/archive/failed evidence remains retained.
 
 **A corrected deployment needs its own Formal2h before Formal12h.** The change
 touches production startup/resync/shutdown work, and a replacement wheel/source
-changes deployment identity. The [current plan](../milestone_plan.md) requires
+changes deployment identity. The [current plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md) requires
 one frozen artifact/profile across2h+12h+24h, and
 `acceptance_v5_online.predecessor_reference` rejects another deployment identity
 before accepting either the baseline or a stage predecessor. Do not transfer

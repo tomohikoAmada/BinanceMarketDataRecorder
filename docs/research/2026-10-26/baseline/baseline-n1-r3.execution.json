@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "nice",
+    "-n",
+    "10",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/preplan_baseline.py",
+    "--events",
+    "2000",
+    "--symbols",
+    "1",
+    "--timeout",
+    "150",
+    "--temp-parent",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6",
+    "--output",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/baseline-n1-r3.json"
+  ],
+  "start_utc_epoch": 1792993975.9119785,
+  "end_utc_epoch": 1792993988.408161,
+  "exit_code": 0
+}

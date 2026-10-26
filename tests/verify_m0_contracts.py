@@ -13,7 +13,6 @@ REQUIRED_FILES = (
     "README.md",
     "docs/project_contract.md",
     "docs/architecture.md",
-    "docs/milestone_plan.md",
     "docs/data_contract.md",
     "docs/storage_contract.md",
     "docs/macos_operations.md",
@@ -175,7 +174,6 @@ ALPHA_REFERENCE_ALLOWLIST = LEGACY_HISTORY_ALLOWLIST | {
     "docs/milestone_acceptance/M10.md",
     "docs/milestone_acceptance/M15.md",
     "docs/milestone_acceptance/M16.md",
-    "docs/milestone_plan.md",
     "docs/project_contract.md",
     "docs/repository_audit.md",
     "docs/requirements_traceability.md",
@@ -190,16 +188,6 @@ def verify() -> None:
 
     missing = [path for path in REQUIRED_FILES if not (ROOT / path).is_file()]
     assert not missing, f"missing M0 files: {missing}"
-
-    plan = (ROOT / "docs/milestone_plan.md").read_text(encoding="utf-8")
-    for number in range(21):
-        assert f"## M{number} " in plan, f"M{number} missing from milestone plan"
-    assert "## M0.1 " in plan, "M0.1 missing from milestone plan"
-    assert "## M0.2 " in plan, "M0.2 missing from milestone plan"
-    for heading in ("Scope", "Non-scope", "Dependencies", "Acceptance", "Rollback"):
-        assert plan.count(f"- {heading}:") == 23, f"expected 23 {heading} sections"
-    assert "## M16 — Replay interface and generic consumer data contract" in plan
-    assert "named consumer is" in plan and "required for V1 completion" in plan
 
     trace = (ROOT / "docs/requirements_traceability.md").read_text(encoding="utf-8")
     for requirement_id in REQUIRED_TRACE_IDS:

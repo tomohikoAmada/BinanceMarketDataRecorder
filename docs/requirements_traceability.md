@@ -4,6 +4,13 @@ This matrix maps implemented requirements to contracts and verification records.
 The current task and handoff define new work; historical milestone procedures
 describe their original deliveries.
 
+New production work follows [P0–P6](production_milestone_plan.md). Ten-asset design
+and full BTC/ETH market coverage map to P0/P2; Raw-path efficiency to P1;
+recovery/background isolation to P3;99.5% per-source continuity and24h/72h
+qualification to P4–P6. These are target requirements, not completed features.
+Sudden power-loss work is deferred. Historical rows below retain their original
+scope and do not require repeating old milestone procedures.
+
 Q1 candidate correction evidence is recorded in
 [Q1 acceptance](milestone_acceptance/Q1-correctness-and-bounded-diagnostics.md):
 required heartbeat/capacity supervision, auxiliary failure visibility,
@@ -92,8 +99,9 @@ separate gates; these candidate changes do not grant Formal credit.
 
 ## Milestone coverage
 
-The M0, M0.1, M0.2, and M1-M20 sections in `milestone_plan.md` each contain
-scope, non-scope, dependencies, acceptance, and rollback. M19 review-fix
+The old milestone plan was retired at the owner's request on October 26, 2026;
+its historical scope and gates remain available in Git history. The acceptance
+records below are historical evidence, not a current execution plan. M19 review-fix
 submilestones add scoped acceptance records without extending the top-level
 M0-M20 plan. M21.4 (USD-M ingress backpressure repair) was merged through
 PR #7, deployed to production, and passed 2h and 12h formal validation

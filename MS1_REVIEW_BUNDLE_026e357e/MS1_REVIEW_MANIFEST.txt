@@ -1,0 +1,17 @@
+MS1 review bundle SHA-256 manifest
+Bundle root: MS1_REVIEW_BUNDLE_026e357e
+All payload files below are hashed relative to the bundle root.
+The manifest is intentionally excluded from its own hash list because a
+self-hash would change the manifest and cannot be stable.
+
+b05663104a20af54c2cf06100bb90814f6207391835a48ec1410578cbfbfee10  ./MS1_ACCEPTANCE_RECORD.md
+d34139d4329b739dea9898de7180d94ac0f8d9c9b33878236a1de2c95bd8f547  ./MS1_CANDIDATE.patch
+cac4cb07095af4df9760dcfdf7875f4ca665685f4cc6356bec6188b62d4f4366  ./MS1_CANDIDATE_IDENTITY.txt
+32a23e66ae1fe31bcdbc258ceed724443ee04781efb78060abf530d1ce954e2f  ./MS1_CHANGED_FILES.txt
+a4b95c77f2dc89178c664a4b5e6e0fa5d02613f4d4b2b3a4b943488bb75dd308  ./MS1_DIFFSTAT.txt
+008cd889dde0a15fb13cb4d6a6eb5375dab86b5021c1fc5a309a9f166c05d133  ./MS1_SCHEMA_EVIDENCE.md
+7a8113d64b0f9b69d34e8cadcf8cd7a305c25180027e15902816ef15c8db73f3  ./MS1_TEST_ARTIFACTS/README.md
+3474d05d442af4b08b9e100a9136060dda345b0139d1b2750beadcd4fc5a871a  ./MS1_TEST_ARTIFACTS/tests/integration/test_ms1_multisymbol_durable_identity.py
+da7f640502205d267c76e7b66b8595d42d1e075ead16416048e9c2f36a2b138b  ./MS1_TEST_RESULTS.txt
+
+MANIFEST_SELF_HASH=NOT_APPLICABLE; standard manifests exclude themselves from recursive hashing.

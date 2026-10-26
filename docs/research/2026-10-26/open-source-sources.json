@@ -1,0 +1,166 @@
+{
+  "review_date": "2026-10-26",
+  "purpose": "Source review, not runtime certification or measured cross-project performance comparison.",
+  "projects": [
+    {
+      "repository": "ccxt/ccxt",
+      "url": "https://github.com/ccxt/ccxt",
+      "reviewed_commit": "d3159f7036f93db086cd0414642132fba5401710",
+      "archived": false,
+      "last_pushed": "2026-10-25T08:50:14Z",
+      "stars": 44583,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "ddf4f02d422e3bfbb9b307ef769276df0841e105",
+          "url": "https://github.com/ccxt/ccxt/blob/d3159f7036f93db086cd0414642132fba5401710/README.md"
+        },
+        {
+          "path": "python/ccxt/pro/binance.py",
+          "git_blob_sha": "d9f8114ce948c7ab10e5b11a6b9ae5717e56235d",
+          "url": "https://github.com/ccxt/ccxt/blob/d3159f7036f93db086cd0414642132fba5401710/python/ccxt/pro/binance.py"
+        }
+      ]
+    },
+    {
+      "repository": "bmoscon/cryptofeed",
+      "url": "https://github.com/bmoscon/cryptofeed",
+      "reviewed_commit": "4679bff3e2041f14c2e8d92e9793e2a39e168b97",
+      "archived": false,
+      "last_pushed": "2026-10-26T00:13:31Z",
+      "stars": 2931,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "2b10a123263dae8b570b218c3a8be811a3a0148b",
+          "url": "https://github.com/bmoscon/cryptofeed/blob/4679bff3e2041f14c2e8d92e9793e2a39e168b97/README.md"
+        },
+        {
+          "path": "cryptofeed/connection.py",
+          "git_blob_sha": "e4bd52617c1e366a9570be2192571236f3cefb60",
+          "url": "https://github.com/bmoscon/cryptofeed/blob/4679bff3e2041f14c2e8d92e9793e2a39e168b97/cryptofeed/connection.py"
+        },
+        {
+          "path": "cryptofeed/capture/recorder.py",
+          "git_blob_sha": "67c47f2734c59cc16b8f965f3ad9226a30248389",
+          "url": "https://github.com/bmoscon/cryptofeed/blob/4679bff3e2041f14c2e8d92e9793e2a39e168b97/cryptofeed/capture/recorder.py"
+        },
+        {
+          "path": "cryptofeed/exchanges/binance.py",
+          "git_blob_sha": "076f9bf6fdddf7eb9cb0e4df7b4d07c57a57a3e9",
+          "url": "https://github.com/bmoscon/cryptofeed/blob/4679bff3e2041f14c2e8d92e9793e2a39e168b97/cryptofeed/exchanges/binance.py"
+        }
+      ]
+    },
+    {
+      "repository": "binance/binance-connector-python",
+      "url": "https://github.com/binance/binance-connector-python",
+      "reviewed_commit": "d70e4dc58a1773cd129815157d2e1b44bb81392d",
+      "archived": false,
+      "last_pushed": "2026-10-23T12:14:18Z",
+      "stars": 2956,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "5f1c0d84a4a41ff621f287db429679ae36476438",
+          "url": "https://github.com/binance/binance-connector-python/blob/d70e4dc58a1773cd129815157d2e1b44bb81392d/README.md"
+        },
+        {
+          "path": "common/src/binance_common/websocket.py",
+          "git_blob_sha": "d853054ba3b70ac61f709297716d51b1cf51236b",
+          "url": "https://github.com/binance/binance-connector-python/blob/d70e4dc58a1773cd129815157d2e1b44bb81392d/common/src/binance_common/websocket.py"
+        }
+      ]
+    },
+    {
+      "repository": "nautechsystems/nautilus_trader",
+      "url": "https://github.com/nautechsystems/nautilus_trader",
+      "reviewed_commit": "730f1b37bf80c54b90ddfdb9d0d2693f3db07d0e",
+      "archived": false,
+      "last_pushed": "2026-10-26T03:33:18Z",
+      "stars": 30851,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "eaa6f0ff8457ea0512895fd353655ca6f664a282",
+          "url": "https://github.com/nautechsystems/nautilus_trader/blob/730f1b37bf80c54b90ddfdb9d0d2693f3db07d0e/README.md"
+        },
+        {
+          "path": "docs/integrations/binance.md",
+          "git_blob_sha": "2ab45beb9a4d3a13def2e895a0d6ae03f4dad923",
+          "url": "https://github.com/nautechsystems/nautilus_trader/blob/730f1b37bf80c54b90ddfdb9d0d2693f3db07d0e/docs/integrations/binance.md"
+        }
+      ]
+    },
+    {
+      "repository": "bmoscon/cryptostore",
+      "url": "https://github.com/bmoscon/cryptostore",
+      "reviewed_commit": "8a4310d6ca1d52f294e015c802863f1ff9da44e2",
+      "archived": true,
+      "last_pushed": "2024-04-18T17:38:07Z",
+      "stars": 417,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "54804ded8ffc9c9ed1fc2e8ffeab52ca6fc17e32",
+          "url": "https://github.com/bmoscon/cryptostore/blob/8a4310d6ca1d52f294e015c802863f1ff9da44e2/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "binance/binance-public-data",
+      "url": "https://github.com/binance/binance-public-data",
+      "reviewed_commit": "d571690eb66760763b0bd6e27e8cd35603c7e244",
+      "archived": false,
+      "last_pushed": "2026-10-16T14:18:28Z",
+      "stars": 2550,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "e01e34a0b0cd91d62386a5a237190a3167138bae",
+          "url": "https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "ccakirr/binance-microstructure-recorder",
+      "url": "https://github.com/ccakirr/binance-microstructure-recorder",
+      "reviewed_commit": "ac0517efe717a27ddb0a8a1151dda880bdba8b07",
+      "archived": false,
+      "last_pushed": "2026-09-28T22:56:01Z",
+      "stars": 0,
+      "files": [
+        {
+          "path": "README.md",
+          "git_blob_sha": "3b3bab5f6a990f830c42f6a95c4ff888ae51508c",
+          "url": "https://github.com/ccakirr/binance-microstructure-recorder/blob/ac0517efe717a27ddb0a8a1151dda880bdba8b07/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "nkaz001/hftbacktest",
+      "url": "https://github.com/nkaz001/hftbacktest",
+      "reviewed_commit": "5f3ec40b2afb764e0fea112f941ed85523ef4e88",
+      "archived": false,
+      "last_pushed": "2025-12-23T15:57:58Z",
+      "stars": 5002,
+      "files": [
+        {
+          "path": "README.rst",
+          "git_blob_sha": "8b0fedadb2a10f50ce449a8218924d12cde5b64e",
+          "url": "https://github.com/nkaz001/hftbacktest/blob/5f3ec40b2afb764e0fea112f941ed85523ef4e88/README.rst"
+        },
+        {
+          "path": "collector/src/main.rs",
+          "git_blob_sha": "eb00bb40d6f234da2ebf73b921117a14d0594fc4",
+          "url": "https://github.com/nkaz001/hftbacktest/blob/5f3ec40b2afb764e0fea112f941ed85523ef4e88/collector/src/main.rs"
+        },
+        {
+          "path": "collector/src/file.rs",
+          "git_blob_sha": "aea46eee5202e299363d43eab4f74a26cc045815",
+          "url": "https://github.com/nkaz001/hftbacktest/blob/5f3ec40b2afb764e0fea112f941ed85523ef4e88/collector/src/file.rs"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+py-spy> Sampling process 25 times a second. Press Control-C to exit.
+
+{"symbols": ["BTCUSDT", "ETHUSDT"], "expected_ws_frames": 17040, "wall_seconds_including_drain_seal": 17.16909407102503, "cpu_seconds": 17.878633936, "cpu_us_per_ws_frame": 1049.21560657277, "verification": {"saved_ws_frames": 17040, "expected_ws_frames": 17040, "exact_payloads_and_crc_and_artifact_hashes_pass": true, "capture_flags": {"rest_snapshot": 6, "sdk_model_not_raw_http_body": 2, "injected_model_without_raw_http_body": 4}, "wall_seconds": 2.637125479988754, "cpu_seconds": 2.4714711620000003, "chunks": 29, "stored_bytes": 480897, "decoded_bytes": 10506692}}
+
+py-spy> Stopped sampling because process exited
+py-spy> Wrote raw flamegraph data to '/var/tmp/bmdr-preplan-20261026-7cwa2sj6/profile-python25-n2.folded'. Samples: 1452 Errors: 0
+py-spy> You can use the flamegraph.pl script from https://github.com/brendangregg/flamegraph to generate a SVG

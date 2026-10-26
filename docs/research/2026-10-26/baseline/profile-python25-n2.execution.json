@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "nice",
+    "-n",
+    "10",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/profiler/bin/py-spy",
+    "record",
+    "--rate",
+    "25",
+    "--format",
+    "raw",
+    "-o",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/profile-python25-n2.folded",
+    "--",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/preplan_baseline.py",
+    "--events",
+    "4000",
+    "--symbols",
+    "2",
+    "--timeout",
+    "150",
+    "--temp-parent",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6",
+    "--output",
+    "/var/tmp/bmdr-preplan-20261026-7cwa2sj6/profile-python25-n2.json"
+  ],
+  "start_epoch": 1792994465.538733,
+  "end_epoch": 1792994495.6577017,
+  "exit_code": 0
+}

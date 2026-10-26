@@ -8,7 +8,7 @@ Verified October 1, 2026 following the owner's instruction to stop qualification
 
 October 2 read-only performance checks confirmed Recorder remains inactive and
 disabled; its installed source was not replaced. The owner selected safe cleanup
-and a new independent corpus for the current [38h plan](milestone_plan.md).
+and a new independent corpus for the current [38h plan](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md).
 That cleanup/deployment/qualification has not occurred. The local optimization
 candidate and diagnostic-only cloud measurements are recorded in the
 [performance report](reviews/2026-10-02-cloud-performance-and-38h.md); they grant
@@ -945,7 +945,7 @@ coverage findings are CLOSED. The approved exact candidate was subsequently
 validated by run `34436773366` and merged in PR #56 as
 `303e073e25d5ed53d7cf6e26a9c6c6e879013b50` (tree
 `2b30a4dd2b8c694ac2e3abad88d6cb56a75badee`). No deployment is authorized.
-The [multi-symbol execution ledger](milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
+The [multi-symbol execution ledger](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/blob/9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b/docs/milestone_plan.md#multi-symbol-execution-ledger--2026-09-10)
 was the detailed continuation queue at that historical cut; the candidate
 submission summaries below retain their evidence context. The current P2
 authority is the opening section of this document.

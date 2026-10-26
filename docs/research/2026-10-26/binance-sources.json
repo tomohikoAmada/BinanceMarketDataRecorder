@@ -1,0 +1,55 @@
+[
+  {
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_utc": "2026-10-26T03:52:44.572133+00:00",
+    "sha256": "e669de0fc0ee2030e81b56ab086211f62a74f0ab48ccd190e05d11ddaf37d63b",
+    "bytes": 174759,
+    "file": "binance-llms.txt",
+    "conclusion": "Current index identifies Spot, USD-M and COIN-M public data families; options deferred by owner."
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/common-definition.md",
+    "retrieved_utc": "2026-10-26T03:57:12.534030+00:00",
+    "sha256": "2b1c74158ccaac85c0b0f2d2c4f9f1149180658f5e93a3c6c2c28eadbadac3e0",
+    "bytes": 5868,
+    "file": "official-0.md",
+    "content_type": "application/octet-stream",
+    "conclusion": "COIN-M perpetual and quarterly dated contract identities/statuses require a separate adapter."
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/common-definition.md",
+    "retrieved_utc": "2026-10-26T03:57:12.810787+00:00",
+    "sha256": "52706283c94a7b6c80714aee009e4c9bf1b367979612903753e52bd935c878d1",
+    "bytes": 6399,
+    "file": "official-1.md",
+    "content_type": "application/octet-stream",
+    "conclusion": "USD-M perpetual and dated contract types are distinct; do not match every contract by symbol==underlying pair."
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/products/spot/web-socket-streams.md",
+    "retrieved_utc": "2026-10-26T03:57:13.099511+00:00",
+    "sha256": "555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35",
+    "bytes": 10472,
+    "file": "official-2.md",
+    "content_type": "application/octet-stream",
+    "conclusion": "Spot stream/connection lifecycle and raw capture baseline reference."
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md",
+    "retrieved_utc": "2026-10-26T03:57:13.517186+00:00",
+    "sha256": "7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863",
+    "bytes": 113183,
+    "file": "official-3.md",
+    "content_type": "application/octet-stream",
+    "conclusion": "Shared derivatives changelog records stream routing/data-family changes; inspect exact endpoint before implementation."
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/change-log.md",
+    "retrieved_utc": "2026-10-26T03:57:13.800877+00:00",
+    "sha256": "7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863",
+    "bytes": 113183,
+    "file": "official-4.md",
+    "content_type": "application/octet-stream",
+    "conclusion": "Same shared changelog response bytes as USD-M URL; not independent corroboration."
+  }
+]
