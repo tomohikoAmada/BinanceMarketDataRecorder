@@ -8,7 +8,10 @@ descriptions: the current catalog says latest, while the 2026-04-10 changelog
 pre-milestone research snapshot. This is an unresolved coverage-contract issue,
 not evidence of a dropped payload. Both sources describe a representative feed,
 not an exhaustive liquidation ledger. Do not infer COIN-M behavior from the USD-M
-change. D11 correction remains in P0 and is tracked in the risk register.
+change. D11 is now split into U/C observations with an explicit unresolved selection
+rule. Raw observation identity is retained; latest/largest is not an authority
+for completeness or derived statistics. See the [R4 correction](milestones/P0/coverage.md)
+and [fresh source record](milestones/P0/corrections-20261026/official-sources.json).
 
 | Source | Retrieval UTC | SHA-256 and representation |
 | --- | --- | --- |
@@ -659,3 +662,13 @@ retains the depth limit/weight tiers. The source record hashes downloaded
 upstream text, not a hash claim for rendered excerpts. No Binance API was called.
 Static role shares, reference6000/2400 admission limits and remaining live checks
 are explicit in [the closeout](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md).
+
+## R4 correction adopted — 2026-10-26
+
+The independent COIN-M catalog also describes the latest snapshot, but the
+April10 changed-description entry is explicitly under USD-M. The U conflict
+is disclosed rather than resolved by guessing; do not infer a C change.
+The current contract preserves representative messages and does not use either
+selection assumption in completeness, deduplication or derived liquidation totals.
+Historical retrieval conclusions above remain their original observations and are
+superseded for current D11 interpretation by the [coverage correction](milestones/P0/coverage.md).

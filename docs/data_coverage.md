@@ -3,7 +3,7 @@
 ## Current target and implemented boundary — P0, 2026-10-26
 
 Use the [first-release coverage inventory](milestones/P0/coverage.md) for the current
-52-family mapping and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md)
+52-family mapping (53 rows after the U/C liquidation split) and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md)
 for per-source continuity/new-file correctness. The inventory explicitly distinguishes
 planned families, shared/equivalent sources, authentication limitations, not-offered
 interfaces and historical alternatives. Tables below describe implemented/historical
@@ -53,3 +53,13 @@ archive-only rows. Missing results are absent/GAP, never zero or forward-filled.
 An empty 5-minute REST model is an explicit observation keyed by its requested
 range and model hash, with no fabricated exchange-period timestamp.
 No data class here authorizes strategy, model, account, order, or trading code.
+
+## P0 R4 liquidation interpretation
+
+USD-M's current reference describes the latest snapshot per1000ms, while its
+2026-04-10 changelog (effective April14) describes the largest. The actual
+selection rule is unresolved; preserve published payloads without using either
+assumption for completeness, deduplication or liquidation totals. COIN-M's own
+reference is recorded separately; a USD-M-only change does not establish a C
+change. Both are representative feeds, not an exhaustive liquidation ledger.
+See [D11 source conflict and policy](milestones/P0/coverage.md#d11-的官方语义冲突r42026-10-26).

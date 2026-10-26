@@ -201,3 +201,11 @@ Correction creates/verifies absolute08:52:46UTC expiry before cancelling oldtime
 preserving original bound/Recorder/observer/T0 and five masked inactive units.
 Actual receipt retained; final independent eligibility review must assess it.
 Use absolute fixed cutoff for future windows, no silent extension.
+
+## P0 R4 disposition — 2026-10-26
+
+The coverage-disclosure defect is corrected: D11 distinguishes U/C, records the
+reference/changelog conflict, and forbids latest/largest assumptions in
+completeness, deduplication and derived totals. Exchange selection semantics
+remain unresolved; no implementation is authorized to guess them. This does
+not invalidate original Raw content/count checks and requires no recapture.

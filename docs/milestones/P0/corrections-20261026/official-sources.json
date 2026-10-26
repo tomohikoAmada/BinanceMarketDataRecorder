@@ -1,0 +1,36 @@
+[
+  {
+    "id": "index",
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_utc": "2026-10-26T14:48:32.412863+00:00",
+    "bytes": 174759,
+    "sha256": "81d0f32aabb5c313ed7e94cf61c5bc1b935a094d5d3cbf32274586bf4a0da77b",
+    "representation": "downloaded HTTP response body",
+    "usable": true
+  },
+  {
+    "id": "changelog",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md",
+    "retrieved_utc": "2026-10-26T14:48:32.773191+00:00",
+    "bytes": 113183,
+    "sha256": "7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863",
+    "representation": "downloaded HTTP response body",
+    "usable": true
+  },
+  {
+    "id": "U-reference",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market",
+    "retrieved_utc": "2026-10-26T14:48:32.773343+00:00",
+    "representation": "web-tool rendered official page; conclusion below is a paraphrase, not original HTTP bytes",
+    "conclusion": "Reference says latest; conflicts with USD-M changelog 2026-04-10 effective 2026-04-14 saying largest; selection rule unresolved.",
+    "original_http_sha256": null
+  },
+  {
+    "id": "C-reference",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~",
+    "retrieved_utc": "2026-10-26T14:48:32.773349+00:00",
+    "representation": "web-tool rendered official page; conclusion below is a paraphrase, not original HTTP bytes",
+    "conclusion": "Own reference says latest. No evidence that the USD-M-only liquidation change applies to COIN-M. Do not transfer the largest rule to C.",
+    "original_http_sha256": null
+  }
+]

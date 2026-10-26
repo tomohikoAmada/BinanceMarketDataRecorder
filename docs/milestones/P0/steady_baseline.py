@@ -21,25 +21,31 @@ import tempfile
 import time
 from collections import Counter
 from contextlib import ExitStack, asynccontextmanager, suppress
+from dataclasses import asdict
 from pathlib import Path
 from typing import ClassVar
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "research/2026-10-26"))
 import preplan_baseline as core
+from benchmark_checks import WorkloadProgress, classify_steady, verify_physical_records
 
 from binance_market_data_recorder.archive import archive_drain
+from binance_market_data_recorder.binance.spot.websocket import SpotStreamCollector
 from binance_market_data_recorder.binance.usdm.side_data_rest import (
     FIVE_MINUTE_RETENTION,
     RestSideDataKind,
 )
+from binance_market_data_recorder.binance.usdm.websocket import UsdMStreamCollector
 from binance_market_data_recorder.collector.usdm_side_data import RestSideDataPoller
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.metrics.report import DailyReporter
 from binance_market_data_recorder.normalize.pipeline import Normalizer
-from binance_market_data_recorder.normalize.raw import iter_source_records, load_source_chunks
+from binance_market_data_recorder.normalize.raw import load_source_chunks
 from binance_market_data_recorder.service import runtime as runtime_module
 from binance_market_data_recorder.service.resources import current_rss_bytes
+from binance_market_data_recorder.spool.stream import StreamSpool
+from binance_market_data_recorder.spool.writer import RawChunkWriter
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.forecast import StorageForecaster
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
@@ -245,6 +251,9 @@ async def measure(args, parent):
                     digest_frame(digest, frame)
                 expected["/".join(key)] = {"frames": count, "sha256": digest.hexdigest()}
     anchor = None
+    progress = WorkloadProgress(inputs, intervals)
+    stream_objects = {}
+    spool_objects = {}
 
     class Socket:
         def __init__(self, key):
@@ -258,6 +267,7 @@ async def measure(args, parent):
             frame = inputs[self.key][self.position]
             self.position += 1
             sent[self.key] += 1
+            progress.record("sent", "/".join(self.key), len(frame), time.perf_counter() - anchor)
             return frame
 
         async def close(self, code=1000, reason=""):
@@ -338,7 +348,81 @@ async def measure(args, parent):
         kwargs["utc_clock_ns"] = lambda: core.EPOCH_MS * 1_000_000
         poller_init(instance, **kwargs)
 
+    def receive_meter(original, market):
+        async def receive(instance, *args, **kwargs):
+            receipt = await original(instance, *args, **kwargs)
+            key = f"{market}/{instance.symbol}/{getattr(instance.stream, 'value', instance.stream)}"
+            stream_objects[key] = instance
+            progress.record("received", key, len(receipt.raw_payload))
+            return receipt
+
+        return receive
+
+    original_enqueue = StreamSpool.enqueue
+    original_commit = RawChunkWriter._commit_prepared_frame
+    original_sync = RawChunkWriter.sync
+
+    def metered_enqueue(spool, envelope):
+        key = f"{envelope.market}/{envelope.symbol}/{envelope.stream}"
+        with progress.lock:
+            spool_objects[key] = spool
+            if key not in progress.sizes:
+                progress.register_model_source(key)
+                progress.record("sent", key, len(envelope.raw_payload))
+                progress.record("received", key, len(envelope.raw_payload))
+            original_enqueue(spool, envelope)
+            progress.record("enqueued", key, len(envelope.raw_payload))
+
+    def metered_commit(writer, prepared):
+        with progress.lock:
+            original_commit(writer, prepared)
+            e = prepared.snapshot
+            key = f"{e.market}/{e.symbol}/{e.stream}"
+            if key in progress.values:
+                progress.written(str(writer.header.chunk_id), key, len(e.raw_payload))
+
+    def metered_sync(writer):
+        identity = str(writer.header.chunk_id)
+        target = progress.sync_target(identity)
+        original_sync(writer)
+        progress.synced(identity, target)
+
+    def boundary(name):
+        # No await: sender/receiver stay on this event loop; writer commits/acks
+        # serialize against this short observation. Fsync itself holds no meter lock.
+        with progress.lock:
+            observation_start = time.perf_counter()
+            resources = counters()
+            point = progress.snapshot(time.perf_counter() - anchor)
+            for key, stream in stream_objects.items():
+                row = point["streams"][key]
+                row["receipt_queue"] = asdict(stream.receipt_queue_stats)
+            for key, spool in spool_objects.items():
+                point["streams"][key]["spool_queue_depth"] = spool.queue.depth
+            point["name"] = name
+            point["observation_start_elapsed"] = observation_start - anchor
+            point["observation_end_elapsed"] = time.perf_counter() - anchor
+            resources["progress"] = point
+            return resources
+
     with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(
+                SpotStreamCollector,
+                "_receive_once",
+                receive_meter(SpotStreamCollector._receive_once, "spot"),
+            )
+        )
+        stack.enter_context(
+            patch.object(
+                UsdMStreamCollector,
+                "_receive_once",
+                receive_meter(UsdMStreamCollector._receive_once, "um_perpetual"),
+            )
+        )
+        stack.enter_context(patch.object(StreamSpool, "enqueue", metered_enqueue))
+        stack.enter_context(patch.object(RawChunkWriter, "_commit_prepared_frame", metered_commit))
+        stack.enter_context(patch.object(RawChunkWriter, "sync", metered_sync))
         stack.enter_context(patch.object(RestSideDataPoller, "__init__", fixed_source_clock))
         for name in (
             "PublicSpotRestApi",
@@ -361,16 +445,24 @@ async def measure(args, parent):
             if task.done():
                 task.result()
                 raise RuntimeError("runtime ended in warmup")
-            before = counters()
+            before = boundary("start")
+            boundaries = [before["progress"]]
             print("STEADY_BEGIN", flush=True)
-            await asyncio.sleep(args.seconds)
-            after = counters()
+            for step in range(1, 5):
+                target = before["wall"] + args.seconds * step / 4
+                await asyncio.sleep(max(0, target - time.perf_counter()))
+                checkpoint = boundary("end" if step == 4 else f"quarter-{step}")
+                boundaries.append(checkpoint["progress"])
+            after = checkpoint
             print("STEADY_END", flush=True)
+            steady_state = classify_steady(boundaries, duration)
+            tail_start = time.perf_counter()
             async with asyncio.timeout(60):
                 while sum(sent.values()) != sum(len(v) for v in inputs.values()):
                     if task.done():
                         task.result()
                     await asyncio.sleep(0.05)
+            input_complete = boundary("tail-input-complete")
             if task.done():
                 task.result()
                 raise RuntimeError("runtime ended before normal stop")
@@ -381,10 +473,14 @@ async def measure(args, parent):
                 for p, c in runtime._collectors.items()
             }
         finally:
+            drain_start = time.perf_counter()
             runtime.request_stop("P0_FIXED_INPUT_COMPLETE")
             await asyncio.wait_for(task, 90)
+            drain_end = time.perf_counter()
+            drained = boundary("normal-stop-drained")
             stop_background.set()
             await asyncio.gather(worker, monitor)
+            background_join_end = time.perf_counter()
     for status in [*side_status.values(), global_side_status]:
         for name, stats in status.items():
             if stats["failures"] or not stats["accepted"]:
@@ -397,36 +493,19 @@ async def measure(args, parent):
             catalog=catalog,
             external_roots={prepared.target.storage_id: prepared.target.root},
         )
-        # load_source_chunks is chronological per stream; sort frames by capture sequence.
-        records = [r for c in chunks for r in iter_source_records(c)]
-        records.sort(
-            key=lambda r: (
-                r.envelope.market,
-                r.envelope.symbol,
-                r.envelope.stream,
-                r.envelope.receive_monotonic_ns,
-            )
+        actual, flags, stream_counts, physical_lifecycle = verify_physical_records(
+            chunks, layout.catalog, expected
         )
-        for record in records:
-            e = record.envelope
-            stream_counts[f"{e.market}/{e.symbol}/{e.stream}"] += 1
-            flags.update(e.capture_flags)
-            key = (e.market, e.symbol, e.stream)
-            if key in inputs:
-                label = "/".join(key)
-                item = actual.setdefault(label, {"frames": 0, "digest": hashlib.sha256()})
-                item["frames"] += 1
-                digest_frame(item["digest"], e.raw_payload)
-        actual = {
-            k: {"frames": v["frames"], "sha256": v["digest"].hexdigest()} for k, v in actual.items()
+        persisted = {
+            key: row["persisted_frames"] for key, row in drained["progress"]["streams"].items()
         }
-        if actual != expected or flags.get("malformed", 0):
-            raise RuntimeError(f"Raw input mismatch/malformed: {actual != expected}, {flags}")
+        if persisted != stream_counts:
+            raise RuntimeError("fsync acknowledgements differ from independently read Raw counts")
         backlog = catalog.archive_aggregate(prepared.target.storage_id)
     steady = [s for s in samples if args.warmup <= s["elapsed"] <= duration]
     lag = sorted(s["lag"] for s in steady)
     return {
-        "schema": "p0-steady-baseline.v2",
+        "schema": "p0-steady-baseline.v3",
         "source_commit": args.commit,
         "python": sys.version,
         "platform": platform.platform(),
@@ -450,6 +529,10 @@ async def measure(args, parent):
         "input_manifest": expected,
         "raw_verification": actual,
         "all_ws_exact_bytes_order_count_crc_hashes": True,
+        "physical_order_verified": True,
+        "fsync_counts_match_independent_raw_read": True,
+        "physical_chunk_lifecycle": physical_lifecycle,
+        "replay_frame_sort_used_for_verification": False,
         "capture_flags": dict(flags),
         "streams_saved": dict(stream_counts),
         "rest_calls": dict(api.calls),
@@ -458,6 +541,31 @@ async def measure(args, parent):
         "readiness_before_stop": readiness,
         "measurement_before": before,
         "measurement_after": after,
+        "steady_boundaries": boundaries,
+        "steady_state": steady_state,
+        "window_work": {
+            key: {
+                field: row[field] - before["progress"]["streams"].get(key, {}).get(field, 0)
+                for field in (
+                    "sent_frames",
+                    "received_frames",
+                    "written_frames",
+                    "persisted_frames",
+                    "written_payload_bytes",
+                    "persisted_payload_bytes",
+                )
+            }
+            for key, row in after["progress"]["streams"].items()
+        },
+        "comparison_rule": "compare matched per-stream window work and tail, never CPU alone",
+        "tail": {
+            "input_catchup_seconds": input_complete["wall"] - tail_start,
+            "normal_stop_drain_seconds": drain_end - drain_start,
+            "background_join_seconds": background_join_end - drain_end,
+            "input_complete": input_complete,
+            "drained": drained,
+            "work_excluded_from_steady_cpu_is_reported_separately": True,
+        },
         "steady_seconds": after["wall"] - before["wall"],
         "steady_cpu_seconds": after["cpu"] - before["cpu"],
         "rss_min_bytes": min(s["rss"] for s in steady),
@@ -560,7 +668,8 @@ def main():
         p.error("new output and positive bounded durations required")
     with tempfile.TemporaryDirectory(prefix="bmdr-p0-steady-", dir="/var/tmp") as temporary:
         result = asyncio.run(measure(args, Path(temporary).resolve()))
-    args.output.write_text(json.dumps(result, indent=2, default=str) + "\n")
+    with args.output.open("x") as output:
+        output.write(json.dumps(result, indent=2, default=str) + "\n")
 
 
 if __name__ == "__main__":

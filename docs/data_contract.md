@@ -609,3 +609,13 @@ existing `gap`/`complete` semantics are reused.
 The V1 format is designed for Binance data and generic downstream consumption,
 not as a speculative multi-exchange interchange standard. Another exchange
 would require a new architecture and compatibility review.
+
+## P0 R4 representative liquidation observations
+
+D11 records the unresolved USD-M reference/changelog latest-versus-largest
+selection conflict and the separately checked COIN-M reference. Until official
+semantics are consistent, preserve published payloads and source/connection/
+physical-ordinal observation identity; neither assumption authorizes completeness,
+event merging or derived liquidation totals. Raw/normalized format versions and
+historical results are unchanged by this disclosure. See the current
+[coverage policy](milestones/P0/coverage.md).
