@@ -11,8 +11,10 @@ power-loss engineering/tests are out of scope; retain existing periodic sync and
 normal stop/drain, without claiming a new owner-approved loss window.
 
 Research and the first core-path VPS baseline are preserved. P0 deliverables are
-reviewed; four corrections remain in P0 before final acceptance and P1 entry.
-See [P0 review](docs/milestones/P0/review-20261026.md) for concrete fixes and checks.
+reviewed and R1–R4 are corrected with targeted tests and a new isolated v3 baseline.
+See [P0 review](docs/milestones/P0/review-20261026.md) for closure evidence. P1 has
+not started. Compare matched per-source timed work and tail; the new profile run
+is NON_STEADY and is diagnostic only.
 Use 2h checkpoints within 1/2-asset 24h runs, measured expansion/backoff, then
 48h and 72h checkpoints within the final continuous 72h run. Avoid a new generic
 fault/capacity framework, repeated whole-history audits, and private approval

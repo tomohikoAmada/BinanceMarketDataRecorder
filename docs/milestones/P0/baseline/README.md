@@ -1,6 +1,6 @@
 # P0 全现有功能稳态基准
 
-状态：**原始测量完成，基准校验修正待完成**。双币全现有功能模型与独立采样原文件保持不变。[PR #86审查R1–R3](../review-20261026.md)指出：排序后的原文核对不足以证明物理写入顺序，计时边界缺少进度 / 积压记录，复测有覆盖旧日志的风险。修正前不能把本基准作为完整的顺序保证或直接声称候选性能胜出。与最初的 [20e57f3核心路径基准](../../../research/2026-10-26/baseline/README.md) 分开保存。
+状态：**PR #86 历史原始测量，文件保留**。R1–R3 已在当前脚本修正，另见[v3 复测与分类](../corrections-20261026/README.md)。下列 v2 结果只支持原文内容 / 数量，不能由排序核对证明物理顺序，也不能由最终总量证明计时窗口工作相同。旧结果未重算或改写。新 v3 无 profiler 基线 STEADY；独立 profile NON_STEADY，仅作诊断。两版仪表开销不同，不直接比较 CPU。与最初的 [20e57f3 核心路径基准](../../../research/2026-10-26/baseline/README.md)分开保存。
 
 选定源 `113cdb3`（runtime tree与已接受 `01d7421`一致），在原GreenCloud VPS独立源码目录执行，复用已安装运行依赖，不替换生产venv/包，不启用生产服务。每次创建独立临时数据根与模拟注册归档目录，正常退出后只清理自己创建的测试数据；生产Raw、Catalog、evidence和归档均不打开。真实归档代码在临时目录执行，其卷发现返回fixture，物理I/O仍发生在主机ext4系统盘，不代表2TB归档盘吞吐。
 
@@ -14,7 +14,7 @@
 
 CPU是Recorder及已回收子进程分别计量；I/O/上下文切换、host steal/PSI、调度lag和原始样本均留存，子进程CPU在回收时计入可能略跨窗口，不能当精确逐时刻总CPU。低频profile单独执行，不混入无profiler成绩；10Hz attach仅在STEADY_BEGIN后开始，110s后在STEADY_END前结束，排除导入和最终核对。
 
-## 最终实测结果
+## PR #86 原始实测结果（v2）
 
 [完整汇总](summary.json)、[无profiler原始结果](steady-n2.json)、[独立profile运行](profile-steady-n2.json)及各自execution文件保留实际命令/时间/退出码。
 
@@ -46,7 +46,7 @@ CPU是Recorder及已回收子进程分别计量；I/O/上下文切换、host ste
 
 ## 复测
 
-将当前源、必要fixtures和这两份脚本放到隔离目录，使用相同运行依赖；生产数据根不参与：
+当前脚本采用 v3：五个边界保存逐源写入 / fsync 和队列进度，单列尾部耗时；物理帧不排序，分片只按 Catalog 生命周期排列；输出冲突在写入前拒绝。将当前源、必要 fixtures、原固定输入生成器及三份脚本（包括 `benchmark_checks.py`）放到新的隔离目录，使用相同运行依赖；生产数据根不参与：
 
 ```bash
 cd /path/to/isolated-checkout
@@ -57,7 +57,7 @@ PYTHONPATH=src:. /path/to/python3.12 docs/milestones/P0/steady_baseline.py \
   --root "$PWD" --commit <selected-runtime-commit> --profiler /path/to/py-spy
 ```
 
-`profile_steady.py`启动自己的相同输入运行并在稳态窗口attach；输出路径必须未占用。运行文件在 [steady_baseline.py](../steady_baseline.py)、[profile_steady.py](../profile_steady.py)。后续P1 A/B保持同输入和后台频率交错重复，报告snapshot/chunk/REST数量与宿主steal差异；这里单轮基线不能推断规模曲线、CPU瓶颈归因或精确优化百分比。
+`profile_steady.py`启动自己的相同输入运行并在稳态窗口attach；全部七类输出路径必须未占用。运行文件在 [steady_baseline.py](../steady_baseline.py)、[benchmark_checks.py](../benchmark_checks.py)、[profile_steady.py](../profile_steady.py)。后续P1 A/B保持同输入和后台频率交错重复，报告snapshot/chunk/REST数量与宿主steal差异；这里单轮基线不能推断规模曲线、CPU瓶颈归因或精确优化百分比。
 
 ## 初测限制保留
 

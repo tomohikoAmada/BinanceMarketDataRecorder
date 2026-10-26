@@ -1,0 +1,23 @@
+import datetime,hashlib,json,os,pathlib,subprocess,time
+root=pathlib.Path(__file__).resolve().parent
+os.chdir(root)
+meta=json.loads((root/'measurement-source.json').read_text())
+for path,digest in meta['scripts'].items():
+ assert hashlib.sha256((root/path).read_bytes()).hexdigest()==digest,path
+python='/opt/binance-market-data-recorder/venv/bin/python'
+env=dict(os.environ,PYTHONPATH=str(root/'src')+':'+str(root),BINANCE_MARKET_RECORDER_GIT_COMMIT=meta['code_commit'])
+command=['nice','-n','10',python,'docs/milestones/P0/steady_baseline.py','--repo',str(root),'--commit',meta['code_commit'],'--symbols','2','--warmup','20','--seconds','120','--output',str(root/'steady-n2.json')]
+receipt={'argv':command,'start_epoch':time.time(),'status':'STARTING'}
+try:
+ with (root/'steady-n2.stdout').open('x') as out,(root/'steady-n2.stderr').open('x') as err:
+  run=subprocess.run(command,env=env,stdout=out,stderr=err,timeout=330)
+ receipt.update(exit_code=run.returncode,status='COMPLETE' if run.returncode==0 else 'FAILED')
+ if run.returncode: raise RuntimeError('benchmark failed')
+finally:
+ receipt['end_epoch']=time.time()
+ with (root/'steady-n2.execution.json').open('x') as out:json.dump(receipt,out,indent=2)
+profile=[python,'docs/milestones/P0/profile_steady.py','--root',str(root),'--profiler','/var/tmp/bmdr-preplan-20261026-7cwa2sj6/profiler/bin/py-spy','--commit',meta['code_commit']]
+with (root/'profile-runner.stdout').open('x') as out,(root/'profile-runner.stderr').open('x') as err:
+ subprocess.run(profile,env=env,stdout=out,stderr=err,check=True,timeout=330)
+state=subprocess.run(['systemctl','show','binance-market-data-recorder.service','-p','ActiveState','-p','MainPID','-p','UnitFileState','-p','NRestarts'],capture_output=True,text=True,check=True).stdout
+with (root/'completion.json').open('x') as out:json.dump({'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'production_recorder_state':state},out,indent=2)

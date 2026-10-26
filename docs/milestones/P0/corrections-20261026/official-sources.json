@@ -23,7 +23,23 @@
     "retrieved_utc": "2026-10-26T14:48:32.773343+00:00",
     "representation": "web-tool rendered official page; conclusion below is a paraphrase, not original HTTP bytes",
     "conclusion": "Reference says latest; conflicts with USD-M changelog 2026-04-10 effective 2026-04-14 saying largest; selection rule unresolved.",
-    "original_http_sha256": null
+    "original_http_sha256": null,
+    "unusable_markdown_probe": {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market.md",
+      "retrieved_utc": "2026-10-26T15:12:25.606225+00:00",
+      "bytes": 66196,
+      "sha256": "10cac1c0e2a3222660f629a65dca427c49282403200da2ea67f80fcd1cecf1cf",
+      "usable": false,
+      "reason": "HTTP 200 HTML shell, not normative Markdown; excluded from semantics"
+    },
+    "excerpt_file": "u-liquidation-excerpt.txt",
+    "excerpt_sha256": "1ac870d670e877cf3ed117f171b01b6081c3d5131594e44698083196b0565a6f",
+    "excerpt_retrieved_utc": "2026-10-26T15:14:16.103984+00:00",
+    "excerpt_representation": "UTF-8 exact short excerpt from web-tool rendered reference, shared wording at symbol and all-market sections; not original HTTP bytes",
+    "excerpt_lines": [
+      244,
+      2210
+    ]
   },
   {
     "id": "C-reference",
@@ -31,6 +47,22 @@
     "retrieved_utc": "2026-10-26T14:48:32.773349+00:00",
     "representation": "web-tool rendered official page; conclusion below is a paraphrase, not original HTTP bytes",
     "conclusion": "Own reference says latest. No evidence that the USD-M-only liquidation change applies to COIN-M. Do not transfer the largest rule to C.",
-    "original_http_sha256": null
+    "original_http_sha256": null,
+    "unusable_markdown_probe": {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~.md",
+      "retrieved_utc": "2026-10-26T15:12:25.972369+00:00",
+      "bytes": 66196,
+      "sha256": "10cac1c0e2a3222660f629a65dca427c49282403200da2ea67f80fcd1cecf1cf",
+      "usable": false,
+      "reason": "HTTP 200 HTML shell, not normative Markdown; excluded from semantics"
+    },
+    "excerpt_file": "c-liquidation-excerpt.txt",
+    "excerpt_sha256": "1ac870d670e877cf3ed117f171b01b6081c3d5131594e44698083196b0565a6f",
+    "excerpt_retrieved_utc": "2026-10-26T15:14:16.104219+00:00",
+    "excerpt_representation": "UTF-8 exact short excerpt from web-tool rendered reference, shared wording at symbol and all-market sections; not original HTTP bytes",
+    "excerpt_lines": [
+      399,
+      3061
+    ]
   }
 ]

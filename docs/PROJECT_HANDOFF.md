@@ -2,11 +2,15 @@
 
 Read the [production plan](production_milestone_plan.md), [P0 result](milestones/P0/README.md),
 [coverage inventory](milestones/P0/coverage.md), and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
-P0 deliverables are reviewed, with **four P0 corrections still open** in the
-[PR #86 review](milestones/P0/review-20261026.md): physical-order validation,
-steady-window progress/backlog accounting, output preservation, and D11 liquidation
-semantics. Complete those focused corrections before P1; preserve original results
-and add the corrected baseline before performance A/B. P1 has not started.
+P0 R1–R4 are complete; see the [review closure](milestones/P0/review-20261026.md)
+and [v3 baseline](milestones/P0/corrections-20261026/README.md). Physical order is
+verified before payload comparison; each source has timed write/fsync and queue
+accounting; output conflicts preserve old evidence; D11 U/C sampling semantics
+are disclosed separately. USD-M latest/largest remains unresolved, so no such
+assumption may govern deduplication, completeness or derived totals. The new
+unprofiled run is STEADY; its separate profile is NON_STEADY and diagnostic only.
+P1 has not started. Preserve old results; compare matched per-source window work,
+tail and background work in P1 A/B, with the same v3 instrumentation on both sides.
 
 P0 preserved the original local changes and research in `d81e7d2`, then merged the
 accepted `origin/main=01d7421` into `113cdb3`. Existing accepted fixes include USD-M

@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "nice",
+    "-n",
+    "10",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "docs/milestones/P0/steady_baseline.py",
+    "--repo",
+    "/var/tmp/bmdr-p0-review-20261026-3KRfsxId",
+    "--commit",
+    "7c07157144d400e75974adf58ab52282d19479b9",
+    "--symbols",
+    "2",
+    "--warmup",
+    "20",
+    "--seconds",
+    "120",
+    "--output",
+    "/var/tmp/bmdr-p0-review-20261026-3KRfsxId/steady-n2.json"
+  ],
+  "start_epoch": 1793026860.6002634,
+  "status": "COMPLETE",
+  "exit_code": 0,
+  "end_epoch": 1793027025.6297698
+}

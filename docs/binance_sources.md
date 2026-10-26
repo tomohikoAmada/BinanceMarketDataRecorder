@@ -24,7 +24,7 @@ No downloaded text was executed and no exchange market-data endpoint was called.
 
 ## P0 official source refresh — 2026-10-26
 
-The [52-row first-release coverage inventory](milestones/P0/coverage.md) and
+The [52-family first-release coverage inventory (53 rows after D11 split)](milestones/P0/coverage.md) and
 [retrieval record](milestones/P0/official-sources.json) map Spot/USD-M/COIN-M
 families, frequencies, fields, sharing, permissions, deduplication and gaps.
 Current rendered USD-M market documentation requires API keys for the two top-trader
@@ -672,3 +672,13 @@ The current contract preserves representative messages and does not use either
 selection assumption in completeness, deduplication or derived liquidation totals.
 Historical retrieval conclusions above remain their original observations and are
 superseded for current D11 interpretation by the [coverage correction](milestones/P0/coverage.md).
+
+The correction refresh follows the current index and preserves exact short U/C
+rendered excerpts in the [source record](milestones/P0/corrections-20261026/official-sources.json).
+Both were observed at 2026-10-26T15:14:16Z; each excerpt SHA-256 is
+`1ac870d670e877cf3ed117f171b01b6081c3d5131594e44698083196b0565a6f`.
+Equal short wording is not independent original-HTTP identity. The downloaded
+changelog at 2026-10-26T14:48:32Z retains SHA-256
+`7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`.
+U/C `.md` probes returned an HTML shell and are explicitly unusable; no downloaded
+content was executed and the index's full-text corpus was not loaded for this fix.
