@@ -214,16 +214,20 @@ def classify_steady(boundaries: list[dict[str, Any]], scheduled_end: float) -> d
         "receipt_owned_payload_bytes",
         "spool_owned_payload_bytes",
     ):
-        values = [sum(row[field] for row in point["streams"].values()) for point in boundaries]
-        if (
-            len(values) >= 3
-            and values[-1] > values[0]
-            and all(left <= right for left, right in pairwise(values))
-        ):
-            reasons.append(f"sustained_backlog_growth:{field}")
+        for key in last:
+            values = [point["streams"].get(key, {}).get(field, 0) for point in boundaries]
+            changes = list(pairwise(values))
+            # Two positive steps over >=3 separated observations distinguish
+            # growth from one transient endpoint frame. Other sources cannot offset it.
+            if (
+                len(values) >= 3
+                and all(a <= b for a, b in changes)
+                and sum(a < b for a, b in changes) >= 2
+            ):
+                reasons.append(f"sustained_backlog_growth:{field}:{key}")
     return {
         "status": "NON_STEADY" if reasons else "STEADY",
         "performance_comparable": not reasons,
         "reasons": reasons,
-        "rule": "input by deadline; no monotonic backlog growth across >=3 boundaries",
+        "rule": "input by deadline; per-source monotonic backlog with >=2 increases is non-steady",
     }

@@ -269,4 +269,24 @@ def test_post_write_consumer_backlog_is_not_hidden_by_fsync() -> None:
         point["streams"][LABEL]["receipt_owned_payload_bytes"] = size
         points.append(point)
     result = classify_steady(points, 3)
-    assert "sustained_backlog_growth:receipt_owned_payload_bytes" in result["reasons"]
+    assert f"sustained_backlog_growth:receipt_owned_payload_bytes:{LABEL}" in result["reasons"]
+
+
+def test_one_source_draining_cannot_cancel_another_sources_growth() -> None:
+    p = WorkloadProgress(
+        {("spot", "BTCUSDT", "diff_depth"): [b"x"], ("spot", "ETHUSDT", "diff_depth"): [b"x"]},
+        {"diff_depth": 1.0},
+    )
+    for label in p.values:
+        for phase in ("sent", "received", "enqueued"):
+            p.record(phase, label, 1)
+        p.written(label, label, 1)
+        p.synced(label, p.sync_target(label))
+    points = []
+    for size in (1, 2, 3):
+        point = p.snapshot(float(size))
+        point["streams"][LABEL]["receipt_owned_payload_bytes"] = size
+        point["streams"]["spot/ETHUSDT/diff_depth"]["receipt_owned_payload_bytes"] = 4 - size
+        points.append(point)
+    result = classify_steady(points, 3)
+    assert result["reasons"] == [f"sustained_backlog_growth:receipt_owned_payload_bytes:{LABEL}"]
