@@ -130,7 +130,7 @@
     "src/binance_market_data_recorder/supervisor/readiness.py": "bf47d78804b1b2f80f95b76c86809a63eeb7e10d5edc13c2d656d61a9941422f",
     "src/binance_market_data_recorder/version.py": "19197570f4a0ca22abfedf3a0b494a1f0a5dd86260e4e70d4b55d5bd6b46b7eb"
   },
-  "harness_sha256": "9ca5805c3927830935746bdd43b479453fa0be08281673dcc0c4658466452054",
+  "harness_sha256": "990b40a547742bd1f5ad8bbd929c4bcd04d7434775fe587e5689b8bf5cf6c22f",
   "fixture_support_sha256": {
     "tests/__init__.py": "a2d2adc778deafbd3f910cfcfc7a0511d080a17a3aa9aab17e38c8169ddbbfde",
     "tests/archive_support.py": "3df2100d1cfb5204cfabf6acfec8baaa3697ddf26333110154fedafa2a0d58a1",

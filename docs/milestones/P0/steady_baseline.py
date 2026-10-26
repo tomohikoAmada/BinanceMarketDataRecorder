@@ -161,7 +161,10 @@ class Api(core.Rest):
     def periods(self, kind, *args):
         self.calls[kind.value] += 1
         symbol, limit, start, end = args[0], args[-3], args[-2], args[-1]
-        rows = [_cursor_model(kind, stamp) for stamp in range(start, end + 1, 300000)][:limit]
+        response_start = start - 300000 if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME else start
+        rows = [_cursor_model(kind, stamp) for stamp in range(response_start, end + 1, 300000)][
+            :limit
+        ]
         return Response(json.loads(json.dumps(rows).replace("BTCUSDT", symbol)))
 
     def open_interest_statistics(self, *args):
@@ -372,6 +375,7 @@ async def measure(args, parent):
                 task.result()
                 raise RuntimeError("runtime ended before normal stop")
             readiness = [c.readiness_snapshot().public_dict() for c in runtime._collectors.values()]
+            global_side_status = runtime.global_side_data.status()
             side_status = {
                 f"{p.market}/{p.symbol}": c.side_data_status()
                 for p, c in runtime._collectors.items()
@@ -381,6 +385,10 @@ async def measure(args, parent):
             await asyncio.wait_for(task, 90)
             stop_background.set()
             await asyncio.gather(worker, monitor)
+    for status in [*side_status.values(), global_side_status]:
+        for name, stats in status.items():
+            if stats["failures"] or not stats["accepted"]:
+                raise RuntimeError(f"fixture source did not run successfully: {name}: {stats}")
     archived.append(await asyncio.to_thread(background_once))
     actual, flags, stream_counts = {}, Counter(), Counter()
     with Catalog(layout.catalog) as catalog:
@@ -446,6 +454,7 @@ async def measure(args, parent):
         "streams_saved": dict(stream_counts),
         "rest_calls": dict(api.calls),
         "side_status_before_stop": side_status,
+        "global_side_status_before_stop": global_side_status,
         "readiness_before_stop": readiness,
         "measurement_before": before,
         "measurement_after": after,
