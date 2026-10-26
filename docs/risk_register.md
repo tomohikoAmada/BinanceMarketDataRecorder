@@ -2,11 +2,13 @@
 
 ## P0 current risks — 2026-10-26
 
-- [PR #86 review R1–R4](milestones/P0/review-20261026.md) are corrected and
-  verified in P0; see [v3 evidence](milestones/P0/corrections-20261026/README.md).
+- [PR #87 review](milestones/P0/review-20261026.md#pr-87-复审2026-10-26) accepts
+  R1/R3/R4; R2 remains OPEN because a temporary drop in backlog masks overall
+  growth and incorrectly returns STEADY. Fix the focused classifier, retain the
+  measurements and append classification of their saved boundaries.
   USD-M latest/largest selection semantics remain unresolved: disclosure is fixed,
   not the exchange conflict. Do not guess either rule or transfer U behavior to C.
-  The unprofiled run is STEADY; its separate profile is NON_STEADY and cannot serve
+  The unprofiled run's recorded label is STEADY; its profile is NON_STEADY and cannot serve
   as a performance comparison. Preserve representative raw messages and compare
   matched per-source window work/tail/background workload for P1.
 - R-078 remains OPEN: no new-plan BTC/ETH full-scope production qualification exists.

@@ -10,11 +10,13 @@ automatic recovery. Saved-data correctness is a separate requirement. Sudden
 power-loss engineering/tests are out of scope; retain existing periodic sync and
 normal stop/drain, without claiming a new owner-approved loss window.
 
-Research and the first core-path VPS baseline are preserved. P0 deliverables are
-reviewed and R1–R4 are corrected with targeted tests and a new isolated v3 baseline.
-See [P0 review](docs/milestones/P0/review-20261026.md) for closure evidence. P1 has
-not started. Compare matched per-source timed work and tail; the new profile run
-is NON_STEADY and is diagnostic only.
+Research and the first core-path VPS baseline are preserved. PR #87 review accepts
+R1/R3/R4 and the new boundary measurements; one R2 classifier defect remains in P0:
+a temporary backlog decrease masks later growth. See the [P0 review](docs/milestones/P0/review-20261026.md)
+for the reproduced case and focused fix. Reclassify retained boundaries if only
+the classifier changes; do not repeat VPS measurements unnecessarily. P1 has not
+started. Compare matched per-source timed work and tail; the NON_STEADY profile
+remains diagnostic only.
 Use 2h checkpoints within 1/2-asset 24h runs, measured expansion/backoff, then
 48h and 72h checkpoints within the final continuous 72h run. Avoid a new generic
 fault/capacity framework, repeated whole-history audits, and private approval
