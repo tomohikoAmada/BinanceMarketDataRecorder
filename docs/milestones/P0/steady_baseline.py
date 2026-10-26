@@ -29,7 +29,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "research/2026-10-2
 import preplan_baseline as core
 
 from binance_market_data_recorder.archive import archive_drain
-from binance_market_data_recorder.binance.usdm.side_data_rest import RestSideDataKind
+from binance_market_data_recorder.binance.usdm.side_data_rest import (
+    FIVE_MINUTE_RETENTION,
+    RestSideDataKind,
+)
 from binance_market_data_recorder.collector.usdm_side_data import RestSideDataPoller
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.metrics.report import DailyReporter
@@ -198,6 +201,20 @@ async def measure(args, parent):
     root, layout = prepared.layout.root, prepared.layout
     fixtures = args.repo / "tests/fixtures/binance/usdm"
     api = Api(fixtures)
+    # A steady-state fixture starts at the previous closed period, rather than
+    # synthesizing a month of cold-start catch-up inside the measured interval.
+    last_closed = core.EPOCH_MS // 300000 * 300000 - 300000
+    with Catalog(layout.catalog) as catalog:
+        for symbol in core.SYMBOLS[: args.symbols]:
+            for kind, (retention, window) in FIVE_MINUTE_RETENTION.items():
+                catalog.advance_side_data_cursor(
+                    kind=kind.value,
+                    symbol=symbol,
+                    last_persisted_period_timestamp=last_closed - 300000,
+                    updated_at_utc_ns=core.EPOCH_MS * 1_000_000,
+                    source_retention_window=retention,
+                    retention_window_ms=window,
+                )
     duration = args.warmup + args.seconds
     inputs, expected, sent, opened = {}, {}, Counter(), Counter()
     intervals = {
@@ -421,6 +438,7 @@ async def measure(args, parent):
         },
         "config": config.model_dump(mode="json") | {"data_root": "<fresh-temporary-root>"},
         "source_period_epoch_ms": core.EPOCH_MS,
+        "initial_fixture_cursor_ms": last_closed - 300000,
         "input_manifest": expected,
         "raw_verification": actual,
         "all_ws_exact_bytes_order_count_crc_hashes": True,
