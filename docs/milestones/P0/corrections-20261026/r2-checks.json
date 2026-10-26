@@ -1,0 +1,89 @@
+{
+  "code_commit": "4bf0daecac0e29193b79dd5163d400f07753378c",
+  "classifier_version": "p0-steady-classifier.v4",
+  "review_snapshot_commit": "a943f39",
+  "local": {
+    "targeted_tests": {
+      "command": ".venv/bin/python -m pytest -q tests/unit/test_p0_benchmark_review.py",
+      "result": "26 passed in 0.29s",
+      "previous_cases_retained": 19,
+      "new_batch_growth_and_bounded_cases": 7
+    },
+    "ruff": {
+      "command": ".venv/bin/python -m ruff check .",
+      "result": "PASS"
+    },
+    "mypy": {
+      "command": ".venv/bin/python -m mypy tests/unit/test_p0_benchmark_review.py",
+      "result": "PASS; includes imported typed classifier"
+    },
+    "document_links": {
+      "result": "PASS",
+      "local_paths": 123,
+      "heading_fragments": 10
+    },
+    "m0": {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "result": "PASS"
+    },
+    "diff_check": "PASS"
+  },
+  "ci": {
+    "run_id": 40353132475,
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40353132475",
+    "status": "completed",
+    "code_commit": "4bf0daecac0e29193b79dd5163d400f07753378c",
+    "conclusion": "SUCCESS",
+    "jobs": {
+      "macos-python312": "SUCCESS",
+      "ubuntu-python312": "SUCCESS"
+    },
+    "scope": "Full default suites, Ruff, mypy, M0, Go golden, build, clean wheel/CLI; executable commit 4bf0dae. Subsequent changes only add documentation and reclassification evidence.",
+    "test_results": {
+      "macos-python312": {
+        "passed": 2244,
+        "skipped": 24,
+        "deselected": 5,
+        "seconds": 297.53
+      },
+      "ubuntu-python312": {
+        "passed": 2240,
+        "skipped": 28,
+        "deselected": 5,
+        "seconds": 356.58
+      }
+    },
+    "mypy_sources": 321
+  },
+  "reclassification": "r2-reclassification.json",
+  "scope": "Classifier interpretation and focused tests only; capture/timing/counting unchanged. Original producer JSON, profile, summary, checks and research retained. No VPS access or branch cleanup.",
+  "not_run": [
+    "Repeated local full default suite (CI runs it)",
+    "VPS capture or profiling",
+    "Production operations or history audits",
+    "Online or million-event stress"
+  ],
+  "preservation": "Git diff against 43aab9f empty for runtime/dependencies/workflows/research, capture/profile scripts and all preserved producer artifacts",
+  "regression": {
+    "original_review_case": [
+      0,
+      3,
+      2,
+      5,
+      8
+    ],
+    "old_classifier": "STEADY (reproduced before correction)",
+    "v4_classifier": "NON_STEADY",
+    "bounded_recovery": [
+      0,
+      3,
+      0,
+      3,
+      0
+    ],
+    "v4_bounded_classifier": "STEADY",
+    "tail_completion": "All 20 frames written/fsync acknowledged after window; saved verdict unchanged"
+  },
+  "recorded_local_date": "2026-10-27",
+  "timezone": "Asia/Shanghai"
+}

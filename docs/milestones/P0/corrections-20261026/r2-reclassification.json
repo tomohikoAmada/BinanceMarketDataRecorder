@@ -1,0 +1,131 @@
+{
+  "classifier_version": "p0-steady-classifier.v4",
+  "classifier_commit": "4bf0daecac0e29193b79dd5163d400f07753378c",
+  "producer_commit": "7c07157144d400e75974adf58ab52282d19479b9",
+  "scheduled_end_seconds": 140,
+  "scope": "Only reclassifies retained five-boundary telemetry. No capture, timing, counters, fsync instrumentation or original JSON changed. No VPS access.",
+  "runs": {
+    "steady-n2": {
+      "source_result": "benchmark/steady-n2.json",
+      "producer_classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "rule": "input by deadline; no monotonic backlog growth across >=3 boundaries"
+      },
+      "corrected_classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "growth_reason_series": [],
+      "end_totals": {
+        "sent_frames": 32250,
+        "received_frames": 32250,
+        "written_frames": 32250,
+        "persisted_frames": 32113
+      },
+      "historical_tail_seconds": {
+        "input_catchup_seconds": 0.00011765304952859879,
+        "normal_stop_drain_seconds": 0.3697714649606496,
+        "background_join_seconds": 3.2809418740216643
+      }
+    },
+    "profile-steady-n2": {
+      "source_result": "benchmark/profile-steady-n2.json",
+      "producer_classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "input_not_completed_in_protocol:spot/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:spot/ETHUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/ETHUSDT/book_ticker"
+        ],
+        "rule": "input by deadline; no monotonic backlog growth across >=3 boundaries"
+      },
+      "corrected_classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "input_not_completed_in_protocol:spot/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:spot/ETHUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/BTCUSDT/book_ticker",
+          "input_not_completed_in_protocol:um_perpetual/ETHUSDT/book_ticker",
+          "sustained_backlog_growth:due_not_sent_frames:spot/BTCUSDT/book_ticker",
+          "sustained_backlog_growth:due_not_sent_frames:spot/ETHUSDT/book_ticker",
+          "sustained_backlog_growth:due_not_sent_frames:um_perpetual/BTCUSDT/book_ticker",
+          "sustained_backlog_growth:due_not_sent_frames:um_perpetual/ETHUSDT/book_ticker",
+          "sustained_backlog_growth:written_not_persisted_frames:spot/BTCUSDT/book_ticker"
+        ],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "growth_reason_series": [
+        {
+          "reason": "sustained_backlog_growth:due_not_sent_frames:spot/BTCUSDT/book_ticker",
+          "boundary_values": [
+            0,
+            1,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "reason": "sustained_backlog_growth:due_not_sent_frames:spot/ETHUSDT/book_ticker",
+          "boundary_values": [
+            0,
+            1,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "reason": "sustained_backlog_growth:due_not_sent_frames:um_perpetual/BTCUSDT/book_ticker",
+          "boundary_values": [
+            0,
+            1,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "reason": "sustained_backlog_growth:due_not_sent_frames:um_perpetual/ETHUSDT/book_ticker",
+          "boundary_values": [
+            0,
+            1,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "reason": "sustained_backlog_growth:written_not_persisted_frames:spot/BTCUSDT/book_ticker",
+          "boundary_values": [
+            6,
+            22,
+            33,
+            28,
+            43
+          ]
+        }
+      ],
+      "end_totals": {
+        "sent_frames": 32242,
+        "received_frames": 32242,
+        "written_frames": 32237,
+        "persisted_frames": 32091
+      },
+      "historical_tail_seconds": {
+        "input_catchup_seconds": 0.05395751306787133,
+        "normal_stop_drain_seconds": 1.608692394103855,
+        "background_join_seconds": 0.0028325540479272604
+      }
+    }
+  }
+}

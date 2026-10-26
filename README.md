@@ -17,7 +17,7 @@ See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 The [current production milestone plan](docs/production_milestone_plan.md)
 replaces the retired plan as of October 26, 2026. It designs for at least ten
 assets and targets stable BTC/ETH production across Spot, USD-M and COIN-M
-perpetual/delivery markets, with 99.5% per-source continuity. [P0 review accepts R1/R3/R4, with one R2 classifier fix pending](docs/milestones/P0/review-20261026.md); the new measurements and NON_STEADY diagnostic profile are preserved. P1 has not started. Expanded
+perpetual/delivery markets, with 99.5% per-source continuity. [P0 review corrections are complete, including the remaining R2 classifier fix](docs/milestones/P0/review-20261026.md); retained boundaries have an appended v4 classification and the NON_STEADY profile remains diagnostic only. P1 has not started. Expanded
 market support and production readiness are not yet achieved.
 Historical plans and acceptance evidence remain preserved.
 

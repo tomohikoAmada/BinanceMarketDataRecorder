@@ -1,11 +1,15 @@
 # Risk Register
 
-## P0 current risks — 2026-10-26
+## P0 current risks — 2026-10-27
 
 - [PR #87 review](milestones/P0/review-20261026.md#pr-87-复审2026-10-26) accepts
-  R1/R3/R4; R2 remains OPEN because a temporary drop in backlog masks overall
-  growth and incorrectly returns STEADY. Fix the focused classifier, retain the
-  measurements and append classification of their saved boundaries.
+  R1/R3/R4; the remaining R2 defect is now corrected with 26 focused tests.
+  The classifier retains each source's new highs through partial drains and
+  distinguishes the review negative from bounded oscillation/recovery.
+  [V4 interpretation](milestones/P0/corrections-20261026/r2-reclassification.json)
+  of saved boundaries is appended without recapture; originals are unchanged.
+  Five sparse observations remain a comparison screen, not a long-run capacity
+  or boundedness proof; P1 still needs matched work/tail and interleaved A/B.
   USD-M latest/largest selection semantics remain unresolved: disclosure is fixed,
   not the exchange conflict. Do not guess either rule or transfer U behavior to C.
   The unprofiled run's recorded label is STEADY; its profile is NON_STEADY and cannot serve

@@ -2,19 +2,24 @@
 
 Read the [production plan](production_milestone_plan.md), [P0 result](milestones/P0/README.md),
 [coverage inventory](milestones/P0/coverage.md), and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
-PR #87 review accepts R1/R3/R4, with one R2 classifier fix remaining in P0; see the
-[reproduced case](milestones/P0/review-20261026.md#pr-87-复审2026-10-26) and
-[v3 baseline](milestones/P0/corrections-20261026/README.md). A temporary backlog
-decrease must not hide overall growth. Add that focused regression and reclassify
-retained boundaries; unchanged instrumentation needs no new VPS measurement.
-Physical order is
-verified before payload comparison; each source has timed write/fsync and queue
-accounting; output conflicts preserve old evidence; D11 U/C sampling semantics
-are disclosed separately. USD-M latest/largest remains unresolved, so no such
-assumption may govern deduplication, completeness or derived totals. The new
-unprofiled run's recorded label is STEADY; its separate profile is NON_STEADY and
-diagnostic only. Finish the remaining R2 correction before P1. Preserve old results; compare matched per-source window work,
-tail and background work in P1 A/B, with the same v3 instrumentation on both sides.
+R1/R3/R4 passed PR #87 review; the remaining R2 classifier fix is complete. See the
+[review closure](milestones/P0/review-20261026.md#r2补充修正2026-10-27) and
+[appended v4 classification](milestones/P0/corrections-20261026/r2-reclassification.json).
+The classifier retains each source's peak history across partial drains: at least
+two new highs beyond the starting value, with the endpoint still above the first
+new high, is NON_STEADY. Repeated bounded peaks or recovery into the earlier range
+do not qualify. Tests cover both, including a final partial drain; tail completion
+cannot revise a window's verdict. This finite five-boundary check is a comparison
+screen, not proof of long-run boundedness. Capture/timing instruments and producer
+results are unchanged; no new VPS run was needed. The unprofiled run remains
+STEADY; its profile remains NON_STEADY with additional growth reasons. P1 has not
+started. Compare matched per-source window work, tail and background work in P1
+A/B, using the same instrumentation and classifier on both sides.
+
+Physical order, write/fsync accounting and output protection retain their accepted
+contracts. D11 U/C sampling semantics remain disclosed separately; USD-M
+latest/largest is unresolved and cannot govern completeness, deduplication or
+derived totals.
 
 P0 preserved the original local changes and research in `d81e7d2`, then merged the
 accepted `origin/main=01d7421` into `113cdb3`. Existing accepted fixes include USD-M

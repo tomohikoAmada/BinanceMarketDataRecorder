@@ -1,6 +1,6 @@
 # P0 审查修正与复测
 
-2026-10-26；对应 [R1–R4](../review-20261026.md)。PR #87实现提交的修正与测量保留如下；[复审](../review-20261026.md#pr-87-复审2026-10-26)确认R1 / R3 / R4通过，R2仍有“积压短暂回落掩盖整体增长”的分类漏判。五个边界记录已核实，修正分类器后追加解释即可，不改原JSON或无故重跑VPS。P1未开始。原baseline和最初研究保留；运行时 `src` tree 仍为 `392154f9fc26923f88a465800d4a0a89b1fac2df`，依赖锁和CI workflow未改。
+2026-10-26；对应 [R1–R4](../review-20261026.md)。PR #87实现提交的修正与测量保留如下；复审确认R1 / R3 / R4通过，后续[R2补充修正](../review-20261026.md#r2补充修正2026-10-27)已修正“积压短暂回落掩盖整体增长”的分类漏判。26项定向回归及[v4追加解释](r2-reclassification.json)完成；原JSON、summary/checks及VPS结果不改写。P1未开始。原baseline和最初研究保留；运行时 `src` tree 仍为 `392154f9fc26923f88a465800d4a0a89b1fac2df`，依赖锁和CI workflow未改。
 
 ## 修正
 
@@ -11,7 +11,7 @@
 
 ## 新 VPS 观察
 
-独立目录 `/var/tmp/bmdr-p0-review-20261026-3KRfsxId`，固定输入、all14、20s warmup / 120s 窗口及后台工作频率同原协议。两轮均 nice 10；无部署、生产采集、历史 Raw 扫描或服务状态修改。实际[执行源](measurement-source.json)固定为 `7c07157`；[执行入口原文](benchmark/runner-source.py.txt)与 receipts 保留。之后 `a773339` 只将积压判定从跨流总量改为逐源，采集、计时字段和物理 / fsync 校验均未改变。[独立汇总](summary.json)按该最终分类器解释已存五个边界，两轮分类与 producer 相同；没有改写 producer JSON 或虚称测量了后来的 HEAD。
+独立目录 `/var/tmp/bmdr-p0-review-20261026-3KRfsxId`，固定输入、all14、20s warmup / 120s 窗口及后台工作频率同原协议。两轮均 nice 10；无部署、生产采集、历史 Raw 扫描或服务状态修改。实际[执行源](measurement-source.json)固定为 `7c07157`；[执行入口原文](benchmark/runner-source.py.txt)与 receipts 保留。之后 `a773339` 只将积压判定从跨流总量改为逐源，采集、计时字段和物理 / fsync 校验均未改变。[独立汇总](summary.json)按当时的a773339分类器解释已存五个边界，两轮分类与 producer 相同；没有改写 producer JSON 或虚称测量了后来的 HEAD。
 
 | 项目 | [无 profiler](benchmark/steady-n2.json) | [独立 profile](benchmark/profile-steady-n2.json) |
 | --- | ---: | ---: |
@@ -36,3 +36,11 @@
 [定向测试](../../../../tests/unit/test_p0_benchmark_review.py) 19 passed；Ruff、针对该测试及其 helper 的 mypy、M0 合同和文档链接检查通过，详见 [checks](checks.json)。双平台 CI 绑定实际可执行提交，见该记录；本地不再重复全套历史测试。未运行在线、百万帧压力、平台部署或生产长跑。
 
 复测须同时带上 `steady_baseline.py`、`benchmark_checks.py`、`profile_steady.py`、原固定输入生成器及其必要 fixtures；使用新的隔离输出目录和相同运行依赖。协议 v3 的额外计数会产生开销，P1 两侧都必须采用相同仪表。旧 v2 的 CPU 不能直接当 v3 的优化前对照。数据格式、生产运行时与依赖均未因这些修正改变。
+
+## R2复审后的分类器修正
+
+`4bf0dae` / `p0-steady-classifier.v4`仅改变已存边界的解释。逐源保留积压新高历史：至少两次新高且终点仍高于第一次新高则NON_STEADY，部分排空不清除该历史；重复有界峰值或已恢复到先前范围不机械拒绝。新增7个用例使用20帧协议内输入及真实WorkloadProgress分批written/fsync；负例包括复审的`0,3,2,5,8`、终点回落和扩大后停留；正例包括`0,3,0,3,0`、非零有界终点和单次突发。原19项保留，26项通过。
+
+[重新分类](r2-reclassification.json)保留producer原判定，并记录新版本/提交、完整理由及触发增长的序列。无profiler仍STEADY；profile仍NON_STEADY，除4条输入逾期，新增4条due_not_sent增长和1条未同步增长原因。没有访问VPS、重跑采样或覆盖旧测量；正常周期fsync未完成计数不要求为零。
+
+[r2-checks](r2-checks.json)单列这次检查，原checks仍绑定原代码。后续A/B两侧采用相同仪表和分类器，匹配逐源window_work、尾部及后台工作；五次稀疏观察只作筛选，不能代替交错复测或长期资源观察。
