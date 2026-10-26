@@ -1,5 +1,24 @@
 # Official Binance Sources
 
+## P0 PR #86 review: liquidation semantics — 2026-10-26
+
+Review [R4](milestones/P0/review-20261026.md) finds conflicting USD-M sampling
+descriptions: the current catalog says latest, while the 2026-04-10 changelog
+(effective 2026-04-14) says largest within 1000ms. The changelog bytes match the
+pre-milestone research snapshot. This is an unresolved coverage-contract issue,
+not evidence of a dropped payload. Both sources describe a representative feed,
+not an exhaustive liquidation ledger. Do not infer COIN-M behavior from the USD-M
+change. D11 correction remains in P0 and is tracked in the risk register.
+
+| Source | Retrieval UTC | SHA-256 and representation |
+| --- | --- | --- |
+| [USD-M liquidation catalog](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market) | 2026-10-26T14:19:55Z–14:19:59Z | `14cc2220cb690489af9d9729061f67f1d5347ed8c294f22ec9c42edc610b5f1f`, serialized web-tool excerpt JSON, not original HTTP bytes; `/private/tmp/bmdr-pr86-review-market-fresh.json` |
+| [Shared derivatives changelog, USD-M entry](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md) | 2026-10-26T09:58:39.936776+00:00 | `7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`, downloaded Markdown, 113183 bytes; `/private/tmp/bmdr-pr86-review-changelog.md` |
+
+The P0 current-index record below selected the affected official sources. An empty
+direct catalog HTTP response was excluded; it supplies no semantic evidence.
+No downloaded text was executed and no exchange market-data endpoint was called.
+
 ## P0 official source refresh — 2026-10-26
 
 The [52-row first-release coverage inventory](milestones/P0/coverage.md) and

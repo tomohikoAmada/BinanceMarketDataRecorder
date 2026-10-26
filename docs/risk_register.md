@@ -2,6 +2,13 @@
 
 ## P0 current risks — 2026-10-26
 
+- [PR #86 review R1–R4](milestones/P0/review-20261026.md) remain OPEN in P0:
+  benchmark physical-order validation, steady-window backlog accounting, output
+  preservation, and D11 liquidation semantics. The current USD-M catalog says
+  latest snapshot, while its 2026-04-10 changelog says largest within 1000ms.
+  Do not implement assumptions from either wording or transfer USD-M semantics
+  to COIN-M until the inventory discloses and resolves the affected scope.
+  This does not prevent preserving the published raw payloads.
 - R-078 remains OPEN: no new-plan BTC/ETH full-scope production qualification exists.
   Original core baseline and the isolated full-current-feature steady baseline are
   separate model workloads; neither proves the VPS can sustain all P2 sources.
