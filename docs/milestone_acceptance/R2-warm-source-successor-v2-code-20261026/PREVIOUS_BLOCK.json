@@ -1,0 +1,13 @@
+{
+  "candidate": "/private/var/tmp/bmdr-r2-warm-successor-code-20261026-lrdrj2v4",
+  "manifest": "2f75d522c2782144c2ddff692010c1825e874f9c06b1a442110a561543958282",
+  "independent_review": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y",
+  "review_manifest": "617d62c4faf2b737b46b381acd42f11b4c77b3c532a2edb3123d5acfbc57c0a6",
+  "all100_parent_SHA_bytes_PASS": true,
+  "decision": "BLOCK",
+  "findings": [
+    "F1 owned group leader-first cleanup",
+    "F2 post-pair live publication bypass",
+    "F3 contradictory static/clock receipt"
+  ]
+}

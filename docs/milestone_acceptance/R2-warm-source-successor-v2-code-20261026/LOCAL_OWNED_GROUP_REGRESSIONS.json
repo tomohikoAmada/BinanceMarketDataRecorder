@@ -1,0 +1,359 @@
+{
+  "case_count": 8,
+  "cases": [
+    {
+      "case": "normal JSON and no control/lease FD inheritance",
+      "PASS": true,
+      "elapsed": 0.092234332987573,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import json,os,signal\nfds=[]\nfor fd in range(3,128):\n try:os.fstat(fd);fds.append(fd)\n except OSError:pass\nprint(json.dumps({'fds':fds,'stdin':os.read(0,1).decode(),'TERM_default':signal.getsignal(signal.SIGTERM)==signal.SIG_DFL}),flush=True)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274613976906333",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import json,os,signal\\nfds=[]\\nfor fd in range(3,128):\\n try:os.fstat(fd);fds.append(fd)\\n except OSError:pass\\nprint(json.dumps({'fds':fds,'stdin':os.read(0,1).decode(),'TERM_default':signal.getsignal(signal.SIGTERM)==signal.SIG_DFL}),flush=True)\"]"
+        ],
+        "child_pid": 82222,
+        "owned_pgid": 82222,
+        "inner_pid": 82223,
+        "returncode": 0,
+        "keeper_returncode": 0,
+        "timed_out": false,
+        "timeout_seconds": 0.5,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": true,
+        "group_KILL_used": false,
+        "unexpected_live_descendants": [],
+        "final_group_members": [
+          {
+            "pid": 82222,
+            "pgid": 82222,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "{\"fds\": [], \"stdin\": \"\", \"TERM_default\": true}\n",
+        "stderr_raw_text": "",
+        "control_raw_text": "{\"keeper_pid\": 82222, \"pgid\": 82222, \"inner_pid\": 82223, \"returncode\": 0}\n",
+        "timeout_prefix_stdout_raw_text": "",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "default TERM is preserved across keeper exec",
+      "PASS": true,
+      "elapsed": 0.6117079579853453,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import json,signal,time; print(json.dumps({'TERM_default':signal.getsignal(signal.SIGTERM)==signal.SIG_DFL}),flush=True);time.sleep(20)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274614071540082",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import json,signal,time; print(json.dumps({'TERM_default':signal.getsignal(signal.SIGTERM)==signal.SIG_DFL}),flush=True);time.sleep(20)\"]"
+        ],
+        "child_pid": 82228,
+        "owned_pgid": 82228,
+        "inner_pid": null,
+        "returncode": null,
+        "keeper_returncode": -9,
+        "timed_out": true,
+        "timeout_seconds": 0.5,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82229,
+            "pgid": 82228,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82228,
+            "pgid": 82228,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "{\"TERM_default\": true}\n",
+        "stderr_raw_text": "",
+        "control_raw_text": "{\"keeper_pid\": 82228, \"pgid\": 82228, \"inner_pid\": 82229, \"returncode\": -15}\n",
+        "timeout_prefix_stdout_raw_text": "{\"TERM_default\": true}\n",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "noncooperative inner requires KILL",
+      "PASS": true,
+      "elapsed": 1.569225333048962,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(20)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274614685665333",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(20)\"]"
+        ],
+        "child_pid": 82235,
+        "owned_pgid": 82235,
+        "inner_pid": null,
+        "returncode": null,
+        "keeper_returncode": -9,
+        "timed_out": true,
+        "timeout_seconds": 0.5,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82236,
+            "pgid": 82235,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82235,
+            "pgid": 82235,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "",
+        "stderr_raw_text": "",
+        "control_raw_text": "",
+        "timeout_prefix_stdout_raw_text": "",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "normal wrapper exit with closed-pipe noncooperative descendant",
+      "PASS": true,
+      "elapsed": 1.2787962909787893,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274616757376125",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);\"]"
+        ],
+        "child_pid": 82267,
+        "owned_pgid": 82267,
+        "inner_pid": 82268,
+        "returncode": 0,
+        "keeper_returncode": -9,
+        "timed_out": false,
+        "timeout_seconds": 1,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82269,
+            "pgid": 82267,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82267,
+            "pgid": 82267,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "{\"owned_descendant\": 82269}\n",
+        "stderr_raw_text": "",
+        "control_raw_text": "{\"keeper_pid\": 82267, \"pgid\": 82267, \"inner_pid\": 82268, \"returncode\": 0}\n",
+        "timeout_prefix_stdout_raw_text": "",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "timeout wrapper TERM exit with closed-pipe noncooperative descendant",
+      "PASS": true,
+      "elapsed": 1.570161083014682,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);time.sleep(20)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274617538728958",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);time.sleep(20)\"]"
+        ],
+        "child_pid": 82301,
+        "owned_pgid": 82301,
+        "inner_pid": null,
+        "returncode": null,
+        "keeper_returncode": -9,
+        "timed_out": true,
+        "timeout_seconds": 0.5,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82302,
+            "pgid": 82301,
+            "state": "S",
+            "live": true
+          },
+          {
+            "pid": 82303,
+            "pgid": 82301,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82301,
+            "pgid": 82301,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "{\"owned_descendant\": 82303}\n",
+        "stderr_raw_text": "",
+        "control_raw_text": "{\"keeper_pid\": 82301, \"pgid\": 82301, \"inner_pid\": 82302, \"returncode\": -15}\n",
+        "timeout_prefix_stdout_raw_text": "{\"owned_descendant\": 82303}\n",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "nonzero wrapper also drains remaining owned group",
+      "PASS": true,
+      "elapsed": 1.275619000021834,
+      "receipt": {
+        "argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-c",
+          "import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);sys.exit(7)"
+        ],
+        "keeper_argv": [
+          "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+          "-B",
+          "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7/runtime/owned_command.py",
+          "--keeper",
+          "4",
+          "274619611376791",
+          "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"import subprocess,sys,json,time;p=subprocess.Popen([sys.executable,'-c','import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);os.close(0);os.close(1);os.close(2);time.sleep(20)']);print(json.dumps({'owned_descendant':p.pid}),flush=True);time.sleep(.15);sys.exit(7)\"]"
+        ],
+        "child_pid": 82336,
+        "owned_pgid": 82336,
+        "inner_pid": 82337,
+        "returncode": 7,
+        "keeper_returncode": -9,
+        "timed_out": false,
+        "timeout_seconds": 1,
+        "cleanup_reserve_seconds": 2,
+        "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+        "cleanup_error": null,
+        "lease_released": false,
+        "group_KILL_used": true,
+        "unexpected_live_descendants": [
+          {
+            "pid": 82338,
+            "pgid": 82336,
+            "state": "S",
+            "live": true
+          }
+        ],
+        "final_group_members": [
+          {
+            "pid": 82336,
+            "pgid": 82336,
+            "state": "Z",
+            "live": false
+          }
+        ],
+        "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+        "stdout_raw_text": "{\"owned_descendant\": 82338}\n",
+        "stderr_raw_text": "",
+        "control_raw_text": "{\"keeper_pid\": 82336, \"pgid\": 82336, \"inner_pid\": 82337, \"returncode\": 7}\n",
+        "timeout_prefix_stdout_raw_text": "",
+        "timeout_prefix_stderr_raw_text": ""
+      },
+      "Linux_credit": false
+    },
+    {
+      "case": "malformed inventory fails closed and cleanup is finite",
+      "PASS": true,
+      "cleanup_error": "RuntimeError:fixture malformed ps"
+    },
+    {
+      "case": "controller death closes lease and kills only owned new group",
+      "PASS": true,
+      "owned_pids": {
+        "keeper": 82375,
+        "inner": 82376
+      },
+      "final_members": [],
+      "Linux_credit": false
+    }
+  ],
+  "all_PASS": true,
+  "real_LOCAL_POSIX": true,
+  "Linux_or_runuser_credit": false,
+  "escape_scope": "only processes retaining the leased session/group; exact Linux runuser group retention remains a pre-execution gate"
+}

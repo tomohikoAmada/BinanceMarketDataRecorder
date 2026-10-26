@@ -130,6 +130,7 @@ def make_collector(
     opener: Any,
     stream: SpotStream,
     capacity: int,
+    byte_capacity: int = 64 * 1024 * 1024,
     drain_delay_seconds: float,
     put_timeout_seconds: float,
     saturation_timeout_seconds: float,
@@ -166,6 +167,7 @@ def make_collector(
         collector_version="0.1.0+test",
         logger=logging.getLogger("test.spot.ingress"),
         receipt_queue_capacity=capacity,
+        receipt_byte_capacity=byte_capacity,
         planned_rotation_seconds=60,
         backoff=ReconnectBackoff(
             initial_seconds=0.001,

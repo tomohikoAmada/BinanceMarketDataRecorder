@@ -1,0 +1,49 @@
+{
+  "all_input_SHA_bytes_PASS": true,
+  "blocking_findings": [],
+  "candidate": "/private/var/tmp/bmdr-r2-control-files-v2-20261026-k9ma9t7a",
+  "collection_manifest_sha256": "b42e377f2d501f26fb9496eb4a963ad24e09d07afaa3a9ea1bda96a64b99d7c4",
+  "created_utc": "2026-10-26T00:51:54.321889+00:00",
+  "credits": {
+    "Linux_or_newscope_qualified": false,
+    "collection_component_delta_accepted": true,
+    "copy_ARM_launch_eligible": false,
+    "data_capacity_or_stability_credit": false,
+    "new_T0_or_24h": false,
+    "whole_reader_invselector_or_commit_consumer_accepted": false
+  },
+  "decision": "ACCEPT",
+  "input_members": 10,
+  "kind": "INDEPENDENT_COLLECTION_V2_EXACT_NARROW_DELTA_REVIEW",
+  "limits": {
+    "deadline": "Cooperative before-read checks, not kernel-I/O preemption or whole-reader timeout",
+    "parsed_view": "Non-authoritative resource-limited view; source bytes retained",
+    "read_complete": "Stable full original byte capture only, not parse/owner/T0 validity"
+  },
+  "old_block_manifest_sha256": "8a2091f718908b7ed7f34330117c15d1bd857821583cfd312b1ecd98bf18deea",
+  "preservation": {
+    "SSH_network_Raw_service_actions": false,
+    "candidate_W_source_P3_runtime_plans": "UNCHANGED",
+    "writes": "THIS_EXCLUSIVE_REVIEW_DIRECTORY_ONLY"
+  },
+  "report": {
+    "bytes": 6288,
+    "sha256": "86dded4e2b4467fec5d5b7eb8c75247a23d060d2b951e42498a476a63456e9ff"
+  },
+  "scope": "DEFINITION_ONLY_COLLECTION_PRIMITIVE_CODE_LOCAL_DELTA",
+  "subject_sha256": "d13a30e0d007666c26d152f66d4ff5d70d6854014f3893a2c6cb87ae8b4ee263",
+  "validation": {
+    "all_additional_returned_results_strict_JSON_serializable": true,
+    "all_recorded_bytepacks_SHA_size_PASS": true,
+    "current_V2_provided_cases": {
+      "all_PASS": true,
+      "base": 16,
+      "repair_regressions": 6
+    },
+    "independent_delta_cases": {
+      "all_PASS": true,
+      "cases": 17
+    },
+    "partial_review_directory_continued_not_restarted": true
+  }
+}

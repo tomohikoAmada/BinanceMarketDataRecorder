@@ -1,0 +1,98 @@
+--- controller-original.py
++++ controller.py
+@@ -169,6 +169,58 @@
+     assert not list(D.rglob('*.partial'))
+     publish('terminal-freeze.json',{'result':'STOPPED_DISABLED_DRAINED_FROZEN','utc_ns':time.time_ns(),'census':c,'recorder':stopped(),'archive_worker':s,'archive_timer':state(AT)})
+ 
++def canonical_readiness_during_warm(invocation, pid, warm_deadline, expected_boot):
++    """One retained canonical check inside the existing1200s warm budget.
++
++    This earlier result supplies deployment verification, never final freshness.
++    Fresh strict end/start observations remain required after warm completion.
++    """
++    import base64
++    def raw(value):
++        if value is None:return None
++        value=value.encode('utf-8') if isinstance(value,str) else value
++        return {'base64':base64.b64encode(value).decode('ascii'),'bytes':len(value),'sha256':hashlib.sha256(value).hexdigest()}
++    record={'kind':'CANONICAL_READINESS_DURING_EXISTING_WARM_BUDGET','began_utc_ns':time.time_ns(),'began_boottime_ns':bt(),'began_monotonic':time.monotonic(),'expected_boot_id':expected_boot,'recorder_invocation':invocation,'recorder_pid':pid,'formal_duration_credit_ns':0,'supplies_final_start_freshness':False}
++    ready=None
++    try:
++        before=state(REC);record['runtime_before']=before
++        assert (before['InvocationID'],before['MainPID'],before['ActiveState'],before['NRestarts'])==(invocation,pid,'active','0')
++        record.update(observed_boot_before=boot(),config_sha_before=sha(CONFIG),identity_sha_before=sha(DEPLOYMENT))
++        assert record['observed_boot_before']==expected_boot and record['config_sha_before']==CONFIG_SHA and record['identity_sha_before']==IDENTITY
++        remaining=warm_deadline-time.monotonic();assert remaining>0,'warm_deadline_before_canonical_check'
++        record['timeout_seconds']=min(330,remaining)
++        try:
++            completed=subprocess.run(CLI+['deployment','readiness'],capture_output=True,timeout=record['timeout_seconds'])
++            record.update(returncode=completed.returncode,stdout_raw=raw(completed.stdout),stderr_raw=raw(completed.stderr),error_type=None)
++            try:ready=json.loads(completed.stdout);record['parse_error']=None
++            except (ValueError,UnicodeError,TypeError) as error:record['parse_error']=type(error).__name__
++        except (subprocess.TimeoutExpired,OSError) as error:
++            record.update(returncode=None,error_type=type(error).__name__,stdout_raw=raw(getattr(error,'stdout',None)),stderr_raw=raw(getattr(error,'stderr',None)))
++        record.update(ended_utc_ns=time.time_ns(),ended_boottime_ns=bt(),ended_monotonic=time.monotonic())
++        after=state(REC);record['runtime_after']=after
++        assert (after['InvocationID'],after['MainPID'],after['ActiveState'],after['NRestarts'])==(invocation,pid,'active','0')
++        record.update(observed_boot_after=boot(),config_sha_after=sha(CONFIG),identity_sha_after=sha(DEPLOYMENT))
++        assert record['observed_boot_after']==expected_boot and record['config_sha_after']==CONFIG_SHA and record['identity_sha_after']==IDENTITY
++        assert record['returncode']==0 and record['error_type'] is None and isinstance(ready,dict) and ready.get('state')=='READY','canonical_readiness_failed'
++        identity=ready['evidence']['identity'];runtime=ready['evidence']['systemd_runtime']
++        assert identity['identity_sha256']==IDENTITY and identity['source_git_sha']==SOURCE and identity['config_sha256']==CONFIG_SHA
++        assert runtime['active_state']=='active' and type(runtime['main_pid']) is int and runtime['main_pid']==int(pid)
++        assert time.monotonic()<warm_deadline,'canonical_readiness_exceeded_existing_warm_deadline'
++        record['result']='CANONICAL_CHECK_PASSED_WITHIN_WARM_BUDGET'
++    except BaseException as error:
++        record.update(result='CANONICAL_CHECK_FAILED',failure_type=type(error).__name__)
++        raise
++    finally:
++        record['recorded_utc_ns']=time.time_ns()
++        record['recorded_boottime_ns']=bt()
++        record['recorded_monotonic']=time.monotonic()
++        try:publish('warm-readiness-check.json',record)
++        except BaseException as publication_error:
++            print('WARM_READINESS_EVIDENCE_WRITE_FAILED '+type(publication_error).__name__,file=sys.stderr,flush=True)
++            if record.get('result')!='CANONICAL_CHECK_FAILED':raise
++    return ready
++
++
+ def capture():
+     from binance_market_data_recorder.config import load_config
+     from qualification_owner_995 import evaluate_fixed_slots as evaluate
+@@ -182,7 +234,7 @@
+     publish('data-scope-start.json',boundary)
+     request=time.time_ns();run(['systemctl','enable','--now',REC],120);r=state(REC)
+     assert r['MainPID']!='0' and r['NRestarts']=='0'
+-    inv,pid=r['InvocationID'],r['MainPID']; first=None; initial_swap=None; samples=0
++    inv,pid=r['InvocationID'],r['MainPID']; first=None; ready=None; initial_swap=None; samples=0; warm_boot=boot()
+     with (Q/'warmup.jsonl').open('x') as out:
+         while True:
+             # Publication from the new incarnation is required before any warm sample.
+@@ -193,16 +245,25 @@
+             swap=(row['resources']['pswpin'],row['resources']['pswpout'])
+             if initial_swap is None:initial_swap=swap
+             validate_warm(row,initial_swap,request)
++            assert row['boot_id']==warm_boot
++            if first is not None:assert row['recorder_service_instance_id']==first['recorder_service_instance_id']
++            assert time.monotonic()<warm_deadline,'strict all-enabled warmup timeout'
+             if row['auxiliary_gate']['result']=='PASS':
+-                if first is None:first=row
++                if first is None:
++                    first=row
++                    assert isinstance(first['recorder_service_instance_id'],str) and first['recorder_service_instance_id']
++                    ready=canonical_readiness_during_warm(inv,pid,warm_deadline,warm_boot)
+                 elif row['boottime_ns']-first['boottime_ns']>=300*10**9 and samples>=12:break
+             assert time.monotonic()<warm_deadline,'strict all-enabled warmup timeout';time.sleep(30)
+-    ready=json.loads(run(CLI+['deployment','readiness'],330));assert ready['state']=='READY'
++    assert ready is not None and ready['state']=='READY'
+     assert time.monotonic()<warm_deadline,'warmup exceeded 1200s'
+     end=sample(config,inv,pid,True);publish('warmup-end-observation.json',dict(end));validate_warm(end,initial_swap,request,strict=True)
++    assert end['boot_id']==warm_boot and end['recorder_service_instance_id']==first['recorder_service_instance_id']
++    assert time.monotonic()<warm_deadline,'strict warm completion exceeded1200s'
+     publish('warmup-result.json',{'result':'ACTUAL_ALL_ENABLED_WARMUP_PASS','first_strict':first,'end_strict':end,'samples':samples,'core_readiness':ready,'elapsed_seconds':time.monotonic()-begin})
+     adm=admission(TARGET_SECONDS+660,TARGET_SECONDS+60,0);publish('prestart-admission.json',adm)
+     start_row=sample(config,inv,pid,True);publish('start-observation.json',dict(start_row));validate_warm(start_row,initial_swap,request,strict=True)
++    assert start_row['boot_id']==warm_boot and start_row['recorder_service_instance_id']==first['recorder_service_instance_id']
+     t0_utc=time.time_ns();t0_bt=bt();run_id=uuid.uuid4().hex
+     start={'kind':'R2_CAPACITY_N2_OWNER_POLICY_24H_START','run_id':run_id,'t0_utc_ns':t0_utc,'t0_boottime_ns':t0_bt,'target_duration_ns':TARGET_NS,'target_utc_ns_estimate':t0_utc+TARGET_NS,'boot_id':boot(),'source_git_sha':SOURCE,'identity_sha256':IDENTITY,'config_sha256':CONFIG_SHA,'accepted_deployment_sha256':DEPLOY_SHA,'recorder_invocation':inv,'recorder_pid':pid,'native_capture_invocation':os.environ.get('INVOCATION_ID'),'strict_start':start_row,'admission_sha256':sha(Q/'prestart-admission.json'),'canonical_v5_predecessor':False,'owner_policy_predecessor':predecessor(),'core_recovery_policy':POLICY,'target_duration_semantics':'minimum','target_finalization_policy':FINALIZATION_POLICY,'target_finalization_reserve_seconds':60,'data_scope_start_sha256':sha(Q/'data-scope-start.json'),'data_scope':boundary['scope'],'configured_products':cohort['products'],'configured_auxiliary_contexts':sorted(cohort['expected_contexts']),'configured_spools':cohort['spools']}
+     publish('owner-start.json',start);print(json.dumps({'phase':'CAPTURE','run_id':run_id,'t0_utc_ns':t0_utc,'target_utc_ns':t0_utc+TARGET_NS}),flush=True)

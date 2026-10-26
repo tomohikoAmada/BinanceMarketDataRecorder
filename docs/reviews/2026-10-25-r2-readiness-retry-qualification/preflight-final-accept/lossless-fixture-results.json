@@ -1,0 +1,2728 @@
+{
+  "case_count": 26,
+  "cases": [
+    {
+      "attempt_count": 1,
+      "attempt_results": [
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "coherent_empty_inventory",
+      "elapsed_seconds": 0.11999999999999998,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 1,
+      "attempt_results": [
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "metadata_only_retained_partial_gates_startup_false",
+      "elapsed_seconds": 0.11999999999999998,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30
+      ],
+      "partial_count": 1,
+      "result": "PASS",
+      "startup_custody_gate": false
+    },
+    {
+      "attempt_count": 1,
+      "case": "scan_error_is_fail_closed",
+      "elapsed_seconds": 0.02,
+      "error": "PermissionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "PermissionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_ancestor_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_directory_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-ueimpys5/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "symlink_file_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-fnzcd8u1/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "entry_stats": [
+              {
+                "bytes": 65,
+                "device": 16777231,
+                "inode": 168978781,
+                "mode": 41453,
+                "mtime_ns": 1792912869812309257,
+                "path": "/private/var/tmp/review-local-synthetic-metadata-fnzcd8u1/D/data/active/link"
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "fifo_entry_rejected",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-q9dh3dko/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "entry_stats": [
+              {
+                "bytes": 0,
+                "device": 16777231,
+                "inode": 168978786,
+                "mode": 4516,
+                "mtime_ns": 1792912869812976719,
+                "path": "/private/var/tmp/review-local-synthetic-metadata-q9dh3dko/D/data/active/fifo"
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "late_success_is_rejected_and_response_retained",
+      "elapsed_seconds": 181,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS",
+      "successful_late_response_retained_losslessly": true
+    },
+    {
+      "attempt_count": 1,
+      "case": "timeout_is_rejected_and_original_bytes_retained",
+      "elapsed_seconds": 0.01,
+      "error": "TimeoutExpired",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "TimeoutExpired",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "error_type": "TimeoutExpired",
+                "stderr_raw": {
+                  "base64": "/mVycg==",
+                  "bytes": 4,
+                  "sha256": "0672ac67927222d3479f1d553e003900ad174032e911c700af8ffa1058f44d28"
+                },
+                "stdout_raw": {
+                  "base64": "/2V4YWN0AA==",
+                  "bytes": 7,
+                  "sha256": "4cbc0e4f6cd6e4d8b2c4f2510862a3166ed8a88dd9c392639da516dd04e8f088"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": {
+          "base64": "/mVycg==",
+          "bytes": 4,
+          "sha256": "0672ac67927222d3479f1d553e003900ad174032e911c700af8ffa1058f44d28"
+        },
+        "timeout_stdout_raw": {
+          "base64": "/2V4YWN0AA==",
+          "bytes": 7,
+          "sha256": "4cbc0e4f6cd6e4d8b2c4f2510862a3166ed8a88dd9c392639da516dd04e8f088"
+        }
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "original_timeout_bytes_retained_losslessly": true,
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 3,
+      "case": "busy_worker_exhausts_bounded_wait",
+      "elapsed_seconds": 184.03,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=static\nMainPID=999\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9c3RhdGljCk1haW5QSUQ9OTk5ClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "a624f7e0e25039c14533ff67541521d95ddb1b5decaa9b62448b77b102307013"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "active",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "999",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          },
+          {
+            "began_at_utc_ns": 1062010000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=static\nMainPID=999\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9c3RhdGljCk1haW5QSUQ9OTk5ClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "a624f7e0e25039c14533ff67541521d95ddb1b5decaa9b62448b77b102307013"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "active",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "999",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          },
+          {
+            "began_at_utc_ns": 1124020000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=static\nMainPID=999\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9c3RhdGljCk1haW5QSUQ9OTk5ClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "a624f7e0e25039c14533ff67541521d95ddb1b5decaa9b62448b77b102307013"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 2,
+      "attempt_results": [
+        "NATURAL_ARCHIVE_RACE_RETRY",
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "natural_worker_race_is_retried",
+      "elapsed_seconds": 0.4400000000000001,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 2,
+      "attempt_results": [
+        "NATURAL_ARCHIVE_RACE_RETRY",
+        "COHERENT_SNAPSHOT"
+      ],
+      "case": "past_timer_race_is_retried",
+      "elapsed_seconds": 0.4400000000000001,
+      "error": null,
+      "expected": "accept",
+      "failure_output": null,
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        15,
+        30
+      ],
+      "partial_count": 0,
+      "result": "PASS",
+      "startup_custody_gate": true
+    },
+    {
+      "attempt_count": 1,
+      "case": "recorder_changed",
+      "elapsed_seconds": 0.03,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-0a3cpowt/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-recorder.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=disabled\nMainPID=1\nNRestarts=0\nInvocationID=cccccccccccccccccccccccccccccccc\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1kaXNhYmxlZApNYWluUElEPTEKTlJlc3RhcnRzPTAKSW52b2NhdGlvbklEPWNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjCg==",
+                  "bytes": 112,
+                  "sha256": "780f1d48988dc9bb22f99eecd09331538463a8a11f1d3dc099e8da3ecde73751"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "1",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "worker_failure",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=exit-code\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1leGl0LWNvZGUKSW52b2NhdGlvbklEPWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhCg==",
+                  "bytes": 115,
+                  "sha256": "7c30cd015045969310a52b87553fc7cd15ef582564d73fbe6b230c73d4473d2e"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "exit-code",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "bad_inv",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=invalid\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1pbnZhbGlkCg==",
+                  "bytes": 88,
+                  "sha256": "8d5b2db3a37c1218982d738c5464cb1db7c95b530bf88e3714a21f4eda693897"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "invalid",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "masked_owner",
+      "elapsed_seconds": 0.09999999999999999,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-7lv2m3q8/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-recorder.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=disabled\nMainPID=0\nNRestarts=0\nInvocationID=cccccccccccccccccccccccccccccccc\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1kaXNhYmxlZApNYWluUElEPTAKTlJlc3RhcnRzPTAKSW52b2NhdGlvbklEPWNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjCg==",
+                  "bytes": 112,
+                  "sha256": "72eb6d8d8109771ec57518745edf52f4cb32a311c828a62429f68e7cd20f09e9"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=masked\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9bWFza2VkCg==",
+                  "bytes": 40,
+                  "sha256": "e0657090103fe8a2dcebaea08cf617afb89c1ae7a1a589daa203ca1075d2c4a7"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily-upgrade.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1lbmFibGVkCg==",
+                  "bytes": 43,
+                  "sha256": "ce5c1c72984173c2a33e8550e0a25aaa97b21b9c7e5be1d5ac3b062059c19a25"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily-upgrade.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1lbmFibGVkCg==",
+                  "bytes": 43,
+                  "sha256": "ce5c1c72984173c2a33e8550e0a25aaa97b21b9c7e5be1d5ac3b062059c19a25"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "unattended-upgrades.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "owners": {
+              "apt-daily-upgrade.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily-upgrade.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "masked"
+              },
+              "binance-market-data-archive.service": {
+                "ActiveState": "inactive",
+                "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "MainPID": "0",
+                "Result": "success",
+                "UnitFileState": "static"
+              },
+              "binance-market-data-archive.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "unattended-upgrades.service": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              }
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "0",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "timer_disabled",
+      "elapsed_seconds": 0.09999999999999999,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [
+              "/private/var/tmp/review-local-synthetic-metadata-fc4qi6rp/D/data/active"
+            ],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-recorder.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=disabled\nMainPID=0\nNRestarts=0\nInvocationID=cccccccccccccccccccccccccccccccc\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1kaXNhYmxlZApNYWluUElEPTAKTlJlc3RhcnRzPTAKSW52b2NhdGlvbklEPWNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjCg==",
+                  "bytes": 112,
+                  "sha256": "72eb6d8d8109771ec57518745edf52f4cb32a311c828a62429f68e7cd20f09e9"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily-upgrade.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1lbmFibGVkCg==",
+                  "bytes": 43,
+                  "sha256": "ce5c1c72984173c2a33e8550e0a25aaa97b21b9c7e5be1d5ac3b062059c19a25"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "apt-daily-upgrade.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1lbmFibGVkCg==",
+                  "bytes": 43,
+                  "sha256": "ce5c1c72984173c2a33e8550e0a25aaa97b21b9c7e5be1d5ac3b062059c19a25"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "unattended-upgrades.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZW5hYmxlZAo=",
+                  "bytes": 41,
+                  "sha256": "99e7132c5dcd504ffedc52d45778e21970e2e95f30cba22e082558f609ef67f4"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.timer",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=active\nUnitFileState=disabled\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9YWN0aXZlClVuaXRGaWxlU3RhdGU9ZGlzYWJsZWQK",
+                  "bytes": 42,
+                  "sha256": "87d8836eb4eb5618401a890b28081133b8cf3bb1736ecab1a850606f09f2d0a3"
+                }
+              },
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "owners": {
+              "apt-daily-upgrade.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily-upgrade.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.service": {
+                "ActiveState": "inactive",
+                "UnitFileState": "enabled"
+              },
+              "apt-daily.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              },
+              "binance-market-data-archive.service": {
+                "ActiveState": "inactive",
+                "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "MainPID": "0",
+                "Result": "success",
+                "UnitFileState": "static"
+              },
+              "binance-market-data-archive.timer": {
+                "ActiveState": "active",
+                "UnitFileState": "disabled"
+              },
+              "unattended-upgrades.service": {
+                "ActiveState": "active",
+                "UnitFileState": "enabled"
+              }
+            },
+            "partial_inventory": [],
+            "recorder": {
+              "ActiveState": "inactive",
+              "InvocationID": "cccccccccccccccccccccccccccccccc",
+              "MainPID": "0",
+              "NRestarts": "0",
+              "UnitFileState": "disabled"
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "journal_rc",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 1,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 1,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "journal_json",
+      "elapsed_seconds": 0.02,
+      "error": "JSONDecodeError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "JSONDecodeError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "bad-json",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "YmFkLWpzb24=",
+                  "bytes": 8,
+                  "sha256": "f7e5487eda1342f35e65bef5cf188f3ad71ea589073ecc38b44876ee27f76bd3"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "bad-json",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "YmFkLWpzb24=",
+                "bytes": 8,
+                "sha256": "f7e5487eda1342f35e65bef5cf188f3ad71ea589073ecc38b44876ee27f76bd3"
+              }
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "old_journal",
+      "elapsed_seconds": 0.02,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"0\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIwIn0=",
+                  "bytes": 29,
+                  "sha256": "5877d8ead4e07227998d6cd5c5fbd43019e36a3573a5d52c7ebbccc5f06bfad5"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"0\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIwIn0=",
+                "bytes": 29,
+                "sha256": "5877d8ead4e07227998d6cd5c5fbd43019e36a3573a5d52c7ebbccc5f06bfad5"
+              }
+            },
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "inventory_timeout",
+      "elapsed_seconds": 181,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "active_directories_scanned": [],
+            "active_files_scanned_metadata_only": 0,
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "owned_journal": {
+              "argv": [
+                "journalctl",
+                "--no-pager",
+                "-o",
+                "json",
+                "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "+",
+                "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ],
+              "returncode": 0,
+              "stderr": "",
+              "stderr_decode_error": null,
+              "stderr_raw": {
+                "base64": "",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+              "stdout_decode_error": null,
+              "stdout_raw": {
+                "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                "bytes": 29,
+                "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+              }
+            },
+            "partial_inventory": [],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "invalid_state_utf8",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": null,
+                "stdout_decode_error": "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte",
+                "stdout_raw": {
+                  "base64": "/29yaWdpbmFsLXN0YXRl",
+                  "bytes": 15,
+                  "sha256": "302650297f2aad44034bad742237f131c6918f64da01f43783149137e12c44dd"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "invalid_stderr_utf8",
+      "elapsed_seconds": 0.01,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": null,
+                "stderr_decode_error": "'utf-8' codec can't decode byte 0xfe in position 0: invalid start byte",
+                "stderr_raw": {
+                  "base64": "/mJpbmFyeS1zdGRlcnI=",
+                  "bytes": 14,
+                  "sha256": "c6108c865ee68ab3f02d0655cd442af82d5c7cf7a95e17a00d65fcc49ba68e88"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "malformed_state",
+      "elapsed_seconds": 0.01,
+      "error": "ValueError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "ValueError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "malformed-line",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "bWFsZm9ybWVkLWxpbmU=",
+                  "bytes": 14,
+                  "sha256": "3cd9c6ba7059f3d7f89921a095b5669ee4381fcd8abf0fe5da2b29d39ccf9309"
+                }
+              }
+            ]
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30
+      ],
+      "result": "PASS"
+    },
+    {
+      "attempt_count": 1,
+      "case": "late_journal",
+      "elapsed_seconds": 181.0,
+      "error": "AssertionError",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "AssertionError",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "{\"__REALTIME_TIMESTAMP\": \"2\"}",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "eyJfX1JFQUxUSU1FX1RJTUVTVEFNUCI6ICIyIn0=",
+                  "bytes": 29,
+                  "sha256": "897cd33927002360bcaec3671a03ae33beaad2304615934ef76562880c8804b7"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": null,
+        "timeout_stdout_raw": null
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "result": "PASS",
+      "successful_late_response_retained_losslessly": true
+    },
+    {
+      "attempt_count": 1,
+      "case": "timeout_journal",
+      "elapsed_seconds": 0.02,
+      "error": "TimeoutExpired",
+      "expected": "reject",
+      "failure_output": {
+        "canonical_verification_attempt": {},
+        "error_type": "TimeoutExpired",
+        "failed_attempts": [
+          {
+            "began_at_utc_ns": 1000000000000,
+            "command_observations": [
+              {
+                "argv": [
+                  "systemctl",
+                  "show",
+                  "binance-market-data-archive.service",
+                  "-p",
+                  "LoadState,ActiveState,SubState,UnitFileState,MainPID,NRestarts,InvocationID,Result,TimeoutStopUSec"
+                ],
+                "returncode": 0,
+                "stderr": "",
+                "stderr_decode_error": null,
+                "stderr_raw": {
+                  "base64": "",
+                  "bytes": 0,
+                  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                "stdout": "ActiveState=inactive\nUnitFileState=static\nMainPID=0\nResult=success\nInvocationID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+                "stdout_decode_error": null,
+                "stdout_raw": {
+                  "base64": "QWN0aXZlU3RhdGU9aW5hY3RpdmUKVW5pdEZpbGVTdGF0ZT1zdGF0aWMKTWFpblBJRD0wClJlc3VsdD1zdWNjZXNzCkludm9jYXRpb25JRD1hYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYQo=",
+                  "bytes": 113,
+                  "sha256": "9c71b87221d049076419fa1a68c6795d6abd749ffcd927f8c77188260456b7f4"
+                }
+              },
+              {
+                "argv": [
+                  "journalctl",
+                  "--no-pager",
+                  "-o",
+                  "json",
+                  "_SYSTEMD_INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "+",
+                  "INVOCATION_ID=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "error_type": "TimeoutExpired",
+                "stderr_raw": {
+                  "base64": "/mVycg==",
+                  "bytes": 4,
+                  "sha256": "0672ac67927222d3479f1d553e003900ad174032e911c700af8ffa1058f44d28"
+                },
+                "stdout_raw": {
+                  "base64": "/2V4YWN0AA==",
+                  "bytes": 7,
+                  "sha256": "4cbc0e4f6cd6e4d8b2c4f2510862a3166ed8a88dd9c392639da516dd04e8f088"
+                }
+              }
+            ],
+            "worker_begin": {
+              "ActiveState": "inactive",
+              "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "MainPID": "0",
+              "Result": "success",
+              "UnitFileState": "static"
+            }
+          }
+        ],
+        "formal_credit_seconds": 0,
+        "result": "FAILED_FRESH_HANDOFF_PREFLIGHT",
+        "startup_custody_gate": false,
+        "timeout_stderr_raw": {
+          "base64": "/mVycg==",
+          "bytes": 4,
+          "sha256": "0672ac67927222d3479f1d553e003900ad174032e911c700af8ffa1058f44d28"
+        },
+        "timeout_stdout_raw": {
+          "base64": "/2V4YWN0AA==",
+          "bytes": 7,
+          "sha256": "4cbc0e4f6cd6e4d8b2c4f2510862a3166ed8a88dd9c392639da516dd04e8f088"
+        }
+      },
+      "operation_timeouts": [
+        30,
+        30
+      ],
+      "original_timeout_bytes_retained_losslessly": true,
+      "result": "PASS"
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "helper_sha256": "abe667eca3ced0666dd4e2f54a9335218ca93b6f5cb512e01308300249ef8ef6",
+  "linux_credit": false,
+  "production_payloads_opened": false,
+  "real_network_subprocess_or_service_called": false,
+  "scope": "ISOLATED_LOCAL_HANDOFF_COMPONENT_REVIEW_ONLY",
+  "whole_remote_or_helper_main_executed": false
+}

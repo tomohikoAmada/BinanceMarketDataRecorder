@@ -1,0 +1,220 @@
+{
+  "accepted_design_sha256": "5640864446cf7ea23349e4b3016dfccae8a275864936d4c41633c4795f65082c",
+  "blocking_findings": [],
+  "copy_after": {
+    "archive_timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "boot": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "config": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "free": {
+      "archive": 2051518160896,
+      "writer": 24416145408
+    },
+    "host_available": 5168857088,
+    "identity": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "recorder": {
+      "ActiveState": "inactive",
+      "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml _service run ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 30s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "simple",
+      "UMask": "0027",
+      "UnitFileState": "disabled"
+    },
+    "utc_ns": 1792804557821234123
+  },
+  "copy_before": {
+    "archive_timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "boot": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "config": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "free": {
+      "archive": 2051518255104,
+      "writer": 24416145408
+    },
+    "host_available": 5197852672,
+    "identity": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "recorder": {
+      "ActiveState": "inactive",
+      "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml _service run ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 30s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "simple",
+      "UMask": "0027",
+      "UnitFileState": "disabled"
+    },
+    "utc_ns": 1792804554127185187
+  },
+  "copy_completed_assertion_scope": "The accepted copy control asserts exact four on-disk SHA/size/root0:9880640, exclusive scope creation with requested mode0750/chown0:988, unchanged service-lock identity, and stopped admission; scope mode is not separately exported. This review validates its original completed receipt; it performs no independent remote stat/read.",
+  "copy_payloads_match_accepted_manifest": {
+    "observe_stream_closes.py": {
+      "sha256": "634ee1eeca31f9015f617a3fa3bff38f27625f4d395a7d37ccc2a62b7569cfa0",
+      "size": 13380
+    },
+    "pin-unit-exec.py": {
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "size": 329
+    },
+    "qualification_auxiliary_gate.py": {
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "size": 6324
+    },
+    "qualification_owner_995.py": {
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "size": 7983
+    }
+  },
+  "credits": {
+    "24h_readiness": false,
+    "capacity": false,
+    "formal_seconds": 0,
+    "production_ready": false,
+    "saved_frame_correctness": false,
+    "stability_repair": false
+  },
+  "decision": "ACCEPT_ACTUAL_TWO_HOUR_DIAGNOSTIC_COPY_AND_INITIAL_NATIVE_BINDING_ONLY",
+  "dispatch_preflight": {
+    "archive_timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "boot": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "config": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "free": {
+      "archive": 2051518156800,
+      "writer": 24416141312
+    },
+    "host_available": 5249724416,
+    "identity": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "recorder": {
+      "ActiveState": "inactive",
+      "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml _service run ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "TimeoutStartUSec": "1min 30s",
+      "TimeoutStopUSec": "1min 30s",
+      "Type": "simple",
+      "UMask": "0027",
+      "UnitFileState": "disabled"
+    },
+    "utc_ns": 1792804579990560834
+  },
+  "effective_ExecStart_matches_accepted_pin_and_canonical_observer": true,
+  "effective_ExecStopPost_matches_accepted_cleanup": true,
+  "effective_Type": "oneshot",
+  "effective_UMask": "0027",
+  "effective_start_seconds": 8400,
+  "effective_stop_seconds": 900,
+  "initial_native_observation_utc": "2026-10-24T01:16:20.053850969Z",
+  "limits": [
+    "Only one supplied initial dispatch is bound; no additional check or launch was made.",
+    "No observation publications, owned Recorder binding, final cleanup or completion journal are in these two records.",
+    "Initial Resultsuccess is not a completed native result.",
+    "ExecStopPost is configured and unexecuted in the initial property snapshot.",
+    "No independent outer SSH process exit-code metadata is supplied; original stdout parses to each receipt (key ordering differs) and outer stderr is empty. The nested systemd-run returncode is explicitly0.",
+    "Derived launch-summary.json is not used as authority."
+  ],
+  "linux_import_and_clock_smoke": {
+    "boottime_ns": 1869451670180233,
+    "formal_credit_seconds": 0,
+    "gate": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/qualification_auxiliary_gate.py",
+    "helper": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py",
+    "policy": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/qualification_owner_995.py"
+  },
+  "native": {
+    "ActiveState": "activating",
+    "ExecStart": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py /opt/binance-market-data-recorder/venv/bin/python /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py ; ignore_errors=no ; start_time=[Sat 2026-10-24 01:16:20 UTC] ; stop_time=[n/a] ; pid=818041 ; code=(null) ; status=0/0 }",
+    "ExecStopPost": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+    "InvocationID": "e33cf116c1e843b5b5e9d7988e71cdf8",
+    "LoadState": "loaded",
+    "MainPID": "818041",
+    "NRestarts": "0",
+    "Result": "success",
+    "SubState": "start",
+    "TimeoutStartUSec": "2h 20min",
+    "TimeoutStopUSec": "15min",
+    "Type": "oneshot",
+    "UMask": "0027",
+    "UnitFileState": "transient"
+  },
+  "native_argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=8400",
+    "--property=TimeoutStopSec=900",
+    "--property=UMask=0027",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py"
+  ],
+  "native_initial_state_qualification": "activating/start, NRestarts0; not a proof of completed oneshot, observed Recorder health or elapsed observation",
+  "native_request_utc": "2026-10-24T01:16:20.006922404Z",
+  "new_tests": 0,
+  "originals": {
+    "actual-diagnostic-copy-stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "actual-diagnostic-copy-stdout.txt": {
+      "bytes": 3397,
+      "sha256": "8dd0709394476653691fc6c131f1a9d5a7207ff4bfa61ec0df06bbd67d2576c8"
+    },
+    "actual-diagnostic-copy.json": {
+      "bytes": 3397,
+      "sha256": "2f72c6c0493881e3a07ae5ec089e4f97638a8a57b441afd84c718cdf5fb4b06a"
+    },
+    "actual-diagnostic-dispatch-stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "actual-diagnostic-dispatch-stdout.txt": {
+      "bytes": 3446,
+      "sha256": "f2252e3d32535556e4d997452f6823e0a1fa5bf3a2a04a0c4d3b97bd598b8ef1"
+    },
+    "actual-diagnostic-dispatch.json": {
+      "bytes": 3446,
+      "sha256": "27270710fbae107c2af9f7a7d903507ab5369e39a269c7b7eee642b3b7fced7f"
+    }
+  },
+  "remote_actions_by_reviewer": 0,
+  "source_design_QA_repeated": false
+}

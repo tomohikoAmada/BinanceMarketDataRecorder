@@ -1,0 +1,150 @@
+{
+  "actual_credit": {
+    "canonical_stopped_deployment": true,
+    "canonical_v5": false,
+    "capture_started": false,
+    "formal_duration_seconds": 0,
+    "formal_t0": null,
+    "owner12h": false,
+    "owner2h": false,
+    "production_ready": false,
+    "saved_data_correctness_denominator": null,
+    "window_armed": false
+  },
+  "actual_deployment_result_sha256": "6e98b14d0b02c9ecb8ea11a451d84ff4d9fdedae62a0cbea4d8c94cc5290a758",
+  "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+  "canonical_release_path": "/opt/binance-market-data-recorder/release-8fa54d1-0b8lade6",
+  "clean_receipt_sha256": "64026b122e77c5a63ed58e61264898ed2534bbbe7b281b45b6819e553d03ee3a",
+  "completed_physical_custody_binding": {
+    "current_software_readback_sha256": "585fa1390409696f848d358907bd9bb82f1a89b52338c8655e6ca6035ee82c3d",
+    "custody_pyvenv_cfg_and_recorder_dist_info_present": true,
+    "new_release_wheel_lock_archive_copies_exact": true,
+    "not_a_full_old_venv_audit": true,
+    "physical_retention_binding_complete": true,
+    "prior_identity_source49b4a2d_config_unit_sidecars_effective_unchanged": true,
+    "prior_venv_custody_exists_root_bmdr0750_symlink_free": true,
+    "saved_prior_identity_exact707_bytes": true,
+    "six_software_files_exact": true,
+    "software_root_bmdr0640_symlink_free": true,
+    "supplement_has_no_intrinsic_timestamp": "bound by exact current deployment paths/hashes; operational state timestamp remains actual-canonical-deployment bundle UTC"
+  },
+  "core_reconstruction": {
+    "archive_restored_enabled_active_worker_success": true,
+    "canonical_verification": "VERIFIED",
+    "commands_all20_success": true,
+    "config_lock_unit_effective_unchanged": true,
+    "deployment_child_pid": 429344,
+    "identity_sha256": "d804a02f14e1f80faa8bceed8eeaef41931ab986db7db60812157f4ed879ebeb",
+    "installed_dep_count28_and_protected_files4859_dirs407": true,
+    "installed_recorder_record_files": 131,
+    "linux_owned_group_v3_cases_passed": 3,
+    "native_finished_realtime_us": "1791948611321729",
+    "native_invocation": "c98ce736fda74db4a5be5d03a51de7a7",
+    "native_main_pid": 429343,
+    "native_resource_fields": {
+      "CPU_USAGE_NSEC": "111208077000",
+      "MEMORY_PEAK": "962273280",
+      "MEMORY_SWAP_PEAK": "0"
+    },
+    "native_wall_seconds": 152.181054,
+    "new_identity_and_record_hashes_reconstructed": true,
+    "new_release": "/opt/binance-market-data-recorder/release-8fa54d1-0b8lade6",
+    "no_capture_or_formal_credit": true,
+    "physical_custody_and_copy_metadata_readback": "PENDING_REQUESTED_FROM_PARENT",
+    "post_gc_lookup_excluded_from_native_failure": true,
+    "post_gc_lookup_row_realtime_us": "1791949156382459",
+    "prior_identity_sha256": "7072575b248d1c0b3fccaf984189a50342fd3479e9508a0d328ca27f1527133e",
+    "recorded_prior_venv_custody": "/opt/binance-market-data-recorder/venv-custody-r1-prior49b4a2d-0wapy6ez/venv",
+    "recorder_stopped_disabled_pid0_nrestarts0": true,
+    "result_sha256": "6e98b14d0b02c9ecb8ea11a451d84ff4d9fdedae62a0cbea4d8c94cc5290a758",
+    "retained_chunks_metadata_only": 62700,
+    "source": "8fa54d18ac08f515362229d7f9c739b45767c2b7",
+    "wheel_sha256": "26c6c5c73c3a23f1459331389cb0297c90f7e0a1636c582c44625f1521e6fdc7"
+  },
+  "current_config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "current_lock_sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335",
+  "current_state_at_bundle_utc_ns": 1791949156728394778,
+  "custody_path": "/opt/binance-market-data-recorder/venv-custody-r1-prior49b4a2d-0wapy6ez/venv",
+  "deploy_helper_sha256": "17176648a0d85690b8896ba932c1bf9685507c1e53250f4f350d25efbc4f22da",
+  "frozen_inputs": {
+    "actual-canonical-custody-readback.json": {
+      "bytes": 6763,
+      "sha256": "585fa1390409696f848d358907bd9bb82f1a89b52338c8655e6ca6035ee82c3d"
+    },
+    "actual-canonical-deployment-0335.json": {
+      "bytes": 91668,
+      "sha256": "1c626b2499be3960b56df504206dfb372322ceffdd0ac4ef3357a40cff41d4d1"
+    },
+    "actual-deploy-dispatch.json": {
+      "bytes": 1753,
+      "sha256": "befd51999feab428c6e8c6b2f36b25a3889fd41d12c2829ad375d79a4ea7ac58"
+    },
+    "actual-linux-command-group-v3.json": {
+      "bytes": 928,
+      "sha256": "74a7b4cec3d325e652cd105d5b0a9e30e21c693d978a5cb1572ff43fc318c084"
+    },
+    "clean-wheel.json": {
+      "bytes": 2185,
+      "sha256": "64026b122e77c5a63ed58e61264898ed2534bbbe7b281b45b6819e553d03ee3a"
+    },
+    "deploy-design-bindings.json": {
+      "bytes": 569,
+      "sha256": "372cb463b3ec4fb540755c028fb999ca84e8168467dbf731dca7173590ad7045"
+    },
+    "deploy-proposed-argv.json": {
+      "bytes": 989,
+      "sha256": "567270c6bbd3e06e6f763fedf57022e695c29925221231186a71f97d6d245fda"
+    },
+    "deploy-release.py": {
+      "bytes": 12894,
+      "sha256": "17176648a0d85690b8896ba932c1bf9685507c1e53250f4f350d25efbc4f22da"
+    },
+    "deployment-remote-scope.json": {
+      "bytes": 300,
+      "sha256": "7341b8fbf53f92c64f0f0dcb5e682f51d27ab6ee807beef188409a4d8a9eb83f"
+    },
+    "pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "qualify_corrected_command_group_v3.py": {
+      "bytes": 3541,
+      "sha256": "cec2e7b521c29ee9b04fe926ae2f419e0d414dce9782247eaff65dfd08fdb1d9"
+    }
+  },
+  "limitations": [
+    "Initial core reconstruction PENDING physical-binding field is a preserved checkpoint; completed custody binding and final verdict supersede that pending field.",
+    "Old venv physical custody/existence/protected metadata and exact prior identity are verified; no full old-venv historical audit was performed.",
+    "Custody readback carries no intrinsic timestamp; it binds by exact current scope/release paths/hash metadata. Operational-state timestamp comes from actual deployment bundle.",
+    "Canonical verification/install facts are reconstructed from exact supplied CLI command outputs, record hash, identity and readbacks; no new remote verifier execution occurred.",
+    "Archive restored enabled-active and workerinactive-success is accepted for deployment handoff; fresh natural-worker/future-deadline/quiet-window/resource/strict/arm/start gates precede a new owner test.",
+    "No old duration/time transfer, own2h/12h, saved-data correctness or every-exchange-event completeness, canonicalV5/24h/48h or production-ready credit."
+  ],
+  "native_actual_start_properties": {
+    "StartSeconds": 3600,
+    "StopSeconds": 1500,
+    "Type": "oneshot",
+    "UMask": "0027",
+    "async_no_block": true,
+    "helper_child_pid": 429344,
+    "main_pid": 429343
+  },
+  "new_identity_sha256": "d804a02f14e1f80faa8bceed8eeaef41931ab986db7db60812157f4ed879ebeb",
+  "pin_sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+  "prior_identity_sha256": "7072575b248d1c0b3fccaf984189a50342fd3479e9508a0d328ca27f1527133e",
+  "review_access": {
+    "candidate_or_repository_edits": 0,
+    "local_offline": true,
+    "metadata_scope": "supplied actual current deployment/identity/software-custody/native/fixture metadata only",
+    "production_or_historical_raw_manifest_or_catalog_opens": 0,
+    "service_or_production_state_operations": 0,
+    "vps_network_connections": 0
+  },
+  "schema": "r1-actual-canonical-deployment-independent-review.v1",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R1-repair-release-20261014-dpri5ssx",
+  "source_git_sha": "8fa54d18ac08f515362229d7f9c739b45767c2b7",
+  "systemd_unit_sha256": "d5afc4c2228a78f02ffd7be07775e7c53acda90b8c2b1b3581d64020537188b6",
+  "unresolved_findings": [],
+  "verdict": "ACCEPT_ACTUAL_STOPPED_CANONICAL_DEPLOYMENT",
+  "wheel_sha256": "26c6c5c73c3a23f1459331389cb0297c90f7e0a1636c582c44625f1521e6fdc7"
+}

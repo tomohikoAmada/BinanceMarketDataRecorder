@@ -1,0 +1,41 @@
+{
+  "design_manifest_sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f",
+  "files": [
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/observe_stream_closes.py",
+      "snapshot": "inputs/observe_stream_closes.py",
+      "size": 13375,
+      "sha256": "6c9128a38f080cb8f1f5f9aba9e5556adde76e3928d2d6952fe7853cc19852b4"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/qualification_auxiliary_gate.py",
+      "snapshot": "inputs/qualification_auxiliary_gate.py",
+      "size": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/qualification_owner_995.py",
+      "snapshot": "inputs/qualification_owner_995.py",
+      "size": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/pin-unit-exec.py",
+      "snapshot": "inputs/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/operate.py",
+      "snapshot": "inputs/operate.py",
+      "size": 11089,
+      "sha256": "7ff6cb03329fdc885030e60d1a8246c6871b694d11dad74fcc06807cc4e64e8f"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/design-manifest.json",
+      "snapshot": "inputs/design-manifest.json",
+      "size": 2857,
+      "sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f"
+    }
+  ]
+}

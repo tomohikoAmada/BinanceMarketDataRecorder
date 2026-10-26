@@ -1,0 +1,67 @@
+{
+  "all_input_SHA_bytes_PASS": true,
+  "blocking_findings": [
+    {
+      "evidence": "ADVERSARIAL_COLLECTION_RESULTS.json case1",
+      "file": "control_files.py",
+      "id": "COLLECTION-ROOT-ANCESTOR",
+      "lines": [
+        55,
+        66
+      ],
+      "mechanism": "root.resolve is checked before root.lstat/open. O_NOFOLLOW protects only the final root entry; higher ancestors are traversed by absolute lstat/open and are not pinned or rechecked. Swapping one ancestor to a symlink after resolve makes before/open/after all describe another root, yielding foreign allowed-name bytes as read_complete true and custody_race false.",
+      "minimal_remedy": "Open root by an O_DIRECTORY/O_NOFOLLOW dir-fd walk from a trusted stable anchor, recording/checking every ancestor link, or accept a separately trusted pre-opened root fd with bound identity. Do not rely on resolve followed by an absolute open; reject/mark ancestor changes and retain any observations. Extend below-root link/race discipline to the root path itself.",
+      "priority": "P1",
+      "reproduced": true,
+      "title": "Root canonicality can race before unanchored absolute-path open"
+    },
+    {
+      "evidence": "ADVERSARIAL_COLLECTION_RESULTS.json cases2-3",
+      "file": "control_files.py",
+      "id": "COLLECTION-PARSE-RESOURCE",
+      "lines": [
+        122,
+        139
+      ],
+      "mechanism": "JSON/JSONL parse runs outside collection try/finally and catches only ValueError/UnicodeError. A bounded40001-byte depth20000 JSON triggers RecursionError; JSONL with an earlier valid line similarly escapes without returning raw or earlier parsed rows.",
+      "minimal_remedy": "Retain parser resource exceptions such as RecursionError as structured parse_errors and return already captured raw/previous row evidence. Keep parsing/serialization resource bounds explicit; do not change global recursion limits or let later parsing discard earlier bytes. Whole-reader outer runtime/serialization safety remains a separate pending gate.",
+      "priority": "P2",
+      "reproduced": true,
+      "title": "Parser resource error escapes after raw capture and discards result"
+    }
+  ],
+  "candidate": "/private/var/tmp/bmdr-r2-warm-reader-integration-20261026-mnolxttl",
+  "collection_manifest_sha256": "892f6e5e38ab0f26091a88f46848ff8e1eb202010716692aad7805add16f89bf",
+  "created_utc": "2026-10-25T21:49:31.267803+00:00",
+  "credits": {
+    "Linux_or_newscope_qualified": false,
+    "collection_accepted": false,
+    "copy_ARM_launch_eligible": false,
+    "data_capacity_or_stability_credit": false,
+    "new_T0_or_24h": false,
+    "whole_reader_implemented_or_accepted": false
+  },
+  "decision": "BLOCK",
+  "input_members": 6,
+  "kind": "INDEPENDENT_EXACT_LOSSLESS_METADATA_COLLECTION_COMPONENT_REVIEW",
+  "preservation": {
+    "SSH_network_Raw_service_actions": false,
+    "candidate_W_source_P3_runtime_plans": "UNCHANGED",
+    "writes": "THIS_EXCLUSIVE_REVIEW_DIRECTORY_ONLY"
+  },
+  "report": {
+    "bytes": 6798,
+    "sha256": "8c84060cb1d557f024e7f972d8631a44a23f9a9ccc9cc17deadcea273dfe159f"
+  },
+  "required_next": "Distinct exact correction of root ancestor anchoring and parser error custody, then narrow independent review. Whole integration remains separately pending.",
+  "scope": "DEFINITION_ONLY_FILE_COLLECTION_PRIMITIVE_NOT_WHOLE_READER",
+  "subject_sha256": "9b6107b0a65c0805c1f32e0c743c731388ba5f1bfdfc1103637d67f8894e67ce",
+  "validation": {
+    "all_recorded_bytepacks_SHA_size_PASS": true,
+    "distinct_findings": 2,
+    "independent_reproduced_counterexamples": 3,
+    "initial_harness_depth_assumption_failure_retained": true,
+    "provided_LOCAL_cases": 16,
+    "provided_PASS": 16
+  }
+}

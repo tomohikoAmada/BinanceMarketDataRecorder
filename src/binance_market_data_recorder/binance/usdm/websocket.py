@@ -39,7 +39,7 @@ from urllib.parse import quote
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
-from websockets.exceptions import WebSocketException
+from websockets.exceptions import InvalidStatus, WebSocketException
 
 from ...domain.event import EventEnvelope
 from ...domain.product import product_log_fields
@@ -57,9 +57,11 @@ from ...spool.stream import StreamSpool
 from ...storage.catalog import stream_discontinuity_event_id
 from ..spot.websocket import ReceivedFrame, ReconnectBackoff
 from ..websocket_common import (
+    DEFAULT_RECEIPT_BYTE_CAPACITY,
     RECONNECT_REASONS,
     release_writer_preserving_errors,
     run_owned_blocking_call,
+    websocket_disconnect_log_fields,
 )
 from .schema import UsdMStream, envelope_from_websocket_frame
 
@@ -98,16 +100,25 @@ async def open_usdm_websocket(
 ) -> AsyncIterator[WebSocketConnection]:
     """Open a routed USD-M raw stream with bounded library buffering."""
 
-    async with connect(
-        url,
-        proxy=proxy,
-        compression=None,
-        ping_interval=None,
-        max_queue=(32, 8),
-        max_size=16 * 1024 * 1024,
-        close_timeout=10,
-    ) as websocket:
-        yield websocket
+    from ..request_budget import observe_websocket_rejection, shared_request_budget
+
+    await shared_request_budget().acquire({"usdm_connections": 1})
+    try:
+        async with connect(
+            url,
+            proxy=proxy,
+            compression=None,
+            ping_interval=None,
+            max_queue=(4, 1),
+            max_size=16 * 1024 * 1024,
+            close_timeout=10,
+        ) as websocket:
+            yield websocket
+    except InvalidStatus as exc:
+        observe_websocket_rejection(
+            "usdm", exc.response.status_code, exc.response.headers
+        )
+        raise
 
 
 class UsdMStreamCollector:
@@ -126,6 +137,7 @@ class UsdMStreamCollector:
         logger: logging.Logger,
         log_context: Mapping[str, object] | None = None,
         receipt_queue_capacity: int = 1024,
+        receipt_byte_capacity: int = DEFAULT_RECEIPT_BYTE_CAPACITY,
         planned_rotation_seconds: float = 23 * 60 * 60 + 50 * 60,
         backoff: ReconnectBackoff | None = None,
         websocket_root: str = USDM_WEBSOCKET_ROOT,
@@ -179,6 +191,8 @@ class UsdMStreamCollector:
             receipt_queue_capacity,
             put_timeout_seconds=backpressure_put_timeout_seconds,
             saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
+            byte_capacity=receipt_byte_capacity,
+            size_of=lambda frame: len(frame.raw_payload),
         )
         self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
         self._backpressure_active = False
@@ -305,7 +319,7 @@ class UsdMStreamCollector:
         writer_task: asyncio.Task[None],
         stop: asyncio.Event,
     ) -> None:
-        if self._receipts.depth >= self._receipts.capacity and not self._backpressure_active:
+        if self._receipts.would_block(receipt) and not self._backpressure_active:
             self._backpressure_active = True
             self._log_ingress_state(
                 logging.WARNING,
@@ -337,6 +351,10 @@ class UsdMStreamCollector:
             "receipt_queue_capacity": stats.capacity,
             "receipt_queue_depth": stats.depth,
             "receipt_queue_high_watermark": stats.high_watermark,
+            "receipt_byte_capacity": stats.byte_capacity,
+            "receipt_queued_bytes": stats.queued_bytes,
+            "receipt_owned_bytes": stats.owned_bytes,
+            "receipt_owned_bytes_high_watermark": stats.high_watermark_bytes,
             "queue_wait_count": stats.wait_count,
             "queue_wait_total_ns": stats.wait_total_ns,
             "queue_wait_max_ns": stats.wait_max_ns,
@@ -695,22 +713,20 @@ class UsdMStreamCollector:
                     batch.append(self._receipts.get_nowait())
                 except asyncio.QueueEmpty:
                     break
-            try:
-                persisted = await self._persist_batch(batch)
-            except BaseException:
-                for _receipt in batch:
-                    self._receipts.task_done()
-                raise
-            for _receipt in batch:
-                self._receipts.task_done()
+            persisted = await self._persist_batch(batch)
             for envelope in persisted:
                 await self._record_gap_completed(envelope)
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
+            connection_id = persisted[-1].connection_id
+            for receipt in batch:
+                self._receipts.task_done(receipt)
+            batch.clear()
+            persisted.clear()
+            del receipt, envelope
             if self._receipts.note_consumer_progress() and self._backpressure_active:
                 self._backpressure_active = False
-                connection_id = persisted[-1].connection_id if persisted else "unknown"
                 self._log_ingress_state(
                     logging.INFO,
                     "usdm_ingress_backpressure_recovered",
@@ -771,6 +787,14 @@ class UsdMStreamCollector:
                 try:
                     receipt = receive_task.result()
                     await self._accept(receipt, writer_task, stop)
+                    # A ready frame and stop can complete together. Preserve
+                    # this frame, then stop instead of letting continuous recv
+                    # readiness starve shutdown (including stop during handoff).
+                    if stop.is_set():
+                        await websocket.close(code=1000, reason="collector shutdown")
+                        if self._is_session_restart(session_restart):
+                            return "session_restart"
+                        return "graceful_shutdown"
                 except IngressBackpressureTimeout:
                     self._log_ingress_state(
                         logging.ERROR,
@@ -927,6 +951,11 @@ class UsdMStreamCollector:
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
                     retry=failures,
+                    **websocket_disconnect_log_fields(
+                        exc,
+                        connected_at=connected_at,
+                        observed_at=asyncio.get_running_loop().time(),
+                    ),
                 )
                 if not was_connected or self._connection_receipt_count == 0:
                     # The opener failed or the connection closed before

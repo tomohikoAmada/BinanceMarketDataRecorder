@@ -1,0 +1,6 @@
+{
+  "result": "ALL80_WARM_FAILURE_REVIEW_MEMBERS_AND_ORIGINAL_INPUT_SHA_BYTES_PASS",
+  "manifest_sha256": "095323daaf749169fb892267b15f5bb49c4c472842ed1487e0d1787579688b48",
+  "original_input_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "formal_T0_or_duration_credit": false
+}

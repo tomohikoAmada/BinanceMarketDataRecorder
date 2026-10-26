@@ -1,0 +1,96 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "ACCEPTED_ARCHIVE_INVENTORY.json",
+      "size": 75879,
+      "sha256": "75d462898a03b8b6a2092e11d947a474b246c09a01b7f04ecbb554efae73792a"
+    },
+    {
+      "path": "CHECKS.json",
+      "size": 3256,
+      "sha256": "6a1f5c779b08c625030a65f6a1d9bae19acda4bd89d48493c9e831726ad81e2b"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 2991,
+      "sha256": "a9721720613c169b01c2a9cfb1d3fc935cff482ea35a3f680d7e37aa4b807ea5"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 3268,
+      "sha256": "37da7aef36c25306b9c4d5953554e39e5ffb5c62e3579602fcce8bb8b7098c86"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 2674,
+      "sha256": "77dda109853e39d35ce6a2f90569828ee72b36a2391f49e621d36ed764917751"
+    },
+    {
+      "path": "inputs/actual-release-exclusive-copy.json",
+      "size": 1532,
+      "sha256": "554cb1da7af33e43199e3fea7c366bf1fa038f5a6001b8f39b26602626ee0fce"
+    },
+    {
+      "path": "inputs/actual-software-copy-execution.json",
+      "size": 373,
+      "sha256": "d8743b6e2fc2ef1a7e180cee4cc887d7148dc9d0c42253f0c996dd7fdc9fdba6"
+    },
+    {
+      "path": "inputs/actual-software-copy-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-software-copy-stdout.txt",
+      "size": 1622,
+      "sha256": "d7fefd12a7420b0c510a2a514349a7168efdb4ed0cebda9019ff5cfa59594d99"
+    },
+    {
+      "path": "inputs/cloud-native-argv.json",
+      "size": 920,
+      "sha256": "e20fb44709843060b627474faa6ef6c4dffd3c5f53c8816689a019cf1db40b77"
+    },
+    {
+      "path": "inputs/copy-release-controls.py",
+      "size": 5295,
+      "sha256": "afafa7a0669162b64b9e9dd25e2ee614308017d8bb52692aed773a073a6b6e35"
+    },
+    {
+      "path": "inputs/dispatch-cloud.py",
+      "size": 4500,
+      "sha256": "cd818e075fb27ca91b7643900d428328fe0f4a5a3169b8686ddc521a780e9921"
+    },
+    {
+      "path": "inputs/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "inputs/release-design-manifest.json",
+      "size": 647,
+      "sha256": "28aabb660b4bee855855b388ea4db5ea3e0b961c78f6d9ae2d623d6a8131626c"
+    },
+    {
+      "path": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    },
+    {
+      "path": "prior-design/MANIFEST.json",
+      "size": 4170,
+      "sha256": "40a258f0aeef0a0423420557260ac65cd48c1df6bb4533e4f503f6c6fbe3bece"
+    },
+    {
+      "path": "prior-design/REPORT.md",
+      "size": 6915,
+      "sha256": "88df855f9fbfb1d7e44938bb8c202a13c3eef80f03af8f8d9168d6595e04a52e"
+    },
+    {
+      "path": "prior-design/RESULT.json",
+      "size": 4451,
+      "sha256": "fc20a2fc11d04c70a0ee3b7d8e8870d334d3dd6def7b8b2c6e5940758f0682c5"
+    }
+  ]
+}

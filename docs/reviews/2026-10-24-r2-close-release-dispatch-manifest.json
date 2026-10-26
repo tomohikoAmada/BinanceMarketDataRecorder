@@ -1,0 +1,36 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "REPORT.md",
+      "size": 1895,
+      "sha256": "8740991763451242b22de2f34e52aa657f8eda8b5fce8c1c6a0796e17423c035"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 2231,
+      "sha256": "844de249e682b72e674f71aa4a77cb3f1da070a002644e6861a074b7cd930aad"
+    },
+    {
+      "path": "inputs/actual-cloud-dispatch-execution.json",
+      "size": 384,
+      "sha256": "5a7aa681b7958bec2f98cd095a7970e3e9ede7e69b5d85fd9cffd077a66363a1"
+    },
+    {
+      "path": "inputs/actual-cloud-dispatch-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inputs/actual-cloud-dispatch-stdout.txt",
+      "size": 1666,
+      "sha256": "29eb247d8e2539ba76903406bb6c077eda06a26ac4724ec03a72723bb75c1ac3"
+    },
+    {
+      "path": "inputs/actual-cloud-dispatch.json",
+      "size": 1587,
+      "sha256": "23ccfc8fc874148df827096763db5f9cebf38522dece3fd0956ef2f9c1274bc4"
+    }
+  ]
+}

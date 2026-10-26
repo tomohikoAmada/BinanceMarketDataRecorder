@@ -1,0 +1,7 @@
+# Warm ordering candidate: independent code BLOCK
+
+Candidate d8c0c6ed/final manifest67d7eaf1 is **BLOCKED and not deployed**. The24 provided LOCAL cases pass.16 additional full warm-prefix cases exercise placement, bounds, recovery and identity/resource failures; two reproduce a real acceptance gap: a stale final capacity timestamp or wrong published deployment identity can reach owner-start after an earlier READY while auxiliary/resource checks remain PASS. The canonical source evaluator rejects both. No actual collector or saved data was modified by these fixtures.
+
+A successor needs a source-aligned fast current completion check over all cheap readiness predicates, without a second heavy CLI/Catalog scan. Earlier static attestation must stay explicitly time-scoped and bound to the same deployment/configuration/boot/process; fresh source identity/profile/capacity/topology/heartbeat and strict end/start observations remain required.1200/300/995/2880/own86400 are not waived. Current work is successor independent LOCAL/OFFLINE design in the existing reviewer; genuine Linux/new-scope qualification remains future work.
+
+All23 frozen members passed parent SHA/bytes. Earlier draft inputs remain unchanged, the BLOCK is retained, and no Linux, deployment, duration or capacity credit is granted. See [report](2026-10-25-r2-warm-ordering-code-review/REPORT.md), [result](2026-10-25-r2-warm-ordering-code-review/RESULT.json), [manifest](2026-10-25-r2-warm-ordering-code-review/MANIFEST.json) and [mirror map](2026-10-25-r2-warm-ordering-code-review/MIRROR.json).

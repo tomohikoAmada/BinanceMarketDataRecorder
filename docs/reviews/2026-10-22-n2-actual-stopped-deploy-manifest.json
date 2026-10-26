@@ -1,0 +1,142 @@
+{
+  "files": [
+    {
+      "bytes": 15942,
+      "path": "CHECKS.json",
+      "sha256": "cdc083edca79fc0ff365eb18430f1acd9350927cbabf3a7ab0364e4573ef4585"
+    },
+    {
+      "bytes": 5070,
+      "path": "INPUTS.json",
+      "sha256": "cc1e35b431753bdcaa48a69d6835e5941f4fa24ae08260a3a67adefea8c5e261"
+    },
+    {
+      "bytes": 2355,
+      "path": "REPORT.md",
+      "sha256": "bd3a0cf1bf9551731599a9b60d5eeaf467ea49ff7d79aab39bc5d9a6a8612af8"
+    },
+    {
+      "bytes": 1462,
+      "path": "RESULT.json",
+      "sha256": "04c5fe7f4d6aa04469e76b9e21dc5bca37d43cd580e8bbf59b442f81687af6ad"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/N1-receipt.bin",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    {
+      "bytes": 4834,
+      "path": "inputs/accepted-manifest.bin",
+      "sha256": "95c09f267d6fdc3ed4ad50b2be5ef78dffd1946f63daedbe07a25f8e9f30745f"
+    },
+    {
+      "bytes": 3230,
+      "path": "inputs/accepted-pending.bin",
+      "sha256": "3fb511043f793fc7c02d7435c3f248b13cbcbb872db39afa065320f249715c08"
+    },
+    {
+      "bytes": 2469,
+      "path": "inputs/accepted-report.bin",
+      "sha256": "709efa302c549f9ec507f838c9794e0a059adb8753b27515fe47931cf321051a"
+    },
+    {
+      "bytes": 1630,
+      "path": "inputs/accepted-result.bin",
+      "sha256": "91ee2d280979a45e86b6a1557f2096f1c3e0c6eb11b87323dbe8fd626112b139"
+    },
+    {
+      "bytes": 697,
+      "path": "inputs/actual-copy.bin",
+      "sha256": "404521e01f7ee386a3d8708f4b41920527d2d3b43c62acd3e1fd07fabef1edd2"
+    },
+    {
+      "bytes": 0,
+      "path": "inputs/actual-deploy-stderr.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1919,
+      "path": "inputs/actual-deploy.bin",
+      "sha256": "392b4778c9355c2ea4e0472ecb750365ec0574962aeeb61207259dc21aabe8c0"
+    },
+    {
+      "bytes": 0,
+      "path": "inputs/actual-read-stderr.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 84360,
+      "path": "inputs/actual-read.bin",
+      "sha256": "25a2598a095a497101acc5f6358514969c9982ac8e62395429185abe4682fb85"
+    },
+    {
+      "bytes": 1642,
+      "path": "inputs/candidate-config.bin",
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "bytes": 2292,
+      "path": "inputs/candidate-identity.bin",
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    {
+      "bytes": 14151,
+      "path": "inputs/helper.bin",
+      "sha256": "8a0456fbbd741054987a7fbd3350d3c4ec2a157e5c9696bb0c9a21110ad52208"
+    },
+    {
+      "bytes": 6092,
+      "path": "inputs/operator.bin",
+      "sha256": "ce35b0fc56aaddf285effdd4f217ad5a239ec9520364796878d54261ecaf0714"
+    },
+    {
+      "bytes": 329,
+      "path": "inputs/pin.bin",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 13882,
+      "path": "observed/canonical-deployment.log",
+      "sha256": "07a0764372dbcf6acc1b2ed3c175abc7db6b670acc31daf39acecc8b4256edfd"
+    },
+    {
+      "bytes": 2292,
+      "path": "observed/deployment-identity.json",
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    {
+      "bytes": 37734,
+      "path": "observed/deployment-result.json",
+      "sha256": "9571c469a025b895d183fbb4707a573118a3f038c4cfb3f7c7a5b2f162fa3d6b"
+    },
+    {
+      "bytes": 1255,
+      "path": "observed/dispatch-attempt.json",
+      "sha256": "2e13a2f09d2b00d58c11ad059cde9a28694724f402155eaa3ea57956cd7d08fd"
+    },
+    {
+      "bytes": 2292,
+      "path": "observed/prior-deployment-identity.json",
+      "sha256": "db52730c27cdacf239e5131cdafe9043ee8d3ddf54a71b59d94b5d1179245c45"
+    },
+    {
+      "bytes": 1620,
+      "path": "observed/prior-recorder.toml",
+      "sha256": "e2f813123e1815a87be84d4c84cb5c96030398bb844ec3eb04554c94a7f7cad5"
+    },
+    {
+      "bytes": 1642,
+      "path": "observed/recorder.toml",
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "bytes": 12879,
+      "path": "observed/unit-journal.jsonl",
+      "sha256": "1f9d147f365cf38f9a63a54aafa3c837e1a1831eb9792ccec1fc07615e7a9e28"
+    }
+  ],
+  "member_count": 27,
+  "schema_version": 1,
+  "scope": "ACTUAL_STOPPED_N2_CONFIGURATION_DEPLOYMENT_ONLY"
+}

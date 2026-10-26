@@ -1,0 +1,21 @@
+{
+  "result": "PARENT_FULL14_ACTUAL_LAUNCH_REVIEW_MEMBERS_VERIFIED",
+  "review": {
+    "REPORT.md": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-launch-review-20261024-9mk_zhhg/REPORT.md",
+      "sha256": "fd3656c5f2adcfc8aae8f27ba7d891bf1292bb0e0af67c3f57b0b8261ab28e88"
+    },
+    "RESULT.json": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-launch-review-20261024-9mk_zhhg/RESULT.json",
+      "sha256": "c58cff1f5d59bcc9c4e66fd36170a1fd46d8404170e6c21d9849fc4b014d14ad"
+    },
+    "MANIFEST.json": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-launch-review-20261024-9mk_zhhg/MANIFEST.json",
+      "sha256": "fe7f4bc146dcd577dd25f9abc092dc690ec4d12e8cf36a840040abc5b7a68c7a"
+    }
+  },
+  "launch_sha256": "c16fc3b733b77cd618e2b010a512a65b95cb6be0bd4120488f54791090d81691",
+  "formal_T0": null,
+  "reasonably_check_at": "2026-10-24T06:15:54.807086532Z",
+  "no_extra_vps_before_healthy_checkpoint": true
+}

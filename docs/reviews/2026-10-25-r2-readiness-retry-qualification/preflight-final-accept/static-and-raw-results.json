@@ -1,0 +1,97 @@
+{
+  "cases": [
+    {
+      "case": "raw_pack_0",
+      "result": "PASS"
+    },
+    {
+      "case": "raw_pack_1",
+      "result": "PASS"
+    },
+    {
+      "case": "raw_pack_2",
+      "result": "PASS"
+    },
+    {
+      "case": "raw_pack_3",
+      "result": "PASS"
+    },
+    {
+      "case": "raw_pack_4",
+      "result": "PASS"
+    },
+    {
+      "case": "run_original_bytes_5",
+      "result": "PASS"
+    },
+    {
+      "case": "run_original_bytes_6",
+      "result": "PASS"
+    },
+    {
+      "case": "run_original_bytes_7",
+      "result": "PASS"
+    },
+    {
+      "case": "state_invalid_utf8_rejected_8",
+      "result": "PASS"
+    },
+    {
+      "case": "state_invalid_utf8_rejected_9",
+      "result": "PASS"
+    }
+  ],
+  "constants": {
+    "CONFIG": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+    "IDENTITY": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+    "SOURCE": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "end": 1792907346512229095,
+    "start": 1792821038109362000
+  },
+  "definition_only_verify_argv": [
+    "/usr/bin/python3.12",
+    "-c",
+    "import dbus,subprocess,sys\nbus=dbus.SystemBus()\nm=dbus.Interface(bus.get_object('org.freedesktop.systemd1','/org/freedesktop/systemd1'),'org.freedesktop.systemd1.Manager')\nunit='binance-market-data-recorder.service'\nm.LoadUnit(unit);m.RefUnit(unit)\ntry:\n raise SystemExit(subprocess.call(sys.argv[1:]))\nfinally:m.UnrefUnit(unit)\n",
+    "/usr/sbin/runuser",
+    "-u",
+    "bmdr",
+    "--",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "-m",
+    "binance_market_data_recorder",
+    "--config",
+    "/etc/binance-market-data-recorder/recorder.toml",
+    "deployment",
+    "verify"
+  ],
+  "formal_credit_seconds": 0,
+  "helper_main_or_whole_remote_executed": false,
+  "linux_credit": false,
+  "outer_module_AST_unchanged_since_4f4c": true,
+  "pin_sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+  "raw_case_count": 10,
+  "read_only_scope_preserved": true,
+  "real_subprocess_or_network_called": false,
+  "references": {
+    "/private/var/tmp/bmdr-r2-retry-preflight-correction-review-20261025-s8m5a0o7/MANIFEST.json": {
+      "bytes": 1386,
+      "sha256": "9000134dfc447c104c2c330db147d157898c1ce86689e9aab8fea4dd7a270856"
+    },
+    "/private/var/tmp/bmdr-r2-retry-preflight-correction-review-20261025-s8m5a0o7/inputs/read_current_capacity.py": {
+      "bytes": 15535,
+      "sha256": "4f4c710c37d17e99976473387257ac3dbd89d861820b0102e3fab7a44728fda3"
+    },
+    "/private/var/tmp/bmdr-r2-retry-preflight-design-review-20261025-n59txw4H/MANIFEST.json": {
+      "bytes": 1610,
+      "sha256": "0c37b15f5bf063bbffd2b5ca95c0d2b2dc42b68793a7379aaae4f4e1260ca5cb"
+    },
+    "/private/var/tmp/bmdr-r2-retry-preflight-lossless-review-20261025-qie5itpl/inputs/preflight-design-manifest.json": {
+      "bytes": 757,
+      "sha256": "cd8f711e837878612148d97151fb113e2df43c4590aecf51bb4c99a16fb59148"
+    }
+  },
+  "remote_aftertry_result_AST_unchanged": true,
+  "remote_pretry_bindings_unchanged_except_raw_run_state": true,
+  "scope": "STATIC_BINDINGS_AND_ISOLATED_BYTE_SERIALIZATION_ONLY",
+  "service_lock_concurrency": "exclusive lock retained; deployment verify has no runtime service-lock acquisition, prior static source inspection retained"
+}

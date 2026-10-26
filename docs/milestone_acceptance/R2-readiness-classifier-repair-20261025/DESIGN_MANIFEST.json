@@ -1,0 +1,43 @@
+{
+  "kind": "LOCAL_ONLY_READINESS_CLASSIFIER_REPAIR_DESIGN",
+  "state": "INDEPENDENT_REVIEW_PENDING_NOT_DEPLOYED",
+  "members": {
+    "qualification_owner_995-original.py": {
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "bytes": 7983
+    },
+    "qualification_owner_995.py": {
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+      "bytes": 9161
+    },
+    "test_classifier.py": {
+      "sha256": "c72257d07102a0752b3388ed3f96d180085a12cb44e15847a6ed9098efa70b9e",
+      "bytes": 8105
+    },
+    "parent-tests.json": {
+      "sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81",
+      "bytes": 6602
+    },
+    "trigger-publication.json": {
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+      "bytes": 13508
+    },
+    "CANDIDATE.json": {
+      "sha256": "0d8fdafbc5560c24ec60341ef4afbf30dd09b7e364a76fb39f7e004d2d0fd5f3",
+      "bytes": 906
+    },
+    "DELTA.diff": {
+      "sha256": "13cc9b40b242f626c205f1199e23e1a5a837870428480f849c574f8a695fc14f",
+      "bytes": 1742
+    },
+    "DESIGN.md": {
+      "sha256": "a5991c02da597f222302a651dedf18521bdefab7cb9e56dbbe0d3ec9831f5697",
+      "bytes": 2333
+    }
+  },
+  "actual_failure_read_sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+  "production_source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "formal_credit_seconds": 0,
+  "self_contained_metadata_fixture": true,
+  "initial_external_trigger_manifest_sha256": "d723515bbe66f8a00e70aa163ba729a0df495b25746792320159c901bef6f608"
+}

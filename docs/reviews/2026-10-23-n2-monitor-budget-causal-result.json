@@ -1,0 +1,42 @@
+{
+  "N2_stage_acceptance_credit": false,
+  "accepted_capacity_lower_bound_symbols": 1,
+  "actual_capture_state": "RUNNING_NOT_FAILED",
+  "affected_context_entries": 1924,
+  "affected_gate_maps": 74,
+  "affected_observations_full_gate_rebuilt": 37,
+  "allowed_bad": 14,
+  "assertions": 21874,
+  "current_export_sha256": "5c20f4339b80b3ab243542468006ec4a3833ad58e4cc66330fb4a877e333ebd3",
+  "current_nominal": 2302,
+  "current_official_BLOCK": 17,
+  "current_official_PASS": 2285,
+  "current_strict_PASS": 2264,
+  "decision": "ACCEPT",
+  "diagnostics_verified": 19,
+  "fixed_complete_denominator": 2880,
+  "forbidden_access": {
+    "Raw": 0,
+    "SSH": 0,
+    "candidate_import_or_execution": 0,
+    "historical_manifest_payloads": 0,
+    "network": 0,
+    "production_mutations": 0
+  },
+  "healthy_original_native_should_continue_target_audit_restore": true,
+  "max_hardware_capacity_one_claim": false,
+  "max_possible_final_PASS": 2863,
+  "max_possible_final_percent": 99.40972222222223,
+  "monitor_criterion": "UNREACHABLE_AT_995_WITH_RETAINED_FIXED_2880_SLOTS",
+  "no_new_source_runtime_or_VPS_mutation": true,
+  "original_members_verified": 61,
+  "proven_immediate_causes": [
+    "16 nominal core-not-ready book_ticker transport observations",
+    "1 nominal BTC open_interest RETRYING NetworkError"
+  ],
+  "report_sha256": "68118521ecb80cee141dca3d2cc67fc04c596199fc1516047618356794fea2d0",
+  "same_read_formal_probe_publication_bindings": 2321,
+  "scope": "CURRENT_N2_MONITOR_BUDGET_EVIDENCE_AND_CAUSAL_LIMITS_ONLY",
+  "source_diagnostic_gap_proven": true,
+  "underlying_transport_origin_proven": false
+}

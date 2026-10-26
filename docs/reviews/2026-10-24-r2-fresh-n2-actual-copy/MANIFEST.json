@@ -1,0 +1,134 @@
+{
+  "kind": "INDEPENDENT_ACTUAL_N2_COPY_REVIEW_FROZEN_MANIFEST",
+  "manifest_excludes_itself": true,
+  "members": {
+    "CHECKS.json": {
+      "bytes": 17436,
+      "sha256": "0443136d931a78b29078277f6e388c1723d8657789547c4d729b8770c544bfce"
+    },
+    "REPORT.md": {
+      "bytes": 5432,
+      "sha256": "4cea5e19c2f58c12a16a81e1ffdc7a2985c51baea3ce7aeffd244351bbe635dd"
+    },
+    "RESULT.json": {
+      "bytes": 11363,
+      "sha256": "26a431cbc8cdece5d983acb1ffc1f4e94ec9100303a076f52756aff11313186f"
+    },
+    "bindings/current-forecast-DRAFT.json": {
+      "bytes": 4639,
+      "sha256": "a6bbd454d8b0b0d5ee157d21de53b6a82fef2a1619b88bbd224ba4d8b2020f9b"
+    },
+    "bindings/reconstructed-dispatched-copy.txt": {
+      "bytes": 189303,
+      "sha256": "71cbee4773c550adf6f817b77d79bd64730254bd66598b8cb8f11e0f34146cc6"
+    },
+    "bindings/stage-operator.py": {
+      "bytes": 22087,
+      "sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00"
+    },
+    "bindings/stage-qualification-at-copy.json": {
+      "bytes": 1742,
+      "sha256": "8292ef40a68f5295eaaf88292d7dcbdfcd2249425de7940d90eb791ca3baf365"
+    },
+    "originals/actual-n2-stage-copy-1792820069158868000.execution.json": {
+      "bytes": 233,
+      "sha256": "00d244ea180a2afea007042b111f808cb1a69ca80a6c98e817b0868c9d83edfd"
+    },
+    "originals/actual-n2-stage-copy-1792820069158868000.json": {
+      "bytes": 22700,
+      "sha256": "e7102b1c843bae3157631944836adf483b1e9d0ff52acea72265aede0d569903"
+    },
+    "originals/actual-n2-stage-copy-1792820069158868000.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "payload/arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "payload/arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "payload/capacity-policy.json": {
+      "bytes": 12875,
+      "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b"
+    },
+    "payload/common.py": {
+      "bytes": 12264,
+      "sha256": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1"
+    },
+    "payload/controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "payload/historical-linux-qa-result.json": {
+      "bytes": 8527,
+      "sha256": "c5ed01332116e7a0b34465553fbccfe82782a113d0852e0faa454c9725319631"
+    },
+    "payload/historical-runtime-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "payload/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "payload/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "payload/qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "payload/qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "payload/qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "payload/qualification_owner_995.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "payload/qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "payload/restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "payload/scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "payload/stage-controls-manifest.json": {
+      "bytes": 2345,
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348"
+    },
+    "payload/stage-design-evidence.json": {
+      "bytes": 1502,
+      "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7"
+    },
+    "payload/stage-design-manifest.json": {
+      "bytes": 8466,
+      "sha256": "817fda3445f2b4dade6c8f2b2e0ce48356d6a6946612bd616e8b101ca0f20167"
+    },
+    "payload/stage-design-report.md": {
+      "bytes": 10066,
+      "sha256": "fb65d846311368e52a8ed33a3e8fa489d3002f5bbf4a20e3fd3eaab889d206ff"
+    },
+    "payload/stage-design-result.json": {
+      "bytes": 6467,
+      "sha256": "397c5b59c8aec56a976b08661f9c4cfa2b618888e2b34fdb40da16b497152c6a"
+    },
+    "reconstruct-copy.py": {
+      "bytes": 22472,
+      "sha256": "cade73e6b942116de98123adb26371a8ba3ab23e478208a3c0ead52c6954f649"
+    }
+  }
+}

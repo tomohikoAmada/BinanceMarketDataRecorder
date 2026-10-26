@@ -1,0 +1,294 @@
+{
+  "by_product": {
+    "spot:BTCUSDT": {
+      "chunks": 4417,
+      "decoded_bytes": 7381257946,
+      "saved_frames": 10687786,
+      "stored_bytes": 446945787
+    },
+    "spot:ETHUSDT": {
+      "chunks": 4396,
+      "decoded_bytes": 5992978238,
+      "saved_frames": 8678988,
+      "stored_bytes": 385454512
+    },
+    "um_perpetual:BTCUSDT": {
+      "chunks": 8745,
+      "decoded_bytes": 17620987354,
+      "saved_frames": 22119947,
+      "stored_bytes": 1232504252
+    },
+    "um_perpetual:ETHUSDT": {
+      "chunks": 8766,
+      "decoded_bytes": 16687356723,
+      "saved_frames": 21201200,
+      "stored_bytes": 1253240729
+    }
+  },
+  "by_spool": {
+    "spot:BTCUSDT:agg_trade": {
+      "chunks": 1452,
+      "decoded_bytes": 608659200,
+      "saved_frames": 863363,
+      "stored_bytes": 39318326
+    },
+    "spot:BTCUSDT:book_ticker": {
+      "chunks": 1500,
+      "decoded_bytes": 5493895635,
+      "saved_frames": 8958584,
+      "stored_bytes": 247906406
+    },
+    "spot:BTCUSDT:depth_snapshot": {
+      "chunks": 2,
+      "decoded_bytes": 754314,
+      "saved_frames": 5,
+      "stored_bytes": 100285
+    },
+    "spot:BTCUSDT:diff_depth": {
+      "chunks": 1450,
+      "decoded_bytes": 1277777075,
+      "saved_frames": 865809,
+      "stored_bytes": 159590183
+    },
+    "spot:BTCUSDT:exchange_info": {
+      "chunks": 13,
+      "decoded_bytes": 171722,
+      "saved_frames": 25,
+      "stored_bytes": 30587
+    },
+    "spot:ETHUSDT:agg_trade": {
+      "chunks": 1451,
+      "decoded_bytes": 452029544,
+      "saved_frames": 641864,
+      "stored_bytes": 30876190
+    },
+    "spot:ETHUSDT:book_ticker": {
+      "chunks": 1481,
+      "decoded_bytes": 4394029696,
+      "saved_frames": 7185538,
+      "stored_bytes": 202121404
+    },
+    "spot:ETHUSDT:depth_snapshot": {
+      "chunks": 2,
+      "decoded_bytes": 879922,
+      "saved_frames": 6,
+      "stored_bytes": 119491
+    },
+    "spot:ETHUSDT:diff_depth": {
+      "chunks": 1449,
+      "decoded_bytes": 1145867677,
+      "saved_frames": 851555,
+      "stored_bytes": 152306896
+    },
+    "spot:ETHUSDT:exchange_info": {
+      "chunks": 13,
+      "decoded_bytes": 171399,
+      "saved_frames": 25,
+      "stored_bytes": 30531
+    },
+    "um_perpetual:BTCUSDT:agg_trade": {
+      "chunks": 1450,
+      "decoded_bytes": 759862178,
+      "saved_frames": 1053885,
+      "stored_bytes": 50976482
+    },
+    "um_perpetual:BTCUSDT:basis_5m": {
+      "chunks": 145,
+      "decoded_bytes": 663740,
+      "saved_frames": 289,
+      "stored_bytes": 209569
+    },
+    "um_perpetual:BTCUSDT:book_ticker": {
+      "chunks": 1573,
+      "decoded_bytes": 14100224427,
+      "saved_frames": 20122208,
+      "stored_bytes": 677686838
+    },
+    "um_perpetual:BTCUSDT:depth_snapshot": {
+      "chunks": 1,
+      "decoded_bytes": 130388,
+      "saved_frames": 3,
+      "stored_bytes": 23484
+    },
+    "um_perpetual:BTCUSDT:diff_depth": {
+      "chunks": 1450,
+      "decoded_bytes": 2650377406,
+      "saved_frames": 850999,
+      "stored_bytes": 494629667
+    },
+    "um_perpetual:BTCUSDT:exchange_info": {
+      "chunks": 13,
+      "decoded_bytes": 28941142,
+      "saved_frames": 25,
+      "stored_bytes": 551276
+    },
+    "um_perpetual:BTCUSDT:funding_history": {
+      "chunks": 145,
+      "decoded_bytes": 4297593,
+      "saved_frames": 289,
+      "stored_bytes": 417192
+    },
+    "um_perpetual:BTCUSDT:funding_info": {
+      "chunks": 13,
+      "decoded_bytes": 3523404,
+      "saved_frames": 25,
+      "stored_bytes": 81562
+    },
+    "um_perpetual:BTCUSDT:global_long_short_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 642024,
+      "saved_frames": 289,
+      "stored_bytes": 204970
+    },
+    "um_perpetual:BTCUSDT:liquidation": {
+      "chunks": 344,
+      "decoded_bytes": 916301,
+      "saved_frames": 1003,
+      "stored_bytes": 283692
+    },
+    "um_perpetual:BTCUSDT:mark_price": {
+      "chunks": 1450,
+      "decoded_bytes": 63578644,
+      "saved_frames": 86816,
+      "stored_bytes": 4814366
+    },
+    "um_perpetual:BTCUSDT:open_interest": {
+      "chunks": 713,
+      "decoded_bytes": 2315807,
+      "saved_frames": 1425,
+      "stored_bytes": 830187
+    },
+    "um_perpetual:BTCUSDT:open_interest_statistics_5m": {
+      "chunks": 145,
+      "decoded_bytes": 706722,
+      "saved_frames": 290,
+      "stored_bytes": 224021
+    },
+    "um_perpetual:BTCUSDT:premium_index_snapshot": {
+      "chunks": 714,
+      "decoded_bytes": 2633775,
+      "saved_frames": 1425,
+      "stored_bytes": 922776
+    },
+    "um_perpetual:BTCUSDT:taker_buy_sell_volume_5m": {
+      "chunks": 154,
+      "decoded_bytes": 883247,
+      "saved_frames": 398,
+      "stored_bytes": 238133
+    },
+    "um_perpetual:BTCUSDT:top_long_short_account_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 644772,
+      "saved_frames": 289,
+      "stored_bytes": 205118
+    },
+    "um_perpetual:BTCUSDT:top_long_short_position_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 645784,
+      "saved_frames": 289,
+      "stored_bytes": 204919
+    },
+    "um_perpetual:ETHUSDT:agg_trade": {
+      "chunks": 1451,
+      "decoded_bytes": 729290106,
+      "saved_frames": 1012675,
+      "stored_bytes": 52992166
+    },
+    "um_perpetual:ETHUSDT:basis_5m": {
+      "chunks": 145,
+      "decoded_bytes": 748544,
+      "saved_frames": 290,
+      "stored_bytes": 216605
+    },
+    "um_perpetual:ETHUSDT:book_ticker": {
+      "chunks": 1574,
+      "decoded_bytes": 13485324324,
+      "saved_frames": 19246605,
+      "stored_bytes": 690422111
+    },
+    "um_perpetual:ETHUSDT:depth_snapshot": {
+      "chunks": 2,
+      "decoded_bytes": 127204,
+      "saved_frames": 3,
+      "stored_bytes": 38231
+    },
+    "um_perpetual:ETHUSDT:diff_depth": {
+      "chunks": 1450,
+      "decoded_bytes": 2394665485,
+      "saved_frames": 849074,
+      "stored_bytes": 501326674
+    },
+    "um_perpetual:ETHUSDT:funding_history": {
+      "chunks": 145,
+      "decoded_bytes": 4266688,
+      "saved_frames": 289,
+      "stored_bytes": 408508
+    },
+    "um_perpetual:ETHUSDT:global_long_short_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 699934,
+      "saved_frames": 290,
+      "stored_bytes": 208187
+    },
+    "um_perpetual:ETHUSDT:liquidation": {
+      "chunks": 387,
+      "decoded_bytes": 957666,
+      "saved_frames": 1038,
+      "stored_bytes": 315605
+    },
+    "um_perpetual:ETHUSDT:mark_price": {
+      "chunks": 1450,
+      "decoded_bytes": 63203497,
+      "saved_frames": 86817,
+      "stored_bytes": 4662798
+    },
+    "um_perpetual:ETHUSDT:open_interest": {
+      "chunks": 713,
+      "decoded_bytes": 2318657,
+      "saved_frames": 1425,
+      "stored_bytes": 832953
+    },
+    "um_perpetual:ETHUSDT:open_interest_statistics_5m": {
+      "chunks": 145,
+      "decoded_bytes": 786684,
+      "saved_frames": 291,
+      "stored_bytes": 234409
+    },
+    "um_perpetual:ETHUSDT:premium_index_snapshot": {
+      "chunks": 714,
+      "decoded_bytes": 2629032,
+      "saved_frames": 1425,
+      "stored_bytes": 917858
+    },
+    "um_perpetual:ETHUSDT:taker_buy_sell_volume_5m": {
+      "chunks": 155,
+      "decoded_bytes": 932509,
+      "saved_frames": 398,
+      "stored_bytes": 247733
+    },
+    "um_perpetual:ETHUSDT:top_long_short_account_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 702689,
+      "saved_frames": 290,
+      "stored_bytes": 209070
+    },
+    "um_perpetual:ETHUSDT:top_long_short_position_ratio_5m": {
+      "chunks": 145,
+      "decoded_bytes": 703704,
+      "saved_frames": 290,
+      "stored_bytes": 207821
+    }
+  },
+  "elapsed_seconds": 86400.114838737,
+  "host_cpu_percent": {
+    "idle": 52.77333862583681,
+    "iowait": 1.7436843366463197,
+    "steal": 17.660511437712017,
+    "system": 5.140874655157626,
+    "user": 21.182878837442136
+  },
+  "note": "Host counters are shared VPS diagnostics; cumulative writer latencies and host steal do not identify unique disconnect origin or hardware capacity limit. Product counters include new warm-up and orderly tail.",
+  "period": "first nominal sample through strict actual endpoint",
+  "recorder_cgroup_average_cores": 1.3188381632904054,
+  "recorder_process_average_cores": 1.2929965865854864
+}

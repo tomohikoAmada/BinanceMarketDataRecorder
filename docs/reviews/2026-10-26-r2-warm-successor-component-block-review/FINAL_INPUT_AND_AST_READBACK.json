@@ -1,0 +1,364 @@
+{
+  "candidate_code_manifest": {
+    "bytes": 2069,
+    "sha256": "2f75d522c2782144c2ddff692010c1825e874f9c06b1a442110a561543958282"
+  },
+  "controller_ast": {
+    "formal_next_bt_through_terminal_launch_tail_identical": true,
+    "noncapture_functions": {
+      "drain": true,
+      "resource_gate": true,
+      "resources": true,
+      "retain_observation": true,
+      "sample": true,
+      "strict_finish": true,
+      "terminal": true,
+      "validate_capture": true,
+      "validate_warm": true,
+      "write_sample": true
+    },
+    "noncapture_functions_all_identical": true,
+    "only_capture_warm_start_prefix_and_WarmStart_import_changed": true
+  },
+  "counts": {
+    "code_manifest_members": 13,
+    "runtime_reference_members": 12,
+    "source_modules": 6
+  },
+  "members": {
+    "CANDIDATE.md": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 3473,
+        "sha256": "8854e46da8a4a5b03a8dcf4427613ce4731e35c4ac09fc2ce2f659adf2443e69"
+      },
+      "observed": {
+        "bytes": 3473,
+        "sha256": "8854e46da8a4a5b03a8dcf4427613ce4731e35c4ac09fc2ce2f659adf2443e69"
+      }
+    },
+    "CONTROLLER_DELTA.diff": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 7811,
+        "sha256": "3203786c2fad2ceb34ac1b498531cb7fd6d105a04f92228892db5c1469e83d42"
+      },
+      "observed": {
+        "bytes": 7811,
+        "sha256": "3203786c2fad2ceb34ac1b498531cb7fd6d105a04f92228892db5c1469e83d42"
+      }
+    },
+    "INPUTS.json": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 2905,
+        "sha256": "b9a44d575f10aee5b1611a71ae1c8b84463f1bdaa29297ba4c2829a87909abde"
+      },
+      "observed": {
+        "bytes": 2905,
+        "sha256": "b9a44d575f10aee5b1611a71ae1c8b84463f1bdaa29297ba4c2829a87909abde"
+      }
+    },
+    "LOCAL_BOUNDARY_RESULTS.json": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 4814,
+        "sha256": "f609cc64343e04a223835c5b3e8724d2493f3b83020b779e09a8410a5377b621"
+      },
+      "observed": {
+        "bytes": 4814,
+        "sha256": "f609cc64343e04a223835c5b3e8724d2493f3b83020b779e09a8410a5377b621"
+      }
+    },
+    "LOCAL_FULL_FLOW_RESULTS.json": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 26945,
+        "sha256": "a13d341974d6d7021897675c6f1ce2f9ad14bd95087f98bf5b1566df4761e2ee"
+      },
+      "observed": {
+        "bytes": 26945,
+        "sha256": "a13d341974d6d7021897675c6f1ce2f9ad14bd95087f98bf5b1566df4761e2ee"
+      }
+    },
+    "ORIGINAL_CONTROLLER.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 21356,
+        "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+      },
+      "observed": {
+        "bytes": 21356,
+        "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+      }
+    },
+    "PARENT_LOCAL_EXECUTIONS.json": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 1844,
+        "sha256": "35e17b88d0f3cde700b65039136211ac0ea94c701ae33a58019b54b6b95adfaf"
+      },
+      "observed": {
+        "bytes": 1844,
+        "sha256": "35e17b88d0f3cde700b65039136211ac0ea94c701ae33a58019b54b6b95adfaf"
+      }
+    },
+    "runtime/controller.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 22763,
+        "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+      },
+      "observed": {
+        "bytes": 22763,
+        "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+      }
+    },
+    "runtime/warm_completion.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 6048,
+        "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+      },
+      "observed": {
+        "bytes": 6048,
+        "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+      }
+    },
+    "runtime/warm_readiness.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 19511,
+        "sha256": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc"
+      },
+      "observed": {
+        "bytes": 19511,
+        "sha256": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc"
+      }
+    },
+    "source-module-hashes.json": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 546,
+        "sha256": "443801ce966997ba66126c7415a5f7639c142ef2a31773226091ce149c7eb1db"
+      },
+      "observed": {
+        "bytes": 546,
+        "sha256": "443801ce966997ba66126c7415a5f7639c142ef2a31773226091ce149c7eb1db"
+      }
+    },
+    "test_boundaries.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 5865,
+        "sha256": "465a4cdb3b3424eba5ba24a99487444d2c88a3b5239dc9942f4d08d1df4882c4"
+      },
+      "observed": {
+        "bytes": 5865,
+        "sha256": "465a4cdb3b3424eba5ba24a99487444d2c88a3b5239dc9942f4d08d1df4882c4"
+      }
+    },
+    "test_full_flow.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 19564,
+        "sha256": "85340a40dda07f0b1f21822ba0bdd74b456dc536984e9bcd131b6b1b5e22baee"
+      },
+      "observed": {
+        "bytes": 19564,
+        "sha256": "85340a40dda07f0b1f21822ba0bdd74b456dc536984e9bcd131b6b1b5e22baee"
+      }
+    }
+  },
+  "mode": "LOCAL_OFFLINE_BYTES_AND_AST_ONLY_NO_RUNTIME_OR_SOURCE_MUTATIONS",
+  "runtime_reference_members": {
+    "arm-natural-wait.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 738,
+        "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+      },
+      "observed": {
+        "bytes": 738,
+        "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+      }
+    },
+    "arm.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 6128,
+        "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+      },
+      "observed": {
+        "bytes": 6128,
+        "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+      }
+    },
+    "common.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 12276,
+        "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526"
+      },
+      "observed": {
+        "bytes": 12276,
+        "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526"
+      }
+    },
+    "launch.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 1395,
+        "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+      },
+      "observed": {
+        "bytes": 1395,
+        "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+      }
+    },
+    "pin-unit-exec.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 329,
+        "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+      },
+      "observed": {
+        "bytes": 329,
+        "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+      }
+    },
+    "qualification_auxiliary_gate.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 6324,
+        "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+      },
+      "observed": {
+        "bytes": 6324,
+        "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+      }
+    },
+    "qualification_core_recovery.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 4269,
+        "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+      },
+      "observed": {
+        "bytes": 4269,
+        "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+      }
+    },
+    "qualification_monitor_rate.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 4385,
+        "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+      },
+      "observed": {
+        "bytes": 4385,
+        "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+      }
+    },
+    "qualification_owner_995.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 9161,
+        "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+      },
+      "observed": {
+        "bytes": 9161,
+        "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+      }
+    },
+    "qualification_scoped_corpus.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 14957,
+        "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+      },
+      "observed": {
+        "bytes": 14957,
+        "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+      }
+    },
+    "restore.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 3400,
+        "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+      },
+      "observed": {
+        "bytes": 3400,
+        "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+      }
+    },
+    "scoped-terminal.py": {
+      "PASS": true,
+      "frozen_input": {
+        "bytes": 1804,
+        "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+      },
+      "observed": {
+        "bytes": 1804,
+        "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+      }
+    }
+  },
+  "source_members": {
+    "cli.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/cli.py",
+      "observed": {
+        "bytes": 78727,
+        "sha256": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/cli.py"
+    },
+    "config.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/config.py",
+      "observed": {
+        "bytes": 21084,
+        "sha256": "7e5eda9773120ad83e9154116664eda07827c51891b6675fce82a235c228f506"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/config.py"
+    },
+    "service/deployment_identity.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/service/deployment_identity.py",
+      "observed": {
+        "bytes": 46801,
+        "sha256": "0decd8e6cb745b04e69f103b133248b15cd12a5fa6cd729d85b2de54db8744b7"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py"
+    },
+    "service/readiness.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/service/readiness.py",
+      "observed": {
+        "bytes": 16318,
+        "sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/readiness.py"
+    },
+    "service/state.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/service/state.py",
+      "observed": {
+        "bytes": 3096,
+        "sha256": "49a575f7d3abca370b971abf6cb5814b05973635e8debd3add44d9ec37a60066"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/state.py"
+    },
+    "service/systemd.py": {
+      "PASS": true,
+      "frozen_input": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y/inputs/source/service/systemd.py",
+      "observed": {
+        "bytes": 30933,
+        "sha256": "82c6d8d9195e4698f5dfb029dfc8f8db66a87fa8fb4c54f447176779f794a3a7"
+      },
+      "source": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py"
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "Linux_credit": false,
+  "case": "normal_wrapper_exit_with_live_closed_pipe_descendant",
+  "command_ok_accepts": true,
+  "descendant_pid": 81015,
+  "descendant_state": "S",
+  "macOS_POSIX_only": true,
+  "receipt": {
+    "after": {
+      "boottime_ns": 271527415570000,
+      "monotonic_ns": 271527415570083,
+      "utc_ns": 1792958558325113000
+    },
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-c",
+      "import json,subprocess,sys; p=subprocess.Popen([sys.executable,'-c',sys.argv[1]]); print(json.dumps({'descendant_pid':p.pid}),flush=True)",
+      "import os,signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); os.close(1); os.close(2); time.sleep(30)"
+    ],
+    "before": {
+      "boottime_ns": 271527391340750,
+      "monotonic_ns": 271527391340833,
+      "utc_ns": 1792958558300883000
+    },
+    "child_pid": 81014,
+    "cleanup": "normal_exit",
+    "cleanup_error": null,
+    "cleanup_reserve_seconds": 2.0,
+    "owned_pgid": 81014,
+    "parse_error": null,
+    "parsed_stdout": {
+      "descendant_pid": 81015
+    },
+    "returncode": 0,
+    "stderr": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "base64": "eyJkZXNjZW5kYW50X3BpZCI6IDgxMDE1fQo=",
+      "bytes": 26,
+      "sha256": "b2006c739ab7de70dce5d5b870b332df6780cff023a154aa25bdd65b89425af3"
+    },
+    "timed_out": false,
+    "timeout_prefix_stderr": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_prefix_stdout": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_seconds": 1.0
+  },
+  "result": "BUG_REPRODUCED",
+  "unrelated_sentinel_unaffected": true
+}

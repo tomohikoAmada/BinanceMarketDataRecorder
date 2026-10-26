@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import shlex
+import signal
 import stat
 import subprocess
 import sys
@@ -133,15 +134,45 @@ def main() -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=remote_environment,
+            pipesize=4096,
+        )
+        import fcntl
+
+        capacity_command = getattr(fcntl, "F_GETPIPE_SZ", None)
+        pipe_capacity = (
+            fcntl.fcntl(process.stdout.fileno(), capacity_command)
+            if capacity_command is not None and process.stdout is not None
+            else None
         )
         stage_root = os.environ.get("BMDR_SSH_SHIM_REMOTE_STAGE_ROOT")
-        deadline = time.monotonic() + 5
+        # Hold stdout behind bounded backpressure until the real exporter owns
+        # its stage. Cold CLI import time is not the injection observation.
+        deadline = time.monotonic() + 30
+        injected = False
         while time.monotonic() < deadline and process.poll() is None:
             if stage_root and _owned_active_stage(stage_root):
                 process.kill()
+                injected = True
                 break
             time.sleep(0.001)
+        if not injected and process.poll() is None:
+            process.kill()
         stdout, stderr = process.communicate(input=stdin_bytes)
+        proof_path = os.environ.get("BMDR_SSH_SHIM_KILL_PROOF")
+        if not injected or process.returncode != -signal.SIGKILL or not proof_path:
+            print("catalog_snapshot_kill_fixture_not_injected", file=sys.stderr)
+            sys.stderr.buffer.write(stderr)
+            return 96
+        with open(proof_path, "x") as proof:
+            json.dump(
+                {
+                    "owned_active_stage_observed": True,
+                    "kill_issued": True,
+                    "returncode": process.returncode,
+                    "stdout_pipe_capacity_bytes": pipe_capacity,
+                },
+                proof,
+            )
         sys.stdout.buffer.write(stdout)
         sys.stdout.buffer.flush()
         sys.stderr.buffer.write(stderr)

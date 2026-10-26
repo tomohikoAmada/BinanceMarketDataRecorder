@@ -1,0 +1,69 @@
+{
+  "assertions": 1702132,
+  "checks": {
+    "authority": 1320815,
+    "binding": 3,
+    "chain": 2995,
+    "counts": 2,
+    "database": 1,
+    "export": 56973,
+    "manifest": 52649,
+    "ops": 4,
+    "proof": 131622,
+    "selection": 137068
+  },
+  "findings": [],
+  "summary": {
+    "audit": {
+      "aggregate_sha256": "0344001ade3ea811a1508dc76d06e2477529c3d92efbd7a215abcd3cfe12f26b",
+      "archive_bytes_verified": 3318145280,
+      "families": {
+        "archive_event": 131620,
+        "archive_transaction": 26324,
+        "catalog_chunk": 26324,
+        "chunk_transition": 210592,
+        "manifest": 26324,
+        "operational_event": 1538,
+        "raw_location": 26324
+      },
+      "proof_frame_count": 62687921,
+      "raw_bytes_verified": 0,
+      "record_count": 449046
+    },
+    "counts": {
+      "chunks": 26324,
+      "decoded_bytes": 47682580261,
+      "frames": 62687921,
+      "stored_bytes": 3318145280
+    },
+    "flags": {
+      "gap": 5683,
+      "gap_or_incomplete": 5683,
+      "incomplete": 5683,
+      "overlap": 0,
+      "recovered": 0,
+      "zero_frame": 20,
+      "zero_with_gap": 20
+    },
+    "selection": {
+      "creation_ids": 26324,
+      "current_postboundary_operational": 1536,
+      "operational": 1538,
+      "prior_context_companions": [
+        4257,
+        4259
+      ],
+      "prior_metadata_rows_preserved": 137062,
+      "selected_chunks": 26324,
+      "start_chunks": 137062,
+      "terminal_chunks": 163386
+    },
+    "tail": {
+      "created_after_actual_target": 0,
+      "duration_credit_ns": 0,
+      "manifests_with_receive_after_actual_target": 14,
+      "max_after_actual_target_ns": 938855801,
+      "max_after_nominal_target_ns": 1083048772
+    }
+  }
+}

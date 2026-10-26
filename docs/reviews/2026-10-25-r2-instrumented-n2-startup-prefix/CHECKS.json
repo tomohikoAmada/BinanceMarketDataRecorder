@@ -1,0 +1,26 @@
+{
+  "decision": "ACCEPT",
+  "independent_assertions": 24826,
+  "algorithm": "own standard-library reconstruction of byte custody, full paired gates/cursors/freshness, fixed prefix, clock, admission, resources and owned journals",
+  "candidate_import_or_execution": false,
+  "SSH_network_or_Raw_actions": false,
+  "output_records": {
+    "observations": 1229,
+    "raw_context_entries": 31954,
+    "paired_context_entries": 63908,
+    "owned_journal_events": 282,
+    "core_episodes": 6,
+    "close_events": 63
+  },
+  "scope_limits": [
+    "Raw data, start Catalog content and final saved-frame denominator not audited; boundary original hash/cursors accepted as current metadata provenance only.",
+    "private warm begin monotonic counter and exact Recorder request UTC were not separately exported; reported833.693442688s is not independently reconstructed to nanoseconds. Observable capture-admission-toT0 is below1200s and original strict span is independently verified.",
+    "The reader collects sequentially; envelope utc_ns is read start, individual original publication/resource and systemd observations keep their own time.",
+    "1190/1196 prefix99.4983% is neither finalPASS nor finalFAIL; fixed2880 final denominator remains authoritative.",
+    "20 real received/sent1008 Pong timeout closes and5 immediate reset104 causes narrow observed failure modes but do not uniquely identify network/exchange/client scheduling/writer/host causality.",
+    "Sampled bad-to-recovery intervals are not exact outage duration.",
+    "capacity_stateCRITICAL/FORECAST is distinct from actual_hard_reserve_reached=false; owned swap is separate from host paging counters.",
+    "The preserved measured-spool forecasts are not absolute traffic guarantees; all uniform upper writer projections are below10GiB and retained, while actual>10GiB hard pauses remain.",
+    "No SSH, network, Raw/manifest payload, private candidate import/main/helper execution, source QA/CI/build/release or operational action occurred."
+  ]
+}

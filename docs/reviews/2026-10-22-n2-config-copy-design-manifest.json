@@ -1,0 +1,147 @@
+{
+  "files": [
+    {
+      "bytes": 7514,
+      "path": "CHECKS.json",
+      "sha256": "527934664e418aba5583ba4981ea9988d2ffd14139e814fe618b516a43eddad7"
+    },
+    {
+      "bytes": 23376,
+      "path": "GENERATED-copy-COMPILE-ONLY.txt",
+      "sha256": "1e2f7f428d63050f51f2d302041a6c0b620ea3545a2166f3b0ace935802910a4"
+    },
+    {
+      "bytes": 3156,
+      "path": "GENERATED-deploy-COMPILE-ONLY.txt",
+      "sha256": "cd421cb9af3a65f42f3fb21adc2a2166c3b07f042c7db42c6e595844820b8948"
+    },
+    {
+      "bytes": 1870,
+      "path": "GENERATED-read-COMPILE-ONLY.txt",
+      "sha256": "6c92624911722343a3fc190f2a2db6dcf6d861227152e41a0b55db13af140ca8"
+    },
+    {
+      "bytes": 7177,
+      "path": "INPUTS.json",
+      "sha256": "f3f364323df895fb41656d16cd32b468efb971afc09d92e5e06a786786b88836"
+    },
+    {
+      "bytes": 3230,
+      "path": "PENDING_NATIVE.json",
+      "sha256": "3fb511043f793fc7c02d7435c3f248b13cbcbb872db39afa065320f249715c08"
+    },
+    {
+      "bytes": 2469,
+      "path": "REPORT.md",
+      "sha256": "709efa302c549f9ec507f838c9794e0a059adb8753b27515fe47931cf321051a"
+    },
+    {
+      "bytes": 1630,
+      "path": "RESULT.json",
+      "sha256": "91ee2d280979a45e86b6a1557f2096f1c3e0c6eb11b87323dbe8fd626112b139"
+    },
+    {
+      "bytes": 2241,
+      "path": "inputs/N1-publication-result.bin",
+      "sha256": "9a24b4d94f56a4fbb636382b098dc726d61d8f7606aecaca325d4ee2261621af"
+    },
+    {
+      "bytes": 863,
+      "path": "inputs/N1-readback.bin",
+      "sha256": "4234d483172adc9fd6678405b4ebfe4b861dbe7492f2f32195c2ff752e95315e"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/N1-receipt.bin",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    {
+      "bytes": 1642,
+      "path": "inputs/accepted-candidate-n2-recorder.toml.bin",
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "bytes": 2292,
+      "path": "inputs/accepted-expected-deployment-identity-DESIGN-ONLY.json.bin",
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    {
+      "bytes": 5584,
+      "path": "inputs/accepted-operate-stopped-config.py.bin",
+      "sha256": "5bfc9068fd8330af2dc6ce6602c87226537389fde7664c312966464652e0167c"
+    },
+    {
+      "bytes": 329,
+      "path": "inputs/accepted-pin-unit-exec.py.bin",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 14151,
+      "path": "inputs/accepted-stopped-config-n2.py.bin",
+      "sha256": "8a0456fbbd741054987a7fbd3350d3c4ec2a157e5c9696bb0c9a21110ad52208"
+    },
+    {
+      "bytes": 0,
+      "path": "inputs/actual-copy-stderr.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 697,
+      "path": "inputs/actual-copy.bin",
+      "sha256": "404521e01f7ee386a3d8708f4b41920527d2d3b43c62acd3e1fd07fabef1edd2"
+    },
+    {
+      "bytes": 1642,
+      "path": "inputs/candidate-candidate-n2-recorder.toml.bin",
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    {
+      "bytes": 2292,
+      "path": "inputs/candidate-expected-deployment-identity-DESIGN-ONLY.json.bin",
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    {
+      "bytes": 6092,
+      "path": "inputs/candidate-operate-stopped-config.py.bin",
+      "sha256": "ce35b0fc56aaddf285effdd4f217ad5a239ec9520364796878d54261ecaf0714"
+    },
+    {
+      "bytes": 329,
+      "path": "inputs/candidate-pin-unit-exec.py.bin",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 14151,
+      "path": "inputs/candidate-stopped-config-n2.py.bin",
+      "sha256": "8a0456fbbd741054987a7fbd3350d3c4ec2a157e5c9696bb0c9a21110ad52208"
+    },
+    {
+      "bytes": 4182,
+      "path": "inputs/design-manifest.bin",
+      "sha256": "31710c621ba284b64181a191ef7456bf5ef326dce0a696ed127d455a2c6da825"
+    },
+    {
+      "bytes": 5576,
+      "path": "inputs/design-report.bin",
+      "sha256": "88b88dddd3ed43365c276dd6a31f8d7e34f2e63b48d87f1a74019f59d34f1cc0"
+    },
+    {
+      "bytes": 367,
+      "path": "inputs/design-result.bin",
+      "sha256": "f0a3b45c2e3b21f8745265a596bed243d3cf829cb066324fe5a6a49527690eaa"
+    },
+    {
+      "bytes": 2241,
+      "path": "inputs/main-N1-publication-result.bin",
+      "sha256": "9a24b4d94f56a4fbb636382b098dc726d61d8f7606aecaca325d4ee2261621af"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/main-N1-receipt.bin",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    }
+  ],
+  "member_count": 28,
+  "schema_version": 1,
+  "scope": "EXACT_ACTUAL_THREE_FILE_SOFTWARE_COPY_AND_SINGLE_PENDING_STOPPED_CONFIG_DEPLOY_ATTEMPT_ONLY"
+}

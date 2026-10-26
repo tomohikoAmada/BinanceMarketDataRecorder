@@ -1,0 +1,511 @@
+{
+  "archive_worker_result": {
+    "backlog_bytes_after": 0,
+    "backlog_bytes_before": 0,
+    "backlog_files_after": 0,
+    "backlog_files_before": 0,
+    "command": "archive.drain",
+    "contains_credentials": false,
+    "elapsed_seconds": 3.916843668,
+    "ended_at_utc_ns": 1792778425767914857,
+    "exit_reason": "BACKLOG_EMPTY",
+    "failed_transactions": 0,
+    "last_chunk_id": null,
+    "lock_acquired": true,
+    "processed_bytes": 0,
+    "processed_files": 0,
+    "started_at_utc_ns": 1792778421851071189,
+    "storage_id": "57512e1d-59cc-4aff-bf3b-49ae84a7a44e",
+    "successful_transactions": 0,
+    "target_state": "READY"
+  },
+  "assertions": 58085,
+  "auxiliary_only_bad_slots": [
+    {
+      "next_good_role": "nominal_monitor",
+      "next_good_seconds": 29.814968226,
+      "reasons": [
+        "auxiliary_not_running:um_perpetual:BTCUSDT:open_interest"
+      ],
+      "slot": 1612
+    },
+    {
+      "next_good_role": "nominal_monitor",
+      "next_good_seconds": 30.00835258,
+      "reasons": [
+        "auxiliary_not_running:um_perpetual:ETHUSDT:open_interest"
+      ],
+      "slot": 2720
+    }
+  ],
+  "declared_payload_members": 28484,
+  "dual_live_completed_control_binding": true,
+  "journal": {
+    "cause_limitation": "Exception classes and cumulative latency metrics do not establish unique underlying network/CPU/I/O origin; source close-code diagnostic remains separate future change.",
+    "critical_planned_depth_resync": [
+      {
+        "event": "spot_depth_resync_restart",
+        "fields": {
+          "buffered_capacity": 8192,
+          "market": "spot",
+          "reason": "planned_rotation",
+          "restart": 1,
+          "scope": "product",
+          "stream": "diff_depth",
+          "symbol": "BTCUSDT"
+        },
+        "level": "CRITICAL",
+        "logger": "binance_market_data_recorder",
+        "message": "depth continuity invalidated; restarting Spot capture session",
+        "timestamp_utc": "2026-10-23T06:24:31.812693+00:00"
+      },
+      {
+        "event": "spot_depth_resync_restart",
+        "fields": {
+          "buffered_capacity": 8192,
+          "market": "spot",
+          "reason": "planned_rotation",
+          "restart": 1,
+          "scope": "product",
+          "stream": "diff_depth",
+          "symbol": "ETHUSDT"
+        },
+        "level": "CRITICAL",
+        "logger": "binance_market_data_recorder",
+        "message": "depth continuity invalidated; restarting Spot capture session",
+        "timestamp_utc": "2026-10-23T06:24:33.832582+00:00"
+      },
+      {
+        "event": "usdm_depth_resync_restart",
+        "fields": {
+          "buffered_capacity": 8192,
+          "market": "um_perpetual",
+          "reason": "planned_rotation",
+          "restart": 1,
+          "scope": "product",
+          "stream": "diff_depth",
+          "symbol": "BTCUSDT"
+        },
+        "level": "CRITICAL",
+        "logger": "binance_market_data_recorder",
+        "message": "depth continuity invalidated; restarting USD-M capture session",
+        "timestamp_utc": "2026-10-23T06:24:34.674970+00:00"
+      },
+      {
+        "event": "usdm_depth_resync_restart",
+        "fields": {
+          "buffered_capacity": 8192,
+          "market": "um_perpetual",
+          "reason": "planned_rotation",
+          "restart": 1,
+          "scope": "product",
+          "stream": "diff_depth",
+          "symbol": "ETHUSDT"
+        },
+        "level": "CRITICAL",
+        "logger": "binance_market_data_recorder",
+        "message": "depth continuity invalidated; restarting USD-M capture session",
+        "timestamp_utc": "2026-10-23T06:24:35.574934+00:00"
+      }
+    ],
+    "current_recovery_outcomes": {
+      "DEPTH_RESYNC_REQUIRED": 4,
+      "STREAM_RECONNECT": 360
+    },
+    "events": {
+      "service_stop_requested": 1,
+      "spot_depth_resync_restart": 2,
+      "spot_ingress_gap_recovered": 1,
+      "spot_ingress_stream_recovery": 95,
+      "spot_planned_rotation": 2,
+      "spot_session_restart": 4,
+      "spot_snapshot_bridge_pending": 7,
+      "spot_websocket_connected": 101,
+      "spot_websocket_disconnected": 90,
+      "usdm_depth_resync_restart": 2,
+      "usdm_ingress_gap_extended": 1,
+      "usdm_ingress_gap_recovered": 1,
+      "usdm_ingress_stream_recovery": 269,
+      "usdm_planned_rotation": 8,
+      "usdm_session_restart": 3,
+      "usdm_side_rest_failed": 224,
+      "usdm_snapshot_bridge_pending": 2,
+      "usdm_websocket_connected": 280,
+      "usdm_websocket_disconnected": 263
+    },
+    "levels": {
+      "CRITICAL": 4,
+      "INFO": 399,
+      "WARNING": 953
+    },
+    "operational_counts": [
+      {
+        "count": 4,
+        "event": "DEPTH_RESYNC_COMPLETED",
+        "reason": "planned_rotation"
+      },
+      {
+        "count": 4,
+        "event": "DEPTH_RESYNC_REQUESTED",
+        "reason": "planned_rotation"
+      },
+      {
+        "count": 1,
+        "event": "SERVICE_STARTED",
+        "reason": null
+      },
+      {
+        "count": 1,
+        "event": "SERVICE_STOPPED",
+        "reason": "SIGTERM"
+      },
+      {
+        "count": 215,
+        "event": "SIDE_DATA_EMPTY_RESPONSE",
+        "reason": null
+      },
+      {
+        "count": 581,
+        "event": "SIDE_DATA_RANGE_EVALUATED",
+        "reason": null
+      },
+      {
+        "count": 2,
+        "event": "STREAM_DISCONTINUITY_COMPLETED",
+        "reason": "ingress_backpressure"
+      },
+      {
+        "count": 10,
+        "event": "STREAM_DISCONTINUITY_COMPLETED",
+        "reason": "planned_rotation"
+      },
+      {
+        "count": 6,
+        "event": "STREAM_DISCONTINUITY_COMPLETED",
+        "reason": "session_restart"
+      },
+      {
+        "count": 348,
+        "event": "STREAM_DISCONTINUITY_COMPLETED",
+        "reason": "unexpected_disconnect"
+      },
+      {
+        "count": 10,
+        "event": "STREAM_DISCONTINUITY_STARTED",
+        "reason": "planned_rotation"
+      },
+      {
+        "count": 6,
+        "event": "STREAM_DISCONTINUITY_STARTED",
+        "reason": "session_restart"
+      },
+      {
+        "count": 348,
+        "event": "STREAM_DISCONTINUITY_STARTED",
+        "reason": "unexpected_disconnect"
+      }
+    ],
+    "usdm_writer_metric_maxima": {
+      "queue_wait_count": 0,
+      "receipt_queue_high_watermark": 5921,
+      "writer_append_max_ns": 4353698519,
+      "writer_drain_max_ns": 8624869490,
+      "writer_fsync_max_ns": 4306244766,
+      "writer_seal_max_ns": 8216391856,
+      "writer_write_max_ns": 3480566459
+    }
+  },
+  "progress_files": 1054,
+  "sampled_core_recovery": [
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792651795087437722,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792651789975743734,
+      "observed_recovery_ns": 5111692018,
+      "slot": 17
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792656355125176877,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792656350065840083,
+      "observed_recovery_ns": 5059336177,
+      "slot": 169
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "ETHUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792656445266945931,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792656440052148575,
+      "observed_recovery_ns": 5214798546,
+      "slot": 172
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792668415047241028,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792668409967242668,
+      "observed_recovery_ns": 5080000219,
+      "slot": 571
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792676215100978300,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792676210012924384,
+      "observed_recovery_ns": 5088052818,
+      "slot": 831
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792677415454648688,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792677409991873642,
+      "observed_recovery_ns": 5462763822,
+      "slot": 871
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792677565203940237,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792677560049554789,
+      "observed_recovery_ns": 5154376340,
+      "slot": 876
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "ETHUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792677715230427151,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792677709965331624,
+      "observed_recovery_ns": 5265096914,
+      "slot": 881
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792678675061634706,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792678669978957763,
+      "observed_recovery_ns": 5082676243,
+      "slot": 913
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792679455203998113,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792679450052882913,
+      "observed_recovery_ns": 5151114752,
+      "slot": 939
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792681615012160233,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792681609956762609,
+      "observed_recovery_ns": 5055398809,
+      "slot": 1011
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792683005613257397,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792682990085438075,
+      "observed_recovery_ns": 15527817890,
+      "slot": 1057
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792683420283339762,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792683410053058264,
+      "observed_recovery_ns": 10230282434,
+      "slot": 1071
+    },
+    {
+      "missing": [
+        {
+          "market": "spot",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792686835000900053,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792686829949339561,
+      "observed_recovery_ns": 5051560124,
+      "slot": 1185
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "ETHUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792687495106856409,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792687490013909781,
+      "observed_recovery_ns": 5092945516,
+      "slot": 1207
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "ETHUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792700335082161457,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792700329976672231,
+      "observed_recovery_ns": 5105489551,
+      "slot": 1635
+    },
+    {
+      "missing": [
+        {
+          "market": "um_perpetual",
+          "missing": [
+            "book_ticker"
+          ],
+          "status": "CONNECTING",
+          "symbol": "BTCUSDT"
+        }
+      ],
+      "next_core_good_utc_ns": 1792725655188919593,
+      "next_role": "recovery_probe",
+      "observed_bad_utc_ns": 1792725649950567702,
+      "observed_recovery_ns": 5238354970,
+      "slot": 2479
+    }
+  ],
+  "tar_verified_members_including_manifest": 28485
+}

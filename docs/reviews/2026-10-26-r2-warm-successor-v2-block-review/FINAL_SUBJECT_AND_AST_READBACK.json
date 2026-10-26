@@ -1,0 +1,99 @@
+{
+  "all20_subject_members_unchanged": true,
+  "all_other_controller_AST_unchanged": {
+    "Observation": true,
+    "drain": true,
+    "resource_gate": true,
+    "resources": true,
+    "retain_observation": true,
+    "sample": true,
+    "strict_finish": true,
+    "terminal": true,
+    "validate_capture": true,
+    "validate_warm": true,
+    "write_sample": true
+  },
+  "formal_next_bt_tail_AST_identical": true,
+  "subjects": {
+    "CANDIDATE_V2.md": {
+      "bytes": 3559,
+      "sha256": "af8097df6d8d886e705c72f4e45a93d09dda3dd8cff73a00af1da6efaa413635"
+    },
+    "INPUTS.json": {
+      "bytes": 3152,
+      "sha256": "47debe443b23abeb1c7f718768e4375ecd43b2a032c9bbd1ae37102f4d5428e0"
+    },
+    "LEASE_DESIGN_REFERENCE.json": {
+      "bytes": 275,
+      "sha256": "33c17abeec8d5554114d727cc7dd6d1deb36fe2a8f6ee8314766c3bfd9f3222d"
+    },
+    "LOCAL_BOUNDARY_RESULTS.json": {
+      "bytes": 6686,
+      "sha256": "1ceebfdc4db9a1b4db2e6388df1ec55e8975df530265fe81259caf5624dbf206"
+    },
+    "LOCAL_FULL_FLOW_RESULTS.json": {
+      "bytes": 29690,
+      "sha256": "cdb1e246afa67d4ca2399ede1b812e383760d720a6d0cd9dcad8b1fae41ef94e"
+    },
+    "LOCAL_OWNED_GROUP_REGRESSIONS.json": {
+      "bytes": 14807,
+      "sha256": "8f7121a9d30c20544be3f29c79459fba46900c84daa3110bf6e4342821ab8c88"
+    },
+    "ORIGINAL_CONTROLLER.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "PARENT_LOCAL_EXECUTIONS.json": {
+      "bytes": 2975,
+      "sha256": "57faa9f0f3f97811469d29ef0f1e02609d83783add36037dd6caeeccaf0b415f"
+    },
+    "PREVIOUS_BLOCK.json": {
+      "bytes": 572,
+      "sha256": "e329e5578e0e17d0c208189bc0dbdd11c6cdf4ad57e58538ec7e8b03216a9e83"
+    },
+    "WARM_V2_DELTA.diff": {
+      "bytes": 10375,
+      "sha256": "9b32cac743d4d09cccf14ca2b1c7a1721aacbcbae596c62338788166c2686797"
+    },
+    "freeze_candidate.py": {
+      "bytes": 6366,
+      "sha256": "fb0e75877d4916d2dc84aab9795ac9e9a2219ce30b7fc58a65112b31411cd93a"
+    },
+    "history-local-stat-parser-failure.json": {
+      "bytes": 3365,
+      "sha256": "18102daf508a0fbc1b071ff061c8a62445b1777a332b6a3ec0aa85523847334a"
+    },
+    "runtime/controller.py": {
+      "bytes": 22763,
+      "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+    },
+    "runtime/owned_command.py": {
+      "bytes": 10940,
+      "sha256": "eafa5ad349b1ce62c5b9bf4ca2c1c0cfa28264579cdb3626c0f3f92d4b620117"
+    },
+    "runtime/warm_completion.py": {
+      "bytes": 6048,
+      "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+    },
+    "runtime/warm_readiness.py": {
+      "bytes": 22060,
+      "sha256": "2923793fa3b77a506b98eac4356efd8c6ec33909ef3bbc3b74adb5cc228137b5"
+    },
+    "source-module-hashes.json": {
+      "bytes": 546,
+      "sha256": "443801ce966997ba66126c7415a5f7639c142ef2a31773226091ce149c7eb1db"
+    },
+    "test_boundaries.py": {
+      "bytes": 5998,
+      "sha256": "bd3d6f908ab920bd0cdbafb3a1a8588df8726f02c134820e0eaeaabda005657b"
+    },
+    "test_full_flow.py": {
+      "bytes": 21361,
+      "sha256": "aef00538ff2e888c1b869056551bfc93bfbf3fb246957819240f4bc1a966c5c0"
+    },
+    "test_owned_regressions.py": {
+      "bytes": 5706,
+      "sha256": "e52ab8214c9a589dbf842f2271f868483e8267cced1a71401cf3e57820ff0e12"
+    }
+  }
+}

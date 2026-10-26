@@ -1,0 +1,17 @@
+{
+  "scope": "STATIC definition-only deployment verify and lock compatibility inspection, no source QA rerun",
+  "references": [
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/cli.py",
+      "sha256": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913",
+      "bytes": 78727
+    },
+    {
+      "path": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/lock.py",
+      "sha256": "41f0389a9768f425000672dc29bdb0edc0131584b65c0b4dbef99ef48acbfce8",
+      "bytes": 1859
+    }
+  ],
+  "candidate_module_imported": false,
+  "source_executed": false
+}

@@ -273,6 +273,7 @@ class SpotSnapshotRequester:
         self._rate_limiter = rate_limiter
         self._inflight_lock = asyncio.Lock()
         self._inflight: dict[tuple[str, str], asyncio.Task[EventEnvelope]] = {}
+        self._wire_started: set[asyncio.Task[EventEnvelope]] = set()
 
     @property
     def rate_limiter(self) -> SpotIpRateLimiter:
@@ -315,6 +316,7 @@ class SpotSnapshotRequester:
     ) -> None:
         if self._inflight.get(key) is completed:
             self._inflight.pop(key, None)
+        self._wire_started.discard(completed)
 
     async def _capture_once(
         self,
@@ -327,8 +329,11 @@ class SpotSnapshotRequester:
         additional_capture_flags: tuple[str, ...],
     ) -> EventEnvelope:
         await self.rate_limiter.acquire(limit=limit)
-        async with self.rate_limiter.request_slot():
+        async with self.rate_limiter.request_slot(weight=depth_request_weight(limit)):
             try:
+                owner = asyncio.current_task()
+                assert owner is not None
+                self._wire_started.add(owner)
                 envelope = await asyncio.to_thread(
                     capture_depth_snapshot,
                     rest_api=self.rest_api,
@@ -356,14 +361,18 @@ class SpotSnapshotRequester:
         await self.rate_limiter.observe_success(limit=limit, headers=headers)
         return envelope
 
-    async def wait_for_idle(self) -> None:
-        """Await any shielded worker so cancellation cannot leak snapshot work."""
+    async def wait_for_idle(self, *, cancel_queued: bool = False) -> None:
+        """Drain owned workers; shutdown may cancel requests still awaiting admission."""
 
         while True:
             async with self._inflight_lock:
                 inflight = tuple(self._inflight.items())
             if not inflight:
                 return
+            if cancel_queued:
+                for _key, task in inflight:
+                    if task not in self._wire_started:
+                        task.cancel()
             await asyncio.gather(*(task for _key, task in inflight), return_exceptions=True)
             # Gathering already-completed tasks need not yield to their queued
             # cleanup callbacks. Reclaim the exact workers we just awaited.

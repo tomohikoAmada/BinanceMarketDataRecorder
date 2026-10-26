@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "actual_LOCAL_cases": 39,
+  "original_test_sha256": "c72257d07102a0752b3388ed3f96d180085a12cb44e15847a6ed9098efa70b9e",
+  "candidate_sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+  "generated_result_sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81",
+  "output_equals_parent_witness_bytes": true,
+  "network_subprocess_deny_hook_enabled": true,
+  "attempted_forbidden_operations": [],
+  "Linux_or_production_credit": false
+}

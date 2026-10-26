@@ -1,0 +1,77 @@
+{
+  "schema": "bmdr-independent-stopped-control-copy-review-v1",
+  "completed_at_utc": "2026-10-23T23:03:46.482747+00:00",
+  "verdict": "ACCEPT_ACTUAL_ONE_HELPER_COPY_AND_EXACT_PENDING_NATIVE_BINDING",
+  "blocking_findings": [],
+  "actual_copy_sha256": "d893e400b3b6e7e4a3aa74639b95f46541fe536150806ffd950c09e3a4ac1f73",
+  "prior_design_manifest_sha256": "0476a1edb967af6b5689cc7397cb1dafb9ed4d72f89080e1c1bf0c5aba537f97",
+  "operations_manifest_sha256": "3c8e2d51492a15c5409e579c07c63bf808baf97c7e98c3d279ddaf611a729cde",
+  "actual_payload": {
+    "path": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/stopped-deploy-diagnostic.py",
+    "sha256": "c9df0940a989516a0823f062e6053f18f4086c76b962839b035cf03e68c29a34",
+    "size": 14818,
+    "uid": 0,
+    "gid": 988,
+    "mode": 416
+  },
+  "actual_recorder": {
+    "MainPID": "0",
+    "NRestarts": "0",
+    "ActiveState": "inactive",
+    "UnitFileState": "disabled"
+  },
+  "pending_native_argv_sha256": "112c10f26fdaa6aeca3a6a8da6091f2678c94292089f7e270c8ca7aa410240db",
+  "pending_native_type": "oneshot",
+  "pending_timeout_start_seconds": 3600,
+  "pending_timeout_stop_seconds": 1500,
+  "canonical_changed": false,
+  "capture_started": false,
+  "deployment_success_accepted": false,
+  "new_identity_accepted": false,
+  "formal_credit_seconds": 0,
+  "reviewer_ssh_helper_execution_or_QA_repetition": false,
+  "inputs": [
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-stopped-deploy-controls-copy.json",
+      "snapshot": "inputs/actual-stopped-deploy-controls-copy.json",
+      "size": 614,
+      "sha256": "d893e400b3b6e7e4a3aa74639b95f46541fe536150806ffd950c09e3a4ac1f73"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-stopped-copy-execution.json",
+      "snapshot": "inputs/actual-stopped-copy-execution.json",
+      "size": 367,
+      "sha256": "4a0c9cf8272927b8a808fdb72efc43b4c428e8daee8cba220622f6db538e50f5"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-stopped-copy-stdout.txt",
+      "snapshot": "inputs/actual-stopped-copy-stdout.txt",
+      "size": 704,
+      "sha256": "4e20c02394da195efd133bca457505a0ad6eeef59aa3b346823dc06bd3ec0899"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-stopped-copy-stderr.txt",
+      "snapshot": "inputs/actual-stopped-copy-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/stopped-deploy-operations-manifest.json",
+      "snapshot": "inputs/stopped-deploy-operations-manifest.json",
+      "size": 625,
+      "sha256": "3c8e2d51492a15c5409e579c07c63bf808baf97c7e98c3d279ddaf611a729cde"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/stopped-deploy-argv.json",
+      "snapshot": "inputs/stopped-deploy-argv.json",
+      "size": 1066,
+      "sha256": "112c10f26fdaa6aeca3a6a8da6091f2678c94292089f7e270c8ca7aa410240db"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/release-paths.json",
+      "snapshot": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    }
+  ]
+}

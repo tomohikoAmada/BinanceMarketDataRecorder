@@ -1,0 +1,19 @@
+{
+  "state": "LOCAL_CANDIDATE_UNQUALIFIED_NOT_DEPLOYED",
+  "original_helper_sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+  "candidate_helper_sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+  "failure_read_sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+  "actual_failed_publication_sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+  "changed_scope": "private write-safety classifier only; no production source/wheel/ping/queue/retry/stop/monitor/saved-data threshold change",
+  "known_recovery_reason_source_contract": [
+    "planned_rotation",
+    "unexpected_disconnect",
+    "server_shutdown",
+    "ingress_backpressure",
+    "sequence_gap"
+  ],
+  "all_other_runtime_algorithms_unchanged": true,
+  "formal_credit_seconds": 0,
+  "copied_to_vps": false,
+  "new_capture_started": false
+}

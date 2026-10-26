@@ -1,0 +1,31 @@
+{
+  "callback_omission_assessment": "Exact source READY control flow calls identity verifier and guarded Catalog callback. The child records both callback-used flags. Parent completion does not independently validate every returned protocol/static-reuse field; no actual skipped-callback READY path was established in unchanged source. This observation is not counted as a separate reproduced defect.",
+  "earlier_static_only": {
+    "catalog": "Earlier full READY with unchanged default _catalog_ready establishes earlier Catalog integrity; conditional adapter checks same path/file identity and guard, allowing normal Catalog growth.",
+    "installed": "Unchanged full canonical CLI at first strict PASS supplies earlier installed artifact/RECORD/dependency proof; candidate does not repeat installed scans at end/start.",
+    "limits": "These subproofs are earlier static attestation, not fresh full installed/Catalog revalidation; receipt explicitly says stock_fresh_full_readiness=false."
+  },
+  "exact_source_readiness_sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38",
+  "fresh_source_evaluator_paths": [
+    "identity_verifier current cheap verify_identity_files(verify_installed=False,require_root_controlled=True), live identity permissions and protected control chain",
+    "systemd install contract, effective properties, current runtime active state and positive main_pid",
+    "effective process environment direct routing/recorder-variable absence and process liveness",
+    "ServiceStateStore schema validation, matching state PID, heartbeat type/age/future bound, RUNNING status",
+    "published deployment identity exact match and vps-production-v1 capacity profile",
+    "catalog_open and startup_recovery_complete, guarded conditional catalog callback",
+    "exact configured product topology, product market/symbol/failure, core connected/persisted streams, snapshot and book synchronization",
+    "capacity observation integer fields excluding bool, positive total/free range, timestamp current/future bounds, evaluation profile/state enum, actual hard reserve"
+  ],
+  "identified_contract_gaps": [
+    "Current live publication reread is reduced to PID/status/service_instance and is not compared to the accepted paired publication (F2).",
+    "Stored earlier static/command-clock proof structure is only partially validated (F3)."
+  ],
+  "private_added_guards": [
+    "same boot/native capture invocation/Recorder invocation PID NRestarts0/service instance",
+    "exact config and deployment file hashes plus six exact source module origins/hashes",
+    "fixed original 1200s BOOTTIME/MONOTONIC budget and UTC cross-clock checks",
+    "strict auxiliary endpoint raw publication paired with source evaluator result, current auxiliary/write safety on cached pair",
+    "300s strict endpoint span/minimum12 real warm samples and bounded at most3 pairs/30s per end/start phase"
+  ],
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+}

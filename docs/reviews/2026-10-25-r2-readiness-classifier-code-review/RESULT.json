@@ -1,0 +1,54 @@
+{
+  "FAILED_always_pause_including_known_or_null_failure": true,
+  "Python_LOCAL_environment": "3.12.9 | packaged by conda-forge | (main, Feb 14 2025, 07:56:32) [Clang 18.1.8 ]",
+  "acceptance_scope": "EXACT_PRIVATE_CLASSIFIER_CODE_REVIEW_AND_PURE_LOCAL_FIXTURES_ONLY",
+  "actual_old_trigger_rejected": true,
+  "additional_independent_cases": 38,
+  "all_non_classifier_AST_and_literal_prefix_suffix_bytes_unchanged": true,
+  "bindings": {
+    "actual_trigger_sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+    "candidate_sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+    "final_design_manifest_sha256": "2f6dfe123212e48631ccb4f60d87f7b47c42d109aab16388e37770f49bdeac9f",
+    "final_self_contained_input_members": 8,
+    "original_helper_sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+  },
+  "blocking_findings": [],
+  "bounded_STARTING_capacity_pending_preserved": true,
+  "credits": {
+    "N2_capacity_or_N4": false,
+    "actual_86400_duration": false,
+    "actual_copy_or_deployment": false,
+    "new_window_or_T0": false,
+    "production_ready": false,
+    "real_Linux_qualification": false,
+    "saved_frame_correctness": false,
+    "stability_transport_rootcause_fix": false
+  },
+  "decision": "ACCEPT",
+  "exact_candidate_actual_trigger_returns_true_without_evidence_mutation": true,
+  "fixed_2880_995_probes_missing_late_clock_duration_algorithms_unchanged": true,
+  "forbidden_operation_attempts": [],
+  "historical_initial_external_trigger_manifest_not_used_for_acceptance": true,
+  "network_subprocess_deny_hook_enabled": true,
+  "only_changed_function": "check_write_safety",
+  "pending": [
+    "Genuine affected Linux qualification of the final private helper with real binding/import/environment proof; no source/wheel/CI rebuild credit from these fixtures.",
+    "Exact failed-partial custody or independently verified zero inventory before future startup, new stopped canonical handoff/current resource admission and a distinct finite scope/window.",
+    "Only after actual qualification/physical binding acceptance may new warm/T0 establish a fresh own86400; the failed23h43m time cannot transfer.",
+    "Full new-data audit/independent final/restored owner receipt and main before accepted N2/N4."
+  ],
+  "provided_fixtures_independently_executed_cases": 39,
+  "provided_generated_bytes_equal_original_parent_witness": true,
+  "provided_generated_result_sha256": "4b5ad6d4c8ae395f7520e54d2d48dbb59192dcc9de7228b15a5f7b8dfe3bcd81",
+  "quality_remains_not_ready": true,
+  "recoverable_readiness_allowlist": [
+    "ingress_backpressure",
+    "planned_rotation",
+    "sequence_gap",
+    "server_shutdown",
+    "unexpected_disconnect"
+  ],
+  "reviewed_parent_inputs_unchanged_at_end": true,
+  "unchanged_original_runtime_still_local187224": true,
+  "unknown_malformed_writer_disk_service_shutdown_stops_preserved": true
+}

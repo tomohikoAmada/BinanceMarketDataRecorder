@@ -1,0 +1,2139 @@
+{
+  "baseline": "9643c96d2509",
+  "scope": "local synthetic, no VPS/network/service access",
+  "runs": [
+    {
+      "workload": "ordinary",
+      "original_result_sha256": "3c53de8856354b72c08fa97f933e84106b0bfce8ca5f82c2f9eaa564a415e471",
+      "kind": "R3_LOCAL_SYNTHETIC_NOT_VPS_QUALIFICATION",
+      "root": "/private/var/tmp/r3-storage-6sy8r323",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.12.9",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "BNBUSDT",
+        "SOLUSDT",
+        "XRPUSDT",
+        "DOGEUSDT",
+        "ADAUSDT",
+        "AVAXUSDT",
+        "LINKUSDT",
+        "LTCUSDT"
+      ],
+      "products": 20,
+      "core_streams": 60,
+      "rounds": 3,
+      "base_frames": 40,
+      "rotation": "explicit close each round; no elapsed-60s claim",
+      "durability_interval_seconds": 1.0,
+      "round_results": [
+        {
+          "append_wall_seconds": 0.2805902080144733,
+          "seal_wall_seconds": 0.07068345812149346,
+          "cpu_seconds": 0.33927100000000004,
+          "active_raw_bytes_before_seal": 6555599,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 60,
+            "unarchived_backlog_bytes": 389207,
+            "oldest_unarchived_at_utc_ns": 1792388809269152000,
+            "ordinary_sealed_files": 60,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 266240,
+          "wal_bytes": 4120032
+        },
+        {
+          "append_wall_seconds": 0.2778717081528157,
+          "seal_wall_seconds": 0.06557129207067192,
+          "cpu_seconds": 0.3336140000000001,
+          "active_raw_bytes_before_seal": 6735859,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 120,
+            "unarchived_backlog_bytes": 765049,
+            "oldest_unarchived_at_utc_ns": 1792388809269152000,
+            "ordinary_sealed_files": 120,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 331776,
+          "wal_bytes": 4124152
+        },
+        {
+          "append_wall_seconds": 0.27863895799964666,
+          "seal_wall_seconds": 0.06531100021675229,
+          "cpu_seconds": 0.3366239999999998,
+          "active_raw_bytes_before_seal": 6733605,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 180,
+            "unarchived_backlog_bytes": 1138396,
+            "oldest_unarchived_at_utc_ns": 1792388809269152000,
+            "ordinary_sealed_files": 180,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 385024,
+          "wal_bytes": 4124152
+        }
+      ],
+      "frames": 27360,
+      "stored_bytes": 1138396,
+      "decoded_bytes": 20025063,
+      "peak_active_raw_bytes": 6735859,
+      "retained_internal_manifest_bytes": 254886,
+      "absent_target": {
+        "command": "archive.drain",
+        "storage_id": "38f71877-368b-4f51-99a8-885c8bc0405b",
+        "started_at_utc_ns": 1792388810314029000,
+        "ended_at_utc_ns": 1792388810314133000,
+        "elapsed_seconds": 0.000104,
+        "exit_reason": "TARGET_ABSENT",
+        "processed_files": 0,
+        "processed_bytes": 0,
+        "successful_transactions": 0,
+        "failed_transactions": 0,
+        "backlog_files_before": 180,
+        "backlog_bytes_before": 1138396,
+        "backlog_files_after": 180,
+        "backlog_bytes_after": 1138396,
+        "last_chunk_id": null,
+        "lock_acquired": true,
+        "target_state": "ABSENT",
+        "contains_credentials": false
+      },
+      "archive": {
+        "command": "archive.drain",
+        "storage_id": "38f71877-368b-4f51-99a8-885c8bc0405b",
+        "started_at_utc_ns": 1792388810315054000,
+        "ended_at_utc_ns": 1792388810881723000,
+        "elapsed_seconds": 0.566669,
+        "exit_reason": "MAX_FILES",
+        "processed_files": 180,
+        "processed_bytes": 1138396,
+        "successful_transactions": 180,
+        "failed_transactions": 0,
+        "backlog_files_before": 180,
+        "backlog_bytes_before": 1138396,
+        "backlog_files_after": 0,
+        "backlog_bytes_after": 0,
+        "last_chunk_id": "1f5d4522-4a18-449f-9c86-ad98dea5469c",
+        "lock_acquired": true,
+        "target_state": "READY",
+        "contains_credentials": false,
+        "wall_seconds": 0.5667762078810483,
+        "cpu_seconds": 0.527061,
+        "bytes_per_work_second": 2008545.8496149858,
+        "chunks_per_work_second": 317.58566696535956
+      },
+      "archive_verification": {
+        "storage_id": "38f71877-368b-4f51-99a8-885c8bc0405b",
+        "status": "VERIFIED",
+        "verified_files": 180,
+        "failed_files": 0,
+        "pending_files": 0,
+        "files": [
+          {
+            "chunk_id": "8eca9c9f-a445-4167-9e15-42246b0e0ef5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3d36deb0-4bf6-4e3a-8e57-6408af22241d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "67ca596f-0170-4057-b38f-f4cf8c24a792",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6f2224aa-0ec4-4bd8-b095-81723c583a7e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5bb5d4a3-5b73-486f-9129-bf2c9308f122",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9a710463-e8d7-4ca8-a033-7620d6b64d5a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d003a816-401c-4d14-b4cb-06c10f62ac78",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "de1d3265-35a5-4f37-b290-be7b1e040f5a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "feec16d0-17c3-4413-8956-33fafa599c4b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1f278f25-41c1-41bd-a82f-402dd7869afa",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "dde93758-6b3c-46f6-b025-645aea434f98",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "019049ab-005d-41d8-a942-d2ea1e61c95d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "48a57482-3568-4da3-a6fc-7137a2b16be4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "267b3ff5-5c74-431f-a3cd-a10163dcb953",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "acb88b09-84c2-43e6-a9fd-30443797c175",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b8780422-e27e-45ca-bbd3-5ab60f6d0e6f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6ed4d2d4-9c63-40e5-9fd5-78745f01a94b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "503928f8-64a5-4227-9463-ef802e275d5f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ffc21d13-74e8-4e11-9fb6-2c51ef0b9e65",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "30b327ff-13f1-4fa5-a4ab-5617afe9ea8e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b4313081-2a51-49f3-86e8-e3e4fe1aa832",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4b987453-30f8-495b-a6d7-61cf9e1747cd",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1e4f42f5-7fe3-44ea-b466-b0df8bf6d279",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6c74683d-0d14-431c-8a76-22d59b6eed2f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d45b97f1-9144-4170-88cf-08a75af6b0e2",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7a3ab796-1d02-4150-8891-4cdc8c5e7077",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7fef64e0-6758-48c4-9c68-32fb6845518f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0ac60bd6-51b6-47e3-a117-2b10579d774b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e35b25f0-2b4b-448d-a84f-6b1ccd68b70a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "87abc13b-0fd9-4cbb-b401-63b1a2f347bb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2ff59357-d1e0-4773-bd43-a4a72a8548c6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "833224a6-4516-4c88-87b3-4581854e6a29",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5dd996d8-78d7-498b-b47b-05483611dc96",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b068afeb-d1fd-4e07-b66b-e1eab377650f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9e75878f-b26c-48da-b564-cf76c863b9ec",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6c877c66-e1c3-4d87-af58-611e9fdc6c9e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e40db20c-600c-49ec-b18e-433f03a1154c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8b225c97-7a32-4839-ad5f-f7f52a0175d0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "68b06079-6420-40fe-ae97-24f036875bba",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "52e7daac-5134-4042-b09c-d657d11660db",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "adb89cbd-46a5-4547-b9a8-8ddf947ff8ff",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "06875560-c50d-481c-a982-056ca3f34a0f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "644c6549-747c-4163-94d1-c0b5e29fb158",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "553062c0-e342-4ad4-b9ee-7196113ae6c6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b065abde-e4da-42c0-bbf5-ae1a3a16fce1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b5fb422e-2201-418c-ae84-03508cd8f8c0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c9c79fee-2d5b-4e8c-85f4-af6ff99e3621",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7badfcbb-c095-4cfe-a319-c254d240f6ea",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3cb35a8c-41f2-4c2f-b3e4-9832154ff416",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c1e508bb-552c-4418-b119-ebf90423ad86",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9d1802c4-7bd6-434c-88f6-c18d1dccacb5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "69999f11-2e66-4b4b-ac31-b68d57363014",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "18572bac-e645-436f-b1e5-787a191fc788",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5ed8e4c9-5aa5-4dc7-b741-8c8d26e21ef3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ea1c6a0b-2c97-4c8d-a7fc-a87917a676cb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5fa843ea-6ddb-4ae0-afd5-a7309b71f8b6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ce540bfe-c230-433d-b59b-01441329f605",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2920d941-c383-474b-86e7-ef02a9d0e4cd",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d7ee2bed-7765-48a4-af83-b1ce2878f253",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0d451835-9b12-402e-9b80-a99e7e8960d1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c02f9cb5-1b52-4ce7-a489-4bb5cd9bfbbd",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0b47e056-ab72-402a-9728-b53906d7e52a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a5538782-efe5-4340-8875-146bf2bb6285",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "32f55db4-29c7-4757-a7af-516ce2cdeddb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8d20e7ef-0bfa-4398-8799-ef61a4c1d2b1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c96fde9d-6800-4bf7-9469-99e288bd77a2",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d4c0e505-d03a-4c0e-9be4-f92fb9a9de5d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7daaed58-e534-4947-be22-21e9e28ae4fa",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5d617f35-2c21-40a5-afd6-9e9b5f8d97ba",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4dcce455-5efd-466e-a345-e3944bdfd08d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "eddfa3e3-fd68-458d-99ee-36b7c54ae64c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5daa226a-9569-486c-904b-e7a776377017",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b94efc16-6080-49ff-855d-01141250ee4d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "73492a83-97b1-4345-b525-1747a0411c11",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "20c2dbce-b181-4478-bb33-f9256951e612",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fd5ed7c9-898e-428f-9456-f412606837dc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1dec3ec7-c08b-4af0-8de4-27af2105ef95",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a33563e0-45ea-4f0e-8d7c-b9ba2c4b5823",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "39073575-76d5-436b-8071-ee93ab094b95",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "42f1f9d0-2f27-4e1d-81fd-b5e0f1db6ae8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9e1a48e6-8a5a-4864-92ac-6fd92cfb825c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2539a370-9d44-4627-b534-6db842dd7d36",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "36afb6f7-dd79-4c4f-9363-05e6a92d0e99",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0bfa3f55-47dc-4a3b-ad10-f6e58b65d614",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9e7db683-b0ea-4dcf-bd00-fab8c97799d8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ff1bfd75-9339-4c25-9040-595f80b7dc52",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "42ac8e53-9a23-44e4-b6fc-fcd7fa7824ae",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4ef162f7-f2fe-4418-927b-faafd05483a4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "806b8da7-b681-4ba1-b548-15f2a6b91bfd",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "cf442a49-49e5-4e6f-bc3b-9857ae48b21e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1696c012-3866-4264-86fd-d37a8b9e9541",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c0eac40a-4745-4f4c-b344-769fb11b6b13",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0aeb48db-9fc3-4aa1-9ba0-775660a0414a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "dde6b9a4-9cfd-44db-bd6c-bd03006772af",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "548ff2f7-7731-4a04-8113-f6f04131173d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "57565637-edff-4791-a6dc-c66600fcfd47",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b18b1049-71bb-4383-bcb1-c476a4ed41b0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0c30583a-97e8-4993-9f01-c10f8dc00f00",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "989c8414-d020-4873-a9ba-a1a9fbc21378",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8fd91ac0-b3b5-428b-a04e-2502b5fc2891",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fa1d2e23-cc2c-4011-9ab0-89a01a8c4292",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "f861fb05-fe2b-4bcb-8639-97d891b982a3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6c1f38cc-5a52-41e6-98b5-2c135140faf5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "715f851a-8361-4d5b-a5c0-e02b5a11c7a7",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "973aacb0-c0bd-490c-9d71-f210e9f044a9",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1db6fd5b-4556-4806-92ad-cac25ae872b8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9b0d95be-5ba6-4002-9e80-ceb79c072e45",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ea5773d9-cc5d-43a3-ad3c-2acf547545d8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b8d40f6d-e61c-4b4c-b8ed-17dc4be69eb8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ce0735b3-1b33-424f-8257-cd0577f188e7",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "11419ad4-888c-4767-a2d4-e25b9ff101f3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b0c611cf-8dce-4696-957d-69156eb064bc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c87961d6-fdd5-4e4a-9645-ae78573ded6f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "103607e6-e0c2-4fa4-92b3-8c6c7391ab00",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e23c60f3-a343-4ac5-838e-e281f01a7c12",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b9bbc1d1-fff3-4f6e-aa76-a016a2453cf1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e69ed200-1891-4d88-9279-765a0f542fb4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "65f37611-852c-417a-8593-35739f096333",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "54f76c37-0ee1-4066-83bc-24f75edc6415",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7e275209-3178-4c46-8de4-e4441b311b1c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0d4bcd6e-8db6-4590-8316-cc3c62d6e84c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "eca62f57-261d-4af8-9bd8-e7cf3db3ca93",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9f06c7fa-7edd-4588-9cad-1c3c2cc835f6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "376e4811-8e77-4a37-8060-0523f77935b1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "64d98ba0-6d06-41ef-8c87-514d62a791e5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2d585292-8668-4b13-b1fe-c3e68f41e21f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "f846d80f-a3c8-415f-ab51-3e2aad920751",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "69bac35c-01ac-488c-b5ef-198fca4e8f0f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "77d54197-6686-42e5-bccf-60815bcf97dc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "f670569f-6be4-42cc-b4da-cddeacaa9e79",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "cf407254-cf99-4176-a203-14d03fdfb860",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b67085e0-da65-4133-81f0-b765a4126527",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8e8d81c5-207d-454f-a718-fd4cfddfc0d3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "de0c83e0-d384-4d58-8054-6d08985e9536",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ef00a675-cb6d-45bb-977a-a9f9ae06bbe6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "56d6dc5b-b533-4a21-97bf-1c20f3962846",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "399ec1c4-07ff-41d8-a8c5-2d17cae9b1fc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "438a74b7-11a1-4b5c-ab3b-369dfe942b02",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "74f3df17-9607-4a37-929d-eedbf1e8b966",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d099e472-0b51-4681-8d05-d1d6c6f376bb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c53fdf41-23be-4c51-9a62-c9283f757e2a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ff378487-e3bf-46bc-9ef1-4c1d569d61e6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1abdc78c-a5db-4137-8fc4-fbe5c130b009",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2d06be6d-052d-4725-b391-b8de2a09d57e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fbd9028c-6547-4647-b99c-4c300ff8905c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bb50b781-8e00-4aa4-bf5d-e375e0dc92fe",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3117f53b-3949-4aa8-940a-3ad3ffaca7ce",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d36b06a1-5218-4555-a994-4122a168d88e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ea35626d-8d59-4f2e-a369-049c665fb87d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "02640142-70fe-489f-b0ee-6605c30a7c47",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fc6323f2-8191-4a5a-af1d-c0c8676f5c69",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ef009b8a-350b-408b-97a5-b3caf6a4acee",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "f4091006-0aa5-45b7-87c3-ae58f9ee7ea3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3f1a5590-6f44-4302-8083-b2e40889ab68",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "31c86a3e-c7b4-442d-ac3b-43e25bdf1d59",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "770ecdad-c5a3-40d9-bd70-7e5369f17004",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c17d4c7d-579d-4990-bb21-c962c85e12f3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "09b1ec9c-f0b1-4a11-adbe-adfa6e8a86eb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2151d10d-2563-40e6-bb56-02f82fcd0962",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e98678af-86e7-4122-8d58-ad83311f564e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a3724f64-a7f5-4ec3-8d48-b1142ae26805",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2c0f8610-3419-4239-b5cf-8cfb29ba4ea0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d0693231-45ff-4a23-8b01-c779068d50d4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8101a5d4-d064-4a7c-ac5e-996e151d8ac7",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7e2096d1-ca10-40cb-8b38-e84329757836",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c40ab528-dc35-4577-aee0-a155aebe16fe",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7f9727f9-652e-4d2c-a6b3-f0d61bca20ea",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "628123c0-3a7c-475d-9793-e2dc71abe000",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "19553cc9-2428-4757-9ea6-cf6502a62bbe",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ebeac8b1-385f-481c-8a03-7e5b73ff9ae5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "81f6aec1-017d-4277-b4a2-32068c16ae6d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ccf8108d-f8eb-41f4-9b4e-b0378658b8b9",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "047327ed-ef8d-43bf-a6ca-8100d6edb007",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c9abf9ab-63cc-42ce-9c0a-82683de4a354",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1e662ff1-f6c9-456f-b2b9-423598ed2f48",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e65e4b48-c377-4a87-93ae-e5731e2f2e95",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "55795c54-b55f-4cd6-be2a-833be1c7e4ad",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "593fc806-6ded-49ec-a424-5df363301216",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9844ed1e-3027-4d6a-98a6-da773a175aff",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1f5d4522-4a18-449f-9c86-ad98dea5469c",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      "writer_bytes_after_archive_before_derived": 5644900,
+      "catalog_after_checkpoint_bytes": 1241088,
+      "wal_after_checkpoint_bytes": 0,
+      "normalization": {
+        "status": "BUILT",
+        "dataset_version": "normalized-dataset.v2",
+        "build_id": "f54a776dd0d1afa0ae08d0e00ed11db05f95be8009a2ceb5db064795ccbd803a",
+        "build_manifest": "data/normalized/normalized-dataset.v2/builds/f54a776dd0d1afa0ae08d0e00ed11db05f95be8009a2ceb5db064795ccbd803a.manifest.json",
+        "source_chunks": 180,
+        "partitions": 6,
+        "normalized_rows": 27360,
+        "duplicate_rows_removed": 0,
+        "identity_conflicts": 0,
+        "wall_seconds": 5.353392666904256
+      },
+      "replay": {
+        "frames": 27360,
+        "identities": 60,
+        "unreliable_rows": 480,
+        "exact_counts": true
+      },
+      "peak_rss_bytes": 316096512,
+      "complete": true,
+      "archive_target_total_bytes": 1867921,
+      "archive_target_non_raw_bytes": 729525
+    },
+    {
+      "workload": "burst",
+      "original_result_sha256": "e8aa491c2a718494cd4af3c406f0aecc39175c4693ac33796fa432e903b51b54",
+      "kind": "R3_LOCAL_SYNTHETIC_NOT_VPS_QUALIFICATION",
+      "root": "/private/var/tmp/r3-storage-ottgh44l",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "python": "3.12.9",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "BNBUSDT",
+        "SOLUSDT",
+        "XRPUSDT",
+        "DOGEUSDT",
+        "ADAUSDT",
+        "AVAXUSDT",
+        "LINKUSDT",
+        "LTCUSDT"
+      ],
+      "products": 20,
+      "core_streams": 60,
+      "rounds": 3,
+      "base_frames": 120,
+      "rotation": "default phased time/size rotation plus round close; no elapsed-60s claim",
+      "durability_interval_seconds": 1.0,
+      "round_results": [
+        {
+          "append_wall_seconds": 0.8035150829236954,
+          "new_chunks": 60,
+          "chunks_closed_at_round_end": 59,
+          "seal_wall_seconds": 0.09524179203435779,
+          "cpu_seconds": 0.8855480000000001,
+          "active_raw_bytes_before_seal": 19680649,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 60,
+            "unarchived_backlog_bytes": 1060983,
+            "oldest_unarchived_at_utc_ns": 1792389354991545000,
+            "ordinary_sealed_files": 60,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 266240,
+          "wal_bytes": 4140632
+        },
+        {
+          "append_wall_seconds": 0.8553937920369208,
+          "new_chunks": 60,
+          "chunks_closed_at_round_end": 60,
+          "seal_wall_seconds": 0.09941520798020065,
+          "cpu_seconds": 0.9421200000000001,
+          "active_raw_bytes_before_seal": 20164739,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 120,
+            "unarchived_backlog_bytes": 2063974,
+            "oldest_unarchived_at_utc_ns": 1792389354991545000,
+            "ordinary_sealed_files": 120,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 331776,
+          "wal_bytes": 4152992
+        },
+        {
+          "append_wall_seconds": 0.8713764590211213,
+          "new_chunks": 60,
+          "chunks_closed_at_round_end": 60,
+          "seal_wall_seconds": 0.09577687503769994,
+          "cpu_seconds": 0.9512860000000001,
+          "active_raw_bytes_before_seal": 20164039,
+          "sealed_backlog": {
+            "unarchived_backlog_files": 180,
+            "unarchived_backlog_bytes": 3065445,
+            "oldest_unarchived_at_utc_ns": 1792389354991545000,
+            "ordinary_sealed_files": 180,
+            "remote_pending_files": 0,
+            "remote_pending_source_bytes": 0,
+            "remote_deleted_files": 0
+          },
+          "catalog_bytes": 385024,
+          "wal_bytes": 4152992
+        }
+      ],
+      "frames": 82080,
+      "stored_bytes": 3065445,
+      "decoded_bytes": 60009427,
+      "peak_active_raw_bytes": 20164739,
+      "retained_internal_manifest_bytes": 255283,
+      "absent_target": {
+        "command": "archive.drain",
+        "storage_id": "a1f87a7f-46ef-4b0d-80a9-a14be4a69663",
+        "started_at_utc_ns": 1792389357817569000,
+        "ended_at_utc_ns": 1792389357817664000,
+        "elapsed_seconds": 9.5e-05,
+        "exit_reason": "TARGET_ABSENT",
+        "processed_files": 0,
+        "processed_bytes": 0,
+        "successful_transactions": 0,
+        "failed_transactions": 0,
+        "backlog_files_before": 180,
+        "backlog_bytes_before": 3065445,
+        "backlog_files_after": 180,
+        "backlog_bytes_after": 3065445,
+        "last_chunk_id": null,
+        "lock_acquired": true,
+        "target_state": "ABSENT",
+        "contains_credentials": false
+      },
+      "archive": {
+        "command": "archive.drain",
+        "storage_id": "a1f87a7f-46ef-4b0d-80a9-a14be4a69663",
+        "started_at_utc_ns": 1792389357818550000,
+        "ended_at_utc_ns": 1792389358506158000,
+        "elapsed_seconds": 0.687608,
+        "exit_reason": "MAX_FILES",
+        "processed_files": 180,
+        "processed_bytes": 3065445,
+        "successful_transactions": 180,
+        "failed_transactions": 0,
+        "backlog_files_before": 180,
+        "backlog_bytes_before": 3065445,
+        "backlog_files_after": 0,
+        "backlog_bytes_after": 0,
+        "last_chunk_id": "39b02868-2407-41de-9712-01aeae9870be",
+        "lock_acquired": true,
+        "target_state": "READY",
+        "contains_credentials": false,
+        "wall_seconds": 0.6877346658147871,
+        "cpu_seconds": 0.650938,
+        "bytes_per_work_second": 4457307.668747864,
+        "chunks_per_work_second": 261.72884536327206
+      },
+      "archive_verification": {
+        "storage_id": "a1f87a7f-46ef-4b0d-80a9-a14be4a69663",
+        "status": "VERIFIED",
+        "verified_files": 180,
+        "failed_files": 0,
+        "pending_files": 0,
+        "files": [
+          {
+            "chunk_id": "3d2218a3-70f5-4d1c-9af5-8d43db228619",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "82dc7d36-bb82-44a9-83fc-6c01710d3cc8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "64d266e1-b514-4526-82dc-8a11a9edeed8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "83787ff5-dbd2-4a1b-a903-0746a35c5a1d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "45d9b8c3-3359-45c4-8afa-518157483030",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e5e9d467-7b7c-4531-a7f7-1c32f09fe343",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "38e9dc98-710a-4cd5-880b-e91cb09ec32b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "14d60f7b-974a-4067-b990-b948a0e3e9aa",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "af077c99-ad72-4a0b-bb6b-8035cc18d827",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0c9f2c8d-2b9d-4f01-a380-145393704794",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6179d3d5-06f3-4d6c-aeb9-8756a889646b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b87e620e-5031-4819-ba43-86d2e2b856d2",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4b3d3a2f-5ada-4c4b-9ade-ae70e819f5bc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6b2b0385-7adf-4e18-bde0-d76923f92c3c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c5332f43-4a53-4a78-8389-73786e7999ab",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7b3bfb43-910b-4b89-9a8a-b8ae9726028e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "da7bd063-3ae5-4564-817d-35bb8d5ff988",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0fbec083-8c71-4773-835c-b81745d45c96",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3f2618f7-b9a0-4af0-971e-ab041e405b1d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "44eddf69-437c-4f73-88a8-2be26c869542",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a473bee0-7c26-417c-b8d8-7258963fa0a4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "74279e54-5763-4efd-8a12-7271c22f2653",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "75b0cbc3-08f9-4360-8565-eeef84c8b699",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "02b3fd35-eca1-4fe1-8936-5959599f2788",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bab1ce68-77ea-4658-960f-33b612278b0e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b49345e5-c48f-48c7-abbb-9085bb0b0723",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d828d6bc-f1a8-442d-8787-72269518a202",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5688e0b5-3440-425a-a815-d30b5cc4ce4d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9b6a64cd-4165-443e-9d33-c0de1e30dd2c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2f130daf-5221-459c-bf49-d8678e3e8987",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "811812b3-0086-4f80-9d78-3c3047a5f225",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "569afcad-8d0a-4325-a911-cbe10af8abaf",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e25b9147-79b7-4f25-b976-19de012585ee",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "355238a6-22fa-44d1-b26f-25c2449bda81",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8b095230-966c-46a5-a605-4a357d4a52bc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c7d7cc63-6a9f-492a-9a02-19c0d978a14a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9e12021d-800e-43e2-9852-157d3de48180",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "c9637ccb-4c16-4806-9901-73e6a3dec8e8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8660037d-af30-4766-b9d5-d4c5f9774c50",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9c729386-d92c-4d52-9a39-365b6f44d673",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fd9ad731-342c-4cf7-96ad-f15f4eaa976b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "dc74b056-1875-41e1-aea5-3fce835222c2",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9ef14ceb-d08c-437a-8b9e-7028f7259e40",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "01a3eea2-14a5-49e8-b827-291261ea51bf",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "47cdc7d5-51e3-4cc7-ace8-45c415640a0c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2b5bc04b-a56f-40a5-b9fb-236ba44745c3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "618a8a14-4da2-4cdf-9292-e9fb0063aa97",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "29d6c543-4c74-4efc-a4da-a316cd397cae",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bd037121-28a3-482a-9427-d27d038ec4ba",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "69ec30e6-7db0-448f-846e-4411ec6eccb5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ae06248b-7470-4b9a-a1f3-791c93c82dc3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "570dbd96-b2da-4f11-9f6d-8a1d62c29064",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b4012367-1c3b-4297-8b8a-eda23502b84d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "13764587-4d0d-4654-8c8a-20738c2cd225",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0beed0c2-c9a6-413b-88eb-c078cf020173",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7660df10-518f-4e6d-85cc-d0899acefed0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d059325a-b0c9-43cd-86ad-41aa453f4214",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1a57513f-2717-473b-ba98-676dc7a2a666",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e48c2f06-e911-409c-a4ff-4b19e0ecf252",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6a92a4f0-18fa-4763-b655-6be74efe29ba",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "00aa8b9a-a19c-48fc-8e4e-b33c60101828",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "22610726-5005-4195-9c13-8ca01a95a96f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b25e531f-9620-4cc3-9238-77473e1fc9a2",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8e5ff163-2b9f-4cfc-a2ab-709f39e4a581",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0c0295bd-cb6a-4c57-83fb-7a5ef6a2db0d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b80c4ba0-a9c9-4311-b25d-b1d059d96d88",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4a34f396-fa29-4504-8439-ecf2ee7116c8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b63400b1-ec3b-4e39-b80a-0631731b2c1e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e270f926-f03c-470b-955a-f600ec201889",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e5a167a2-d58c-4b50-bae9-e5e427564b47",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8ebdd0c7-8402-4b0d-929b-6a17d651de21",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a516771e-cd77-40ba-a8fc-916455621ef5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e8289cda-1c1a-4280-8dea-5ca606e32d72",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9c58e282-09df-4ae0-8d6d-a494b75b44f4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a39f198b-85a7-441e-a6e8-4b4b97964ca5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0297d23c-8a08-4149-8eef-cb2eab36aea5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "288bf68a-adc8-41ec-ab09-b698410f009e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "73be9974-3286-476b-b670-0b148fa6d5d7",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "04a4d3d3-dc45-45a2-be4d-b025306a0992",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b324f935-7b66-41e5-a1a8-0311bf7ad7f0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bc28e401-ff70-407c-86f3-4d456d3dc7fa",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4697514c-fe0e-4623-9979-6d9c873f713b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "edfdfd65-693d-4cba-ba7b-6fe9204d24f5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d34af97c-c4fb-41e1-81b4-19852608de37",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3f6c5726-5d2b-4f96-9c43-c5d137de8890",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "fddf7741-b6eb-4bda-b951-2ae4d836a834",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d4e7efa2-f9f9-481f-bad6-8a2f0e97ca4b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8783774e-4726-4c9a-bdb0-3d5439726606",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bba6b295-36a6-41ae-bb94-a8a1f33fe597",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2c2171c5-5dac-4d3c-b0cd-f906ac29096a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "58d093ce-ef8f-4260-a8cb-82c898d368df",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "09310f06-b6e5-4bc6-9f14-2751863b19c4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0450dd5f-821a-472c-8a10-dac4829787a0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5e8b8d34-7d9f-4f61-8cac-c3bd71368b9a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "752b9c16-1d89-4eb9-88de-2ec11e812053",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e5e43a8a-a462-49b5-afd6-e0d63480b973",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "02461a6b-7e44-4ffa-8a8a-12e9c914c54f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ed455f9e-ec23-42be-8da5-a4824d03fd34",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "40a71528-12ed-4cae-8a82-26e58ad54f7c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5d01af84-545a-4e1e-8cd4-1b23f6670776",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d57e132a-2046-4cd6-a939-2eb9275f22a7",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "0560e146-ab8b-4d4e-90a3-443480cc847d",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "65ff3f9b-1446-45dd-a08b-1b63fff00fb8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "15805b57-a83b-47d0-bdf6-901c9e7a6983",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "22fec07c-2cb2-4848-ab7c-621ce94288d4",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a219d875-1e1e-4767-bdbd-b3dcf49b82f3",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d908c890-1baa-44c8-a432-6bf7fcb89b77",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "51d068a3-189c-48c6-93eb-b7b0f841b65f",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "28ae052c-3ee6-4740-a44c-5f69a49dfbc1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "291d5df0-390a-426d-82de-9329a690fa17",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e1555ef4-2fad-4f53-96f5-4167af54ab82",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "cfc21749-f203-47b9-ab9d-1a188d0d37e0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "28d76a19-ad6e-46a0-9d1f-1fb2b9c96bbf",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bc8ef09a-6333-42ad-8a43-b5da9d46d262",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "75aab294-e333-4cec-b24b-91d35bddc721",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1bc5746b-a1df-4605-8241-63b334e27652",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4e67e020-6cc2-4d92-81d1-5ebac1b46876",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a6788c31-43e0-4383-9dab-ac72e82e1d56",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "56aa794b-31c0-42b7-bc6b-4825dc3039cb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9622737c-5060-45c6-ab91-335e8026152b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "88cad0ee-e28c-4d87-a975-5ed639ad0563",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ff3a9490-0cca-4275-ab2b-7e6bbd329606",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "63e4a4f3-6269-440f-8d5f-c04dd89a0946",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8bd448c8-f680-44b1-b388-5169ad756219",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "43ffc799-0204-44e7-8903-fee882357eed",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "ba5c775d-eece-4c70-99ca-3699dec12f99",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "26a72405-7292-4c5e-bdf8-5bf74a640b43",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "30cb0352-f13a-40b2-b2c2-34ade0c91ae0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a1ccbe51-b2ca-4167-837f-ccebefb0e53c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e9916525-1d21-487f-8369-6a761bbdf1b0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5f4162e9-32d5-4dfd-bb47-79f1f123c5cb",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3ecff400-40e2-491d-ae47-d73750b263e1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3cbe85f7-df35-4ec8-b848-8bb3291c7dfc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2450f2c7-b8ed-4170-9bc2-7c7175276a0b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a158af61-5d45-48f0-9fed-2d55890af0c6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4a8d57b9-c8b3-46a7-9dcc-43e5b339ed94",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "367749f9-87ca-4869-bb21-f6873df6df3b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "4d413025-071c-400a-846f-bea9968d8085",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e405b635-8fb1-4034-b2c8-62d8b2453b0e",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6b8e9925-b422-4216-bc3d-e52cc8c2c3b9",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8b20fec3-7e74-4461-9b93-44663c3af116",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "05f9b1fa-e9a7-4ff6-898e-27c33a808f81",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "51760353-5b08-429e-8a38-96d1747e9931",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1824d516-4cf3-48b0-9cca-340fb19369fe",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "b26d447b-1052-4317-a8e8-464e71e72396",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "dc0eca95-b68f-4eb0-9c15-7594a7eac410",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7442c08d-46a6-4497-8ab1-f26f3eac3da8",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a8ca107f-1528-4c59-a630-78c43c880e28",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "cfeeb22c-c0b9-42b9-b59d-642e1e39bb60",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "7d90b470-be40-4ebc-8f7f-c0ffffaec30a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "1703f023-ce3a-435a-a504-67cd7110b1fa",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "5cf93ec9-63cf-4bda-a35a-5d75b9c018b0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "736dcead-155c-4bc3-8f22-a17320c9bacf",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "62f7a4cc-253c-4be2-ac65-0780626fc4cc",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "070145fa-4bec-47e2-ac37-548244430f8a",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e91ce8e9-585d-437c-99ec-30961f5f20df",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "96d05cda-c02d-433d-ba07-7bc8f0369ae5",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a67115c2-9c04-4086-813d-5d005fa91231",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "991d1ffc-8082-4e7f-b31b-723eecfa11d6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "609bef17-3a0d-4a87-a40e-8fcf52a87027",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2dab5738-6c6c-442f-ad75-792488333333",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "057a499d-26bb-4a67-9c64-b46696cfcdf0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "841a208b-17a9-4b0b-b60f-fdf47c04a90b",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "d10cc098-8aba-4580-bf62-49cc59a769d9",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "3398a49d-b0ed-4214-b4df-d713dae2b3a6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "6a55fb50-401b-4c38-b956-970ca0f6a1ff",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "e6cf30d3-fe16-4ebc-81a6-1feda9fd1e0c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9b82e7d3-7239-49e5-b69f-877e5d294981",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "cad3eeeb-91df-4d0f-bdd7-4db45bb62cdd",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "bb2926fb-48c9-4af6-b65b-675caf1690e1",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "abbd7740-2a5e-474e-b822-b083d18edc90",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "69a7291c-61ac-41d7-87ef-7f73b21f62f0",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "8caeb5bf-6329-4139-879a-48e33fc7a507",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "109af409-1fe1-4cb7-b83f-dae95fe7d469",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "2ae2ddd6-669c-4273-98f3-c264676f3473",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "70030ade-d13a-4e17-9a30-d34435804102",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "9a93aedb-2713-435d-9481-e1c99374475c",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "12f48224-df5a-4cf6-95ca-3ca14e751cd6",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "a84252e9-ea14-4839-b38c-9ac0bc765eea",
+            "status": "VERIFIED"
+          },
+          {
+            "chunk_id": "39b02868-2407-41de-9712-01aeae9870be",
+            "status": "VERIFIED"
+          }
+        ]
+      },
+      "archive_target_total_bytes": 3795988,
+      "archive_target_non_raw_bytes": 730543,
+      "per_identity_frames": [
+        {
+          "market": "spot",
+          "symbol": "ADAUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "ADAUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "spot",
+          "symbol": "ADAUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "spot",
+          "symbol": "AVAXUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "AVAXUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "spot",
+          "symbol": "AVAXUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "spot",
+          "symbol": "BNBUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "spot",
+          "symbol": "BNBUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "spot",
+          "symbol": "BNBUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "BTCUSDT",
+          "stream": "agg_trade",
+          "frames": 2160
+        },
+        {
+          "market": "spot",
+          "symbol": "BTCUSDT",
+          "stream": "book_ticker",
+          "frames": 3240
+        },
+        {
+          "market": "spot",
+          "symbol": "BTCUSDT",
+          "stream": "diff_depth",
+          "frames": 1080
+        },
+        {
+          "market": "spot",
+          "symbol": "DOGEUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "spot",
+          "symbol": "DOGEUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "spot",
+          "symbol": "DOGEUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "ETHUSDT",
+          "stream": "agg_trade",
+          "frames": 2880
+        },
+        {
+          "market": "spot",
+          "symbol": "ETHUSDT",
+          "stream": "book_ticker",
+          "frames": 4320
+        },
+        {
+          "market": "spot",
+          "symbol": "ETHUSDT",
+          "stream": "diff_depth",
+          "frames": 1440
+        },
+        {
+          "market": "spot",
+          "symbol": "LINKUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "LINKUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "spot",
+          "symbol": "LINKUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "spot",
+          "symbol": "LTCUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "LTCUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "spot",
+          "symbol": "LTCUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "spot",
+          "symbol": "SOLUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "spot",
+          "symbol": "SOLUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "spot",
+          "symbol": "SOLUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "spot",
+          "symbol": "XRPUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "spot",
+          "symbol": "XRPUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "spot",
+          "symbol": "XRPUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ADAUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ADAUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ADAUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "AVAXUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "AVAXUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "AVAXUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BNBUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BNBUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BNBUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BTCUSDT",
+          "stream": "agg_trade",
+          "frames": 2160
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BTCUSDT",
+          "stream": "book_ticker",
+          "frames": 3240
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "BTCUSDT",
+          "stream": "diff_depth",
+          "frames": 1080
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "DOGEUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "DOGEUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "DOGEUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ETHUSDT",
+          "stream": "agg_trade",
+          "frames": 2880
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ETHUSDT",
+          "stream": "book_ticker",
+          "frames": 4320
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "ETHUSDT",
+          "stream": "diff_depth",
+          "frames": 1440
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LINKUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LINKUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LINKUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LTCUSDT",
+          "stream": "agg_trade",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LTCUSDT",
+          "stream": "book_ticker",
+          "frames": 1080
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "LTCUSDT",
+          "stream": "diff_depth",
+          "frames": 360
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "SOLUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "SOLUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "SOLUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "XRPUSDT",
+          "stream": "agg_trade",
+          "frames": 1440
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "XRPUSDT",
+          "stream": "book_ticker",
+          "frames": 2160
+        },
+        {
+          "market": "um_perpetual",
+          "symbol": "XRPUSDT",
+          "stream": "diff_depth",
+          "frames": 720
+        }
+      ],
+      "writer_bytes_after_archive_before_derived": 5661777,
+      "catalog_after_checkpoint_bytes": 1245184,
+      "wal_after_checkpoint_bytes": 0,
+      "normalization": {
+        "status": "BUILT",
+        "dataset_version": "normalized-dataset.v2",
+        "build_id": "f6a86b2eb262751d8acfbab9fcf175350766c4831db6e0181d755d10500a27ef",
+        "build_manifest": "data/normalized/normalized-dataset.v2/builds/f6a86b2eb262751d8acfbab9fcf175350766c4831db6e0181d755d10500a27ef.manifest.json",
+        "source_chunks": 180,
+        "partitions": 6,
+        "normalized_rows": 82080,
+        "duplicate_rows_removed": 0,
+        "identity_conflicts": 0,
+        "wall_seconds": 15.94491716613993
+      },
+      "replay": {
+        "frames": 82080,
+        "identities": 60,
+        "unreliable_rows": 1440,
+        "exact_counts": true
+      },
+      "peak_rss_bytes": 552599552,
+      "complete": true
+    }
+  ],
+  "retained_failed_fixture": "/private/var/tmp/r3-storage-llps2zp7: tool wrongly assumed close must return a new seal after natural phased rotation; no production failure"
+}

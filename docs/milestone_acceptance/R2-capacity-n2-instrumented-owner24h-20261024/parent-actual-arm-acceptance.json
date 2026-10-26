@@ -1,0 +1,22 @@
+{
+  "result": "PARENT_FULL41_ACTUAL_ARM_REVIEW_MEMBERS_VERIFIED",
+  "review": {
+    "REPORT.md": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-arm-review-20261024-_31j3cdn/REPORT.md",
+      "sha256": "ce17898714ff9d9184bea78b5bfe934f8a56fe5ea57bc298e70f30e3fa7bc696"
+    },
+    "RESULT.json": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-arm-review-20261024-_31j3cdn/RESULT.json",
+      "sha256": "183f5bc2ad16ffd6f007601bd95b3f2eb7900b55aa79868801f6d8aa66106083"
+    },
+    "MANIFEST.json": {
+      "path": "/private/var/tmp/bmdr-r2-fresh-n2-actual-arm-review-20261024-_31j3cdn/MANIFEST.json",
+      "sha256": "95846e80916b9093ff4536c1a6a943b21ecdf25ec795c57856a702b6e75b8b96"
+    }
+  },
+  "current_operator_sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00",
+  "accepted_window_sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199",
+  "deadline_epoch_seconds": 1793050865,
+  "capture_launched": false,
+  "formal_T0": null
+}

@@ -1,0 +1,7 @@
+{
+  "result": "ALL39_REVIEW_AND22_CURRENT_DESIGN_INPUT_SHA_BYTES_PASS",
+  "report_manifest_sha256": "086587284ed2ad31342b11f8b397baaaf75daa13314eab52349c0ca5d2b78420",
+  "copy_only_bound": true,
+  "arm_launch_blocked_until_actual_current_linux": true,
+  "remote_copy_code_sha256": "8d1d4841cfeb489d5f44b7c18d8caf421af9fd8833f37c6f7b2bed421f1d033c"
+}

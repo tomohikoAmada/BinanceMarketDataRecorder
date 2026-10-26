@@ -1,0 +1,32 @@
+[
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-code-20261026-lrdrj2v4/test_full_flow.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9mdWxsX2Zsb3dfY2FzZXMiOiA1NywgImFsbF9QQVNTIjogdHJ1ZSwgInJlYWxfTGludXhfY3JlZGl0IjogZmFsc2V9Cg==",
+    "stderr_base64": "V0FSTV9FVklERU5DRV9XUklURV9GQUlMRUQgT1NFcnJvcignZml4dHVyZSBzZWNvbmRhcnkgZXZpZGVuY2UgZmFpbHVyZScpOyBvcmlnaW5hbD1SdW50aW1lRXJyb3IoJ3dhcm1fY29tbWFuZF9mYWlsZWRfb3JfaW52YWxpZCcpCg==",
+    "subjects_sha256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+    },
+    "scope": "LOCAL synthetic OS/clock; actual POSIX timeout only on macOS, no Linux or duration credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-code-20261026-lrdrj2v4/test_boundaries.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9ib3VuZGFyeV9jYXNlcyI6IDIwLCAiYWxsX1BBU1MiOiB0cnVlLCAicmVhbF9MaW51eF9jcmVkaXQiOiBmYWxzZX0K",
+    "stderr_base64": "",
+    "subjects_sha256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+    },
+    "scope": "LOCAL synthetic OS/clock; actual POSIX timeout only on macOS, no Linux or duration credit"
+  }
+]

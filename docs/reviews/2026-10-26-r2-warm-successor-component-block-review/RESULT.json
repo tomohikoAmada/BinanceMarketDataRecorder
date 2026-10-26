@@ -1,0 +1,84 @@
+{
+  "accepted_design_manifest_sha256": "16243a8400db121da12339730c3aabdb991a622c6a6d63a4f2859412a1ec5b8c",
+  "bindings": {
+    "original_controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+    "subjects": {
+      "runtime/controller.py": {
+        "bytes": 22763,
+        "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+      },
+      "runtime/warm_completion.py": {
+        "bytes": 6048,
+        "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+      },
+      "runtime/warm_readiness.py": {
+        "bytes": 19511,
+        "sha256": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc"
+      }
+    }
+  },
+  "candidate_code_manifest_sha256": "2f75d522c2782144c2ddff692010c1825e874f9c06b1a442110a561543958282",
+  "candidate_path": "/private/var/tmp/bmdr-r2-warm-successor-code-20261026-lrdrj2v4",
+  "checks": {
+    "all_noncapture_controller_functions_AST_identical": true,
+    "candidate_all_frozen_input_bytes_unchanged": true,
+    "formal_next_bt_onward_AST_identical": true,
+    "independent_full_flow_bypasses_reproduced": 6,
+    "independent_real_local_POSIX_group_defects_reproduced": 2,
+    "provided_boundary_PASS": 20,
+    "provided_boundary_cases": 20,
+    "provided_full_flow_PASS": 57,
+    "provided_full_flow_cases": 57
+  },
+  "created_utc": "2026-10-25T20:07:43.604437+00:00",
+  "credits": {
+    "Linux_qualified": false,
+    "N2_capacity_receipt": false,
+    "N4_eligible": false,
+    "component_accepted": false,
+    "copy_arm_launch_eligible": false,
+    "new_formal_T0": false,
+    "own86400_accepted": false,
+    "production_deployed_or_changed": false,
+    "real_BOOTTIME_duration": false,
+    "root_cause_or_stability_fixed": false,
+    "saved_data_correctness": false
+  },
+  "decision": "BLOCK",
+  "findings": [
+    {
+      "id": "F1",
+      "priority": "P1",
+      "title": "Direct wrapper exit is mistaken for complete owned process-group cleanup"
+    },
+    {
+      "id": "F2",
+      "priority": "P1",
+      "title": "T0 freshness checks read newly bad live state but continue using the cached good pair"
+    },
+    {
+      "id": "F3",
+      "priority": "P2",
+      "title": "Contradictory earlier static proof and command-clock receipts satisfy the proof validator"
+    }
+  ],
+  "input_counts": {
+    "manifest_members": 13,
+    "runtime_references": 12,
+    "source_modules": 6
+  },
+  "kind": "INDEPENDENT_LOCAL_OFFLINE_EXACT_WARM_SUCCESSOR_COMPONENT_CODE_REVIEW",
+  "preservation": {
+    "SSH_or_Raw_access": false,
+    "all_writes": "THIS_EXCLUSIVE_REVIEW_DIRECTORY_ONLY",
+    "old_Q3_runtime_and_guard_194e": "READ_ONLY_REFERENCE_CLOSED_NEVER_REUSE",
+    "service_actions": false
+  },
+  "report": {
+    "bytes": 11359,
+    "sha256": "560a28f75af3c36c2c0d85cba57133824632f7a8564a759ef4fedfa458706a89"
+  },
+  "required_next": "Correct F1/F2/F3 in a distinct frozen component, independent exact review, then future fresh reader/Linux/bindings/custody/admission gates before any capture.",
+  "scope": "EXACT_COMPONENT_CODE_AND_LOCAL_FULL_WARM_PREFIX_ONLY"
+}

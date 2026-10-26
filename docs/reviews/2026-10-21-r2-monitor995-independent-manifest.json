@@ -1,0 +1,142 @@
+{
+  "decision": "ACCEPT",
+  "frozen_at_utc": "2026-10-21T08:30:19.187166+00:00",
+  "kind": "INDEPENDENT_OWNER995_CURRENT_N1_MONITOR_SUPPLEMENT_REVIEW",
+  "manifest_self_hash_excluded": true,
+  "member_count": 26,
+  "members": [
+    {
+      "bytes": 801,
+      "path": "FUTURE_CONTROLLER_PATCH_REVIEW.json",
+      "sha256": "17cbef7d53b0d71c852464d03c9fba9ac4aa70f862554ccbf7cca1092cfdb0b7"
+    },
+    {
+      "bytes": 5828,
+      "path": "INDEPENDENT_ACTUAL_REPLAY.json",
+      "sha256": "b0cf26c6b73c12c2d712b46537b0934364297bb1cb7e11beaf12ba4d7b10856b"
+    },
+    {
+      "bytes": 2832,
+      "path": "INDEPENDENT_BOUNDARY_AND_FAULT_CASES.json",
+      "sha256": "e5f3809aef4c657b6726495f868c5748438f4fb61c227ba15e1bfa3414503826"
+    },
+    {
+      "bytes": 4981,
+      "path": "INPUTS.json",
+      "sha256": "6176d15c9f010005252a1cffe547157252737d99bd80ae33fea68f7bc888dc70"
+    },
+    {
+      "bytes": 3245,
+      "path": "RECONSTRUCTION_RESULT.json",
+      "sha256": "bc4e4a2e52a7c77d7ee2ec7246d3a581e3d61eed02760dab87cdd18b5fbb5759"
+    },
+    {
+      "bytes": 6786,
+      "path": "REPORT.md",
+      "sha256": "78fb3d73c4eea061dbd3f27ad1d5a2af02dfc30936bb71f9b0c338049a218885"
+    },
+    {
+      "bytes": 3604,
+      "path": "RESULT.json",
+      "sha256": "1315961f1559fb54290e33b616d3a4a07d35c09eb9272fa6d26cb1b3a4407e16"
+    },
+    {
+      "bytes": 609,
+      "path": "TEMPLATE_AST_DIFF.json",
+      "sha256": "a4b3b98aa5214fa3a329312e68b1e054920e2d4d3c4e0dc154729ef94cfdf5cf"
+    },
+    {
+      "bytes": 18820,
+      "path": "independent-review.py",
+      "sha256": "579ba0448c98b0ac072bd765b5c023dcc06ae797da43acdaddff293f7daa5857"
+    },
+    {
+      "bytes": 1296,
+      "path": "inputs/CURRENT_README.md",
+      "sha256": "703fa5304e08f659baa26613dfb922fa8376e49ac4083ccb25dba8fcc535a223"
+    },
+    {
+      "bytes": 4385,
+      "path": "inputs/OLD_qualification_monitor_rate.py",
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    {
+      "bytes": 12969,
+      "path": "inputs/PRIOR_MANIFEST.json",
+      "sha256": "44164343d30a7b18f857df7f6614ec9dce0c8ff3318e76426a58e3878dd4909f"
+    },
+    {
+      "bytes": 14905,
+      "path": "inputs/PRIOR_REPORT.md",
+      "sha256": "5e4ba2ac951ea6541ea050e35df112c0c14ebd3abd7d190ebe5a8f7c1e2e2b7e"
+    },
+    {
+      "bytes": 8141,
+      "path": "inputs/PRIOR_RESULT.json",
+      "sha256": "d0968c7afc20cccd38bed6758e79da1763072916567b7afbefea0421ca534b14"
+    },
+    {
+      "bytes": 980,
+      "path": "inputs/README.md",
+      "sha256": "3d608cc2ea29ba440867967b978f3143b65b575f9a15c5bba4df6110bc60e137"
+    },
+    {
+      "bytes": 1863,
+      "path": "inputs/controls-manifest.json",
+      "sha256": "634715ff53410ec9a0a7135733be5443f60dda5ba2ad022c3fea5b7138325b36"
+    },
+    {
+      "bytes": 821,
+      "path": "inputs/future-controller-policy.patch",
+      "sha256": "68eb6b0e0f291f7d34a9a3f99afe16a2d80d487b08962eeb4238baf686ea6698"
+    },
+    {
+      "bytes": 1779,
+      "path": "inputs/local-checks.json",
+      "sha256": "576b4590cb240fce70219d673a4d772a1d4c645329e7d21deb0ca3274dd3c0da"
+    },
+    {
+      "bytes": 2225,
+      "path": "inputs/monitor-rate-owner995-supplement.json",
+      "sha256": "c5a0c117ecfce21414a84cdf43e02d9536ad7444db1f16956d1bad4f70d741a4"
+    },
+    {
+      "bytes": 1519,
+      "path": "inputs/monitor-rate.json",
+      "sha256": "ae0a7700d9b5b0a46b54f27b1c7bdf75b1967843b3269f1ce53ca7cd7cb7e300"
+    },
+    {
+      "bytes": 47739688,
+      "path": "inputs/monitoring.jsonl",
+      "sha256": "f34abc7370a98ef19d08a651d4d01fb9551a6ef11c89a2decb199c5db7355653"
+    },
+    {
+      "bytes": 1186,
+      "path": "inputs/owner-policy.json",
+      "sha256": "fe1e989cf6ac5f63f7dd4055b7d654b561c879f873645a4b36f0c60b09e08fe6"
+    },
+    {
+      "bytes": 20736,
+      "path": "inputs/owner-start.json",
+      "sha256": "8cfbadaa43d8a9ec1b23054ba074819d9610e5c6da3dd6cfa0e3f40786665410"
+    },
+    {
+      "bytes": 18533,
+      "path": "inputs/owner-target.json",
+      "sha256": "abf1946c5b7bc98fd245eaab6e29c4e87d8f5bf3564f65649eb5d7d14ef042fc"
+    },
+    {
+      "bytes": 4385,
+      "path": "inputs/qualification_monitor_rate.py",
+      "sha256": "46c5bbd88b851e6b1a5fbba1b3c86c260fe20e0748e4984df9126bbd89708325"
+    },
+    {
+      "bytes": 5225,
+      "path": "inputs/replay-and-check.py",
+      "sha256": "bfab247992ca3d35ef885baea552767253062d7d52574fbbd241fd954e9c0adb"
+    }
+  ],
+  "report_sha256": "78fb3d73c4eea061dbd3f27ad1d5a2af02dfc30936bb71f9b0c338049a218885",
+  "result_sha256": "1315961f1559fb54290e33b616d3a4a07d35c09eb9272fa6d26cb1b3a4407e16",
+  "root": "/private/var/tmp/bmdr-n1-actual-independent-20261021-531qae20/owner-monitor995-0f3tdx29"
+}

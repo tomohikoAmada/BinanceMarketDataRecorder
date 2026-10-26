@@ -1,0 +1,17 @@
+{
+  "N2_start_qualified": false,
+  "actual_receipt_published": false,
+  "checks_passed": 52,
+  "decision": "ACCEPT",
+  "final_manifest_sha256": "199244a05205b6538d366bd96176753507dc6623adf498288a7c945a64e43ce9",
+  "final_report_sha256": "8ac5cea3e18beb7fa905637d9b7fd85d880e4602246391cf05f5e9010daf55f2",
+  "final_result_sha256": "8afbe52106490aaefd31f5f6bcb08293a440b943ac7835f021bb7bdabbb86b10",
+  "findings": [],
+  "full_control_Raw_replay_repeated": false,
+  "nominal_UTC_tail_ns": 1154609350,
+  "old8be_draft_unpublished_preserved": true,
+  "publisher_sha256": "2859e36cdbed678fa4005a4b481ce9fbd541ad95c47d520f6ce0c54ac5429335",
+  "receipt_sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac",
+  "scope": "CONCRETE_CORRECTED_N1_RECEIPT_BINDINGS_AND_UNCHANGED_SINGLE_PUBLISHER_ONLY",
+  "ssh_network_candidate_execution": false
+}

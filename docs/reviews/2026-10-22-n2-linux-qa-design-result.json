@@ -1,0 +1,21 @@
+{
+  "actual_runtime_binding_and_physical_Linux_native_QA_credit": false,
+  "blocking_findings": [],
+  "candidate": "candidate-v2",
+  "cases": {
+    "fixture_exact_transplants": 6,
+    "operator_generation_and_boundaries": 11,
+    "runner_orchestration_boundaries": 4
+  },
+  "decision": "ACCEPT_QA_RUNNER_OPERATOR_DESIGN_LOCAL_OFFLINE",
+  "fixed_initial_findings": [
+    "QA-PIN-BINDING",
+    "QA-TIMEOUT-DURABILITY"
+  ],
+  "fixture_policy_logic_rerun": false,
+  "operator_sha256": "54cd52d3e226bd38bf7925c1a5ed037cee38e32308fe5790fafb117d78dac5f8",
+  "production_Raw_SSH_network_native_actions": false,
+  "real_capture_duration_credit_ns": 0,
+  "report_sha256": "ada5eced4809907a96f89537b29d3bf6cc7b11ab60f86d9462798c1a5950c223",
+  "runner_sha256": "8308129c1ba0f912a46e4a9bba5f7a5708ce4af16a79850d916fb59fa2a37b29"
+}

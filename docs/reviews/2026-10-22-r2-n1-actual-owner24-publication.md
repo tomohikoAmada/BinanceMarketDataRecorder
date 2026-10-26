@@ -1,0 +1,7 @@
+# N1 actual four-artifact publication readback review
+
+**ACCEPT** for the actual four-file publication only. 74 narrow local/offline checks passed with no findings. The captured success marker and empty stderr bind the exact N1 scope to receipta7938d4a and the previously accepted final REPORT8ac5cea3 / RESULT8afbe521 / MANIFEST199244a0. All four returned SHA-256 values and byte sizes exactly match their local frozen files; every returned owner/mode is uid0:gid988 and0640. The receipt and publisher also exactly match their prior52-check accepted static snapshots. The independently computed local receipt SHA matches the parent's supplied SHA.
+
+The exact publisher2859e36c is unchanged. Its emitted marker follows per-file flush/fsync, directory fsync and final hash/metadata readback. This conclusion uses the captured publisher output and the already accepted publisher bytes; this reviewer made no new remote restat and observed no independent syscall trace. The final N1 data/control acceptance is reused unchanged, without repeating its866893-check audit or Raw reconstruction.
+
+This review read local frozen receipt, publisher, readback and accepted report artifacts only. No SSH, network, Raw, production path or candidate execution occurred. Only this new exclusive review directory was written. Acceptance grants no N2 start or new duration, configuration, canonicalV5, production-ready or capture authority. Prior controls and the old unpublished draft were not modified.

@@ -1,0 +1,35 @@
+{
+  "accepted_launch_sha256": "e984758985dce5387aca274367a45fbd3e0716d7582767a3034af8c0a3383c40",
+  "decision": "ACCEPT",
+  "kind": "INDEPENDENT_INITIAL_NATIVE_LAUNCH_BINDING_REVIEW",
+  "members": {
+    "PRIOR_BINDING_REFERENCES.json": {
+      "bytes": 613,
+      "sha256": "7b9f5a546751f4ffd842a45870be71d6107c043e5483a28caf76cb8b353e47ab"
+    },
+    "REPORT.md": {
+      "bytes": 2537,
+      "sha256": "2b0d8d88f9bd561771d7dbb93b0a86ee4733cf5cbec93866af40f986d125375b"
+    },
+    "RESULT.json": {
+      "bytes": 2275,
+      "sha256": "0684b386baaa84e663f1cb010ba0fa35b31c00cd032311adfd2a179befb26360"
+    },
+    "inputs/actual-n2-stage-launch-1792936727176060000.execution.json": {
+      "bytes": 233,
+      "sha256": "c53d266f0741bad6c3b4c683d27ebf386bab805da533dc4992d00fff030e2512"
+    },
+    "inputs/actual-n2-stage-launch-1792936727176060000.json": {
+      "bytes": 4009,
+      "sha256": "e984758985dce5387aca274367a45fbd3e0716d7582767a3034af8c0a3383c40"
+    },
+    "inputs/actual-n2-stage-launch-1792936727176060000.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "review_initial_launch.py": {
+      "bytes": 9949,
+      "sha256": "a64f0de0216f0d63f7eb01b89d28fb4c78bbcc38f858f9e2a0aabce3765cecac"
+    }
+  }
+}

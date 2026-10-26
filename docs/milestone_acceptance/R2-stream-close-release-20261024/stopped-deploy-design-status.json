@@ -1,0 +1,13 @@
+{
+  "status": "STOPPED_CANONICAL_DEPLOYMENT_VERIFIED_INDEPENDENT_ACCEPTED",
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c",
+  "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "metadata_sha256": "188550dc857ae65da5597b81ccf439c99396349e05ae895fe54e2a60b37c4a6d",
+  "commands_successful": 20,
+  "actual_deployment_review_manifest": "ba1e957ad2192aaca4b5e87c5b17bcdef0c1f44105c49ddf0c398774a6ccd2a2",
+  "formal_started": false,
+  "formal_credit_seconds": 0,
+  "next_step": "SHORT_DIAGNOSTIC_CODE_REVIEW_ACTIVE_UNRUN"
+}

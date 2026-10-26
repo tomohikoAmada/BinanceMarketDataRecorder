@@ -1,0 +1,14 @@
+{
+  "/private/var/tmp/bmdr-r2-retry-actual-arm-review-20261025-igk1y0fn/MANIFEST.json": {
+    "bytes": 4686,
+    "sha256": "f141c4c9653c0b76ec95cfd7432c260932fcd470c6f155d6850400e3e8a0bdee"
+  },
+  "/private/var/tmp/bmdr-r2-retry-actual-arm-review-20261025-igk1y0fn/RESULT.json": {
+    "bytes": 3406,
+    "sha256": "4be04670db4dfc00d6c5178cb2db78765bc42abd5eb8cb6df066fa82f67c8f0b"
+  },
+  "/private/var/tmp/bmdr-r2-retry-actual-linux-physical-review-20261025-ufjx0ew5/inputs/stage-controls-manifest.json": {
+    "bytes": 2898,
+    "sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f"
+  }
+}

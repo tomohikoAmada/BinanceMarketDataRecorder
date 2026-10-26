@@ -1,0 +1,66 @@
+{
+  "all_other_11_historical_runtime_bytes_identical": true,
+  "case_count": 9,
+  "cases": [
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_copy"
+    },
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_arm"
+    },
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_launch"
+    },
+    {
+      "PASS": true,
+      "case": "compile_generated_copy"
+    },
+    {
+      "PASS": true,
+      "case": "compile_generated_arm"
+    },
+    {
+      "PASS": true,
+      "case": "compile_generated_launch"
+    },
+    {
+      "PASS": true,
+      "case": "compile_generated_read"
+    },
+    {
+      "PASS": true,
+      "case": "fresh_rglob_gate_silently_accepts_scan_error",
+      "reproduces_blocker": true
+    },
+    {
+      "PASS": true,
+      "case": "reader_omits_pre_copy_completion_QA_controls",
+      "reproduces_blocker": true
+    }
+  ],
+  "classifier_is_prior_accepted_exact_bytes": true,
+  "common_all_function_AST_unchanged_from_previous_instrumented": true,
+  "controls_manifest_sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+  "decision": "BLOCK",
+  "findings": [
+    {
+      "description": "Fresh copy/ARM/launch rglob partial check suppresses scan errors and lacks trusted ancestor/entry validation; cannot prove promised fresh complete custody.",
+      "id": "S1",
+      "priority": 1
+    },
+    {
+      "description": "Read program omits linux-classifier-qa.json and parent-tests.json, so a failed copy before software-copy publication cannot export its newly persisted QA failure/partial-result bytes using this reader.",
+      "id": "S2",
+      "priority": 2
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "helper_main_or_remote_program_executed": false,
+  "linux39_result_is_persisted_before_pass_assertion": true,
+  "network_service_or_payload_action": false,
+  "operator_sha256": "b4c7e06084c8cb72a2ab0c021bd266f372b80720d62029b7cc4c9c1ebd647b51",
+  "remote_programs_compile_only": true
+}

@@ -144,8 +144,29 @@ def select_catalog(source: Path, root: Path, boundary: Mapping[str, Any]) -> dic
             db.execute(
                 f"DELETE FROM {table} WHERE chunk_id NOT IN (SELECT chunk_id FROM selected_chunks)"
             )
+        # A completion written during this capture can close a gap opened before
+        # its boundary. Keep that exact start as metadata authority, without
+        # selecting any prior chunk, Raw or duration.
+        db.execute("CREATE TEMP TABLE retained_operational(event_id TEXT PRIMARY KEY)")
         db.execute(
-            "DELETE FROM operational_event_sequence WHERE event_seq<=?", (high["operational"],)
+            "INSERT INTO retained_operational SELECT event_id FROM operational_event_sequence "
+            "WHERE event_seq>?",
+            (high["operational"],),
+        )
+        db.execute(
+            "INSERT OR IGNORE INTO retained_operational "
+            "SELECT started.event_id FROM operational_events started "
+            "JOIN operational_events completed ON started.market=completed.market "
+            "AND started.symbol=completed.symbol AND started.stream=completed.stream "
+            "AND started.gap_id=completed.gap_id "
+            "JOIN operational_event_sequence s ON s.event_id=completed.event_id "
+            "WHERE started.event_type='STREAM_DISCONTINUITY_STARTED' "
+            "AND completed.event_type='STREAM_DISCONTINUITY_COMPLETED' AND s.event_seq>?",
+            (high["operational"],),
+        )
+        db.execute(
+            "DELETE FROM operational_event_sequence WHERE event_id NOT IN "
+            "(SELECT event_id FROM retained_operational)"
         )
         db.execute(
             "DELETE FROM operational_events WHERE event_id NOT IN "

@@ -1,0 +1,7 @@
+{
+  "result": "ALL27_PHYSICAL_PAYLOAD_SHA_BYTES_ROOT_MODES_AND_EXACT_LINUX39_WITNESS_PASS",
+  "copy_sha256": "3c09dd59f8691ce3b3de1d1f692cc61a057542dd17551e8c1882edc2c59bba00",
+  "operator_sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+  "controls_manifest_sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+  "real_formal_duration_credit_ns": 0
+}

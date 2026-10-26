@@ -1,0 +1,60 @@
+[
+  {
+    "event": {
+      "event": "usdm_websocket_disconnected",
+      "fields": {
+        "cause_type": null,
+        "close_received_code": null,
+        "close_received_reason": null,
+        "close_received_then_sent": null,
+        "close_sent_code": null,
+        "close_sent_reason": null,
+        "connected_duration_seconds_at_log": 227.42077196016908,
+        "connection_id": "46f7f6a4-7c10-41ec-8148-d745d272b0a6",
+        "connection_phase": "established",
+        "error_type": "ConnectionClosedError",
+        "market": "um_perpetual",
+        "os_errno": null,
+        "retry": 1,
+        "scope": "product",
+        "stream": "book_ticker",
+        "symbol": "BTCUSDT"
+      },
+      "level": "WARNING",
+      "logger": "binance_market_data_recorder",
+      "message": "Binance USD-M stream disconnected unexpectedly",
+      "timestamp_utc": "2026-10-25T14:17:33.043705+00:00"
+    },
+    "journal_utc_us": 1792937853044212,
+    "next_connected_journal_utc_us": 1792937855530597
+  },
+  {
+    "event": {
+      "event": "usdm_websocket_disconnected",
+      "fields": {
+        "cause_type": null,
+        "close_received_code": null,
+        "close_received_reason": null,
+        "close_received_then_sent": null,
+        "close_sent_code": null,
+        "close_sent_reason": null,
+        "connected_duration_seconds_at_log": 153.44610596913844,
+        "connection_id": "71a4437a-6a65-4174-8ec2-a57082d3eb3a",
+        "connection_phase": "established",
+        "error_type": "ConnectionClosedError",
+        "market": "um_perpetual",
+        "os_errno": null,
+        "retry": 1,
+        "scope": "product",
+        "stream": "book_ticker",
+        "symbol": "BTCUSDT"
+      },
+      "level": "WARNING",
+      "logger": "binance_market_data_recorder",
+      "message": "Binance USD-M stream disconnected unexpectedly",
+      "timestamp_utc": "2026-10-25T14:20:08.973664+00:00"
+    },
+    "journal_utc_us": 1792938008976699,
+    "next_connected_journal_utc_us": 1792938015598603
+  }
+]

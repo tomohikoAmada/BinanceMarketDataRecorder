@@ -1,0 +1,49 @@
+# Current R1 own12h failure diagnosis
+
+**Diagnosis complete: FAILED_BEFORE_TARGET; resolution and requalification pending. HOLD blind relaunch or an unproven source/threshold fix.** No runtime/helper/source change is approved by this diagnosis. The earlier startup acceptance remains a historical prefix; the accepted same-release2h remains accepted and grants no inherited12h time.
+
+## Exact current evidence and confirmed termination
+
+Only the current run77fe286f88e143f0ab318246eab4d399 metadata and current Recorder journal were inspected. Status bundle SHA`3c8ffaf708fd735d516eef95d673a4e42f07cbfb383ddfffffa1a8af9eaf9b8d`; failure-controls SHA`719515d3b35023af4e915d0c61b726cfa8af7f82552193e941368bc68c4d21a4`. Every published JSON-body hash, all3 complete ledger-prefix hashes/lengths and all6 retained diagnostic publications were reconstructed. Compact no-newline service-state bytes match their retained exact SHA/length and observation state_sha256. No production Raw or historical manifest was opened.
+
+Sole T0October15 06:34:00.185375590UTC/BOOTTIME1110934365910859; required own43200s. Failure SHA`2bc89bea976f937d0f8abe46fa2ecebd7071a8b82547a27994583aa2b63fd08d` records **13:11:05.519916474UTC**, BOOTTIME1134759700463920: **23825.334553061s (6h37m5.334553061s)**, short **19374.665446939s**. There is no owner-target or full terminal audit and **zero accepted12h/data denominator**. Parent's user-requested status read after15:39UTC did not cause the earlier automatic failure.
+
+The final regular sample at13:11:00.230338949UTC is corefalse; the extra probe at13:11:05.360577100UTC is coretrue. Their observed BOOTTIME separation is **5.130237827s**. The exact unchanged CoreRecovery.check reproduces `core_recovery_requires_fresh_strict_auxiliary_PASS` on those actual two rows. It was not the60s episode deadline or a cumulative budget. Once core recovered, the helper demanded full strict auxiliary PASS; both OI5m contexts remained RETRYING, last success stale and cursor behind. The probe failed both capture freshness and cursor catch-up, so removing only a cosmetic RETRYING check would not establish strict conformance.
+
+The owned current journal has a nearby USD-M BTC book_ticker ConnectionClosedError at13:10:55.724614UTC and connected at13:10:58.567431UTC. Those connection timestamps are not exact coreREADY downtime, and transport closure origin is unknown. The later SIGTERM stop request is13:11:08.985970UTC, following the controller exception. No deployed stack proves a deeper network/provider cause.
+
+## Preserve both distinct failure-prefix metrics
+
+All795 regular rows remain. **auxiliary_gate=783PASS/12BLOCK**, while **strict_auxiliary_gate=753PASS/42BLOCK**. The fixed-monitor evaluator uses auxiliary_gate. Calling753/795 the official permissive monitor rate would conflate the fields. There is no completed monitor-rate receipt/target period here; both are failed-run prefix counts. All5 separate recovery probes remain outside that denominator. Warm20 and their BLOCKs remain unchanged.
+
+Strict OI BTC not-running first appears at line758/12:52:30.222040543UTC, ETH line759/12:53:00.248429976UTC; the permissive gate initially allows EmptySideDataResponse recovery. Both later exceed the unchanged1200s success-freshness bound (first permissive OI BLOCK line788/13:07:30.324899864UTC) and then the cursor catch-up allowance. At the fatal same-read probe both have204 consecutive EmptySideDataResponse failures, accepted77, cursor **1792068000000=12:40UTC**, last success BTC12:47:22.438334737UTC /ETH12:47:29.538567413UTC. Full current Recorder journal contains205 EmptySideDataResponse events per symbol, first BTC12:52:23.443990UTC/ETH12:52:30.216748UTC; final additional log updates around shutdown explain journal205 vs retained publication204. No OI freshness was invented or cursor skipped.
+
+## What the frozen source establishes
+
+The inspected collector/usdm_side_data.py and binance/usdm/side_data_rest.py bytes exactly equal the installed-release wheelbbcb54ae (source8f); their SHA bindings are in FINAL_INPUT_BINDINGS.json. The local installed official SDK14 API and facade signatures are symbol,period,limit,start_time,end_time and match the source call. No concrete argument-order or fixed request-end defect was found.
+
+RestSideDataPoller calculates next period as persisted12:40+300000=12:45. It computes latest fully closed period from request time; it does not freeze the original end forever. Empty envelopes are persisted/synced before recording SIDE_DATA_EMPTY_RESPONSE and raising; the cursor is not advanced. For OI, the capture path first checks HTTP200, obtains a model list, validates its fields/range and requires continuous coverage from the requested start. With requestedRecordCount0 and OI's no-out-of-range allowance, the code path implies an empty SDK model list. This is a source-path inference, not a reread of the original HTTP body or an independent proof of why the server/SDK produced it. The original request/response fields are not in the current operational journal; no original Raw was opened.
+
+A tiny LOCAL exact-method coroutine fixture, driven without an event loop/socket, confirms: at12:52 a persisted12:40 cursor asks start12:45/end12:49:59.999/limit1; at13:11 it still asks start12:45 but expands end13:09:59.999/limit5. Each synthetic empty is persisted before event/exception, and the cursor stays12:40. The actual recovery exception is separately reproduced. These fixtures establish client control flow, not Binance endpoint correctness.
+
+## Later bounded public diagnostics: useful, not retroactive proof
+
+Supplied six-GET diagnostic SHA`f706a50a8b7899cdd614b47491dbc6db678bf30d931f3bd645eee4b2e1ba1cf6` and four-GET boundary differential SHA`8e999e22ee80d1527b888bcc18548afba0cdd3ab0ff600bd509de00bf2598956` were fully parsed and all10 HTTP200 body hashes verified locally. The parent performed those GETs while Recorder was stopped; the reviewer made zero network requests. They occurred later and cannot be substituted for original13:11 responses.
+
+Current first-missing bounded queries produce BTC12:49:59 /ETH12:49:58 off-grid timestamps and zero sumOpenInterestValue. Broad failed-range queries produce seconds-spaced off-grid rows near the end. Latest BTC contains normal five-minute aligned positive-value rows; latest ETH is mixed. Zero values alone are not proof of invalidity, but these arrays do not satisfy this capture contract's exact missing12:45/continuous five-minute coverage.
+
+The additional4GETs rule out the proposed shortcuts: aligned endTime12:50/limit1 returns BTC12:50 rather than missing12:45, while ETH stays off-grid12:49:58; start-only12:45/limit1 returns latest15:45 for both, not the requested missing start. Thus blanket end+1ms or omitted endTime is **not a validated recovery**. Do not floor/round timestamps, relabel end samples as period starts, accept latest as historical catch-up, fabricate values/freshness, or advance over12:45. The generic end=next_boundary-1 is a client range assumption; local SDK notes do not establish an endpoint inclusion/aggregation guarantee. A provider/range-semantics discrepancy is now plausible; its exact root cause and a correct source adjustment remain unproven.
+
+## Actual containment and closed window
+
+Native restoration **RESTORED/errors[]** ended **13:12:00.905808250UTC** (1792069920905808250), before guard cancellation **13:12:00.936075423UTC** (1792069920936075423). Every recorded restoration command returned0. Current supplied states: RecorderinactiveANDdisabled/PID0/NRestarts0/Resultsuccess, original3 OS owners enabled-active, all5 unmasked, normal archive timer enabled-active/last worker inactive-success. Quiet guardnotfound means the window is **CLOSED**, not extended or reusable. This is failure containment/state reconstruction, not a fresh final canonical/natural-deadline acceptance for a successful12h.
+
+## Minimum safe next work
+
+1. Preserve this failed scope, original warm/Raw/publications/journal/empty-response facts and all prior2h evidence. Do not recapture within this closed window or transfer23825s into any successor.
+2. Stop additional exploratory GETs for this status closeout. Retain the ten bounded response bodies and exact request parameters. Resolution should focus on this attempt's missing12:45 OI period/range-versus-latest behavior, with authoritative timestamp/range semantics and representative recorded responses before selecting code.
+3. Keep strict recovery, OI freshness/cursor checks, all14 features, resources, duration and full dualLIVE quality unchanged. Do not skip the stream, mark empty as a successful fresh period, manually jump its cursor or falsely label a within-retention hole unrecoverable.
+4. If a specific source correction is demonstrated, add meaningful tests for empty/partial/missing-start/off-grid/duplicate/out-of-order/limit boundaries and durability before cursor advance; freeze/review/CI/wheel/deploy and perform new source-bound owner2h+12h as authorized. Prefer a small feed-specific request/validation correction; no broad refactor or threshold increase is supported by this evidence.
+5. If no client correction is established, preserve honest upstream-unavailability evidence and keep retry/requalification blocked until the missing-period/caught-up contract can actually be met. Any eventual same-source retry still needs reviewed fresh scope/capacity/finite window, genuine strict warm and new own43200s; no blind launch is approved here.
+
+Diagnosis/checklist marking may now be completed as FAILED6h37 with actual successful restoration. **Resolution/release/requalification remains pending.** Prior2hPASS is preserved; no12h, saved-frame correctness denominator, canonicalV5/every-event/production-ready/24h/48h credit follows. No source edit or runtime mutation was made by the reviewer.

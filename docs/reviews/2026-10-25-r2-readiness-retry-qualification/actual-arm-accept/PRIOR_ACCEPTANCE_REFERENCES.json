@@ -1,0 +1,18 @@
+{
+  "/private/var/tmp/bmdr-r2-retry-actual-linux-physical-review-20261025-ufjx0ew5/MANIFEST.json": {
+    "bytes": 7037,
+    "sha256": "dc491f7d7b4ad28a43c2e985eceb17c85d5cf88b64000fcb37759c59ac7f0b1f"
+  },
+  "/private/var/tmp/bmdr-r2-retry-actual-linux-physical-review-20261025-ufjx0ew5/PENDING_ARM_BINDINGS.json": {
+    "bytes": 1612,
+    "sha256": "d1baa3c83e89c0c08001492d259afd3eb9240bf1162c64b923782f9b5aad46c3"
+  },
+  "/private/var/tmp/bmdr-r2-retry-actual-linux-physical-review-20261025-ufjx0ew5/REPORT.md": {
+    "bytes": 3930,
+    "sha256": "217e582b93a4f6c9ae94d2119483f1e577db553ef6d9c6067a4885dd4e0872af"
+  },
+  "/private/var/tmp/bmdr-r2-retry-actual-linux-physical-review-20261025-ufjx0ew5/RESULT.json": {
+    "bytes": 5555,
+    "sha256": "6e18159b60cbee7279aeded2d6c8ebdd68028fcee69d560822f423dd9d36625c"
+  }
+}

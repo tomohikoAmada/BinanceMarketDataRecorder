@@ -1,0 +1,13 @@
+{
+  "build": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build",
+  "ci_run": 40005007941,
+  "cloud_unit": "binance-recorder-r2-stream-close-cloud-20261024-l2hr7wd9.service",
+  "deploy_unit": "binance-recorder-r2-stream-close-stopped-deploy-20261024-l2hr7wd9.service",
+  "prior_config": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "prior_identity": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452",
+  "prior_source": "c3686dd76406c8d483b23eb10417349e5a1ffecd",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "source_archive_sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "test_data": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-cloud-data"
+}

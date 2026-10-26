@@ -16,8 +16,10 @@ funding、open interest、exchange info 和六种 5 分钟统计的 REST 轮询)
   运行启动恢复。
 - RestSideDataPoller._catch_up_five_minute 为 M19 5 分钟统计实现有界追赶。
   它从 Cursor + 5 分钟查询到最后一个已关闭的 UTC 周期,以可配置批次进行。
-  Raw 在 Cursor 推进前完成排空和 fsync。空响应不推进 Cursor 并创建
-  SIDE_DATA_EMPTY_RESPONSE 事件。超出官方保留窗口的缺失周期变为
+  Raw 在 Cursor 推进前完成排空和 fsync。一般空响应不推进 Cursor 并创建
+  SIDE_DATA_EMPTY_RESPONSE 事件。OI 的官方稀疏周期语义例外:完整有界查询
+  落盘并记录 SIDE_DATA_RANGE_EVALUATED 后推进已查询窗口,不声称存在数据行。
+  超出官方保留窗口的缺失周期变为
   SIDE_DATA_UNRECOVERABLE_GAP 事件。
 - Cursor 通过 Catalog.side_data_cursor/advance_side_data_cursor 实现持久化,
   因此停机后重启从最后持久化的周期恢复。
@@ -31,7 +33,8 @@ import asyncio
 import logging
 import random
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
 from typing import Literal, Protocol
@@ -39,6 +42,7 @@ from typing import Literal, Protocol
 from binance_common.errors import Error as BinanceSdkError
 from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
+from ..binance.request_budget import shared_request_budget, usdm_request_charges
 from ..binance.usdm.side_data_rest import (
     FIVE_MINUTE_KINDS,
     FIVE_MINUTE_PERIOD_MS,
@@ -348,6 +352,26 @@ class UsdMRestCooldown:
                         task.cancel()
                 await asyncio.gather(stop_task, changed_task, return_exceptions=True)
 
+    @asynccontextmanager
+    async def request_slot(
+        self, lock: asyncio.Lock, stop: asyncio.Event, charges: Mapping[str, int]
+    ) -> AsyncIterator[bool]:
+        budget = shared_request_budget()
+        while not stop.is_set():
+            # A statistics window must not hold the shared wire lock while
+            # waiting: depth and ordinary polling have independent allowances.
+            await budget.wait_ready(charges, stop)
+            await self.wait(stop)
+            async with lock:
+                await self.wait(stop)
+                if stop.is_set():
+                    break
+                if budget.take(charges) > 0:
+                    continue
+                yield True
+                return
+        yield False
+
 
 class SideDataExtension(Protocol):
     """One side-data task owned by the supervisor.
@@ -448,6 +472,8 @@ class RestSideDataPoller:
             raise ValueError("USD-M catch-up batches per attempt must be positive")
         self.catchup_batch_limit = catchup_batch_limit
         self.catchup_batches_per_attempt = catchup_batches_per_attempt
+        self._oi_period_limit = min(catchup_batch_limit, 499)
+        self._oi_cursor_rechecked = False
         self.utc_clock_ns = utc_clock_ns
         self.cursor_observer = cursor_observer
         self.log_context = dict(
@@ -549,12 +575,10 @@ class RestSideDataPoller:
         stop = getattr(self, "_active_stop", None)
         if stop is None:
             stop = asyncio.Event()
-        await self.cooldown.wait(stop)
-        if stop.is_set():
-            raise asyncio.CancelledError
-        async with self.request_lock:
-            await self.cooldown.wait(stop)
-            if stop.is_set():
+        async with self.cooldown.request_slot(
+            self.request_lock, stop, usdm_request_charges(self.kind.value)
+        ) as admitted:
+            if not admitted:
                 raise asyncio.CancelledError
             envelope = await run_owned_blocking_call(
                 capture_rest_side_data,
@@ -596,7 +620,16 @@ class RestSideDataPoller:
             persisted_value = cursor["last_persisted_period_timestamp"]
             if not isinstance(persisted_value, int):
                 raise RuntimeError("side-data cursor timestamp is not an integer")
-            next_period = persisted_value + FIVE_MINUTE_PERIOD_MS
+            if (
+                self.kind is RestSideDataKind.OPEN_INTEREST_STATISTICS
+                and not self._oi_cursor_rechecked
+            ):
+                # A legacy cursor proves a persisted row, not that its whole
+                # query window was evaluated. Re-read that window once after
+                # every restart; duplicated observations retain real provenance.
+                next_period = persisted_value
+            else:
+                next_period = persisted_value + FIVE_MINUTE_PERIOD_MS
         else:
             unresolved_empty_starts = [
                 evidence["requested_start_timestamp"]
@@ -645,6 +678,11 @@ class RestSideDataPoller:
                 (last_closed - next_period) // FIVE_MINUTE_PERIOD_MS
             ) + 1
             requested_count = min(self.catchup_batch_limit, remaining)
+            sparse_oi = self.kind is RestSideDataKind.OPEN_INTEREST_STATISTICS
+            if sparse_oi:
+                requested_count = min(requested_count, self._oi_period_limit)
+                if cursor is not None and not self._oi_cursor_rechecked:
+                    requested_count = 1
             request_end = (
                 next_period
                 + requested_count * FIVE_MINUTE_PERIOD_MS
@@ -657,6 +695,31 @@ class RestSideDataPoller:
             )
             await self._persist(envelope)
             record_count = int(envelope.source_sequence["requestedRecordCount"])
+            if sparse_oi:
+                complete = envelope.source_sequence["requestedRangeComplete"] == 1
+                self.catalog.record_operational_event(
+                    event_id=(
+                        f"side-data-range:{self.kind.value}:"
+                        f"{self.symbol}:{envelope.connection_id}"
+                    ),
+                    event_type="SIDE_DATA_RANGE_EVALUATED",
+                    occurred_at_utc_ns=envelope.receive_time_utc_ns,
+                    evidence={
+                        "kind": self.kind.value,
+                        "symbol": self.symbol,
+                        "requested_start_timestamp": next_period,
+                        "requested_end_timestamp": request_end,
+                        "response_record_count": int(envelope.source_sequence["recordCount"]),
+                        "response_limit": 500,
+                        "range_complete": complete,
+                        "cursor_semantics": "evaluated_closed_query_windows.v1",
+                        "raw_connection_id": envelope.connection_id,
+                    },
+                    symbol=self.symbol,
+                )
+                if not complete:
+                    self._oi_period_limit = max(1, requested_count // 2)
+                    raise RuntimeError("OPEN_INTEREST_RESPONSE_LIMIT_REACHED")
             if record_count == 0:
                 self.catalog.record_operational_event(
                     event_id=(
@@ -671,18 +734,25 @@ class RestSideDataPoller:
                         "requested_start_timestamp": next_period,
                         "requested_end_timestamp": request_end,
                         "source_retention_window": retention_name,
+                        **(
+                            {"cursor_semantics": "evaluated_closed_query_windows.v1"}
+                            if sparse_oi else {}
+                        ),
                     },
                     symbol=self.symbol,
                 )
-                raise EmptySideDataResponse("EMPTY_RESPONSE")
-            last_timestamp = int(
-                envelope.source_sequence["lastRequestedTimestamp"]
+                if not sparse_oi:
+                    raise EmptySideDataResponse("EMPTY_RESPONSE")
+            last_period = int(
+                envelope.source_sequence[
+                    "evaluatedThroughPeriodStart" if sparse_oi else "lastRequestedTimestamp"
+                ]
             )
             updated_at_utc_ns = envelope.receive_time_utc_ns
             self.catalog.advance_side_data_cursor(
                 kind=self.kind.value,
                 symbol=self.symbol,
-                last_persisted_period_timestamp=last_timestamp,
+                last_persisted_period_timestamp=last_period,
                 updated_at_utc_ns=updated_at_utc_ns,
                 source_retention_window=retention_name,
                 retention_window_ms=retention_ms,
@@ -693,16 +763,22 @@ class RestSideDataPoller:
                     {
                         "kind": self.kind.value,
                         "symbol": self.symbol,
-                        "last_persisted_period_timestamp": last_timestamp,
+                        "last_persisted_period_timestamp": last_period,
                         "updated_at_utc_ns": updated_at_utc_ns,
                         "source_retention_window": retention_name,
                         "retention_window_ms": retention_ms,
+                        **(
+                            {"cursor_semantics": "evaluated_closed_query_windows.v1"}
+                            if sparse_oi else {}
+                        ),
                     },
                 )
             self.stats.accepted += 1
             self.stats.observe_success()
             self.cooldown.observe_success()
-            next_period = last_timestamp + FIVE_MINUTE_PERIOD_MS
+            if sparse_oi:
+                self._oi_cursor_rechecked = True
+            next_period = last_period + FIVE_MINUTE_PERIOD_MS
         return next_period > last_closed
 
 

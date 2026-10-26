@@ -111,6 +111,16 @@ def test_full_jitter_backoff_has_a_bounded_zero_to_cap_range() -> None:
     assert backoff.delay(10, random_value=1) == 10
 
 
+@pytest.mark.parametrize("failures", [1024, 1025, 100_000, 10**100])
+def test_snapshot_full_jitter_backoff_remains_bounded_after_extreme_failures(
+    failures: int,
+) -> None:
+    policy = FullJitterBackoff(initial_seconds=0.1, maximum_seconds=60)
+    assert policy.delay(failures, random_value=0) == 0
+    assert policy.delay(failures, random_value=0.5) == 30
+    assert policy.delay(failures, random_value=1) == 60
+
+
 def test_429_retry_after_blocks_and_then_recovers() -> None:
     async def exercise() -> None:
         utc_ns = 1_000_000_000

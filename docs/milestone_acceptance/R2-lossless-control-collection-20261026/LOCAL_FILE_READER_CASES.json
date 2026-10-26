@@ -1,0 +1,1290 @@
+{
+  "case_count": 16,
+  "cases": [
+    {
+      "case": "valid original bytes and same-fd JSON",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792964684003799663,
+          "st_ctime_ns": 1792964684003799663
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792964684003799663,
+          "st_ctime_ns": 1792964684003799663
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792964684003799663,
+          "st_ctime_ns": 1792964684003799663
+        }
+      }
+    },
+    {
+      "case": "JSONL originals and line provenance",
+      "PASS": true,
+      "result": {
+        "name": "rows.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJpIjoxfQp7ImkiOjJ9Cg==",
+          "bytes": 16,
+          "sha256": "58ab9e56fa26d7b5db7aeac1c47d9d08214fee79bbeb061f079e49b282c88418"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "i": 1
+            }
+          },
+          {
+            "line": 2,
+            "value": {
+              "i": 2
+            }
+          }
+        ],
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792964684004053248,
+          "st_ctime_ns": 1792964684004053248
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792964684004053248,
+          "st_ctime_ns": 1792964684004053248
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049335,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004087665,
+          "st_ctime_ns": 1792964684004087665
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049335,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004087665,
+          "st_ctime_ns": 1792964684004087665
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049335,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004087665,
+          "st_ctime_ns": 1792964684004087665
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049335,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004087665,
+          "st_ctime_ns": 1792964684004087665
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792964684004053248,
+          "st_ctime_ns": 1792964684004053248
+        }
+      }
+    },
+    {
+      "case": "missing remains missing, not empty",
+      "PASS": true,
+      "result": {
+        "name": "missing.json",
+        "missing": true,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "FileNotFoundError",
+          "message": "[Errno 2] No such file or directory: 'missing.json'",
+          "errno": 2
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792964684004053248,
+          "st_ctime_ns": 1792964684004053248
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792964684004053248,
+          "st_ctime_ns": 1792964684004053248
+        }
+      }
+    },
+    {
+      "case": "empty file bytes distinct from missing and invalid JSON",
+      "PASS": true,
+      "result": {
+        "name": "empty.json",
+        "missing": false,
+        "raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [
+          {
+            "type": "JSONDecodeError",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+            "errno": null
+          }
+        ],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792964684004270541,
+          "st_ctime_ns": 1792964684004270541
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792964684004270541,
+          "st_ctime_ns": 1792964684004270541
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049336,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792964684004268874,
+          "st_ctime_ns": 1792964684004287582
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049336,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792964684004268874,
+          "st_ctime_ns": 1792964684004287582
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049336,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792964684004268874,
+          "st_ctime_ns": 1792964684004287582
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049336,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792964684004268874,
+          "st_ctime_ns": 1792964684004287582
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792964684004270541,
+          "st_ctime_ns": 1792964684004270541
+        }
+      }
+    },
+    {
+      "case": "invalid UTF8 kept without replacement decoding",
+      "PASS": true,
+      "result": {
+        "name": "bad.json",
+        "missing": false,
+        "raw": {
+          "base64": "/3sibm90IjogIlVURjgifQ==",
+          "bytes": 16,
+          "sha256": "7c7cb630d2b10ca85bc7555ecc292bd33e55127ea46b632e6be4467ddcf77741"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [
+          {
+            "type": "UnicodeDecodeError",
+            "message": "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte",
+            "errno": null
+          }
+        ],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792964684004408083,
+          "st_ctime_ns": 1792964684004408083
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792964684004408083,
+          "st_ctime_ns": 1792964684004408083
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049337,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004440125,
+          "st_ctime_ns": 1792964684004440125
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049337,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004440125,
+          "st_ctime_ns": 1792964684004440125
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049337,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004440125,
+          "st_ctime_ns": 1792964684004440125
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049337,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792964684004440125,
+          "st_ctime_ns": 1792964684004440125
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792964684004408083,
+          "st_ctime_ns": 1792964684004408083
+        }
+      }
+    },
+    {
+      "case": "partial JSONL original and exact failing line",
+      "PASS": true,
+      "result": {
+        "name": "partial.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJvayI6MX0KeyJwYXJ0aWFsIjo=",
+          "bytes": 20,
+          "sha256": "20898308cf5a5ef07a76b0c65560dbf5bf92087d32461cb147774101749e6dc6"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "ok": 1
+            }
+          }
+        ],
+        "parse_errors": [
+          {
+            "line": 2,
+            "byte_offset": 9,
+            "type": "JSONDecodeError",
+            "message": "Expecting value: line 1 column 12 (char 11)",
+            "errno": null
+          }
+        ],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792964684004544750,
+          "st_ctime_ns": 1792964684004544750
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792964684004544750,
+          "st_ctime_ns": 1792964684004544750
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049338,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792964684004578334,
+          "st_ctime_ns": 1792964684004578334
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049338,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792964684004578334,
+          "st_ctime_ns": 1792964684004578334
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049338,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792964684004578334,
+          "st_ctime_ns": 1792964684004578334
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049338,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792964684004578334,
+          "st_ctime_ns": 1792964684004578334
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792964684004544750,
+          "st_ctime_ns": 1792964684004544750
+        }
+      }
+    },
+    {
+      "case": "final symlink never opened as data",
+      "PASS": true,
+      "result": {
+        "name": "link.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "ValueError",
+          "message": "metadata entry is not an ordinary file",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 8,
+          "st_size": 256,
+          "st_mtime_ns": 1792964684004688126,
+          "st_ctime_ns": 1792964684004688126
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 8,
+          "st_size": 256,
+          "st_mtime_ns": 1792964684004688126,
+          "st_ctime_ns": 1792964684004688126
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049339,
+          "st_mode": 41453,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 56,
+          "st_mtime_ns": 1792964684004683542,
+          "st_ctime_ns": 1792964684004702334
+        }
+      }
+    },
+    {
+      "case": "symlink parent blocked by directory fd",
+      "PASS": true,
+      "result": {
+        "name": "nested/good.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "parent_directory",
+          "type": "NotADirectoryError",
+          "message": "[Errno 20] Not a directory: 'nested'",
+          "errno": 20
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 9,
+          "st_size": 288,
+          "st_mtime_ns": 1792964684004778210,
+          "st_ctime_ns": 1792964684004778210
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 9,
+          "st_size": 288,
+          "st_mtime_ns": 1792964684004778210,
+          "st_ctime_ns": 1792964684004778210
+        }
+      }
+    },
+    {
+      "case": "allowlist cannot authorize traversal",
+      "PASS": true,
+      "result": {
+        "name": "../good.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "request",
+          "type": "ValueError",
+          "message": "file is outside the explicit metadata allowlist",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption"
+      }
+    },
+    {
+      "case": "FIFO rejected before any blocking open",
+      "PASS": true,
+      "result": {
+        "name": "fifo.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "ValueError",
+          "message": "metadata entry is not an ordinary file",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 10,
+          "st_size": 320,
+          "st_mtime_ns": 1792964684004877585,
+          "st_ctime_ns": 1792964684004877585
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 10,
+          "st_size": 320,
+          "st_mtime_ns": 1792964684004877585,
+          "st_ctime_ns": 1792964684004877585
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049341,
+          "st_mode": 4516,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792964684004872794,
+          "st_ctime_ns": 1792964684004891419
+        }
+      }
+    },
+    {
+      "case": "explicit bounded prefix never complete even if parseable",
+      "PASS": true,
+      "result": {
+        "name": "large.json",
+        "missing": false,
+        "raw": {
+          "base64": "MTIzNDU=",
+          "bytes": 5,
+          "sha256": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5"
+        },
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": true,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": 12345,
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792964684004961752,
+          "st_ctime_ns": 1792964684004961752
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792964684004961752,
+          "st_ctime_ns": 1792964684004961752
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049342,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684004989794,
+          "st_ctime_ns": 1792964684004989794
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049342,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684004989794,
+          "st_ctime_ns": 1792964684004989794
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049342,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684004989794,
+          "st_ctime_ns": 1792964684004989794
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049342,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684004989794,
+          "st_ctime_ns": 1792964684004989794
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792964684004961752,
+          "st_ctime_ns": 1792964684004961752
+        }
+      }
+    },
+    {
+      "case": "cooperative deadline preserves already-read bytes",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "read",
+          "type": "TimeoutError",
+          "message": "metadata read budget exhausted",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792964684004961752,
+          "st_ctime_ns": 1792964684004961752
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792964684004961752,
+          "st_ctime_ns": 1792964684004961752
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        }
+      }
+    },
+    {
+      "case": "atomic path replacement retains pinned old-fd bytes",
+      "PASS": true,
+      "result": {
+        "name": "atomic.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyJvbGQiOjF9",
+          "bytes": 9,
+          "sha256": "5ec4b9b1f7c95a22f15707dcbcc9fc44b08a6267a0437d9d84536c5885de3c54"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": true,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": {
+          "old": 1
+        },
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792964684005213462,
+          "st_ctime_ns": 1792964684005213462
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792964684005213462,
+          "st_ctime_ns": 1792964684005213462
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049343,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684005242920,
+          "st_ctime_ns": 1792964684005242920
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049343,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684005242920,
+          "st_ctime_ns": 1792964684005242920
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049343,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 0,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684005242920,
+          "st_ctime_ns": 1792964684005457505
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049344,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792964684005373421,
+          "st_ctime_ns": 1792964684005457505
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792964684005457546,
+          "st_ctime_ns": 1792964684005457546
+        }
+      }
+    },
+    {
+      "case": "growth is observed without pretending immutable completeness",
+      "PASS": true,
+      "result": {
+        "name": "grow.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJmaXJzdCI6MX0KeyJsYXRlciI6Mn0K",
+          "bytes": 24,
+          "sha256": "e062ccea74280b26458259ffdcb63325c60a3eb7448b70536fa70fa6c61294c3"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": true,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "first": 1
+            }
+          },
+          {
+            "line": 2,
+            "value": {
+              "later": 2
+            }
+          }
+        ],
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049345,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 12,
+          "st_mtime_ns": 1792964684005572380,
+          "st_ctime_ns": 1792964684005572380
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049345,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 12,
+          "st_mtime_ns": 1792964684005572380,
+          "st_ctime_ns": 1792964684005572380
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049345,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 24,
+          "st_mtime_ns": 1792964684005668172,
+          "st_ctime_ns": 1792964684005668172
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049345,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 24,
+          "st_mtime_ns": 1792964684005668172,
+          "st_ctime_ns": 1792964684005668172
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        }
+      }
+    },
+    {
+      "case": "nonboolean finite explicit limits required",
+      "PASS": true
+    },
+    {
+      "case": "secondary close error cannot erase original bytes or qualify completeness",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [
+          {
+            "type": "OSError",
+            "message": "explicit close-result fixture",
+            "errno": null
+          }
+        ],
+        "custody": [],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049334,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792964684003853413,
+          "st_ctime_ns": 1792964684003853413
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169049333,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792964684005537005,
+          "st_ctime_ns": 1792964684005537005
+        }
+      }
+    }
+  ],
+  "all_PASS": true,
+  "scope": "LOCAL_TEMP_METADATA_FILES_AND_EXPLICIT_IO_FAULTS_ONLY",
+  "Linux_or_T0_or_whole_reader_qualification": false
+}

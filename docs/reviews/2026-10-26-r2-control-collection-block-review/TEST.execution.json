@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+    "-B",
+    "/private/var/tmp/bmdr-r2-control-file-component-review-20261026-xyums_n6/run/test_control_files.py"
+  ],
+  "returncode": 0,
+  "scope": "Actual temporary metadata/io-provider tests only; not whole reader/Linux/T0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "5ab7b6466a6ba2c158947338ad12a42deff538f4ea69d4270885c0ca01452dd3"
+}

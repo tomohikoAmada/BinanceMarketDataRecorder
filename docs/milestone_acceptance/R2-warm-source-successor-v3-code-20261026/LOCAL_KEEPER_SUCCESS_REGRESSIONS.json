@@ -1,0 +1,61 @@
+{
+  "case_count": 11,
+  "cases": [
+    {
+      "case": "no command without its cleanup reserve",
+      "PASS": true
+    },
+    {
+      "case": "normal keeper release and exact protocol qualifies command only",
+      "PASS": true
+    },
+    {
+      "case": "actual inner0 plus release then abnormal keeper death never qualifies",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "success_protocol:keeper_returncode",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "success_protocol:lease_released",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "success_protocol:group_KILL_used",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "success_protocol:returncode",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "success_protocol:child_pid",
+      "PASS": true,
+      "error": "warm_keeper_process_ids_invalid"
+    },
+    {
+      "case": "success_protocol:timed_out",
+      "PASS": true,
+      "error": "warm_command_failed_or_invalid"
+    },
+    {
+      "case": "control returncode nonboolean integer required",
+      "PASS": true,
+      "error": "warm_keeper_success_protocol_mismatch"
+    },
+    {
+      "case": "control and leased keeper identity must match",
+      "PASS": true,
+      "error": "warm_keeper_success_protocol_mismatch"
+    }
+  ],
+  "all_PASS": true,
+  "real_LOCAL_POSIX_abnormal_keeper_counterexample_now_rejected": true,
+  "Linux_or_T0_credit": false
+}

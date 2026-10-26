@@ -23,6 +23,7 @@ from pathlib import Path
 from binance_common.errors import Error as BinanceSdkError
 from binance_common.errors import RateLimitBanError, TooManyRequestsError
 
+from ..binance.request_budget import usdm_request_charges
 from ..binance.spot.websocket import ReconnectBackoff
 from ..binance.usdm.rest import (
     UsdMRestApi,
@@ -38,7 +39,6 @@ from ..domain.event import EventEnvelope
 from ..domain.product import product_log_fields
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
-from ..metrics.report import DailyReporter
 from ..orderbook.reconstructor import QualityAudit
 from ..paths import validate_data_root
 from ..spool.stream import StreamSpool
@@ -256,12 +256,14 @@ class UsdMCollector:
         failures = 0
         while not stop.is_set():
             try:
-                await self.public_rest_cooldown.wait(stop)
-                if stop.is_set():
-                    return
-                async with self.public_rest_request_lock:
-                    await self.public_rest_cooldown.wait(stop)
-                    if stop.is_set():
+                async with self.public_rest_cooldown.request_slot(
+                    self.public_rest_request_lock,
+                    stop,
+                    usdm_request_charges(
+                        "depth_snapshot", depth_limit=self.settings.snapshot_limit
+                    ),
+                ) as admitted:
+                    if not admitted:
                         return
                     request_task = asyncio.create_task(
                         asyncio.to_thread(
@@ -583,27 +585,7 @@ class UsdMCollector:
                         error_type=type(side_result[0]).__name__,
                     )
             await run_owned_blocking_call(self.snapshot_spool.close_and_seal)
-            days = {day for day, _market, _stream in self.metrics.pending_keys()}
-            batch_id = await asyncio.to_thread(self.metrics.safely_flush)
-            reporter = DailyReporter(
-                catalog=self.catalog, daily_directory=self.layout.daily_reports
-            )
-            if batch_id is not None:
-                for day in sorted(days):
-                    try:
-                        await asyncio.to_thread(reporter.write, day)
-                    except Exception as exc:
-                        log_event(
-                            self.logger,
-                            logging.ERROR,
-                            "daily_report_failed",
-                            "daily report write failed; Raw remains sealed",
-                            **product_log_fields(
-                                "um_perpetual", self.settings.symbol
-                            ),
-                            utc_date=day,
-                            error_type=type(exc).__name__,
-                        )
+            await asyncio.to_thread(self.metrics.safely_flush)
             self.catalog.close()
 
     def side_data_status(self) -> dict[str, dict[str, object]]:

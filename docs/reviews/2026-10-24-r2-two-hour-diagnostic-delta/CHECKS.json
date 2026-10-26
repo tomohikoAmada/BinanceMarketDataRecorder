@@ -1,0 +1,170 @@
+{
+  "actual_delta_diff_matches_frozen_sources": true,
+  "all_payload_and_operator_hashes_verified": true,
+  "base33_components_reused_without_rerun": true,
+  "base_manifest_sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f",
+  "blocking_findings": [],
+  "component_case_count": 8,
+  "component_cases": [
+    {
+      "case": "after_old4800_bound",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": null,
+      "expectation": "accept",
+      "pass": true,
+      "state_reads": [
+        "binance-market-data-recorder.service",
+        "binance-market-data-recorder.service",
+        "binance-market-data-archive.timer",
+        "binance-market-data-archive.service"
+      ],
+      "stub_actions": [
+        {
+          "argv": [
+            "systemctl",
+            "disable",
+            "--now",
+            "binance-market-data-recorder.service"
+          ],
+          "executed": false,
+          "timeout": 150
+        }
+      ]
+    },
+    {
+      "case": "new_deadline_minus1ns",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": null,
+      "expectation": "accept",
+      "pass": true,
+      "state_reads": [
+        "binance-market-data-recorder.service",
+        "binance-market-data-recorder.service",
+        "binance-market-data-archive.timer",
+        "binance-market-data-archive.service"
+      ],
+      "stub_actions": [
+        {
+          "argv": [
+            "systemctl",
+            "disable",
+            "--now",
+            "binance-market-data-recorder.service"
+          ],
+          "executed": false,
+          "timeout": 150
+        }
+      ]
+    },
+    {
+      "case": "new_deadline_inclusive",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": null,
+      "expectation": "accept",
+      "pass": true,
+      "state_reads": [
+        "binance-market-data-recorder.service",
+        "binance-market-data-recorder.service",
+        "binance-market-data-archive.timer",
+        "binance-market-data-archive.service"
+      ],
+      "stub_actions": [
+        {
+          "argv": [
+            "systemctl",
+            "disable",
+            "--now",
+            "binance-market-data-recorder.service"
+          ],
+          "executed": false,
+          "timeout": 150
+        }
+      ]
+    },
+    {
+      "case": "new_deadline_plus1ns",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": "AssertionError",
+      "expectation": "reject",
+      "pass": true,
+      "state_reads": [],
+      "stub_actions": []
+    },
+    {
+      "case": "old_lease_refused",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": "AssertionError",
+      "expectation": "reject",
+      "pass": true,
+      "state_reads": [],
+      "stub_actions": []
+    },
+    {
+      "case": "extended_lease_refused",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": "AssertionError",
+      "expectation": "reject",
+      "pass": true,
+      "state_reads": [],
+      "stub_actions": []
+    },
+    {
+      "case": "before_request_refused",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": "AssertionError",
+      "expectation": "reject",
+      "pass": true,
+      "state_reads": [],
+      "stub_actions": []
+    },
+    {
+      "case": "completed_marker_after_expiry_no_action",
+      "clock_qualification": "local stub; no Linux/runtime qualification",
+      "error": null,
+      "expectation": "noop",
+      "pass": true,
+      "state_reads": [],
+      "stub_actions": []
+    }
+  ],
+  "decision": "ACCEPT_TWO_HOUR_DIAGNOSTIC_DELTA_DESIGN_ONLY_PENDING_ACTUAL_COPY_AND_LAUNCH",
+  "duration_seconds": 7200,
+  "exact_allowed_text_substitutions_only": true,
+  "fixed_cleanup_lease_seconds": 10800,
+  "formal_credit_seconds": 0,
+  "linux_qualification": false,
+  "manifest_sha256": "5640864446cf7ea23349e4b3016dfccae8a275864936d4c41633c4795f65082c",
+  "native_argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=8400",
+    "--property=TimeoutStopSec=900",
+    "--property=UMask=0027",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py --cleanup",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/pin-unit-exec.py",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9/observe_stream_closes.py"
+  ],
+  "native_requested_start_plus_stop_before_lease_seconds": 1500,
+  "native_requested_start_seconds": 8400,
+  "native_requested_stop_seconds": 900,
+  "new_scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-2h-20261024-l2hr7wd9",
+  "new_unit": "binance-recorder-r2-stream-close-observation-2h-20261024-l2hr7wd9.service",
+  "outer_and_three_remote_syntax_checks_pass": true,
+  "read_only_property_export_added": [
+    "Type",
+    "TimeoutStartUSec",
+    "TimeoutStopUSec",
+    "UMask",
+    "ExecStart",
+    "ExecStopPost"
+  ],
+  "remote_actions": 0,
+  "unchanged_helpers_byte_identical": true
+}

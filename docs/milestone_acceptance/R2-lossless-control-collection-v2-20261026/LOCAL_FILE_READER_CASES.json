@@ -1,0 +1,3223 @@
+{
+  "case_count": 16,
+  "cases": [
+    {
+      "case": "valid original bytes and same-fd JSON",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 3,
+              "st_size": 96,
+              "st_mtime_ns": 1792965164912954882,
+              "st_ctime_ns": 1792965164912954882
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 3,
+              "st_size": 96,
+              "st_mtime_ns": 1792965164912954882,
+              "st_ctime_ns": 1792965164912954882
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 3,
+              "st_size": 96,
+              "st_mtime_ns": 1792965164912954882,
+              "st_ctime_ns": 1792965164912954882
+            }
+          }
+        ],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792965164912954882,
+          "st_ctime_ns": 1792965164912954882
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792965164912954882,
+          "st_ctime_ns": 1792965164912954882
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 3,
+          "st_size": 96,
+          "st_mtime_ns": 1792965164912954882,
+          "st_ctime_ns": 1792965164912954882
+        }
+      }
+    },
+    {
+      "case": "JSONL originals and line provenance",
+      "PASS": true,
+      "result": {
+        "name": "rows.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJpIjoxfQp7ImkiOjJ9Cg==",
+          "bytes": 16,
+          "sha256": "58ab9e56fa26d7b5db7aeac1c47d9d08214fee79bbeb061f079e49b282c88418"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 4,
+              "st_size": 128,
+              "st_mtime_ns": 1792965164913300175,
+              "st_ctime_ns": 1792965164913300175
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 4,
+              "st_size": 128,
+              "st_mtime_ns": 1792965164913300175,
+              "st_ctime_ns": 1792965164913300175
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 4,
+              "st_size": 128,
+              "st_mtime_ns": 1792965164913300175,
+              "st_ctime_ns": 1792965164913300175
+            }
+          }
+        ],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "i": 1
+            }
+          },
+          {
+            "line": 2,
+            "value": {
+              "i": 2
+            }
+          }
+        ],
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792965164913300175,
+          "st_ctime_ns": 1792965164913300175
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792965164913300175,
+          "st_ctime_ns": 1792965164913300175
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050483,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913333300,
+          "st_ctime_ns": 1792965164913333300
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050483,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913333300,
+          "st_ctime_ns": 1792965164913333300
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050483,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913333300,
+          "st_ctime_ns": 1792965164913333300
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050483,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913333300,
+          "st_ctime_ns": 1792965164913333300
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792965164913300175,
+          "st_ctime_ns": 1792965164913300175
+        }
+      }
+    },
+    {
+      "case": "missing remains missing, not empty",
+      "PASS": true,
+      "result": {
+        "name": "missing.json",
+        "missing": true,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "FileNotFoundError",
+          "message": "[Errno 2] No such file or directory: 'missing.json'",
+          "errno": 2
+        },
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 4,
+              "st_size": 128,
+              "st_mtime_ns": 1792965164913300175,
+              "st_ctime_ns": 1792965164913300175
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 4,
+              "st_size": 128,
+              "st_mtime_ns": 1792965164913300175,
+              "st_ctime_ns": 1792965164913300175
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792965164913300175,
+          "st_ctime_ns": 1792965164913300175
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 4,
+          "st_size": 128,
+          "st_mtime_ns": 1792965164913300175,
+          "st_ctime_ns": 1792965164913300175
+        }
+      }
+    },
+    {
+      "case": "empty file bytes distinct from missing and invalid JSON",
+      "PASS": true,
+      "result": {
+        "name": "empty.json",
+        "missing": false,
+        "raw": {
+          "base64": "",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 5,
+              "st_size": 160,
+              "st_mtime_ns": 1792965164913582051,
+              "st_ctime_ns": 1792965164913582051
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 5,
+              "st_size": 160,
+              "st_mtime_ns": 1792965164913582051,
+              "st_ctime_ns": 1792965164913582051
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 5,
+              "st_size": 160,
+              "st_mtime_ns": 1792965164913582051,
+              "st_ctime_ns": 1792965164913582051
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [
+          {
+            "type": "JSONDecodeError",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+            "errno": null
+          }
+        ],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792965164913582051,
+          "st_ctime_ns": 1792965164913582051
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792965164913582051,
+          "st_ctime_ns": 1792965164913582051
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050484,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792965164913580385,
+          "st_ctime_ns": 1792965164913599385
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050484,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792965164913580385,
+          "st_ctime_ns": 1792965164913599385
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050484,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792965164913580385,
+          "st_ctime_ns": 1792965164913599385
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050484,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792965164913580385,
+          "st_ctime_ns": 1792965164913599385
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 5,
+          "st_size": 160,
+          "st_mtime_ns": 1792965164913582051,
+          "st_ctime_ns": 1792965164913582051
+        }
+      }
+    },
+    {
+      "case": "invalid UTF8 kept without replacement decoding",
+      "PASS": true,
+      "result": {
+        "name": "bad.json",
+        "missing": false,
+        "raw": {
+          "base64": "/3sibm90IjogIlVURjgifQ==",
+          "bytes": 16,
+          "sha256": "7c7cb630d2b10ca85bc7555ecc292bd33e55127ea46b632e6be4467ddcf77741"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792965164913747177,
+              "st_ctime_ns": 1792965164913747177
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792965164913747177,
+              "st_ctime_ns": 1792965164913747177
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792965164913747177,
+              "st_ctime_ns": 1792965164913747177
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [
+          {
+            "type": "UnicodeDecodeError",
+            "message": "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte",
+            "errno": null
+          }
+        ],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792965164913747177,
+          "st_ctime_ns": 1792965164913747177
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792965164913747177,
+          "st_ctime_ns": 1792965164913747177
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050485,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913783344,
+          "st_ctime_ns": 1792965164913783344
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050485,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913783344,
+          "st_ctime_ns": 1792965164913783344
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050485,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913783344,
+          "st_ctime_ns": 1792965164913783344
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050485,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 16,
+          "st_mtime_ns": 1792965164913783344,
+          "st_ctime_ns": 1792965164913783344
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 6,
+          "st_size": 192,
+          "st_mtime_ns": 1792965164913747177,
+          "st_ctime_ns": 1792965164913747177
+        }
+      }
+    },
+    {
+      "case": "partial JSONL original and exact failing line",
+      "PASS": true,
+      "result": {
+        "name": "partial.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJvayI6MX0KeyJwYXJ0aWFsIjo=",
+          "bytes": 20,
+          "sha256": "20898308cf5a5ef07a76b0c65560dbf5bf92087d32461cb147774101749e6dc6"
+        },
+        "read_complete": true,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 7,
+              "st_size": 224,
+              "st_mtime_ns": 1792965164913930636,
+              "st_ctime_ns": 1792965164913930636
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 7,
+              "st_size": 224,
+              "st_mtime_ns": 1792965164913930636,
+              "st_ctime_ns": 1792965164913930636
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 7,
+              "st_size": 224,
+              "st_mtime_ns": 1792965164913930636,
+              "st_ctime_ns": 1792965164913930636
+            }
+          }
+        ],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "ok": 1
+            }
+          }
+        ],
+        "parse_errors": [
+          {
+            "line": 2,
+            "byte_offset": 9,
+            "type": "JSONDecodeError",
+            "message": "Expecting value: line 1 column 12 (char 11)",
+            "errno": null
+          }
+        ],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792965164913930636,
+          "st_ctime_ns": 1792965164913930636
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792965164913930636,
+          "st_ctime_ns": 1792965164913930636
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050486,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792965164913966636,
+          "st_ctime_ns": 1792965164913966636
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050486,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792965164913966636,
+          "st_ctime_ns": 1792965164913966636
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050486,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792965164913966636,
+          "st_ctime_ns": 1792965164913966636
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050486,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 20,
+          "st_mtime_ns": 1792965164913966636,
+          "st_ctime_ns": 1792965164913966636
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 7,
+          "st_size": 224,
+          "st_mtime_ns": 1792965164913930636,
+          "st_ctime_ns": 1792965164913930636
+        }
+      }
+    },
+    {
+      "case": "final symlink never opened as data",
+      "PASS": true,
+      "result": {
+        "name": "link.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "ValueError",
+          "message": "metadata entry is not an ordinary file",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 8,
+              "st_size": 256,
+              "st_mtime_ns": 1792965164914120262,
+              "st_ctime_ns": 1792965164914120262
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 8,
+              "st_size": 256,
+              "st_mtime_ns": 1792965164914120262,
+              "st_ctime_ns": 1792965164914120262
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 8,
+          "st_size": 256,
+          "st_mtime_ns": 1792965164914120262,
+          "st_ctime_ns": 1792965164914120262
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 8,
+          "st_size": 256,
+          "st_mtime_ns": 1792965164914120262,
+          "st_ctime_ns": 1792965164914120262
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050487,
+          "st_mode": 41453,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 56,
+          "st_mtime_ns": 1792965164914115970,
+          "st_ctime_ns": 1792965164914134387
+        }
+      }
+    },
+    {
+      "case": "symlink parent blocked by directory fd",
+      "PASS": true,
+      "result": {
+        "name": "nested/good.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "parent_directory",
+          "type": "NotADirectoryError",
+          "message": "[Errno 20] Not a directory: 'nested'",
+          "errno": 20
+        },
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 9,
+              "st_size": 288,
+              "st_mtime_ns": 1792965164914249055,
+              "st_ctime_ns": 1792965164914249055
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 9,
+              "st_size": 288,
+              "st_mtime_ns": 1792965164914249055,
+              "st_ctime_ns": 1792965164914249055
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 9,
+          "st_size": 288,
+          "st_mtime_ns": 1792965164914249055,
+          "st_ctime_ns": 1792965164914249055
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 9,
+          "st_size": 288,
+          "st_mtime_ns": 1792965164914249055,
+          "st_ctime_ns": 1792965164914249055
+        }
+      }
+    },
+    {
+      "case": "allowlist cannot authorize traversal",
+      "PASS": true,
+      "result": {
+        "name": "../good.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "request",
+          "type": "ValueError",
+          "message": "file is outside the explicit metadata allowlist",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [],
+        "parsed": null,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption"
+      }
+    },
+    {
+      "case": "FIFO rejected before any blocking open",
+      "PASS": true,
+      "result": {
+        "name": "fifo.json",
+        "missing": false,
+        "raw": null,
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "entry_stat",
+          "type": "ValueError",
+          "message": "metadata entry is not an ordinary file",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 10,
+              "st_size": 320,
+              "st_mtime_ns": 1792965164914373847,
+              "st_ctime_ns": 1792965164914373847
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 10,
+              "st_size": 320,
+              "st_mtime_ns": 1792965164914373847,
+              "st_ctime_ns": 1792965164914373847
+            }
+          }
+        ],
+        "parsed": null,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 10,
+          "st_size": 320,
+          "st_mtime_ns": 1792965164914373847,
+          "st_ctime_ns": 1792965164914373847
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 10,
+          "st_size": 320,
+          "st_mtime_ns": 1792965164914373847,
+          "st_ctime_ns": 1792965164914373847
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050489,
+          "st_mode": 4516,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 0,
+          "st_mtime_ns": 1792965164914371597,
+          "st_ctime_ns": 1792965164914389014
+        }
+      }
+    },
+    {
+      "case": "explicit bounded prefix never complete even if parseable",
+      "PASS": true,
+      "result": {
+        "name": "large.json",
+        "missing": false,
+        "raw": {
+          "base64": "MTIzNDU=",
+          "bytes": 5,
+          "sha256": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5"
+        },
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": true,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 11,
+              "st_size": 352,
+              "st_mtime_ns": 1792965164914486972,
+              "st_ctime_ns": 1792965164914486972
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 11,
+              "st_size": 352,
+              "st_mtime_ns": 1792965164914486972,
+              "st_ctime_ns": 1792965164914486972
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 11,
+              "st_size": 352,
+              "st_mtime_ns": 1792965164914486972,
+              "st_ctime_ns": 1792965164914486972
+            }
+          }
+        ],
+        "parsed": 12345,
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792965164914486972,
+          "st_ctime_ns": 1792965164914486972
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792965164914486972,
+          "st_ctime_ns": 1792965164914486972
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050490,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914516848,
+          "st_ctime_ns": 1792965164914516848
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050490,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914516848,
+          "st_ctime_ns": 1792965164914516848
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050490,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914516848,
+          "st_ctime_ns": 1792965164914516848
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050490,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914516848,
+          "st_ctime_ns": 1792965164914516848
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792965164914486972,
+          "st_ctime_ns": 1792965164914486972
+        }
+      }
+    },
+    {
+      "case": "cooperative deadline preserves already-read bytes",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": false,
+        "eof_observed": false,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": {
+          "phase": "read",
+          "type": "TimeoutError",
+          "message": "metadata read budget exhausted",
+          "errno": null
+        },
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 11,
+              "st_size": 352,
+              "st_mtime_ns": 1792965164914486972,
+              "st_ctime_ns": 1792965164914486972
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 11,
+              "st_size": 352,
+              "st_mtime_ns": 1792965164914486972,
+              "st_ctime_ns": 1792965164914486972
+            }
+          }
+        ],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792965164914486972,
+          "st_ctime_ns": 1792965164914486972
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 11,
+          "st_size": 352,
+          "st_mtime_ns": 1792965164914486972,
+          "st_ctime_ns": 1792965164914486972
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        }
+      }
+    },
+    {
+      "case": "atomic path replacement retains pinned old-fd bytes",
+      "PASS": true,
+      "result": {
+        "name": "atomic.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyJvbGQiOjF9",
+          "bytes": 9,
+          "sha256": "5ec4b9b1f7c95a22f15707dcbcc9fc44b08a6267a0437d9d84536c5885de3c54"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": true,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 12,
+              "st_size": 384,
+              "st_mtime_ns": 1792965164914842557,
+              "st_ctime_ns": 1792965164914842557
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 12,
+              "st_size": 384,
+              "st_mtime_ns": 1792965164914842557,
+              "st_ctime_ns": 1792965164914842557
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 12,
+              "st_size": 384,
+              "st_mtime_ns": 1792965164915096975,
+              "st_ctime_ns": 1792965164915096975
+            }
+          }
+        ],
+        "parsed": {
+          "old": 1
+        },
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792965164914842557,
+          "st_ctime_ns": 1792965164914842557
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792965164914842557,
+          "st_ctime_ns": 1792965164914842557
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050491,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914870182,
+          "st_ctime_ns": 1792965164914870182
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050491,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914870182,
+          "st_ctime_ns": 1792965164914870182
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050491,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 0,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164914870182,
+          "st_ctime_ns": 1792965164915096934
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050492,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 9,
+          "st_mtime_ns": 1792965164915017683,
+          "st_ctime_ns": 1792965164915096975
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 12,
+          "st_size": 384,
+          "st_mtime_ns": 1792965164915096975,
+          "st_ctime_ns": 1792965164915096975
+        }
+      }
+    },
+    {
+      "case": "growth is observed without pretending immutable completeness",
+      "PASS": true,
+      "result": {
+        "name": "grow.jsonl",
+        "missing": false,
+        "raw": {
+          "base64": "eyJmaXJzdCI6MX0KeyJsYXRlciI6Mn0K",
+          "bytes": 24,
+          "sha256": "e062ccea74280b26458259ffdcb63325c60a3eb7448b70536fa70fa6c61294c3"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": true,
+        "primary_error": null,
+        "secondary_errors": [],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            }
+          }
+        ],
+        "parsed": [
+          {
+            "line": 1,
+            "value": {
+              "first": 1
+            }
+          },
+          {
+            "line": 2,
+            "value": {
+              "later": 2
+            }
+          }
+        ],
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050493,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 12,
+          "st_mtime_ns": 1792965164915213559,
+          "st_ctime_ns": 1792965164915213559
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050493,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 12,
+          "st_mtime_ns": 1792965164915213559,
+          "st_ctime_ns": 1792965164915213559
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050493,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 24,
+          "st_mtime_ns": 1792965164915331518,
+          "st_ctime_ns": 1792965164915331518
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050493,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 24,
+          "st_mtime_ns": 1792965164915331518,
+          "st_ctime_ns": 1792965164915331518
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        }
+      }
+    },
+    {
+      "case": "nonboolean finite explicit limits required",
+      "PASS": true
+    },
+    {
+      "case": "secondary close error cannot erase original bytes or qualify completeness",
+      "PASS": true,
+      "result": {
+        "name": "good.json",
+        "missing": false,
+        "raw": {
+          "base64": "eyAib3JpZ2luYWwiIDogWzEsMl0gfQo=",
+          "bytes": 23,
+          "sha256": "bcb4a5998b69f314456f05c8d34447710dbd1bb0fa4c4f503badb1bac79dd5c2"
+        },
+        "read_complete": false,
+        "eof_observed": true,
+        "truncated": false,
+        "custody_race": false,
+        "primary_error": null,
+        "secondary_errors": [
+          {
+            "type": "OSError",
+            "message": "explicit close-result fixture",
+            "errno": null
+          }
+        ],
+        "custody": [
+          {
+            "root_part": "private",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "root_part": "var",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "root_part": "tmp",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "root_part": "control-reader-files-aw1_bb33",
+            "before": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            },
+            "opened": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            }
+          },
+          {
+            "part": "private",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955090,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 6,
+              "st_size": 192,
+              "st_mtime_ns": 1792648771824927041,
+              "st_ctime_ns": 1792648771824927041
+            }
+          },
+          {
+            "part": "var",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955124,
+              "st_mode": 16877,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 36,
+              "st_size": 1152,
+              "st_mtime_ns": 1790741425610128981,
+              "st_ctime_ns": 1790741425610128981
+            }
+          },
+          {
+            "part": "tmp",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 153955301,
+              "st_mode": 17407,
+              "st_uid": 0,
+              "st_gid": 0,
+              "st_nlink": 674,
+              "st_size": 21568,
+              "st_mtime_ns": 1792965164912865298,
+              "st_ctime_ns": 1792965164912865298
+            }
+          },
+          {
+            "part": "control-reader-files-aw1_bb33",
+            "after": {
+              "st_dev": 16777231,
+              "st_ino": 169050481,
+              "st_mode": 16832,
+              "st_uid": 501,
+              "st_gid": 0,
+              "st_nlink": 13,
+              "st_size": 416,
+              "st_mtime_ns": 1792965164915175851,
+              "st_ctime_ns": 1792965164915175851
+            }
+          }
+        ],
+        "parsed": {
+          "original": [
+            1,
+            2
+          ]
+        },
+        "parse_errors": [],
+        "max_parse_view_depth": 64,
+        "deadline_semantics": "cooperative before-read checks, not kernel-I/O preemption",
+        "root_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        },
+        "root_open": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        },
+        "entry_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "fd_before": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "fd_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "entry_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050482,
+          "st_mode": 33188,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 1,
+          "st_size": 23,
+          "st_mtime_ns": 1792965164913015507,
+          "st_ctime_ns": 1792965164913015507
+        },
+        "root_after": {
+          "st_dev": 16777231,
+          "st_ino": 169050481,
+          "st_mode": 16832,
+          "st_uid": 501,
+          "st_gid": 0,
+          "st_nlink": 13,
+          "st_size": 416,
+          "st_mtime_ns": 1792965164915175851,
+          "st_ctime_ns": 1792965164915175851
+        }
+      }
+    }
+  ],
+  "all_PASS": true,
+  "scope": "LOCAL_TEMP_METADATA_FILES_AND_EXPLICIT_IO_FAULTS_ONLY",
+  "Linux_or_T0_or_whole_reader_qualification": false
+}

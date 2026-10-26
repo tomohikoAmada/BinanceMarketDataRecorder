@@ -1,0 +1,53 @@
+{
+  "case_count": 5,
+  "cases": [
+    {
+      "case": "baseline_empty_synthetic_partial_is_seen",
+      "partial_count": 1,
+      "result": "PASS"
+    },
+    {
+      "case": "walk_permission_error_silently_becomes_zero_inventory",
+      "result": "REPRODUCED",
+      "scan_error_retained": false,
+      "would_publish_startup_custody_gate": true
+    },
+    {
+      "ancestor_is_symlink": true,
+      "case": "symlink_ancestor_is_accepted",
+      "leaf_is_symlink": false,
+      "result": "REPRODUCED"
+    },
+    {
+      "bound_seconds": 180,
+      "case": "late_successful_worker_read_accepted_after_180_seconds",
+      "elapsed_seconds": 181.0,
+      "result": "REPRODUCED"
+    },
+    {
+      "case": "final_handoff_accepts_old_inactive_worker_but_current_active_owner",
+      "published_archive_worker": {
+        "ActiveState": "inactive",
+        "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "MainPID": "0",
+        "Result": "success"
+      },
+      "published_current_archive_owner": {
+        "ActiveState": "active",
+        "InvocationID": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "MainPID": "999",
+        "Result": "success",
+        "UnitFileState": "static"
+      },
+      "result": "REPRODUCED"
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "helper_main_executed": false,
+  "helper_sha256": "d103983ac1af2f14064617e708860bcb1b9ea317d8899811c100128946219365",
+  "linux_qualification_credit": false,
+  "network_or_subprocess_called": false,
+  "production_files_or_payload_opened": false,
+  "scope": "ISOLATED_LOCAL_ORIGINAL_DESIGN_REPRODUCTIONS",
+  "whole_remote_executed": false
+}

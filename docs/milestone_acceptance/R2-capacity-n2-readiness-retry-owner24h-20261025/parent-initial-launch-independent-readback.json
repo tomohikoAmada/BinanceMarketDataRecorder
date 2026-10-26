@@ -1,0 +1,7 @@
+{
+  "result": "ALL7_INITIAL_LAUNCH_REVIEW_MEMBERS_SHA_BYTES_PASS",
+  "manifest_sha256": "203ecd25f801b9efa03f60873274cb8afda303b42ab605cf7f8312777e9d18cf",
+  "actual_launch_sha256": "e984758985dce5387aca274367a45fbd3e0716d7582767a3034af8c0a3383c40",
+  "warm_T0_not_observed": true,
+  "single_next_checkpoint_UTC": "2026-10-25T14:24:15.396626Z"
+}

@@ -1,0 +1,39 @@
+{
+  "kind": "BOUNDED_WARM_CANONICAL_ORDERING_CANDIDATE_PENDING_INDEPENDENT_REVIEW",
+  "members": {
+    "controller-original.py": {
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "bytes": 21356
+    },
+    "controller.py": {
+      "sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+      "bytes": 26234
+    },
+    "DELTA.diff": {
+      "sha256": "6e75c7b8867511bf704edfd726e008a352122eb0a9a9da69ffe53cef235b16a7",
+      "bytes": 8503
+    },
+    "DESIGN.md": {
+      "sha256": "fafec32c863df5263255f9315fb070387626f4bfd565de9319e7f7fadd39a3bb",
+      "bytes": 1366
+    },
+    "CANDIDATE.json": {
+      "sha256": "f622d8fe486c1ce611fb50cda0eeea6e23d28d15fa89ac573db123f9d9444b96",
+      "bytes": 453
+    },
+    "test_warm_ordering.py": {
+      "sha256": "d657852398de52b5334a90678689ebc2005e00028240d74899c570979e042bef",
+      "bytes": 6681
+    },
+    "parent-tests.json": {
+      "sha256": "bdb2957d523453efc4da642bb6872bf9a6a34e88fa3c0175412f8d3bf355a52c",
+      "bytes": 3780
+    }
+  },
+  "actual_failure_input_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "accepted_actual_diagnosis_manifest_sha256": "095323daaf749169fb892267b15f5bb49c4c472842ed1487e0d1787579688b48",
+  "warm_bound_unchanged_seconds": 1200,
+  "strict_endpoint_span_unchanged_seconds": 300,
+  "own_formal_target_unchanged_seconds": 86400,
+  "real_Linux_or_deployment_credit": false
+}

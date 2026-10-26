@@ -1,0 +1,32 @@
+{
+  "kind": "BOUNDED_2H_DIAGNOSTIC_NATIVE_COMPLETE_INDEPENDENT_ACTUAL_REVIEW_PENDING",
+  "original_metadata": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/diagnostic-2h-controls/actual-diagnostic-read-1792814703709257000.json",
+  "metadata_sha256": "e805efd95e84a01d63fd1552a4db1d4bb93fd55009c7c6ae9f97c390a6d99d05",
+  "metadata_bytes": 65762036,
+  "official_gate_counts": {
+    "BLOCK": 63,
+    "PASS": 1350
+  },
+  "strict_gate_counts": {
+    "BLOCK": 85,
+    "PASS": 1328
+  },
+  "first_pass_row": 62,
+  "post_first_pass_counts": {
+    "PASS": 1350,
+    "BLOCK": 2
+  },
+  "resources": {
+    "rss_max": 390922240,
+    "host_available_min": 4621594624,
+    "owned_swap_current_max": 0,
+    "owned_swap_peak_max": 0,
+    "writer_free_min": 24335216640,
+    "archive_free_min": 2051254026240,
+    "host_swap_min": 30437376,
+    "host_swap_max": 30437376
+  },
+  "sample_boottime_span_seconds": 7188.715089914,
+  "formal_credit_seconds": 0,
+  "no_source_repair_proven": true
+}

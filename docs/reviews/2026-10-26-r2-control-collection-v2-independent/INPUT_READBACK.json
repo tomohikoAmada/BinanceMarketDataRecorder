@@ -1,0 +1,52 @@
+{
+  "all10member_SHA_bytes_PASS": true,
+  "candidate": "/private/var/tmp/bmdr-r2-control-files-v2-20261026-k9ma9t7a",
+  "manifest": {
+    "bytes": 1625,
+    "sha256": "b42e377f2d501f26fb9496eb4a963ad24e09d07afaa3a9ea1bda96a64b99d7c4"
+  },
+  "members": {
+    "COLLECTION_DELTA.diff": {
+      "bytes": 4755,
+      "sha256": "300b54d53a2fe45e0fa818d15893aba0facbf8d80e1581a82c3171f33d3657a1"
+    },
+    "DESIGN_BINDING.json": {
+      "bytes": 734,
+      "sha256": "0298a67db9240b16d1719dd999b409736add6da76a04e21fb9bacf4f919af73b"
+    },
+    "LOCAL_COLLECTION_REGRESSIONS.json": {
+      "bytes": 150678,
+      "sha256": "9af2ad90c80bbb1defc73f9768d9d4f25012038679eccdc53f22c566922aa443"
+    },
+    "LOCAL_FILE_READER_CASES.json": {
+      "bytes": 95473,
+      "sha256": "85b85f7ade45849c55cd5fb537826236903e706daf6c8faac6bd751c9958ebb2"
+    },
+    "PARENT_EXECUTIONS.json": {
+      "bytes": 1716,
+      "sha256": "40965eec2786dd5f8f013cba90800c2701d3c0ffd721a7f35b65e1d4979fef9b"
+    },
+    "PREVIOUS_BLOCK.json": {
+      "bytes": 365,
+      "sha256": "bef185e51bd038c49f0ec6315c799f2c207db6db0806e7a52f383a80096eaf59"
+    },
+    "SCOPE_V2.md": {
+      "bytes": 2207,
+      "sha256": "91d43ca10560ddcf86a382dae0a42ac5b833918e8852250990067ad3b157e0cc"
+    },
+    "control_files.py": {
+      "bytes": 8344,
+      "sha256": "d13a30e0d007666c26d152f66d4ff5d70d6854014f3893a2c6cb87ae8b4ee263"
+    },
+    "test_collection_regressions.py": {
+      "bytes": 3020,
+      "sha256": "4fb34b7eeeda6abf03f300f7a9cdffd28229457df7833e8177acba5aaf984d2a"
+    },
+    "test_control_files.py": {
+      "bytes": 5370,
+      "sha256": "9d9156e09bda4c05390e1dff1184001151054aca0582d3df780a1a7211f2da99"
+    }
+  },
+  "prior_block": "8a2091f718908b7ed7f34330117c15d1bd857821583cfd312b1ecd98bf18deea",
+  "scope": "Current primitive delta only; no old V3/source/design/historical QA repeated"
+}

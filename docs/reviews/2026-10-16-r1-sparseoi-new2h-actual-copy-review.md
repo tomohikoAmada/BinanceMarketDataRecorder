@@ -1,0 +1,11 @@
+# Limited actual new owner2h copy and exact arm binding
+
+Decision: **ACCEPT — actual physical copy/readback plus the exact single-arm continuation binding only.** No new findings. This addendum reuses frozen design review46f097d4 and changes no prior report or manifest.
+
+Actual receipt `0b26010f634361026253fa15185e398941fe6c7a05afa643a1bb398df93f82f7` was fully matched to prepared control `c9afb991362274c6c8f9ea9f523ccad8ec4560b37ce9e472461f7a3389401892`: all18 actual file IDs and hashes match, with each UID0/GID988/mode0640. Scope root is0:988/0750, tmp999:988/0770 and archive device64785. These are actual final readback attributes from the exclusive copier, with its canonical-path/regular-file/device/fsync guards; no local directory attributes were inherited.
+
+The exact scope is `/srv/recorder-data/recorder-archive/evidence/R1-owner2h-sparseoi-20261016-7da5e81d05c4`. The receipt preserves sourceca760, identity7276 and accepted deploymenta132, the exact75283/.../35520800 stopped-count tuple, Recorder inactive AND disabled/PID0/NRestarts0 and explicit window_armed=false/t0_created=false. The reviewed successful copier also requires same boot/config, zero backlogs and fresh current reserve over the unchanged floor before creation; those assertions are protocol-qualified rather than additional fields exported by this compact receipt.
+
+The exact arm argv remains `55f262ef5900f2b3ccd4f75341edf6176a2b7032d38affd0a713330204be484c`, dispatcher `a2f5f4a3394c2ecb05f4e5fa8256643eb79b185ab581c885795a007515e443f9`. Its new singleton, whole-phase definition pin, archive temporary paths, Start2400/Stop1500 and failure-only restoration are unchanged from the accepted design. The dispatcher rechecks absent quiet-window/start/capture publications, all18 helper hashes, actual root/tmp attributes and not-found/PID0 arm unit before submitting this single exact argv.
+
+Actual arm success, a newly verified fixed window, canonical verification and current admission remain pending. Capture must still wait for those actual bindings; warm/strict-start/own7200/full selected auditing/restored handoff remain pending. This accepts no T0, duration or data qualification. No live call, network, cache/Raw read, service operation, source edit or repeated test was performed by this reviewer.

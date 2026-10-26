@@ -1,0 +1,39 @@
+{
+  "state": "FAILED_IN_WARMUP_BEFORE_FORMAL_T0",
+  "input_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "original_members": 22,
+  "parent_all_original_SHA_bytes_PASS": true,
+  "failure": {
+    "action": "PAUSE_AFFECTED_CAPTURE",
+    "boottime_ns": 2002953789533419,
+    "error": "warmup exceeded 1200s",
+    "error_type": "AssertionError",
+    "requires_owner_notification": true,
+    "result": "FAILED",
+    "traceback": "Traceback (most recent call last):\n  File \"/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/controller.py\", line 270, in <module>\n    try: globals()[mode]()\n         ^^^^^^^^^^^^^^^^^\n  File \"/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt/controller.py\", line 201, in capture\n    assert time.monotonic()<warm_deadline,'warmup exceeded 1200s'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: warmup exceeded 1200s\n",
+    "utc_ns": 1792938059608992364
+  },
+  "failure_sha256": "65bba80f600cf10855270237421acb6e02694663c4b416da3972e62f23c14cda",
+  "capture_admission_utc_ns": 1792936770661618804,
+  "warm_rows": 38,
+  "all_strict_pass_rows": 11,
+  "first_strict_pass_utc_ns": 1792937642410104592,
+  "last_strict_pass_utc_ns": 1792937944034915304,
+  "strict_pass_endpoint_span_ns": 301624809965,
+  "last_sample_to_failure_seconds": 115.57407706,
+  "owned_recorder_invocation": "f5da35711bba4d268974a73858cf1266",
+  "owned_recorder_pid": "877744",
+  "restoration_sha256": "5f294364b74f3f9b8a16c5719f18b4244d7b267131345f785549543dda8ee8ee",
+  "restoration_end_ns": 1792938079405053625,
+  "cancel_ns": 1792938079433376547,
+  "guard_closed": true,
+  "no_formal_T0": true,
+  "accepted_24h_credit_ns": 0,
+  "resource_summary": {
+    "Recorder_RSS_max_bytes": 431828992,
+    "host_available_min_bytes": 4398583808,
+    "owned_current_swap_max": 0,
+    "owned_peak_swap_max": 0
+  },
+  "no_raw_or_manifest_payload_opened": true
+}

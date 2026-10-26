@@ -1,0 +1,9 @@
+# Lossless read-command receipt adapter
+
+**16 LOCAL cases PASS / INDEPENDENT EXACT COMPONENT REVIEW ACTIVE / UNBOUND**.
+
+The parent implemented the next necessary reader component in an exclusive private directory. [Manifest](R2-lossless-command-receipts-20261026/COMMAND_MANIFEST.json) c03168ce binds all7 original members, checked completely by SHA/bytes. Adapter db61e6de preserves the exact command's five raw byte fields and full keeper/per-attempt ps metadata before deriving bounded UTF8/JSON/JSONL views. Failed/nonzero/timeout/empty/unavailable observations stay distinct; exact keeper protocol plus matching argv only describes command execution, never readiness or T0. The accepted V3 leased runner ef2f8882 is unchanged.
+
+[16 provided cases](R2-lossless-command-receipts-20261026/LOCAL_COMMAND_CASES.json) include disposable actual macOS POSIX metadata commands and explicit provider-response fixtures. Exact original stdout/stderr and subject hashes are in the [execution receipt](R2-lossless-command-receipts-20261026/PARENT_EXECUTION.json). These are neither real Linux/runuser qualification nor full integration tests. The same independent reviewer is now reviewing only this new adapter in a separate private clone; old accepted collection/V3/design tests are not repeated.
+
+The future caller still must freeze a reviewed read-only exact argv allowlist and qualify canonical runner/interpreter origins, output-memory/global/SSH bounds, full generated reader/invocation and start-proof consumers,17-runtime15-safeimport maps and actual Linux/current stopped custody/fresh finite scope. This adapter is not remotely runnable or operationally qualified. No production/source/P3 runtime change, SSH, actual journal/service/Raw access, copy/ARM/launch, newT0 or24h credit occurred. See [scope](R2-lossless-command-receipts-20261026/SCOPE.md) and [review state](R2-lossless-command-receipts-20261026/REVIEW_STATUS.json).

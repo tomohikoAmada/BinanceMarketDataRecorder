@@ -1,0 +1,16 @@
+{
+  "kind": "READ_ONLY_CURRENT_N2_METADATA_PREFLIGHT",
+  "state": "LOCAL_FAILURE_CUSTODY5_MOCK_CASES_PASS_REVIEW_PENDING_UNRUN",
+  "helper_sha256": "1a6a296b9a116aec910fa6b710eaadea346e20c6979c912f1c05dfb3e622d3e7",
+  "remote_sha256": "dea73fd520ab38e4a0b9e56b532e369990b449d2d5d92923440aed9a5a5045fb",
+  "proposed_scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj",
+  "remote_mutations": false,
+  "raw_or_manifest_payload": false,
+  "diagnostic_rate_window_utc_ns": [
+    1792804582614558469,
+    1792811808863586663
+  ],
+  "formal_credit_seconds": 0,
+  "purpose": "Fresh stopped census/free/metadata-only2hload/kernel/normalowners before preparing exact stage controls; no copy/ARM/capture/VERIFY/release",
+  "rate_time_semantics": "created_at_utc_ns metadata window and creation-minute rates only; not seal-minute peak"
+}

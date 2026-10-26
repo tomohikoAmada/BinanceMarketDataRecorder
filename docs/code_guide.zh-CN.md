@@ -184,7 +184,7 @@ snapshot 协议/library 已实现，但实际归档机器的接收/回读/receip
 
 1. `AGENTS.md` — 项目身份和代理合约
 2. `docs/architecture.md` — 架构概览
-3. `docs/data_contract.md` — EventEnvelope v1、Raw chunk v1、normalized-dataset.v1 合约
+3. `docs/data_contract.md` — EventEnvelope v1、Raw chunk v1、normalized-dataset.v2 合约
 4. `docs/storage_contract.md` — 存储不变式
 5. `src/binance_market_data_recorder/domain/event.py` — EventEnvelope 数据模型
 6. `src/binance_market_data_recorder/spool/format.py` — Raw chunk 字节格式

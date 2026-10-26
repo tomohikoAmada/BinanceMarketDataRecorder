@@ -1,0 +1,126 @@
+{
+  "verdict": "ACCEPT_ACTUAL_CURRENT_ARM_WINDOW_NATIVE_AND_ADMISSION_ONLY",
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R1-owner2h-20261014-e56ed32114ca",
+  "arm_invocation_id": "19b4e58dfb9d4be3aa09b399eb6b8b6b",
+  "arm_main_pid": 442684,
+  "expiry_timer_invocation_id": "7a6b925a8ffe42488576c3216158743f",
+  "fixed_deadline_epoch_seconds": 1791993003,
+  "fixed_deadline_utc": "2026-10-14 15:50:03 UTC",
+  "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+  "source_git_sha": "8fa54d18ac08f515362229d7f9c739b45767c2b7",
+  "identity_sha256": "d804a02f14e1f80faa8bceed8eeaef41931ab986db7db60812157f4ed879ebeb",
+  "published_hashes": {
+    "quiet-window-actual.json": "5a98770c5d9c76dce371f39f6a6caf9a741722f27521c2dadbf8f93a6c8d5176",
+    "prearm-admission.json": "67453fa9994b1ceaf4f2d203112a342609d5b7b046c814a41cf7ec05ca3c7114",
+    "postarm-admission.json": "8068411e31ad055d242b60096cb47b25b77e6686d49d8f133e4c0fac9a7df9f0",
+    "canonical-verification.json": "de1e1c376e6d9e216948db2d658f261ee290c35d9c7a424cec4ab1c7021d37ea",
+    "kernel-update-pending.json": "e20d7ec45570fc97e890192f932b999d13c46c0175ae4852652ea2a60ac37edb",
+    "restoration.jsonl": "4f55e5119684c63d2599ddd58edfd533ada183ed479e0eaf061266e9fadd2917"
+  },
+  "current_postarm_snapshot": {
+    "archive_free_bytes": 2088413306880,
+    "audit_budget_125percent_seconds": 6869.632803396667,
+    "audit_device": 64785,
+    "audit_scope": "only chunks created after new capture boundary including warm-up",
+    "audit_scratch_bytes_on_archive": 3730151015,
+    "boot_id": "59bb1735-ac48-408d-b3ec-bda79fc49b41",
+    "catalog_bytes": 376045568,
+    "census": {
+      "backlog": 0,
+      "counts": [
+        62700,
+        116443423,
+        6091180526,
+        88515426277,
+        35520800
+      ],
+      "high_water": {
+        "archive": 313500,
+        "chunk": 501600,
+        "operational": 746
+      },
+      "transaction_backlog": 0
+    },
+    "estimated_full_dual_live_verify_seconds": 5495.706242717334,
+    "forecast_capture_seconds": 9300,
+    "future_growth": [
+      6355,
+      13698590,
+      582979180,
+      10009462436
+    ],
+    "margin_seconds": 7943.864068313156,
+    "metadata_bytes": 470672514,
+    "metadata_growth_bytes": 47705325,
+    "peak_seal_minute_rates": [
+      0.6833333333333333,
+      1472.9666666666667,
+      62685.933333333334,
+      1076286.2833333334
+    ],
+    "projected_archive_free_bytes": 2079805209389,
+    "projected_selected_capture": [
+      6355,
+      13698590,
+      582979180,
+      10009462436
+    ],
+    "projected_total": [
+      69055,
+      130142013,
+      6674159706,
+      98524888713
+    ],
+    "projected_writer_free_bytes": 10793247699,
+    "remaining_seconds": 28793.496871709824,
+    "required_seconds": 20849.632803396667,
+    "reserve_bytes_per_filesystem": 10737418240,
+    "result": "ADMITTED",
+    "two_generations_writer_bytes": 12683575296,
+    "utc_ns": 1791964209584686912,
+    "writer_device": 64769,
+    "writer_free_bytes": 25167396864,
+    "writer_staging_bytes": 1508650816
+  },
+  "writer_reserve_margin_bytes": 55829459,
+  "kernel_preconditions_identical_except_utc": true,
+  "old_restoration_is_prearm_failure_only": true,
+  "gc_lookup_warning_excluded_from_native_failure": true,
+  "actual_capture_accepted": false,
+  "actual_t0_accepted": false,
+  "accepted_duration_ns": 0,
+  "saved_frame_denominator_accepted": 0,
+  "canonical_v5_final_eligible": false,
+  "unresolved_findings": [],
+  "input_hashes": {
+    "actual-owner2h-kernel-notice-arm-result.json": {
+      "sha256": "8e7b77dcbd1f4271333c44863e4f64be93eaee168be0b3ee44fdf6180c734cba",
+      "bytes": 20044
+    },
+    "actual-owner2h-kernel-notice-arm-dispatch.json": {
+      "sha256": "08626ed2b5449d0dbf2cacff935d658836a98031deeb848e7db060772ac9f607",
+      "bytes": 2304
+    },
+    "owner2h-kernel-notice-arm-argv.json": {
+      "sha256": "57427f98f4041ea2fb90c9ec9a020bcccbec1278a8ecad44ba2ca162f19cd50b",
+      "bytes": 3348
+    },
+    "actual-owner2h-kernel-entry-copy-linux.json": {
+      "sha256": "79a76197766b8668085d0af2dd8b5326c503df3517c16534866766308b4e2fe4",
+      "bytes": 2488
+    }
+  },
+  "open_counters": {
+    "current_local_input_reads": 4,
+    "production_data_opens": 0,
+    "raw_opens": 0,
+    "network_connections": 0
+  },
+  "limits": [
+    "Acceptance is at the supplied postarm snapshot; fresh launch/warm/newT0/own7200/selected data/final restored handoff remain separate future gates.",
+    "No remote or production-data operations; exact supplied local metadata only.",
+    "No old-source duration, pending147 kernel,12h or production-ready credit."
+  ],
+  "report_sha256": "dcb7c0cfd25b35039d84ba487f6e221c988b98f1ec8b71a7491b9f86dda2da7a",
+  "reconstruction_sha256": "b004e86208cbb5b2221144b46d30783da49d12c2f36411ac4c41d0357339a2b0"
+}

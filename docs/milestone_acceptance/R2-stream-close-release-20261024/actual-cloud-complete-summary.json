@@ -1,0 +1,18 @@
+{
+  "kind": "ACTUAL_NEW_SOURCE_CLOUD_NATIVE_COMPLETE_PENDING_INDEPENDENT_SUPPLY_CHAIN",
+  "actual_read_file": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-cloud-result-1792789045851542000.json",
+  "actual_read_sha256": "86bf26a5507815476a5d4217f574c89370dc6bf6f91c0741978dff467532abe1",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "source_archive_sha256": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c",
+  "wheel_bytes": 514903,
+  "clean_receipt_sha256": "d409dd561950b883d62c0b90f225171c109d563b9c0051850e5225847a051492",
+  "affected_tests_passed": 83,
+  "deselected": 1,
+  "test_elapsed_s": 38.23,
+  "native_invocation": "779d98ea58e9485a84e1c56e40afd102",
+  "native_manager_deactivated_successfully_utc_us": 1792786095152158,
+  "independent_supply_chain_review": "RUNNING",
+  "production_deployed": false,
+  "new_capture_or_T0": false
+}

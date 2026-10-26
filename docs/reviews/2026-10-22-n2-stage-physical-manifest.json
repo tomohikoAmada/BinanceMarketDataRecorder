@@ -1,0 +1,42 @@
+{
+  "created_at_utc_ns": 1792650026855867000,
+  "files": {
+    "FORECAST_RECONSTRUCTION.json": {
+      "bytes": 3256,
+      "sha256": "3641967538a472600cc174439309f35fb9d4aed130b0f8ef33a8356e12ac1e71"
+    },
+    "REPORT.md": {
+      "bytes": 2428,
+      "sha256": "2eb175acfd0e0455a790b02dbacba78f872635290f9c8fecdb8b0947e142ee11"
+    },
+    "RESULT.json": {
+      "bytes": 2320,
+      "sha256": "6531da47ee57dcb6a4e6d567e7f7d9c8d23d5e17526b3ef44cb604cdf674bc02"
+    },
+    "inputs/actual-copy.json": {
+      "bytes": 16121,
+      "sha256": "48a5b21572f9e9f5c56f40cc4cfedabbb19cfe841927e04c68e1b62a0438d54e"
+    },
+    "inputs/actual-copy.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inputs/actual-linux-binding.json": {
+      "bytes": 4473,
+      "sha256": "0c79e11ce99a48f378a8fb58fbfc6f066d5895a6cedff909071a0db80f7526ac"
+    },
+    "inputs/controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "inputs/operator.py": {
+      "bytes": 17777,
+      "sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+    },
+    "pending-arm.py": {
+      "bytes": 6996,
+      "sha256": "3a98e117887e9837146501a7a735ed232082e536cbc78e2b50f9add6ab94d48f"
+    }
+  },
+  "kind": "NARROW_ACTUAL_N2_PHYSICAL_PENDING_ARM"
+}

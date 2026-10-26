@@ -1,0 +1,109 @@
+{
+  "files": {
+    "FINAL_RESULT.json": {
+      "bytes": 367,
+      "sha256": "f0a3b45c2e3b21f8745265a596bed243d3cf829cb066324fe5a6a49527690eaa"
+    },
+    "FINAL_REVIEW.md": {
+      "bytes": 5576,
+      "sha256": "88b88dddd3ed43365c276dd6a31f8d7e34f2e63b48d87f1a74019f59d34f1cc0"
+    },
+    "candidate-final-input-manifest.json": {
+      "bytes": 1149,
+      "sha256": "d8f2116190e844c08eb9e80a01ef5d6e52641af84ee18136eb05df78bb173aea"
+    },
+    "candidate-v1-input-manifest.json": {
+      "bytes": 1149,
+      "sha256": "e692dd60e386266a092d8ee1ab4a946a792c48373bea24415ab7d0fbc1b9e82a"
+    },
+    "candidate-v1/__pycache__/stopped-config-n2.cpython-312.pyc": {
+      "bytes": 24334,
+      "sha256": "f683d7b6e1a9a5730ec95059e0583e58a4b112d6b1e64b12b6e457e2e0fd6b22"
+    },
+    "candidate-v1/binding-UNBOUND.json": {
+      "bytes": 483,
+      "sha256": "e7d79a0bb18291207ee81172b06065186a99e7524a808c1cc881efa75c0676ee"
+    },
+    "candidate-v1/candidate-n2-recorder.toml": {
+      "bytes": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    "candidate-v1/expected-deployment-identity-DESIGN-ONLY.json": {
+      "bytes": 2292,
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    "candidate-v1/manifest-UNBOUND.json": {
+      "bytes": 1027,
+      "sha256": "ad3614e0e81899c78721f8a47a67b8b938835d80bd81c804c1c2d61203df1609"
+    },
+    "candidate-v1/operate-stopped-config.py": {
+      "bytes": 5554,
+      "sha256": "2f240958d49a9cd41e98a4ac6ba1bb29c95dbdc08866775bc5d39c9159a72064"
+    },
+    "candidate-v1/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "candidate-v1/stopped-config-n2.py": {
+      "bytes": 14151,
+      "sha256": "8a0456fbbd741054987a7fbd3350d3c4ec2a157e5c9696bb0c9a21110ad52208"
+    },
+    "candidate-v2-final/__pycache__/stopped-config-n2.cpython-312.pyc": {
+      "bytes": 24334,
+      "sha256": "f683d7b6e1a9a5730ec95059e0583e58a4b112d6b1e64b12b6e457e2e0fd6b22"
+    },
+    "candidate-v2-final/binding-UNBOUND.json": {
+      "bytes": 483,
+      "sha256": "e7d79a0bb18291207ee81172b06065186a99e7524a808c1cc881efa75c0676ee"
+    },
+    "candidate-v2-final/candidate-n2-recorder.toml": {
+      "bytes": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    "candidate-v2-final/expected-deployment-identity-DESIGN-ONLY.json": {
+      "bytes": 2292,
+      "sha256": "976dfc554abe6629752322e9bb00fdd6b4bcdc2c6f6ecab0a8a3c3ca8a726452"
+    },
+    "candidate-v2-final/manifest-UNBOUND.json": {
+      "bytes": 1027,
+      "sha256": "ad3614e0e81899c78721f8a47a67b8b938835d80bd81c804c1c2d61203df1609"
+    },
+    "candidate-v2-final/operate-stopped-config.py": {
+      "bytes": 5584,
+      "sha256": "5bfc9068fd8330af2dc6ce6602c87226537389fde7664c312966464652e0167c"
+    },
+    "candidate-v2-final/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "candidate-v2-final/stopped-config-n2.py": {
+      "bytes": 14151,
+      "sha256": "8a0456fbbd741054987a7fbd3350d3c4ec2a157e5c9696bb0c9a21110ad52208"
+    },
+    "operator-generation-results.json": {
+      "bytes": 29476,
+      "sha256": "5691c0420dcd112a05c869573f8318d8775928b3faa9efc0d551a0dfb9ae5976"
+    },
+    "operator-generation-run.log": {
+      "bytes": 2121,
+      "sha256": "9cb7b902f17d0e9461432836fb126debab800a703d36fa58c39320e242720a58"
+    },
+    "operator_generation_faults.py": {
+      "bytes": 3089,
+      "sha256": "d99075867270de202f3d24659f48a0892bb9a73fdad7f71041e556bd0b80e13d"
+    },
+    "stopped-config-fault-results.json": {
+      "bytes": 5478,
+      "sha256": "eaf827901b820d2bc9c0ee53ae37a74717f3b560c93bd555ab505b2342368ded"
+    },
+    "stopped-config-run.log": {
+      "bytes": 5642,
+      "sha256": "6a96b7cd9dc9a6b99963418f8e467bde6d29823ad3fb607af7f832c31b2b1a3e"
+    },
+    "stopped_config_faults.py": {
+      "bytes": 9249,
+      "sha256": "9080caaecc5b2632962363f9fe20406d209d81ba3f9532dc28f71481842c9f7c"
+    }
+  },
+  "kind": "INDEPENDENT_UNBOUND_N2_STOPPED_CONFIG_REVIEW"
+}

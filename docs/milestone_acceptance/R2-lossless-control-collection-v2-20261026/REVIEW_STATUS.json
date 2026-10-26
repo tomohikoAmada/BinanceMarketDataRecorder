@@ -1,0 +1,26 @@
+{
+  "state": "COLLECTION_V2_EXACT_DELTA_INDEPENDENTLY_ACCEPTED_UNBOUND",
+  "directory": "/private/var/tmp/bmdr-r2-control-files-v2-20261026-k9ma9t7a",
+  "manifest_sha256": "b42e377f2d501f26fb9496eb4a963ad24e09d07afaa3a9ea1bda96a64b99d7c4",
+  "all10_parent_SHA_bytes_PASS": true,
+  "LOCAL_cases": 22,
+  "previous_collection": "BLOCK8a2091f7_ALL25_PARENT_PASS",
+  "whole_reader_Linux_or_copy_qualified": false,
+  "new_T0": false,
+  "updated_at_utc": "2026-10-26T00:50:32.155662+00:00",
+  "prior_attempt": "QUOTA_INTERRUPTED_NO_FINAL_VERDICT",
+  "review_directory": "/private/var/tmp/bmdr-r2-control-files-v2-delta-review-20261026-5pn9qklv",
+  "fresh_quota": {
+    "ordinaryUsageAllowed": true,
+    "primaryUsedPercent": 2,
+    "primaryResetsAt": 1792993725,
+    "secondaryUsedPercent": 46,
+    "secondaryResetsAt": 1793513445,
+    "credits": 0
+  },
+  "review_manifest_sha256": "1135596dccf52f7be89c655ad35a721b736f26805f2ed142814407157a843c29",
+  "all50_complete_review_parent_SHA_bytes_PASS": true,
+  "independent_provided_cases": 22,
+  "independent_additional_cases": 17,
+  "review_active": false
+}

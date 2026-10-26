@@ -1,0 +1,10 @@
+{
+  "state": "LOCAL_ORDERING_CANDIDATE_UNQUALIFIED_NOT_DEPLOYED",
+  "controller_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+  "original_controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+  "warm_budget_seconds_unchanged": 1200,
+  "strict_endpoint_span_seconds_unchanged": 300,
+  "target_own_seconds_unchanged": 86400,
+  "real_Linux_credit": false,
+  "formal_duration_credit_ns": 0
+}

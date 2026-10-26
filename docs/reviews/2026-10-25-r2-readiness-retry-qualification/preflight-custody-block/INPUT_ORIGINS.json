@@ -1,0 +1,17 @@
+{
+  "read_current_capacity.py": {
+    "sha256": "4f4c710c37d17e99976473387257ac3dbd89d861820b0102e3fab7a44728fda3",
+    "bytes": 15535,
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/read_current_capacity.py"
+  },
+  "preflight-design-manifest.json": {
+    "sha256": "294785cf4f36b5bfb49568b9234a7b8425b11e427c9756e54d9f2c5d42c7b71f",
+    "bytes": 634,
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/preflight-design-manifest.json"
+  },
+  "DESIGN.md": {
+    "sha256": "e96233dc66e03dba8aa567ee6f4952e44dd4e3af52431dc2ff30047a7dd41b27",
+    "bytes": 1789,
+    "path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/DESIGN.md"
+  }
+}

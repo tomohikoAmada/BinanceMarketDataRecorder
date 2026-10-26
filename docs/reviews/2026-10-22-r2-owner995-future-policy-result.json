@@ -1,0 +1,19 @@
+{
+  "actual_execution_credit": false,
+  "actual_main_failure_receipt_cases": 1,
+  "actual_sample_cases": 14,
+  "blocking_findings": [],
+  "candidate_controller_sha256": "cde4cf06166d00d8cd5c0ce4559c346f36dbcb1eddb4df872d7ee85f9d8f8bbd",
+  "candidate_owner995_sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+  "independent_full_controller_own86400_fakeclock_cases": 13,
+  "independent_monitor_fault_cases": 7,
+  "mypy": "PASS",
+  "old_helper_files_changed": [],
+  "old_helper_files_rechecked": 13,
+  "production_or_network_actions": false,
+  "report_sha256": "5e1938cbab36c1001aeed9bd253b2fccd2839259b6916e97e490ce14905a8b36",
+  "repository_unit_tests_passed": 30,
+  "ruff": "PASS",
+  "verdict": "ACCEPT_UNBOUND_POLICY_IMPLEMENTATION_LOCAL_OFFLINE",
+  "warm_resource_evidence_boundary_cases": 4
+}

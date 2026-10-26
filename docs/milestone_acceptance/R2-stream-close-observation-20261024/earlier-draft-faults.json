@@ -1,0 +1,72 @@
+{
+  "source_sha256": "acad00725c1efd330ef4d7753030cead2ce4c5081588a4cd75997fa439303472",
+  "ownership_cases": [
+    {
+      "case": "same-owned-invocation",
+      "expected_owned_under_stated_contract": true,
+      "actual_owned": true,
+      "meets_contract": true
+    },
+    {
+      "case": "foreign-manual-within-start-window",
+      "expected_owned_under_stated_contract": false,
+      "actual_owned": true,
+      "meets_contract": false
+    },
+    {
+      "case": "foreign-invocation-positive-restart-counter",
+      "expected_owned_under_stated_contract": false,
+      "actual_owned": true,
+      "meets_contract": false
+    },
+    {
+      "case": "own-start-fails-before-binding-awaiting-auto-restart",
+      "expected_owned_under_stated_contract": true,
+      "actual_owned": false,
+      "meets_contract": false
+    },
+    {
+      "case": "foreign-later-than-start-window",
+      "expected_owned_under_stated_contract": false,
+      "actual_owned": false,
+      "meets_contract": true
+    }
+  ],
+  "config_drift_cleanup_fixed": true,
+  "cleanup_calls": [
+    [
+      "systemctl",
+      "disable",
+      "--now",
+      "binance-market-data-recorder.service"
+    ]
+  ],
+  "cleanup_result": {
+    "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+    "recorder": {
+      "MainPID": "0",
+      "ActiveState": "inactive",
+      "UnitFileState": "disabled",
+      "InvocationID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "NRestarts": "0"
+    },
+    "archive_timer": {
+      "ActiveState": "active",
+      "UnitFileState": "enabled"
+    },
+    "archive_worker": {
+      "ActiveState": "inactive",
+      "MainPID": "0",
+      "Result": "success"
+    },
+    "backlog": [
+      0,
+      0
+    ],
+    "utc_ns": 1,
+    "clock_monotonic_ns": 2,
+    "formal_credit_seconds": 0
+  },
+  "all_io_mocked_or_private_fixture": true,
+  "no_main_operator_ssh_or_production_access": true
+}

@@ -1,0 +1,11 @@
+{
+  "original_read_path": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/actual-n2-stage-read-1792938767090785000.json",
+  "original_read_sha256": "f8845961effd46b6ccd95865cecccbc53f90382342aa066a20f23ce04363bea9",
+  "bytes": 5604616,
+  "all22_original_member_SHA_bytes_parent_PASS": true,
+  "complete_original_controls_and_journals_local": "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/actual-startup-controls-export-1792938767090785000",
+  "warm_publications": 38,
+  "formal_T0_exists": false,
+  "formal_duration_credit_ns": 0,
+  "raw_or_manifest_payload_opened": false
+}

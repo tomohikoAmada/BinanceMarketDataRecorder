@@ -23,6 +23,10 @@ import asyncio
 from collections.abc import Callable
 from enum import StrEnum
 
+from websockets.exceptions import ConnectionClosed
+
+DEFAULT_RECEIPT_BYTE_CAPACITY = 64 * 1024 * 1024
+
 #: Reconnect boundary reasons that require persistent gap evidence.
 RECONNECT_REASONS = frozenset(
     {
@@ -43,6 +47,59 @@ class ReconnectReason(StrEnum):
     PLANNED_ROTATION = "planned_rotation"
     SERVER_SHUTDOWN = "server_shutdown"
     SESSION_RESTART = "session_restart"
+
+
+def capped_backoff_seconds(initial: float, maximum: float, failures: int) -> float:
+    """Double only until the cap, even for an arbitrarily large failure count."""
+
+    delay = initial
+    remaining = failures - 1
+    while remaining > 0 and delay < maximum:
+        if delay >= maximum / 2:
+            return maximum
+        delay *= 2
+        remaining -= 1
+    return delay
+
+
+def websocket_disconnect_log_fields(
+    error: Exception,
+    *,
+    connected_at: float | None,
+    observed_at: float,
+) -> dict[str, object]:
+    """Describe the close without logging exception messages or transport URLs.
+
+    Missing close frames stay unknown. Duration uses the connection loop's
+    monotonic clock at logging time, including any context-manager cleanup;
+    it isn't an exact failure timestamp or an outage duration.
+    """
+
+    close = error if isinstance(error, ConnectionClosed) else None
+    received = close.rcvd if close is not None else None
+    sent = close.sent if close is not None else None
+    cause = error.__cause__
+    os_error = error if isinstance(error, OSError) else cause
+
+    def reason_for_log(reason: str) -> str:
+        # Protocol reasons are useful, but must not expose an echoed proxy URL.
+        return "[redacted URL]" if "://" in reason else reason[:128]
+
+    return {
+        "connection_phase": "opening" if connected_at is None else "established",
+        "connected_duration_seconds_at_log": (
+            None if connected_at is None else observed_at - connected_at
+        ),
+        "close_received_code": None if received is None else int(received.code),
+        "close_received_reason": (
+            None if received is None else reason_for_log(received.reason)
+        ),
+        "close_sent_code": None if sent is None else int(sent.code),
+        "close_sent_reason": None if sent is None else reason_for_log(sent.reason),
+        "close_received_then_sent": None if close is None else close.rcvd_then_sent,
+        "cause_type": None if cause is None else type(cause).__name__,
+        "os_errno": os_error.errno if isinstance(os_error, OSError) else None,
+    }
 
 
 async def run_owned_blocking_call[**BlockingParams, BlockingResult](

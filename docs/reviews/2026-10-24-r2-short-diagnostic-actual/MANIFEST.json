@@ -1,0 +1,106 @@
+{
+  "decision": "ACCEPT_BOUNDED_DIAGNOSTIC_RECONSTRUCTION_ONLY",
+  "files": [
+    {
+      "bytes": 1437,
+      "path": "BINDING-CHECKS.json",
+      "sha256": "6b8a13de100f4df50b556a1f216c02f967aeed7880369a92cb501ecd2257d927"
+    },
+    {
+      "bytes": 28275,
+      "path": "CHECKS.json",
+      "sha256": "f52b2f9446f7838d79c18db7292f617722f240a0f9800bb525204ca9b000399a"
+    },
+    {
+      "bytes": 12937,
+      "path": "JOURNAL-EVENTS.json",
+      "sha256": "3a74191be6a089feb1772f6c7cc2a50c805c3b98d6d153278892386c4fa7c052"
+    },
+    {
+      "bytes": 1133756,
+      "path": "PUBLICATION-SUMMARY.json",
+      "sha256": "68f0f80fabed7bdca16c2b4fc65710c89b4712718445e65c5e48704033fc1b83"
+    },
+    {
+      "bytes": 9596,
+      "path": "REPORT.md",
+      "sha256": "40593125b99c67952c61b7b9bcc6ce985b679099a4348e85bb0e4efab8ea1507"
+    },
+    {
+      "bytes": 9616,
+      "path": "RESULT.json",
+      "sha256": "2ef6c70e8e582216100856673dfa7573e9241a175c2b32cf034e16d808fc761e"
+    },
+    {
+      "bytes": 14662799,
+      "path": "inputs/actual-diagnostic-read-1792803677663471000.json",
+      "sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5"
+    },
+    {
+      "bytes": 12812,
+      "path": "journals/full_unit_journal.jsonl",
+      "sha256": "2aa66fb10c3d0ec5be4d4a1abaed106592b305fb9bda9ad5cea77d26718ddb69"
+    },
+    {
+      "bytes": 5648,
+      "path": "journals/owned_native_journal.jsonl",
+      "sha256": "242b0ea929342e161897ad9faf25b56fef3f8063d7c570a2317ecd5e30384b52"
+    },
+    {
+      "bytes": 44984,
+      "path": "journals/owned_recorder_journal.jsonl",
+      "sha256": "b250d45e7b26cf4af6244ad5eb90cc530b850f4d7f2d3e9e916f9c272db88636"
+    },
+    {
+      "bytes": 1276,
+      "path": "members/cleanup-complete.json",
+      "sha256": "992549f974e2096612f486ab404b8928d383a6dc83a65cdee23123c442700465"
+    },
+    {
+      "bytes": 1536,
+      "path": "members/diagnostic-result.json",
+      "sha256": "afc069bdb3e0e6a972680b72705b6d087c844c2304bf4db4861ed82ac89c02e7"
+    },
+    {
+      "bytes": 1338,
+      "path": "members/exec-stop-post-1792801414038698940.json",
+      "sha256": "5be8cc372b11292a702a492b20c417667de8cae5e1683932e9ce64ec66a9feba"
+    },
+    {
+      "bytes": 1661,
+      "path": "members/native-attempt.json",
+      "sha256": "54c8ba6805cf49ac9c073bc5b07293f52e69c232a47bb6221eb888f4dd197751"
+    },
+    {
+      "bytes": 2185,
+      "path": "members/native-binding.json",
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749"
+    },
+    {
+      "bytes": 13942825,
+      "path": "members/observations.jsonl",
+      "sha256": "d2e179dd7b90e956dacbcb48e6a1eb9f70cdedb4f886e1196839b985dc67cb1e"
+    },
+    {
+      "bytes": 421,
+      "path": "members/owned-recorder.json",
+      "sha256": "bc0c5c5afbd34ad4f4c1ade5ac41dacd24989b6c503f8980498b1ab7615a38bf"
+    },
+    {
+      "bytes": 2538,
+      "path": "members/software-copy.json",
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf"
+    },
+    {
+      "bytes": 575,
+      "path": "members/start-request.json",
+      "sha256": "59b78accd2949952b33bfeaa73440e43e46291b86537b3951bc7c6d774540aae"
+    },
+    {
+      "bytes": 18166,
+      "path": "reconstruct.py",
+      "sha256": "cc729fc0c2ced082d233c8c52718eac993ca447fe2c97a8196bace3fa1813dba"
+    }
+  ],
+  "schema": "independent-local-review-manifest-v1"
+}

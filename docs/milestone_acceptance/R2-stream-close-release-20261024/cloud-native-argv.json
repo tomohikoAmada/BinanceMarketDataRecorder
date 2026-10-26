@@ -1,0 +1,20 @@
+[
+  "systemd-run",
+  "--no-block",
+  "--unit",
+  "binance-recorder-r2-stream-close-cloud-20261024-l2hr7wd9.service",
+  "--property=Type=exec",
+  "--property=RuntimeMaxSec=3600",
+  "--property=TimeoutStopSec=120",
+  "--property=UMask=0027",
+  "--property=CPUAccounting=yes",
+  "--property=MemoryAccounting=yes",
+  "/usr/bin/python3.12",
+  "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/pin-unit-exec.py",
+  "/bin/bash",
+  "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build/build-release.sh",
+  "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-build",
+  "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-release-20261024-l2hr7wd9/isolated-cloud-data"
+]

@@ -10,8 +10,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
 import zstandard
 from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosedError
+from websockets.frames import Close
 
 from binance_market_data_recorder.binance.spot.schema import SpotStream
 from binance_market_data_recorder.binance.spot.websocket import (
@@ -38,10 +41,12 @@ class ScriptedWebSocket:
         stop: asyncio.Event | None = None,
         *,
         block_on_exhaustion: bool = False,
+        disconnect_error: Exception | None = None,
     ) -> None:
         self.messages = iter(messages)
         self.stop = stop
         self.block_on_exhaustion = block_on_exhaustion
+        self.disconnect_error = disconnect_error
         self.close_reasons: list[str] = []
 
     async def recv(self, decode: bool | None = None) -> bytes:
@@ -53,6 +58,8 @@ class ScriptedWebSocket:
                 await asyncio.Future()
             if self.block_on_exhaustion:
                 await asyncio.Future()
+            if self.disconnect_error is not None:
+                raise self.disconnect_error from None
             raise OSError("injected disconnect") from None
 
     async def close(self, code: int = 1000, reason: str = "") -> None:
@@ -165,7 +172,17 @@ def test_duplicates_and_out_of_order_messages_are_all_written(tmp_path: Path) ->
     ]
 
 
-def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "disconnect_error",
+    [
+        ConnectionResetError(104, "injected reset"),
+        ConnectionClosedError(Close(1011, "server restart"), Close(1011, "ack"), True),
+    ],
+    ids=["tcp-reset", "server-close"],
+)
+def test_unexpected_disconnect_reconnects_with_a_new_connection_id(
+    tmp_path: Path, disconnect_error: Exception, caplog: pytest.LogCaptureFixture,
+) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
@@ -174,7 +191,10 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
             nonlocal attempts
             attempts += 1
-            socket = ScriptedWebSocket([depth(attempts, attempts)], stop if attempts == 2 else None)
+            socket = ScriptedWebSocket(
+                [depth(attempts, attempts)], stop if attempts == 2 else None,
+                disconnect_error=disconnect_error,
+            )
             yield socket
 
         collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
@@ -188,6 +208,20 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
         assert attempts == 2
 
     asyncio.run(exercise())
+    record = next(
+        r for r in caplog.records
+        if getattr(r, "structured_event", None) == "spot_websocket_disconnected"
+    )
+    fields = cast(dict[str, Any], getattr(record, "structured_fields", None))
+    assert fields["connection_phase"] == "established"
+    assert fields["connected_duration_seconds_at_log"] >= 0
+    if isinstance(disconnect_error, ConnectionClosedError):
+        assert fields["close_received_code"] == 1011
+        assert fields["close_received_reason"] == "server restart"
+        assert fields["close_received_then_sent"] is True
+    else:
+        assert fields["close_received_code"] is None
+        assert fields["os_errno"] == 104
     documents = manifests(tmp_path)
     connection_ids = {
         connection_id
@@ -206,6 +240,7 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(tmp_path: Pat
 
 def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
@@ -227,6 +262,15 @@ def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
         assert attempts == 2
 
     asyncio.run(exercise())
+    record = next(
+        r for r in caplog.records
+        if getattr(r, "structured_event", None) == "spot_websocket_disconnected"
+    )
+    fields = cast(dict[str, Any], getattr(record, "structured_fields", None))
+    assert fields["connection_phase"] == "opening"
+    assert fields["connected_duration_seconds_at_log"] is None
+    assert fields["os_errno"] == -2
+    assert fields["close_received_code"] is None
     captured = sealed_envelopes(tmp_path)
     assert [item.raw_payload for item in captured] == [depth(20, 20)]
 

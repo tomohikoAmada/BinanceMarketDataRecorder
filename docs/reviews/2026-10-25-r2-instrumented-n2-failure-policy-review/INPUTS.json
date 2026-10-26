@@ -1,0 +1,277 @@
+{
+  "decoded_journal_string_references": {
+    "recorder_owned_journal": {
+      "bytes": 1102419,
+      "sha256": "7050a1fc28b5debb87d099e63110b57ffaa6bfb3cc8fbbf1669b5a2362b60323"
+    },
+    "unit_journals": {
+      "binance-market-data-archive.service": {
+        "bytes": 8910816,
+        "sha256": "963f66cab64144a4aa9a318a803b612432461d4515628cb653dfe2e486192330"
+      },
+      "binance-market-data-archive.timer": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "binance-market-data-recorder.service": {
+        "bytes": 1108786,
+        "sha256": "87f42bfa3625a27bfb3b3446e379919ee4c7c0d6f5420815153c0aca521cc29f"
+      },
+      "binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-arm.service": {
+        "bytes": 11220,
+        "sha256": "7ae7103c70a22df0bff2a31fbcde58ac7387b6ac87b1dadcc52bc18be0cba76b"
+      },
+      "binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-capture.service": {
+        "bytes": 30218,
+        "sha256": "233c113c775fe853a82f2f00cd236fb833cf70376fc6560fcd4674d19d4ea4af"
+      },
+      "binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.service": {
+        "bytes": 1342,
+        "sha256": "8ad7fa06c3eb62eb4335ad135a5be9047c1f14fc116e94de739a47bbf437bfdc"
+      },
+      "binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.timer": {
+        "bytes": 9564,
+        "sha256": "8531f89653329bd170580825f08d16b48fb27380be07d2e37fb0fa31019e98d8"
+      },
+      "binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-terminal.service": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "earlier_startup_result_reference": {
+    "no_repeated_startup_requalification": true,
+    "path": "/private/var/tmp/bmdr-r2-instrumented-n2-startup-prefix-review-20261024-4JUarTPz/RESULT.json",
+    "sha256": "5d78542243dc6227ed2cc2111fd9ba0f0b059650403ce3d4098dca1d57c7a4c6"
+  },
+  "original_envelope": {
+    "bytes": 319802269,
+    "path": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/actual-n2-stage-read-1792908556330206000.json",
+    "sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768"
+  },
+  "original_members": {
+    "arm-native-attempt.json": {
+      "bytes": 1078,
+      "sha256": "0c2c6d30d7efaa17821634a18a1cbad1b2c6e7d08754cb240dd85bb238f1cb8a"
+    },
+    "canonical-verification.json": {
+      "bytes": 5003,
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5"
+    },
+    "capacity-policy.json": {
+      "bytes": 12875,
+      "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b"
+    },
+    "capture-admission.json": {
+      "bytes": 3793,
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5"
+    },
+    "capture-failure.json": {
+      "bytes": 1393,
+      "sha256": "d872d8454ca1e3d2e7ef4b8c95ff6cf832aef95549c5808e4b5e644d868aaa9f"
+    },
+    "capture-launch.json": {
+      "bytes": 1294,
+      "sha256": "059948191e22e7098b6a91eaf58bca8abcdee96208811ccb944e661605170b3e"
+    },
+    "copy-admission.json": {
+      "bytes": 3783,
+      "sha256": "bcb41030a08128cbbb3fcf20b64e0ddb68ef9e0a349e00904d466cd086b6f70d"
+    },
+    "data-scope-start.json": {
+      "bytes": 567,
+      "sha256": "5f124d7cee064711649d5a70fe27af9bafd81c0cb16ecef876890c017ad77036"
+    },
+    "diagnostic-0a9545bf1d0a4b128ba08976659bf3f0.json": {
+      "bytes": 46698,
+      "sha256": "f0229928f4b4e7a49b4da67bb1aafd5cf2608b1aa4e4f2a2bf81d8a1bed0e615"
+    },
+    "diagnostic-0a9545bf1d0a4b128ba08976659bf3f0.state": {
+      "bytes": 13605,
+      "sha256": "022c0df79e53377c9f7d71eeb278b552c39cb5bd72bbed0fceb24d48a075ca64"
+    },
+    "diagnostic-28dd86b92092420ab3178eaa6d785e1a.json": {
+      "bytes": 46717,
+      "sha256": "24a7f52b80d70550bbd73abdd75557fbaeb1b3e29265d936336a8a8f9a440601"
+    },
+    "diagnostic-28dd86b92092420ab3178eaa6d785e1a.state": {
+      "bytes": 13611,
+      "sha256": "cd0d39e41db2e88e99da73d1c51e3299800039c2a689459e5eb8b8cf3eca528d"
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.json": {
+      "bytes": 46685,
+      "sha256": "bd2374fa7eabe5dfcc294dc5f1d068a57308428ae077247182a49460c1c4fb6b"
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.state": {
+      "bytes": 13601,
+      "sha256": "86ac0f45b869a012cd499fab06d894a122ee745ee3f58a592efe14b5b2eb2474"
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.json": {
+      "bytes": 46632,
+      "sha256": "99ca834f042311bdaaa73655f342ee15c5dc959eec6ac1331885dfdd2286e5c3"
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.state": {
+      "bytes": 13585,
+      "sha256": "aae48cd07492dbd8751123eac025cf7bf8c1353a27113b2e5d87c4aa9f1dae54"
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.json": {
+      "bytes": 46697,
+      "sha256": "ec46c102566884d5a68aeb201709486094b9cfb56cbd9e4c762405280241c891"
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.state": {
+      "bytes": 13605,
+      "sha256": "d2f11368ee45693b479c409a86515dbbe007ec912d14da6ef5209b0dadbd5a0b"
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.json": {
+      "bytes": 46697,
+      "sha256": "8c51f1cc06e60eb8e763217e548b41f597c838c4c6dcf656cade71f135b92259"
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.state": {
+      "bytes": 13605,
+      "sha256": "87cfc2302bb4d17040f09c92cbecc8e9ca446f7facb30582744fe9c2b853db7e"
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.json": {
+      "bytes": 46697,
+      "sha256": "bf83a42ee4382d071322c8fb7dc461ee74cfb1a12092cbdc772c92c4db8673c5"
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.state": {
+      "bytes": 13604,
+      "sha256": "21dd4a94d204c1440cb19117b8669947310f4700fd27fb4bd07b3c073fd14318"
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.json": {
+      "bytes": 46684,
+      "sha256": "a7b50f79b639816ac41a282bb432f90a37ad86a70ff7916712cd79157db1c02d"
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.state": {
+      "bytes": 13601,
+      "sha256": "f7dc87d101c60238e6358336a5516142feb8991abbbff4d3e41099abb4858f86"
+    },
+    "diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.json": {
+      "bytes": 1047,
+      "sha256": "38fdec8ae2fa76a715c1d5b1603a42995220dc5bf99628c6dd5870bd87cd8329"
+    },
+    "diagnostic-d572a3b2a1c04a1e8a92f592dce10d27.state": {
+      "bytes": 13508,
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3"
+    },
+    "expiry-cancellation.jsonl": {
+      "bytes": 282,
+      "sha256": "9731ba3a0f01bfaa477af052af460f78a4c2edf7dae5618f1937e4343e4ed1d6"
+    },
+    "kernel-update-pending.json": {
+      "bytes": 1080,
+      "sha256": "152f1509e0b00709f456a1720e5cceedbb28b3f05a7e9e7ab4abd5b620363cc6"
+    },
+    "launch-admission.json": {
+      "bytes": 3795,
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe"
+    },
+    "monitoring.jsonl": {
+      "bytes": 127083501,
+      "sha256": "5baee1f7236f2ff7714ccbb1f77589adbf908d841c0f485d3b75c02a389499ff"
+    },
+    "owner-start.json": {
+      "bytes": 60066,
+      "sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213"
+    },
+    "postarm-admission.json": {
+      "bytes": 3795,
+      "sha256": "5ea49dc53567112bc6440bb66347a5586ec189b4681fe214ac558684726c9415"
+    },
+    "prearm-admission.json": {
+      "bytes": 3783,
+      "sha256": "a014302e1cdf8154e39c4db0c88286db4dab1e75dabc43e9a6489fa7325b0455"
+    },
+    "prestart-admission.json": {
+      "bytes": 3797,
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd"
+    },
+    "quiet-window-actual.json": {
+      "bytes": 4256,
+      "sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199"
+    },
+    "recovery-observations.jsonl": {
+      "bytes": 356432,
+      "sha256": "c2d903a332df0f665c7332eaf6a903428068bbd2efb08b2df940bce1bf261df5"
+    },
+    "restoration.jsonl": {
+      "bytes": 2990,
+      "sha256": "672d6fafa2277196bd72ae80721e3ab2cb0afcc440aaac5ddf3ff75f00b8a788"
+    },
+    "software-copy.json": {
+      "bytes": 22700,
+      "sha256": "05e162efb7951295ebf39068313ae9c38776d8dd640a5cbdd7068c54ed51db0d"
+    },
+    "stage-controls-manifest.json": {
+      "bytes": 2345,
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348"
+    },
+    "stage-design-evidence.json": {
+      "bytes": 1502,
+      "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7"
+    },
+    "stage-launch-attempt.json": {
+      "bytes": 229,
+      "sha256": "cc616757d68ea8c965bc8342c0b906bf1cdc6811f5e8637502eb5a6f06e5748d"
+    },
+    "start-observation.json": {
+      "bytes": 46080,
+      "sha256": "8daa49ebcab8a88b8ca7667af06ea350d6d605ad2a01a3ae0f668d18fab6092e"
+    },
+    "warmup-end-observation.json": {
+      "bytes": 46080,
+      "sha256": "ba5fa933d43dd68548082a6a40af02ff8d3d3b6718751c02dac63e929561bde6"
+    },
+    "warmup-result.json": {
+      "bytes": 112473,
+      "sha256": "d1ee5f3a15d82ad6d9076736aa1c5967d455a94c711be440a7cb727eea70dd48"
+    },
+    "warmup.jsonl": {
+      "bytes": 765477,
+      "sha256": "b44a1dbfd393bbd583f808373f5705fa898060f868418e876907e97d5007130b"
+    }
+  },
+  "private_failed_predicate": {
+    "path": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/runtime/qualification_owner_995.py",
+    "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+  },
+  "production_source_reference": {
+    "members": {
+      "binance/spot/websocket.py": {
+        "bytes": 54386,
+        "sha256": "d495519efddb68bf8be2dd70d3ede2f983ecd07d3adaffe36765bdc498958a03"
+      },
+      "binance/usdm/websocket.py": {
+        "bytes": 55514,
+        "sha256": "c4b2dd955366ae5c0355b77afcfa174f31955de1d21a9bc3169fdfb4bca94dce"
+      },
+      "collector/resync.py": {
+        "bytes": 5374,
+        "sha256": "1b7862330fcd102696ec7d3cf3a3e83fe3d5676823f78a1f529a2f88aa8df550"
+      },
+      "collector/spot.py": {
+        "bytes": 21803,
+        "sha256": "66feb1923e2c3dd23641a9ea260dd6c4abed88b38aa60e1994c23c3254c45c18"
+      },
+      "collector/usdm.py": {
+        "bytes": 26373,
+        "sha256": "09566d16b3ce6b525a363452e4af8f7f1ce13fff1ed0ee464ed3ef0209510f00"
+      },
+      "service/runtime.py": {
+        "bytes": 46770,
+        "sha256": "0c0abc726e297293684410c5db9290044e40c25e0e0f39d751d600643f8e5020"
+      },
+      "supervisor/readiness.py": {
+        "bytes": 8131,
+        "sha256": "bf47d78804b1b2f80f95b76c86809a63eeb7e10d5edc13c2d656d61a9941422f"
+      }
+    },
+    "root": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder",
+    "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e"
+  },
+  "pure_independent_gate_reused": {
+    "only_own_gate_AST_extracted": true,
+    "path": "/private/var/tmp/bmdr-r2-instrumented-n2-startup-prefix-review-20261024-4JUarTPz/reconstruct.py",
+    "sha256": "950177aabf34a0a8f51deb8523d6e4d5260268be9c089aa09ea4c2d78da99f48"
+  }
+}

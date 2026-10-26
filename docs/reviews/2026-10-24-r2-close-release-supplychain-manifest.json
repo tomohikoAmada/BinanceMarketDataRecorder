@@ -1,0 +1,101 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "size": 2456,
+      "sha256": "f3cee81f57f47e9b348095adeb6427b939046c454811ce5510c71437be5230d9"
+    },
+    {
+      "path": "CHECKS.txt",
+      "size": 57,
+      "sha256": "3482d24507f767e2aab552016df11dadb6e9f8862fe9cb615ebd4a0c120e919f"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 3643,
+      "sha256": "b77db3e8a9d83f7698e147ba4c55e80e999e468f6bc93ba55235aa21cac340ab"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 3272,
+      "sha256": "d81059777aeeda09d7b19ca5872a7ce28ef8fba0cb3493aef0890fec1cf1e5c1"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 1921,
+      "sha256": "03e046e6afd7bcf3c6d6bbe34eabaebab4741e8e791c5f2effdcf52bd5436010"
+    },
+    {
+      "path": "export/clean-wheel.json",
+      "size": 2940,
+      "sha256": "d409dd561950b883d62c0b90f225171c109d563b9c0051850e5225847a051492"
+    },
+    {
+      "path": "export/cloud-admission.log",
+      "size": 51034,
+      "sha256": "3d72141c6be0f7d9d40f8aed6ab5a02e4bd64c83f91de5f995754ab5060aa1c6"
+    },
+    {
+      "path": "export/frozen-wheel.whl",
+      "size": 514903,
+      "sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+    },
+    {
+      "path": "export/installed-python-files.json",
+      "size": 15079,
+      "sha256": "65e6f193839b9653c948f16f478d6f7782a44b6240721a7f1ab35f336d63b208"
+    },
+    {
+      "path": "export/observed-installed-python-files.json",
+      "size": 15330,
+      "sha256": "9424636368982876fa92dd70fee2661ddea8bee512771bb712617aac36167991"
+    },
+    {
+      "path": "export/source-inventory.json",
+      "size": 76040,
+      "sha256": "4bf9334125e13697640eff59618898d5d6567575e6861eb4db914999d17875a6"
+    },
+    {
+      "path": "export/source-origin-proof.json",
+      "size": 870,
+      "sha256": "b74ed451b85329d4af88f5b62ac9bbe2b8f329d8db413de80634ee5e277efe6f"
+    },
+    {
+      "path": "export/wheel-python-files.json",
+      "size": 15330,
+      "sha256": "9424636368982876fa92dd70fee2661ddea8bee512771bb712617aac36167991"
+    },
+    {
+      "path": "inputs/actual-cloud-result.json",
+      "size": 876591,
+      "sha256": "86bf26a5507815476a5d4217f574c89370dc6bf6f91c0741978dff467532abe1"
+    },
+    {
+      "path": "reused/accepted-archive-inventory.json",
+      "size": 75879,
+      "sha256": "75d462898a03b8b6a2092e11d947a474b246c09a01b7f04ecbb554efae73792a"
+    },
+    {
+      "path": "reused/actual-cloud-dispatch.json",
+      "size": 1587,
+      "sha256": "23ccfc8fc874148df827096763db5f9cebf38522dece3fd0956ef2f9c1274bc4"
+    },
+    {
+      "path": "reused/linux-x86_64-python312.lock",
+      "size": 110985,
+      "sha256": "44cd373324f2af5f2682851996bc59a16199c65f8de9e98089131e1c67d6f335"
+    },
+    {
+      "path": "reused/pyproject.toml",
+      "size": 1581,
+      "sha256": "60dfa16bb48033d0fc22dc29205adf09ae01a70b35f588ab9b55a405ecfc5b66"
+    },
+    {
+      "path": "verify_release.py",
+      "size": 12313,
+      "sha256": "52c345690e1db1910503875f12269d5fca7086715bb1e8b7dfce7300be747142"
+    }
+  ]
+}

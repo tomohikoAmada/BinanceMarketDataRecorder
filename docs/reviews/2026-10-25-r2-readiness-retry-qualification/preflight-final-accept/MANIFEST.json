@@ -1,0 +1,53 @@
+{
+  "decision": "ACCEPT",
+  "design_manifest_sha256": "cd8f711e837878612148d97151fb113e2df43c4590aecf51bb4c99a16fb59148",
+  "helper_sha256": "abe667eca3ced0666dd4e2f54a9335218ca93b6f5cb512e01308300249ef8ef6",
+  "kind": "INDEPENDENT_FINAL_LOSSLESS_PREFLIGHT_DESIGN_REVIEW",
+  "members": {
+    "INPUT_ORIGINS.json": {
+      "bytes": 259,
+      "sha256": "3ca398a85e9eda58e2b8a5a018b93d9c73f0b28d37e4755dfba6c73a69e92fbd"
+    },
+    "REPORT.md": {
+      "bytes": 3929,
+      "sha256": "864c8cd5acc76c8b43f20ff4301062b64154a9c9c2ab5a18c78a974e914fe0aa"
+    },
+    "RESULT.json": {
+      "bytes": 1889,
+      "sha256": "e7f5d9de4d80a97d4dad50d2a4df7b85aa4e17e995622d5a27d7268c7cf96edb"
+    },
+    "check_lossless_components.py": {
+      "bytes": 9322,
+      "sha256": "9e5dd9b99732a45b3fff57c511011933359efc080cfbac2b3af2813c790195d0"
+    },
+    "check_static_and_raw.py": {
+      "bytes": 6319,
+      "sha256": "6a38e677356d8ec9538e84f880fb179ae1d519f1d652078d1b8083fd2b38f967"
+    },
+    "freeze_review.py": {
+      "bytes": 7277,
+      "sha256": "1247448fd2f255c52e235bc745b7cd4f02c0ad940b356df93d407500d7432dc1"
+    },
+    "inputs/DESIGN.md": {
+      "bytes": 2276,
+      "sha256": "2dd1b52ceffcc63320dd9e5117b3898598ecf97bd0f8fef1c3160725ec262b53"
+    },
+    "inputs/preflight-design-manifest.json": {
+      "bytes": 757,
+      "sha256": "cd8f711e837878612148d97151fb113e2df43c4590aecf51bb4c99a16fb59148"
+    },
+    "inputs/read_current_capacity.py": {
+      "bytes": 16907,
+      "sha256": "abe667eca3ced0666dd4e2f54a9335218ca93b6f5cb512e01308300249ef8ef6"
+    },
+    "lossless-fixture-results.json": {
+      "bytes": 103044,
+      "sha256": "2f5a03dfda40d7d1482ccb6e5c662d057cbc0a98cd273d75d905b57b916eb0e2"
+    },
+    "static-and-raw-results.json": {
+      "bytes": 3306,
+      "sha256": "09ee19d5d990f4be39e2ba21ce2285659fff7de097a34b813b0b2de7b2f924ef"
+    }
+  },
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-readiness-retry-20261025-1s0kswlt"
+}

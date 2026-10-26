@@ -1,0 +1,9 @@
+{
+  "arm_dispatch_file": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/actual-n2-stage-arm-1792820432274783000.json",
+  "arm_dispatch_sha256": "e86362081f1135d984ec5cdb1ad148f7c9e3f174cc2e44aae513fdf5fd9c0128",
+  "actual_dispatch_utc": "2026-10-24T05:40:45.622954+00:00",
+  "reasonable_arm_checkpoint_utc": "2026-10-24T05:45:45.622954+00:00",
+  "arm_complete": false,
+  "capture_launched": false,
+  "formal_T0": null
+}

@@ -1,0 +1,67 @@
+{
+  "kind": "LOCAL_MOCKED_CURRENT_BINDING_AND_OUTPUT_CUSTODY_ONLY",
+  "cases": [
+    {
+      "case": "output_custody_timeout",
+      "result": "PASS",
+      "raised": "TimeoutExpired",
+      "raw_bytes_preserved": true,
+      "fixture_directory": "/private/var/tmp/r2-stage-local-timeout-1fgj0ht1"
+    },
+    {
+      "case": "output_custody_oserror",
+      "result": "PASS",
+      "raised": "OSError",
+      "raw_bytes_preserved": true,
+      "fixture_directory": "/private/var/tmp/r2-stage-local-oserror-vx5icl8d"
+    },
+    {
+      "case": "output_custody_nonzero",
+      "result": "PASS",
+      "raised": "AssertionError",
+      "raw_bytes_preserved": true,
+      "fixture_directory": "/private/var/tmp/r2-stage-local-nonzero-thaafrit"
+    },
+    {
+      "case": "output_custody_invalid_json",
+      "result": "PASS",
+      "raised": "JSONDecodeError",
+      "raw_bytes_preserved": true,
+      "fixture_directory": "/private/var/tmp/r2-stage-local-invalid_json-7wad9h_3"
+    },
+    {
+      "case": "output_custody_success",
+      "result": "PASS",
+      "raised": null,
+      "raw_bytes_preserved": true,
+      "fixture_directory": "/private/var/tmp/r2-stage-local-success-qn34yj32"
+    },
+    {
+      "case": "historical_current_binding_historical_source_separate",
+      "result": "PASS",
+      "accepts_fixture": true
+    },
+    {
+      "case": "historical_current_binding_receipt_relabeled_current",
+      "result": "PASS",
+      "accepts_fixture": false
+    },
+    {
+      "case": "historical_current_binding_policy_current_source_wrong",
+      "result": "PASS",
+      "accepts_fixture": false
+    },
+    {
+      "case": "historical_current_binding_inherited_duration_nonzero",
+      "result": "PASS",
+      "accepts_fixture": false
+    },
+    {
+      "case": "historical_current_binding_historical_prior_relabeled",
+      "result": "PASS",
+      "accepts_fixture": false
+    }
+  ],
+  "linux_or_capture_credit": false,
+  "no_remote_calls": true
+}

@@ -1,0 +1,16 @@
+{
+  "aggregate_sha256": "0344001ade3ea811a1508dc76d06e2477529c3d92efbd7a215abcd3cfe12f26b",
+  "archive_bytes_verified": 3318145280,
+  "families": {
+    "archive_event": 131620,
+    "archive_transaction": 26324,
+    "catalog_chunk": 26324,
+    "chunk_transition": 210592,
+    "manifest": 26324,
+    "operational_event": 1538,
+    "raw_location": 26324
+  },
+  "proof_frame_count": 62687921,
+  "raw_bytes_verified": 0,
+  "record_count": 449046
+}

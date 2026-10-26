@@ -254,7 +254,7 @@ def test_repeated_normalization_is_deterministic_traceable_and_duckdb_readable(
 
         stale_partial = (
             layout.root
-            / "data/normalized/normalized-dataset.v1/artifacts/.interrupted.partial"
+            / "data/normalized/normalized-dataset.v2/artifacts/.interrupted.partial"
         )
         stale_partial.write_bytes(b"incomplete derived output")
         second = Normalizer(layout=layout, catalog=catalog).run()

@@ -1,0 +1,12 @@
+{
+  "decision": "ACCEPT",
+  "scope": "current actual failure/control misclassification/restoration only",
+  "independent_assertions": 26501,
+  "original_members": 45,
+  "complete_current_publications": 2855,
+  "paired_context_entries": 148460,
+  "model_cases": 27,
+  "candidate_import_or_execution": false,
+  "SSH_network_Raw_source_mutations": false,
+  "future_code_fix_qualification_separate": true
+}

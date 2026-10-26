@@ -1,0 +1,34 @@
+{
+  "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/cli.py": {
+    "bytes": 78727,
+    "sha256": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913"
+  },
+  "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/deployment_identity.py": {
+    "bytes": 46801,
+    "sha256": "0decd8e6cb745b04e69f103b133248b15cd12a5fa6cd729d85b2de54db8744b7"
+  },
+  "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/readiness.py": {
+    "bytes": 16318,
+    "sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38"
+  },
+  "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder/src/binance_market_data_recorder/service/systemd.py": {
+    "bytes": 30933,
+    "sha256": "82c6d8d9195e4698f5dfb029dfc8f8db66a87fa8fb4c54f447176779f794a3a7"
+  },
+  "/private/var/tmp/bmdr-r2-n2-readiness-retry-20261025-1s0kswlt/runtime/controller.py": {
+    "bytes": 21356,
+    "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+  },
+  "/private/var/tmp/bmdr-r2-retry-warm-failure-review-20261025-cir8iwya/RESULT.json": {
+    "bytes": 4056,
+    "sha256": "0ffaa9d053eb93cead9497d1a2e9fb39f871a2665c904dd248881cd94c150fa9"
+  },
+  "/private/var/tmp/bmdr-r2-warm-overlap-code-review-20261025-5wobn1hq/RESULT.json": {
+    "bytes": 2157,
+    "sha256": "5c37eb63733fda7c096b285e38b573efb4a4cce1a6d513b811d011b9da91c721"
+  },
+  "/private/var/tmp/bmdr-r2-warm-overlap-code-review-20261025-5wobn1hq/inputs/controller.py": {
+    "bytes": 26234,
+    "sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e"
+  }
+}

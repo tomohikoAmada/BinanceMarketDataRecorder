@@ -1,0 +1,252 @@
+{
+  "decision": "ACCEPT_DIAGNOSIS",
+  "frozen_at_utc": "2026-10-21T14:25:34.156644+00:00",
+  "kind": "INDEPENDENT_N1_SELECTED_CLOSEOUT_FAILURE_DIAGNOSIS",
+  "manifest_self_hash_excluded": true,
+  "member_count": 48,
+  "members": [
+    {
+      "bytes": 5155,
+      "path": "CAUSAL_OPERATIONAL_RECONSTRUCTION.json",
+      "sha256": "31c5f22d03a86932e92117348836b1214028abc27d332337c8cd041c3ffa1122"
+    },
+    {
+      "bytes": 5356,
+      "path": "INPUTS.json",
+      "sha256": "acbb0a8ce71203e341bcbf1edef60ac63b747228f22065d24115f489e0f73758"
+    },
+    {
+      "bytes": 32808,
+      "path": "JOURNAL_AND_DIAGNOSTIC_RECONSTRUCTION.json",
+      "sha256": "7d68f63aea1d4f9459f0281625b9751aa10a7eaefb894ea3aaf588444fe2fd5f"
+    },
+    {
+      "bytes": 3988,
+      "path": "RECONSTRUCTION_RESULT.json",
+      "sha256": "c4f7c8971fa75a47cc98b27c7a9b1546d7bee0936bad5685ee2f251768d0890f"
+    },
+    {
+      "bytes": 10343,
+      "path": "REPORT.md",
+      "sha256": "1b08906504413909a45b5c5afc435561377e0f62df27b7cba14a9c32e2792f0b"
+    },
+    {
+      "bytes": 7117,
+      "path": "RESTORATION_AND_PHASE_RECONSTRUCTION.json",
+      "sha256": "8c3040b65aa5b1f0460ed9b74da1efdc9f6b1bb7eb3b4f12eb69851e4d96567f"
+    },
+    {
+      "bytes": 4344,
+      "path": "RESULT.json",
+      "sha256": "22195e1f9cf517dbd8a57e8da8e0aff5943ef057203bcd815b0659e804a3268c"
+    },
+    {
+      "bytes": 23517,
+      "path": "independent-diagnosis.py",
+      "sha256": "25da3c55ba70bd5c89eacc8bb4b0b71152e1a39e9534ddf1eb0df598530fb48b"
+    },
+    {
+      "bytes": 8141,
+      "path": "inputs/PRIOR_START_TARGET_RESULT.json",
+      "sha256": "d0968c7afc20cccd38bed6758e79da1763072916567b7afbefea0421ca534b14"
+    },
+    {
+      "bytes": 1427881,
+      "path": "inputs/actual-n1-audit-progress-errors-1792592063196938000.json",
+      "sha256": "6621b9760a9e9244925baa4307b12d232bf9d310b6f3b9471362b1f2b95cea84"
+    },
+    {
+      "bytes": 1218993,
+      "path": "inputs/actual-n1-failed-audit-authority-1792592253970090000.json",
+      "sha256": "6506f59e59c85fb4f4aec8b17172178cd42e2766f677ba7a423ebe0e37a64f55"
+    },
+    {
+      "bytes": 20559,
+      "path": "inputs/controller.py",
+      "sha256": "05f5461251be7afebf86454a284bdf1894aaaa01bf7e37e12f665aa24d41624c"
+    },
+    {
+      "bytes": 557,
+      "path": "inputs/data-scope-start.json",
+      "sha256": "7e0dd8bdc58f26de8b2f4a753a3df774305fa20f5c109335f69017b88c90173f"
+    },
+    {
+      "bytes": 20736,
+      "path": "inputs/owner-start.json",
+      "sha256": "8cfbadaa43d8a9ec1b23054ba074819d9610e5c6da3dd6cfa0e3f40786665410"
+    },
+    {
+      "bytes": 18533,
+      "path": "inputs/owner-target.json",
+      "sha256": "abf1946c5b7bc98fd245eaab6e29c4e87d8f5bf3564f65649eb5d7d14ef042fc"
+    },
+    {
+      "bytes": 13763,
+      "path": "inputs/qualification_scoped_corpus.py",
+      "sha256": "936e614aefe7e3f0e128dd4f0317a955afcaff61240410a8683b8e5e5ba12588"
+    },
+    {
+      "bytes": 4025,
+      "path": "inputs/read-current-n1-failed-audit-authority.py",
+      "sha256": "e9fbdd3e7aff8e4c582f40368f4c592fe27445fbc33f44eca6d08740beffe245"
+    },
+    {
+      "bytes": 915,
+      "path": "inputs/terminal-freeze.json",
+      "sha256": "b71e56eeb95a80b365909b26e34b1f5c5c2b933d5339b1da1522321f060cfb7c"
+    },
+    {
+      "bytes": 235023,
+      "path": "owned-journal-parsed.json",
+      "sha256": "a7b37a109a94a881e4b137b3fa587d262b899c5d3a8532cee6d8e78445feb7f6"
+    },
+    {
+      "bytes": 654,
+      "path": "publications/audit-progress-00000551.json",
+      "sha256": "5ef31b0be47589275a80383f0a0ddccbaa3a2b575007d4a8207565cded09f80e"
+    },
+    {
+      "bytes": 654,
+      "path": "publications/audit-progress-00000552.json",
+      "sha256": "9dbde7f30ac5e9ffb8b4f1c686e762677960dee0ba79e977c1b9b66a0b7825a6"
+    },
+    {
+      "bytes": 654,
+      "path": "publications/audit-progress-00000553.json",
+      "sha256": "df843a687a3473e4bc36e64d905cd6de3787d186734fe76303cd22cdc697496a"
+    },
+    {
+      "bytes": 654,
+      "path": "publications/audit-progress-00000554.json",
+      "sha256": "55388faff2d7889387c7a3455fffc0148ae37f8a3372e440985bf5d1099e222e"
+    },
+    {
+      "bytes": 654,
+      "path": "publications/audit-progress-00000555.json",
+      "sha256": "2f90b3744193a427e1de5a6a33fe148b731ed96ce6e19a264eac33512cde8c13"
+    },
+    {
+      "bytes": 476,
+      "path": "publications/audit-progress-00000556.json",
+      "sha256": "1d408470bbb403ef330eeca53e49a53f705dcfc36763eca3be30f32b1398d5a7"
+    },
+    {
+      "bytes": 13041,
+      "path": "publications/audit-root.json",
+      "sha256": "0499ec4abf471502607bdc4510d060e9765b3e76c5d495fe28ffc67016c8d209"
+    },
+    {
+      "bytes": 17844,
+      "path": "publications/diagnostic-051e5624b4de421fa5ab7215652e0d7f.json",
+      "sha256": "9686187d1aaf955027a0fb20557c2949de61adfbc9ff255157f644b371822034"
+    },
+    {
+      "bytes": 13470,
+      "path": "publications/diagnostic-051e5624b4de421fa5ab7215652e0d7f.state",
+      "sha256": "f21ffce0b8897240ea5ab5199172d95e762f6954d70a3c9ef3f71d803b48317e"
+    },
+    {
+      "bytes": 17844,
+      "path": "publications/diagnostic-35b6d1c854b44a3e924ac5d0229985b0.json",
+      "sha256": "325f08d6d3b3e72d8f7d5508af3bf7b6160d252cf29cd3d95f5fc09ac50fb696"
+    },
+    {
+      "bytes": 13470,
+      "path": "publications/diagnostic-35b6d1c854b44a3e924ac5d0229985b0.state",
+      "sha256": "4a621b833ad54121ceae163eb5dc868852fd5f710f287323eb84ed15ff6582fd"
+    },
+    {
+      "bytes": 17844,
+      "path": "publications/diagnostic-d58e414880894f2fa5184b994421b519.json",
+      "sha256": "aaf6db1807a25b3729e3bc66fe25d499023432bd2755913f9d07d29c395c9379"
+    },
+    {
+      "bytes": 13470,
+      "path": "publications/diagnostic-d58e414880894f2fa5184b994421b519.state",
+      "sha256": "69e06a01e513694fd241c0a8faf9b290844ed5f3a49532f71695aeeebe7d0952"
+    },
+    {
+      "bytes": 17844,
+      "path": "publications/diagnostic-e541340de64244e49b1a17299b1d740d.json",
+      "sha256": "013d487f952701c4b4856ec47a1643a882a74bb4e7fa8eeb623f88efa40b774f"
+    },
+    {
+      "bytes": 13470,
+      "path": "publications/diagnostic-e541340de64244e49b1a17299b1d740d.state",
+      "sha256": "f4a710ff34d599e7c669157cfab0a69668cadd69312d1e51ed242305683020fc"
+    },
+    {
+      "bytes": 280,
+      "path": "publications/expiry-cancellation.jsonl",
+      "sha256": "529f43cb3e37ff789952180663acfd3a9e9e575098e51e2027566e4ef439f629"
+    },
+    {
+      "bytes": 1546,
+      "path": "publications/owner-scope-receipt.json",
+      "sha256": "39d65d84cdf5dbf6dcc51ee5309e8f2fbd4eb89bd7126622e6b41b75138314a9"
+    },
+    {
+      "bytes": 5770,
+      "path": "publications/quiescence-corpus.json",
+      "sha256": "03a1090ed41ded1110d76dba158c2cf339f3f9ee26399e37110904a8cd3f5034"
+    },
+    {
+      "bytes": 2893,
+      "path": "publications/restoration.jsonl",
+      "sha256": "0e4164073a990ce9f9efc4670e6e7fff6a16f7dd13d396f27693e79ea51987a8"
+    },
+    {
+      "bytes": 508960,
+      "path": "publications/shard-00000433.json",
+      "sha256": "bb1f96656349042e492fc282b9e1cd2683a943135160262441b3fb778744c715"
+    },
+    {
+      "bytes": 1254,
+      "path": "publications/terminal-failure.json",
+      "sha256": "b8e1317d10962696b58de0b396ffdc3b8ea91c2c574f3b80a91dc14ed6432332"
+    },
+    {
+      "bytes": 54120,
+      "path": "source-static/binance__spot__websocket.py",
+      "sha256": "a1033525446022cf9da3325a44208086cdc1769057e3442738399c3d7b40712f"
+    },
+    {
+      "bytes": 55248,
+      "path": "source-static/binance__usdm__websocket.py",
+      "sha256": "f1dab97a7e2428a2489724320bb716949d8c0ea98dbab13325729a65c3b684dd"
+    },
+    {
+      "bytes": 38072,
+      "path": "source-static/service__acceptance_v5_audit.py",
+      "sha256": "8d0dca665900ebac86ce6c3444cdabf8e0db1a9ce87c78587e0e560c21a2fdb2"
+    },
+    {
+      "bytes": 21790,
+      "path": "source-static/service__acceptance_v5_delta.py",
+      "sha256": "fc184766ad7c3b94483cac5279bfea5495595c1db359cb63ad034962c8a5fd9a"
+    },
+    {
+      "bytes": 5620,
+      "path": "source-static/service__acceptance_v5_reconnect.py",
+      "sha256": "b4385b3726f60e14a12dc529044c5b0d146fe34a7643e3e6c54aab8dd2b64ed7"
+    },
+    {
+      "bytes": 46770,
+      "path": "source-static/service__runtime.py",
+      "sha256": "0c0abc726e297293684410c5db9290044e40c25e0e0f39d751d600643f8e5020"
+    },
+    {
+      "bytes": 11183,
+      "path": "source-static/storage__acceptance_delta.py",
+      "sha256": "b25e1644bd121fe29d6f3b565923a735789cae68e903bb671f75f81d9fd8ac0c"
+    },
+    {
+      "bytes": 203844,
+      "path": "source-static/storage__catalog.py",
+      "sha256": "2595817b8501e8727850a8896be19072947b8b3ad42e9bdab6862f7ffb0cc972"
+    }
+  ],
+  "report_sha256": "1b08906504413909a45b5c5afc435561377e0f62df27b7cba14a9c32e2792f0b",
+  "result_sha256": "22195e1f9cf517dbd8a57e8da8e0aff5943ef057203bcd815b0659e804a3268c",
+  "root": "/private/var/tmp/bmdr-n1-actual-independent-20261021-531qae20/audit-closeout-failure-nqan9s4c"
+}

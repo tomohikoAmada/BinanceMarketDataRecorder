@@ -1,0 +1,99 @@
+{
+  "all_candidate_member_bytes_SHA_PASS": true,
+  "candidate": "/private/var/tmp/bmdr-r2-warm-successor-v2-20261026-8af9t1z7",
+  "exact_sources": {
+    "cli.py": {
+      "bytes": 78727,
+      "sha256": "b3ede1e1c7b59e8e7a6eed49e0bf4654a85b1b940adf56c1d817f43ff4d9c913"
+    },
+    "config.py": {
+      "bytes": 21084,
+      "sha256": "7e5eda9773120ad83e9154116664eda07827c51891b6675fce82a235c228f506"
+    },
+    "service/deployment_identity.py": {
+      "bytes": 46801,
+      "sha256": "0decd8e6cb745b04e69f103b133248b15cd12a5fa6cd729d85b2de54db8744b7"
+    },
+    "service/readiness.py": {
+      "bytes": 16318,
+      "sha256": "7f53a042b454f38d7269da4ece711219573d52d745bad40234b042381acaea38"
+    },
+    "service/state.py": {
+      "bytes": 3096,
+      "sha256": "49a575f7d3abca370b971abf6cb5814b05973635e8debd3add44d9ec37a60066"
+    },
+    "service/systemd.py": {
+      "bytes": 30933,
+      "sha256": "82c6d8d9195e4698f5dfb029dfc8f8db66a87fa8fb4c54f447176779f794a3a7"
+    }
+  },
+  "manifest": {
+    "bytes": 3121,
+    "sha256": "4f73a416b00522c9afd99fb62b34a0ad981678ac6d7a7234161fa4b0081c6309"
+  },
+  "member_count": 20,
+  "prior_artifacts": {
+    "lease_sanity": {
+      "all_members_full_bytes_SHA_PASS": true,
+      "manifest_sha256": "cde3f93b337f26cabfc70dc5cdb519a3c7c968a4f007728c227433b30c27988f",
+      "member_count": 5,
+      "path": "/private/var/tmp/bmdr-r2-owned-lease-design-sanity-20261026-e_f38e0l"
+    },
+    "previous_block": {
+      "all_members_full_bytes_SHA_PASS": true,
+      "manifest_sha256": "617d62c4faf2b737b46b381acd42f11b4c77b3c532a2edb3123d5acfbc57c0a6",
+      "member_count": 100,
+      "path": "/private/var/tmp/bmdr-r2-warm-successor-component-review-20261026-s26uk82y"
+    }
+  },
+  "runtime_references": {
+    "arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "common.py": {
+      "bytes": 12276,
+      "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526"
+    },
+    "launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "qualification_owner_995.py": {
+      "bytes": 9161,
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+    },
+    "qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "result": "PARENT_FULL32_ACTUAL_COPY_REVIEW_MEMBERS_VERIFIED",
+  "qualification_state": "CURRENT_LINUX_PHYSICAL_INDEPENDENTLY_ACCEPTED",
+  "accepted_copy_sha256": "e7102b1c843bae3157631944836adf483b1e9d0ff52acea72265aede0d569903",
+  "manifest_sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+  "no_arm_launched_yet": true
+}

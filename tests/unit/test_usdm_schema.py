@@ -40,7 +40,13 @@ def test_official_usdm_fixtures_preserve_bytes_and_metadata(
     assert envelope.raw_payload == raw
     assert envelope.source_sequence == sequence
     assert envelope.exchange_event_time == 1672515782136
-    assert envelope.exchange_trade_time == 1672515782135
+    assert envelope.module == "binance.usdm.websocket.v2"
+    if stream is UsdMStream.AGG_TRADE:
+        assert envelope.exchange_trade_time == 1672515782135
+        assert envelope.exchange_transaction_time is None
+    else:
+        assert envelope.exchange_transaction_time == 1672515782135
+        assert envelope.exchange_trade_time is None
     assert envelope.capture_flags == ()
 
 

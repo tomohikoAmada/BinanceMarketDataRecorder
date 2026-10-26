@@ -1,0 +1,34 @@
+{
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/ACTUAL_RECONSTRUCTION.json": {
+    "bytes": 1335,
+    "sha256": "edf7ba2e033d2a43228660ba9ec7ed8bb93de482f58fab5d8bbb217c7e1c7c85"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/MANIFEST.json": {
+    "bytes": 5967,
+    "sha256": "1af05d3e3d97dbd235fb6ad100bbb6e7ee484ee39edad0632605d2828c653f3e"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/REPORT.md": {
+    "bytes": 3543,
+    "sha256": "8dee7bb291395f6b34ead605ef0e4fff434c81e7a9d3fe1c30e4f609400e22c0"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/RESULT.json": {
+    "bytes": 3008,
+    "sha256": "263473c0fd225be12695a0395c9786f469d7d417297b50a5b01ae7408e13841e"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/inputs/preflight-1792912997523101000-execution.json": {
+    "bytes": 259,
+    "sha256": "432033798a9973c268058b62af9a5d68fb15a2b62f8fc09725c8be3369e20837"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/inputs/preflight-1792912997523101000-stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/inputs/preflight-1792912997523101000-stdout.txt": {
+    "bytes": 6951497,
+    "sha256": "e7dfc0f5aea159eb3fbe8b0d19b3a9c2b6f4fcb149c836eca72578ecf9401bd9"
+  },
+  "/private/var/tmp/bmdr-r2-retry-binding-and-actual-review-20261025-nx_gijvq/reconstruct_actual.py": {
+    "bytes": 10643,
+    "sha256": "7b674101a2b81c1d25356f910cc9accb0840c2ff6cc58b01e59ace795b8ac7a5"
+  }
+}

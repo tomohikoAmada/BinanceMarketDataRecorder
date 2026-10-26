@@ -1,0 +1,9 @@
+# Independent design conclusion
+
+**ACCEPT_DESIGN_ONLY** for the minimal new17-runtime/15-safe-import integration and lossless reader/current Linux-binding plan in DESIGN.md. No conceptual blocker remains if these requirements are implemented and independently reviewed exactly. The unchanged P3 operator cannot be used as-is with V3: its14/12 assumptions, historical qualification selectors, absent warm/commit enumeration and owner-start-only invocation selection require the specified new binding/reader changes.
+
+No implementation or generated remote program was written or executed. No test from FIXTURE_MATRIX ran. All work was read-only exact LOCAL input inspection plus files in this exclusive report directory. The four V3 subject bytes remain accepted only for their existing code/LOCAL scope. Source20e57/wheeldd2c/identity9b8/config5b73/all14/cohort/Stop90 remain unchanged; old failed scope/guard194e and all other closed guards are not reusable.
+
+The critical implementation gates are complete raw warm/owned evidence and phase-sensitive export; a necessary-but-not-alone commit plus real postcommit formal entry; all17 manifest/hash and15 safe-import maps; separate real Linux clock/origin/runuser/group behavior and explicit fixture predicates; current independently accepted stopped preflight/physical copy/Linux proof; fresh finite absolute expiry/admissions and one copy/launch. Old18/39/Mac and synthetic clocks grant none of those new actual facts. Full READY latency and true warm/own86400 evidence can come only from the future actual run.
+
+This design may now be implemented in a distinct unbound directory. It authorizes no SSH, copy, ARM, launch, newT0, deployment, accepted duration, saved-data result, capacity receipt or stability fix. The parent must obtain the required exact implementation review and subsequent actual qualification/independent readbacks before progressing operational gates.

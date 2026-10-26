@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+    "/private/var/tmp/bmdr-r2-warm-reader-integration-20261026-mnolxttl/test_control_files.py"
+  ],
+  "returncode": 0,
+  "stdout_base64": "eyJMT0NBTF9maWxlX3JlYWRlcl9jYXNlcyI6IDE2LCAiYWxsX1BBU1MiOiB0cnVlLCAid2hvbGVfcmVhZGVyX29yX0xpbnV4X2NyZWRpdCI6IGZhbHNlfQo=",
+  "stderr_base64": "",
+  "subjects_SHA256": {
+    "control_files.py": "9b6107b0a65c0805c1f32e0c743c731388ba5f1bfdfc1103637d67f8894e67ce",
+    "test_control_files.py": "9d9156e09bda4c05390e1dff1184001151054aca0582d3df780a1a7211f2da99"
+  },
+  "scope": "LOCAL temp metadata collection only; no Linux or whole-reader/T0 qualification"
+}

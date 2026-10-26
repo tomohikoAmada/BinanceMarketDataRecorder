@@ -1,0 +1,65 @@
+{
+  "created_utc": "2026-10-23T23:43:47.988522+00:00",
+  "kind": "BOUNDED_DIAGNOSTIC_ONLY_NOT_CAPACITY",
+  "duration_seconds": 1800,
+  "formal_credit_seconds": 0,
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-20261024-l2hr7wd9",
+  "unit": "binance-recorder-r2-stream-close-observation-20261024-l2hr7wd9.service",
+  "payloads": {
+    "observe_stream_closes.py": {
+      "sha256": "6c9128a38f080cb8f1f5f9aba9e5556adde76e3928d2d6952fe7853cc19852b4",
+      "size": 13375
+    },
+    "qualification_auxiliary_gate.py": {
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "size": 6324
+    },
+    "qualification_owner_995.py": {
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "size": 7983
+    },
+    "pin-unit-exec.py": {
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "size": 329
+    }
+  },
+  "argv": [
+    "systemd-run",
+    "--no-block",
+    "--unit",
+    "binance-recorder-r2-stream-close-observation-20261024-l2hr7wd9.service",
+    "--property=Type=oneshot",
+    "--property=TimeoutStartSec=3000",
+    "--property=TimeoutStopSec=900",
+    "--property=UMask=0027",
+    "--property=CPUAccounting=yes",
+    "--property=MemoryAccounting=yes",
+    "--property=ExecStopPost=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-20261024-l2hr7wd9/observe_stream_closes.py --cleanup",
+    "/usr/bin/python3.12",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-20261024-l2hr7wd9/pin-unit-exec.py",
+    "/opt/binance-market-data-recorder/venv/bin/python",
+    "/srv/recorder-data/recorder-archive/evidence/R2-stream-close-observation-20261024-l2hr7wd9/observe_stream_closes.py"
+  ],
+  "local_controls": {
+    "operate.py": {
+      "sha256": "7ff6cb03329fdc885030e60d1a8246c6871b694d11dad74fcc06807cc4e64e8f"
+    }
+  },
+  "source_git_sha": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "os_archive_policy": "normal_enabled_owners_unchanged_no_quiet_window",
+  "copied_unchanged_helpers": [
+    "qualification_auxiliary_gate.py",
+    "qualification_owner_995.py",
+    "pin-unit-exec.py"
+  ],
+  "local_checks": {
+    "all_outer_scripts_compile": true,
+    "selected_cleanup_component_cases_passed": 7,
+    "artifact_sha256": "05590660f36013fe44dc3cff5d99e3dfc1c8984a223c5e02f4bead385bfb574e"
+  },
+  "cleanup_contract": "exclusive affected Recorder service; same-boot fixed4800s lease; any unexpected incarnation paused; completed cleanup no-op",
+  "initial_draft": "design-manifest-initial-f1c50d44.json",
+  "initial_draft_had_unresolved_review_findings": true
+}

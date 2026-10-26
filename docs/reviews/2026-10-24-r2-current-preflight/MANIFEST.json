@@ -1,0 +1,56 @@
+{
+  "decision": "ACCEPT_SINGLE_READ_ONLY_CURRENT_PREFLIGHT_DESIGN_PENDING_ACTUAL_OBSERVATION",
+  "files": [
+    {
+      "bytes": 610,
+      "path": "INITIAL-FINDINGS.json",
+      "sha256": "2896c26ee42975c7d607a0b38873bc074a4340fa92e6d71aa7d534c63a2977d2"
+    },
+    {
+      "bytes": 421,
+      "path": "REFERENCES.json",
+      "sha256": "cfa12f53c78277090b328cd33c61300d382457d01b2594adaf560c9eaac9efa1"
+    },
+    {
+      "bytes": 5157,
+      "path": "REPORT.md",
+      "sha256": "a9c9d7ded169c3c1109dd83bbeaafd1d7f64877fe6cc5f753dd873c578787798"
+    },
+    {
+      "bytes": 3297,
+      "path": "RESULT.json",
+      "sha256": "155055317771f67aeb82cf2b887b7984faf42eb9ea564031f5684c4abdcaad2b"
+    },
+    {
+      "bytes": 5576,
+      "path": "final-inputs/REMOTE.py",
+      "sha256": "dea73fd520ab38e4a0b9e56b532e369990b449d2d5d92923440aed9a5a5045fb"
+    },
+    {
+      "bytes": 875,
+      "path": "final-inputs/preflight-design-manifest.json",
+      "sha256": "18234ef68ae68fbd29fdb61e6ec283b2e2e13e45322add1dc19ca490d3d4de28"
+    },
+    {
+      "bytes": 1304,
+      "path": "final-inputs/preflight-parent-fault-cases.json",
+      "sha256": "50905be0fdaecedd4644a32e96c52330f7868e34ca111a3083b8284d7e11e627"
+    },
+    {
+      "bytes": 7802,
+      "path": "final-inputs/read_current_capacity.py",
+      "sha256": "1a6a296b9a116aec910fa6b710eaadea346e20c6979c912f1c05dfb3e622d3e7"
+    },
+    {
+      "bytes": 751,
+      "path": "initial3003/preflight-design-manifest.json",
+      "sha256": "7d5be6e8d0125c1cde196463706048de6cb92aa70668d52e117b37dbc54e2ab6"
+    },
+    {
+      "bytes": 6973,
+      "path": "initial3003/read_current_capacity.py",
+      "sha256": "3003c4b8d4586f9c0c16a08a6a1476836cc8ec5326e028c8d3bde82853664b23"
+    }
+  ],
+  "schema": "independent-local-review-manifest-v1"
+}

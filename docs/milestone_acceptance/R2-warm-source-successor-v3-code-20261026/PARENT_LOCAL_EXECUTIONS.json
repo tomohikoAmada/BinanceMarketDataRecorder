@@ -1,0 +1,82 @@
+[
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/test_full_flow.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9mdWxsX2Zsb3dfY2FzZXMiOiA2MywgImFsbF9QQVNTIjogdHJ1ZSwgInJlYWxfTGludXhfY3JlZGl0IjogZmFsc2V9Cg==",
+    "stderr_base64": "V0FSTV9FVklERU5DRV9XUklURV9GQUlMRUQgT1NFcnJvcignZml4dHVyZSBzZWNvbmRhcnkgZXZpZGVuY2UgZmFpbHVyZScpOyBvcmlnaW5hbD1SdW50aW1lRXJyb3IoJ3dhcm1fY29tbWFuZF9mYWlsZWRfb3JfaW52YWxpZCcpCg==",
+    "subjects_SHA256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "scope": "LOCAL only, fake OS/static/source clocks and real macOS POSIX lease fixtures; no Linux/runuser/T0 credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/test_boundaries.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9ib3VuZGFyeV9jYXNlcyI6IDIwLCAiYWxsX1BBU1MiOiB0cnVlLCAicmVhbF9MaW51eF9jcmVkaXQiOiBmYWxzZX0K",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "scope": "LOCAL only, fake OS/static/source clocks and real macOS POSIX lease fixtures; no Linux/runuser/T0 credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/test_owned_regressions.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJyZWFsX0xPQ0FMX1BPU0lYX2Nhc2VzIjogOCwgImFsbF9QQVNTIjogdHJ1ZSwgIkxpbnV4X2NyZWRpdCI6IGZhbHNlfQo=",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "scope": "LOCAL only, fake OS/static/source clocks and real macOS POSIX lease fixtures; no Linux/runuser/T0 credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/test_keeper_commit.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9rZWVwZXJfc3VjY2Vzc19jYXNlcyI6IDExLCAiYWxsX1BBU1MiOiB0cnVlLCAiTGludXhfY3JlZGl0IjogZmFsc2V9Cg==",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "scope": "LOCAL only, fake OS/static/source clocks and real macOS POSIX lease fixtures; no Linux/runuser/T0 credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-warm-successor-v3-20261026-x7yfquh1/test_inventory_evidence.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9pbnZlbnRvcnlfZmFpbHVyZV9jYXNlcyI6IDMsICJhbGxfUEFTUyI6IHRydWUsICJMaW51eF9jcmVkaXQiOiBmYWxzZX0K",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+      "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "scope": "LOCAL only, fake OS/static/source clocks and real macOS POSIX lease fixtures; no Linux/runuser/T0 credit"
+  }
+]

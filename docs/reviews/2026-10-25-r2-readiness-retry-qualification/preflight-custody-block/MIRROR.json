@@ -1,0 +1,74 @@
+{
+  "all_original_members": {
+    "INPUT_ORIGINS.json": {
+      "bytes": 702,
+      "sha256": "2ce661e2207edc77dd2f65dae9714a476d343858f78c4c8c91498bb0c2786810"
+    },
+    "REPORT.md": {
+      "bytes": 2386,
+      "sha256": "6cec33796c5657c5b3f59f6e994f91ccd4161b1fa30247e75dbf6ef9686ff4bd"
+    },
+    "RESULT.json": {
+      "bytes": 1880,
+      "sha256": "ec1a9ba9b3796f2a897cfda6fdc732545403a7bb795f1a6eb8655ecb4ec3eb03"
+    },
+    "check_correction_components.py": {
+      "bytes": 7547,
+      "sha256": "a24d1a758d8837334ac31e45a2b3440260dd13655f7c1fec3f3b2468aca6f80e"
+    },
+    "correction-fixture-results.json": {
+      "bytes": 28480,
+      "sha256": "bab0c02d9da1c85c3f49aff15b7f3f345c09f4adb755fe93a6e0d8ef8539c77b"
+    },
+    "freeze_review.py": {
+      "bytes": 5557,
+      "sha256": "10f49a90865d05e810b935bf1b9567eff86fb02fc4e1cda4de52839f6fa3edb6"
+    },
+    "inputs/DESIGN.md": {
+      "bytes": 1789,
+      "sha256": "e96233dc66e03dba8aa567ee6f4952e44dd4e3af52431dc2ff30047a7dd41b27"
+    },
+    "inputs/preflight-design-manifest.json": {
+      "bytes": 634,
+      "sha256": "294785cf4f36b5bfb49568b9234a7b8425b11e427c9756e54d9f2c5d42c7b71f"
+    },
+    "inputs/read_current_capacity.py": {
+      "bytes": 15535,
+      "sha256": "4f4c710c37d17e99976473387257ac3dbd89d861820b0102e3fab7a44728fda3"
+    }
+  },
+  "mirrored_files": {
+    "INPUT_ORIGINS.json": {
+      "bytes": 702,
+      "sha256": "2ce661e2207edc77dd2f65dae9714a476d343858f78c4c8c91498bb0c2786810"
+    },
+    "MANIFEST.json": {
+      "bytes": 1386,
+      "sha256": "9000134dfc447c104c2c330db147d157898c1ce86689e9aab8fea4dd7a270856"
+    },
+    "REPORT.md": {
+      "bytes": 2386,
+      "sha256": "6cec33796c5657c5b3f59f6e994f91ccd4161b1fa30247e75dbf6ef9686ff4bd"
+    },
+    "RESULT.json": {
+      "bytes": 1880,
+      "sha256": "ec1a9ba9b3796f2a897cfda6fdc732545403a7bb795f1a6eb8655ecb4ec3eb03"
+    },
+    "check_correction_components.py": {
+      "bytes": 7547,
+      "sha256": "a24d1a758d8837334ac31e45a2b3440260dd13655f7c1fec3f3b2468aca6f80e"
+    },
+    "correction-fixture-results.json": {
+      "bytes": 28480,
+      "sha256": "bab0c02d9da1c85c3f49aff15b7f3f345c09f4adb755fe93a6e0d8ef8539c77b"
+    },
+    "freeze_review.py": {
+      "bytes": 5557,
+      "sha256": "10f49a90865d05e810b935bf1b9567eff86fb02fc4e1cda4de52839f6fa3edb6"
+    }
+  },
+  "original_directory": "/private/var/tmp/bmdr-r2-retry-preflight-correction-review-20261025-s8m5a0o7",
+  "original_manifest_sha256": "9000134dfc447c104c2c330db147d157898c1ce86689e9aab8fea4dd7a270856",
+  "originals_preserved": true,
+  "parent_full_SHA_bytes_PASS": true
+}

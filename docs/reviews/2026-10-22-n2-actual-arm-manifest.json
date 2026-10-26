@@ -1,0 +1,38 @@
+{
+  "created_at_utc_ns": 1792650318544632000,
+  "files": {
+    "CHECKS.json": {
+      "bytes": 1933,
+      "sha256": "743effcbd60caa99ebd020202e8189428e9e4bf2c2f8e1733bf3fa1b5d387281"
+    },
+    "REPORT.md": {
+      "bytes": 3092,
+      "sha256": "27b71ecc1a76092183e374a5c73707f7dd384bc32bbbb8f815e2984d0bc2fbd5"
+    },
+    "RESULT.json": {
+      "bytes": 1110,
+      "sha256": "294023cc55bc0d6f925b30805b5da3319f59815eb52be4219d1aacffb69f063c"
+    },
+    "inputs/actual-arm-dispatch.json": {
+      "bytes": 2822,
+      "sha256": "4b82af11a25c774c3ba8825f5edbd4c0c9a1f57806fa103392e0dc7756b7be09"
+    },
+    "inputs/actual-read.json": {
+      "bytes": 618229,
+      "sha256": "b1f09a03d711817ca98adb43e24a6bdae5e17487d854eaaa156636658e99e007"
+    },
+    "inputs/controls-manifest.json": {
+      "bytes": 1967,
+      "sha256": "ae6154e4e3ee02e34a4c6007ea2c962e0d27b7caf5a19ac4c5267e63371cc40e"
+    },
+    "inputs/operator.py": {
+      "bytes": 17777,
+      "sha256": "7802617964ffc3eb5f28c8a061687a3b3f636ed90e861920b9fb682af46f150b"
+    },
+    "pending-launch.py": {
+      "bytes": 6252,
+      "sha256": "e571bbd8f93459f520b4b34eef33e01164c74b44ad9eed58f62dbd96acc65d62"
+    }
+  },
+  "kind": "NARROW_ACTUAL_N2_ARM_PENDING_LAUNCH"
+}

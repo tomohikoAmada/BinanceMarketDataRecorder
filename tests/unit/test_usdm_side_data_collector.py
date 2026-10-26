@@ -285,7 +285,9 @@ def test_each_five_minute_kind_uses_independent_durable_bounded_cursor(
         )
         assert not await poller._catch_up_five_minute(asyncio.Event())
         api_limit = (
-            3
+            500
+            if kind is RestSideDataKind.OPEN_INTEREST_STATISTICS
+            else 3
             if kind is RestSideDataKind.TAKER_BUY_SELL_VOLUME
             else 2
         )
@@ -327,7 +329,7 @@ def test_each_five_minute_kind_uses_independent_durable_bounded_cursor(
     asyncio.run(exercise())
 
 
-def test_five_minute_cursor_resumes_without_skipping_after_restart(
+def test_oi_cursor_rechecks_its_legacy_window_after_restart(
     tmp_path: Path,
 ) -> None:
     async def exercise() -> None:
@@ -347,10 +349,7 @@ def test_five_minute_cursor_resumes_without_skipping_after_restart(
         await first._catch_up_five_minute(asyncio.Event())
         cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
         assert cursor is not None
-        expected_next = (
-            cast(int, cursor["last_persisted_period_timestamp"])
-            + FIVE_MINUTE_PERIOD_MS
-        )
+        expected_next = cast(int, cursor["last_persisted_period_timestamp"])
         second_api = CursorApi(kind)
         second = _cursor_poller(
             kind=kind,
@@ -363,6 +362,11 @@ def test_five_minute_cursor_resumes_without_skipping_after_restart(
         )
         await second._catch_up_five_minute(asyncio.Event())
         assert second_api.calls[0][0] == expected_next
+        rechecked = catalog.side_data_cursor(kind.value, "BTCUSDT")
+        assert rechecked is not None
+        assert rechecked["last_persisted_period_timestamp"] == expected_next
+        await second._catch_up_five_minute(asyncio.Event())
+        assert second_api.calls[1][0] == expected_next + FIVE_MINUTE_PERIOD_MS
         catalog.close()
 
     asyncio.run(exercise())
@@ -429,7 +433,9 @@ def test_cursor_does_not_advance_on_request_empty_or_fsync_failure(
 
 
 
-@pytest.mark.parametrize("kind", sorted(FIVE_MINUTE_KINDS, key=str))
+@pytest.mark.parametrize(
+    "kind", sorted(FIVE_MINUTE_KINDS - {RestSideDataKind.OPEN_INTEREST_STATISTICS}, key=str)
+)
 def test_repeated_empty_periods_survive_restart_and_recover_without_cursor_skip(
     tmp_path: Path, kind: RestSideDataKind
 ) -> None:
@@ -484,7 +490,9 @@ def test_repeated_empty_periods_survive_restart_and_recover_without_cursor_skip(
 
 
 
-@pytest.mark.parametrize("kind", sorted(FIVE_MINUTE_KINDS, key=str))
+@pytest.mark.parametrize(
+    "kind", sorted(FIVE_MINUTE_KINDS - {RestSideDataKind.OPEN_INTEREST_STATISTICS}, key=str)
+)
 def test_retention_gap_then_empty_retry_preserves_facts_and_reaches_rest_again(
     tmp_path: Path, kind: RestSideDataKind,
 ) -> None:
@@ -763,5 +771,123 @@ def test_cursor_mutation_owned_until_complete_before_seal_and_cursor_advance(
             release.set()
             await asyncio.gather(task, return_exceptions=True)
             catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_sparse_oi_empty_and_period_end_rows_have_durable_range_evidence(
+    tmp_path: Path, empty: bool,
+) -> None:
+    import json
+
+    class SparseApi(CursorApi):
+        def _call(self, *args: object) -> PublicResponse:
+            start, end = cast(int, args[-2]), cast(int, args[-1])
+            self.calls.append((start, end, cast(int, args[2])))
+            return CursorResponse([] if self.empty else [_cursor_model(self.kind, end - 999)])
+
+        open_interest_statistics = _call
+
+    async def exercise() -> None:
+        kind = RestSideDataKind.OPEN_INTEREST_STATISTICS
+        catalog = Catalog(tmp_path / "oi-sparse.sqlite")
+        api = SparseApi(kind, empty=empty)
+        spool = CursorSpool()
+        poller = _cursor_poller(kind=kind, tmp_path=tmp_path, catalog=catalog,
+                                api=api, spool=spool, now_ms=1_200_001, batches=1)
+        assert not await poller._catch_up_five_minute(asyncio.Event())
+        cursor = catalog.side_data_cursor(kind.value, "BTCUSDT")
+        assert cursor is not None and cursor["last_persisted_period_timestamp"] == 300_000
+        envelope = spool.envelopes[0]
+        evidence = catalog.operational_events(event_type="SIDE_DATA_RANGE_EVALUATED")[0]
+        details = cast(dict[str, object], evidence["evidence"])
+        assert details["symbol"] == "BTCUSDT"
+        assert details["raw_connection_id"] == envelope.connection_id
+        assert details["range_complete"] is True
+        assert details["response_record_count"] == (0 if empty else 1)
+        assert poller.stats.accepted == 1 and poller.stats.consecutive_failures == 0
+        if empty:
+            assert json.loads(envelope.raw_payload)["response"]["model"] == []
+            assert len(catalog.operational_events(event_type="SIDE_DATA_EMPTY_RESPONSE")) == 1
+        else:
+            assert envelope.source_sequence["lastRequestedTimestamp"] == 599_000
+        catalog.close()
+
+    asyncio.run(exercise())
+
+
+def test_oi_range_cursor_waits_for_fsync_and_event_commit(tmp_path: Path) -> None:
+    async def exercise() -> None:
+        kind = RestSideDataKind.OPEN_INTEREST_STATISTICS
+        catalog = Catalog(tmp_path / "oi-durability.sqlite")
+        spool = CursorSpool(fail_sync=True)
+        api = CursorApi(kind, empty=True)
+        poller = _cursor_poller(kind=kind, tmp_path=tmp_path, catalog=catalog,
+                                api=api, spool=spool, now_ms=1_200_001, batches=1)
+        with pytest.raises(OSError, match="fsync"):
+            await poller._catch_up_five_minute(asyncio.Event())
+        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        assert catalog.operational_events(event_type="SIDE_DATA_RANGE_EVALUATED") == []
+        assert poller.stats.accepted == 0
+        spool.fail_sync = False
+        original = catalog.record_operational_event
+
+        def fail_event(**kwargs: Any) -> bool:
+            raise OSError("injected range event commit failure")
+
+        catalog.record_operational_event = fail_event  # type: ignore[method-assign]
+        with pytest.raises(OSError, match="event commit"):
+            await poller._catch_up_five_minute(asyncio.Event())
+        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        assert poller.stats.accepted == 0
+        catalog.record_operational_event = original  # type: ignore[method-assign]
+        await poller._catch_up_five_minute(asyncio.Event())
+        assert api.calls[0][0] == api.calls[1][0] == api.calls[2][0]
+        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is not None
+        catalog.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("batch_limit", [1, 4])
+def test_saturated_oi_persists_but_cannot_advance_or_claim_success(
+    tmp_path: Path, batch_limit: int,
+) -> None:
+    class SaturatedApi(CursorApi):
+        saturated = True
+
+        def _call(self, *args: object) -> PublicResponse:
+            start, end = cast(int, args[-2]), cast(int, args[-1])
+            self.calls.append((start, end, cast(int, args[2])))
+            return CursorResponse(
+                [_cursor_model(self.kind, start + index) for index in range(500)]
+                if self.saturated else []
+            )
+
+        open_interest_statistics = _call
+
+    async def exercise() -> None:
+        kind = RestSideDataKind.OPEN_INTEREST_STATISTICS
+        catalog = Catalog(tmp_path / "oi-saturation.sqlite")
+        api = SaturatedApi(kind)
+        spool = CursorSpool()
+        poller = _cursor_poller(kind=kind, tmp_path=tmp_path, catalog=catalog,
+                                api=api, spool=spool, now_ms=3_000_001,
+                                batch_limit=batch_limit, batches=1)
+        with pytest.raises(RuntimeError, match="OPEN_INTEREST_RESPONSE_LIMIT_REACHED"):
+            await poller._catch_up_five_minute(asyncio.Event())
+        assert len(spool.envelopes) == 1
+        assert catalog.side_data_cursor(kind.value, "BTCUSDT") is None
+        assert poller.stats.accepted == 0
+        details = cast(dict[str, object], catalog.operational_events(
+            event_type="SIDE_DATA_RANGE_EVALUATED")[0]["evidence"])
+        assert details["range_complete"] is False
+        api.saturated = False
+        await poller._catch_up_five_minute(asyncio.Event())
+        assert api.calls[1][0] == api.calls[0][0]
+        assert api.calls[1][1] - api.calls[1][0] + 1 == max(1, batch_limit // 2) * 300_000
+        assert poller.stats.accepted == 1
+        catalog.close()
 
     asyncio.run(exercise())

@@ -1,0 +1,11 @@
+# N2 actual isolated Linux QA outcome
+
+Decision: **ACCEPT** for exact actual9571-bound N2 runtime Linux QA only.
+
+The full actual read7d0eadd3 independently decodes and SHA/size compares all44 exported files with the parent export. Original QA resultc5ed0133 and QA_MANIFEST07d4c135 match the accepted actualbinding; all14 runtime files and all23 original software inputs remain byte-identical. No repeated QA or candidate execution was performed during this LOCAL/OFFLINE review.
+
+Actual launch e4cd6464 exactly matches the reviewed argv. The live effective snapshot binds invocationa6ecb10f/PID747954, Typeexec/20min runtime/2min stop/UMask0027/control-group and the copied runtime pin to canonical Python. Full journal independently binds the owned runner PID747956 PASS, the same invocation's normal manager Deactivated successfully, and CPU129.945794s / reported swap peak0. The post-GC not-found/default90s/infinity values are not used as effective policy or failure evidence.
+
+The result contains12 clean imports from the copied runtime and6 fixture processes, all return codes0 with SHA-bound stdout/stderr (all stderr empty). Complete fixture result JSONs bind their printed logs (common/topology prints a matching18-case/hash summary):13 whole86400 fakeclock controller scenarios,7 monitor fault cases,14 actual sample fault cases plus main critical pause receipt,4 admission/warm/resource boundaries,18 real-package topology/forecast/admission cases,3 complete actual-sample finish flows with8710 calls, and11 publication cases plus5 tamper rejections. Fixed2880 denominator accepts2866 and rejects2865; missing slot remains bad. Critical filesystem boundary still fails rather than inventing correct-rate evidence. N2 topology is4products/26contexts/42spools. Fullflow/publication observations are synthetic fixture observations; none grants24h duration credit.
+
+All105 checks pass. Recorder readback remains inactive AND disabled/PID0/NRestarts0. Human-notification delivery is not proven by the fixture; it proves the pause/notification-required receipt. Direct UID/GID/mode export is still absent and is not claimed. This result supports stage actualbinding/preparation, not future ARM/current admission/launch/warm/T0 or real24h qualification.

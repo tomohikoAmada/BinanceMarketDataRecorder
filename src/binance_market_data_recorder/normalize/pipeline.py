@@ -1,7 +1,7 @@
 """内容寻址、崩溃安全且确定性的 Raw 到 Parquet 管道。
 
 Normalizer 将已验证的 SEALED Raw chunk(以及可选的 archive-verified 外部副本)
-转换为 normalized-dataset.v1 层次结构下的不可变、内容寻址 Parquet 分区。
+转换为 normalized-dataset.v2 层次结构下的不可变、内容寻址 Parquet 分区。
 
 管道不变量:
 - 所有 Raw chunk 必须在任何行被解析前通过验证(sealed artifact 的大小/哈希
@@ -279,6 +279,11 @@ def _provenance(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
 
 def _candidate(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
     envelope = record.envelope
+    exchange_times = parsed.exchange_times or {
+        "exchange_event_time_ms": envelope.exchange_event_time,
+        "exchange_transaction_time_ms": envelope.exchange_transaction_time,
+        "exchange_trade_time_ms": envelope.exchange_trade_time,
+    }
     receive_date, receive_hour = _partition_time(envelope.receive_time_utc_ns)
     semantic_hash = sha256_json(
         {
@@ -294,9 +299,7 @@ def _candidate(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
             "event_kind": parsed.event_kind,
             "valid": parsed.valid,
             "error_code": parsed.error_code,
-            "exchange_event_time_ms": envelope.exchange_event_time,
-            "exchange_transaction_time_ms": envelope.exchange_transaction_time,
-            "exchange_trade_time_ms": envelope.exchange_trade_time,
+            **exchange_times,
             "content": parsed.logical_content,
         }
     )
@@ -315,9 +318,7 @@ def _candidate(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
         "receive_date": receive_date,
         "receive_hour": int(receive_hour),
         "receive_monotonic_ns": envelope.receive_monotonic_ns,
-        "exchange_event_time_ms": envelope.exchange_event_time,
-        "exchange_transaction_time_ms": envelope.exchange_transaction_time,
-        "exchange_trade_time_ms": envelope.exchange_trade_time,
+        **exchange_times,
         "module": envelope.module,
         "connection_id": envelope.connection_id,
         "collector_instance_id": envelope.collector_instance_id,

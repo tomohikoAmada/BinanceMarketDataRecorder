@@ -1,0 +1,14 @@
+{
+  "accepted_initial_new2h_copy_and_native_binding": {
+    "MANIFEST.json": "5ba6baac6a1819d50f2f17ac3010c4284de5da9a2b4fc6b1b128aecca443751d",
+    "REPORT.md": "99b539a0b701714691857842b3d6ed194643b79d759ae3f9ade6c82da453d900",
+    "RESULT.json": "077ae5b94bbc83292595821dac9aa583a035a7f7ecf22e5b5af8b6c8e2e7fe05",
+    "root": "/private/var/tmp/bmdr-r2-two-hour-diagnostic-actual-binding-review-20261024-final-sgcXxy4N"
+  },
+  "accepted_new2h_design": {
+    "MANIFEST.json": "dbc19b4cd229bdd89c2acff840c062eb98d8657035188410567f010d9f4d8493",
+    "REPORT.md": "7eedc9a8b97fdcc176d8fef1b6cd7974e3bd7f36dd92bc663894be7fb5466d07",
+    "RESULT.json": "7a5f55f742aad39c7674a0cd6b63864a3ba726d5b763a1c3f5aa7cee6ff47e73",
+    "root": "/private/var/tmp/bmdr-r2-two-hour-diagnostic-delta-review-20261024-2fbUk2gD"
+  }
+}

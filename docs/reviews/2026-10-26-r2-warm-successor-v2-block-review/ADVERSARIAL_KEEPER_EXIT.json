@@ -1,0 +1,73 @@
+{
+  "case": "unexpected_keeper_SIGKILL_after_real_R_flush",
+  "command_ok_accepts": true,
+  "keeper_pids": [
+    82634
+  ],
+  "receipt": {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-c",
+      "print(\"{}\",flush=True)"
+    ],
+    "child_pid": 82634,
+    "cleanup": "LEASED_GROUP_NO_LIVE_MEMBERS",
+    "cleanup_error": null,
+    "cleanup_reserve_seconds": 2,
+    "control_raw": {
+      "base64": "eyJrZWVwZXJfcGlkIjogODI2MzQsICJwZ2lkIjogODI2MzQsICJpbm5lcl9waWQiOiA4MjYzNSwgInJldHVybmNvZGUiOiAwfQo=",
+      "bytes": 74,
+      "sha256": "2909b2c0c6e209908d9b38baa79f4a9b9afa42b7c0b3ccee546ebf13bbc8da5f"
+    },
+    "final_group_members": [
+      {
+        "live": false,
+        "pgid": 82634,
+        "pid": 82634,
+        "state": "Z"
+      }
+    ],
+    "group_KILL_used": false,
+    "inner_pid": 82635,
+    "keeper_argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-B",
+      "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+      "--keeper",
+      "4",
+      "274801538733125",
+      "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"print(\\\"{}\\\",flush=True)\"]"
+    ],
+    "keeper_returncode": -9,
+    "lease_released": true,
+    "owned_pgid": 82634,
+    "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+    "returncode": 0,
+    "stderr_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout_raw": {
+      "base64": "e30K",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    "timed_out": false,
+    "timeout_prefix_stderr_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_prefix_stdout_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_seconds": 1,
+    "unexpected_live_descendants": []
+  },
+  "result": "BUG_REPRODUCED",
+  "scope": "Actual local POSIX signal of exact owned keeper only, after inner has completed; no Linux/runuser/service actions",
+  "unrelated_sentinel_unaffected": true
+}

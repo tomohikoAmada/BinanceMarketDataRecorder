@@ -1,0 +1,7 @@
+{
+  "initial_helper_sha256": "3003c4b8d4586f9c0c16a08a6a1476836cc8ec5326e028c8d3bde82853664b23",
+  "blocking": "TimeoutExpired/OSError before original stdout/stderr preservation in main(); preserve partial bytes and execution error metadata without retry.",
+  "provenance_note": "Only created_at_utc_ns is selected; creation-minute rates are not peak-seal-minute rates.",
+  "remote_boundaries": "No remote filesystem/service/SQL mutation action; advisory lock plus SQLite ro/query_only metadata transaction, approved exact source/config/identity/deployment binding.",
+  "actual_execution_by_reviewer": false
+}

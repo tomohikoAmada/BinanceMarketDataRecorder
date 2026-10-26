@@ -1,0 +1,35 @@
+{
+  "accepted24h_data_or_capacity_credit": false,
+  "additional_isolated_full_warm_prefix_cases": 16,
+  "all_expected_fixture_outcomes_reproduced": true,
+  "bindings": {
+    "candidate_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+    "design_manifest_sha256": "67d7eaf153cb6f5cab5dae42ffdc1cca11dad1596c0f22cf2e76f5a29555f8d6",
+    "original_controller_sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+  },
+  "candidate_copied_or_deployed": false,
+  "corrected_successor_not_assessed_here": true,
+  "decision": "BLOCK",
+  "findings": [
+    {
+      "detail": "Complete isolated warm-flow models reach owner-start with a final capacity observation stale by1h or a different published deployment identity, after an earlier valid canonical READY. Existing strict auxiliary/resource validation does not inspect those fields, whereas frozen source readiness.py rejects them at lines272/342. Add a source-aligned fast current completion guard for fresh end/start, preserving one full early CLI and all original bounds; do not relabel the cached result as T0 freshness.",
+      "function": "capture final end/start completion checks",
+      "id": "F1",
+      "priority": 1,
+      "title": "Earlier canonical READY is not followed by all required cheap current source-readiness checks"
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "old194e_closed_and_original_failures_immutable": true,
+  "positive_scope_confirmed": [
+    "One unchanged full canonical CLI at first strict PASS with remaining1200/min330 cap and lossless evidence",
+    "Same1200/300/min12 semantics, fresh strict end/start and normal bad-middle recovery",
+    "CLI timeout/late READY/failed durability/end-start failures prevent T0",
+    "Boot/service instance and true resource faults prevent T0",
+    "All noncapture controller AST and entire post-T0 monitor/duration/audit/restore AST unchanged"
+  ],
+  "provided_fixture_cases_independently_executed": 24,
+  "real_Linux_deployment_source_QA_or_service_actions": false,
+  "scope": "EXACT_MINIMAL_WARM_OVERLAP_CANDIDATE_CODE_REVIEW_ONLY",
+  "source_semantic_completion_counterexamples": 2
+}

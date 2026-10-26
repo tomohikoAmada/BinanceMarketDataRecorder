@@ -1,0 +1,5 @@
+{
+  "initial_harness_setup_failure": "Mock environment omitted read(); the capture prefix attempted its ordinary PID publication gate and failed NameError before samples.",
+  "correction": "Added metadata-only PID publication mock; no candidate changed.",
+  "failed_harness_attempt_credit": false
+}

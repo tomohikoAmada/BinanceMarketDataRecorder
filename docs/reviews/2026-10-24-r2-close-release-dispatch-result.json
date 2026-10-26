@@ -1,0 +1,49 @@
+{
+  "schema": "bmdr-independent-actual-dispatch-supplement-v1",
+  "completed_at_utc": "2026-10-23T20:07:23.836205+00:00",
+  "verdict": "ACCEPT_ACTUAL_LAUNCH_BINDING_ONLY",
+  "blocking_findings": [],
+  "actual_dispatch_sha256": "23ccfc8fc874148df827096763db5f9cebf38522dece3fd0956ef2f9c1274bc4",
+  "prior_physical_review_manifest_sha256": "b8ca3b9369e72ad9e9e44735ce6217c8703e747ab49d933a7c2543670bcbc0f8",
+  "unit": "binance-recorder-r2-stream-close-cloud-20261024-l2hr7wd9.service",
+  "invocation_id": "779d98ea58e9485a84e1c56e40afd102",
+  "pid": 808287,
+  "actual_observed_state": "activating/start",
+  "actual_start_timestamp": "Fri 2026-10-23 20:06:03 UTC",
+  "runtime_max_seconds": 3600,
+  "stop_timeout_seconds": 120,
+  "actual_argv_equals_frozen": true,
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "launch_status": "ISOLATED_CLOUD_LAUNCHED_NOT_PASS",
+  "cloud_qa_or_wheel_accepted": false,
+  "canonical_deployment_accepted": false,
+  "formal_credit_seconds": 0,
+  "reviewer_ssh_or_helper_execution": false,
+  "next_result_checkpoint_utc": "2026-10-23T20:25:00Z",
+  "inputs": [
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-cloud-dispatch.json",
+      "snapshot": "inputs/actual-cloud-dispatch.json",
+      "size": 1587,
+      "sha256": "23ccfc8fc874148df827096763db5f9cebf38522dece3fd0956ef2f9c1274bc4"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-cloud-dispatch-execution.json",
+      "snapshot": "inputs/actual-cloud-dispatch-execution.json",
+      "size": 384,
+      "sha256": "5a7aa681b7958bec2f98cd095a7970e3e9ede7e69b5d85fd9cffd077a66363a1"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-cloud-dispatch-stdout.txt",
+      "snapshot": "inputs/actual-cloud-dispatch-stdout.txt",
+      "size": 1666,
+      "sha256": "29eb247d8e2539ba76903406bb6c077eda06a26ac4724ec03a72723bb75c1ac3"
+    },
+    {
+      "path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/actual-cloud-dispatch-stderr.txt",
+      "snapshot": "inputs/actual-cloud-dispatch-stderr.txt",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "kind": "LOCAL_WARM_SOURCE_SUCCESSOR_COMPONENT_CODE_PENDING_INDEPENDENT_REVIEW",
+  "members": {
+    "INPUTS.json": {
+      "sha256": "b9a44d575f10aee5b1611a71ae1c8b84463f1bdaa29297ba4c2829a87909abde",
+      "bytes": 2905
+    },
+    "CANDIDATE.md": {
+      "sha256": "8854e46da8a4a5b03a8dcf4427613ce4731e35c4ac09fc2ce2f659adf2443e69",
+      "bytes": 3473
+    },
+    "CONTROLLER_DELTA.diff": {
+      "sha256": "3203786c2fad2ceb34ac1b498531cb7fd6d105a04f92228892db5c1469e83d42",
+      "bytes": 7811
+    },
+    "ORIGINAL_CONTROLLER.py": {
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "bytes": 21356
+    },
+    "source-module-hashes.json": {
+      "sha256": "443801ce966997ba66126c7415a5f7639c142ef2a31773226091ce149c7eb1db",
+      "bytes": 546
+    },
+    "runtime/controller.py": {
+      "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+      "bytes": 22763
+    },
+    "runtime/warm_readiness.py": {
+      "sha256": "9c173bf88382dba65985259b0bd3ad62695e4f741b314724201e578c6900b7fc",
+      "bytes": 19511
+    },
+    "runtime/warm_completion.py": {
+      "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+      "bytes": 6048
+    },
+    "test_full_flow.py": {
+      "sha256": "85340a40dda07f0b1f21822ba0bdd74b456dc536984e9bcd131b6b1b5e22baee",
+      "bytes": 19564
+    },
+    "test_boundaries.py": {
+      "sha256": "465a4cdb3b3424eba5ba24a99487444d2c88a3b5239dc9942f4d08d1df4882c4",
+      "bytes": 5865
+    },
+    "LOCAL_FULL_FLOW_RESULTS.json": {
+      "sha256": "a13d341974d6d7021897675c6f1ce2f9ad14bd95087f98bf5b1566df4761e2ee",
+      "bytes": 26945
+    },
+    "LOCAL_BOUNDARY_RESULTS.json": {
+      "sha256": "f609cc64343e04a223835c5b3e8724d2493f3b83020b779e09a8410a5377b621",
+      "bytes": 4814
+    },
+    "PARENT_LOCAL_EXECUTIONS.json": {
+      "sha256": "35e17b88d0f3cde700b65039136211ac0ea94c701ae33a58019b54b6b95adfaf",
+      "bytes": 1844
+    }
+  },
+  "copied_or_deployed": false,
+  "Linux_qualified": false,
+  "new_T0": false,
+  "parent_LOCAL_cases": 77
+}

@@ -1,0 +1,101 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "size": 4024,
+      "sha256": "5a9c2ca8b57199357aaccab8da5f6ee022901da1c76d2cb696009959ec95fd39"
+    },
+    {
+      "path": "CHECKS.txt",
+      "size": 57,
+      "sha256": "19ca89b9fbd83de8730af16ee014a1f98c2d715c001ea365cce0077ad7c51581"
+    },
+    {
+      "path": "HELPER_DIFF.txt",
+      "size": 17218,
+      "sha256": "caa80559eb583819903657744a25a406228287396ee29fbd1f24fa49f3535ee3"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 2266,
+      "sha256": "ec920b7ec1cb6baef3f7a1ce5c43b0e5ea440f1d1bf3a350b39e76eb4cfcfe04"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 5174,
+      "sha256": "86de7d0062aec0977d31e23c7b6f7f2a6fed4b76b920d36baf460c46da9aeebd"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 1582,
+      "sha256": "da47159303ff87b9d65c1f202e730080efc449a2070296e43b8170e4b632f9d2"
+    },
+    {
+      "path": "check_controls.py",
+      "size": 5625,
+      "sha256": "864d68abb636d82db86b35a8f162436ef6b35271da2e2ecf52843d566bc11cec"
+    },
+    {
+      "path": "inputs/copy-stopped-deploy-controls.py",
+      "size": 4181,
+      "sha256": "5f5e69b2838e6a7131edd142d49490ed19461b1f38f2fe38a60071acd8f71c5b"
+    },
+    {
+      "path": "inputs/dispatch-stopped-deploy-diagnostic.py",
+      "size": 4120,
+      "sha256": "6395ec2768969b194c4b1e99cabcaec05c713ad2815ff55fe2dda34e7157f9d5"
+    },
+    {
+      "path": "inputs/read-stopped-deploy-diagnostic-result.py",
+      "size": 3606,
+      "sha256": "edc3445463b87e35c8710187925de3024330833b234faf5773c85b3dc9b6be07"
+    },
+    {
+      "path": "inputs/release-paths.json",
+      "size": 935,
+      "sha256": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df"
+    },
+    {
+      "path": "inputs/stopped-deploy-argv.json",
+      "size": 1066,
+      "sha256": "112c10f26fdaa6aeca3a6a8da6091f2678c94292089f7e270c8ca7aa410240db"
+    },
+    {
+      "path": "inputs/stopped-deploy-diagnostic.py",
+      "size": 14818,
+      "sha256": "c9df0940a989516a0823f062e6053f18f4086c76b962839b035cf03e68c29a34"
+    },
+    {
+      "path": "inputs/stopped-deploy-operations-manifest.json",
+      "size": 625,
+      "sha256": "3c8e2d51492a15c5409e579c07c63bf808baf97c7e98c3d279ddaf611a729cde"
+    },
+    {
+      "path": "previous/copy-stopped-deploy-controls.py",
+      "size": 4052,
+      "sha256": "939748833810b0f2d520206a43930c375a3d48a26c596d07f3e793d912524cef"
+    },
+    {
+      "path": "previous/dispatch-stopped-deploy-btc.py",
+      "size": 3678,
+      "sha256": "d718badacf83d4600eb197a29f12fa63e3712787096910ae951ca384c7afc781"
+    },
+    {
+      "path": "previous/read-stopped-deploy-btc-result.py",
+      "size": 3599,
+      "sha256": "f1ea564d77ba5aa9a22170afe3484de2598568b658976311828ba2b5f6887a79"
+    },
+    {
+      "path": "previous/stopped-deploy-argv.json",
+      "size": 1069,
+      "sha256": "7b258ae983c0508fb5e470a23b90bb12fb6b24e29d8d24dbbcfb303c27773293"
+    },
+    {
+      "path": "previous/stopped-deploy-btc.py",
+      "size": 15734,
+      "sha256": "cdbfc070b40dbc65256f0632dffeb30498cc2cede21fee900dd2cbb6c7f327ab"
+    }
+  ]
+}

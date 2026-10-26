@@ -1,0 +1,32 @@
+[
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-control-files-v2-20261026-k9ma9t7a/test_control_files.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9maWxlX3JlYWRlcl9jYXNlcyI6IDE2LCAiYWxsX1BBU1MiOiB0cnVlLCAid2hvbGVfcmVhZGVyX29yX0xpbnV4X2NyZWRpdCI6IGZhbHNlfQo=",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "control_files.py": "d13a30e0d007666c26d152f66d4ff5d70d6854014f3893a2c6cb87ae8b4ee263",
+      "test_control_files.py": "9d9156e09bda4c05390e1dff1184001151054aca0582d3df780a1a7211f2da99",
+      "test_collection_regressions.py": "4fb34b7eeeda6abf03f300f7a9cdffd28229457df7833e8177acba5aaf984d2a"
+    },
+    "scope": "LOCAL temporary metadata and explicit IO fault fixtures only, no Linux or whole reader credit"
+  },
+  {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "/private/var/tmp/bmdr-r2-control-files-v2-20261026-k9ma9t7a/test_collection_regressions.py"
+    ],
+    "returncode": 0,
+    "stdout_base64": "eyJMT0NBTF9jb2xsZWN0aW9uX3JlZ3Jlc3Npb25zIjogNiwgImFsbF9QQVNTIjogdHJ1ZSwgIndob2xlX3JlYWRlcl9vcl9MaW51eF9jcmVkaXQiOiBmYWxzZX0K",
+    "stderr_base64": "",
+    "subjects_SHA256": {
+      "control_files.py": "d13a30e0d007666c26d152f66d4ff5d70d6854014f3893a2c6cb87ae8b4ee263",
+      "test_control_files.py": "9d9156e09bda4c05390e1dff1184001151054aca0582d3df780a1a7211f2da99",
+      "test_collection_regressions.py": "4fb34b7eeeda6abf03f300f7a9cdffd28229457df7833e8177acba5aaf984d2a"
+    },
+    "scope": "LOCAL temporary metadata and explicit IO fault fixtures only, no Linux or whole reader credit"
+  }
+]

@@ -1,0 +1,88 @@
+{
+  "created_at_utc": "2026-10-22T05:25:59.347342+00:00",
+  "files": [
+    {
+      "bytes": 8682,
+      "path": "CHECKS.json",
+      "sha256": "5a30514db3bb23d88685c97c4193d1ca6c5f9b369edf30c65153b2b8f3071d41"
+    },
+    {
+      "bytes": 4161,
+      "path": "INPUTS.json",
+      "sha256": "7631ab30fa9c9c466cae10df771d8758bf9bdcc3cfe4ac76f682867218b78d60"
+    },
+    {
+      "bytes": 1487,
+      "path": "REPORT.md",
+      "sha256": "d43ee38ab3e81122fba09a20be349fcb9ea2da0945bcc170dd41ec912a45239a"
+    },
+    {
+      "bytes": 2241,
+      "path": "RESULT.json",
+      "sha256": "9a24b4d94f56a4fbb636382b098dc726d61d8f7606aecaca325d4ee2261621af"
+    },
+    {
+      "bytes": 3394647,
+      "path": "inputs/final_manifest.bin",
+      "sha256": "199244a05205b6538d366bd96176753507dc6623adf498288a7c945a64e43ce9"
+    },
+    {
+      "bytes": 8145,
+      "path": "inputs/final_report.bin",
+      "sha256": "8ac5cea3e18beb7fa905637d9b7fd85d880e4602246391cf05f5e9010daf55f2"
+    },
+    {
+      "bytes": 6058,
+      "path": "inputs/final_result.bin",
+      "sha256": "8afbe52106490aaefd31f5f6bcb08293a440b943ac7835f021bb7bdabbb86b10"
+    },
+    {
+      "bytes": 5071,
+      "path": "inputs/publisher.py",
+      "sha256": "2859e36cdbed678fa4005a4b481ce9fbd541ad95c47d520f6ce0c54ac5429335"
+    },
+    {
+      "bytes": 863,
+      "path": "inputs/readback.bin",
+      "sha256": "4234d483172adc9fd6678405b4ebfe4b861dbe7492f2f32195c2ff752e95315e"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/receipt.bin",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    {
+      "bytes": 1073,
+      "path": "inputs/static_manifest.bin",
+      "sha256": "7df9b63fa5b28f29a5f053a77cf13f92720f2d753196c4ab9bd922f7693d772c"
+    },
+    {
+      "bytes": 5071,
+      "path": "inputs/static_publisher.py",
+      "sha256": "2859e36cdbed678fa4005a4b481ce9fbd541ad95c47d520f6ce0c54ac5429335"
+    },
+    {
+      "bytes": 5318,
+      "path": "inputs/static_receipt.bin",
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    {
+      "bytes": 1681,
+      "path": "inputs/static_report.bin",
+      "sha256": "7b13a2ab4ce041936dffe4c30759619ad2aac9133b155321cc7363ce76b53adf"
+    },
+    {
+      "bytes": 856,
+      "path": "inputs/static_result.bin",
+      "sha256": "4917f355abf9388a58706075a11e180e5a5751a65674c5529ac00ab72371ce8d"
+    },
+    {
+      "bytes": 0,
+      "path": "inputs/stderr.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "member_count": 16,
+  "schema_version": 1,
+  "scope": "ACTUAL_FOUR_ARTIFACT_PUBLICATION_READBACK_ONLY"
+}

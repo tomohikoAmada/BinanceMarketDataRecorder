@@ -1,0 +1,70 @@
+{
+  "bindings": {
+    "V3_code_manifest_sha256": "b020d893bb4acb01aaa46b3272d4a15b043a483cddfba234715f9736ff3fb164",
+    "V3_component_acceptance_manifest_sha256": "b59d6f8f0133401f63d865e88ccf273c12f1542a09229b37aac0d50c7fbb9b2b",
+    "accepted_four_subjects": {
+      "controller.py": {
+        "bytes": 22763,
+        "sha256": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f"
+      },
+      "owned_command.py": {
+        "bytes": 12954,
+        "sha256": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+      },
+      "warm_completion.py": {
+        "bytes": 6048,
+        "sha256": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d"
+      },
+      "warm_readiness.py": {
+        "bytes": 23235,
+        "sha256": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988"
+      }
+    },
+    "base_stage_operator_sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+    "new_scope_operator_window": "UNBOUND_REQUIRED_FUTURE_EXACT_BINDING",
+    "planned_runtime_member_count": 17,
+    "planned_safe_import_count": 15
+  },
+  "blocking_findings": [],
+  "created_utc": "2026-10-25T21:37:43.228208+00:00",
+  "credits": {
+    "actual_current_Linux_qualified": false,
+    "capacity_or_stability_fix_credit": false,
+    "copy_ARM_launch_authorized": false,
+    "design_accepted": true,
+    "new_T0": false,
+    "new_runtime_or_reader_code_accepted": false,
+    "own86400_or_saved_data_accepted": false,
+    "production_deployed": false
+  },
+  "decision": "ACCEPT_DESIGN_ONLY",
+  "design": {
+    "bytes": 17550,
+    "sha256": "612b4f14478bac2a6d60638deed69abaeb577c4b8706b40939fc158965cb2c95"
+  },
+  "fixture_specs_executed": 0,
+  "implementation_or_generated_programs_created": false,
+  "input_readback_all_SHA_bytes_PASS": true,
+  "kind": "INDEPENDENT_MINIMAL_WARM_RUNTIME_READER_CURRENT_LINUX_BINDING_DESIGN",
+  "mandatory_future_gates": [
+    "new exact operator/control/fixture implementation review",
+    "lossless complete reader/export/commit consumer contract",
+    "actual current stopped preflight/handoff/resources/metadata forecast",
+    "exclusive physical copy/current canonical Linux and runuser/group qualification",
+    "independent full actual Linux/physical acceptance",
+    "new ARM fixed expiry/admission and independent actual binding",
+    "sole launch and actual warm bundle/formal entry before newT0 credit",
+    "new own86400/full saved data/restored handoff/receipt criteria"
+  ],
+  "planned_fixture_specs": 24,
+  "preservation": {
+    "SSH_network_Raw_service_actions": false,
+    "old_closed_scopes_guards": "NEVER_REUSE_OR_EXTEND",
+    "source_W_P3_candidate_plans": "UNCHANGED",
+    "writes": "THIS_EXCLUSIVE_DESIGN_DIRECTORY_ONLY"
+  },
+  "report": {
+    "bytes": 1924,
+    "sha256": "bd7471a3a6052c1aeaa5d54ccfd4cea4fbca941d182622f3811af608eb5752bb"
+  }
+}

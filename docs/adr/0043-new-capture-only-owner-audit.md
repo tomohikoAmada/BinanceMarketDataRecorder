@@ -1,5 +1,45 @@
 # ADR-0043: Audit only a new owner-policy capture
 
+Latest actual October22 00:45UTC: **N1 BTC OWN24H COMPLETE_OWNER_NEW_DATA_ONLY / N2 BTC+ETH PREPARING**.
+
+- [x] Sole N1 run3f127f83 own86400.234416692s and strict14/core actual endpoint PASS.
+- [x] Both complete released LIVE passes and completed immutable verification audit415ae088:
+  independent45893093/45893093 saved frames100%,12998chunks; monitor2876/2880=99.861111% separately.
+  Each satisfies the latest inclusive >=99.5% owner criterion; original999 BLOCK retained.
+- [x] Complete independent866893-check reconstruction ACCEPT8ac5cea3/result8afbe521/manifest199244a0;
+  all27158 exported controls and14150 review members hash/size checked. No extra Raw audit or duration.
+- [x] Actual OS/archive RESTORED before guard cancellation; both old windows CLOSED forever.
+  Fresh canonical0c621729/handoff9297a05f independently accepted, sameboot/config/identity,
+  RecorderinactiveANDdisabled/PID0/NRestarts0, backlogs/partials0, natural archive success and finite
+  future CLOCK_MONOTONIC deadline at handoff collection.
+- [x] Final owner24h N1 receipt **a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac**
+  plus three independent reports actually published/fsynced/root0:988/0640/SHA-readback on VPS.
+- [x] Future995 continuity policy reviewed5e1938cb:30 focused cases,13 complete86400 fake-clock cases,
+  14 actual sample cases; no production wheel/source change. Recoverable faults log/retry;
+  actual write/verification/trusted-evidence failure pauses affected capture and notifies.
+- [ ] N2 BTC+ETH new config/identity/forecast/runtime/finite window/strict warm and fresh own86400 T0.
+  Public Spot+USD-M eligibility confirmed; no N2 T0 or final capacity boundary yet.
+
+Retained limitations:2657 gap/incomplete manifests include10 zero-frame objects, overlap0;
+7 original stop-tail manifests extend <=0.920193276s after actual target (nominal UTC tail1.154609350s),
+zero extra duration. Complete monitor rows/projections and4 failed full-state snapshots reconstruct;
+full service_state source bytes were not kept for every row. Oct20 daily report is aggregate, not
+this run's frame denominator. Four failed checks show USD-M book_ticker temporarily disconnected;
+3 recovered queue-pressure episodes and6 planned rotations remain visible, no deeper origin assumed.
+Only tested BTC traffic/VPS conditions accepted. Capacity/headroom matrix pending;48h PENDING,
+R078 OPEN/no every-event/canonicalV5/predecessor/production-ready claim. Earlier checkpoints are history.
+
+October21 correction: a post-boundary discontinuity completion may depend on a
+START recorded before the capture boundary. Retain only that exact paired START
+as causal metadata authority with its original row values and sequence ID. This
+does not add a prior chunk, Raw frame, predecessor qualification or duration.
+Missing/invalid pairs still fail the unchanged authority validator. A previously
+frozen selection can be repaired only in a new private child using hash-bound
+original frozen metadata, preserving original failed controls and the exact Raw
+membership. Sequence triggers/counters/schema and all unrelated rows stay intact.
+See [N1 repair](../milestone_acceptance/R2-n1-causal-audit-repair-20261021.md).
+
+
 Status: accepted design/implementation/copy qualification, October12,2026. Actual capture/target/data/restoration qualification remains separate.
 
 The owner requested a fresh12h test without analyzing historical data. The Recorder deployment and data directory remain unchanged. Existing data is retained; the private test controller defines a new capture boundary before enabling Recorder.

@@ -1,0 +1,220 @@
+{
+  "kind": "CURRENT_METADATA_STARTUP_AND_PREFIX_ORIGINAL_EXPORT",
+  "parent_read_sha256": "e589bece829dc14ae43002adaf024dd1fe831be364526e695b65ad5967abf6ac",
+  "original_files": 36,
+  "members": {
+    "software-copy.json": {
+      "sha256": "05e162efb7951295ebf39068313ae9c38776d8dd640a5cbdd7068c54ed51db0d",
+      "bytes": 22700
+    },
+    "copy-admission.json": {
+      "sha256": "bcb41030a08128cbbb3fcf20b64e0ddb68ef9e0a349e00904d466cd086b6f70d",
+      "bytes": 3783
+    },
+    "stage-controls-manifest.json": {
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+      "bytes": 2345
+    },
+    "stage-design-evidence.json": {
+      "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7",
+      "bytes": 1502
+    },
+    "canonical-verification.json": {
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5",
+      "bytes": 5003
+    },
+    "prearm-admission.json": {
+      "sha256": "a014302e1cdf8154e39c4db0c88286db4dab1e75dabc43e9a6489fa7325b0455",
+      "bytes": 3783
+    },
+    "quiet-window-actual.json": {
+      "sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199",
+      "bytes": 4256
+    },
+    "postarm-admission.json": {
+      "sha256": "5ea49dc53567112bc6440bb66347a5586ec189b4681fe214ac558684726c9415",
+      "bytes": 3795
+    },
+    "kernel-update-pending.json": {
+      "sha256": "152f1509e0b00709f456a1720e5cceedbb28b3f05a7e9e7ab4abd5b620363cc6",
+      "bytes": 1080
+    },
+    "launch-admission.json": {
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe",
+      "bytes": 3795
+    },
+    "capture-launch.json": {
+      "sha256": "059948191e22e7098b6a91eaf58bca8abcdee96208811ccb944e661605170b3e",
+      "bytes": 1294
+    },
+    "capture-admission.json": {
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5",
+      "bytes": 3793
+    },
+    "warmup-result.json": {
+      "sha256": "d1ee5f3a15d82ad6d9076736aa1c5967d455a94c711be440a7cb727eea70dd48",
+      "bytes": 112473
+    },
+    "warmup-end-observation.json": {
+      "sha256": "ba5fa933d43dd68548082a6a40af02ff8d3d3b6718751c02dac63e929561bde6",
+      "bytes": 46080
+    },
+    "prestart-admission.json": {
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd",
+      "bytes": 3797
+    },
+    "owner-start.json": {
+      "sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213",
+      "bytes": 60066
+    },
+    "start-observation.json": {
+      "sha256": "8daa49ebcab8a88b8ca7667af06ea350d6d605ad2a01a3ae0f668d18fab6092e",
+      "bytes": 46080
+    },
+    "capacity-policy.json": {
+      "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+      "bytes": 12875
+    },
+    "arm-native-attempt.json": {
+      "sha256": "0c2c6d30d7efaa17821634a18a1cbad1b2c6e7d08754cb240dd85bb238f1cb8a",
+      "bytes": 1078
+    },
+    "stage-launch-attempt.json": {
+      "sha256": "cc616757d68ea8c965bc8342c0b906bf1cdc6811f5e8637502eb5a6f06e5748d",
+      "bytes": 229
+    },
+    "data-scope-start.json": {
+      "sha256": "5f124d7cee064711649d5a70fe27af9bafd81c0cb16ecef876890c017ad77036",
+      "bytes": 567
+    },
+    "warmup.jsonl": {
+      "sha256": "b44a1dbfd393bbd583f808373f5705fa898060f868418e876907e97d5007130b",
+      "bytes": 765477
+    },
+    "monitoring.jsonl": {
+      "sha256": "82d6ba400ba4299b485e635eff34f099f17bd782afad4780f635be13c10ddcec",
+      "bytes": 53334215
+    },
+    "recovery-observations.jsonl": {
+      "sha256": "d9bb2900e6c36af6d3b67acc062371d261fc81adfe7ada653096c56910d1e9d6",
+      "bytes": 267284
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.json": {
+      "sha256": "bd2374fa7eabe5dfcc294dc5f1d068a57308428ae077247182a49460c1c4fb6b",
+      "bytes": 46685
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.json": {
+      "sha256": "99ca834f042311bdaaa73655f342ee15c5dc959eec6ac1331885dfdd2286e5c3",
+      "bytes": 46632
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.json": {
+      "sha256": "ec46c102566884d5a68aeb201709486094b9cfb56cbd9e4c762405280241c891",
+      "bytes": 46697
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.json": {
+      "sha256": "8c51f1cc06e60eb8e763217e548b41f597c838c4c6dcf656cade71f135b92259",
+      "bytes": 46697
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.json": {
+      "sha256": "bf83a42ee4382d071322c8fb7dc461ee74cfb1a12092cbdc772c92c4db8673c5",
+      "bytes": 46697
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.json": {
+      "sha256": "a7b50f79b639816ac41a282bb432f90a37ad86a70ff7916712cd79157db1c02d",
+      "bytes": 46684
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.state": {
+      "sha256": "86ac0f45b869a012cd499fab06d894a122ee745ee3f58a592efe14b5b2eb2474",
+      "bytes": 13601
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.state": {
+      "sha256": "aae48cd07492dbd8751123eac025cf7bf8c1353a27113b2e5d87c4aa9f1dae54",
+      "bytes": 13585
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.state": {
+      "sha256": "d2f11368ee45693b479c409a86515dbbe007ec912d14da6ef5209b0dadbd5a0b",
+      "bytes": 13605
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.state": {
+      "sha256": "87cfc2302bb4d17040f09c92cbecc8e9ca446f7facb30582744fe9c2b853db7e",
+      "bytes": 13605
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.state": {
+      "sha256": "21dd4a94d204c1440cb19117b8669947310f4700fd27fb4bd07b3c073fd14318",
+      "bytes": 13604
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.state": {
+      "sha256": "f7dc87d101c60238e6358336a5516142feb8991abbbff4d3e41099abb4858f86",
+      "bytes": 13601
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-arm.service.txt": {
+      "sha256": "c685cdd354952c42198052fa62dbe26775bb9d449aa63edd512e7335c86b8b29",
+      "bytes": 11220
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-capture.service.txt": {
+      "sha256": "fec7e5dacea9c394b2c5de19b86ff72b0342ae157ec2c8b460a882753a8219b6",
+      "bytes": 7348
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-terminal.service.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.timer.txt": {
+      "sha256": "870984e7f1f7474ac206d9242be5090364bbabdf792f2d453e085c143135a6e9",
+      "bytes": 1465
+    },
+    "unit_journals-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.service.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "unit_journals-binance-market-data-recorder.service.txt": {
+      "sha256": "da30e2214597a47ff31f1ce2ec6e0cfaf67620daf290ee16b7031e9604ffc205",
+      "bytes": 493585
+    },
+    "unit_journals-binance-market-data-archive.timer.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "unit_journals-binance-market-data-archive.service.txt": {
+      "sha256": "32c27415cdfa393e07ebe27b0157a01a3024bce21df7aeb270d306fea58e3479",
+      "bytes": 3803046
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-arm.service.txt": {
+      "sha256": "08a745cd5b7c62258c3d67970804fe811e96a8cb6943703c06c6589413641ff1",
+      "bytes": 410
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-capture.service.txt": {
+      "sha256": "bfda4cf796d8cded79088e05eeb6d052b351ce2a742f90fc7fd59312c1d5461e",
+      "bytes": 1245
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-terminal.service.txt": {
+      "sha256": "08a745cd5b7c62258c3d67970804fe811e96a8cb6943703c06c6589413641ff1",
+      "bytes": 410
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.timer.txt": {
+      "sha256": "4d6a9273088e2ee3abd91e628b330f14822d0773f89842289db7599a5a5eb212",
+      "bytes": 215
+    },
+    "states-binance-recorder-r2-capacity-n2-instrumented-20261024-4r2aauoj-quiet-expiry.service.txt": {
+      "sha256": "b0fe8c38ba720ea609e10c5295d7365e8580d229af40426a321d2cbc3ec6fc08",
+      "bytes": 685
+    },
+    "states-binance-market-data-recorder.service.txt": {
+      "sha256": "ae77b69671777675f21cbe1c35e96eb7111b6ca642adaa8190720344064dbe13",
+      "bytes": 849
+    },
+    "states-binance-market-data-archive.timer.txt": {
+      "sha256": "a56a586ff370eaea8592be7a6e0e9c0d08efdf33c0e87cb8bd081f9e966851eb",
+      "bytes": 209
+    },
+    "states-binance-market-data-archive.service.txt": {
+      "sha256": "83c46d14f24f95066d701235ac0184431c8109203b2ea3233c52e1ac4544190c",
+      "bytes": 918
+    },
+    "recorder-owned-journal.jsonl": {
+      "sha256": "ed76d92bbb0bcdea7635ce058ae40941575d116ae62bcf43502d9542516ebe2a",
+      "bytes": 492303
+    }
+  },
+  "no_raw_or_manifest_payload": true
+}

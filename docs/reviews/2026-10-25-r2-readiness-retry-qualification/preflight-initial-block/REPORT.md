@@ -1,0 +1,11 @@
+# Original unexecuted preflight design — BLOCK
+
+This review binds only helper `d103983ac1af2f14064617e708860bcb1b9ea317d8899811c100128946219365` and design manifest `f8e10a42807ae57cb2c80c29efdfede84b4f07359356d15b77d0921a04eec40c` for proposed scope `R2-capacity-n2-readiness-retry-20261025-1s0kswlt`. The original design was not remotely executed. Its immutable originals are retained separately from any correction.
+
+The design is blocked by three concrete control defects. First, the active-tree walk suppresses scan errors and only rejects a symlink at the leaf, so it can report zero partials without a complete trusted census. Second, the 180-second natural-worker bound is checked only before I/O; each command can take 330 seconds and a late successful result is still accepted. Third, a timer race after the last worker check can make the published inactive-worker proof contradict the later current owner state. The docstring also inaccurately states that no deployment verification occurs.
+
+Five isolated LOCAL fixtures reproduce the ordinary empty synthetic-partial census, silent scan failure, symlink-ancestor acceptance, late successful worker read, and contradictory old-worker/current-owner publication. The fixtures execute only AST-extracted inventory/wait/handoff components with synthetic files, clocks, service state and D-Bus objects. No module main or whole remote program was executed; no network, real process/service, production data or payload was accessed.
+
+The canonical pin argv is definition-only: LoadUnit/RefUnit/UnrefUnit surround canonical `deployment verify` under the installed environment as bmdr, without starting Recorder. Static production source inspection confirms deployment verification does not acquire the runtime service lock, so the outer exclusive lock does not introduce a lock deadlock.
+
+Before execution, require fail-closed traversal with ancestor/entry checks; remaining-time command bounds and post-I/O deadline checks; and one bounded worker/journal/inventory/owner/timer/final-worker coherence attempt that retains failed or raced observations. A corrected successor requires its own exact-hash review. Nothing here accepts an actual current handoff, Linux qualification, startup, duration, saved-data correctness or capacity. All failed-run data, duration and closed guards remain unchanged.

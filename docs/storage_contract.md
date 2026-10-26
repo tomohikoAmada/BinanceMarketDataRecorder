@@ -16,8 +16,9 @@ Linux interactive: ~/.local/share/BinanceMarketDataRecorder/
 Linux systemd:     /var/lib/binance-market-data-recorder/
 ```
 
-The primary future production host is Ubuntu 24.04 LTS x86_64 on a shared
-2 vCPU/4 GiB/40 GB-class VPS. The interactive macOS and Linux roots above
+The v0.4 target is Ubuntu 24.04 LTS x86_64 on a shared 4 vCPU / about
+5.7 GiB RAM / about 57 GiB system disk plus about 2.16 TB same-host archive.
+These are planning dimensions; actual available bytes govern admission. The interactive macOS and Linux roots above
 remain valid local profiles; the Ubuntu ARM64/RK3588 root is a distinct
 validation/historical profile, not the production authority.
 
@@ -76,7 +77,7 @@ hashes and is refused for an unreliable book. It may be deleted and rebuilt;
 Raw chunks remain immutable and authoritative.
 
 M15 normalized outputs are derived files below
-`data/normalized/normalized-dataset.v1/`. Work files stay under its `.work`
+`data/normalized/normalized-dataset.v2/`. Work files stay under its `.work`
 directory and are disposable after interruption. Final Parquet partitions and
 their manifests are content-addressed, written through in-directory unique
 partials, fsynced, reopened for logical verification, atomically renamed, and
@@ -294,7 +295,7 @@ writable Catalog path.
 ## Space measurements and forecasts
 
 Measure internal and every registered external target independently. For the
-primary 40 GB-class VPS profile, the initial internal policy is:
+explicitly selected VPS profile (thresholds unchanged by disk size), the policy is:
 
 - `NORMAL`: free > 18 GiB;
 - `WARNING`: free <= 18 GiB or ETA to hard reserve <= 7 days;
@@ -359,3 +360,16 @@ seal normally. That intentional path exits successfully; forecast ETA alone
 never stops the process. Runtime failures remain failures. No capacity state or
 filesystem release authorizes Raw deletion, remote deletion, or automatic
 service restart.
+
+
+## R3 offline retention and peak planning
+
+Raw retirement leaves internal manifests, Catalog/lifecycle/archive rows and
+other control evidence on the writer disk. External archive manifests also
+consume target capacity. Backlog zero therefore does not imply zero disk
+growth or indefinite retention. No automatic pruning policy is added.
+The [R3 runbook](runbooks/R3-offline-capacity.md) separates persistent metadata,
+active Raw, sealing/copy overlap, WAL, audit/derived scratch and unavailable
+archive backlog. `tools/r3_capacity.py` evaluates explicit scenario inputs with
+byte/file throughput, max-files, full timer-cycle gap and the unchanged 10 GiB
+hard reserve. It neither accesses a host nor substitutes for runtime forecasting.

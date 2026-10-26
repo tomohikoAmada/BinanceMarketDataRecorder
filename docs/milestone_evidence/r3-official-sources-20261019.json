@@ -1,0 +1,54 @@
+[
+  {
+    "name": "llms-index",
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_at_utc": "2026-10-19T05:47:28.970901+00:00",
+    "sha256": "debd53777001ab6e9ac221879d75fa830024868142f12090844cb2e0d0b62ede",
+    "bytes": 174840,
+    "time_note": "local snapshot write time immediately after retrieval"
+  },
+  {
+    "name": "spot-rest",
+    "url": "https://developers.binance.com/en/docs/products/spot/rest-api.md",
+    "retrieved_at_utc": "2026-10-19T05:48:07.376461+00:00",
+    "sha256": "25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec",
+    "bytes": 38519
+  },
+  {
+    "name": "spot-ws",
+    "url": "https://developers.binance.com/en/docs/products/spot/web-socket-streams.md",
+    "retrieved_at_utc": "2026-10-19T05:48:07.575009+00:00",
+    "sha256": "555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35",
+    "bytes": 10472
+  },
+  {
+    "name": "usdm-general",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md",
+    "retrieved_at_utc": "2026-10-19T05:48:07.853618+00:00",
+    "sha256": "7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65",
+    "bytes": 19261
+  },
+  {
+    "name": "usdm-ws",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md",
+    "retrieved_at_utc": "2026-10-19T05:48:08.263551+00:00",
+    "sha256": "912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2",
+    "bytes": 2613
+  },
+  {
+    "name": "usdm-market-web-rendered",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "retrieved_at_utc": "2026-10-19T05:53:07.931608+00:00",
+    "sha256": "a90e472a3691785986c4b5bccafd7acb05bd52cbe5f7ed65e9b0aa5b924be4ac",
+    "bytes": 20835,
+    "representation": "Web tool rendered excerpt snapshot; direct HTTP returned empty/site shell, not asserted as upstream HTTP hash"
+  },
+  {
+    "name": "spot-endpoints-web-rendered",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market (and /general)",
+    "retrieved_at_utc": "2026-10-19T05:58:37.772560+00:00",
+    "sha256": "fd40c156625756dde17c30bdc4979175621ed306cb848a320444b53fc1ce179c",
+    "bytes": 23015,
+    "representation": "Web tool rendered excerpt snapshot, not upstream HTTP hash"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "result": "PARENT_FULL47_REVIEW_MEMBERS_AND_CURRENT_BINDINGS_VERIFIED_DESIGN_COPY_ONLY",
+  "review_manifest_sha256": "817fda3445f2b4dade6c8f2b2e0ce48356d6a6946612bd616e8b101ca0f20167",
+  "operator_sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00",
+  "controls_manifest_sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+  "qualification_sha256": "8292ef40a68f5295eaaf88292d7dcbdfcd2249425de7940d90eb791ca3baf365",
+  "actual_copy_arm_launch_credit": false
+}

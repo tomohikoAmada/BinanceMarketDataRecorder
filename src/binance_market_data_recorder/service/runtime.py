@@ -44,7 +44,6 @@ from ..domain.product import (
 )
 from ..logging import log_event
 from ..metrics.recorder import MetricsRecorder
-from ..metrics.report import DailyReporter
 from ..spool import recover_storage
 from ..spool.writer import RotationPolicy
 from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
@@ -62,6 +61,7 @@ from .power import (
     NoopSleepObserver,
     SleepGap,
 )
+from .report_worker import DailyReportWorker
 from .resources import current_rss_bytes, peak_rss_bytes
 from .state import ServiceStateStore
 
@@ -834,6 +834,7 @@ class ServiceRuntime:
         global_side_task: asyncio.Task[None] | None = None
         supervisor_task: asyncio.Task[None] | None = None
         capacity_task: asyncio.Task[dict[str, object] | None] | None = None
+        report_task: asyncio.Task[None] | None = None
         failure: BaseException | None = None
         try:
             self.started_at_utc_ns = self.utc_clock_ns()
@@ -936,6 +937,10 @@ class ServiceRuntime:
             supervisor_task = asyncio.create_task(
                 self._supervisor.run(stop), name="GLOBAL:collector-supervisor"
             )
+            report_task = asyncio.create_task(
+                DailyReportWorker(self.layout.root, self.logger).run(stop),
+                name="GLOBAL:daily-report-owner",
+            )
             await asyncio.sleep(0)
             await self._write_state()
             required_tasks: set[asyncio.Task[Any]] = {supervisor_task, heartbeat_task}
@@ -976,6 +981,8 @@ class ServiceRuntime:
                 stop.set()
                 recovery_stop.set()
                 cleanup_failure: BaseException | None = None
+                if report_task is not None:
+                    await asyncio.gather(report_task, return_exceptions=True)
                 if heartbeat_task is not None:
                     await asyncio.gather(heartbeat_task, return_exceptions=True)
                     if failure is None and self._heartbeat_failure is not None:
@@ -991,26 +998,7 @@ class ServiceRuntime:
                 if global_side_task is not None:
                     await asyncio.gather(global_side_task, return_exceptions=True)
                     if self._global_side_metrics is not None and self._catalog is not None:
-                        days = {day for day, _, _ in self._global_side_metrics.pending_keys()}
-                        batch = await asyncio.to_thread(self._global_side_metrics.safely_flush)
-                        if batch is not None:
-                            reporter = DailyReporter(
-                                catalog=self._catalog, daily_directory=self.layout.daily_reports
-                            )
-                            for day in sorted(days):
-                                try:
-                                    await asyncio.to_thread(reporter.write, day)
-                                except Exception as exc:
-                                    log_event(
-                                        self.logger,
-                                        logging.ERROR,
-                                        "global_side_report_failed",
-                                        "global side-data daily report could not be written",
-                                        **global_log_fields(
-                                            "um_perpetual", owner="usdm_side_data"
-                                        ),
-                                        error_type=type(exc).__name__,
-                                    )
+                        await asyncio.to_thread(self._global_side_metrics.safely_flush)
                 try:
                     observer.stop()
                 except RuntimeError as exc:

@@ -1,0 +1,16 @@
+{
+  "all10candidate_members_unchanged": true,
+  "all12_additional_returned_results_strict_JSON_serializable": true,
+  "all_bytepack_SHA_size_PASS": true,
+  "bytepack_count": 26,
+  "scope": "Current collection asset delta only; no whole-reader, source QA, Linux or operational action",
+  "unchanged_AST": {
+    "original_cooperative_read_loop": true,
+    "original_raw_capture_and_fd_close_finally": true,
+    "stat_identity_error_helpers": {
+      "_error": true,
+      "_identity": true,
+      "_stat": true
+    }
+  }
+}

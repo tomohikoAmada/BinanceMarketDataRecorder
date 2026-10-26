@@ -1,0 +1,15 @@
+# Actual Linux N1 software QA and stage-copy qualification
+
+**ACCEPT — completed actual Linux software QA reconstructed; no blocking finding.** LOCAL/OFFLINE supplement. No SSH, QA rerun, operator main, stage copy, arm, capture or production Raw access occurred.
+
+Actual copy `84ce2fd0…` contains all18 exact frozen payloads with full SHA/size/root0:988/0640 readback. Actual launch `30123d1a…` equals the frozen native argv, including canonical Python, original pin, Runtime600/Stop120 and archive TMPDIR/SQLITE_TMPDIR. Actual read `73232433f0f36c35455fc8936cf856b8d17eeb2881946455b2a4aa516ab9601c` binds the same unit/invocation **ff7e824e78bd432e8633bc859442e5f4**/PID665531 and full result **636e1039c2adb1a107808d24794f4b54f262b525728dc76627f8fad2cfd0c797**. Every exported content field is independently rehashed; the separately accepted local QA result is byte-identical to the actual result file.
+
+The actual manifest9bb7242f is byte-identical to the accepted Linux manifest and its13 runtime members equal stage controls634715ff exactly. Complete-directory import passes under installed canonical Python3.12.3. Both complete fixture logs match their declared hashes and final summaries:12 fake-clock86400s cases with2880 nominal rows each, plus7 topology/config/forecast checks. Their summaries equal the previously independently reproduced draft results. No tests are rerun in this review.
+
+Four genuine manager records under the same boot/unit/invocation contain Started/JOB_RESULTdone and **Deactivated successfully at2026-10-20 07:12:35.439422UTC**. CPU31.944310s and the manager-reported QA memory/swap values are retained diagnostics, not Recorder resource qualification. Later transient-unit not-found defaults are not used as success proof.
+
+The owned journal contains one matching invocation/runner metadata record with **MESSAGE:null**; its long stdout body was not exported. That original fact remains unchanged. This acceptance uses the full result/log file exports plus normal actual manager records, rather than asserting complete owned stdout. No extra VPS read is requested. For future stage reads, operator **3a060188efdfe9a3c5975312070a79351e8a3fd069861de7920f08f8828a2c0d** adds only two `journalctl --all` arguments in the read branch. Its copy/arm/launch logic is unchanged; the exact read delta and embedded script compile pass. The13 runtime members and controls manifest remain unchanged.
+
+**Actual Linux software QA ACCEPT and exact one-time stage-copy qualification ACCEPT** for operator3a060188/controls634715ff. Stage copy still enforces its current canonical identity/config, stopped census/backlogs, separate archive device and current reserve/time admission before publishing its physical evidence. Actual stage-copy physical/current admission and exact pending arm/launch qualification remain future work. No stage has been armed or launched by this review.
+
+All86400s in these fixture cases are simulated. Actual capture duration credit0, durability creditfalse, capture/T0/24h/next-stage/production-ready credit0. Earlier design, source, CI, isolated cloud release and deployment acceptances remain unchanged.

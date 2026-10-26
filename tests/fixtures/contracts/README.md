@@ -1,0 +1,1 @@
+Fixture copied from BinanceMarketDataContracts/fixtures/integration/usdm-depth-time.v1.json on 2026-10-14. SHA-256: 9f56c86077b5636fd94634ab21e6d851a6a08922d951ca047c64c83714bf1a0b. Official source and its check date are retained in the fixture. No runtime Contracts dependency. Recorder keeps its existing required-T/malformed policy when T is absent.

@@ -1,0 +1,166 @@
+{
+  "accepted_preflight_sha256": "e7dfc0f5aea159eb3fbe8b0d19b3a9c2b6f4fcb149c836eca72578ecf9401bd9",
+  "controls_manifest_sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+  "decision": "ACCEPT",
+  "design_manifest_sha256": "bf27149d21d3dc72bb0b436a49663cbfe180d8cf2c64aaf4c3e9c46b229ba74d",
+  "kind": "INDEPENDENT_ACTUAL_PREFLIGHT_AND_FINAL_STAGE_BINDING_DESIGN_REVIEW",
+  "members": {
+    "ACTUAL_PROOF_REFERENCES.json": {
+      "bytes": 1732,
+      "sha256": "311d7d613d8ed7373aada332db8e71d0c95ebf3d1e764d3f1816aa6a93162410"
+    },
+    "ACTUAL_RECONSTRUCTION.json": {
+      "bytes": 1335,
+      "sha256": "edf7ba2e033d2a43228660ba9ec7ed8bb93de482f58fab5d8bbb217c7e1c7c85"
+    },
+    "FINAL_COMPONENT_CHECKS.json": {
+      "bytes": 2840,
+      "sha256": "131cb28f44d3279383b5f52d3fe31ceeafdd89861810399586a2c569b16d67ad"
+    },
+    "HARNESS_CORRECTION.json": {
+      "bytes": 388,
+      "sha256": "951e8d4f1d0d2523797debe2352d025edd83ff0ffcbb7f2867cb2ada6aaa74ec"
+    },
+    "QUALIFICATION_GATE_CASES.json": {
+      "bytes": 4265,
+      "sha256": "83303e482918c7d41876751626484bc6ca83f9731b97d2e3114e363294a87638"
+    },
+    "REPORT.md": {
+      "bytes": 4793,
+      "sha256": "51640990373b71cfd37cb7d2a17666d97f60d0eae71183a94774b1f1fffa0267"
+    },
+    "RESULT.json": {
+      "bytes": 4451,
+      "sha256": "f60d9bc0098bc8b6c347d8f79f1e1a24063780e7afe2de6a7c003b2fd710c517"
+    },
+    "STATIC_DELTA.json": {
+      "bytes": 584,
+      "sha256": "e965dd7cecd97aba79923d5ebf368e282a77093805d10d3e9079da86b8f91715"
+    },
+    "check_final_stage_components.py": {
+      "bytes": 6564,
+      "sha256": "5fcb4d6b4235870f7da39a1e42aa1ae25dd666dc924493cf78e993ce156d81ce"
+    },
+    "check_qualification_gates.py": {
+      "bytes": 6130,
+      "sha256": "0ced08a8909a9e315ee9374631f09ff71a9fc57fa63f38ed179906838ad195bf"
+    },
+    "freeze_final.py": {
+      "bytes": 11153,
+      "sha256": "4ec657e5cde76c6cfe36cb087f78801ada252f3e6fe02ac53a0468e417b0a12a"
+    },
+    "generated-arm.py": {
+      "bytes": 7910,
+      "sha256": "22cf44e0217549e9c5b7b06f1ecd01ef878fef82909a9a03b1183982d4ac6593"
+    },
+    "generated-copy.py": {
+      "bytes": 142511,
+      "sha256": "9aed3b05c23b4073c465de7114f64bb8fe863b9fe244dbe0ab0cc15043595bbd"
+    },
+    "generated-launch.py": {
+      "bytes": 7100,
+      "sha256": "a67849b94a49c25a7b226c8cdc8fec5a570abb0761b51e3ad32450b4e255fdea"
+    },
+    "generated-read.py": {
+      "bytes": 10433,
+      "sha256": "5bb158e47fb1e42595776cb78eb96aff298f571acecd12264c8d27af635aa361"
+    },
+    "inputs/RETRY_DESIGN.md": {
+      "bytes": 3209,
+      "sha256": "37d715a17198fdecf0e78a292833af9adfa5d90653206bb12c432f5b7b1ae8b3"
+    },
+    "inputs/actual-current-preflight.json": {
+      "bytes": 6951497,
+      "sha256": "e7dfc0f5aea159eb3fbe8b0d19b3a9c2b6f4fcb149c836eca72578ecf9401bd9"
+    },
+    "inputs/classifier-fixtures/qualification_owner_995-original.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "inputs/classifier-fixtures/test_classifier.py": {
+      "bytes": 8105,
+      "sha256": "c72257d07102a0752b3388ed3f96d180085a12cb44e15847a6ed9098efa70b9e"
+    },
+    "inputs/classifier-fixtures/trigger-publication.json": {
+      "bytes": 13508,
+      "sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3"
+    },
+    "inputs/current-forecast.json": {
+      "bytes": 4678,
+      "sha256": "21dd1355365d95cc15ce538fb6fa5eae35bb89877baed6135dbd5b77f801d76b"
+    },
+    "inputs/retry-design-manifest.json": {
+      "bytes": 3888,
+      "sha256": "bf27149d21d3dc72bb0b436a49663cbfe180d8cf2c64aaf4c3e9c46b229ba74d"
+    },
+    "inputs/runtime/arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "inputs/runtime/arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "inputs/runtime/capacity-policy.json": {
+      "bytes": 13229,
+      "sha256": "db8566b8d9bd960e61e5309ccf96d7ad14635f2db940bc3b530f4a7c17b7ccf7"
+    },
+    "inputs/runtime/common.py": {
+      "bytes": 12276,
+      "sha256": "54afe94976211634b2a0e1d74c0f3651c03d4e1676cb0a1798f88fe732a5c526"
+    },
+    "inputs/runtime/controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "inputs/runtime/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "inputs/runtime/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "inputs/runtime/qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "inputs/runtime/qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "inputs/runtime/qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "inputs/runtime/qualification_owner_995.py": {
+      "bytes": 9161,
+      "sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2"
+    },
+    "inputs/runtime/qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "inputs/runtime/restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "inputs/runtime/scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "inputs/stage-controls-manifest.json": {
+      "bytes": 2898,
+      "sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f"
+    },
+    "inputs/stage-operator.py": {
+      "bytes": 28223,
+      "sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9"
+    },
+    "inputs/stage-qualification.json": {
+      "bytes": 1786,
+      "sha256": "69abf5129c434c28a6f7d4e6a32441aeea1d49d736caba8da66b134aa7504fce"
+    }
+  },
+  "operator_sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9"
+}

@@ -1,0 +1,11 @@
+# N2 actual stopped configuration deployment review
+
+**ACCEPT**:12/12 narrow LOCAL/OFFLINE checks pass, with no blocking findings. Actual deployment-result9571c469 is qualified for the stopped BTC+ETH configuration only. Common DEPLOY_SHA may bind this actual result for isolated QA preparation; N2 capture/T0 and duration remain unqualified.
+
+Actualdeploy392b4778 binds the previously accepted exact native argv and retained loaded-unit witness: Typeoneshot, Start30min/Stop25min, root default, UMask0027, CPU/Memory accounting, control-group/SIGTERM, outer systemPython whole-phase pin, inv2b8c50c1/PID746755. Actualread25a2598a contains all seven original artifacts with correct byte hashes. The later unloaded unit's90s/0022 defaults are explicitly excluded from qualification.
+
+All12 command argv and return0/empty-stderr outputs match the accepted helper. Canonical log bytes equal their complete stdout+stderr concatenation. OldVERIFY/identity-create/freshVERIFY JSON equals the retained result objects. Olde2f81312 config/db52730c identity backups and new5b73db1b config/976dfc55 identity exactly match their bindings. Parsed TOML changes only both BTC-to-BTC+ETH symbol lists; all14 flags remain enabled. Identity changes only its config field. Accepted c3686dd source,68460be4 wheel,44cd3733 lock, installed28 dependencies/133 recorder files and existingvenv observations remain equal across the three proofs; no source/wheel audit or rebuild was repeated.
+
+Same-boot invocation-owned application output reports STOPPED_CANONICAL_DEPLOYMENT_VERIFIED, followed in order by manager Deactivated successfully/Finished jobdone and69.568147s CPU. The result spans106.008056828s, grants0formal seconds and reports no venv replacement, rollback or unsettled command. Recorder is independently read inactive AND disabled/PID0/NRestarts0. Archive timer is enabled-active/waiting; the later fdff0222 worker exited0/success. The earlier activating worker snapshot is normal timer recurrence. A finite future monotonic timer deadline is absent from this readback and is not granted here.
+
+This review read only local copied artifacts and prior accepted bindings, wrote only its exclusive directory, and performed no SSH/network/Raw/production access or candidate execution. No new capture, arm/window, T0, source release or inherited duration is authorized.

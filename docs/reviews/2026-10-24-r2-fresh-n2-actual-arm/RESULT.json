@@ -1,0 +1,159 @@
+{
+  "absolute_expiry_epoch_seconds": 1793050865,
+  "acceptance_scope": "ACTUAL_FRESH_ARM_NATIVE_AND_FIXED_WINDOW_BINDING_ONLY",
+  "accepted_canonical_verification_sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5",
+  "accepted_checkpoint_sha256": "0e2446f90829e16173a0bb20b0ca535b6fd125d8ac505d83e0097ed4f65d830c",
+  "accepted_dispatch_sha256": "e86362081f1135d984ec5cdb1ad148f7c9e3f174cc2e44aae513fdf5fd9c0128",
+  "accepted_postarm_admission_sha256": "5ea49dc53567112bc6440bb66347a5586ec189b4681fe214ac558684726c9415",
+  "accepted_prearm_admission_sha256": "a014302e1cdf8154e39c4db0c88286db4dab1e75dabc43e9a6489fa7325b0455",
+  "accepted_quiet_window_sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199",
+  "actual_armed_at_utc_ns": 1792820465016366384,
+  "actual_window_armed": true,
+  "actual_window_seconds": 230400,
+  "blocking_findings": [],
+  "checkpoint_archive_timer": {
+    "ActiveState": "active",
+    "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+    "LoadState": "loaded",
+    "NextElapseUSecMonotonic": "3w 19h 48min 15.137041s",
+    "NextElapseUSecRealtime": "",
+    "Result": "success",
+    "SubState": "waiting",
+    "UnitFileState": "enabled"
+  },
+  "checkpoint_archive_worker": {
+    "ActiveState": "inactive",
+    "CPUAccounting": "yes",
+    "CPUUsageNSec": "9130455000",
+    "ControlGroup": "",
+    "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml archive drain --storage-id 57512e1d-59cc-4aff-bf3b-49ae84a7a44e --max-runtime-seconds 50 --max-files 1000 ; ignore_errors=no ; start_time=[Sat 2026-10-24 05:45:32 UTC] ; stop_time=[Sat 2026-10-24 05:45:41 UTC] ; pid=824838 ; code=exited ; status=0 }",
+    "InvocationID": "be4448af4ab84243898225a07f223ed4",
+    "KillMode": "control-group",
+    "LoadState": "loaded",
+    "MainPID": "0",
+    "MemoryAccounting": "yes",
+    "MemoryCurrent": "[not set]",
+    "MemoryPeak": "[not set]",
+    "MemorySwapCurrent": "[not set]",
+    "MemorySwapPeak": "[not set]",
+    "NRestarts": "0",
+    "Result": "success",
+    "RuntimeMaxUSec": "infinity",
+    "SubState": "dead",
+    "TimeoutStartUSec": "1min 5s",
+    "TimeoutStopUSec": "1min 30s",
+    "Type": "oneshot",
+    "UMask": "0027",
+    "UnitFileState": "static"
+  },
+  "checkpoint_recorder": {
+    "ActiveState": "inactive",
+    "CPUAccounting": "yes",
+    "CPUUsageNSec": "[not set]",
+    "ControlGroup": "",
+    "ExecStart": "{ path=/opt/binance-market-data-recorder/venv/bin/python ; argv[]=/opt/binance-market-data-recorder/venv/bin/python -m binance_market_data_recorder --config /etc/binance-market-data-recorder/recorder.toml _service run ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+    "InvocationID": "",
+    "KillMode": "control-group",
+    "LoadState": "loaded",
+    "MainPID": "0",
+    "MemoryAccounting": "yes",
+    "MemoryCurrent": "[not set]",
+    "MemoryPeak": "[not set]",
+    "MemorySwapCurrent": "[not set]",
+    "MemorySwapPeak": "[not set]",
+    "NRestarts": "0",
+    "Result": "success",
+    "RuntimeMaxUSec": "infinity",
+    "SubState": "dead",
+    "TimeoutStartUSec": "1min 30s",
+    "TimeoutStopUSec": "1min 30s",
+    "Type": "simple",
+    "UMask": "0027",
+    "UnitFileState": "disabled"
+  },
+  "config_sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419",
+  "controls_manifest_sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348",
+  "copy_receipt_remote_sha256": "05e162efb7951295ebf39068313ae9c38776d8dd640a5cbdd7068c54ed51db0d",
+  "credits": {
+    "N4_or_N8": false,
+    "accepted_N2": false,
+    "capacity": false,
+    "formal_duration_seconds": 0,
+    "inherited_duration_ns": 0,
+    "saved_frame_correctness": false,
+    "stability_fix": false
+  },
+  "deadline_utc": "2026-10-26 21:41:05 UTC",
+  "decision": "ACCEPT",
+  "effective_native_at_dispatch": {
+    "ActiveState": "activating",
+    "ExecStart": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/pin-unit-exec.py /opt/binance-market-data-recorder/venv/bin/python /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/arm-natural-wait.py ; ignore_errors=no ; start_time=[Sat 2026-10-24 05:40:45 UTC] ; stop_time=[n/a] ; pid=824518 ; code=(null) ; status=0/0 }",
+    "ExecStopPost": "{ path=/usr/bin/python3.12 ; argv[]=/usr/bin/python3.12 /srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj/restore.py capture-failure ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+    "InvocationID": "50eef5aeafe3428d94503f04fa79abd9",
+    "KillMode": "control-group",
+    "RuntimeMaxUSec": "infinity",
+    "SubState": "start",
+    "TimeoutStartUSec": "40min",
+    "TimeoutStopUSec": "25min",
+    "Type": "oneshot",
+    "UMask": "0027"
+  },
+  "fresh_launch_admission_required": true,
+  "identity_sha256": "9b8ce8219105fd7962cbf4831a99c9764c3c2889088bda7e73c834ff6bffc715",
+  "initial_native_PID": 824518,
+  "launch_performed_or_approved_by_review": false,
+  "limits": [
+    "states/journals are read sequentially; top-level utc_ns is read-start time, not a simultaneous census",
+    "TMPDIR and SQLITE_TMPDIR are preserved native request arguments; Environment was not exported",
+    "five OS masked states are the actual arm receipt snapshot; no separate checkpoint export of those five states exists",
+    "postarm reserve/admission belongs to its recorded time and must be rechecked at launch"
+  ],
+  "native_invocation": "50eef5aeafe3428d94503f04fa79abd9",
+  "native_normal_done_utc_us": 1792820471921296,
+  "no_capture_or_T0_observed": true,
+  "operator_sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00",
+  "original_copy_stdout_sha256": "e7102b1c843bae3157631944836adf483b1e9d0ff52acea72265aede0d569903",
+  "postarm_margin_seconds": 8767.444541054807,
+  "postarm_observed_remaining_seconds": 230393.63663744926,
+  "postarm_projected_archive_free_bytes": 1963180262168,
+  "postarm_projected_writer_free_bytes": 20368503746,
+  "postarm_required_seconds": 221626.19209639446,
+  "postarm_uniform_upper_writer_diagnostic_bytes": 9116557322,
+  "scope": "/srv/recorder-data/recorder-archive/evidence/R2-capacity-n2-instrumented-20261024-4r2aauoj",
+  "source": "20e57f30682e88b4090cc2f0da34aa26fca4de2e",
+  "timeline": {
+    "absolute_expiry": {
+      "epoch_seconds": 1793050865,
+      "utc": "2026-10-26 21:41:05 UTC"
+    },
+    "checkpoint_read_started": {
+      "utc": "2026-10-24T05:45:54.787928680Z",
+      "utc_ns": 1792820754787928680
+    },
+    "dispatch_observation": {
+      "utc": "2026-10-24T05:40:45.622953885Z",
+      "utc_ns": 1792820445622953885
+    },
+    "native_attempt": {
+      "utc": "2026-10-24T05:40:45.593942874Z",
+      "utc_ns": 1792820445593942874
+    },
+    "native_done": {
+      "utc": "2026-10-24T05:41:11.921296Z",
+      "utc_us": 1792820471921296
+    },
+    "postarm_admission": {
+      "utc": "2026-10-24T05:41:11.446713584Z",
+      "utc_ns": 1792820471446713584
+    },
+    "prearm_admission": {
+      "utc": "2026-10-24T05:41:05.011597413Z",
+      "utc_ns": 1792820465011597413
+    },
+    "window_armed": {
+      "utc": "2026-10-24T05:41:05.016366384Z",
+      "utc_ns": 1792820465016366384
+    }
+  },
+  "wheel_sha256": "dd2cc06fd182001588b00e03f3407b94bbd648e44b14436d8933dd957e0bcb2c"
+}

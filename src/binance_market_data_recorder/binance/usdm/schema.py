@@ -92,6 +92,8 @@ def _parse_metadata(
         _require_usdm_symbol_type(decoded)
         event_time = _integer(decoded, "E")
         transaction_time = _integer(decoded, "T")
+        if event_time > 2**63 - 1 or transaction_time > 2**63 - 1:
+            raise ValueError("exchange timestamp exceeds int64 milliseconds")
 
         if stream is UsdMStream.DIFF_DEPTH:
             first = _integer(decoded, "U")
@@ -148,14 +150,17 @@ def envelope_from_websocket_frame(
         market="um_perpetual",
         symbol=symbol,
         stream=stream.value,
-        module="binance.usdm.websocket.v1",
+        module="binance.usdm.websocket.v2",
         connection_id=connection_id,
         collector_instance_id=collector_instance_id,
         collector_version=collector_version,
         receive_time_utc_ns=receive_time_utc_ns,
         receive_monotonic_ns=receive_monotonic_ns,
         exchange_event_time=event_time,
-        exchange_trade_time=transaction_time,
+        exchange_transaction_time=(
+            transaction_time if stream is not UsdMStream.AGG_TRADE else None
+        ),
+        exchange_trade_time=(transaction_time if stream is UsdMStream.AGG_TRADE else None),
         source_sequence=sequence,
         raw_payload=raw_payload,
         capture_flags=tuple(dict.fromkeys((*flags, *additional_capture_flags))),

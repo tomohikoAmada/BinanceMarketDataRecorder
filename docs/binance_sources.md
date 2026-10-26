@@ -570,3 +570,55 @@ responses, not a new normative publication-latency guarantee. The correction
 changes local operational-event identity and explicitly bounded diagnostic
 recovery; it never advances a missing-period cursor or substitutes different data.
 No new external document retrieval or downloaded code execution occurred.
+
+## R1 USD-M E/T semantic correction (2026-10-14)
+
+USD-M public depth/bookTicker T is Transaction Time; market aggTrade T is
+Trade Time. ADR-0044 maps these separately and versions Normalize rederivation
+without changing old Raw. E remains Event Time. The current Agent Native
+index selected the official USD-M streams, and their current catalog pages
+were inspected through the browser source reader.
+
+| Source | URL | Retrieval UTC | Content SHA-256 and representation |
+| --- | --- | --- | --- |
+| Agent Native index | https://developers.binance.com/en/docs/llms.txt | 2026-10-14T02:33:26.224998+00:00 | `b92c275f8d8aed4f403235a354d2ac6681261480e2f579d043b3c79ed4f00ef1` raw text response |
+| Official USD-M stream page | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public | 2026-10-14T02:37:02.366345+00:00 | `9a8c54bf50e85e99a4bd4fd5c6125cfbe5862fa1263032cd37d022dd261b67d2` combined browser-extracted E/T excerpts, not HTTP response bytes |
+| Official USD-M stream page | https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market | 2026-10-14T02:37:02.366345+00:00 | `9a8c54bf50e85e99a4bd4fd5c6125cfbe5862fa1263032cd37d022dd261b67d2` combined browser-extracted E/T excerpts, not HTTP response bytes |
+
+Direct HTML/schema requests returned HTTP202 empty bodies, so their response hashes provide no semantic evidence. The nonempty browser-extracted official pages identify stream-specific T semantics and int64 types. Downloaded text was not executed. Shared Contracts fixture origin/check date and copied SHA remain in tests/fixtures/contracts/README.md.
+
+
+## R3 offline capacity / shared-IP inventory — 2026-10-19
+
+Agent Native index `https://developers.binance.com/en/docs/llms.txt` was checked
+before selected Spot REST/WS and USD-M General/WS/market endpoint pages. Full
+URL, UTC retrieval time, representation and content SHA-256 are recorded in
+[machine-readable source ledger](milestone_evidence/r3-official-sources-20261019.json).
+The documentation portal moved endpoint pages into its catalog. Direct HTTP
+endpoint fetches returned empty bodies/site shells, so endpoint evidence is an
+explicitly labelled Web-rendered excerpt snapshot, not a claimed upstream HTTP
+digest; source snapshots remain under `/private/var/tmp/r3-binance-docs-8awe6o9v`.
+No exchange market-data endpoint was called.
+
+Conclusions: depth weights differ by market and requested limit; IP budgets
+include both processes. Funding history/info share a separate request-count
+window, while zero-weight statistics still require count-window budgeting.
+WS client control and connection attempts are separate from incoming market
+frames. The [R3 inventory](runbooks/R3-shared-ip-budget.md) records calculations,
+process-local cooldown coverage and the still-open joint recovery gate.
+Official example rateLimits must be replaced by actual metadata before live
+admission; none of these sources qualifies twenty-product VPS capacity.
+
+
+## 2026-10-19 R3-b/G3-b shared-IP admission
+
+Re-read the Agent Native index first, then the selected official Spot REST/WS
+and USD-M general/WS text. Exact URLs, UTC retrieval times, content SHA-256 and
+bytes are in [the source record](milestone_evidence/shared-api-official-sources-20261019.json).
+Selected current [USD-M market data](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)
+confirms depth1000 weight20, funding500/5min shared and statistics1000/5min;
+[Spot market data](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)
+retains the depth limit/weight tiers. The source record hashes downloaded
+upstream text, not a hash claim for rendered excerpts. No Binance API was called.
+Static role shares, reference6000/2400 admission limits and remaining live checks
+are explicit in [the closeout](milestone_acceptance/R3-b-G3-b-shared-api-20261019.md).

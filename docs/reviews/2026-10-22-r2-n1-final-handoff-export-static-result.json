@@ -1,0 +1,25 @@
+{
+  "N2_start_credit": false,
+  "actual_outputs_and_final_reconstruction_pending": true,
+  "candidate_sha256": {
+    "collect-n1-owned-journal-20261022.py": "84caa91b2f9ff764efcd39fea9e50f90f75d96e53d0ba317ed626b5d542bce74",
+    "export-n1-complete-controls-20261022.py": "9eda1b721cc537b0a4a58d476404133da87a26701f46f2df8e46efa3b7cb2e1e",
+    "fresh-n1-restored-handoff-20261022.py": "fd63a9a500f90b5236cd0133768c916eb916719b5c3241bbbcfca30faf1185cc"
+  },
+  "checks_passed": 53,
+  "decision": "ACCEPT_STATIC_SINGLE_FRESH_HANDOFF_COLLECT_EXPORT",
+  "findings": [],
+  "limitations": [
+    "Actual finite future deadline, current backlog/partial census and canonical/restored identities require readback.",
+    "Actual report/rotation availability and all metadata member counts must be assessed; absent evidence cannot be fabricated.",
+    "Full saved-data acceptance requires independent466shard/26mapping/12998objects/all520ops and boundary-set reconstruction; native candidate alone is insufficient."
+  ],
+  "only_static_AST_compile_no_execution": true,
+  "owner_final_N1_accepted": false,
+  "resolved_findings": [
+    "Exact invocation OR retains both manager and process journal rows.",
+    "Exact deployment receipt now required, not optional glob."
+  ],
+  "sequence": "single fresh restored handoff; single owned journal collection; then single complete metadata export",
+  "ssh_network_raw_production_access": false
+}

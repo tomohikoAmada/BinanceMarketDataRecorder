@@ -1,0 +1,9 @@
+{
+  "source.tar.gz": "729ae4114c2eaeacc35205596995d920b64ad0463d513306638907e4f2b20cbf",
+  "build-release.sh": "cc9d4644661d0e910df23a10d38aa36d48320583dda6dd1d94a1903ede2059d5",
+  "copy-release-controls.py": "afafa7a0669162b64b9e9dd25e2ee614308017d8bb52692aed773a073a6b6e35",
+  "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+  "release-paths.json": "27463f25b5cece2c66f52c077a8adc2e650e4dde56929c5e29905ac6393897df",
+  "cloud-native-argv.json": "e20fb44709843060b627474faa6ef6c4dffd3c5f53c8816689a019cf1db40b77",
+  "dispatch-cloud.py": "cd818e075fb27ca91b7643900d428328fe0f4a5a3169b8686ddc521a780e9921"
+}

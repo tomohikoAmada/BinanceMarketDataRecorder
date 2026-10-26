@@ -1,0 +1,90 @@
+{
+  "created_at_utc_ns": 1792778358864479000,
+  "files": {
+    "CHECKS.json": {
+      "bytes": 7082,
+      "sha256": "7b30f6b66964b98569088b1e1292541ae218b490bc6de62b9919f9d7754f0563"
+    },
+    "REPORT.md": {
+      "bytes": 4346,
+      "sha256": "5c9f2b7aaf12944fc13a366caa847b89af4de1fa58f48cbf27356466c5181d05"
+    },
+    "RESULT.json": {
+      "bytes": 1427,
+      "sha256": "9e28407210951fcc0fc9c49bcc439e01e542eb05276a574be9778744c3154831"
+    },
+    "generated/collect-n2-owned-journal-20261024.py": {
+      "bytes": 2028,
+      "sha256": "267178723dea2d9308a0c0452a99155122cbfb1c17406f05e89e28879eeddd8d"
+    },
+    "generated/export-n2-complete-controls-20261024.py": {
+      "bytes": 4035,
+      "sha256": "dbcbd06e14d9d0d01d82cdbbfd8c7c4b2de52ba293cafa9cdd0dfa2845dd8f56"
+    },
+    "generated/fresh-n2-restored-handoff-20261024.py": {
+      "bytes": 6537,
+      "sha256": "883248f9f35a10fb8c05f064c7ce750116ab1a281573fa355d50ec73e2bf536d"
+    },
+    "helpers/collect-n2-owned-journal-20261024.py": {
+      "bytes": 2517,
+      "sha256": "90ee16a9c8b4a9f02c727bb21501e5965c4f0ac155ce9253ad85d7db8caf8984"
+    },
+    "helpers/export-n2-complete-controls-20261024.py": {
+      "bytes": 5928,
+      "sha256": "6f05d5c77ea96504e8a7905a1c8f98f5d362c4c0b9d0259d6a477f8468390b77"
+    },
+    "helpers/fresh-n2-restored-handoff-20261024.py": {
+      "bytes": 7398,
+      "sha256": "e4d8f4fa5c50bb1b3e3a31c9be16d47ac178228b301b25835c52ec2483690677"
+    },
+    "inputs/common-reference.py": {
+      "bytes": 11952,
+      "sha256": "fbb23bd8d3789255154726a65d7b432b31407ff9855cc54fd4cb2ff07b45ceb7"
+    },
+    "inputs/design-manifest.json": {
+      "bytes": 1023,
+      "sha256": "8faf128cee101fb9d5c699cf42559cac0bb876a47e719e0063a37c2b542eb749"
+    },
+    "inputs/pin-reference.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "native-precheck/expiry-cancellation.jsonl": {
+      "bytes": 280,
+      "sha256": "e12a56b9adbec61a4c7427dbc9b2b6894308d599c3ecb80bb593a5a4f81fed41"
+    },
+    "native-precheck/monitor-rate.json": {
+      "bytes": 3752,
+      "sha256": "3a8d128ba77037170bf82e3a5b40d73a1d283d1c5b29d8eb5316ec945c57587c"
+    },
+    "native-precheck/native-result.json": {
+      "bytes": 1821,
+      "sha256": "854ea7e42c36e0a88fd1020dd87779aacdbfcd39fd606f32ce3e12f22c23f656"
+    },
+    "native-precheck/owner-target.json": {
+      "bytes": 47487,
+      "sha256": "d2b1e0e3ff7389b631a99440facc4ceeb2c35957418cb4e0e3c7f701629c0c2a"
+    },
+    "native-precheck/restoration.jsonl": {
+      "bytes": 2898,
+      "sha256": "e6f5386278aa492bd36724bcc5e36b26bd9b5e0b39731d1b0ca8b998173cfbb9"
+    },
+    "native-precheck/terminal-audit__audit-root.json": {
+      "bytes": 21955,
+      "sha256": "7011d408f3d72274e9bfae0fba2f6dd913b720434a5189874e418830bccd0265"
+    },
+    "native-precheck/terminal-audit__owner-selected-result.json": {
+      "bytes": 1049,
+      "sha256": "68b79a1a38a7a30d6b83a86a98aadd37b372bf8d29cf786da99d8f99bddbb37c"
+    },
+    "native-precheck/terminal-freeze.json": {
+      "bytes": 915,
+      "sha256": "470a8d2264cdc01e22c898a085c09f0351207347bc9d3e6bf85c0adc6ee2ebf6"
+    },
+    "native-precheck/terminal-start.json": {
+      "bytes": 252,
+      "sha256": "65b3027a8ee0d192468725407fec6588643a591f649500b5d7c2273b94cba755"
+    }
+  },
+  "kind": "INDEPENDENT_LOCAL_N2_FINAL_CLOSEOUT_HELPER_REVIEW"
+}

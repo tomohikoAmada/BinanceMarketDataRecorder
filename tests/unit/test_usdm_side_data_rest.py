@@ -345,3 +345,85 @@ def test_taker_volume_preserves_official_leading_overlap_but_advances_requested_
     assert envelope.source_sequence["requestedRecordCount"] == 1
     assert envelope.source_sequence["firstRequestedTimestamp"] == 300_000
     assert envelope.source_sequence["lastRequestedTimestamp"] == 300_000
+
+
+@pytest.mark.parametrize("timestamps", [[], [599_000], [300_123, 899_876]])
+def test_oi_sparse_period_end_rows_preserve_exact_source_and_evaluated_window(
+    timestamps: list[int],
+) -> None:
+    api = Api("funding_history.json")
+    api.value = [
+        {"symbol": "BTCUSDT", "sumOpenInterest": "91624.96000000",
+         "sumOpenInterestValue": "0.00000000", "timestamp": timestamp}
+        for timestamp in timestamps
+    ]
+    envelope = capture_rest_side_data(
+        kind=RestSideDataKind.OPEN_INTEREST_STATISTICS, symbol="BTCUSDT",
+        rest_api=api, collector_instance_id="oi-contract", collector_version="test",
+        period_start_ms=300_000, period_end_ms=899_999, period_limit=2,
+    )
+    assert api.calls[0][1][2:] == (500, 300_000, 899_999)
+    assert json.loads(envelope.raw_payload)["response"]["model"] == api.value
+    assert envelope.source_sequence["requestedRangeComplete"] == 1
+    assert envelope.source_sequence["evaluatedThroughPeriodStart"] == 600_000
+    assert envelope.source_sequence["requestedRecordCount"] == len(timestamps)
+    if timestamps:
+        assert envelope.source_sequence["lastRequestedTimestamp"] == timestamps[-1]
+    else:
+        assert "lastRequestedTimestamp" not in envelope.source_sequence
+
+
+def test_saturated_oi_response_retains_all_rows_without_claiming_complete_window() -> None:
+    api = Api("funding_history.json")
+    api.value = [
+        {"symbol": "BTCUSDT", "sumOpenInterest": "1", "sumOpenInterestValue": "2",
+         "timestamp": 300_000 + index}
+        for index in range(500)
+    ]
+    envelope = capture_rest_side_data(
+        kind=RestSideDataKind.OPEN_INTEREST_STATISTICS, symbol="BTCUSDT",
+        rest_api=api, collector_instance_id="oi-contract", collector_version="test",
+        period_start_ms=300_000, period_end_ms=599_999, period_limit=1,
+    )
+    assert json.loads(envelope.raw_payload)["response"]["model"] == api.value
+    assert envelope.source_sequence["requestedRangeComplete"] == 0
+    assert "evaluatedThroughPeriodStart" not in envelope.source_sequence
+
+
+@pytest.mark.parametrize("timestamp", [299_999, 900_000])
+def test_oi_sparse_contract_still_rejects_out_of_requested_range(timestamp: int) -> None:
+    api = Api("funding_history.json")
+    api.value = [{"symbol": "BTCUSDT", "sumOpenInterest": "1",
+                  "sumOpenInterestValue": "2", "timestamp": timestamp}]
+    with pytest.raises(SideDataSchemaError, match="out-of-range"):
+        capture_rest_side_data(
+            kind=RestSideDataKind.OPEN_INTEREST_STATISTICS, symbol="BTCUSDT",
+            rest_api=api, collector_instance_id="oi-contract", collector_version="test",
+            period_start_ms=300_000, period_end_ms=899_999, period_limit=2,
+        )
+
+
+@pytest.mark.parametrize("record_index", [0, 1])
+def test_recorded_current_oi_response_keeps_its_exact_period_end_observations(
+    record_index: int,
+) -> None:
+    import hashlib
+
+    record = json.loads((FIXTURES / "oi_sparse_current_diagnostic.json").read_text())[
+        "records"][record_index]
+    assert hashlib.sha256(record["body_utf8"].encode()).hexdigest() == record["body_sha256"]
+    api = Api("funding_history.json")
+    api.value = json.loads(record["body_utf8"])
+    parameters = record["parameters"]
+    envelope = capture_rest_side_data(
+        kind=RestSideDataKind.OPEN_INTEREST_STATISTICS, symbol=record["symbol"],
+        rest_api=api, collector_instance_id="recorded-public-response", collector_version="test",
+        period_start_ms=parameters["startTime"], period_end_ms=parameters["endTime"],
+        period_limit=parameters["limit"],
+    )
+    assert json.loads(envelope.raw_payload)["response"]["model"] == api.value
+    assert envelope.source_sequence["lastRequestedTimestamp"] == max(
+        row["timestamp"] for row in api.value
+    )
+    assert envelope.source_sequence["evaluatedThroughPeriodStart"] == 1_792_069_500_000
+    assert envelope.source_sequence["requestedRangeComplete"] == 1

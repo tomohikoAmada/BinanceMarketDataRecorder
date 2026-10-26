@@ -1,0 +1,14 @@
+{
+  "UID_GID_mode_direct_readback_exported": false,
+  "actual_copy_sha256": "7b9a16b72f42bc08d6395083fcf00b10f1a147b0f8f60461bd3ba3a02b18a89f",
+  "actual_deployment_sha256": "9571c469a025b895d183fbb4707a573118a3f038c4cfb3f7c7a5b2f162fa3d6b",
+  "actual_native_QA_capture_T0_duration_credit": false,
+  "all_payload_readback_count": 24,
+  "blocking_findings": [],
+  "checks_passed": 10,
+  "decision": "ACCEPT_ACTUAL_QA_SOFTWARE_COPY_AND_EXACT_PENDING_NATIVE_LAUNCH",
+  "qa_manifest_sha256": "07d4c1354c48f5fa60c411581774f73391b561d9fd61b47cf2562f6d3f9f6ad8",
+  "report_sha256": "e7b3770b036e2db5e02e76b6e21d1a17708d590c55144da8dd8d3f702818365a",
+  "review_SSH_Raw_candidate_execution": false,
+  "runtime_payload_count": 14
+}

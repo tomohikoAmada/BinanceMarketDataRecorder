@@ -1,0 +1,46 @@
+{
+  "decision": "BLOCK",
+  "kind": "INDEPENDENT_ORIGINAL_UNEXECUTED_PREFLIGHT_DESIGN_REVIEW",
+  "members": {
+    "INPUT_ORIGINS.json": {
+      "bytes": 798,
+      "sha256": "d86c528094286c596b60d3345620f866fc25128eb54a6b655c6a94fa80349a01"
+    },
+    "REPORT.md": {
+      "bytes": 2355,
+      "sha256": "186e08df5fd146befe0c61f161ba61ed109795a87fef914e0389f9b2559b40fb"
+    },
+    "RESULT.json": {
+      "bytes": 2686,
+      "sha256": "b1fc4530ec8e49e9cb4cf58a83ad906135351c5edf1c9c325c41dffced0c0519"
+    },
+    "check_original_findings.py": {
+      "bytes": 5158,
+      "sha256": "85f7c5dbbb21fa89ac52af3eb958696a783d4de5f5d29d45a9ef9fe479a92ed8"
+    },
+    "freeze_original_review.py": {
+      "bytes": 6654,
+      "sha256": "b14b7bee90a244b229b7ef17fac6bb859609fdcfc524d9bdd3a14a71450531cc"
+    },
+    "inputs-initial-unexecuted/DESIGN.md": {
+      "bytes": 1304,
+      "sha256": "3394fb2428d4f160491682caa835a93f1b3d39c01ec481ce6027b542ecb4d4bd"
+    },
+    "inputs-initial-unexecuted/preflight-design-manifest.json": {
+      "bytes": 619,
+      "sha256": "f8e10a42807ae57cb2c80c29efdfede84b4f07359356d15b77d0921a04eec40c"
+    },
+    "inputs-initial-unexecuted/read_current_capacity.py": {
+      "bytes": 13160,
+      "sha256": "d103983ac1af2f14064617e708860bcb1b9ea317d8899811c100128946219365"
+    },
+    "original-fixture-results.json": {
+      "bytes": 1609,
+      "sha256": "1b676f16863d75407dc89bf19c4df219285815adec016b3c68a2686d24143162"
+    },
+    "source-static-references.json": {
+      "bytes": 712,
+      "sha256": "5886de219ee8785a08ca72e0878a528b8a59f824ce99d6eabad51bc22e5d1f2b"
+    }
+  }
+}

@@ -36,7 +36,7 @@ from urllib.parse import quote
 from uuid import uuid4
 
 from websockets.asyncio.client import connect
-from websockets.exceptions import WebSocketException
+from websockets.exceptions import InvalidStatus, WebSocketException
 
 from ...domain.event import EventEnvelope
 from ...domain.product import product_log_fields
@@ -53,9 +53,12 @@ from ...spool.seal import RECONNECT_GAP_FLAG, RECONNECT_INTENT_SCHEMA_V2
 from ...spool.stream import StreamSpool
 from ...storage.catalog import stream_discontinuity_event_id
 from ..websocket_common import (
+    DEFAULT_RECEIPT_BYTE_CAPACITY,
     RECONNECT_REASONS,
+    capped_backoff_seconds,
     release_writer_preserving_errors,
     run_owned_blocking_call,
+    websocket_disconnect_log_fields,
 )
 from .schema import SpotStream, envelope_from_websocket_frame
 
@@ -90,9 +93,7 @@ class ReconnectBackoff:
             raise ValueError("invalid reconnect bounds")
         if not 0 <= self.jitter_ratio <= 1:
             raise ValueError("jitter ratio must be between zero and one")
-        base: float = min(
-            self.maximum_seconds, self.initial_seconds * (2.0 ** (failures - 1))
-        )
+        base = capped_backoff_seconds(self.initial_seconds, self.maximum_seconds, failures)
         sample: float = random.random() if random_value is None else random_value
         multiplier = 1 + self.jitter_ratio * (2 * sample - 1)
         return float(min(self.maximum_seconds, max(0.0, base * multiplier)))
@@ -111,16 +112,25 @@ async def open_spot_websocket(
 ) -> AsyncIterator[WebSocketConnection]:
     """Open a raw stream with finite library buffering and no client Ping loop."""
 
-    async with connect(
-        url,
-        proxy=proxy,
-        compression=None,
-        ping_interval=None,
-        max_queue=(32, 8),
-        max_size=16 * 1024 * 1024,
-        close_timeout=10,
-    ) as websocket:
-        yield websocket
+    from ..request_budget import observe_websocket_rejection, shared_request_budget
+
+    await shared_request_budget().acquire({"spot_connections": 1})
+    try:
+        async with connect(
+            url,
+            proxy=proxy,
+            compression=None,
+            ping_interval=None,
+            max_queue=(4, 1),
+            max_size=16 * 1024 * 1024,
+            close_timeout=10,
+        ) as websocket:
+            yield websocket
+    except InvalidStatus as exc:
+        observe_websocket_rejection(
+            "spot", exc.response.status_code, exc.response.headers
+        )
+        raise
 
 
 class SpotStreamCollector:
@@ -137,6 +147,7 @@ class SpotStreamCollector:
         collector_version: str,
         logger: logging.Logger,
         receipt_queue_capacity: int = 1024,
+        receipt_byte_capacity: int = DEFAULT_RECEIPT_BYTE_CAPACITY,
         planned_rotation_seconds: float = 23 * 60 * 60 + 50 * 60,
         backoff: ReconnectBackoff | None = None,
         base_url: str = SPOT_WEBSOCKET_BASE_URL,
@@ -177,6 +188,8 @@ class SpotStreamCollector:
             receipt_queue_capacity,
             put_timeout_seconds=backpressure_put_timeout_seconds,
             saturation_timeout_seconds=backpressure_saturation_timeout_seconds,
+            byte_capacity=receipt_byte_capacity,
+            size_of=lambda frame: len(frame.raw_payload),
         )
         self.post_close_handoff_timeout_seconds = post_close_handoff_timeout_seconds
         self._server_shutdown = asyncio.Event()
@@ -302,7 +315,7 @@ class SpotStreamCollector:
         writer_task: asyncio.Task[None],
         stop: asyncio.Event,
     ) -> None:
-        if self._receipts.depth >= self._receipts.capacity and not self._backpressure_active:
+        if self._receipts.would_block(receipt) and not self._backpressure_active:
             self._backpressure_active = True
             self._log_ingress_state(
                 logging.WARNING,
@@ -330,6 +343,10 @@ class SpotStreamCollector:
             "receipt_queue_capacity": stats.capacity,
             "receipt_queue_depth": stats.depth,
             "receipt_queue_high_watermark": stats.high_watermark,
+            "receipt_byte_capacity": stats.byte_capacity,
+            "receipt_queued_bytes": stats.queued_bytes,
+            "receipt_owned_bytes": stats.owned_bytes,
+            "receipt_owned_bytes_high_watermark": stats.high_watermark_bytes,
             "queue_wait_count": stats.wait_count,
             "queue_wait_total_ns": stats.wait_total_ns,
             "queue_wait_max_ns": stats.wait_max_ns,
@@ -533,8 +550,7 @@ class SpotStreamCollector:
             batch: list[ReceivedFrame] = []
             persisted: list[EventEnvelope] = []
             try:
-                first = await asyncio.wait_for(self._receipts.get(), timeout=0.1)
-                batch.append(first)
+                batch.append(await asyncio.wait_for(self._receipts.get(), timeout=0.1))
             except TimeoutError:
                 await run_owned_blocking_call(self.spool.drain_all)
                 continue
@@ -559,7 +575,6 @@ class SpotStreamCollector:
                 persisted.append(envelope)
                 if "server_shutdown" in envelope.capture_flags:
                     self._server_shutdown.set()
-                self._receipts.task_done()
             drain_started = time.perf_counter_ns()
             drained = await run_owned_blocking_call(self.spool.drain_all)
             drain_duration = time.perf_counter_ns() - drain_started
@@ -573,9 +588,14 @@ class SpotStreamCollector:
             if self.envelope_observer is not None:
                 for envelope in persisted:
                     self.envelope_observer(envelope)
+            connection_id = persisted[-1].connection_id
+            for receipt in batch:
+                self._receipts.task_done(receipt)
+            batch.clear()
+            persisted.clear()
+            del receipt, envelope
             if self._receipts.note_consumer_progress() and self._backpressure_active:
                 self._backpressure_active = False
-                connection_id = persisted[-1].connection_id if persisted else "unknown"
                 self._log_ingress_state(
                     logging.INFO,
                     "spot_ingress_backpressure_recovered",
@@ -640,6 +660,14 @@ class SpotStreamCollector:
                 try:
                     receipt = receive_task.result()
                     await self._accept(receipt, writer_task, stop)
+                    # A ready frame and stop can complete together. Preserve
+                    # this frame, then stop instead of letting continuous recv
+                    # readiness starve shutdown (including stop during handoff).
+                    if stop.is_set():
+                        await websocket.close(code=1000, reason="collector shutdown")
+                        if self._is_session_restart(session_restart):
+                            return "session_restart"
+                        return "graceful_shutdown"
                 except IngressBackpressureTimeout:
                     self._log_ingress_state(
                         logging.ERROR,
@@ -891,6 +919,11 @@ class SpotStreamCollector:
                     connection_id=connection_id,
                     error_type=type(exc).__name__,
                     retry=failures,
+                    **websocket_disconnect_log_fields(
+                        exc,
+                        connected_at=connected_at,
+                        observed_at=asyncio.get_running_loop().time(),
+                    ),
                 )
                 if not was_connected or self._connection_receipt_count == 0:
                     # The opener failed or the connection closed before

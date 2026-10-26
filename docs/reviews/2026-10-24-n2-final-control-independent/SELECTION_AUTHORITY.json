@@ -1,0 +1,13 @@
+{
+  "creation_ids": 26324,
+  "current_postboundary_operational": 1536,
+  "operational": 1538,
+  "prior_context_companions": [
+    4257,
+    4259
+  ],
+  "prior_metadata_rows_preserved": 137062,
+  "selected_chunks": 26324,
+  "start_chunks": 137062,
+  "terminal_chunks": 163386
+}

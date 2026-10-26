@@ -1,0 +1,29 @@
+{
+  "recorded_at_utc": "2026-10-23T18:37:49.103158+00:00",
+  "source": "Parent task report received after immutable review freeze; not independently rerun",
+  "review_verdict": "ACCEPT_DIAGNOSTIC_SCOPE_ONLY",
+  "reviewed_six_files_still_unchanged": true,
+  "parent_full_suite": {
+    "passed": 2146,
+    "skipped": 24,
+    "deselected": 5,
+    "failed": 1,
+    "failure": "M0 default primary-repository location contract in isolated worktree",
+    "retained_log_sha256_prefix": "38b080c8"
+  },
+  "parent_affected_only_recheck": {
+    "passed": 1,
+    "CI": "true",
+    "M0_CONTRACT_ROOT": "/Users/amada/.codex/worktrees/r2-close-diagnostics/BinanceMarketDataRecorder",
+    "log_sha256_prefix": "976ea3fe",
+    "source_edits": false
+  },
+  "interpretation": "All2147 selected offline cases covered across full run and supported affected-only recheck; do not claim a single clean2147 run.",
+  "exact_future_dual_ci": "REQUIRED_BEFORE_FUTURE_RELEASE",
+  "independent_offline_cases": "10PASS in0.92s; six real-loopback server/Raw preservation cases, two opening-immediate-OS-cause/privacy callsites, immediate-only chain control, redaction-before-truncation control.",
+  "frozen_original_artifacts": {
+    "REPORT.md": "55b7cca5d8d4d52f8d2f84aad50216518094550ff7a281fcfa5cc90e369d0ca5",
+    "RESULT.json": "cc93f898b0e0d7176205e898c56101a75ed0b363e7cbcaac15fc9ea390f66504",
+    "MANIFEST.json": "99f39af4e1c701c30f27967227d60593cce350991d260a41b1e76212d71f9412"
+  }
+}

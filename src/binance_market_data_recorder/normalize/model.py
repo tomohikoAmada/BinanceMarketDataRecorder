@@ -7,7 +7,8 @@ from dataclasses import dataclass
 
 import pyarrow as pa  # type: ignore[import-untyped]
 
-DATASET_VERSION = "normalized-dataset.v1"
+DATASET_VERSION = "normalized-dataset.v2"
+READABLE_DATASET_VERSIONS = frozenset({"normalized-dataset.v1", DATASET_VERSION})
 DEDUP_VERSION = "normalized-dedup.v2"
 PARQUET_PROFILE = "bmdr-parquet.v1"
 
@@ -53,6 +54,7 @@ class ParsedEvent:
     subrecord_ordinal: int = 0
     valid: bool = True
     error_code: str | None = None
+    exchange_times: Mapping[str, int | None] | None = None
     event_kind: str = "market_event"
 
 

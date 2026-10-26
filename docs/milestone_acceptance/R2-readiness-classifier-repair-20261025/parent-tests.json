@@ -1,0 +1,236 @@
+{
+  "result": "LOCAL_CLASSIFIER_AND_FIXED_MONITOR_REGRESSION_PASS",
+  "case_count": 39,
+  "cases": [
+    {
+      "case": "normal_ready",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "recognized_connecting_planned_rotation",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "real_failed_even_with_planned_rotation",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "recognized_connecting_unexpected_disconnect",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "real_failed_even_with_unexpected_disconnect",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "recognized_connecting_server_shutdown",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "real_failed_even_with_server_shutdown",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "recognized_connecting_ingress_backpressure",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "real_failed_even_with_ingress_backpressure",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "recognized_connecting_sequence_gap",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "real_failed_even_with_sequence_gap",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "malformed_or_unproven_11",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "malformed_or_unproven_12",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "malformed_or_unproven_13",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "malformed_or_unproven_14",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "malformed_or_unproven_15",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "malformed_or_unproven_16",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "malformed_or_unproven_17",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "malformed_or_unproven_18",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "malformed_or_unproven_19",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "FAILED_even_without_failure_text",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "service_failure",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "shutdown",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "actual_disk_reserve",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "invalid_disk_flag",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "missing_disk_flag",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "writer_error",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "write_fatal",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "recovery_tag_needs_trusted_running_service",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "existing_bounded_initial_capacity_pending_preserved",
+      "PASS": true,
+      "result": false
+    },
+    {
+      "case": "capacity_pending_not_allowed_in_formal",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "ValueError"
+    },
+    {
+      "case": "real_planned_rotation_trigger_stays_write_safe_but_not_ready",
+      "PASS": true,
+      "expected_action": "continue_quality_logging",
+      "error_type": null
+    },
+    {
+      "case": "mixed_four_products_real_FAILED_not_masked_by_other_rotations",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "four_recoveries_do_not_bypass_actual_disk_stop",
+      "PASS": true,
+      "expected_action": "pause_untrusted_or_terminal",
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "all_other_policy_functions_and_constants_AST_identical",
+      "PASS": true
+    },
+    {
+      "case": "fake_own86400_complete2880_rotation_faults_remain_five_bad_probes_excluded",
+      "PASS": true
+    },
+    {
+      "case": "missing_nominal_stays_bad",
+      "PASS": true
+    },
+    {
+      "case": "late_and_missing_both_stay_bad",
+      "PASS": true
+    },
+    {
+      "case": "more_than_fourteen_bad_cannot_pass_995",
+      "PASS": true
+    }
+  ],
+  "actual_trigger_reproduced_in_original": true,
+  "all_other_policy_AST_unchanged": true,
+  "candidate_sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+  "real_linux_credit": false,
+  "production_or_raw_actions": false,
+  "formal_duration_credit_seconds": 0,
+  "synthetic_86400_seconds_only": true
+}

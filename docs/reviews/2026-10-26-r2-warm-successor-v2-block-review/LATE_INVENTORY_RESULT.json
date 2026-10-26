@@ -1,0 +1,105 @@
+{
+  "accepted": false,
+  "case": "late_successful_inventory_response_after_original_absolute_cap",
+  "elapsed": 0.4820511249708943,
+  "inventory_calls": [
+    {
+      "args": [
+        82756,
+        0.11999620898859575
+      ],
+      "at": 274968.952713833,
+      "kwargs": {},
+      "observed": [
+        {
+          "live": true,
+          "pgid": 82756,
+          "pid": 82756,
+          "state": "Ss"
+        }
+      ]
+    },
+    {
+      "args": [
+        82756,
+        0.10777349997079
+      ],
+      "at": 274968.963329375,
+      "kwargs": {},
+      "observed": [
+        {
+          "live": true,
+          "pgid": 82756,
+          "pid": 82756,
+          "state": "Ss"
+        }
+      ]
+    }
+  ],
+  "late_I_O_fixture": "Second actual ps result delayed by .4s after capture, modelling returned I/O after scheduler pause; no claim of actual host CPU stall",
+  "real_Linux_or_runuser_credit": false,
+  "receipt": {
+    "argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-c",
+      "print(\"{}\",flush=True)"
+    ],
+    "child_pid": 82756,
+    "cleanup": "UNRESOLVED_OWNED_GROUP_CLEANUP",
+    "cleanup_error": "TimeoutError:owned_group_unresolved_cleanup_or_pipes; cleanup=ProcessLookupError:[Errno 3] No such process; live_owned_members_remaining",
+    "cleanup_reserve_seconds": 0.12,
+    "control_raw": {
+      "base64": "eyJrZWVwZXJfcGlkIjogODI3NTYsICJwZ2lkIjogODI3NTYsICJpbm5lcl9waWQiOiA4Mjc1NywgInJldHVybmNvZGUiOiAwfQo=",
+      "bytes": 74,
+      "sha256": "6d43b60988b015304410c8c8c0e5778d3b7f25d10d3fc80f38e109c1b63ca43e"
+    },
+    "final_group_members": [
+      {
+        "live": true,
+        "pgid": 82756,
+        "pid": 82756,
+        "state": "Ss"
+      }
+    ],
+    "group_KILL_used": false,
+    "inner_pid": 82757,
+    "keeper_argv": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python",
+      "-B",
+      "/private/var/tmp/bmdr-r2-warm-successor-v2-review-20261026-ztq0xae1/provided-run/runtime/owned_command.py",
+      "--keeper",
+      "4",
+      "274969132038540",
+      "[\"/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv-ms2/bin/python\", \"-c\", \"print(\\\"{}\\\",flush=True)\"]"
+    ],
+    "keeper_returncode": 0,
+    "lease_released": true,
+    "owned_pgid": 82756,
+    "ownership_scope": "new leased session/group only; no universal escaped-descendant claim",
+    "returncode": 0,
+    "stderr_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout_raw": {
+      "base64": "e30K",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    "timed_out": false,
+    "timeout_prefix_stderr_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_prefix_stdout_raw": {
+      "base64": "",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timeout_seconds": 0.12,
+    "unexpected_live_descendants": []
+  },
+  "total_requested_cap_seconds": 0.24
+}

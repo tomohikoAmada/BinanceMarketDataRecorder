@@ -1,0 +1,311 @@
+{
+  "schema": "bmdr-independent-review-manifest-v1",
+  "self_excluded": true,
+  "files": [
+    {
+      "path": "CHECKS.json",
+      "size": 3730,
+      "sha256": "06b6a1a7a5faaffa909412098114d0782636a79a6eb2c829dc4525872276e7e6"
+    },
+    {
+      "path": "CHECKS.txt",
+      "size": 66,
+      "sha256": "18e520212f46564a229e3a4acfc92232c29abc094c27e465aba2818191e149f1"
+    },
+    {
+      "path": "INPUTS.json",
+      "size": 1847,
+      "sha256": "88014ccb19f8ac74c179b913cfdca21385e2afc0d538ab416b6d2172688c0821"
+    },
+    {
+      "path": "REPORT.md",
+      "size": 6060,
+      "sha256": "a0b92c291c73d67500859f22f904f19dc2068e22367a6729416b06e815a7de17"
+    },
+    {
+      "path": "RESULT.json",
+      "size": 2041,
+      "sha256": "34bd8b4acac56d20013865a3083af144e08bd0cee57452a90fc64d2d72c07a1c"
+    },
+    {
+      "path": "check_components.py",
+      "size": 15312,
+      "sha256": "cd5e948d1b498bfcffc39dc8a050702027727ce706ddadf032309da5e3fad3d9"
+    },
+    {
+      "path": "earlier-findings/FAULTS.json",
+      "size": 1879,
+      "sha256": "baf38431bdfdd1fcdcd1ca1cdc79a1d1fe8578823aca005d18ac2397d77d511f"
+    },
+    {
+      "path": "earlier-findings/design-manifest-initial.json",
+      "size": 2490,
+      "sha256": "f1c50d446774f71e6f0cf4c89148de4ed37d962a21458049126d79c948195671"
+    },
+    {
+      "path": "earlier-findings/observe-reviewed.py",
+      "size": 12513,
+      "sha256": "acad00725c1efd330ef4d7753030cead2ce4c5081588a4cd75997fa439303472"
+    },
+    {
+      "path": "earlier-findings/operate-reviewed.py",
+      "size": 8839,
+      "sha256": "e402f0d0bd92af00c66e262d65882d0e53af4513cb5848dba7caa7dce7f26841"
+    },
+    {
+      "path": "fixtures/PID0-before-binding-pending-auto-restart-o8n5hich/cleanup-complete.json",
+      "size": 571,
+      "sha256": "5a522a0765a89b810d4828cac3edf829e57228ec0336cf7a34424a2ea3ea6286"
+    },
+    {
+      "path": "fixtures/PID0-before-binding-pending-auto-restart-o8n5hich/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/archive-failure-evidence-bxv4_x6_/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/archive-timer-failure-48b5dswp/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/early-PID0-failure-qghgnl4m/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/early-PID0-failure-qghgnl4m/native-binding.json",
+      "size": 491,
+      "sha256": "655552d02fd292a3ddbc76c3852055beb874024796e7f28c5a29d0de480c3e1a"
+    },
+    {
+      "path": "fixtures/exec-stop-post-entry-trust-drift-hs2lgof8/cleanup-complete.json",
+      "size": 632,
+      "sha256": "55c921d965f9028ecac50f531a244587de8d9bd231861b1ad8a448fc84a4b714"
+    },
+    {
+      "path": "fixtures/exec-stop-post-entry-trust-drift-hs2lgof8/exec-stop-post-1000000000000.json",
+      "size": 632,
+      "sha256": "55c921d965f9028ecac50f531a244587de8d9bd231861b1ad8a448fc84a4b714"
+    },
+    {
+      "path": "fixtures/exec-stop-post-entry-trust-drift-hs2lgof8/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/expired-lease-dag94t9s/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/extended-deadline-h7g8me5v/start-request.json",
+      "size": 134,
+      "sha256": "5aa162994942bc5467651d9fb4f88bcef51ce1e890077fe5c53b3c1a2cf2e840"
+    },
+    {
+      "path": "fixtures/future-request-ttsqq4xw/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/healthy-request-b40aunwe/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/healthy-request-b40aunwe/native-binding.json",
+      "size": 496,
+      "sha256": "8a985c79b1b6c6b0e3c1b9071e32d85e45f5cd4ff53ca2f1733c944c27ecc67a"
+    },
+    {
+      "path": "fixtures/idempotence-after-completion-y4c8sw8a/cleanup-complete.json",
+      "size": 632,
+      "sha256": "55c921d965f9028ecac50f531a244587de8d9bd231861b1ad8a448fc84a4b714"
+    },
+    {
+      "path": "fixtures/idempotence-after-completion-y4c8sw8a/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/invalid-invocation-types-ato49a4a/native-binding.json",
+      "size": 68,
+      "sha256": "01714ca96eef5903ffbb977b58f3e85fcc275208b51fdf3a7a6fdab8319ed194"
+    },
+    {
+      "path": "fixtures/invalid-invocation-types-ato49a4a/owned-recorder.json",
+      "size": 50,
+      "sha256": "78b910337e5e55860ce4734381b58ff80c88166cfbf0b22947c51a82d3b7c5b9"
+    },
+    {
+      "path": "fixtures/invalid-invocation-types-ato49a4a/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/invalid-utf8-binding-7_dbv0ac/native-binding.json",
+      "size": 2,
+      "sha256": "b26f99543485cab0666a50160ed4281d01669a10feb99985525b10dd791f1e9d"
+    },
+    {
+      "path": "fixtures/invalid-utf8-binding-7_dbv0ac/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/missing-bindings-s0uipjb_/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/natural-worker-still-active-with-zero-backlog-ssa94j8b/cleanup-complete.json",
+      "size": 642,
+      "sha256": "327906cb657f39aff6feae13d978c6efb8cef7fdb121d46e0b33d7c1ab4d5af0"
+    },
+    {
+      "path": "fixtures/natural-worker-still-active-with-zero-backlog-ssa94j8b/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/partial-native-binding-xnb7rtm0/native-binding.json",
+      "size": 10,
+      "sha256": "1fb29e0e4f1e094e251e1799a007462ef7ab5601639d00375095b12dc85a8cff"
+    },
+    {
+      "path": "fixtures/partial-native-binding-xnb7rtm0/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/partial-owned-recorder-o34nbbxv/owned-recorder.json",
+      "size": 14,
+      "sha256": "7903c79acef64d0dfe3e734ec8ef64f7897caf01337c6b278bfdcad75ec3b9a3"
+    },
+    {
+      "path": "fixtures/partial-owned-recorder-o34nbbxv/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/request-nonzero-1ffk7n62/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/request-nonzero-1ffk7n62/native-binding.json",
+      "size": 491,
+      "sha256": "a47f6508c2de48c030f791ea6d0449ed50624795440f5669a2ccda90996defca"
+    },
+    {
+      "path": "fixtures/request-oserror-ko0ppfrf/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/request-oserror-ko0ppfrf/native-binding.json",
+      "size": 463,
+      "sha256": "75f13a5357d56974f33b3f295a83395ba5b6b8e165192f9ba2d9aa6eb7cfb940"
+    },
+    {
+      "path": "fixtures/request-timeout-f5mconvf/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/request-timeout-f5mconvf/native-binding.json",
+      "size": 470,
+      "sha256": "62a2effdea8de95f0766a43c0b4ff3fc37fe8af12bca00ff8ab3c18184a2df96"
+    },
+    {
+      "path": "fixtures/scope-trust-fails-jcshia55/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/state-read-error-42rlvvha/native-attempt.json",
+      "size": 205,
+      "sha256": "4c3c905e2bdd08a15ce57ed5484525f14aa6d8e2211c649b8bf3bce3e32280ea"
+    },
+    {
+      "path": "fixtures/state-read-error-42rlvvha/native-binding.json",
+      "size": 435,
+      "sha256": "4540c60429ef01013da687f64082099282d6e2a05218a2c41dae0044b6af0ce0"
+    },
+    {
+      "path": "fixtures/trust-drift-same-invocation-a8ontces/cleanup-complete.json",
+      "size": 632,
+      "sha256": "55c921d965f9028ecac50f531a244587de8d9bd231861b1ad8a448fc84a4b714"
+    },
+    {
+      "path": "fixtures/trust-drift-same-invocation-a8ontces/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/unexpected-incarnation-exclusive-service-contract-61k3k23h/cleanup-complete.json",
+      "size": 632,
+      "sha256": "c5f5c8546f65f6740fd575ba9d75a25151c9ae66bc2441b70c3a703787df8d58"
+    },
+    {
+      "path": "fixtures/unexpected-incarnation-exclusive-service-contract-61k3k23h/start-request.json",
+      "size": 134,
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "path": "fixtures/valid-owned-invocations-tcbnurep/native-binding.json",
+      "size": 100,
+      "sha256": "446c1187023984dadada306757d07fd0d3fb199a61ee97337fba3ed7f0f7da39"
+    },
+    {
+      "path": "fixtures/valid-owned-invocations-tcbnurep/owned-recorder.json",
+      "size": 50,
+      "sha256": "4750ae2ce690f89b7a18ecd0b0f7b7c69109516413cc1e6bf32fdab414564d12"
+    },
+    {
+      "path": "fixtures/valid-owned-invocations-tcbnurep/software-copy.json",
+      "size": 24,
+      "sha256": "3a3987580f4fa62aa22bde79a49a7175db3d06e13bcc766531ebbd9ca9ffbafa"
+    },
+    {
+      "path": "fixtures/wrong-boot-request-6wib0h56/start-request.json",
+      "size": 112,
+      "sha256": "32c585bb4eea67ceb172bb02cf0311462ee4b6ff435a326295dbab1c048e8c1e"
+    },
+    {
+      "path": "inputs/design-manifest.json",
+      "size": 2857,
+      "sha256": "f5fb7b410e7a8d1273ea575826c69416150f3b3e04eeafb0e78cd4fcf874f12f"
+    },
+    {
+      "path": "inputs/observe_stream_closes.py",
+      "size": 13375,
+      "sha256": "6c9128a38f080cb8f1f5f9aba9e5556adde76e3928d2d6952fe7853cc19852b4"
+    },
+    {
+      "path": "inputs/operate.py",
+      "size": 11089,
+      "sha256": "7ff6cb03329fdc885030e60d1a8246c6871b694d11dad74fcc06807cc4e64e8f"
+    },
+    {
+      "path": "inputs/pin-unit-exec.py",
+      "size": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "path": "inputs/qualification_auxiliary_gate.py",
+      "size": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    {
+      "path": "inputs/qualification_owner_995.py",
+      "size": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "result": "PARENT_FULL20_INDEPENDENT_ACTUAL_STARTUP_PREFIX_ARTIFACT_MEMBERS_VERIFIED",
+  "review": {
+    "REPORT.md": {
+      "path": "/private/var/tmp/bmdr-r2-instrumented-n2-startup-prefix-review-20261024-4JUarTPz/REPORT.md",
+      "sha256": "e7cd6598f88a1f884b3e119839be8bd2568113c75975512b34c4b2ca74fa8ced"
+    },
+    "RESULT.json": {
+      "path": "/private/var/tmp/bmdr-r2-instrumented-n2-startup-prefix-review-20261024-4JUarTPz/RESULT.json",
+      "sha256": "5d78542243dc6227ed2cc2111fd9ba0f0b059650403ce3d4098dca1d57c7a4c6"
+    },
+    "MANIFEST.json": {
+      "path": "/private/var/tmp/bmdr-r2-instrumented-n2-startup-prefix-review-20261024-4JUarTPz/MANIFEST.json",
+      "sha256": "98ad8df1d6b660758fb038d135da0933ae0e08eb905c78bbac5842c23cff5f80"
+    }
+  },
+  "original_input_read_sha256": "e589bece829dc14ae43002adaf024dd1fe831be364526e695b65ad5967abf6ac",
+  "full_actual_startup_prefix_only": true,
+  "final_24h_capacity_savedframes_credit": false
+}

@@ -95,6 +95,7 @@ def test_post_close_boundary_timeout_is_explicit() -> None:
             put_timeout_seconds=0.01,
             saturation_timeout_seconds=0.02,
         )
+
         async def idle_writer() -> None:
             await asyncio.Event().wait()
 
@@ -146,6 +147,7 @@ def test_cancelled_put_leaves_no_helper_task() -> None:
             put_timeout_seconds=10,
             saturation_timeout_seconds=10,
         )
+
         async def idle_writer() -> None:
             await asyncio.Event().wait()
 
@@ -162,9 +164,7 @@ def test_cancelled_put_leaves_no_helper_task() -> None:
         assert [
             task
             for task in asyncio.all_tasks()
-            if task not in baseline
-            and task is not asyncio.current_task()
-            and not task.done()
+            if task not in baseline and task is not asyncio.current_task() and not task.done()
         ] == []
 
     asyncio.run(exercise())
@@ -185,9 +185,7 @@ def test_stop_interrupts_wait_without_enqueuing_or_leaking_helper() -> None:
 
         writer_task = asyncio.create_task(idle_writer())
         await queue.put(1, writer_task=writer_task)
-        waiting = asyncio.create_task(
-            queue.put(2, writer_task=writer_task, stop=stop)
-        )
+        waiting = asyncio.create_task(queue.put(2, writer_task=writer_task, stop=stop))
         await asyncio.sleep(0)
         stop.set()
         with pytest.raises(IngressStopRequested):
@@ -199,9 +197,7 @@ def test_stop_interrupts_wait_without_enqueuing_or_leaking_helper() -> None:
         assert [
             task
             for task in asyncio.all_tasks()
-            if task not in baseline
-            and task is not asyncio.current_task()
-            and not task.done()
+            if task not in baseline and task is not asyncio.current_task() and not task.done()
         ] == []
 
     asyncio.run(exercise())
@@ -239,9 +235,183 @@ def test_cancelled_post_close_put_leaves_no_helper_task_or_duplicate() -> None:
         assert [
             task
             for task in asyncio.all_tasks()
-            if task not in baseline
-            and task is not asyncio.current_task()
-            and not task.done()
+            if task not in baseline and task is not asyncio.current_task() and not task.done()
         ] == []
+
+    asyncio.run(exercise())
+
+
+def test_owned_bytes_stay_charged_while_writer_holds_dequeued_batch() -> None:
+    async def exercise() -> None:
+        queue = BoundedAsyncQueue[bytes](
+            20,
+            byte_capacity=8,
+            size_of=len,
+            put_timeout_seconds=0.2,
+            saturation_timeout_seconds=1,
+        )
+
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+
+        writer = asyncio.create_task(idle_writer())
+        try:
+            first, second, third = b"first", b"sec", b"next"
+            await queue.put(first, writer_task=writer)
+            await queue.put(second, writer_task=writer)
+            assert queue.get_nowait() is first
+            assert queue.get_nowait() is second
+            stats = queue.snapshot()
+            assert stats.depth == stats.queued_bytes == 0
+            assert stats.owned_bytes == stats.high_watermark_bytes == 8
+            waiting = asyncio.create_task(queue.put(third, writer_task=writer))
+            await asyncio.sleep(0)
+            assert not waiting.done()
+            # An out-of-order completion releases only this item's three bytes.
+            queue.task_done(second)
+            await asyncio.sleep(0)
+            assert not waiting.done()
+            assert queue.snapshot().owned_bytes == 5
+            queue.task_done(first)
+            await asyncio.wait_for(waiting, timeout=0.2)
+            assert queue.get_nowait() is third
+            queue.task_done(third)
+            assert queue.snapshot().owned_bytes == queue.snapshot().queued_bytes == 0
+            assert queue.snapshot().high_watermark_bytes == 8
+            with pytest.raises(ValueError, match="in-flight"):
+                queue.task_done(third)
+        finally:
+            writer.cancel()
+            await asyncio.gather(writer, return_exceptions=True)
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("interruption", ["cancel", "stop", "writer_failure", "timeout"])
+def test_weighted_wait_interruptions_never_release_inflight_or_charge_unadmitted(
+    interruption: str,
+) -> None:
+    async def exercise() -> None:
+        baseline = set(asyncio.all_tasks())
+        queue = BoundedAsyncQueue[bytes](
+            20,
+            byte_capacity=4,
+            size_of=len,
+            put_timeout_seconds=0.01,
+            saturation_timeout_seconds=0.03,
+        )
+        fail, stop = asyncio.Event(), asyncio.Event()
+
+        async def writer_run() -> None:
+            await fail.wait()
+            raise OSError("fsync failed")
+
+        writer = asyncio.create_task(writer_run())
+        first = b"full"
+        await queue.put(first, writer_task=writer)
+        assert await queue.get() is first
+        waiting = asyncio.create_task(queue.put(b"new", writer_task=writer, stop=stop))
+        await asyncio.sleep(0)
+        expected: type[BaseException]
+        if interruption == "cancel":
+            waiting.cancel()
+            expected = asyncio.CancelledError
+        elif interruption == "stop":
+            stop.set()
+            expected = IngressStopRequested
+        elif interruption == "writer_failure":
+            fail.set()
+            expected = IngressWriterStopped
+        else:
+            expected = IngressBackpressureTimeout
+        with pytest.raises(expected):
+            await waiting
+        assert queue.snapshot().owned_bytes == 4
+        assert queue.depth == queue.snapshot().queued_bytes == 0
+        if not writer.done():
+            writer.cancel()
+        await asyncio.gather(writer, return_exceptions=True)
+        await asyncio.sleep(0)
+        assert not [
+            task for task in asyncio.all_tasks() if task not in baseline and not task.done()
+        ]
+
+    asyncio.run(exercise())
+
+
+def test_weighted_boundary_waits_for_batch_release_and_rejects_oversize() -> None:
+    async def exercise() -> None:
+        queue = BoundedAsyncQueue[bytes](
+            20,
+            byte_capacity=4,
+            size_of=len,
+            put_timeout_seconds=0.01,
+            saturation_timeout_seconds=0.03,
+        )
+
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+
+        writer = asyncio.create_task(idle_writer())
+        try:
+            first = b"full"
+            await queue.put(first, writer_task=writer)
+            assert await queue.get() is first
+            with pytest.raises(IngressPostCloseHandoffTimeout):
+                await queue.put_after_connection_close(
+                    b"tail", writer_task=writer, timeout_seconds=0.01
+                )
+            boundary = asyncio.create_task(
+                queue.put_after_connection_close(
+                    b"tail",
+                    writer_task=writer,
+                    timeout_seconds=0.2,
+                )
+            )
+            await asyncio.sleep(0)
+            queue.task_done(first)
+            await boundary
+            tail = queue.get_nowait()
+            assert tail == b"tail"
+            queue.task_done(tail)
+            with pytest.raises(IngressBackpressureTimeout, match="exceeds"):
+                await queue.put(b"large", writer_task=writer)
+            with pytest.raises(IngressPostCloseHandoffTimeout, match="exceeds"):
+                await queue.put_after_connection_close(
+                    b"large", writer_task=writer, timeout_seconds=0.1
+                )
+            assert queue.snapshot().owned_bytes == 0
+        finally:
+            writer.cancel()
+            await asyncio.gather(writer, return_exceptions=True)
+
+    asyncio.run(exercise())
+
+
+def test_repeated_same_object_keeps_each_admission_charge() -> None:
+    async def exercise() -> None:
+        queue = BoundedAsyncQueue[bytes](
+            2,
+            byte_capacity=8,
+            size_of=len,
+            put_timeout_seconds=0.1,
+            saturation_timeout_seconds=0.2,
+        )
+
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+
+        writer = asyncio.create_task(idle_writer())
+        item = b"same"
+        try:
+            for _ in range(2):
+                await queue.put(item, writer_task=writer)
+            for expected_bytes in (4, 0):
+                assert queue.get_nowait() is item
+                queue.task_done(item)
+                assert queue.snapshot().owned_bytes == expected_bytes
+        finally:
+            writer.cancel()
+            await asyncio.gather(writer, return_exceptions=True)
 
     asyncio.run(exercise())

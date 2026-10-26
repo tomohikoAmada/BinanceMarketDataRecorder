@@ -1,0 +1,173 @@
+{
+  "kind": "BOUNDED_DIAGNOSTIC_COMPLETE_NO_WS_REPRODUCTION",
+  "metadata_path": "/private/var/tmp/bmdr-r2-close-release-20261024-l2hr7wd9/short-diagnostic-controls/actual-diagnostic-read-1792803677663471000.json",
+  "metadata_sha256": "8248c7dc897a9959a5544d120b58ebb9316ed977caf40899de3d6984127d93c5",
+  "original_members": {
+    "cleanup-complete.json": {
+      "sha256": "992549f974e2096612f486ab404b8928d383a6dc83a65cdee23123c442700465",
+      "size": 1276
+    },
+    "diagnostic-result.json": {
+      "sha256": "afc069bdb3e0e6a972680b72705b6d087c844c2304bf4db4861ed82ac89c02e7",
+      "size": 1536
+    },
+    "exec-stop-post-1792801414038698940.json": {
+      "sha256": "5be8cc372b11292a702a492b20c417667de8cae5e1683932e9ce64ec66a9feba",
+      "size": 1338
+    },
+    "native-attempt.json": {
+      "sha256": "54c8ba6805cf49ac9c073bc5b07293f52e69c232a47bb6221eb888f4dd197751",
+      "size": 1661
+    },
+    "native-binding.json": {
+      "sha256": "3d7f4319afa3edef69ecce61416c53bec3d7ab9d3d8e28d3887c0084c8c9e749",
+      "size": 2185
+    },
+    "observations.jsonl": {
+      "sha256": "d2e179dd7b90e956dacbcb48e6a1eb9f70cdedb4f886e1196839b985dc67cb1e",
+      "size": 13942825
+    },
+    "owned-recorder.json": {
+      "sha256": "bc0c5c5afbd34ad4f4c1ade5ac41dacd24989b6c503f8980498b1ab7615a38bf",
+      "size": 421
+    },
+    "software-copy.json": {
+      "sha256": "97a0a632891ff43da6f789241a1953b6378686c421846588a32985144df02cbf",
+      "size": 2538
+    },
+    "start-request.json": {
+      "sha256": "59b78accd2949952b33bfeaa73440e43e46291b86537b3951bc7c6d774540aae",
+      "size": 575
+    }
+  },
+  "native_result": {
+    "cleanup": {
+      "archive_timer": {
+        "ActiveState": "active",
+        "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+        "NextElapseUSecMonotonic": "3w 14h 25min 51.829983s",
+        "Result": "success",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      },
+      "archive_worker": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1866283807268",
+        "InvocationID": "36d24906810b4b76bc062c5e501088c9",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      },
+      "backlog": [
+        0,
+        0
+      ],
+      "clock_monotonic_ns": 1866307657332760,
+      "formal_credit_seconds": 0,
+      "recorder": {
+        "ActiveState": "inactive",
+        "ControlGroup": "",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "0",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "dead",
+        "UnitFileState": "disabled"
+      },
+      "recorder_before_cleanup": {
+        "ActiveState": "active",
+        "ControlGroup": "/system.slice/binance-market-data-recorder.service",
+        "ExecMainStartTimestampMonotonic": "1864457111263",
+        "InvocationID": "8948116f38a8483c8438d42645299e72",
+        "MainPID": "815493",
+        "NRestarts": "0",
+        "Result": "success",
+        "SubState": "running",
+        "UnitFileState": "disabled"
+      },
+      "result": "STOPPED_DISABLED_NORMAL_ARCHIVE_DRAINED",
+      "utc_ns": 1792801413476783910
+    },
+    "ended_at_utc_ns": 1792801413482765086,
+    "formal_credit_seconds": 0,
+    "observations": 352,
+    "own_observed_seconds": 1803.909538731,
+    "owned_recorder_invocation": "8948116f38a8483c8438d42645299e72",
+    "result": "BOUNDED_DIAGNOSTIC_OBSERVATION_COMPLETE"
+  },
+  "current_read_states": {
+    "binance-market-data-archive.service": {
+      "ActiveState": "activating",
+      "InvocationID": "4e521f6505124b9fa10cad0c07766ebf",
+      "LoadState": "loaded",
+      "MainPID": "817416",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "start",
+      "UnitFileState": "static"
+    },
+    "binance-market-data-archive.timer": {
+      "ActiveState": "active",
+      "InvocationID": "e786f0c126b14897a9f0fd7390ca558a",
+      "LoadState": "loaded",
+      "Result": "success",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "binance-market-data-recorder.service": {
+      "ActiveState": "inactive",
+      "InvocationID": "",
+      "LoadState": "loaded",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": "disabled"
+    },
+    "binance-recorder-r2-stream-close-observation-20261024-l2hr7wd9.service": {
+      "ActiveState": "inactive",
+      "InvocationID": "",
+      "LoadState": "not-found",
+      "MainPID": "0",
+      "NRestarts": "0",
+      "Result": "success",
+      "SubState": "dead",
+      "UnitFileState": ""
+    }
+  },
+  "diagnostic_rows": 352,
+  "initial_readiness_rows": 87,
+  "post_first_PASS_rows": 265,
+  "post_first_PASS_failed_rows": [
+    {
+      "zero_based_index": 349,
+      "utc_ns": 1792801351630011908,
+      "reasons": [
+        "auxiliary_not_running:um_perpetual:BTCUSDT:premium_index_snapshot"
+      ]
+    }
+  ],
+  "counts_official": {
+    "BLOCK": 88,
+    "PASS": 264
+  },
+  "counts_strict": {
+    "BLOCK": 88,
+    "PASS": 264
+  },
+  "resources": {
+    "owned_swap_current_max": 0,
+    "owned_swap_peak_max": 0,
+    "rss_max_bytes": 390201344,
+    "host_available_min_bytes": 4718088192,
+    "writer_free_min_bytes": 24363888640,
+    "archive_free_min_bytes": 2051522383872
+  },
+  "no_formal_monitor_or_saved_frame_denominator": true,
+  "formal_credit_seconds": 0,
+  "deeper_transport_cause": "UNRESOLVED_no_unexpected_WebSocket_close_in_this_bounded_journal"
+}

@@ -1,0 +1,5 @@
+# First file collection primitive: independent BLOCK
+
+BLOCK8c84060c/result5ef665de/manifest8a2091f7; all25 complete report members plus manifest passed parent SHA/bytes.16 supplied cases pass, but three independent counterexamples establish P1 ancestor resolve→open redirection reading FOREIGN temporary metadata as complete, and P2 JSON/JSONL RecursionError escaping without returning captured bytes/earlier rows. This is LOCAL fixture evidence, not a production read or incident. Original component892f6e5e remains immutable and never operationally deployed.
+
+A distinct collection V2 anchors the complete absolute chain by directory fds and preserves parser resource errors/bounded views. Its narrow review is ACTIVE; whole reader and operational qualification remain pending. See [report](2026-10-26-r2-control-collection-block-review/REPORT.md), [result](2026-10-26-r2-control-collection-block-review/RESULT.json), [manifest](2026-10-26-r2-control-collection-block-review/MANIFEST.json) and [mirror](2026-10-26-r2-control-collection-block-review/MIRROR.json).

@@ -1,0 +1,126 @@
+{
+  "decision": "ACCEPT_TWO_HOUR_DIAGNOSTIC_DELTA_DESIGN_ONLY_PENDING_ACTUAL_COPY_AND_LAUNCH",
+  "files": [
+    {
+      "bytes": 5527,
+      "path": "CHECKS.json",
+      "sha256": "8837be451a6b99fe92ee4894c9430bc5361015cd01fbe7fd3dc0674df35a5b67"
+    },
+    {
+      "bytes": 774,
+      "path": "REFERENCES.json",
+      "sha256": "4cfce506103fa6a9100c2545a15c862627cd92f79d19a96538cb8e9494a113df"
+    },
+    {
+      "bytes": 6455,
+      "path": "REPORT.md",
+      "sha256": "7eedc9a8b97fdcc176d8fef1b6cd7974e3bd7f36dd92bc663894be7fb5466d07"
+    },
+    {
+      "bytes": 6924,
+      "path": "RESULT.json",
+      "sha256": "7a5f55f742aad39c7674a0cd6b63864a3ba726d5b763a1c3f5aa7cee6ff47e73"
+    },
+    {
+      "bytes": 10472,
+      "path": "check_delta.py",
+      "sha256": "db7750c6c2b4d5bfd878caab7f3faa9207d1294ee5002fd0254751e8461a9a85"
+    },
+    {
+      "bytes": 490,
+      "path": "fixtures/after_old4800_bound/cleanup-complete.json",
+      "sha256": "b18c9eaef6830d9c2b73c8917ee0c4ed0301d23e9a7daa9dc2eeaa8f9225e9e9"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/after_old4800_bound/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/before_request_refused/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 47,
+      "path": "fixtures/completed_marker_after_expiry_no_action/cleanup-complete.json",
+      "sha256": "b33e056f393f0702c3f55a54a610d52dc744df835eba425482ff8c75da7ba2ab"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/completed_marker_after_expiry_no_action/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/extended_lease_refused/start-request.json",
+      "sha256": "a4abff26cb431a89e40345512136dcdd2ae783db012e8b7380de498ecbede13b"
+    },
+    {
+      "bytes": 490,
+      "path": "fixtures/new_deadline_inclusive/cleanup-complete.json",
+      "sha256": "b18c9eaef6830d9c2b73c8917ee0c4ed0301d23e9a7daa9dc2eeaa8f9225e9e9"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/new_deadline_inclusive/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 490,
+      "path": "fixtures/new_deadline_minus1ns/cleanup-complete.json",
+      "sha256": "b18c9eaef6830d9c2b73c8917ee0c4ed0301d23e9a7daa9dc2eeaa8f9225e9e9"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/new_deadline_minus1ns/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 135,
+      "path": "fixtures/new_deadline_plus1ns/start-request.json",
+      "sha256": "158c4cc2ee33cf37cd8b67898851a8ead2b06b3ff127de1d8db40541b4f29d93"
+    },
+    {
+      "bytes": 134,
+      "path": "fixtures/old_lease_refused/start-request.json",
+      "sha256": "79341c6c6addd4cb48eebf142017901da6c57a568e279f0041a938f19bf02257"
+    },
+    {
+      "bytes": 5032,
+      "path": "inputs/DELTA.diff",
+      "sha256": "0aa5cf94cdf97de6c163d0bc8815e862b9c57dbb97ad6f7b39a80d5d8596c45e"
+    },
+    {
+      "bytes": 2897,
+      "path": "inputs/design-manifest.json",
+      "sha256": "5640864446cf7ea23349e4b3016dfccae8a275864936d4c41633c4795f65082c"
+    },
+    {
+      "bytes": 13380,
+      "path": "inputs/observe_stream_closes.py",
+      "sha256": "634ee1eeca31f9015f617a3fa3bff38f27625f4d395a7d37ccc2a62b7569cfa0"
+    },
+    {
+      "bytes": 11162,
+      "path": "inputs/operate.py",
+      "sha256": "aa174bb58a3d266229aee28c8bb39022ef301c83be137871128bbb8d1deedde9"
+    },
+    {
+      "bytes": 329,
+      "path": "inputs/pin-unit-exec.py",
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    {
+      "bytes": 6324,
+      "path": "inputs/qualification_auxiliary_gate.py",
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    {
+      "bytes": 7983,
+      "path": "inputs/qualification_owner_995.py",
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    }
+  ],
+  "schema": "independent-local-review-manifest-v1"
+}

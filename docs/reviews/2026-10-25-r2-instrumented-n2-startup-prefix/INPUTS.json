@@ -1,0 +1,179 @@
+{
+  "current_config_reference": {
+    "bytes": 1642,
+    "path": "/private/var/tmp/bmdr-r2-report-isolation-20261020-yf61hyp0/n2-stopped-config-UNBOUND-20261022/candidate-n2-recorder.toml",
+    "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+  },
+  "embedded_members": {
+    "arm-native-attempt.json": {
+      "bytes": 1078,
+      "sha256": "0c2c6d30d7efaa17821634a18a1cbad1b2c6e7d08754cb240dd85bb238f1cb8a"
+    },
+    "canonical-verification.json": {
+      "bytes": 5003,
+      "sha256": "5103ed987ae3f677a2a110f0bd0635e7dbe253e68346d86aee3612f73715a7f5"
+    },
+    "capacity-policy.json": {
+      "bytes": 12875,
+      "sha256": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b"
+    },
+    "capture-admission.json": {
+      "bytes": 3793,
+      "sha256": "829ee811c11e7512eb4f0ce83876449f65cdc35b9e73ef8d6a43e60a578a7df5"
+    },
+    "capture-launch.json": {
+      "bytes": 1294,
+      "sha256": "059948191e22e7098b6a91eaf58bca8abcdee96208811ccb944e661605170b3e"
+    },
+    "copy-admission.json": {
+      "bytes": 3783,
+      "sha256": "bcb41030a08128cbbb3fcf20b64e0ddb68ef9e0a349e00904d466cd086b6f70d"
+    },
+    "data-scope-start.json": {
+      "bytes": 567,
+      "sha256": "5f124d7cee064711649d5a70fe27af9bafd81c0cb16ecef876890c017ad77036"
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.json": {
+      "bytes": 46685,
+      "sha256": "bd2374fa7eabe5dfcc294dc5f1d068a57308428ae077247182a49460c1c4fb6b"
+    },
+    "diagnostic-77e714510547434094e022581b4fbff7.state": {
+      "bytes": 13601,
+      "sha256": "86ac0f45b869a012cd499fab06d894a122ee745ee3f58a592efe14b5b2eb2474"
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.json": {
+      "bytes": 46632,
+      "sha256": "99ca834f042311bdaaa73655f342ee15c5dc959eec6ac1331885dfdd2286e5c3"
+    },
+    "diagnostic-8413ef506a944b7b93b7b19708758614.state": {
+      "bytes": 13585,
+      "sha256": "aae48cd07492dbd8751123eac025cf7bf8c1353a27113b2e5d87c4aa9f1dae54"
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.json": {
+      "bytes": 46697,
+      "sha256": "ec46c102566884d5a68aeb201709486094b9cfb56cbd9e4c762405280241c891"
+    },
+    "diagnostic-85f9be79c8a144e1966ca17674e4f027.state": {
+      "bytes": 13605,
+      "sha256": "d2f11368ee45693b479c409a86515dbbe007ec912d14da6ef5209b0dadbd5a0b"
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.json": {
+      "bytes": 46697,
+      "sha256": "8c51f1cc06e60eb8e763217e548b41f597c838c4c6dcf656cade71f135b92259"
+    },
+    "diagnostic-95d1b3f2800d4943bb3d71822d2a8c73.state": {
+      "bytes": 13605,
+      "sha256": "87cfc2302bb4d17040f09c92cbecc8e9ca446f7facb30582744fe9c2b853db7e"
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.json": {
+      "bytes": 46697,
+      "sha256": "bf83a42ee4382d071322c8fb7dc461ee74cfb1a12092cbdc772c92c4db8673c5"
+    },
+    "diagnostic-bf5ca59852a84518acdc4eab53aa82f9.state": {
+      "bytes": 13604,
+      "sha256": "21dd4a94d204c1440cb19117b8669947310f4700fd27fb4bd07b3c073fd14318"
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.json": {
+      "bytes": 46684,
+      "sha256": "a7b50f79b639816ac41a282bb432f90a37ad86a70ff7916712cd79157db1c02d"
+    },
+    "diagnostic-c45c57d3742a41808e4dd3a4953d503a.state": {
+      "bytes": 13601,
+      "sha256": "f7dc87d101c60238e6358336a5516142feb8991abbbff4d3e41099abb4858f86"
+    },
+    "kernel-update-pending.json": {
+      "bytes": 1080,
+      "sha256": "152f1509e0b00709f456a1720e5cceedbb28b3f05a7e9e7ab4abd5b620363cc6"
+    },
+    "launch-admission.json": {
+      "bytes": 3795,
+      "sha256": "05942b756441ff3b6a09f0d305499f7f24bab45bd2610cb7aab0f818fcc26afe"
+    },
+    "monitoring.jsonl": {
+      "bytes": 53334215,
+      "sha256": "82d6ba400ba4299b485e635eff34f099f17bd782afad4780f635be13c10ddcec"
+    },
+    "owner-start.json": {
+      "bytes": 60066,
+      "sha256": "17f11ac6d4e3723bf9bcb151d54cdd75ff780836d48be24553d8dd404f111213"
+    },
+    "postarm-admission.json": {
+      "bytes": 3795,
+      "sha256": "5ea49dc53567112bc6440bb66347a5586ec189b4681fe214ac558684726c9415"
+    },
+    "prearm-admission.json": {
+      "bytes": 3783,
+      "sha256": "a014302e1cdf8154e39c4db0c88286db4dab1e75dabc43e9a6489fa7325b0455"
+    },
+    "prestart-admission.json": {
+      "bytes": 3797,
+      "sha256": "0e31e1538fdc37aeee3c17d89da319c8b20f44437b50ca60499ec8df1098c4dd"
+    },
+    "quiet-window-actual.json": {
+      "bytes": 4256,
+      "sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199"
+    },
+    "recovery-observations.jsonl": {
+      "bytes": 267284,
+      "sha256": "d9bb2900e6c36af6d3b67acc062371d261fc81adfe7ada653096c56910d1e9d6"
+    },
+    "software-copy.json": {
+      "bytes": 22700,
+      "sha256": "05e162efb7951295ebf39068313ae9c38776d8dd640a5cbdd7068c54ed51db0d"
+    },
+    "stage-controls-manifest.json": {
+      "bytes": 2345,
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348"
+    },
+    "stage-design-evidence.json": {
+      "bytes": 1502,
+      "sha256": "692747f0f03d0f96fb2c7313b4c10820b57b97a906034fe8870f4fb8b9aa06c7"
+    },
+    "stage-launch-attempt.json": {
+      "bytes": 229,
+      "sha256": "cc616757d68ea8c965bc8342c0b906bf1cdc6811f5e8637502eb5a6f06e5748d"
+    },
+    "start-observation.json": {
+      "bytes": 46080,
+      "sha256": "8daa49ebcab8a88b8ca7667af06ea350d6d605ad2a01a3ae0f668d18fab6092e"
+    },
+    "warmup-end-observation.json": {
+      "bytes": 46080,
+      "sha256": "ba5fa933d43dd68548082a6a40af02ff8d3d3b6718751c02dac63e929561bde6"
+    },
+    "warmup-result.json": {
+      "bytes": 112473,
+      "sha256": "d1ee5f3a15d82ad6d9076736aa1c5967d455a94c711be440a7cb727eea70dd48"
+    },
+    "warmup.jsonl": {
+      "bytes": 765477,
+      "sha256": "b44a1dbfd393bbd583f808373f5705fa898060f868418e876907e97d5007130b"
+    }
+  },
+  "no_large_envelope_copy_or_Raw_access": true,
+  "original_envelope": {
+    "bytes": 136527697,
+    "path": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/actual-n2-stage-read-1792857776991744000.json",
+    "sha256": "e589bece829dc14ae43002adaf024dd1fe831be364526e695b65ad5967abf6ac"
+  },
+  "private_current_controls_reference": {
+    "manifest_path": "/private/var/tmp/bmdr-r2-n2-instrumented-20261024-4r2aauoj/stage-controls-manifest.json",
+    "members": {
+      "arm-natural-wait.py": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2",
+      "arm.py": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079",
+      "capacity-policy.json": "1dde0aa8e72254dc879dea1e4e1899c1fe7740da6c34715b98444b620e56de4b",
+      "common.py": "a4aef8e3448d22dd1b49161fe3f38bcd445ecea56f9f26ac763766cead6ff7e1",
+      "controller.py": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0",
+      "launch.py": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21",
+      "pin-unit-exec.py": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d",
+      "qualification_auxiliary_gate.py": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594",
+      "qualification_core_recovery.py": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8",
+      "qualification_monitor_rate.py": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4",
+      "qualification_owner_995.py": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+      "qualification_scoped_corpus.py": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d",
+      "restore.py": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d",
+      "scoped-terminal.py": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    },
+    "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348"
+  }
+}

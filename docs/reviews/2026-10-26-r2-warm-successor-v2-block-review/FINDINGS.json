@@ -1,0 +1,43 @@
+{
+  "decision": "BLOCK",
+  "findings": [
+    {
+      "evidence": "ADVERSARIAL_KEEPER_EXIT.json",
+      "file": "runtime/warm_readiness.py",
+      "id": "V2-KEEPER-SUCCESS",
+      "limits": "The group is actually clean in this counterexample. This establishes a protocol/trust success-gate failure, not an observed surviving writer or a claim that a Linux deadline actually fired.",
+      "lines": [
+        167,
+        169
+      ],
+      "minimal_fix": "Success must require exact-int keeper_returncode0, lease_released is True, intentional group KILL not used, valid no-live cleanup and matching original control PID/inner returncode, while preserving all existing timeout/resource/clock guards. Add the real after-release keeper death regression. Timeout/failed cleanup receipts may truthfully report group emptiness but cannot become success.",
+      "priority": "P1",
+      "related_file": "runtime/owned_command.py",
+      "related_lines": [
+        149,
+        180
+      ],
+      "reproduced": "A real local owned inner returns0/control; parent really flushes R, then the fixture SIGKILLs only that owned keeper. Return receipt has keeper_returncode=-9, lease_released=true, no live members and cleanup_error=null. Exact command_ok accepts it.",
+      "title": "Abnormal keeper termination after release is accepted as command success"
+    },
+    {
+      "evidence": "OWNED_FAULT_BOUNDARIES.json",
+      "file": "runtime/owned_command.py",
+      "id": "V2-INVENTORY-CUSTODY",
+      "limits": "This is a reproducible evidence-custody gap, not a fail-open inventory decision. The ps response is an explicit LOCAL fault provider; no false claim of a real host ps UTF8 fault is made.",
+      "lines": [
+        16,
+        33,
+        68,
+        72,
+        136,
+        148
+      ],
+      "minimal_fix": "Capture every bounded ps response/exception stdout/stderr/timeout prefix losslessly with SHA/bytes/base64 and parse_error before checks; retain each inventory attempt in the final command receipt even when parse, nonzero status or timeout fails. Preserve original error and existing budget/ownership checks.",
+      "priority": "P2",
+      "reproduced": "An explicit first ps response contains non-UTF8 original stdout and stderr. _members raises while run_owned retains only UnicodeDecodeError text; neither original stream is present in the returned receipt, and there is no per-attempt inventory response list. Later real scans clean the owned group and eligibility correctly remains failed.",
+      "title": "Inventory parse/timeout/nonzero failure loses original ps bytes and attempt evidence"
+    }
+  ],
+  "old_F1_F2_F3_regressions": "Specific previously reproduced group-residual and six readiness/static/clock defects now reject in tested V2 paths; this does not accept the new keeper protocol."
+}

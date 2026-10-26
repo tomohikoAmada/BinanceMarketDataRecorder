@@ -1,0 +1,1058 @@
+{
+  "actual_remote_helper_main_or_source_actions": false,
+  "candidate_sha256": "d8c0c6edf4a5732507fe3bb4be8bc5d668cbc74bd13dc1f82dc7d4f780f1110e",
+  "case_count": 16,
+  "cases": [
+    {
+      "PASS": true,
+      "T0_reached": true,
+      "canonical_call_count": 1,
+      "case": "overlap_fits_actual_shape",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:warmup-result.json",
+          1136.54344
+        ],
+        [
+          "publish:prestart-admission.json",
+          1136.54344
+        ],
+        [
+          "publish:start-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:owner-start.json",
+          1136.54344
+        ]
+      ],
+      "failure": null,
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 35
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": true,
+      "canonical_call_count": 1,
+      "case": "early_ready_still_requires_minimum12_and_300span",
+      "clock_end": 446.54344000000003,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          1.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          116.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          446.54344000000003
+        ],
+        [
+          "publish:warmup-result.json",
+          446.54344000000003
+        ],
+        [
+          "publish:prestart-admission.json",
+          446.54344000000003
+        ],
+        [
+          "publish:start-observation.json",
+          446.54344000000003
+        ],
+        [
+          "publish:owner-start.json",
+          446.54344000000003
+        ]
+      ],
+      "failure": null,
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000000446543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000000446543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 12
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": true,
+      "canonical_call_count": 1,
+      "case": "recoverable_middle_BLOCK_does_not_duplicate_canonical",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:warmup-result.json",
+          1136.54344
+        ],
+        [
+          "publish:prestart-admission.json",
+          1136.54344
+        ],
+        [
+          "publish:start-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:owner-start.json",
+          1136.54344
+        ]
+      ],
+      "failure": null,
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 35
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 0,
+      "case": "no_ready_before_original1200_bound",
+      "clock_end": 1201.0,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ]
+      ],
+      "failure": "AssertionError:strict all-enabled warmup timeout",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 41
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "late_canonical_READY_still_fails",
+      "clock_end": 1251.0,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          1051.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          1251.0
+        ]
+      ],
+      "failure": "AssertionError:canonical_readiness_exceeded_existing_warm_deadline",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 36
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "canonical_NOT_READY_fails",
+      "clock_end": 926.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "AssertionError:canonical_readiness_failed",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 28
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "canonical_timeout_retains_and_fails",
+      "clock_end": 926.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "AssertionError:canonical_readiness_failed",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 28
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "end_strict_failure_prevents_T0",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ]
+      ],
+      "failure": "RuntimeError:strict_warm_endpoint_failed",
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": false,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": false,
+            "status": "STARTING"
+          },
+          "role": "end"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "warm": 35
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "start_strict_failure_prevents_T0",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:warmup-result.json",
+          1136.54344
+        ],
+        [
+          "publish:prestart-admission.json",
+          1136.54344
+        ],
+        [
+          "publish:start-observation.json",
+          1136.54344
+        ]
+      ],
+      "failure": "RuntimeError:strict_warm_endpoint_failed",
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": false,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": false,
+            "status": "STARTING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 35
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "same_service_instance_required_after_early_check",
+      "clock_end": 956.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "AssertionError:",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 29
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "same_boot_required_after_early_check",
+      "clock_end": 956.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "AssertionError:",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 29
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "current_resource_failure_prevents_T0",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ]
+      ],
+      "failure": "RuntimeError:filesystem_free_space_bound:{'rss_bytes': 104857600, 'host_available_bytes': 4294967296, 'cgroup_swap_bytes': 0, 'cgroup_swap_peak_bytes': 0, 'writer_free_bytes': 1, 'archive_free_bytes': 2199023255552, 'pswpin': 0, 'pswpout': 0}",
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "warm": 35
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "evidence_write_failure_halts_READY_path",
+      "clock_end": 926.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "OSError:synthetic durability fault",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 28
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": false,
+      "canonical_call_count": 1,
+      "case": "slow_durability_cannot_overrun1200_into_T0",
+      "clock_end": 1201,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ]
+      ],
+      "failure": "AssertionError:strict all-enabled warmup timeout",
+      "fresh_end_start_publications": [],
+      "sample_counts": {
+        "warm": 28
+      }
+    },
+    {
+      "PASS": true,
+      "T0_reached": true,
+      "canonical_call_count": 1,
+      "case": "stale_capacity_after_earlier_READY_currently_reaches_T0",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:warmup-result.json",
+          1136.54344
+        ],
+        [
+          "publish:prestart-admission.json",
+          1136.54344
+        ],
+        [
+          "publish:start-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:owner-start.json",
+          1136.54344
+        ]
+      ],
+      "failure": null,
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 999997536543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 999997536543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 35
+      },
+      "source_dynamic_predicate_bypass_reproduced": true
+    },
+    {
+      "PASS": true,
+      "T0_reached": true,
+      "canonical_call_count": 1,
+      "case": "changed_published_identity_after_earlier_READY_currently_reaches_T0",
+      "clock_end": 1136.54344,
+      "event_order": [
+        [
+          "publish:capture-admission.json",
+          0.0
+        ],
+        [
+          "publish:data-scope-start.json",
+          0.0
+        ],
+        [
+          "service-request",
+          1.0
+        ],
+        [
+          "canonical-cli",
+          811.0
+        ],
+        [
+          "publish:warm-readiness-check.json",
+          926.54344
+        ],
+        [
+          "publish:warmup-end-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:warmup-result.json",
+          1136.54344
+        ],
+        [
+          "publish:prestart-admission.json",
+          1136.54344
+        ],
+        [
+          "publish:start-observation.json",
+          1136.54344
+        ],
+        [
+          "publish:owner-start.json",
+          1136.54344
+        ]
+      ],
+      "failure": null,
+      "fresh_end_start_publications": [
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "untrusted-other-identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "end"
+        },
+        {
+          "publication": {
+            "capacity": {
+              "actual_hard_reserve_reached": false,
+              "capacity_profile": "vps-production-v1",
+              "capacity_state": "NORMAL",
+              "free_bytes": 26843545600,
+              "observed_at_utc_ns": 1000001136543440000,
+              "total_bytes": 64424509440
+            },
+            "capacity_profile_id": "vps-production-v1",
+            "catalog_open": true,
+            "core_ready": true,
+            "deployment_identity": {
+              "config_sha256": "config",
+              "identity_sha256": "untrusted-other-identity",
+              "source_git_sha": "source"
+            },
+            "failure": null,
+            "pid": 17,
+            "shutdown_reason": null,
+            "startup_recovery_complete": true,
+            "status": "RUNNING"
+          },
+          "role": "start"
+        }
+      ],
+      "sample_counts": {
+        "end": 1,
+        "start": 1,
+        "warm": 35
+      },
+      "source_dynamic_predicate_bypass_reproduced": true
+    }
+  ],
+  "production_Raw_payload_opened": false,
+  "real_Linux_or_duration_credit": false,
+  "scope": "ISOLATED_FULL_CAPTURE_WARM_PREFIX_WITH_SYNTHETIC_TIME_AND_METADATA_ONLY"
+}

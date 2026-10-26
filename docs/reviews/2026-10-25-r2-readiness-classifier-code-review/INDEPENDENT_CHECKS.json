@@ -1,0 +1,313 @@
+{
+  "Linux_qualification": false,
+  "actual_trigger_sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+  "all_non_classifier_AST_and_prefix_suffix_bytes_identical": true,
+  "attempted_forbidden_actions": [],
+  "candidate_sha256": "621063b04ba21103206282519fa4b14731e599118a05f5a132c11b72abf3cdd2",
+  "cases": [
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "exact_actual_all4_rotation_no_evidence_mutation",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "one_recovery_among_other_ready_ingress_backpressure",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "last_product_FAILED_null_after_earlier_recovery_ingress_backpressure",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "one_recovery_among_other_ready_planned_rotation",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "last_product_FAILED_null_after_earlier_recovery_planned_rotation",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "one_recovery_among_other_ready_sequence_gap",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "last_product_FAILED_null_after_earlier_recovery_sequence_gap",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "one_recovery_among_other_ready_server_shutdown",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "last_product_FAILED_null_after_earlier_recovery_server_shutdown",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": true,
+      "case": "one_recovery_among_other_ready_unexpected_disconnect",
+      "expected_action": "CONTINUE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "last_product_FAILED_null_after_earlier_recovery_unexpected_disconnect",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_11",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_12",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_13",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_14",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_15",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_16",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_17",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "no_fuzzy_or_malformed_allowlist_18",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "KeyError:'status'",
+      "actual_result": null,
+      "case": "missing_product_status",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "KeyError:'ready'",
+      "actual_result": null,
+      "case": "missing_product_ready",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "ValueError:untrusted_product_readiness_state",
+      "actual_result": null,
+      "case": "integer_ready_not_boolean",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "FAILED_missing_failure_is_still_terminal",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "later_unknown_writer_failure_after_recovery",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_actual_hard_reserve",
+      "actual_result": null,
+      "case": "recovery_must_not_bypass_actual_reserve",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "ValueError:untrusted_write_safety_publication",
+      "actual_result": null,
+      "case": "recovery_must_not_bypass_malformed_capflag",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "KeyError:'capacity'",
+      "actual_result": null,
+      "case": "recovery_must_not_bypass_missing_capacity",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_service_failure",
+      "actual_result": null,
+      "case": "recovery_must_not_bypass_service_failure",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_service_shutdown",
+      "actual_result": null,
+      "case": "recovery_must_not_bypass_shutdown",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": null,
+      "actual_result": false,
+      "case": "nonempty_actual_starting_shape_pending_only_preT0",
+      "expected_action": "PENDING",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "ValueError:untrusted_write_safety_publication",
+      "actual_result": null,
+      "case": "same_starting_shape_rejected_without_preT0_allowance",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "actual_error": "RuntimeError:critical_product_terminal_failure",
+      "actual_result": null,
+      "case": "known_tag_does_not_bypass_running_requirement",
+      "expected_action": "PAUSE",
+      "input_unchanged": true
+    },
+    {
+      "PASS": true,
+      "case": "exact_995_boundary_14_bad_100_probes_cannot_dilute",
+      "result": "PASS",
+      "synthetic_only": true
+    },
+    {
+      "PASS": true,
+      "case": "exact_995_boundary_15_bad_100_probes_cannot_dilute",
+      "result": "BLOCK",
+      "synthetic_only": true
+    },
+    {
+      "PASS": true,
+      "case": "UTC_BT_discontinuity_2s_rejected",
+      "synthetic_only": true
+    },
+    {
+      "PASS": true,
+      "case": "duplicate_nominal_rejected",
+      "synthetic_only": true
+    },
+    {
+      "PASS": true,
+      "case": "config_identity_mismatch_rejected",
+      "synthetic_only": true
+    },
+    {
+      "PASS": true,
+      "case": "known_recovery_stays_quality_fault_and_observed_episode",
+      "synthetic_only": true
+    }
+  ],
+  "decision": "ACCEPT",
+  "final_design_manifest_sha256": "2f6dfe123212e48631ccb4f60d87f7b47c42d109aab16388e37770f49bdeac9f",
+  "formal_duration_or_stability_credit": false,
+  "independent_cases": 38,
+  "network_subprocess_deny_hook_enabled": true,
+  "only_changed_function": "check_write_safety",
+  "original_sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608",
+  "production_deployment_or_ops": false,
+  "recoverable_allowlist": [
+    "ingress_backpressure",
+    "planned_rotation",
+    "sequence_gap",
+    "server_shutdown",
+    "unexpected_disconnect"
+  ],
+  "scope": "PURE_LOCAL_EXACT_PRIVATE_CLASSIFIER_CODE_REVIEW_ONLY"
+}

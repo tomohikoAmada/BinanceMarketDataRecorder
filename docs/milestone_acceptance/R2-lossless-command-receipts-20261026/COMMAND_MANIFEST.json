@@ -1,0 +1,36 @@
+{
+  "kind": "UNBOUND_LOSSLESS_COMMAND_RECEIPT_ADAPTER_PENDING_INDEPENDENT_REVIEW",
+  "members": {
+    "command_receipts.py": {
+      "bytes": 7580,
+      "sha256": "db61e6deb01c1cfa7a87ea76781746111ebe5db9c07f9d9835b04b83c0f33142"
+    },
+    "owned_command.py": {
+      "bytes": 12954,
+      "sha256": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+    },
+    "test_command_receipts.py": {
+      "bytes": 6008,
+      "sha256": "7c404ea8efbf77f86f5ac531494e0368c82be02454186971d8270852a2fcdfa6"
+    },
+    "DEPENDENCIES.json": {
+      "bytes": 241,
+      "sha256": "f4754403820f5ce113f93cc4356257f0461afc86d22d362593d1be20f7b8d409"
+    },
+    "LOCAL_COMMAND_CASES.json": {
+      "bytes": 819557,
+      "sha256": "777ba8b8ae51238675fb4f75529d54ce9a8ecb23ba84070341307dcfbbf1318c"
+    },
+    "PARENT_EXECUTION.json": {
+      "bytes": 791,
+      "sha256": "3d1b16ed1ea2b8aa4930cd3e742911dd5d21ce5df205e4aa0da578929bc49649"
+    },
+    "SCOPE.md": {
+      "bytes": 1960,
+      "sha256": "15c9b6f28c761598cb4354640f7bc6806f6ceac86dee2cbb3948abd78e51b97f"
+    }
+  },
+  "LOCAL_cases": 16,
+  "whole_reader_or_Linux_or_operational_qualified": false,
+  "new_T0": false
+}

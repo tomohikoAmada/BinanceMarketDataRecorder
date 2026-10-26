@@ -1,0 +1,13 @@
+{
+  "state": "BLOCKED_NOT_OPERATIONAL",
+  "directory": "/private/var/tmp/bmdr-r2-warm-reader-integration-20261026-mnolxttl",
+  "manifest_sha256": "892f6e5e38ab0f26091a88f46848ff8e1eb202010716692aad7805add16f89bf",
+  "all6_parent_SHA_bytes_PASS": true,
+  "LOCAL_cases": 16,
+  "whole_reader_validator_or_Linux_qualified": false,
+  "copy_ARM_launch": false,
+  "new_T0": false,
+  "reviewer": "r2_instrumented_n2_actual_startup_review",
+  "review_manifest_sha256": "8a2091f718908b7ed7f34330117c15d1bd857821583cfd312b1ecd98bf18deea",
+  "all25_complete_review_parent_SHA_bytes_PASS": true
+}

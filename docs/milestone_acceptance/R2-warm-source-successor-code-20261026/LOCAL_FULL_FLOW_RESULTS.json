@@ -1,0 +1,1145 @@
+{
+  "scope": "SYNTHETIC_OS_CLOCK_FULL_ACTUAL_WARM_PREFIX_AND_HELPER_WITH_EXACT_SOURCE_EVALUATOR",
+  "cases": [
+    {
+      "name": "observed late first-PASS shape fits without30s rounding waste",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1111.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "early ready still requires12 actual primary rows",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 446.94344,
+      "primary_samples": 12,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "late first-PASS endpoint cap",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1171.4,
+      "primary_samples": 37,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "recoverable middle warm BLOCK",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1111.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "ordinary catalog growth retains earlier-only scope",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1111.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "forecast CRITICAL without actual hard reserve is eligible",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1111.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "one publication race receives bounded fresh pair",
+      "expected": true,
+      "PASS": true,
+      "accepted_start": true,
+      "failure": null,
+      "clock_end": 1111.8000000000002,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 2,
+        "start": 2
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "no first PASS",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_original_1200s_deadline_exceeded",
+      "clock_end": 1200.0,
+      "primary_samples": 40,
+      "full_CLI_count": 0,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "late full canonical READY",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_original_1200s_deadline_exceeded",
+      "clock_end": 1251.0,
+      "primary_samples": 36,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "canonical_NOT_READY",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "canonical_malformed",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "canonical_timeout",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "bare_READY",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_full_canonical_not_READY",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "evidence_write_failure",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "OSError:fixture full attestation fsync failure",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "secondary_evidence_failure",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 926.54344,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "slow_attestation_write",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_original_1200s_deadline_exceeded",
+      "clock_end": 1201,
+      "primary_samples": 28,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "slow_end_write",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_decision_strict_evidence_stale",
+      "clock_end": 1171.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "slow_start_observation_write",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_decision_strict_evidence_stale",
+      "clock_end": 1171.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "slow_start_receipt_write",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_original_1200s_deadline_exceeded",
+      "clock_end": 1201,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "stale_capacity",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_observation_stale"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "future_capacity",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_observation_stale"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "wrong_published_identity",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "runtime_deployment_identity_mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "runtime_profile",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "runtime_capacity_profile_mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "capacity_profile",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_evaluation_profile_mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "capacity_enum",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_evaluation_invalid"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "capacity_invalid_total",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_observation_invalid"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "capacity_free_gt_total",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "capacity_observation_invalid"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hard_reserve",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:critical_actual_hard_reserve",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "source_HARD_RESERVE",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "NOT_READY",
+          "reasons": [
+            "hard_reserve_safety_stop"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalog_closed",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "catalog_not_open"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "startup_recovery",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "NOT_READY",
+          "reasons": [
+            "startup_recovery_incomplete"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "topology",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:strict_warm_endpoint_failed",
+      "clock_end": 1111.0,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "product_identity",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "product_identity_mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "product_core_persistence",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "NOT_READY",
+          "reasons": [
+            "spot:BTCUSDT_core_not_ready"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "product_failure",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "spot:BTCUSDT_failed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "state_schema",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "service_state_invalid:unsupported service state schema"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "heartbeat_stale",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_heartbeat_predates_start_request",
+      "clock_end": 1111.0,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "heartbeat_future",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:strict_warm_endpoint_failed",
+      "clock_end": 1111.0,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "instance_change",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "end_good_start_bad",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.4,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 1
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "FAILED",
+          "reasons": [
+            "runtime_deployment_identity_mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "auxiliary_loss",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:strict_warm_endpoint_failed",
+      "clock_end": 1111.0,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "recorder_restart",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "recorder_PID_changed",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "recorder_inv_changed",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "boot_change",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "current_disk_failure",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:filesystem_free_space_bound:{'rss_bytes': 104857600, 'host_available_bytes': 4294967296, 'cgroup_swap_bytes': 0, 'cgroup_swap_peak_bytes': 0, 'writer_free_bytes': 1, 'archive_free_bytes': 2199023255552, 'pswpin': 0, 'pswpout': 0}",
+      "clock_end": 1111.0,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 0,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "install_contract",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "deployment_evidence_invalid:DeploymentIdentityError:fixture install contract changed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "effective_properties",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "deployment_evidence_invalid:DeploymentIdentityError:fixture effective properties changed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "small_file_change",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "deployment_evidence_invalid:DeploymentIdentityError:fixture current identity hash changed"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "namespace_change",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "deployment_evidence_invalid:DeploymentIdentityError:fixture namespace writable"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "process_dead",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "service_state_pid_dead"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "process_proxy",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_source_current_not_READY",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "FAILED",
+          "reasons": [
+            "process_environment_invalid:DeploymentIdentityError:effective service process proxy environment is active: HTTP_PROXY"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "catalog_replaced",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "cache_tampered",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_command_failed_or_invalid",
+      "clock_end": 1111.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": []
+    },
+    {
+      "name": "endless_pair_race",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_publication_pair_never_settled",
+      "clock_end": 1111.6000000000001,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 3,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        },
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "current_check_late",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_current_pair_30s_deadline_exceeded",
+      "clock_end": 1142.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "name": "slow_prestart_admission",
+      "expected": false,
+      "PASS": true,
+      "accepted_start": false,
+      "failure": "RuntimeError:warm_original_1200s_deadline_exceeded",
+      "clock_end": 1261.2,
+      "primary_samples": 35,
+      "full_CLI_count": 1,
+      "pair_attempts": {
+        "end": 1,
+        "start": 0
+      },
+      "source_results": [
+        {
+          "state": "READY",
+          "reasons": []
+        }
+      ]
+    }
+  ],
+  "case_count": 57,
+  "all_PASS": true,
+  "real_Linux_or_duration_credit": false,
+  "OS_identity_permissions_and_source_static_verifiers_explicit_fixture": true,
+  "Raw_or_VPS_access": false
+}

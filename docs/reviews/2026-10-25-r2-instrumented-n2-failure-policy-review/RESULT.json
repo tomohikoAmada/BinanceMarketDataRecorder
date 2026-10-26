@@ -1,0 +1,115 @@
+{
+  "blocking_findings_for_review": [],
+  "corrective_design": {
+    "kind": "PROPOSED_BOUNDED_SEMANTIC_RULE_ONLY_NOT_IMPLEMENTATION_ACCEPTANCE",
+    "model_fault_cases": 27,
+    "official_monitor_BLOCK_and_fixed995_denominator_unchanged": true,
+    "private_helper_candidate_implemented_or_qualified": false,
+    "recoverable_readiness_tags": [
+      "ingress_backpressure",
+      "planned_rotation",
+      "sequence_gap",
+      "server_shutdown",
+      "unexpected_disconnect"
+    ],
+    "reject_FAILED_first_even_known_tag": true,
+    "requires_product_ready": false,
+    "requires_product_status": "CONNECTING",
+    "requires_service_status": "RUNNING",
+    "unknown_or_malformed_still_pause": true
+  },
+  "credits": {
+    "N2_capacity": false,
+    "N4": false,
+    "new_T0": false,
+    "old_duration_transfer": false,
+    "own24h": false,
+    "saved_frame_correctness": false,
+    "stability_fix": false
+  },
+  "decision": "ACCEPT",
+  "failure": {
+    "actual_service_failure": null,
+    "actual_shutdown_reason": null,
+    "boottime_ns": 1972217103892898,
+    "error": "critical_product_terminal_failure",
+    "failing_row_has_fresh_resources": false,
+    "own_elapsed_seconds": 85410.086844564,
+    "phase": "write_safety",
+    "product_failure_tags": {
+      "spot:BTCUSDT": "planned_rotation",
+      "spot:ETHUSDT": "planned_rotation",
+      "um_perpetual:BTCUSDT": "planned_rotation",
+      "um_perpetual:ETHUSDT": "planned_rotation"
+    },
+    "publication_sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+    "sha256": "d872d8454ca1e3d2e7ef4b8c95ff6cf832aef95549c5808e4b5e644d868aaa9f",
+    "short_of_86400_seconds": 989.913155436,
+    "source_semantic_misclassification_confirmed": true,
+    "true_write_failure_established": false,
+    "utc": "2026-10-25T05:48:42.923359029Z"
+  },
+  "independent_assertions": 26501,
+  "limitations": [
+    "The immediate stop cause is established as a private readiness-tag misclassification; this does not explain earlier transport closes or prove no other potential writing problem.",
+    "The fatal sample stopped before resources/gate/write_sample; no fresh failing-row resource snapshot or nominal sample was invented.",
+    "All Raw/archive/partial/failed original data remain outside this review; no complete saved-frame denominator/full LIVE audit exists.",
+    "Fresh handoff/VERIFY/future CLOCK_MONOTONIC, partial-byte custody before any startup and future helper implementation/LINUX/physical qualification are still pending.",
+    "The old guard is CLOSED; this halted run cannot resume16min or inherit its23h43m into a fresh own86400.",
+    "Design-model fixtures do not execute either private predicate and provide no candidate implementation, Linux or duration credit.",
+    "No SSH/network/Raw/manifestpayload/production mutation or sourceQA/build/CI action occurred."
+  ],
+  "observed_previous_resources": {
+    "archive_free_min": 2047442305024,
+    "current_owned_swap_max": 0,
+    "failure_publication_free_bytes": 24106143744,
+    "host_available_min": 4184096768,
+    "lifetime_peak_owned_swap_max": 0,
+    "rss_max": 464146432,
+    "rss_peak_max": 464146432,
+    "writer_free_min": 24078499840
+  },
+  "partial_monitor": {
+    "fatal_observation_not_completed_nominal": true,
+    "final_monitor_artifact_present": false,
+    "fixed_final_denominator": 2880,
+    "nominal": 2847,
+    "official_block": 9,
+    "official_pass": 2838,
+    "own24h_accepted": false,
+    "paired_context_entries": 148460,
+    "partial_percent": 99.68387776606954,
+    "probes_excluded": 8,
+    "raw_context_entries": 74230,
+    "raw_publications_rehashed": 2855,
+    "skipped_late_missing_prefix": 0,
+    "slots": [
+      0,
+      2846
+    ],
+    "strict_diagnostic_block": 43,
+    "strict_diagnostic_pass": 2804
+  },
+  "read": {
+    "bytes": 319802269,
+    "original_members": 45,
+    "sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+    "utc_ns": 1792908560101616660
+  },
+  "restoration": {
+    "before_cancel_margin_ns": 155648099,
+    "cancel_sha256": "9731ba3a0f01bfaa477af052af460f78a4c2edf7dae5618f1937e4343e4ed1d6",
+    "cancelled_at_utc_ns": 1792907346667877194,
+    "current_natural_archive_worker": "258f4d3bc3f146f1b091947db4b233e5",
+    "current_natural_archive_worker_success_backlog0": true,
+    "current_recorder_stopped_disabled_PID0_NRestarts0": true,
+    "ended_at_utc_ns": 1792907346512229095,
+    "ended_utc": "2026-10-25T05:49:06.512229095Z",
+    "errors": [],
+    "fresh_canonical_VERIFY_handoff_or_future_clock_qualification": false,
+    "guard_closed_never_reusable": true,
+    "original_OS_owners_restored": true,
+    "sha256": "672d6fafa2277196bd72ae80721e3ab2cb0afcc440aaac5ddf3ff75f00b8a788"
+  },
+  "scope": "FAILURE_DIAGNOSIS_AND_ORIGINAL_AUTOMATIC_RESTORATION_BINDING_ONLY"
+}

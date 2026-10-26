@@ -1,0 +1,124 @@
+{
+  "all_modes_share_identical_fresh_inventory_AST": true,
+  "case_count": 22,
+  "cases": [
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_copy"
+    },
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_arm"
+    },
+    {
+      "PASS": true,
+      "case": "UNBOUND_rejects_launch"
+    },
+    {
+      "PASS": true,
+      "case": "compile_only_copy"
+    },
+    {
+      "PASS": true,
+      "case": "compile_only_arm"
+    },
+    {
+      "PASS": true,
+      "case": "compile_only_launch"
+    },
+    {
+      "PASS": true,
+      "case": "compile_only_read"
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_empty",
+      "error": null,
+      "expected_accept": true
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_nested_empty",
+      "error": null,
+      "expected_accept": true
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_partial",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_regular",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_scan_error",
+      "error": "PermissionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_ancestor_symlink",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_dir_symlink",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_file_symlink",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_fifo",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_missing_root",
+      "error": "FileNotFoundError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "fresh_inventory_expired_entry",
+      "error": "AssertionError",
+      "expected_accept": false
+    },
+    {
+      "PASS": true,
+      "case": "reader_lossless_both_missing"
+    },
+    {
+      "PASS": true,
+      "case": "reader_lossless_partial_json"
+    },
+    {
+      "PASS": true,
+      "case": "reader_lossless_invalid_utf8"
+    },
+    {
+      "PASS": true,
+      "case": "reader_lossless_valid_json"
+    }
+  ],
+  "controls_manifest_sha256": "d3ed70e54b3e2fe1131f0fdffe7eaf1b7637aaafc673a188681dc38ad905b54f",
+  "decision": "COMPONENT_CASES_PASS",
+  "formal_credit_seconds": 0,
+  "generated_programs_compile_only": true,
+  "helper_main_or_remote_program_executed": false,
+  "linux_credit": false,
+  "operator_sha256": "f3b7b6bfc159b934408be326e6e157f031c3714b14fe8e09719c50dc06e603a9",
+  "real_network_service_or_payload_action": false
+}

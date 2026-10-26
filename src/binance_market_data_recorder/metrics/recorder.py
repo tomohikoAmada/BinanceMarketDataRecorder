@@ -98,13 +98,9 @@ class MetricsRecorder:
             return
         if utc_date <= self._latest_utc_date:
             return
-        completed_days = sorted({day for day, _market, _stream in self._aggregates})
         self._flush_locked()
-        from .report import DailyReporter
-
-        reporter = DailyReporter(catalog=self.catalog, daily_directory=self.daily_directory)
-        for day in completed_days:
-            reporter.write(day)
+        # Rendering a report can scan retained history. Only commit the small,
+        # idempotent batches here; the service-owned report process renders them.
         self._latest_utc_date = utc_date
 
     def observe_written(

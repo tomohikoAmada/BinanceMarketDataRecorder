@@ -1,0 +1,224 @@
+{
+  "files": {
+    "CHECKS.json": {
+      "bytes": 19963,
+      "sha256": "c9048db959280019de825b4c57ba1dcf13ea63ea9744f94ee35b51b06df4873e"
+    },
+    "FIXTURE_COUNTS.json": {
+      "bytes": 230,
+      "sha256": "52289c1f1c4465602253ff30a84b10b139168315f5f93c5e27307f553c647fcb"
+    },
+    "REPORT.md": {
+      "bytes": 2260,
+      "sha256": "cf5d774812ddde6e57f311fa3141d124645ea899870a63e18f6423672deeba39"
+    },
+    "RESULT.json": {
+      "bytes": 2729,
+      "sha256": "b112ef7ee4a529d1fce04a862e7d5c18b19e493bcbcabbc2e574de3f7dd6676c"
+    },
+    "inputs/MANIFEST.json": {
+      "bytes": 6605,
+      "sha256": "ebeda1b7aa47dd873b9fae7022a5607f17e4288f24eb4d675071f145f8412b44"
+    },
+    "inputs/RESULT.json": {
+      "bytes": 2119,
+      "sha256": "b4d1ce368d7257f6652be102b0eb4e976f93a944947caebbc3de5817109cdf4d"
+    },
+    "inputs/actual-linux-qa-launch-1792649429446701000.json": {
+      "bytes": 1595,
+      "sha256": "e4cd6464cd50ff5728b4b5d0b60c6140e8909adb475a20a684e8f4e7dc84f7d9"
+    },
+    "inputs/actual-linux-qa-launch-1792649429446701000.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inputs/actual-linux-qa-read-1792649683900841000.json": {
+      "bytes": 297580,
+      "sha256": "7d0eadd3f7c9acf02766f12286bdfd626fde3460d57e5877fbe6c2e6a1313fa8"
+    },
+    "inputs/actual-linux-qa-read-1792649683900841000.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manager-journal.jsonl": {
+      "bytes": 7325,
+      "sha256": "252e6d27f3d417acc448c5b48e93734a030745f8d5133c8556fd434a1fd9ea6b"
+    },
+    "observed/QA_MANIFEST.json": {
+      "bytes": 4018,
+      "sha256": "07d4c1354c48f5fa60c411581774f73391b561d9fd61b47cf2562f6d3f9f6ad8"
+    },
+    "observed/admission_evidence_boundary_faults.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/admission_evidence_boundary_faults.py.stdout": {
+      "bytes": 699,
+      "sha256": "9a64a41e50e73a6c8187b1e2641a2cd0b4dfcb60eecc85adc432cb10585bc15c"
+    },
+    "observed/common_topology_forecast_faults.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/common_topology_forecast_faults.py.stdout": {
+      "bytes": 184,
+      "sha256": "c5aada89d142a66d37957c4769f55b5ff3b5d866809e9f7d95ba7c79776b7d98"
+    },
+    "observed/controller_independent_faults.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/controller_independent_faults.py.stdout": {
+      "bytes": 11214,
+      "sha256": "c7171630844661fb5d22f3274791cc6b8d901d03e21909e41167fbdfbdbc738f"
+    },
+    "observed/critical_actual_callsite_faults.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/critical_actual_callsite_faults.py.stdout": {
+      "bytes": 4066,
+      "sha256": "4d1f61e94891592b671f4019766708ef1341d52510296613adc76245ee695fe6"
+    },
+    "observed/finish_actual_fullflow.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/finish_actual_fullflow.py.stdout": {
+      "bytes": 2277,
+      "sha256": "e7f1c9fce56681f55e07091d8be47fe214b3c8bf4e1f582ba0a598f0c6d4877d"
+    },
+    "observed/launch-attempt.json": {
+      "bytes": 828,
+      "sha256": "a81b140f07fc2724c8660dbf0d1400d10f53b42218f6c17e9ac24f8d25ff17f6"
+    },
+    "observed/publication_binding_faults.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed/publication_binding_faults.py.stdout": {
+      "bytes": 3466,
+      "sha256": "eb5b245836dd08595afcbb6f2cdd19b72f863506c1ccfaaa5194b1fcb7446f92"
+    },
+    "observed/qa-result.json": {
+      "bytes": 8527,
+      "sha256": "c5ed01332116e7a0b34465553fbccfe82782a113d0852e0faa454c9725319631"
+    },
+    "observed/qa-runner.py": {
+      "bytes": 3357,
+      "sha256": "8308129c1ba0f912a46e4a9bba5f7a5708ce4af16a79850d916fb59fa2a37b29"
+    },
+    "observed/qa/admission_evidence_boundary_faults.py": {
+      "bytes": 3561,
+      "sha256": "bbeb460f8995e5968088338dba196cf1497b9013cbae52f2ebc49257d991a0d2"
+    },
+    "observed/qa/candidate-n2-recorder.toml": {
+      "bytes": 1642,
+      "sha256": "5b73db1b6ba6ac8cc7ab84cbcf0c7b688187b316644bef3df44bbb42f9283419"
+    },
+    "observed/qa/common-fault-results.json": {
+      "bytes": 5368,
+      "sha256": "3879618c93867e415c3d358b7e9a67d358f48bc448832f549deade5096db2b7e"
+    },
+    "observed/qa/common_topology_forecast_faults.py": {
+      "bytes": 8062,
+      "sha256": "dddde9af6ba4e996969b1aaa68b3186b012117c87d171d6002e26161f294ba73"
+    },
+    "observed/qa/controller_independent_faults.py": {
+      "bytes": 11919,
+      "sha256": "2198455cd882a96fe500398e86bf64e2482c76d0ab78d2fe33a7f1deab8f1435"
+    },
+    "observed/qa/critical_actual_callsite_faults.py": {
+      "bytes": 5529,
+      "sha256": "1dd92e04cf131010575c7ae324e1550169ed5fc387332a46f2d7674685c98db4"
+    },
+    "observed/qa/finish-fullflow-results.json": {
+      "bytes": 1737,
+      "sha256": "90530bde8b578f43c37d2810698d6efaff79089e9a0ccbf7940b79b8c6f9538d"
+    },
+    "observed/qa/finish_actual_fullflow.py": {
+      "bytes": 8107,
+      "sha256": "69416af08c26de79376a5be5ed3cb970215a327fcbbb4ebde4961b9f859ac75d"
+    },
+    "observed/qa/owner24h-n1-btc-acceptance-20261022.json": {
+      "bytes": 5318,
+      "sha256": "a7938d4ae2ab564945f2dd0434132bf4978f69756103f66838b5fb75eacc29ac"
+    },
+    "observed/qa/publication-fault-results.json": {
+      "bytes": 3466,
+      "sha256": "eb5b245836dd08595afcbb6f2cdd19b72f863506c1ccfaaa5194b1fcb7446f92"
+    },
+    "observed/qa/publication_binding_faults.py": {
+      "bytes": 9442,
+      "sha256": "efe91c47e6c1a22d982849af7026c8240de7c683ded29f1016efc522425d4cb1"
+    },
+    "observed/qa/runtime-admission-boundaries.json": {
+      "bytes": 699,
+      "sha256": "9a64a41e50e73a6c8187b1e2641a2cd0b4dfcb60eecc85adc432cb10585bc15c"
+    },
+    "observed/qa/runtime-critical-callsite-results.json": {
+      "bytes": 4066,
+      "sha256": "4d1f61e94891592b671f4019766708ef1341d52510296613adc76245ee695fe6"
+    },
+    "observed/qa/runtime-fault-results.json": {
+      "bytes": 8997,
+      "sha256": "914f0617eb6ac0cfb9666b32a32127cfe38e632aafe3f3631afd8f0a6b104ca8"
+    },
+    "observed/runtime/arm-natural-wait.py": {
+      "bytes": 738,
+      "sha256": "9b43657f66bcdbb2d20ca0d92b74f1b0c729457fc48ad60b25f492fdb0f198f2"
+    },
+    "observed/runtime/arm.py": {
+      "bytes": 6128,
+      "sha256": "5c19aab6f043559b31dcd31154ddfbfbbb805658cfd6f0d14d4aeb6d94b72079"
+    },
+    "observed/runtime/capacity-policy.json": {
+      "bytes": 10407,
+      "sha256": "dbd46fafb240666af8031165e797fdd422adbdded889a8f006f2ea68e408dd48"
+    },
+    "observed/runtime/common.py": {
+      "bytes": 11952,
+      "sha256": "fbb23bd8d3789255154726a65d7b432b31407ff9855cc54fd4cb2ff07b45ceb7"
+    },
+    "observed/runtime/controller.py": {
+      "bytes": 21356,
+      "sha256": "3b3f8d50338c82c594cb346eb49686adb235f2d7c5d3ce13e966bf3cc4cd98f0"
+    },
+    "observed/runtime/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "observed/runtime/pin-unit-exec.py": {
+      "bytes": 329,
+      "sha256": "ebe6da40c6b7cd12da9419200d835ea5069f956e33ff1bb8c0c9d1e5a5b0be3d"
+    },
+    "observed/runtime/qualification_auxiliary_gate.py": {
+      "bytes": 6324,
+      "sha256": "79435a68408df7a1bf7fb9fd2541251bb62fd8cb767242c89aaea07051f3a594"
+    },
+    "observed/runtime/qualification_core_recovery.py": {
+      "bytes": 4269,
+      "sha256": "656b2ddba6505fa77555c5edb1d2599c7f1a7f20f084cc00ca225c392b4fcec8"
+    },
+    "observed/runtime/qualification_monitor_rate.py": {
+      "bytes": 4385,
+      "sha256": "07a0a4f31740fe09bf65c5410b95206c48de27207c687fe7a24ccb69329f3eb4"
+    },
+    "observed/runtime/qualification_owner_995.py": {
+      "bytes": 7983,
+      "sha256": "187224ed556f2f9f3664095b4ee34aa83be76ac57619a5263abde55b25afe608"
+    },
+    "observed/runtime/qualification_scoped_corpus.py": {
+      "bytes": 14957,
+      "sha256": "2ce6d5815e9e6fe507382d7f0d143e2811062de9e0fb5af7ce6d731f8fc1501d"
+    },
+    "observed/runtime/restore.py": {
+      "bytes": 3400,
+      "sha256": "cdef4bcc8dc936dccb851abec368538528e1736453c5beb7b8495a3037233b3d"
+    },
+    "observed/runtime/scoped-terminal.py": {
+      "bytes": 1804,
+      "sha256": "2350e186b34676e45af0125831d737172ab3d2058fcdff52e1a43efc730857f6"
+    }
+  }
+}

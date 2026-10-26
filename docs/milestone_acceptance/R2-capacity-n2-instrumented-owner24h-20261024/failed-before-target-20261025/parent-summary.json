@@ -1,0 +1,67 @@
+{
+  "result": "CAPTURE_FAILED_BEFORE_OWN24H_RESTORED_INDEPENDENT_FAILURE_REVIEW_ACTIVE",
+  "input_read_sha256": "015902c0a9aa0a3b9e1ba129ddb4a0e2f34ce341f4d6a411f5d1388fd70f0768",
+  "input_read_bytes": 319802269,
+  "input_read_utc": "2026-10-25T06:09:20.101616660Z",
+  "original_member_count": 45,
+  "all_original_members_parent_sha_bytes_verified": true,
+  "export_manifest_sha256": "a666e8634f62ae55b04cc8151ed8541ecd535dbb6c4f7124013ea50b55d5858e",
+  "run_id": "0cf49bcde4a040ef9c3d60b6a5656d8c",
+  "failure_utc": "2026-10-25T05:48:42.923359029Z",
+  "failure_utc_ns": 1792907322923359029,
+  "failure_boottime_ns": 1972217103892898,
+  "elapsed_boottime_ns": 85410086844564,
+  "target_duration_ns": 86400000000000,
+  "short_boottime_ns": 989913155436,
+  "failure_error": "critical_product_terminal_failure",
+  "failure_action": "PAUSE_AFFECTED_CAPTURE",
+  "requires_owner_notification": true,
+  "failed_publication_sha256": "5dcdd17d75bfbd9715ca44ead2ad9f19923db221909f8a68efa58904335957c3",
+  "failed_publication_status": "RUNNING",
+  "failed_service_failure": null,
+  "failed_service_shutdown_reason": null,
+  "product_failures": [
+    {
+      "market": "spot",
+      "symbol": "BTCUSDT",
+      "failure": "planned_rotation",
+      "status": "CONNECTING",
+      "ready": false
+    },
+    {
+      "market": "spot",
+      "symbol": "ETHUSDT",
+      "failure": "planned_rotation",
+      "status": "CONNECTING",
+      "ready": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "failure": "planned_rotation",
+      "status": "CONNECTING",
+      "ready": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "failure": "planned_rotation",
+      "status": "CONNECTING",
+      "ready": false
+    }
+  ],
+  "partial_nominal_rows": 2847,
+  "partial_nominal_passed": 2838,
+  "partial_nominal_blocked": 9,
+  "no_final_monitor_denominator": true,
+  "no_accepted_24h_credit": true,
+  "saved_frame_correctness_denominator": null,
+  "terminal_audit_started": false,
+  "restoration_ended_at_utc_ns": 1792907346512229095,
+  "cancelled_at_utc_ns": 1792907346667877194,
+  "restore_before_cancel": true,
+  "old_guard_closed_never_reuse": true,
+  "fresh_restored_handoff_pending": true,
+  "no_recapture_or_source_change": true,
+  "independent_failure_review": "ACTIVE_LOCAL_ONLY"
+}

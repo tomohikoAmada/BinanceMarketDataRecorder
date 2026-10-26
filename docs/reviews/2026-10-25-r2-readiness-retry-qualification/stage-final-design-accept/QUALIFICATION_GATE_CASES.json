@@ -1,0 +1,166 @@
+{
+  "actual_Linux_copy_ARM_or_launch_performed": false,
+  "case_count": 26,
+  "cases": [
+    {
+      "PASS": true,
+      "case": "design_acceptance_permits_only_copy_payload_preparation",
+      "error": null,
+      "expected_gate_acceptance": true
+    },
+    {
+      "PASS": true,
+      "case": "copy_only_binding_still_refuses_ARM",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "copy_only_binding_still_refuses_launch",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "complete_synthetic_binding_allows_ARM_payload_only",
+      "error": null,
+      "expected_gate_acceptance": true
+    },
+    {
+      "PASS": true,
+      "case": "complete_synthetic_binding_allows_launch_payload_only",
+      "error": null,
+      "expected_gate_acceptance": true
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_result",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_platform",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_candidate_sha256",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_fixture_result_sha256",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_case_count",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_linux_returncode",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_result",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_imports",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_source",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_identity_sha256",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_inherited_duration_ns",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_smoke_formal_credit_seconds",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_physical_payload_hash",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_copied_counts",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_independent_copy_hash_binding",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_binding_operator_sha256",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_binding_manifest_sha256",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_binding_state",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_wrong_preflight_acceptance",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_wrong_design_source",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    },
+    {
+      "PASS": true,
+      "case": "reject_wrong_accepted_classifier",
+      "error": "AssertionError",
+      "expected_gate_acceptance": false
+    }
+  ],
+  "formal_credit_seconds": 0,
+  "remote_or_helper_main_executed": false,
+  "scope": "ISOLATED_SYNTHETIC_DOCUMENT_GATING_ONLY_NOT_ACTUAL_ACCEPTANCE",
+  "source_or_classifier_tests_repeated": false
+}

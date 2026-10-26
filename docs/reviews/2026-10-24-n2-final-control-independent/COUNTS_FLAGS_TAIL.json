@@ -1,0 +1,24 @@
+{
+  "counts": {
+    "chunks": 26324,
+    "decoded_bytes": 47682580261,
+    "frames": 62687921,
+    "stored_bytes": 3318145280
+  },
+  "flags": {
+    "gap": 5683,
+    "gap_or_incomplete": 5683,
+    "incomplete": 5683,
+    "overlap": 0,
+    "recovered": 0,
+    "zero_frame": 20,
+    "zero_with_gap": 20
+  },
+  "tail": {
+    "created_after_actual_target": 0,
+    "duration_credit_ns": 0,
+    "manifests_with_receive_after_actual_target": 14,
+    "max_after_actual_target_ns": 938855801,
+    "max_after_nominal_target_ns": 1083048772
+  }
+}

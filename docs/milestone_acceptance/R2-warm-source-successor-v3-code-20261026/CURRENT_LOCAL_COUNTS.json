@@ -1,0 +1,18 @@
+{
+  "cases": {
+    "LOCAL_FULL_FLOW_RESULTS.json": 63,
+    "LOCAL_BOUNDARY_RESULTS.json": 20,
+    "LOCAL_OWNED_GROUP_REGRESSIONS.json": 8,
+    "LOCAL_KEEPER_SUCCESS_REGRESSIONS.json": 11,
+    "LOCAL_INVENTORY_EVIDENCE_RESULTS.json": 3
+  },
+  "total": 105,
+  "all_PASS": true,
+  "subjects": {
+    "runtime/controller.py": "eb8f321a8c1433987f72e42d2dea1afc2ddc217a2e4e016ac4d5d3a2a9367c4f",
+    "runtime/warm_readiness.py": "9305c447d8263a3a7a57a540fd129f1f9a974805c46766745f3e5855b9a79988",
+    "runtime/warm_completion.py": "f8c7fc8569d6a0b32cca4cb0e24a5b975e376be2a90f5b97872ce8c4e1d3287d",
+    "runtime/owned_command.py": "ef2f8882cabbd6becca136b41075e117a28fb9f3c3ed7b8c721d60f283e757bd"
+  },
+  "Linux_or_copy_qualified": false
+}

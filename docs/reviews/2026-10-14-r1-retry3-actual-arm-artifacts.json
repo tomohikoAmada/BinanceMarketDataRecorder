@@ -1,0 +1,26 @@
+{
+  "kind": "INDEPENDENT_R1_RETRY3_ACTUAL_COPY_ARM_ARTIFACTS",
+  "members": {
+    "R1_RETRY3_ACTUAL_COPY_ARM_REVIEW.md": {
+      "sha256": "e62b6fadaced0012e78ab04167a000cd5c9dc8660acfb9ce9b79d655313d8ca4",
+      "bytes": 3109
+    },
+    "R1_RETRY3_ACTUAL_COPY_ARM_RESULT.json": {
+      "sha256": "d6235ca5aa2c06c0e2ed48cc8ac60003909e68c84bce5c017f0ed86ee0daf22c",
+      "bytes": 2158
+    }
+  },
+  "input_hashes": {
+    "actual-owner2h-retry3-copy-readback.json": "36ebd96dcffa69984607e2b40eaef47e93230cd209a0d10546805c4dd20fc7be",
+    "actual-owner2h-retry3-arm-dispatch.json": "ed21c19fe45315371f795e43ef208f645b9b14f6263ab34f16fe4e6efb1f93fd",
+    "actual-owner2h-retry3-arm-result.json": "e8612530464f953a6ce75e8c2106ecbacd03b46ee27da241924d0345b276653c",
+    "owner2h-retry3-arm-argv.json": "17e90b72e60aec88eaac86d41e842e509356c47cdd22baf5f7b531cfc39fcdb4"
+  },
+  "published_hashes": {
+    "canonical-verification.json": "de1e1c376e6d9e216948db2d658f261ee290c35d9c7a424cec4ab1c7021d37ea",
+    "kernel-update-pending.json": "9e7ef50b27e334d2da3ac9b5bbe8411eac9c5c143c66b7612c640e1082b6efd0",
+    "postarm-admission.json": "ca05d50c982b7d0d39aacb123c48ebb4bea45b2d6e9e2a099f1bbc3d402e106d",
+    "prearm-admission.json": "2cdaa769cbe94be703864fc5752a7a11c881fb44404ea2818340fbfd7a3e1d9a",
+    "quiet-window-actual.json": "72e3ce3b9bdb967ab0dd36fa7efdb119216ac29bdb3150e5c650ac9c97f4161e"
+  }
+}

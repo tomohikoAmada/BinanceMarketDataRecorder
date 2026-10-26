@@ -1,0 +1,75 @@
+{
+  "existing_warm_controls_retained": [
+    "warmup.jsonl",
+    "warmup-result.json",
+    "warmup-end-observation.json",
+    "prestart-admission.json",
+    "start-observation.json",
+    "capture-admission.json",
+    "capture-launch.json",
+    "data-scope-start.json"
+  ],
+  "journal_record_fields": [
+    "argv",
+    "timeout",
+    "returncode or exception",
+    "stdout/stderr availability",
+    "lossless stdout/stderr bytepacks",
+    "timeout partial markers",
+    "parse/decode errors separate",
+    "selection provenance"
+  ],
+  "kind": "PROPOSED_WARM_METADATA_CONTRACT_DESIGN_ONLY",
+  "missing_policy": "Required-by-phase matrix, not all-fixed-missing equals failure. Read-only incompleteness never stops healthy native work; it withholds eligibility.",
+  "nested_owned_evidence": "Keep complete command receipt JSON unchanged, including keeper_control and all inventory_receipts bytepacks inline. Decode/rehash independently; do not replace originals by summaries.",
+  "new_bounded_attempt_controls": [
+    "warm-completion-end-1-state.json",
+    "warm-completion-end-1.json",
+    "warm-completion-end-2-state.json",
+    "warm-completion-end-2.json",
+    "warm-completion-end-3-state.json",
+    "warm-completion-end-3.json",
+    "warm-completion-start-1-state.json",
+    "warm-completion-start-1.json",
+    "warm-completion-start-2-state.json",
+    "warm-completion-start-2.json",
+    "warm-completion-start-3-state.json",
+    "warm-completion-start-3.json"
+  ],
+  "new_fixed_warm_controls": [
+    "warm-budget.json",
+    "warm-enable-request.json",
+    "warm-start-binding.json",
+    "warm-first-strict.json",
+    "warm-readiness-check.json",
+    "warm-completion-end.json",
+    "warm-completion-start.json",
+    "owner-start-commit.json"
+  ],
+  "owner_start_consumer": "Pure LOCAL/OFFLINE validation of exported original bytes and hash links; no private-helper execution or remote source evaluator replay.",
+  "proposed_current_Linux_qualification_controls": [
+    "linux-warm-binding-smoke.json",
+    "linux-warm-qualification.json",
+    "linux-warm-source-fixtures.json",
+    "linux-owned-group-qualification.json"
+  ],
+  "reader_raw_record_fields": [
+    "availability",
+    "file/open/stat/error metadata",
+    "exact base64",
+    "bytes",
+    "sha256",
+    "mtime/owner/mode",
+    "parse_error separate from display text",
+    "before/after fstat identity/race status"
+  ],
+  "required_by_phase": {
+    "before_native": "copy/qualification/ARM controls only; warm/commit files normally absent",
+    "candidate_start": "complete selected end/start chains, first/full proof, prestart admission, owner-start and commit; missing/partial/mismatched field means not eligible",
+    "formal_entry": "candidate_start plus actual postcommit owned-native CAPTURE entry or stronger consistent formal evidence; commit alone is insufficient",
+    "target_final": "all current duration/monitor/target/audit/restored controls plus mandatory verified start bundle; no new earlier duration credit",
+    "warm_failed": "every existing budget/binding/first/full/attempt/witness control plus actual failure/restoration; no owner-start required for owned journal provenance",
+    "warm_started": "budget, enable-request and start-binding after their original creation; missing later controls pending"
+  },
+  "schema_version": "FUTURE_VERSION_MUST_BE_FROZEN_IN_NEW_MANIFEST"
+}

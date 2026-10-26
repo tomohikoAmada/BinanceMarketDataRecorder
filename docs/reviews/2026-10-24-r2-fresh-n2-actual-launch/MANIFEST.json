@@ -1,0 +1,62 @@
+{
+  "kind": "INDEPENDENT_ACTUAL_N2_LAUNCH_FROZEN_MANIFEST",
+  "manifest_excludes_itself": true,
+  "members": {
+    "CHECKS.json": {
+      "bytes": 5137,
+      "sha256": "1512babcadf113066b05345ed107dd295550e1a173337bf3ef1e386efca42215"
+    },
+    "REPORT.md": {
+      "bytes": 3775,
+      "sha256": "fd3656c5f2adcfc8aae8f27ba7d891bf1292bb0e0af67c3f57b0b8261ab28e88"
+    },
+    "RESULT.json": {
+      "bytes": 3467,
+      "sha256": "c58cff1f5d59bcc9c4e66fd36170a1fd46d8404170e6c21d9849fc4b014d14ad"
+    },
+    "bindings/accepted-actual-window.json": {
+      "bytes": 4256,
+      "sha256": "b502d4a8456ace4888495f80f137fbb03a5d97a8c643bd2743baa7a6a0832199"
+    },
+    "bindings/accepted-arm-RESULT.json": {
+      "bytes": 7578,
+      "sha256": "183f5bc2ad16ffd6f007601bd95b3f2eb7900b55aa79868801f6d8aa66106083"
+    },
+    "bindings/accepted-copy-payload-map-original.json": {
+      "bytes": 22700,
+      "sha256": "e7102b1c843bae3157631944836adf483b1e9d0ff52acea72265aede0d569903"
+    },
+    "bindings/launch.py": {
+      "bytes": 1395,
+      "sha256": "a5e4689181be9277f4a459665e6d28d7552747a717689fae044f1c7d80cb9c21"
+    },
+    "bindings/reconstructed-dispatched-launch.txt": {
+      "bytes": 5938,
+      "sha256": "983d121e22ea0ab89e1469936b238dc1df276aa6c768f8f7f51f00205ddfb01a"
+    },
+    "bindings/stage-controls-manifest.json": {
+      "bytes": 2345,
+      "sha256": "21ab1c0ba74f2c6556107c910dd8e6f3b59cad939597e69f638889d8cfa84348"
+    },
+    "bindings/stage-operator.py": {
+      "bytes": 22087,
+      "sha256": "4792d322feb8e7f2018cf6299e2054ea3ac1226ac5db219ad6307d4fd1c8cf00"
+    },
+    "originals/actual-n2-stage-launch-1792821038109362000.execution.json": {
+      "bytes": 233,
+      "sha256": "989c2e29151a26c64aae7b61f0ae47354baa16fdf24db681b16c327cdd69f09b"
+    },
+    "originals/actual-n2-stage-launch-1792821038109362000.json": {
+      "bytes": 3621,
+      "sha256": "c16fc3b733b77cd618e2b010a512a65b95cb6be0bd4120488f54791090d81691"
+    },
+    "originals/actual-n2-stage-launch-1792821038109362000.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reconstruct-launch.py": {
+      "bytes": 15473,
+      "sha256": "9be754d1139d5b2be26b67868ae364de4bfc6f571e041152c10ac2a58cbf5468"
+    }
+  }
+}
