@@ -130,6 +130,51 @@ def test_tail_catchup_does_not_make_slow_window_steady() -> None:
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize(
+    ("backlog", "expected_status"),
+    [
+        ([0, 3, 2, 5, 8], "NON_STEADY"),  # Review: one batch drains, then growth resumes.
+        ([0, 3, 2, 6, 5], "NON_STEADY"),  # A small final drain cannot hide growth either.
+        ([0, 3, 2, 5, 5], "NON_STEADY"),  # Enlarged backlog remains at the deadline.
+        ([0, 3, 0, 3, 0], "STEADY"),  # Bounded batches repeatedly recover.
+        ([0, 4, 1, 2, 3], "STEADY"),  # Later batches stay within the earlier range.
+        ([2, 1, 3, 0, 2], "STEADY"),  # Bounded does not require zero final backlog.
+        ([0, 3, 0, 0, 3], "STEADY"),  # An isolated endpoint burst is not a trend.
+    ],
+)
+def test_batch_drain_does_not_reset_window_backlog_history(
+    backlog: list[int], expected_status: str
+) -> None:
+    p = WorkloadProgress(
+        {("spot", "BTCUSDT", "diff_depth"): [b"x"] * 20}, {"diff_depth": 1.0}
+    )
+    points, sent, written = [], 0, 0
+    for boundary, pending in enumerate(backlog, 1):
+        while sent < boundary * 4:
+            for phase in ("sent", "received", "enqueued"):
+                p.record(phase, LABEL, 1, float(sent))
+            sent += 1
+        while written < sent - pending:
+            p.written("writer", LABEL, 1)
+            written += 1
+        p.synced("writer", p.sync_target("writer"))
+        points.append(p.snapshot(float(boundary * 4)))
+    assert [point["streams"][LABEL]["pending_write_frames"] for point in points] == backlog
+    assert points[-1]["streams"][LABEL]["sent_frames"] == 20
+    window = classify_steady(points, 20)
+    assert window["status"] == expected_status
+    assert window["performance_comparable"] == (expected_status == "STEADY")
+    reason = f"sustained_backlog_growth:pending_write_frames:{LABEL}"
+    assert (reason in window["reasons"]) == (expected_status == "NON_STEADY")
+    # Complete the same input after the window; retained boundaries keep their verdict.
+    while written < 20:
+        p.written("writer", LABEL, 1)
+        written += 1
+    p.synced("writer", p.sync_target("writer"))
+    assert p.snapshot(21)["streams"][LABEL]["persisted_frames"] == 20
+    assert classify_steady(points, 20) == window
+
+
 def test_input_delivered_after_deadline_is_nonsteady_even_if_final_counts_match() -> None:
     p = WorkloadProgress({("spot", "BTCUSDT", "diff_depth"): [b"x"]}, {"diff_depth": 1.0})
     for phase in ("sent", "received", "enqueued"):

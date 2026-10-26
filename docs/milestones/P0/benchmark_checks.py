@@ -7,7 +7,6 @@ import math
 import sqlite3
 import struct
 from collections import Counter
-from itertools import pairwise
 from pathlib import Path
 from threading import RLock
 from typing import Any
@@ -216,18 +215,25 @@ def classify_steady(boundaries: list[dict[str, Any]], scheduled_end: float) -> d
     ):
         for key in last:
             values = [point["streams"].get(key, {}).get(field, 0) for point in boundaries]
-            changes = list(pairwise(values))
-            # Two positive steps over >=3 separated observations distinguish
-            # growth from one transient endpoint frame. Other sources cannot offset it.
-            if (
-                len(values) >= 3
-                and all(a <= b for a, b in changes)
-                and sum(a < b for a, b in changes) >= 2
-            ):
+            # Keep the window's peak history across partial drains. Two new highs
+            # and an endpoint above the first show an enlarged backlog. Repeated
+            # bounded peaks or recovery into the earlier range do not qualify;
+            # neither does a single transient endpoint burst.
+            peak = values[0]
+            highs = []
+            for value in values[1:]:
+                if value > peak:
+                    highs.append(value)
+                    peak = value
+            if len(highs) >= 2 and values[-1] > highs[0]:
                 reasons.append(f"sustained_backlog_growth:{field}:{key}")
     return {
         "status": "NON_STEADY" if reasons else "STEADY",
         "performance_comparable": not reasons,
         "reasons": reasons,
-        "rule": "input by deadline; per-source monotonic backlog with >=2 increases is non-steady",
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": (
+            "input by deadline; per-source >=2 new backlog highs since window start "
+            "and endpoint above the first new high is non-steady"
+        ),
     }
