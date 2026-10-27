@@ -1,5 +1,23 @@
 # Official Binance Sources
 
+## Retention discussion: candle boundaries and recent trades — 2026-10-27
+
+Evidence for the retention discussion and subsequent plan update; no endpoint implementation.
+The current Agent Native index was read before the selected product pages.
+
+| Source / representation | Retrieval UTC | SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt), downloaded text, 174759 bytes | 2026-10-27T05:23:35.814051+00:00 | `81d0f32aabb5c313ed7e94cf61c5bc1b935a094d5d3cbf32274586bf4a0da77b` | Index lists the Spot kline streams and USD-M recent-trades family; it is not a substitute for endpoint semantics. |
+| [Spot streams](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~) and [USD-M market REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data), combined serialized web-tool excerpts with retrieval bounds, 10773 bytes | 2026-10-27T05:26:11Z–2026-10-27T05:26:14Z | `e2300533f129193a9c15b5dff42d2aabba94682330d6387110c4173b4c086253` | Spot kline has interval/start/close times and boolean `x` for whether that candle is closed. USD-M `/fapi/v1/trades` accepts symbol/limit (default 500, max 1000), returns recent records with IDs, and does not expose a fromId parameter on this endpoint. It is not an unlimited historical feed. |
+
+The excerpt digest covers the [retained web-tool excerpts](research/2026-10-27/binance-retention-excerpts.json),
+originally `/tmp/bmdr-retention-discussion-20261027-web.json`, not original HTTP bodies.
+Direct HTTP downloads of the two catalogue pages returned empty bodies
+and were excluded as semantic evidence; rendered official-page excerpts were used.
+No `llms-full.txt`, account endpoint, market-data request or downloaded code was executed.
+Polling overlap and reduced duplicate writes are design inferences; this check does
+not establish a live capture guarantee or authorize dropping required observations.
+
 ## P0 PR #86 review: liquidation semantics — 2026-10-26
 
 Review [R4](milestones/P0/review-20261026.md) finds conflicting USD-M sampling

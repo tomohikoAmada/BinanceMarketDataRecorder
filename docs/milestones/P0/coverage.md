@@ -1,14 +1,22 @@
 # P0 首版公开数据覆盖表
 
-核对日期：2026-10-26。此表是 P2 的范围合同，不是已实现清单。P4 开始前将本表展开为实际产品/源清单并冻结；每个必须源分别进入连续性分母。P0 不发起生产采集。
+核对日期：2026-10-26；保存表示取舍更新：2026-10-27（[ADR-0053](../../adr/0053-single-rest-representation-and-required-information.md)）。此表是 P2 的范围合同，不是已实现清单。P4 开始前将本表展开为实际产品/源清单并冻结；每个必须源分别进入连续性分母。P0 不发起生产采集。
 
 官方依据：[Spot 流](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)、[Spot 市场 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)、[Spot 通用 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general)、[USD-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[USD-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)、[COIN-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data)、[COIN-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)。抓取哈希与无效网页回退见 [official-sources.json](official-sources.json)；不能把返回 HTML 壳的 `.md` 地址当正文证据。
 
 产品选择：配置是 underlying assets 列表，至少支持 10 项；首版 BTC、ETH。S 是 `baseAsset` 为所选标的且允许现货交易的所有所选报价对（含非 USDT 报价）；不把 BTC 作为 quote 的所有其他币种引进来。U 是这些标的在 USD-M 的永续与交割，C 是 COIN-M 的永续与交割，D 表示 U 和 C **分别实例化**。身份包含市场、symbol、pair、base/quote/margin、contractType、contractSize、上市/到期时间及状态，不能只以 symbol 或 `st=1` 判断。交易所没有某合约时记 `EXCHANGE_NOT_OFFERED`，附当次目录快照，不能凭想象订阅。尚未到期的已选产品一直纳入，不因故障而移除。
 
-下表“字段”是必须保留的代表字段，不是白名单；完整正文和未知字段均保留。权限 P=无需密钥，K=官方要求 API key（不请求），A=账户/签名（排除）。周期是本项目拟采用的采样/轮询合同，括号内为官方发布频率；P2 须在共享预算下落实，不声称 REST 连续事件真值。`F` 为 REST 新鲜度：首次请求或上次成功 + 轮询周期 + 最多 10s 请求预算；过期起算缺口，失败不得刷新成功时间。历史/周期型源还要求对应已关闭数据周期，允许官方合法空值但保留原始空响应及查询范围。长期静态元数据允许内容相同，仍需新一次成功响应。
+下表“字段”是所需信息的起点，P2 按具体源补齐映射、表示 / schema、适用 SDK 版本和已知不保留项；不能仅以 SDK 未建模为由删掉已要求的字段。WS 继续保留完整应用层 payload；REST 每个响应只保存一种主体表示，正文或能保留所需信息的 SDK 模型均可，不再统一要求未知字段、JSON 排版及 HTTP 字节原样留存。价格 / 数量精度、交易所 / 接收时间、产品身份、必要序列、缺口及有语义的 null / 缺失区别须保留。表内 REST “原文”指相应字段信息，不增加逐字节留存要求；“正文哈希”若用于派生去重，应明确哈希实际表示，不把模型摘要冒充 HTTP 正文摘要。
+
+权限 P=无需密钥，K=官方要求 API key（不请求），A=账户/签名（排除）。周期是本项目拟采用的采样/轮询合同，括号内为官方发布频率；P2 须在共享预算下落实，不声称 REST 连续事件真值。`F` 为 REST 新鲜度：首次请求或上次成功 + 轮询周期 + 最多 10s 请求预算；过期起算缺口，失败不得刷新成功时间。历史/周期型源还要求对应已关闭数据周期，允许官方合法空值，按声明表示保留该次空观测及查询范围，不捏造零值。长期静态元数据允许内容相同，仍需新一次成功响应。
 
 WS 缺口 W：断连/心跳失效、已接收未持久化停滞、无法解释的序列断裂，至有效恢复；只有观测上界时把上界前无法确认区间记 unknown。序列型深度须重新获得有效快照并接续后才恢复。稀疏流无新事件不判掉线。去重只用于派生层，Raw 不删除重复响应或重连重复帧。默认键前缀均含市场/产品；共享源使用自身 scope 并关联产品。
+
+## 2026-10-27 信息优先级补充
+
+[ADR-0053](../../adr/0053-single-rest-representation-and-required-information.md)与[计划的信息优先级](../../production_milestone_plan.md#信息优先级与资源不足时的顺序)区分完整目标和实际资源配置。下列53行保留最初目标，不改写历史证据；P2逐源补充优先级、保留字段、实际周期 / 频率及缩减原因。不能按假定研究策略删除独有事实。最低必需源及冻结配置内全部启用源按99.5%验收，未启用观察细节单列未采集，不视为覆盖成功。
+
+S11/S12、D21–D23的全部未收盘更新仍是完整目标；受限配置可以明确减少部分周期的形成过程，原生收盘值及价格类型 / 日界等语义不能随意替代。D06未来可按同ADR评估“新增 / 变化成交 + 每次轮询记录”的有版本表示；收益不足就保持每次完整响应。此例外不自动扩展到WS或历史Raw。表中“正文哈希”是旧派生去重候选写法，不要求P2新增逐事件SHA；自然ID与字段比较足够时优先使用，必要摘要的用途和实际表示须明确。
 
 ## Spot
 
@@ -82,7 +90,7 @@ REST U 前缀 `/fapi/v1`，C 为 `/dapi/v1`；`/futures/data` 的 host 分别为
 - Spot UIKlines 是显示变体；成交/挂单账户接口、private user streams、账户ADL量化、保证金/杠杆/手续费个人配置、订单、资金划转、期权、期权大宗、Alpha、股票等独立产品不属于本次范围。公共元数据中的交易规则仍保留。
 - U/C 清算流发布代表性快照；具体选择语义按下文分别披露，不能声称每笔全集。最近成交REST是有限窗口；本项目不能承诺捕获被交易所省略的事件。盘口是L2，非L3、非所有隐藏/RPI订单的完整队列。
 - 权限是当前官方合同，SDK方法存在或历史成功不改变当前要求。U top两种ratio的缺失**没有无钥等价替代**，必须在P2/交付报告保留受限标记；global ratio、官方历史包都不能冒充top ratio。若新官方合同解除权限限制，再在P2记录依据后纳入，不私加key。
-- REST现实现保存 SDK model provenance 的来源继续标 `official_sdk_model_no_raw_http_body`；P2须在模型转换前截取响应正文及HTTP状态/必要headers，方可写“原始HTTP正文已覆盖”。P0保持已有Raw/manifest/normalization版本不变。
+- REST 现实现保存 SDK model provenance 的来源继续如实标注模型边界。P2 按 ADR-0053 实现单份主体、所需字段及必要状态 / headers；SDK 模型满足字段与精度约定即可计入覆盖，不以取得所有原始 HTTP 正文为前提。现货盘口模型 / Base64 重复表示在 P2 去掉，变化的 payload 明确版本并保留旧 reader；历史记录不改写。
 - 运行前的源合同须固定：source_id、完整产品或共享scope、选定传输、请求参数、发布/轮询周期、成功期限、合法空值、数据周期、新鲜度、恢复条件。上表中“官方周期”的流须在P2按具体endpoint参数展开；不能用一个统一超时替代所有语义。实现/官方实样证明在P2逐行填写，P0只完成定义与归宿。
 
 ## D11 的官方语义冲突（R4，2026-10-26）

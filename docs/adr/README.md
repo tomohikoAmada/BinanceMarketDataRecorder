@@ -51,3 +51,5 @@ link both records.
 - [ADR-0051: Production per-source continuity and new-file verification](0051-production-continuity-and-incremental-verification.md) — current P0–P6 acceptance authority.
 
 - [ADR-0052: Bounded Raw batches and sequence-only capture health](0052-bounded-raw-batches-and-sequence-only-capture-health.md) — P1 implementation; Raw v1 and archive contracts unchanged.
+
+- [ADR-0053: Information-first capture and single REST representation](0053-single-rest-representation-and-required-information.md) — P2/P3 scope independent of research consumers, explicit resource priorities, single REST body and removal of unnecessary repeated work; implementation pending.

@@ -1,11 +1,24 @@
 # Binance Market Data Recorder Agent Contract
 
-Current owner direction October26, 2026: follow the new
+Current owner direction October27, 2026: follow the new
 [production milestone plan](docs/production_milestone_plan.md), P0 through P6.
 Design for at least ten underlying assets; the initial production exit is BTC
 and ETH across their Spot quote pairs and USD-M/COIN-M perpetual and dated
-futures. Options are deferred. Capture original public data for offline research
-and backtesting. Owner selected 99.5% continuity, with honest per-source gaps and
+futures. Options are deferred. Capture selected public data for offline research
+and backtesting. P2 follows [ADR-0053](docs/adr/0053-single-rest-representation-and-required-information.md):
+WS keeps exact payload bytes; each REST response stores one primary body or SDK-model
+representation preserving required precision, exchange/receive times, identity,
+sequence and gap information. Exact HTTP bytes/unknown fields are not universal gates;
+do not persist both a complete model and Base64 body or label SDK output as original
+HTTP. Existing data/readers remain compatible; P2 implementation is still pending.
+Research use is unknown and must not determine capture scope. Preserve distinct public
+information first; remove equivalent representations and repeated work before reducing
+observations. P2 records source priorities and explicit resource-limited coverage in the
+existing inventory; preserve core facts across the selected markets. No silent dynamic
+shedding or retrospective removal of failed sources. P3 removes hashes without a real
+identity/integrity consumer and repeated same-operation work, while keeping meaningful
+file/archive checks. See ADR-0053 and the plan for the exact boundary.
+Owner selected 99.5% continuity, with honest per-source gaps and
 automatic recovery. Saved-data correctness is a separate requirement. Sudden
 power-loss engineering/tests are out of scope; retain existing periodic sync and
 normal stop/drain, without claiming a new owner-approved loss window.
@@ -15,7 +28,9 @@ PR #87 review; the remaining R2 classifier fix retains peak history through part
 drains and is verified by negative and bounded-oscillation regressions. See the
 [P0 review](docs/milestones/P0/review-20261026.md) and appended v4 classification
 of retained boundaries. Original measurements remain unchanged; no VPS rerun was
-needed. P0 corrections and [P1](docs/milestones/P1/README.md) are complete; P2 has not started.
+needed. P0 corrections are complete. [P1 review](docs/milestones/P1/review-20261027.md)
+of 5218d9d leaves R1 open: receive retirement can miss the transition from a scheduling
+yield to idle recv. Fix and review this before P1 acceptance; P2 has not started.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains
 do not establish all-feature CPU gains or VPS capacity. Compare matched per-source
@@ -111,10 +126,15 @@ per configured ProductKey.
    never an active write target and its absence is not a Collector failure.
 2. Preserve the exact raw WebSocket payload bytes plus exchange times, receive
    UTC wall-clock time, monotonic time, market, symbol, stream, connection ID,
-   collector instance/version, and source sequence IDs.
+   collector instance/version, and source sequence IDs. REST uses the declared
+   single representation and required-field contract in ADR-0053; SDK models
+   are not byte-exact HTTP bodies.
 3. Raw files are append-only while active and immutable after sealing. Active
    files end in `.partial`. Duplicate raw events are allowed; derived layers
    own explicit deterministic deduplication.
+   Future P2 D06 may use the explicitly versioned compact polling representation
+   in ADR-0053 after measuring its benefit; this does not authorize blanket WS
+   deduplication or rewriting historical Raw.
 4. Every sealed file has count, time and sequence ranges, byte counts, schema
    and collector versions, SHA-256, and gap/resync metadata.
 5. Never label a truncated, checksum-failed, or sequence-incomplete interval as

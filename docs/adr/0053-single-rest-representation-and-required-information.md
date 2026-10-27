@@ -1,0 +1,39 @@
+# ADR-0053: Information-first capture and single REST representation
+
+Status: accepted by the owner on 2026-10-27 for P2/P3. This records the approved design direction; runtime implementation, per-source resource configuration and any format selection remain pending.
+
+## Decision
+
+Recorder collects the selected public data for offline research and backtesting with bounded resource use. Exact HTTP body retention is not a universal production exit requirement. Each REST response has one primary persisted representation: received body bytes, or an SDK model representation that preserves the information required by its source entry. Do not retain both a complete model and a Base64 copy of the body for new P2 records, or add a second HTTP implementation solely to achieve byte identity.
+
+The source entry declares its representation/version, SDK version when applicable, required field mapping and known omissions. Preserve exact price/quantity values, supplied exchange times, actual receive times, product/source identity, necessary sequence identifiers, meaningful empty/null/missing distinctions, request scope/status and gap evidence. A required field missing from an SDK model must be supplied by the adapter or recorded as unsupported, not silently removed from the coverage requirement. Receiving a late or invalid model does not authorize invented times, values or successful coverage.
+
+Model-based sources do not promise preservation of unknown fields, JSON formatting or exact HTTP bytes. Label SDK output honestly; it is never an original HTTP body. Readily available body bytes remain a valid single representation. WS keeps application-payload byte preservation for the configured streams, including P1's malformed-message handling. The full family inventory remains the target; source selection follows the explicit resource policy below. The 99.5% continuity threshold and archive/corruption protections remain.
+
+## Capture scope is independent of research consumers
+
+Research use is not yet known. Do not choose capture fields or sources by a hypothetical strategy, nor require a trading/research framework or another repository at runtime. Preserve distinct public facts and the precision, identity and clocks needed to interpret them. Prioritize irreplaceable observations, ability to recover missed information, source semantics and measured resource cost; this is an engineering policy, not a universal ranking established by a paper.
+
+P2 uses the existing coverage inventory to record priorities and actual fields/cadences. First remove equivalent representations/shared requests and duplicate processing. Protect product/contract rules and status, available individual/aggregate trades, snapshot/diff depth, non-equivalent quotes, reference prices, funding, OI and liquidation publications across BTC/ETH's selected markets. Sparse or low-rate does not mean unimportant. Preserve native bars and statistics as families; if resources require reducing some forming-bar observations or other repeated observations, declare precisely what is absent before the next run. Derived bars do not automatically reproduce venue observations or their receive times.
+
+No automatic per-event scoring or silent live shedding is needed. Try the full target first; a resource-limited configuration may reduce the observation details allowed by the plan, not the protected core or the selected-market scope. Freeze the configuration before qualification: the minimum sources and every enabled source must meet 99.5%. Disabled optional observations remain visibly uncaptured, not successful coverage. Never remove failed sources after a run or call a workload reduction a code speedup. Reduce expansion to additional assets before compromising the two-asset minimum; further cuts require a scope decision.
+
+## Repeated observations and computation
+
+For P2 D06 only, evaluate a compact recent-trade representation against storing one full response. If worthwhile, retain new/changed trades by market/product/native ID and direct retained-field comparison, plus a short record for each poll: actual observation times, request scope, status/empty response, returned count and ID/time boundaries. Keep first-observed times and same-ID changes; declare window overflow/gaps. A bounded recent cache may admit duplicates after restart or eviction; it must not scan history or discard all lower IDs. This does not promise reconstruction of every original response list. Version this payload and its readers if adopted; otherwise retain the simpler full-response representation. Historical records and WS still allow duplicates; this is a narrow, explicit future exception, not blanket ingestion deduplication.
+
+P3 removes hashes without a specific content identity, corruption check or actual consumer. Reuse a required payload digest within one immutable Raw observation, including all derived rows; prefer natural IDs and direct comparisons where sufficient. Change published normalized schemas/readers explicitly when removing fields with existing users. Keep file CRC/content/storage checks and archive target readback/deletion boundaries; combine compatible checks in one independent sequential pass instead of repeating the read. Do not add per-event hash chains, whole-history audits or metadata-only substitutes for actual readback.
+
+Normalize on demand, outside capture/rotation dependencies, using bounded requested input when needed. Do not schedule default whole-history rewrites or precompute every possible research dataset. Reuse stable metadata in-process; consider block-level storage only if measured savings justify a versioned format and reader work. No mandatory Raw v1 rewrite, historical migration or new generic pipeline is introduced.
+
+## Implementation and verification
+
+P2 removes the Spot snapshot model/Base64 duplication. Use an explicit payload version where representation changes; update dependent snapshot/normalization readers and retain existing record readability. Do not migrate, relabel or delete historical data. This decision does not itself change EventEnvelope v1, Raw v1 or any executable serializer; do not expand the outer format solely because this ADR exists.
+
+For fixed inputs, byte representations compare exact bytes; model representations compare the required fields, precision, clocks, identity, sequence and defined empty-value semantics. Both check saved ordering/counts and correct provenance. Compare encoding cost and compressed bytes on matched inputs; SDK export is not assumed to compress data or reduce CPU. Keep temporary parsed objects where runtime processing needs them without persisting a second complete body.
+
+## Scope and history
+
+This supersedes the universal future REST-original-body/unknown-field requirement in the initial production plan, P0 coverage inventory and ADR-0051's future P2 format paragraph. It also qualifies the inventory's universal sampling/response-retention target with the explicit resource policy and optional D06 representation above. ADR-0051 remains authoritative for continuity of the frozen source set, independent new-file verification, durability and archive custody. Historical P0/P1 measurements and published formats retain their original meaning; their tests are not retrospectively weakened.
+
+The [production plan](../production_milestone_plan.md), [P0 supplement](../milestones/P0/README.md#rest-representation-scope-update-2026-10-27), [data contract](../data_contract.md#information-priority-and-resource-policy-2026-10-27) and [source review](../research/2026-10-27/retention-and-overhead-review.md#7-源码与研究依据) carry this decision. Changes outside Recorder are not part of this task. Use matched inputs to decide optimizations, not speculative infrastructure or new approval chains.

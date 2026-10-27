@@ -2,6 +2,8 @@
 
 Status: accepted by the owner's 2026-10-26 production milestone plan; P0 contract adopted. Runtime implementation belongs to P1–P3. P4–P6 cannot use the new qualification until those implementations exist.
 
+2026-10-27 scope update: [ADR-0053](0053-single-rest-representation-and-required-information.md) supersedes the future universal REST-original-body requirement below and defines representation-specific fixture checks and explicit resource priorities for P2. The minimum source set and all enabled sources in each frozen configuration remain subject to 99.5%; disabled optional observations are visibly uncaptured, never retroactively removed failures. The original decision text and historical results are retained; new-file verification and archive protections remain in force.
+
 ## Decision
 
 The [production plan](../production_milestone_plan.md), [P0 coverage inventory](../milestones/P0/coverage.md) and this ADR govern future production qualification. They supersede the future-stage sequencing, sampled-slot pass criteria and repeated whole-corpus qualification procedures of ADR-0033–0035, 0039–0043, 0046–0048 and 0050 **for P0–P6 only**. Historical results and their readers remain valid under their original contracts; no old result receives new production credit. Existing implementation details and data preservation rules remain unless explicitly changed below.

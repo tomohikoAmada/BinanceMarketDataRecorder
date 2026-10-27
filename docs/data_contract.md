@@ -12,8 +12,9 @@ quiet-stream event-rate shortcut, fabricated REST success or claim of every exch
 event is permitted. Received, queued, persisted and synchronized progress are distinct.
 
 P0 does not change EventEnvelope v1, Raw v1, manifest/Catalog or normalized/replay formats.
-Expanded market identities/raw HTTP capture are explicit P2 changes; existing SDK
-model payloads keep their provenance labels. P1–P3 must implement these future runtime
+Expanded market identities and the single REST representation decision in
+[ADR-0053](adr/0053-single-rest-representation-and-required-information.md) belong to P2;
+existing SDK model payloads keep their provenance labels. P1–P3 must implement these future runtime
 and verification rules before P4 can qualify. Historical acceptance contracts below
 remain the rules for their original artifacts.
 
@@ -25,6 +26,51 @@ The approved VPS/local archive topology changes physical custody and execution
 roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
 market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
 explicit gaps, and historical/live clock separation remain authoritative.
+
+## REST retention decision (2026-10-27)
+
+The owner approved one primary persisted representation per REST response in P2:
+body bytes or an SDK model retaining the source's required information. Exact HTTP
+bytes and unknown fields are not universal acceptance requirements. Preserve required
+price/quantity precision, supplied exchange times, actual receive times, product/source
+identity, sequence, meaningful null/absence/empty semantics, request scope/status and
+gaps. Record the representation/schema and SDK version where applicable, field mapping
+and known omissions in the existing coverage inventory. SDK filtering does not excuse
+losing a required field, and model output must not be labelled original HTTP bytes.
+
+P2 removes the Spot model/Base64 duplication using an explicit payload version and
+updated readers; existing v1/v2 records remain readable and immutable. No second HTTP
+implementation is required solely for byte preservation. WS keeps exact payloads.
+Fixture checks follow the declared representation: exact bytes for body captures,
+required values and semantics for model captures, with ordering/counts checked for both.
+This is an approved future contract, not an implemented serializer change; historical
+measurements, independent file checks and archive/deletion protections remain unchanged.
+See [ADR-0053](adr/0053-single-rest-representation-and-required-information.md).
+
+## Information priority and resource policy (2026-10-27)
+
+Research consumers do not determine capture scope. The full coverage inventory remains
+the target; prioritize distinct public facts, interpretability and measured cost. P2
+declares each source's retained fields/cadence and any resource-limited observation
+details before qualification. The protected minimum spans BTC/ETH's selected markets;
+the minimum and every enabled source must meet 99.5%. Disabled optional observations
+remain visibly uncaptured. No silent shedding, after-the-fact denominator changes or
+substitution of locally derived values for non-equivalent native observations.
+
+P2 may adopt a measured, versioned D06 exception to full-response retention: new/changed
+trades plus each poll's scope, actual time, status, count and boundaries, bounded recent
+ID/content comparison, same-ID changes and honest window gaps. Repeated full response
+lists are then not reconstructable. Preserve old readers and data; WS/historical Raw
+still permit duplicates. Without demonstrated benefit, use the full single response.
+
+P3 removes hashes with no real purpose/consumer, shares a necessary Raw digest across
+its derived records, and combines same-boundary file checks in one independent pass.
+Published normalized changes require explicit schemas/readers. Meaningful CRC/content/
+stored-byte checks, target readback and deletion safeguards remain. Normalization is
+an on-demand consumer, not a capture/seal dependency or default whole-history VPS job.
+See [ADR-0053](adr/0053-single-rest-representation-and-required-information.md) and
+the [plan](production_milestone_plan.md) for implementation and comparison requirements.
+These are approved future changes, not changes to existing executable formats.
 
 ## P1 capture and progress contract (2026-10-27)
 

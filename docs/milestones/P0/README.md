@@ -19,7 +19,7 @@
 
 ## 数据和流程合同
 
-[52个信息家族覆盖表（D11拆分后53行）](coverage.md) 明确市场/产品、端点/流、频率、字段、共享scope、权限、去重、缺口、必须性及实现归宿；[当前官方资料](official-sources.json)及[R4冲突记录](corrections-20261026/official-sources.json)约束API语义；官方冲突未解决前不猜测采样规则。USD-M两种top trader ratio当前要求key，无法无钥等价替代；如实列为权限受限。COIN-M/交割、新数据家族和原始HTTP正文属于P2，没有以文档宣布已实现。
+[52个信息家族覆盖表（D11拆分后53行）](coverage.md) 明确市场/产品、端点/流、频率、字段、共享scope、权限、去重、缺口、必须性及实现归宿；[当前官方资料](official-sources.json)及[R4冲突记录](corrections-20261026/official-sources.json)约束API语义；官方冲突未解决前不猜测采样规则。USD-M两种top trader ratio当前要求key，无法无钥等价替代；如实列为权限受限。COIN-M/交割、新数据家族和 REST 表示改造属于 P2，没有以文档宣布已实现；最初的通用原始 HTTP 正文要求由下述 2026-10-27 用户取舍替代。
 
 [ADR-0051](../../adr/0051-production-continuity-and-incremental-verification.md) 已落实到数据、存储、项目合同与执行入口：逐必需源99.5%连续性，unknown计缺口，窗口并集不重复扣时；每次新封存文件独立完整读取校验，终点只补尚未验证的新文件。归档目标实际回读和删除授权保留。P1–P3实现后才可用于P4–P6，旧采样pass率不能冒充新覆盖率。
 
@@ -50,3 +50,12 @@ comparisons; the retained P0 runs, original readiness fields and v4 classificati
 are not rewritten or given new production credit. P1 measurements use the same
 fixed input, instrumentation and classifier on both sides, with local machine
 results identified separately from the preserved VPS baseline.
+
+## REST representation scope update (2026-10-27)
+
+- [x] 用户确认以独有信息及资源成本为依据，研究用途与采集解耦：WS保留已选源的现有原文；REST每个响应只存一种主体表示，所需字段完整的SDK模型可以作为正式数据。价格 / 数量精度、交易所 / 接收时间、产品身份、必要序列与缺口信息保留；模型不冒充HTTP原文。
+- [x] [ADR-0053](../../adr/0053-single-rest-representation-and-required-information.md)、[生产计划](../../production_milestone_plan.md)、[覆盖表](coverage.md)与[数据约定](../../data_contract.md#rest-retention-decision-2026-10-27)同步。P2 实现现货盘口去重、表示版本和新旧读取 / 字段核对；该实现尚未完成。
+
+- [x] 研究用途未知时按独有信息、可恢复性和资源成本制定优先级；完整目标保留，受限配置明确披露，最低必需源及启用源均考核99.5%。P2落实K线形成过程的资源取舍及D06紧凑表示评估；P3清理无用途哈希、重复读取和消费流程耦合。研究与边界见[补充记录](../../research/2026-10-27/retention-and-overhead-review.md)。
+
+这是后续设计约定，不代表P2 / P3已实现；不修改原基准、原始测量或历史读取契约。P1当前验收另见[独立复审](../P1/review-20261027.md)，不能将此范围补充当成P1回归问题已修复。
