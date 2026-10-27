@@ -1,12 +1,14 @@
 # Project Handoff
 
-Next work is **independent re-review of P1-R1**, before accepting P1 or starting P2.
-The [review](milestones/P1/review-20261027.md#r1修正交付2026-10-27) records candidate
+Next work is **P2** in the [production plan](production_milestone_plan.md); it has not started.
+[Independent P1 re-review](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27) accepts fix
 `b292d0d892c8f53812749f1aeac7f637ba1a3b13`, src tree
 `d8194460b4dcc5bd45dc52209d483c9243a98306`. Both receive loops now check retirement
 immediately before receive admission, including after their scheduling yield.
-Nine new regressions, 196 focused tests and dual-platform CI run 40465389449 pass;
-that record binds the CI head and results. Independent review remains pending.
+The reviewer reran the original three reproductions and 196 focused tests, including
+nine new regressions, and verified dual-platform CI run 40465389449 at the exact fix
+commit. No additional actionable issue was found; P1 is accepted and R1 is closed.
+GitHub already has only main and no open PRs; no branch/PR deletion was needed.
 
 Original P1 implementation `ce1826b` and its measurements retain src tree
 `0a173540835c6eb78de26eab9d06d165cc4902aa`; the R1 fix does not rerun or relabel them.

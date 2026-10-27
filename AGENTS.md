@@ -30,9 +30,10 @@ drains and is verified by negative and bounded-oscillation regressions. See the
 of retained boundaries. Original measurements remain unchanged; no VPS rerun was
 needed. P0 corrections are complete. [P1 review](docs/milestones/P1/review-20261027.md)
 of 5218d9d found R1: retirement could miss the transition from a scheduling yield
-to idle recv. Candidate b292d0d checks retirement before receive admission; 9 new
-regressions, 196 focused tests and dual-platform CI pass. Independent re-review is pending before
-P1 acceptance; P2 has not started.
+to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
+before receive admission; the original three reproductions and 196 focused tests
+(including nine new regressions) pass, and exact-commit dual-platform CI is verified.
+P1 is complete; P2 is the next development phase and has not started.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains
 do not establish all-feature CPU gains or VPS capacity. Compare matched per-source
