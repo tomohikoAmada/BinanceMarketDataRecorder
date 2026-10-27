@@ -1,0 +1,93 @@
+[
+  {
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_utc": "2026-10-27T15:13:25.820554+00:00",
+    "bytes": 174870,
+    "sha256": "533716d1dfd4a505e9d4f52e3de850c6048f775b17e6c1d0bef0c169f532cdd4",
+    "representation": "downloaded text",
+    "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/recorder-p2-review-6hebjtqb/llms.txt"
+  },
+  {
+    "id": "spot-rest",
+    "url": "https://developers.binance.com/en/docs/products/spot/rest-api.md",
+    "retrieved_utc": "2026-10-27T15:54:35.269613+00:00",
+    "bytes": 38519,
+    "sha256": "25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "cm-um-integration",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md",
+    "retrieved_utc": "2026-10-27T15:54:35.225260+00:00",
+    "bytes": 12109,
+    "sha256": "7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "um-general",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md",
+    "retrieved_utc": "2026-10-27T15:54:35.256107+00:00",
+    "bytes": 19261,
+    "sha256": "7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "url": "https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/README.md",
+    "representation": "GitHub connector decoded UTF-8 file text",
+    "sha256": "2e133d9945a9263a02781369078e72805eff074680f305cd5460016471c6caad",
+    "bytes": 5282,
+    "retrieval_utc_bounds": [
+      "2026-10-27T15:13:25Z",
+      "2026-10-27T15:59:05Z"
+    ]
+  },
+  {
+    "url": "https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/python/download-trade.py",
+    "representation": "GitHub connector decoded UTF-8 file text",
+    "sha256": "9acd63d2dca09dd198949a28e00a0a54f13100a70f8b24ac932678e14c7e02b6",
+    "bytes": 4061,
+    "retrieval_utc_bounds": [
+      "2026-10-27T15:13:25Z",
+      "2026-10-27T15:59:05Z"
+    ]
+  },
+  {
+    "url": "https://github.com/ccxt/ccxt/blob/d3159f7036f93db086cd0414642132fba5401710/python/ccxt/async_support/base/throttler.py",
+    "representation": "GitHub connector decoded UTF-8 file text",
+    "sha256": "c76c5c1f7f398547dd19ea621a4cc3ad637dbc096ce996e96c9ec4be4aa13f5c",
+    "bytes": 3695,
+    "retrieval_utc_bounds": [
+      "2026-10-27T15:13:25Z",
+      "2026-10-27T15:59:05Z"
+    ]
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "also_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data",
+    "representation": "web tool result text containing matched UM/CM REST sections; not HTTP bytes",
+    "sha256": "1e70d3f2720438f80e612c7fc4408a616b9becb2a24f230c24afd85c924823f3",
+    "bytes": 10350,
+    "retrieval_utc_bounds": [
+      "2026-10-27T15:13:25Z",
+      "2026-10-27T15:59:05Z"
+    ]
+  },
+  {
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market",
+    "also_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data",
+    "representation": "web tool result text containing UM aggTrade and CM premium sections; not HTTP bytes",
+    "sha256": "2dc2d19cde45ae5b42df82bbc085111b4a1ccf20808a3e7950b2924987bd2212",
+    "bytes": 10174,
+    "retrieval_utc_bounds": [
+      "2026-10-27T15:13:25Z",
+      "2026-10-27T15:59:05Z"
+    ]
+  },
+  {
+    "url": "https://www.vldb.org/pvldb/vol8/p1792-Akidau.pdf",
+    "retrieved_utc": "2026-10-27T16:00:57.612181+00:00",
+    "bytes": 365591,
+    "sha256": "7eeb8be6b52f2a9d2eb509a8616f748831fb48fab59ef2f5e83fca7b374bea18",
+    "representation": "downloaded PDF bytes; primary VLDB 2015 paper, text inspected using web tool"
+  }
+]

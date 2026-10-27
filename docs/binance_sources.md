@@ -1,5 +1,27 @@
 # Official Binance Sources
 
+## P2 独立复审与 D06 预算研究（2026-10-28）
+
+本次先读取 Agent Native index，再核对选定产品页、整合说明及官方批量数据源码。
+下列 UTC、摘要及表示完整记录于 [P2 review-sources.json](milestones/P2/review-sources.json)；
+检索发生于 2026-10-27 UTC，报告日期为上海时间次日。没有访问账户或市场采集接口、
+执行下载代码或读取 llms-full。文档更新不授权 6 秒采样或生产运行。
+
+| 来源 | 获取 UTC | SHA-256 / 表示 | 结论 |
+| --- | --- | --- | --- |
+| [当前 index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-27T15:13:25.820554Z | `533716d1dfd4a505e9d4f52e3de850c6048f775b17e6c1d0bef0c169f532cdd4`，下载文本 | 定位 recent trades、premium bars 及 CM/UM 整合说明 |
+| [Spot REST](https://developers.binance.com/en/docs/products/spot/rest-api.md) | 2026-10-27T15:54:35.269613Z | `25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec`，下载 Markdown | 429/418 的 Retry-After 表示应等待秒数；固定 120 秒不能替代实际期限 |
+| [CM/UM 整合说明](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-27T15:54:35.225260Z | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98`，下载 Markdown | UM/CM 共用 IP 2,400 weight/min；部分跨市场路径可接受两类 symbol，但不能据此推导交割 premium 的适用规则 |
+| [UM general info](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md) | 2026-10-27T15:54:35.256107Z | `7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65`，下载 Markdown | 请求按 IP 计量，429 应退避；持续违规可能封禁 |
+| [UM REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[CM REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data) | 2026-10-27T15:13:25Z–15:59:05Z | `1e70d3f2720438f80e612c7fc4408a616b9becb2a24f230c24afd85c924823f3`，组合 web 工具摘录文本，非 HTTP 原文 | recent trades 的 weight=5、limit≤1,000，无翻页参数；UM historicalTrades 需 API Key，不能引入本项目 |
+| [UM WS](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)、[CM premium REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data) | 2026-10-27T15:13:25Z–15:59:05Z | `2dc2d19cde45ae5b42df82bbc085111b4a1ccf20808a3e7950b2924987bd2212`，组合 web 工具摘录文本，非 HTTP 原文 | aggTrade 是聚合流，不能反推逐笔；CM premium 页未明确所有交割产品的适用规则，R2 保持开放 |
+| [官方批量文件 README](https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/README.md) | 2026-10-27T15:13:25Z–15:59:05Z | `2e133d9945a9263a02781369078e72805eff074680f305cd5460016471c6caad`，connector 解码文件文本 | 日文件次日发布，带文件校验；所列合约 trades 列未列 isRPITrade，实际产品/字段覆盖待验证 |
+| [官方下载源码](https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/python/download-trade.py) | 2026-10-27T15:13:25Z–15:59:05Z | `9acd63d2dca09dd198949a28e00a0a54f13100a70f8b24ac932678e14c7e02b6`，connector 解码文件文本 | 可按产品、日期获取文件及校验文件；仅阅读，未运行或整仓引入 |
+
+[研究结论](milestones/P2/d06-budget-research-20261028.md)区分源文档事实和方案推断：
+按产品分配频率和日文件补充是候选，不是已验证的数据完整性保证。文件校验不证明
+交易所逐笔发布完整，也不能替代实时接收时间或连续性。
+
 ## Retention discussion: candle boundaries and recent trades — 2026-10-27
 
 Evidence for the retention discussion and subsequent plan update; no endpoint implementation.

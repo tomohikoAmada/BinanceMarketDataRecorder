@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "venue": "spot",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    },
+    {
+      "venue": "spot",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    },
+    {
+      "venue": "usdm",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    },
+    {
+      "venue": "usdm",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    },
+    {
+      "venue": "coinm",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    },
+    {
+      "venue": "coinm",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 120.0,
+      "failure_observation_retained": true,
+      "passed": false
+    }
+  ],
+  "reviewed_commit": "e73068b06b6cde118af0f0c7293e2dc41654d67b",
+  "exit_code": 1,
+  "network": "fake client; no network",
+  "clock": "fixed request-budget clock; no wall-clock waits"
+}

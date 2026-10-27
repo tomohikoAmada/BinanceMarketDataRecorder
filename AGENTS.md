@@ -35,7 +35,13 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P1 is complete. P2 is implemented locally but not fully accepted; P3 has not started.
+P1 is complete. P2 independent review of e73068b is NOT ACCEPTED; P3 has not started.
+See [P2 review](docs/milestones/P2/review-20261028.md). Existing R1 budget and R2
+CM dated premium applicability remain open; new R4 ignores REST Retry-After and
+blocks for a fixed 120 seconds. Fix R4 using the existing cooldown semantics.
+The D06 research recommends comparing explicit per-product cadences and validating
+official daily trade files as a separate delayed supplement; neither is approved
+as a scope change. Historical facts cannot replace receive times or live coverage.
 Keep the 1s D06 default until the owner resolves its full-scope request-budget conflict.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains

@@ -1,6 +1,14 @@
 # Project Handoff
 
-Current work is **P2**, implementation and local verification delivered but not fully accepted.
+Current work is **P2**, independently reviewed and **not accepted** at e73068b.
+The [2026-10-28 review](milestones/P2/review-20261028.md) adds R4: REST 429/418
+ignores Retry-After and always blocks 120 seconds. Six offline reproductions fail
+despite 2,314 full-suite and 314 focused tests passing. Fix R4 using existing
+cooldown semantics, then re-review the final candidate with dual-platform CI.
+Completed implementation items are checked in the production plan. The
+[D06 study](milestones/P2/d06-budget-research-20261028.md) recommends evaluating
+explicit per-product frequency allocation and a separate official daily-file
+supplement; no sampling change or delayed-data contract has been approved.
 See the [P2 result](milestones/P2/README.md), source mapping, fixtures and ADR-0054.
 The full current BTC/ETH directory requires ~5,829 derivative weight/min with D06 at 1s,
 above the Recorder share and exchange pool. No unapproved cadence reduction was made;
@@ -16,7 +24,7 @@ immediately before receive admission, including after their scheduling yield.
 The reviewer reran the original three reproductions and 196 focused tests, including
 nine new regressions, and verified dual-platform CI run 40465389449 at the exact fix
 commit. No additional actionable issue was found; P1 is accepted and R1 is closed.
-GitHub already has only main and no open PRs; no branch/PR deletion was needed.
+At the P1 closeout GitHub had only main and no open PRs; no branch/PR deletion was needed.
 
 Original P1 implementation `ce1826b` and its measurements retain src tree
 `0a173540835c6eb78de26eab9d06d165cc4902aa`; the R1 fix does not rerun or relabel them.
