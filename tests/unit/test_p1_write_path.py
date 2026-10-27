@@ -23,6 +23,8 @@ def test_batch_exact_bytes_metadata_transitions_and_single_syscall(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # Test append/fsync accounting independently of host scheduling delays.
+    monkeypatch.setattr("binance_market_data_recorder.spool.writer.time.monotonic", lambda: 1000.0)
     events = [
         _envelope(
             i,
@@ -195,10 +197,14 @@ def test_writer_portable_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         assert _read_envelopes(writer.path) == events
 
 
-def test_spool_rotation_and_progress_distinguish_write_from_sync(tmp_path: Path) -> None:
+def test_spool_rotation_and_progress_distinguish_write_from_sync(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from binance_market_data_recorder.spool.stream import StreamSpool
     from binance_market_data_recorder.spool.writer import RotationPolicy
 
+    monkeypatch.setattr("binance_market_data_recorder.spool.writer.time.monotonic", lambda: 1000.0)
     layout = ensure_storage_layout(tmp_path)
     observations = []
     with Catalog(layout.catalog) as catalog:
