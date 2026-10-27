@@ -20,12 +20,79 @@ persistent gap evidence, regardless of whether the close was intentional.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from enum import StrEnum
 
 from websockets.exceptions import ConnectionClosed
 
 DEFAULT_RECEIPT_BYTE_CAPACITY = 64 * 1024 * 1024
+
+
+@dataclass
+class ConnectionReceiveControl:
+    waiting_for_frame: bool = False
+    retirement: str | None = None
+
+    async def receive[T](self, receive: Callable[[], Awaitable[T]]) -> T:
+        self.waiting_for_frame = True
+        try:
+            return await receive()
+        finally:
+            self.waiting_for_frame = False
+
+
+async def run_connection_receiver(
+    receiver: Callable[[ConnectionReceiveControl], Awaitable[str]],
+    *,
+    stop: asyncio.Event,
+    writer_task: asyncio.Task[None],
+    rotation_seconds: float,
+    shutdown: asyncio.Event | None = None,
+) -> str:
+    """One receive task and control wait per connection, never per message.
+
+    Retire an idle recv by cancellation. An already received frame instead
+    finishes its bounded handoff, including the existing post-close stop path.
+    The writer remains owned by its caller and storage failures take priority.
+    """
+
+    control = ConnectionReceiveControl()
+
+    async def run_receiver() -> str:
+        return await receiver(control)
+
+    receive_task = asyncio.create_task(run_receiver())
+    stop_task = asyncio.create_task(stop.wait())
+    shutdown_task = None if shutdown is None else asyncio.create_task(shutdown.wait())
+    owned: list[asyncio.Task[object]] = [receive_task, stop_task]
+    if shutdown_task is not None:
+        owned.append(shutdown_task)
+    try:
+        done, _ = await asyncio.wait(
+            {*owned, writer_task}, timeout=rotation_seconds,
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        if writer_task in done:
+            await writer_task
+            raise RuntimeError("Raw writer stopped unexpectedly")
+        if receive_task in done:
+            return await receive_task
+        control.retirement = (
+            "stopped" if stop.is_set() else
+            "server_shutdown" if shutdown is not None and shutdown.is_set() else
+            "planned_rotation"
+        )
+        if control.waiting_for_frame:
+            receive_task.cancel()
+            await asyncio.gather(receive_task, return_exceptions=True)
+            return control.retirement
+        return await receive_task
+    finally:
+        for task in owned:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*owned, return_exceptions=True)
 
 #: Reconnect boundary reasons that require persistent gap evidence.
 RECONNECT_REASONS = frozenset(

@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from hashlib import sha256
 from types import MappingProxyType
@@ -181,6 +181,7 @@ class RawChunkWriter:
         self._state = _WriterState.OPEN_CLEAN
         self._closed = False
         self._record_count = 0
+        self._synced_record_count = 0
         self._bytes_written = 0
         self._verified_bytes = 0
         self._raw_digest = sha256()
@@ -225,6 +226,12 @@ class RawChunkWriter:
     @property
     def record_count(self) -> int:
         return self._record_count
+
+    @property
+    def synced_record_count(self) -> int:
+        """Frames acknowledged by a successful fsync, distinct from appended frames."""
+
+        return self._synced_record_count
 
     @property
     def bytes_written(self) -> int:
@@ -305,7 +312,7 @@ class RawChunkWriter:
         self._previous_capture_flags = prepared.capture_flags
         if (
             self._statistics.record_count != self._record_count
-            or self._verified_bytes != self._bytes_written
+            or self._verified_bytes > self._bytes_written
         ):
             raise RuntimeError("incremental Raw evidence invariant failed")
 
@@ -317,6 +324,8 @@ class RawChunkWriter:
         self._write_all(prepared.exact_bytes)
         try:
             self._commit_prepared_frame(prepared)
+            if self._verified_bytes != self.bytes_written:
+                raise RuntimeError("incremental Raw evidence invariant failed")
             if self.operation_observer is not None:
                 self.operation_observer(
                     "write_latency_ns", time.perf_counter_ns() - started
@@ -327,6 +336,88 @@ class RawChunkWriter:
         now = time.monotonic()
         self.sync_if_due(now_monotonic=now)
         return ordinal
+
+    def append_batch(self, envelopes: Sequence[EventEnvelope]) -> tuple[int, ...]:
+        """Append a bounded prefix with one vectored write (plus short-write retries).
+
+        Preparation owns one immutable snapshot per frame. Nothing is committed
+        until ALL bytes in this group have been written; ambiguous partial writes
+        poison the writer and recovery owns the physical tail. Rotation retains
+        its per-frame size boundary. A group owns at most 256 frames and 1 MiB
+        plus one maximum frame, independently of the caller's input length.
+        """
+
+        self._require_open_clean()
+        if not envelopes:
+            return ()
+        # The explicit sync-each-frame setting retains its original semantics.
+        if self.durability_interval_seconds == 0:
+            before = self.bytes_written
+            self.append(envelopes[0])
+            return (self.bytes_written - before,)
+        prepared: list[_PreparedFrame] = []
+        byte_count = 0
+        for envelope in envelopes[:256]:
+            frame = self._prepare_frame(envelope)
+            if prepared:
+                previous = prepared[-1]
+                frame = replace(
+                    frame,
+                    expected_ordinal=self._record_count + len(prepared),
+                    connection_transition=(
+                        (
+                            previous.snapshot.connection_id,
+                            frame.snapshot.connection_id,
+                            previous.capture_flags,
+                            frame.capture_flags,
+                        )
+                        if previous.snapshot.connection_id != frame.snapshot.connection_id
+                        else None
+                    ),
+                )
+            prepared.append(frame)
+            byte_count += len(frame.exact_bytes)
+            if (
+                byte_count >= 1024 * 1024
+                or self.bytes_written + byte_count >= self.rotation.bytes
+                or self.should_rotate()
+                or time.monotonic() - self._last_sync_monotonic
+                >= self.durability_interval_seconds
+            ):
+                break
+        started = time.perf_counter_ns()
+        try:
+            self._write_vectors([memoryview(frame.exact_bytes) for frame in prepared])
+            for frame in prepared:
+                self._commit_prepared_frame(frame)
+            if self._verified_bytes != self.bytes_written:
+                raise RuntimeError("incremental Raw batch evidence invariant failed")
+            if self.operation_observer is not None:
+                self.operation_observer("write_latency_ns", time.perf_counter_ns() - started)
+        except BaseException:
+            self._poison()
+            raise
+        self.sync_if_due()
+        return tuple(len(frame.exact_bytes) for frame in prepared)
+
+    def _write_vectors(self, views: list[memoryview]) -> None:
+        if not hasattr(os, "writev"):
+            self._write_all(b"".join(views))
+            return
+        # POSIX guarantees at least 16 iovecs; use the actual platform limit.
+        vector_limit = max(1, int(os.sysconf("SC_IOV_MAX")))
+        while views:
+            try:
+                written = os.writev(self._descriptor, views[:vector_limit])
+            except InterruptedError:
+                continue
+            if written <= 0:
+                raise OSError("writev returned no progress")
+            self._bytes_written += written
+            while views and written >= len(views[0]):
+                written -= len(views.pop(0))
+            if written:
+                views[0] = views[0][written:]
 
     def sync_if_due(self, *, now_monotonic: float | None = None) -> bool:
         """Fsync when due; a spool loop calls this even when the stream is idle."""
@@ -352,6 +443,7 @@ class RawChunkWriter:
         except BaseException:
             self._poison()
             raise
+        self._synced_record_count = self._record_count
         self._last_sync_monotonic = time.monotonic()
 
     def should_rotate(self, *, now_monotonic: float | None = None) -> bool:

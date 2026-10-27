@@ -39,6 +39,12 @@ class SpoolOperationStats:
     seal_max_ns: int
 
 
+@dataclass(frozen=True, slots=True)
+class PersistenceProgress:
+    written_frames: int
+    synchronized_frames: int
+
+
 class StreamSpool:
     """One homogeneous stream's queue and current chunk; no network ownership."""
 
@@ -85,6 +91,10 @@ class StreamSpool:
             "seal_latency_ns": 0,
         }
         self._operation_max_ns = dict(self._operation_last_ns)
+        self._written_frames = 0
+        self._synchronized_frames = 0
+        self._writer_written = 0
+        self._writer_synchronized = 0
 
     def enqueue(self, envelope: EventEnvelope) -> None:
         self.queue.put_nowait(envelope)
@@ -112,9 +122,24 @@ class StreamSpool:
             writer_kwargs["chunk_id"] = chunk_id
         if created_at_utc_ns is not None:
             writer_kwargs["created_at_utc_ns"] = created_at_utc_ns
-        return self._writer_factory(
+        writer = self._writer_factory(
             **writer_kwargs,
         )
+        self._writer_written = self._writer_synchronized = 0
+        return writer
+
+    def _observe_progress(self, writer: RawChunkWriter) -> None:
+        with self._operation_lock:
+            self._written_frames += writer.record_count - self._writer_written
+            self._synchronized_frames += writer.synced_record_count - self._writer_synchronized
+            self._writer_written = writer.record_count
+            self._writer_synchronized = writer.synced_record_count
+
+    def persistence_progress(self) -> PersistenceProgress:
+        """Conservative completed-operation counters; memory receipt is separate."""
+
+        with self._operation_lock:
+            return PersistenceProgress(self._written_frames, self._synchronized_frames)
 
     def _observe_duration(self, name: str, duration_ns: int) -> None:
         with self._operation_lock:
@@ -149,6 +174,7 @@ class StreamSpool:
                     self._seal_current()
                 else:
                     self._writer.sync_if_due()
+                    self._observe_progress(self._writer)
             return False
         writer_created = self._writer is None
         if writer_created:
@@ -161,6 +187,7 @@ class StreamSpool:
         try:
             writer.append(envelope)
         finally:
+            self._observe_progress(writer)
             self._observe_duration(
                 "append_latency_ns", time.perf_counter_ns() - append_started
             )
@@ -173,15 +200,56 @@ class StreamSpool:
 
     def drain_all(self) -> int:
         count = 0
-        while self.drain_one():
-            count += 1
-        return count
+        while True:
+            batch: list[EventEnvelope] = []
+            payload_bytes = 0
+            while len(batch) < 256 and payload_bytes < 1024 * 1024:
+                envelope = self.queue.get_nowait()
+                if envelope is None:
+                    break
+                batch.append(envelope)
+                payload_bytes += len(envelope.raw_payload)
+            if not batch:
+                if self._writer is not None:
+                    if self._writer.should_rotate():
+                        self._seal_current()
+                    else:
+                        self._writer.sync_if_due()
+                        self._observe_progress(self._writer)
+                return count
+            offset = 0
+            while offset < len(batch):
+                writer_created = self._writer is None
+                if writer_created:
+                    self._writer = self._new_writer()
+                writer = self._writer
+                if writer is None:
+                    raise RuntimeError("stream writer was not created")
+                started = time.perf_counter_ns()
+                try:
+                    sizes = writer.append_batch(batch[offset:])
+                finally:
+                    self._observe_progress(writer)
+                    self._observe_duration("append_latency_ns", time.perf_counter_ns() - started)
+                header_bytes = writer.bytes_written - sum(sizes) if writer_created else 0
+                for index, size in enumerate(sizes):
+                    if self._event_observer is not None:
+                        self._event_observer(
+                            batch[offset + index],
+                            size + (header_bytes if index == 0 else 0),
+                            self.queue.depth + len(batch) - offset - index - 1,
+                        )
+                offset += len(sizes)
+                count += len(sizes)
+                if writer.should_rotate():
+                    self._seal_current()
 
     def sync(self) -> None:
         """Make the current partial durable before committing external progress."""
 
         if self._writer is not None:
             self._writer.sync()
+            self._observe_progress(self._writer)
 
     def _seal_current(
         self,
@@ -251,6 +319,7 @@ class StreamSpool:
                 writer.abort()
             raise
         finally:
+            self._observe_progress(writer)
             self._writer = None
             self._observe_duration(
                 "seal_latency_ns", time.perf_counter_ns() - seal_started

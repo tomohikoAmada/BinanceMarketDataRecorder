@@ -59,7 +59,9 @@ from ..spot.websocket import ReceivedFrame, ReconnectBackoff
 from ..websocket_common import (
     DEFAULT_RECEIPT_BYTE_CAPACITY,
     RECONNECT_REASONS,
+    ConnectionReceiveControl,
     release_writer_preserving_errors,
+    run_connection_receiver,
     run_owned_blocking_call,
     websocket_disconnect_log_fields,
 )
@@ -347,7 +349,12 @@ class UsdMStreamCollector:
     def _queue_fields(self) -> dict[str, object]:
         stats = self._receipts.snapshot()
         operations = self.spool.operation_stats()
+        progress = self.spool.persistence_progress()
         return {
+            "raw_written_frames": progress.written_frames,
+            "raw_synchronized_frames": progress.synchronized_frames,
+            "spool_queued_bytes": self.spool.queue.queued_bytes,
+            "spool_byte_capacity": self.spool.queue.byte_capacity,
             "receipt_queue_capacity": stats.capacity,
             "receipt_queue_depth": stats.depth,
             "receipt_queue_high_watermark": stats.high_watermark,
@@ -708,9 +715,13 @@ class UsdMStreamCollector:
             except TimeoutError:
                 await _run_owned_blocking_call(self.spool.drain_all)
                 continue
+            batch_bytes = len(batch[0].raw_payload)
             for _ in range(min(255, self.spool.queue.capacity - 1)):
+                if batch_bytes >= 1024 * 1024:
+                    break
                 try:
                     batch.append(self._receipts.get_nowait())
+                    batch_bytes += len(batch[-1].raw_payload)
                 except asyncio.QueueEmpty:
                     break
             persisted = await self._persist_batch(batch)
@@ -748,44 +759,12 @@ class UsdMStreamCollector:
         writer_task: asyncio.Task[None],
         session_restart: asyncio.Event | None = None,
     ) -> str:
-        deadline = asyncio.get_running_loop().time() + self.planned_rotation_seconds
-        while True:
-            remaining = max(0.0, deadline - asyncio.get_running_loop().time())
-            receive_task = asyncio.create_task(self._receive_once(websocket, connection_id))
-            stop_task = asyncio.create_task(stop.wait())
-            try:
-                done, pending = await asyncio.wait(
-                    {receive_task, stop_task, writer_task},
-                    timeout=remaining,
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-            except BaseException:
-                for cleanup_task in (receive_task, stop_task):
-                    if not cleanup_task.done():
-                        cleanup_task.cancel()
-                await asyncio.gather(
-                    receive_task,
-                    stop_task,
-                    return_exceptions=True,
-                )
-                raise
-            cancelled = [task for task in pending if task is not writer_task]
-            for cancelled_task in cancelled:
-                cancelled_task.cancel()
-            if cancelled:
-                await asyncio.gather(*cancelled, return_exceptions=True)
-            if writer_task in done:
-                if receive_task in done:
-                    await asyncio.gather(receive_task, return_exceptions=True)
-                await writer_task
-                raise RuntimeError("USD-M Raw writer stopped unexpectedly")
-            if not done:
-                receive_task.cancel()
-                await websocket.close(code=1000, reason="planned 24-hour rotation")
-                return "planned_rotation"
-            if receive_task in done:
+        async def receive_frames(control: ConnectionReceiveControl) -> str:
+            while True:
                 try:
-                    receipt = receive_task.result()
+                    receipt = await control.receive(
+                        lambda: self._receive_once(websocket, connection_id)
+                    )
                     await self._accept(receipt, writer_task, stop)
                     # A ready frame and stop can complete together. Preserve
                     # this frame, then stop instead of letting continuous recv
@@ -866,21 +845,38 @@ class UsdMStreamCollector:
                     if post_close_outcome == "session_restart":
                         return "session_restart"
                     return "graceful_shutdown"
-                except (WebSocketException, OSError, TimeoutError):
-                    if self._is_session_restart(session_restart):
-                        await websocket.close(code=1000, reason="collector shutdown")
-                        return "session_restart"
-                    if stop.is_set():
-                        await websocket.close(code=1000, reason="collector shutdown")
-                        return "graceful_shutdown"
-                    raise
-                continue
-            if stop_task in done and stop_task.result():
-                receive_task.cancel()
+
+                if control.retirement is not None:
+                    return control.retirement
+                # Yield without creating a Task: already-buffered recv() may
+                # otherwise starve stop, the writer and connection rotation.
+                await asyncio.sleep(0)
+
+        try:
+            outcome = await run_connection_receiver(
+                receive_frames,
+                stop=stop,
+                writer_task=writer_task,
+                rotation_seconds=self.planned_rotation_seconds,
+            )
+        except (WebSocketException, OSError, TimeoutError):
+            if self._is_session_restart(session_restart):
                 await websocket.close(code=1000, reason="collector shutdown")
-                if self._is_session_restart(session_restart):
-                    return "session_restart"
+                return "session_restart"
+            if stop.is_set():
+                await websocket.close(code=1000, reason="collector shutdown")
                 return "graceful_shutdown"
+            raise
+
+        if outcome == "stopped":
+            await websocket.close(code=1000, reason="collector shutdown")
+            return (
+                "session_restart" if self._is_session_restart(session_restart)
+                else "graceful_shutdown"
+            )
+        if outcome == "planned_rotation":
+            await websocket.close(code=1000, reason="planned 24-hour rotation")
+        return outcome
 
     @staticmethod
     def _is_session_restart(session_restart: asyncio.Event | None) -> bool:

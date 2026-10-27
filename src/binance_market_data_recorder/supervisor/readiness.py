@@ -1,17 +1,9 @@
-"""单 market 实例的线程安全健康与 order-book readiness 证据。
+"""Thread-safe capture readiness from written events and a depth sequence bridge.
 
-CollectorReadiness 把控 Collector 生命周期:Collector 仅在全部三条核心流
-(diff_depth、agg_trade、book_ticker)均已连接、至少各持久化了一个事件、
-depth snapshot 已持久写入且 LocalBookReconstructor 已同步时才视为 "ready"。
-
-线程安全:所有公共方法获取 RLock,因为生命周期观察者在 WebSocket 回调中运行
-(通过 asyncio.to_thread drain 单线程化),而 snapshot 循环可能从另一个 asyncio
-任务读取 readiness 状态。RLock 涵盖整个 Snapshot + Book 状态;锁内的单个计数器
-更新是原子的,因为 GIL 下的 Python dict/set 操作是串行的。
-
-在 restart_bootstrap()(resync 请求后调用)上重建 readiness 时从零开始。
-旧的 LocalBookReconstructor 被丢弃并创建新实例,因此缺口之前的任何已缓冲 diff
-将丢失。这是有意为之:缺口之前的深度无法重放,因为序列缺口是永久的。
+P1/ADR-0052 removes full price-level reconstruction from capture. The legacy
+orderbook_synchronized property denotes the snapshot-backed sequence bridge;
+public status explicitly says full_orderbook_evaluated=false. Complete books
+and their price-quality audits remain available through offline consumers.
 """
 
 from __future__ import annotations
@@ -22,12 +14,11 @@ from threading import RLock
 
 from ..domain.event import EventEnvelope, Market
 from ..orderbook.model import OrderBookDataError
-from ..orderbook.parser import depth_update_from_envelope, snapshot_from_envelope
 from ..orderbook.reconstructor import (
-    LocalBookReconstructor,
     QualityAudit,
     SynchronizeResult,
 )
+from .depth_continuity import DepthContinuity
 
 CORE_STREAMS = frozenset({"diff_depth", "agg_trade", "book_ticker"})
 
@@ -66,6 +57,9 @@ class ReadinessSnapshot:
             "persisted_streams": sorted(self.persisted_streams),
             "snapshot_persisted": self.snapshot_persisted,
             "orderbook_synchronized": self.orderbook_synchronized,
+            "depth_sequence_synchronized": self.orderbook_synchronized,
+            "full_orderbook_evaluated": False,
+            "capture_health_contract": "capture-depth-sequence.v1",
             "event_count": self.event_count,
             "last_receive_time_utc_ns": self.last_receive_time_utc_ns,
             "failure": self.failure,
@@ -74,7 +68,7 @@ class ReadinessSnapshot:
 
 
 class CollectorReadiness:
-    """Build readiness only from persisted core events and official snapshot sync."""
+    """Build capture health from written core events and the snapshot sequence bridge."""
 
     def __init__(
         self,
@@ -102,12 +96,8 @@ class CollectorReadiness:
         self._audit_observer = audit_observer
         self._bootstrap_buffer_capacity = bootstrap_buffer_capacity
         self._bootstrap_overflow_observer = bootstrap_overflow_observer
-        self._book = LocalBookReconstructor(
-            market,
-            symbol,
-            audit_observer=audit_observer,
-            bootstrap_buffer_capacity=bootstrap_buffer_capacity,
-            audit_history_limit=256,
+        self._book = DepthContinuity(
+            market, capacity=bootstrap_buffer_capacity, audit_observer=audit_observer
         )
         self._lock = RLock()
 
@@ -124,16 +114,21 @@ class CollectorReadiness:
 
     def observe_persisted(self, envelope: EventEnvelope) -> None:
         self._check_identity(envelope)
-        if envelope.stream not in CORE_STREAMS or "malformed" in envelope.capture_flags:
+        if envelope.stream not in CORE_STREAMS:
             return
         with self._lock:
+            if "malformed" in envelope.capture_flags:
+                if envelope.stream == "diff_depth":
+                    self._book.invalidate(envelope.receive_time_utc_ns)
+                return
             self._persisted.add(envelope.stream)
             self._event_count += 1
             self._last_receive_time_utc_ns = envelope.receive_time_utc_ns
             if envelope.stream == "diff_depth":
                 try:
-                    self._book.offer(depth_update_from_envelope(envelope))
+                    self._book.offer(envelope)
                 except OrderBookDataError:
+                    self._book.invalidate(envelope.receive_time_utc_ns)
                     return
                 if (
                     self._book.bootstrap_buffer_overflowed
@@ -146,10 +141,9 @@ class CollectorReadiness:
         with self._lock:
             self._snapshot_persisted = True
             try:
-                snapshot = snapshot_from_envelope(envelope)
+                return self._book.synchronize(envelope)
             except OrderBookDataError:
                 return SynchronizeResult.NEED_MORE_EVENTS
-            return self._book.synchronize(snapshot)
 
     def record_failure(self, reason: str) -> None:
         if not reason:
@@ -165,12 +159,9 @@ class CollectorReadiness:
             self._persisted.clear()
             self._snapshot_persisted = False
             self._failure = None
-            self._book = LocalBookReconstructor(
-                self._market,
-                self._symbol,
+            self._book = DepthContinuity(
+                self._market, capacity=self._bootstrap_buffer_capacity,
                 audit_observer=self._audit_observer,
-                bootstrap_buffer_capacity=self._bootstrap_buffer_capacity,
-                audit_history_limit=256,
             )
 
     def snapshot(self) -> ReadinessSnapshot:
@@ -191,7 +182,7 @@ class CollectorReadiness:
 
     @property
     def reliable_update_id(self) -> int | None:
-        """Expose only the fully bridged and applied local-book update ID."""
+        """Expose the bridged depth sequence ID only while continuity is valid."""
 
         with self._lock:
             return self._book.reliable_update_id

@@ -121,7 +121,7 @@ def _parse_metadata(
         for name in ("b", "B", "a", "A"):
             _text(decoded, name)
         return None, None, {"u": update_id}, ()
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError):
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError, RecursionError):
         return None, None, {}, ("malformed",)
 
 

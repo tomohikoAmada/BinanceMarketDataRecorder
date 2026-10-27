@@ -90,7 +90,11 @@ class MetricsRecorder:
         return f"{self.collector_instance_id}:{uuid4()}"
 
     def _aggregate(self, utc_date: str, market: str, stream: str) -> MetricAggregate:
-        return self._aggregates.setdefault((utc_date, market, stream), MetricAggregate())
+        key = (utc_date, market, stream)
+        aggregate = self._aggregates.get(key)
+        if aggregate is None:
+            aggregate = self._aggregates[key] = MetricAggregate()
+        return aggregate
 
     def _rollover_if_needed(self, utc_date: str) -> None:
         if self._latest_utc_date is None:

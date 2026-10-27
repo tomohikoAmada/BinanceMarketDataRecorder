@@ -49,3 +49,5 @@ ADRs are immutable after acceptance. Superseding decisions add a new ADR and
 link both records.
 
 - [ADR-0051: Production per-source continuity and new-file verification](0051-production-continuity-and-incremental-verification.md) — current P0–P6 acceptance authority.
+
+- [ADR-0052: Bounded Raw batches and sequence-only capture health](0052-bounded-raw-batches-and-sequence-only-capture-health.md) — P1 implementation; Raw v1 and archive contracts unchanged.
