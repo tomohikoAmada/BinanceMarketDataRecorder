@@ -38,3 +38,15 @@
 R2补充验证及对应CI见[r2-checks](corrections-20261026/r2-checks.json)；原checks及测量文件保留。
 
 P1从包含修正的main开始，只缩短Raw接收→落盘通路：当前已有批量线程移交，要实测真正批量系统调用、减少重复编码/任务创建和派生耦合。保留Raw/SQLite/校验兼容、有界缓冲、明确持久化进度、写失败传播和正常排空。用修正后的同口径输入交错A/B，报告snapshot/chunk数量、波动和资源差异；无实测收益的复杂化不保留。本任务不启动P1、P2或生产资格长跑。
+
+## P1 contract application (2026-10-27)
+
+P1 adopts [ADR-0052](../../adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)
+and the [P1 data/progress contract](../../data_contract.md#p1-capture-and-progress-contract-2026-10-27).
+Capture health is now a bounded snapshot/sequence bridge, explicitly not full-book
+quality; append and fsync progress are separate. Raw v1 and archive readback/
+retirement rules are unchanged. These contracts govern the P1 candidate and its
+comparisons; the retained P0 runs, original readiness fields and v4 classification
+are not rewritten or given new production credit. P1 measurements use the same
+fixed input, instrumentation and classifier on both sides, with local machine
+results identified separately from the preserved VPS baseline.

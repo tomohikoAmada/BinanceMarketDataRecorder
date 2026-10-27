@@ -1,48 +1,47 @@
 # Project Handoff
 
-Read the [production plan](production_milestone_plan.md), [P0 result](milestones/P0/README.md),
-[coverage inventory](milestones/P0/coverage.md), and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
-R1/R3/R4 passed PR #87 review; the remaining R2 classifier fix is complete. See the
-[review closure](milestones/P0/review-20261026.md#r2补充修正2026-10-27) and
-[appended v4 classification](milestones/P0/corrections-20261026/r2-reclassification.json).
-The classifier retains each source's peak history across partial drains: at least
-two new highs beyond the starting value, with the endpoint still above the first
-new high, is NON_STEADY. Repeated bounded peaks or recovery into the earlier range
-do not qualify. Tests cover both, including a final partial drain; tail completion
-cannot revise a window's verdict. This finite five-boundary check is a comparison
-screen, not proof of long-run boundedness. Capture/timing instruments and producer
-results are unchanged; no new VPS run was needed. The unprofiled run remains
-STEADY; its profile remains NON_STEADY with additional growth reasons. P1 has not
-started. Compare matched per-source window work, tail and background work in P1
-A/B, using the same instrumentation and classifier on both sides.
+Next work is **P2** in the [production plan](production_milestone_plan.md).
+[P1](milestones/P1/README.md) is implemented in `ce1826b8a8fa9057783dfe035596332c8c6d67d8`;
+its runtime src tree is `0a173540835c6eb78de26eab9d06d165cc4902aa`. Later result,
+test and documentation commits do not change that runtime identity. Follow
+[ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) and
+[ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md).
 
-Physical order, write/fsync accounting and output protection retain their accepted
-contracts. D11 U/C sampling semantics remain disclosed separately; USD-M
-latest/largest is unresolved and cannot govern completeness, deduplication or
-derived totals.
+P1 preserves Raw v1/SQLite/read compatibility, exact payload/time/provenance,
+periodic fsync and normal drain. The existing batch thread handoff now reaches
+bounded vectored writes. Each connection owns one receive loop; full book
+reconstruction no longer gates capture. Readiness declares sequence-only health
+and `full_orderbook_evaluated=false`; `orderbook_synchronized` is a compatibility
+alias for the snapshot-backed sequence bridge. Written and synchronized progress
+are distinct. Malformed received bytes remain Raw; malformed depth invalidates
+sequence health after saving. Storage failures remain fatal and retain evidence.
 
-P0 preserved the original local changes and research in `d81e7d2`, then merged the
-accepted `origin/main=01d7421` into `113cdb3`. Existing accepted fixes include USD-M
-E/T time semantics, bounded owned ingress, stop priority, sparse OI evaluated windows,
-shared-IP API budgets, independent daily-report process and WebSocket diagnostics.
-Do not repair the pre-merge version again. Installed production source `20e57f3`
-remains distinct; the isolated P0 benchmark is not a production installation.
+Local A/B/B/A uses unchanged P0 fixtures/instrumentation/classifier. All four
+all-feature rounds pass physical Raw/order/fsync reconciliation, but A4 and B2
+are NON_STEADY and background work differs; no all-feature CPU gain is established.
+Ten-asset / twenty-product / sixty-core-stream fixtures pass, with bounded queues
+and normal drain. The separate identical-byte writer comparison shows an 11.82%
+median wall reduction locally, not a VPS throughput or long-run capacity claim.
+See P1's single result record for raw measurements, checks, limitations and rerun commands.
 
-For P1, retain Raw v1/SQLite/read compatibility, exact payload/time/provenance,
-periodic fsync and normal drain. Current writer already batches thread handoff;
-measure actual syscall batching, avoid per-message task churn, and detach expensive
-derived computation. Keep queue/persistence accounting honest and bounded. Repeat
-P0 fixed input/configuration for A/B and compare exact bytes/order/counts. No new
-market adapter, generic fault framework, historical data migration or production run
-is required by P1. Product/raw HTTP changes belong to P2; per-source monitoring and
-background verifier integration belong to P3.
+P2 implements explicit market/contract identities and the
+[P0 coverage inventory](milestones/P0/coverage.md), including COIN-M/delivery and
+raw HTTP body capture. Do not treat ten current Spot/USD-M products configured
+by symbol as completion of that expanded coverage. D11 USD-M latest/largest
+sampling semantics remain unresolved; preserve the disclosed conflict rather than
+assuming completeness, deduplication or derived liquidation totals. P3 owns
+per-source availability, durable new-file verification and background recovery.
 
-Use [developer guide](developer_guide.md) for the code map and local checks.
-Use a temporary test root; leave production data, evidence and old venvs intact.
-No inherited run duration or prerequisite private OS protection window, repeated
-whole-history scan, helper receipt chain or model signature applies to P0–P6.
-Archive destination readback/deletion authorization remains required.
+P0 R1/R3/R4 and the R2 v4 classifier correction are complete; original measurements
+and the NON_STEADY diagnostic profile remain preserved. See [P0](milestones/P0/README.md)
+and its [review closure](milestones/P0/review-20261026.md#r2补充修正2026-10-27).
+The installed-source historical observation remains `20e57f3`, distinct from this
+local candidate. P1 made no deployment, VPS service change or production-data access.
+No P4–P6 duration, expanded-market production credit or new power-loss guarantee
+has been earned. Production readiness remains NO.
 
-Historical handoffs and failed attempts remain in
+Use [developer guide](developer_guide.md) for the code map/checks and a temporary
+test root. Preserve production data, evidence and old environments. Archive
+readback/deletion authorization remains required. Historical handoffs remain in
 [pre-P0 history](history/pre-P0-PROJECT_HANDOFF.md) and
-[earlier history](PROJECT_HANDOFF_HISTORY.md); their next-action instructions are superseded.
+[earlier history](PROJECT_HANDOFF_HISTORY.md); their operations are superseded.

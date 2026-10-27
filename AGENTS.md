@@ -15,7 +15,10 @@ PR #87 review; the remaining R2 classifier fix retains peak history through part
 drains and is verified by negative and bounded-oscillation regressions. See the
 [P0 review](docs/milestones/P0/review-20261026.md) and appended v4 classification
 of retained boundaries. Original measurements remain unchanged; no VPS rerun was
-needed. P0 corrections are complete; P1 has not started. Compare matched per-source
+needed. P0 corrections and [P1](docs/milestones/P1/README.md) are complete; P2 has not started.
+P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
+and evaluates sequence-only capture health under ADR-0052. Local writer gains
+do not establish all-feature CPU gains or VPS capacity. Compare matched per-source
 timed work and tail; the NON_STEADY profile remains diagnostic only.
 Use 2h checkpoints within 1/2-asset 24h runs, measured expansion/backoff, then
 48h and 72h checkpoints within the final continuous 72h run. Avoid a new generic

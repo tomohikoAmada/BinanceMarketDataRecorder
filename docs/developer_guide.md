@@ -6,7 +6,8 @@ Follow the [production plan](production_milestone_plan.md), [P0 result](mileston
 and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
 The V5 flow below documents legacy tools/artifacts; it is not the new production
 procedure and does not impose historical baseline scans or private approval helpers.
-P1–P3 implement the new capture, source-monitoring and background verification behavior
+P1 implements the shorter capture path under [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md);
+P2–P3 still supply expanded coverage, source monitoring and background verification
 before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
 docs/research is excluded from lint mutation; live source/tests/tools and P0's new
 benchmark remain checked. Historical scripts are evidence, not runtime dependencies.
@@ -56,7 +57,8 @@ Paths below are relative to `src/binance_market_data_recorder/`.
 | Auxiliary capture | `collector/spot_side_data.py`, `collector/usdm_side_data.py` | Product-specific and shared public metadata/periodic datasets |
 | Raw persistence | `spool/` | CBOR frames, CRC32C, writes, rotation, compression, seal/recovery |
 | Durable metadata | `storage/catalog.py`, `storage/layout.py`, `spool/seal.py` | SQLite lifecycle, paths, manifests and archive state |
-| Order books | `orderbook/` | Spot `U/u`, USD-M `U/u/pu`, bootstrap and checkpoints |
+| Capture continuity | `supervisor/depth_continuity.py`, `supervisor/readiness.py` | Bounded sequence bridge and capture health without a full book |
+| Order books | `orderbook/` | Offline Spot `U/u`, USD-M `U/u/pu`, full reconstruction and checkpoints |
 | Archive | `archive/manager.py`, `archive/remote_*.py`, `archive/archive_set.py` | Verified copy/retirement, receipts, remote transfer and custody |
 | Derived data | `normalize/`, `replay/`, `backfill/` | Parquet, deterministic consumer replay, official historical imports |
 | Operations | `metrics/`, `storage/forecast.py`, `service/launchd.py`, `service/systemd.py` | Reports, capacity and platform service control |
@@ -148,7 +150,7 @@ For a V5 change, a useful focused selection is:
 python -m pytest -q tests/unit/test_acceptance_v5_*.py tests/integration/test_acceptance_v5_*.py
 ```
 
-The implementation is merged and reviewed. Production qualification is paused
-before baseline completion and before Formal T0. Full-corpus audit practicality
-remains an open P2; partial progress does not establish complete integrity or
-terminal performance. Use [handoff](PROJECT_HANDOFF.md) for the next task.
+The preceding V5 state is retained history. Current development has completed
+[P1](milestones/P1/README.md); P2 market coverage is next. Historical full-corpus
+audit cost does not impose a new P2 prerequisite: P0–P6 qualification uses ADR-0051,
+with P3 durable new-file verification still pending. Use [handoff](PROJECT_HANDOFF.md).

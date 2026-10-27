@@ -1,13 +1,30 @@
 # Known Limitations
 
-Updated October 1, 2026 for the code merged in PR #78.
+Updated October 27, 2026; current P1 boundary below. Older measurements retain
+their original code/run scope.
+
+## Current production milestones
+
+- [P1](milestones/P1/README.md) separates sequence-only capture health from full
+  offline book reconstruction and preserves Raw v1. The compatibility field
+  `orderbook_synchronized` now denotes the snapshot/sequence bridge; public
+  status explicitly declares `full_orderbook_evaluated=false`.
+- Ten-asset offline current-product fixtures do not establish expanded COIN-M /
+  delivery coverage, real-network continuity, VPS capacity or long-run memory
+  behavior. P2–P6 remain necessary.
+- Each stream's queue/batch is bounded, but aggregate budgets scale with product
+  and stream count. Simultaneous maximum saturation is not a host memory promise.
+- P3's durable independent new-file verification and source-specific availability
+  remain pending. Existing independent audit and archive verification are retained.
 
 ## Qualification and performance
 
 - V5 is implemented and deployed, but its first production baseline was stopped
   before publication. No V5 Formal 2h stage started; production qualification
   remains incomplete.
-- Full Raw/archive audit cost is the open P2. The stopped run published 87,423
+- Historical V5 full Raw/archive audit cost remains a limitation of that tool,
+  not the current P2 market-coverage milestone. ADR-0051 governs new qualification;
+  its P3 independent new-file workflow is pending. The stopped run published 87,423
   first-pass records from 143,362 frozen manifests over more than 14 hours.
   These are partial measurements, not a complete integrity or throughput result.
 - Recorder memory growth was previously a watch item, not a demonstrated leak.
@@ -17,7 +34,7 @@ Updated October 1, 2026 for the code merged in PR #78.
 
 See [current deployment state](CURRENT_PRODUCTION_STATE.md),
 [owner-stop measurements](milestone_acceptance/M22.9-v5-deployment-owner-stop.md),
-and [next work](PROJECT_HANDOFF.md#remaining-work).
+and [next work](PROJECT_HANDOFF.md).
 
 ## Data coverage
 

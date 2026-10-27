@@ -1,0 +1,941 @@
+{
+  "schema": "p1-local-results.v1",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "baseline_commit": "6f8fe1e802d1e2b99e4f0a38a1f5cacfe707079a",
+  "candidate_commit": "ce1826b8a8fa9057783dfe035596332c8c6d67d8",
+  "candidate_src_tree": "0a173540835c6eb78de26eab9d06d165cc4902aa",
+  "all_features": [
+    {
+      "file": "all-features-1-A.json",
+      "side": "A",
+      "classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "cpu_seconds": 122.62754400000001,
+      "wall_seconds": 120.00112062500557,
+      "rss_max_bytes": 173031424,
+      "loop_lag_p99_seconds": 0.0013552919845096767,
+      "ws_frames": 32214,
+      "raw_frames": 32250,
+      "physical_order_and_payload_and_crc_hash_verified": true,
+      "fsync_count_independently_reconciled": true,
+      "window_ws_work": {
+        "spot/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6016,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 589568
+        },
+        "spot/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30424
+        },
+        "spot/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79200
+        },
+        "spot/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6000,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 588000
+        },
+        "spot/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30424
+        },
+        "spot/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 599,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79068
+        },
+        "um_perpetual/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5998,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 821726
+        },
+        "um_perpetual/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35726
+        },
+        "um_perpetual/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 598,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92092
+        },
+        "um_perpetual/BTCUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 120,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21840
+        },
+        "um_perpetual/BTCUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        },
+        "um_perpetual/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5995,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 821315
+        },
+        "um_perpetual/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35726
+        },
+        "um_perpetual/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 602,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92708
+        },
+        "um_perpetual/ETHUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 119,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21658
+        },
+        "um_perpetual/ETHUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        }
+      },
+      "tail_seconds": {
+        "input_catchup_seconds": 9.457988198846579e-06,
+        "normal_stop_drain_seconds": 0.10922133299754933,
+        "background_join_seconds": 0.09382766700582579
+      },
+      "archive_files": 98,
+      "archive_backlog_files": 0,
+      "normalized_rows": 9804,
+      "replayed_agg_trades": 213,
+      "triggering_unsynchronized_boundaries": {}
+    },
+    {
+      "file": "all-features-2-B.json",
+      "side": "B",
+      "classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "sustained_backlog_growth:written_not_persisted_frames:um_perpetual/ETHUSDT/book_ticker"
+        ],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "cpu_seconds": 122.581709,
+      "wall_seconds": 120.0012527910294,
+      "rss_max_bytes": 147636224,
+      "loop_lag_p99_seconds": 0.0014329580590128899,
+      "ws_frames": 32214,
+      "raw_frames": 32251,
+      "physical_order_and_payload_and_crc_hash_verified": true,
+      "fsync_count_independently_reconciled": true,
+      "window_ws_work": {
+        "spot/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5999,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 587902
+        },
+        "spot/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 242,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30548
+        },
+        "spot/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 603,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79596
+        },
+        "spot/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6027,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 590646
+        },
+        "spot/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30424
+        },
+        "spot/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79200
+        },
+        "um_perpetual/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6008,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 823096
+        },
+        "um_perpetual/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 242,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35872
+        },
+        "um_perpetual/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 599,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92246
+        },
+        "um_perpetual/BTCUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 119,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21658
+        },
+        "um_perpetual/BTCUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        },
+        "um_perpetual/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5993,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 821041
+        },
+        "um_perpetual/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35723
+        },
+        "um_perpetual/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92400
+        },
+        "um_perpetual/ETHUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 120,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21840
+        },
+        "um_perpetual/ETHUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        }
+      },
+      "tail_seconds": {
+        "input_catchup_seconds": 1.1665979400277138e-05,
+        "normal_stop_drain_seconds": 0.11883099999977276,
+        "background_join_seconds": 0.04296187497675419
+      },
+      "archive_files": 99,
+      "archive_backlog_files": 0,
+      "normalized_rows": 7939,
+      "replayed_agg_trades": 123,
+      "triggering_unsynchronized_boundaries": {
+        "um_perpetual/ETHUSDT/book_ticker": [
+          28,
+          4,
+          33,
+          5,
+          35
+        ]
+      }
+    },
+    {
+      "file": "all-features-3-B.json",
+      "side": "B",
+      "classification": {
+        "status": "STEADY",
+        "performance_comparable": true,
+        "reasons": [],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "cpu_seconds": 122.77844100000002,
+      "wall_seconds": 120.00094549998175,
+      "rss_max_bytes": 169738240,
+      "loop_lag_p99_seconds": 0.001340000017080456,
+      "ws_frames": 32214,
+      "raw_frames": 32250,
+      "physical_order_and_payload_and_crc_hash_verified": true,
+      "fsync_count_independently_reconciled": true,
+      "window_ws_work": {
+        "spot/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5994,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 587412
+        },
+        "spot/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 239,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30173
+        },
+        "spot/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79200
+        },
+        "spot/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6011,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 589078
+        },
+        "spot/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 240,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30297
+        },
+        "spot/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 602,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79464
+        },
+        "um_perpetual/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6000,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 822000
+        },
+        "um_perpetual/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 240,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35580
+        },
+        "um_perpetual/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 599,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92246
+        },
+        "um_perpetual/BTCUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 120,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21840
+        },
+        "um_perpetual/BTCUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        },
+        "um_perpetual/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6001,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 822137
+        },
+        "um_perpetual/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35723
+        },
+        "um_perpetual/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 597,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 91938
+        },
+        "um_perpetual/ETHUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 121,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 22022
+        },
+        "um_perpetual/ETHUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        }
+      },
+      "tail_seconds": {
+        "input_catchup_seconds": 1.18750031106174e-05,
+        "normal_stop_drain_seconds": 0.11967375001404434,
+        "background_join_seconds": 0.08779670798685402
+      },
+      "archive_files": 99,
+      "archive_backlog_files": 0,
+      "normalized_rows": 6944,
+      "replayed_agg_trades": 153,
+      "triggering_unsynchronized_boundaries": {}
+    },
+    {
+      "file": "all-features-4-A.json",
+      "side": "A",
+      "classification": {
+        "status": "NON_STEADY",
+        "performance_comparable": false,
+        "reasons": [
+          "sustained_backlog_growth:written_not_persisted_frames:um_perpetual/BTCUSDT/book_ticker"
+        ],
+        "classifier_version": "p0-steady-classifier.v4",
+        "rule": "input by deadline; per-source >=2 new backlog highs since window start and endpoint above the first new high is non-steady"
+      },
+      "cpu_seconds": 122.98482000000001,
+      "wall_seconds": 120.00208112498512,
+      "rss_max_bytes": 166543360,
+      "loop_lag_p99_seconds": 0.0022923750220797956,
+      "ws_frames": 32214,
+      "raw_frames": 32251,
+      "physical_order_and_payload_and_crc_hash_verified": true,
+      "fsync_count_independently_reconciled": true,
+      "window_ws_work": {
+        "spot/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6023,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 590254
+        },
+        "spot/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 240,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30297
+        },
+        "spot/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79200
+        },
+        "spot/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6002,
+          "written_payload_bytes": 588000,
+          "persisted_payload_bytes": 588196
+        },
+        "spot/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 240,
+          "written_payload_bytes": 30300,
+          "persisted_payload_bytes": 30297
+        },
+        "spot/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 605,
+          "written_payload_bytes": 79200,
+          "persisted_payload_bytes": 79860
+        },
+        "um_perpetual/BTCUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 5987,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 820219
+        },
+        "um_perpetual/BTCUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35726
+        },
+        "um_perpetual/BTCUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92400
+        },
+        "um_perpetual/BTCUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 120,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21840
+        },
+        "um_perpetual/BTCUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        },
+        "um_perpetual/ETHUSDT/book_ticker": {
+          "sent_frames": 5999,
+          "received_frames": 5999,
+          "written_frames": 6000,
+          "persisted_frames": 6020,
+          "written_payload_bytes": 822000,
+          "persisted_payload_bytes": 824740
+        },
+        "um_perpetual/ETHUSDT/agg_trade": {
+          "sent_frames": 239,
+          "received_frames": 239,
+          "written_frames": 240,
+          "persisted_frames": 241,
+          "written_payload_bytes": 35580,
+          "persisted_payload_bytes": 35726
+        },
+        "um_perpetual/ETHUSDT/diff_depth": {
+          "sent_frames": 599,
+          "received_frames": 599,
+          "written_frames": 600,
+          "persisted_frames": 600,
+          "written_payload_bytes": 92400,
+          "persisted_payload_bytes": 92400
+        },
+        "um_perpetual/ETHUSDT/mark_price": {
+          "sent_frames": 119,
+          "received_frames": 119,
+          "written_frames": 120,
+          "persisted_frames": 120,
+          "written_payload_bytes": 21840,
+          "persisted_payload_bytes": 21840
+        },
+        "um_perpetual/ETHUSDT/liquidation": {
+          "sent_frames": 5,
+          "received_frames": 5,
+          "written_frames": 6,
+          "persisted_frames": 6,
+          "written_payload_bytes": 1074,
+          "persisted_payload_bytes": 1074
+        }
+      },
+      "tail_seconds": {
+        "input_catchup_seconds": 1.1500029359012842e-05,
+        "normal_stop_drain_seconds": 0.1373545409878716,
+        "background_join_seconds": 0.0021284999675117433
+      },
+      "archive_files": 97,
+      "archive_backlog_files": 0,
+      "normalized_rows": 7992,
+      "replayed_agg_trades": 181,
+      "triggering_unsynchronized_boundaries": {
+        "um_perpetual/BTCUSDT/book_ticker": [
+          32,
+          11,
+          44,
+          23,
+          45
+        ]
+      }
+    }
+  ],
+  "core_ten_assets": [
+    {
+      "file": "core-ten-assets-1-A.json",
+      "side": "A",
+      "cpu_seconds": 4.109782,
+      "wall_seconds": 4.671695000026375,
+      "rss_peak_sampled_bytes": 166952960,
+      "fixture_included_in_rss": true,
+      "assets": 10,
+      "products": 20,
+      "streams": 60,
+      "ws_frames": 42600,
+      "verification": {
+        "capture_flags": {
+          "injected_model_without_raw_http_body": 10,
+          "rest_snapshot": 20,
+          "sdk_model_not_raw_http_body": 10
+        },
+        "chunks": 142,
+        "cpu_seconds": 0.6890969999999994,
+        "decoded_bytes": 26339794,
+        "exact_payloads_and_crc_and_artifact_hashes_pass": true,
+        "expected_ws_frames": 42600,
+        "saved_ws_frames": 42600,
+        "stored_bytes": 1270571,
+        "wall_seconds": 0.6895996669773012
+      },
+      "receipt_high_watermark_frames": 268,
+      "receipt_high_watermark_payload_bytes": 34726,
+      "queues_empty_after_stop": true
+    },
+    {
+      "file": "core-ten-assets-2-B.json",
+      "side": "B",
+      "cpu_seconds": 2.259141,
+      "wall_seconds": 4.733010833035223,
+      "rss_peak_sampled_bytes": 170246144,
+      "fixture_included_in_rss": true,
+      "assets": 10,
+      "products": 20,
+      "streams": 60,
+      "ws_frames": 42600,
+      "verification": {
+        "capture_flags": {
+          "injected_model_without_raw_http_body": 10,
+          "rest_snapshot": 21,
+          "sdk_model_not_raw_http_body": 11
+        },
+        "chunks": 141,
+        "cpu_seconds": 0.7173740000000004,
+        "decoded_bytes": 26343180,
+        "exact_payloads_and_crc_and_artifact_hashes_pass": true,
+        "expected_ws_frames": 42600,
+        "saved_ws_frames": 42600,
+        "stored_bytes": 1239267,
+        "wall_seconds": 0.7196967499912716
+      },
+      "receipt_high_watermark_frames": 1024,
+      "receipt_high_watermark_payload_bytes": 140897,
+      "queues_empty_after_stop": true
+    },
+    {
+      "file": "core-ten-assets-3-B.json",
+      "side": "B",
+      "cpu_seconds": 2.314717,
+      "wall_seconds": 4.677134041965473,
+      "rss_peak_sampled_bytes": 174129152,
+      "fixture_included_in_rss": true,
+      "assets": 10,
+      "products": 20,
+      "streams": 60,
+      "ws_frames": 42600,
+      "verification": {
+        "capture_flags": {
+          "injected_model_without_raw_http_body": 10,
+          "rest_snapshot": 20,
+          "sdk_model_not_raw_http_body": 10
+        },
+        "chunks": 141,
+        "cpu_seconds": 0.6887130000000004,
+        "decoded_bytes": 26339451,
+        "exact_payloads_and_crc_and_artifact_hashes_pass": true,
+        "expected_ws_frames": 42600,
+        "saved_ws_frames": 42600,
+        "stored_bytes": 1251023,
+        "wall_seconds": 0.6890941250021569
+      },
+      "receipt_high_watermark_frames": 1024,
+      "receipt_high_watermark_payload_bytes": 163091,
+      "queues_empty_after_stop": true
+    },
+    {
+      "file": "core-ten-assets-4-A.json",
+      "side": "A",
+      "cpu_seconds": 4.101064,
+      "wall_seconds": 4.6777171670109965,
+      "rss_peak_sampled_bytes": 159432704,
+      "fixture_included_in_rss": true,
+      "assets": 10,
+      "products": 20,
+      "streams": 60,
+      "ws_frames": 42600,
+      "verification": {
+        "capture_flags": {
+          "injected_model_without_raw_http_body": 10,
+          "rest_snapshot": 20,
+          "sdk_model_not_raw_http_body": 10
+        },
+        "chunks": 140,
+        "cpu_seconds": 0.7126330000000003,
+        "decoded_bytes": 26339112,
+        "exact_payloads_and_crc_and_artifact_hashes_pass": true,
+        "expected_ws_frames": 42600,
+        "saved_ws_frames": 42600,
+        "stored_bytes": 1256606,
+        "wall_seconds": 0.7131609590142034
+      },
+      "receipt_high_watermark_frames": 283,
+      "receipt_high_watermark_payload_bytes": 34338,
+      "queues_empty_after_stop": true
+    }
+  ],
+  "writer": [
+    {
+      "file": "writer-1-A.json",
+      "side": "A",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.3253474999801256,
+      "cpu_seconds": 0.324796,
+      "syscalls": {
+        "write": 20000
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-2-B.json",
+      "side": "B",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.27920262498082593,
+      "cpu_seconds": 0.278429,
+      "syscalls": {
+        "writev": 79
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-3-B.json",
+      "side": "B",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.27954420901369303,
+      "cpu_seconds": 0.279107,
+      "syscalls": {
+        "writev": 79
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-4-A.json",
+      "side": "A",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.3154464580002241,
+      "cpu_seconds": 0.31484500000000004,
+      "syscalls": {
+        "write": 20000
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-5-A.json",
+      "side": "A",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.3181813749833964,
+      "cpu_seconds": 0.317588,
+      "syscalls": {
+        "write": 20000
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-6-B.json",
+      "side": "B",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.28180037502897903,
+      "cpu_seconds": 0.28124000000000005,
+      "syscalls": {
+        "writev": 79
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-7-B.json",
+      "side": "B",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.27884158300003037,
+      "cpu_seconds": 0.27834800000000004,
+      "syscalls": {
+        "writev": 79
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    },
+    {
+      "file": "writer-8-A.json",
+      "side": "A",
+      "schema": "p1-local-writer-comparison.v1",
+      "events": 20000,
+      "source_package_path": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before/src/binance_market_data_recorder/__init__.py",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "wall_seconds": 0.311188250023406,
+      "cpu_seconds": 0.310643,
+      "syscalls": {
+        "write": 20000
+      },
+      "uncompressed_sha256": "6c07846a08c261f268a719ec9d22e8d05468efc57cb0b2780805e07d1d71badf",
+      "bytes": 9288638,
+      "independent_scan_passed": true
+    }
+  ],
+  "writer_medians": {
+    "A": {
+      "wall_seconds": 0.31681391649181023,
+      "cpu_seconds": 0.3162165
+    },
+    "B": {
+      "wall_seconds": 0.2793734169972595,
+      "cpu_seconds": 0.278768
+    }
+  },
+  "writer_median_wall_reduction_percent": 11.81782034992096,
+  "writer_median_cpu_reduction_percent": 11.842677406144208,
+  "same_full_input_config_dependencies": true,
+  "same_core_input": true,
+  "same_window_ws_sent_received_written_work": true,
+  "all_features_cpu_speedup_claim": false,
+  "limits": [
+    "Local macOS only; no VPS speed/capacity claim",
+    "Both sides have a NON_STEADY round; no all-feature CPU improvement demonstrated",
+    "Window fsync and background consumer quantities differ and are retained",
+    "Core B2 has one additional SDK snapshot; fixed WS input is identical",
+    "Finite fixtures and per-queue bounds do not prove long-run stability",
+    "P2 coverage and P3 durable verifier/source availability remain pending"
+  ]
+}

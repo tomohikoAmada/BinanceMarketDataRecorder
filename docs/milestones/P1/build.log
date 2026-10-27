@@ -1,0 +1,438 @@
+* Getting build dependencies for wheel...
+running egg_info
+writing src/binance_market_data_recorder.egg-info/PKG-INFO
+writing dependency_links to src/binance_market_data_recorder.egg-info/dependency_links.txt
+writing entry points to src/binance_market_data_recorder.egg-info/entry_points.txt
+writing requirements to src/binance_market_data_recorder.egg-info/requires.txt
+writing top-level names to src/binance_market_data_recorder.egg-info/top_level.txt
+reading manifest file 'src/binance_market_data_recorder.egg-info/SOURCES.txt'
+writing manifest file 'src/binance_market_data_recorder.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+copying src/binance_market_data_recorder/logging.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/config.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/version.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/paths.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/diagnostics.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/__init__.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/cli.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/__main__.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/status.py -> build/lib/binance_market_data_recorder
+copying src/binance_market_data_recorder/metrics/maintenance.py -> build/lib/binance_market_data_recorder/metrics
+copying src/binance_market_data_recorder/metrics/recorder.py -> build/lib/binance_market_data_recorder/metrics
+copying src/binance_market_data_recorder/metrics/__init__.py -> build/lib/binance_market_data_recorder/metrics
+copying src/binance_market_data_recorder/metrics/model.py -> build/lib/binance_market_data_recorder/metrics
+copying src/binance_market_data_recorder/metrics/report.py -> build/lib/binance_market_data_recorder/metrics
+copying src/binance_market_data_recorder/archive/remote_source.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/remote_receive.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/remote_session.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/__init__.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/remote_transport.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/catalog_snapshot.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/remote_authorization.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/drain.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/archive_set.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/remote_delete.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/archive/manager.py -> build/lib/binance_market_data_recorder/archive
+copying src/binance_market_data_recorder/network/proxy.py -> build/lib/binance_market_data_recorder/network
+copying src/binance_market_data_recorder/network/__init__.py -> build/lib/binance_market_data_recorder/network
+copying src/binance_market_data_recorder/spool/queue.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/recovery.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/seal.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/__init__.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/format.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/stream.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/legacy_reconnect.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/async_queue.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/writer.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/spool/evidence.py -> build/lib/binance_market_data_recorder/spool
+copying src/binance_market_data_recorder/collector/usdm_side_data.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/supervisor.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/__init__.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/spot_side_data.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/spot.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/usdm.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/collector/resync.py -> build/lib/binance_market_data_recorder/collector
+copying src/binance_market_data_recorder/soak/__init__.py -> build/lib/binance_market_data_recorder/soak
+copying src/binance_market_data_recorder/soak/sample.py -> build/lib/binance_market_data_recorder/soak
+copying src/binance_market_data_recorder/storage/catalog.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/capacity.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/forecast.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/acceptance_delta.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/layout.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/__init__.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/platform.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/emergency.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/storage/linux.py -> build/lib/binance_market_data_recorder/storage
+copying src/binance_market_data_recorder/backfill/planner.py -> build/lib/binance_market_data_recorder/backfill
+copying src/binance_market_data_recorder/backfill/importer.py -> build/lib/binance_market_data_recorder/backfill
+copying src/binance_market_data_recorder/backfill/__init__.py -> build/lib/binance_market_data_recorder/backfill
+copying src/binance_market_data_recorder/normalize/raw.py -> build/lib/binance_market_data_recorder/normalize
+copying src/binance_market_data_recorder/normalize/__init__.py -> build/lib/binance_market_data_recorder/normalize
+copying src/binance_market_data_recorder/normalize/model.py -> build/lib/binance_market_data_recorder/normalize
+copying src/binance_market_data_recorder/normalize/parser.py -> build/lib/binance_market_data_recorder/normalize
+copying src/binance_market_data_recorder/normalize/pipeline.py -> build/lib/binance_market_data_recorder/normalize
+copying src/binance_market_data_recorder/audit/__init__.py -> build/lib/binance_market_data_recorder/audit
+copying src/binance_market_data_recorder/audit/reconnect_boundaries.py -> build/lib/binance_market_data_recorder/audit
+copying src/binance_market_data_recorder/orderbook/checkpoint.py -> build/lib/binance_market_data_recorder/orderbook
+copying src/binance_market_data_recorder/orderbook/__init__.py -> build/lib/binance_market_data_recorder/orderbook
+copying src/binance_market_data_recorder/orderbook/model.py -> build/lib/binance_market_data_recorder/orderbook
+copying src/binance_market_data_recorder/orderbook/parser.py -> build/lib/binance_market_data_recorder/orderbook
+copying src/binance_market_data_recorder/orderbook/reconstructor.py -> build/lib/binance_market_data_recorder/orderbook
+copying src/binance_market_data_recorder/replay/catalog.py -> build/lib/binance_market_data_recorder/replay
+copying src/binance_market_data_recorder/replay/clock.py -> build/lib/binance_market_data_recorder/replay
+copying src/binance_market_data_recorder/replay/__init__.py -> build/lib/binance_market_data_recorder/replay
+copying src/binance_market_data_recorder/replay/model.py -> build/lib/binance_market_data_recorder/replay
+copying src/binance_market_data_recorder/replay/reader.py -> build/lib/binance_market_data_recorder/replay
+copying src/binance_market_data_recorder/service/soak_timer.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/deployment_identity.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_online.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_delta.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/systemd.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_codec.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/report_worker.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/__init__.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_reconnect.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_raw.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/runtime.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_io.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_audit.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_admission.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/lock.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_corpus.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/resources.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/acceptance_v5_finalize.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/launchd.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/archive_timer.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/readiness.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/power.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/service/state.py -> build/lib/binance_market_data_recorder/service
+copying src/binance_market_data_recorder/domain/event.py -> build/lib/binance_market_data_recorder/domain
+copying src/binance_market_data_recorder/domain/__init__.py -> build/lib/binance_market_data_recorder/domain
+copying src/binance_market_data_recorder/domain/product.py -> build/lib/binance_market_data_recorder/domain
+copying src/binance_market_data_recorder/supervisor/__init__.py -> build/lib/binance_market_data_recorder/supervisor
+copying src/binance_market_data_recorder/supervisor/depth_continuity.py -> build/lib/binance_market_data_recorder/supervisor
+copying src/binance_market_data_recorder/supervisor/readiness.py -> build/lib/binance_market_data_recorder/supervisor
+copying src/binance_market_data_recorder/supervisor/blue_green.py -> build/lib/binance_market_data_recorder/supervisor
+copying src/binance_market_data_recorder/binance/request_budget.py -> build/lib/binance_market_data_recorder/binance
+copying src/binance_market_data_recorder/binance/__init__.py -> build/lib/binance_market_data_recorder/binance
+copying src/binance_market_data_recorder/binance/websocket_common.py -> build/lib/binance_market_data_recorder/binance
+copying src/binance_market_data_recorder/storage/macos/registry.py -> build/lib/binance_market_data_recorder/storage/macos
+copying src/binance_market_data_recorder/storage/macos/__init__.py -> build/lib/binance_market_data_recorder/storage/macos
+copying src/binance_market_data_recorder/storage/macos/volumes.py -> build/lib/binance_market_data_recorder/storage/macos
+copying src/binance_market_data_recorder/storage/macos/model.py -> build/lib/binance_market_data_recorder/storage/macos
+copying src/binance_market_data_recorder/storage/macos/eject.py -> build/lib/binance_market_data_recorder/storage/macos
+copying src/binance_market_data_recorder/binance/usdm/rest.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/usdm/__init__.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/usdm/side_data_schema.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/usdm/side_data_rest.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/usdm/schema.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/usdm/websocket.py -> build/lib/binance_market_data_recorder/binance/usdm
+copying src/binance_market_data_recorder/binance/spot/rest.py -> build/lib/binance_market_data_recorder/binance/spot
+copying src/binance_market_data_recorder/binance/spot/exchange_info.py -> build/lib/binance_market_data_recorder/binance/spot
+copying src/binance_market_data_recorder/binance/spot/__init__.py -> build/lib/binance_market_data_recorder/binance/spot
+copying src/binance_market_data_recorder/binance/spot/rate_limit.py -> build/lib/binance_market_data_recorder/binance/spot
+copying src/binance_market_data_recorder/binance/spot/schema.py -> build/lib/binance_market_data_recorder/binance/spot
+copying src/binance_market_data_recorder/binance/spot/websocket.py -> build/lib/binance_market_data_recorder/binance/spot
+running egg_info
+writing src/binance_market_data_recorder.egg-info/PKG-INFO
+writing dependency_links to src/binance_market_data_recorder.egg-info/dependency_links.txt
+writing entry points to src/binance_market_data_recorder.egg-info/entry_points.txt
+writing requirements to src/binance_market_data_recorder.egg-info/requires.txt
+writing top-level names to src/binance_market_data_recorder.egg-info/top_level.txt
+reading manifest file 'src/binance_market_data_recorder.egg-info/SOURCES.txt'
+writing manifest file 'src/binance_market_data_recorder.egg-info/SOURCES.txt'
+copying src/binance_market_data_recorder/py.typed -> build/lib/binance_market_data_recorder
+installing to build/bdist.macosx-11.0-arm64/wheel
+running install
+running install_lib
+creating build/bdist.macosx-11.0-arm64/wheel
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/metrics/maintenance.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/metrics/recorder.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/metrics/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/metrics/model.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/metrics/report.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/metrics
+copying build/lib/binance_market_data_recorder/logging.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+copying build/lib/binance_market_data_recorder/config.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+copying build/lib/binance_market_data_recorder/version.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_source.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_receive.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_session.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_transport.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/catalog_snapshot.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_authorization.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/drain.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/archive_set.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/remote_delete.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/archive/manager.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/archive
+copying build/lib/binance_market_data_recorder/paths.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+copying build/lib/binance_market_data_recorder/diagnostics.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/network
+copying build/lib/binance_market_data_recorder/network/proxy.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/network
+copying build/lib/binance_market_data_recorder/network/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/network
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/queue.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/recovery.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/seal.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/format.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/stream.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/legacy_reconnect.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/async_queue.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/writer.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+copying build/lib/binance_market_data_recorder/spool/evidence.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/spool
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/usdm_side_data.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/supervisor.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/spot_side_data.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/spot.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/usdm.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/collector/resync.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/collector
+copying build/lib/binance_market_data_recorder/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/soak
+copying build/lib/binance_market_data_recorder/soak/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/soak
+copying build/lib/binance_market_data_recorder/soak/sample.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/soak
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/catalog.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/capacity.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/forecast.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/macos/registry.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/macos/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/macos/volumes.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/macos/model.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/macos/eject.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage/macos
+copying build/lib/binance_market_data_recorder/storage/acceptance_delta.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/layout.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/platform.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/emergency.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+copying build/lib/binance_market_data_recorder/storage/linux.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/storage
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/backfill
+copying build/lib/binance_market_data_recorder/backfill/planner.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/backfill
+copying build/lib/binance_market_data_recorder/backfill/importer.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/backfill
+copying build/lib/binance_market_data_recorder/backfill/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/backfill
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/normalize/raw.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/normalize/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/normalize/model.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/normalize/parser.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/normalize/pipeline.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/normalize
+copying build/lib/binance_market_data_recorder/cli.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/audit
+copying build/lib/binance_market_data_recorder/audit/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/audit
+copying build/lib/binance_market_data_recorder/audit/reconnect_boundaries.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/audit
+copying build/lib/binance_market_data_recorder/py.typed -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/orderbook
+copying build/lib/binance_market_data_recorder/orderbook/checkpoint.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/orderbook
+copying build/lib/binance_market_data_recorder/orderbook/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/orderbook
+copying build/lib/binance_market_data_recorder/orderbook/model.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/orderbook
+copying build/lib/binance_market_data_recorder/orderbook/parser.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/orderbook
+copying build/lib/binance_market_data_recorder/orderbook/reconstructor.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/orderbook
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/replay
+copying build/lib/binance_market_data_recorder/replay/catalog.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/replay
+copying build/lib/binance_market_data_recorder/replay/clock.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/replay
+copying build/lib/binance_market_data_recorder/replay/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/replay
+copying build/lib/binance_market_data_recorder/replay/model.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/replay
+copying build/lib/binance_market_data_recorder/replay/reader.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/replay
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/soak_timer.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/deployment_identity.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_online.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_delta.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/systemd.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_codec.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/report_worker.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_reconnect.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_raw.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/runtime.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_io.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_audit.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_admission.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/lock.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_corpus.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/resources.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/acceptance_v5_finalize.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/launchd.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/archive_timer.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/readiness.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/power.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+copying build/lib/binance_market_data_recorder/service/state.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/service
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/domain
+copying build/lib/binance_market_data_recorder/domain/event.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/domain
+copying build/lib/binance_market_data_recorder/domain/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/domain
+copying build/lib/binance_market_data_recorder/domain/product.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/domain
+copying build/lib/binance_market_data_recorder/__main__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+copying build/lib/binance_market_data_recorder/status.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/supervisor
+copying build/lib/binance_market_data_recorder/supervisor/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/supervisor
+copying build/lib/binance_market_data_recorder/supervisor/depth_continuity.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/supervisor
+copying build/lib/binance_market_data_recorder/supervisor/readiness.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/supervisor
+copying build/lib/binance_market_data_recorder/supervisor/blue_green.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/supervisor
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/binance
+copying build/lib/binance_market_data_recorder/binance/request_budget.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/rest.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/side_data_schema.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/side_data_rest.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/schema.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/usdm/websocket.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/usdm
+copying build/lib/binance_market_data_recorder/binance/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance
+copying build/lib/binance_market_data_recorder/binance/websocket_common.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/rest.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/exchange_info.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/__init__.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/rate_limit.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/schema.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+copying build/lib/binance_market_data_recorder/binance/spot/websocket.py -> build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder/binance/spot
+running install_egg_info
+Copying src/binance_market_data_recorder.egg-info to build/bdist.macosx-11.0-arm64/wheel/./binance_market_data_recorder-0.1.0a1-py3.12.egg-info
+running install_scripts
+creating build/bdist.macosx-11.0-arm64/wheel/binance_market_data_recorder-0.1.0a1.dist-info/WHEEL
+creating '/var/tmp/bmdr-p1-20261027-8JCF7QMA/dist/.tmp-nfp78coe/binance_market_data_recorder-0.1.0a1-py3-none-any.whl' and adding 'build/bdist.macosx-11.0-arm64/wheel' to it
+adding 'binance_market_data_recorder/__init__.py'
+adding 'binance_market_data_recorder/__main__.py'
+adding 'binance_market_data_recorder/cli.py'
+adding 'binance_market_data_recorder/config.py'
+adding 'binance_market_data_recorder/diagnostics.py'
+adding 'binance_market_data_recorder/logging.py'
+adding 'binance_market_data_recorder/paths.py'
+adding 'binance_market_data_recorder/py.typed'
+adding 'binance_market_data_recorder/status.py'
+adding 'binance_market_data_recorder/version.py'
+adding 'binance_market_data_recorder/archive/__init__.py'
+adding 'binance_market_data_recorder/archive/archive_set.py'
+adding 'binance_market_data_recorder/archive/catalog_snapshot.py'
+adding 'binance_market_data_recorder/archive/drain.py'
+adding 'binance_market_data_recorder/archive/manager.py'
+adding 'binance_market_data_recorder/archive/remote_authorization.py'
+adding 'binance_market_data_recorder/archive/remote_delete.py'
+adding 'binance_market_data_recorder/archive/remote_receive.py'
+adding 'binance_market_data_recorder/archive/remote_session.py'
+adding 'binance_market_data_recorder/archive/remote_source.py'
+adding 'binance_market_data_recorder/archive/remote_transport.py'
+adding 'binance_market_data_recorder/audit/__init__.py'
+adding 'binance_market_data_recorder/audit/reconnect_boundaries.py'
+adding 'binance_market_data_recorder/backfill/__init__.py'
+adding 'binance_market_data_recorder/backfill/importer.py'
+adding 'binance_market_data_recorder/backfill/planner.py'
+adding 'binance_market_data_recorder/binance/__init__.py'
+adding 'binance_market_data_recorder/binance/request_budget.py'
+adding 'binance_market_data_recorder/binance/websocket_common.py'
+adding 'binance_market_data_recorder/binance/spot/__init__.py'
+adding 'binance_market_data_recorder/binance/spot/exchange_info.py'
+adding 'binance_market_data_recorder/binance/spot/rate_limit.py'
+adding 'binance_market_data_recorder/binance/spot/rest.py'
+adding 'binance_market_data_recorder/binance/spot/schema.py'
+adding 'binance_market_data_recorder/binance/spot/websocket.py'
+adding 'binance_market_data_recorder/binance/usdm/__init__.py'
+adding 'binance_market_data_recorder/binance/usdm/rest.py'
+adding 'binance_market_data_recorder/binance/usdm/schema.py'
+adding 'binance_market_data_recorder/binance/usdm/side_data_rest.py'
+adding 'binance_market_data_recorder/binance/usdm/side_data_schema.py'
+adding 'binance_market_data_recorder/binance/usdm/websocket.py'
+adding 'binance_market_data_recorder/collector/__init__.py'
+adding 'binance_market_data_recorder/collector/resync.py'
+adding 'binance_market_data_recorder/collector/spot.py'
+adding 'binance_market_data_recorder/collector/spot_side_data.py'
+adding 'binance_market_data_recorder/collector/supervisor.py'
+adding 'binance_market_data_recorder/collector/usdm.py'
+adding 'binance_market_data_recorder/collector/usdm_side_data.py'
+adding 'binance_market_data_recorder/domain/__init__.py'
+adding 'binance_market_data_recorder/domain/event.py'
+adding 'binance_market_data_recorder/domain/product.py'
+adding 'binance_market_data_recorder/metrics/__init__.py'
+adding 'binance_market_data_recorder/metrics/maintenance.py'
+adding 'binance_market_data_recorder/metrics/model.py'
+adding 'binance_market_data_recorder/metrics/recorder.py'
+adding 'binance_market_data_recorder/metrics/report.py'
+adding 'binance_market_data_recorder/network/__init__.py'
+adding 'binance_market_data_recorder/network/proxy.py'
+adding 'binance_market_data_recorder/normalize/__init__.py'
+adding 'binance_market_data_recorder/normalize/model.py'
+adding 'binance_market_data_recorder/normalize/parser.py'
+adding 'binance_market_data_recorder/normalize/pipeline.py'
+adding 'binance_market_data_recorder/normalize/raw.py'
+adding 'binance_market_data_recorder/orderbook/__init__.py'
+adding 'binance_market_data_recorder/orderbook/checkpoint.py'
+adding 'binance_market_data_recorder/orderbook/model.py'
+adding 'binance_market_data_recorder/orderbook/parser.py'
+adding 'binance_market_data_recorder/orderbook/reconstructor.py'
+adding 'binance_market_data_recorder/replay/__init__.py'
+adding 'binance_market_data_recorder/replay/catalog.py'
+adding 'binance_market_data_recorder/replay/clock.py'
+adding 'binance_market_data_recorder/replay/model.py'
+adding 'binance_market_data_recorder/replay/reader.py'
+adding 'binance_market_data_recorder/service/__init__.py'
+adding 'binance_market_data_recorder/service/acceptance.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_admission.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_audit.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_codec.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_corpus.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_delta.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_finalize.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_io.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_online.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_raw.py'
+adding 'binance_market_data_recorder/service/acceptance_v5_reconnect.py'
+adding 'binance_market_data_recorder/service/archive_timer.py'
+adding 'binance_market_data_recorder/service/deployment_identity.py'
+adding 'binance_market_data_recorder/service/launchd.py'
+adding 'binance_market_data_recorder/service/lock.py'
+adding 'binance_market_data_recorder/service/power.py'
+adding 'binance_market_data_recorder/service/readiness.py'
+adding 'binance_market_data_recorder/service/report_worker.py'
+adding 'binance_market_data_recorder/service/resources.py'
+adding 'binance_market_data_recorder/service/runtime.py'
+adding 'binance_market_data_recorder/service/soak_timer.py'
+adding 'binance_market_data_recorder/service/state.py'
+adding 'binance_market_data_recorder/service/systemd.py'
+adding 'binance_market_data_recorder/soak/__init__.py'
+adding 'binance_market_data_recorder/soak/sample.py'
+adding 'binance_market_data_recorder/spool/__init__.py'
+adding 'binance_market_data_recorder/spool/async_queue.py'
+adding 'binance_market_data_recorder/spool/evidence.py'
+adding 'binance_market_data_recorder/spool/format.py'
+adding 'binance_market_data_recorder/spool/legacy_reconnect.py'
+adding 'binance_market_data_recorder/spool/queue.py'
+adding 'binance_market_data_recorder/spool/recovery.py'
+adding 'binance_market_data_recorder/spool/seal.py'
+adding 'binance_market_data_recorder/spool/stream.py'
+adding 'binance_market_data_recorder/spool/writer.py'
+adding 'binance_market_data_recorder/storage/__init__.py'
+adding 'binance_market_data_recorder/storage/acceptance_delta.py'
+adding 'binance_market_data_recorder/storage/capacity.py'
+adding 'binance_market_data_recorder/storage/catalog.py'
+adding 'binance_market_data_recorder/storage/emergency.py'
+adding 'binance_market_data_recorder/storage/forecast.py'
+adding 'binance_market_data_recorder/storage/layout.py'
+adding 'binance_market_data_recorder/storage/linux.py'
+adding 'binance_market_data_recorder/storage/platform.py'
+adding 'binance_market_data_recorder/storage/macos/__init__.py'
+adding 'binance_market_data_recorder/storage/macos/eject.py'
+adding 'binance_market_data_recorder/storage/macos/model.py'
+adding 'binance_market_data_recorder/storage/macos/registry.py'
+adding 'binance_market_data_recorder/storage/macos/volumes.py'
+adding 'binance_market_data_recorder/supervisor/__init__.py'
+adding 'binance_market_data_recorder/supervisor/blue_green.py'
+adding 'binance_market_data_recorder/supervisor/depth_continuity.py'
+adding 'binance_market_data_recorder/supervisor/readiness.py'
+adding 'binance_market_data_recorder-0.1.0a1.dist-info/METADATA'
+adding 'binance_market_data_recorder-0.1.0a1.dist-info/WHEEL'
+adding 'binance_market_data_recorder-0.1.0a1.dist-info/entry_points.txt'
+adding 'binance_market_data_recorder-0.1.0a1.dist-info/top_level.txt'
+adding 'binance_market_data_recorder-0.1.0a1.dist-info/RECORD'
+removing build/bdist.macosx-11.0-arm64/wheel
+Successfully built binance_market_data_recorder-0.1.0a1-py3-none-any.whl

@@ -138,3 +138,38 @@ def test_unknown_fields_and_unparseable_received_bytes_are_preserved(market: Mar
         assert envelope.receive_time_utc_ns == 1234
         assert envelope.receive_monotonic_ns == 5678
         assert ("malformed" in envelope.capture_flags) is malformed
+
+
+def test_capture_readiness_needs_no_full_book_and_malformed_depth_invalidates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from binance_market_data_recorder.orderbook.model import OrderBook
+    from binance_market_data_recorder.supervisor.readiness import CollectorReadiness
+
+    def no_full_book(*args: object, **kwargs: object) -> None:
+        raise AssertionError("capture must not construct a full book")
+
+    monkeypatch.setattr(OrderBook, "__init__", no_full_book)
+    audits = []
+    readiness = CollectorReadiness(
+        market="spot",
+        symbol="BTCUSDT",
+        collector_instance_id="candidate-1",
+        collector_version="0.2.0+candidate",
+        audit_observer=lambda audit, at: audits.append(audit.kind),
+    )
+    readiness.observe_persisted(depth("spot", 100, 101, 99))
+    assert readiness.observe_snapshot_persisted(snapshot("spot", 100)) == (
+        SynchronizeResult.SYNCHRONIZED
+    )
+    assert readiness.snapshot().orderbook_synchronized
+    public = readiness.snapshot().public_dict()
+    assert public["full_orderbook_evaluated"] is False
+    assert public["depth_sequence_synchronized"] is True
+    readiness.observe_persisted(
+        depth("spot", 102, 103, 101).model_copy(
+            update={"capture_flags": ("malformed",), "raw_payload": b"invalid raw bytes"}
+        )
+    )
+    assert not readiness.snapshot().orderbook_synchronized
+    assert audits == ["sequence_gap"]

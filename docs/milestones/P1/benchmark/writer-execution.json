@@ -1,0 +1,122 @@
+[
+  {
+    "name": "writer-1-A",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-1-A.json"
+    ],
+    "source": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before",
+    "started_utc": "2026-10-27T00:35:02.728032+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:03.569185+00:00"
+  },
+  {
+    "name": "writer-2-B",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-2-B.json"
+    ],
+    "source": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder",
+    "started_utc": "2026-10-27T00:35:03.569320+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:04.326204+00:00"
+  },
+  {
+    "name": "writer-3-B",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-3-B.json"
+    ],
+    "source": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder",
+    "started_utc": "2026-10-27T00:35:04.326320+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:05.087995+00:00"
+  },
+  {
+    "name": "writer-4-A",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-4-A.json"
+    ],
+    "source": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before",
+    "started_utc": "2026-10-27T00:35:05.088098+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:05.886019+00:00"
+  },
+  {
+    "name": "writer-5-A",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-5-A.json"
+    ],
+    "source": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before",
+    "started_utc": "2026-10-27T00:35:05.886131+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:06.679970+00:00"
+  },
+  {
+    "name": "writer-6-B",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-6-B.json"
+    ],
+    "source": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder",
+    "started_utc": "2026-10-27T00:35:06.680068+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:07.444311+00:00"
+  },
+  {
+    "name": "writer-7-B",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-7-B.json"
+    ],
+    "source": "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder",
+    "started_utc": "2026-10-27T00:35:07.444416+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:08.200701+00:00"
+  },
+  {
+    "name": "writer-8-A",
+    "command": [
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/.venv/bin/python",
+      "/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder/docs/milestones/P1/writer_benchmark.py",
+      "--events",
+      "20000",
+      "--output",
+      "/var/tmp/bmdr-p1-20261027-8JCF7QMA/writer-8-A.json"
+    ],
+    "source": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before",
+    "started_utc": "2026-10-27T00:35:08.200818+00:00",
+    "exit_code": 0,
+    "ended_utc": "2026-10-27T00:35:08.986633+00:00"
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "schema": "p1-checks.v1",
+  "recorded_at_utc": "2026-10-27T00:41:29.079857+00:00",
+  "runtime_commit": "ce1826b8a8fa9057783dfe035596332c8c6d67d8",
+  "runtime_src_tree": "0a173540835c6eb78de26eab9d06d165cc4902aa",
+  "scope": "Same runtime src tree throughout measurements and final checks; later docs/evidence and an additional readiness regression only.",
+  "checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "result": "PASS",
+      "passed": 2263,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 188.61,
+      "log": "pytest.log"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check .",
+      "result": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m mypy",
+      "result": "PASS",
+      "source_files": 324
+    },
+    {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "result": "PASS"
+    },
+    {
+      "command": "go run tools/verify_raw_chunk_golden.go",
+      "result": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    },
+    {
+      "command": ".venv/bin/binance-market-recorder --version",
+      "result": "PASS",
+      "value": "0.1.0a1 (git ce1826b8a8fa)"
+    },
+    {
+      "command": ".venv/bin/python -m build --wheel --no-isolation --outdir <fresh-temp>/dist",
+      "result": "PASS",
+      "log": "build.log"
+    },
+    {
+      "command": "pip install --no-index --no-deps --target <fresh-temp>/wheel-smoke <built-wheel>; import from that target outside repository",
+      "result": "PASS",
+      "checked": [
+        "resolved package path under fresh wheel target",
+        "RawChunkWriter.append_batch exists",
+        "DepthContinuity import/initialization"
+      ]
+    },
+    {
+      "command": "local documentation link check",
+      "result": "PASS",
+      "files": 12
+    },
+    {
+      "command": "P1 comparison output conflict preflight",
+      "result": "PASS",
+      "exit_code": 2,
+      "observation": "Existing comparison directory rejected before creating children or any outputs inside it; original artifacts retained."
+    }
+  ],
+  "measurements": {
+    "all_features_rounds": 4,
+    "core_ten_assets_rounds": 4,
+    "writer_rounds": 8,
+    "summary": "benchmark/summary.json",
+    "network_or_production_deployment": false
+  },
+  "unrun": [
+    "Opt-in public online smoke",
+    "Million-event stress (not P1 acceptance prerequisite)",
+    "VPS A/B or real-network soak",
+    "New power-loss engineering/tests (out of scope)",
+    "Linux/Windows/platform service or real external-volume tests"
+  ],
+  "warnings": "13 retained macOS multiprocessing fork-in-multithreaded-process warnings; no test failures."
+}

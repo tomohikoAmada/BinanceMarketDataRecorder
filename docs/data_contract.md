@@ -26,6 +26,32 @@ roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
 market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
 explicit gaps, and historical/live clock separation remain authoritative.
 
+## P1 capture and progress contract (2026-10-27)
+
+[ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)
+implements the P1 boundary without changing Raw v1 bytes, readers, Catalog,
+normalization/replay identities or archive authorization. Extra WS fields do not
+invalidate capture; malformed schema/JSON (including excessive nesting) retains
+its original bytes with `malformed`. Sequence metadata and exact receive times
+remain attached to valid frames. A malformed depth observation invalidates
+capture sequence health after saving; it cannot silently sustain a healthy bridge.
+
+Capture evaluates bounded snapshot/sequence continuity rather than a full book.
+Status declares `capture_health_contract=capture-depth-sequence.v1`,
+`depth_sequence_synchronized` and `full_orderbook_evaluated=false`;
+`orderbook_synchronized` remains a compatibility alias for that bridge. Price-level
+quality, reconstructed books and consumer output need separate offline evaluation.
+Historical records retain their original readiness meaning.
+
+Receipt ownership, completed append and successful fsync are distinct observations.
+Spool progress publishes `written_frames` and `synchronized_frames` after completed
+operations, conservatively excluding any unobserved in-flight worker. Receipt and
+spool queues retain explicit item/byte limits; a bounded consumer batch is separate.
+Actual vectored writes retain CRC, canonical frames, immutable snapshots and the
+existing digest; short writes retry and ambiguous errors poison clean evidence.
+Normal drain and periodic/final sync remain. This is not independent new-file
+verification (P3) or a new power-loss guarantee.
+
 ## MS2 configurable-product compatibility
 
 ADR-0032 changes collection topology, not Raw v1 or durable schema.

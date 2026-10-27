@@ -7,7 +7,8 @@ merged as `113cdb3`; see [P0](milestones/P0/README.md). The installed production
 was separately observed as `20e57f3`. The old installed revision and V5 sequencing in
 historical sections below are not current deployment claims or future prerequisites.
 [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) supplies the
-new qualification contract. P1–P3 implementation is still required.
+new qualification contract. P1 capture changes are described below; P2–P3
+implementation and P4–P6 qualification are still required.
 
 This document describes the implemented Recorder and its deployment roles.
 Configurable Spot/USD-M products and V5 acceptance are merged through PR #78.
@@ -16,6 +17,22 @@ At the historical PR #78 checkpoint, installed code was
 during its baseline on 2026-10-01. This is retained history, not current installed identity. Exact current
 operational status is in [current state](CURRENT_PRODUCTION_STATE.md).
 The [developer guide](developer_guide.md) maps these components to source files.
+
+## P1 capture path
+
+[ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)
+keeps transport, Raw and derived responsibilities distinct. Each connection owns
+one long-lived receive task; the existing owned thread handoff reaches bounded
+vectored append calls. The spool queue has an item and byte budget, and progress
+separates written frames from successful fsync acknowledgements. Final drain and
+storage-failure propagation remain owned by the collector.
+
+Live readiness uses `supervisor/depth_continuity.py` to bridge snapshots and
+observe U/u/pu without retaining full books or rescanning prices. It declares
+sequence health explicitly; offline `orderbook/`, normalization and replay retain
+their full reconstruction/validation roles. Malformed received bytes remain Raw
+records and cannot kill capture merely because derived price processing rejects
+them. Per-source availability and durable new-file verification remain P3 work.
 
 ## V5 acceptance architecture
 

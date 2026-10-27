@@ -1,0 +1,37 @@
+import json
+import os
+import subprocess
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+root = Path('/Users/amada/Documents/Development/Crypto/BinanceMarketDataRecorder')
+evidence = Path('/var/tmp/bmdr-p1-20261027-8JCF7QMA')
+while not (evidence / 'core-ten-assets-4-A.json').exists():
+    try:
+        os.kill(35867, 0)
+    except ProcessLookupError:
+        raise SystemExit('first comparison driver ended before ten-asset results')
+    time.sleep(2)
+# The last output is written after timing and verification; wait for process cleanup.
+time.sleep(2)
+records = []
+for number, side in enumerate('ABBAABBA', 1):
+    repo = evidence / 'before' if side == 'A' else root
+    name = f'writer-{number}-{side}'
+    command = [str(root / '.venv/bin/python'), str(root / 'docs/milestones/P1/writer_benchmark.py'),
+               '--events', '20000', '--output', str(evidence / f'{name}.json')]
+    record = {'name': name, 'command': command, 'source': str(repo),
+              'started_utc': datetime.now(UTC).isoformat()}
+    records.append(record)
+    with (evidence / f'{name}.log').open('x') as log:
+        result = subprocess.run(command, env=dict(os.environ, PYTHONPATH=f'{repo / "src"}:{repo}'),
+                                stdout=log, stderr=subprocess.STDOUT)
+    record.update(exit_code=result.returncode, ended_utc=datetime.now(UTC).isoformat())
+    print(f'{name} exit={result.returncode}', flush=True)
+    if result.returncode:
+        raise SystemExit(result.returncode)
+(evidence / 'writer-execution.json').write_text(json.dumps(records, indent=2) + '\n')
+with (evidence / 'final-pytest.log').open('x') as log:
+    result = subprocess.run([str(root / '.venv/bin/python'), '-m', 'pytest', '-q'], cwd=root,
+                            stdout=log, stderr=subprocess.STDOUT)
+print(f'FINAL_PYTEST exit={result.returncode}', flush=True)

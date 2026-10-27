@@ -1,6 +1,6 @@
 # Recorder 生产上线 Milestone Plan
 
-版本：2026-10-27 · 当前开发计划 · R1 / R3 / R4复审通过，R2剩余分类缺陷已修正并验证，P0完成；P1–P6未开始。
+版本：2026-10-27 · 当前开发计划 · R1 / R3 / R4复审通过，R2剩余分类缺陷已修正并验证，P0、P1完成；P2–P6未开始。
 
 **目标：按至少 10 个币种设计，先在 GreenCloud VPS 上让 BTC 和 ETH 稳定生产运行。** 记录所选标的在现货、U 本位 / 币本位永续及交割合约中的公开原始数据，供离线研究和回测。期权暂缓。
 
@@ -66,7 +66,7 @@ flowchart LR
 | 阶段 | 交付结果 | 状态 | 依赖 |
 | --- | --- | --- | --- |
 | P0：对齐代码和验收口径 | 单一开发基线、完整覆盖清单、可比较的性能起点 | [完成，R2补充修正及v4分类已记录](milestones/P0/review-20261026.md#r2补充修正2026-10-27) | 无 |
-| P1：缩短原始数据写入路径 | 采集与计算分开，减少逐消息开销 | 未开始 | P0 |
+| P1：缩短原始数据写入路径 | 采集与计算分开，减少逐消息开销 | [完成，本机收益和限制分列](milestones/P1/README.md) | P0 |
 | P2：补齐市场与数据覆盖 | 10 标的可配置，BTC / ETH 各指定市场完整接入 | 未开始 | P1 的接口稳定 |
 | P3：恢复、后台处理与运行工具 | 小故障能自动恢复，归档 / 校验不拖住采集 | 未开始 | P1、P2 |
 | P4：单币验证 | 同一版本 / 配置从 2h 检查到完整 24h | 未开始 | P3 |
@@ -77,7 +77,7 @@ flowchart LR
 
 ### P0：对齐代码和验收口径
 
-**状态：R1 / R3 / R4复审通过，R2剩余分类修正完成，P0通过。** [结果记录](milestones/P0/README.md)保留原始交付和测量；[PR #87复审](milestones/P0/review-20261026.md#pr-87-复审2026-10-26)记录一个已复现的稳态漏判。[v3基线](milestones/P0/corrections-20261026/README.md)的原分类仍为无profiler STEADY / profile NON_STEADY，原文件保留；[v4分类](milestones/P0/corrections-20261026/r2-reclassification.json)已追加，两轮状态保持；profile增加积压原因，仍不用于性能比较。P1尚未开始。
+**状态：R1 / R3 / R4复审通过，R2剩余分类修正完成，P0通过。** [结果记录](milestones/P0/README.md)保留原始交付和测量；[PR #87复审](milestones/P0/review-20261026.md#pr-87-复审2026-10-26)记录一个已复现的稳态漏判。[v3基线](milestones/P0/corrections-20261026/README.md)的原分类仍为无profiler STEADY / profile NON_STEADY，原文件保留；[v4分类](milestones/P0/corrections-20261026/r2-reclassification.json)已追加，两轮状态保持；profile增加积压原因，仍不用于性能比较。P1交付见[结果记录](milestones/P1/README.md)。
 
 **工作：**
 
@@ -101,6 +101,8 @@ flowchart LR
 **远端整理已核实：** PR #86 / #87已合并关闭，2026-10-26复审时GitHub已仅有main，head为 `43aab9f`，无需再次删除或重建分支。本轮直接同步现有main，不创建、删除或恢复旧分支；历史PR、标签、数据和其他本地worktree保留。
 
 ### P1：缩短原始数据写入路径
+
+**状态：开发与离线验证完成。** [结果记录](milestones/P1/README.md)给出实际批量写、长寿命接收、序列健康边界、十标的并发及交错对照。writer本机固定输入中位墙钟减少11.82%；全功能两侧各有NON_STEADY且后台工作不同，不宣称整体CPU收益或VPS容量。Raw v1与归档保护保留；P2尚未开始。
 
 **工作：**
 

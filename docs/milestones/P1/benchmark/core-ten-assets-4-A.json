@@ -1,0 +1,2714 @@
+{
+  "capture_cpu_seconds": 3.884631,
+  "capture_wall_seconds": 4.533807792002335,
+  "cpu_cores_used": 0.8767233788571551,
+  "cpu_seconds": 4.101064,
+  "cpu_us_per_ws_frame": 96.26910798122066,
+  "dependencies": {
+    "Pygments": "2.21.0",
+    "aiohappyeyeballs": "2.7.1",
+    "aiohttp": "3.14.5",
+    "aiosignal": "1.4.0",
+    "annotated-types": "0.8.0",
+    "attrs": "26.1.0",
+    "binance-common": "4.0.3",
+    "binance-market-data-recorder": "0.1.0a1",
+    "binance-sdk-derivatives-trading-usds-futures": "14.0.0",
+    "binance-sdk-spot": "10.0.0",
+    "build": "1.6.1",
+    "cbor2": "6.1.3",
+    "certifi": "2026.10.23",
+    "charset-normalizer": "3.5.2",
+    "duckdb": "1.5.5",
+    "frozenlist": "1.8.0",
+    "google-crc32c": "1.8.0",
+    "idna": "3.20",
+    "iniconfig": "2.3.1",
+    "librt": "0.16.0",
+    "multidict": "7.2.1",
+    "mypy": "1.20.2",
+    "mypy_extensions": "1.1.0",
+    "packaging": "26.3",
+    "pathspec": "1.1.1",
+    "pip": "25.0.1",
+    "pluggy": "1.7.0",
+    "propcache": "0.5.4",
+    "pyarrow": "25.0.0",
+    "pycryptodome": "3.24.1",
+    "pydantic": "2.14.1",
+    "pydantic_core": "2.50.1",
+    "pyobjc-core": "12.2.2",
+    "pyobjc-framework-Cocoa": "12.2.1",
+    "pyobjc-framework-DiskArbitration": "12.2.1",
+    "pyproject_hooks": "1.3.3",
+    "pytest": "9.1.1",
+    "requests": "2.34.2",
+    "ruff": "0.17.2",
+    "setuptools": "81.0.0",
+    "typing-inspection": "0.4.4",
+    "typing_extensions": "4.16.0",
+    "urllib3": "2.8.0",
+    "websocket-client": "1.9.2",
+    "websockets": "15.0.1",
+    "yarl": "1.25.1",
+    "zstandard": "0.25.0"
+  },
+  "event_loop_lag_max_seconds": 0.0018376250518485904,
+  "event_loop_lag_p99_seconds": 0.0014322090428322554,
+  "excluded": [
+    "real sockets/TLS/network",
+    "auxiliary streams and REST polling",
+    "service manager and report worker",
+    "archive timer",
+    "COIN-M and delivery adapters (not implemented)",
+    "live capacity, long-run stability, real traffic distribution"
+  ],
+  "expected_ws_frames": 42600,
+  "fixture": {
+    "spot/ADAUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "e64791767aad020c0c784d5073ca39b9d8bd6517a4b611a8f65763bf4197009f"
+    },
+    "spot/ADAUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "c5b0af8f0bfe1dd38b047d7d072ad37f6aca7d1b01ff0ecd1872c7e893553f90"
+    },
+    "spot/ADAUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "ab647a128bc582c3f10b464536717ac133ec65cecf3dbc9418a415381ef4073c"
+    },
+    "spot/AVAXUSDT/agg_trade": {
+      "bytes": 9970,
+      "frames": 80,
+      "sha256": "43dbf763223fe9943cbddff988256b2eae83fad8ace6cc34df71bc3509e4f190"
+    },
+    "spot/AVAXUSDT/book_ticker": {
+      "bytes": 197101,
+      "frames": 2000,
+      "sha256": "9a313f4f4006721330dc588db730375b810c440bc866109b413a08d90fbc8aa8"
+    },
+    "spot/AVAXUSDT/diff_depth": {
+      "bytes": 6649,
+      "frames": 50,
+      "sha256": "c8286b39310f867e3c88c5c3a318df1d977f33e98be956711092722b5a7bcd66"
+    },
+    "spot/BNBUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "7405127d63e6551b2c141447c7772f175d9342cc73d09fd81fcb9b444fc652c1"
+    },
+    "spot/BNBUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "a2c52a4c89b956184d9cd39015b5291f64c0d77cdc2a5431062f430a4ffeb547"
+    },
+    "spot/BNBUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "b083cd3474725efcf98e417a03340e8e61b562f798c05365ac86e34006b3c6a6"
+    },
+    "spot/BTCUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "86ea885cd0f7905beb69627ac343032b8fafe1b612fe4a08ba1798c09aac3f33"
+    },
+    "spot/BTCUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "525f8d0b9632efaefdcc76cdf038dfcb98233edc9133751cfc8de9429affb8ad"
+    },
+    "spot/BTCUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "52e9f0d803806e4b9fb50adb06f8bdcab432272e6dc4e8722d8daf206b0a364f"
+    },
+    "spot/DOGEUSDT/agg_trade": {
+      "bytes": 9970,
+      "frames": 80,
+      "sha256": "24af26e63e8b3e34accc022e89c1911700f970f1c721d6586fd4b3a80349afce"
+    },
+    "spot/DOGEUSDT/book_ticker": {
+      "bytes": 197101,
+      "frames": 2000,
+      "sha256": "f25778c6f6cd9992b0770253871e43cc8bca824e4b3738655f509657026489b9"
+    },
+    "spot/DOGEUSDT/diff_depth": {
+      "bytes": 6649,
+      "frames": 50,
+      "sha256": "231b57188df6f88036086512b6e4db0e4b72c45691c0acfbdb0c5cd91f670fca"
+    },
+    "spot/ETHUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "96abf3cc1b2bfe4f219d46ad52fe74acd2b2992630911bc90b25a25dc92f6448"
+    },
+    "spot/ETHUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "beda4de3910bdb9e5895ec4e1a8d34e03330669daefa209bca6361de83be0df3"
+    },
+    "spot/ETHUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "8508e25b1cdb2e386f05ffcb8cc3d71c5ff2cea75662e5865e32dba1571d05b6"
+    },
+    "spot/LINKUSDT/agg_trade": {
+      "bytes": 9970,
+      "frames": 80,
+      "sha256": "ac1625d2ad90022baad4b4106b44c966293ea04a8ff4cd0b057550c562d6cede"
+    },
+    "spot/LINKUSDT/book_ticker": {
+      "bytes": 197101,
+      "frames": 2000,
+      "sha256": "8989708d14bfb3bfa7d1a19be4a08279c3a3c01f70734a2d1470ca7c2093ac68"
+    },
+    "spot/LINKUSDT/diff_depth": {
+      "bytes": 6649,
+      "frames": 50,
+      "sha256": "876f6a722b99baa760d25a21582721802a88443d2c0dc8eb05db0aa2545048bc"
+    },
+    "spot/LTCUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "79474f385ce63aa0789c8b527ff1ed335923df8ef2d9d194dc02ed6c821bd0d0"
+    },
+    "spot/LTCUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "bede2ad2b8e7610122275efa35196af5f582e05eabb49e03a1d7388a2ab16aa9"
+    },
+    "spot/LTCUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "fbd6d547ab134542585ffbdebb3c4ec9a765af72c50cf234cbff2e524fcc43f0"
+    },
+    "spot/SOLUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "15d699dc6018f29b8f04d431ee96b7cd5fad9a83c90d698e76c4b3ad6be8a47a"
+    },
+    "spot/SOLUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "eceb72d356cdef4e7478d54f7168ac563de4b86c530d0b812b0156be629fff9c"
+    },
+    "spot/SOLUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "5aa3a1d159acacedd34ff6593e3478e8da5df18777b6af22465fff71036095e3"
+    },
+    "spot/XRPUSDT/agg_trade": {
+      "bytes": 9890,
+      "frames": 80,
+      "sha256": "8d95a89e805aa8cac614710903c1ecc7e50c961fa9cc56c60dc4da4fb7f02a93"
+    },
+    "spot/XRPUSDT/book_ticker": {
+      "bytes": 195101,
+      "frames": 2000,
+      "sha256": "56e4b5c2fc0275753d27d745ee3c918bdde5b8c45ca199d8d08361b5f7bdefa3"
+    },
+    "spot/XRPUSDT/diff_depth": {
+      "bytes": 6599,
+      "frames": 50,
+      "sha256": "83449320bd03f696c1f5f4bbf992fb0aa1c886c38975252e55728e433f1367ab"
+    },
+    "um_perpetual/ADAUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "b19350d9f88491b667583acd3c776df490bc68b443e5d435c1c64a99ddabed54"
+    },
+    "um_perpetual/ADAUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "2ac7b54071c256fff8d26e9550823ad9cdfcfa8b2fe338d22c088da3497f3d3d"
+    },
+    "um_perpetual/ADAUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "d8522fc03d1639d84e431ad0da856ff45776576fde14f1eea4bafeede53e4062"
+    },
+    "um_perpetual/AVAXUSDT/agg_trade": {
+      "bytes": 11810,
+      "frames": 80,
+      "sha256": "6b2a2b4451a4fd2fd6695c015c98bac7d5985fb486d78f26a1eafa220751c623"
+    },
+    "um_perpetual/AVAXUSDT/book_ticker": {
+      "bytes": 277101,
+      "frames": 2000,
+      "sha256": "d6890a6bff939e05287d2ea34352cd9c160c9a3b89e6a37026744068d1a0a8b9"
+    },
+    "um_perpetual/AVAXUSDT/diff_depth": {
+      "bytes": 7799,
+      "frames": 50,
+      "sha256": "fbad6138597dd59f8a4a298309c48272edcb7262a1c5e5d3fe2e8e986a3275ff"
+    },
+    "um_perpetual/BNBUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "4f025f2d463bc946ceb58fb31f277a950dee24c40e4518627e248b669494567c"
+    },
+    "um_perpetual/BNBUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "b7ccc218ba1b782ebc457a4eea08dd3bacda220dbea280690d3e55890ad04adf"
+    },
+    "um_perpetual/BNBUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "358c530b7bebdcf5e1260b8fe9066ab65f5aff3a8907ec767dc95e8441377f58"
+    },
+    "um_perpetual/BTCUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "fbf41c3a3d37eca29c1f256666d358d707f6c6c2610a873df2358e8b9ca3075b"
+    },
+    "um_perpetual/BTCUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "c45287666d99e2ccae570c88c87fb5f51e20e232649d9cabb64b9804634f15f9"
+    },
+    "um_perpetual/BTCUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "cb8baa327429c50104c0fd51c8a21f884c65b895088a026d4c7d26c67b89db20"
+    },
+    "um_perpetual/DOGEUSDT/agg_trade": {
+      "bytes": 11810,
+      "frames": 80,
+      "sha256": "9acc1ffcf2a5074708c7e6ff8f43dcdcf2063587de4fcf6e16c3e03bc31da79e"
+    },
+    "um_perpetual/DOGEUSDT/book_ticker": {
+      "bytes": 277101,
+      "frames": 2000,
+      "sha256": "00f9fdd279f729587085e6dc0751c1867b8530f8476120ea024992a176cf7431"
+    },
+    "um_perpetual/DOGEUSDT/diff_depth": {
+      "bytes": 7799,
+      "frames": 50,
+      "sha256": "d4b9fdd62ee77e2f07d3a23301672310c2251083281d335c988e823bff2cca5b"
+    },
+    "um_perpetual/ETHUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "02695e70a003627fd4acd734d900b596096b9f7ad489d88a9370dbdc9b31726b"
+    },
+    "um_perpetual/ETHUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "67f0342585d314c3adbade4040d4b128233324dedd094dab9fcd6f1edea23c32"
+    },
+    "um_perpetual/ETHUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "ff60caca5f886b02b1895361cea9c8dc0dc4060685e5687a5f155c9a6e43badf"
+    },
+    "um_perpetual/LINKUSDT/agg_trade": {
+      "bytes": 11810,
+      "frames": 80,
+      "sha256": "32ca60023ab6d6f154f102656f545dd5fb00b28a6481034546c6e0d95fbaf187"
+    },
+    "um_perpetual/LINKUSDT/book_ticker": {
+      "bytes": 277101,
+      "frames": 2000,
+      "sha256": "50c4ae088daa7bd6f7928747b851fa52686a77b582e480c94732d0974ed5ee2b"
+    },
+    "um_perpetual/LINKUSDT/diff_depth": {
+      "bytes": 7799,
+      "frames": 50,
+      "sha256": "3a5b5d831d2f98cfc51dea224012780672d60c65cbe331d3cd10dc88e896aae2"
+    },
+    "um_perpetual/LTCUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "b72be42d923362048a5ff5d7fbdca3e47781effd1ebdba8e7289fdb47d72c71c"
+    },
+    "um_perpetual/LTCUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "f188b876e7424df4f3b7260a0cc7c2943973fec1f904934a61875763d354bd09"
+    },
+    "um_perpetual/LTCUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "591d9c216c251de350c17919138aa0030b3a2845e8fa04fad7bd6747bfc76097"
+    },
+    "um_perpetual/SOLUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "b0484efc3659eb2de4c66fb34b0b25c53a3cb068d519675497fc9a7f0349e872"
+    },
+    "um_perpetual/SOLUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "ad63e7557a1ccf00c0248e2f10f520fe83c6809b9f869eb502fa7742097ac012"
+    },
+    "um_perpetual/SOLUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "608b29d6c2c454e39800cac6b889ed308c48291d45eab1f736eadcdb87982cc1"
+    },
+    "um_perpetual/XRPUSDT/agg_trade": {
+      "bytes": 11650,
+      "frames": 80,
+      "sha256": "b22dac852a1286ced675e9ec38629b57293b2c2a0d150f265a61308aff550af9"
+    },
+    "um_perpetual/XRPUSDT/book_ticker": {
+      "bytes": 273101,
+      "frames": 2000,
+      "sha256": "b430da0ddff1635ac0a4f7c3902518a27af8523b4c8f1fd6b61b045bdac0cc5c"
+    },
+    "um_perpetual/XRPUSDT/diff_depth": {
+      "bytes": 7699,
+      "frames": 50,
+      "sha256": "add54a029ac23381e34d5ee0f0257a5cbdcd8730ea4d45be295b09bc86868e67"
+    }
+  },
+  "logical_cpus": 8,
+  "operations": [
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 24083,
+        "append_max_ns": 4028750,
+        "fsync_last_ns": 3791,
+        "fsync_max_ns": 483458,
+        "seal_last_ns": 58933291,
+        "seal_max_ns": 151681000,
+        "write_last_ns": 6625,
+        "write_max_ns": 4013375
+      },
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23791,
+        "append_max_ns": 5246375,
+        "fsync_last_ns": 34084,
+        "fsync_max_ns": 1344125,
+        "seal_last_ns": 73057916,
+        "seal_max_ns": 151609625,
+        "write_last_ns": 7500,
+        "write_max_ns": 5230417
+      },
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 82,
+        "high_watermark_bytes": 11640,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 29292,
+        "append_max_ns": 5519084,
+        "fsync_last_ns": 3167,
+        "fsync_max_ns": 1007708,
+        "seal_last_ns": 61128959,
+        "seal_max_ns": 150499291,
+        "write_last_ns": 8417,
+        "write_max_ns": 5500167
+      },
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1004917,
+        "append_max_ns": 1004917,
+        "fsync_last_ns": 5250,
+        "fsync_max_ns": 831459,
+        "seal_last_ns": 49440208,
+        "seal_max_ns": 49440208,
+        "write_last_ns": 986750,
+        "write_max_ns": 986750
+      },
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23417,
+        "append_max_ns": 509250,
+        "fsync_last_ns": 18250,
+        "fsync_max_ns": 821666,
+        "seal_last_ns": 50269083,
+        "seal_max_ns": 50269083,
+        "write_last_ns": 7084,
+        "write_max_ns": 491208
+      },
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 231,
+        "high_watermark_bytes": 34338,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23167,
+        "append_max_ns": 4079250,
+        "fsync_last_ns": 10834,
+        "fsync_max_ns": 1118084,
+        "seal_last_ns": 4591208,
+        "seal_max_ns": 4591208,
+        "write_last_ns": 5833,
+        "write_max_ns": 4064709
+      },
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 21833,
+        "append_max_ns": 1412750,
+        "fsync_last_ns": 5417,
+        "fsync_max_ns": 1706875,
+        "seal_last_ns": 31044500,
+        "seal_max_ns": 31044500,
+        "write_last_ns": 6416,
+        "write_max_ns": 1395417
+      },
+      "stream": "diff_depth",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 185708,
+        "append_max_ns": 2466958,
+        "fsync_last_ns": 45042,
+        "fsync_max_ns": 518083,
+        "seal_last_ns": 20882792,
+        "seal_max_ns": 20882792,
+        "write_last_ns": 169042,
+        "write_max_ns": 2448250
+      },
+      "stream": "agg_trade",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 207,
+        "high_watermark_bytes": 31622,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 255917,
+        "append_max_ns": 5065000,
+        "fsync_last_ns": 273541,
+        "fsync_max_ns": 818416,
+        "seal_last_ns": 10782125,
+        "seal_max_ns": 10782125,
+        "write_last_ns": 235125,
+        "write_max_ns": 5049500
+      },
+      "stream": "book_ticker",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 267209,
+        "append_max_ns": 2210833,
+        "fsync_last_ns": 5917,
+        "fsync_max_ns": 1625083,
+        "seal_last_ns": 10739250,
+        "seal_max_ns": 10739250,
+        "write_last_ns": 251667,
+        "write_max_ns": 886792
+      },
+      "stream": "diff_depth",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 380000,
+        "append_max_ns": 1685791,
+        "fsync_last_ns": 16583,
+        "fsync_max_ns": 704541,
+        "seal_last_ns": 7024666,
+        "seal_max_ns": 7024666,
+        "write_last_ns": 361000,
+        "write_max_ns": 1667125
+      },
+      "stream": "agg_trade",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 207,
+        "high_watermark_bytes": 31137,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 211917,
+        "append_max_ns": 14956958,
+        "fsync_last_ns": 1583,
+        "fsync_max_ns": 699084,
+        "seal_last_ns": 16216333,
+        "seal_max_ns": 16216333,
+        "write_last_ns": 195583,
+        "write_max_ns": 14941916
+      },
+      "stream": "book_ticker",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 799083,
+        "append_max_ns": 5110834,
+        "fsync_last_ns": 3875,
+        "fsync_max_ns": 287916,
+        "seal_last_ns": 40801875,
+        "seal_max_ns": 40801875,
+        "write_last_ns": 780917,
+        "write_max_ns": 1700833
+      },
+      "stream": "diff_depth",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 309583,
+        "append_max_ns": 2883417,
+        "fsync_last_ns": 4167,
+        "fsync_max_ns": 1302208,
+        "seal_last_ns": 10217584,
+        "seal_max_ns": 14479292,
+        "write_last_ns": 292250,
+        "write_max_ns": 2864375
+      },
+      "stream": "agg_trade",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 283,
+        "high_watermark_bytes": 32107,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 74541,
+        "append_max_ns": 11429125,
+        "fsync_last_ns": 50875,
+        "fsync_max_ns": 1400167,
+        "seal_last_ns": 6780667,
+        "seal_max_ns": 19218041,
+        "write_last_ns": 57375,
+        "write_max_ns": 5250417
+      },
+      "stream": "book_ticker",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6649,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23500,
+        "append_max_ns": 2372584,
+        "fsync_last_ns": 13542,
+        "fsync_max_ns": 1395584,
+        "seal_last_ns": 7154917,
+        "seal_max_ns": 57597083,
+        "write_last_ns": 6583,
+        "write_max_ns": 2356084
+      },
+      "stream": "diff_depth",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9970,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 415917,
+        "append_max_ns": 1937000,
+        "fsync_last_ns": 300083,
+        "fsync_max_ns": 736000,
+        "seal_last_ns": 8662375,
+        "seal_max_ns": 15705875,
+        "write_last_ns": 398042,
+        "write_max_ns": 1916750
+      },
+      "stream": "agg_trade",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 134,
+        "high_watermark_bytes": 21070,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 95750,
+        "append_max_ns": 6750791,
+        "fsync_last_ns": 2542,
+        "fsync_max_ns": 968792,
+        "seal_last_ns": 3539541,
+        "seal_max_ns": 44018666,
+        "write_last_ns": 80084,
+        "write_max_ns": 6735458
+      },
+      "stream": "book_ticker",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23958,
+        "append_max_ns": 2540166,
+        "fsync_last_ns": 4583,
+        "fsync_max_ns": 399875,
+        "seal_last_ns": 4887875,
+        "seal_max_ns": 61044000,
+        "write_last_ns": 6542,
+        "write_max_ns": 2520667
+      },
+      "stream": "diff_depth",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 349541,
+        "append_max_ns": 5665250,
+        "fsync_last_ns": 3208,
+        "fsync_max_ns": 846042,
+        "seal_last_ns": 5512333,
+        "seal_max_ns": 61550875,
+        "write_last_ns": 333000,
+        "write_max_ns": 5647625
+      },
+      "stream": "agg_trade",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 197,
+        "high_watermark_bytes": 29779,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 26000,
+        "append_max_ns": 7053917,
+        "fsync_last_ns": 30500,
+        "fsync_max_ns": 1058000,
+        "seal_last_ns": 6318583,
+        "seal_max_ns": 6318583,
+        "write_last_ns": 7500,
+        "write_max_ns": 7035208
+      },
+      "stream": "book_ticker",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6649,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 400583,
+        "append_max_ns": 2211375,
+        "fsync_last_ns": 27083,
+        "fsync_max_ns": 1350333,
+        "seal_last_ns": 8176875,
+        "seal_max_ns": 8176875,
+        "write_last_ns": 359667,
+        "write_max_ns": 2192417
+      },
+      "stream": "diff_depth",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9970,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1861542,
+        "append_max_ns": 1861542,
+        "fsync_last_ns": 3291,
+        "fsync_max_ns": 479042,
+        "seal_last_ns": 11607125,
+        "seal_max_ns": 11607125,
+        "write_last_ns": 1842333,
+        "write_max_ns": 1842333
+      },
+      "stream": "agg_trade",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 195,
+        "high_watermark_bytes": 28812,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 646541,
+        "append_max_ns": 10188125,
+        "fsync_last_ns": 2667,
+        "fsync_max_ns": 526792,
+        "seal_last_ns": 45427666,
+        "seal_max_ns": 45427666,
+        "write_last_ns": 629583,
+        "write_max_ns": 10169125
+      },
+      "stream": "book_ticker",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6649,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23500,
+        "append_max_ns": 1393125,
+        "fsync_last_ns": 2750,
+        "fsync_max_ns": 510208,
+        "seal_last_ns": 2765250,
+        "seal_max_ns": 8069333,
+        "write_last_ns": 6375,
+        "write_max_ns": 1375709
+      },
+      "stream": "diff_depth",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9970,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 26334,
+        "append_max_ns": 6578500,
+        "fsync_last_ns": 2584,
+        "fsync_max_ns": 1193833,
+        "seal_last_ns": 42713500,
+        "seal_max_ns": 42713500,
+        "write_last_ns": 7625,
+        "write_max_ns": 6560500
+      },
+      "stream": "agg_trade",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 179,
+        "high_watermark_bytes": 25676,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 134917,
+        "append_max_ns": 7792792,
+        "fsync_last_ns": 4875,
+        "fsync_max_ns": 936875,
+        "seal_last_ns": 8038667,
+        "seal_max_ns": 8623542,
+        "write_last_ns": 115709,
+        "write_max_ns": 4015708
+      },
+      "stream": "book_ticker",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 6599,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 502250,
+        "append_max_ns": 1849500,
+        "fsync_last_ns": 3792,
+        "fsync_max_ns": 542375,
+        "seal_last_ns": 41081583,
+        "seal_max_ns": 41081583,
+        "write_last_ns": 486083,
+        "write_max_ns": 1831584
+      },
+      "stream": "diff_depth",
+      "symbol": "LTCUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 9890,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 264375,
+        "append_max_ns": 6914042,
+        "fsync_last_ns": 10000,
+        "fsync_max_ns": 403125,
+        "seal_last_ns": 13086417,
+        "seal_max_ns": 64347334,
+        "write_last_ns": 247708,
+        "write_max_ns": 6893334
+      },
+      "stream": "agg_trade",
+      "symbol": "LTCUSDT"
+    },
+    {
+      "market": "spot",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 101,
+        "high_watermark_bytes": 16781,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 138375,
+        "append_max_ns": 4591917,
+        "fsync_last_ns": 4667,
+        "fsync_max_ns": 1672959,
+        "seal_last_ns": 16285708,
+        "seal_max_ns": 63221459,
+        "write_last_ns": 117084,
+        "write_max_ns": 4575583
+      },
+      "stream": "book_ticker",
+      "symbol": "LTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 26833,
+        "append_max_ns": 1786625,
+        "fsync_last_ns": 3083,
+        "fsync_max_ns": 856834,
+        "seal_last_ns": 11676959,
+        "seal_max_ns": 11676959,
+        "write_last_ns": 7791,
+        "write_max_ns": 1768208
+      },
+      "stream": "diff_depth",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 395791,
+        "append_max_ns": 3190333,
+        "fsync_last_ns": 3084,
+        "fsync_max_ns": 1094209,
+        "seal_last_ns": 12775208,
+        "seal_max_ns": 12775208,
+        "write_last_ns": 380709,
+        "write_max_ns": 3172375
+      },
+      "stream": "agg_trade",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 156,
+        "high_watermark_bytes": 33728,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 26792,
+        "append_max_ns": 13158625,
+        "fsync_last_ns": 4083,
+        "fsync_max_ns": 1082833,
+        "seal_last_ns": 9533042,
+        "seal_max_ns": 9533042,
+        "write_last_ns": 8292,
+        "write_max_ns": 13141166
+      },
+      "stream": "book_ticker",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 24541,
+        "append_max_ns": 7222250,
+        "fsync_last_ns": 2416,
+        "fsync_max_ns": 1734583,
+        "seal_last_ns": 7200125,
+        "seal_max_ns": 7200125,
+        "write_last_ns": 7541,
+        "write_max_ns": 7202375
+      },
+      "stream": "diff_depth",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 3941000,
+        "append_max_ns": 3941000,
+        "fsync_last_ns": 3916,
+        "fsync_max_ns": 644000,
+        "seal_last_ns": 3813667,
+        "seal_max_ns": 5897709,
+        "write_last_ns": 3923459,
+        "write_max_ns": 3923459
+      },
+      "stream": "agg_trade",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 144,
+        "high_watermark_bytes": 31552,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 22375,
+        "append_max_ns": 7675292,
+        "fsync_last_ns": 5417,
+        "fsync_max_ns": 1091792,
+        "seal_last_ns": 5712750,
+        "seal_max_ns": 5712750,
+        "write_last_ns": 7167,
+        "write_max_ns": 7659833
+      },
+      "stream": "book_ticker",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 26875,
+        "append_max_ns": 10081542,
+        "fsync_last_ns": 179208,
+        "fsync_max_ns": 1372667,
+        "seal_last_ns": 5970250,
+        "seal_max_ns": 5970250,
+        "write_last_ns": 8125,
+        "write_max_ns": 10063833
+      },
+      "stream": "diff_depth",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1392834,
+        "append_max_ns": 8980542,
+        "fsync_last_ns": 17417,
+        "fsync_max_ns": 1356917,
+        "seal_last_ns": 8113791,
+        "seal_max_ns": 8113791,
+        "write_last_ns": 1375291,
+        "write_max_ns": 8962708
+      },
+      "stream": "agg_trade",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 139,
+        "high_watermark_bytes": 29784,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 291458,
+        "append_max_ns": 5042042,
+        "fsync_last_ns": 2917,
+        "fsync_max_ns": 437917,
+        "seal_last_ns": 9529042,
+        "seal_max_ns": 9529042,
+        "write_last_ns": 274125,
+        "write_max_ns": 5025584
+      },
+      "stream": "book_ticker",
+      "symbol": "BNBUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 25583,
+        "append_max_ns": 10996833,
+        "fsync_last_ns": 3250,
+        "fsync_max_ns": 765208,
+        "seal_last_ns": 45897916,
+        "seal_max_ns": 45897916,
+        "write_last_ns": 7459,
+        "write_max_ns": 10973375
+      },
+      "stream": "diff_depth",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 338709,
+        "append_max_ns": 9850708,
+        "fsync_last_ns": 3958,
+        "fsync_max_ns": 603666,
+        "seal_last_ns": 45147291,
+        "seal_max_ns": 45147291,
+        "write_last_ns": 321583,
+        "write_max_ns": 9835375
+      },
+      "stream": "agg_trade",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 123,
+        "high_watermark_bytes": 26656,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 33417,
+        "append_max_ns": 8330000,
+        "fsync_last_ns": 13292,
+        "fsync_max_ns": 852167,
+        "seal_last_ns": 37846333,
+        "seal_max_ns": 37846333,
+        "write_last_ns": 10584,
+        "write_max_ns": 8314000
+      },
+      "stream": "book_ticker",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 2391750,
+        "append_max_ns": 5883667,
+        "fsync_last_ns": 364417,
+        "fsync_max_ns": 371875,
+        "seal_last_ns": 54419917,
+        "seal_max_ns": 54419917,
+        "write_last_ns": 2373375,
+        "write_max_ns": 5863667
+      },
+      "stream": "diff_depth",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 54,
+        "high_watermark_bytes": 11361,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 271083,
+        "append_max_ns": 6869500,
+        "fsync_last_ns": 3709,
+        "fsync_max_ns": 1292916,
+        "seal_last_ns": 14710167,
+        "seal_max_ns": 14710167,
+        "write_last_ns": 252417,
+        "write_max_ns": 2392959
+      },
+      "stream": "agg_trade",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 54,
+        "high_watermark_bytes": 10200,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 28042,
+        "append_max_ns": 9609625,
+        "fsync_last_ns": 3334,
+        "fsync_max_ns": 2181625,
+        "seal_last_ns": 26530875,
+        "seal_max_ns": 26530875,
+        "write_last_ns": 8000,
+        "write_max_ns": 3499000
+      },
+      "stream": "book_ticker",
+      "symbol": "XRPUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7799,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 24125,
+        "append_max_ns": 6655250,
+        "fsync_last_ns": 4667,
+        "fsync_max_ns": 317000,
+        "seal_last_ns": 27396250,
+        "seal_max_ns": 27396250,
+        "write_last_ns": 6958,
+        "write_max_ns": 6635334
+      },
+      "stream": "diff_depth",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11810,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 794625,
+        "append_max_ns": 6954625,
+        "fsync_last_ns": 10417,
+        "fsync_max_ns": 898083,
+        "seal_last_ns": 27336917,
+        "seal_max_ns": 27336917,
+        "write_last_ns": 777125,
+        "write_max_ns": 6939500
+      },
+      "stream": "agg_trade",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 107,
+        "high_watermark_bytes": 24702,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 32625,
+        "append_max_ns": 7949833,
+        "fsync_last_ns": 20125,
+        "fsync_max_ns": 755333,
+        "seal_last_ns": 8707375,
+        "seal_max_ns": 10692250,
+        "write_last_ns": 9583,
+        "write_max_ns": 7933000
+      },
+      "stream": "book_ticker",
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 25959,
+        "append_max_ns": 7979209,
+        "fsync_last_ns": 27834,
+        "fsync_max_ns": 838083,
+        "seal_last_ns": 4913167,
+        "seal_max_ns": 5276458,
+        "write_last_ns": 7917,
+        "write_max_ns": 7960125
+      },
+      "stream": "diff_depth",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1702000,
+        "append_max_ns": 3420333,
+        "fsync_last_ns": 19209,
+        "fsync_max_ns": 225417,
+        "seal_last_ns": 17297667,
+        "seal_max_ns": 17297667,
+        "write_last_ns": 1684542,
+        "write_max_ns": 3400875
+      },
+      "stream": "agg_trade",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 146,
+        "high_watermark_bytes": 26656,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 23083,
+        "append_max_ns": 4117583,
+        "fsync_last_ns": 17459,
+        "fsync_max_ns": 542084,
+        "seal_last_ns": 4843334,
+        "seal_max_ns": 5893583,
+        "write_last_ns": 7208,
+        "write_max_ns": 4100791
+      },
+      "stream": "book_ticker",
+      "symbol": "ADAUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7799,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 280084,
+        "append_max_ns": 4956833,
+        "fsync_last_ns": 81417,
+        "fsync_max_ns": 714959,
+        "seal_last_ns": 8639292,
+        "seal_max_ns": 16598500,
+        "write_last_ns": 262791,
+        "write_max_ns": 4939250
+      },
+      "stream": "diff_depth",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11810,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 973375,
+        "append_max_ns": 2824958,
+        "fsync_last_ns": 2458,
+        "fsync_max_ns": 344291,
+        "seal_last_ns": 2704500,
+        "seal_max_ns": 15471500,
+        "write_last_ns": 956125,
+        "write_max_ns": 2807333
+      },
+      "stream": "agg_trade",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 108,
+        "high_watermark_bytes": 22080,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 27333,
+        "append_max_ns": 6118000,
+        "fsync_last_ns": 5083,
+        "fsync_max_ns": 704291,
+        "seal_last_ns": 37250417,
+        "seal_max_ns": 37250417,
+        "write_last_ns": 9041,
+        "write_max_ns": 6099500
+      },
+      "stream": "book_ticker",
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7799,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1650041,
+        "append_max_ns": 2825542,
+        "fsync_last_ns": 2666,
+        "fsync_max_ns": 504166,
+        "seal_last_ns": 14546417,
+        "seal_max_ns": 14546417,
+        "write_last_ns": 1632333,
+        "write_max_ns": 2805667
+      },
+      "stream": "diff_depth",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11810,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1184542,
+        "append_max_ns": 4748958,
+        "fsync_last_ns": 4959,
+        "fsync_max_ns": 489166,
+        "seal_last_ns": 26979666,
+        "seal_max_ns": 32918000,
+        "write_last_ns": 1168917,
+        "write_max_ns": 4731166
+      },
+      "stream": "agg_trade",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 92,
+        "high_watermark_bytes": 18768,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 28625,
+        "append_max_ns": 6762583,
+        "fsync_last_ns": 3083,
+        "fsync_max_ns": 794750,
+        "seal_last_ns": 7245500,
+        "seal_max_ns": 58009000,
+        "write_last_ns": 8375,
+        "write_max_ns": 6747375
+      },
+      "stream": "book_ticker",
+      "symbol": "LINKUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 49,
+        "high_watermark_bytes": 7699,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 353959,
+        "append_max_ns": 2233417,
+        "fsync_last_ns": 181792,
+        "fsync_max_ns": 397791,
+        "seal_last_ns": 48118834,
+        "seal_max_ns": 48118834,
+        "write_last_ns": 337584,
+        "write_max_ns": 2215583
+      },
+      "stream": "diff_depth",
+      "symbol": "LTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 79,
+        "high_watermark_bytes": 11650,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 1031875,
+        "append_max_ns": 2957541,
+        "fsync_last_ns": 14041,
+        "fsync_max_ns": 216167,
+        "seal_last_ns": 10678708,
+        "seal_max_ns": 11176916,
+        "write_last_ns": 1014500,
+        "write_max_ns": 2936583
+      },
+      "stream": "agg_trade",
+      "symbol": "LTCUSDT"
+    },
+    {
+      "market": "um_perpetual",
+      "queue": {
+        "byte_capacity": 67108864,
+        "capacity": 1024,
+        "depth": 0,
+        "high_watermark": 86,
+        "high_watermark_bytes": 17680,
+        "owned_bytes": 0,
+        "queued_bytes": 0,
+        "saturation_seconds": null,
+        "wait_count": 0,
+        "wait_max_ns": 0,
+        "wait_p50_ns": "INSUFFICIENT_DATA",
+        "wait_p95_ns": "INSUFFICIENT_DATA",
+        "wait_p99_ns": "INSUFFICIENT_DATA",
+        "wait_total_ns": 0
+      },
+      "spool": {
+        "append_last_ns": 30375,
+        "append_max_ns": 4862292,
+        "fsync_last_ns": 3333,
+        "fsync_max_ns": 903125,
+        "seal_last_ns": 11130000,
+        "seal_max_ns": 26028917,
+        "write_last_ns": 8917,
+        "write_max_ns": 4845583
+      },
+      "stream": "book_ticker",
+      "symbol": "LTCUSDT"
+    }
+  ],
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "proc_after": {},
+  "proc_before": {},
+  "python": "3.12.14 (main, Sep  1 2026, 14:09:38) [Clang 22.1.3 ]",
+  "readiness_before_stop": [
+    {
+      "collector_instance_id": "baseline-spot-BTCUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297084819000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-ETHUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296839446000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-BNBUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296887836000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "BNBUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-SOLUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296896897000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-XRPUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296927659000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "XRPUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-DOGEUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297020118000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-ADAUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296916787000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "ADAUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-AVAXUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296935378000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-LINKUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296968886000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "LINKUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-spot-LTCUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297056420000,
+      "market": "spot",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "LTCUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-BTCUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061296985204000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-ETHUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297001138000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-BNBUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297017218000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "BNBUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-SOLUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297032118000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-XRPUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297094007000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "XRPUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-DOGEUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297048296000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-ADAUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297051060000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "ADAUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-AVAXUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297065607000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "AVAXUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-LINKUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297080975000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "LINKUSDT"
+    },
+    {
+      "collector_instance_id": "baseline-um_perpetual-LTCUSDT",
+      "collector_version": "preplan-baseline",
+      "connected_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "event_count": 2130,
+      "failure": null,
+      "last_receive_time_utc_ns": 1793061297079787000,
+      "market": "um_perpetual",
+      "orderbook_synchronized": true,
+      "persisted_streams": [
+        "agg_trade",
+        "book_ticker",
+        "diff_depth"
+      ],
+      "ready": true,
+      "snapshot_persisted": true,
+      "symbol": "LTCUSDT"
+    }
+  ],
+  "rss_includes_preallocated_fixture": true,
+  "rss_peak_sampled_bytes": 159432704,
+  "ru_maxrss": 182075392,
+  "ru_maxrss_unit": "bytes",
+  "schema": "preplan-core-baseline.v1",
+  "source_package_path": "/var/tmp/bmdr-p1-20261027-8JCF7QMA/before/src/binance_market_data_recorder/__init__.py",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "DOGEUSDT",
+    "ADAUSDT",
+    "AVAXUSDT",
+    "LINKUSDT",
+    "LTCUSDT"
+  ],
+  "utc": "2026-10-27T00:34:59Z",
+  "verification": {
+    "capture_flags": {
+      "injected_model_without_raw_http_body": 10,
+      "rest_snapshot": 20,
+      "sdk_model_not_raw_http_body": 10
+    },
+    "chunks": 140,
+    "cpu_seconds": 0.7126330000000003,
+    "decoded_bytes": 26339112,
+    "exact_payloads_and_crc_and_artifact_hashes_pass": true,
+    "expected_ws_frames": 42600,
+    "saved_ws_frames": 42600,
+    "stored_bytes": 1256606,
+    "wall_seconds": 0.7131609590142034
+  },
+  "wall_seconds_including_drain_seal": 4.6777171670109965,
+  "ws_frames_per_second": 9107.00636208428
+}
