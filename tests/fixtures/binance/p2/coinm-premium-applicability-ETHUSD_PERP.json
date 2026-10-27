@@ -1,0 +1,71 @@
+{
+  "schema_version": "binance-public-rest-provenance.v1",
+  "representation": "sdk-parsed-json.v1",
+  "family": "D23",
+  "source_stream": "premium_price_bars_1m",
+  "scope": "ETHUSD_PERP",
+  "venue_market": "coinm",
+  "request": {
+    "method": "GET",
+    "path": "/dapi/v1/premiumIndexKlines",
+    "parameters": {
+      "symbol": "ETHUSD_PERP",
+      "interval": "1m",
+      "limit": 2
+    },
+    "request_time_utc_ns": 1793097681523491000,
+    "request_monotonic_ns": 398158186466958,
+    "timeout_ms": 10000
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "date": "Tue, 27 Oct 2026 10:41:21 GMT",
+      "content-type": "application/json",
+      "x-mbx-used-weight-1m": "10",
+      "x-response-time": "0ms"
+    },
+    "model": [
+      [
+        1793097600000,
+        "-0.00033434",
+        "-0.00033152",
+        "-0.00058879",
+        "-0.00038676",
+        "0",
+        1793097659999,
+        "0",
+        12,
+        "0",
+        "0",
+        "0"
+      ],
+      [
+        1793097660000,
+        "-0.00046875",
+        "-0.00032327",
+        "-0.00047321",
+        "-0.00047321",
+        "0",
+        1793097719999,
+        "0",
+        3,
+        "0",
+        "0",
+        "0"
+      ]
+    ],
+    "valid": true,
+    "error_type": null,
+    "receive_time_utc_ns": 1793097681620024000,
+    "receive_monotonic_ns": 398158283000333
+  },
+  "transport": {
+    "kind": "official_sdk_unsigned_parsed_json",
+    "package": "binance-sdk-spot",
+    "version": "10.0.0",
+    "common_version": "4.0.3",
+    "raw_http_body_available": false,
+    "receive_boundary": "sdk_request_completion"
+  }
+}

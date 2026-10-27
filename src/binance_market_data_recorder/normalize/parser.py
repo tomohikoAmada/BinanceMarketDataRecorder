@@ -8,8 +8,9 @@ from collections.abc import Mapping
 from dataclasses import replace
 from typing import Any
 
+from ..binance.rest_representation import response_document
 from ..domain.event import EventEnvelope
-from .model import SUPPORTED_STREAMS, ParsedEvent, stream_fields
+from .model import SUPPORTED_STREAMS, ParsedEvent, public_observation_stream, stream_fields
 
 
 class NormalizedSchemaError(ValueError):
@@ -199,7 +200,10 @@ def _core_websocket(envelope: EventEnvelope, payload: dict[str, Any]) -> list[Pa
 def _depth_snapshot(envelope: EventEnvelope, provenance: dict[str, Any]) -> list[ParsedEvent]:
     response = _object(provenance.get("response"), "response")
     request = _object(provenance.get("request"), "request")
-    model = _object(response.get("model"), "response.model")
+    try:
+        model = _object(response_document(provenance), "response.model")
+    except (KeyError, ValueError, TypeError) as exc:
+        raise NormalizedSchemaError("invalid snapshot representation") from exc
     last_update_id = _integer(model, "lastUpdateId")
     bids = _levels(model, "bids")
     asks = _levels(model, "asks")
@@ -661,6 +665,56 @@ def _invalid(envelope: EventEnvelope, error: str) -> list[ParsedEvent]:
 
 
 def parse_envelope(envelope: EventEnvelope) -> list[ParsedEvent]:
+    if public_observation_stream(envelope.stream):
+        valid = "malformed" not in envelope.capture_flags
+        try:
+            decoded = _decode(envelope)
+        except (NormalizedSchemaError, RecursionError):
+            valid = False
+            import base64
+
+            decoded = {
+                "unparseable_payload_base64": base64.b64encode(envelope.raw_payload).decode()
+            }
+        if valid:
+            if (
+                envelope.stream.startswith("ws_")
+                and envelope.payload_encoding != "utf-8-json-combined.v1"
+            ):
+                raise NormalizedSchemaError("unsupported public WS representation")
+            if envelope.stream == "rest_observations" and (
+                not isinstance(decoded, dict)
+                or decoded.get("schema_version") != "binance-public-rest-provenance.v1"
+                or decoded.get("representation")
+                not in {"sdk-parsed-json.v1", "recent-trades-compact.v1", "http-body-base64.v1"}
+            ):
+                raise NormalizedSchemaError("unsupported public REST representation")
+        logical_stream = envelope.source_sequence.get("sourceStream")
+        fields = {
+            "source_stream": logical_stream,
+            "source_family": envelope.source_sequence.get("sourceFamily"),
+            "representation": (
+                decoded.get("representation", envelope.payload_encoding)
+                if isinstance(decoded, dict)
+                else envelope.payload_encoding
+            ),
+            "observation_json": canonical_json(decoded),
+        }
+        identity = {
+            "connection_id": envelope.connection_id,
+            "receive_monotonic_ns": envelope.receive_monotonic_ns,
+            "stream": logical_stream,
+        }
+        return [
+            ParsedEvent(
+                fields,
+                identity,
+                fields,
+                valid=valid,
+                error_code=None if valid else "UPSTREAM_MALFORMED",
+                event_kind="source_observation",
+            )
+        ]
     if envelope.stream not in SUPPORTED_STREAMS.get(
         envelope.market, frozenset()
     ):

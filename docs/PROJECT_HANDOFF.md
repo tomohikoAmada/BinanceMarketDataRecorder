@@ -1,6 +1,14 @@
 # Project Handoff
 
-Next work is **P2** in the [production plan](production_milestone_plan.md); it has not started.
+Current work is **P2**, implementation and local verification delivered but not fully accepted.
+See the [P2 result](milestones/P2/README.md), source mapping, fixtures and ADR-0054.
+The full current BTC/ETH directory requires ~5,829 derivative weight/min with D06 at 1s,
+above the Recorder share and exchange pool. No unapproved cadence reduction was made;
+owner sampling/scope direction is pending. C dated premium applicability also remains
+unresolved; failures are retained without a perpetual substitution. P2 is not marked
+passed, P3 has not started, and production readiness remains NO.
+
+Retained P1 closure follows.
 [Independent P1 re-review](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27) accepts fix
 `b292d0d892c8f53812749f1aeac7f637ba1a3b13`, src tree
 `d8194460b4dcc5bd45dc52209d483c9243a98306`. Both receive loops now check retirement
@@ -39,7 +47,8 @@ the single REST representation decision in
 [ADR-0053](adr/0053-single-rest-representation-and-required-information.md): body bytes
 or a sufficient SDK model, declared honestly, without model/Base64 duplication or a
 universal exact-HTTP-body gate. Preserve required precision, clocks, identity, sequence
-and gap information; P2 must implement and verify the representation/read compatibility.
+and gap information; P2 now implements and verifies representation/read compatibility under ADR-0054;
+its outstanding scope/source blockers remain in the P2 result.
 Research consumers do not determine capture scope. P2 prioritizes distinct information
 and declares resource-driven reductions before a run, preserving the minimum facts
 across all selected markets; every enabled source remains in continuity accounting.

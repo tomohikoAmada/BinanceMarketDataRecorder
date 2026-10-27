@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ..binance.public_websocket import wire_document
+from ..binance.rest_representation import response_document
 from ..domain.event import EventEnvelope
 from .model import BookSnapshot, BookTicker, DepthUpdate, Level, OrderBookDataError
 
@@ -51,8 +53,8 @@ def _levels(value: object) -> tuple[Level, ...]:
 def depth_update_from_envelope(envelope: EventEnvelope) -> DepthUpdate:
     if envelope.stream != "diff_depth":
         raise OrderBookDataError("envelope is not a diff-depth event")
-    payload = _object(envelope.raw_payload)
-    previous = _integer(payload, "pu") if envelope.market == "um_perpetual" else None
+    payload = wire_document(envelope)
+    previous = _integer(payload, "pu") if envelope.market != "spot" else None
     return DepthUpdate(
         market=envelope.market,
         symbol=_text(payload, "s"),
@@ -73,10 +75,10 @@ def snapshot_from_envelope(envelope: EventEnvelope) -> BookSnapshot:
         response = provenance["response"]
         if not isinstance(response, dict):
             raise TypeError
-        model = response["model"]
+        model = response_document(provenance)
         if not isinstance(model, dict):
             raise TypeError
-    except (KeyError, TypeError) as exc:
+    except (KeyError, TypeError, ValueError) as exc:
         raise OrderBookDataError("invalid snapshot provenance") from exc
     return BookSnapshot(
         market=envelope.market,
@@ -90,7 +92,7 @@ def snapshot_from_envelope(envelope: EventEnvelope) -> BookSnapshot:
 def book_ticker_from_envelope(envelope: EventEnvelope) -> BookTicker:
     if envelope.stream != "book_ticker":
         raise OrderBookDataError("envelope is not a book-ticker event")
-    payload = _object(envelope.raw_payload)
+    payload = wire_document(envelope)
     return BookTicker(
         market=envelope.market,
         symbol=_text(payload, "s"),

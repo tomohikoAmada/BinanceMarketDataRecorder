@@ -1,0 +1,113 @@
+{
+  "source": {
+    "family": "D20",
+    "venue_market": "usdm",
+    "market": "um_delivery",
+    "symbol": "BTCUSDT_CURRENT_QUARTER",
+    "stream": "basis_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/basis",
+    "cadence_seconds": 300,
+    "parameters": {
+      "contractType": "CURRENT_QUARTER",
+      "limit": 2,
+      "pair": "BTCUSDT",
+      "period": "5m"
+    },
+    "weight": 0,
+    "required_fields": [
+      "timestamp",
+      "basis",
+      "basisRate"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "contractType": "CURRENT_QUARTER",
+    "limit": 3,
+    "pair": "BTCUSDT",
+    "period": "5m"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D20",
+    "source_stream": "basis_5m",
+    "scope": "BTCUSDT_CURRENT_QUARTER",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/basis",
+      "parameters": {
+        "contractType": "CURRENT_QUARTER",
+        "limit": 3,
+        "pair": "BTCUSDT",
+        "period": "5m"
+      },
+      "request_time_utc_ns": 1793097608355407000,
+      "request_monotonic_ns": 398085018820041,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:08 GMT"
+      },
+      "model": [
+        {
+          "indexPrice": "79599.53978261",
+          "contractType": "CURRENT_QUARTER",
+          "basisRate": "0.0088",
+          "futuresPrice": "80297.4",
+          "annualizedBasisRate": "0.0545",
+          "basis": "697.86021739",
+          "pair": "BTCUSDT",
+          "timestamp": 1793096700000
+        },
+        {
+          "indexPrice": "79639.94043478",
+          "contractType": "CURRENT_QUARTER",
+          "basisRate": "0.0090",
+          "futuresPrice": "80354.1",
+          "annualizedBasisRate": "0.0558",
+          "basis": "714.15956522",
+          "pair": "BTCUSDT",
+          "timestamp": 1793097000000
+        },
+        {
+          "indexPrice": "79650.88282609",
+          "contractType": "CURRENT_QUARTER",
+          "basisRate": "0.0089",
+          "futuresPrice": "80363.7",
+          "annualizedBasisRate": "0.0552",
+          "basis": "712.81717391",
+          "pair": "BTCUSDT",
+          "timestamp": 1793097300000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097608476678000,
+      "receive_monotonic_ns": 398085140090583
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

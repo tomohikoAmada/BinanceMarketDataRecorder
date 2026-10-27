@@ -1,0 +1,17 @@
+# Example only: full target, NOT a 99.5%-qualified production profile.
+# Keep the service stopped; select an approved internal root before actual use.
+[recorder]
+network_proxy_mode = "direct"
+
+[recorder.coverage]
+underlying_assets = ["BTC", "ETH"]
+# Empty selects every allowed Spot quote for the configured base assets.
+spot_quote_assets = []
+max_products = 256
+max_streams = 32768
+streams_per_connection = 128
+rest_concurrency = 4
+recent_trades_compact = true
+recent_trades_interval_seconds = 1.0
+# Omitted interval lists use ALL native intervals, both Spot UTC/+08:00.
+# This scope exceeds the shared-IP budget; see README before qualification.

@@ -1,0 +1,98 @@
+{
+  "source": {
+    "family": "D12",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "funding_history",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/fundingRate",
+    "cadence_seconds": 300,
+    "parameters": {
+      "limit": 100,
+      "symbol": "BTCUSDT"
+    },
+    "weight": 1,
+    "required_fields": [
+      "symbol",
+      "fundingTime",
+      "fundingRate"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D12",
+    "source_stream": "funding_history",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/fundingRate",
+      "parameters": {
+        "limit": 3,
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097606986690000,
+      "request_monotonic_ns": 398083650111500,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:07 GMT"
+      },
+      "model": [
+        {
+          "symbol": "BTCUSDT",
+          "fundingTime": 1793030400000,
+          "fundingRate": "0.00010000",
+          "markPrice": "80398.40000000",
+          "rateType": "Regular"
+        },
+        {
+          "symbol": "BTCUSDT",
+          "fundingTime": 1793059200001,
+          "fundingRate": "0.00010000",
+          "markPrice": "80116.00000000",
+          "rateType": "Regular"
+        },
+        {
+          "symbol": "BTCUSDT",
+          "fundingTime": 1793088000001,
+          "fundingRate": "0.00008696",
+          "markPrice": "79770.00000000",
+          "rateType": "Regular"
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097607088303000,
+      "receive_monotonic_ns": 398083751725166
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

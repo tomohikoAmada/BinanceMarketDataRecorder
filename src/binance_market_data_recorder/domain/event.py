@@ -7,7 +7,9 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 EnvelopeSchema = Literal["event-envelope.v1"]
-Market = Literal["spot", "um_perpetual"]
+Market = Literal[
+    "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery", "um_shared", "cm_shared"
+]
 NonEmptyText = Annotated[str, StringConstraints(min_length=1, max_length=256)]
 SequenceValue = int | str
 

@@ -1,0 +1,127 @@
+{
+  "source": {
+    "family": "D26",
+    "venue_market": "usdm",
+    "market": "um_delivery",
+    "symbol": "BTCUSDT",
+    "stream": "index_constituents",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/constituents",
+    "cadence_seconds": 3600,
+    "parameters": {
+      "symbol": "BTCUSDT"
+    },
+    "weight": 2,
+    "required_fields": [
+      "constituents"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT",
+      "BTCUSDT_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D26",
+    "source_stream": "index_constituents",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/constituents",
+      "parameters": {
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097607196109000,
+      "request_monotonic_ns": 398083859529125,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:40:07 GMT",
+        "x-mbx-used-weight-1m": "20",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "symbol": "BTCUSDT",
+        "time": 1793097602443,
+        "constituents": [
+          {
+            "exchange": "binance",
+            "symbol": "BTCUSDT",
+            "price": "79849.99000000",
+            "weight": "0.43478261"
+          },
+          {
+            "exchange": "okex",
+            "symbol": "BTC-USDT",
+            "price": "79840.50000000",
+            "weight": "0.13043478"
+          },
+          {
+            "exchange": "coinbase",
+            "symbol": "BTC-USDT",
+            "price": "79853.00000000",
+            "weight": "0.13043478"
+          },
+          {
+            "exchange": "gateio",
+            "symbol": "BTC_USDT",
+            "price": "79843.20000000",
+            "weight": "0.04347826"
+          },
+          {
+            "exchange": "kucoin",
+            "symbol": "BTC-USDT",
+            "price": "79870.10000000",
+            "weight": "0.06521739"
+          },
+          {
+            "exchange": "mexc",
+            "symbol": "BTCUSDT",
+            "price": "79858.52000000",
+            "weight": "0.06521739"
+          },
+          {
+            "exchange": "bitget",
+            "symbol": "BTCUSDT",
+            "price": "79855.00000000",
+            "weight": "0.06521739"
+          },
+          {
+            "exchange": "bybit",
+            "symbol": "BTCUSDT",
+            "price": "79852.30000000",
+            "weight": "0.06521739"
+          }
+        ]
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097607297365000,
+      "receive_monotonic_ns": 398083960784166
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

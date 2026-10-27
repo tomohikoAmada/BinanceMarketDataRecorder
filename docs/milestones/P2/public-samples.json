@@ -1,0 +1,26 @@
+[
+  {
+    "venue": "spot",
+    "retrieved_utc": "2026-10-27T10:36:55.826618+00:00",
+    "status": 200,
+    "selection": "baseAsset BTC/ETH; parsed JSON, not HTTP bytes",
+    "directory_rows": 3736,
+    "selected_rows": 69
+  },
+  {
+    "venue": "usdm",
+    "retrieved_utc": "2026-10-27T10:36:56.109604+00:00",
+    "status": 200,
+    "selection": "baseAsset BTC/ETH; parsed JSON, not HTTP bytes",
+    "directory_rows": 936,
+    "selected_rows": 13
+  },
+  {
+    "venue": "coinm",
+    "retrieved_utc": "2026-10-27T10:36:56.730641+00:00",
+    "status": 200,
+    "selection": "baseAsset BTC/ETH; parsed JSON, not HTTP bytes",
+    "directory_rows": 30,
+    "selected_rows": 6
+  }
+]

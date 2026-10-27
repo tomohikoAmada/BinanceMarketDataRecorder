@@ -7,8 +7,9 @@ and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
 The V5 flow below documents legacy tools/artifacts; it is not the new production
 procedure and does not impose historical baseline scans or private approval helpers.
 P1 implements the shorter capture path under [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md);
-P2–P3 still supply expanded coverage, source monitoring and background verification
-before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
+P2 now supplies expanded coverage and compatible public observations, with acceptance
+blockers recorded in its result; P3 still supplies durable source monitoring and background
+verification before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
 docs/research is excluded from lint mutation; live source/tests/tools and P0's new
 benchmark remain checked. Historical scripts are evidence, not runtime dependencies.
 
@@ -154,3 +155,18 @@ The preceding V5 state is retained history. Current development has completed
 [P1](milestones/P1/README.md); P2 market coverage is next. Historical full-corpus
 audit cost does not impose a new P2 prerequisite: P0–P6 qualification uses ADR-0051,
 with P3 durable new-file verification still pending. Use [handoff](PROJECT_HANDOFF.md).
+
+## P2 selected-asset capture
+
+Use the explicit `[recorder.coverage]` configuration in
+[milestones/P2/recorder.example.toml](milestones/P2/recorder.example.toml).
+`CoverageConfig` and `binance/products.py` own selected-base discovery;
+`binance/public_sources.py` records concrete Binance-only scopes/capabilities;
+`collector/coverage.py` owns one product collector per ProductKey and shared scopes,
+with the existing bounded receive/writer and IP request budget. Legacy explicit
+symbols remain supported and cannot be combined with discovery configuration.
+Source plans are saved with directory operational events. New payloads and their
+logical readers are in `binance/public_websocket.py`, `public_rest.py` and
+`rest_representation.py`; ADR-0054 describes their compatibility boundary.
+No credentials, consumer dependency or new network service is required.
+P2 is not yet fully accepted: read its result before attempting qualification.

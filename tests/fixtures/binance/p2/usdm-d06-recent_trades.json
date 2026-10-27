@@ -1,0 +1,108 @@
+{
+  "source": {
+    "family": "D06",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "recent_trades",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/trades",
+    "cadence_seconds": 1.0,
+    "parameters": {
+      "limit": 1000,
+      "symbol": "BTCUSDT"
+    },
+    "weight": 5,
+    "required_fields": [
+      "id",
+      "price",
+      "qty",
+      "time",
+      "isBuyerMaker"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D06",
+    "source_stream": "recent_trades",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/trades",
+      "parameters": {
+        "limit": 3,
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097608044398000,
+      "request_monotonic_ns": 398084707812750,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:40:08 GMT",
+        "x-mbx-used-weight-1m": "31",
+        "x-response-time": "0ms"
+      },
+      "model": [
+        {
+          "id": 8208256267,
+          "price": "79788.50",
+          "qty": "0.001",
+          "quoteQty": "79.78",
+          "time": 1793097607940,
+          "isBuyerMaker": true,
+          "isRPITrade": false
+        },
+        {
+          "id": 8208256268,
+          "price": "79788.30",
+          "qty": "0.001",
+          "quoteQty": "79.78",
+          "time": 1793097607940,
+          "isBuyerMaker": true,
+          "isRPITrade": false
+        },
+        {
+          "id": 8208256269,
+          "price": "79788.10",
+          "qty": "0.005",
+          "quoteQty": "398.94",
+          "time": 1793097607997,
+          "isBuyerMaker": true,
+          "isRPITrade": false
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097608142676000,
+      "receive_monotonic_ns": 398084806092083
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

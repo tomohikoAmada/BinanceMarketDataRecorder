@@ -251,9 +251,23 @@ MARKET_STREAM_FIELDS: dict[
 }
 
 
+PUBLIC_OBSERVATION_FIELDS: tuple[tuple[str, pa.DataType, bool], ...] = (
+    ("source_stream", pa.string(), True),
+    ("source_family", pa.string(), True),
+    ("representation", pa.string(), False),
+    ("observation_json", pa.string(), False),
+)
+
+
+def public_observation_stream(stream: str) -> bool:
+    return stream == "rest_observations" or stream.startswith(("ws_public_", "ws_market_"))
+
+
 def stream_fields(
     market: str, stream: str
 ) -> tuple[tuple[str, pa.DataType, bool], ...]:
+    if public_observation_stream(stream):
+        return PUBLIC_OBSERVATION_FIELDS
     fields = MARKET_STREAM_FIELDS.get((market, stream))
     if fields is not None:
         return fields
@@ -269,7 +283,8 @@ def schema_version(market: str, stream: str) -> str:
 
 
 def schema_for(market: str, stream: str) -> pa.Schema:
-    if stream not in SUPPORTED_STREAMS.get(market, frozenset()):
+    if (stream not in SUPPORTED_STREAMS.get(market, frozenset())
+            and not public_observation_stream(stream)):
         raise ValueError(f"unsupported normalized stream {market}/{stream}")
     fields = [
         pa.field(name, data_type, nullable=nullable)

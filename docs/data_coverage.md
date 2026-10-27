@@ -1,6 +1,19 @@
 # Data coverage
 
-## Current target and implemented boundary — P0, 2026-10-26
+## Current implementation — P2, 2026-10-27
+
+Selected-underlying discovery and public capture now distinguish Spot, USD-M
+perpetual/delivery and COIN-M perpetual/delivery products. The
+[P2 mapping](milestones/P0/coverage.md#p2-implementation-and-field-mapping--2026-10-27)
+links all 53 rows to actual adapters, required fields, representation and sample
+evidence. New combined WS observations retain exact application bytes; REST has
+one declared primary representation. The
+[P2 result](milestones/P2/README.md) records unresolved request-budget and CM
+dated-premium applicability blockers. Implementation is not P2 acceptance or
+production qualification. Historical coverage and deployed versions below are
+preserved as their original observations.
+
+## Historical implemented boundary — P0, 2026-10-26
 
 Use the [first-release coverage inventory](milestones/P0/coverage.md) for the current
 52-family mapping (53 rows after the U/C liquidation split) and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md)

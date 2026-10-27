@@ -174,7 +174,7 @@ def _intervals(value: object) -> list[UnreliableInterval]:
 
 def _interval(value: dict[str, Any]) -> UnreliableInterval:
     market = value.get("market")
-    if market not in {"spot", "um_perpetual"}:
+    if market not in {"spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"}:
         raise TypeError
     reason = value.get("reason")
     if not isinstance(reason, str) or not reason:

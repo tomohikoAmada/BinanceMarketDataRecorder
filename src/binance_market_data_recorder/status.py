@@ -214,7 +214,9 @@ def service_status(
         "status": current_status,
         "service_implemented": True,
         "collector_implemented": True,
-        "implemented_markets": ["spot", "um_perpetual"],
+        "implemented_markets": [
+            "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+        ],
         "network_connected": network_connected,
         "network_status": network_status,
         "proxy_mode": (

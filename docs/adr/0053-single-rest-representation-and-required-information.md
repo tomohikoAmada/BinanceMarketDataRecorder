@@ -1,6 +1,6 @@
 # ADR-0053: Information-first capture and single REST representation
 
-Status: accepted by the owner on 2026-10-27 for P2/P3. This records the approved design direction; runtime implementation, per-source resource configuration and any format selection remain pending.
+Status: accepted by the owner on 2026-10-27 for P2/P3. The approved direction is now implemented for P2 under ADR-0054; its full-scope request-budget and source-applicability acceptance blockers remain open. P3 repeated-work cleanup is pending.
 
 ## Decision
 

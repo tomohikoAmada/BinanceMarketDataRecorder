@@ -215,3 +215,26 @@ reference/changelog conflict, and forbids latest/largest assumptions in
 completeness, deduplication and derived totals. Exchange selection semantics
 remain unresolved; no implementation is authorized to guess them. This does
 not invalidate original Raw content/count checks and requires no recapture.
+
+## P2 current source and resource blockers — 2026-10-27
+
+- **P2-R1 OPEN:** BTC/ETH current full discovery includes 19 derivative products.
+  D06 1s × request weight 5 requires 5,700/min; full nominal steady requests are
+  ~5,829/min, exceeding Recorder's 1,200/min reserved share and the official
+  2,400/min combined UM/CM pool. The limiter waits honestly; no silent shedding
+  or 99.5% credit. An explicit D06 sampling/scope decision is required under plan
+  section 6. No unapproved default reduction has been made.
+- **P2-R2 OPEN:** C dated premiumIndexKlines returns -1121 for listed tested dated
+  contracts on both documented DAPI/FAPI transports, while perpetual samples
+  succeed; the catalog's BTCUSD example also fails. Current documentation does
+  not establish a universal dated applicability rule. Preserve these failures;
+  stop semantic inference for that source, do not replace it with a perpetual
+  series or retrospectively remove it from qualification. See fixtures and
+  [P2 result](milestones/P2/README.md).
+- **P2-R3 disclosed:** U dated ticker.ps in the sample equals the dated symbol,
+  while depth/bookTicker/RPI ps is the directory pair. Preserve actual payloads;
+  directory identity is authoritative. Do not generalize one stream's ps field.
+- Full-interval short capture configured 197 native-bar streams but observed 130.
+  Missing observations and sparse streams remain unproven, not passed. P3 still
+  owns durable source intervals/new-file verification/background qualification;
+  no P4+ production run has started. P0/P1 historical evidence is unchanged.

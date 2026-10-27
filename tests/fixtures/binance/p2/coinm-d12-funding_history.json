@@ -1,0 +1,100 @@
+{
+  "source": {
+    "family": "D12",
+    "venue_market": "coinm",
+    "market": "cm_perpetual",
+    "symbol": "BTCUSD_PERP",
+    "stream": "funding_history",
+    "transport": "rest",
+    "endpoint": "/dapi/v1/fundingRate",
+    "cadence_seconds": 300,
+    "parameters": {
+      "limit": 100,
+      "symbol": "BTCUSD_PERP"
+    },
+    "weight": 1,
+    "required_fields": [
+      "symbol",
+      "fundingTime",
+      "fundingRate"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_PERP"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "symbol": "BTCUSD_PERP"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D12",
+    "source_stream": "funding_history",
+    "scope": "BTCUSD_PERP",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/dapi/v1/fundingRate",
+      "parameters": {
+        "limit": 3,
+        "symbol": "BTCUSD_PERP"
+      },
+      "request_time_utc_ns": 1793097605594368000,
+      "request_monotonic_ns": 398082257798041,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:05 GMT",
+        "content-type": "application/json",
+        "x-mbx-used-weight-1m": "17",
+        "x-response-time": "12ms"
+      },
+      "model": [
+        {
+          "symbol": "BTCUSD_PERP",
+          "fundingTime": 1793030400000,
+          "fundingRate": "0.00010000",
+          "markPrice": "80278.05405842",
+          "rateType": "Regular"
+        },
+        {
+          "symbol": "BTCUSD_PERP",
+          "fundingTime": 1793059200001,
+          "fundingRate": "0.00010000",
+          "markPrice": "79991.12449239",
+          "rateType": "Regular"
+        },
+        {
+          "symbol": "BTCUSD_PERP",
+          "fundingTime": 1793088000001,
+          "fundingRate": "0.00010000",
+          "markPrice": "79639.40000000",
+          "rateType": "Regular"
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097605701544000,
+      "receive_monotonic_ns": 398082364975583
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

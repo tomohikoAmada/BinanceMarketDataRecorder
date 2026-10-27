@@ -10,7 +10,9 @@ WS keeps exact payload bytes; each REST response stores one primary body or SDK-
 representation preserving required precision, exchange/receive times, identity,
 sequence and gap information. Exact HTTP bytes/unknown fields are not universal gates;
 do not persist both a complete model and Base64 body or label SDK output as original
-HTTP. Existing data/readers remain compatible; P2 implementation is still pending.
+HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
+delivered under ADR-0054, but full acceptance is blocked on request-budget/sampling
+direction and C dated-premium applicability; see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
 observations. P2 records source priorities and explicit resource-limited coverage in the
@@ -33,7 +35,8 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P1 is complete; P2 is the next development phase and has not started.
+P1 is complete. P2 is implemented locally but not fully accepted; P3 has not started.
+Keep the 1s D06 default until the owner resolves its full-scope request-budget conflict.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains
 do not establish all-feature CPU gains or VPS capacity. Compare matched per-source

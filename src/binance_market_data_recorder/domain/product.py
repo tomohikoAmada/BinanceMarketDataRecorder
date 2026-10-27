@@ -51,3 +51,34 @@ def configured_products(
             + [ProductKey("um_perpetual", symbol) for symbol in usdm_symbols]
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class Product:
+    """Exchange directory identity; dated contracts never borrow perpetual identity."""
+
+    key: ProductKey
+    venue_market: str
+    pair: str
+    base_asset: str
+    quote_asset: str
+    margin_asset: str | None
+    contract_type: str
+    contract_size: str | None
+    onboard_time_ms: int | None
+    delivery_time_ms: int | None
+    status: str
+    underlying_type: str = "COIN"
+
+    @property
+    def symbol_type(self) -> int | None:
+        return None if self.venue_market == "spot" else 1 if self.venue_market == "usdm" else 2
+
+    @property
+    def perpetual(self) -> bool:
+        return self.contract_type == "PERPETUAL"
+
+    def public_dict(self) -> dict[str, object]:
+        from dataclasses import asdict
+
+        return {"schema_version": "binance-product.v1", **asdict(self)}

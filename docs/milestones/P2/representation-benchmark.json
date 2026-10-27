@@ -1,0 +1,96 @@
+{
+  "scope": "local fixed input; encoding and compressed bytes only",
+  "representation_equivalence": true,
+  "d06_new_changed_first_observed_equal": true,
+  "measurements": {
+    "snapshot_dual": {
+      "cpu_ms": 37.1265,
+      "compressed_bytes": 8724,
+      "rounds": [
+        [
+          37.387,
+          8724
+        ],
+        [
+          37.152,
+          8724
+        ],
+        [
+          36.927,
+          8724
+        ],
+        [
+          37.101,
+          8724
+        ]
+      ]
+    },
+    "snapshot_single": {
+      "cpu_ms": 14.528,
+      "compressed_bytes": 5508,
+      "rounds": [
+        [
+          14.55,
+          5508
+        ],
+        [
+          14.505,
+          5508
+        ],
+        [
+          14.588,
+          5508
+        ],
+        [
+          14.506,
+          5508
+        ]
+      ]
+    },
+    "d06_full": {
+      "cpu_ms": 26.0855,
+      "compressed_bytes": 13726,
+      "rounds": [
+        [
+          24.895,
+          13726
+        ],
+        [
+          26.064,
+          13726
+        ],
+        [
+          26.107,
+          13726
+        ],
+        [
+          26.147,
+          13726
+        ]
+      ]
+    },
+    "d06_compact": {
+      "cpu_ms": 12.8945,
+      "compressed_bytes": 5824,
+      "rounds": [
+        [
+          12.796,
+          5824
+        ],
+        [
+          12.802,
+          5824
+        ],
+        [
+          13.033,
+          5824
+        ],
+        [
+          12.987,
+          5824
+        ]
+      ]
+    }
+  },
+  "d06_compact_selected": true
+}

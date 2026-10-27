@@ -41,7 +41,7 @@ from uuid import uuid4
 from websockets.asyncio.client import connect
 from websockets.exceptions import InvalidStatus, WebSocketException
 
-from ...domain.event import EventEnvelope
+from ...domain.event import EventEnvelope, Market
 from ...domain.product import product_log_fields
 from ...logging import log_event
 from ...network import WebSocketProxy
@@ -143,6 +143,7 @@ class UsdMStreamCollector:
         planned_rotation_seconds: float = 23 * 60 * 60 + 50 * 60,
         backoff: ReconnectBackoff | None = None,
         websocket_root: str = USDM_WEBSOCKET_ROOT,
+        combined_streams: tuple[str, ...] = (),
         opener: ConnectionOpener = open_usdm_websocket,
         utc_clock_ns: Callable[[], int] = time.time_ns,
         monotonic_clock_ns: Callable[[], int] = time.monotonic_ns,
@@ -154,7 +155,7 @@ class UsdMStreamCollector:
         backpressure_saturation_timeout_seconds: float = 30.0,
         post_close_handoff_timeout_seconds: float = 5.0,
     ) -> None:
-        if route not in {"public", "market"}:
+        if route not in {"public", "market", ""} or (not route and not combined_streams):
             raise ValueError("USD-M market data route must be public or market")
         if receipt_queue_capacity < 1:
             raise ValueError("receipt queue capacity must be positive")
@@ -166,17 +167,21 @@ class UsdMStreamCollector:
             raise ValueError("USD-M collector symbol must match its spool")
         if envelope_factory is None and not isinstance(stream, UsdMStream):
             raise ValueError("a side-data stream requires an envelope factory")
+        self.market = cast(Market, spool.market)
+        self.combined_streams = combined_streams
         self.stream = stream
         self.symbol = symbol
         self.stream_name = stream.value if isinstance(stream, UsdMStream) else stream
         self.route = route
-        self.wire_name = f"{quote(symbol.lower(), safe='')}@{wire_name.split('@', 1)[1]}"
+        self.wire_name = wire_name if combined_streams else (
+            f"{quote(symbol.lower(), safe='')}@{wire_name.split('@', 1)[1]}"
+        )
         self.spool = spool
         self.collector_instance_id = collector_instance_id
         self.collector_version = collector_version
         self.logger = logger
         self.log_context = dict(
-            log_context or product_log_fields("um_perpetual", symbol)
+            log_context or product_log_fields(self.market, symbol)
         )
         self.planned_rotation_seconds = planned_rotation_seconds
         self.backoff = backoff or ReconnectBackoff()
@@ -215,11 +220,19 @@ class UsdMStreamCollector:
         self._last_writer_drain_ns = 0
         self._max_writer_drain_ns = 0
         self._active_connection_id: str | None = None
+        self._server_shutdown = asyncio.Event()
         self._restore_open_gap()
 
     @property
     def url(self) -> str:
-        return f"{self.websocket_root}/{self.route}/ws/{self.wire_name}"
+        prefix = self.websocket_root + ("/" + self.route if self.route else "")
+        if self.combined_streams:
+            names = "/".join(quote(name, safe="@!_,:") for name in self.combined_streams)
+            return f"{prefix}/stream?streams={names}"
+        return f"{prefix}/ws/{self.wire_name}"
+
+    def request_rotation(self) -> None:
+        self._server_shutdown.set()
 
     def set_capture_flags(self, flags: tuple[str, ...]) -> None:
         self._capture_flags = flags
@@ -230,7 +243,7 @@ class UsdMStreamCollector:
 
     def _restore_open_gap(self) -> None:
         open_gaps = self.spool.catalog.unclosed_stream_discontinuities(
-            market="um_perpetual",
+            market=self.market,
             symbol=self.symbol,
             stream=self.stream_name,
         )
@@ -434,7 +447,7 @@ class UsdMStreamCollector:
             boundary_kind = "no_last_frame_available"
         evidence: dict[str, object] = {
             "gap_id": gap_id,
-            "market": "um_perpetual",
+            "market": self.market,
             "symbol": self.symbol,
             "stream": self.stream_name,
             "reason": reason,
@@ -471,7 +484,7 @@ class UsdMStreamCollector:
             self.spool.catalog.ensure_operational_event,
             event_id=stream_discontinuity_event_id(
                 event_type="STREAM_DISCONTINUITY_STARTED",
-                market="um_perpetual",
+                market=self.market,
                 symbol=self.symbol,
                 stream=self.stream_name,
                 gap_id=gap_id,
@@ -507,7 +520,7 @@ class UsdMStreamCollector:
             self.spool.catalog.ensure_operational_event,
             event_id=stream_discontinuity_event_id(
                 event_type="STREAM_DISCONTINUITY_COMPLETED",
-                market="um_perpetual",
+                market=self.market,
                 symbol=self.symbol,
                 stream=self.stream_name,
                 gap_id=gap_id,
@@ -516,7 +529,7 @@ class UsdMStreamCollector:
             occurred_at_utc_ns=completed_at,
             evidence={
                 **gap,
-                "market": "um_perpetual",
+                "market": self.market,
                 "symbol": self.symbol,
                 "stream": self.stream_name,
                 "reason": gap["reason"],
@@ -583,7 +596,7 @@ class UsdMStreamCollector:
                 "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
                 "gap_id": str(parent["gap_id"]),
                 "reason": str(parent["reason"]),
-                "market": "um_perpetual",
+                "market": self.market,
                 "symbol": self.symbol,
                 "stream": self.stream_name,
                 "original_connection_id": str(
@@ -609,7 +622,7 @@ class UsdMStreamCollector:
             "intent_schema": RECONNECT_INTENT_SCHEMA_V2,
             "gap_id": str(uuid4()),
             "reason": outcome,
-            "market": "um_perpetual",
+            "market": self.market,
             "symbol": self.symbol,
             "stream": self.stream_name,
             "original_connection_id": self._boundary_connection_id,
@@ -860,6 +873,7 @@ class UsdMStreamCollector:
                 stop=stop,
                 writer_task=writer_task,
                 rotation_seconds=self.planned_rotation_seconds,
+                shutdown=self._server_shutdown,
             )
         except (WebSocketException, OSError, TimeoutError):
             if self._is_session_restart(session_restart):
@@ -903,6 +917,7 @@ class UsdMStreamCollector:
             was_connected = False
             self._connection_receipt_count = 0
             try:
+                self._server_shutdown.clear()
                 async with self.opener(self.url) as websocket:
                     connected_at = asyncio.get_running_loop().time()
                     was_connected = True
@@ -1030,7 +1045,7 @@ class UsdMStreamCollector:
             self._active_connection_id = None
             writer_task = asyncio.create_task(
                 self._writer_loop(producer_done),
-                name=f"raw-writer:um_perpetual:{self.symbol}:{self.stream_name}",
+                name=f"raw-writer:{self.market}:{self.symbol}:{self.stream_name}",
             )
             outcome = "stopped"
             gap_just_started = False

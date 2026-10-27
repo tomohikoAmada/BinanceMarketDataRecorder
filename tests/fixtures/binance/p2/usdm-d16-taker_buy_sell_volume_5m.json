@@ -1,0 +1,96 @@
+{
+  "source": {
+    "family": "D16",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "taker_buy_sell_volume_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/takerlongshortRatio",
+    "cadence_seconds": 300,
+    "parameters": {
+      "limit": 2,
+      "period": "5m",
+      "symbol": "BTCUSDT"
+    },
+    "weight": 0,
+    "required_fields": [
+      "timestamp"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "period": "5m",
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D16",
+    "source_stream": "taker_buy_sell_volume_5m",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/takerlongshortRatio",
+      "parameters": {
+        "limit": 3,
+        "period": "5m",
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097608247827000,
+      "request_monotonic_ns": 398084911240458,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:08 GMT"
+      },
+      "model": [
+        {
+          "buySellRatio": "1.4180",
+          "sellVol": "72.5810",
+          "buyVol": "102.9190",
+          "timestamp": 1793096400000
+        },
+        {
+          "buySellRatio": "0.8300",
+          "sellVol": "94.7710",
+          "buyVol": "78.6590",
+          "timestamp": 1793096700000
+        },
+        {
+          "buySellRatio": "0.5230",
+          "sellVol": "106.4890",
+          "buyVol": "55.6910",
+          "timestamp": 1793097000000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097608349902000,
+      "receive_monotonic_ns": 398085013316375
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

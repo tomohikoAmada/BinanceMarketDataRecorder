@@ -691,3 +691,16 @@ physical-ordinal observation identity; neither assumption authorizes completenes
 event merging or derived liquidation totals. Raw/normalized format versions and
 historical results are unchanged by this disclosure. See the current
 [coverage policy](milestones/P0/coverage.md).
+
+## P2 public observations — 2026-10-27
+
+[ADR-0054](adr/0054-selected-asset-capture-and-public-observations.md) implements
+ADR-0053 with explicit product and shared-scope market values, versioned combined
+WS payloads, single REST representations and compatible readers. New expanded
+observations retain exact WS application frames and the declared REST body/model;
+logical source labels are not exchange sequence counters. D06 compact polling is
+a narrow versioned exception and cannot reconstruct every original response list.
+Original Raw/normalized records are unchanged. Numeric delivery prices use the
+already-received HTTP body; reader numeric fractions become exact decimal text.
+Unknown new payload versions are rejected. See the P0 inventory's P2 field map and
+[P2 limits](milestones/P2/README.md); no production continuity is inferred.

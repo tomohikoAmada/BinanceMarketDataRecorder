@@ -1,0 +1,362 @@
+[
+  {
+    "file": "coinm-d17-global_long_short_ratio_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:03.975816+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "d7a51384dba171fbc26409372e79d20e9e8ced42aaca76520260d08c188d7368"
+  },
+  {
+    "file": "coinm-d26-index_constituents.json",
+    "retrieved_utc": "2026-10-27T10:40:04.070458+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "cc87a491f838765749db312c0bc300bb4dae358d8850f9a6d088d7cdf46e578e"
+  },
+  {
+    "file": "coinm-d23-index_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.162315+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "d67f5749746521a98c08f2cac5f06de30809b8b207fe2efa81e9f123bafe5d22"
+  },
+  {
+    "file": "coinm-d18-top_long_short_account_ratio_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.265803+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "34bd387df08a755e1a365d152b944c45da5923ad921eb0f33aa29de4396f121a"
+  },
+  {
+    "file": "coinm-d19-top_long_short_position_ratio_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.370095+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "48d9fdeb1c9cf4fb3cc27816bbecc5824c97efb973187806b88e987f3dfe8d13"
+  },
+  {
+    "file": "coinm-d02-depth_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:04.470274+00:00",
+    "valid": false,
+    "status": 400,
+    "error": "HttpResponseError",
+    "sha256": "a9bd185b04ae41d5a54dd663270366bbd1781bbb9a692a16c636a9b7d6759554"
+  },
+  {
+    "file": "coinm-d21-kline_seed_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.568188+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "5d70c095723ea6f4a981da5f18391be0af29d788992a1814daeb020a2ad065d3"
+  },
+  {
+    "file": "coinm-d23-mark_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.665216+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "4b3386aae4340f1f9c51f653d82c4cbdbd339ab006ae66694ebbe07e2ae87ec2"
+  },
+  {
+    "file": "coinm-d14-open_interest.json",
+    "retrieved_utc": "2026-10-27T10:40:04.762320+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "fc8d5a718c55daa3540f7bb2f7c0cfa4e77e9cbb2d53feb1084abfa5caa64fb4"
+  },
+  {
+    "file": "coinm-d09-premium_index_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:04.867593+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "3fdc60fa99009012399d0ca35df0e4537ad5b454f4ee2f1379b1bf03a5e31978"
+  },
+  {
+    "file": "coinm-d23-premium_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:04.963922+00:00",
+    "valid": false,
+    "status": 400,
+    "error": "HttpResponseError",
+    "sha256": "6672864013b8e67c784e26c2db664fdb562545e62cae3766a96cb22e718e1c7f"
+  },
+  {
+    "file": "coinm-d06-recent_trades.json",
+    "retrieved_utc": "2026-10-27T10:40:05.056479+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "39f4fd57fa34908c2a1565c9fe0dd677fef3165938fa84adbfbe58a406cc3c54"
+  },
+  {
+    "file": "coinm-d20-basis_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:05.168906+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "f120baa609f3134c782a67279fb0f0f0f2a0cb2377bed07033a850e22ecaa54e"
+  },
+  {
+    "file": "coinm-d22-continuous_seed_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:05.261041+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "b41e4afa2da88a04fcfbd937356b77c02043d6e95840e6298447b895b3c194b0"
+  },
+  {
+    "file": "coinm-d15-open_interest_statistics_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:05.404956+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "865ce3c4ef3617ae7126b838132378e36b82aedc84051865fd23f23ae8cf576e"
+  },
+  {
+    "file": "coinm-d16-taker_buy_sell_volume_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:05.594288+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "29c1ed0bc2defb61f3b0219b74d3be68fa9419871c3acf4b57b7ca980b054f4d"
+  },
+  {
+    "file": "coinm-d12-funding_history.json",
+    "retrieved_utc": "2026-10-27T10:40:05.707124+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "454af3b03648eb5c4de9006aae65571b8ac59b1395c05966c5d1340d267619e8"
+  },
+  {
+    "file": "coinm-d13-funding_info.json",
+    "retrieved_utc": "2026-10-27T10:40:05.808822+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "3f9711da3db14b881a50c9c8cc5876ee2b14bf56f199386dcfedf4d693200444"
+  },
+  {
+    "file": "spot-s02-depth_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:05.998691+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "6e6812c522e7e3923c74d4602fc510eeb49f4189a6fe18d2e5c5deb96c510fa9"
+  },
+  {
+    "file": "spot-s11-kline_seed_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:06.093517+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "dc15d825eb030a0f7e372993105405ea9cd6bcbf2dcdb6e6c55e5cf11d880de3"
+  },
+  {
+    "file": "spot-s12-kline_seed_1m_utc8.json",
+    "retrieved_utc": "2026-10-27T10:40:06.191438+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "ca8665aac5364b94068d3cfe13fdc1f948900b459d28925e2cf284c714a270ec"
+  },
+  {
+    "file": "spot-s08-reference_price_calculation.json",
+    "retrieved_utc": "2026-10-27T10:40:06.284808+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "9ae4e2b76176d660035210574eba4e3c729dc77bb9c14806823b771359d4afdf"
+  },
+  {
+    "file": "spot-s07-reference_price_seed.json",
+    "retrieved_utc": "2026-10-27T10:40:06.379039+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "3aa7fae07bc1852bddab5f683e40e03eb63303f3aad1cac96cebb9f1e8de1201"
+  },
+  {
+    "file": "spot-s15-trading_day.json",
+    "retrieved_utc": "2026-10-27T10:40:06.478819+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "73e1a30aeb0ef329998035cb79ab518330617d43d5080448f0a634494a32e510"
+  },
+  {
+    "file": "spot-s09-execution_rules.json",
+    "retrieved_utc": "2026-10-27T10:40:06.576545+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "73b522a5ff3ddff8f79157295531e2f591d6c8337658b3fc7209e2a65e105ead"
+  },
+  {
+    "file": "usdm-d28-adl_risk.json",
+    "retrieved_utc": "2026-10-27T10:40:06.776651+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "5e6bff3b027157b68a9441b3bffe65862f3bf3766ec8ec68b5a871f6264056c7"
+  },
+  {
+    "file": "usdm-d31-delivery_price.json",
+    "retrieved_utc": "2026-10-27T10:40:06.883300+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "34d2f3837df430c0ecacc118fd26148e37dab3c25c32ff21554270245346abdd"
+  },
+  {
+    "file": "usdm-d02-depth_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:06.986617+00:00",
+    "valid": false,
+    "status": 400,
+    "error": "HttpResponseError",
+    "sha256": "4aa97445567778deb7445830830ccc9663a9f10799a2c7d450af37cf7f3152c3"
+  },
+  {
+    "file": "usdm-d12-funding_history.json",
+    "retrieved_utc": "2026-10-27T10:40:07.092304+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "a9be92e8c973c83c8392a0fec4d73f1eb596e4aa0e3c16b11535bdeabf2719b6"
+  },
+  {
+    "file": "usdm-d17-global_long_short_ratio_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:07.195979+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "768f22ca9eaa57b16383321f6e520e041ccdb5eddc46bb35144481de05b94f17"
+  },
+  {
+    "file": "usdm-d26-index_constituents.json",
+    "retrieved_utc": "2026-10-27T10:40:07.298425+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "121f5b2a0fabb8fe6c94aa0de32c37c94a302b149150f1163ec8032c877c055f"
+  },
+  {
+    "file": "usdm-d23-index_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:07.410766+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "405bbdedafdab6c0f8926fd5a68f07e2570ea0e912730e5aa247b29e53b603c4"
+  },
+  {
+    "file": "usdm-d21-kline_seed_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:07.513423+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "01da676cca84448cc668dd57284ef556c2636040ac2a548c137fda7f11d9546c"
+  },
+  {
+    "file": "usdm-d23-mark_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:07.625455+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "79d7d0c6e28ab65517068558bb5e777cc50ad30ff4e7ddc522442bbc0fe285df"
+  },
+  {
+    "file": "usdm-d14-open_interest.json",
+    "retrieved_utc": "2026-10-27T10:40:07.728129+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "ab7d7dd23aae661f904e7607b3524c581a30e763b513dd4b967508d75a70cd54"
+  },
+  {
+    "file": "usdm-d15-open_interest_statistics_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:07.834709+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "afdfc8d82c59b4c906ea05e98dca8b04073d09f11f7e22fc7b125b12c5c3f68e"
+  },
+  {
+    "file": "usdm-d09-premium_index_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:07.940724+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "0ee612b53355cd83b768228566b0deb7247ecd15f687c0f84a0012dad8dd1072"
+  },
+  {
+    "file": "usdm-d23-premium_price_bars_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:08.044323+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "1c5f23b72114d7240c33841d884928d1768830f62d073c1b728c72442b7730de"
+  },
+  {
+    "file": "usdm-d06-recent_trades.json",
+    "retrieved_utc": "2026-10-27T10:40:08.147993+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "74b5d5f00dd0991cb8eb1a039a057025a087c8de438438ff94715c28296454ab"
+  },
+  {
+    "file": "usdm-d03-rpi_depth_snapshot.json",
+    "retrieved_utc": "2026-10-27T10:40:08.247780+00:00",
+    "valid": false,
+    "status": 400,
+    "error": "HttpResponseError",
+    "sha256": "afd40a970879129a2dd5321d8feb6a38375ea8db3195a7b80c277c345e28c622"
+  },
+  {
+    "file": "usdm-d16-taker_buy_sell_volume_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:08.355277+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "ab0af0f25e4f319aca0dcf382c46c1fe0768ea471ef38223dc1a6c44c012add9"
+  },
+  {
+    "file": "usdm-d20-basis_5m.json",
+    "retrieved_utc": "2026-10-27T10:40:08.477593+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "8525a920597e3e9f1818d4b6d4e1ca835b70a5e1d4880bd8efc81522d7201dd8"
+  },
+  {
+    "file": "usdm-d22-continuous_seed_1m.json",
+    "retrieved_utc": "2026-10-27T10:40:08.574183+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "fc5491b0798d0951424bb530028e5a8df88ebfb88df789bd2e2d1d5259640dad"
+  },
+  {
+    "file": "usdm-d13-funding_info.json",
+    "retrieved_utc": "2026-10-27T10:40:08.694743+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "69f9b566ad1efcea503fc52954e142b37dd0e023a1ab9a5dd2169e06d12b68a2"
+  },
+  {
+    "file": "usdm-d29-insurance_balance.json",
+    "retrieved_utc": "2026-10-27T10:40:08.815010+00:00",
+    "valid": true,
+    "status": 200,
+    "error": null,
+    "sha256": "0ec1d674ab175541b56307a7b47463ef95a6c7340564761684982c0439457f6a"
+  }
+]

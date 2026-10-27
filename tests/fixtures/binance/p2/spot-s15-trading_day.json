@@ -1,0 +1,94 @@
+{
+  "source": {
+    "family": "S15",
+    "venue_market": "spot",
+    "market": "spot",
+    "symbol": "BTCUSDT",
+    "stream": "trading_day",
+    "transport": "rest",
+    "endpoint": "/api/v3/ticker/tradingDay",
+    "cadence_seconds": 60,
+    "parameters": {
+      "symbol": "BTCUSDT",
+      "timeZone": "0"
+    },
+    "weight": 4,
+    "required_fields": [
+      "symbol",
+      "openTime",
+      "closeTime"
+    ],
+    "priority": "native_statistics",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "symbol": "BTCUSDT",
+    "timeZone": "0"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "S15",
+    "source_stream": "trading_day",
+    "scope": "BTCUSDT",
+    "venue_market": "spot",
+    "request": {
+      "method": "GET",
+      "path": "/api/v3/ticker/tradingDay",
+      "parameters": {
+        "symbol": "BTCUSDT",
+        "timeZone": "0"
+      },
+      "request_time_utc_ns": 1793097606379077000,
+      "request_monotonic_ns": 398083042501041,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:06 GMT",
+        "x-mbx-used-weight": "17",
+        "x-mbx-used-weight-1m": "17"
+      },
+      "model": {
+        "symbol": "BTCUSDT",
+        "priceChange": "-316.55000000",
+        "priceChangePercent": "-0.395",
+        "weightedAvgPrice": "79904.64913368",
+        "openPrice": "80150.56000000",
+        "highPrice": "80388.37000000",
+        "lowPrice": "79506.00000000",
+        "lastPrice": "79834.01000000",
+        "volume": "5193.34103000",
+        "quoteVolume": "414972092.83370730",
+        "openTime": 1793059200000,
+        "closeTime": 1793145599999,
+        "firstId": 6793976222,
+        "lastId": 6794816304,
+        "count": 840083
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097606474590000,
+      "receive_monotonic_ns": 398083138015208
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

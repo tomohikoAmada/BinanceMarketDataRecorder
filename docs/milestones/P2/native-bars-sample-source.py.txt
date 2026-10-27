@@ -1,0 +1,55 @@
+from __future__ import annotations
+import asyncio,base64,json,logging,tempfile,time
+from pathlib import Path
+from functools import partial
+from collections import Counter,defaultdict
+from binance_market_data_recorder.binance.products import discover_products
+from binance_market_data_recorder.binance.coverage_config import CoverageConfig
+from binance_market_data_recorder.binance.public_sources import source_plan
+from binance_market_data_recorder.binance.public_websocket import stream_groups
+from binance_market_data_recorder.collector.coverage import SelectedAssetCapture
+from binance_market_data_recorder.config import RecorderConfig
+from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.normalize.raw import load_source_chunks,iter_source_records
+class NoRest:
+ def close(self):pass
+async def main():
+ c=CoverageConfig(underlying_assets=('BTC','ETH'))
+ selected={'BTCUSDT','BTCUSDT_261225','BTCUSD_PERP','BTCUSD_261225'}
+ ps=tuple(p for v in ('spot','usdm','coinm') for p in discover_products(v,json.loads(Path(f'tests/fixtures/binance/p2/{v}-directory.json').read_bytes()),c) if p.key.symbol in selected)
+ plan=tuple(s for s in source_plan(ps,c) if s.transport=='ws' and s.priority=='forming_bars')
+ layout=ensure_storage_layout(Path(tempfile.mkdtemp(prefix='bmdr-p2-native-bars-',dir='/private/var/tmp')))
+ with Catalog(layout.catalog) as catalog:
+  owner=SelectedAssetCapture(RecorderConfig(data_root=layout.root,coverage=c),logging.getLogger('p2-native-sample'),'p2-dev','p2-native-bars',layout,catalog,clients={'spot':NoRest()})
+  stop=asyncio.Event();by_scope=defaultdict(list);expected=defaultdict(list);counts=Counter();wire_counts=Counter();first={};collectors=[]
+  for s in plan:owner.add_source(s);by_scope[(s.market,s.symbol)].append(s)
+  for key,ss in by_scope.items():
+   product=next((p for p in ps if (p.key.market,p.key.symbol)==key),None)
+   for group in stream_groups(tuple(ss),c.streams_per_connection):
+    def observed(envelope):
+     wire=envelope.source_sequence.get('wireStream','malformed')
+     counts[envelope.source_sequence.get('sourceFamily','unknown')]+=1;wire_counts[wire]+=1
+     first.setdefault(wire,base64.b64encode(envelope.raw_payload).decode())
+    collector=owner.make_group(group,product,observed,lambda event:None)
+    original=collector.envelope_factory
+    def extract(original=original,key=(*key,group.name),**kwargs):
+     expected[key].append(kwargs['raw_payload'])
+     return original(**kwargs)
+    collector.envelope_factory=extract;collectors.append(collector)
+  start=time.perf_counter_ns();cpu=time.process_time_ns()
+  tasks=[asyncio.create_task(col.run(stop)) for col in collectors]
+  try:await asyncio.wait_for(stop.wait(),timeout=30)
+  except TimeoutError:stop.set()
+  await asyncio.gather(*tasks)
+  wall=time.perf_counter_ns()-start;cpu=time.process_time_ns()-cpu
+  actual=defaultdict(list)
+  chunks=load_source_chunks(layout=layout,catalog=catalog)
+  for chunk in sorted(chunks,key=lambda c:c.manifest['created_at_utc_ns']):
+   for record in iter_source_records(chunk):
+    e=record.envelope;actual[(e.market,e.symbol,e.stream)].append(e.raw_payload)
+  assert dict(actual)=={k:v for k,v in expected.items() if v}
+  out={'scope':'30s real public native-bar sample, all configured intervals; local only, not VPS or continuity qualification','wall_seconds':wall/1e9,'process_cpu_seconds':cpu/1e9,'products':len(ps),'configured_native_bar_streams':len(plan),'observed_native_bar_streams':len(wire_counts),'written_and_read_frames':sum(counts.values()),'exact_physical_order_and_bytes':True,'received_payload_bytes':sum(len(b) for rows in actual.values() for b in rows),'stored_bytes':sum(chunk.artifact_path.stat().st_size for chunk in chunks),'families':dict(counts),'streams':dict(wire_counts),'first_payloads_base64':first,'raw_test_root':str(layout.root),'queue_capacities':{'per_connection_frames':owner.config.ingress_queue_capacity,'per_connection_bytes':64*1024*1024},'max_remaining_queue_frames':max(col.receipt_queue_stats.depth for col in collectors)}
+  Path('docs/milestones/P2/native-bars-sample.json').write_text(json.dumps(out,indent=2)+'\n')
+  print({k:v for k,v in out.items() if k not in {'streams','first_payloads_base64'}})
+asyncio.run(main())

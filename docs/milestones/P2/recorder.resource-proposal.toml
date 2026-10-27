@@ -1,0 +1,20 @@
+# UNAPPROVED PROPOSAL: explicit D06 6s finite-window sampling.
+# Can observe fewer trades at peaks; not a qualified production profile.
+# Keep the service stopped; select an approved internal root before actual use.
+[recorder]
+network_proxy_mode = "direct"
+
+[recorder.coverage]
+underlying_assets = ["BTC", "ETH"]
+# Empty selects every allowed Spot quote for the configured base assets.
+spot_quote_assets = []
+max_products = 256
+max_streams = 32768
+streams_per_connection = 128
+rest_concurrency = 4
+recent_trades_compact = true
+recent_trades_interval_seconds = 6.0
+# Omitted interval lists use ALL native intervals, both Spot UTC/+08:00.
+# Nominal steady demand ~1079 derivative weight/min; retries/seeds add cost.
+# No source or failed observation is retrospectively removed.
+# Owner decision and P2/P3 source closure are still required.

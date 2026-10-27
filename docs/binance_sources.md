@@ -700,3 +700,21 @@ changelog at 2026-10-26T14:48:32Z retains SHA-256
 `7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`.
 U/C `.md` probes returned an HTML shell and are explicitly unusable; no downloaded
 content was executed and the index's full-text corpus was not loaded for this fix.
+
+## P2 implementation sources — 2026-10-27
+
+Current source inventory and exact representations are in [P2 official-sources.json](milestones/P2/official-sources.json). Direct catalogue/schema downloads returned WAF 202 and were excluded as semantic evidence. Rendered official-page excerpts are explicitly hashed as excerpts, not HTTP bodies. No downloaded code was executed.
+
+| Source | Retrieval UTC | SHA-256 | Relevant conclusion |
+| --- | --- | --- | --- |
+| [index](https://developers.binance.com/en/docs/llms.txt) (downloaded text) | 2026-10-27T10:20:33.264476+00:00 | `d23560223c5726258114e892d31b86915d8f4de4a2bf65d6885e9c8c54800ab4` | Current index read before selected pages; no llms-full load. |
+| [spot-streams](https://developers.binance.com/en/docs/products/spot/web-socket-streams.md) (downloaded document bytes) | 2026-10-27T10:20:53.964338+00:00 | `555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35` | Combined wrapper, exact application-message boundary, native connection limits and shutdown. |
+| [spot-rest](https://developers.binance.com/en/docs/products/spot/rest-api.md) (downloaded document bytes) | 2026-10-27T10:20:53.971075+00:00 | `25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec` | Public unsigned REST and supplied time/precision semantics. |
+| [um-connect](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md) (downloaded document bytes) | 2026-10-27T10:20:53.900829+00:00 | `912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2` | USD-M public/market routing and combined stream limit. |
+| [cm-connect](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Connect.md) (downloaded document bytes) | 2026-10-27T10:20:53.968097+00:00 | `d6963a3e320b7d9d86ab4cbc9e199d063926a6e27ecfddd4f07dac821f158762` | COIN-M dstream route and combined stream limit. |
+| [integration](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) (downloaded document bytes) | 2026-10-27T10:20:53.899703+00:00 | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | UM/CM 2400/min shared IP weight; st=1/2; stream-specific ps; cross-host kline support. |
+| [catalog-excerpts](https://developers.binance.com/en/docs/catalog) (serialized rendered official-page excerpts, not original HTTP bytes) | 2026-10-27T11:43:53+00:00 | `5ec6acf9c87a44aa127757efd39b9699d843c054b9d29aac583f19b174dd333e` | Spot blockTrade native t field; C indexPrice i/p; C premium symbol contract remains ambiguous; U top-ratio key restrictions retained. |
+
+Live public samples, initial invalid-limit probes, C dated-premium failures and the successful perpetual comparison are separately retained in P2 fixtures. The SDK source evaluation used installed official Spot 10.0.0 / USD-M 14.0.0 / common 4.0.3; generated model null loss and the generic wrapper error are worked around within the installed unsigned transport. D31 uses the already-received body to preserve numeric decimal precision. See [P2 result](milestones/P2/README.md); failed/unobserved sources are not qualification successes.
+
+RPI sequence semantics checked at 2026-10-27T12:52:15Z: [official public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public) documents `pu` as the preceding stream event's final ID. The [short rendered excerpt](milestones/P2/rpi-sequence-source.json) SHA-256 is `fadee421d713a415c5e82d806d3170e09fd542dce58344ed5b607907bf632be8` (excerpt identity, not HTTP-body identity). P2 keeps an independent RPI cursor and marks a known jump before append; it does not infer order-book price correctness.
