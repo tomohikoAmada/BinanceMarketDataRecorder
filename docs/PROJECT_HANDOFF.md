@@ -1,14 +1,16 @@
 # Project Handoff
 
-Next work is **P1-R1** in the [production plan](production_milestone_plan.md).
-[Independent review of 5218d9d](milestones/P1/review-20261027.md) reproduces a
-connection-retirement stall in Spot/USD-M: retirement during `sleep(0)` can be
-followed by a fresh idle recv, leaving rotation and later stop waiting for a new
-message. Fix the handoff and add focused regressions before accepting P1.
-The remaining reviewed P1 work and original measurements retain their credit.
-[P1](milestones/P1/README.md) is implemented in `ce1826b8a8fa9057783dfe035596332c8c6d67d8`;
-its runtime src tree is `0a173540835c6eb78de26eab9d06d165cc4902aa`. Later result,
-test and documentation commits do not change that runtime identity. Follow
+Next work is **independent re-review of P1-R1**, before accepting P1 or starting P2.
+The [review](milestones/P1/review-20261027.md#r1修正交付2026-10-27) records candidate
+`b292d0d892c8f53812749f1aeac7f637ba1a3b13`, src tree
+`d8194460b4dcc5bd45dc52209d483c9243a98306`. Both receive loops now check retirement
+immediately before receive admission, including after their scheduling yield.
+Nine new regressions, 196 focused tests and dual-platform CI run 40465389449 pass;
+that record binds the CI head and results. Independent review remains pending.
+
+Original P1 implementation `ce1826b` and its measurements retain src tree
+`0a173540835c6eb78de26eab9d06d165cc4902aa`; the R1 fix does not rerun or relabel them.
+Follow
 [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md) and
 [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md).
 

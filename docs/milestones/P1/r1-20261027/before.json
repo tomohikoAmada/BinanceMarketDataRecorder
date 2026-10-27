@@ -1,0 +1,32 @@
+[
+  {
+    "market": "spot",
+    "boundary": "rotation",
+    "buffered": 2,
+    "recv_calls": 3,
+    "retired_without_new_message": false,
+    "finished_after_stop": false,
+    "outcome": null,
+    "close_reasons": []
+  },
+  {
+    "market": "usdm",
+    "boundary": "rotation",
+    "buffered": 2,
+    "recv_calls": 3,
+    "retired_without_new_message": false,
+    "finished_after_stop": false,
+    "outcome": null,
+    "close_reasons": []
+  },
+  {
+    "market": "spot",
+    "boundary": "server_shutdown",
+    "buffered": 3,
+    "recv_calls": 4,
+    "retired_without_new_message": false,
+    "finished_after_stop": false,
+    "outcome": null,
+    "close_reasons": []
+  }
+]

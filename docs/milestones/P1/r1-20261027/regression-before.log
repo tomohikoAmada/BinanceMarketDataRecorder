@@ -1,0 +1,280 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_retirement_at_yield_exits_without_next_message[spot-rotation-2] _____
+
+tmp_path = PosixPath('/private/var/tmp/bmdr-pytest-44737/test_retirement_at_yield_exits0')
+market = 'spot', boundary = 'rotation', buffered = 2
+
+    @pytest.mark.parametrize(
+        ("market", "boundary", "buffered"),
+        [("spot", "rotation", 2), ("usdm", "rotation", 2), ("spot", "server_shutdown", 3)],
+    )
+    def test_retirement_at_yield_exits_without_next_message(
+        tmp_path: Path,
+        market: str,
+        boundary: str,
+        buffered: int,
+    ) -> None:
+        """The reviewed 5218d9d enters one extra recv and fails this watchdog."""
+    
+        async def exercise() -> None:
+            collector, catalog = make_collector(tmp_path, market, 32)
+            collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+            if boundary == "server_shutdown":
+                assert isinstance(collector, SpotStreamCollector)
+                collector._server_shutdown.set()
+            payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+            socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+            stop = asyncio.Event()
+    
+            async def idle_writer() -> None:
+                await asyncio.Event().wait()
+    
+            writer = asyncio.create_task(idle_writer())
+            receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+            try:
+                # The watchdog ends a failure; no next frame is ever supplied.
+                done, _ = await asyncio.wait({receive}, timeout=1)
+                assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+                assert await receive == (
+                    "planned_rotation" if boundary == "rotation" else "server_shutdown"
+                )
+                assert 0 < socket.calls <= buffered
+                assert socket.close_reasons == [
+                    "planned 24-hour rotation" if boundary == "rotation" else "serverShutdown received"
+                ]
+                stop.set()
+                await receive  # a later stop cannot leave a receiver or its controls waiting
+                assert not writer.done()  # the caller still owns the healthy writer
+                await drain_and_check(tmp_path, collector, socket.payloads[: socket.calls])
+            finally:
+                receive.cancel()
+                writer.cancel()
+                await asyncio.gather(receive, writer, return_exceptions=True)
+                catalog.close()
+    
+>       asyncio.run(exercise())
+
+tests/integration/test_receive_retirement.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def exercise() -> None:
+        collector, catalog = make_collector(tmp_path, market, 32)
+        collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+        if boundary == "server_shutdown":
+            assert isinstance(collector, SpotStreamCollector)
+            collector._server_shutdown.set()
+        payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+        socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+        stop = asyncio.Event()
+    
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+    
+        writer = asyncio.create_task(idle_writer())
+        receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+        try:
+            # The watchdog ends a failure; no next frame is ever supplied.
+            done, _ = await asyncio.wait({receive}, timeout=1)
+>           assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+E           AssertionError: rotation stalled at recv 3
+E           assert <Task pending name='Task-3' coro=<SpotStreamCollector._receive_connection() running at /Users/amada/Documents/Developm...ta_recorder/binance/websocket_common.py:63> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[Task.task_wakeup()]>> in set()
+
+tests/integration/test_receive_retirement.py:102: AssertionError
+_____ test_retirement_at_yield_exits_without_next_message[usdm-rotation-2] _____
+
+tmp_path = PosixPath('/private/var/tmp/bmdr-pytest-44737/test_retirement_at_yield_exits1')
+market = 'usdm', boundary = 'rotation', buffered = 2
+
+    @pytest.mark.parametrize(
+        ("market", "boundary", "buffered"),
+        [("spot", "rotation", 2), ("usdm", "rotation", 2), ("spot", "server_shutdown", 3)],
+    )
+    def test_retirement_at_yield_exits_without_next_message(
+        tmp_path: Path,
+        market: str,
+        boundary: str,
+        buffered: int,
+    ) -> None:
+        """The reviewed 5218d9d enters one extra recv and fails this watchdog."""
+    
+        async def exercise() -> None:
+            collector, catalog = make_collector(tmp_path, market, 32)
+            collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+            if boundary == "server_shutdown":
+                assert isinstance(collector, SpotStreamCollector)
+                collector._server_shutdown.set()
+            payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+            socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+            stop = asyncio.Event()
+    
+            async def idle_writer() -> None:
+                await asyncio.Event().wait()
+    
+            writer = asyncio.create_task(idle_writer())
+            receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+            try:
+                # The watchdog ends a failure; no next frame is ever supplied.
+                done, _ = await asyncio.wait({receive}, timeout=1)
+                assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+                assert await receive == (
+                    "planned_rotation" if boundary == "rotation" else "server_shutdown"
+                )
+                assert 0 < socket.calls <= buffered
+                assert socket.close_reasons == [
+                    "planned 24-hour rotation" if boundary == "rotation" else "serverShutdown received"
+                ]
+                stop.set()
+                await receive  # a later stop cannot leave a receiver or its controls waiting
+                assert not writer.done()  # the caller still owns the healthy writer
+                await drain_and_check(tmp_path, collector, socket.payloads[: socket.calls])
+            finally:
+                receive.cancel()
+                writer.cancel()
+                await asyncio.gather(receive, writer, return_exceptions=True)
+                catalog.close()
+    
+>       asyncio.run(exercise())
+
+tests/integration/test_receive_retirement.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def exercise() -> None:
+        collector, catalog = make_collector(tmp_path, market, 32)
+        collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+        if boundary == "server_shutdown":
+            assert isinstance(collector, SpotStreamCollector)
+            collector._server_shutdown.set()
+        payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+        socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+        stop = asyncio.Event()
+    
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+    
+        writer = asyncio.create_task(idle_writer())
+        receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+        try:
+            # The watchdog ends a failure; no next frame is ever supplied.
+            done, _ = await asyncio.wait({receive}, timeout=1)
+>           assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+E           AssertionError: rotation stalled at recv 3
+E           assert <Task pending name='Task-11' coro=<UsdMStreamCollector._receive_connection() running at /Users/amada/Documents/Develop...ta_recorder/binance/websocket_common.py:63> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[Task.task_wakeup()]>> in set()
+
+tests/integration/test_receive_retirement.py:102: AssertionError
+_ test_retirement_at_yield_exits_without_next_message[spot-server_shutdown-3] __
+
+tmp_path = PosixPath('/private/var/tmp/bmdr-pytest-44737/test_retirement_at_yield_exits2')
+market = 'spot', boundary = 'server_shutdown', buffered = 3
+
+    @pytest.mark.parametrize(
+        ("market", "boundary", "buffered"),
+        [("spot", "rotation", 2), ("usdm", "rotation", 2), ("spot", "server_shutdown", 3)],
+    )
+    def test_retirement_at_yield_exits_without_next_message(
+        tmp_path: Path,
+        market: str,
+        boundary: str,
+        buffered: int,
+    ) -> None:
+        """The reviewed 5218d9d enters one extra recv and fails this watchdog."""
+    
+        async def exercise() -> None:
+            collector, catalog = make_collector(tmp_path, market, 32)
+            collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+            if boundary == "server_shutdown":
+                assert isinstance(collector, SpotStreamCollector)
+                collector._server_shutdown.set()
+            payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+            socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+            stop = asyncio.Event()
+    
+            async def idle_writer() -> None:
+                await asyncio.Event().wait()
+    
+            writer = asyncio.create_task(idle_writer())
+            receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+            try:
+                # The watchdog ends a failure; no next frame is ever supplied.
+                done, _ = await asyncio.wait({receive}, timeout=1)
+                assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+                assert await receive == (
+                    "planned_rotation" if boundary == "rotation" else "server_shutdown"
+                )
+                assert 0 < socket.calls <= buffered
+                assert socket.close_reasons == [
+                    "planned 24-hour rotation" if boundary == "rotation" else "serverShutdown received"
+                ]
+                stop.set()
+                await receive  # a later stop cannot leave a receiver or its controls waiting
+                assert not writer.done()  # the caller still owns the healthy writer
+                await drain_and_check(tmp_path, collector, socket.payloads[: socket.calls])
+            finally:
+                receive.cancel()
+                writer.cancel()
+                await asyncio.gather(receive, writer, return_exceptions=True)
+                catalog.close()
+    
+>       asyncio.run(exercise())
+
+tests/integration/test_receive_retirement.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../../.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def exercise() -> None:
+        collector, catalog = make_collector(tmp_path, market, 32)
+        collector.planned_rotation_seconds = 1e-9 if boundary == "rotation" else 60
+        if boundary == "server_shutdown":
+            assert isinstance(collector, SpotStreamCollector)
+            collector._server_shutdown.set()
+        payload = spot.book_ticker if market == "spot" else usdm.book_ticker
+        socket = BufferedThenQuietSocket([payload(i) for i in range(buffered)])
+        stop = asyncio.Event()
+    
+        async def idle_writer() -> None:
+            await asyncio.Event().wait()
+    
+        writer = asyncio.create_task(idle_writer())
+        receive = asyncio.create_task(collector._receive_connection(socket, "review", stop, writer))
+        try:
+            # The watchdog ends a failure; no next frame is ever supplied.
+            done, _ = await asyncio.wait({receive}, timeout=1)
+>           assert receive in done, f"{boundary} stalled at recv {socket.calls}"
+E           AssertionError: server_shutdown stalled at recv 4
+E           assert <Task pending name='Task-18' coro=<SpotStreamCollector._receive_connection() running at /Users/amada/Documents/Develop...ta_recorder/binance/websocket_common.py:63> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[Task.task_wakeup()]>> in set()
+
+tests/integration/test_receive_retirement.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_receive_retirement.py::test_retirement_at_yield_exits_without_next_message[spot-rotation-2]
+FAILED tests/integration/test_receive_retirement.py::test_retirement_at_yield_exits_without_next_message[usdm-rotation-2]
+FAILED tests/integration/test_receive_retirement.py::test_retirement_at_yield_exits_without_next_message[spot-server_shutdown-3]
+3 failed, 6 deselected in 3.80s

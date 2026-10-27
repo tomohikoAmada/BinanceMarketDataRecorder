@@ -6,7 +6,8 @@ user changes as `d81e7d2`; the merge base for new work is `113cdb3`.
 PR #86 merged as `004c1a6`, PR #87 as `43aab9f`. The [review](milestones/P0/review-20261026.md)
 accepts R1/R3/R4 and the [P0 measurements](milestones/P0/README.md); the remaining
 R2 classifier defect is corrected with 26 focused tests and an appended v4
-interpretation of the same boundaries. P0 corrections and [P1 local capture-path development](milestones/P1/README.md) are complete;
+interpretation of the same boundaries. P0 corrections are complete. [P1-R1 candidate b292d0d](milestones/P1/review-20261027.md#r1修正交付2026-10-27)
+has passed focused validation and awaits independent re-review; P1 overall is not accepted.
 P2–P6 have not started. P1 uses the existing main without branch cleanup.
 P1 did not access the VPS, install a candidate, change service state, or touch
 production data. Its macOS fixture measurements do not update the installed

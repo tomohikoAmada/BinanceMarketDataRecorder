@@ -1,0 +1,82 @@
+{
+  "schema": "p1-r1-checks.v1",
+  "reviewed_commit": "5218d9d7918de5162bb1121101df5f2c9d2a71f9",
+  "development_base": "42224ef6fca03e4c632a98fce534bd67d23965c1",
+  "fix_commit": "b292d0d892c8f53812749f1aeac7f637ba1a3b13",
+  "fix_src_tree": "d8194460b4dcc5bd45dc52209d483c9243a98306",
+  "original_measurement_src_tree": "0a173540835c6eb78de26eab9d06d165cc4902aa",
+  "reproduction": {
+    "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P1/reproduce_receive_retirement.py",
+    "before": {
+      "exit_code": 1,
+      "file": "before.json",
+      "stalled_cases": 3
+    },
+    "after": {
+      "exit_code": 0,
+      "file": "after.json",
+      "completed_cases": 3
+    }
+  },
+  "regression_before": {
+    "command": ".venv/bin/python -m pytest -q tests/integration/test_receive_retirement.py -k at_yield",
+    "failed": 3,
+    "deselected": 6,
+    "log": "regression-before.log"
+  },
+  "regression_after": {
+    "command": ".venv/bin/python -m pytest -q tests/integration/test_receive_retirement.py",
+    "passed": 9,
+    "seconds": 0.59,
+    "log": "regression-after.log"
+  },
+  "focused": {
+    "command": ".venv/bin/python -m pytest -q tests/unit/test_p1_write_path.py tests/unit/test_p1_depth_continuity.py tests/unit/test_spot_websocket.py tests/unit/test_websocket_diagnostics.py tests/unit/test_collector_readiness.py tests/integration/test_receive_retirement.py tests/integration/test_receive_stop_priority.py tests/integration/test_spot_ingress_backpressure.py tests/integration/test_usdm_ingress_backpressure.py tests/integration/test_reconnect_boundary_integrity.py tests/integration/test_spot_stream_collector.py tests/integration/test_usdm_stream_collector.py tests/integration/test_spot_collector.py tests/integration/test_usdm_collector.py tests/integration/test_ms3b_production_paths.py tests/integration/test_service_signals.py",
+    "passed": 196,
+    "deselected": 1,
+    "seconds": 20.64,
+    "log": "focused.log"
+  },
+  "ruff": "PASS",
+  "mypy": {
+    "result": "PASS",
+    "source_files": 325
+  },
+  "m0": "PASS",
+  "diff_check": "PASS",
+  "ci": {
+    "conclusion": "success",
+    "headSha": "b292d0d892c8f53812749f1aeac7f637ba1a3b13",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "databaseId": 122059413284,
+        "name": "macos-python312",
+        "status": "completed"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 122059413582,
+        "name": "ubuntu-python312",
+        "status": "completed"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40465389449",
+    "run_id": 40465389449,
+    "observed_at_utc": "2026-10-27T07:20:20.595050+00:00"
+  },
+  "review_status": "Fix and self-check delivered; independent re-review pending; P1 overall not accepted.",
+  "unrun": [
+    "VPS benchmark",
+    "Full local suite (targeted checks plus requested dual-platform CI instead)",
+    "Million-frame stress",
+    "Online smoke",
+    "Production or platform service operations"
+  ],
+  "compatibility": "No Raw/SQLite/envelope/reader/queue/writer format or budget change. Original P0/P1 measurement files and contracts are retained.",
+  "documentation_links": {
+    "result": "PASS",
+    "files": 7
+  }
+}
