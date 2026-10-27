@@ -2,6 +2,18 @@
 
 ## P2 独立复审与 D06 预算研究（2026-10-28）
 
+### 日度文件存在性补充核验
+
+2026-10-28（上海）重新读取官方 `binance/binance-public-data` README，并以无凭据
+HEAD 核验以下历史样例 ZIP，GET 其对应 `.CHECKSUM`；全部返回 HTTP 200。
+ZIP 正文未下载，下表 SHA-256 是实际取得的校验文本的摘要，不是对 ZIP 内容完成了校验。
+这确认官方日度逐笔文件实际存在，不证明每个目标产品/日期/字段均完整可用。
+
+| 官方样例 / 核验日期 | 请求 UTC | CHECKSUM 文本 SHA-256 | 结果 |
+| --- | --- | --- | --- |
+| [USD-M BTCUSDT 2025-01-01](https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2025-01-01.zip)、[校验文本](https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2025-01-01.zip.CHECKSUM) | 2026-10-27T16:21:52.799929Z | `c721f59b57c2c1c369d99063272b4cb93b812da45b104ae88e19f8da5fc39157` | HEAD 200，15,105,022 bytes；CHECKSUM GET 200 |
+| [COIN-M BTCUSD_PERP 2025-01-01](https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2025-01-01.zip)、[校验文本](https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2025-01-01.zip.CHECKSUM) | 2026-10-27T16:21:52.800231Z | `9e01995b65e1007dc17809ddd7c0625b691e6e871c4e89a384d7276293cb1964` | HEAD 200，1,652,988 bytes；CHECKSUM GET 200 |
+
 本次先读取 Agent Native index，再核对选定产品页、整合说明及官方批量数据源码。
 下列 UTC、摘要及表示完整记录于 [P2 review-sources.json](milestones/P2/review-sources.json)；
 检索发生于 2026-10-27 UTC，报告日期为上海时间次日。没有访问账户或市场采集接口、
