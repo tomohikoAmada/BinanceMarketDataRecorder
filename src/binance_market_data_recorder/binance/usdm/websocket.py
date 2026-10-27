@@ -761,6 +761,10 @@ class UsdMStreamCollector:
     ) -> str:
         async def receive_frames(control: ConnectionReceiveControl) -> str:
             while True:
+                # No await may separate this check from control.receive():
+                # retirement can arrive while the previous iteration yields.
+                if control.retirement is not None:
+                    return control.retirement
                 try:
                     receipt = await control.receive(
                         lambda: self._receive_once(websocket, connection_id)
@@ -846,8 +850,6 @@ class UsdMStreamCollector:
                         return "session_restart"
                     return "graceful_shutdown"
 
-                if control.retirement is not None:
-                    return control.retirement
                 # Yield without creating a Task: already-buffered recv() may
                 # otherwise starve stop, the writer and connection rotation.
                 await asyncio.sleep(0)

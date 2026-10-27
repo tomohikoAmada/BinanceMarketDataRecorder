@@ -54,6 +54,9 @@ async def run_connection_receiver(
 
     Retire an idle recv by cancellation. An already received frame instead
     finishes its bounded handoff, including the existing post-close stop path.
+    The receiver must check retirement immediately before every control.receive,
+    including after a cooperative yield. With no intervening await, that check
+    and waiting_for_frame admission are atomic on the owning event loop.
     The writer remains owned by its caller and storage failures take priority.
     """
 
