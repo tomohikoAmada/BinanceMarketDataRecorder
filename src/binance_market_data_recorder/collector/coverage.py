@@ -7,6 +7,7 @@ process-owned and concurrency/weight bounded; no worker is created per poll.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from collections.abc import Callable
@@ -484,6 +485,21 @@ class SelectedAssetCapture:
                 if sum(s.transport == "ws" for s in plan) > self.coverage.max_streams:
                     self.admission[key] = "NOT_ADMITTED_STREAM_BUDGET"
                     continue
+                rest_limit = self.coverage.max_steady_derivative_weight_per_minute
+                steady = (
+                    sum(
+                        s.weight * 60 / s.cadence_seconds
+                        for s in plan
+                        if s.transport == "rest"
+                        and s.venue_market != "spot"
+                        and s.cadence_seconds > 0
+                        and s.lifecycle != "after_delivery"
+                    )
+                    + 120 / self.coverage.directory_interval_seconds
+                )
+                if rest_limit is not None and steady > rest_limit:
+                    self.admission[key] = "NOT_ADMITTED_REST_BUDGET"
+                    continue
                 for source in plan:
                     self.add_source(source)
                 self.collectors[key] = ProductCapture(self, product)
@@ -657,8 +673,19 @@ class SelectedAssetCapture:
                 418,
                 429,
             }:
+                from ..binance.spot.rate_limit import _retry_at_utc_ns
+
+                saved = json.loads(result.envelope.raw_payload)
+                received = result.envelope.receive_time_utc_ns
+                until = _retry_at_utc_ns(
+                    status=result.status or (418 if result.error == "RateLimitBanError" else 429),
+                    headers=saved["response"]["headers"],
+                    body_text=json.dumps(result.document),
+                    now_utc_ns=received,
+                )
                 shared_request_budget().block(
-                    "spot" if source.venue_market == "spot" else "usdm", 120
+                    "spot" if source.venue_market == "spot" else "usdm",
+                    max(0.0, (until - time.time_ns()) / 1e9),
                 )
         return result
 

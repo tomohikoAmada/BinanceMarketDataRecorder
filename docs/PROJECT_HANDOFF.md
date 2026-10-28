@@ -1,3 +1,18 @@
+# Current P2 correction candidate — 2026-10-28
+
+R4 now uses existing Retry-After/date/ban/fallback semantics and remaining receive-based
+cooldown. R1's owner-approved live-plus-daily direction is implemented: explicit measured
+2s USDT / 3s USDC / 30s other derivative polling, nominal steady admission bound, and a
+small selected-daily-trades profile using the existing separate HistoricalImporter.
+See [current P2 result](milestones/P2/README.md) for measurements, loss, exact samples,
+file reader/merge contract and final checks/CI. No approval of the same direction is needed.
+R2 remains unresolved: this check also found all four USD-M delivery premium symbols fail,
+in addition to COIN-M delivery. Official semantics still do not establish applicability.
+P2 is NOT ACCEPTED pending R2 and independent re-review. P3 has not started. No deployment
+or production data change; the generic 1s default and historical evidence remain intact.
+
+## Prior review/handoff (retained)
+
 # Project Handoff
 
 Current work is **P2**, independently reviewed and **not accepted** at e73068b.

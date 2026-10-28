@@ -1,0 +1,62 @@
+[
+  {
+    "name": "index",
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_at_utc": "2026-10-28T06:41:13Z",
+    "status": 200,
+    "bytes": 174964,
+    "sha256": "c5ce78c90244f0bf92fa1b6143a63807bdfb908a3de8c1a6e9379e73c911741f",
+    "representation": "downloaded index"
+  },
+  {
+    "name": "cm-premium",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/market-data/rest-api/Premium-Index-Kline-Data.md",
+    "retrieved_at_utc": "2026-10-28T06:41:13Z",
+    "status": 200,
+    "bytes": 66196,
+    "sha256": "d0824272cad35ed9fa89050cf939231e3081675bf80acdea5a9d4426d4a0bfb9",
+    "representation": "HTML shell; not semantic evidence"
+  },
+  {
+    "name": "um-premium",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/market-data/rest-api/Premium-Index-Kline-Data.md",
+    "retrieved_at_utc": "2026-10-28T06:41:13Z",
+    "status": 200,
+    "bytes": 66196,
+    "sha256": "d0824272cad35ed9fa89050cf939231e3081675bf80acdea5a9d4426d4a0bfb9",
+    "representation": "HTML shell; not semantic evidence"
+  },
+  {
+    "name": "cm-premium-ws",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Premium-Index-Kline-Candlestick-Streams.md",
+    "retrieved_at_utc": "2026-10-28T06:41:14Z",
+    "status": 200,
+    "bytes": 66196,
+    "sha256": "d0824272cad35ed9fa89050cf939231e3081675bf80acdea5a9d4426d4a0bfb9",
+    "representation": "HTML shell; not semantic evidence"
+  },
+  {
+    "name": "premium-catalog",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data",
+    "retrieval_utc_bounds": [
+      "2026-10-28T06:41:14Z",
+      "2026-10-28T06:42:45Z"
+    ],
+    "representation": "short rendered excerpt, not HTTP bytes",
+    "excerpt": "Premium index kline bars of a symbol. After CM migration, accepts both CM and UM symbols.",
+    "sha256": "87b48b046703bdb8193ba88d702ad580eb776857dbf11c79a2dcfc46266a784f",
+    "conclusion": "No explicit perpetual/delivery applicability rule established; R2 remains open."
+  },
+  {
+    "name": "public-data-readme",
+    "url": "https://github.com/binance/binance-public-data/blob/master/README.md",
+    "retrieval_utc_bounds": [
+      "2026-10-28T06:41:13Z",
+      "2026-10-28T06:41:30Z"
+    ],
+    "representation": "short rendered excerpt, not HTTP bytes",
+    "excerpt": "new daily data becoming available the next day",
+    "sha256": "8bb6fea7c93492f92f5937c1c39479547938d247453b90aa5b9447101bcc71e3",
+    "conclusion": "Daily release is delayed; verify selected file/date/fields and revisions independently."
+  }
+]

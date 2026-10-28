@@ -170,3 +170,24 @@ logical readers are in `binance/public_websocket.py`, `public_rest.py` and
 `rest_representation.py`; ADR-0054 describes their compatibility boundary.
 No credentials, consumer dependency or new network service is required.
 P2 is not yet fully accepted: read its result before attempting qualification.
+
+### P2 measured polling and independent daily supplement
+
+See [P2 current result](milestones/P2/README.md) and its explicit measured TOML.
+`coverage.recent_trades_intervals` maps physical `market:symbol` keys to fixed seconds.
+An optional `max_steady_derivative_weight_per_minute` admission ceiling leaves new
+products visibly NOT_ADMITTED_REST_BUDGET; it never adjusts running source rates.
+Initial seed/retries still use the common budget. The generic old default stays1s.
+
+On an operator-selected safe internal/test data root, use for example:
+
+```bash
+BINANCE_MARKET_RECORDER_DATA_ROOT=<safe-root> binance-market-recorder backfill plan --profile selected-daily-trades \
+  --product um_delivery:BTCUSDT_261225 --product cm_perpetual:ETHUSD_PERP \
+  --start 2026-10-26 --end 2026-10-26
+```
+
+Use `run` for the same explicit request, and existing backfill status/verify for
+results. The path is separate from the live service; no automatic all-history job.
+The bounded reader/conflict helper is `backfill/daily_trades.py`; original Spot and
+BTCUSDT historical profiles remain available with their existing formats.

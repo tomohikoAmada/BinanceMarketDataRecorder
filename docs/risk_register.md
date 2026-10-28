@@ -251,3 +251,20 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
   Missing observations and sparse streams remain unproven, not passed. P3 still
   owns durable source intervals/new-file verification/background qualification;
   no P4+ production run has started. P0/P1 historical evidence is unchanged.
+
+## P2 correction candidate — 2026-10-28
+
+- P2-R4: fixed in the correction candidate using existing numeric/date/ban/fallback
+  Retry-After parsing and actual remaining time since receive.21 regressions and
+  the original6 cases pass. Await independent re-review; historical failures retained.
+- P2-R1: measured2s/3s/30s configuration and separate selected-daily-trades importer
+  delivered. Nominal778.687/min versus Recorder1200/min, but initial/retry work is extra.
+  Ideal daily simulation loses1.297% of supplied rows to finite live windows; it is not
+  live completeness. Two CM next-quarter files404 on the selected date, native ID holes,
+  missing isRPITrade/live timing and source revisions remain explicit. No live gaps erased.
+- P2-R2 remains OPEN and is broader than the first sample: all four tested UM dated
+  and four CM dated premium symbols return400/-1121; CM perpetual controls succeed.
+  Current official catalog still specifies symbol without a delivery applicability rule.
+  No substitute or permanent-not-offered inference. Keep failures and their retry demand
+  in the source plan. Up to120 failing interval sources retry at60s; nominal costs must
+  not hide this extra demand. See the [actual recheck](milestones/P2/closeout-20261028/premium-applicability.json).

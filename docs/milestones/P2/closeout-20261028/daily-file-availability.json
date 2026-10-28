@@ -1,0 +1,186 @@
+[
+  {
+    "market": "um_delivery",
+    "symbol": "BTCUSDT_261225",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_261225/BTCUSDT_261225-trades-2026-10-26.zip",
+    "checksum": "2d10dbbe335359868218eeb5ea4ceac69505c3a3ae9bbaa060d7a18924d38f6e  BTCUSDT_261225-trades-2026-10-26.zip",
+    "size": "108928",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:49Z"
+  },
+  {
+    "market": "um_delivery",
+    "symbol": "BTCUSDT_270326",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_270326/BTCUSDT_270326-trades-2026-10-26.zip",
+    "checksum": "d8a8160e2ea3705f7c534f37dbf2b919bde7427615dbe40122ca1572de28d898  BTCUSDT_270326-trades-2026-10-26.zip",
+    "size": "38432",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:49Z"
+  },
+  {
+    "market": "um_delivery",
+    "symbol": "ETHUSDT_261225",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_261225/ETHUSDT_261225-trades-2026-10-26.zip",
+    "checksum": "b9fcdf71c50b7c5bc8696ee466afe0d0dd191b64aecbcc8730a01069f92dd4ce  ETHUSDT_261225-trades-2026-10-26.zip",
+    "size": "151123",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:49Z"
+  },
+  {
+    "market": "um_delivery",
+    "symbol": "ETHUSDT_270326",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_270326/ETHUSDT_270326-trades-2026-10-26.zip",
+    "checksum": "6dc912adf6042cba77597f954a3119e547190c9e38bdfd93093e57c74f7417e7  ETHUSDT_270326-trades-2026-10-26.zip",
+    "size": "52245",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "BTCU",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCU/BTCU-trades-2026-10-26.zip",
+    "checksum": "d0a548c2b42f2d5ca0b82e92abc2b92c3386c7bb191465059d3f408c5f73c12d  BTCU-trades-2026-10-26.zip",
+    "size": "128335",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "BTCUSD1",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSD1/BTCUSD1-trades-2026-10-26.zip",
+    "checksum": "99487bca0b72227f1bc67b27bfbccc58b024fd5d1a3e3bf62699c63b49100643  BTCUSD1-trades-2026-10-26.zip",
+    "size": "407336",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "BTCUSDC",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDC/BTCUSDC-trades-2026-10-26.zip",
+    "checksum": "60f53ef3dd670b6f784852de40fcd6f2f614437c336ec566a11e6e8156fd4f93  BTCUSDC-trades-2026-10-26.zip",
+    "size": "6307015",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2026-10-26.zip",
+    "checksum": "d1e5b142ec47ab16fb1a367111d51b0fe7e54c35d705041d96b4232185365cb4  BTCUSDT-trades-2026-10-26.zip",
+    "size": "25098976",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "ETHBTC",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHBTC/ETHBTC-trades-2026-10-26.zip",
+    "checksum": "227346949f81da038a09cb1901bae24f3f855bc210f14fa3b8a40358e45ac77a  ETHBTC-trades-2026-10-26.zip",
+    "size": "43369",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:50Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "ETHU",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHU/ETHU-trades-2026-10-26.zip",
+    "checksum": "17fedfcfea0775aa45ae99fcdf59f485d05eb9b9cfa9a9ca47c9b920a8ba88d1  ETHU-trades-2026-10-26.zip",
+    "size": "89511",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:51Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "ETHUSD1",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSD1/ETHUSD1-trades-2026-10-26.zip",
+    "checksum": "3e3520a9588275d0eed8ac16c1e3f1689e824ab9a121e523e2d139024f8a680e  ETHUSD1-trades-2026-10-26.zip",
+    "size": "167110",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:51Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "ETHUSDC",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDC/ETHUSDC-trades-2026-10-26.zip",
+    "checksum": "e1a66b1ee4df5892785e3fc6b6be291902a91a3d85af4f7f723387157a358d74  ETHUSDC-trades-2026-10-26.zip",
+    "size": "13631539",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:51Z"
+  },
+  {
+    "market": "um_perpetual",
+    "symbol": "ETHUSDT",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT/ETHUSDT-trades-2026-10-26.zip",
+    "checksum": "0d17f26a3d604022b5da08d0875bab636e85c0750072810ed145486da5e49605  ETHUSDT-trades-2026-10-26.zip",
+    "size": "37758423",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:51Z"
+  },
+  {
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_261225",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_261225/BTCUSD_261225-trades-2026-10-26.zip",
+    "checksum": "cc20ee7ba340274d01bc8307ba7293314a31aa0cbad8a9b616eb5d1b0ecb7110  BTCUSD_261225-trades-2026-10-26.zip",
+    "size": "14347",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:51Z"
+  },
+  {
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_270326",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "market": "cm_delivery",
+    "symbol": "ETHUSD_261225",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_261225/ETHUSD_261225-trades-2026-10-26.zip",
+    "checksum": "5cdf611ac5bd08fc3220ac2fcc4805040f038e7cd9ca87338b8969728d3609be  ETHUSD_261225-trades-2026-10-26.zip",
+    "size": "12234",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:52Z"
+  },
+  {
+    "market": "cm_delivery",
+    "symbol": "ETHUSD_270326",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "market": "cm_perpetual",
+    "symbol": "BTCUSD_PERP",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2026-10-26.zip",
+    "checksum": "e66351a727ca9d9f85fc9cfdbc930339165e29478e95946771790ba77154ed96  BTCUSD_PERP-trades-2026-10-26.zip",
+    "size": "274483",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:52Z"
+  },
+  {
+    "market": "cm_perpetual",
+    "symbol": "ETHUSD_PERP",
+    "date": "2026-10-26",
+    "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_PERP/ETHUSD_PERP-trades-2026-10-26.zip",
+    "checksum": "c366a2de54f2f08f8603eab29a333be2da1cbe7246e2cd8649ee9a9d44f41b17  ETHUSD_PERP-trades-2026-10-26.zip",
+    "size": "430882",
+    "status": 200,
+    "checked_at_utc": "2026-10-28T06:42:52Z"
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "schema_version": "p2-measured-budget.v1",
+  "configuration": "recorder.measured.toml",
+  "derivative_products": 19,
+  "source_count": 4781,
+  "ws_streams": 2154,
+  "d06_weight_per_minute": 650.0,
+  "nominal_derivative_weight_per_minute": 778.686745818399,
+  "recorder_share_weight_per_minute": 1200,
+  "steady_admission_ceiling": 1000,
+  "headroom_weight_per_minute": 421.313254181601,
+  "live_sample": {
+    "successes": 147,
+    "maximum_d06_rolling_60s_weight": 620,
+    "latency_median_seconds": 0.104042958,
+    "latency_max_seconds": 0.614279167,
+    "known_window_gaps": 0
+  },
+  "ideal_daily": {
+    "date": "2026-10-26",
+    "available_products": 17,
+    "missing_products": 2,
+    "supplied_rows": 10267636,
+    "selected_rows_beyond_window": 133143,
+    "uniform_6s_rows_beyond_window": 471898,
+    "selected_fraction": 0.012967249715513872,
+    "uniform_fraction": 0.04595975159228473
+  },
+  "limits": [
+    "Ideal phase-0/instant-window simulation is relative only to supplied file rows; ID holes/missing files remain unknown. Not live completeness.",
+    "Nominal rate excludes startup seed/retry/delivery publication and other IP users. 120 failed U/C dated premium sources can retry at 60s: up to 120 additional weight/min; preserve failures.",
+    "WS/native bar load unchanged. No code CPU gain claimed.",
+    "Files lack isRPITrade and live receive/observation history.",
+    "Generic default stays 1s. Measured profile fixes USDT2s/USDC3s/others and new products30s; new products above nominal admission budget remain explicitly not admitted."
+  ]
+}

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import math
+import re
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 SPOT_INTERVALS = (
@@ -40,6 +43,18 @@ class CoverageConfig(BaseModel):
     futures_intervals: tuple[str, ...] = FUTURES_INTERVALS
     recent_trades_compact: bool = True
     recent_trades_interval_seconds: float = Field(default=1.0, ge=1)
+    recent_trades_intervals: dict[str, float] = Field(default_factory=dict)
+    max_steady_derivative_weight_per_minute: float | None = Field(default=None, gt=0, le=1200)
+
+    @field_validator("recent_trades_intervals")
+    @classmethod
+    def _trade_intervals(cls, value: dict[str, float]) -> dict[str, float]:
+        for key, seconds in value.items():
+            if not re.fullmatch(r"(?:um|cm)_(?:perpetual|delivery):[A-Z0-9_]{1,64}", key):
+                raise ValueError("recent trade cadence requires a derivative market:symbol")
+            if not math.isfinite(seconds) or not 1 <= seconds <= 3600:
+                raise ValueError("recent trade cadence must be finite, between 1 and 3600 seconds")
+        return value
 
     @field_validator("underlying_assets", "spot_quote_assets", mode="before")
     @classmethod

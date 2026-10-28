@@ -32,6 +32,7 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -44,6 +45,7 @@ import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from ..network import ProxyPolicy
 from ..storage.layout import fsync_directory
 from ..version import package_version
+from .daily_trades import DAILY_SCHEMA, MARKETS, daily_trade_rows
 from .planner import BackfillPlan, PlanEntry
 
 CHECKSUM = re.compile(r"^(?P<digest>[0-9a-fA-F]{64})\s+\*?(?P<name>[^\s]+)\s*$")
@@ -302,10 +304,9 @@ class HistoricalImporter:
             )
         return actual
 
-    def _normalize(
-        self, entry: PlanEntry, revision: str, zip_path: Path, source_sha: str
-    ) -> Path:
-        output = self.normalized / f"{revision}.parquet"
+    def _normalize(self, entry: PlanEntry, revision: str, zip_path: Path, source_sha: str) -> Path:
+        prefix = "daily-trades-" if entry.market in MARKETS and entry.data_type == "trades" else ""
+        output = self.normalized / f"{prefix}{revision}.parquet"
         if output.is_file():
             return output
         metadata = {
@@ -313,47 +314,33 @@ class HistoricalImporter:
             b"source_zip_sha256": source_sha.encode(),
             b"clock_semantics": b"archive_source_no_live_receive_clock",
         }
-        schema = NORMALIZED_SCHEMA.with_metadata(metadata)
+        selected_daily = entry.market in MARKETS and entry.data_type == "trades"
+        if selected_daily:
+            source_manifest = json.loads((zip_path.parent / "source_manifest.json").read_text())
+            metadata.update(
+                {
+                    b"bmdr.schema_version": b"official-daily-trades.v1",
+                    b"market": entry.market.encode(),
+                    b"symbol": entry.symbol.encode(),
+                    b"downloaded_at_utc_ns": str(source_manifest["downloaded_at_utc_ns"]).encode(),
+                    b"unavailable_fields": b"isRPITrade;live_receive_time;REST_observation_history",
+                }
+            )
+        schema = (DAILY_SCHEMA if selected_daily else NORMALIZED_SCHEMA).with_metadata(metadata)
         partial = output.with_suffix(".parquet.partial")
         row_count = 0
         try:
-            with (
-                pq.ParquetWriter(partial, schema, compression="zstd") as writer,
-                zipfile.ZipFile(zip_path) as archive,
-            ):
-                members = [
-                    name for name in archive.namelist() if name.endswith(".csv")
-                ]
-                if len(members) != 1:
-                    raise ValueError(
-                        "historical ZIP must contain exactly one CSV"
-                    )
-                with archive.open(members[0]) as raw:
-                    reader = csv.reader(
-                        io.TextIOWrapper(raw, encoding="utf-8", newline="")
-                    )
-                    batch: list[dict[str, object]] = []
-                    for ordinal, values in enumerate(reader):
-                        if not values or not values[0].lstrip("-").isdigit():
-                            continue
-                        batch.append(
-                            self._normalized_row(
-                                entry,
-                                revision,
-                                source_sha,
-                                ordinal,
-                                values,
-                            )
-                        )
-                        if len(batch) == self.normalization_batch_rows:
-                            writer.write_table(
-                                pa.Table.from_pylist(batch, schema=schema)
-                            )
-                            row_count += len(batch)
-                            batch.clear()
-                    if batch:
+            with pq.ParquetWriter(partial, schema, compression="zstd") as writer:
+                batch: list[dict[str, object]] = []
+                for row in self._iter_rows(entry, revision, zip_path, source_sha):
+                    batch.append(row)
+                    if len(batch) == self.normalization_batch_rows:
                         writer.write_table(pa.Table.from_pylist(batch, schema=schema))
                         row_count += len(batch)
+                        batch.clear()
+                if batch:
+                    writer.write_table(pa.Table.from_pylist(batch, schema=schema))
+                    row_count += len(batch)
             with partial.open("rb") as handle:
                 os.fsync(handle.fileno())
             self._verify_normalized(
@@ -368,6 +355,27 @@ class HistoricalImporter:
         except BaseException:
             partial.unlink(missing_ok=True)
             raise
+
+    @staticmethod
+    def _iter_rows(
+        entry: PlanEntry, revision: str, zip_path: Path, source_sha: str
+    ) -> Iterator[dict[str, object]]:
+        if entry.market in MARKETS and entry.data_type == "trades":
+            yield from daily_trade_rows(entry, zip_path)
+            return
+        with zipfile.ZipFile(zip_path) as archive:
+            members = [name for name in archive.namelist() if name.endswith(".csv")]
+            if len(members) != 1:
+                raise ValueError("historical ZIP must contain exactly one CSV")
+            with archive.open(members[0]) as raw:
+                reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8", newline=""))
+                for ordinal, values in enumerate(reader):
+                    if not values or not values[0].lstrip("-").isdigit():
+                        continue
+                    yield HistoricalImporter._normalized_row(
+                        entry, revision, source_sha, ordinal, values
+                    )
+
 
     @staticmethod
     def _normalized_row(
@@ -465,23 +473,24 @@ class HistoricalImporter:
             checksum_path = manifest_path.parent / f"{filename}.CHECKSUM"
             if not checksum_path.is_file():
                 raise ValueError("historical source CHECKSUM is missing")
-            checksum_sha, checksum_text = self._parse_checksum(
-                checksum_path.read_bytes(), filename
-            )
-            if (
-                checksum_sha != source_sha
-                or checksum_text != manifest.get("official_checksum_text")
+            checksum_sha, checksum_text = self._parse_checksum(checksum_path.read_bytes(), filename)
+            if checksum_sha != source_sha or checksum_text != manifest.get(
+                "official_checksum_text"
             ):
                 raise ValueError("historical source CHECKSUM manifest mismatch")
             self._verify_file(zip_path, source_sha)
-            normalized_path = self.normalized / f"{revision}.parquet"
-            if not normalized_path.is_file():
+            paths = [
+                self.normalized / f"{prefix}{revision}.parquet" for prefix in ("", "daily-trades-")
+            ]
+            existing = [path for path in paths if path.is_file()]
+            if not existing:
                 raise ValueError("historical normalized Parquet is missing")
-            normalized_rows += self._verify_normalized(
-                normalized_path,
-                revision=revision,
-                source_sha=source_sha,
-            )
+            for normalized_path in existing:
+                normalized_rows += self._verify_normalized(
+                    normalized_path,
+                    revision=revision,
+                    source_sha=source_sha,
+                )
             verified += 1
         return {
             "status": "VERIFIED",

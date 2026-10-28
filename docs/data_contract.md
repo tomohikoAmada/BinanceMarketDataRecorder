@@ -724,3 +724,18 @@ Original Raw/normalized records are unchanged. Numeric delivery prices use the
 already-received HTTP body; reader numeric fractions become exact decimal text.
 Unknown new payload versions are rejected. See the P0 inventory's P2 field map and
 [P2 limits](milestones/P2/README.md); no production continuity is inferred.
+
+### Selected derivative daily trades (P2 correction, 2026-10-28)
+
+`backfill plan/run --profile selected-daily-trades --product market:symbol` is an
+independent bounded official daily import for UM/CM perpetual/dated identities.
+The source ZIP and official CHECKSUM/source revision remain primary. The derived
+`official-daily-trades.v1` schema retains exact decimal text and native trade IDs;
+UM quote_qty and CM base_qty remain distinct. File metadata binds physical product,
+actual acquisition/verification completion time and source revision/SHA. No live
+receive timestamp is manufactured; missing fields and files remain unavailable/gaps.
+Use the published `backfill.daily_trades.iter_daily_trade_facts` and
+`reconcile_trade_facts` contracts in ADR-0054. Overlap equality prefers live facts
+without overwriting their evidence; conflicts have no selected value. These are
+archive-source facts and do not enter receive-time replay or restore live continuity.
+Old historical profiles and old normalized paths keep their existing schemas.

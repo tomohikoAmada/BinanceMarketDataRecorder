@@ -329,7 +329,9 @@ def product_sources(product: Product, config: CoverageConfig) -> tuple[Source, .
         "D06",
         "recent_trades",
         prefix + "/trades",
-        config.recent_trades_interval_seconds,
+        config.recent_trades_intervals.get(
+            f"{market}:{symbol}", config.recent_trades_interval_seconds
+        ),
         {"symbol": symbol, "limit": 1000},
         weight=5,
         fields=("id", "price", "qty", "time", "isBuyerMaker"),

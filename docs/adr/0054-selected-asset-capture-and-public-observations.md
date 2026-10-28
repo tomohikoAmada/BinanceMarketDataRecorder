@@ -154,3 +154,35 @@ P2 acceptance still requires measured frequency/budget and loss disclosure,
 representative file/import evidence and regression checks. R2 source applicability
 and R4 cooldown remain independent open items. This decision does not change an
 executable schema, historical evidence, a running service or production status.
+
+## Implementation of the approved daily supplement (2026-10-28)
+
+The explicit selected-daily-trades profile is implemented for UM/CM perpetual and
+native dated ProductKeys. The existing Spot/BTCUSDT historical profiles are unchanged.
+At most256 explicit identities and31 completed UTC days are planned, daily only.
+The existing importer owns proxy-aware unsigned downloads, official CHECKSUM verification,
+immutable source ZIP/revision manifests and bounded50,000-row Parquet batches. Nothing
+runs in a live callback or is automatically scheduled alongside the service.
+
+New derived files are named daily-trades-<revision>.parquet with schema metadata
+`official-daily-trades.v1`; legacy normalized paths and schemas remain readable.
+Native IDs and exact decimal text, exchange time in UTC nanoseconds and source row
+ordinal are retained. UM quote_qty and CM base_qty stay distinct. Acquisition/verification
+completion time, market/symbol, source ZIP hash/revision and unavailable fields are
+file-level metadata. The primary ZIP remains the source of exact CSV text; the typed
+view serves a concrete bounded research reader, not another primary body.
+
+`backfill.daily_trades.iter_daily_trade_facts` publishes that view, explicitly declares
+archive_source and no live receive clock/isRPITrade. `reconcile_trade_facts` requires one
+matching market/symbol/nativeID pair. Numerically equal decimal text is one fact with
+the live record preferred, preserving its REST-only fields and observation times.
+Conflicts retain both sources and have no chosen value. This API is a consumer fact view;
+it does not deduplicate/overwrite Raw or retroactively repair a live interval. Generic
+receive-time ManifestCatalog replay does not silently ingest these files.
+
+Fixed per-product recent_trades_intervals and an optional nominal derivative steady
+weight admission ceiling are declared in coverage config. The measured candidate uses
+2s/3s/30s, with disclosed window losses and default30s for new identities; it does not
+change rates dynamically or remove failed sources. The generic1s default is retained.
+Sources over the admission bound remain visible. Initial seed, retry and publication
+costs still use the shared rolling budget; this rate estimate is not capacity proof.

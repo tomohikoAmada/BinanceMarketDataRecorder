@@ -1,3 +1,39 @@
+**2026-10-28 修正候选：R1 实施与 R4 修复已交付，P2 仍未通过。**
+
+- R4 复用现有 Retry-After 秒数/HTTP 日期/418 截止时间及缺省语义，按接收时刻计算
+  剩余冷却；Spot 独立，UM/CM 共用。新增21种回归及原6例复现通过，失败响应保留。
+- 按 owner 已批准方向交付[实测固定配置](closeout-20261028/recorder.measured.toml)：
+  两个 USDT 永续2s、两个 USDC 永续3s，其余15个合约30s；新发现产品使用明确30s
+  默认，并受名义稳态准入上限约束，超出则显示 NOT_ADMITTED_REST_BUDGET。
+  通用库的旧1s默认未改，未自动选择原6s提案，WS/原生bar保持完整目标。
+- [预算及损失](closeout-20261028/measured-budget.json)：D06为650 weight/min，
+  全部名义常驻合约请求含目录约778.687/min，Recorder份额1200/min，余421.313/min。
+  启动seed、重试和交割发布另计；120条失败的U/C交割premium周期源按60s重试，
+  最坏另有120/min，不能把它们删掉凑预算。共享限流器始终限制实际准入。
+- [17份实际日文件](closeout-20261028/daily-window-study.json)共10,267,636行，SHA核对、
+  所需字段/精度/时间/ID已逐文件检查。相同日文件在理想UTC相位、零延迟模型下，
+  这份配置窗口外133,143行（1.297%），统一6s为471,898行（4.596%）；这不是现场
+  完整率或99.5%证明。文件自身有ID跳号，两份CM次季文件404；缺失不填零、不推断无成交。
+  每日六列没有isRPITrade、接收时间或现场观察变化，不能补回这些信息。
+- 先做19产品/6轮/10s有界网络样本，再按实测配置运行65s的D06独立样本：
+  [147次成功响应](closeout-20261028/candidate-cadence-sample.json)均独立读取，
+  最大滚动60s D06权重620，接收延迟中位0.104s、最大0.614s，短窗没有已知窗口缺口。
+  不代表全功能/VPS容量。收尾报告最初误用reader位置参数；修离线报告后读取同一批封存
+  文件，没有重复采集，CPU指标如实记不可用。
+- 复用独立 HistoricalImporter 的下载、CHECKSUM、修订与有界批处理，新增
+  `backfill plan/run --profile selected-daily-trades --product <market>:<symbol>`，
+  明确产品及最多31个已结束UTC日期，无默认全市场/全历史。发布独立
+  official-daily-trades.v1 reader及逐ID事实对账：相同共同字段用现场事实一次，冲突保留
+  两个来源且不选值。实际获取时间/文件来源放文件级元数据，不创造live时钟，不改历史Raw。
+  [实际导入](closeout-20261028/daily-import-sample.json)8份/123,773行验证通过，两份缺文件
+  为gap。下载失败不取消实时落盘；新旧导入/reader、精度、缺字段和重叠/冲突均有回归。
+- **R2仍开放，且新增确认U交割同样失败。** [本次公开复查](closeout-20261028/premium-applicability.json)
+  中8个U/C交割symbol均400/-1121，C永续对照200；[官方语义核对](closeout-20261028/official-sources.json)
+  仍无交割适用规则。未用永续替代、未认定永久不提供、未删除失败源。
+
+最终检查及CI见 closeout-20261028/checks.json。当前修正需要独立复审；不合并main，
+不清理承载工作的分支，不授予P3/P4–P6或生产资格。以下初审与原测量保持历史原义。
+
 # P2：产品和数据范围实施记录
 
 **2026-10-28 独立审查：暂不通过。** [审查记录](review-20261028.md)与

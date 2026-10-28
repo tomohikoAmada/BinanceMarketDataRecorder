@@ -195,3 +195,21 @@ Current full BTC/ETH discovery also produces a REST demand above the existing
 reserved request share; the explicit limiter waits and reports overdue sources.
 This is a qualification/resource issue for P3/P4, not permission to silently shed
 D06 or to describe a smaller workload as a code speedup.
+
+### P2 measured D06 / daily supplement update — 2026-10-28
+
+The full53-row target above and its original samples remain unchanged. Current
+[D06 configuration and losses](../P2/closeout-20261028/measured-budget.json) explicitly
+use2s for BTCUSDT/ETHUSDT UM perpetual,3s for BTCUSDC/ETHUSDC UM perpetual and30s for
+other selected derivatives. The entire family/products remain; finite windows can
+miss individual observations. Generic1s stays available; no dynamic shedding.
+Official derivative daily trades are a separate delayed supplement, not keyed REST
+historicalTrades, live receive recovery or all-field equivalence. Native id/price/qty,
+UM quote_qty or CM base_qty, millisecond time and maker flag are typed without float
+loss. isRPITrade and live observation/timing are unavailable.17 actual files parsed;
+8 imported/read independently; two CM next-quarter files404 and file ID holes remain
+unknown, not zero activity. [Reader and conflict rules](../../adr/0054-selected-asset-capture-and-public-observations.md#implementation-of-the-approved-daily-supplement-2026-10-28)
+keep equal overlapping facts once and conflicting source records separate.
+D23 now has observed failures for all8 tested U/C dated premium symbols. This adds
+UM to the R2 unknown/failed applicability boundary; do not drop them or substitute a
+perpetual. P2 is not passed until applicability and independent review are resolved.
