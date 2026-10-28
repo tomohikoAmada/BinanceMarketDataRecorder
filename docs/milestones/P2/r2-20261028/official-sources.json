@@ -1,0 +1,119 @@
+{
+  "schema_version": "p2-r2-official-source-evaluation.v1",
+  "local_source_note": "Hashes identify the downloaded text or connector-decoded source, not original HTTP wire bytes. Full source texts remain in the listed local diagnostic directory; this committed record contains metadata and conclusions. No downloaded code was executed.",
+  "sources": [
+    {
+      "url": "https://developers.binance.com/en/docs/llms.txt",
+      "status": 200,
+      "utc": "2026-10-28T15:16:15Z",
+      "bytes": 174964,
+      "sha256": "b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482",
+      "conclusion": "Index locates native fapi/dapi premiumIndexKlines paths; it does not define a per-contract applicability rule.",
+      "representation": "downloaded index text",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/llms.txt"
+    },
+    {
+      "name": "integration",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md",
+      "status": 200,
+      "utc": "2026-10-28T15:23:57Z",
+      "bytes": 12109,
+      "sha256": "7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98",
+      "representation": "downloaded text",
+      "conclusion": "C.3 lists both native premiumIndexKlines paths accepting UM/CM symbols after migration; this does not specify dated-contract applicability.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/integration.txt"
+    },
+    {
+      "name": "um-changelog",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md",
+      "status": 200,
+      "utc": "2026-10-28T15:23:58Z",
+      "bytes": 112546,
+      "sha256": "05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8",
+      "representation": "downloaded text",
+      "conclusion": "Selected changelog search found no premiumIndexKlines perpetual/dated rule. premiumIndex funding-field and other-endpoint parameter changes are not such a rule.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/um-changelog.txt"
+    },
+    {
+      "name": "cm-changelog",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/change-log.md",
+      "status": 200,
+      "utc": "2026-10-28T15:23:58Z",
+      "bytes": 112546,
+      "sha256": "05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8",
+      "representation": "downloaded text",
+      "conclusion": "Same shared changelog bytes as the UM URL; evaluated once, not independent corroboration.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/cm-changelog.txt"
+    },
+    {
+      "name": "agent-native",
+      "url": "https://developers.binance.com/en/docs/agent-native/overview.md",
+      "status": 200,
+      "utc": "2026-10-28T15:23:59Z",
+      "bytes": 5218,
+      "sha256": "7848052093045381e874dcd826d3cd8a1fb73706f71ed10a8b6607fbcf701a22",
+      "representation": "downloaded text",
+      "conclusion": "Explains document discovery only; not a per-endpoint product rule.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/agent-native.txt"
+    },
+    {
+      "url": "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py",
+      "utc": "2026-10-28T15:27:20Z",
+      "bytes": 57475,
+      "sha256": "684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a",
+      "representation": "GitHub connector decoded source text; not executed",
+      "venue_market": "coinm",
+      "method": "premium_index_kline_data",
+      "line_range": [
+        1014,
+        1084
+      ],
+      "required_parameters": [
+        "symbol",
+        "interval"
+      ],
+      "optional_parameters": [
+        "start_time",
+        "end_time",
+        "limit"
+      ],
+      "native_http_path": "/dapi/v1/premiumIndexKlines",
+      "conclusion": "Generated SDK checks required non-None inputs and sends the native path; no contractType/pair alternate or perpetual/dated eligibility check. SDK behavior is not normative endpoint eligibility.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/sdk-0.py.txt"
+    },
+    {
+      "url": "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py",
+      "utc": "2026-10-28T15:27:20Z",
+      "bytes": 65093,
+      "sha256": "d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182",
+      "representation": "GitHub connector decoded source text; not executed",
+      "venue_market": "usdm",
+      "method": "premium_index_kline_data",
+      "line_range": [
+        1133,
+        1203
+      ],
+      "required_parameters": [
+        "symbol",
+        "interval"
+      ],
+      "optional_parameters": [
+        "start_time",
+        "end_time",
+        "limit"
+      ],
+      "native_http_path": "/fapi/v1/premiumIndexKlines",
+      "conclusion": "Generated SDK checks required non-None inputs and sends the native path; no contractType/pair alternate or perpetual/dated eligibility check. SDK behavior is not normative endpoint eligibility.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/sdk-1.py.txt"
+    },
+    {
+      "url": "https://github.com/binance/binance-connector-python/blob/master/README.md",
+      "utc": "2026-10-28T15:45:06Z",
+      "bytes": 8372,
+      "sha256": "381dc82aac2e997d63a785d8cfbcfaf718da605ea8bfb98dd48b8ddb6831eceb",
+      "representation": "GitHub decoded README text; not executed",
+      "conclusion": "Contributing section asks users to open a GitHub issue for discussion or bug reports; this establishes a possible clarification venue, not API applicability.",
+      "retained_local_source": "/private/var/tmp/bmdr-p2-r2-Q0irrK/sdk-readme.txt"
+    }
+  ]
+}

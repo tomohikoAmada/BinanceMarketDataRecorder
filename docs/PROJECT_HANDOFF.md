@@ -1,4 +1,20 @@
-# Current P2 independent re-review of f9aaeee — 2026-10-28
+# Current P2 R2 investigation — 2026-10-29
+
+R1/R4 remain accepted. R2 is still OPEN: the new bounded native-HTTP diagnostic
+observed eight dated premium failures, four successful perpetual controls and two
+failed explicit closed-range variants. A fresh directory check confirms all eight
+dated identities remain TRADING. Current official Python methods expose no extra
+dated-contract parameter; official documentation still supplies no applicability rule.
+See [evidence and next actions](milestones/P2/r2-20261028/README.md).
+
+Follow the official-source stop condition: no runtime change, inferred exclusion,
+series substitution or removal of failed source/retry costs. A concrete
+[official clarification draft](milestones/P2/r2-20261028/binance-clarification-draft.md)
+is prepared but unsent; external submission requires explicit owner authorization.
+P2 remains NOT ACCEPTED, PR #88 remains Draft, P3 has not started, no deployment.
+No unchanged runtime/history audit was repeated. Prior independent reviews follow.
+
+## P2 independent re-review of f9aaeee — 2026-10-28 (retained)
 
 R4 is accepted and closed. The existing cooldown is applied synchronously before the
 persistence await; malformed directives reuse existing fallback/ban semantics while

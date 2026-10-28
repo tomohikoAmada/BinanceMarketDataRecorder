@@ -319,3 +319,21 @@ by the final correction; no old green run is credited to the new source.
 - Overall P2 remains NOT ACCEPTED. Keep Draft PR #88 and its branch until R2 and final
   acceptance close; main unchanged, P3 not started, no deployment.
   See [independent closure](milestones/P2/review-20261028.md#review-f9aaeee).
+
+## P2-R2 bounded follow-up — 2026-10-29
+
+**OPEN, official semantics required.** [New evidence](milestones/P2/r2-20261028/README.md)
+contains 14 native public HTTP requests: eight listed dated-symbol failures, four
+successful perpetual controls and two failed dated closed-range variants. Two fresh
+directory requests confirm all eight dated identities remain TRADING. Direct HTTP
+shows these failures also occur without SDK model decoding; it does not establish
+permanent exclusion. Current generated SDK parameters, integration notice and shared
+changelog do not resolve endpoint eligibility. A delivery-specific empty funding field
+on premiumIndex is not a premiumIndexKlines exclusion rule.
+
+The official-source stop condition applies to this implementation. Preserve UNKNOWN,
+the eight product failures and all 120 interval sources/retry costs. Do not substitute
+perpetual, mark, index or locally computed basis. An [official clarification draft](milestones/P2/r2-20261028/binance-clarification-draft.md)
+is ready but unsent; external submission needs explicit owner authorization. Once an
+official rule is available, implement its actual boundary and obtain final P2 review.
+R1/R4 stay accepted; no runtime or production change in this follow-up.

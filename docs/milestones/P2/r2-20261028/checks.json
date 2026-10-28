@@ -1,0 +1,42 @@
+{
+  "schema_version": "p2-r2-follow-up-checks.v1",
+  "status": "passed",
+  "base_commit": "e3f1dd74e58ce04cae26fdc15e6f73177092d2a6",
+  "runtime_unchanged": true,
+  "scope": "Documentation and bounded public diagnostic evidence only; R2 remains OPEN, P2 NOT ACCEPTED",
+  "checks": [
+    {
+      "name": "M0 contract verifier",
+      "result": "passed",
+      "command": ".venv/bin/python tests/verify_m0_contracts.py"
+    },
+    {
+      "name": "bounded evidence consistency and provenance",
+      "result": "passed",
+      "http_observations": 14,
+      "dated_failures": 8,
+      "perpetual_successes": 4,
+      "closed_range_failures": 2,
+      "current_dated_identities": 8,
+      "source_text_digests": 8,
+      "full_directory_body_digests": 2
+    },
+    {
+      "name": "local Markdown link target existence",
+      "result": "passed",
+      "links": 149
+    },
+    {
+      "name": "Git whitespace check",
+      "result": "passed",
+      "command": "git diff --check"
+    }
+  ],
+  "checked_at_utc": "2026-10-28T16:17:16Z",
+  "not_run": [
+    "Unchanged R1/R4 tests, full offline suite and history audits; documentation-only follow-up reuses original runtime evidence without crediting it to a new runtime commit.",
+    "No VPS measurement, soak, production collection, merge or deployment."
+  ],
+  "r2_status": "OPEN; official applicability rule remains unresolved",
+  "external_clarification": "Draft prepared, not sent"
+}

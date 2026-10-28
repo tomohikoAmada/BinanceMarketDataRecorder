@@ -1,5 +1,32 @@
 # Official Binance Sources
 
+## P2-R2 official applicability follow-up — 2026-10-29
+
+The index was read first; observations below were retrieved on 2026-10-28 UTC.
+[Source metadata](milestones/P2/r2-20261028/official-sources.json) records exact byte
+counts, representations and local full-source paths. Digests identify downloaded
+text or decoded connector files, not original HTTP wire bytes. No downloaded
+content was executed and no llms-full was read.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-28T15:16:15Z | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Locates native paths; no dated eligibility rule. |
+| [CM/UM integration C.3](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-28T15:23:57Z | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | Both premium paths accept UM/CM symbols; contract-type eligibility unspecified. |
+| [USD-M shared changelog](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md) | 2026-10-28T15:23:58Z | `05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8` | No premiumIndexKlines dated/perpetual rule found in the selected search. |
+| [COIN-M shared changelog (same bytes)](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/change-log.md) | 2026-10-28T15:23:58Z | `05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8` | Same content as the USD-M URL, evaluated once. |
+| [Agent Native discovery](https://developers.binance.com/en/docs/agent-native/overview.md) | 2026-10-28T15:23:59Z | `7848052093045381e874dcd826d3cd8a1fb73706f71ed10a8b6607fbcf701a22` | Discovery guidance only; not endpoint eligibility. |
+| [COIN-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py) | 2026-10-28T15:27:20Z | `684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a` | symbol/interval + optional time/limit, no alternate pair/contractType or eligibility validation. |
+| [USD-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py) | 2026-10-28T15:27:20Z | `d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182` | Same parameter boundary; SDK behavior does not define market eligibility. |
+| [Python connector README](https://github.com/binance/binance-connector-python/blob/master/README.md) | 2026-10-28T15:45:06Z | `381dc82aac2e997d63a785d8cfbcfaf718da605ea8bfb98dd48b8ddb6831eceb` | Contributing section provides an issue discussion/bug-report venue. |
+
+The catalogue evidence already retained in [the earlier P2 source record](milestones/P2/closeout-20261028/official-sources.json)
+also does not establish dated eligibility. Delivery-specific funding nulls on
+premiumIndex belong to another endpoint. No unsupported-to-not-offered inference
+or substitute series is authorized. [New finite public HTTP observations](milestones/P2/r2-20261028/raw-http-diagnostic.json)
+and [current selected directory facts](milestones/P2/r2-20261028/directory-validation.json)
+are diagnostic observations, not normative applicability. R2 stays OPEN; the
+[clarification draft](milestones/P2/r2-20261028/binance-clarification-draft.md) is unsent.
+
 ## P2 独立复审与 D06 预算研究（2026-10-28）
 
 ### 日度文件存在性补充核验

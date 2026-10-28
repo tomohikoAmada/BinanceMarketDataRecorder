@@ -213,3 +213,15 @@ keep equal overlapping facts once and conflicting source records separate.
 D23 now has observed failures for all8 tested U/C dated premium symbols. This adds
 UM to the R2 unknown/failed applicability boundary; do not drop them or substitute a
 perpetual. P2 is not passed until applicability and independent review are resolved.
+
+### D23 R2 follow-up — 2026-10-29
+
+[New bounded evidence](../P2/r2-20261028/README.md) confirms the same eight dated
+identities are currently TRADING. Native HTTP premiumIndexKlines still fails for
+all eight; four perpetual controls succeed, and two explicit closed-range queries
+also fail. The official Python method parameters do not supply an alternate dated
+identity, and official documentation still lacks an applicability rule. This remains
+**UNKNOWN / failed**, not exchange-not-offered or an equivalent shared/perpetual series.
+All 120 affected interval sources and retry costs remain. No implementation boundary
+changes until the [official clarification](../P2/r2-20261028/binance-clarification-draft.md)
+has an authoritative answer. Historical measurements and scope rows above are retained.
