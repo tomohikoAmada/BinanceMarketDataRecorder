@@ -41,9 +41,10 @@ P1 is complete. P2 independent re-review of 195762c is NOT ACCEPTED; P3 has not 
 See [P2 review](docs/milestones/P2/review-20261028.md#review-195762c). R1's measured
 per-product polling and independent daily supplement pass. R4's remaining-duration
 calculation passes, but poll_once enables the cooldown only after awaiting persistence;
-six new cases admit requests after a known 429/418 while persistence waits. Enable the
-existing shared-pool cooldown before that await, retain failure persistence and storage
-error propagation, and add the regressions. No new limiter or in-flight cancellation.
+six review cases admit requests after a known 429/418 while persistence waits. The new
+correction candidate now enables that existing cooldown before the persistence await;
+eight added regressions and both six-case reproductions pass. Retain independent
+re-review before closing R4. No new limiter or in-flight cancellation was introduced.
 R2 U/C dated-premium applicability remains unresolved; retain failed sources without
 substitution. Keep Draft PR #88 and its branch until these items and final verification
 pass. Exact 195762c dual-platform CI is verified; it does not cover the new R4 finding.

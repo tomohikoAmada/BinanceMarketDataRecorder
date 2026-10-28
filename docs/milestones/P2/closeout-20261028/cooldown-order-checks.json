@@ -1,0 +1,48 @@
+{
+  "schema_version": "p2-r4-order-correction.v1",
+  "recorded_at_utc": "2026-10-28T14:31:01.477089+00:00",
+  "base_commit": "7d80f2f",
+  "binding": "runtime source in enclosing correction commit",
+  "scope": "Existing cooldown block moved ahead of first persistence await; no duration/protocol/cadence changes",
+  "negative_regression": {
+    "runtime": "7d80f2f / same src as 195762c",
+    "new_cases_failed": 8,
+    "seconds": 0.92,
+    "full_suite_rerun": false
+  },
+  "positive_checks": {
+    "cooldown_regressions": 29,
+    "cooldown_regressions_seconds": 0.8,
+    "affected_regressions": 178,
+    "affected_regressions_seconds": 4.56,
+    "shared_api_budget_tests": 9,
+    "shared_api_budget_seconds": 0.51,
+    "review_admission_reproduction": "6/6 pass; cooldown-order-correction.json",
+    "original_duration_reproduction": "6/6 pass; cooldown-duration-order-correction.json",
+    "ruff": "passed",
+    "mypy": "passed,341 source files",
+    "M0_contracts": "passed",
+    "git_diff_check": "passed"
+  },
+  "ci": {
+    "workflow": "offline-ci",
+    "required_jobs": [
+      "macos-python312",
+      "ubuntu-python312"
+    ],
+    "source_binding": "exact correction commit; current run and outcomes recorded in PR #88",
+    "status_at_record_creation": "not dispatched"
+  },
+  "acceptance": {
+    "R1": "PASS, retained 195762c independent review",
+    "R2": "OPEN, U/C delivery premium semantics unknown",
+    "R4": "correction delivered, independent re-review pending",
+    "P2": "NOT_ACCEPTED"
+  },
+  "unrun": [
+    "Local full-suite repeat; exact correction CI performs the full suite",
+    "New official-source/market requests; duration semantics and R2 evidence unchanged",
+    "R1 whole-history/daily-file re-audit",
+    "VPS/capacity/production-duration/deployment work"
+  ]
+}

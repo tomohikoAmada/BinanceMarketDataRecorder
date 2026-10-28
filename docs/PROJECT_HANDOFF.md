@@ -1,20 +1,19 @@
-# Current P2 independent re-review — 2026-10-28
+# Current P2 R4 admission-order correction — 2026-10-28
 
-Reviewed commit `195762c`; P2 remains NOT ACCEPTED. R1's measured fixed-cadence profile,
-nominal budget and independent daily supplement pass this review. Existing 143 focused
-tests and exact-commit dual-platform CI pass. Retained 17 daily ZIPs, 8 imported files
-(123,773 CSV rows) and 147 Raw observations were independently checked; limits remain
-explicit. See [review](milestones/P2/review-20261028.md#review-195762c) and updated plan.
+The R4 correction candidate moves the existing shared-pool cooldown immediately after
+capture returns a known rejection and before the first persistence await. Duration
+semantics remain those accepted in the 195762c review. Failure persistence, fatal storage
+errors, waiting-admission cancellation and existing in-flight drain ownership remain.
+Eight new regressions fail on the previous runtime and pass after correction; both
+six-case reproductions pass. See [current P2 result](milestones/P2/README.md) and
+[checks](milestones/P2/closeout-20261028/cooldown-order-checks.json). New exact-commit CI
+is recorded in Draft PR #88; independent re-review is still required.
 
-R4's duration calculation passes, but its admission ordering does not: poll_once awaits
-persist_rest before blocking the pool. Six new offline cases send a fresh Spot or shared
-UM/CM request after 429/418 is known, while persistence waits. Enable the existing cooldown
-before that first await, retain failure persistence/storage-error propagation/normal stop,
-and add those regressions. Do not add a limiter framework or cancel in-flight requests.
-R2 U/C dated-premium applicability remains unresolved; retain failures without substitution.
-The next development work stays in P2. Keep Draft PR #88 and the working branch until
-R2/R4 and final-candidate verification/re-review pass. Main is unchanged, P3 not started;
-no deployment or production operation was performed. Owner's option-one scope is approved.
+R1 remains accepted from the independent 195762c review. No R1 configuration, import
+contract, measurement or historical samples changed. R2 U/C dated-premium applicability
+remains unresolved and failed sources stay retained without substitution. P2 is NOT
+ACCEPTED; keep Draft PR #88 and the development branch, main unchanged, P3 not started.
+No Binance probe, deployment or production-data operation was performed in this correction.
 
 ## Prior correction-candidate handoff (retained)
 

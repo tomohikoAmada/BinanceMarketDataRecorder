@@ -287,3 +287,13 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
 - Exact-commit dual-platform CI passed, but does not cover the new R4 boundary. P2 remains
   NOT ACCEPTED; PR #88 stays Draft, main/working branches are preserved, P3 has not begun.
   See [review and follow-up](milestones/P2/review-20261028.md#review-195762c).
+
+### P2-R4 admission-order correction candidate (2026-10-28)
+
+The original duration correction and its review evidence remain unchanged. The new
+candidate moves the existing rejection gate before the first persistence await, so
+storage waiting cannot leave a known rejection's shared pool open to new admission.
+Both six-case reproductions now pass; eight new regressions fail on the prior runtime
+and pass after correction. Failure bytes still persist, storage errors propagate and
+unrelated pools remain independent. Await independent re-review; R2 stays OPEN.
+No new network evidence, cadence change, production operation or R1 audit was needed.

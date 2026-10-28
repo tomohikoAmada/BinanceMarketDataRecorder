@@ -616,6 +616,26 @@ class SelectedAssetCapture:
             parameters=self._parameters(source),
             recent_trades=state.recent_trades,
         )
+        # A known rejection closes new admission before any storage await.
+        # Existing wire attempts retain their normal completion/drain boundary.
+        if result.error in {"TooManyRequestsError", "RateLimitBanError"} or result.status in {
+            418,
+            429,
+        }:
+            from ..binance.spot.rate_limit import _retry_at_utc_ns
+
+            saved = json.loads(result.envelope.raw_payload)
+            received = result.envelope.receive_time_utc_ns
+            until = _retry_at_utc_ns(
+                status=result.status or (418 if result.error == "RateLimitBanError" else 429),
+                headers=saved["response"]["headers"],
+                body_text=json.dumps(result.document),
+                now_utc_ns=received,
+            )
+            shared_request_budget().block(
+                "spot" if source.venue_market == "spot" else "usdm",
+                max(0.0, (until - time.time_ns()) / 1e9),
+            )
         # Persistence exceptions propagate; they are never reclassified as network retries.
         await self.persist_rest(result.envelope)
         state.count += 1
@@ -669,24 +689,6 @@ class SelectedAssetCapture:
         else:
             state.failures += 1
             state.next_due = time.monotonic() + min(60, 2 ** min(state.failures, 6))
-            if result.error in {"TooManyRequestsError", "RateLimitBanError"} or result.status in {
-                418,
-                429,
-            }:
-                from ..binance.spot.rate_limit import _retry_at_utc_ns
-
-                saved = json.loads(result.envelope.raw_payload)
-                received = result.envelope.receive_time_utc_ns
-                until = _retry_at_utc_ns(
-                    status=result.status or (418 if result.error == "RateLimitBanError" else 429),
-                    headers=saved["response"]["headers"],
-                    body_text=json.dumps(result.document),
-                    now_utc_ns=received,
-                )
-                shared_request_budget().block(
-                    "spot" if source.venue_market == "spot" else "usdm",
-                    max(0.0, (until - time.time_ns()) / 1e9),
-                )
         return result
 
     def shared_source_status(self) -> dict[str, dict[str, object]]:
