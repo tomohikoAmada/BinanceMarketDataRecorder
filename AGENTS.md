@@ -12,8 +12,8 @@ sequence and gap information. Exact HTTP bytes/unknown fields are not universal 
 do not persist both a complete model and Base64 body or label SDK output as original
 HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
 delivered under ADR-0054. Independent review of 195762c accepts the measured D06
-fixed-cadence/daily supplement. Full acceptance still needs U/C dated-premium
-applicability and the remaining R4 cooldown-admission ordering fix, then final re-review;
+fixed-cadence/daily supplement; independent review of f9aaeee closes R4. Full acceptance
+still needs U/C dated-premium applicability and final P2 re-review;
 see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
@@ -37,19 +37,18 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P1 is complete. P2 independent re-review of 195762c is NOT ACCEPTED; P3 has not started.
-See [P2 review](docs/milestones/P2/review-20261028.md#review-195762c). R1's measured
-per-product polling and independent daily supplement pass. R4's remaining-duration
-calculation passes, but poll_once enables the cooldown only after awaiting persistence;
-six review cases admit requests after a known 429/418 while persistence waits. The new
-correction candidate now enables that existing cooldown before the persistence await;
-eight order/storage regressions, four malformed-header regressions and both six-case
-reproductions pass. Unparseable Retry-After uses existing fallback/ban semantics
-while retaining the original failure header. Retain independent
-re-review before closing R4. No new limiter or in-flight cancellation was introduced.
+P1 is complete. P2 overall remains NOT ACCEPTED; P3 has not started.
+See [f9aaeee independent review](docs/milestones/P2/review-20261028.md#review-f9aaeee).
+R1's measured per-product polling and independent daily supplement remain accepted.
+R4 is closed: the existing cooldown is enabled synchronously before the persistence
+await. Both six-case reproductions, 33 cooldown regressions and 42 related tests pass
+independently, with one online smoke skipped. Unparseable Retry-After uses existing
+fallback/ban semantics while retaining the original failure header; storage errors
+and normal stop/drain ownership remain intact. No new limiter or in-flight cancellation.
 R2 U/C dated-premium applicability remains unresolved; retain failed sources without
 substitution. Keep Draft PR #88 and its branch until these items and final verification
-pass. Exact 195762c dual-platform CI is verified; it does not cover the new R4 finding.
+pass. Exact f9aaeee dual-platform CI and logs are verified; no new blocking issue was
+found. Continue R2 in P2 without repeating R1 history audits or already closed R4 work.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction
 is approved; do not ask for it again. First verify product/date/field coverage,

@@ -269,7 +269,7 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
   in the source plan. Up to120 failing interval sources retry at60s; nominal costs must
   not hide this extra demand. See the [actual recheck](milestones/P2/closeout-20261028/premium-applicability.json).
 
-## P2 independent re-review of 195762c — 2026-10-28 (current)
+## P2 independent re-review of 195762c — 2026-10-28 (retained)
 
 - **P2-R1 CLOSED for the measured implementation:** fixed per-product cadences, nominal
   admission budget and independent daily supplement pass. 17 retained ZIPs/window results,
@@ -303,3 +303,19 @@ non-finite numeric directives use the existing missing-header/ban fallback befor
 persistence, with the original failure header retained. Without this guard, moving
 parsing earlier could skip the failure record. The queued73ec0c8 CI was superseded
 by the final correction; no old green run is credited to the new source.
+
+## P2 independent re-review of f9aaeee — 2026-10-28 (current)
+
+- **P2-R4 CLOSED:** the existing cooldown now precedes the persistence await. Both
+  six-case reproductions, 33 cooldown tests and 42 related tests pass independently;
+  one online smoke is skipped. Malformed headers retain their original evidence and
+  use existing fallback/ban semantics; storage errors propagate. Exact-commit dual-platform
+  CI is verified. No new blocking issue was found in this correction.
+- **P2-R1 CLOSED for the measured implementation:** prior acceptance and its limits
+  remain unchanged; no cadence/import change or repeated history audit.
+- **P2-R2 OPEN:** no new evidence establishes U/C dated-premium applicability. Preserve
+  the eight failed product observations, source/retry costs and UNKNOWN coverage.
+  Do not infer permanent unavailability from -1121 or substitute another price series.
+- Overall P2 remains NOT ACCEPTED. Keep Draft PR #88 and its branch until R2 and final
+  acceptance close; main unchanged, P3 not started, no deployment.
+  See [independent closure](milestones/P2/review-20261028.md#review-f9aaeee).

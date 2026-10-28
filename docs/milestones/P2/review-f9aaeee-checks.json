@@ -1,0 +1,237 @@
+{
+  "schema_version": "p2-independent-review.v1",
+  "reviewed_commit": "f9aaeeea8a3a2b32a2de565b02a48b1726b51780",
+  "reviewed_src_tree": "bf36cdaa08adc3ba3ec05762dccd033411e5eeb9",
+  "compared_with": "7d80f2ff9cd3c208ec5f7bcfeb993b7d48d836cd",
+  "reviewed_at_utc": "2026-10-28 15:04:01 UTC",
+  "result": "P2_NOT_ACCEPTED_R4_CLOSED",
+  "disposition": {
+    "R1": "PASS_RETAINED",
+    "R2": "OPEN_U_C_DATED_PREMIUM_APPLICABILITY",
+    "R4": "PASS_CLOSED"
+  },
+  "new_blocking_findings": [],
+  "local_tests": [
+    {
+      "command": ".venv/bin/python -m pytest -q --tb=short tests/integration/test_p2_cooldown.py",
+      "passed": 33,
+      "seconds": 1.05,
+      "exit_code": 0
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q --tb=short tests/integration/test_p2_capture.py tests/integration/test_binance_public_rest.py tests/unit/test_spot_rate_limit.py tests/unit/test_shared_api_budget.py",
+      "passed": 42,
+      "skipped": 1,
+      "skip_reason": "unsigned online smoke not enabled",
+      "seconds": 2.07,
+      "exit_code": 0
+    }
+  ],
+  "reproductions": {
+    "duration": {
+      "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P2/reproduce_rest_cooldown.py",
+      "passed": 6,
+      "failed": 0,
+      "output": {
+        "cases": [
+          {
+            "venue": "spot",
+            "http_status": 429,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999763,
+            "failure_observation_retained": true,
+            "passed": true
+          },
+          {
+            "venue": "spot",
+            "http_status": 418,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999796,
+            "failure_observation_retained": true,
+            "passed": true
+          },
+          {
+            "venue": "usdm",
+            "http_status": 429,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999851,
+            "failure_observation_retained": true,
+            "passed": true
+          },
+          {
+            "venue": "usdm",
+            "http_status": 418,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999834,
+            "failure_observation_retained": true,
+            "passed": true
+          },
+          {
+            "venue": "coinm",
+            "http_status": 429,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999856,
+            "failure_observation_retained": true,
+            "passed": true
+          },
+          {
+            "venue": "coinm",
+            "http_status": 418,
+            "saved_retry_after": "600",
+            "expected_wait_seconds": 600,
+            "actual_wait_seconds": 599.999863,
+            "failure_observation_retained": true,
+            "passed": true
+          }
+        ]
+      }
+    },
+    "admission_order": {
+      "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P2/reproduce_rest_cooldown_order.py",
+      "passed": 6,
+      "failed": 0,
+      "output": {
+        "cases": [
+          {
+            "venue": "spot",
+            "http_status": 429,
+            "successor_venue": "spot",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9998072080198,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.8953028749675,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          },
+          {
+            "venue": "spot",
+            "http_status": 418,
+            "successor_venue": "spot",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9998012079741,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.8939440829563,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          },
+          {
+            "venue": "usdm",
+            "http_status": 429,
+            "successor_venue": "coinm",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9997752909549,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.89410008298,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          },
+          {
+            "venue": "usdm",
+            "http_status": 418,
+            "successor_venue": "coinm",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9997635000036,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.8918546250206,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          },
+          {
+            "venue": "coinm",
+            "http_status": 429,
+            "successor_venue": "usdm",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9997670830344,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.8935193330399,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          },
+          {
+            "venue": "coinm",
+            "http_status": 418,
+            "successor_venue": "usdm",
+            "server_retry_after_seconds": 600,
+            "delay_while_persistence_waits": 599.9997483749758,
+            "new_request_sent_while_persistence_waits": false,
+            "delay_after_persistence": 599.8888059579767,
+            "failure_observation_retained": true,
+            "sealed_record_count": 1,
+            "passed": true
+          }
+        ]
+      }
+    }
+  },
+  "ci": {
+    "run_id": 40707969755,
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40707969755",
+    "head_sha": "f9aaeeea8a3a2b32a2de565b02a48b1726b51780",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "job_id": 122885127113,
+        "name": "ubuntu-python312",
+        "conclusion": "success",
+        "all_steps_successful": true,
+        "log_excerpts": [
+          "2026-10-28T14:45:07.9381534Z 2352 passed, 28 skipped, 5 deselected, 13 warnings in 357.25s (0:05:57)",
+          "2026-10-28T14:45:08.4856865Z All checks passed!",
+          "2026-10-28T14:45:27.5258529Z Success: no issues found in 341 source files",
+          "2026-10-28T14:45:27.8310957Z M0 contract verification passed",
+          "2026-10-28T14:45:45.8213625Z Successfully built binance_market_data_recorder-0.1.0a1.tar.gz and binance_market_data_recorder-0.1.0a1-py3-none-any.whl"
+        ]
+      },
+      {
+        "job_id": 122885127687,
+        "name": "macos-python312",
+        "conclusion": "success",
+        "all_steps_successful": true,
+        "log_excerpts": [
+          "2026-10-28T14:43:21.8296920Z 2356 passed, 24 skipped, 5 deselected, 13 warnings in 254.98s (0:04:14)",
+          "2026-10-28T14:43:22.6669250Z All checks passed!",
+          "2026-10-28T14:43:36.4965060Z Success: no issues found in 341 source files",
+          "2026-10-28T14:43:36.7914180Z M0 contract verification passed",
+          "2026-10-28T14:43:41.7853310Z Successfully built binance_market_data_recorder-0.1.0a1.tar.gz and binance_market_data_recorder-0.1.0a1-py3-none-any.whl"
+        ]
+      }
+    ]
+  },
+  "documentation_checks": {
+    "m0_contracts": "PASS",
+    "git_diff_check": "PASS",
+    "local_markdown_links_checked": 116,
+    "review_anchors": "PASS",
+    "review_json_and_proof_bindings": "PASS",
+    "src_and_tests_unchanged": true
+  },
+  "unchanged_by_review": [
+    "src/",
+    "tests/",
+    "R1 configuration/import/data evidence",
+    "main",
+    "Draft PR #88 status"
+  ],
+  "unrun": [
+    "local full-suite repeat; exact-commit CI reviewed",
+    "new Binance/public-market requests",
+    "R1 historical/daily-file re-audit",
+    "VPS benchmark",
+    "stress",
+    "production soak",
+    "deployment"
+  ],
+  "next_work": "P2-R2 official applicability and corresponding coverage evidence; preserve failed sources without substitution. Do not merge or clean the work branch until P2 passes."
+}

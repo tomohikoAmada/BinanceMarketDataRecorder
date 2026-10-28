@@ -1,4 +1,21 @@
-# Current P2 R4 admission-order correction — 2026-10-28
+# Current P2 independent re-review of f9aaeee — 2026-10-28
+
+R4 is accepted and closed. The existing cooldown is applied synchronously before the
+persistence await; malformed directives reuse existing fallback/ban semantics while
+retaining failure headers. Storage errors still propagate, pools remain correctly shared
+or independent, and waiting-admission cancellation and in-flight drain ownership remain.
+Both six-case reproductions, 33 cooldown tests and 42 related tests pass independently
+(one online smoke skipped). Exact f9aaeee CI and logs are verified: macOS 2,356 passed,
+Linux 2,352 passed. No new blocking issue was found. See the
+[closure](milestones/P2/review-20261028.md#review-f9aaeee) and updated production plan.
+
+R1 remains accepted without a new history audit. R2 U/C dated-premium applicability
+remains open; keep failed sources and their costs, with no substitute or unsupported
+not-offered inference. Continue R2 in P2 and associate any supported conclusion with
+the coverage inventory. Overall P2 is NOT ACCEPTED; retain Draft PR #88 and its branch.
+Main is unchanged, P3 has not started, and no deployment or production operation occurred.
+
+## Prior R4 admission-order correction handoff (retained)
 
 The R4 correction candidate moves the existing shared-pool cooldown immediately after
 capture returns a known rejection and before the first persistence await. Duration
