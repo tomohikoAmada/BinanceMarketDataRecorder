@@ -1,0 +1,170 @@
+{
+  "nominal_weight_per_minute": 778.686745818399,
+  "d06_weight_per_minute": 650.0,
+  "source_count": 4781,
+  "ws_streams": 2154,
+  "daily_study_recomputed_from_retained_report": {
+    "products": 17,
+    "rows": 10267636,
+    "selected_loss_rows": 133143,
+    "uniform_6s_loss_rows": 471898
+  },
+  "raw_readback": {
+    "chunks": 38,
+    "records": 147,
+    "matched_saved_observations": true,
+    "maximum_rolling_60s_weight": 620,
+    "latency_median": 0.104042958,
+    "latency_max": 0.614279167,
+    "known_gaps": 0
+  },
+  "daily_study_zip_replay": {
+    "files": 17,
+    "rows": 10267636,
+    "all_checksums_and_report_fields_match": true,
+    "products": [
+      {
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_261225",
+        "rows": 10106,
+        "sha256": "2d10dbbe335359868218eeb5ea4ceac69505c3a3ae9bbaa060d7a18924d38f6e"
+      },
+      {
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_270326",
+        "rows": 3362,
+        "sha256": "d8a8160e2ea3705f7c534f37dbf2b919bde7427615dbe40122ca1572de28d898"
+      },
+      {
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_261225",
+        "rows": 12178,
+        "sha256": "b9fcdf71c50b7c5bc8696ee466afe0d0dd191b64aecbcc8730a01069f92dd4ce"
+      },
+      {
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_270326",
+        "rows": 4330,
+        "sha256": "6dc912adf6042cba77597f954a3119e547190c9e38bdfd93093e57c74f7417e7"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "BTCU",
+        "rows": 11465,
+        "sha256": "d0a548c2b42f2d5ca0b82e92abc2b92c3386c7bb191465059d3f408c5f73c12d"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "BTCUSD1",
+        "rows": 36398,
+        "sha256": "99487bca0b72227f1bc67b27bfbccc58b024fd5d1a3e3bf62699c63b49100643"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDC",
+        "rows": 740611,
+        "sha256": "60f53ef3dd670b6f784852de40fcd6f2f614437c336ec566a11e6e8156fd4f93"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "BTCUSDT",
+        "rows": 3522593,
+        "sha256": "d1e5b142ec47ab16fb1a367111d51b0fe7e54c35d705041d96b4232185365cb4"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHBTC",
+        "rows": 4529,
+        "sha256": "227346949f81da038a09cb1901bae24f3f855bc210f14fa3b8a40358e45ac77a"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHU",
+        "rows": 9359,
+        "sha256": "17fedfcfea0775aa45ae99fcdf59f485d05eb9b9cfa9a9ca47c9b920a8ba88d1"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHUSD1",
+        "rows": 13575,
+        "sha256": "3e3520a9588275d0eed8ac16c1e3f1689e824ab9a121e523e2d139024f8a680e"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHUSDC",
+        "rows": 1415245,
+        "sha256": "e1a66b1ee4df5892785e3fc6b6be291902a91a3d85af4f7f723387157a358d74"
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHUSDT",
+        "rows": 4403220,
+        "sha256": "0d17f26a3d604022b5da08d0875bab636e85c0750072810ed145486da5e49605"
+      },
+      {
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_261225",
+        "rows": 1387,
+        "sha256": "cc20ee7ba340274d01bc8307ba7293314a31aa0cbad8a9b616eb5d1b0ecb7110"
+      },
+      {
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_261225",
+        "rows": 1067,
+        "sha256": "5cdf611ac5bd08fc3220ac2fcc4805040f038e7cd9ca87338b8969728d3609be"
+      },
+      {
+        "market": "cm_perpetual",
+        "symbol": "BTCUSD_PERP",
+        "rows": 31595,
+        "sha256": "e66351a727ca9d9f85fc9cfdbc930339165e29478e95946771790ba77154ed96"
+      },
+      {
+        "market": "cm_perpetual",
+        "symbol": "ETHUSD_PERP",
+        "rows": 46616,
+        "sha256": "c366a2de54f2f08f8603eab29a333be2da1cbe7246e2cd8649ee9a9d44f41b17"
+      }
+    ]
+  },
+  "daily_import_csv_to_parquet": {
+    "files": 8,
+    "rows": 123773,
+    "matching_required_fields": true,
+    "missing_files": 2,
+    "files_checked": [
+      {
+        "source_revision": "0bb93e60625bd5b3-cc20ee7ba340274d",
+        "rows": 1387
+      },
+      {
+        "source_revision": "22fe7331da2f9062-5cdf611ac5bd08fc",
+        "rows": 1067
+      },
+      {
+        "source_revision": "21da62bf10a20398-e66351a727ca9d9f",
+        "rows": 31595
+      },
+      {
+        "source_revision": "b932ce45d919de02-c366a2de54f2f08f",
+        "rows": 46616
+      },
+      {
+        "source_revision": "0411f16001baa76b-2d10dbbe33535986",
+        "rows": 10106
+      },
+      {
+        "source_revision": "e6afebd6208f6a93-b9fcdf71c50b7c5b",
+        "rows": 12178
+      },
+      {
+        "source_revision": "491b4f4b2f0effc8-d0a548c2b42f2d5c",
+        "rows": 11465
+      },
+      {
+        "source_revision": "ee33cf3407447342-17fedfcfea0775aa",
+        "rows": 9359
+      }
+    ]
+  }
+}

@@ -1,4 +1,24 @@
-# Current P2 correction candidate — 2026-10-28
+# Current P2 independent re-review — 2026-10-28
+
+Reviewed commit `195762c`; P2 remains NOT ACCEPTED. R1's measured fixed-cadence profile,
+nominal budget and independent daily supplement pass this review. Existing 143 focused
+tests and exact-commit dual-platform CI pass. Retained 17 daily ZIPs, 8 imported files
+(123,773 CSV rows) and 147 Raw observations were independently checked; limits remain
+explicit. See [review](milestones/P2/review-20261028.md#review-195762c) and updated plan.
+
+R4's duration calculation passes, but its admission ordering does not: poll_once awaits
+persist_rest before blocking the pool. Six new offline cases send a fresh Spot or shared
+UM/CM request after 429/418 is known, while persistence waits. Enable the existing cooldown
+before that first await, retain failure persistence/storage-error propagation/normal stop,
+and add those regressions. Do not add a limiter framework or cancel in-flight requests.
+R2 U/C dated-premium applicability remains unresolved; retain failures without substitution.
+The next development work stays in P2. Keep Draft PR #88 and the working branch until
+R2/R4 and final-candidate verification/re-review pass. Main is unchanged, P3 not started;
+no deployment or production operation was performed. Owner's option-one scope is approved.
+
+## Prior correction-candidate handoff (retained)
+
+# P2 correction candidate — 2026-10-28
 
 R4 now uses existing Retry-After/date/ban/fallback semantics and remaining receive-based
 cooldown. R1's owner-approved live-plus-daily direction is implemented: explicit measured

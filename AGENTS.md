@@ -11,9 +11,9 @@ representation preserving required precision, exchange/receive times, identity,
 sequence and gap information. Exact HTTP bytes/unknown fields are not universal gates;
 do not persist both a complete model and Base64 body or label SDK output as original
 HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
-delivered under ADR-0054. The measured D06 fixed-cadence/daily supplement and R4
-cooldown correction are now delivered as a candidate; full acceptance still needs
-U/C dated-premium applicability and independent re-review;
+delivered under ADR-0054. Independent review of 195762c accepts the measured D06
+fixed-cadence/daily supplement. Full acceptance still needs U/C dated-premium
+applicability and the remaining R4 cooldown-admission ordering fix, then final re-review;
 see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
@@ -37,12 +37,16 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P1 is complete. P2 independent review of e73068b is NOT ACCEPTED; P3 has not started.
-See [P2 review](docs/milestones/P2/review-20261028.md). R1 implementation now includes measured per-product polling and the independent
-daily-file supplement; R4 now reuses the existing remaining-cooldown semantics.
-R2 remains unresolved and this check also found USD-M delivery premium failures.
-Retain those sources and await official applicability semantics; no substitution.
-Independent re-review is still required before acceptance.
+P1 is complete. P2 independent re-review of 195762c is NOT ACCEPTED; P3 has not started.
+See [P2 review](docs/milestones/P2/review-20261028.md#review-195762c). R1's measured
+per-product polling and independent daily supplement pass. R4's remaining-duration
+calculation passes, but poll_once enables the cooldown only after awaiting persistence;
+six new cases admit requests after a known 429/418 while persistence waits. Enable the
+existing shared-pool cooldown before that await, retain failure persistence and storage
+error propagation, and add the regressions. No new limiter or in-flight cancellation.
+R2 U/C dated-premium applicability remains unresolved; retain failed sources without
+substitution. Keep Draft PR #88 and its branch until these items and final verification
+pass. Exact 195762c dual-platform CI is verified; it does not cover the new R4 finding.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction
 is approved; do not ask for it again. First verify product/date/field coverage,

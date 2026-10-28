@@ -1,0 +1,76 @@
+{
+  "cases": [
+    {
+      "venue": "spot",
+      "http_status": 429,
+      "successor_venue": "spot",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9964607500006,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    },
+    {
+      "venue": "spot",
+      "http_status": 418,
+      "successor_venue": "spot",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9970742079895,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    },
+    {
+      "venue": "usdm",
+      "http_status": 429,
+      "successor_venue": "coinm",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9971379160415,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    },
+    {
+      "venue": "usdm",
+      "http_status": 418,
+      "successor_venue": "coinm",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9971364589292,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    },
+    {
+      "venue": "coinm",
+      "http_status": 429,
+      "successor_venue": "usdm",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9971454580082,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    },
+    {
+      "venue": "coinm",
+      "http_status": 418,
+      "successor_venue": "usdm",
+      "server_retry_after_seconds": 600,
+      "delay_while_persistence_waits": 0.0,
+      "new_request_sent_while_persistence_waits": true,
+      "delay_after_persistence": 599.9972132080002,
+      "failure_observation_retained": true,
+      "sealed_record_count": 2,
+      "passed": false
+    }
+  ]
+}

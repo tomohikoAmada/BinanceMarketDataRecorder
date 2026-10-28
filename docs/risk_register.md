@@ -252,7 +252,7 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
   owns durable source intervals/new-file verification/background qualification;
   no P4+ production run has started. P0/P1 historical evidence is unchanged.
 
-## P2 correction candidate — 2026-10-28
+## P2 correction candidate — 2026-10-28 (retained)
 
 - P2-R4: fixed in the correction candidate using existing numeric/date/ban/fallback
   Retry-After parsing and actual remaining time since receive.21 regressions and
@@ -268,3 +268,22 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
   No substitute or permanent-not-offered inference. Keep failures and their retry demand
   in the source plan. Up to120 failing interval sources retry at60s; nominal costs must
   not hide this extra demand. See the [actual recheck](milestones/P2/closeout-20261028/premium-applicability.json).
+
+## P2 independent re-review of 195762c — 2026-10-28 (current)
+
+- **P2-R1 CLOSED for the measured implementation:** fixed per-product cadences, nominal
+  admission budget and independent daily supplement pass. 17 retained ZIPs/window results,
+  8 imports/123,773 rows and 147 Raw observations independently match their evidence.
+  Missing files/fields, file ID holes, finite polling windows and non-live acquisition times
+  remain disclosed. This does not qualify full-feature capacity or 99.5% live continuity.
+- **P2-R4 OPEN (high, ordering remains):** Retry-After duration/date/ban handling passes
+  21 regressions and the original 6 cases. However, poll_once waits for persistence before
+  blocking the pool. All 6 new Spot→Spot/UM→CM/CM→UM cases issue a newly admitted request
+  after a known 429/418 while persistence waits. Set the existing cooldown before that await;
+  retain failure records, storage-error propagation and normal stop. No new limiter needed.
+- **P2-R2 OPEN:** U/C dated-premium applicability is still not established. Retain all
+  8 failing product observations and their source/retry costs; no permanent-not-offered
+  inference or substitute prices.
+- Exact-commit dual-platform CI passed, but does not cover the new R4 boundary. P2 remains
+  NOT ACCEPTED; PR #88 stays Draft, main/working branches are preserved, P3 has not begun.
+  See [review and follow-up](milestones/P2/review-20261028.md#review-195762c).
