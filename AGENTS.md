@@ -43,7 +43,9 @@ per-product polling and independent daily supplement pass. R4's remaining-durati
 calculation passes, but poll_once enables the cooldown only after awaiting persistence;
 six review cases admit requests after a known 429/418 while persistence waits. The new
 correction candidate now enables that existing cooldown before the persistence await;
-eight added regressions and both six-case reproductions pass. Retain independent
+eight order/storage regressions, four malformed-header regressions and both six-case
+reproductions pass. Unparseable Retry-After uses existing fallback/ban semantics
+while retaining the original failure header. Retain independent
 re-review before closing R4. No new limiter or in-flight cancellation was introduced.
 R2 U/C dated-premium applicability remains unresolved; retain failed sources without
 substitution. Keep Draft PR #88 and its branch until these items and final verification

@@ -297,3 +297,9 @@ Both six-case reproductions now pass; eight new regressions fail on the prior ru
 and pass after correction. Failure bytes still persist, storage errors propagate and
 unrelated pools remain independent. Await independent re-review; R2 stays OPEN.
 No new network evidence, cadence change, production operation or R1 audit was needed.
+
+Four malformed Retry-After regressions additionally verify that invalid dates or
+non-finite numeric directives use the existing missing-header/ban fallback before
+persistence, with the original failure header retained. Without this guard, moving
+parsing earlier could skip the failure record. The queued73ec0c8 CI was superseded
+by the final correction; no old green run is credited to the new source.

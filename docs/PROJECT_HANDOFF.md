@@ -4,7 +4,9 @@ The R4 correction candidate moves the existing shared-pool cooldown immediately 
 capture returns a known rejection and before the first persistence await. Duration
 semantics remain those accepted in the 195762c review. Failure persistence, fatal storage
 errors, waiting-admission cancellation and existing in-flight drain ownership remain.
-Eight new regressions fail on the previous runtime and pass after correction; both
+Eight new order/storage regressions fail on the previous runtime and pass after correction.
+Four further invalid-header cases reuse existing fallback semantics while retaining the
+failure record, so moving the gate cannot make malformed directives skip persistence. Both
 six-case reproductions pass. See [current P2 result](milestones/P2/README.md) and
 [checks](milestones/P2/closeout-20261028/cooldown-order-checks.json). New exact-commit CI
 is recorded in Draft PR #88; independent re-review is still required.

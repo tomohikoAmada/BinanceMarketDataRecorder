@@ -626,12 +626,25 @@ class SelectedAssetCapture:
 
             saved = json.loads(result.envelope.raw_payload)
             received = result.envelope.receive_time_utc_ns
-            until = _retry_at_utc_ns(
-                status=result.status or (418 if result.error == "RateLimitBanError" else 429),
-                headers=saved["response"]["headers"],
-                body_text=json.dumps(result.document),
-                now_utc_ns=received,
-            )
+            status = result.status or (418 if result.error == "RateLimitBanError" else 429)
+            body_text = json.dumps(result.document)
+            try:
+                until = _retry_at_utc_ns(
+                    status=status,
+                    headers=saved["response"]["headers"],
+                    body_text=body_text,
+                    now_utc_ns=received,
+                )
+            except (ValueError, TypeError, OverflowError):
+                # A malformed directive must not skip failure persistence now
+                # that admission closes first. Reuse the missing-header/ban
+                # fallback, retaining the original header in the saved record.
+                until = _retry_at_utc_ns(
+                    status=status,
+                    headers={},
+                    body_text=body_text,
+                    now_utc_ns=received,
+                )
             shared_request_budget().block(
                 "spot" if source.venue_market == "spot" else "usdm",
                 max(0.0, (until - time.time_ns()) / 1e9),

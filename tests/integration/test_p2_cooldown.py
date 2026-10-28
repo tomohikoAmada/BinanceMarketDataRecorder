@@ -273,3 +273,55 @@ def test_cooldown_is_active_even_if_failure_persistence_raises(
             assert owner.sources[source.key].count == 0
 
     asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("status,minimum", [(429, 59), (418, 86399)])
+@pytest.mark.parametrize("retry_after", ["invalid-date", "inf"])
+def test_unparseable_retry_header_uses_existing_fallback_and_retains_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    status: int,
+    minimum: int,
+    retry_after: str,
+) -> None:
+    import time
+
+    async def exercise() -> None:
+        budget = RequestBudget()
+        monkeypatch.setattr(
+            "binance_market_data_recorder.collector.coverage.shared_request_budget", lambda: budget
+        )
+
+        class Client:
+            def request(self, source: Any, params: Any) -> _ObservedResponse:
+                return _ObservedResponse(
+                    status, {"Retry-After": retry_after}, {}, time.time_ns(), time.monotonic_ns()
+                )
+
+            def close(self) -> None:
+                pass
+
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = SelectedAssetCapture(
+                RecorderConfig(
+                    data_root=tmp_path, coverage=CoverageConfig(underlying_assets=("BTC",))
+                ),
+                logging.getLogger("p2.cooldown.header"),
+                "v",
+                "i",
+                layout,
+                catalog,
+                clients={"spot": Client()},
+            )
+            result = await owner.poll_once(
+                owner.sources[directory_source("spot", owner.coverage).key]
+            )
+            saved = json.loads(result.envelope.raw_payload)
+            assert not result.valid and saved["response"]["headers"]["retry-after"] == retry_after
+            assert budget.delay({"spot_weight": 1}) > minimum
+            for spool in owner.spools.values():
+                manifest = spool.close_and_seal()
+                assert manifest is not None and manifest["record_count"] == 1
+
+    asyncio.run(exercise())
