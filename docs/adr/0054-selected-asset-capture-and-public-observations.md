@@ -112,3 +112,45 @@ unresolved sources separately. USD-M liquidation selection semantics remain
 unresolved; no latest/largest assumption or liquidation-total derivation is added.
 P3 still owns durable per-source interval accounting, new-file verification and
 background/recovery qualification; no 99.5% or VPS capacity credit is inferred.
+
+## Owner decision: live D06 and daily supplement (2026-10-28)
+
+Status: **approved direction, implementation and validation pending in P2-R1**.
+The owner selected option one after reviewing the trade-offs and official-file
+existence evidence. Retain live capture, allocate D06 polling by product using
+measured window/ID coverage and the shared request budget, and add official daily
+trade files as an independent delayed supplement. The 6-second proposal is not
+automatically selected; the current 1-second default stays until the measured
+replacement configuration is implemented and disclosed before qualification.
+Routine implementation within this decision needs no repeated direction approval.
+
+Keep this path small and separate from capture:
+
+- First verify representative selected perpetual/dated products, actual dates,
+  price/quantity precision, native IDs, time units and field availability. Preserve
+  missing fields as unavailable, including any REST-only fields; do not invent
+  values or claim complete coverage from an HTTP 200 or a matching file checksum.
+- Fetch only the selected products and bounded dates. Use a small standalone
+  download/import command, preferably on the research/archive machine. Its retries,
+  unavailable files and processing backlog must not block the live receiver/writer.
+  Do not introduce a general scheduling framework or scan the entire live history.
+- Preserve exchange event times and actual file acquisition time with official
+  URL, product/date and file identity. Identify these records as official bulk
+  data, not live REST responses or WS payloads. Do not manufacture live receive
+  times or rewrite the original live observations and their gaps.
+- Use the supplied file checksum at download/import for content verification and
+  identity; no per-trade hash chain. Reuse file-level metadata rather than repeating
+  it for every row, and avoid keeping redundant full parsed and source copies
+  without a concrete reader need. Existing archive/deletion rules still apply.
+- Where live and daily facts overlap, match market/product/native trade ID and
+  retained fields. Consumers must not double-count identical trades; differing
+  fields or conflicting records keep their source rather than silently overwriting
+  the live observation. No full-history deduplication is added to capture.
+- Report live continuity, known sampled trade gaps and delayed fact coverage
+  separately. A late file cannot award retrospective 99.5% live coverage. Missing
+  dates, missing fields and unavailable products remain visible.
+
+P2 acceptance still requires measured frequency/budget and loss disclosure,
+representative file/import evidence and regression checks. R2 source applicability
+and R4 cooldown remain independent open items. This decision does not change an
+executable schema, historical evidence, a running service or production status.

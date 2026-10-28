@@ -229,13 +229,14 @@ Independent review updated 2026-10-28; see [review](milestones/P2/review-2026102
   D06 1s × request weight 5 requires 5,700/min; full nominal steady requests are
   ~5,829/min, exceeding Recorder's 1,200/min reserved share and the official
   2,400/min combined UM/CM pool. The limiter waits honestly; no silent shedding
-  or 99.5% credit. An explicit D06 sampling/scope decision is required under plan
-  section 6. No unapproved default reduction has been made.
-  [Review research](milestones/P2/d06-budget-research-20261028.md) recommends
-  comparing explicit per-product frequencies and verifying official daily-file
-  supplementation, rather than accepting uniform 6s only because its mean fits.
-  Neither is approved. Bulk data must not fabricate receipt times or live credit;
-  actual product/file/field coverage and possible sampling loss remain unverified.
+  or 99.5% credit. On October28 the owner selected option one: explicit per-product
+  polling plus a separate official daily-file supplement. The direction is approved;
+  R1 remains open for product/date/field verification, measured cadence allocation
+  and implementation, not another direction decision. See the
+  [updated study](milestones/P2/d06-budget-research-20261028.md).
+  Uniform 6s is not automatically accepted and the current default is unchanged.
+  Bulk data must not fabricate receipt times or live credit; actual target coverage,
+  unavailable fields and possible sampling loss must be measured and disclosed.
 - **P2-R2 OPEN:** C dated premiumIndexKlines returns -1121 for listed tested dated
   contracts on both documented DAPI/FAPI transports, while perpetual samples
   succeed; the catalog's BTCUSD example also fails. Current documentation does

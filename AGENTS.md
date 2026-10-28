@@ -1,6 +1,6 @@
 # Binance Market Data Recorder Agent Contract
 
-Current owner direction October27, 2026: follow the new
+Current owner direction October28, 2026: follow the new
 [production milestone plan](docs/production_milestone_plan.md), P0 through P6.
 Design for at least ten underlying assets; the initial production exit is BTC
 and ETH across their Spot quote pairs and USD-M/COIN-M perpetual and dated
@@ -11,8 +11,9 @@ representation preserving required precision, exchange/receive times, identity,
 sequence and gap information. Exact HTTP bytes/unknown fields are not universal gates;
 do not persist both a complete model and Base64 body or label SDK output as original
 HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
-delivered under ADR-0054, but full acceptance is blocked on request-budget/sampling
-direction and C dated-premium applicability; see docs/milestones/P2/README.md.
+delivered under ADR-0054, but full acceptance still needs the measured D06 budget
+implementation, C dated-premium applicability and the R4 cooldown fix;
+see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
 observations. P2 records source priorities and explicit resource-limited coverage in the
@@ -39,10 +40,14 @@ P1 is complete. P2 independent review of e73068b is NOT ACCEPTED; P3 has not sta
 See [P2 review](docs/milestones/P2/review-20261028.md). Existing R1 budget and R2
 CM dated premium applicability remain open; new R4 ignores REST Retry-After and
 blocks for a fixed 120 seconds. Fix R4 using the existing cooldown semantics.
-The D06 research recommends comparing explicit per-product cadences and validating
-official daily trade files as a separate delayed supplement; neither is approved
-as a scope change. Historical facts cannot replace receive times or live coverage.
-Keep the 1s D06 default until the owner resolves its full-scope request-budget conflict.
+The owner selected option one on October28: explicit per-product live polling
+plus official daily trade files as a separate delayed supplement. This direction
+is approved; do not ask for it again. First verify product/date/field coverage,
+then implement a small independent download/import path and measured cadences.
+Keep actual acquisition times and live gaps; historical facts cannot replace
+receive times or live coverage. The 6s proposal is not automatically selected.
+The existing 1s default stays until a measured, disclosed configuration replaces
+it; routine work within this decision does not need another scope approval.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains
 do not establish all-feature CPU gains or VPS capacity. Compare matched per-source

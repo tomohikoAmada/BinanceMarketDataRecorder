@@ -6,13 +6,17 @@ ignores Retry-After and always blocks 120 seconds. Six offline reproductions fai
 despite 2,314 full-suite and 314 focused tests passing. Fix R4 using existing
 cooldown semantics, then re-review the final candidate with dual-platform CI.
 Completed implementation items are checked in the production plan. The
-[D06 study](milestones/P2/d06-budget-research-20261028.md) recommends evaluating
-explicit per-product frequency allocation and a separate official daily-file
-supplement; no sampling change or delayed-data contract has been approved.
+[D06 study](milestones/P2/d06-budget-research-20261028.md) now records the owner's
+October28 selection of option one: explicit per-product live polling plus a
+separate official daily-file supplement. The direction is approved. Verify actual
+product/date/field coverage, then implement the small independent importer and
+measured frequency allocation under ADR-0054; no repeat direction approval is needed.
 See the [P2 result](milestones/P2/README.md), source mapping, fixtures and ADR-0054.
 The full current BTC/ETH directory requires ~5,829 derivative weight/min with D06 at 1s,
 above the Recorder share and exchange pool. No unapproved cadence reduction was made;
-owner sampling/scope direction is pending. C dated premium applicability also remains
+the existing 1s default and unselected 6s proposal remain unchanged until the measured
+configuration is implemented. R1 remains open for that work, not for the direction
+decision. C dated premium applicability also remains
 unresolved; failures are retained without a perpetual substitution. P2 is not marked
 passed, P3 has not started, and production readiness remains NO.
 

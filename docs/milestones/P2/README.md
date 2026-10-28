@@ -5,6 +5,12 @@
 新增 R4：REST 未遵守 Retry-After。复跑全仓 2,314 项及相关 314 项通过，
 新限流复现六例均失败。以下是原交付证据，保留其测量和当时边界。
 
+**2026-10-28 owner 决定：已选择选项一。** 后续按“按产品分配实时轮询频率＋官方
+日度逐笔文件独立延迟补充”推进；先核验具体产品、日期、字段及观察损失，再实现
+小型下载/导入路径和实测频率配置。方向已确定，R1 的实现与验证尚未完成，R2/R4
+仍开放。当前默认仍为1秒，原6秒提案未被直接选定。详见[计划](../../production_milestone_plan.md#p2补齐产品和数据范围)
+及[数据边界](../../adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28)。
+
 2026-10-27。基线 `8c2cf72114b55ea193316189e7ce9a178bd96393`，工作分支
 `codex/p2-market-coverage`；起始工作区干净。未部署、未改变 VPS 服务，未访问生产数据。
 

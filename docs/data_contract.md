@@ -72,6 +72,26 @@ See [ADR-0053](adr/0053-single-rest-representation-and-required-information.md) 
 the [plan](production_milestone_plan.md) for implementation and comparison requirements.
 These are approved future changes, not changes to existing executable formats.
 
+## D06 live and delayed supplement decision (2026-10-28)
+
+The owner selected live capture with measured per-product D06 polling plus
+official daily trade files as a separate delayed supplement. This direction is
+approved for P2; product/date/field verification, the importer and the replacement
+frequency configuration remain to be implemented. Selecting it does not select
+the uniform 6-second proposal or qualify the current full-scope 1-second plan.
+
+Bulk records retain their actual acquisition time, exchange event time, market,
+product, native trade ID and file source/identity. They do not acquire invented
+live receive timestamps, replace immutable live observations or erase live gaps.
+Report the 99.5% live continuity result and delayed trade-fact coverage separately;
+missing dates, unavailable fields and source conflicts remain explicit. Matching
+overlapping trade facts must prevent consumer double-counting while preserving
+source differences. Keep download/import outside the capture path, bounded by
+selected products/dates, with meaningful file checks and no per-trade hashes or
+whole-history capture-time scans. Existing Raw formats and archive/deletion rules
+are unchanged. Implementation details and limits are recorded in
+[ADR-0054](adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28).
+
 ## P1 capture and progress contract (2026-10-27)
 
 [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)
