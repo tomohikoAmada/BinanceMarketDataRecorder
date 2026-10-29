@@ -1,5 +1,23 @@
 # Official Binance Sources
 
+## P2-R2 independent review — 2026-10-29
+
+The current index was fetched first. The following selected official catalogue sections
+were then read to check the eligibility claim and explain the missing-data boundary.
+No new Binance market request was made. [Review metadata](milestones/P2/review-066c2c3-checks.json)
+contains representations and the exact short excerpts behind the excerpt digests.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-29T00:20:54.389792Z | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Downloaded index bytes match the prior investigation's index; no endpoint-specific dated rule. |
+| [USD-M premium bars](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T00:25:07Z–00:25:14Z | `b1d7f0ada599087dc1c39b509d15eb9d82cb2af6c3eb784f9f431ea25ade8c9c` | Selected rendered excerpt, not HTTP bytes: symbol/interval and optional time/limit; reviewed section does not specify perpetual/dated applicability. |
+| [COIN-M premium bars](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T00:25:07Z–00:25:14Z | `a92bc0db3846ad2adb3637dba09c7af2cd06e97d49c830431d08bf6f29bb8ff1` | Selected rendered excerpt, not HTTP bytes: same parameter boundary and no explicit dated eligibility in the reviewed section. |
+
+The web reader could not open llms.txt, so its bytes were fetched directly. Direct
+HTTP downloads of the two catalogue pages returned empty bodies and are not semantic
+evidence; rendered official pages were used instead. Excerpt hashes identify only the
+selected text, not the full page or a normative applicability guarantee. R2 stays OPEN.
+
 ## P2-R2 official applicability follow-up — 2026-10-29
 
 The index was read first; observations below were retrieved on 2026-10-28 UTC.

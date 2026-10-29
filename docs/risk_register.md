@@ -337,3 +337,19 @@ perpetual, mark, index or locally computed basis. An [official clarification dra
 is ready but unsent; external submission needs explicit owner authorization. Once an
 official rule is available, implement its actual boundary and obtain final P2 review.
 R1/R4 stay accepted; no runtime or production change in this follow-up.
+
+## P2 independent evidence review of 066c2c3 — 2026-10-29 (current)
+
+The R2 evidence and clarification draft pass review; no new runtime change or blocking
+defect was found. R1/R4 remain closed. Current official endpoint sections still do not
+provide dated eligibility, so R2 and P2 remain OPEN/NOT ACCEPTED. The draft is unsent.
+
+Missing dated premium bars limit research that needs that official series; they do not
+make other captured market data invalid. The current 8 products × 15 intervals can spend
+up to 120 weight/min on repeated failures at the 60-second backoff cap. This is a source
+plan estimate, not a CPU or production measurement. Preserve UNKNOWN and failed evidence.
+
+A narrow, explicitly declared initial-production coverage exception is a possible owner
+scope choice, not a discovery that Binance never offers the data. It is described in the
+[review](milestones/P2/review-20261028.md#review-066c2c3) but is not approved or implemented.
+Do not waive acceptance, disable sources or send a public issue based on this note.

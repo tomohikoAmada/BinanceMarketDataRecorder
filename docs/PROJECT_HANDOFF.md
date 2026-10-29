@@ -1,4 +1,21 @@
-# Current P2 R2 investigation — 2026-10-29
+# Current P2 evidence review of 066c2c3 — 2026-10-29
+
+R2 investigation evidence and the unsent clarification draft pass independent review.
+The runtime tree is unchanged from f9aaeee; R1/R4 remain accepted and no new blocking
+defect was found. Fourteen saved diagnostic responses, two full directory bodies and
+eight source digests match; eight dated products remain TRADING in those observations.
+Current official premiumIndexKlines sections still do not establish dated applicability.
+See [review and practical impact](milestones/P2/review-20261028.md#review-066c2c3).
+
+The missing series is dated premium-index bars, not all market data for those products.
+The existing failure path can consume up to 120 weight/min once 120 configured sources
+reach 60-second retry backoff. No new CPU/capacity conclusion follows. A narrowly declared
+initial-production coverage exception is described for owner consideration only; it has
+not been approved or implemented. Do not change the scope, suppress failures or post the
+public issue on the strength of this review. R2 and overall P2 remain open; keep Draft
+PR #88 and its branch, main unchanged, P3 not started. No deployment was performed.
+
+## Prior R2 investigation handoff (retained)
 
 R1/R4 remain accepted. R2 is still OPEN: the new bounded native-HTTP diagnostic
 observed eight dated premium failures, four successful perpetual controls and two

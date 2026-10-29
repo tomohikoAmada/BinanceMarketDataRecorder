@@ -1,0 +1,83 @@
+{
+  "schema_version": "p2-r2-independent-evidence-review.v1",
+  "reviewed_commit": "066c2c39e20435755313ebf73747d8da0f4e9795",
+  "reviewed_src_tree": "bf36cdaa08adc3ba3ec05762dccd033411e5eeb9",
+  "same_runtime_as": "f9aaeeea8a3a2b32a2de565b02a48b1726b51780",
+  "reviewed_at_utc": "2026-10-29T00:27:02.531516+00:00",
+  "result": "EVIDENCE_ACCEPTED_P2_NOT_ACCEPTED",
+  "new_blocking_findings": [],
+  "R1": "PASS_RETAINED",
+  "R4": "PASS_RETAINED",
+  "R2": "OPEN_OFFICIAL_APPLICABILITY",
+  "evidence_checks": {
+    "http_observations": 14,
+    "counts": {
+      "(True, 'native_symbol_recent', 400)": 8,
+      "(False, 'native_symbol_recent', 200)": 4,
+      "(True, 'dated_explicit_closed_range', 400)": 2
+    },
+    "dated_identities": 8,
+    "directory_projections_match": true,
+    "directory_bodies_verified": 2,
+    "source_digests_verified": 8,
+    "first_request_utc": "2026-10-28T15:30:04.555324+00:00",
+    "last_receive_utc": "2026-10-28T15:30:10.635960+00:00"
+  },
+  "retry_cost_review": {
+    "dated_products": 8,
+    "configured_intervals_per_product": 15,
+    "affected_sources": 120,
+    "weight_per_attempt": 1,
+    "upper_weight_per_minute_with_60s_error_backoff": 120,
+    "note": "If enabled and all sources keep failing; not observed production load or a measured CPU cost."
+  },
+  "clarification_draft": "Reviewed public unsigned reproductions, no new issue submitted; external submission not authorized by this review request.",
+  "official_sources": [
+    {
+      "url": "https://developers.binance.com/en/docs/llms.txt",
+      "retrieved_at_utc": "2026-10-29T00:20:54.389792+00:00",
+      "sha256": "b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482",
+      "bytes": 174964,
+      "retained_local_source": "/private/var/tmp/bmdr-p2-review-r2-8djawpm1/llms.txt",
+      "representation": "downloaded bytes"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data",
+      "retrieved_utc_bounds": [
+        "2026-10-29T00:25:07Z",
+        "2026-10-29T00:25:14Z"
+      ],
+      "representation": "selected non-contiguous rendered excerpt; not original HTTP bytes",
+      "excerpt": "Premium index kline bars of a symbol.\nsymbol\ninterval\nstartTime\nendTime\nlimit\nAfter CM migration, accepts both UM and CM symbols.",
+      "sha256": "b1d7f0ada599087dc1c39b509d15eb9d82cb2af6c3eb784f9f431ea25ade8c9c",
+      "conclusion": "Public premium-index bar endpoint lists symbol, interval and optional time/limit. The reviewed section gives no explicit perpetual/dated applicability rule."
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data",
+      "retrieved_utc_bounds": [
+        "2026-10-29T00:25:07Z",
+        "2026-10-29T00:25:14Z"
+      ],
+      "representation": "selected non-contiguous rendered excerpt; not original HTTP bytes",
+      "excerpt": "Premium index kline bars of a symbol.\nsymbol\ninterval\nstartTime\nendTime\nlimit\nAfter CM migration, accepts both CM and UM symbols.",
+      "sha256": "a92bc0db3846ad2adb3637dba09c7af2cd06e97d49c830431d08bf6f29bb8ff1",
+      "conclusion": "Public premium-index bar endpoint lists symbol, interval and optional time/limit. The reviewed section gives no explicit perpetual/dated applicability rule."
+    }
+  ],
+  "source_access_limits": "Direct catalog HTTP downloads returned empty bodies and were not used as semantic evidence. Rendered official catalog sections were reviewed; excerpt hashes identify only the quoted text.",
+  "documentation_checks": {
+    "m0_contracts": "PASS",
+    "git_diff_check": "PASS",
+    "local_markdown_links_checked": 161,
+    "review_anchors": "PASS",
+    "json_and_excerpt_digests": "PASS",
+    "src_and_tests_unchanged": true
+  },
+  "unrun": [
+    "Unchanged runtime tests/full CI rerun",
+    "New Binance market requests",
+    "R1 historical data audit",
+    "VPS/soak/deployment"
+  ],
+  "next_steps": "Continue R2 with an authoritative applicability rule and corresponding coverage updates. Any temporary production coverage exception is an explicit owner scope decision and has not been applied."
+}

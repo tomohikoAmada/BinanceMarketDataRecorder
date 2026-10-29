@@ -49,6 +49,13 @@ R2 U/C dated-premium applicability remains unresolved; retain failed sources wit
 substitution. Keep Draft PR #88 and its branch until these items and final verification
 pass. Exact f9aaeee dual-platform CI and logs are verified; no new blocking issue was
 found. Continue R2 in P2 without repeating R1 history audits or already closed R4 work.
+Independent review of 066c2c3 accepts the bounded R2 investigation evidence and unsent
+clarification draft; the runtime is unchanged and official applicability remains unknown.
+See [scope and impact](docs/milestones/P2/review-20261028.md#review-066c2c3). The review
+describes an optional initial-production coverage exception, but the owner has not approved
+it. Do not change the scope, disable failed sources or publish the issue without the
+corresponding owner decision. P2 and PR #88 remain pending; no production work is authorized
+by the documentation status alone.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction
 is approved; do not ask for it again. First verify product/date/field coverage,
