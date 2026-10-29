@@ -13,10 +13,11 @@
   explicitly selects `capture_dated_premium_klines=false` before admission/scheduling.
   New dated products follow the same rule. The report discloses 120 uncaptured sources
   with unknown applicability, a new-instance effective boundary and unchanged historical
-  evidence. The retained-directory nominal budget becomes765.328366/min; WS and other
+  evidence. The retained-directory nominal budget becomes 765.328366/min; WS and other
   source descriptions are unchanged. This scope reduction establishes no CPU/VPS gain.
-- Ten new regressions and71 affected checks pass; final code CI and independent review
-  remain required. Generic/old configuration defaults still capture the full target.
+- Ten new regressions and 71 affected checks pass; exact 13602c8 dual-platform CI and logs
+  are verified. Independent review remains required. Generic/old configuration defaults
+  still capture the full target.
   Do not apply the exception to an already-running window or silently drop other sources.
 - R1/R4 stay accepted. PR #88 remains Draft; P3/production have not started. Historical
   unapproved/unsent and mandatory-official-reply statements below describe earlier states.

@@ -1,7 +1,7 @@
 # ADR-0055: Initial-production exception for dated premium-index bars
 
 Status: owner-approved on 2026-10-29; implementation and focused validation delivered,
-final code CI and independent P2 review pending.
+exact 13602c8 dual-platform CI verified; independent P2 review pending.
 
 ## Decision
 

@@ -9,12 +9,14 @@ are unchanged. New dated identities use the same boundary. No production operati
 Coverage now declares uncaptured/UNKNOWN products and intervals, actual counts and the
 same nominal budget used by admission; the new-instance effective UTC/identity and frozen
 configuration are retained in existing directory events. Old failed Raw and old directory
-evidence remain readable and unchanged. Retained directories produce4,661 selected sources
-plus3 directories,2,154 WS streams and765.328366/min nominal derivative weight. This scope
+evidence remain readable and unchanged. Retained directories produce 4,661 selected sources
+plus 3 directories, 2,154 WS streams and 765.328366/min nominal derivative weight. This scope
 change is not a CPU or VPS capacity measurement. R1/R4 acceptance remains unchanged.
 
-Ten new regressions and71 affected checks pass. Final runtime CI and independent P2 review
-remain; keep Draft PR #88 and its branch. P3 and production have not started. Official
+Ten new regressions and 71 affected checks pass. Exact 13602c8 [CI and logs](milestones/P2/initial-production-20261029/ci.json)
+are verified: macOS 2,366 passed/24 skipped, Ubuntu 2,362 passed/28 skipped; both complete
+build/install/CLI checks. Independent P2 review remains; keep Draft PR #88 and its branch.
+P3 and production have not started. Official
 applicability stays UNKNOWN with issue#585 as future follow-up, not a first-release gate.
 
 ## Prior P2 owner decision and team handoff — 2026-10-29 (retained)

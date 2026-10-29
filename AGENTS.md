@@ -17,8 +17,8 @@ accepts an initial release without U/C dated premium-index klines under
 [ADR-0055](docs/adr/0055-initial-production-dated-premium-exception.md). Perpetual premium
 and all other selected scope remain. Prioritize reliable basic data and as much additional
 distinct public information as resources allow. The exception's implementation and focused
-coverage/budget checks are delivered as a candidate; acceptance still needs final-code CI
-and independent P2 re-review;
+coverage/budget checks are delivered as a candidate, with exact 13602c8 dual-platform CI
+verified; acceptance still needs independent P2 re-review;
 see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
@@ -69,7 +69,7 @@ the prepared public clarification. It is submitted as
 Waiting for an official reply is no longer a first-release P2 acceptance gate. The
 official-source stop rule still prohibits inventing dated-premium semantics; it does
 not prevent implementation of this explicitly declared omission. Do not ask again for
-these approved actions. P2/PR #88 remain pending final-code CI and independent review; no
+these approved actions. P2/PR #88 remain pending independent review; no
 production work is authorized by documentation status alone.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction

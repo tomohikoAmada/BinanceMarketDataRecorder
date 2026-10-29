@@ -1,6 +1,6 @@
 # Recorder 生产上线 Milestone Plan
 
-版本：2026-10-29 · 当前开发计划 · P0、P1通过；P2的R1/R4保持通过；首版范围例外已实施并通过定向验证，官方issue已提交。P2待最终代码CI与整体独立复审；P3–P6未开始。
+版本：2026-10-29 · 当前开发计划 · P0、P1通过；P2的R1/R4保持通过；首版范围例外已实施，定向验证及13602c8双平台CI通过，官方issue已提交。P2待整体独立复审；P3–P6未开始。
 
 **目标：按至少 10 个币种设计，先在 GreenCloud VPS 上让 BTC 和 ETH 稳定生产运行。** 记录所选标的在现货、U 本位 / 币本位永续及交割合约中的公开市场数据，供离线研究和回测；保留所需信息及精度，不把所有 HTTP 正文逐字节留存作为上线条件。期权暂缓。
 
@@ -91,7 +91,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | P0：对齐代码和验收口径 | 单一开发基线、完整覆盖清单、可比较的性能起点 | [完成，R2补充修正及v4分类已记录](milestones/P0/review-20261026.md#r2补充修正2026-10-27) | 无 |
 | P1：缩短原始数据写入路径 | 采集与计算分开，减少逐消息开销 | [完成，R1独立复审通过](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27) | P0 |
-| P2：补齐市场与数据覆盖 | 10 标的可配置，BTC / ETH 各指定市场按首版范围接入，完整目标与暂缺分别披露 | [首版范围已实施，待最终CI和复审](milestones/P2/initial-production-20261029/README.md) | P1 的接口稳定 |
+| P2：补齐市场与数据覆盖 | 10 标的可配置，BTC / ETH 各指定市场按首版范围接入，完整目标与暂缺分别披露 | [实现/CI完成，待整体独立复审](milestones/P2/initial-production-20261029/README.md) | P1 的接口稳定 |
 | P3：恢复、后台处理与运行工具 | 小故障能自动恢复，归档 / 校验不拖住采集 | 未开始 | P1、P2 |
 | P4：单币验证 | 同一版本 / 配置从 2h 检查到完整 24h | 未开始 | P3 |
 | P5：双币与实际扩容 | BTC / ETH 24h，通过逐档增加标的了解余量 | 未开始 | P4 |
@@ -149,7 +149,7 @@ flowchart LR
 
 ### P2：补齐产品和数据范围
 
-**状态：首版范围例外候选已实施，P2待最终代码CI与整体独立复审。** R1/R4的独立复审通过结论保留。[ADR-0055实施记录](milestones/P2/initial-production-20261029/README.md)包含显式配置、源集合差异、覆盖边界和预算；10项新增回归及71项受影响检查通过。首版仅不采U/C交割premium K线，永续和其他数据继续。官方适用性仍未知，[Binance官方issue #585](https://github.com/binance/binance-connector-python/issues/585)回复不再单独阻塞首版P2。最终CI与独立复审前保留Draft PR #88和工作分支，P3未开始。
+**状态：首版范围例外候选已实施，P2待整体独立复审。** R1/R4的独立复审通过结论保留。[ADR-0055实施记录](milestones/P2/initial-production-20261029/README.md)包含显式配置、源集合差异、覆盖边界和预算；10项新增回归及71项受影响检查通过。最终运行时提交13602c8的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40827645005)已核实：macOS 2,366项、Ubuntu 2,362项通过。首版仅不采U/C交割premium K线，永续和其他数据继续。官方适用性仍未知，[Binance官方issue #585](https://github.com/binance/binance-connector-python/issues/585)回复不再单独阻塞首版P2。独立复审前保留Draft PR #88和工作分支，P3未开始。
 
 **历史证据保留：** [066c2c3证据复审](milestones/P2/review-20261028.md#review-066c2c3)及[权限补充](milestones/P2/r2-20261029-access/README.md)没有发现新的运行时缺陷，保留官方语义未知、失败样本及缺项影响；本次批准的是首版范围取舍，不将旧观测改为成功或官方不适用。
 
@@ -179,7 +179,7 @@ flowchart LR
 - [x] **P2-R2官方澄清已提交**：按owner授权将准备好的稿件提交为[binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585)，已回读核对正文；[提交稿](milestones/P2/r2-20261028/binance-clarification-issue-body.md)留存。
 - [x] **P2-R2源选择与预算**：既有配置新增`capture_dated_premium_klines`，首版显式false、旧配置默认true。在源生成阶段仅跳过`um_delivery`/`cm_delivery`的premium K线，新发现交割产品沿用，无轮询/重试。其余源描述逐项相同，不影响永续或交割mark/index。保留目录复算4,781完整目标中选4,661源，另3目录，WS仍2,154；名义765.328366 weight/min。见[清单](milestones/P2/initial-production-20261029/source-selection.json)，这是范围取舍，不是CPU/VPS优化。
 - [x] **P2-R2覆盖与连续性说明**：现有status及目录事件增加`source_selection`，单列120项OWNER_APPROVED_UNCAPTURED/UNKNOWN及完整目标/已选数、配置生效UTC与实例身份。旧Raw、失败、目录证据和旧窗口不变；新配置用新实例/窗口，其他必需及启用源仍按99.5%验收，不宣称P2已具备连续性资格。
-- [ ] **P2-R2定向验证**：验证交割不安排premium请求/重试、永续继续、其他数据源集合不变、新交割合约调和同样遵守例外、预算与覆盖报告一致、历史失败记录仍可读。只跑受影响检查及必要回归，最终运行时代码绑定CI；不重审已通过R1/R4历史，不靠反复失败请求代替验证。
+- [x] **P2-R2定向验证**：10项新回归与71项受影响检查通过，覆盖交割无premium请求/重试、永续保留、其他源描述不变、十资产新身份、调和/预算准入/报告一致、历史失败仍原样可读。运行时代码13602c8的双平台CI及日志核对通过，见[CI记录](milestones/P2/initial-production-20261029/ci.json)。未重审R1历史或复跑闭合R4复现，未新增公开接口探测。
 - [ ] **官方适用性后续跟进（非首版验收门槛）**：有issue回复或新官方规则时核实实际边界，按事实补齐接入或记录不适用；未有依据前保留UNKNOWN，不使用其他价格/永续序列替代。不为等待回复新建自动轮询服务，也不阻止已批准首版范围的开发和验收。
 - [x] **195762c验证核实**：本机143项相关测试通过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40648496846)的日志确认macOS 2,344项、Linux 2,340项通过。新增R4时序复现未被这些既有测试覆盖。
 - [x] **f9aaeee验证核实**：独立复跑33项冷却及42项相关回归通过，1项在线测试按默认跳过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40707969755)日志确认macOS 2,356项、Linux 2,352项通过。本轮仅复审R4修正，R1证据保留，无新增生产资格。
@@ -273,7 +273,7 @@ flowchart LR
 3. 运行与变化相称的检查。无新改动 / 新失败时不反复全仓测试、重新审计或重新出同一份证明。
 4. 用一份阶段结果更新上表状态；完成后推进下阶段。具体协议 / 数据格式 / 归档承诺变更才需要相应短 ADR，普通修复不增加审批链。
 5. 遇到范围变化、无法满足双币目标的资源取舍、数据契约改变或需要改动用户其他系统时再请用户决定；日常实现选择由开发者完成。
-6. P1已通过，当前继续P2；R1/R4保持通过，首版例外、覆盖/预算及定向验证已交付候选，下一步核实最终代码CI并做整体独立复审。官方issue已提交，其回复不是首版前置条件。未部署或启动生产，不逐项重复索要同一授权。
+6. P1已通过，当前继续P2；R1/R4保持通过，首版例外、覆盖/预算、定向验证及最终代码CI已交付，下一步做整体独立复审。官方issue已提交，其回复不是首版前置条件。未部署或启动生产，不逐项重复索要同一授权。
 
 不把 GUI、交易功能、多交易所、Kafka / Kubernetes、完整消费者平台、历史全量重算、突然断电专项或全语言重写作为本阶段的上线前置条件。
 

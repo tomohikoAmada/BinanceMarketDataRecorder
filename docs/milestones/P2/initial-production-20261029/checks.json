@@ -1,7 +1,14 @@
 {
   "schema_version": "p2-initial-production-checks.v1",
   "base_commit": "44fa019",
-  "runtime_ci": "pending",
+  "runtime_ci": {
+    "runtime_commit": "13602c81922b0943562da49fa243e9236cf3d5f5",
+    "run_id": 40827645005,
+    "run_url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40827645005",
+    "conclusion": "success",
+    "checked_at_utc": "2026-10-29T06:20:28Z",
+    "evidence": "ci.json"
+  },
   "independent_p2_review": "pending",
   "checks": [
     {
