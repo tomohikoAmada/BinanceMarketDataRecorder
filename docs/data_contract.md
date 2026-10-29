@@ -92,6 +92,19 @@ whole-history capture-time scans. Existing Raw formats and archive/deletion rule
 are unchanged. Implementation details and limits are recorded in
 [ADR-0054](adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28).
 
+## Initial-production dated-premium exception (2026-10-29)
+
+The owner approved [ADR-0055](adr/0055-initial-production-dated-premium-exception.md):
+the initial release explicitly omits only USD-M/COIN-M dated premium-index klines.
+Perpetual premium and every other selected family remain in scope. Keep the complete
+target inventory; distinguish this declared uncaptured selection from official
+applicability, which remains unknown. No substitution or successful-coverage claim.
+The frozen future eligible source set excludes this item from its declared start;
+old Raw, failures, gaps and qualification denominators remain unchanged. Required
+and enabled sources still meet 99.5%, and saved-data correctness is unchanged.
+Source/configuration, budget and reporting changes remain P2 implementation work.
+The official clarification is separate follow-up, not a first-release acceptance gate.
+
 ## P1 capture and progress contract (2026-10-27)
 
 [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)

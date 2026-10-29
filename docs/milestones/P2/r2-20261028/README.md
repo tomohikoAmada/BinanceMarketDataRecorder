@@ -1,5 +1,12 @@
 # P2-R2：交割 premium 适用性调查
 
+**后续owner决定（2026-10-29）：** 首版仅暂缺U/C交割premium K线已获批准，
+永续和其他范围不变；[官方issue #585](https://github.com/binance/binance-connector-python/issues/585)
+已提交。适用性仍未知，但等待回复不再阻塞首版验收；团队继续落实
+[P2清单](../../../production_milestone_plan.md#p2补齐产品和数据范围)中的源选择、
+覆盖/预算和验证。以下调查保留原义，旧的未授权/未发送及等待规则门槛已被
+[ADR-0055](../../../adr/0055-initial-production-dated-premium-exception.md)替代。
+
 2026-10-29；观测发生于2026-10-28 UTC。本轮基线为 `e3f1dd7`；R1、R4的独立复审通过结论保留。
 **R2仍未闭合，P2仍未通过。** 没有新的官方适用规则，故按AGENTS的官方来源
 要求停止该项实现，不把重复失败转换成“不提供”，不缩减目标或改用另一价格序列。

@@ -1,5 +1,14 @@
 # P0 首版公开数据覆盖表
 
+**2026-10-29首版范围补充（已批准，P2待实现）：** owner接受仅暂缺U/C交割合约的
+溢价指数K线，永续premium及其他产品/数据不变。下表53行仍是完整目标；D23的
+这一个子项在首版选择中明确标为owner批准暂不采集，官方适用性仍UNKNOWN，
+不能记为交易所不提供或覆盖成功。未来冻结配置的连续性范围按该选择声明，
+历史失败、Raw和旧分母保持原义。实现/验证见[ADR-0055](../../adr/0055-initial-production-dated-premium-exception.md)
+和[P2计划](../../production_milestone_plan.md#p2补齐产品和数据范围)；无需等待官方
+[issue #585](https://github.com/binance/binance-connector-python/issues/585)回复才验收首版。
+下列历史证据中要求保留所有失败轮询/等待官方回复的门槛，仅对该首版例外由本条替代。
+
 核对日期：2026-10-26；保存表示取舍更新：2026-10-27（[ADR-0053](../../adr/0053-single-rest-representation-and-required-information.md)）。此表是 P2 的范围合同，不是已实现清单。P4 开始前将本表展开为实际产品/源清单并冻结；每个必须源分别进入连续性分母。P0 不发起生产采集。
 
 官方依据：[Spot 流](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)、[Spot 市场 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)、[Spot 通用 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general)、[USD-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[USD-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)、[COIN-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data)、[COIN-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)。抓取哈希与无效网页回退见 [official-sources.json](official-sources.json)；不能把返回 HTML 壳的 `.md` 地址当正文证据。

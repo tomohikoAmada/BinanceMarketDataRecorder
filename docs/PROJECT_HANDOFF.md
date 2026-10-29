@@ -1,4 +1,28 @@
-# Current P2 evidence review of 066c2c3 — 2026-10-29
+# Current P2 owner decision and team handoff — 2026-10-29
+
+The owner approved an initial release without **only USD-M/COIN-M dated premium-index
+klines**. Perpetual premium continues and all other selected scope stays unchanged.
+Prioritize reliable basic facts and as much other distinct public data as resources
+allow. [ADR-0055](adr/0055-initial-production-dated-premium-exception.md) and the
+[P2 checklist](production_milestone_plan.md#p2补齐产品和数据范围) record the decision.
+
+The prepared clarification was submitted with explicit owner authorization as
+[Binance issue #585](https://github.com/binance/binance-connector-python/issues/585).
+The issue was read back and its body matches the retained submission. Official dated
+eligibility stays unknown; waiting for that answer no longer blocks initial-release P2.
+
+Next, implement the declared omission before source scheduling/budget admission, including
+new dated products; preserve perpetual premium, dated mark/index bars and other families.
+Keep complete-target versus selected/uncaptured reporting explicit, retain old failures
+and denominators, recalculate source/request budgets, and run focused boundary regressions
+and final-code CI. Then request independent P2 review. Do not reopen R1/R4 or repeat their
+historical audits. These implementation steps are authorized; no repeat scope approval.
+
+This update changes plans/contracts only. Runtime/configuration still need the P2 work;
+P2 is not yet accepted, Draft PR #88 and its branch remain, P3/production have not started.
+Historical notes below describe the state before this owner decision.
+
+## Prior P2 evidence review of 066c2c3 — 2026-10-29 (retained)
 
 R2 investigation evidence and the unsent clarification draft pass independent review.
 The runtime tree is unchanged from f9aaeee; R1/R4 remain accepted and no new blocking

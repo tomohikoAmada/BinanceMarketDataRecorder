@@ -4,6 +4,10 @@ Status: accepted by the owner on 2026-10-27 for P2/P3. The approved direction is
 
 ## Decision
 
+The specific initial-release dated-premium omission approved on 2026-10-29 is recorded
+in [ADR-0055](0055-initial-production-dated-premium-exception.md). It qualifies the full
+target for that source only; this ADR's information/representation rules are unchanged.
+
 Recorder collects the selected public data for offline research and backtesting with bounded resource use. Exact HTTP body retention is not a universal production exit requirement. Each REST response has one primary persisted representation: received body bytes, or an SDK model representation that preserves the information required by its source entry. Do not retain both a complete model and a Base64 copy of the body for new P2 records, or add a second HTTP implementation solely to achieve byte identity.
 
 The source entry declares its representation/version, SDK version when applicable, required field mapping and known omissions. Preserve exact price/quantity values, supplied exchange times, actual receive times, product/source identity, necessary sequence identifiers, meaningful empty/null/missing distinctions, request scope/status and gap evidence. A required field missing from an SDK model must be supplied by the adapter or recorded as unsupported, not silently removed from the coverage requirement. Receiving a late or invalid model does not authorize invented times, values or successful coverage.

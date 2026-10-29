@@ -1,5 +1,10 @@
 # P2-R2：交割溢价指数 K 线的权限与重要性
 
+本研究之后，owner已批准首版仅暂缺U/C交割premium K线并提交
+[官方issue #585](https://github.com/binance/binance-connector-python/issues/585)。
+当前执行边界见[ADR-0055](../../../adr/0055-initial-production-dated-premium-exception.md)；
+下文保留研究时未批准、未发送的状态，不再作为当前开发门槛。
+
 2026-10-29。按 owner 的问题核对官方接口说明、权限、错误码和 Python SDK，
 并做六次无凭据公开 GET。本次仅研究解释；不更改采集范围、配置或验收状态。
 

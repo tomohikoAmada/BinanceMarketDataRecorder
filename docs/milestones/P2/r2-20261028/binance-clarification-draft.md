@@ -1,8 +1,11 @@
 # Clarify dated-contract support for premiumIndexKlines (USD-M and COIN-M)
 
-Unsent draft for `binance/binance-connector-python` maintainers or Binance API
-support. This asks for an API documentation clarification, not trading assistance.
-The connector README recommends opening an issue for discussion/bug reports.
+Submitted with owner authorization as
+[binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585)
+at 2026-10-29T05:39:33Z by tomohikoAmada. The published body was read back and matched
+the [retained submission](binance-clarification-issue-body.md); it adds the complete
+error JSON and a direct-HTTP environment note to the original draft below.
+This asks for an API documentation clarification, not trading assistance.
 
 ## Question
 

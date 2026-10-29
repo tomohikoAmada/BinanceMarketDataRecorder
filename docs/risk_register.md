@@ -1,5 +1,21 @@
 # Risk Register
 
+## Current P2 scope exception — 2026-10-29
+
+- The owner approved an initial-release omission of only U/C dated premium-index bars;
+  perpetual premium and all other selected scope remain. Official applicability stays
+  unknown and the history is preserved. [ADR-0055](adr/0055-initial-production-dated-premium-exception.md)
+  supersedes earlier notes that made an official answer a first-release acceptance gate.
+- [Binance issue #585](https://github.com/binance/binance-connector-python/issues/585)
+  is submitted with owner authorization. A future official answer is separate follow-up.
+  Missing this series can limit future research; exact later recovery is not promised.
+- P2 still needs the explicit source/configuration change, prospective coverage boundary,
+  revised budget, targeted verification and final independent review. Until implemented,
+  the old failed polling work remains; this decision alone establishes no CPU/VPS gain.
+  Do not silently drop other sources, rewrite old gaps or call the omission complete.
+- R1/R4 stay accepted. PR #88 remains Draft; P3/production have not started. Historical
+  unapproved/unsent and mandatory-official-reply statements below describe earlier states.
+
 ## P0 current risks — 2026-10-27
 
 - [PR #87 review](milestones/P0/review-20261026.md#pr-87-复审2026-10-26) accepts

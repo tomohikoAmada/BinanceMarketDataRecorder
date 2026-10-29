@@ -3,6 +3,11 @@
 Status: implemented for P2, 2026-10-27. Implements ADR-0053 within the approved
 P2 scope; this is not production or expanded-market continuity qualification.
 
+The initial-release dated-premium scope is qualified by
+[ADR-0055](0055-initial-production-dated-premium-exception.md), accepted 2026-10-29;
+its source selection and validation are pending. The decisions below retain their
+original implementation meaning.
+
 ## Identity and scope
 
 `ProductKey` remains `(market, symbol)`. Product markets are `spot`,

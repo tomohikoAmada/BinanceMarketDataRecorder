@@ -1,6 +1,6 @@
 # Binance Market Data Recorder Agent Contract
 
-Current owner direction October28, 2026: follow the new
+Current owner direction October29, 2026: follow the new
 [production milestone plan](docs/production_milestone_plan.md), P0 through P6.
 Design for at least ten underlying assets; the initial production exit is BTC
 and ETH across their Spot quote pairs and USD-M/COIN-M perpetual and dated
@@ -12,8 +12,12 @@ sequence and gap information. Exact HTTP bytes/unknown fields are not universal 
 do not persist both a complete model and Base64 body or label SDK output as original
 HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
 delivered under ADR-0054. Independent review of 195762c accepts the measured D06
-fixed-cadence/daily supplement; independent review of f9aaeee closes R4. Full acceptance
-still needs U/C dated-premium applicability and final P2 re-review;
+fixed-cadence/daily supplement; independent review of f9aaeee closes R4. The owner now
+accepts an initial release without U/C dated premium-index klines under
+[ADR-0055](docs/adr/0055-initial-production-dated-premium-exception.md). Perpetual premium
+and all other selected scope remain. Prioritize reliable basic data and as much additional
+distinct public information as resources allow. Acceptance still needs this exception's
+implementation, coverage/budget verification and final P2 re-review;
 see docs/milestones/P2/README.md.
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
@@ -45,17 +49,27 @@ await. Both six-case reproductions, 33 cooldown regressions and 42 related tests
 independently, with one online smoke skipped. Unparseable Retry-After uses existing
 fallback/ban semantics while retaining the original failure header; storage errors
 and normal stop/drain ownership remain intact. No new limiter or in-flight cancellation.
-R2 U/C dated-premium applicability remains unresolved; retain failed sources without
-substitution. Keep Draft PR #88 and its branch until these items and final verification
-pass. Exact f9aaeee dual-platform CI and logs are verified; no new blocking issue was
-found. Continue R2 in P2 without repeating R1 history audits or already closed R4 work.
+R2 official U/C dated-premium applicability remains unresolved; preserve the complete
+target and historical failures without substitution. The initial-production selection
+is authorized to omit only these dated premium sources before scheduling, including
+new dated products. Keep perpetual premium and all other source families. Record the
+omission as owner-approved uncaptured scope, with official applicability still UNKNOWN;
+do not label it exchange-not-offered or rewrite old Raw, gaps or denominators. Recompute
+source/budget reporting and verify the boundary in P2 before final independent review.
+Keep Draft PR #88 and its branch until implementation and verification pass. Exact
+f9aaeee dual-platform CI/logs remain verified; no new blocking code issue was found.
+Do not repeat R1 history audits or already closed R4 work.
 Independent review of 066c2c3 accepts the bounded R2 investigation evidence and unsent
 clarification draft; the runtime is unchanged and official applicability remains unknown.
-See [scope and impact](docs/milestones/P2/review-20261028.md#review-066c2c3). The review
-describes an optional initial-production coverage exception, but the owner has not approved
-it. Do not change the scope, disable failed sources or publish the issue without the
-corresponding owner decision. P2 and PR #88 remain pending; no production work is authorized
-by the documentation status alone.
+See [scope and impact](docs/milestones/P2/review-20261028.md#review-066c2c3). On October29
+the owner approved that narrow initial-production exception and separately authorized
+the prepared public clarification. It is submitted as
+[binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585).
+Waiting for an official reply is no longer a first-release P2 acceptance gate. The
+official-source stop rule still prohibits inventing dated-premium semantics; it does
+not prevent implementation of this explicitly declared omission. Do not ask again for
+these approved actions. P2/PR #88 remain pending implementation and final review; no
+production work is authorized by documentation status alone.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction
 is approved; do not ask for it again. First verify product/date/field coverage,
