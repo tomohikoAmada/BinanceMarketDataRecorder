@@ -1,5 +1,37 @@
 # Official Binance Sources
 
+## P2-R2 access and importance clarification — 2026-10-29
+
+The owner requested a focused check of API-key/VIP access and the importance of the
+missing series. The index was read first, followed by selected developer pages and
+official Python connector source. [Research note](milestones/P2/r2-20261029-access/README.md),
+[source metadata](milestones/P2/r2-20261029-access/sources.json) and
+[six unsigned observations](milestones/P2/r2-20261029-access/unsigned-diagnostic.json)
+retain the distinction between documentation, observed behavior and engineering judgment.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-29T03:12:57.548844+00:00 | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Index was consulted first; locates native premium-index routes. |
+| [USD-M security rules](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md) | 2026-10-29T03:13:52.026858+00:00 | `7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65` | NONE is public; MARKET_DATA is a separate security label requiring a key. The catalogue market-data category alone does not establish authentication. |
+| [COIN-M security rules](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/general-info.md) | 2026-10-29T03:13:52.094065+00:00 | `a1f5167589eb77e33a8e804c4e83fe1d5059c83ff1c38ed98f15bd0931b4a225` | Same security-label distinction as USD-M; some endpoints require keys, so evaluate this endpoint rather than every market-data API together. |
+| [USD-M errors](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/error-code.md) | 2026-10-29T03:13:52.053160+00:00 | `1e9600365347dfb8bf76faee4c7593de196c126154e17cea340ad76a621d6474` | -1121 is BAD_SYMBOL; -1002, -2014 and -2015 describe authorization/key problems. An error code alone does not establish permanent product exclusion. |
+| [COIN-M errors](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/error-code.md) | 2026-10-29T03:13:51.942198+00:00 | `89a36a402e170058e1d9235ca98cef206145c9b59b76411ec49d21c03f8b0a65` | Same distinction between BAD_SYMBOL and authorization/key errors. |
+| [CM/UM integration C.3](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-29T03:13:52.099904+00:00 | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | C.3 extends the listed paths across UM/CM symbols; it does not explicitly say every dated contract has a premium-index series. |
+| [COIN-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py) | 2026-10-29T03:15:35Z to 2026-10-29T03:18:18Z | `684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a` | premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility. |
+| [USD-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py) | 2026-10-29T03:15:35Z to 2026-10-29T03:18:18Z | `d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182` | premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility. |
+| [USD-M premium section](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T03:12:57Z to 2026-10-29T03:19:14Z | `da26bd6c88b633843afbe159847a2d33770d89f816536771e0ad98a4e1bb2b51` | Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header. |
+| [COIN-M premium section](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T03:12:57Z to 2026-10-29T03:19:14Z | `a850fd7fddd8d4ab6c2ba234ff5f490c1b0a37b0f09cb93bc63870695ef8236f` | Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header. |
+
+Catalogue hashes cover the short rendered excerpts retained in the metadata, not complete
+HTTP responses. Both schema downloads were empty and provide no authentication evidence.
+The six fresh public GETs used no key, signature, cookie or account: native UM/CM BTC
+perpetual premium queries returned two bars each; dated premium queries returned -1121;
+the same dated symbols returned five bids and asks from depth. This supports the public
+access conclusion and localizes the observation to the requested series, but does not
+prove permanent non-availability of dated premium bars. No VIP requirement was found in
+this endpoint's documentation. R2/P2 remain open; no scope exception or issue submission
+is authorized by this research.
+
 ## P2-R2 independent review — 2026-10-29
 
 The current index was fetched first. The following selected official catalogue sections

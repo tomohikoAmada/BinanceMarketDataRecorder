@@ -26,6 +26,10 @@
 
 ## 闭合需要的外部事实
 
+[2026-10-29权限与重要性补充](../r2-20261029-access/README.md)核对API Key/VIP疑问：
+六次匿名请求中两个BTC永续premium成功，两个交割premium失败但各自盘口成功。
+官方接口说明未列密钥或VIP门槛；这项补充没有解决交割适用规则，R2保持开放。
+
 已整理[可提交的官方澄清问题稿](binance-clarification-draft.md)，尚未发送。
 官方connector README提供GitHub issue讨论入口；提交外部消息需要owner明确授权。
 这不是重新确认已批准的D06方向或新增验收层级。
