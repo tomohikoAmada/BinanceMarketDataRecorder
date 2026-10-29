@@ -1,4 +1,18 @@
-# Current P2 independent review — 2026-10-29
+# Current P2 R5 test correction candidate — 2026-10-29
+
+The test fixture now controls only the writer's rotation-time predicate via the existing
+writer factory. Shutdown and TCP-reset/server-close cases cover both active-tail and
+already-rotated layouts, asserting exact Raw bytes/order, connection identities, two data
+chunks, one/two empty markers, completeness/gaps and Catalog discontinuity identity.
+Other same-fixture layout assumptions now run with controlled writer timing. Runtime,
+configuration, protocol and historical failure evidence are unchanged.
+
+87 affected capture/reconnect/startup checks and both3/4-manifest shutdown cases pass.
+See [candidate and evidence](milestones/P2/README.md) and [checks](milestones/P2/r5-20261029/checks.json).
+Final correction CI and independent R5 review remain. Keep Draft PR #88 and its branch;
+do not reopen accepted R1/R4 or scope/history audits. P3/production have not started.
+
+## Prior P2 independent review — 2026-10-29 (retained)
 
 The [independent review](milestones/P2/review-20261029.md) accepts the ADR-0055
 initial-release implementation, exact source-set/budget comparison and historical-read

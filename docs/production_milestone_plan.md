@@ -1,6 +1,6 @@
 # Recorder 生产上线 Milestone Plan
 
-版本：2026-10-29 · 当前开发计划 · P0、P1通过；P2的R1/R4及首版范围实现通过独立复审。最新HEAD的CI暴露P2-R5重连测试时机依赖，P2整体暂不通过；P3–P6未开始。
+版本：2026-10-29 · 当前开发计划 · P0、P1通过；P2的R1/R4及首版范围实现通过独立复审。R5测试修正候选及87项受影响检查完成，待最终CI与独立复审；P2整体暂不通过，P3–P6未开始。
 
 **目标：按至少 10 个币种设计，先在 GreenCloud VPS 上让 BTC 和 ETH 稳定生产运行。** 记录所选标的在现货、U 本位 / 币本位永续及交割合约中的公开市场数据，供离线研究和回测；保留所需信息及精度，不把所有 HTTP 正文逐字节留存作为上线条件。期权暂缓。
 
@@ -149,7 +149,7 @@ flowchart LR
 
 ### P2：补齐产品和数据范围
 
-**状态：首版范围实现通过独立复审；P2整体暂不通过，剩余P2-R5测试修正。** [本轮复审](milestones/P2/review-20261029.md)确认仅排除已批准的交割premium，独立复算源集合/预算和71项检查通过；R1/R4保持接受。运行时13602c8的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40827645005)通过事实保留，但后续仅改文档的58a3ca2之[CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40828820269)在macOS暴露重连测试的固定文件数假设。团队需修正该测试并复审R5，保留Draft PR #88及分支。官方适用性仍UNKNOWN，[issue #585](https://github.com/binance/binance-connector-python/issues/585)回复不阻塞首版；P3未开始。
+**状态：首版范围实现通过独立复审；R5测试修正候选已交付，P2整体待最终CI与R5复审。** [本轮复审](milestones/P2/review-20261029.md)确认仅排除已批准的交割premium，独立复算源集合/预算和71项检查通过；R1/R4保持接受。13602c8的[CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40827645005)通过、58a3ca2之[CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40828820269)暴露R5的历史均保留。当前修正只控制测试writer轮换时点并严格校验两种布局，87项受影响检查通过，生产协议及数据不改。保留Draft PR #88及分支。官方适用性仍UNKNOWN，[issue #585](https://github.com/binance/binance-connector-python/issues/585)回复不阻塞首版；P3未开始。
 
 **历史证据保留：** [066c2c3证据复审](milestones/P2/review-20261028.md#review-066c2c3)及[权限补充](milestones/P2/r2-20261029-access/README.md)没有发现新的运行时缺陷，保留官方语义未知、失败样本及缺项影响；本次批准的是首版范围取舍，不将旧观测改为成功或官方不适用。
 
@@ -184,7 +184,7 @@ flowchart LR
 - [x] **195762c验证核实**：本机143项相关测试通过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40648496846)的日志确认macOS 2,344项、Linux 2,340项通过。新增R4时序复现未被这些既有测试覆盖。
 - [x] **f9aaeee验证核实**：独立复跑33项冷却及42项相关回归通过，1项在线测试按默认跳过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40707969755)日志确认macOS 2,356项、Linux 2,352项通过。本轮仅复审R4修正，R1证据保留，无新增生产资格。
 - [x] **首版范围独立复审完成**：58a3ca2与运行时13602c8的src tree相同；独立与44fa019源计划比较，恰少120项交割premium，其余源完全相同，已提交报告与复算一致，71项定向检查通过。范围实现通过，不重开R1/R4；P2整体因下项R5暂不通过。
-- [ ] **P2-R5：修正重连测试的时机依赖**。最新HEAD的macOS CI报`assert 4 == 3`；[受控复现](milestones/P2/reproduce_shutdown_rotation.py)确认shutdown文件正常轮换后会产生合法的独立边界marker。控制测试时钟/轮换，校验两种布局下的精确原文、连接及缺口语义，核对同一fixture内类似假设；不能放宽为任意文件数或改生产协议迁就断言。
+- [x] **P2-R5修正与本机验证**。测试writer时钟受控，shutdown及同fixture异常断线分别验证活跃尾文件/已轮换两种布局；按文件角色严格核对数量、完整性、精确原文/顺序、连接及Catalog缺口身份，不放宽为任意文件数。87项受影响检查和[两例shutdown回归](milestones/P2/r5-20261029/shutdown-layouts.json)通过；生产代码、协议及历史证据不改。见[作者交付记录](milestones/P2/review-20261029.md#r5-correction-candidate)，尚非独立闭合结论。
 - [ ] R5修正后复跑受影响重连检查与最终提交双平台CI，只复审该修正后关闭P2。无需重审已通过范围或等待官方回复；通过后执行已授权的PR合并及安全分支清理。
 
 **通过：**覆盖表逐项关联实现及真实公开接口小样本 / 官方样例验证；无账户 / 密钥依赖；BTC / ETH 每个适用产品可发现、订阅、落盘、读取，配置可扩展至少10标的。最低必需信息已覆盖，完整目标中的缺失、交易所不提供、owner批准暂缺、资源缩减和等价去重项分别明确列出；ADR-0055例外落实后无需官方回复才能通过。REST模型保留全部已要求信息并核对；未知字段不作完整保留承诺，模型重编码不冒充原始HTTP正文。紧凑D06如启用，其观察 / 缺口语义及旧读取需验证；收益不足则保留单份完整响应，不为它阻塞上线。资格配置明确字段、周期和频率，不静默削减来通过99.5%。

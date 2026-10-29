@@ -29,7 +29,7 @@ from binance_market_data_recorder.spool.format import (
     decode_envelope,
 )
 from binance_market_data_recorder.spool.stream import StreamSpool
-from binance_market_data_recorder.spool.writer import RotationPolicy
+from binance_market_data_recorder.spool.writer import RawChunkWriter, RotationPolicy
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
 
@@ -72,9 +72,24 @@ def make_stream(
     opener: Any,
     stop: asyncio.Event,
     planned_rotation_seconds: float = 60,
+    rotate_before_reconnect: bool = False,
 ) -> tuple[SpotStreamCollector, Catalog]:
     layout = ensure_storage_layout(root)
     catalog = Catalog(layout.catalog)
+    rotated = False
+
+    class ControlledRotationWriter(RawChunkWriter):
+        def should_rotate(self, *, now_monotonic: float | None = None) -> bool:
+            nonlocal rotated
+            # Control only the writer's rotation clock, leaving the event loop,
+            # receive times, real append/seal and reconnect protocol untouched.
+            if now_monotonic is None:
+                now_monotonic = self._opened_monotonic
+                if rotate_before_reconnect and self.record_count and not rotated:
+                    rotated = True
+                    now_monotonic = self._rotation_deadline_monotonic
+            return super().should_rotate(now_monotonic=now_monotonic)
+
     spool = StreamSpool(
         layout=layout,
         catalog=catalog,
@@ -87,6 +102,7 @@ def make_stream(
         rotation=RotationPolicy(seconds=60),
         durability_interval_seconds=0,
         max_frame_bytes=1024 * 1024,
+        writer_factory=ControlledRotationWriter,
     )
     collector = SpotStreamCollector(
         stream=SpotStream.DIFF_DEPTH,
@@ -141,6 +157,69 @@ def depth(first: int, last: int) -> bytes:
     ).encode()
 
 
+def assert_reconnect_layout(
+    root: Path,
+    *,
+    old_payload: bytes,
+    new_payload: bytes,
+    reason: str,
+    old_flags: set[str],
+    rotated: bool,
+) -> None:
+    captured = sealed_envelopes(root)
+    assert [item.raw_payload for item in captured] == [old_payload, new_payload]
+    old, new = captured
+    assert set(old.capture_flags) == old_flags
+    assert new.capture_flags == ("sequence_gap",)
+    assert old.connection_id != new.connection_id
+
+    documents = manifests(root)
+    data = [d for d in documents if d["record_count"] > 0]
+    markers = [d for d in documents if d["record_count"] == 0]
+    assert len(data) == 2
+    assert len(markers) == 1 + int(rotated)
+    assert len(documents) == len(data) + len(markers)
+    assert all(d["record_count"] == 1 for d in data)
+    old_data = next(d for d in data if d["connection_ids"] == [old.connection_id])
+    new_data = next(d for d in data if d["connection_ids"] == [new.connection_id])
+    assert set(old_data["capture_flags"]) == old_flags | (set() if rotated else {"reconnect_gap"})
+    assert old_data["complete"] is rotated
+    assert old_data["gap"] is not rotated
+    assert new_data["capture_flags"] == ["sequence_gap"]
+    assert new_data["complete"] is False and new_data["gap"] is True
+    assert all(
+        d["capture_flags"] == ["reconnect_gap"]
+        and d["connection_ids"] == []
+        and d["complete"] is False
+        and d["gap"] is True
+        for d in markers
+    )
+    assert len([d for d in markers if d["created_at_utc_ns"] < old_data["created_at_utc_ns"]]) == 1
+    assert len(
+        [
+            d
+            for d in markers
+            if old_data["created_at_utc_ns"]
+            < d["created_at_utc_ns"]
+            < new_data["created_at_utc_ns"]
+        ]
+    ) == int(rotated)
+
+    with Catalog(root / "state/catalog.sqlite", read_only=True) as catalog:
+        started_events = catalog.operational_events(event_type="STREAM_DISCONTINUITY_STARTED")
+        completed_events = catalog.operational_events(event_type="STREAM_DISCONTINUITY_COMPLETED")
+    assert len(started_events) == len(completed_events) == 1
+    started = cast(dict[str, Any], started_events[0]["evidence"])
+    completed = cast(dict[str, Any], completed_events[0]["evidence"])
+    assert started["reason"] == completed["reason"] == reason
+    assert started["original_connection_id"] == old.connection_id
+    assert completed["new_connection_id"] == new.connection_id
+    assert completed["gap_id"] == started["gap_id"]
+    assert completed["new_generation"] == started["original_generation"] + 1
+    assert completed["raw_gap_marker"] == "sequence_gap"
+    assert completed["historical_continuity_restored"] is False
+
+
 def test_duplicates_and_out_of_order_messages_are_all_written(tmp_path: Path) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
@@ -180,8 +259,14 @@ def test_duplicates_and_out_of_order_messages_are_all_written(tmp_path: Path) ->
     ],
     ids=["tcp-reset", "server-close"],
 )
+@pytest.mark.parametrize(
+    "rotate_before_reconnect", [False, True], ids=["active-tail", "rotated-tail"]
+)
 def test_unexpected_disconnect_reconnects_with_a_new_connection_id(
-    tmp_path: Path, disconnect_error: Exception, caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+    disconnect_error: Exception,
+    caplog: pytest.LogCaptureFixture,
+    rotate_before_reconnect: bool,
 ) -> None:
     async def exercise() -> None:
         stop = asyncio.Event()
@@ -192,12 +277,15 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(
             nonlocal attempts
             attempts += 1
             socket = ScriptedWebSocket(
-                [depth(attempts, attempts)], stop if attempts == 2 else None,
+                [depth(attempts, attempts)],
+                stop if attempts == 2 else None,
                 disconnect_error=disconnect_error,
             )
             yield socket
 
-        collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
+        collector, catalog = make_stream(
+            tmp_path, opener=opener, stop=stop, rotate_before_reconnect=rotate_before_reconnect
+        )
         try:
             # DIFF_DEPTH retires its capture session at a reconnect boundary;
             # the outer collector restarts the session (second run() call).
@@ -209,7 +297,8 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(
 
     asyncio.run(exercise())
     record = next(
-        r for r in caplog.records
+        r
+        for r in caplog.records
         if getattr(r, "structured_event", None) == "spot_websocket_disconnected"
     )
     fields = cast(dict[str, Any], getattr(record, "structured_fields", None))
@@ -222,20 +311,14 @@ def test_unexpected_disconnect_reconnects_with_a_new_connection_id(
     else:
         assert fields["close_received_code"] is None
         assert fields["os_errno"] == 104
-    documents = manifests(tmp_path)
-    connection_ids = {
-        connection_id
-        for document in documents
-        for connection_id in document["connection_ids"]
-    }
-    assert sum(int(document["record_count"]) for document in documents) == 2
-    assert len(connection_ids) == 2
-    assert len(documents) == 3  # One initial boundary plus two capture chunks.
-    assert all(document["complete"] is False for document in documents)
-    assert all(document["gap"] is True for document in documents)
-    assert "reconnect_gap" in documents[0]["capture_flags"]
-    assert "reconnect_gap" in documents[1]["capture_flags"]
-    assert "sequence_gap" in documents[2]["capture_flags"]
+    assert_reconnect_layout(
+        tmp_path,
+        old_payload=depth(1, 1),
+        new_payload=depth(2, 2),
+        reason="unexpected_disconnect",
+        old_flags=set(),
+        rotated=rotate_before_reconnect,
+    )
 
 
 def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
@@ -263,7 +346,8 @@ def test_dns_failure_backs_off_then_reconnects_without_losing_raw(
 
     asyncio.run(exercise())
     record = next(
-        r for r in caplog.records
+        r
+        for r in caplog.records
         if getattr(r, "structured_event", None) == "spot_websocket_disconnected"
     )
     fields = cast(dict[str, Any], getattr(record, "structured_fields", None))
@@ -339,21 +423,24 @@ def test_planned_rotation_replaces_connection_before_24_hours(tmp_path: Path) ->
             ]
             assert len(started) == 1
             assert cast(dict[str, Any], started[0]["evidence"])["reason"] == "planned_rotation"
-            assert (
-                cast(dict[str, Any], started[0]["evidence"])["boundary_frame_persisted"]
-                is False
-            )
+            assert cast(dict[str, Any], started[0]["evidence"])["boundary_frame_persisted"] is False
         finally:
             catalog.close()
 
     asyncio.run(exercise())
 
 
-def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "rotate_before_reconnect", [False, True], ids=["active-tail", "rotated-tail"]
+)
+def test_server_shutdown_frame_is_persisted_before_reconnect(
+    tmp_path: Path, rotate_before_reconnect: bool
+) -> None:
+    shutdown = b'{"e":"serverShutdown","E":1770123456789}'
+
     async def exercise() -> None:
         stop = asyncio.Event()
         attempts = 0
-        shutdown = b'{"e":"serverShutdown","E":1770123456789}'
 
         @asynccontextmanager
         async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
@@ -366,7 +453,9 @@ def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> 
             )
             yield socket
 
-        collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
+        collector, catalog = make_stream(
+            tmp_path, opener=opener, stop=stop, rotate_before_reconnect=rotate_before_reconnect
+        )
         try:
             # DIFF_DEPTH retires its capture session at a reconnect boundary.
             await asyncio.wait_for(collector.run(stop), timeout=3)
@@ -376,12 +465,11 @@ def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> 
         assert attempts == 2
 
     asyncio.run(exercise())
-    captured = sealed_envelopes(tmp_path)
-    assert len(captured) == 2
-    assert captured[0].capture_flags == ("server_shutdown",)
-    documents = manifests(tmp_path)
-    assert len(documents) == 3
-    assert all(document["complete"] is False for document in documents)
-    assert "reconnect_gap" in documents[0]["capture_flags"]
-    assert "reconnect_gap" in documents[1]["capture_flags"]
-    assert "sequence_gap" in documents[2]["capture_flags"]
+    assert_reconnect_layout(
+        tmp_path,
+        old_payload=shutdown,
+        new_payload=depth(2, 2),
+        reason="server_shutdown",
+        old_flags={"server_shutdown"},
+        rotated=rotate_before_reconnect,
+    )

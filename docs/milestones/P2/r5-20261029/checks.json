@@ -1,0 +1,51 @@
+{
+  "schema_version": "p2-r5-test-correction-checks.v1",
+  "base_commit": "2b2b7b5",
+  "runtime_unchanged_since": "13602c81922b0943562da49fa243e9236cf3d5f5",
+  "original_failure_evidence": "../review-shutdown-rotation.json",
+  "checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/test_spot_stream_collector.py tests/integration/test_reconnect_boundary_integrity.py tests/integration/test_capture_startup_boundary.py --tb=short",
+      "result": "passed",
+      "tests": 87
+    },
+    {
+      "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P2/reproduce_shutdown_rotation.py",
+      "result": "passed",
+      "cases": 2,
+      "manifest_counts": [
+        3,
+        4
+      ],
+      "evidence": "shutdown-layouts.json"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check .",
+      "result": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m mypy",
+      "result": "passed",
+      "files": 343
+    },
+    {
+      "name": "local Markdown file targets",
+      "result": "passed",
+      "targets": 149
+    },
+    {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "ci": "pending final correction commit",
+  "independent_r5_review": "pending",
+  "not_run": [
+    "No repeated R1/R4 or accepted source-selection history audit",
+    "No VPS measurement, public-market probe, production run, merge or branch cleanup"
+  ]
+}

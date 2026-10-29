@@ -25,6 +25,11 @@
   intact, as allowed by ADR-0027. Fix deterministic timing and semantic assertions;
   retain payload/connection/gap checks and rerun final CI. See [review](milestones/P2/review-20261029.md).
   This is a test reliability issue, not evidence of production data loss.
+- The R5 correction candidate controls only the test writer's rotation predicate and
+  covers both layouts for shutdown, TCP reset and server close. Exact bytes/order,
+  connection/marker layout, flags, completeness and Catalog gap identity remain asserted.
+  87 affected checks and both shutdown cases pass. Final correction CI and independent
+  review remain; production code/protocol and historical failure evidence are unchanged.
 - R1/R4 and the initial-release implementation stay accepted. P2 remains NOT ACCEPTED
   pending R5; PR #88 stays Draft. P3/production have not started. Historical unapproved/
   unsent and mandatory-official-reply statements below describe earlier states.

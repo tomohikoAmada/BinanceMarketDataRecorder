@@ -1,0 +1,79 @@
+{
+  "cases": [
+    {
+      "case": "no_rotation",
+      "test_passed": true,
+      "assertion_failure": null,
+      "payloads_equal": true,
+      "raw_records": 2,
+      "manifests": [
+        {
+          "records": 0,
+          "flags": [
+            "reconnect_gap"
+          ],
+          "complete": false,
+          "gap": true
+        },
+        {
+          "records": 1,
+          "flags": [
+            "reconnect_gap",
+            "server_shutdown"
+          ],
+          "complete": false,
+          "gap": true
+        },
+        {
+          "records": 1,
+          "flags": [
+            "sequence_gap"
+          ],
+          "complete": false,
+          "gap": true
+        }
+      ]
+    },
+    {
+      "case": "rotate_shutdown_chunk",
+      "test_passed": true,
+      "assertion_failure": null,
+      "payloads_equal": true,
+      "raw_records": 2,
+      "manifests": [
+        {
+          "records": 0,
+          "flags": [
+            "reconnect_gap"
+          ],
+          "complete": false,
+          "gap": true
+        },
+        {
+          "records": 1,
+          "flags": [
+            "server_shutdown"
+          ],
+          "complete": true,
+          "gap": false
+        },
+        {
+          "records": 0,
+          "flags": [
+            "reconnect_gap"
+          ],
+          "complete": false,
+          "gap": true
+        },
+        {
+          "records": 1,
+          "flags": [
+            "sequence_gap"
+          ],
+          "complete": false,
+          "gap": true
+        }
+      ]
+    }
+  ]
+}
