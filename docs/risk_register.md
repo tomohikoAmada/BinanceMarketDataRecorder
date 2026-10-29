@@ -9,10 +9,15 @@
 - [Binance issue #585](https://github.com/binance/binance-connector-python/issues/585)
   is submitted with owner authorization. A future official answer is separate follow-up.
   Missing this series can limit future research; exact later recovery is not promised.
-- P2 still needs the explicit source/configuration change, prospective coverage boundary,
-  revised budget, targeted verification and final independent review. Until implemented,
-  the old failed polling work remains; this decision alone establishes no CPU/VPS gain.
-  Do not silently drop other sources, rewrite old gaps or call the omission complete.
+- The [implementation candidate](milestones/P2/initial-production-20261029/README.md)
+  explicitly selects `capture_dated_premium_klines=false` before admission/scheduling.
+  New dated products follow the same rule. The report discloses 120 uncaptured sources
+  with unknown applicability, a new-instance effective boundary and unchanged historical
+  evidence. The retained-directory nominal budget becomes765.328366/min; WS and other
+  source descriptions are unchanged. This scope reduction establishes no CPU/VPS gain.
+- Ten new regressions and71 affected checks pass; final code CI and independent review
+  remain required. Generic/old configuration defaults still capture the full target.
+  Do not apply the exception to an already-running window or silently drop other sources.
 - R1/R4 stay accepted. PR #88 remains Draft; P3/production have not started. Historical
   unapproved/unsent and mandatory-official-reply statements below describe earlier states.
 

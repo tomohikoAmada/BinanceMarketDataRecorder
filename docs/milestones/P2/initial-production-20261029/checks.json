@@ -1,0 +1,45 @@
+{
+  "schema_version": "p2-initial-production-checks.v1",
+  "base_commit": "44fa019",
+  "runtime_ci": "pending",
+  "independent_p2_review": "pending",
+  "checks": [
+    {
+      "name": "Focused source selection, discovery, scheduler, old Raw and configuration regressions",
+      "result": "passed",
+      "tests": 71,
+      "new_regressions": 10,
+      "command": ".venv/bin/python -m pytest -q tests/unit/test_p2_coverage.py tests/unit/test_p2_premium_selection.py tests/integration/test_p2_capture.py tests/integration/test_p2_premium_selection.py tests/integration/test_p2_daily_pipeline.py tests/unit/test_config.py --tb=short"
+    },
+    {
+      "name": "ruff check",
+      "result": "passed",
+      "command": ".venv/bin/python -m ruff check ."
+    },
+    {
+      "name": "mypy",
+      "result": "passed",
+      "files": 343,
+      "command": ".venv/bin/python -m mypy"
+    },
+    {
+      "name": "M0 contracts",
+      "result": "passed",
+      "command": ".venv/bin/python tests/verify_m0_contracts.py"
+    },
+    {
+      "name": "local Markdown file targets",
+      "result": "passed",
+      "links": 151
+    },
+    {
+      "name": "Git whitespace",
+      "result": "passed",
+      "command": "git diff --check"
+    }
+  ],
+  "not_run": [
+    "No repeated R1 historical audit or closed R4 reproductions",
+    "No live public probes, VPS measurement, production run, merge or deployment"
+  ]
+}

@@ -22,7 +22,14 @@ from websockets.exceptions import InvalidStatus
 
 from ..binance.products import TERMINAL_STATUSES, ProductDirectory
 from ..binance.public_rest import PublicRestClient, RestObservation, capture_public_response
-from ..binance.public_sources import Source, bar_period_seconds, directory_source, source_plan
+from ..binance.public_sources import (
+    Source,
+    bar_period_seconds,
+    directory_source,
+    nominal_derivative_weight_per_minute,
+    source_plan,
+    source_selection_report,
+)
 from ..binance.public_websocket import (
     DepthSequenceObserver,
     StreamGroup,
@@ -249,6 +256,8 @@ class SelectedAssetCapture:
         )
         self.layout, self.catalog = layout, catalog
         self.coverage = config.coverage
+        self.selection_started_utc_ns = time.time_ns()
+        self._source_selection = source_selection_report((), self.coverage, ())
         self.directory = ProductDirectory(self.coverage)
         self.clients = clients or {
             v: PublicRestClient(v, config.proxy_policy()) for v in ("spot", "usdm", "coinm")
@@ -486,17 +495,7 @@ class SelectedAssetCapture:
                     self.admission[key] = "NOT_ADMITTED_STREAM_BUDGET"
                     continue
                 rest_limit = self.coverage.max_steady_derivative_weight_per_minute
-                steady = (
-                    sum(
-                        s.weight * 60 / s.cadence_seconds
-                        for s in plan
-                        if s.transport == "rest"
-                        and s.venue_market != "spot"
-                        and s.cadence_seconds > 0
-                        and s.lifecycle != "after_delivery"
-                    )
-                    + 120 / self.coverage.directory_interval_seconds
-                )
+                steady = nominal_derivative_weight_per_minute(plan, self.coverage)
                 if rest_limit is not None and steady > rest_limit:
                     self.admission[key] = "NOT_ADMITTED_REST_BUDGET"
                     continue
@@ -509,8 +508,10 @@ class SelectedAssetCapture:
                     self.collectors[key].run(self.product_stops[key]),
                     name=f"collector:{key.market}:{key.symbol}",
                 )
-            current_plan = source_plan(
-                tuple(c.product for c in self.collectors.values()), self.coverage
+            admitted_products = tuple(c.product for c in self.collectors.values())
+            current_plan = source_plan(admitted_products, self.coverage)
+            self._source_selection = source_selection_report(
+                admitted_products, self.coverage, current_plan
             )
             for source in current_plan:
                 self.add_source(source)
@@ -721,6 +722,11 @@ class SelectedAssetCapture:
                 for k, p in sorted(self.directory.products.items())
             ],
             "not_offered": self.directory.not_offered(),
+            "source_selection": {
+                **self._source_selection,
+                "effective_from_utc_ns": self.selection_started_utc_ns,
+                "collector_instance_id": self.instance_id,
+            },
             "sources": [s.public_dict(time.time_ns()) for s in self.sources.values()]
             if include_sources
             else [],

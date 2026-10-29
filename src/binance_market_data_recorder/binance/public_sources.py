@@ -458,6 +458,12 @@ def product_sources(product: Product, config: CoverageConfig) -> tuple[Source, .
             priority="bar_repair",
         )
         for price_type in ("mark", "index", "premium"):
+            if (
+                price_type == "premium"
+                and market in {"um_delivery", "cm_delivery"}
+                and not config.capture_dated_premium_klines
+            ):
+                continue
             scope = pair_scope if price_type == "index" else symbol
             parameter = "pair" if price_type == "index" else "symbol"
             if coin and price_type in {"mark", "index"}:
@@ -589,3 +595,62 @@ def source_plan(products: tuple[Product, ...], config: CoverageConfig) -> tuple[
             source = replace(old, products=tuple(sorted(set(old.products + source.products))))
         unique[source.key] = source
     return tuple(sorted(unique.values(), key=lambda s: s.key))
+
+
+def nominal_derivative_weight_per_minute(
+    sources: tuple[Source, ...], config: CoverageConfig
+) -> float:
+    """Selected steady polls plus both derivative directories; seeds/retries are extra."""
+    return (
+        sum(
+            s.weight * 60 / s.cadence_seconds
+            for s in sources
+            if s.transport == "rest"
+            and s.venue_market != "spot"
+            and s.cadence_seconds > 0
+            and s.lifecycle != "after_delivery"
+        )
+        + 120 / config.directory_interval_seconds
+    )
+
+
+def source_selection_report(
+    products: tuple[Product, ...], config: CoverageConfig, selected: tuple[Source, ...]
+) -> dict[str, object]:
+    """Describe the admitted product plan without regenerating its complete source set."""
+    uncaptured = [
+        {
+            "family": "D23",
+            "market": p.key.market,
+            "symbol": p.key.symbol,
+            "stream": "premium_price_bars_" + interval,
+            "transport": "rest",
+            "interval": interval,
+            "enabled": False,
+            "status": "OWNER_APPROVED_UNCAPTURED",
+            "official_applicability": "UNKNOWN",
+            "reason": "ADR-0055 initial-release dated premium omission",
+            "continuity_eligible": False,
+        }
+        for p in sorted(products, key=lambda p: p.key)
+        if not config.capture_dated_premium_klines
+        and p.key.market in {"um_delivery", "cm_delivery"}
+        for interval in config.futures_intervals
+    ]
+    return {
+        "policy": "complete_target"
+        if config.capture_dated_premium_klines
+        else "initial_production_adr_0055",
+        "scope": "admitted_products and configured intervals; directories counted separately",
+        "full_target_source_count": len(selected) + len(uncaptured),
+        "selected_source_count": len(selected),
+        "directory_source_count": 3,
+        "selected_ws_streams": sum(s.transport == "ws" for s in selected),
+        "selected_rest_sources": sum(s.transport == "rest" for s in selected),
+        "uncaptured_source_count": len(uncaptured),
+        "uncaptured_sources": uncaptured,
+        "nominal_steady_derivative_weight_per_minute": nominal_derivative_weight_per_minute(
+            selected, config
+        ),
+        "budget_excludes": "startup seeds, retries, delivery publication and other IP users",
+    }

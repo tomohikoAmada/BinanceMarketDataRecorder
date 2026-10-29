@@ -102,7 +102,20 @@ applicability, which remains unknown. No substitution or successful-coverage cla
 The frozen future eligible source set excludes this item from its declared start;
 old Raw, failures, gaps and qualification denominators remain unchanged. Required
 and enabled sources still meet 99.5%, and saved-data correctness is unchanged.
-Source/configuration, budget and reporting changes remain P2 implementation work.
+The [P2 candidate](milestones/P2/initial-production-20261029/README.md) implements this
+selection with explicit `capture_dated_premium_klines=false`; the default true retains
+the full target for existing configurations. `selected-asset-coverage.v1.source_selection`
+adds counts scoped to admitted products and configured intervals (directories counted
+separately), a nominal
+steady budget and a per-product/interval uncaptured list. Each omission has
+`status=OWNER_APPROVED_UNCAPTURED`, `official_applicability=UNKNOWN`,
+`continuity_eligible=false`. The selected count includes declared lifecycle sources,
+including delivery publication waiting for expiry, rather than only currently active polls.
+The report's `effective_from_utc_ns` and `collector_instance_id`, configuration and source
+plan are saved in existing PRODUCT_DIRECTORY_OBSERVED events. A configuration change
+starts a new instance/window; the implementation does not remove already failed sources
+from old windows. Unadmitted products retain their separate admission status. This is
+an additive report change, not a Raw/reader format change or a continuity qualification.
 The official clarification is separate follow-up, not a first-release acceptance gate.
 
 ## P1 capture and progress contract (2026-10-27)

@@ -1,4 +1,23 @@
-# Current P2 owner decision and team handoff — 2026-10-29
+# Current P2 initial-release implementation candidate — 2026-10-29
+
+The [ADR-0055 candidate](milestones/P2/initial-production-20261029/README.md) implements
+the approved dated-premium omission before source creation/admission/scheduling. Its
+explicit configuration sets capture_dated_premium_klines=false; old/default configurations
+retain the full target. Perpetual premium, dated mark/index and all other source descriptions
+are unchanged. New dated identities use the same boundary. No production operation occurred.
+
+Coverage now declares uncaptured/UNKNOWN products and intervals, actual counts and the
+same nominal budget used by admission; the new-instance effective UTC/identity and frozen
+configuration are retained in existing directory events. Old failed Raw and old directory
+evidence remain readable and unchanged. Retained directories produce4,661 selected sources
+plus3 directories,2,154 WS streams and765.328366/min nominal derivative weight. This scope
+change is not a CPU or VPS capacity measurement. R1/R4 acceptance remains unchanged.
+
+Ten new regressions and71 affected checks pass. Final runtime CI and independent P2 review
+remain; keep Draft PR #88 and its branch. P3 and production have not started. Official
+applicability stays UNKNOWN with issue#585 as future follow-up, not a first-release gate.
+
+## Prior P2 owner decision and team handoff — 2026-10-29 (retained)
 
 The owner approved an initial release without **only USD-M/COIN-M dated premium-index
 klines**. Perpetual premium continues and all other selected scope stays unchanged.

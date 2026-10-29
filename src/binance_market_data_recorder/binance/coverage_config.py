@@ -41,6 +41,9 @@ class CoverageConfig(BaseModel):
     # Full native interval sets are the default. Explicit subsets disclose a reduction.
     spot_intervals: tuple[str, ...] = SPOT_INTERVALS
     futures_intervals: tuple[str, ...] = FUTURES_INTERVALS
+    # False explicitly selects the owner-approved ADR-0055 initial-release omission.
+    # Keep the complete target for existing configurations unless they opt in.
+    capture_dated_premium_klines: bool = True
     recent_trades_compact: bool = True
     recent_trades_interval_seconds: float = Field(default=1.0, ge=1)
     recent_trades_intervals: dict[str, float] = Field(default_factory=dict)

@@ -1,6 +1,7 @@
 # ADR-0055: Initial-production exception for dated premium-index bars
 
-Status: owner-approved on 2026-10-29; implementation and validation pending in P2.
+Status: owner-approved on 2026-10-29; implementation and focused validation delivered,
+final code CI and independent P2 review pending.
 
 ## Decision
 
@@ -43,6 +44,17 @@ continuity for the frozen eligible source set and saved-data correctness are unc
   final code with affected checks and CI, then obtain the final independent P2 review.
 
 ## Official clarification and acceptance
+
+The [implementation candidate](../milestones/P2/initial-production-20261029/README.md)
+uses the existing CoverageConfig field `capture_dated_premium_klines` (default true).
+The explicit initial-release configuration selects false; default/old configurations
+retain their complete target. The condition applies during source generation, before
+admission or scheduling. The additive `source_selection` coverage report discloses the
+uncaptured products/intervals, unknown official applicability, selected/full-target counts
+and the same nominal budget used by admission. Its effective UTC start and collector
+instance are recorded with the configuration in existing directory observations. It
+does not mutate old observations or qualify continuity. See the candidate for validation
+and the final review gate.
 
 The owner separately authorized submitting the prepared clarification. It was posted
 as [binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585)
