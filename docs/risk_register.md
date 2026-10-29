@@ -1,5 +1,35 @@
 # Risk Register
 
+## Current P2 scope exception — 2026-10-29
+
+- The owner approved an initial-release omission of only U/C dated premium-index bars;
+  perpetual premium and all other selected scope remain. Official applicability stays
+  unknown and the history is preserved. [ADR-0055](adr/0055-initial-production-dated-premium-exception.md)
+  supersedes earlier notes that made an official answer a first-release acceptance gate.
+- [Binance issue #585](https://github.com/binance/binance-connector-python/issues/585)
+  is submitted with owner authorization. A future official answer is separate follow-up.
+  Missing this series can limit future research; exact later recovery is not promised.
+- The [implementation candidate](milestones/P2/initial-production-20261029/README.md)
+  explicitly selects `capture_dated_premium_klines=false` before admission/scheduling.
+  New dated products follow the same rule. The report discloses 120 uncaptured sources
+  with unknown applicability, a new-instance effective boundary and unchanged historical
+  evidence. The retained-directory nominal budget becomes 765.328366/min; WS and other
+  source descriptions are unchanged. This scope reduction establishes no CPU/VPS gain.
+- Independent review accepts the source selection/reporting/historical-read boundary;
+  71 affected checks and exact 13602c8 dual-platform CI/logs are verified. Generic/old
+  configuration defaults still capture the full target.
+  Do not apply the exception to an already-running window or silently drop other sources.
+- **P2-R5 CLOSED:** independent review accepts controlled writer timing and strict
+  semantic assertions for both legal shutdown/reset/close layouts. 87 affected checks
+  and both shutdown cases pass independently; 1c1785c and final HEAD 464ed56 dual-platform
+  CI/logs are verified. Exact payload/order, connection/marker layout, completeness
+  and Catalog gap assertions remain; production code and old failure evidence are
+  unchanged. See [closure](milestones/P2/review-20261029.md#r5-independent-closure).
+- R1/R4 and the initial-release implementation stay accepted. P2 is ACCEPTED with no new
+  blocking correction. P3/production have not started, and capacity/99.5% qualification
+  remain future work. Historical unapproved/unsent and mandatory-official-reply statements
+  below describe earlier states.
+
 ## P0 current risks — 2026-10-27
 
 - [PR #87 review](milestones/P0/review-20261026.md#pr-87-复审2026-10-26) accepts
@@ -215,3 +245,141 @@ reference/changelog conflict, and forbids latest/largest assumptions in
 completeness, deduplication and derived totals. Exchange selection semantics
 remain unresolved; no implementation is authorized to guess them. This does
 not invalidate original Raw content/count checks and requires no recapture.
+
+## P2 current source and resource blockers — 2026-10-27
+
+Independent review updated 2026-10-28; see [review](milestones/P2/review-20261028.md).
+
+- **P2-R4 OPEN (new, high):** selected-asset REST polling ignores retained
+  Retry-After and always blocks the pool for 120 seconds. Six offline cases
+  (Spot/UM/CM × 429/418, server asks 600 seconds) all resume too early. Reuse the
+  existing retry-boundary parser, preserve response evidence and shared UM/CM
+  blocking, and add focused regressions before P2 acceptance.
+- **P2-R1 OPEN:** BTC/ETH current full discovery includes 19 derivative products.
+  D06 1s × request weight 5 requires 5,700/min; full nominal steady requests are
+  ~5,829/min, exceeding Recorder's 1,200/min reserved share and the official
+  2,400/min combined UM/CM pool. The limiter waits honestly; no silent shedding
+  or 99.5% credit. On October28 the owner selected option one: explicit per-product
+  polling plus a separate official daily-file supplement. The direction is approved;
+  R1 remains open for product/date/field verification, measured cadence allocation
+  and implementation, not another direction decision. See the
+  [updated study](milestones/P2/d06-budget-research-20261028.md).
+  Uniform 6s is not automatically accepted and the current default is unchanged.
+  Bulk data must not fabricate receipt times or live credit; actual target coverage,
+  unavailable fields and possible sampling loss must be measured and disclosed.
+- **P2-R2 OPEN:** C dated premiumIndexKlines returns -1121 for listed tested dated
+  contracts on both documented DAPI/FAPI transports, while perpetual samples
+  succeed; the catalog's BTCUSD example also fails. Current documentation does
+  not establish a universal dated applicability rule. Preserve these failures;
+  stop semantic inference for that source, do not replace it with a perpetual
+  series or retrospectively remove it from qualification. See fixtures and
+  [P2 result](milestones/P2/README.md).
+- **P2-R3 disclosed:** U dated ticker.ps in the sample equals the dated symbol,
+  while depth/bookTicker/RPI ps is the directory pair. Preserve actual payloads;
+  directory identity is authoritative. Do not generalize one stream's ps field.
+- Full-interval short capture configured 197 native-bar streams but observed 130.
+  Missing observations and sparse streams remain unproven, not passed. P3 still
+  owns durable source intervals/new-file verification/background qualification;
+  no P4+ production run has started. P0/P1 historical evidence is unchanged.
+
+## P2 correction candidate — 2026-10-28 (retained)
+
+- P2-R4: fixed in the correction candidate using existing numeric/date/ban/fallback
+  Retry-After parsing and actual remaining time since receive.21 regressions and
+  the original6 cases pass. Await independent re-review; historical failures retained.
+- P2-R1: measured2s/3s/30s configuration and separate selected-daily-trades importer
+  delivered. Nominal778.687/min versus Recorder1200/min, but initial/retry work is extra.
+  Ideal daily simulation loses1.297% of supplied rows to finite live windows; it is not
+  live completeness. Two CM next-quarter files404 on the selected date, native ID holes,
+  missing isRPITrade/live timing and source revisions remain explicit. No live gaps erased.
+- P2-R2 remains OPEN and is broader than the first sample: all four tested UM dated
+  and four CM dated premium symbols return400/-1121; CM perpetual controls succeed.
+  Current official catalog still specifies symbol without a delivery applicability rule.
+  No substitute or permanent-not-offered inference. Keep failures and their retry demand
+  in the source plan. Up to120 failing interval sources retry at60s; nominal costs must
+  not hide this extra demand. See the [actual recheck](milestones/P2/closeout-20261028/premium-applicability.json).
+
+## P2 independent re-review of 195762c — 2026-10-28 (retained)
+
+- **P2-R1 CLOSED for the measured implementation:** fixed per-product cadences, nominal
+  admission budget and independent daily supplement pass. 17 retained ZIPs/window results,
+  8 imports/123,773 rows and 147 Raw observations independently match their evidence.
+  Missing files/fields, file ID holes, finite polling windows and non-live acquisition times
+  remain disclosed. This does not qualify full-feature capacity or 99.5% live continuity.
+- **P2-R4 OPEN (high, ordering remains):** Retry-After duration/date/ban handling passes
+  21 regressions and the original 6 cases. However, poll_once waits for persistence before
+  blocking the pool. All 6 new Spot→Spot/UM→CM/CM→UM cases issue a newly admitted request
+  after a known 429/418 while persistence waits. Set the existing cooldown before that await;
+  retain failure records, storage-error propagation and normal stop. No new limiter needed.
+- **P2-R2 OPEN:** U/C dated-premium applicability is still not established. Retain all
+  8 failing product observations and their source/retry costs; no permanent-not-offered
+  inference or substitute prices.
+- Exact-commit dual-platform CI passed, but does not cover the new R4 boundary. P2 remains
+  NOT ACCEPTED; PR #88 stays Draft, main/working branches are preserved, P3 has not begun.
+  See [review and follow-up](milestones/P2/review-20261028.md#review-195762c).
+
+### P2-R4 admission-order correction candidate (2026-10-28)
+
+The original duration correction and its review evidence remain unchanged. The new
+candidate moves the existing rejection gate before the first persistence await, so
+storage waiting cannot leave a known rejection's shared pool open to new admission.
+Both six-case reproductions now pass; eight new regressions fail on the prior runtime
+and pass after correction. Failure bytes still persist, storage errors propagate and
+unrelated pools remain independent. Await independent re-review; R2 stays OPEN.
+No new network evidence, cadence change, production operation or R1 audit was needed.
+
+Four malformed Retry-After regressions additionally verify that invalid dates or
+non-finite numeric directives use the existing missing-header/ban fallback before
+persistence, with the original failure header retained. Without this guard, moving
+parsing earlier could skip the failure record. The queued73ec0c8 CI was superseded
+by the final correction; no old green run is credited to the new source.
+
+## P2 independent re-review of f9aaeee — 2026-10-28 (current)
+
+- **P2-R4 CLOSED:** the existing cooldown now precedes the persistence await. Both
+  six-case reproductions, 33 cooldown tests and 42 related tests pass independently;
+  one online smoke is skipped. Malformed headers retain their original evidence and
+  use existing fallback/ban semantics; storage errors propagate. Exact-commit dual-platform
+  CI is verified. No new blocking issue was found in this correction.
+- **P2-R1 CLOSED for the measured implementation:** prior acceptance and its limits
+  remain unchanged; no cadence/import change or repeated history audit.
+- **P2-R2 OPEN:** no new evidence establishes U/C dated-premium applicability. Preserve
+  the eight failed product observations, source/retry costs and UNKNOWN coverage.
+  Do not infer permanent unavailability from -1121 or substitute another price series.
+- Overall P2 remains NOT ACCEPTED. Keep Draft PR #88 and its branch until R2 and final
+  acceptance close; main unchanged, P3 not started, no deployment.
+  See [independent closure](milestones/P2/review-20261028.md#review-f9aaeee).
+
+## P2-R2 bounded follow-up — 2026-10-29
+
+**OPEN, official semantics required.** [New evidence](milestones/P2/r2-20261028/README.md)
+contains 14 native public HTTP requests: eight listed dated-symbol failures, four
+successful perpetual controls and two failed dated closed-range variants. Two fresh
+directory requests confirm all eight dated identities remain TRADING. Direct HTTP
+shows these failures also occur without SDK model decoding; it does not establish
+permanent exclusion. Current generated SDK parameters, integration notice and shared
+changelog do not resolve endpoint eligibility. A delivery-specific empty funding field
+on premiumIndex is not a premiumIndexKlines exclusion rule.
+
+The official-source stop condition applies to this implementation. Preserve UNKNOWN,
+the eight product failures and all 120 interval sources/retry costs. Do not substitute
+perpetual, mark, index or locally computed basis. An [official clarification draft](milestones/P2/r2-20261028/binance-clarification-draft.md)
+is ready but unsent; external submission needs explicit owner authorization. Once an
+official rule is available, implement its actual boundary and obtain final P2 review.
+R1/R4 stay accepted; no runtime or production change in this follow-up.
+
+## P2 independent evidence review of 066c2c3 — 2026-10-29 (current)
+
+The R2 evidence and clarification draft pass review; no new runtime change or blocking
+defect was found. R1/R4 remain closed. Current official endpoint sections still do not
+provide dated eligibility, so R2 and P2 remain OPEN/NOT ACCEPTED. The draft is unsent.
+
+Missing dated premium bars limit research that needs that official series; they do not
+make other captured market data invalid. The current 8 products × 15 intervals can spend
+up to 120 weight/min on repeated failures at the 60-second backoff cap. This is a source
+plan estimate, not a CPU or production measurement. Preserve UNKNOWN and failed evidence.
+
+A narrow, explicitly declared initial-production coverage exception is a possible owner
+scope choice, not a discovery that Binance never offers the data. It is described in the
+[review](milestones/P2/review-20261028.md#review-066c2c3) but is not approved or implemented.
+Do not waive acceptance, disable sources or send a public issue based on this note.

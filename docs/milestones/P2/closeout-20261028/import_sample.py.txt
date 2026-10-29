@@ -1,0 +1,20 @@
+from pathlib import Path
+from datetime import date
+import json,time
+from binance_market_data_recorder.backfill import HistoricalImporter
+from binance_market_data_recorder.backfill.daily_trades import build_daily_trade_plan,iter_daily_trade_facts
+from binance_market_data_recorder.domain.product import ProductKey
+root=Path('/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import')
+products=[ProductKey(m,s) for m,s in [('um_perpetual','BTCU'),('um_perpetual','ETHU'),('um_delivery','BTCUSDT_261225'),('um_delivery','ETHUSDT_261225'),('cm_perpetual','BTCUSD_PERP'),('cm_perpetual','ETHUSD_PERP'),('cm_delivery','BTCUSD_261225'),('cm_delivery','ETHUSD_261225'),('cm_delivery','BTCUSD_270326'),('cm_delivery','ETHUSD_270326')]]
+plan=build_daily_trade_plan(products,date(2026,10,26),date(2026,10,26))
+wall,cpu=time.monotonic(),time.process_time(); importer=HistoricalImporter(data_root=root)
+result=importer.run(plan)
+reads=[]
+for r in result['results']:
+    if r['normalized_path']:
+        facts=iter_daily_trade_facts(Path(r['normalized_path'])); first=next(facts,None); count=1 if first else 0
+        for fact in facts: count+=1
+        reads.append(dict(source_revision=r['source_revision'],rows=count,first_fact=first))
+result.update(wall_seconds=time.monotonic()-wall,cpu_seconds=time.process_time()-cpu,readbacks=reads,verification=importer.verify(),data_root=str(root))
+Path('docs/milestones/P2/closeout-20261028/daily-import-sample.json').write_text(json.dumps(result,indent=2)+'\n')
+print(result['verification'])

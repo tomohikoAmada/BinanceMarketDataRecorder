@@ -1,0 +1,147 @@
+{
+  "purpose": "Explain P2-R2 data importance and distinguish endpoint applicability from API-key/VIP access. No scope or runtime change.",
+  "sources": [
+    {
+      "url": "https://developers.binance.com/en/docs/llms.txt",
+      "retrieved_at_utc": "2026-10-29T03:12:57.548844+00:00",
+      "sha256": "b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482",
+      "bytes": 174964,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/llms.txt",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "Index was consulted first; locates native premium-index routes."
+    },
+    {
+      "name": "um-general",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md",
+      "retrieved_at_utc": "2026-10-29T03:13:52.026858+00:00",
+      "sha256": "7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65",
+      "bytes": 19261,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/um-general.md",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "NONE is public; MARKET_DATA is a separate security label requiring a key. The catalogue market-data category alone does not establish authentication."
+    },
+    {
+      "name": "cm-general",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/general-info.md",
+      "retrieved_at_utc": "2026-10-29T03:13:52.094065+00:00",
+      "sha256": "a1f5167589eb77e33a8e804c4e83fe1d5059c83ff1c38ed98f15bd0931b4a225",
+      "bytes": 18120,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/cm-general.md",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "Same security-label distinction as USD-M; some endpoints require keys, so evaluate this endpoint rather than every market-data API together."
+    },
+    {
+      "name": "um-errors",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/error-code.md",
+      "retrieved_at_utc": "2026-10-29T03:13:52.053160+00:00",
+      "sha256": "1e9600365347dfb8bf76faee4c7593de196c126154e17cea340ad76a621d6474",
+      "bytes": 19893,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/um-errors.md",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "-1121 is BAD_SYMBOL; -1002, -2014 and -2015 describe authorization/key problems. An error code alone does not establish permanent product exclusion."
+    },
+    {
+      "name": "cm-errors",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/error-code.md",
+      "retrieved_at_utc": "2026-10-29T03:13:51.942198+00:00",
+      "sha256": "89a36a402e170058e1d9235ca98cef206145c9b59b76411ec49d21c03f8b0a65",
+      "bytes": 14576,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/cm-errors.md",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "Same distinction between BAD_SYMBOL and authorization/key errors."
+    },
+    {
+      "name": "integration",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md",
+      "retrieved_at_utc": "2026-10-29T03:13:52.099904+00:00",
+      "sha256": "7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98",
+      "bytes": 12109,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/integration.md",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": true,
+      "conclusion": "C.3 extends the listed paths across UM/CM symbols; it does not explicitly say every dated contract has a premium-index series."
+    },
+    {
+      "name": "um-schema",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/1.0.0/schema.yaml",
+      "retrieved_at_utc": "2026-10-29T03:15:35.681913+00:00",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/um-schema.yaml",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": false,
+      "conclusion": "Empty download; excluded as semantic evidence. No OpenAPI security or applicability conclusion was derived."
+    },
+    {
+      "name": "cm-schema",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/1.0.0/schema.yaml",
+      "retrieved_at_utc": "2026-10-29T03:15:35.673279+00:00",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/cm-schema.yaml",
+      "representation": "downloaded bytes",
+      "usable_semantic_evidence": false,
+      "conclusion": "Empty download; excluded as semantic evidence. No OpenAPI security or applicability conclusion was derived."
+    },
+    {
+      "name": "coinm-sdk",
+      "url": "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py",
+      "retrieved_utc_bounds": [
+        "2026-10-29T03:15:35Z",
+        "2026-10-29T03:18:18Z"
+      ],
+      "representation": "GitHub connector decoded text, one terminal newline; not executed",
+      "bytes": 57475,
+      "sha256": "684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a",
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/sdk-0.py.txt",
+      "usable_semantic_evidence": true,
+      "conclusion": "premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility."
+    },
+    {
+      "name": "usdm-sdk",
+      "url": "https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py",
+      "retrieved_utc_bounds": [
+        "2026-10-29T03:15:35Z",
+        "2026-10-29T03:18:18Z"
+      ],
+      "representation": "GitHub connector decoded text, one terminal newline; not executed",
+      "bytes": 65093,
+      "sha256": "d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182",
+      "path": "/var/folders/cq/s7zfw8sj7mx9r_l_t34jsfh40000gn/T/bmdr-p2-premium-access-5gl4ap_t/sdk-1.py.txt",
+      "usable_semantic_evidence": true,
+      "conclusion": "premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility."
+    },
+    {
+      "name": "usdm-catalogue",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data",
+      "retrieved_utc_bounds": [
+        "2026-10-29T03:12:57Z",
+        "2026-10-29T03:19:14Z"
+      ],
+      "representation": "selected non-contiguous rendered excerpt; digest identifies only this excerpt, not HTTP bytes or the entire section",
+      "excerpt": "Premium index kline bars of a symbol.\nsymbol\ninterval\nstartTime\nendTime\nlimit\nExample: BTCUSDT",
+      "sha256": "da26bd6c88b633843afbe159847a2d33770d89f816536771e0ad98a4e1bb2b51",
+      "usable_semantic_evidence": true,
+      "conclusion": "Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header."
+    },
+    {
+      "name": "coinm-catalogue",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data",
+      "retrieved_utc_bounds": [
+        "2026-10-29T03:12:57Z",
+        "2026-10-29T03:19:14Z"
+      ],
+      "representation": "selected non-contiguous rendered excerpt; digest identifies only this excerpt, not HTTP bytes or the entire section",
+      "excerpt": "Premium index kline bars of a symbol.\nsymbol\ninterval\nstartTime\nendTime\nlimit\nExample: BTCUSD",
+      "sha256": "a850fd7fddd8d4ab6c2ba234ff5f490c1b0a37b0f09cb93bc63870695ef8236f",
+      "usable_semantic_evidence": true,
+      "conclusion": "Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header."
+    }
+  ],
+  "limits": "Schema download attempts returned zero bytes and were excluded. Existing eight-product observations remain historical. The new six public requests cover BTC only; no continuity, all-product eligibility or production claim."
+}

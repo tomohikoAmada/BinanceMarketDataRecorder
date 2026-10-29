@@ -1,0 +1,1401 @@
+{
+  "schema_version": "p2-daily-window-study.v1",
+  "assumptions": "1000 newest rows available instantly; UTC phase 0; no RTT/errors/publication delay; excludes day-start warmup. Does not prove live loss or 99.5%.",
+  "wall_seconds": 14.389931917015929,
+  "cpu_seconds": 14.372872000000001,
+  "products": [
+    {
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_261225",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_261225/BTCUSDT_261225-trades-2026-10-26.zip",
+      "checksum": "2d10dbbe335359868218eeb5ea4ceac69505c3a3ae9bbaa060d7a18924d38f6e  BTCUSDT_261225-trades-2026-10-26.zip",
+      "size": "108928",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:49Z",
+      "downloaded_at_utc": "2026-10-28T06:43:21Z",
+      "zip_sha256": "2d10dbbe335359868218eeb5ea4ceac69505c3a3ae9bbaa060d7a18924d38f6e",
+      "download_wall_seconds": 0.4719364170450717,
+      "analyzed": true,
+      "rows": 10106,
+      "first_id": 1299372,
+      "last_id": 1309613,
+      "id_gaps_in_file": 136,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800020000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1299372,
+        "price": "80875.5",
+        "qty": "0.001",
+        "quote_qty": "80.8755",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 87,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 132,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "BTCUSDT_270326",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_270326/BTCUSDT_270326-trades-2026-10-26.zip",
+      "checksum": "d8a8160e2ea3705f7c534f37dbf2b919bde7427615dbe40122ca1572de28d898  BTCUSDT_270326-trades-2026-10-26.zip",
+      "size": "38432",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:49Z",
+      "downloaded_at_utc": "2026-10-28T06:43:21Z",
+      "zip_sha256": "d8a8160e2ea3705f7c534f37dbf2b919bde7427615dbe40122ca1572de28d898",
+      "download_wall_seconds": 0.40626504202373326,
+      "analyzed": true,
+      "rows": 3362,
+      "first_id": 140869,
+      "last_id": 144243,
+      "id_gaps_in_file": 13,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972830630000000,
+        "source_row_ordinal": 1,
+        "trade_id": 140869,
+        "price": "81890.0",
+        "qty": "0.002",
+        "quote_qty": "163.78",
+        "base_qty": null,
+        "is_buyer_maker": false,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 33,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 33,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 33,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 33,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 34,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 35,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 35,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 43,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_261225",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_261225/ETHUSDT_261225-trades-2026-10-26.zip",
+      "checksum": "b9fcdf71c50b7c5bc8696ee466afe0d0dd191b64aecbcc8730a01069f92dd4ce  ETHUSDT_261225-trades-2026-10-26.zip",
+      "size": "151123",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:49Z",
+      "downloaded_at_utc": "2026-10-28T06:43:22Z",
+      "zip_sha256": "b9fcdf71c50b7c5bc8696ee466afe0d0dd191b64aecbcc8730a01069f92dd4ce",
+      "download_wall_seconds": 0.4785265420214273,
+      "analyzed": true,
+      "rows": 12178,
+      "first_id": 1788316,
+      "last_id": 1800522,
+      "id_gaps_in_file": 29,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800047000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1788316,
+        "price": "2346.31",
+        "qty": "0.014",
+        "quote_qty": "32.84834",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 57,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 78,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 79,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 82,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 83,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 94,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_delivery",
+      "symbol": "ETHUSDT_270326",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_270326/ETHUSDT_270326-trades-2026-10-26.zip",
+      "checksum": "6dc912adf6042cba77597f954a3119e547190c9e38bdfd93093e57c74f7417e7  ETHUSDT_270326-trades-2026-10-26.zip",
+      "size": "52245",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:22Z",
+      "zip_sha256": "6dc912adf6042cba77597f954a3119e547190c9e38bdfd93093e57c74f7417e7",
+      "download_wall_seconds": 0.3350658750277944,
+      "analyzed": true,
+      "rows": 4330,
+      "first_id": 100097,
+      "last_id": 104436,
+      "id_gaps_in_file": 10,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800022000000,
+        "source_row_ordinal": 1,
+        "trade_id": 100097,
+        "price": "2373.68",
+        "qty": "0.049",
+        "quote_qty": "116.31032",
+        "base_qty": null,
+        "is_buyer_maker": false,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 39,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 39,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 39,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 39,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 39,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 40,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 49,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 55,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCU",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCU/BTCU-trades-2026-10-26.zip",
+      "checksum": "d0a548c2b42f2d5ca0b82e92abc2b92c3386c7bb191465059d3f408c5f73c12d  BTCU-trades-2026-10-26.zip",
+      "size": "128335",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:22Z",
+      "zip_sha256": "d0a548c2b42f2d5ca0b82e92abc2b92c3386c7bb191465059d3f408c5f73c12d",
+      "download_wall_seconds": 0.41478395799640566,
+      "analyzed": true,
+      "rows": 11465,
+      "first_id": 962254,
+      "last_id": 973739,
+      "id_gaps_in_file": 21,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972817492000000,
+        "source_row_ordinal": 1,
+        "trade_id": 962254,
+        "price": "80048.9",
+        "qty": "1.0E-4",
+        "quote_qty": "8.00489",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 77,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 77,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 78,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 102,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 107,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 154,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 254,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 398,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSD1",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSD1/BTCUSD1-trades-2026-10-26.zip",
+      "checksum": "99487bca0b72227f1bc67b27bfbccc58b024fd5d1a3e3bf62699c63b49100643  BTCUSD1-trades-2026-10-26.zip",
+      "size": "407336",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:22Z",
+      "zip_sha256": "99487bca0b72227f1bc67b27bfbccc58b024fd5d1a3e3bf62699c63b49100643",
+      "download_wall_seconds": 0.5501650410005823,
+      "analyzed": true,
+      "rows": 36398,
+      "first_id": 5237955,
+      "last_id": 5274367,
+      "id_gaps_in_file": 15,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800245000000,
+        "source_row_ordinal": 1,
+        "trade_id": 5237955,
+        "price": "80097.0",
+        "qty": "9.0E-4",
+        "quote_qty": "72.0873",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 77,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 93,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 134,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 219,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 240,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 247,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 251,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 281,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSDC",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDC/BTCUSDC-trades-2026-10-26.zip",
+      "checksum": "60f53ef3dd670b6f784852de40fcd6f2f614437c336ec566a11e6e8156fd4f93  BTCUSDC-trades-2026-10-26.zip",
+      "size": "6307015",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:23Z",
+      "zip_sha256": "60f53ef3dd670b6f784852de40fcd6f2f614437c336ec566a11e6e8156fd4f93",
+      "download_wall_seconds": 0.8416340830153786,
+      "analyzed": true,
+      "rows": 740611,
+      "first_id": 613320445,
+      "last_id": 614064113,
+      "id_gaps_in_file": 3058,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800225000000,
+        "source_row_ordinal": 1,
+        "trade_id": 613320445,
+        "price": "80021.6",
+        "qty": "0.002",
+        "quote_qty": "160.0432",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 823,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 863,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 49,
+          "fraction": 6.61615882021736e-05,
+          "max_arrivals_per_poll": 1049,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 1546,
+          "fraction": 0.0020874656196032734,
+          "max_arrivals_per_poll": 1502,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 3871,
+          "fraction": 0.005226765467971716,
+          "max_arrivals_per_poll": 1722,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 11114,
+          "fraction": 0.015006528393448113,
+          "max_arrivals_per_poll": 2007,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 40292,
+          "fraction": 0.05440372881310161,
+          "max_arrivals_per_poll": 3497,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 101520,
+          "fraction": 0.13707600886295235,
+          "max_arrivals_per_poll": 5569,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "BTCUSDT",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2026-10-26.zip",
+      "checksum": "d1e5b142ec47ab16fb1a367111d51b0fe7e54c35d705041d96b4232185365cb4  BTCUSDT-trades-2026-10-26.zip",
+      "size": "25098976",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:25Z",
+      "zip_sha256": "d1e5b142ec47ab16fb1a367111d51b0fe7e54c35d705041d96b4232185365cb4",
+      "download_wall_seconds": 2.9576483339769766,
+      "analyzed": true,
+      "rows": 3522593,
+      "first_id": 8203800945,
+      "last_id": 8207334176,
+      "id_gaps_in_file": 10639,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800003000000,
+        "source_row_ordinal": 1,
+        "trade_id": 8203800945,
+        "price": "80114.3",
+        "qty": "0.007",
+        "quote_qty": "560.8001",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 41562,
+          "fraction": 0.011798694881866852,
+          "max_arrivals_per_poll": 4087,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 67116,
+          "fraction": 0.019053010097959087,
+          "max_arrivals_per_poll": 4318,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 98696,
+          "fraction": 0.028017996969845794,
+          "max_arrivals_per_poll": 4919,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 226009,
+          "fraction": 0.06415983907309189,
+          "max_arrivals_per_poll": 6548,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 418781,
+          "fraction": 0.11888429915122184,
+          "max_arrivals_per_poll": 7437,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 669155,
+          "fraction": 0.1899609179942162,
+          "max_arrivals_per_poll": 8494,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 1369541,
+          "fraction": 0.3887877481162314,
+          "max_arrivals_per_poll": 13803,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 2176591,
+          "fraction": 0.6178945452966039,
+          "max_arrivals_per_poll": 19514,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHBTC",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHBTC/ETHBTC-trades-2026-10-26.zip",
+      "checksum": "227346949f81da038a09cb1901bae24f3f855bc210f14fa3b8a40358e45ac77a  ETHBTC-trades-2026-10-26.zip",
+      "size": "43369",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:50Z",
+      "downloaded_at_utc": "2026-10-28T06:43:23Z",
+      "zip_sha256": "227346949f81da038a09cb1901bae24f3f855bc210f14fa3b8a40358e45ac77a",
+      "download_wall_seconds": 0.26971416699234396,
+      "analyzed": true,
+      "rows": 4529,
+      "first_id": 48733554,
+      "last_id": 48738083,
+      "id_gaps_in_file": 1,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972842452000000,
+        "source_row_ordinal": 1,
+        "trade_id": 48733554,
+        "price": "0.029061",
+        "qty": "0.01",
+        "quote_qty": "2.906E-4",
+        "base_qty": null,
+        "is_buyer_maker": false,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 82,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 94,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 108,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 112,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 168,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 288,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHU",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHU/ETHU-trades-2026-10-26.zip",
+      "checksum": "17fedfcfea0775aa45ae99fcdf59f485d05eb9b9cfa9a9ca47c9b920a8ba88d1  ETHU-trades-2026-10-26.zip",
+      "size": "89511",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:51Z",
+      "downloaded_at_utc": "2026-10-28T06:43:24Z",
+      "zip_sha256": "17fedfcfea0775aa45ae99fcdf59f485d05eb9b9cfa9a9ca47c9b920a8ba88d1",
+      "download_wall_seconds": 0.36234049999620765,
+      "analyzed": true,
+      "rows": 9359,
+      "first_id": 1135320,
+      "last_id": 1144678,
+      "id_gaps_in_file": 0,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800413000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1135320,
+        "price": "2326.78",
+        "qty": "0.012",
+        "quote_qty": "27.92136",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 34,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 52,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 52,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 52,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 61,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 65,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 76,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 125,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSD1",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSD1/ETHUSD1-trades-2026-10-26.zip",
+      "checksum": "3e3520a9588275d0eed8ac16c1e3f1689e824ab9a121e523e2d139024f8a680e  ETHUSD1-trades-2026-10-26.zip",
+      "size": "167110",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:51Z",
+      "downloaded_at_utc": "2026-10-28T06:43:24Z",
+      "zip_sha256": "3e3520a9588275d0eed8ac16c1e3f1689e824ab9a121e523e2d139024f8a680e",
+      "download_wall_seconds": 0.4244171670288779,
+      "analyzed": true,
+      "rows": 13575,
+      "first_id": 3379776,
+      "last_id": 3393355,
+      "id_gaps_in_file": 5,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972801343000000,
+        "source_row_ordinal": 1,
+        "trade_id": 3379776,
+        "price": "2327.2",
+        "qty": "0.003",
+        "quote_qty": "6.9816",
+        "base_qty": null,
+        "is_buyer_maker": false,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 49,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 71,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 81,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 87,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 96,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 103,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 140,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSDC",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDC/ETHUSDC-trades-2026-10-26.zip",
+      "checksum": "e1a66b1ee4df5892785e3fc6b6be291902a91a3d85af4f7f723387157a358d74  ETHUSDC-trades-2026-10-26.zip",
+      "size": "13631539",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:51Z",
+      "downloaded_at_utc": "2026-10-28T06:43:25Z",
+      "zip_sha256": "e1a66b1ee4df5892785e3fc6b6be291902a91a3d85af4f7f723387157a358d74",
+      "download_wall_seconds": 1.0192439590464346,
+      "analyzed": true,
+      "rows": 1415245,
+      "first_id": 933869479,
+      "last_id": 935287715,
+      "id_gaps_in_file": 2992,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800168000000,
+        "source_row_ordinal": 1,
+        "trade_id": 933869479,
+        "price": "2326.01",
+        "qty": "0.018",
+        "quote_qty": "41.86818",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 1012,
+          "fraction": 0.0007150705354903215,
+          "max_arrivals_per_poll": 1647,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 2164,
+          "fraction": 0.0015290638723330589,
+          "max_arrivals_per_poll": 2915,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 2612,
+          "fraction": 0.0018456168366607901,
+          "max_arrivals_per_poll": 3117,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 5308,
+          "fraction": 0.00375058735413303,
+          "max_arrivals_per_poll": 3725,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 13640,
+          "fraction": 0.009637907217478247,
+          "max_arrivals_per_poll": 4466,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 30576,
+          "fraction": 0.021604739815367657,
+          "max_arrivals_per_poll": 5080,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 122823,
+          "fraction": 0.0867856802179128,
+          "max_arrivals_per_poll": 6605,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 376780,
+          "fraction": 0.2662295220968808,
+          "max_arrivals_per_poll": 8528,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "um_perpetual",
+      "symbol": "ETHUSDT",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT/ETHUSDT-trades-2026-10-26.zip",
+      "checksum": "0d17f26a3d604022b5da08d0875bab636e85c0750072810ed145486da5e49605  ETHUSDT-trades-2026-10-26.zip",
+      "size": "37758423",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:51Z",
+      "downloaded_at_utc": "2026-10-28T06:43:27Z",
+      "zip_sha256": "0d17f26a3d604022b5da08d0875bab636e85c0750072810ed145486da5e49605",
+      "download_wall_seconds": 1.941985375015065,
+      "analyzed": true,
+      "rows": 4403220,
+      "first_id": 8895737011,
+      "last_id": 8900154949,
+      "id_gaps_in_file": 14719,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800007000000,
+        "source_row_ordinal": 1,
+        "trade_id": 8895737011,
+        "price": "2328.58",
+        "qty": "0.01",
+        "quote_qty": "23.2858",
+        "base_qty": null,
+        "is_buyer_maker": false,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 42179,
+          "fraction": 0.009579126184928302,
+          "max_arrivals_per_poll": 5764,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 63366,
+          "fraction": 0.014390832163734721,
+          "max_arrivals_per_poll": 9181,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 94334,
+          "fraction": 0.021423867079092117,
+          "max_arrivals_per_poll": 9478,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 239035,
+          "fraction": 0.05428640858280985,
+          "max_arrivals_per_poll": 11553,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 500966,
+          "fraction": 0.11377264819836393,
+          "max_arrivals_per_poll": 14002,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 895577,
+          "fraction": 0.20339138176152907,
+          "max_arrivals_per_poll": 15965,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 1944644,
+          "fraction": 0.4416413442889522,
+          "max_arrivals_per_poll": 20695,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 2988140,
+          "fraction": 0.6786260963567571,
+          "max_arrivals_per_poll": 26963,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_261225",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_261225/BTCUSD_261225-trades-2026-10-26.zip",
+      "checksum": "cc20ee7ba340274d01bc8307ba7293314a31aa0cbad8a9b616eb5d1b0ecb7110  BTCUSD_261225-trades-2026-10-26.zip",
+      "size": "14347",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:51Z",
+      "downloaded_at_utc": "2026-10-28T06:43:26Z",
+      "zip_sha256": "cc20ee7ba340274d01bc8307ba7293314a31aa0cbad8a9b616eb5d1b0ecb7110",
+      "download_wall_seconds": 0.28907866700319573,
+      "analyzed": true,
+      "rows": 1387,
+      "first_id": 960258,
+      "last_id": 961644,
+      "id_gaps_in_file": 0,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800364000000,
+        "source_row_ordinal": 1,
+        "trade_id": 960258,
+        "price": "80757.7",
+        "qty": "1.0",
+        "quote_qty": null,
+        "base_qty": "0.00123827",
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 69,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 112,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 176,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 177,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 177,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 177,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 177,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 286,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "BTCUSD_270326",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip",
+      "error": "HTTP Error 404: Not Found",
+      "analyzed": false
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_261225",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_261225/ETHUSD_261225-trades-2026-10-26.zip",
+      "checksum": "5cdf611ac5bd08fc3220ac2fcc4805040f038e7cd9ca87338b8969728d3609be  ETHUSD_261225-trades-2026-10-26.zip",
+      "size": "12234",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:52Z",
+      "downloaded_at_utc": "2026-10-28T06:43:26Z",
+      "zip_sha256": "5cdf611ac5bd08fc3220ac2fcc4805040f038e7cd9ca87338b8969728d3609be",
+      "download_wall_seconds": 0.3673397090169601,
+      "analyzed": true,
+      "rows": 1067,
+      "first_id": 785299,
+      "last_id": 786365,
+      "id_gaps_in_file": 0,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800413000000,
+        "source_row_ordinal": 1,
+        "trade_id": 785299,
+        "price": "2344.04",
+        "qty": "2.0",
+        "quote_qty": null,
+        "base_qty": "0.00853227",
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 44,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 44,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 45,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 45,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 45,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 59,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 63,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 64,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "cm_delivery",
+      "symbol": "ETHUSD_270326",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip",
+      "error": "HTTP Error 404: Not Found",
+      "analyzed": false
+    },
+    {
+      "market": "cm_perpetual",
+      "symbol": "BTCUSD_PERP",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2026-10-26.zip",
+      "checksum": "e66351a727ca9d9f85fc9cfdbc930339165e29478e95946771790ba77154ed96  BTCUSD_PERP-trades-2026-10-26.zip",
+      "size": "274483",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:52Z",
+      "downloaded_at_utc": "2026-10-28T06:43:27Z",
+      "zip_sha256": "e66351a727ca9d9f85fc9cfdbc930339165e29478e95946771790ba77154ed96",
+      "download_wall_seconds": 0.5477120419964194,
+      "analyzed": true,
+      "rows": 31595,
+      "first_id": 1160791858,
+      "last_id": 1160823452,
+      "id_gaps_in_file": 0,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800314000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1160791858,
+        "price": "80010.0",
+        "qty": "250.0",
+        "quote_qty": null,
+        "base_qty": "0.31246094",
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 341,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 353,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 362,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 474,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 521,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 553,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 621,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 3,
+          "fraction": 9.495173286912486e-05,
+          "max_arrivals_per_poll": 1003,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    },
+    {
+      "market": "cm_perpetual",
+      "symbol": "ETHUSD_PERP",
+      "date": "2026-10-26",
+      "url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_PERP/ETHUSD_PERP-trades-2026-10-26.zip",
+      "checksum": "c366a2de54f2f08f8603eab29a333be2da1cbe7246e2cd8649ee9a9d44f41b17  ETHUSD_PERP-trades-2026-10-26.zip",
+      "size": "430882",
+      "status": 200,
+      "checked_at_utc": "2026-10-28T06:42:52Z",
+      "downloaded_at_utc": "2026-10-28T06:43:27Z",
+      "zip_sha256": "c366a2de54f2f08f8603eab29a333be2da1cbe7246e2cd8649ee9a9d44f41b17",
+      "download_wall_seconds": 0.5397207079804502,
+      "analyzed": true,
+      "rows": 46616,
+      "first_id": 1244495118,
+      "last_id": 1244541740,
+      "id_gaps_in_file": 7,
+      "sample_fields": {
+        "archive_event_time_utc_ns": 1792972800330000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1244495118,
+        "price": "2325.54",
+        "qty": "1.0",
+        "quote_qty": null,
+        "base_qty": "0.00430007",
+        "is_buyer_maker": true,
+        "is_best_match": null
+      },
+      "ideal_polling": {
+        "1": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 189,
+          "weight_per_minute": 300.0
+        },
+        "2": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 190,
+          "weight_per_minute": 150.0
+        },
+        "3": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 259,
+          "weight_per_minute": 100.0
+        },
+        "6": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 301,
+          "weight_per_minute": 50.0
+        },
+        "10": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 354,
+          "weight_per_minute": 30.0
+        },
+        "15": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 479,
+          "weight_per_minute": 20.0
+        },
+        "30": {
+          "new_trades_beyond_window": 0,
+          "fraction": 0.0,
+          "max_arrivals_per_poll": 737,
+          "weight_per_minute": 10.0
+        },
+        "60": {
+          "new_trades_beyond_window": 180,
+          "fraction": 0.0038613351638922258,
+          "max_arrivals_per_poll": 1148,
+          "weight_per_minute": 5.0
+        }
+      },
+      "timestamp_unit": "milliseconds",
+      "isRPITrade_available": false
+    }
+  ]
+}

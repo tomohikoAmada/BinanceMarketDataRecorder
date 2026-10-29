@@ -1,5 +1,20 @@
 # P0 首版公开数据覆盖表
 
+**2026-10-29首版范围补充（已批准，P2候选已实施，待最终复审）：** owner接受仅暂缺U/C交割合约的
+溢价指数K线，永续premium及其他产品/数据不变。下表53行仍是完整目标；D23的
+这一个子项在首版选择中明确标为owner批准暂不采集，官方适用性仍UNKNOWN，
+不能记为交易所不提供或覆盖成功。未来冻结配置的连续性范围按该选择声明，
+历史失败、Raw和旧分母保持原义。实现/验证见[ADR-0055](../../adr/0055-initial-production-dated-premium-exception.md)
+和[P2计划](../../production_milestone_plan.md#p2补齐产品和数据范围)；无需等待官方
+[issue #585](https://github.com/binance/binance-connector-python/issues/585)回复才验收首版。
+下列历史证据中要求保留所有失败轮询/等待官方回复的门槛，仅对该首版例外由本条替代。
+
+[首版实现和实际源清单](../P2/initial-production-20261029/README.md)按配置在调度前
+排除交割premium，不影响永续及其他D23。保留目录的4,781源完整目标中选4,661源，
+另计3个目录源；120项明确OWNER_APPROVED_UNCAPTURED/UNKNOWN。配置生效UTC与
+实例身份附在后续目录事件，旧失败与统计窗口不变。源集合差异、预算、调和及旧读取
+回归通过；这是首版范围实施证据，不是生产99.5%或CPU收益证明。
+
 核对日期：2026-10-26；保存表示取舍更新：2026-10-27（[ADR-0053](../../adr/0053-single-rest-representation-and-required-information.md)）。此表是 P2 的范围合同，不是已实现清单。P4 开始前将本表展开为实际产品/源清单并冻结；每个必须源分别进入连续性分母。P0 不发起生产采集。
 
 官方依据：[Spot 流](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~)、[Spot 市场 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market)、[Spot 通用 REST](https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general)、[USD-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[USD-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public)、[COIN-M REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data)、[COIN-M 流](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)。抓取哈希与无效网页回退见 [official-sources.json](official-sources.json)；不能把返回 HTML 壳的 `.md` 地址当正文证据。
@@ -100,3 +115,128 @@ U参考页在单产品和全市场清算流都仍使用“latest”；[官方USD
 C的[独立参考页](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~)也写latest，但上述改述明确属于USD-M，不能据此替C断言largest，亦不把U冲突宣称为已经发现C同样变更。U/C分别保留原文、来源、接收时间、连接与物理ordinal，按交易所实际发布的代表性快照解释。未取得一致资料前，不将最新/最大假设用于完备性、去重、总清算数量或派生统计；不能模拟未发布的清算全集。当前仍只承诺采集已发布消息，不承诺每笔清算完整。
 
 [R4来源记录](corrections-20261026/official-sources.json)列出检索时间、可取得的正文摘要及表示限制。此次把同一家族D11按U/C拆为两行，因此现表仍为52个家族、53行，并未增加市场范围。该合同披露不要求重跑VPS；本次新增测量是为R1–R3校验脚本修正。
+
+## P2 implementation and field mapping — 2026-10-27
+
+The original target and P0 evidence above remain unchanged. P2's concrete source
+planner is `binance/public_sources.py`; selected-base discovery is
+`binance/products.py`, and runtime ownership is `collector/coverage.py`.
+[ADR-0054](../../adr/0054-selected-asset-capture-and-public-observations.md)
+defines the additive product/shared identities and versioned observation formats.
+[P2 result](../P2/README.md) records actual samples, exceptions and costs.
+
+For every selected source, `Source.public_dict()` records its market/scope,
+request parameters, exact native intervals, cadence, priority, required fields,
+representation, adapter schema and SDK versions. A directory observation records
+the expanded source plan in Catalog. The default tries every interval above;
+explicit interval subsets, quote filters and admission budgets remain visible.
+New/changed products are admitted under these bounds; missing or failed sources
+are not retrospectively removed. U/C weight shares one process/IP budget.
+
+WS mapping below is into the **unchanged received combined message** `data`;
+metadata is extracted separately without reencoding the raw bytes. `W1` means
+`utf-8-json-combined.v1` / `binance.public.websocket.v1`, generic websockets 15.0.1,
+no SDK model conversion. `J1` means `binance-public-rest-provenance.v1`, one
+`sdk-parsed-json.v1` body under `response.model`, through Spot SDK 10.0.0's common
+unsigned transport (the exact common version is in every record and source plan).
+It preserves supplied JSON strings, integers and null/missing distinctions; it
+makes no unknown-field/HTTP-format promise. `B1` means one exact SDK-received body,
+Base64 only, with decimal JSON numbers exposed as exact text by the reader.
+Legacy Spot snapshot v3 also selects B1 when available, otherwise one model;
+historical v1/v2 records still read. All clocks and request/status/header evidence
+are retained. Model conversion is not described as original HTTP.
+
+| ID | Implemented mapping / source selection | Version, cadence and priority | Evidence / explicit boundary |
+| --- | --- | --- | --- |
+| S01 | `response.model.symbols[*]`, filters/permissions/status/rateLimits; filter selected base after saving one market response | J1; startup/hour; unique metadata | Live selected-directory fixture; all quote pairs, not quote-asset expansion |
+| S02 | WS `data.U/u/b/a`; REST lastUpdateId/bids/asks; snapshot sequence reader | W1 + J1 (expanded), legacy B1 v3; 100ms + on-demand; unique | Live bytes, independent Raw read, old/new snapshot tests |
+| S03 | `data.a/p/q/f/l/T/m` | W1; venue publication; unique | Live Spot sample; no inversion to individual fills |
+| S04 | `data.t/p/q/T/m` and all supplied fields | W1; real time; unique | Live Spot sample |
+| S05 | `data.u/b/B/a/A` | W1; best-price changes; unique | Live Spot sample; no global sequence guarantee |
+| S06 | `data.e/E/s/t/p/q/T/m` (native `t`, not invented block ID) | W1; sparse real time; unique | Official block-trade example; 15s sample had no block event |
+| S07 | WS `data.r/t/s` including null; REST symbol/referencePrice/timestamp | W1 + J1 startup; 1s; unique | Live WS/REST sample; explicit null regression |
+| S08 | model symbol/calculationType/bucketCount/bucketWidthMs and supplied parameters | J1; startup/hour; unique | Live public sample |
+| S09 | model execution rules for selected-symbol batches | J1; startup/hour; unique | Live public batch sample; one request per <=100 symbols |
+| S10 | `data.i/w/T/E` and supplied fields | W1; 1s; unique | Live average-price sample; WS reconnect is primary recovery |
+| S11 | `data.k` including t/T/i/OHLC/v/q/n/V/Q/x; REST native array positions retained | W1 + J1 startup seed; every native interval, 1s/2s updates; forming bars | Full-interval native-bar sample, UTC |
+| S12 | Same native kline fields, distinct `@+08:00` wire identity and REST timeZone=8 | W1 + J1 seed; every native interval; forming bars | Live timezone sample; no UTC substitution |
+| S13 | Native 24h ticker fields including time/volume/count/first-last IDs | W1; 1s; native statistics | Live Spot ticker |
+| S14 | Separate `ticker_1h`, `ticker_4h`, `ticker_1d` payloads | W1; 1s each; native statistics | Live three-window sample |
+| S15 | model native trading-day OHLC/count/open-close clocks, UTC timeZone=0 | J1; 60s; native statistics | Live public sample; distinct from rolling ticker |
+| S16 | Select S04/S05/S13/S14 primary publications | Equivalent, not additional enabled sources | No duplicate all-market/mini/ticker transports |
+| S17 | Select S02 depth snapshot+diff | Equivalent, not additional enabled sources | No claim of L3 or a full hidden-order book |
+| S18 | Existing historical import/selected live trade primary; recent/agg repair alternatives are not independent streams | Equivalent repair, not separately enabled | No promise that a live receive gap is erased by historical data |
+| S19 | Historical/block lookup is an equivalent repair alternative, not an enabled source in this candidate | Not additionally implemented/enabled | New block information uses S06; no fabricated key requirement or repair success |
+| S20 | UI-only modified bars excluded | Explicit non-goal | Not used to fill native bars |
+| D01 | Full exchangeInfo plus one merged `!contractInfo`; directory Product maps pair/base/quote/margin/type/size/onboard/delivery/status | J1 hourly + W1 lifecycle; unique | Live U/C directories; shared UM/CM lifecycle transport once |
+| D02 | `data.E/T/U/u/pu/b/a/st/ps`; model lastUpdateId/bids/asks | W1 + J1 on-demand; 100ms; unique | Live U/C perpetual/dated samples; st/pair regression |
+| D03 | Separate `rpiDepth` sequence and snapshot model | W1 + J1; 500ms + on-demand; unique | Live U RPI stream and valid limit=1000 snapshot; independent sequence bridge |
+| D04 | No confirmed dedicated C REST snapshot/RPI pair in the current C catalog | Not offered/confirmed as a C-specific source | Integration notice's st field does not invent an undocumented C snapshot |
+| D05 | `data.a/f/l/p/q/T/m`, nq and st when supplied | W1; 100ms; unique | Live U/C aggregate trades |
+| D06 | Native trade id/price/qty/time/isBuyerMaker; U quoteQty or C baseQty retained; direct field equality | Compact v1 by default; 1s; unique | Live U/C responses; matched CPU/size comparison; late IDs, changes, empty/failure, overflow, eviction/restart tests |
+| D07 | Key-restricted historical lookup not called | Permission-limited, excluded | No credentials or substitute completeness claim |
+| D08 | `data.E/T/u/b/B/a/A/st/ps` | W1; best-price changes; unique | Live U/C perpetual/dated samples |
+| D09 | Native mark/index/estimated-settle/funding/next-funding fields, including dated empty/zero values | W1 1s + J1 60s; unique | Live U/C WS/REST; no funding values invented for delivery |
+| D10 | C pair `data.i/E/p`, collected once per pair | W1; 1s; unique | Official index-price example; 15s live sample received no event, no coverage success inferred |
+| D11-U | Entire representative forceOrder observation, connection/group/physical ordinal | W1; sparse representative publication; unique | Live U observation; latest/largest conflict remains unresolved |
+| D11-C | Entire native `data.o` plus supplied root fields | W1; sparse representative publication; unique | Official C example; no U sampling-rule substitution |
+| D12 | model symbol/fundingTime/fundingRate/markPrice | J1; 300s, perpetual only; unique | Live U/C response |
+| D13 | Sparse model symbol/cap/floor/fundingIntervalHours records; legal empty retained | J1; startup/hour, once per venue; unique | Live U/C response |
+| D14 | model symbol/pair/openInterest/time/contractType as supplied | J1; 60s; unique | Live U/C response |
+| D15 | model sumOpenInterest/sumOpenInterestValue/timestamp; C pair+contractType | J1; closed 5m query/300s; unique | Live U/C response, bounded request range retained; no dense fill |
+| D16 | U buy/sell volume/ratio versus C takerBuyVol/takerSellVol and supplied fields | J1; closed 5m query/300s; unique | Distinct endpoint/parameter maps, live U/C samples |
+| D17 | model longShortRatio/longAccount/shortAccount/timestamp; C pair-only scope | J1; closed 5m query/300s; unique | Live U/C samples; no invented C contractType parameter |
+| D18 | C top-account model ratio/account/timestamp; U excluded | J1 C only; closed 5m/300s; unique | C live success; U key restriction remains disclosed |
+| D19 | C top-position model ratio/account/timestamp; U excluded | J1 C only; closed 5m/300s; unique | C live success; global ratio is not a replacement |
+| D20 | model pair/type/basis/rate/index/futures/annualized/timestamp | J1; pair+contract-role once, closed 5m/300s; unique | Live U/C samples; roles remain distinct |
+| D21 | Native per-symbol kline payload plus bounded native REST seed | W1 + J1; all 15 futures intervals, 250ms when published; forming bars | Full-interval sample; no locally aggregated replacement |
+| D22 | Native ps/ct/k continuous bars per pair+contract role | W1 + J1 seed; all 15 intervals, 250ms; forming bars | Live continuous samples; role scopes and directory changes retained |
+| D23 | Distinct mark/index/premium native arrays; C mark/index kline streams; index scope once per pair | W1 + J1, query each native closed period within 60s, all intervals; native/forming bars | U/C successful samples except **C dated premium**: endpoint returns -1121; unresolved applicability, kept failed/uncovered, never replaced with perpetual bars |
+| D24 | Full native 24h ticker fields | W1; 500ms; native statistics | Live U/C samples |
+| D25 | Select D02/D08/D24 primary publications | Equivalent, not additionally enabled | RPI is not folded into ordinary depth |
+| D26 | model constituents exchange/symbol/price/weight; indexInfo and compositeIndex only for directory INDEX products | J1 hour + applicable W1 1s; unique | Live U/C constituents; BTC/ETH composite-index sources not applicable |
+| D27 | Whole merged assetIndex array, once globally | W1; ~1s; unique | Official integration contract; no per-product duplicate |
+| D28 | model symbol/adlRisk/updateTime | J1; 1800s; unique | Live unsigned sample; never account adlQuantile |
+| D29 | Whole insurance pool symbols/assets/balances/times response | J1; 60s, global pool once; unique | Live unsigned sample; no C endpoint invented |
+| D30 | No C-specific insurance/ADL endpoint assumed | Not offered/confirmed separately | U's actual shared response may be associated with its listed pool |
+| D31 | Exact numeric-price body; deliveryTime/price, pair and request/receive clocks | B1; 60s only after delivery until observed publication; unique | Live body fixture; high-precision numeric regression; directory lifecycle keeps due deliveries |
+| D32 | TradFi schedule/session excluded for selected crypto products | Not applicable | No account or TradFi scope expansion |
+
+The source planner's configured native intervals are complete **targets**, not a
+claim that every stream emitted within the short sample. The 30s sample observed
+130 of 197 configured native-bar streams; others remain unobserved in that sample.
+No source is dropped after failure, and no 99.5% continuity is claimed here.
+Current full BTC/ETH discovery also produces a REST demand above the existing
+reserved request share; the explicit limiter waits and reports overdue sources.
+This is a qualification/resource issue for P3/P4, not permission to silently shed
+D06 or to describe a smaller workload as a code speedup.
+
+### P2 measured D06 / daily supplement update — 2026-10-28
+
+The full53-row target above and its original samples remain unchanged. Current
+[D06 configuration and losses](../P2/closeout-20261028/measured-budget.json) explicitly
+use2s for BTCUSDT/ETHUSDT UM perpetual,3s for BTCUSDC/ETHUSDC UM perpetual and30s for
+other selected derivatives. The entire family/products remain; finite windows can
+miss individual observations. Generic1s stays available; no dynamic shedding.
+Official derivative daily trades are a separate delayed supplement, not keyed REST
+historicalTrades, live receive recovery or all-field equivalence. Native id/price/qty,
+UM quote_qty or CM base_qty, millisecond time and maker flag are typed without float
+loss. isRPITrade and live observation/timing are unavailable.17 actual files parsed;
+8 imported/read independently; two CM next-quarter files404 and file ID holes remain
+unknown, not zero activity. [Reader and conflict rules](../../adr/0054-selected-asset-capture-and-public-observations.md#implementation-of-the-approved-daily-supplement-2026-10-28)
+keep equal overlapping facts once and conflicting source records separate.
+D23 now has observed failures for all8 tested U/C dated premium symbols. This adds
+UM to the R2 unknown/failed applicability boundary; do not drop them or substitute a
+perpetual. P2 is not passed until applicability and independent review are resolved.
+
+### D23 R2 follow-up — 2026-10-29
+
+[New bounded evidence](../P2/r2-20261028/README.md) confirms the same eight dated
+identities are currently TRADING. Native HTTP premiumIndexKlines still fails for
+all eight; four perpetual controls succeed, and two explicit closed-range queries
+also fail. The official Python method parameters do not supply an alternate dated
+identity, and official documentation still lacks an applicability rule. This remains
+**UNKNOWN / failed**, not exchange-not-offered or an equivalent shared/perpetual series.
+All 120 affected interval sources and retry costs remain. No implementation boundary
+changes until the [official clarification](../P2/r2-20261028/binance-clarification-draft.md)
+has an authoritative answer. Historical measurements and scope rows above are retained.

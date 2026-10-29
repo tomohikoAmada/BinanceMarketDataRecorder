@@ -1,0 +1,34 @@
+import asyncio,json,time,statistics
+from pathlib import Path
+from binance_market_data_recorder.binance.public_rest import PublicRestClient,capture_public_response
+from binance_market_data_recorder.binance.public_sources import product_sources
+from binance_market_data_recorder.binance.request_budget import shared_request_budget
+from binance_market_data_recorder.binance.recent_trades import RecentTradesCompactor
+from binance_market_data_recorder.network import ProxyPolicy
+from tests.unit.test_p2_coverage import products,SMALL
+
+root=Path('/private/var/tmp/bmdr-p2-closeout-wqpuPp')
+async def main():
+    clients={v:PublicRestClient(v,ProxyPolicy('direct')) for v in ('usdm','coinm')}
+    sources=[next(s for s in product_sources(p,SMALL) if s.family=='D06') for p in products() if p.venue_market!='spot']
+    caches={s.key:RecentTradesCompactor() for s in sources}; metrics=[]; sem=asyncio.Semaphore(2)
+    start=time.monotonic()
+    async def poll(s,round,output):
+        async with sem:
+            await shared_request_budget().acquire(s.charges)
+            t=time.monotonic()
+            r=await asyncio.to_thread(capture_public_response,s,clients[s.venue_market].request,collector_instance_id='p2-bounded-sample',collector_version='local-candidate',recent_trades=caches[s.key])
+            latency=time.monotonic()-t; record=json.loads(r.envelope.raw_payload)
+            output.write(json.dumps(record,separators=(',',':'))+'\n'); output.flush()
+            p=record['response']['model'].get('poll',{}) if r.valid else {}
+            metrics.append(dict(round=round,market=s.market,symbol=s.symbol,valid=r.valid,status=r.status,latency_seconds=latency,weight=s.weight,poll=p))
+            if r.status in (418,429): raise RuntimeError('Rate limited: stop bounded sample, keep evidence')
+    try:
+        with (root/'live-observations.jsonl').open('x') as output:
+            for round in range(6):
+                if round: await asyncio.sleep(max(0,start+round*10-time.monotonic()))
+                await asyncio.gather(*(poll(s,round,output) for s in sources))
+    finally:
+        for c in clients.values():c.close()
+        (root/'live-metrics.json').write_text(json.dumps(dict(schema_version='p2-bounded-live-d06.v1',started_monotonic=start,wall_seconds=time.monotonic()-start,configured_interval_seconds=10,rounds=6,concurrency=2,maximum_weight=570,observations=metrics),indent=2))
+asyncio.run(main())

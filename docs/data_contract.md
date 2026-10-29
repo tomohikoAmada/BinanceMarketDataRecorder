@@ -72,6 +72,52 @@ See [ADR-0053](adr/0053-single-rest-representation-and-required-information.md) 
 the [plan](production_milestone_plan.md) for implementation and comparison requirements.
 These are approved future changes, not changes to existing executable formats.
 
+## D06 live and delayed supplement decision (2026-10-28)
+
+The owner selected live capture with measured per-product D06 polling plus
+official daily trade files as a separate delayed supplement. This direction is
+approved for P2; product/date/field verification, the importer and the replacement
+frequency configuration remain to be implemented. Selecting it does not select
+the uniform 6-second proposal or qualify the current full-scope 1-second plan.
+
+Bulk records retain their actual acquisition time, exchange event time, market,
+product, native trade ID and file source/identity. They do not acquire invented
+live receive timestamps, replace immutable live observations or erase live gaps.
+Report the 99.5% live continuity result and delayed trade-fact coverage separately;
+missing dates, unavailable fields and source conflicts remain explicit. Matching
+overlapping trade facts must prevent consumer double-counting while preserving
+source differences. Keep download/import outside the capture path, bounded by
+selected products/dates, with meaningful file checks and no per-trade hashes or
+whole-history capture-time scans. Existing Raw formats and archive/deletion rules
+are unchanged. Implementation details and limits are recorded in
+[ADR-0054](adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28).
+
+## Initial-production dated-premium exception (2026-10-29)
+
+The owner approved [ADR-0055](adr/0055-initial-production-dated-premium-exception.md):
+the initial release explicitly omits only USD-M/COIN-M dated premium-index klines.
+Perpetual premium and every other selected family remain in scope. Keep the complete
+target inventory; distinguish this declared uncaptured selection from official
+applicability, which remains unknown. No substitution or successful-coverage claim.
+The frozen future eligible source set excludes this item from its declared start;
+old Raw, failures, gaps and qualification denominators remain unchanged. Required
+and enabled sources still meet 99.5%, and saved-data correctness is unchanged.
+The [P2 candidate](milestones/P2/initial-production-20261029/README.md) implements this
+selection with explicit `capture_dated_premium_klines=false`; the default true retains
+the full target for existing configurations. `selected-asset-coverage.v1.source_selection`
+adds counts scoped to admitted products and configured intervals (directories counted
+separately), a nominal
+steady budget and a per-product/interval uncaptured list. Each omission has
+`status=OWNER_APPROVED_UNCAPTURED`, `official_applicability=UNKNOWN`,
+`continuity_eligible=false`. The selected count includes declared lifecycle sources,
+including delivery publication waiting for expiry, rather than only currently active polls.
+The report's `effective_from_utc_ns` and `collector_instance_id`, configuration and source
+plan are saved in existing PRODUCT_DIRECTORY_OBSERVED events. A configuration change
+starts a new instance/window; the implementation does not remove already failed sources
+from old windows. Unadmitted products retain their separate admission status. This is
+an additive report change, not a Raw/reader format change or a continuity qualification.
+The official clarification is separate follow-up, not a first-release acceptance gate.
+
 ## P1 capture and progress contract (2026-10-27)
 
 [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)
@@ -691,3 +737,31 @@ physical-ordinal observation identity; neither assumption authorizes completenes
 event merging or derived liquidation totals. Raw/normalized format versions and
 historical results are unchanged by this disclosure. See the current
 [coverage policy](milestones/P0/coverage.md).
+
+## P2 public observations — 2026-10-27
+
+[ADR-0054](adr/0054-selected-asset-capture-and-public-observations.md) implements
+ADR-0053 with explicit product and shared-scope market values, versioned combined
+WS payloads, single REST representations and compatible readers. New expanded
+observations retain exact WS application frames and the declared REST body/model;
+logical source labels are not exchange sequence counters. D06 compact polling is
+a narrow versioned exception and cannot reconstruct every original response list.
+Original Raw/normalized records are unchanged. Numeric delivery prices use the
+already-received HTTP body; reader numeric fractions become exact decimal text.
+Unknown new payload versions are rejected. See the P0 inventory's P2 field map and
+[P2 limits](milestones/P2/README.md); no production continuity is inferred.
+
+### Selected derivative daily trades (P2 correction, 2026-10-28)
+
+`backfill plan/run --profile selected-daily-trades --product market:symbol` is an
+independent bounded official daily import for UM/CM perpetual/dated identities.
+The source ZIP and official CHECKSUM/source revision remain primary. The derived
+`official-daily-trades.v1` schema retains exact decimal text and native trade IDs;
+UM quote_qty and CM base_qty remain distinct. File metadata binds physical product,
+actual acquisition/verification completion time and source revision/SHA. No live
+receive timestamp is manufactured; missing fields and files remain unavailable/gaps.
+Use the published `backfill.daily_trades.iter_daily_trade_facts` and
+`reconcile_trade_facts` contracts in ADR-0054. Overlap equality prefers live facts
+without overwriting their evidence; conflicts have no selected value. These are
+archive-source facts and do not enter receive-time replay or restore live continuity.
+Old historical profiles and old normalized paths keep their existing schemas.

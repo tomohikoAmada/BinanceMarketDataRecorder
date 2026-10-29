@@ -30,6 +30,7 @@ from .archive.remote_transport import (
     require_sha256,
 )
 from .backfill import HistoricalImporter, build_plan
+from .backfill.daily_trades import build_daily_trade_plan
 from .config import ENV_PREFIX, ConfigurationError, LoadedConfig, load_config
 from .diagnostics import run_doctor
 from .domain.product import configured_products
@@ -213,8 +214,12 @@ def build_parser() -> argparse.ArgumentParser:
         command = backfill_commands.add_parser(action, help=f"{action} a historical archive import")
         command.add_argument(
             "--profile",
-            choices=("baseline-bars", "microstructure-trades"),
+            choices=("baseline-bars", "microstructure-trades", "selected-daily-trades"),
             default="baseline-bars",
+        )
+        command.add_argument(
+            "--product", action="append", default=[],
+            help="explicit market:symbol for selected-daily-trades; repeatable",
         )
         command.add_argument("--start", required=True, help="inclusive YYYY-MM-DD")
         command.add_argument("--end", required=True, help="inclusive YYYY-MM-DD")
@@ -732,11 +737,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         try:
             if action in {"plan", "run"}:
-                plan = build_plan(
-                    str(args.profile),
-                    datetime.strptime(str(args.start), "%Y-%m-%d").date(),
-                    datetime.strptime(str(args.end), "%Y-%m-%d").date(),
-                )
+                start = datetime.strptime(str(args.start), "%Y-%m-%d").date()
+                end = datetime.strptime(str(args.end), "%Y-%m-%d").date()
+                if args.profile == "selected-daily-trades":
+                    from typing import cast
+
+                    from .domain.event import Market
+                    from .domain.product import ProductKey
+
+                    products = []
+                    for item in args.product:
+                        market, symbol = item.split(":", 1)
+                        products.append(ProductKey(cast(Market, market), symbol))
+                    plan = build_daily_trade_plan(products, start, end)
+                else:
+                    if args.product:
+                        raise ValueError("--product is only supported by selected-daily-trades")
+                    plan = build_plan(str(args.profile), start, end)
                 result = plan.public_dict() if action == "plan" else importer.run(plan)
             elif action == "status":
                 result = importer.status()

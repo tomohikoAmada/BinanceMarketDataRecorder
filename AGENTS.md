@@ -1,6 +1,6 @@
 # Binance Market Data Recorder Agent Contract
 
-Current owner direction October27, 2026: follow the new
+Current owner direction October29, 2026: follow the new
 [production milestone plan](docs/production_milestone_plan.md), P0 through P6.
 Design for at least ten underlying assets; the initial production exit is BTC
 and ETH across their Spot quote pairs and USD-M/COIN-M perpetual and dated
@@ -10,7 +10,21 @@ WS keeps exact payload bytes; each REST response stores one primary body or SDK-
 representation preserving required precision, exchange/receive times, identity,
 sequence and gap information. Exact HTTP bytes/unknown fields are not universal gates;
 do not persist both a complete model and Base64 body or label SDK output as original
-HTTP. Existing data/readers remain compatible; P2 implementation is still pending.
+HTTP. Existing data/readers remain compatible. P2 implementation and local validation are
+delivered under ADR-0054. Independent review of 195762c accepts the measured D06
+fixed-cadence/daily supplement; independent review of f9aaeee closes R4. The owner now
+accepts an initial release without U/C dated premium-index klines under
+[ADR-0055](docs/adr/0055-initial-production-dated-premium-exception.md). Perpetual premium
+and all other selected scope remain. Prioritize reliable basic data and as much additional
+distinct public information as resources allow. Independent review of 13602c8/58a3ca2
+accepts the exception's source selection, coverage/budget and historical-read boundary;
+71 focused checks and exact 13602c8 dual-platform CI are verified. P2-R5 is now closed by
+independent review of 1c1785c and delivery HEAD 464ed56: controlled writer timing covers
+both legal shutdown/reset/close layouts while preserving exact payload, connection and
+gap assertions. Independent 87-test and two-case checks pass; both commits' dual-platform
+CI/logs are verified. Runtime code and historical failure evidence are unchanged. P2 is
+ACCEPTED, with no new correction; P3 has not started. Do not repeat accepted R1/R4 audits.
+See [independent closure](docs/milestones/P2/review-20261029.md#r5-independent-closure).
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
 observations. P2 records source priorities and explicit resource-limited coverage in the
@@ -33,7 +47,44 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P1 is complete; P2 is the next development phase and has not started.
+P0, P1 and P2 are complete under the approved initial-release scope; P3 has not started.
+See [f9aaeee independent review](docs/milestones/P2/review-20261028.md#review-f9aaeee).
+R1's measured per-product polling and independent daily supplement remain accepted.
+R4 is closed: the existing cooldown is enabled synchronously before the persistence
+await. Both six-case reproductions, 33 cooldown regressions and 42 related tests pass
+independently, with one online smoke skipped. Unparseable Retry-After uses existing
+fallback/ban semantics while retaining the original failure header; storage errors
+and normal stop/drain ownership remain intact. No new limiter or in-flight cancellation.
+R2 official U/C dated-premium applicability remains unresolved; preserve the complete
+target and historical failures without substitution. The initial-production selection
+is authorized to omit only these dated premium sources before scheduling, including
+new dated products. Keep perpetual premium and all other source families. Record the
+omission as owner-approved uncaptured scope, with official applicability still UNKNOWN;
+do not label it exchange-not-offered or rewrite old Raw, gaps or denominators. The
+source/budget reporting and implementation boundary have passed independent review.
+P2-R5 has passed independent review. PR #88 may be merged under owner authorization;
+only remove its remote branch after confirming all commits are in main. Exact
+f9aaeee dual-platform CI/logs remain verified; no new blocking code issue was found in that review.
+Do not repeat R1 history audits or already closed R4 work.
+Independent review of 066c2c3 accepts the bounded R2 investigation evidence and unsent
+clarification draft; the runtime is unchanged and official applicability remains unknown.
+See [scope and impact](docs/milestones/P2/review-20261028.md#review-066c2c3). On October29
+the owner approved that narrow initial-production exception and separately authorized
+the prepared public clarification. It is submitted as
+[binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585).
+Waiting for an official reply is no longer a first-release P2 acceptance gate. The
+official-source stop rule still prohibits inventing dated-premium semantics; it does
+not prevent implementation of this explicitly declared omission. Do not ask again for
+these approved actions. P2 is accepted; P3 is the next development phase. No
+production work is authorized by documentation status alone.
+The owner selected option one on October28: explicit per-product live polling
+plus official daily trade files as a separate delayed supplement. This direction
+is approved; do not ask for it again. First verify product/date/field coverage,
+then implement a small independent download/import path and measured cadences.
+Keep actual acquisition times and live gaps; historical facts cannot replace
+receive times or live coverage. The 6s proposal is not automatically selected.
+The existing 1s default stays until a measured, disclosed configuration replaces
+it; routine work within this decision does not need another scope approval.
 P1 preserves Raw v1, uses bounded vectored append and long-lived receive tasks,
 and evaluates sequence-only capture health under ADR-0052. Local writer gains
 do not establish all-feature CPU gains or VPS capacity. Compare matched per-source

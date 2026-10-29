@@ -1,0 +1,130 @@
+[
+  {
+    "id": "index",
+    "url": "https://developers.binance.com/en/docs/llms.txt",
+    "retrieved_utc": "2026-10-27T10:20:33.264476+00:00",
+    "sha256": "d23560223c5726258114e892d31b86915d8f4de4a2bf65d6885e9c8c54800ab4",
+    "bytes": 174759,
+    "representation": "downloaded text",
+    "retrieval_boundary": "successful download completed by local file write time"
+  },
+  {
+    "id": "spot-streams",
+    "url": "https://developers.binance.com/en/docs/products/spot/web-socket-streams.md",
+    "retrieved_utc": "2026-10-27T10:20:53.964338+00:00",
+    "sha256": "555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35",
+    "bytes": 10472,
+    "content_type": "application/octet-stream",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "spot-rest",
+    "url": "https://developers.binance.com/en/docs/products/spot/rest-api.md",
+    "retrieved_utc": "2026-10-27T10:20:53.971075+00:00",
+    "sha256": "25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec",
+    "bytes": 38519,
+    "content_type": "application/octet-stream",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "um-connect",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md",
+    "retrieved_utc": "2026-10-27T10:20:53.900829+00:00",
+    "sha256": "912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2",
+    "bytes": 2613,
+    "content_type": "application/octet-stream",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "cm-connect",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Connect.md",
+    "retrieved_utc": "2026-10-27T10:20:53.968097+00:00",
+    "sha256": "d6963a3e320b7d9d86ab4cbc9e199d063926a6e27ecfddd4f07dac821f158762",
+    "bytes": 1546,
+    "content_type": "application/octet-stream",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "integration",
+    "url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md",
+    "retrieved_utc": "2026-10-27T10:20:53.899703+00:00",
+    "sha256": "7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98",
+    "bytes": 12109,
+    "content_type": "application/octet-stream",
+    "representation": "downloaded document bytes"
+  },
+  {
+    "id": "spot-market",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "spot-general",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "um-market",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "um-public",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "um-market-streams",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "cm-market",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "cm-streams",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/~",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "spot-rest-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "spot-ws-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "um-rest-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "um-ws-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "cm-rest-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "cm-ws-schema",
+    "error": "source returned HTTP 202, WAF action=challenge: https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/ws-streams/1.0.0/schema.yaml",
+    "representation": "failed retrieval; not semantic evidence"
+  },
+  {
+    "id": "catalog-excerpts",
+    "url": "https://developers.binance.com/en/docs/catalog",
+    "retrieved_utc": "2026-10-27T11:43:53+00:00",
+    "sha256": "5ec6acf9c87a44aa127757efd39b9699d843c054b9d29aac583f19b174dd333e",
+    "bytes": 22103,
+    "representation": "serialized rendered official-page excerpts, not original HTTP bytes",
+    "file": "official-excerpts.json"
+  }
+]

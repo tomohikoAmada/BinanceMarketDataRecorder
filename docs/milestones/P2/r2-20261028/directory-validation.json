@@ -1,0 +1,97 @@
+{
+  "schema_version": "p2-r2-selected-directory-check.v1",
+  "observations": [
+    {
+      "url": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "http_status": 200,
+      "request_time_utc_ns": 1793201893745518000,
+      "receive_time_utc_ns": 1793201894155824000,
+      "representation": "selected-directory-facts.v1; projection only, not full HTTP body",
+      "body_sha256": "f3d736388552e8a8164c4a5e6e23782dffbdea4bb5fe14f5808ea94942961cb7",
+      "body_bytes": 1161998,
+      "retained_full_body": "/private/var/tmp/bmdr-p2-r2-Q0irrK/fapi-exchangeInfo.json.txt",
+      "selected_products": [
+        {
+          "symbol": "BTCUSDT_261225",
+          "pair": "BTCUSDT",
+          "contractType": "CURRENT_QUARTER",
+          "status": "TRADING",
+          "onboardDate": 1782460800000,
+          "deliveryDate": 1798185600000
+        },
+        {
+          "symbol": "ETHUSDT_261225",
+          "pair": "ETHUSDT",
+          "contractType": "CURRENT_QUARTER",
+          "status": "TRADING",
+          "onboardDate": 1782460800000,
+          "deliveryDate": 1798185600000
+        },
+        {
+          "symbol": "BTCUSDT_270326",
+          "pair": "BTCUSDT",
+          "contractType": "NEXT_QUARTER",
+          "status": "TRADING",
+          "onboardDate": 1790323200000,
+          "deliveryDate": 1806048000000
+        },
+        {
+          "symbol": "ETHUSDT_270326",
+          "pair": "ETHUSDT",
+          "contractType": "NEXT_QUARTER",
+          "status": "TRADING",
+          "onboardDate": 1790323200000,
+          "deliveryDate": 1806048000000
+        }
+      ]
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/exchangeInfo",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "http_status": 200,
+      "request_time_utc_ns": 1793201894177908000,
+      "receive_time_utc_ns": 1793201894446785000,
+      "representation": "selected-directory-facts.v1; projection only, not full HTTP body",
+      "body_sha256": "191ea3959b89efbcd0271ef1de8c1ca3f8d704bec7c36e36b39818d7c5684beb",
+      "body_bytes": 35700,
+      "retained_full_body": "/private/var/tmp/bmdr-p2-r2-Q0irrK/dapi-exchangeInfo.json.txt",
+      "selected_products": [
+        {
+          "symbol": "BTCUSD_261225",
+          "pair": "BTCUSD",
+          "contractType": "CURRENT_QUARTER",
+          "contractStatus": "TRADING",
+          "onboardDate": 1782460800000,
+          "deliveryDate": 1798185600000
+        },
+        {
+          "symbol": "ETHUSD_261225",
+          "pair": "ETHUSD",
+          "contractType": "CURRENT_QUARTER",
+          "contractStatus": "TRADING",
+          "onboardDate": 1782460800000,
+          "deliveryDate": 1798185600000
+        },
+        {
+          "symbol": "BTCUSD_270326",
+          "pair": "BTCUSD",
+          "contractType": "NEXT_QUARTER",
+          "contractStatus": "TRADING",
+          "onboardDate": 1790323200000,
+          "deliveryDate": 1806048000000
+        },
+        {
+          "symbol": "ETHUSD_270326",
+          "pair": "ETHUSD",
+          "contractType": "NEXT_QUARTER",
+          "contractStatus": "TRADING",
+          "onboardDate": 1790323200000,
+          "deliveryDate": 1806048000000
+        }
+      ]
+    }
+  ]
+}

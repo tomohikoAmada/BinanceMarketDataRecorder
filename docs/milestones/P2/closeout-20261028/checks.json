@@ -1,0 +1,66 @@
+{
+  "schema_version": "p2-correction-checks.v1",
+  "recorded_at_utc": "2026-10-28T07:10:28.007155+00:00",
+  "base": "1b1a544",
+  "source_binding": "runtime source in the enclosing correction commit",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.12.14"
+  },
+  "local_runs": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "passed": 2343,
+      "failed": 1,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 182.39,
+      "note": "Only the newly added CLI test used unsupported --data-root. Test and example corrected to existing environment setting; no runtime change needed."
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q --tb=short tests/unit/test_p2_daily_trades.py tests/unit/test_backfill.py tests/integration/test_p2_daily_pipeline.py tests/integration/test_p2_cooldown.py tests/unit/test_p2_coverage.py tests/integration/test_p2_capture.py tests/unit/test_cli.py",
+      "passed": 143,
+      "seconds": 3.89,
+      "note": "After the CLI-test/example correction. Sets overlap; counts are not additive."
+    }
+  ],
+  "checks": {
+    "ruff": "passed",
+    "mypy": "passed, 341 source files",
+    "m0_contracts": "passed",
+    "go_raw_golden": "passed",
+    "sdist_wheel_build": "passed",
+    "diff_check": "passed",
+    "original_cooldown_reproduction": "6/6 pass; received evidence retained",
+    "new_cooldown_regressions": "21 pass"
+  },
+  "ci": {
+    "workflow": "offline-ci",
+    "required_jobs": [
+      "macos-python312",
+      "ubuntu-python312"
+    ],
+    "binding": "exact correction commit; PR/check URLs supplied with delivery after dispatch",
+    "status_at_record_creation": "not yet dispatched"
+  },
+  "evidence": [
+    "measured-budget.json",
+    "daily-window-study.json",
+    "candidate-cadence-sample.json",
+    "daily-import-sample.json",
+    "premium-applicability.json",
+    "official-sources.json"
+  ],
+  "qualification": {
+    "P2_accepted": false,
+    "R1_implementation": "delivered, reviewed acceptance pending",
+    "R4_fix": "delivered, reviewed acceptance pending",
+    "R2": "OPEN, U/C delivery premium applicability unresolved",
+    "P3_started": false,
+    "production_operations": false,
+    "VPS_or_duration_credit": false,
+    "power_loss_tests": "owner excluded"
+  }
+}

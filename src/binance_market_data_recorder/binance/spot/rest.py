@@ -202,9 +202,8 @@ def capture_depth_snapshot(
     model = response.data()
     if model.last_update_id is None:
         raise RuntimeError("Spot depth snapshot has no lastUpdateId")
-    response_model = model.to_dict()
     provenance: dict[str, object] = {
-        "schema_version": "binance-spot-depth-snapshot-provenance.v2",
+        "schema_version": "binance-spot-depth-snapshot-provenance.v3",
         "request": {
             "method": "GET",
             "path": "/api/v3/depth",
@@ -218,7 +217,6 @@ def capture_depth_snapshot(
         "response": {
             "status": response.status,
             "headers": _safe_headers(response.headers),
-            "model": response_model,
             "receive_time_utc_ns": receive_utc_ns,
             "receive_monotonic_ns": receive_monotonic_ns,
         },
@@ -234,6 +232,14 @@ def capture_depth_snapshot(
             **provenance["response"],  # type: ignore[dict-item]
             "raw_body_base64": base64.b64encode(raw_body).decode("ascii"),
         }
+    else:
+        provenance["response"] = {
+            **provenance["response"],  # type: ignore[dict-item]
+            "model": model.to_dict(),
+        }
+    provenance["representation"] = (
+        "http-body-base64.v1" if isinstance(raw_body, bytes) else "parsed-model.v1"
+    )
     raw_payload = json.dumps(
         provenance, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
@@ -247,7 +253,7 @@ def capture_depth_snapshot(
         market="spot",
         symbol=symbol,
         stream="depth_snapshot",
-        module="binance.spot.rest.v2",
+        module="binance.spot.rest.v3",
         connection_id=f"rest-{uuid4()}",
         collector_instance_id=collector_instance_id,
         collector_version=collector_version,

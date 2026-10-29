@@ -19,6 +19,7 @@ from pydantic import (
     model_validator,
 )
 
+from .binance.coverage_config import CoverageConfig
 from .network import ProxyConfigurationError, ProxyMode, ProxyPolicy
 from .paths import UnsafeDataRootError, default_data_root, validate_data_root
 
@@ -58,6 +59,7 @@ class RecorderConfig(BaseModel):
     data_root: Path
     spot_symbols: tuple[str, ...] = ()
     usdm_symbols: tuple[str, ...] = ()
+    coverage: CoverageConfig | None = None
     capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel = "INFO"
     network_proxy_mode: ProxyMode = "direct"
@@ -108,7 +110,8 @@ class RecorderConfig(BaseModel):
         if not isinstance(value, dict):
             return value
         resolved = dict(value)
-        explicit = "spot_symbols" in resolved or "usdm_symbols" in resolved
+        explicit = ("spot_symbols" in resolved or "usdm_symbols" in resolved
+                    or resolved.get("coverage") is not None)
         for name in ("spot_symbols", "usdm_symbols"):
             symbols = resolved.get(name, () if explicit else ("BTCUSDT",))
             if not isinstance(symbols, (list, tuple)):
@@ -129,7 +132,12 @@ class RecorderConfig(BaseModel):
             if len(set(canonical)) != len(canonical):
                 raise ValueError("duplicate canonical product symbol")
             resolved[name] = tuple(canonical)
-        if not resolved["spot_symbols"] and not resolved["usdm_symbols"]:
+        if resolved.get("coverage") is not None and (
+            resolved["spot_symbols"] or resolved["usdm_symbols"]
+        ):
+            raise ValueError("coverage discovery and explicit legacy symbols cannot be combined")
+        if (not resolved["spot_symbols"] and not resolved["usdm_symbols"]
+                and resolved.get("coverage") is None):
             raise ValueError("at least one product must be configured")
         return resolved
 
@@ -174,6 +182,7 @@ class RecorderConfig(BaseModel):
             "data_root": str(self.data_root),
             "spot_symbols": list(self.spot_symbols),
             "usdm_symbols": list(self.usdm_symbols),
+            "coverage": self.coverage.model_dump(mode="json") if self.coverage else None,
             "capacity_profile": self.capacity_profile,
             "log_level": self.log_level,
             "network_proxy_mode": self.network_proxy_mode,
@@ -200,6 +209,7 @@ class _RecorderOverrides(BaseModel):
     spot_symbols: list[str] | None = None
     usdm_symbols: list[str] | None = None
     data_root: Path | None = None
+    coverage: CoverageConfig | None = None
     capacity_profile: CapacityProfileId | None = None
     log_level: LogLevel | None = None
     network_proxy_mode: ProxyMode | None = None
@@ -364,6 +374,9 @@ def load_config(
             if name in overrides.model_fields_set:
                 values[name] = getattr(overrides, name)
                 sources[name] = "config_file"
+        if overrides.coverage is not None:
+            values["coverage"] = overrides.coverage
+            sources["coverage"] = "config_file"
         if overrides.data_root is not None:
             values["data_root"] = overrides.data_root
             sources["data_root"] = "config_file"

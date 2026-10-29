@@ -119,7 +119,7 @@ class DepthContinuity:
             "spot_first_update_id_exceeds_local_plus_one"
             if self.market == "spot" and update.first > current + 1
             else "usdm_pu_does_not_equal_previous_u"
-            if self.market == "um_perpetual" and update.previous != current
+            if self.market != "spot" and update.previous != current
             else None
         )
         if reason is not None:

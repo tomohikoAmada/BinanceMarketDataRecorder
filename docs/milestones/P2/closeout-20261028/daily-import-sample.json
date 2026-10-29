@@ -1,0 +1,465 @@
+{
+  "schema_version": "historical-import-run.v1",
+  "clock_semantics": "archive_source_no_live_receive_clock",
+  "plan": {
+    "profile": "selected-daily-trades",
+    "start_date": "2026-10-26",
+    "end_date": "2026-10-26",
+    "estimated_bytes": 10000000000,
+    "file_count": 10,
+    "concurrency_limit": 1,
+    "entries": [
+      {
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_261225",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_261225/BTCUSD_261225-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_261225/BTCUSD_261225-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_270326",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_261225",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_261225/ETHUSD_261225-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_261225/ETHUSD_261225-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_270326",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "cm_perpetual",
+        "symbol": "BTCUSD_PERP",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "cm_perpetual",
+        "symbol": "ETHUSD_PERP",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_PERP/ETHUSD_PERP-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_PERP/ETHUSD_PERP-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_261225",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_261225/BTCUSDT_261225-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT_261225/BTCUSDT_261225-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_261225",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_261225/ETHUSDT_261225-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT_261225/ETHUSDT_261225-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "BTCU",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/um/daily/trades/BTCU/BTCU-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/um/daily/trades/BTCU/BTCU-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      },
+      {
+        "market": "um_perpetual",
+        "symbol": "ETHU",
+        "data_type": "trades",
+        "interval": null,
+        "granularity": "daily",
+        "period": "2026-10-26",
+        "start_date": "2026-10-26",
+        "end_date": "2026-10-26",
+        "timestamp_unit": "milliseconds",
+        "zip_url": "https://data.binance.vision/data/futures/um/daily/trades/ETHU/ETHU-trades-2026-10-26.zip",
+        "checksum_url": "https://data.binance.vision/data/futures/um/daily/trades/ETHU/ETHU-trades-2026-10-26.zip.CHECKSUM",
+        "estimated_bytes": 1000000000
+      }
+    ]
+  },
+  "results": [
+    {
+      "status": "IMPORTED",
+      "source_revision": "0bb93e60625bd5b3-cc20ee7ba340274d",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/0bb93e60625bd5b3-cc20ee7ba340274d/BTCUSD_261225-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-0bb93e60625bd5b3-cc20ee7ba340274d.parquet",
+      "gap": null
+    },
+    {
+      "status": "GAP",
+      "source_revision": "59e134a22163847534e4673dae45870205832ba9ed3d76fa97316132a10f136b",
+      "zip_path": null,
+      "normalized_path": null,
+      "gap": {
+        "schema_version": "historical-gap.v1",
+        "reason": "CHECKSUM_NOT_FOUND",
+        "entry": {
+          "market": "cm_delivery",
+          "symbol": "BTCUSD_270326",
+          "data_type": "trades",
+          "interval": null,
+          "granularity": "daily",
+          "period": "2026-10-26",
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-26",
+          "timestamp_unit": "milliseconds",
+          "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip",
+          "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_270326/BTCUSD_270326-trades-2026-10-26.zip.CHECKSUM",
+          "estimated_bytes": 1000000000
+        },
+        "observed_at_utc_ns": 1793170586182688000
+      }
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "22fe7331da2f9062-5cdf611ac5bd08fc",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/22fe7331da2f9062-5cdf611ac5bd08fc/ETHUSD_261225-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-22fe7331da2f9062-5cdf611ac5bd08fc.parquet",
+      "gap": null
+    },
+    {
+      "status": "GAP",
+      "source_revision": "49b971dd88f8dc6aad0eb2a7d0785de5d6c03093d7d17bec4a65031ebaea8540",
+      "zip_path": null,
+      "normalized_path": null,
+      "gap": {
+        "schema_version": "historical-gap.v1",
+        "reason": "CHECKSUM_NOT_FOUND",
+        "entry": {
+          "market": "cm_delivery",
+          "symbol": "ETHUSD_270326",
+          "data_type": "trades",
+          "interval": null,
+          "granularity": "daily",
+          "period": "2026-10-26",
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-26",
+          "timestamp_unit": "milliseconds",
+          "zip_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip",
+          "checksum_url": "https://data.binance.vision/data/futures/cm/daily/trades/ETHUSD_270326/ETHUSD_270326-trades-2026-10-26.zip.CHECKSUM",
+          "estimated_bytes": 1000000000
+        },
+        "observed_at_utc_ns": 1793170587020998000
+      }
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "21da62bf10a20398-e66351a727ca9d9f",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/21da62bf10a20398-e66351a727ca9d9f/BTCUSD_PERP-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-21da62bf10a20398-e66351a727ca9d9f.parquet",
+      "gap": null
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "b932ce45d919de02-c366a2de54f2f08f",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/b932ce45d919de02-c366a2de54f2f08f/ETHUSD_PERP-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-b932ce45d919de02-c366a2de54f2f08f.parquet",
+      "gap": null
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "0411f16001baa76b-2d10dbbe33535986",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/0411f16001baa76b-2d10dbbe33535986/BTCUSDT_261225-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-0411f16001baa76b-2d10dbbe33535986.parquet",
+      "gap": null
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "e6afebd6208f6a93-b9fcdf71c50b7c5b",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/e6afebd6208f6a93-b9fcdf71c50b7c5b/ETHUSDT_261225-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-e6afebd6208f6a93-b9fcdf71c50b7c5b.parquet",
+      "gap": null
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "491b4f4b2f0effc8-d0a548c2b42f2d5c",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/491b4f4b2f0effc8-d0a548c2b42f2d5c/BTCU-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-491b4f4b2f0effc8-d0a548c2b42f2d5c.parquet",
+      "gap": null
+    },
+    {
+      "status": "IMPORTED",
+      "source_revision": "ee33cf3407447342-17fedfcfea0775aa",
+      "zip_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/sources/ee33cf3407447342-17fedfcfea0775aa/ETHU-trades-2026-10-26.zip",
+      "normalized_path": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import/data/historical/normalized/daily-trades-ee33cf3407447342-17fedfcfea0775aa.parquet",
+      "gap": null
+    }
+  ],
+  "completed_at_utc_ns": 1793170591959097000,
+  "wall_seconds": 7.038262208050583,
+  "cpu_seconds": 0.721461,
+  "readbacks": [
+    {
+      "source_revision": "0bb93e60625bd5b3-cc20ee7ba340274d",
+      "rows": 1387,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800364000000,
+        "source_row_ordinal": 1,
+        "trade_id": 960258,
+        "price": "80757.7",
+        "qty": "1.0",
+        "quote_qty": null,
+        "base_qty": "0.00123827",
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_261225",
+        "source_revision": "0bb93e60625bd5b3-cc20ee7ba340274d",
+        "source_zip_sha256": "cc20ee7ba340274d01bc8307ba7293314a31aa0cbad8a9b616eb5d1b0ecb7110",
+        "downloaded_at_utc_ns": "1793170585876461000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800364000000
+      }
+    },
+    {
+      "source_revision": "22fe7331da2f9062-5cdf611ac5bd08fc",
+      "rows": 1067,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800413000000,
+        "source_row_ordinal": 1,
+        "trade_id": 785299,
+        "price": "2344.04",
+        "qty": "2.0",
+        "quote_qty": null,
+        "base_qty": "0.00853227",
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_261225",
+        "source_revision": "22fe7331da2f9062-5cdf611ac5bd08fc",
+        "source_zip_sha256": "5cdf611ac5bd08fc3220ac2fcc4805040f038e7cd9ca87338b8969728d3609be",
+        "downloaded_at_utc_ns": "1793170586767193000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800413000000
+      }
+    },
+    {
+      "source_revision": "21da62bf10a20398-e66351a727ca9d9f",
+      "rows": 31595,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800314000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1160791858,
+        "price": "80010.0",
+        "qty": "250.0",
+        "quote_qty": null,
+        "base_qty": "0.31246094",
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "cm_perpetual",
+        "symbol": "BTCUSD_PERP",
+        "source_revision": "21da62bf10a20398-e66351a727ca9d9f",
+        "source_zip_sha256": "e66351a727ca9d9f85fc9cfdbc930339165e29478e95946771790ba77154ed96",
+        "downloaded_at_utc_ns": "1793170587661202000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800314000000
+      }
+    },
+    {
+      "source_revision": "b932ce45d919de02-c366a2de54f2f08f",
+      "rows": 46616,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800330000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1244495118,
+        "price": "2325.54",
+        "qty": "1.0",
+        "quote_qty": null,
+        "base_qty": "0.00430007",
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "cm_perpetual",
+        "symbol": "ETHUSD_PERP",
+        "source_revision": "b932ce45d919de02-c366a2de54f2f08f",
+        "source_zip_sha256": "c366a2de54f2f08f8603eab29a333be2da1cbe7246e2cd8649ee9a9d44f41b17",
+        "downloaded_at_utc_ns": "1793170588519071000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800330000000
+      }
+    },
+    {
+      "source_revision": "0411f16001baa76b-2d10dbbe33535986",
+      "rows": 10106,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800020000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1299372,
+        "price": "80875.5",
+        "qty": "0.001",
+        "quote_qty": "80.8755",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_261225",
+        "source_revision": "0411f16001baa76b-2d10dbbe33535986",
+        "source_zip_sha256": "2d10dbbe335359868218eeb5ea4ceac69505c3a3ae9bbaa060d7a18924d38f6e",
+        "downloaded_at_utc_ns": "1793170589363458000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800020000000
+      }
+    },
+    {
+      "source_revision": "e6afebd6208f6a93-b9fcdf71c50b7c5b",
+      "rows": 12178,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800047000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1788316,
+        "price": "2346.31",
+        "qty": "0.014",
+        "quote_qty": "32.84834",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_261225",
+        "source_revision": "e6afebd6208f6a93-b9fcdf71c50b7c5b",
+        "source_zip_sha256": "b9fcdf71c50b7c5bc8696ee466afe0d0dd191b64aecbcc8730a01069f92dd4ce",
+        "downloaded_at_utc_ns": "1793170590478652000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800047000000
+      }
+    },
+    {
+      "source_revision": "491b4f4b2f0effc8-d0a548c2b42f2d5c",
+      "rows": 11465,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972817492000000,
+        "source_row_ordinal": 1,
+        "trade_id": 962254,
+        "price": "80048.9",
+        "qty": "1.0E-4",
+        "quote_qty": "8.00489",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "um_perpetual",
+        "symbol": "BTCU",
+        "source_revision": "491b4f4b2f0effc8-d0a548c2b42f2d5c",
+        "source_zip_sha256": "d0a548c2b42f2d5ca0b82e92abc2b92c3386c7bb191465059d3f408c5f73c12d",
+        "downloaded_at_utc_ns": "1793170591186648000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972817492000000
+      }
+    },
+    {
+      "source_revision": "ee33cf3407447342-17fedfcfea0775aa",
+      "rows": 9359,
+      "first_fact": {
+        "archive_event_time_utc_ns": 1792972800413000000,
+        "source_row_ordinal": 1,
+        "trade_id": 1135320,
+        "price": "2326.78",
+        "qty": "0.012",
+        "quote_qty": "27.92136",
+        "base_qty": null,
+        "is_buyer_maker": true,
+        "is_best_match": null,
+        "market": "um_perpetual",
+        "symbol": "ETHU",
+        "source_revision": "ee33cf3407447342-17fedfcfea0775aa",
+        "source_zip_sha256": "17fedfcfea0775aa45ae99fcdf59f485d05eb9b9cfa9a9ca47c9b920a8ba88d1",
+        "downloaded_at_utc_ns": "1793170591916748000",
+        "clock_semantics": "archive_source",
+        "is_rpi_trade_available": false,
+        "live_receive_time_utc_ns": null,
+        "trade_time_utc_ns": 1792972800413000000
+      }
+    }
+  ],
+  "verification": {
+    "status": "VERIFIED",
+    "verified_source_revisions": 8,
+    "verified_normalized_rows": 123773
+  },
+  "data_root": "/private/var/tmp/bmdr-p2-closeout-wqpuPp/daily-import"
+}

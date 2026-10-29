@@ -1,7 +1,7 @@
 # Binance Market Data Recorder
 
-A Python 3.12 recorder for Binance Spot and USD-M perpetual public market data.
-It captures original payloads, stores immutable Raw chunks, tracks gaps and
+A Python 3.12 recorder for Binance Spot and USD-M / COIN-M public market data.
+It captures exact WebSocket payloads and declared REST representations, stores immutable Raw chunks, tracks gaps and
 recovery, and provides verified archival, Parquet normalization, and deterministic
 replay for downstream research.
 
@@ -17,8 +17,7 @@ See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 The [current production milestone plan](docs/production_milestone_plan.md)
 replaces the retired plan as of October 26, 2026. It designs for at least ten
 assets and targets stable BTC/ETH production across Spot, USD-M and COIN-M
-perpetual/delivery markets, with 99.5% per-source continuity. [P0 review corrections are complete, including the remaining R2 classifier fix](docs/milestones/P0/review-20261026.md); retained boundaries have an appended v4 classification and the NON_STEADY profile remains diagnostic only. [P1 passed independent re-review, including its R1 fix](docs/milestones/P1/README.md); its local interleaved results and limits remain explicit. Expanded
-market support and production readiness are not yet achieved.
+perpetual/delivery markets, with 99.5% per-source continuity. [P0 review corrections are complete, including the remaining R2 classifier fix](docs/milestones/P0/review-20261026.md); retained boundaries have an appended v4 classification and the NON_STEADY profile remains diagnostic only. [P1 passed independent re-review, including its R1 fix](docs/milestones/P1/README.md); its local interleaved results and limits remain explicit. [P2 expanded-market capture is implemented locally](docs/milestones/P2/README.md), with request-budget and source-applicability blockers still open. P2 acceptance and production readiness are not yet achieved.
 Historical plans and acceptance evidence remain preserved.
 
 The [pre-milestone research](docs/research/2026-10-26/README.md) compares reusable

@@ -1,0 +1,58 @@
+{
+  "schema_version": "p2-r4-order-correction.v1",
+  "recorded_at_utc": "2026-10-28T14:38:28.437182+00:00",
+  "base_commit": "7d80f2f",
+  "binding": "runtime source in enclosing correction commit",
+  "scope": "Existing gate moved before persistence, with existing fallback reused for malformed directives so failure evidence still persists; no limiter/valid duration/cadence changes",
+  "negative_regression": {
+    "runtime": "7d80f2f / same src as 195762c",
+    "new_cases_failed": 8,
+    "seconds": 0.92,
+    "full_suite_rerun": false
+  },
+  "positive_checks": {
+    "cooldown_regressions": 33,
+    "affected_regressions": 182,
+    "affected_regressions_seconds": 4.46,
+    "shared_api_budget_tests": 9,
+    "shared_api_budget_seconds": 0.51,
+    "review_admission_reproduction": "6/6 pass; cooldown-order-final.json",
+    "original_duration_reproduction": "6/6 pass; cooldown-duration-order-final.json",
+    "ruff": "passed",
+    "mypy": "passed,341 source files",
+    "M0_contracts": "passed",
+    "git_diff_check": "passed"
+  },
+  "ci": {
+    "workflow": "offline-ci",
+    "required_jobs": [
+      "macos-python312",
+      "ubuntu-python312"
+    ],
+    "source_binding": "exact correction commit; current run and outcomes recorded in PR #88",
+    "status_at_record_creation": "not dispatched",
+    "superseded_run": {
+      "id": 40706983558,
+      "head": "73ec0c8",
+      "disposition": "cancelled because malformed-header guard changes final source"
+    }
+  },
+  "acceptance": {
+    "R1": "PASS, retained 195762c independent review",
+    "R2": "OPEN, U/C delivery premium semantics unknown",
+    "R4": "correction delivered, independent re-review pending",
+    "P2": "NOT_ACCEPTED"
+  },
+  "unrun": [
+    "Local full-suite repeat; exact correction CI performs the full suite",
+    "New official-source/market requests; duration semantics and R2 evidence unchanged",
+    "R1 whole-history/daily-file re-audit",
+    "VPS/capacity/production-duration/deployment work"
+  ],
+  "previous_ordering_candidate": "73ec0c8; retained initial eight-case evidence and JSON files in git",
+  "malformed_header_negative_regression": {
+    "runtime": "73ec0c8",
+    "new_cases_failed": 4,
+    "seconds": 1.06
+  }
+}

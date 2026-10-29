@@ -1,5 +1,116 @@
 # Official Binance Sources
 
+## P2-R2 access and importance clarification — 2026-10-29
+
+The owner requested a focused check of API-key/VIP access and the importance of the
+missing series. The index was read first, followed by selected developer pages and
+official Python connector source. [Research note](milestones/P2/r2-20261029-access/README.md),
+[source metadata](milestones/P2/r2-20261029-access/sources.json) and
+[six unsigned observations](milestones/P2/r2-20261029-access/unsigned-diagnostic.json)
+retain the distinction between documentation, observed behavior and engineering judgment.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-29T03:12:57.548844+00:00 | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Index was consulted first; locates native premium-index routes. |
+| [USD-M security rules](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md) | 2026-10-29T03:13:52.026858+00:00 | `7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65` | NONE is public; MARKET_DATA is a separate security label requiring a key. The catalogue market-data category alone does not establish authentication. |
+| [COIN-M security rules](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/general-info.md) | 2026-10-29T03:13:52.094065+00:00 | `a1f5167589eb77e33a8e804c4e83fe1d5059c83ff1c38ed98f15bd0931b4a225` | Same security-label distinction as USD-M; some endpoints require keys, so evaluate this endpoint rather than every market-data API together. |
+| [USD-M errors](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/error-code.md) | 2026-10-29T03:13:52.053160+00:00 | `1e9600365347dfb8bf76faee4c7593de196c126154e17cea340ad76a621d6474` | -1121 is BAD_SYMBOL; -1002, -2014 and -2015 describe authorization/key problems. An error code alone does not establish permanent product exclusion. |
+| [COIN-M errors](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/error-code.md) | 2026-10-29T03:13:51.942198+00:00 | `89a36a402e170058e1d9235ca98cef206145c9b59b76411ec49d21c03f8b0a65` | Same distinction between BAD_SYMBOL and authorization/key errors. |
+| [CM/UM integration C.3](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-29T03:13:52.099904+00:00 | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | C.3 extends the listed paths across UM/CM symbols; it does not explicitly say every dated contract has a premium-index series. |
+| [COIN-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py) | 2026-10-29T03:15:35Z to 2026-10-29T03:18:18Z | `684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a` | premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility. |
+| [USD-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py) | 2026-10-29T03:15:35Z to 2026-10-29T03:18:18Z | `d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182` | premium_index_kline_data has symbol/interval and optional time/limit; no VIP argument or extra dated-contract switch. SDK behavior corroborates parameter handling, not normative product eligibility. |
+| [USD-M premium section](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T03:12:57Z to 2026-10-29T03:19:14Z | `da26bd6c88b633843afbe159847a2d33770d89f816536771e0ad98a4e1bb2b51` | Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header. |
+| [COIN-M premium section](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T03:12:57Z to 2026-10-29T03:19:14Z | `a850fd7fddd8d4ab6c2ba234ff5f490c1b0a37b0f09cb93bc63870695ef8236f` | Reviewed section has the public GET example, required symbol/interval and optional time/limit, and index OHLC output; no API-key header or VIP requirement is documented. No explicit dated eligibility rule. Unlike this section, historicalTrades explicitly lists a required API-key header. |
+
+Catalogue hashes cover the short rendered excerpts retained in the metadata, not complete
+HTTP responses. Both schema downloads were empty and provide no authentication evidence.
+The six fresh public GETs used no key, signature, cookie or account: native UM/CM BTC
+perpetual premium queries returned two bars each; dated premium queries returned -1121;
+the same dated symbols returned five bids and asks from depth. This supports the public
+access conclusion and localizes the observation to the requested series, but does not
+prove permanent non-availability of dated premium bars. No VIP requirement was found in
+this endpoint's documentation. R2/P2 remain open; no scope exception or issue submission
+is authorized by this research.
+
+## P2-R2 independent review — 2026-10-29
+
+The current index was fetched first. The following selected official catalogue sections
+were then read to check the eligibility claim and explain the missing-data boundary.
+No new Binance market request was made. [Review metadata](milestones/P2/review-066c2c3-checks.json)
+contains representations and the exact short excerpts behind the excerpt digests.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-29T00:20:54.389792Z | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Downloaded index bytes match the prior investigation's index; no endpoint-specific dated rule. |
+| [USD-M premium bars](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T00:25:07Z–00:25:14Z | `b1d7f0ada599087dc1c39b509d15eb9d82cb2af6c3eb784f9f431ea25ade8c9c` | Selected rendered excerpt, not HTTP bytes: symbol/interval and optional time/limit; reviewed section does not specify perpetual/dated applicability. |
+| [COIN-M premium bars](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data#premium-index-kline-data) | 2026-10-29T00:25:07Z–00:25:14Z | `a92bc0db3846ad2adb3637dba09c7af2cd06e97d49c830431d08bf6f29bb8ff1` | Selected rendered excerpt, not HTTP bytes: same parameter boundary and no explicit dated eligibility in the reviewed section. |
+
+The web reader could not open llms.txt, so its bytes were fetched directly. Direct
+HTTP downloads of the two catalogue pages returned empty bodies and are not semantic
+evidence; rendered official pages were used instead. Excerpt hashes identify only the
+selected text, not the full page or a normative applicability guarantee. R2 stays OPEN.
+
+## P2-R2 official applicability follow-up — 2026-10-29
+
+The index was read first; observations below were retrieved on 2026-10-28 UTC.
+[Source metadata](milestones/P2/r2-20261028/official-sources.json) records exact byte
+counts, representations and local full-source paths. Digests identify downloaded
+text or decoded connector files, not original HTTP wire bytes. No downloaded
+content was executed and no llms-full was read.
+
+| Source | Retrieved UTC | Content SHA-256 | Conclusion |
+| --- | --- | --- | --- |
+| [Agent Native index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-28T15:16:15Z | `b7051e1b961a4b221a5e5fcd47439221d2ade5222cc0bad59c1dc84a505d5482` | Locates native paths; no dated eligibility rule. |
+| [CM/UM integration C.3](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-28T15:23:57Z | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | Both premium paths accept UM/CM symbols; contract-type eligibility unspecified. |
+| [USD-M shared changelog](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log.md) | 2026-10-28T15:23:58Z | `05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8` | No premiumIndexKlines dated/perpetual rule found in the selected search. |
+| [COIN-M shared changelog (same bytes)](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/change-log.md) | 2026-10-28T15:23:58Z | `05cd6861a8210185f498ab6f7d2248c3d58ee0202d4707f1c80a877fc59a8bb8` | Same content as the USD-M URL, evaluated once. |
+| [Agent Native discovery](https://developers.binance.com/en/docs/agent-native/overview.md) | 2026-10-28T15:23:59Z | `7848052093045381e874dcd826d3cd8a1fb73706f71ed10a8b6607fbcf701a22` | Discovery guidance only; not endpoint eligibility. |
+| [COIN-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_coin_futures/src/binance_sdk_derivatives_trading_coin_futures/rest_api/api/market_data_api.py) | 2026-10-28T15:27:20Z | `684f233e18a6440254daeedfa6f99ea2c5861c85fd15c5be867ba642a6ca650a` | symbol/interval + optional time/limit, no alternate pair/contractType or eligibility validation. |
+| [USD-M Python market API](https://github.com/binance/binance-connector-python/blob/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/market_data_api.py) | 2026-10-28T15:27:20Z | `d783bb54426876450e148c11c76d4f9784b45dd40d1026a7e81ceb0cc4268182` | Same parameter boundary; SDK behavior does not define market eligibility. |
+| [Python connector README](https://github.com/binance/binance-connector-python/blob/master/README.md) | 2026-10-28T15:45:06Z | `381dc82aac2e997d63a785d8cfbcfaf718da605ea8bfb98dd48b8ddb6831eceb` | Contributing section provides an issue discussion/bug-report venue. |
+
+The catalogue evidence already retained in [the earlier P2 source record](milestones/P2/closeout-20261028/official-sources.json)
+also does not establish dated eligibility. Delivery-specific funding nulls on
+premiumIndex belong to another endpoint. No unsupported-to-not-offered inference
+or substitute series is authorized. [New finite public HTTP observations](milestones/P2/r2-20261028/raw-http-diagnostic.json)
+and [current selected directory facts](milestones/P2/r2-20261028/directory-validation.json)
+are diagnostic observations, not normative applicability. R2 stays OPEN; the
+[clarification draft](milestones/P2/r2-20261028/binance-clarification-draft.md) is unsent.
+
+## P2 独立复审与 D06 预算研究（2026-10-28）
+
+### 日度文件存在性补充核验
+
+2026-10-28（上海）重新读取官方 `binance/binance-public-data` README，并以无凭据
+HEAD 核验以下历史样例 ZIP，GET 其对应 `.CHECKSUM`；全部返回 HTTP 200。
+ZIP 正文未下载，下表 SHA-256 是实际取得的校验文本的摘要，不是对 ZIP 内容完成了校验。
+这确认官方日度逐笔文件实际存在，不证明每个目标产品/日期/字段均完整可用。
+
+| 官方样例 / 核验日期 | 请求 UTC | CHECKSUM 文本 SHA-256 | 结果 |
+| --- | --- | --- | --- |
+| [USD-M BTCUSDT 2025-01-01](https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2025-01-01.zip)、[校验文本](https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2025-01-01.zip.CHECKSUM) | 2026-10-27T16:21:52.799929Z | `c721f59b57c2c1c369d99063272b4cb93b812da45b104ae88e19f8da5fc39157` | HEAD 200，15,105,022 bytes；CHECKSUM GET 200 |
+| [COIN-M BTCUSD_PERP 2025-01-01](https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2025-01-01.zip)、[校验文本](https://data.binance.vision/data/futures/cm/daily/trades/BTCUSD_PERP/BTCUSD_PERP-trades-2025-01-01.zip.CHECKSUM) | 2026-10-27T16:21:52.800231Z | `9e01995b65e1007dc17809ddd7c0625b691e6e871c4e89a384d7276293cb1964` | HEAD 200，1,652,988 bytes；CHECKSUM GET 200 |
+
+本次先读取 Agent Native index，再核对选定产品页、整合说明及官方批量数据源码。
+下列 UTC、摘要及表示完整记录于 [P2 review-sources.json](milestones/P2/review-sources.json)；
+检索发生于 2026-10-27 UTC，报告日期为上海时间次日。没有访问账户或市场采集接口、
+执行下载代码或读取 llms-full。文档更新不授权 6 秒采样或生产运行。
+
+| 来源 | 获取 UTC | SHA-256 / 表示 | 结论 |
+| --- | --- | --- | --- |
+| [当前 index](https://developers.binance.com/en/docs/llms.txt) | 2026-10-27T15:13:25.820554Z | `533716d1dfd4a505e9d4f52e3de850c6048f775b17e6c1d0bef0c169f532cdd4`，下载文本 | 定位 recent trades、premium bars 及 CM/UM 整合说明 |
+| [Spot REST](https://developers.binance.com/en/docs/products/spot/rest-api.md) | 2026-10-27T15:54:35.269613Z | `25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec`，下载 Markdown | 429/418 的 Retry-After 表示应等待秒数；固定 120 秒不能替代实际期限 |
+| [CM/UM 整合说明](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) | 2026-10-27T15:54:35.225260Z | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98`，下载 Markdown | UM/CM 共用 IP 2,400 weight/min；部分跨市场路径可接受两类 symbol，但不能据此推导交割 premium 的适用规则 |
+| [UM general info](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/general-info.md) | 2026-10-27T15:54:35.256107Z | `7026aa5ae78b20df3e15349dfdb37f92866d563131cb551ff6eb538e58343a65`，下载 Markdown | 请求按 IP 计量，429 应退避；持续违规可能封禁 |
+| [UM REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data)、[CM REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data) | 2026-10-27T15:13:25Z–15:59:05Z | `1e70d3f2720438f80e612c7fc4408a616b9becb2a24f230c24afd85c924823f3`，组合 web 工具摘录文本，非 HTTP 原文 | recent trades 的 weight=5、limit≤1,000，无翻页参数；UM historicalTrades 需 API Key，不能引入本项目 |
+| [UM WS](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/market)、[CM premium REST](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data) | 2026-10-27T15:13:25Z–15:59:05Z | `2dc2d19cde45ae5b42df82bbc085111b4a1ccf20808a3e7950b2924987bd2212`，组合 web 工具摘录文本，非 HTTP 原文 | aggTrade 是聚合流，不能反推逐笔；CM premium 页未明确所有交割产品的适用规则，R2 保持开放 |
+| [官方批量文件 README](https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/README.md) | 2026-10-27T15:13:25Z–15:59:05Z | `2e133d9945a9263a02781369078e72805eff074680f305cd5460016471c6caad`，connector 解码文件文本 | 日文件次日发布，带文件校验；所列合约 trades 列未列 isRPITrade，实际产品/字段覆盖待验证 |
+| [官方下载源码](https://github.com/binance/binance-public-data/blob/d571690eb66760763b0bd6e27e8cd35603c7e244/python/download-trade.py) | 2026-10-27T15:13:25Z–15:59:05Z | `9acd63d2dca09dd198949a28e00a0a54f13100a70f8b24ac932678e14c7e02b6`，connector 解码文件文本 | 可按产品、日期获取文件及校验文件；仅阅读，未运行或整仓引入 |
+
+[研究结论](milestones/P2/d06-budget-research-20261028.md)区分源文档事实和方案推断：
+按产品分配频率和日文件补充是候选，不是已验证的数据完整性保证。文件校验不证明
+交易所逐笔发布完整，也不能替代实时接收时间或连续性。
+
 ## Retention discussion: candle boundaries and recent trades — 2026-10-27
 
 Evidence for the retention discussion and subsequent plan update; no endpoint implementation.
@@ -700,3 +811,32 @@ changelog at 2026-10-26T14:48:32Z retains SHA-256
 `7da6939ae9e4e9b9c9dbdbabba6a4b582fa08d3af23c4bd952546f140e331863`.
 U/C `.md` probes returned an HTML shell and are explicitly unusable; no downloaded
 content was executed and the index's full-text corpus was not loaded for this fix.
+
+## P2 implementation sources — 2026-10-27
+
+Current source inventory and exact representations are in [P2 official-sources.json](milestones/P2/official-sources.json). Direct catalogue/schema downloads returned WAF 202 and were excluded as semantic evidence. Rendered official-page excerpts are explicitly hashed as excerpts, not HTTP bodies. No downloaded code was executed.
+
+| Source | Retrieval UTC | SHA-256 | Relevant conclusion |
+| --- | --- | --- | --- |
+| [index](https://developers.binance.com/en/docs/llms.txt) (downloaded text) | 2026-10-27T10:20:33.264476+00:00 | `d23560223c5726258114e892d31b86915d8f4de4a2bf65d6885e9c8c54800ab4` | Current index read before selected pages; no llms-full load. |
+| [spot-streams](https://developers.binance.com/en/docs/products/spot/web-socket-streams.md) (downloaded document bytes) | 2026-10-27T10:20:53.964338+00:00 | `555f9ed488d94665fc6c6dc3e7645d90546d2d179d5083f0289a8a9a5f538a35` | Combined wrapper, exact application-message boundary, native connection limits and shutdown. |
+| [spot-rest](https://developers.binance.com/en/docs/products/spot/rest-api.md) (downloaded document bytes) | 2026-10-27T10:20:53.971075+00:00 | `25f9203680b6c2570113c54fb449a119dc7482f125b790a6a27ce572b4665dec` | Public unsigned REST and supplied time/precision semantics. |
+| [um-connect](https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md) (downloaded document bytes) | 2026-10-27T10:20:53.900829+00:00 | `912f2dad9da21b5c1801d73f052473b6a1d7136a43b2ff3e7a1c2cdc54abdde2` | USD-M public/market routing and combined stream limit. |
+| [cm-connect](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Connect.md) (downloaded document bytes) | 2026-10-27T10:20:53.968097+00:00 | `d6963a3e320b7d9d86ab4cbc9e199d063926a6e27ecfddd4f07dac821f158762` | COIN-M dstream route and combined stream limit. |
+| [integration](https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md) (downloaded document bytes) | 2026-10-27T10:20:53.899703+00:00 | `7b2f3c49aec8d1ab2d9ca2d1295ae1c0c8a54a958ee01e8aa23ecd03568eaa98` | UM/CM 2400/min shared IP weight; st=1/2; stream-specific ps; cross-host kline support. |
+| [catalog-excerpts](https://developers.binance.com/en/docs/catalog) (serialized rendered official-page excerpts, not original HTTP bytes) | 2026-10-27T11:43:53+00:00 | `5ec6acf9c87a44aa127757efd39b9699d843c054b9d29aac583f19b174dd333e` | Spot blockTrade native t field; C indexPrice i/p; C premium symbol contract remains ambiguous; U top-ratio key restrictions retained. |
+
+Live public samples, initial invalid-limit probes, C dated-premium failures and the successful perpetual comparison are separately retained in P2 fixtures. The SDK source evaluation used installed official Spot 10.0.0 / USD-M 14.0.0 / common 4.0.3; generated model null loss and the generic wrapper error are worked around within the installed unsigned transport. D31 uses the already-received body to preserve numeric decimal precision. See [P2 result](milestones/P2/README.md); failed/unobserved sources are not qualification successes.
+
+RPI sequence semantics checked at 2026-10-27T12:52:15Z: [official public streams](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/ws-streams/public) documents `pu` as the preceding stream event's final ID. The [short rendered excerpt](milestones/P2/rpi-sequence-source.json) SHA-256 is `fadee421d713a415c5e82d806d3170e09fd542dce58344ed5b607907bf632be8` (excerpt identity, not HTTP-body identity). P2 keeps an independent RPI cursor and marks a known jump before append; it does not infer order-book price correctness.
+
+## P2 corrections and measured D06 — 2026-10-28
+
+Read the [Agent Native index](https://developers.binance.com/en/docs/llms.txt) first at 2026-10-28T06:41:13Z; 174,964 bytes, SHA-256 `c5ce78c90244f0bf92fa1b6143a63807bdfb908a3de8c1a6e9379e73c911741f`. Selected old premium `.md` URLs returned an HTML shell, excluded as semantics. [Retrieval records and catalog excerpt](milestones/P2/closeout-20261028/official-sources.json) record UTC bounds/hashes. No delivery applicability rule was established, so R2 remains open.
+
+The [official Public Data README](https://github.com/binance/binance-public-data/blob/master/README.md) was re-read in rendered form on October28. The pinned README hash above remains its original retrieval. Actual [file/date/checksum observations](milestones/P2/closeout-20261028/daily-file-availability.json), [content/field/ID study](milestones/P2/closeout-20261028/daily-window-study.json), and [import readbacks](milestones/P2/closeout-20261028/daily-import-sample.json) bind each official ZIP URL, supplied SHA-256 and actual acquisition time. All 17 available files were downloaded and SHA-verified; two CM next-quarter files returned 404 for this date. Six-column files lack isRPITrade/live timing; native ID holes are disclosed. These observations do not establish exchange completeness. No downloaded code was executed.
+
+| Current rendered source | UTC retrieval bounds | SHA-256 of retained short excerpt | Conclusion |
+| --- | --- | --- | --- |
+| [premium-catalog](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-coin-m-futures/api/rest-api/market-data) | 2026-10-28T06:41:14Z to 2026-10-28T06:42:45Z | `87b48b046703bdb8193ba88d702ad580eb776857dbf11c79a2dcfc46266a784f` | No explicit perpetual/delivery applicability rule established; R2 remains open. |
+| [public-data-readme](https://github.com/binance/binance-public-data/blob/master/README.md) | 2026-10-28T06:41:13Z to 2026-10-28T06:41:30Z | `8bb6fea7c93492f92f5937c1c39479547938d247453b90aa5b9447101bcc71e3` | Daily release is delayed; verify selected file/date/fields and revisions independently. |

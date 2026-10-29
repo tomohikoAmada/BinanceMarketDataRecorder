@@ -145,6 +145,17 @@ class CollectorReadiness:
             except OrderBookDataError:
                 return SynchronizeResult.NEED_MORE_EVENTS
 
+    def invalidate_depth(self, received_at: int) -> None:
+        with self._lock:
+            self._book.invalidate(received_at)
+            self._book = DepthContinuity(
+                self._market,
+                capacity=self._bootstrap_buffer_capacity,
+                audit_observer=self._audit_observer,
+            )
+            self._snapshot_persisted = False
+            self._persisted.discard("diff_depth")
+
     def record_failure(self, reason: str) -> None:
         if not reason:
             raise ValueError("readiness failure must be non-empty")
@@ -160,7 +171,8 @@ class CollectorReadiness:
             self._snapshot_persisted = False
             self._failure = None
             self._book = DepthContinuity(
-                self._market, capacity=self._bootstrap_buffer_capacity,
+                self._market,
+                capacity=self._bootstrap_buffer_capacity,
                 audit_observer=self._audit_observer,
             )
 

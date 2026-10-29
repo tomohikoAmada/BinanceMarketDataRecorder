@@ -1,0 +1,724 @@
+[
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_261225"
+      },
+      "venue_market": "usdm",
+      "pair": "BTCUSDT",
+      "base_asset": "BTC",
+      "quote_asset": "USDT",
+      "margin_asset": "USDT",
+      "contract_type": "CURRENT_QUARTER",
+      "contract_size": "1",
+      "onboard_time_ms": 1782460800000,
+      "delivery_time_ms": 1798185600000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "BTCUSDT_261225",
+      "venue_market": "usdm",
+      "request": {
+        "request_id": "ef9568e0-bf4e-4aad-9204-a05adf004038",
+        "method": "GET",
+        "path": "/fapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "BTCUSDT_261225"
+        },
+        "request_time_utc_ns": 1793170586866013000,
+        "request_monotonic_ns": 460577566842250,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "x-mbx-used-weight-1m": "284",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587125187000,
+        "receive_monotonic_ns": 460577826015375
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "um_delivery",
+        "symbol": "BTCUSDT_270326"
+      },
+      "venue_market": "usdm",
+      "pair": "BTCUSDT",
+      "base_asset": "BTC",
+      "quote_asset": "USDT",
+      "margin_asset": "USDT",
+      "contract_type": "NEXT_QUARTER",
+      "contract_size": "1",
+      "onboard_time_ms": 1790323200000,
+      "delivery_time_ms": 1806048000000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "BTCUSDT_270326",
+      "venue_market": "usdm",
+      "request": {
+        "request_id": "8f005da6-2beb-4632-8e43-a65c3c3848c2",
+        "method": "GET",
+        "path": "/fapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "BTCUSDT_270326"
+        },
+        "request_time_utc_ns": 1793170587125898000,
+        "request_monotonic_ns": 460577826725083,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "x-mbx-used-weight-1m": "285",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587218684000,
+        "receive_monotonic_ns": 460577919512333
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_261225"
+      },
+      "venue_market": "usdm",
+      "pair": "ETHUSDT",
+      "base_asset": "ETH",
+      "quote_asset": "USDT",
+      "margin_asset": "USDT",
+      "contract_type": "CURRENT_QUARTER",
+      "contract_size": "1",
+      "onboard_time_ms": 1782460800000,
+      "delivery_time_ms": 1798185600000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "ETHUSDT_261225",
+      "venue_market": "usdm",
+      "request": {
+        "request_id": "47642165-b8a0-4e94-ae12-f5c05afd325f",
+        "method": "GET",
+        "path": "/fapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "ETHUSDT_261225"
+        },
+        "request_time_utc_ns": 1793170587219606000,
+        "request_monotonic_ns": 460577920432791,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "x-mbx-used-weight-1m": "286",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587314930000,
+        "receive_monotonic_ns": 460578015758750
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "um_delivery",
+        "symbol": "ETHUSDT_270326"
+      },
+      "venue_market": "usdm",
+      "pair": "ETHUSDT",
+      "base_asset": "ETH",
+      "quote_asset": "USDT",
+      "margin_asset": "USDT",
+      "contract_type": "NEXT_QUARTER",
+      "contract_size": "1",
+      "onboard_time_ms": 1790323200000,
+      "delivery_time_ms": 1806048000000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "ETHUSDT_270326",
+      "venue_market": "usdm",
+      "request": {
+        "request_id": "9aa14f00-878c-44f1-9dc6-fbcaa10691c0",
+        "method": "GET",
+        "path": "/fapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "ETHUSDT_270326"
+        },
+        "request_time_utc_ns": 1793170587316668000,
+        "request_monotonic_ns": 460578017494708,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json",
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "x-mbx-used-weight-1m": "287",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587510154000,
+        "receive_monotonic_ns": 460578210981750
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_261225"
+      },
+      "venue_market": "coinm",
+      "pair": "BTCUSD",
+      "base_asset": "BTC",
+      "quote_asset": "USD",
+      "margin_asset": "BTC",
+      "contract_type": "CURRENT_QUARTER",
+      "contract_size": "100",
+      "onboard_time_ms": 1782460800000,
+      "delivery_time_ms": 1798185600000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "BTCUSD_261225",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "d96d3015-c66e-4319-b306-5fcc2b9d2f6b",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "BTCUSD_261225"
+        },
+        "request_time_utc_ns": 1793170587521552000,
+        "request_monotonic_ns": 460578222377458,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "293",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587845460000,
+        "receive_monotonic_ns": 460578546283208
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_delivery",
+        "symbol": "BTCUSD_270326"
+      },
+      "venue_market": "coinm",
+      "pair": "BTCUSD",
+      "base_asset": "BTC",
+      "quote_asset": "USD",
+      "margin_asset": "BTC",
+      "contract_type": "NEXT_QUARTER",
+      "contract_size": "100",
+      "onboard_time_ms": 1790323200000,
+      "delivery_time_ms": 1806048000000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "BTCUSD_270326",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "879a31f8-7a9f-4dd6-a126-9f2b2eb544bc",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "BTCUSD_270326"
+        },
+        "request_time_utc_ns": 1793170587845726000,
+        "request_monotonic_ns": 460578546548708,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "294",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170587932681000,
+        "receive_monotonic_ns": 460578633504750
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_261225"
+      },
+      "venue_market": "coinm",
+      "pair": "ETHUSD",
+      "base_asset": "ETH",
+      "quote_asset": "USD",
+      "margin_asset": "ETH",
+      "contract_type": "CURRENT_QUARTER",
+      "contract_size": "10",
+      "onboard_time_ms": 1782460800000,
+      "delivery_time_ms": 1798185600000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "ETHUSD_261225",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "443d6da2-6abe-46fc-9cb7-8814649bad14",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "ETHUSD_261225"
+        },
+        "request_time_utc_ns": 1793170587933276000,
+        "request_monotonic_ns": 460578634097958,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:27 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "300",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170588021914000,
+        "receive_monotonic_ns": 460578722737833
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_delivery",
+        "symbol": "ETHUSD_270326"
+      },
+      "venue_market": "coinm",
+      "pair": "ETHUSD",
+      "base_asset": "ETH",
+      "quote_asset": "USD",
+      "margin_asset": "ETH",
+      "contract_type": "NEXT_QUARTER",
+      "contract_size": "10",
+      "onboard_time_ms": 1790323200000,
+      "delivery_time_ms": 1806048000000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "ETHUSD_270326",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "5a31299b-f77b-4939-90c2-49d0876a0485",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "ETHUSD_270326"
+        },
+        "request_time_utc_ns": 1793170588022570000,
+        "request_monotonic_ns": 460578723391916,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:28 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "301",
+          "x-response-time": "0ms"
+        },
+        "model": {
+          "code": -1121,
+          "msg": "Invalid symbol."
+        },
+        "valid": false,
+        "error_type": "HttpResponseError",
+        "receive_time_utc_ns": 1793170588110796000,
+        "receive_monotonic_ns": 460578811617208
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_perpetual",
+        "symbol": "BTCUSD_PERP"
+      },
+      "venue_market": "coinm",
+      "pair": "BTCUSD",
+      "base_asset": "BTC",
+      "quote_asset": "USD",
+      "margin_asset": "BTC",
+      "contract_type": "PERPETUAL",
+      "contract_size": "100",
+      "onboard_time_ms": 1597042800000,
+      "delivery_time_ms": 4133404800000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "BTCUSD_PERP",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "439122dc-84a1-4ce9-90a1-9faf3cbba86a",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "BTCUSD_PERP"
+        },
+        "request_time_utc_ns": 1793170588111701000,
+        "request_monotonic_ns": 460578812522291,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:28 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "302",
+          "x-response-time": "0ms"
+        },
+        "model": [
+          [
+            1793170500000,
+            "-0.00037808",
+            "-0.00029560",
+            "-0.00038313",
+            "-0.00029560",
+            "0",
+            1793170559999,
+            "0",
+            12,
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            1793170560000,
+            "-0.00029297",
+            "-0.00029114",
+            "-0.00036133",
+            "-0.00036133",
+            "0",
+            1793170619999,
+            "0",
+            3,
+            "0",
+            "0",
+            "0"
+          ]
+        ],
+        "valid": false,
+        "error_type": "RequiredFieldSchemaError",
+        "receive_time_utc_ns": 1793170588200048000,
+        "receive_monotonic_ns": 460578900868916
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  },
+  {
+    "product": {
+      "schema_version": "binance-product.v1",
+      "key": {
+        "market": "cm_perpetual",
+        "symbol": "ETHUSD_PERP"
+      },
+      "venue_market": "coinm",
+      "pair": "ETHUSD",
+      "base_asset": "ETH",
+      "quote_asset": "USD",
+      "margin_asset": "ETH",
+      "contract_type": "PERPETUAL",
+      "contract_size": "10",
+      "onboard_time_ms": 1597734000000,
+      "delivery_time_ms": 4133404800000,
+      "status": "TRADING",
+      "underlying_type": "COIN"
+    },
+    "record": {
+      "schema_version": "binance-public-rest-provenance.v1",
+      "representation": "sdk-parsed-json.v1",
+      "family": "D23",
+      "source_stream": "premium_price_bars_1m",
+      "scope": "ETHUSD_PERP",
+      "venue_market": "coinm",
+      "request": {
+        "request_id": "a0d9dcbe-4368-4502-b0da-f9ba851ab54b",
+        "method": "GET",
+        "path": "/dapi/v1/premiumIndexKlines",
+        "parameters": {
+          "interval": "1m",
+          "limit": 2,
+          "symbol": "ETHUSD_PERP"
+        },
+        "request_time_utc_ns": 1793170588201881000,
+        "request_monotonic_ns": 460578902701250,
+        "timeout_ms": 10000
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "date": "Wed, 28 Oct 2026 06:56:28 GMT",
+          "content-type": "application/json",
+          "x-mbx-used-weight-1m": "303",
+          "x-response-time": "0ms"
+        },
+        "model": [
+          [
+            1793170500000,
+            "-0.00037185",
+            "-0.00023608",
+            "-0.00047244",
+            "-0.00047244",
+            "0",
+            1793170559999,
+            "0",
+            12,
+            "0",
+            "0",
+            "0"
+          ],
+          [
+            1793170560000,
+            "-0.00042022",
+            "-0.00041936",
+            "-0.00050084",
+            "-0.00050084",
+            "0",
+            1793170619999,
+            "0",
+            3,
+            "0",
+            "0",
+            "0"
+          ]
+        ],
+        "valid": false,
+        "error_type": "RequiredFieldSchemaError",
+        "receive_time_utc_ns": 1793170588289467000,
+        "receive_monotonic_ns": 460578990288708
+      },
+      "transport": {
+        "kind": "official_sdk_unsigned_parsed_json",
+        "package": "binance-sdk-spot",
+        "version": "10.0.0",
+        "common_version": "4.0.3",
+        "raw_http_body_available": false,
+        "receive_boundary": "response_body_received_before_sdk_parse",
+        "connection_identity": "logical_collector_venue_polling_session_not_tcp"
+      }
+    }
+  }
+]

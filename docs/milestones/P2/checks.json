@@ -1,0 +1,96 @@
+{
+  "schema_version": "p2-development-checks.v1",
+  "recorded_at_utc": "2026-10-27T13:00:10.774728+00:00",
+  "base_commit": "8c2cf72114b55ea193316189e7ce9a178bd96393",
+  "branch": "codex/p2-market-coverage",
+  "source_binding": "P2 working tree recorded in the enclosing delivery commit; no production qualification",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python_runtime": ".venv Python 3.12"
+  },
+  "test_runs": [
+    {
+      "scope": "intermediate P2 candidate, whole repository",
+      "command": ".venv/bin/python -m pytest -q",
+      "passed": 2292,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "duration_seconds": 181.9,
+      "limitation": "Before subsequent P2 fixes; not relabeled as an exact-final-source full-suite run. Warnings were macOS multiprocessing/fork diagnostics."
+    },
+    {
+      "scope": "affected modules after service/status integration; before final RPI metadata and REST polling-session corrections",
+      "command": ".venv/bin/python -m pytest -q tests/unit/test_p2_coverage.py tests/integration/test_p2_capture.py tests/unit/test_collector_readiness.py tests/unit/test_p1_depth_continuity.py tests/integration/test_receive_retirement.py tests/integration/test_receive_stop_priority.py tests/unit/test_service_runtime.py tests/unit/test_spot_rest.py tests/unit/test_spot_rate_limit.py tests/unit/test_config.py tests/unit/test_ms2_configurable_products.py tests/unit/test_normalized_parser.py tests/unit/test_m19_normalized_parser.py tests/unit/test_orderbook_parser.py tests/unit/test_orderbook_reconstructor.py tests/integration/test_normalization_pipeline.py tests/integration/test_replay_contract.py tests/integration/test_orderbook_checkpoint.py tests/unit/test_cli.py",
+      "passed": 313,
+      "duration_seconds": 18.85
+    },
+    {
+      "scope": "final P2 source, including those last corrections and one added REST manifest regression",
+      "command": ".venv/bin/python -m pytest -q tests/unit/test_p2_coverage.py tests/integration/test_p2_capture.py",
+      "passed": 42,
+      "duration_seconds": 1.58
+    }
+  ],
+  "other_checks": [
+    {
+      "command": ".venv/bin/python -m ruff check .",
+      "result": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m mypy --no-incremental",
+      "result": "passed; 336 source files"
+    },
+    {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "result": "M0 contract verification passed"
+    },
+    {
+      "command": "go run tools/verify_raw_chunk_golden.go",
+      "result": "Go raw-chunk.v1 golden verification passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "command": ".venv/bin/python -m build --sdist --wheel",
+      "result": "passed; final source"
+    },
+    {
+      "command": ".venv/bin/binance-market-recorder --version",
+      "result": "0.1.0a1; working-tree base git 8c2cf72114b5"
+    },
+    {
+      "check": "public/official fixture manifest",
+      "result": "62 exact file identities and sizes verified; no missing or extra JSON fixtures"
+    }
+  ],
+  "evidence": [
+    "representation-benchmark.json",
+    "native-bars-sample.json",
+    "fixture-manifest.json",
+    "official-sources.json",
+    "rpi-sequence-source.json"
+  ],
+  "unrun": [
+    "New-candidate dual-platform CI",
+    "Linux runtime/platform certification",
+    "VPS all-feature capacity or steady-state performance",
+    "Production 24h/72h continuity",
+    "Sudden power-loss tests (owner excluded)",
+    "Million-event stress rerun (Raw framing/writer unchanged)"
+  ],
+  "acceptance": {
+    "P2_passed": false,
+    "production_ready": false,
+    "P3_started": false,
+    "open_items": [
+      "D06 1s full BTC/ETH request demand exceeds shared IP budget; 6s proposal remains unapproved",
+      "CM dated premium-index endpoint applicability unresolved; failed sources retained"
+    ],
+    "no_deployment_or_production_data_changes": true
+  },
+  "counting_note": "Test sets overlap. Do not add their counts or treat short samples as continuity/capacity credit."
+}

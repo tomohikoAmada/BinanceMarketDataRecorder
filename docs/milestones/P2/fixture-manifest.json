@@ -1,0 +1,315 @@
+{
+  "purpose": "bind the exact public/official sample fixtures used for P2 validation; parsed representations are not HTTP byte claims",
+  "files": [
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d02-depth_snapshot.json",
+      "bytes": 2190,
+      "sha256": "a9bd185b04ae41d5a54dd663270366bbd1781bbb9a692a16c636a9b7d6759554"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d06-recent_trades.json",
+      "bytes": 2725,
+      "sha256": "39f4fd57fa34908c2a1565c9fe0dd677fef3165938fa84adbfbe58a406cc3c54"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d09-premium_index_snapshot.json",
+      "bytes": 2466,
+      "sha256": "3fdc60fa99009012399d0ca35df0e4537ad5b454f4ee2f1379b1bf03a5e31978"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d12-funding_history.json",
+      "bytes": 2743,
+      "sha256": "454af3b03648eb5c4de9006aae65571b8ac59b1395c05966c5d1340d267619e8"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d13-funding_info.json",
+      "bytes": 1849,
+      "sha256": "3f9711da3db14b881a50c9c8cc5876ee2b14bf56f199386dcfedf4d693200444"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d14-open_interest.json",
+      "bytes": 2232,
+      "sha256": "fc8d5a718c55daa3540f7bb2f7c0cfa4e77e9cbb2d53feb1084abfa5caa64fb4"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d15-open_interest_statistics_5m.json",
+      "bytes": 2996,
+      "sha256": "865ce3c4ef3617ae7126b838132378e36b82aedc84051865fd23f23ae8cf576e"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d16-taker_buy_sell_volume_5m.json",
+      "bytes": 3070,
+      "sha256": "29c1ed0bc2defb61f3b0219b74d3be68fa9419871c3acf4b57b7ca980b054f4d"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d17-global_long_short_ratio_5m.json",
+      "bytes": 2792,
+      "sha256": "d7a51384dba171fbc26409372e79d20e9e8ced42aaca76520260d08c188d7368"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d18-top_long_short_account_ratio_5m.json",
+      "bytes": 2753,
+      "sha256": "34bd387df08a755e1a365d152b944c45da5923ad921eb0f33aa29de4396f121a"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d19-top_long_short_position_ratio_5m.json",
+      "bytes": 2763,
+      "sha256": "48d9fdeb1c9cf4fb3cc27816bbecc5824c97efb973187806b88e987f3dfe8d13"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d20-basis_5m.json",
+      "bytes": 3191,
+      "sha256": "f120baa609f3134c782a67279fb0f0f0f2a0cb2377bed07033a850e22ecaa54e"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d21-kline_seed_1m.json",
+      "bytes": 2883,
+      "sha256": "5d70c095723ea6f4a981da5f18391be0af29d788992a1814daeb020a2ad065d3"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d22-continuous_seed_1m.json",
+      "bytes": 3028,
+      "sha256": "b41e4afa2da88a04fcfbd937356b77c02043d6e95840e6298447b895b3c194b0"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d23-index_price_bars_1m.json",
+      "bytes": 2946,
+      "sha256": "d67f5749746521a98c08f2cac5f06de30809b8b207fe2efa81e9f123bafe5d22"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d23-mark_price_bars_1m.json",
+      "bytes": 2962,
+      "sha256": "4b3386aae4340f1f9c51f653d82c4cbdbd339ab006ae66694ebbe07e2ae87ec2"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d23-premium_price_bars_1m.json",
+      "bytes": 2234,
+      "sha256": "6672864013b8e67c784e26c2db664fdb562545e62cae3766a96cb22e718e1c7f"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-d26-index_constituents.json",
+      "bytes": 2831,
+      "sha256": "cc87a491f838765749db312c0bc300bb4dae358d8850f9a6d088d7cdf46e578e"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-directory.json",
+      "bytes": 11819,
+      "sha256": "8c6da201a1bfac69967ead03af0523b8ab001461d0c1e3570df25cb4e470bb4d"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-applicability-BTCUSD.json",
+      "bytes": 1201,
+      "sha256": "351f496f218c0c0b94b86ff2e2e32e89f235d70f836d5bbbcacc778d794c6ab3"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-applicability-BTCUSD_PERP.json",
+      "bytes": 1603,
+      "sha256": "a75dd708280bc49c347ed31564e6be2264e4b576f38a1c562cf5e7702143898b"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-applicability-ETHUSD.json",
+      "bytes": 1201,
+      "sha256": "df5a13e6d5b236f8ec71e9c75ece9d049fc2c15a5129ae332749a10968f1ad0f"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-applicability-ETHUSD_PERP.json",
+      "bytes": 1604,
+      "sha256": "9bd2c16da4b810ad1a241c7af9556a4a356b02b19f3d602ec6ce7f899c699799"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-via-fapi-BTCUSD_261225.json",
+      "bytes": 2247,
+      "sha256": "3f4efccf477ddfca670fc372652617abcbeaf0f2b69f429141210fbb1ba83049"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-via-fapi-BTCUSD_PERP.json",
+      "bytes": 2684,
+      "sha256": "2b777ba03f5a06db5894594fd1310c83e7edddf36193046bc5ea2da165166337"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-premium-via-fapi-ETHUSD_261225.json",
+      "bytes": 2247,
+      "sha256": "c864336427ab13bab6855663ddeccee4364ac398287cf2bb04ca82ab7b2dc2ee"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/coinm-valid-limit-depth_snapshot.json",
+      "bytes": 2861,
+      "sha256": "a4b26b5189bc57c395d9ba00603bfc5eb9b4db0cb1fcd533d0ed876a22dcfcbb"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/official-sparse-ws.json",
+      "bytes": 1507,
+      "sha256": "dcf292e8ae4a906ac158fa46bbfd95fa9c1c51b018972caf7340e90c31e6bc20"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-directory.json",
+      "bytes": 581297,
+      "sha256": "f5a334733ede394c229bd3232b25fcf0c822eb103195029cbba53fa942d74ddc"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s02-depth_snapshot.json",
+      "bytes": 2647,
+      "sha256": "6e6812c522e7e3923c74d4602fc510eeb49f4189a6fe18d2e5c5deb96c510fa9"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s07-reference_price_seed.json",
+      "bytes": 2165,
+      "sha256": "3aa7fae07bc1852bddab5f683e40e03eb63303f3aad1cac96cebb9f1e8de1201"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s08-reference_price_calculation.json",
+      "bytes": 2212,
+      "sha256": "9ae4e2b76176d660035210574eba4e3c729dc77bb9c14806823b771359d4afdf"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s09-execution_rules.json",
+      "bytes": 2379,
+      "sha256": "73b522a5ff3ddff8f79157295531e2f591d6c8337658b3fc7209e2a65e105ead"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s11-kline_seed_1m.json",
+      "bytes": 3043,
+      "sha256": "dc15d825eb030a0f7e372993105405ea9cd6bcbf2dcdb6e6c55e5cf11d880de3"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s12-kline_seed_1m_utc8.json",
+      "bytes": 3122,
+      "sha256": "ca8665aac5364b94068d3cfe13fdc1f948900b459d28925e2cf284c714a270ec"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/spot-s15-trading_day.json",
+      "bytes": 2661,
+      "sha256": "73e1a30aeb0ef329998035cb79ab518330617d43d5080448f0a634494a32e510"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d02-depth_snapshot.json",
+      "bytes": 2154,
+      "sha256": "4aa97445567778deb7445830830ccc9663a9f10799a2c7d450af37cf7f3152c3"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d03-rpi_depth_snapshot.json",
+      "bytes": 2168,
+      "sha256": "afd40a970879129a2dd5321d8feb6a38375ea8db3195a7b80c277c345e28c622"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d06-recent_trades.json",
+      "bytes": 2794,
+      "sha256": "74b5d5f00dd0991cb8eb1a039a057025a087c8de438438ff94715c28296454ab"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d09-premium_index_snapshot.json",
+      "bytes": 2372,
+      "sha256": "0ee612b53355cd83b768228566b0deb7247ecd15f687c0f84a0012dad8dd1072"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d12-funding_history.json",
+      "bytes": 2646,
+      "sha256": "a9be92e8c973c83c8392a0fec4d73f1eb596e4aa0e3c16b11535bdeabf2719b6"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d13-funding_info.json",
+      "bytes": 214600,
+      "sha256": "69f9b566ad1efcea503fc52954e142b37dd0e023a1ab9a5dd2169e06d12b68a2"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d14-open_interest.json",
+      "bytes": 2124,
+      "sha256": "ab7d7dd23aae661f904e7607b3524c581a30e763b513dd4b967508d75a70cd54"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d15-open_interest_statistics_5m.json",
+      "bytes": 2902,
+      "sha256": "afdfc8d82c59b4c906ea05e98dca8b04073d09f11f7e22fc7b125b12c5c3f68e"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d16-taker_buy_sell_volume_5m.json",
+      "bytes": 2576,
+      "sha256": "ab0af0f25e4f319aca0dcf382c46c1fe0768ea471ef38223dc1a6c44c012add9"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d17-global_long_short_ratio_5m.json",
+      "bytes": 2784,
+      "sha256": "768f22ca9eaa57b16383321f6e520e041ccdb5eddc46bb35144481de05b94f17"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d20-basis_5m.json",
+      "bytes": 3198,
+      "sha256": "8525a920597e3e9f1818d4b6d4e1ca835b70a5e1d4880bd8efc81522d7201dd8"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d21-kline_seed_1m.json",
+      "bytes": 2928,
+      "sha256": "01da676cca84448cc668dd57284ef556c2636040ac2a548c137fda7f11d9546c"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d22-continuous_seed_1m.json",
+      "bytes": 3052,
+      "sha256": "fc5491b0798d0951424bb530028e5a8df88ebfb88df789bd2e2d1d5259640dad"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d23-index_price_bars_1m.json",
+      "bytes": 2947,
+      "sha256": "405bbdedafdab6c0f8926fd5a68f07e2570ea0e912730e5aa247b29e53b603c4"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d23-mark_price_bars_1m.json",
+      "bytes": 2926,
+      "sha256": "79d7d0c6e28ab65517068558bb5e777cc50ad30ff4e7ddc522442bbc0fe285df"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d23-premium_price_bars_1m.json",
+      "bytes": 2902,
+      "sha256": "1c5f23b72114d7240c33841d884928d1768830f62d073c1b728c72442b7730de"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d26-index_constituents.json",
+      "bytes": 3458,
+      "sha256": "121f5b2a0fabb8fe6c94aa0de32c37c94a302b149150f1163ec8032c877c055f"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d28-adl_risk.json",
+      "bytes": 2114,
+      "sha256": "5e6bff3b027157b68a9441b3bffe65862f3bf3766ec8ec68b5a871f6264056c7"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d29-insurance_balance.json",
+      "bytes": 52062,
+      "sha256": "0ec1d674ab175541b56307a7b47463ef95a6c7340564761684982c0439457f6a"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-d31-delivery_price.json",
+      "bytes": 3734,
+      "sha256": "34d2f3837df430c0ecacc118fd26148e37dab3c25c32ff21554270245346abdd"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-delivery-price-exact-body.json",
+      "bytes": 3378,
+      "sha256": "fc0b89912864c4dca1b10f35a36bd710b5d3d5e3e53755e93bdfa189213df538"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-directory.json",
+      "bytes": 27678,
+      "sha256": "89644f888bdb2e47be88df0cadfbf1df02abb0984cd1dca302b6d28ea301d015"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-valid-limit-depth_snapshot.json",
+      "bytes": 2815,
+      "sha256": "21abfbce72771f46049faa7f3c971a5c32c1bcb2309822270133985200237995"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-valid-limit-rpi_depth_snapshot.json",
+      "bytes": 2071,
+      "sha256": "1b83ffc4ce599ddcc783dc750c4fd25eddd330c75e4921933793b6b01e1f56de"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/usdm-valid-rpi-depth-1000.json",
+      "bytes": 140162,
+      "sha256": "6468839f2d7497313562d9ee514066b78590e260e8fcba7936a63d89423bbe7e"
+    },
+    {
+      "file": "tests/fixtures/binance/p2/ws-public-samples.json",
+      "bytes": 68509,
+      "sha256": "4b306a9cd114aab752f68c1878395800510604da4312d84c1a24bbb6d353c058"
+    }
+  ]
+}

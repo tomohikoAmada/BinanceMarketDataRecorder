@@ -1,0 +1,108 @@
+{
+  "source": {
+    "family": "S02",
+    "venue_market": "spot",
+    "market": "spot",
+    "symbol": "BTCUSDT",
+    "stream": "depth_snapshot",
+    "transport": "rest",
+    "endpoint": "/api/v3/depth",
+    "cadence_seconds": 0,
+    "parameters": {
+      "limit": 1000,
+      "symbol": "BTCUSDT"
+    },
+    "weight": 50,
+    "required_fields": [
+      "lastUpdateId",
+      "bids",
+      "asks"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "S02",
+    "source_stream": "depth_snapshot",
+    "scope": "BTCUSDT",
+    "venue_market": "spot",
+    "request": {
+      "method": "GET",
+      "path": "/api/v3/depth",
+      "parameters": {
+        "limit": 3,
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097605808921000,
+      "request_monotonic_ns": 398082472349958,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "date": "Tue, 27 Oct 2026 10:40:05 GMT",
+        "x-mbx-used-weight": "5",
+        "x-mbx-used-weight-1m": "5"
+      },
+      "model": {
+        "lastUpdateId": 101958855669,
+        "bids": [
+          [
+            "79834.00000000",
+            "0.03691000"
+          ],
+          [
+            "79833.99000000",
+            "0.00049000"
+          ],
+          [
+            "79832.06000000",
+            "0.00008000"
+          ]
+        ],
+        "asks": [
+          [
+            "79834.01000000",
+            "9.36359000"
+          ],
+          [
+            "79834.49000000",
+            "2.09425000"
+          ],
+          [
+            "79834.71000000",
+            "0.99393000"
+          ]
+        ]
+      },
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097605994719000,
+      "receive_monotonic_ns": 398082658147625
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

@@ -74,7 +74,9 @@ class BookSnapshot:
 
     def __post_init__(self) -> None:
         if (
-            self.market not in {"spot", "um_perpetual"}
+            self.market not in {
+                "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+            }
             or not self.symbol
             or self.last_update_id < 0
         ):
@@ -95,13 +97,15 @@ class DepthUpdate:
     receive_time_utc_ns: int = 0
 
     def __post_init__(self) -> None:
-        if self.market not in {"spot", "um_perpetual"} or not self.symbol:
+        if self.market not in {
+                "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+            } or not self.symbol:
             raise OrderBookDataError("unexpected depth symbol")
         if self.first_update_id < 0 or self.final_update_id < self.first_update_id:
             raise OrderBookDataError("invalid depth update ID range")
         if self.market == "spot" and self.previous_final_update_id is not None:
             raise OrderBookDataError("Spot updates must not carry USD-M pu")
-        if self.market == "um_perpetual" and (
+        if self.market != "spot" and (
             self.previous_final_update_id is None or self.previous_final_update_id < 0
         ):
             raise OrderBookDataError("USD-M updates require non-negative pu")
@@ -122,7 +126,9 @@ class BookTicker:
     ask_quantity: str
 
     def __post_init__(self) -> None:
-        if self.market not in {"spot", "um_perpetual"} or not self.symbol or self.update_id < 0:
+        if self.market not in {
+                "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+            } or not self.symbol or self.update_id < 0:
             raise OrderBookDataError("invalid book ticker identity or update ID")
         decimal_value(self.bid_price, positive=True)
         decimal_value(self.ask_price, positive=True)
@@ -256,7 +262,9 @@ class OrderBook:
             update_id = value["update_id"]
             bids = value["bids"]
             asks = value["asks"]
-            if market_value not in {"spot", "um_perpetual"}:
+            if market_value not in {
+                "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+            }:
                 raise TypeError
             market = cast(Market, market_value)
             if not isinstance(symbol, str) or not isinstance(update_id, int):

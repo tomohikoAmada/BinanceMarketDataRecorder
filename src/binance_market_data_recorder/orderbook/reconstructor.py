@@ -92,7 +92,9 @@ class LocalBookReconstructor:
         bootstrap_buffer_warning_ratio: float = 0.75,
         audit_history_limit: int | None = None,
     ) -> None:
-        if market not in {"spot", "um_perpetual"} or not symbol:
+        if market not in {
+                "spot", "um_perpetual", "um_delivery", "cm_perpetual", "cm_delivery"
+            } or not symbol:
             raise OrderBookDataError("order book requires a Binance Spot/USD-M product")
         if bootstrap_buffer_capacity < 2:
             raise ValueError("bootstrap buffer capacity must be at least two")

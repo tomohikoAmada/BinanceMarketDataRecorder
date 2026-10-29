@@ -1,0 +1,28 @@
+# Measured fixed candidate, 2026-10-28; not production qualification.
+# Full WS/native bars retained. Daily files are a delayed independent supplement.
+[recorder]
+# Set data_root outside the repository/Documents before any run.
+[recorder.coverage]
+underlying_assets = ["BTC", "ETH"]
+recent_trades_interval_seconds = 30.0
+max_steady_derivative_weight_per_minute = 1000.0
+[recorder.coverage.recent_trades_intervals]
+"cm_delivery:BTCUSD_261225" = 30.0
+"cm_delivery:BTCUSD_270326" = 30.0
+"cm_delivery:ETHUSD_261225" = 30.0
+"cm_delivery:ETHUSD_270326" = 30.0
+"cm_perpetual:BTCUSD_PERP" = 30.0
+"cm_perpetual:ETHUSD_PERP" = 30.0
+"um_delivery:BTCUSDT_261225" = 30.0
+"um_delivery:BTCUSDT_270326" = 30.0
+"um_delivery:ETHUSDT_261225" = 30.0
+"um_delivery:ETHUSDT_270326" = 30.0
+"um_perpetual:BTCU" = 30.0
+"um_perpetual:BTCUSD1" = 30.0
+"um_perpetual:BTCUSDC" = 3.0
+"um_perpetual:BTCUSDT" = 2.0
+"um_perpetual:ETHBTC" = 30.0
+"um_perpetual:ETHU" = 30.0
+"um_perpetual:ETHUSD1" = 30.0
+"um_perpetual:ETHUSDC" = 3.0
+"um_perpetual:ETHUSDT" = 2.0

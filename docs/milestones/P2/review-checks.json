@@ -1,0 +1,75 @@
+{
+  "reviewed_commit": "e73068b06b6cde118af0f0c7293e2dc41654d67b",
+  "reviewed_src_tree": "1bbfc3011cf08d5b7537e5b770a242afcb3d71f2",
+  "comparison_base": "8c2cf72114b55ea193316189e7ce9a178bd96393",
+  "platform": "local macOS arm64 Python 3.12",
+  "decision": "P2_NOT_ACCEPTED",
+  "full_pytest": {
+    "command": ".venv/bin/python -m pytest -q",
+    "passed": 2314,
+    "skipped": 24,
+    "deselected": 5,
+    "warnings": 13,
+    "seconds": 181.51,
+    "log": "review-pytest.log"
+  },
+  "focused_pytest": {
+    "passed": 314,
+    "seconds": 19.57,
+    "test_files": [
+      "tests/unit/test_p2_coverage.py",
+      "tests/integration/test_p2_capture.py",
+      "tests/unit/test_collector_readiness.py",
+      "tests/unit/test_p1_depth_continuity.py",
+      "tests/integration/test_receive_retirement.py",
+      "tests/integration/test_receive_stop_priority.py",
+      "tests/unit/test_service_runtime.py",
+      "tests/unit/test_spot_rest.py",
+      "tests/unit/test_spot_rate_limit.py",
+      "tests/unit/test_config.py",
+      "tests/unit/test_ms2_configurable_products.py",
+      "tests/unit/test_normalized_parser.py",
+      "tests/unit/test_m19_normalized_parser.py",
+      "tests/unit/test_orderbook_parser.py",
+      "tests/unit/test_orderbook_reconstructor.py",
+      "tests/integration/test_normalization_pipeline.py",
+      "tests/integration/test_replay_contract.py",
+      "tests/integration/test_orderbook_checkpoint.py",
+      "tests/unit/test_cli.py"
+    ]
+  },
+  "r4_reproduction": {
+    "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P2/reproduce_rest_cooldown.py",
+    "exit_code": 1,
+    "cases": 6,
+    "failed": 6,
+    "result": "review-cooldown.json"
+  },
+  "fixture_manifest": {
+    "files_checked": 62,
+    "mismatches": 0,
+    "purpose": "confirm reviewed sample evidence identity; not runtime hashing"
+  },
+  "checks": {
+    "ruff": "PASS",
+    "mypy": "PASS: 336 source files",
+    "m0_contracts": "PASS",
+    "go_raw_v1_golden": "PASS",
+    "diff_check": "PASS",
+    "local_document_targets": "PASS"
+  },
+  "not_run": [
+    "final candidate dual-platform CI",
+    "new wheel build (original delivery evidence retained)",
+    "VPS performance",
+    "online market capture",
+    "stress suite",
+    "production qualification or deployment"
+  ],
+  "remote_at_review_start": {
+    "main": "8c2cf72114b55ea193316189e7ce9a178bd96393",
+    "candidate_published": false
+  },
+  "production_actions": false,
+  "default_or_proposal_config_changed": false
+}

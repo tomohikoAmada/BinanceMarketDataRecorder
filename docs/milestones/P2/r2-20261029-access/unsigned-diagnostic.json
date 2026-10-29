@@ -1,0 +1,95 @@
+{
+  "observations": [
+    {
+      "name": "um_perpetual",
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT&interval=1m&limit=2",
+      "request_utc": "2026-10-29T03:17:36.759857+00:00",
+      "receive_utc": "2026-10-29T03:17:36.951022+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json",
+        "Date": "Thu, 29 Oct 2026 03:17:36 GMT",
+        "x-mbx-used-weight-1m": "325"
+      },
+      "body_utf8": "[[1793243760000,\"-0.00031384\",\"-0.00031384\",\"-0.00068773\",\"-0.00068773\",\"0\",1793243819999,\"0\",12,\"0\",\"0\",\"0\"],[1793243820000,\"-0.00055799\",\"-0.00048720\",\"-0.00055799\",\"-0.00049303\",\"0\",1793243879999,\"0\",5,\"0\",\"0\",\"0\"]]"
+    },
+    {
+      "name": "um_dated",
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT_261225&interval=1m&limit=2",
+      "request_utc": "2026-10-29T03:17:36.951096+00:00",
+      "receive_utc": "2026-10-29T03:17:37.131875+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 400,
+      "headers": {
+        "Content-Type": "application/json",
+        "Date": "Thu, 29 Oct 2026 03:17:37 GMT",
+        "x-mbx-used-weight-1m": "326"
+      },
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}"
+    },
+    {
+      "name": "um_dated_depth",
+      "url": "https://fapi.binance.com/fapi/v1/depth?symbol=BTCUSDT_261225&limit=5",
+      "request_utc": "2026-10-29T03:17:37.131990+00:00",
+      "receive_utc": "2026-10-29T03:17:37.380999+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json",
+        "Date": "Thu, 29 Oct 2026 03:17:37 GMT",
+        "x-mbx-used-weight-1m": "328"
+      },
+      "body_utf8": "{\"lastUpdateId\":11953442121563,\"E\":1793243857240,\"T\":1793243857234,\"bids\":[[\"80605.1\",\"0.003\"],[\"80605.0\",\"0.003\"],[\"80602.9\",\"0.001\"],[\"80600.9\",\"0.015\"],[\"80600.4\",\"0.001\"]],\"asks\":[[\"80612.0\",\"0.010\"],[\"80612.1\",\"0.003\"],[\"80612.5\",\"0.002\"],[\"80616.9\",\"0.015\"],[\"80617.9\",\"0.021\"]]}"
+    },
+    {
+      "name": "cm_perpetual",
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_PERP&interval=1m&limit=2",
+      "request_utc": "2026-10-29T03:17:37.381171+00:00",
+      "receive_utc": "2026-10-29T03:17:37.660276+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 200,
+      "headers": {
+        "Date": "Thu, 29 Oct 2026 03:17:37 GMT",
+        "Content-Type": "application/json",
+        "x-mbx-used-weight-1m": "329"
+      },
+      "body_utf8": "[[1793243760000,\"-0.00035744\",\"-0.00029363\",\"-0.00041324\",\"-0.00040823\",\"0\",1793243819999,\"0\",12,\"0\",\"0\",\"0\"],[1793243820000,\"-0.00028003\",\"-0.00026062\",\"-0.00035130\",\"-0.00028047\",\"0\",1793243879999,\"0\",6,\"0\",\"0\",\"0\"]]"
+    },
+    {
+      "name": "cm_dated",
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_261225&interval=1m&limit=2",
+      "request_utc": "2026-10-29T03:17:37.660448+00:00",
+      "receive_utc": "2026-10-29T03:17:37.898184+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 400,
+      "headers": {
+        "Date": "Thu, 29 Oct 2026 03:17:37 GMT",
+        "Content-Type": "application/json",
+        "x-mbx-used-weight-1m": "330"
+      },
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}"
+    },
+    {
+      "name": "cm_dated_depth",
+      "url": "https://dapi.binance.com/dapi/v1/depth?symbol=BTCUSD_261225&limit=5",
+      "request_utc": "2026-10-29T03:17:37.898252+00:00",
+      "receive_utc": "2026-10-29T03:17:38.150262+00:00",
+      "proxy_mode": "direct",
+      "authentication": "none; no key, cookie, signature or account",
+      "status": 200,
+      "headers": {
+        "Date": "Thu, 29 Oct 2026 03:17:38 GMT",
+        "Content-Type": "application/json",
+        "x-mbx-used-weight-1m": "332"
+      },
+      "body_utf8": "{\"symbol\":\"BTCUSD_261225\",\"pair\":\"BTCUSD\",\"lastUpdateId\":11953442207697,\"E\":1793243858020,\"T\":1793243858013,\"bids\":[[\"80507.1\",\"215\"],[\"80494.3\",\"21\"],[\"80493.1\",\"1\"],[\"80484.9\",\"1\"],[\"80482.6\",\"21\"]],\"asks\":[[\"80507.2\",\"78\"],[\"80513.8\",\"50\"],[\"80513.9\",\"168\"],[\"80518.4\",\"1\"],[\"80525.9\",\"1\"]]}"
+    }
+  ],
+  "purpose": "Small public access check only, not continuity or full-market qualification."
+}

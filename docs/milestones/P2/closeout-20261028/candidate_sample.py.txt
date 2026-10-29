@@ -1,0 +1,45 @@
+import asyncio,json,time,tomllib,logging
+from pathlib import Path
+from binance_market_data_recorder.collector.coverage import SelectedAssetCapture
+from binance_market_data_recorder.config import RecorderConfig
+from binance_market_data_recorder.binance.coverage_config import CoverageConfig
+from binance_market_data_recorder.binance.public_sources import product_sources
+from binance_market_data_recorder.storage.layout import ensure_storage_layout
+from binance_market_data_recorder.storage.catalog import Catalog
+from binance_market_data_recorder.normalize.raw import load_source_chunks,iter_source_records
+from tests.unit.test_p2_coverage import products
+root=Path('/private/var/tmp/bmdr-p2-closeout-wqpuPp/candidate-capture')
+c=CoverageConfig.model_validate(tomllib.loads(Path('docs/milestones/P2/closeout-20261028/recorder.measured.toml').read_text())['recorder']['coverage'])
+async def main():
+    layout=ensure_storage_layout(root); metrics=[]; start=time.monotonic(); cpu=time.process_time()
+    with Catalog(layout.catalog) as catalog:
+        owner=SelectedAssetCapture(RecorderConfig(data_root=root,coverage=c),logging.getLogger('p2'), 'candidate','p2-cadence-sample',layout,catalog)
+        for st in owner.sources.values():st.dormant=True
+        for p in products():
+            if p.venue_market!='spot':owner.add_source(next(s for s in product_sources(p,c) if s.family=='D06'))
+        original=owner.poll_once
+        async def observed(state):
+            at=time.monotonic(); result=await original(state)
+            record=json.loads(result.envelope.raw_payload)
+            metrics.append(dict(market=state.source.market,symbol=state.source.symbol,at_seconds=at-start,
+                completed_seconds=time.monotonic()-start,cadence_seconds=state.source.cadence_seconds,
+                valid=result.valid,status=result.status,request_weight=state.source.weight,
+                poll=record['response']['model'].get('poll') if result.valid else None))
+            if result.status in (418,429):stop.set()
+            return result
+        owner.poll_once=observed
+        stop=asyncio.Event()
+        async def deadline():
+            await asyncio.sleep(65);stop.set()
+        timer=asyncio.create_task(deadline())
+        await owner.run(stop);timer.cancel()
+        chunks=load_source_chunks(catalog,layout)
+        saved=[r for chunk in chunks for r in iter_source_records(chunk)]
+        assert len(saved)==len(metrics)
+        assert all(json.loads(r.envelope.raw_payload)['source_stream']=='recent_trades' for r in saved)
+        result=dict(schema_version='p2-measured-cadence-sample.v1',configuration=c.model_dump(mode='json'),
+            scope='D06 only, no WS/other REST/background work; not full-feature capacity/continuity',
+            wall_seconds=time.monotonic()-start,cpu_seconds=time.process_time()-cpu,
+            data_root=str(root),independent_raw_record_count=len(saved),observations=metrics)
+        Path('docs/milestones/P2/closeout-20261028/candidate-cadence-sample.json').write_text(json.dumps(result,indent=2)+'\n')
+asyncio.run(main())

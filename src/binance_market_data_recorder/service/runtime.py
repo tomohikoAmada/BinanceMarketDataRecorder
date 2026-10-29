@@ -30,6 +30,7 @@ from ..collector import (
     UsdMCollector,
     UsdMCollectorSettings,
 )
+from ..collector.coverage import SelectedAssetCapture
 from ..collector.usdm_side_data import (
     UsdMRestCooldown,
     UsdMSideDataManager,
@@ -266,7 +267,7 @@ class ServiceRuntime:
         self._stop: asyncio.Event | None = None
         self._recovery_stop: threading.Event | None = None
         self._catalog: Catalog | None = None
-        self._supervisor: MarketCollectorSupervisor | None = None
+        self._supervisor: MarketCollectorSupervisor | SelectedAssetCapture | None = None
         self._collectors: Mapping[ProductKey, RuntimeCollector] = {}
         self.expected_products = frozenset(
             configured_products(config.spot_symbols, config.usdm_symbols)
@@ -416,7 +417,7 @@ class ServiceRuntime:
         failures = self._supervisor.failures if self._supervisor is not None else {}
         for name, collector in sorted(self._collectors.items()):
             readiness = collector.readiness_snapshot()
-            output[name.market][name.symbol] = {
+            output.setdefault(name.market, {})[name.symbol] = {
                 "market": readiness.market,
                 "symbol": readiness.symbol,
                 "status": "FAILED"
@@ -442,6 +443,8 @@ class ServiceRuntime:
         return output
 
     def _state_document(self) -> dict[str, object]:
+        if isinstance(self._supervisor, SelectedAssetCapture):
+            self.expected_products = frozenset(self._collectors)
         products = self._product_state()
         states = [item for market in products.values() for item in market.values()]
         ready_count = sum(item["ready"] is True for item in states)
@@ -455,6 +458,15 @@ class ServiceRuntime:
                 for item in [products[key.market][key.symbol]]
             )
         )
+        if isinstance(self._supervisor, SelectedAssetCapture):
+            core_ready = core_ready and self._supervisor.directory.observed_markets == {
+                "spot", "usdm", "coinm"
+            }
+            core_ready = core_ready and all(
+                (state in {"ADMITTED", "EXPIRED", "DELIVERED", "SETTLED", "CLOSE", "DELISTED"}
+                 or state.startswith("INACTIVE_AT_DISCOVERY:"))
+                for state in self._supervisor.admission.values()
+            )
         markets = {}
         for market, items in products.items():
             expected_symbols = {
@@ -503,6 +515,9 @@ class ServiceRuntime:
                 if item.get("enabled") else item
                 for name, item in global_side_status.items()
             }
+        shared_public_status = (self._supervisor.shared_source_status()
+                                if isinstance(self._supervisor, SelectedAssetCapture) else {})
+        side_items.extend(shared_public_status.values())
         side_items.extend(global_side_status.values())
         degraded_side_states = {"RETRYING", "STALE", "FAILED"}
         if self._status == "RUNNING":
@@ -529,6 +544,8 @@ class ServiceRuntime:
             "products": products,
             "spot_symbols": list(self.config.spot_symbols),
             "usdm_symbols": list(self.config.usdm_symbols),
+            "selected_asset_coverage": self._supervisor.status(include_sources=False)
+            if isinstance(self._supervisor, SelectedAssetCapture) else None,
             "expected_product_count": len(self.expected_products),
             "ready_product_count": ready_count,
             "core_ready": core_ready,
@@ -541,6 +558,7 @@ class ServiceRuntime:
                 "error_type": self._global_side_failure,
             } if self.global_side_data is not None else None,
             "global_usdm_side_data": global_side_status,
+            "shared_public_sources": shared_public_status,
             "shutdown_reason": self.shutdown_reason,
             "prevent_sleep_enabled": self.config.prevent_sleep,
             "power_assertion_active": self.power_assertion.active,
@@ -870,15 +888,16 @@ class ServiceRuntime:
                     self._status = "STOPPING"
                     self._record_hard_reserve_stop(capacity)
                     return
-            self._collectors = self.collector_factory(
-                self.config,
-                self.logger,
-                self.collector_version,
-                self.service_instance_id,
-                self.usdm_request_lock,
-                self.usdm_cooldown,
-            )
-            self._create_global_side_data()
+            if self.config.coverage is None:
+                self._collectors = self.collector_factory(
+                    self.config,
+                    self.logger,
+                    self.collector_version,
+                    self.service_instance_id,
+                    self.usdm_request_lock,
+                    self.usdm_cooldown,
+                )
+                self._create_global_side_data()
 
             def observe_terminal(name: ProductKey, exc: BaseException) -> None:
                 if self._catalog is None:
@@ -912,9 +931,16 @@ class ServiceRuntime:
                     },
                 )
 
-            self._supervisor = MarketCollectorSupervisor(
-                self._collectors, terminal_failure_observer=observe_terminal
-            )
+            if self.config.coverage is not None:
+                self._supervisor = SelectedAssetCapture(
+                    self.config, self.logger, self.collector_version, self.service_instance_id,
+                    self.layout, self._catalog,
+                )
+                self._collectors = self._supervisor.collectors
+            else:
+                self._supervisor = MarketCollectorSupervisor(
+                    self._collectors, terminal_failure_observer=observe_terminal
+                )
             self.power_assertion.start()
             observer.start()
             self._status = "RUNNING"

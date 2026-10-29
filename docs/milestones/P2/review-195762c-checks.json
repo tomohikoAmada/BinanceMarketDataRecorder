@@ -1,0 +1,277 @@
+{
+  "schema_version": "p2-independent-review.v1",
+  "reviewed_commit": "195762c69fb0b14351110ee5e8d62384d853325e",
+  "reviewed_src_tree": "7a1e954c5d50722aae0cb2c14dbdb1dd9fa6d5e5",
+  "base_main": "8c2cf72114b55ea193316189e7ce9a178bd96393",
+  "reviewed_at_utc": "2026-10-28 07:59:17 UTC",
+  "result": "NOT_ACCEPTED",
+  "disposition": {
+    "R1": "PASS_MEASURED_IMPLEMENTATION",
+    "R2": "OPEN_U_C_DATED_PREMIUM_APPLICABILITY",
+    "R4": "OPEN_COOLDOWN_ENABLED_AFTER_PERSISTENCE_AWAIT"
+  },
+  "local_tests": {
+    "command": ".venv/bin/python -m pytest -q --tb=short tests/unit/test_p2_daily_trades.py tests/unit/test_backfill.py tests/integration/test_p2_daily_pipeline.py tests/integration/test_p2_cooldown.py tests/unit/test_p2_coverage.py tests/integration/test_p2_capture.py tests/unit/test_cli.py",
+    "passed": 143,
+    "wall_seconds": 4.03,
+    "exit_code": 0,
+    "full_suite_rerun": false
+  },
+  "original_cooldown_reproduction": {
+    "passed": 6,
+    "failed": 0,
+    "exit_code": 0,
+    "output": "review-195762c-cooldown-duration.json"
+  },
+  "new_cooldown_admission_reproduction": {
+    "passed": 0,
+    "failed": 6,
+    "exit_code": 1,
+    "output": "review-195762c-cooldown-order.json",
+    "failure": "A fresh request is admitted after a known 429/418 while persist_rest waits."
+  },
+  "retained_evidence_recheck": {
+    "output": "review-195762c-evidence.json",
+    "daily_zip_files": 17,
+    "daily_csv_rows": 10267636,
+    "imported_zip_files": 8,
+    "imported_csv_rows": 123773,
+    "raw_chunks": 38,
+    "raw_records": 147,
+    "all_reported_checks_match": true,
+    "new_capture": false
+  },
+  "ci": {
+    "run_id": 40648496846,
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40648496846",
+    "head_sha": "195762c69fb0b14351110ee5e8d62384d853325e",
+    "attempt": 1,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 122682801757,
+        "name": "macos-python312",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure safe temporary data root",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-go@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pip install --require-hashes -r requirements/macos-arm64-python312.lock",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pip install -r requirements/ci-macos-python312.lock",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pip install --no-deps -e .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pytest -q -o faulthandler_timeout=120",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m ruff check .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m mypy",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python tests/verify_m0_contracts.py",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run go run tools/verify_raw_chunk_golden.go",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m build --no-isolation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Clean wheel install and CLI smoke",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-go@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 122682801866,
+        "name": "ubuntu-python312",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Configure safe temporary data root",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-go@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install exact x86_64 production runtime lock",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pip install -r requirements/ci-linux-python312.lock",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pip install --no-deps -e .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m pytest -q -o faulthandler_timeout=120",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m ruff check .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m mypy",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python tests/verify_m0_contracts.py",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run go run tools/verify_raw_chunk_golden.go",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m build --no-isolation",
+            "conclusion": "success"
+          },
+          {
+            "name": "Exact production dependency environment identity",
+            "conclusion": "success"
+          },
+          {
+            "name": "Clean wheel install and CLI smoke",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-go@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ],
+    "log_evidence": [
+      {
+        "job_id": 122682801757,
+        "excerpts": [
+          "2026-10-28T07:18:34.3112370Z 2344 passed, 24 skipped, 5 deselected, 13 warnings in 372.76s (0:06:12)",
+          "2026-10-28T07:18:35.7368510Z All checks passed!",
+          "2026-10-28T07:18:56.2470700Z Success: no issues found in 341 source files",
+          "2026-10-28T07:18:56.8452500Z M0 contract verification passed",
+          "2026-10-28T07:19:04.2288150Z Successfully built binance_market_data_recorder-0.1.0a1.tar.gz and binance_market_data_recorder-0.1.0a1-py3-none-any.whl"
+        ]
+      },
+      {
+        "job_id": 122682801866,
+        "excerpts": [
+          "2026-10-28T07:19:33.4256244Z 2340 passed, 28 skipped, 5 deselected, 13 warnings in 441.54s (0:07:21)",
+          "2026-10-28T07:19:34.1386563Z All checks passed!",
+          "2026-10-28T07:20:00.0297797Z Success: no issues found in 341 source files",
+          "2026-10-28T07:20:00.3700151Z M0 contract verification passed",
+          "2026-10-28T07:20:10.7531090Z Successfully built binance_market_data_recorder-0.1.0a1.tar.gz and binance_market_data_recorder-0.1.0a1-py3-none-any.whl"
+        ]
+      }
+    ]
+  },
+  "documentation_checks": {
+    "ruff_reproduction_script": "PASS",
+    "m0_contracts": "PASS",
+    "git_diff_check": "PASS",
+    "changed_markdown_local_links": 108,
+    "review_anchor": "PASS",
+    "review_json_parsing": "PASS",
+    "src_and_tests_unchanged": true
+  },
+  "unchanged": [
+    "src/",
+    "tests/",
+    "measurement configurations",
+    "original review and measurement artifacts",
+    "main",
+    "Draft PR #88 status",
+    "production"
+  ],
+  "unrun": [
+    "new public API requests",
+    "online smoke",
+    "VPS benchmark",
+    "million-event stress",
+    "production soak",
+    "deployment"
+  ],
+  "audit_notes": [
+    "The initial ad-hoc retained-ZIP replay stopped on a missing-file entry without a status key. The corrected read-only replay checked all 17 available ZIPs; no evidence was changed or recollected.",
+    "The reproduction script's one Ruff line-length issue was wrapped before final checks."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "source": {
+    "family": "D02",
+    "venue_market": "usdm",
+    "market": "um_perpetual",
+    "symbol": "BTCUSDT",
+    "stream": "depth_snapshot",
+    "transport": "rest",
+    "endpoint": "/fapi/v1/depth",
+    "cadence_seconds": 0,
+    "parameters": {
+      "limit": 1000,
+      "symbol": "BTCUSDT"
+    },
+    "weight": 20,
+    "required_fields": [
+      "lastUpdateId",
+      "bids",
+      "asks"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSDT"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "limit": 3,
+    "symbol": "BTCUSDT"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D02",
+    "source_stream": "depth_snapshot",
+    "scope": "BTCUSDT",
+    "venue_market": "usdm",
+    "request": {
+      "method": "GET",
+      "path": "/fapi/v1/depth",
+      "parameters": {
+        "limit": 3,
+        "symbol": "BTCUSDT"
+      },
+      "request_time_utc_ns": 1793097606883377000,
+      "request_monotonic_ns": 398083546798333,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 400,
+      "headers": {
+        "content-type": "application/json",
+        "date": "Tue, 27 Oct 2026 10:40:06 GMT",
+        "x-mbx-used-weight-1m": "19",
+        "x-response-time": "0ms"
+      },
+      "model": {
+        "code": -4021,
+        "msg": "3 is not valid depth limit"
+      },
+      "valid": false,
+      "error_type": "HttpResponseError",
+      "receive_time_utc_ns": 1793097606981861000,
+      "receive_monotonic_ns": 398083645284041
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}

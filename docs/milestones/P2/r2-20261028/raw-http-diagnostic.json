@@ -1,0 +1,432 @@
+{
+  "schema_version": "p2-r2-finite-http-diagnostic.v1",
+  "scope": "diagnostic only; not a new HTTP production implementation; selected prior-directory identities",
+  "observations": [
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT_261225&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201404555324000,
+      "receive_time_utc_ns": 1793201404829835000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_delivery",
+          "symbol": "BTCUSDT_261225"
+        },
+        "venue_market": "usdm",
+        "pair": "BTCUSDT",
+        "base_asset": "BTC",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "CURRENT_QUARTER",
+        "contract_size": "1",
+        "onboard_time_ms": 1782460800000,
+        "delivery_time_ms": 1798185600000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT_270326&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201404937167000,
+      "receive_time_utc_ns": 1793201405189349000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_delivery",
+          "symbol": "BTCUSDT_270326"
+        },
+        "venue_market": "usdm",
+        "pair": "BTCUSDT",
+        "base_asset": "BTC",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "NEXT_QUARTER",
+        "contract_size": "1",
+        "onboard_time_ms": 1790323200000,
+        "delivery_time_ms": 1806048000000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=ETHUSDT_261225&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201405298738000,
+      "receive_time_utc_ns": 1793201405785911000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_delivery",
+          "symbol": "ETHUSDT_261225"
+        },
+        "venue_market": "usdm",
+        "pair": "ETHUSDT",
+        "base_asset": "ETH",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "CURRENT_QUARTER",
+        "contract_size": "1",
+        "onboard_time_ms": 1782460800000,
+        "delivery_time_ms": 1798185600000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=ETHUSDT_270326&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201405893674000,
+      "receive_time_utc_ns": 1793201406170313000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_delivery",
+          "symbol": "ETHUSDT_270326"
+        },
+        "venue_market": "usdm",
+        "pair": "ETHUSDT",
+        "base_asset": "ETH",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "NEXT_QUARTER",
+        "contract_size": "1",
+        "onboard_time_ms": 1790323200000,
+        "delivery_time_ms": 1806048000000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201406277360000,
+      "receive_time_utc_ns": 1793201406778513000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 200,
+      "body_utf8": "[[1793201280000,\"-0.00045858\",\"-0.00032271\",\"-0.00045858\",\"-0.00034012\",\"0\",1793201339999,\"0\",12,\"0\",\"0\",\"0\"],[1793201340000,\"-0.00034018\",\"-0.00033553\",\"-0.00045528\",\"-0.00045528\",\"0\",1793201399999,\"0\",12,\"0\",\"0\",\"0\"]]",
+      "summary": {
+        "error_code": null,
+        "rows": 2
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_perpetual",
+          "symbol": "BTCUSDT"
+        },
+        "venue_market": "usdm",
+        "pair": "BTCUSDT",
+        "base_asset": "BTC",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "PERPETUAL",
+        "contract_size": "1",
+        "onboard_time_ms": 1567965300000,
+        "delivery_time_ms": 4133404800000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=ETHUSDT&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201406889057000,
+      "receive_time_utc_ns": 1793201407172154000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 200,
+      "body_utf8": "[[1793201280000,\"-0.00056475\",\"-0.00045638\",\"-0.00056475\",\"-0.00050632\",\"0\",1793201339999,\"0\",12,\"0\",\"0\",\"0\"],[1793201340000,\"-0.00049063\",\"-0.00042823\",\"-0.00051490\",\"-0.00050482\",\"0\",1793201399999,\"0\",12,\"0\",\"0\",\"0\"]]",
+      "summary": {
+        "error_code": null,
+        "rows": 2
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "um_perpetual",
+          "symbol": "ETHUSDT"
+        },
+        "venue_market": "usdm",
+        "pair": "ETHUSDT",
+        "base_asset": "ETH",
+        "quote_asset": "USDT",
+        "margin_asset": "USDT",
+        "contract_type": "PERPETUAL",
+        "contract_size": "1",
+        "onboard_time_ms": 1574840700000,
+        "delivery_time_ms": 4133404800000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_261225&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201407287007000,
+      "receive_time_utc_ns": 1793201407628214000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_delivery",
+          "symbol": "BTCUSD_261225"
+        },
+        "venue_market": "coinm",
+        "pair": "BTCUSD",
+        "base_asset": "BTC",
+        "quote_asset": "USD",
+        "margin_asset": "BTC",
+        "contract_type": "CURRENT_QUARTER",
+        "contract_size": "100",
+        "onboard_time_ms": 1782460800000,
+        "delivery_time_ms": 1798185600000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_270326&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201407744539000,
+      "receive_time_utc_ns": 1793201408077012000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_delivery",
+          "symbol": "BTCUSD_270326"
+        },
+        "venue_market": "coinm",
+        "pair": "BTCUSD",
+        "base_asset": "BTC",
+        "quote_asset": "USD",
+        "margin_asset": "BTC",
+        "contract_type": "NEXT_QUARTER",
+        "contract_size": "100",
+        "onboard_time_ms": 1790323200000,
+        "delivery_time_ms": 1806048000000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=ETHUSD_261225&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201408186427000,
+      "receive_time_utc_ns": 1793201408527621000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_delivery",
+          "symbol": "ETHUSD_261225"
+        },
+        "venue_market": "coinm",
+        "pair": "ETHUSD",
+        "base_asset": "ETH",
+        "quote_asset": "USD",
+        "margin_asset": "ETH",
+        "contract_type": "CURRENT_QUARTER",
+        "contract_size": "10",
+        "onboard_time_ms": 1782460800000,
+        "delivery_time_ms": 1798185600000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=ETHUSD_270326&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201408642988000,
+      "receive_time_utc_ns": 1793201408988422000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_delivery",
+          "symbol": "ETHUSD_270326"
+        },
+        "venue_market": "coinm",
+        "pair": "ETHUSD",
+        "base_asset": "ETH",
+        "quote_asset": "USD",
+        "margin_asset": "ETH",
+        "contract_type": "NEXT_QUARTER",
+        "contract_size": "10",
+        "onboard_time_ms": 1790323200000,
+        "delivery_time_ms": 1806048000000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_PERP&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201409097619000,
+      "receive_time_utc_ns": 1793201409447731000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 200,
+      "body_utf8": "[[1793201280000,\"-0.00034111\",\"-0.00034111\",\"-0.00040952\",\"-0.00040952\",\"0\",1793201339999,\"0\",12,\"0\",\"0\",\"0\"],[1793201340000,\"-0.00040942\",\"-0.00031249\",\"-0.00040942\",\"-0.00032112\",\"0\",1793201399999,\"0\",11,\"0\",\"0\",\"0\"]]",
+      "summary": {
+        "error_code": null,
+        "rows": 2
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_perpetual",
+          "symbol": "BTCUSD_PERP"
+        },
+        "venue_market": "coinm",
+        "pair": "BTCUSD",
+        "base_asset": "BTC",
+        "quote_asset": "USD",
+        "margin_asset": "BTC",
+        "contract_type": "PERPETUAL",
+        "contract_size": "100",
+        "onboard_time_ms": 1597042800000,
+        "delivery_time_ms": 4133404800000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=ETHUSD_PERP&interval=1m&limit=2",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201409560945000,
+      "receive_time_utc_ns": 1793201409898596000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 200,
+      "body_utf8": "[[1793201280000,\"-0.00038291\",\"-0.00025635\",\"-0.00046185\",\"-0.00039809\",\"0\",1793201339999,\"0\",12,\"0\",\"0\",\"0\"],[1793201340000,\"-0.00038190\",\"-0.00033334\",\"-0.00044160\",\"-0.00041050\",\"0\",1793201399999,\"0\",12,\"0\",\"0\",\"0\"]]",
+      "summary": {
+        "error_code": null,
+        "rows": 2
+      },
+      "product": {
+        "schema_version": "binance-product.v1",
+        "key": {
+          "market": "cm_perpetual",
+          "symbol": "ETHUSD_PERP"
+        },
+        "venue_market": "coinm",
+        "pair": "ETHUSD",
+        "base_asset": "ETH",
+        "quote_asset": "USD",
+        "margin_asset": "ETH",
+        "contract_type": "PERPETUAL",
+        "contract_size": "10",
+        "onboard_time_ms": 1597734000000,
+        "delivery_time_ms": 4133404800000,
+        "status": "TRADING",
+        "underlying_type": "COIN"
+      },
+      "variant": "native_symbol_recent"
+    },
+    {
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndexKlines?symbol=BTCUSDT_261225&interval=1m&limit=2&startTime=1793201280000&endTime=1793201399999",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201410007256000,
+      "receive_time_utc_ns": 1793201410324825000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "variant": "dated_explicit_closed_range"
+    },
+    {
+      "url": "https://dapi.binance.com/dapi/v1/premiumIndexKlines?symbol=BTCUSD_261225&interval=1m&limit=2&startTime=1793201280000&endTime=1793201399999",
+      "method": "GET",
+      "proxy_mode": "direct",
+      "request_time_utc_ns": 1793201410328522000,
+      "receive_time_utc_ns": 1793201410635960000,
+      "representation": "diagnostic-http-body-utf8.v1",
+      "http_status": 400,
+      "body_utf8": "{\"code\":-1121,\"msg\":\"Invalid symbol.\"}",
+      "summary": {
+        "error_code": -1121,
+        "rows": null
+      },
+      "variant": "dated_explicit_closed_range"
+    }
+  ]
+}

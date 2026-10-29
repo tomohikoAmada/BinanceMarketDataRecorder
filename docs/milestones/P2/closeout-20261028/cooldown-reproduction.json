@@ -1,0 +1,58 @@
+{
+  "cases": [
+    {
+      "venue": "spot",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.9992,
+      "failure_observation_retained": true,
+      "passed": true
+    },
+    {
+      "venue": "spot",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.99939,
+      "failure_observation_retained": true,
+      "passed": true
+    },
+    {
+      "venue": "usdm",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.999471,
+      "failure_observation_retained": true,
+      "passed": true
+    },
+    {
+      "venue": "usdm",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.999409,
+      "failure_observation_retained": true,
+      "passed": true
+    },
+    {
+      "venue": "coinm",
+      "http_status": 429,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.999468,
+      "failure_observation_retained": true,
+      "passed": true
+    },
+    {
+      "venue": "coinm",
+      "http_status": 418,
+      "saved_retry_after": "600",
+      "expected_wait_seconds": 600,
+      "actual_wait_seconds": 599.999492,
+      "failure_observation_retained": true,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+# P2 当前交付：独立复审通过（2026-10-29）
+
+R5现在只在测试writer的`should_rotate(now_monotonic=...)`入口控制轮换时间；
+实际append、seal、重连和事件循环保持原路径。shutdown及TCP reset/server close
+都参数化覆盖活跃尾文件/已轮换两种布局；逐角色核对两条精确原文、顺序、连接ID、
+数据文件/空marker的数量、flags、complete/gap，以及Catalog缺口身份与代际。
+同一fixture的其他测试固定writer轮换时点，移除真实时钟的错峰偶然性。
+
+87项受影响检查及[两种shutdown布局](r5-20261029/shutdown-layouts.json)通过；
+测试/复现程序Ruff与mypy通过。[检查记录](r5-20261029/checks.json)保留范围与未跑项。
+`src`、默认/首版配置和历史失败证据未改。1c1785c的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40866220110)
+及日志已核对：macOS 2,369通过/24跳过，Ubuntu 2,365通过/28跳过；静态检查、
+Go golden、构建/安装/CLI通过，Ubuntu精确生产依赖身份检查通过。见[CI记录](r5-20261029/ci.json)。
+[独立复审](review-20261029.md#r5-independent-closure)现已接受R5并关闭P2，无新增待修正项。
+独立复跑87项检查及两例驱动通过；修正1c1785c与最终HEAD 464ed56的
+[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40867731939)
+及原始日志均核实成功。P3未开始，尚未获得生产连续性或VPS容量资格。
+
+- [x] owner批准首版仅暂缺U本位、币本位交割合约的溢价指数K线；永续继续采集，
+  其他范围不变。优先稳定基础数据，同时尽可能保留其他独立公开信息。
+- [x] [ADR-0055](../../adr/0055-initial-production-dated-premium-exception.md)、
+  P0覆盖合同、数据约定和[计划](../../production_milestone_plan.md#p2补齐产品和数据范围)
+  已同步；官方适用性仍未知，不能标成交易所不提供或覆盖成功。
+- [x] 按owner授权提交[Binance官方issue #585](https://github.com/binance/binance-connector-python/issues/585)，
+  已回读核对[提交稿](r2-20261028/binance-clarification-issue-body.md)。
+- [x] 团队落实首版源选择，停止该项轮询/重试，保持永续和其他源；更新实际预算、
+  覆盖报告及后续运行的统计范围，保留历史失败和旧数据。
+- [x] [首版候选](initial-production-20261029/README.md)包含显式配置、120项暂缺清单、
+  765.328366/min名义预算及10项新回归；71项受影响检查通过。
+- [x] 13602c8的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40827645005)
+  及日志已核对：macOS 2,366通过，Ubuntu 2,362通过，构建/安装/CLI烟测均通过。
+- [x] [本轮独立复审](review-20261029.md)确认首版范围实现、覆盖/预算、旧数据边界；
+  独立比较修改前源计划，只有120项批准暂缺，71项相关检查通过。
+- [x] **P2-R5修正与本机验证**：控制Spot测试的writer轮换时机，覆盖合法的三份/四份
+  布局并加强原文、连接和缺口语义断言；同fixture异常断线的相同假设已一起修正。
+- [x] **P2-R5修正CI**：1c1785c双平台完整检查通过；后续CI记录提交只改文档。
+- [x] **P2-R5独立复审**：两种受控布局及严格原文/连接/缺口检查通过，87项定向检查和准确提交CI核实，R5关闭，P2整体通过。
+
+**P2整体通过。** R1/R4及首版范围实现保持接受，R5已闭合；等待官方回复仍是非阻塞后续事项。
+交付关联[PR #88](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/88)，可按owner授权合并及安全清理。P3未开始，未部署。
+以下记录保留其当时结论，其中未批准/未发送和等待官方规则的旧门槛由上述决定替代。
+
+## 066c2c3独立复审记录（保留）
+
+**2026-10-29独立复审066c2c3：调查证据与澄清稿通过，R2/P2仍未闭合。**
+[复审与影响说明](review-20261028.md#review-066c2c3)核实14份诊断、两份完整目录
+和8份来源摘要；运行时与f9aaeee相同，无新增阻塞缺陷，R1/R4保持通过。
+缺项限定于交割premium指数K线，不意味着缺少这些合约的全部行情。现配置启用时
+120个持续失败源最多约120 weight/min；这是请求成本估算，不是CPU测量。
+官方适用性仍未知，澄清稿未发送，首版范围未放宽。已将完成调查与待闭合规则
+分开勾选；PR #88保持Draft，未合并、清理分支或部署。
+
+## 066c2c3调查交付记录（保留）
+
+**2026-10-29后续调查：R1/R4保持通过，R2仍需官方适用规则，P2整体仍未通过。**
+
+[R2证据](r2-20261028/README.md)保留2026-10-28 UTC的14次原生HTTP诊断及两次
+新目录检查：8个交割symbol仍TRADING但premium均400/-1121，4个永续对照200；
+两个交割时间段变体仍失败。当前官方SDK无额外交割参数，整合说明/changelog未建立
+适用规则。按官方来源要求停止该项实现；已备好[官方澄清问题稿](r2-20261028/binance-clarification-draft.md)，
+尚未发送。原失败源与重试预算保留；本轮未改运行时，不重审R1/R4历史。以下复审
+及候选记录保留原义。
+
+**2026-10-28 f9aaeee独立复审：R4通过并关闭，P2整体仍未通过。**
+
+[闭合记录](review-20261028.md#review-f9aaeee)确认冷却在落盘等待前生效，无效头部
+回退后原失败记录仍保存；存储异常、独立/共享请求池和正常停止边界保留。
+独立复跑33项冷却、42项相关回归和两组六例复现全部通过，1项在线smoke按默认
+跳过；核实f9aaeee双平台CI：macOS 2,356项、Linux 2,352项通过。
+本轮未发现新的阻塞问题。R1保持通过，下一步只需继续P2的R2适用性及覆盖证据；
+已知失败源和稀疏流未观察限制保留。PR #88保持Draft，未合并main、删除分支或部署。
+
+## R4修正候选交付记录（保留）
+
+**2026-10-28 R4准入次序修正候选已交付，待独立复审；P2仍未通过。**
+
+收到429/418结果后，现在在首次`await persist_rest`之前同步启用原共享池冷却。
+等待时长解释与资源预算不变；失败响应随后正常保存，存储异常继续传播。未取消已
+发出的请求，未新增限流框架。R1保持复审通过，配置/日文件/已存样本未改，R2仍开放。
+
+新增8项回归在7d80f2f的旧运行时上全部失败；修正后33项冷却测试全部通过。
+[复审六例时序复现](closeout-20261028/cooldown-order-final.json)与
+[原六例时长复现](closeout-20261028/cooldown-duration-order-final.json)均6/6通过。
+回归覆盖Spot另一源及UM↔CM共享准入、落盘等待、其他池独立、预算等待取消、失败
+证据真实落盘/读取，以及落盘失败时冷却仍有效且OSError继续传播。另有182项相关
+检查、9项共享预算测试通过；[检查记录](closeout-20261028/cooldown-order-checks.json)
+区分旧版负回归和修正候选验证。没有重采或重审R1历史文件，也没有部署。
+
+PR #88保持Draft；最终修正提交的双平台CI和独立复审仍按当前计划核验。R2未知
+适用性和旧失败证据保留，P3未开始。以下复审与原交付保持历史原义。
+
+额外4项坏日期/非有限数值头部回归在73ec0c8上失败；当前修正复用既有缺省/封禁
+解释，原头部保留，避免冷却前移后解析异常跳过失败落盘。73ec0c8的排队CI已取消，
+以本次最终提交的CI为准；旧候选及其验证文件留存，不冒充最终通过记录。
+
+## 195762c独立复审记录（保留）
+
+**2026-10-28 独立复审195762c：P2仍未通过。** [复审记录](review-20261028.md#review-195762c)
+认可R1的实测固定频率、预算和独立日文件补充，已在计划中勾选。143项相关测试及
+同提交双平台CI通过；已保存的17份日文件、8份导入与147条Raw样本独立核对一致。
+R4时长计算已通过，但冷却仍在失败记录落盘之后启用；落盘等待期间，新请求仍能
+发出，[新增六例复现](review-195762c-cooldown-order.json)全部失败。将冷却移至
+落盘等待之前并补回归；R2的U/C交割premium适用性仍待闭合。PR #88保持Draft，
+未合并main或清理分支，P3未启动。以下候选交付与更早记录保留当时含义。
+
+## 195762c修正候选交付记录（保留）
+
+**2026-10-28 修正候选：R1 实施与 R4 时长修复已交付，P2 仍未通过。**
+
+- R4 复用现有 Retry-After 秒数/HTTP 日期/418 截止时间及缺省语义，按接收时刻计算
+  剩余冷却；Spot 独立，UM/CM 共用。新增21种回归及原6例复现通过，失败响应保留。
+- 按 owner 已批准方向交付[实测固定配置](closeout-20261028/recorder.measured.toml)：
+  两个 USDT 永续2s、两个 USDC 永续3s，其余15个合约30s；新发现产品使用明确30s
+  默认，并受名义稳态准入上限约束，超出则显示 NOT_ADMITTED_REST_BUDGET。
+  通用库的旧1s默认未改，未自动选择原6s提案，WS/原生bar保持完整目标。
+- [预算及损失](closeout-20261028/measured-budget.json)：D06为650 weight/min，
+  全部名义常驻合约请求含目录约778.687/min，Recorder份额1200/min，余421.313/min。
+  启动seed、重试和交割发布另计；120条失败的U/C交割premium周期源按60s重试，
+  最坏另有120/min，不能把它们删掉凑预算。共享限流器始终限制实际准入。
+- [17份实际日文件](closeout-20261028/daily-window-study.json)共10,267,636行，SHA核对、
+  所需字段/精度/时间/ID已逐文件检查。相同日文件在理想UTC相位、零延迟模型下，
+  这份配置窗口外133,143行（1.297%），统一6s为471,898行（4.596%）；这不是现场
+  完整率或99.5%证明。文件自身有ID跳号，两份CM次季文件404；缺失不填零、不推断无成交。
+  每日六列没有isRPITrade、接收时间或现场观察变化，不能补回这些信息。
+- 先做19产品/6轮/10s有界网络样本，再按实测配置运行65s的D06独立样本：
+  [147次成功响应](closeout-20261028/candidate-cadence-sample.json)均独立读取，
+  最大滚动60s D06权重620，接收延迟中位0.104s、最大0.614s，短窗没有已知窗口缺口。
+  不代表全功能/VPS容量。收尾报告最初误用reader位置参数；修离线报告后读取同一批封存
+  文件，没有重复采集，CPU指标如实记不可用。
+- 复用独立 HistoricalImporter 的下载、CHECKSUM、修订与有界批处理，新增
+  `backfill plan/run --profile selected-daily-trades --product <market>:<symbol>`，
+  明确产品及最多31个已结束UTC日期，无默认全市场/全历史。发布独立
+  official-daily-trades.v1 reader及逐ID事实对账：相同共同字段用现场事实一次，冲突保留
+  两个来源且不选值。实际获取时间/文件来源放文件级元数据，不创造live时钟，不改历史Raw。
+  [实际导入](closeout-20261028/daily-import-sample.json)8份/123,773行验证通过，两份缺文件
+  为gap。下载失败不取消实时落盘；新旧导入/reader、精度、缺字段和重叠/冲突均有回归。
+- **R2仍开放，且新增确认U交割同样失败。** [本次公开复查](closeout-20261028/premium-applicability.json)
+  中8个U/C交割symbol均400/-1121，C永续对照200；[官方语义核对](closeout-20261028/official-sources.json)
+  仍无交割适用规则。未用永续替代、未认定永久不提供、未删除失败源。
+
+最终检查及CI见 closeout-20261028/checks.json。当前修正需要独立复审；不合并main，
+不清理承载工作的分支，不授予P3/P4–P6或生产资格。以下初审与原测量保持历史原义。
+
+# P2：产品和数据范围实施记录
+
+**2026-10-28 独立审查：暂不通过。** [审查记录](review-20261028.md)与
+[D06 预算研究](d06-budget-research-20261028.md)已写回计划；原 R1/R2 继续开放，
+新增 R4：REST 未遵守 Retry-After。复跑全仓 2,314 项及相关 314 项通过，
+新限流复现六例均失败。以下是原交付证据，保留其测量和当时边界。
+
+**2026-10-28 owner 决定：已选择选项一。** 后续按“按产品分配实时轮询频率＋官方
+日度逐笔文件独立延迟补充”推进；先核验具体产品、日期、字段及观察损失，再实现
+小型下载/导入路径和实测频率配置。方向已确定，R1 的实现与验证尚未完成，R2/R4
+仍开放。当前默认仍为1秒，原6秒提案未被直接选定。详见[计划](../../production_milestone_plan.md#p2补齐产品和数据范围)
+及[数据边界](../../adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28)。
+
+2026-10-27。基线 `8c2cf72114b55ea193316189e7ce9a178bd96393`，工作分支
+`codex/p2-market-coverage`；起始工作区干净。未部署、未改变 VPS 服务，未访问生产数据。
+
+**代码及本机验证已交付，P2 的全部通过条件尚未闭合。** 保留完整目标的
+1s D06 配置，不用限流等待或减少工作冒充 99.5% 通过。当前公开接口预算无法满足
+这份 BTC/ETH 完整配置，正在请 owner 决定是否允许明确的采样范围调整。
+C 交割 premium-index 的适用性也仍有未覆盖记录，不能用永续值替代。
+P3–P6 未开始；production readiness 仍为 NO。
+
+## 已实施
+
+- 明确 Spot、USD-M / COIN-M 永续和交割身份；保存 pair、base/quote/margin、
+  合约倍率、上市/交割时间与状态。共享源使用独立 shared 身份。
+- 按配置 underlying assets 发现 base 对应的全部 Spot 报价对及 U/C 合约；
+  处理新产品、到期、目录缺失、状态变化及显式资源准入。不是订阅全交易所。
+  保留旧显式 symbol 配置模式及旧记录读取。
+- 将 [53 行覆盖表](../P0/coverage.md#p2-implementation-and-field-mapping--2026-10-27)
+  落实到具体 Source 计划，逐项记录字段、scope、请求参数、原生周期、优先级、
+  schema、SDK 版本及例外。目录、pair/contract-role 数据和全局数据按实际 scope 抓一次。
+- 复用 P1 有界长寿命接收与批写，采用 Binance 官方 combined 订阅。保存完整收到的
+  combined 应用消息字节，保留逻辑源标签；订阅成员的单次身份摘要绑定断线记录。
+  普通深度与 RPI 的快照/序列桥接独立，接收不等待完整盘口。
+- REST 通过已安装的官方 SDK common unsigned transport，保留真实完成接收时钟、
+  状态和允许的 headers。解析型每次只存一份 JSON 信息，保留 null/缺失和十进制字符串；
+  数字型结算价格使用已经收到的单份正文，避免 SDK float 精度损失。
+  Spot 旧快照写入改为 v3 单份表示，v1/v2 仍可读。
+- D06 有界 2,000-ID 缓存直接比较 ID 和字段，保存新增、同 ID 变化、首次观察时点、
+  每次轮询计数/空值/ID 与时间边界、窗口溢出。失败轮询保留证据且不刷新成功。
+  重启/驱逐允许重复；不承诺重建每次原返回列表。不改 WS 或历史 Raw。
+- 新 public-observation 规范化 schema 及现有 ManifestCatalog/replay 可读；
+  保留原始保存表示，未知有效版本拒绝猜测。Raw v1、CRC、文件/归档完整性边界不改。
+
+协议与兼容约定见 [ADR-0054](../../adr/0054-selected-asset-capture-and-public-observations.md)。
+`data_freshness_evaluated=false` 和 `continuity_qualified=false` 如实保留：当前源状态
+用于接入/请求诊断，P3 的持久逐源时间区间、新文件验证和后台资格工作尚未完成。
+
+## 实际证据
+
+| 项目 | 结果及边界 |
+| --- | --- |
+| 真实目录 | Spot/U/C 三市场成功，BTC/ETH 有 50 个 TRADING 产品：Spot 31、U 永续 9 / 交割 4、C 永续 2 / 交割 4；含 ETHBTC 和非 USDT 报价对。另有非交易历史目录项，未伪造成活跃产品 |
+| REST 小样本 | 已保存公开响应及失败，覆盖各实际 REST 家族；无账户/订单/密钥请求。初次探测为缩小样本把 depth limit 改成 3/5 的失败原样保留；有效深度及 RPI limit=1000 后续样本单列，未覆盖旧文件 |
+| WS 小样本 | 五种产品身份的真实公开字节；稀疏 block/C liquidation、未观测的 C index 用官方样例补充。短窗口没有消息不等于故障，也不等于已验证其生产覆盖 |
+| 全周期原生 bar 成本 | [固定 30s 接收样本](native-bars-sample.json)：5 个代表产品，197 条配置流，实际观察 130 条；3,194 帧 / 1,169,630 payload bytes，独立完整读取的字节和物理顺序一致，停止队列为 0。含连接/排空总墙钟 39.335s，进程 CPU 2.691s，压缩 Raw 149,224 bytes。未观察的 67 条不记成功。非 VPS、非稳态/全功能 A/B、非 99.5% 资格 |
+| Spot 单份/双份对照 | [同输入交错测量](representation-benchmark.json)：100 次相同 1,000 档快照，编码 CPU 中位 37.127→14.528ms，压缩字节 8,724→5,508；字段及正文一致。只证明该本机编码工作 |
+| D06 表示对照 | 同 52 次有重叠/变化/空窗口，编码 CPU 26.086→12.895ms，压缩字节 13,726→5,824；新增/变化事实及首次观察时点相同。选紧凑 v1；不把减少重复列表当作减少真实成交 |
+| 离线验证 | 全仓 2,292 passed、24 skipped、5 deselected；随后受影响的 P2 / 服务 / 规范化 / 盘口定向回归单独补跑。Ruff、strict mypy、M0、Go Raw golden、sdist/wheel 构建通过。最终定向数量见 [checks.json](checks.json) |
+| 实际落盘与读取 | 五类身份经真实有界接收/Raw writer/封存，独立 Raw 读取、规范化及 ManifestCatalog replay；精度、旧快照、迟到 ID、同 ID 变化、空/失败轮询、配置、目录丢失、资源准入与 10 标的/50 产品计划均有回归；另验证实际服务入口、缓冲溢出恢复、已知序列缺口标记和正常轮询不制造断线缺口 |
+
+目录及 REST/WS 小样本在 `tests/fixtures/binance/p2/`；
+[fixture 清单](fixture-manifest.json)绑定用于验证的具体文件；初始 D31 SDK 模型样本
+仅是接入诊断，数字精度以 `usdm-delivery-price-exact-body.json` 和高精度回归为准。
+[官方来源](official-sources.json)区别下载原文、WAF/HTML 失败与渲染摘录；未下载 llms-full。
+[原生 bar 样本源码](native-bars-sample-source.py.txt)保留当次执行，测试 Raw 位于结果中的
+临时测试根，未清理或改动生产/外置盘。
+
+## 尚未闭合的通过条件
+
+1. **明确的请求预算冲突。** [当前目录完整计划](coverage-summary.json)有 2,154 WS
+   订阅及 2,627 REST 源/seed。D23 已改为每个原生 bar 关闭后查询（不是把月线每分钟
+   重复抓）；即使如此，正常 REST 计划仍约消耗 5,829 UM/CM weight/min，其中 D06
+   19 产品 × 5 weight × 60 次 = **5,700/min**。现有 Recorder 份额为 1,200/min，
+   官方整合池总量 2,400/min。初始 seed、重试和其他 IP 用户还要额外消耗。
+   限流器不会违规绕过配额；它等待，逾期仍可见。不能以这种等待宣称通过。
+   6s 的显式有限窗口采样在名义稳态约为 1,079/min，可能减少高峰时观察到的成交，
+   尚未获得 owner 的范围变更决定，未改默认 1s。可审阅的
+   [6s 配置提案](recorder.resource-proposal.toml)和[同源需求估算](resource-proposal.json)均明确标为未批准，未运行资格窗口。
+2. **C 交割 premium-index 未覆盖。** 当前目录列有 BTCUSD_261225 / ETHUSD_261225，
+   但 `/dapi/v1/premiumIndexKlines` 对所测交割 symbol 返回 -1121。依官方整合说明
+   再查同名 FAPI 路径也同样返回 -1121；相同路径的 perpetual symbol 成功。
+   当前文档的例子 pair=BTCUSD 自身也返回 -1121。这些是实测边界，尚不能据此推导
+   所有合约的永久不提供规则。停止猜测这条源的适用语义，保留失败/未知状态及
+   风险登记，不改成永续或其他价格类型，不删除失败源以通过资格。
+3. **U dated ticker 的 ps 不可泛化。** 小样本 ticker.ps 等于完整 dated symbol，
+   depth/bookTicker/rpiDepth.ps 则为目录 pair。保留实际字段，产品身份取目录；
+   不再用一个全局 ps 规则解释所有流。U 清算 latest/largest 的既有冲突仍未解决。
+4. **资格工作未做。** 67 条 bar 流在短样本中未观察，C index 小样本无事件；
+   不授予成功 credit。P3 的逐源新鲜度/连续性和后台验证、GreenCloud 长跑、双平台
+   新候选 CI 与实际容量均未获本次证明。没有 P4–P6 时长或生产通过。
+
+P2 的实现可以审阅，但在预算/采样范围决定及源适用边界明确前，计划仍标记
+“实施中，未全部通过”。这是当前合同要求的阻塞，不新增私人审批链。

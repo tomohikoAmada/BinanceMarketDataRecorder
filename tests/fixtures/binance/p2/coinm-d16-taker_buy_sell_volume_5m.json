@@ -1,0 +1,108 @@
+{
+  "source": {
+    "family": "D16",
+    "venue_market": "coinm",
+    "market": "cm_delivery",
+    "symbol": "BTCUSD_CURRENT_QUARTER",
+    "stream": "taker_buy_sell_volume_5m",
+    "transport": "rest",
+    "endpoint": "/futures/data/takerBuySellVol",
+    "cadence_seconds": 300,
+    "parameters": {
+      "contractType": "CURRENT_QUARTER",
+      "limit": 2,
+      "pair": "BTCUSD",
+      "period": "5m"
+    },
+    "weight": 1,
+    "required_fields": [
+      "timestamp"
+    ],
+    "priority": "unique_fact",
+    "lifecycle": "active",
+    "products": [
+      "BTCUSD_261225"
+    ],
+    "representation": "binance-public-rest-provenance.v1/sdk-parsed-json.v1",
+    "success_budget_seconds": 10,
+    "empty_response": "retained_observation",
+    "unknown_fields": "WS preserved; REST not guaranteed",
+    "recovery": "new_valid_response_or_connection",
+    "gap_semantics": "F"
+  },
+  "request_parameters": {
+    "contractType": "CURRENT_QUARTER",
+    "limit": 3,
+    "pair": "BTCUSD",
+    "period": "5m"
+  },
+  "observation": {
+    "schema_version": "binance-public-rest-provenance.v1",
+    "representation": "sdk-parsed-json.v1",
+    "family": "D16",
+    "source_stream": "taker_buy_sell_volume_5m",
+    "scope": "BTCUSD_CURRENT_QUARTER",
+    "venue_market": "coinm",
+    "request": {
+      "method": "GET",
+      "path": "/futures/data/takerBuySellVol",
+      "parameters": {
+        "contractType": "CURRENT_QUARTER",
+        "limit": 3,
+        "pair": "BTCUSD",
+        "period": "5m"
+      },
+      "request_time_utc_ns": 1793097605405185000,
+      "request_monotonic_ns": 398082068616166,
+      "timeout_ms": 10000
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "date": "Tue, 27 Oct 2026 10:40:05 GMT",
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "model": [
+        {
+          "takerBuyVolValue": "0.0000",
+          "contractType": "CURRENT_QUARTER",
+          "takerSellVol": "197",
+          "takerSellVolValue": "0.0025",
+          "takerBuyVol": "2",
+          "pair": "BTCUSD",
+          "timestamp": 1793096400000
+        },
+        {
+          "takerBuyVolValue": "0.0014",
+          "contractType": "CURRENT_QUARTER",
+          "takerSellVol": "1",
+          "takerSellVolValue": "0.0000",
+          "takerBuyVol": "111",
+          "pair": "BTCUSD",
+          "timestamp": 1793096700000
+        },
+        {
+          "takerBuyVolValue": "0.0007",
+          "contractType": "CURRENT_QUARTER",
+          "takerSellVol": "0",
+          "takerSellVolValue": "0.0000",
+          "takerBuyVol": "58",
+          "pair": "BTCUSD",
+          "timestamp": 1793097000000
+        }
+      ],
+      "valid": true,
+      "error_type": null,
+      "receive_time_utc_ns": 1793097605590068000,
+      "receive_monotonic_ns": 398082253499083
+    },
+    "transport": {
+      "kind": "official_sdk_unsigned_parsed_json",
+      "package": "binance-sdk-spot",
+      "version": "10.0.0",
+      "common_version": "4.0.3",
+      "raw_http_body_available": false,
+      "receive_boundary": "sdk_request_completion"
+    }
+  }
+}
