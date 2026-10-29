@@ -1,4 +1,4 @@
-# P2 当前交付：R5测试修正候选已完成（2026-10-29）
+# P2 当前交付：独立复审通过（2026-10-29）
 
 R5现在只在测试writer的`should_rotate(now_monotonic=...)`入口控制轮换时间；
 实际append、seal、重连和事件循环保持原路径。shutdown及TCP reset/server close
@@ -11,8 +11,10 @@ R5现在只在测试writer的`should_rotate(now_monotonic=...)`入口控制轮�
 `src`、默认/首版配置和历史失败证据未改。1c1785c的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40866220110)
 及日志已核对：macOS 2,369通过/24跳过，Ubuntu 2,365通过/28跳过；静态检查、
 Go golden、构建/安装/CLI通过，Ubuntu精确生产依赖身份检查通过。见[CI记录](r5-20261029/ci.json)。
-R5仍待独立复审，
-不能将作者自检记为P2通过。以下已接受部分继续保留。
+[独立复审](review-20261029.md#r5-independent-closure)现已接受R5并关闭P2，无新增待修正项。
+独立复跑87项检查及两例驱动通过；修正1c1785c与最终HEAD 464ed56的
+[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40867731939)
+及原始日志均核实成功。P3未开始，尚未获得生产连续性或VPS容量资格。
 
 - [x] owner批准首版仅暂缺U本位、币本位交割合约的溢价指数K线；永续继续采集，
   其他范围不变。优先稳定基础数据，同时尽可能保留其他独立公开信息。
@@ -32,10 +34,10 @@ R5仍待独立复审，
 - [x] **P2-R5修正与本机验证**：控制Spot测试的writer轮换时机，覆盖合法的三份/四份
   布局并加强原文、连接和缺口语义断言；同fixture异常断线的相同假设已一起修正。
 - [x] **P2-R5修正CI**：1c1785c双平台完整检查通过；后续CI记录提交只改文档。
-- [ ] **P2-R5独立复审**：仅复审本项修正后闭合P2。
+- [x] **P2-R5独立复审**：两种受控布局及严格原文/连接/缺口检查通过，87项定向检查和准确提交CI核实，R5关闭，P2整体通过。
 
-**等待官方回复不再是首版P2验收前置条件。** R1/R4及首版范围实现保持通过；
-P2整体暂不通过，PR #88保持Draft，分支保留，P3未开始，未部署。
+**P2整体通过。** R1/R4及首版范围实现保持接受，R5已闭合；等待官方回复仍是非阻塞后续事项。
+交付关联[PR #88](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/88)，可按owner授权合并及安全清理。P3未开始，未部署。
 以下记录保留其当时结论，其中未批准/未发送和等待官方规则的旧门槛由上述决定替代。
 
 ## 066c2c3独立复审记录（保留）

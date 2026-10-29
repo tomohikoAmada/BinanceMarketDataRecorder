@@ -1,4 +1,23 @@
-# Current P2 R5 test correction candidate — 2026-10-29
+# Current handoff: P2 accepted; P3 next — 2026-10-29
+
+[Independent R5 review](milestones/P2/review-20261029.md#r5-independent-closure)
+accepts correction 1c1785c and delivery HEAD 464ed56. Controlled writer timing covers
+both legal reconnect layouts and preserves exact Raw bytes/order, connection identities,
+manifest roles and Catalog gap evidence. Independent 87-test and two-case checks pass;
+both commits' dual-platform CI and original logs are verified. Production source,
+configuration and historical failures are unchanged. No new correction is required.
+
+P0–P2 are complete. R1/R4 and the approved initial-release scope remain accepted;
+no repeated history audits are needed. PR #88 is eligible for the owner-authorized
+merge and safe remote-branch cleanup after verifying its commits are in main.
+The next development phase is P3; it has not started, and no production run or deployment
+was performed. P2 does not establish VPS capacity or 99.5% production continuity.
+
+The explicit initial-release configuration still omits only U/C dated premium bars.
+Perpetual premium and all other selected sources remain; official applicability stays
+UNKNOWN. Binance issue #585 is nonblocking follow-up, not a reason to reopen P2.
+
+## Prior P2 R5 test correction candidate — 2026-10-29 (retained)
 
 The test fixture now controls only the writer's rotation-time predicate via the existing
 writer factory. Shutdown and TCP-reset/server-close cases cover both active-tail and

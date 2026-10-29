@@ -1,8 +1,8 @@
 # ADR-0055: Initial-production exception for dated premium-index bars
 
 Status: owner-approved on 2026-10-29; implementation and focused validation independently
-accepted at 13602c8/58a3ca2. Overall P2 remains pending the separate R5 test correction;
-see the [review](../milestones/P2/review-20261029.md).
+accepted at 13602c8/58a3ca2. R5 correction has since passed independent review at 464ed56;
+P2 is accepted. See the [closure](../milestones/P2/review-20261029.md#r5-independent-closure).
 
 ## Decision
 
@@ -65,8 +65,8 @@ that answer, synthetic replacement series or repeated failing market probes is n
 
 Waiting for this official answer is **not an initial-release P2 acceptance gate**.
 The approved exception implementation and its independent review have passed. R1/R4
-stay accepted; overall P2 remains pending the separate R5 deterministic-test correction
-and final validation. Draft PR #88 is retained, and P3/production have not started.
+stay accepted; R5 deterministic-test correction and final independent validation have
+passed, closing P2. PR #88 may be merged under owner authorization; P3/production have not started.
 
 ## Superseded boundary
 
