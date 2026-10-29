@@ -16,10 +16,14 @@ fixed-cadence/daily supplement; independent review of f9aaeee closes R4. The own
 accepts an initial release without U/C dated premium-index klines under
 [ADR-0055](docs/adr/0055-initial-production-dated-premium-exception.md). Perpetual premium
 and all other selected scope remain. Prioritize reliable basic data and as much additional
-distinct public information as resources allow. The exception's implementation and focused
-coverage/budget checks are delivered as a candidate, with exact 13602c8 dual-platform CI
-verified; acceptance still needs independent P2 re-review;
-see docs/milestones/P2/README.md.
+distinct public information as resources allow. Independent review of 13602c8/58a3ca2
+accepts the exception's source selection, coverage/budget and historical-read boundary;
+71 focused checks and exact 13602c8 dual-platform CI are verified. P2 remains NOT ACCEPTED
+because the subsequent docs-only 58a3ca2 macOS CI exposed P2-R5: a shutdown/reconnect test
+assumes exactly three manifests despite legal automatic rotation creating a separate
+boundary marker. Fix deterministic test timing/layout assertions and verify the final CI;
+do not change the production protocol to satisfy the count or repeat accepted R1/R4 audits.
+See [current independent review](docs/milestones/P2/review-20261029.md).
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
 observations. P2 records source priorities and explicit resource-limited coverage in the
@@ -55,10 +59,10 @@ target and historical failures without substitution. The initial-production sele
 is authorized to omit only these dated premium sources before scheduling, including
 new dated products. Keep perpetual premium and all other source families. Record the
 omission as owner-approved uncaptured scope, with official applicability still UNKNOWN;
-do not label it exchange-not-offered or rewrite old Raw, gaps or denominators. Recompute
-source/budget reporting and verify the boundary in P2 before final independent review.
-Keep Draft PR #88 and its branch until implementation and verification pass. Exact
-f9aaeee dual-platform CI/logs remain verified; no new blocking code issue was found.
+do not label it exchange-not-offered or rewrite old Raw, gaps or denominators. The
+source/budget reporting and implementation boundary have passed independent review.
+Keep Draft PR #88 and its branch until P2-R5 is corrected and independently verified. Exact
+f9aaeee dual-platform CI/logs remain verified; no new blocking code issue was found in that review.
 Do not repeat R1 history audits or already closed R4 work.
 Independent review of 066c2c3 accepts the bounded R2 investigation evidence and unsent
 clarification draft; the runtime is unchanged and official applicability remains unknown.
@@ -69,7 +73,7 @@ the prepared public clarification. It is submitted as
 Waiting for an official reply is no longer a first-release P2 acceptance gate. The
 official-source stop rule still prohibits inventing dated-premium semantics; it does
 not prevent implementation of this explicitly declared omission. Do not ask again for
-these approved actions. P2/PR #88 remain pending independent review; no
+these approved actions. P2/PR #88 remain pending R5 correction/re-review; no
 production work is authorized by documentation status alone.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction

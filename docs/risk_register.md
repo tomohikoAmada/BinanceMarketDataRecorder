@@ -15,12 +15,19 @@
   with unknown applicability, a new-instance effective boundary and unchanged historical
   evidence. The retained-directory nominal budget becomes 765.328366/min; WS and other
   source descriptions are unchanged. This scope reduction establishes no CPU/VPS gain.
-- Ten new regressions and 71 affected checks pass; exact 13602c8 dual-platform CI and logs
-  are verified. Independent review remains required. Generic/old configuration defaults
-  still capture the full target.
+- Independent review accepts the source selection/reporting/historical-read boundary;
+  71 affected checks and exact 13602c8 dual-platform CI/logs are verified. Generic/old
+  configuration defaults still capture the full target.
   Do not apply the exception to an already-running window or silently drop other sources.
-- R1/R4 stay accepted. PR #88 remains Draft; P3/production have not started. Historical
-  unapproved/unsent and mandatory-official-reply statements below describe earlier states.
+- **P2-R5 OPEN:** the later docs-only HEAD 58a3ca2 failed macOS CI because a shutdown
+  test assumes exactly three manifests. A controlled reproduction shows legitimate
+  automatic rotation plus a separate reconnect marker yields four with both payloads
+  intact, as allowed by ADR-0027. Fix deterministic timing and semantic assertions;
+  retain payload/connection/gap checks and rerun final CI. See [review](milestones/P2/review-20261029.md).
+  This is a test reliability issue, not evidence of production data loss.
+- R1/R4 and the initial-release implementation stay accepted. P2 remains NOT ACCEPTED
+  pending R5; PR #88 stays Draft. P3/production have not started. Historical unapproved/
+  unsent and mandatory-official-reply statements below describe earlier states.
 
 ## P0 current risks — 2026-10-27
 

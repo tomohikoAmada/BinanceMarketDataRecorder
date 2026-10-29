@@ -1,4 +1,25 @@
-# Current P2 initial-release implementation candidate — 2026-10-29
+# Current P2 independent review — 2026-10-29
+
+The [independent review](milestones/P2/review-20261029.md) accepts the ADR-0055
+initial-release implementation, exact source-set/budget comparison and historical-read
+boundary at runtime 13602c8 / documentation HEAD 58a3ca2. The 71 affected checks pass;
+R1/R4 stay accepted and the runtime commit's dual-platform CI/logs are verified.
+
+P2 is still **NOT ACCEPTED** because the later docs-only HEAD's macOS CI failed
+`test_server_shutdown_frame_is_persisted_before_reconnect` (`4 != 3` manifests).
+P2-R5 has a deterministic two-case reproduction: normal spool rotation can seal the
+shutdown frame before reconnect, requiring a separate zero-record boundary marker under
+ADR-0027. Both payloads are retained; the fixed-count/position test rejects a legal layout.
+This is an existing test assumption, not a newly demonstrated source-selection defect.
+
+Team next: control test rotation timing and verify both allowed layouts, preserving
+payload/order/connection/gap assertions; check the same fixture's related assumptions.
+Run affected checks and final-commit CI, then review R5 only. Do not change runtime
+integrity semantics or rerun accepted history merely to make the test green. Keep Draft
+PR #88 and its branch until closure. Official applicability stays UNKNOWN, issue #585
+remains nonblocking follow-up. P3, production runs and deployment have not started.
+
+## Prior P2 initial-release implementation candidate — 2026-10-29 (retained)
 
 The [ADR-0055 candidate](milestones/P2/initial-production-20261029/README.md) implements
 the approved dated-premium omission before source creation/admission/scheduling. Its

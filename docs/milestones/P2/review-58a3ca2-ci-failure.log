@@ -1,0 +1,49 @@
+Source: GitHub Actions run 40828820269, head 58a3ca24923a6901c447ad15d851736a0b9abd5e, macOS job 123298011733.
+Fetched with gh run view --log-failed; excerpt omits progress/warnings/skipped listings.
+
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6433430Z =================================== FAILURES ===================================
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6434870Z ___________ test_server_shutdown_frame_is_persisted_before_reconnect ___________
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6435280Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6435630Z tmp_path = PosixPath('/private/var/tmp/bmdr-pytest-1578/test_server_shutdown_frame_is_0')
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6435930Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6437510Z     def test_server_shutdown_frame_is_persisted_before_reconnect(tmp_path: Path) -> None:
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6438240Z         async def exercise() -> None:
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6438740Z             stop = asyncio.Event()
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6439070Z             attempts = 0
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6439690Z             shutdown = b'{"e":"serverShutdown","E":1770123456789}'
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6440120Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6440440Z             @asynccontextmanager
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6441140Z             async def opener(_url: str) -> AsyncIterator[WebSocketConnection]:
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6441620Z                 nonlocal attempts
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6442050Z                 attempts += 1
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6442550Z                 socket = ScriptedWebSocket(
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6443240Z                     [shutdown] if attempts == 1 else [depth(2, 2)],
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6443930Z                     stop if attempts == 2 else None,
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6444540Z                     block_on_exhaustion=True,
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6586340Z                 )
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6586980Z                 yield socket
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6587270Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6588020Z             collector, catalog = make_stream(tmp_path, opener=opener, stop=stop)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6588520Z             try:
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6589230Z                 # DIFF_DEPTH retires its capture session at a reconnect boundary.
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6591030Z                 await asyncio.wait_for(collector.run(stop), timeout=3)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6592840Z                 await asyncio.wait_for(collector.run(stop), timeout=3)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6593900Z             finally:
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6594890Z                 catalog.close()
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6595770Z             assert attempts == 2
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6596500Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6597280Z         asyncio.run(exercise())
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6598190Z         captured = sealed_envelopes(tmp_path)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6599300Z         assert len(captured) == 2
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6600410Z         assert captured[0].capture_flags == ("server_shutdown",)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6601580Z         documents = manifests(tmp_path)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6602500Z >       assert len(documents) == 3
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6603130Z E       AssertionError: assert 4 == 3
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6605520Z E        +  where 4 = len([{'capture_flags': ['reconnect_gap'], 'chunk_id': '30db3946-770a-4a8f-b50f-d82e17b63c11', 'chunk_schema_version': 'raw...cf-41d2-9290-914d22e72cce', 'chunk_schema_version': 'raw-chunk.v1', 'collector_instance_ids': ['collector-test'], ...}])
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6607890Z
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6608390Z tests/integration/test_spot_stream_collector.py:383: AssertionError
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6609470Z ------------------------------ Captured log call -------------------------------
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6610940Z WARNING  test.spot:logging.py:55 Spot stream is opening a new generation with persistent gap evidence
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6647050Z FAILED tests/integration/test_spot_stream_collector.py::test_server_shutdown_frame_is_persisted_before_reconnect - AssertionError: assert 4 == 3
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:28:59.6649400Z 1 failed, 2365 passed, 24 skipped, 5 deselected, 13 warnings in 357.24s (0:05:57)
+macos-python312	Run python -m pytest -q -o faulthandler_timeout=120	2026-10-29T06:29:00.4067510Z ##[error]Process completed with exit code 1.
