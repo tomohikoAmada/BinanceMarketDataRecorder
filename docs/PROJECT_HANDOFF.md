@@ -7,9 +7,11 @@ chunks, one/two empty markers, completeness/gaps and Catalog discontinuity ident
 Other same-fixture layout assumptions now run with controlled writer timing. Runtime,
 configuration, protocol and historical failure evidence are unchanged.
 
-87 affected capture/reconnect/startup checks and both3/4-manifest shutdown cases pass.
+87 affected capture/reconnect/startup checks and both 3/4-manifest shutdown cases pass.
 See [candidate and evidence](milestones/P2/README.md) and [checks](milestones/P2/r5-20261029/checks.json).
-Final correction CI and independent R5 review remain. Keep Draft PR #88 and its branch;
+Exact 1c1785c [dual-platform CI/logs](milestones/P2/r5-20261029/ci.json) pass: macOS 2,369 passed/24 skipped,
+Ubuntu 2,365 passed/28 skipped, both with successful static/build/install/CLI checks. Independent
+R5 review remains. Keep Draft PR #88 and its branch;
 do not reopen accepted R1/R4 or scope/history audits. P3/production have not started.
 
 ## Prior P2 independent review — 2026-10-29 (retained)

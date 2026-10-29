@@ -22,8 +22,8 @@ accepts the exception's source selection, coverage/budget and historical-read bo
 because the subsequent docs-only 58a3ca2 macOS CI exposed P2-R5: a shutdown/reconnect test
 assumes exactly three manifests despite legal automatic rotation creating a separate
 boundary marker. A test-only correction now controls writer rotation timing, covers both
-layouts for shutdown/reset/close, and passes 87 affected checks. Verify the final CI and
-independently review R5;
+layouts for shutdown/reset/close, and passes 87 affected checks. Exact 1c1785c dual-platform
+CI/logs are verified; independently review R5;
 do not change the production protocol to satisfy the count or repeat accepted R1/R4 audits.
 See [current independent review](docs/milestones/P2/review-20261029.md).
 Research use is unknown and must not determine capture scope. Preserve distinct public

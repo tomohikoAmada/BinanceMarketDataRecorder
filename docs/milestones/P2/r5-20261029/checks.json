@@ -42,7 +42,14 @@
       "result": "passed"
     }
   ],
-  "ci": "pending final correction commit",
+  "ci": {
+    "correction_commit": "1c1785cf2dbc975b37ee043b8d05188763d44612",
+    "run_id": 40866220110,
+    "run_url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40866220110",
+    "conclusion": "success",
+    "checked_at_utc": "2026-10-29T11:42:12Z",
+    "evidence": "ci.json"
+  },
   "independent_r5_review": "pending",
   "not_run": [
     "No repeated R1/R4 or accepted source-selection history audit",

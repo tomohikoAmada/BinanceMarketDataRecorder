@@ -28,8 +28,9 @@
 - The R5 correction candidate controls only the test writer's rotation predicate and
   covers both layouts for shutdown, TCP reset and server close. Exact bytes/order,
   connection/marker layout, flags, completeness and Catalog gap identity remain asserted.
-  87 affected checks and both shutdown cases pass. Final correction CI and independent
-  review remain; production code/protocol and historical failure evidence are unchanged.
+  87 affected checks and both shutdown cases pass. Exact 1c1785c dual-platform CI and logs
+  pass; independent review remains. Production code/protocol and historical failure
+  evidence are unchanged.
 - R1/R4 and the initial-release implementation stay accepted. P2 remains NOT ACCEPTED
   pending R5; PR #88 stays Draft. P3/production have not started. Historical unapproved/
   unsent and mandatory-official-reply statements below describe earlier states.
