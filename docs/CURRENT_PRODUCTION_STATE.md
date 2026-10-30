@@ -1,5 +1,12 @@
 # Current Production State
 
+2026-10-30: P0–P2 are accepted under the approved initial-release scope;
+[P3 development](milestones/P3/README.md) is delivered and locally validated.
+P4–P6 have not started; production readiness remains **NO**. P3 did not access the
+VPS or production services/data. The installed-source observations below are retained
+history, not a fresh host-state assertion.
+
+
 The [production plan](production_milestone_plan.md) governs future development.
 P0 aligns the development base with accepted remote main `01d7421`, after preserving
 user changes as `d81e7d2`; the merge base for new work is `113cdb3`.
@@ -9,7 +16,7 @@ R2 classifier defect is corrected with 26 focused tests and an appended v4
 interpretation of the same boundaries. P0 corrections are complete.
 [Independent P1 re-review](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27)
 accepts fix b292d0d and P1's development deliverables; production qualification is still pending.
-P2–P6 have not started. GitHub was checked: main is the only branch and there are
+At the retained P1 handoff, P2–P6 had not started. At that time GitHub had only main and there were
 no open PRs, so no branch/PR deletion was needed.
 P1 did not access the VPS, install a candidate, change service state, or touch
 production data. Its macOS fixture measurements do not update the installed

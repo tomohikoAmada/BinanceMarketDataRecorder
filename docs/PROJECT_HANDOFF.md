@@ -1,4 +1,27 @@
-# Current handoff: P2 accepted; P3 next — 2026-10-29
+# Current handoff: P3 local delivery; P4 next — 2026-10-30
+
+The user authorized P3 development. [P3 result](milestones/P3/README.md) and
+[ADR-0056](adr/0056-source-recovery-and-bounded-background-verification.md) describe
+durable per-source gaps/recovery, the independent new-file queue/proofs, bounded
+report/verifier children and archive I/O, reserve safety for all configurations,
+compatible restricted normalization and measured same-boundary readback reuse.
+See the result/check record for commands, exact local checks and limitations.
+
+P0–P2 acceptance is unchanged; do not repeat their history audits. P3 is a local
+development delivery, not VPS capacity, dual-platform CI or production qualification.
+The next phase is P4's explicitly authorized BTC full-scope 2h/24h run with normal
+background work. No VPS, deployment, production service/data or real external volume
+was accessed in P3. P4–P6 have not started; production readiness remains NO.
+
+The ADR-0055 exception and unknown official dated-premium applicability remain;
+issue #585 is nonblocking follow-up. Preserve historical failures and original readers.
+Qualification freezes expected source IDs/configuration; diagnostic discovery-only
+reports cannot hide sources that never appeared. Freeze verifier enrollment high-water
+at checkpoints and finish that pending boundary while capture continues.
+
+Prior P2 handoffs below are retained history, not instructions to reopen closed work.
+
+# Prior handoff: P2 accepted; P3 next — 2026-10-29
 
 [Independent R5 review](milestones/P2/review-20261029.md#r5-independent-closure)
 accepts correction 1c1785c and delivery HEAD 464ed56. Controlled writer timing covers
