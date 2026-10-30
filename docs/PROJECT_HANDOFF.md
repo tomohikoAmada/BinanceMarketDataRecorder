@@ -1,4 +1,42 @@
-# Current handoff: P2 accepted; P3 next — 2026-10-29
+# Current handoff: P3 review requires corrections — 2026-10-30
+
+[Independent review](milestones/P3/review-20261030.md) of b72761a/8df01c8 finds
+P3-R1 (durable gap flags omitted from verification), P3-R2 (idle time counted as
+writer stall), and P3-R3 (brief RPI gaps missed by periodic monitoring).
+All three have offline reproductions. The independent 2,404-test full suite and
+35 P3 checks pass but do not cover these failures. P3 is NOT ACCEPTED.
+Corrective checkboxes are in the production plan's P3 section, using P3-R1–R3 IDs;
+historical P2 acceptance remains unchanged.
+Continue corrections on Draft PR #89 / codex/p3-recovery-background. Do not merge,
+delete the unmerged branch, or advance to P4 before fixes and independent re-review.
+No production operation was performed.
+
+The local implementation handoff below is retained as delivery history, not acceptance.
+
+# Prior handoff: P3 local delivery; P4 proposed next — 2026-10-30
+
+The user authorized P3 development. [P3 result](milestones/P3/README.md) and
+[ADR-0056](adr/0056-source-recovery-and-bounded-background-verification.md) describe
+durable per-source gaps/recovery, the independent new-file queue/proofs, bounded
+report/verifier children and archive I/O, reserve safety for all configurations,
+compatible restricted normalization and measured same-boundary readback reuse.
+See the result/check record for commands, exact local checks and limitations.
+
+P0–P2 acceptance is unchanged; do not repeat their history audits. P3 is a local
+development delivery, not VPS capacity, dual-platform CI or production qualification.
+The next phase is P4's explicitly authorized BTC full-scope 2h/24h run with normal
+background work. No VPS, deployment, production service/data or real external volume
+was accessed in P3. P4–P6 have not started; production readiness remains NO.
+
+The ADR-0055 exception and unknown official dated-premium applicability remain;
+issue #585 is nonblocking follow-up. Preserve historical failures and original readers.
+Qualification freezes expected source IDs/configuration; diagnostic discovery-only
+reports cannot hide sources that never appeared. Freeze verifier enrollment high-water
+at checkpoints and finish that pending boundary while capture continues.
+
+Prior P2 handoffs below are retained history, not instructions to reopen closed work.
+
+# Prior handoff: P2 accepted; P3 next — 2026-10-29
 
 [Independent R5 review](milestones/P2/review-20261029.md#r5-independent-closure)
 accepts correction 1c1785c and delivery HEAD 464ed56. Controlled writer timing covers

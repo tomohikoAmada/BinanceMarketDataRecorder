@@ -1,0 +1,112 @@
+{
+  "schema_version": "p3-local-processing-comparison.v1",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "python": "3.12.14",
+  "scope": "local warm-cache microcomparison; not all-feature CPU or VPS capacity",
+  "identical_results": true,
+  "input": {
+    "records": 64,
+    "stored_bytes": 16805635,
+    "stored_sha256": "09eff412657442b23750d2e81b10ad9ee3733e425a8d3e16cb56882f31568ceb",
+    "uncompressed_bytes": 16805234,
+    "uncompressed_sha256": "7ade2aac1c77ecfa1419fd5e8750d9bafae3890b978836bdbd609afe8cbc9ed8"
+  },
+  "readback": {
+    "before": {
+      "median_wall_seconds": 0.013940083561465144,
+      "median_cpu_seconds": 0.01393750000000002,
+      "peak_python_allocated_bytes": 2229201,
+      "compressed_opens": 2,
+      "compressed_bytes_read": 33611270,
+      "rounds": [
+        {
+          "wall_seconds": 0.01403925009071827,
+          "cpu_seconds": 0.01402500000000001
+        },
+        {
+          "wall_seconds": 0.013967209029942751,
+          "cpu_seconds": 0.013965000000000005
+        },
+        {
+          "wall_seconds": 0.01373462495394051,
+          "cpu_seconds": 0.013734999999999997
+        },
+        {
+          "wall_seconds": 0.013808166957460344,
+          "cpu_seconds": 0.013808000000000042
+        },
+        {
+          "wall_seconds": 0.013993124943226576,
+          "cpu_seconds": 0.013990999999999976
+        },
+        {
+          "wall_seconds": 0.013912958092987537,
+          "cpu_seconds": 0.013910000000000033
+        },
+        {
+          "wall_seconds": 0.01385204098187387,
+          "cpu_seconds": 0.013849
+        },
+        {
+          "wall_seconds": 0.013979792012833059,
+          "cpu_seconds": 0.01397799999999999
+        }
+      ]
+    },
+    "after": {
+      "median_wall_seconds": 0.01310872903559357,
+      "median_cpu_seconds": 0.013104999999999978,
+      "peak_python_allocated_bytes": 2230284,
+      "compressed_opens": 1,
+      "compressed_bytes_read": 16805635,
+      "rounds": [
+        {
+          "wall_seconds": 0.01302725006826222,
+          "cpu_seconds": 0.013027999999999984
+        },
+        {
+          "wall_seconds": 0.013151000021025538,
+          "cpu_seconds": 0.013146999999999992
+        },
+        {
+          "wall_seconds": 0.013133375090546906,
+          "cpu_seconds": 0.013130999999999948
+        },
+        {
+          "wall_seconds": 0.013071750057861209,
+          "cpu_seconds": 0.013071999999999973
+        },
+        {
+          "wall_seconds": 0.013187750009819865,
+          "cpu_seconds": 0.013187000000000004
+        },
+        {
+          "wall_seconds": 0.013264790992252529,
+          "cpu_seconds": 0.01324599999999998
+        },
+        {
+          "wall_seconds": 0.013084082980640233,
+          "cpu_seconds": 0.013079000000000007
+        },
+        {
+          "wall_seconds": 0.013023499981500208,
+          "cpu_seconds": 0.013021000000000005
+        }
+      ]
+    }
+  },
+  "raw_digest_reuse": {
+    "payload_bytes": 1048576,
+    "children": 128,
+    "before": {
+      "wall_seconds": 0.04403954104054719,
+      "cpu_seconds": 0.044035000000000046
+    },
+    "after": {
+      "wall_seconds": 0.00033820897806435823,
+      "cpu_seconds": 0.0003380000000000605
+    },
+    "before_sha_calls": 128,
+    "after_sha_calls": 1
+  }
+}

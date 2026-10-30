@@ -17,6 +17,7 @@ from ...network import ProxyPolicy
 from ..usdm.rest import safe_provenance_headers
 
 SPOT_SDK_DISTRIBUTION = "binance-sdk-spot"
+SPOT_SDK_VERSION = version(SPOT_SDK_DISTRIBUTION)
 SPOT_REST_BASE_URL = "https://api.binance.com"
 
 
@@ -129,7 +130,7 @@ def capture_spot_exchange_info(
         "transport": {
             "kind": "official_sdk_parsed_model",
             "package": SPOT_SDK_DISTRIBUTION,
-            "version": version(SPOT_SDK_DISTRIBUTION),
+            "version": SPOT_SDK_VERSION,
             "raw_http_body_available": False,
         },
         "semantics": "periodic_rules_snapshot_no_forward_fill",

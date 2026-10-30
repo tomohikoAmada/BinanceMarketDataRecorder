@@ -21,6 +21,7 @@ from ...domain.event import EventEnvelope
 from ...network import ProxyPolicy
 
 USDM_SDK_DISTRIBUTION = "binance-sdk-derivatives-trading-usds-futures"
+USDM_SDK_VERSION = version(USDM_SDK_DISTRIBUTION)
 USDM_REST_BASE_URL = "https://fapi.binance.com"
 SNAPSHOT_LIMIT = 1000
 _PROVENANCE_HEADERS = {
@@ -254,7 +255,7 @@ def capture_depth_snapshot(
         "transport": {
             "kind": "official_sdk_parsed_model",
             "package": USDM_SDK_DISTRIBUTION,
-            "version": version(USDM_SDK_DISTRIBUTION),
+            "version": USDM_SDK_VERSION,
             "raw_http_body_available": False,
         },
     }

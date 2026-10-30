@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import os
 import struct
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -419,146 +420,154 @@ def encode_frame(envelope: _EnvelopeSemantics, *, max_frame_bytes: int) -> bytes
 def scan_chunk(path: Path) -> ScanResult:
     """Scan one uncompressed chunk without retaining event bodies in memory."""
 
-    file_size = path.stat().st_size
+    try:
+        with path.open("rb", buffering=0) as source:
+            return scan_chunk_stream(source, path=path, file_size=os.fstat(source.fileno()).st_size)
+    except OSError as exc:
+        raise ChunkFormatError(f"cannot scan chunk {path}: {exc}") from exc
+
+
+def scan_chunk_stream(source: BinaryIO, *, path: Path, file_size: int) -> ScanResult:
+    """Apply the identical scanner to an owned stream, including decompressed Raw."""
+
     statistics = ChunkStatistics()
     digest = hashlib.sha256()
     transitions: list[ConnectionTransition] = []
     previous_connection_id: str | None = None
     previous_flags: frozenset[str] = frozenset()
     try:
-        with path.open("rb", buffering=0) as source:
+        try:
+            header, header_bytes = decode_chunk_header(source)
+        except ChunkFormatError as exc:
+            return ScanResult(
+                path,
+                None,
+                statistics,
+                0,
+                file_size,
+                ScanIssue.INVALID_HEADER,
+                str(exc),
+                None,
+            )
+        digest.update(header_bytes)
+        valid_end = len(header_bytes)
+        while True:
+            prefix = _read_up_to(source, FRAME_PREFIX.size)
+            if not prefix:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.NONE,
+                    None,
+                    digest.hexdigest(),
+                    tuple(transitions),
+                )
+            if len(prefix) != FRAME_PREFIX.size:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.TRUNCATED_TAIL,
+                    "incomplete frame prefix",
+                    None,
+                )
+            body_length, flags, reserved, expected_crc = FRAME_PREFIX.unpack(prefix)
+            if body_length > header.max_frame_bytes:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.INVALID_FRAME_LENGTH,
+                    f"declared frame body {body_length} exceeds maximum",
+                    None,
+                )
+            if flags != 0 or reserved != 0:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.UNSUPPORTED_FLAGS,
+                    f"flags={flags}, reserved={reserved}",
+                    None,
+                )
+            body = _read_up_to(source, body_length)
+            if len(body) != body_length:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.TRUNCATED_TAIL,
+                    "incomplete frame body",
+                    None,
+                )
+            covered_prefix = prefix[: FRAME_PREFIX_WITHOUT_CRC.size]
+            if google_crc32c.value(covered_prefix + body) != expected_crc:
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.CHECKSUM_FAILURE,
+                    "frame CRC32C mismatch",
+                    None,
+                )
             try:
-                header, header_bytes = decode_chunk_header(source)
+                envelope = decode_envelope(body)
             except ChunkFormatError as exc:
                 return ScanResult(
                     path,
-                    None,
+                    header,
                     statistics,
-                    0,
+                    valid_end,
                     file_size,
-                    ScanIssue.INVALID_HEADER,
+                    ScanIssue.INVALID_ENVELOPE,
                     str(exc),
                     None,
                 )
-            digest.update(header_bytes)
-            valid_end = len(header_bytes)
-            while True:
-                prefix = _read_up_to(source, FRAME_PREFIX.size)
-                if not prefix:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.NONE,
-                        None,
-                        digest.hexdigest(),
-                        tuple(transitions),
+            if (
+                envelope.market != header.market
+                or envelope.symbol != header.symbol
+                or envelope.stream != header.stream
+            ):
+                return ScanResult(
+                    path,
+                    header,
+                    statistics,
+                    valid_end,
+                    file_size,
+                    ScanIssue.INVALID_ENVELOPE,
+                    "envelope identity differs from chunk header",
+                    None,
+                )
+            statistics.add(envelope)
+            if (
+                previous_connection_id is not None
+                and envelope.connection_id != previous_connection_id
+            ):
+                transitions.append(
+                    (
+                        previous_connection_id,
+                        envelope.connection_id,
+                        previous_flags,
+                        frozenset(envelope.capture_flags),
                     )
-                if len(prefix) != FRAME_PREFIX.size:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.TRUNCATED_TAIL,
-                        "incomplete frame prefix",
-                        None,
-                    )
-                body_length, flags, reserved, expected_crc = FRAME_PREFIX.unpack(prefix)
-                if body_length > header.max_frame_bytes:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.INVALID_FRAME_LENGTH,
-                        f"declared frame body {body_length} exceeds maximum",
-                        None,
-                    )
-                if flags != 0 or reserved != 0:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.UNSUPPORTED_FLAGS,
-                        f"flags={flags}, reserved={reserved}",
-                        None,
-                    )
-                body = _read_up_to(source, body_length)
-                if len(body) != body_length:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.TRUNCATED_TAIL,
-                        "incomplete frame body",
-                        None,
-                    )
-                covered_prefix = prefix[: FRAME_PREFIX_WITHOUT_CRC.size]
-                if google_crc32c.value(covered_prefix + body) != expected_crc:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.CHECKSUM_FAILURE,
-                        "frame CRC32C mismatch",
-                        None,
-                    )
-                try:
-                    envelope = decode_envelope(body)
-                except ChunkFormatError as exc:
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.INVALID_ENVELOPE,
-                        str(exc),
-                        None,
-                    )
-                if (
-                    envelope.market != header.market
-                    or envelope.symbol != header.symbol
-                    or envelope.stream != header.stream
-                ):
-                    return ScanResult(
-                        path,
-                        header,
-                        statistics,
-                        valid_end,
-                        file_size,
-                        ScanIssue.INVALID_ENVELOPE,
-                        "envelope identity differs from chunk header",
-                        None,
-                    )
-                statistics.add(envelope)
-                if (
-                    previous_connection_id is not None
-                    and envelope.connection_id != previous_connection_id
-                ):
-                    transitions.append(
-                        (
-                            previous_connection_id,
-                            envelope.connection_id,
-                            previous_flags,
-                            frozenset(envelope.capture_flags),
-                        )
-                    )
-                previous_connection_id = envelope.connection_id
-                previous_flags = frozenset(envelope.capture_flags)
-                digest.update(prefix)
-                digest.update(body)
-                valid_end += len(prefix) + len(body)
+                )
+            previous_connection_id = envelope.connection_id
+            previous_flags = frozenset(envelope.capture_flags)
+            digest.update(prefix)
+            digest.update(body)
+            valid_end += len(prefix) + len(body)
     except OSError as exc:
         raise ChunkFormatError(f"cannot scan chunk {path}: {exc}") from exc

@@ -1,0 +1,76 @@
+{
+  "probes": [
+    {
+      "finding": "P3-R1",
+      "record_count": 1,
+      "valid_control_verified": 1,
+      "after_false_complete_verified": 1,
+      "after_false_complete_failed": 0,
+      "catalog_sealing_evidence": {
+        "seal_forced_flags": [
+          "reconnect_gap"
+        ],
+        "seal_intent": {
+          "required_forced_flags": [
+            "reconnect_gap"
+          ]
+        },
+        "verified_frames": 1
+      },
+      "expected": "Reject missing durable reconnect flags; never publish VERIFIED.",
+      "finding_reproduced": true
+    },
+    {
+      "finding": "P3-R1",
+      "record_count": 0,
+      "valid_control_verified": 1,
+      "after_false_complete_verified": 1,
+      "after_false_complete_failed": 0,
+      "catalog_sealing_evidence": {
+        "seal_forced_flags": [
+          "reconnect_gap"
+        ],
+        "seal_intent": {
+          "required_forced_flags": [
+            "reconnect_gap"
+          ]
+        },
+        "verified_frames": 0
+      },
+      "expected": "Reject missing durable reconnect flags; never publish VERIFIED.",
+      "finding_reproduced": true
+    },
+    {
+      "finding": "P3-R2",
+      "pending_seconds": 0.1,
+      "reason": "WRITER_STALLED",
+      "unavailable_seconds": 60.0,
+      "expected": "No writer stall after only 0.1s pending; quiet time stays healthy.",
+      "finding_reproduced": true
+    },
+    {
+      "finding": "P3-R3",
+      "stream": "diff_depth",
+      "sequence_failure_observed": true,
+      "recovered_before_monitor": true,
+      "unavailable_ns": 900000000,
+      "coverage": 0.91,
+      "expected": "Retain the observed sequence failure even when recovery is quick.",
+      "finding_reproduced": false
+    },
+    {
+      "finding": "P3-R3",
+      "stream": "rpi_depth",
+      "sequence_failure_observed": true,
+      "recovered_before_monitor": true,
+      "unavailable_ns": 0,
+      "coverage": 1.0,
+      "expected": "Retain the observed sequence failure even when recovery is quick.",
+      "finding_reproduced": true
+    }
+  ],
+  "reviewed_head": "8df01c8970a23ac7431a7718b523adf6bc2d4705",
+  "runtime_commit": "b72761a1b5eb6ee52d1b3a473079ac5d5b5ef23a",
+  "recorded_at_utc": "2026-10-30T01:35:13.684777+00:00",
+  "production_data_access": false
+}

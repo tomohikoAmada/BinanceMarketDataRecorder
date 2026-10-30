@@ -1,5 +1,12 @@
 # Operations
 
+For the current P0–P6 workflow, use [P3 operation commands](milestones/P3/README.md#稳定操作入口)
+and [the production plan](production_milestone_plan.md). P3 is a local development
+delivery; the deployment observations below are historical, not commands to resume
+old qualification. `verify status/new` and `report continuity` use new-file/source
+evidence without requiring full-history V5 audits.
+
+
 Use [current production state](CURRENT_PRODUCTION_STATE.md) for exact artifact
 and service status. V5 from PR #78 is deployed on Ubuntu 24.04 x86_64. The
 owner stopped qualification during its baseline on October 1, 2026. Recorder is

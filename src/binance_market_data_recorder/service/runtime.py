@@ -49,7 +49,7 @@ from ..spool import recover_storage
 from ..spool.writer import RotationPolicy
 from ..storage.capacity import VPS_PRODUCTION_V1, selected_capacity_profile
 from ..storage.catalog import Catalog, stream_discontinuity_event_id
-from ..storage.forecast import StorageForecaster
+from ..storage.forecast import StorageForecaster, hard_reserve_bytes
 from ..storage.layout import StorageLayout, ensure_storage_layout
 from ..supervisor.readiness import CORE_STREAMS, ReadinessSnapshot
 from ..version import git_commit, package_version
@@ -734,6 +734,33 @@ class ServiceRuntime:
         self._capacity_evidence = evidence
         return evidence
 
+    def _observe_capacity(self) -> dict[str, object]:
+        if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
+            return self._observe_vps_capacity()
+        if self._catalog is None:
+            raise RuntimeError("capacity observation requires an open Catalog")
+        now = self.utc_clock_ns()
+        forecaster = StorageForecaster(
+            catalog=self._catalog, data_root=self.config.data_root,
+            utc_clock_ns=self.utc_clock_ns, disk_usage=self.disk_usage,
+        )
+        forecaster.observe_internal(observed_at_utc_ns=now)
+        forecast = forecaster.forecast("internal", now_utc_ns=now)
+        total, free = forecast["total_bytes"], forecast["free_bytes"]
+        if (not isinstance(total, int) or isinstance(total, bool)
+                or not isinstance(free, int) or isinstance(free, bool)
+                or total <= 0 or free < 0 or free > total):
+            raise RuntimeError("current capacity observation is invalid")
+        reserve = hard_reserve_bytes(total, rotation_bytes=self.config.rotation_bytes)
+        evidence = {
+            "observed_at_utc_ns": now, "total_bytes": total, "free_bytes": free,
+            "capacity_profile": None, "capacity_state": forecast["status"],
+            "hard_reserve_bytes": reserve, "actual_hard_reserve_reached": free <= reserve,
+            "forecast": forecast,
+        }
+        self._capacity_evidence = evidence
+        return evidence
+
     async def _capacity_monitor(
         self, stop: asyncio.Event
     ) -> dict[str, object] | None:
@@ -743,7 +770,7 @@ class ServiceRuntime:
                     stop.wait(), timeout=self.capacity_poll_seconds
                 )
             except TimeoutError:
-                evidence = await asyncio.to_thread(self._observe_vps_capacity)
+                evidence = await asyncio.to_thread(self._observe_capacity)
                 await self._write_state()
                 if evidence["actual_hard_reserve_reached"] is True:
                     return evidence
@@ -769,7 +796,9 @@ class ServiceRuntime:
                     "capacity_state": evidence.get("capacity_state"),
                     "free_bytes": evidence.get("free_bytes"),
                     "total_bytes": evidence.get("total_bytes"),
-                    "hard_reserve_bytes": VPS_PRODUCTION_V1.hard_reserve_bytes,
+                    "hard_reserve_bytes": evidence.get(
+                        "hard_reserve_bytes", VPS_PRODUCTION_V1.hard_reserve_bytes
+                    ),
                     "gap_start_at_utc_ns": observed_at,
                     "unarchived_raw_deleted": False,
                     "termination": "HARD_RESERVE_SAFETY_STOP",
@@ -853,6 +882,7 @@ class ServiceRuntime:
         supervisor_task: asyncio.Task[None] | None = None
         capacity_task: asyncio.Task[dict[str, object] | None] | None = None
         report_task: asyncio.Task[None] | None = None
+        verification_task: asyncio.Task[None] | None = None
         failure: BaseException | None = None
         try:
             self.started_at_utc_ns = self.utc_clock_ns()
@@ -878,16 +908,15 @@ class ServiceRuntime:
             if recovery_stop.is_set():
                 return
             self._startup_recovery_complete = True
-            if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
-                capacity = await asyncio.to_thread(self._observe_vps_capacity)
-                self._check_heartbeat_failure()
-                if recovery_stop.is_set():
-                    return
-                if capacity["actual_hard_reserve_reached"] is True:
-                    self.shutdown_reason = "HARD_RESERVE_SAFETY_STOP"
-                    self._status = "STOPPING"
-                    self._record_hard_reserve_stop(capacity)
-                    return
+            capacity = await asyncio.to_thread(self._observe_capacity)
+            self._check_heartbeat_failure()
+            if recovery_stop.is_set():
+                return
+            if capacity["actual_hard_reserve_reached"] is True:
+                self.shutdown_reason = "HARD_RESERVE_SAFETY_STOP"
+                self._status = "STOPPING"
+                self._record_hard_reserve_stop(capacity)
+                return
             if self.config.coverage is None:
                 self._collectors = self.collector_factory(
                     self.config,
@@ -967,14 +996,25 @@ class ServiceRuntime:
                 DailyReportWorker(self.layout.root, self.logger).run(stop),
                 name="GLOBAL:daily-report-owner",
             )
+            verification_budget = max(
+                512 * 1024 * 1024,
+                3 * (self.config.rotation_bytes + self.config.max_frame_bytes + 128 * 1024),
+            )
+            verification_task = asyncio.create_task(
+                DailyReportWorker(
+                    self.layout.root, self.logger, interval_seconds=10,
+                    module="binance_market_data_recorder.service.verification_worker",
+                    operation="raw_verification", extra_arguments=(str(verification_budget),),
+                    report_timeout_seconds=max(300, verification_budget / (16 * 1024 * 1024) + 60),
+                ).run(stop), name="GLOBAL:raw-verification-owner",
+            )
             await asyncio.sleep(0)
             await self._write_state()
             required_tasks: set[asyncio.Task[Any]] = {supervisor_task, heartbeat_task}
-            if self.config.capacity_profile == VPS_PRODUCTION_V1.profile_id:
-                capacity_task = asyncio.create_task(
-                    self._capacity_monitor(stop), name="GLOBAL:capacity-monitor"
-                )
-                required_tasks.add(capacity_task)
+            capacity_task = asyncio.create_task(
+                self._capacity_monitor(stop), name="GLOBAL:capacity-monitor"
+            )
+            required_tasks.add(capacity_task)
             done, _pending = await asyncio.wait(
                 required_tasks, return_when=asyncio.FIRST_COMPLETED,
             )
@@ -1007,6 +1047,8 @@ class ServiceRuntime:
                 stop.set()
                 recovery_stop.set()
                 cleanup_failure: BaseException | None = None
+                if verification_task is not None:
+                    await asyncio.gather(verification_task, return_exceptions=True)
                 if report_task is not None:
                     await asyncio.gather(report_task, return_exceptions=True)
                 if heartbeat_task is not None:

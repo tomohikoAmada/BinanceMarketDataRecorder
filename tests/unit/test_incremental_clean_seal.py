@@ -32,6 +32,7 @@ from binance_market_data_recorder.spool.format import (
     encode_chunk_header,
     scan_chunk,
 )
+from binance_market_data_recorder.spool.readback import ArtifactReadback
 from binance_market_data_recorder.spool.recovery import recover_partials, recover_storage
 from binance_market_data_recorder.spool.seal import (
     RECONNECT_GAP_FLAG,
@@ -784,8 +785,8 @@ def test_clean_seal_failure_boundaries_retain_source_and_never_false_seal(
         elif failure_phase == "readback":
             monkeypatch.setattr(
                 seal_module,
-                "_decompressed_identity",
-                lambda _path: (0, "0" * 64),
+                "_artifact_identity",
+                lambda _path: ArtifactReadback(0, "0" * 64, 0, "0" * 64),
             )
         elif failure_phase == "rename":
 

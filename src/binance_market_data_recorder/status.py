@@ -114,6 +114,7 @@ def service_status(
         with Catalog(catalog_path, read_only=True) as catalog:
             lifecycle = catalog.source_lifecycle_aggregate()
             catalog_summary = {
+                "raw_verification": catalog.raw_verification_status(),
                 "available": True,
                 "active_chunks": len(
                     catalog.chunks_in_states(

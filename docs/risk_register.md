@@ -1,5 +1,25 @@
 # Risk Register
 
+## P3 independent review blockers — 2026-10-30
+
+[Review and reproductions](milestones/P3/review-20261030.md) establish three current
+defects: manifest-only reconnect evidence can be lost yet verified, sparse-stream
+idle time can be counted as writer failure, and quickly recovered RPI gaps can be
+omitted from continuity. P3 is not accepted. Existing tests passing does not close
+these findings. Fixes are tracked as P3-R1–R3 in the plan's P3 section;
+historical P2 acceptance and scope remain unchanged. Keep PR #89 Draft.
+
+## Current P3 delivery — 2026-10-30
+
+[P3](milestones/P3/README.md) implements durable source intervals, independent bounded
+new-file verification, normal-background isolation, ordinary-profile reserve stops
+and compatible selected consumer builds. Local tests/measurements do not close R-078.
+P4–P6 still require actual VPS growth/archive-throughput/backlog and per-source99.5%
+results. A verifier unable to access an already retired archive keeps that file
+pending/failed; receipt metadata cannot replace frame validation. Reports need the
+frozen expected source set, and unknown monitoring tails remain unavailable.
+
+
 ## Current P2 scope exception — 2026-10-29
 
 - The owner approved an initial-release omission of only U/C dated premium-index bars;
@@ -26,7 +46,7 @@
   and Catalog gap assertions remain; production code and old failure evidence are
   unchanged. See [closure](milestones/P2/review-20261029.md#r5-independent-closure).
 - R1/R4 and the initial-release implementation stay accepted. P2 is ACCEPTED with no new
-  blocking correction. P3/production have not started, and capacity/99.5% qualification
+  blocking correction. P3 local delivery is recorded above; production has not started, and capacity/99.5% qualification
   remain future work. Historical unapproved/unsent and mandatory-official-reply statements
   below describe earlier states.
 

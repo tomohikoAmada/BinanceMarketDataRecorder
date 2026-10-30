@@ -93,14 +93,14 @@ def _deployment_id(envelope: EventEnvelope) -> str | None:
 
 
 def _poll_identity(
-    envelope: EventEnvelope, *, model_hash: str
+    envelope: EventEnvelope, *, model: object
 ) -> dict[str, object]:
     deployment_id = _deployment_id(envelope)
     if deployment_id is not None and "blue_green_overlap" in envelope.capture_flags:
         return {
             "kind": "blue_green_poll",
             "deployment_id": deployment_id,
-            "model_sha256": model_hash,
+            "model_sha256": sha256_json(model),
         }
     return {
         "kind": "poll_observation",
@@ -374,10 +374,9 @@ def _usdm_exchange_info(
         "filters_json": canonical_json(_array(symbol.get("filters"), "filters")),
         "rate_limits_json": canonical_json(rate_limits),
     }
-    model_hash = sha256_json(item)
     identity = {
         "kind": envelope.stream,
-        **_poll_identity(envelope, model_hash=model_hash),
+        **_poll_identity(envelope, model=item),
     }
     return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
 
@@ -551,7 +550,7 @@ def _side_rest(envelope: EventEnvelope, provenance: dict[str, Any]) -> list[Pars
                 "funding_rate": None,
                 "mark_price": None,
             }
-            identity = _poll_identity(envelope, model_hash=sha256_json(items))
+            identity = _poll_identity(envelope, model=items)
             return [
                 ParsedEvent(
                     fields,
@@ -615,10 +614,9 @@ def _side_rest(envelope: EventEnvelope, provenance: dict[str, Any]) -> list[Pars
                 else None
             ),
         }
-        model_hash = sha256_json(items)
         identity = {
             "kind": stream,
-            **_poll_identity(envelope, model_hash=model_hash),
+            **_poll_identity(envelope, model=items),
         }
         return [ParsedEvent(fields, identity, fields, event_kind="rest_snapshot")]
     raise NormalizedSchemaError(f"unhandled REST side-data stream {stream}")
@@ -628,8 +626,10 @@ def _stream_field_names(market: str, stream: str) -> tuple[str, ...]:
     return tuple(name for name, _type, _nullable in stream_fields(market, stream))
 
 
-def _invalid(envelope: EventEnvelope, error: str) -> list[ParsedEvent]:
-    payload_hash = hashlib.sha256(envelope.raw_payload).hexdigest()
+def _invalid(
+    envelope: EventEnvelope, error: str, payload_sha256: str | None = None
+) -> list[ParsedEvent]:
+    payload_hash = payload_sha256 or hashlib.sha256(envelope.raw_payload).hexdigest()
     fields: dict[str, object] = {
         name: None
         for name in _stream_field_names(envelope.market, envelope.stream)
@@ -664,7 +664,9 @@ def _invalid(envelope: EventEnvelope, error: str) -> list[ParsedEvent]:
     ]
 
 
-def parse_envelope(envelope: EventEnvelope) -> list[ParsedEvent]:
+def parse_envelope(
+    envelope: EventEnvelope, *, payload_sha256: str | None = None
+) -> list[ParsedEvent]:
     if public_observation_stream(envelope.stream):
         valid = "malformed" not in envelope.capture_flags
         try:
@@ -722,7 +724,7 @@ def parse_envelope(envelope: EventEnvelope) -> list[ParsedEvent]:
             f"unsupported Raw stream {envelope.market}/{envelope.stream}"
         )
     if "malformed" in envelope.capture_flags:
-        return _invalid(envelope, "UPSTREAM_MALFORMED")
+        return _invalid(envelope, "UPSTREAM_MALFORMED", payload_sha256)
     try:
         decoded = _decode(envelope)
         payload = _object(decoded, "payload")
@@ -760,4 +762,4 @@ def parse_envelope(envelope: EventEnvelope) -> list[ParsedEvent]:
             return _liquidation(envelope, payload)
         return _side_rest(envelope, payload)
     except NormalizedSchemaError as exc:
-        return _invalid(envelope, f"SCHEMA_ERROR:{exc}")
+        return _invalid(envelope, f"SCHEMA_ERROR:{exc}", payload_sha256)

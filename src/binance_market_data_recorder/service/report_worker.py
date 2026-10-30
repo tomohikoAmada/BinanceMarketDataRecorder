@@ -17,11 +17,15 @@ class DailyReportWorker:
         self, data_root: Path, logger: logging.Logger, *,
         interval_seconds: float = 60, report_timeout_seconds: float = 300,
         stop_timeout_seconds: float = 5,
+        module: str = "binance_market_data_recorder.metrics.maintenance",
+        operation: str = "daily_report",
+        extra_arguments: tuple[str, ...] = (),
     ) -> None:
         self.arguments: tuple[str, ...] = (
-            sys.executable, "-m", "binance_market_data_recorder.metrics.maintenance",
-            str(data_root),
+            sys.executable, "-m", module,
+            str(data_root), *extra_arguments,
         )
+        self.operation = operation
         self.logger = logger
         self.interval_seconds = interval_seconds
         self.report_timeout_seconds = report_timeout_seconds
@@ -61,8 +65,9 @@ class DailyReportWorker:
                     raise RuntimeError("daily report process failed; pending inputs retained")
             except (OSError, RuntimeError, TimeoutError) as exc:
                 log_event(
-                    self.logger, logging.ERROR, "daily_report_failed",
-                    "background daily report failed; capture continues and report will retry",
+                    self.logger, logging.ERROR, f"{self.operation}_failed",
+                    "background task failed; capture continues and pending inputs will retry",
+                    operation=self.operation,
                     error_type=type(exc).__name__,
                 )
             finally:

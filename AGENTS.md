@@ -1,5 +1,26 @@
 # Binance Market Data Recorder Agent Contract
 
+Current independent review October30, 2026: P3 is NOT ACCEPTED. Review of
+b72761a/8df01c8 reproduces P3-R1 (verifier ignores durable manifest-only gap flags),
+P3-R2 (sparse-stream idle time miscounted as writer stall), and P3-R3 (RPI gap
+lost when recovery occurs between monitor passes). See
+[P3 review](docs/milestones/P3/review-20261030.md). Continue corrections in the
+plan's P3 section using those P3 IDs, without reopening
+accepted historical P2-R1–R5. Existing full-suite and P3 tests pass but miss these
+cases. Keep Draft PR #89 / codex/p3-recovery-background for fixes and independent
+re-review; do not merge or clean the unmerged branch. P4–P6 have not started.
+No production operation is authorized by this review. The implementation delivery
+below remains historical candidate evidence, not P3 acceptance.
+
+Current implementation update October30, 2026: the owner explicitly authorized P3
+in this chat. P3 local development and verification are delivered under
+[ADR-0056](docs/adr/0056-source-recovery-and-bounded-background-verification.md) and the
+[single P3 result](docs/milestones/P3/README.md). P4 is next and has not started.
+No production operation or VPS access occurred; local results establish neither
+VPS capacity nor 99.5% qualification. The October29 P2 closure/status descriptions
+below retain their history; P0–P2 acceptance and the initial-release scope stand.
+
+
 Current owner direction October29, 2026: follow the new
 [production milestone plan](docs/production_milestone_plan.md), P0 through P6.
 Design for at least ten underlying assets; the initial production exit is BTC
@@ -23,7 +44,7 @@ independent review of 1c1785c and delivery HEAD 464ed56: controlled writer timin
 both legal shutdown/reset/close layouts while preserving exact payload, connection and
 gap assertions. Independent 87-test and two-case checks pass; both commits' dual-platform
 CI/logs are verified. Runtime code and historical failure evidence are unchanged. P2 is
-ACCEPTED, with no new correction; P3 has not started. Do not repeat accepted R1/R4 audits.
+ACCEPTED, with no new correction; P3 local delivery is now recorded above; P4 has not started. Do not repeat accepted R1/R4 audits.
 See [independent closure](docs/milestones/P2/review-20261029.md#r5-independent-closure).
 Research use is unknown and must not determine capture scope. Preserve distinct public
 information first; remove equivalent representations and repeated work before reducing
@@ -47,7 +68,7 @@ of 5218d9d found R1: retirement could miss the transition from a scheduling yiel
 to idle recv. Independent re-review accepts fix b292d0d: retirement is checked
 before receive admission; the original three reproductions and 196 focused tests
 (including nine new regressions) pass, and exact-commit dual-platform CI is verified.
-P0, P1 and P2 are complete under the approved initial-release scope; P3 has not started.
+P0, P1 and P2 are complete under the approved initial-release scope; P3 local delivery is now recorded above; P4 has not started.
 See [f9aaeee independent review](docs/milestones/P2/review-20261028.md#review-f9aaeee).
 R1's measured per-product polling and independent daily supplement remain accepted.
 R4 is closed: the existing cooldown is enabled synchronously before the persistence
@@ -75,7 +96,7 @@ the prepared public clarification. It is submitted as
 Waiting for an official reply is no longer a first-release P2 acceptance gate. The
 official-source stop rule still prohibits inventing dated-premium semantics; it does
 not prevent implementation of this explicitly declared omission. Do not ask again for
-these approved actions. P2 is accepted; P3 is the next development phase. No
+these approved actions. P2 is accepted; current P3 delivery is recorded above. No
 production work is authorized by documentation status alone.
 The owner selected option one on October28: explicit per-product live polling
 plus official daily trade files as a separate delayed supplement. This direction
