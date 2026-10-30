@@ -173,8 +173,7 @@ class _PartitionSpools:
     def write(self, key: tuple[str, str, str, str], row: dict[str, object]) -> None:
         path = self.paths.get(key)
         if path is None:
-            digest = hashlib.sha256("\0".join(key).encode()).hexdigest()
-            path = self.root / f"partition-{digest}.ndjson"
+            path = self.root / f"partition-{len(self.paths):08d}.ndjson"
             self.paths[key] = path
         handle = self._open.pop(key, None)
         if handle is None:
@@ -329,7 +328,7 @@ def _candidate(record: SourceRecord, parsed: ParsedEvent) -> dict[str, object]:
         "source_chunk_sha256": record.chunk.uncompressed_sha256,
         "source_record_ordinal": record.ordinal,
         "source_subrecord_ordinal": parsed.subrecord_ordinal,
-        "raw_payload_sha256": hashlib.sha256(envelope.raw_payload).hexdigest(),
+        "raw_payload_sha256": record.payload_sha256,
         "semantic_key_sha256": semantic_hash,
         "logical_record_sha256": logical_hash,
         "duplicate_count": 1,
@@ -716,7 +715,17 @@ class Normalizer:
         layout: StorageLayout,
         catalog: Catalog,
         external_roots: Mapping[str, Path] | None = None,
+        products: frozenset[tuple[str, str]] | None = None,
+        start_utc_ns: int | None = None,
+        end_utc_ns: int | None = None,
+        manifest_paths: list[Path] | None = None,
     ) -> None:
+        if start_utc_ns is not None and end_utc_ns is not None and start_utc_ns >= end_utc_ns:
+            raise ValueError("normalization start must precede end")
+        self.products = products
+        self.start_utc_ns = start_utc_ns
+        self.end_utc_ns = end_utc_ns
+        self.manifest_paths = manifest_paths
         self.layout = layout
         self.catalog = catalog
         self.external_roots = {} if external_roots is None else dict(external_roots)
@@ -736,7 +745,9 @@ class Normalizer:
             chunks = load_source_chunks(
                 layout=self.layout,
                 catalog=self.catalog,
-                external_roots=self.external_roots,
+                external_roots=self.external_roots, products=self.products,
+                start_utc_ns=self.start_utc_ns, end_utc_ns=self.end_utc_ns,
+                manifest_paths=self.manifest_paths,
             )
         except RawSourceError as exc:
             raise NormalizationError(str(exc)) from exc
@@ -744,8 +755,23 @@ class Normalizer:
             return NormalizationResult(
                 "NO_RAW_CHUNKS", DATASET_VERSION, None, None, 0, 0, 0, 0, 0
             )
-        checkpoints = _checkpoint_entries(layout=self.layout, catalog=self.catalog)
+        # A restricted consumer build does not scan unrelated historical checkpoints.
+        checkpoints = (
+            _checkpoint_entries(layout=self.layout, catalog=self.catalog)
+            if self.products is None and self.start_utc_ns is None
+            and self.end_utc_ns is None and self.manifest_paths is None else []
+        )
         build_id = _build_id(chunks, checkpoints)
+        selection: dict[str, object] | None = None
+        if (self.products is not None or self.start_utc_ns is not None
+                or self.end_utc_ns is not None or self.manifest_paths is not None):
+            selection = {
+                "schema_version": "normalization-input-selection.v1",
+                "products": sorted(self.products) if self.products is not None else None,
+                "start_utc_ns": self.start_utc_ns, "end_utc_ns": self.end_utc_ns,
+                "checkpoint_scope": "none",
+            }
+            build_id = sha256_json({"source_build_id": build_id, "input_selection": selection})
         self.dataset_root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.artifacts_root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.builds_root.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -765,7 +791,14 @@ class Normalizer:
             with candidates_path.open("wb", buffering=WORK_BUFFER_BYTES) as candidates:
                 for chunk in chunks:
                     for record in iter_source_records(chunk):
-                        for parsed in parse_envelope(record.envelope):
+                        received = record.envelope.receive_time_utc_ns
+                        if self.start_utc_ns is not None and received < self.start_utc_ns:
+                            continue
+                        if self.end_utc_ns is not None and received >= self.end_utc_ns:
+                            continue
+                        for parsed in parse_envelope(
+                            record.envelope, payload_sha256=record.payload_sha256
+                        ):
                             candidates.write(
                                 (canonical_json(_candidate(record, parsed)) + "\n").encode()
                             )
@@ -810,6 +843,8 @@ class Normalizer:
                     item.identity_conflicts for item in results
                 ),
             }
+            if selection is not None:
+                build_manifest["input_selection"] = selection
             build_path = self.builds_root / f"{build_id}.manifest.json"
             _atomic_json(build_path, build_manifest)
             return NormalizationResult(

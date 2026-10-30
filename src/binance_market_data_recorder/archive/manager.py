@@ -43,6 +43,7 @@ from typing import Any, cast
 
 from ..metrics.model import MetricAggregate
 from ..metrics.recorder import utc_date_from_ns
+from ..spool.readback import ReadBudget
 from ..spool.seal import SealError, validate_sealed_artifact
 from ..storage.catalog import ArchiveState, Catalog
 from ..storage.layout import StorageLayout, fsync_directory
@@ -85,7 +86,12 @@ class ArchiveManager:
         target: ArchiveTarget,
         fault_hook: FaultHook | None = None,
         utc_clock_ns: Callable[[], int] = time.time_ns,
+        io_bytes_per_second: int | None = None,
     ) -> None:
+        if io_bytes_per_second is not None and io_bytes_per_second <= 0:
+            raise ValueError("archive I/O rate must be positive")
+        self.io_bytes_per_second = io_bytes_per_second
+        self._io_budget: ReadBudget | None = None
         self.layout = layout
         self.catalog = catalog
         self.target = target
@@ -93,6 +99,7 @@ class ArchiveManager:
         self.utc_clock_ns = utc_clock_ns
 
     def run_once(self) -> ArchiveResult:
+        self._io_budget = None
         transaction = self._next_transaction()
         if transaction is None:
             return ArchiveResult(None, None, "NO_ELIGIBLE_CHUNKS", 0, 0)
@@ -119,6 +126,7 @@ class ArchiveManager:
     def _run_transaction(
         self, transaction: dict[str, object]
     ) -> ArchiveResult:
+        self._io_budget = ReadBudget(self.io_bytes_per_second) if self.io_bytes_per_second else None
         transaction_id = str(transaction["transaction_id"])
         self.catalog.begin_archive_attempt(transaction_id)
         self._hit("attempt_started")
@@ -245,7 +253,17 @@ class ArchiveManager:
         manifest_bytes, manifest = _load_json_bytes(manifest_path)
         _validate_raw_manifest(manifest, chunk_id=chunk_id, chunk=chunk)
         try:
-            validate_sealed_artifact(source, manifest)
+            if self.io_bytes_per_second:
+                validate_sealed_artifact(
+                    source, manifest, bytes_per_second=self.io_bytes_per_second
+                )
+                if self._io_budget is not None:
+                    self._io_budget.consume(
+                        int(str(manifest["stored_bytes"]))
+                        + int(str(manifest["uncompressed_bytes"]))
+                    )
+            else:
+                validate_sealed_artifact(source, manifest)
         except (OSError, SealError) as exc:
             raise ArchiveError(f"source Raw validation failed: {exc}") from exc
         transaction_id = str(
@@ -375,6 +393,8 @@ class ArchiveManager:
             with source.open("rb", buffering=0) as source_handle:
                 while block := source_handle.read(COPY_BUFFER_BYTES):
                     _write_all(descriptor, block)
+                    if self._io_budget is not None:
+                        self._io_budget.consume(len(block) * 2)
                     self._hit("copy_progress", temporary)
             self._hit("before_copy_fsync", temporary)
             os.fsync(descriptor)
@@ -493,6 +513,8 @@ class ArchiveManager:
         with path.open("rb", buffering=0) as handle:
             while block := handle.read(COPY_BUFFER_BYTES):
                 digest.update(block)
+                if self._io_budget is not None:
+                    self._io_budget.consume(len(block))
                 self._hit("verify_progress", path)
         if digest.hexdigest() != transaction["stored_sha256"]:
             raise ArchiveError("external artifact SHA-256 mismatch")
@@ -511,7 +533,16 @@ class ArchiveManager:
             manifest, chunk_id=str(transaction["chunk_id"]), chunk=transaction
         )
         try:
-            validate_sealed_artifact(source, manifest)
+            validate_sealed_artifact(
+                source, manifest, bytes_per_second=self.io_bytes_per_second
+            )
+            if self._io_budget is not None:
+                # Charge the shared transaction budget too: time spent validating
+                # source bytes must not grant an uncharged copy burst afterward.
+                self._io_budget.consume(
+                    int(str(manifest["stored_bytes"]))
+                    + int(str(manifest["uncompressed_bytes"]))
+                )
         except (OSError, SealError) as exc:
             raise ArchiveError(f"source Raw validation failed: {exc}") from exc
 
@@ -522,7 +553,9 @@ class ArchiveManager:
             raise ArchiveError("internal source is missing before authorized deletion")
         if source.stat().st_size != _row_int(transaction, "stored_bytes"):
             raise ArchiveError("internal source size changed before deletion")
-        if _sha256_file(source) != transaction["stored_sha256"]:
+        if _sha256_file(
+            source, consume=self._io_budget.consume if self._io_budget else None
+        ) != transaction["stored_sha256"]:
             raise ArchiveError("internal source hash changed before deletion")
 
     def _validate_target_identity(self) -> None:
@@ -773,11 +806,13 @@ def _write_all(descriptor: int, data: bytes) -> None:
         view = view[written:]
 
 
-def _sha256_file(path: Path) -> str:
+def _sha256_file(path: Path, *, consume: Callable[[int], None] | None = None) -> str:
     digest = hashlib.sha256()
     with path.open("rb", buffering=0) as handle:
         while block := handle.read(COPY_BUFFER_BYTES):
             digest.update(block)
+            if consume is not None:
+                consume(len(block))
     return digest.hexdigest()
 
 

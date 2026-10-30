@@ -217,6 +217,7 @@ def archive_drain(
         )
 
         manager = ArchiveManager(
+            io_bytes_per_second=16 * 1024 * 1024,
             layout=layout,
             catalog=catalog,
             target=target,

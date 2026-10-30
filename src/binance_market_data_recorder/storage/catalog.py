@@ -477,6 +477,42 @@ class Catalog:
                 created_at_utc_ns INTEGER NOT NULL,
                 updated_at_utc_ns INTEGER NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS source_availability (
+                source_id TEXT PRIMARY KEY,
+                state_json TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS source_availability_lifecycle (
+                interval_id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                started_at_utc_ns INTEGER NOT NULL,
+                ended_at_utc_ns INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS source_availability_lifecycle_source
+                ON source_availability_lifecycle(source_id, started_at_utc_ns);
+            CREATE TABLE IF NOT EXISTS source_availability_gaps (
+                gap_id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                started_at_utc_ns INTEGER NOT NULL,
+                ended_at_utc_ns INTEGER,
+                evidence_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS source_availability_by_source_time
+                ON source_availability_gaps(source_id, started_at_utc_ns);
+            CREATE TABLE IF NOT EXISTS raw_verification_queue (
+                chunk_id TEXT PRIMARY KEY REFERENCES chunks(chunk_id),
+                enrolled_at_utc_ns INTEGER NOT NULL,
+                next_attempt_utc_ns INTEGER NOT NULL DEFAULT 0,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                verified_result_id TEXT
+            );
+            CREATE INDEX IF NOT EXISTS raw_verification_due
+                ON raw_verification_queue(verified_result_id, next_attempt_utc_ns);
+            CREATE TABLE IF NOT EXISTS raw_verification_results (
+                result_id TEXT PRIMARY KEY,
+                chunk_id TEXT NOT NULL REFERENCES chunks(chunk_id),
+                evidence_json TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS chunk_transitions (
                 transition_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 chunk_id TEXT NOT NULL REFERENCES chunks(chunk_id),
@@ -4511,6 +4547,190 @@ class Catalog:
                 """,
                 (chunk_id, from_state, to_state, now, evidence_json, idempotency_key),
             )
+
+            if to_state is ChunkState.SEALED:
+                connection.execute(
+                    "INSERT OR IGNORE INTO raw_verification_queue(chunk_id, enrolled_at_utc_ns) "
+                    "VALUES (?, ?)", (chunk_id, now),
+                )
+
+    def operational_event_by_id(self, event_id: str) -> dict[str, object] | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT event_id, event_type, occurred_at_utc_ns, evidence_json "
+                "FROM operational_events WHERE event_id=?", (event_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return {
+            "event_id": row["event_id"], "event_type": row["event_type"],
+            "occurred_at_utc_ns": row["occurred_at_utc_ns"],
+            "evidence": json.loads(row["evidence_json"]),
+        }
+
+    def source_availability(self) -> dict[str, dict[str, Any]]:
+        with self._lock:
+            if self._connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='source_availability'"
+            ).fetchone() is None:
+                return {}
+            rows = self._connection.execute("SELECT * FROM source_availability").fetchall()
+        return {str(row["source_id"]): json.loads(row["state_json"]) for row in rows}
+
+    def persist_source_availability(self, batch: list[dict[str, Any]]) -> None:
+        with self._transaction() as connection:
+            for item in batch:
+                state, gap = item["state"], item["gap"]
+                connection.execute(
+                    "INSERT INTO source_availability VALUES (?, ?) "
+                    "ON CONFLICT(source_id) DO UPDATE SET state_json=excluded.state_json",
+                    (state["source_id"], json.dumps(state, sort_keys=True)),
+                )
+                eligibility = item["eligibility"]
+                connection.execute(
+                    "INSERT INTO source_availability_lifecycle VALUES (?, ?, ?, ?) "
+                    "ON CONFLICT(interval_id) DO UPDATE SET "
+                    "ended_at_utc_ns=excluded.ended_at_utc_ns",
+                    (eligibility["interval_id"], eligibility["source_id"],
+                     eligibility["started_at_utc_ns"], eligibility["ended_at_utc_ns"]),
+                )
+                if gap is not None:
+                    connection.execute(
+                        "INSERT INTO source_availability_gaps VALUES (?, ?, ?, ?, ?) "
+                        "ON CONFLICT(gap_id) DO UPDATE SET "
+                        "ended_at_utc_ns=excluded.ended_at_utc_ns, "
+                        "evidence_json=excluded.evidence_json",
+                        (gap["gap_id"], gap["source_id"], gap["started_at_utc_ns"],
+                         gap["ended_at_utc_ns"], json.dumps(gap, sort_keys=True)),
+                    )
+
+    def sealed_manifests_since(self, since_utc_ns: int) -> list[str]:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT DISTINCT c.manifest_path FROM chunk_transitions t JOIN chunks c "
+                "USING(chunk_id) WHERE t.to_state=? AND t.occurred_at_utc_ns>=? "
+                "AND c.manifest_path IS NOT NULL ORDER BY c.manifest_path",
+                (ChunkState.SEALED, since_utc_ns),
+            ).fetchall()
+        return [str(row[0]) for row in rows]
+
+    def source_eligibility_intervals(self, source_id: str) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM source_availability_lifecycle WHERE source_id=? "
+                "ORDER BY started_at_utc_ns", (source_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def enroll_raw_verification(self, chunk_id: str) -> None:
+        with self._transaction() as connection:
+            row = connection.execute(
+                "SELECT manifest_path FROM chunks WHERE chunk_id=?", (chunk_id,)
+            ).fetchone()
+            if row is None or row[0] is None:
+                raise CatalogStateError("verification requires a sealed chunk")
+            connection.execute(
+                "INSERT INTO raw_verification_queue(chunk_id, enrolled_at_utc_ns) VALUES (?, ?) "
+                "ON CONFLICT(chunk_id) DO UPDATE SET verified_result_id=NULL, "
+                "next_attempt_utc_ns=0, last_error=NULL", (chunk_id, time.time_ns()),
+            )
+
+    def source_availability_intervals(
+        self, source_id: str, start: int, end: int,
+    ) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM source_availability_gaps WHERE source_id=? "
+                "AND started_at_utc_ns<? AND (ended_at_utc_ns IS NULL OR ended_at_utc_ns>?) "
+                "ORDER BY started_at_utc_ns", (source_id, end, start),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def pending_raw_verifications(
+        self, *, now: int, limit: int = 32, through_utc_ns: int | None = None,
+    ) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT c.*, q.enrolled_at_utc_ns FROM raw_verification_queue q "
+                "JOIN chunks c USING(chunk_id) WHERE q.verified_result_id IS NULL "
+                "AND q.next_attempt_utc_ns <= ? AND (? IS NULL OR q.enrolled_at_utc_ns <= ?) "
+                "ORDER BY q.enrolled_at_utc_ns, c.chunk_id LIMIT ?",
+                (now, through_utc_ns, through_utc_ns, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def record_raw_verification(
+        self, chunk_id: str, *, evidence: Mapping[str, object] | None = None,
+        error: str | None = None,
+    ) -> None:
+        now = time.time_ns()
+        with self._transaction() as connection:
+            if evidence is None:
+                connection.execute(
+                    "UPDATE raw_verification_queue SET attempts=attempts+1, last_error=?, "
+                    "next_attempt_utc_ns=? WHERE chunk_id=? AND verified_result_id IS NULL",
+                    (error, now + 60_000_000_000, chunk_id),
+                )
+                return
+            row = connection.execute(
+                "SELECT * FROM chunks WHERE chunk_id=?", (chunk_id,)
+            ).fetchone()
+            if row is None or any(row[key] != evidence[key] for key in (
+                "stored_sha256", "uncompressed_sha256", "stored_bytes", "uncompressed_bytes",
+                "record_count", "manifest_path",
+            )):
+                raise CatalogStateError("Raw identity changed during verification")
+            result_id = (
+                f"{chunk_id}:{evidence['manifest_sha256']}:{evidence['verifier_version']}:"
+                f"{evidence['verified_at_utc_ns']}"
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO raw_verification_results VALUES (?, ?, ?)",
+                (result_id, chunk_id, json.dumps(dict(evidence), sort_keys=True)),
+            )
+            connection.execute(
+                "UPDATE raw_verification_queue SET verified_result_id=?, attempts=attempts+1, "
+                "last_error=NULL WHERE chunk_id=?", (result_id, chunk_id),
+            )
+
+    def raw_verification_status(self, *, through_utc_ns: int | None = None) -> dict[str, object]:
+        with self._lock:
+            present = self._connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='raw_verification_queue'"
+            ).fetchone()
+            if present is None:
+                return {"status": "NOT_ENROLLED", "pending_files": 0, "verified_files": 0}
+            row = self._connection.execute(
+                "SELECT COUNT(*) AS enrolled_files, "
+                "COALESCE(SUM(q.verified_result_id IS NOT NULL),0) AS verified_files, "
+                "COALESCE(SUM(q.verified_result_id IS NULL),0) AS pending_files, "
+                "COALESCE(SUM(q.verified_result_id IS NULL AND q.last_error IS NOT NULL),0) "
+                "AS failed_files, "
+                "COALESCE(SUM(CASE WHEN q.verified_result_id IS NULL THEN c.stored_bytes END),0) "
+                "AS pending_stored_bytes, "
+                "MIN(CASE WHEN q.verified_result_id IS NULL THEN q.enrolled_at_utc_ns END) "
+                "AS oldest_pending_utc_ns FROM raw_verification_queue q "
+                "JOIN chunks c USING(chunk_id) WHERE (? IS NULL OR q.enrolled_at_utc_ns<=?)",
+                (through_utc_ns, through_utc_ns),
+            ).fetchone()
+            high_water = self._connection.execute(
+                "SELECT MAX(enrolled_at_utc_ns) FROM raw_verification_queue"
+            ).fetchone()[0]
+            failures = self._connection.execute(
+                "SELECT chunk_id, last_error, attempts FROM raw_verification_queue "
+                "WHERE verified_result_id IS NULL AND last_error IS NOT NULL "
+                "AND (? IS NULL OR enrolled_at_utc_ns<=?) ORDER BY enrolled_at_utc_ns LIMIT 16",
+                (through_utc_ns, through_utc_ns),
+            ).fetchall()
+        return {
+            "status": "PENDING" if row["pending_files"] else "CAUGHT_UP", **dict(row),
+            "failures": [dict(item) for item in failures],
+            "through_utc_ns": through_utc_ns, "enrollment_high_water_utc_ns": high_water,
+            "oldest_pending_age_seconds": (
+                max(0, time.time_ns() - row["oldest_pending_utc_ns"]) / 1e9
+                if row["oldest_pending_utc_ns"] is not None else 0
+            ),
+        }
 
     def register_quarantined_artifact(
         self, *, artifact_id: str, relative_path: str, reason: str, sha256: str

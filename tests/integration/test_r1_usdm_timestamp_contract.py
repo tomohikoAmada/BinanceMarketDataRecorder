@@ -156,7 +156,7 @@ def test_legacy_raw_rederives_v2_while_legacy_build_and_replay_remain_immutable(
             old_code.setattr(
                 pipeline,
                 "parse_envelope",
-                lambda raw: [
+                lambda raw, **_kwargs: [
                     replace(parsed, exchange_times=None) for parsed in original_parse(raw)
                 ],
             )

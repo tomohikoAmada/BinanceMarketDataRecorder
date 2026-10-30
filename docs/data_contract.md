@@ -27,6 +27,27 @@ roles only. It does not change EventEnvelope, Raw chunk, manifest, Catalog
 market-data, normalized, or replay semantics. Exact Raw bytes, provenance,
 explicit gaps, and historical/live clock separation remain authoritative.
 
+## P3 executable monitoring and verification (2026-10-30)
+
+[ADR-0056](adr/0056-source-recovery-and-bounded-background-verification.md) implements
+source availability/lifecycle intervals, unknown-tail accounting, a durable new-sealed
+queue and immutable independent file proofs. The proof binds exact manifest/stored/
+expanded identities, verifier version and checked frame/statistics metadata. It is
+an observation-bound proof, never archive/source-deletion authority. Old files are not
+automatically scanned/enrolled. Normalization remains an on-demand consumer.
+
+Raw v1, EventEnvelope, existing manifests and normalized row fields remain unchanged.
+Restricted v2 builds add `normalization-input-selection.v1` metadata with products,
+half-open receive-time bounds and no unrelated checkpoints. Its digest wraps the
+original source-build ID plus that exact selection; the public replay reader checks
+both. Unrestricted historical IDs and readers of old builds remain valid. A necessary
+Raw payload digest is computed once per immutable source record and shared by its
+children; actual deduplication, provenance, file and archive identity hashes remain.
+
+The earlier future-tense notes below retain their decision dates. Current executable
+status and validation are in the [P3 result](milestones/P3/README.md), not in the old
+qualification evidence. No saved data is rewritten and no power-loss guarantee is added.
+
 ## REST retention decision (2026-10-27)
 
 The owner approved one primary persisted representation per REST response in P2:
