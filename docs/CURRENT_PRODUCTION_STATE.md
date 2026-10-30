@@ -1,7 +1,10 @@
 # Current Production State
 
 2026-10-30: P0–P2 are accepted under the approved initial-release scope;
-[P3 development](milestones/P3/README.md) is delivered and locally validated.
+[P3 development](milestones/P3/README.md) is delivered and locally validated, but
+[independent review](milestones/P3/review-20261030.md) leaves P3 NOT ACCEPTED with
+three reproduced gap/verification defects. Draft PR #89 is retained for fixes;
+main remains ec46e32. Corrective tasks are in the plan's P3 section.
 P4–P6 have not started; production readiness remains **NO**. P3 did not access the
 VPS or production services/data. The installed-source observations below are retained
 history, not a fresh host-state assertion.

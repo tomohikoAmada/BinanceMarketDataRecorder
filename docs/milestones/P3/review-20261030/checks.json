@@ -1,0 +1,72 @@
+{
+  "schema_version": "p3-independent-review.v1",
+  "date": "2026-10-30",
+  "reviewed_head": "8df01c8970a23ac7431a7718b523adf6bc2d4705",
+  "runtime_commit": "b72761a1b5eb6ee52d1b3a473079ac5d5b5ef23a",
+  "base": "ec46e32ebd1a74e042e6e66f5f9bdaa7a60958b9",
+  "decision": "NOT_ACCEPTED",
+  "open_findings": ["P3-R1", "P3-R2", "P3-R3"],
+  "corrective_task_location": "docs/production_milestone_plan.md P3 section",
+  "independent_local_checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "status": "PASS",
+      "passed": 2404,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "elapsed_seconds": 192.13
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/test_p3_background.py tests/integration/test_p3_consumers.py tests/integration/test_p3_verification.py tests/unit/test_p3_availability.py tests/unit/test_p3_capacity.py",
+      "status": "PASS",
+      "passed": 35,
+      "elapsed_seconds": 2.30
+    },
+    {"command": ".venv/bin/python -m ruff check .", "status": "PASS"},
+    {"command": ".venv/bin/python -m mypy", "status": "PASS", "source_files": 355},
+    {"command": ".venv/bin/python tests/verify_m0_contracts.py", "status": "PASS"},
+    {"command": "git diff --check", "status": "PASS"},
+    {
+      "command": "PYTHONPATH=. .venv/bin/python docs/milestones/P3/review-20261030/reproduce.py",
+      "status": "THREE_FINDINGS_REPRODUCED",
+      "evidence": "reproductions.json",
+      "cases": "Two manifest-only reconnect layouts, sparse writer, RPI gap and ordinary-depth control. Correct manifest controls pass; the corruption cases wrongly pass verification."
+    }
+  ],
+  "ci": {
+    "run_id": 40985968408,
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40985968408",
+    "head_sha": "8df01c8970a23ac7431a7718b523adf6bc2d4705",
+    "attempt": 1,
+    "conclusion": "success",
+    "run_identity_and_job_steps_read": true,
+    "original_job_logs_read": true,
+    "jobs": [
+      {
+        "id": 123836950353,
+        "name": "macos-python312",
+        "conclusion": "success",
+        "tests": "2404 passed, 24 skipped, 5 deselected, 13 warnings in 380.98s",
+        "log_access": "gh run view --job --log after connector transport closed"
+      },
+      {
+        "id": 123836950867,
+        "name": "ubuntu-python312",
+        "conclusion": "success",
+        "tests": "2400 passed, 28 skipped, 5 deselected, 13 warnings in 326.25s",
+        "log_access": "GitHub connector workflow job logs"
+      }
+    ],
+    "other_checks": "Ruff, mypy, M0, Go golden, sdist/wheel build and clean installed-wheel smoke pass; Ubuntu production dependency identity check passes.",
+    "limitation": "CI covers the delivery HEAD; it does not close the independently reproduced semantic defects. The subsequent review-document commit is not claimed as this tested head."
+  },
+  "operations": {
+    "production_data_access": false,
+    "vps_access": false,
+    "deployment": false,
+    "merge": false,
+    "branch_deletion": false,
+    "draft_pr": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89"
+  }
+}

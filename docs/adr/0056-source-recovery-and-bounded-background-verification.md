@@ -1,6 +1,10 @@
 # ADR-0056: Source recovery evidence and bounded independent Raw verification
 
-Status: implemented for P3, 2026-10-30. Implements ADR-0051/0053; no production
+Status: implementation candidate; independent review NOT ACCEPTED, 2026-10-30.
+[P3-R1–R3](../milestones/P3/review-20261030.md) identify missing durable-gap checks,
+incorrect idle-to-pending writer timing, and missed short RPI intervals. The intended
+behavior below remains required; corrections are tracked in the plan's P3 section
+per owner direction. Implements ADR-0051/0053; no production
 qualification, transport scope change or archive deletion authorization is granted.
 
 ## Recovery and observation boundary

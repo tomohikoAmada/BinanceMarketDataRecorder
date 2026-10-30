@@ -1,5 +1,14 @@
 # Risk Register
 
+## P3 independent review blockers — 2026-10-30
+
+[Review and reproductions](milestones/P3/review-20261030.md) establish three current
+defects: manifest-only reconnect evidence can be lost yet verified, sparse-stream
+idle time can be counted as writer failure, and quickly recovered RPI gaps can be
+omitted from continuity. P3 is not accepted. Existing tests passing does not close
+these findings. Fixes are tracked as P3-R1–R3 in the plan's P3 section;
+historical P2 acceptance and scope remain unchanged. Keep PR #89 Draft.
+
 ## Current P3 delivery — 2026-10-30
 
 [P3](milestones/P3/README.md) implements durable source intervals, independent bounded

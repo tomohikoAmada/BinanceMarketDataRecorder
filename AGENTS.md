@@ -1,5 +1,17 @@
 # Binance Market Data Recorder Agent Contract
 
+Current independent review October30, 2026: P3 is NOT ACCEPTED. Review of
+b72761a/8df01c8 reproduces P3-R1 (verifier ignores durable manifest-only gap flags),
+P3-R2 (sparse-stream idle time miscounted as writer stall), and P3-R3 (RPI gap
+lost when recovery occurs between monitor passes). See
+[P3 review](docs/milestones/P3/review-20261030.md). Continue corrections in the
+plan's P3 section using those P3 IDs, without reopening
+accepted historical P2-R1–R5. Existing full-suite and P3 tests pass but miss these
+cases. Keep Draft PR #89 / codex/p3-recovery-background for fixes and independent
+re-review; do not merge or clean the unmerged branch. P4–P6 have not started.
+No production operation is authorized by this review. The implementation delivery
+below remains historical candidate evidence, not P3 acceptance.
+
 Current implementation update October30, 2026: the owner explicitly authorized P3
 in this chat. P3 local development and verification are delivered under
 [ADR-0056](docs/adr/0056-source-recovery-and-bounded-background-verification.md) and the
