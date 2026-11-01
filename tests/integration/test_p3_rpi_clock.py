@@ -276,3 +276,50 @@ def test_rest_success_also_retains_known_clock_uncertainty(
                 spool.close_and_seal()
 
     asyncio.run(scenario())
+
+
+def test_delivery_completion_ends_eligibility_without_clock_health_credit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = BASE
+    monkeypatch.setattr(time, "time_ns", lambda: now)
+    monkeypatch.setattr(coverage, "capture_public_response", partial(
+        capture_public_response, utc_clock_ns=lambda: now,
+    ))
+
+    async def scenario() -> None:
+        nonlocal now
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            owner.sources.clear()
+            product = next(p for p in products() if p.key.market == "um_delivery")
+            owner.directory.products[product.key] = product
+            source = next(s for s in product_sources(product, SMALL) if s.family == "D31")
+            owner.add_source(source)
+            owner.clients["usdm"] = Client([
+                {"deliveryTime": product.delivery_time_ms, "deliveryPrice": "1.0001"},
+            ])
+            state = owner.sources[source.key]
+            state.first_due = state.last_success = BASE
+            for second in range(11):
+                now = BASE + second * SECOND
+                owner._observe_availability(now)
+            now = BASE
+            owner._observe_availability(now)
+            health = owner.availability.sources["/".join(source.key)]
+            assert health.reason == "CLOCK_DISCONTINUITY"
+            last_valid = health.last_valid
+            now += 1_000_000
+            assert (await owner.poll_once(state)).valid
+            assert state.dormant and health.dormant
+            assert health.last_valid == last_valid  # No clock-health credit from the response.
+            flush(owner.availability, catalog)
+            gaps = catalog.source_availability_intervals("/".join(source.key), BASE, BASE + SECOND)
+            assert len(gaps) == 1
+            assert gaps[0]["started_at_utc_ns"] == BASE
+            assert gaps[0]["ended_at_utc_ns"] == now
+            for spool in owner.spools.values():
+                spool.close_and_seal()
+
+    asyncio.run(scenario())

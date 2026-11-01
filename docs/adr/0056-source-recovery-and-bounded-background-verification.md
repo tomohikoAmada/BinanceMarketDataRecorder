@@ -199,8 +199,10 @@ clock framework, hash, Raw/schema change or recovery loop is introduced.
 
 Healthy RPI callbacks leave periodic journal checkpoints to the monitor. Only an
 open/startup gap needs recovery evaluation; clock-blocked callbacks return without
-scanning writer groups. Thirteen offline regressions cover clock controls, continuous
+scanning writer groups. Fourteen offline regressions cover clock controls, continuous
 valid messages and snapshots, simultaneous sequence repair, delayed persistence,
-writer stalls and the remaining source conditions, plus REST clock recovery. The
+writer stalls and the remaining source conditions, plus REST clock recovery and completed-delivery
+eligibility. Ending lifecycle eligibility still suspends immediately, without marking
+the clock healthy or extending the service interval while waiting for clock recovery. The
 review's original reproduction remains unchanged. Author checks are candidate evidence;
 independent re-review still owns P3 acceptance.

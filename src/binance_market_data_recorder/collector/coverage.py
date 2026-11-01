@@ -828,10 +828,10 @@ class SelectedAssetCapture:
                 else:
                     state.publication_status = "CURRENT"
             completed_at = time.time_ns()
-            if (state.error is None and completed_at >= self._clock_unreliable_until
-                    and (state.response_deadline_utc_ns is None
-                         or completed_at <= state.response_deadline_utc_ns)):
-                self.availability.valid("/".join(source.key), completed_at)
+            if state.error is None and (state.response_deadline_utc_ns is None
+                                        or completed_at <= state.response_deadline_utc_ns):
+                if completed_at >= self._clock_unreliable_until:
+                    self.availability.valid("/".join(source.key), completed_at)
                 if state.dormant:
                     self.availability.suspend("/".join(source.key), completed_at)
             elif state.error is not None:
