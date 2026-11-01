@@ -240,3 +240,13 @@ identity, and official documentation still lacks an applicability rule. This rem
 All 120 affected interval sources and retry costs remain. No implementation boundary
 changes until the [official clarification](../P2/r2-20261028/binance-clarification-draft.md)
 has an authoritative answer. Historical measurements and scope rows above are retained.
+
+### P4 initial-production ADL selection — 2026-11-01
+
+The full D28 target above remains. The owner explicitly approved the additional
+USD-M dated public-ADL omission in [ADR-0057](../../adr/0057-initial-production-dated-adl-exception.md).
+Only configurations setting `capture_dated_adl_risk=false` omit those sources before
+scheduling and disclose UNKNOWN/OWNER_APPROVED_UNCAPTURED. Perpetual D28 and all
+other selected information remain; old failures/Raw/denominators are preserved.
+S09 selected-symbol arrays use compact JSON and two-per-symbol weight capped40.
+P4's actual directory, omissions and new-file evidence live in its single result.

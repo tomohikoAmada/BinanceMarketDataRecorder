@@ -59,3 +59,5 @@ link both records.
 - [ADR-0055: Initial-production dated premium exception](0055-initial-production-dated-premium-exception.md) — owner-approved omission of only USD-M/COIN-M dated premium-index bars; implementation/review pending in P2, official clarification tracked separately.
 
 - [ADR-0056: Source recovery and bounded background verification](0056-source-recovery-and-bounded-background-verification.md) — P3 durable source intervals, new-file queue/proofs, worker budgets, same-boundary readback reuse and compatible restricted normalization.
+
+- [ADR-0057: Explicit initial-production USD-M dated ADL omission](0057-initial-production-dated-adl-exception.md) — owner approved during P4.

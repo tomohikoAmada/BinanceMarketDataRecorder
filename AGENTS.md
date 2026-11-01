@@ -1,3 +1,7 @@
+# P4 owner task — November1, 2026
+
+The owner now explicitly authorizes completing P4, including the planned real GreenCloud BTC 2h/24h run with normal archive/verification/reporting. Follow the latest [P4 result](docs/milestones/P4/README.md) for run identities, failures and continuation; no formal T0 yet. The owner additionally approved first-release omission of USD-M dated public ADL with explicit disclosure under [ADR-0057](docs/adr/0057-initial-production-dated-adl-exception.md). Official applicability remains UNKNOWN; perpetual ADL and all other selected scope stay enabled. Keep the complete target and old failed data/denominators. P0–P3 acceptance stays closed. This authorization supersedes prior review-only/no-P4 statements below for this task; do not begin P5 or operate unrelated services.
+
 # Binance Market Data Recorder Agent Contract
 
 Current independent closure November1, 2026: P3 is ACCEPTED. Review of runtime

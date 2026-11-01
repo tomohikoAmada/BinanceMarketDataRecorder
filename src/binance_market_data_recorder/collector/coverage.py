@@ -657,6 +657,11 @@ class SelectedAssetCapture:
         if source.endpoint.startswith("/futures/data/") and source.family != "D31":
             end = (time.time_ns() // 1_000_000 // 300_000) * 300_000 - 1
             params.update(startTime=end - 600_000 + 1, endTime=end)
+            if source.family == "D16":
+                # Match the existing side_data_rest taker boundary policy. The
+                # endpoint can include the preceding period and needs the next
+                # boundary to return both requested closed periods.
+                params.update(endTime=end + 300_000, limit=3)
         if source.family == "D23":
             from datetime import UTC, datetime
 
@@ -700,6 +705,16 @@ class SelectedAssetCapture:
             parameters=parameters,
             recent_trades=state.recent_trades,
         )
+        if source.family == "D16":
+            saved = json.loads(result.envelope.raw_payload)
+            saved["request"]["evaluated_period"] = {
+                "start_time_ms": parameters["startTime"],
+                "end_time_ms": parameters["endTime"] - 300_000,
+                "allowed_preceding_overlap_ms": 300_000,
+            }
+            result = replace(result, envelope=result.envelope.model_copy(update={
+                "raw_payload": json.dumps(saved, separators=(",", ":")).encode(),
+            }))
         # A known rejection closes new admission before any storage await.
         # Existing wire attempts retain their normal completion/drain boundary.
         if result.error in {"TooManyRequestsError", "RateLimitBanError"} or result.status in {
@@ -792,19 +807,28 @@ class SelectedAssetCapture:
                 timestamps = (
                     [row.get("timestamp") for row in rows] if isinstance(rows, list) else []
                 )
+                period_start, period_end = parameters["startTime"], parameters["endTime"]
+                if source.family == "D16":
+                    period_end -= 300_000
                 if not isinstance(rows, list):
                     state.error = "DataPeriodShapeUnknown"
                     state.publication_status = "UNKNOWN"
                 elif any(not isinstance(value, int) or isinstance(value, bool)
-                       or not parameters["startTime"] <= value <= parameters["endTime"]
+                       or not (period_start <= value <= period_end
+                               or (source.family == "D16" and value == period_start - 300_000))
                        for value in timestamps):
                     state.error = "DataOutsideRequestedPeriod"
                     state.publication_status = "STALE"
                 else:
-                    state.publication_status = (
-                        "EMPTY_EVALUATED_QUERY_WINDOW" if not rows else "CURRENT"
-                    )
-                    state.publication_time_ms = max(timestamps, default=None)
+                    evaluated = [t for t in timestamps if period_start <= t <= period_end]
+                    if rows and not evaluated:
+                        state.error = "DataPublicationStale"
+                        state.publication_status = "STALE"
+                    else:
+                        state.publication_status = (
+                            "EMPTY_EVALUATED_QUERY_WINDOW" if not rows else "CURRENT"
+                        )
+                    state.publication_time_ms = max(evaluated, default=None)
             if source.cadence_seconds:
                 state.response_deadline_utc_ns = (
                     time.time_ns() + int((max(0, state.next_due - time.monotonic()) + 10) * 1e9)
@@ -874,6 +898,10 @@ class SelectedAssetCapture:
             "config": self.coverage.model_dump(mode="json"),
             "continuity_qualified": False,
             "availability_journal_pending": len(self.availability.pending),
+            "transport_progress": [
+                {"group_id": group.name, **collector.capture_progress()}
+                for collector, group in self._group_sources.items()
+            ],
         }
 
     async def _flush_availability(self, *, all_pending: bool = False) -> None:

@@ -142,6 +142,7 @@ def test_receive_and_normal_drain_continue_with_all_background_consumers(tmp_pat
                 envelope_factory=partial(envelope_for_group, group, product),
                 envelope_observer=persisted,
             )
+            owner._group_sources[collector] = group
             task = asyncio.create_task(asyncio.to_thread(background))
             while not background_entered.is_set():
                 await asyncio.sleep(0.001)
@@ -150,6 +151,9 @@ def test_receive_and_normal_drain_continue_with_all_background_consumers(tmp_pat
             assert len(received) >= 30
             progress = collector.capture_progress()
             assert progress["received_frames"] == progress["persisted_frames"] == len(expected)
+            assert owner.status(include_sources=False)["transport_progress"] == [
+                {"group_id": group.name, **progress}
+            ]
             chunks = load_source_chunks(
                 layout=fixture.layout,
                 catalog=catalog,

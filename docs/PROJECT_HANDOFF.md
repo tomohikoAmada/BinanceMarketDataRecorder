@@ -1,3 +1,7 @@
+# Current handoff: P4 authorized, preparation corrections — 2026-11-01
+
+The owner explicitly requested completion of P4, including the planned real GreenCloud BTC 2h/24h run. See [P4](milestones/P4/README.md) for the latest run identity, retained failed preparations and continuation. No formal T0 yet. A new explicit owner decision approves initial-release omission of USD-M dated public ADL under [ADR-0057](adr/0057-initial-production-dated-adl-exception.md), with applicability UNKNOWN; perpetual ADL and other sources remain. P0–P3 acceptance is unchanged. Do not begin P5. The new-chat operating authorization supersedes the prior review-only scope below.
+
 # Current handoff: P3 accepted; P4 next, not started — 2026-11-01
 
 [Independent closure](milestones/P3/review-20261101.md#r3-independent-closure) of

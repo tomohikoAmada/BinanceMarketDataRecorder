@@ -447,3 +447,8 @@ A narrow, explicitly declared initial-production coverage exception is a possibl
 scope choice, not a discovery that Binance never offers the data. It is described in the
 [review](milestones/P2/review-20261028.md#review-066c2c3) but is not approved or implemented.
 Do not waive acceptance, disable sources or send a public issue based on this note.
+
+
+## P4 dated public ADL applicability — 2026-11-01 (current)
+
+Official USD-M dated ADL applicability remains UNKNOWN: both selected BTC dated symbols return HTTP400/-1121, and a successful global ADL response contains neither. Do not infer exchange-not-offered or substitute perpetual/account data. The owner explicitly approved the prospective initial-release omission in [ADR-0057](adr/0057-initial-production-dated-adl-exception.md), so this uncertainty is no longer a first-release gate when the configured exception is disclosed. Earlier failed Raw/gaps/denominators remain intact. Perpetual ADL remains required. Evidence and preparation failures are retained in [P4](milestones/P4/README.md).

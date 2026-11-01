@@ -318,13 +318,14 @@ def product_sources(product: Product, config: CoverageConfig) -> tuple[Source, .
             weight=20,
             fields=("lastUpdateId", "bids", "asks"),
         )
-        rest(
-            "D28",
-            "adl_risk",
-            prefix + "/symbolAdlRisk",
-            1800,
-            fields=("symbol", "adlRisk", "updateTime"),
-        )
+        if p.perpetual or config.capture_dated_adl_risk:
+            rest(
+                "D28",
+                "adl_risk",
+                prefix + "/symbolAdlRisk",
+                1800,
+                fields=("symbol", "adlRisk", "updateTime"),
+            )
     rest(
         "D06",
         "recent_trades",
@@ -535,8 +536,9 @@ def shared_sources(products: tuple[Product, ...]) -> tuple[Source, ...]:
                     "rest",
                     "/api/v3/executionRules",
                     3600,
-                    (("symbols", json.dumps(symbols[offset : offset + 100])),),
-                    20,
+                    (("symbols", json.dumps(symbols[offset : offset + 100],
+                                            separators=(",", ":"))),),
+                    min(2 * len(symbols[offset : offset + 100]), 40),
                     required_fields=("symbolRules",),
                 )
             )
@@ -637,9 +639,22 @@ def source_selection_report(
         and p.key.market in {"um_delivery", "cm_delivery"}
         for interval in config.futures_intervals
     ]
+    uncaptured.extend(
+        {
+            "family": "D28", "market": p.key.market, "symbol": p.key.symbol,
+            "stream": "adl_risk", "transport": "rest", "enabled": False,
+            "status": "OWNER_APPROVED_UNCAPTURED", "official_applicability": "UNKNOWN",
+            "reason": "ADR-0057 initial-release USD-M dated ADL omission",
+            "continuity_eligible": False,
+        }
+        for p in sorted(products, key=lambda p: p.key)
+        if not config.capture_dated_adl_risk and p.key.market == "um_delivery"
+    )
     return {
         "policy": "complete_target"
-        if config.capture_dated_premium_klines
+        if config.capture_dated_premium_klines and config.capture_dated_adl_risk
+        else "initial_production_adr_0055_0057"
+        if not config.capture_dated_adl_risk
         else "initial_production_adr_0055",
         "scope": "admitted_products and configured intervals; directories counted separately",
         "full_target_source_count": len(selected) + len(uncaptured),
