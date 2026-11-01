@@ -1,0 +1,292 @@
+{
+  "source_commit": "30e8a4a3c7ffad8daa54a4daa2e9935aeeb4cdb2",
+  "repo": "tomohikoAmada/BinanceMarketDataRecorder",
+  "run_id": 41285390829,
+  "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41285390829",
+  "workflow": {
+    "id": 41285390829,
+    "name": "offline-ci",
+    "status": "completed",
+    "conclusion": "success",
+    "run_number": 408,
+    "jobs_url": "https://api.github.com/repos/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41285390829/jobs",
+    "logs_url": "https://api.github.com/repos/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41285390829/logs",
+    "workflow_id": 320658232
+  },
+  "jobs": [
+    {
+      "id": 124785523802,
+      "name": "macos-python312",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41285390829,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Configure safe temporary data root",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run actions/setup-go@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Run python -m pip install --require-hashes -r requirements/macos-arm64-python312.lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Run python -m pip install -r requirements/ci-macos-python312.lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run python -m pip install --no-deps -e .",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Run python -m pytest -q -o faulthandler_timeout=120",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Run python -m ruff check .",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Run python -m mypy",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Run python tests/verify_m0_contracts.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Run go run tools/verify_raw_chunk_golden.go",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Run python -m build --no-isolation",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Clean wheel install and CLI smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "Post Run actions/setup-go@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 28
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 29
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 30
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 31
+        }
+      ]
+    },
+    {
+      "id": 124785523918,
+      "name": "ubuntu-python312",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41285390829,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Configure safe temporary data root",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run actions/setup-go@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install exact x86_64 production runtime lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Run python -m pip install -r requirements/ci-linux-python312.lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run python -m pip install --no-deps -e .",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Run python -m pytest -q -o faulthandler_timeout=120",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Run python -m ruff check .",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Run python -m mypy",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Run python tests/verify_m0_contracts.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Run go run tools/verify_raw_chunk_golden.go",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Run python -m build --no-isolation",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Exact production dependency environment identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "Clean wheel install and CLI smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Post Run actions/setup-go@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 30
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 31
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 32
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 33
+        }
+      ]
+    }
+  ],
+  "decoded_logs": {
+    "macos": {
+      "file": "macos-30e8a4a.txt.gz",
+      "passed": 2435,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 373.49,
+      "full_source_sha_in_checkout_log": true
+    },
+    "ubuntu": {
+      "file": "ubuntu-30e8a4a.txt.gz",
+      "passed": 2431,
+      "skipped": 28,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 349.91,
+      "full_source_sha_in_checkout_log": true
+    }
+  }
+}

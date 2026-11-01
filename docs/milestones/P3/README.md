@@ -1,6 +1,59 @@
 # P3：恢复与后台任务不再互相拖累
 
-**当前状态：R1、R2独立复审关闭；R3剩余一项，P3暂不通过。**
+**当前交付：R3剩余时钟问题已修正，P3仍待独立复审，NOT ACCEPTED。**
+修正提交 `30e8a4a3c7ffad8daa54a4daa2e9935aeeb4cdb2` 已推送至原分支，
+[PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)保持Draft。
+R1/R2已独立关闭，P0–P2与首版范围不变；未合并、删除分支、启动P4或执行生产操作。
+
+## 2026-11-01：P3-R3剩余时钟问题修正候选
+
+- RPI消息和快照的持久回调只恢复已可靠桥接的盘口；恢复判断复用监控中的连接、
+  writer阻塞、解析错误和序列条件，休眠源不被回调恢复。
+- 已知时钟不确定边界未结束时，正常消息、快照或序列重建均不能关闭未知区间。
+  判断使用当前落盘完成时钟；倒退前收到、倒退后落盘的旧消息也不能用较早接收边界
+  冒充当前时钟已恢复。边界结束后，消息、快照或监控均可按既有条件正常恢复。
+- 同类检查发现REST成功回调也可绕过已知时钟边界，因此在原成功/期限判断中增加同一
+  边界条件。交割发布完成仍即时结束服务资格，不因等待时钟恢复延长分母，
+  也不为时钟异常期记健康。失败保存、计数和调度规则不变。没有新增故障框架、时钟状态、
+  journal、Raw格式或哈希；即时序列缺口仍在尝试快照修复之前记录。
+- 健康RPI回调将周期检查点留给监控，仅在打开的/启动缺口上检查恢复，避免每条健康消息
+  扫描writer连接组；时钟仍不可靠时直接保留原journal区间。
+
+新增14项正式回归；在未修正运行时`fdd0097`上 **11失败/3对照通过**，见
+[失败摘要](r3-clock-correction-20261101/pre-fix.txt)，修正后14项全部通过。
+覆盖持续有效消息、有效快照、无回调对照、同时序列断裂/快照恢复、倒退前收到的延迟落盘、
+同组writer仍阻塞、断连/解析错误/休眠、REST成功回调及交割完成资格边界。断裂原文、次序、单调接收时间
+和Raw `sequence_gap` 保持；边界结束后核对精确完整区间和正常恢复，不用未知尾部凑时长。
+
+[未改动的复审复现](review-20261101/reproduce_rpi_clock.py)现在有、无RPI回调两组都保留
+**10,000,000,000ns未知，10秒窗口覆盖率0%**；见
+[本次输出](r3-clock-correction-20261101/rpi-clock.json)。
+[原五个探针输出](r3-clock-correction-20261101/original-probes.json)仍满足原要求，
+RPI快速恢复为200,000,001ns、普通盘口对照900,000,000ns；正式原100ms/200ms回归仍通过。
+未修改两次独立审查及其复现/原始输出，没有重开R1/R2历史审计。
+
+66项P3相关检查通过；Ruff、strict mypy（357文件）、M0、Go golden、sdist/wheel及
+隔离安装/CLI冒烟通过；最终运行时本机完整套件 **2,435通过/24跳过/5 stress未选，
+13条既有fork warning，185.81秒**。
+[完整日志](r3-clock-correction-20261101/pytest.txt)及[检查记录](r3-clock-correction-20261101/checks.json)保留。修正提交的
+[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41285390829)
+已完成并核对精确SHA及两端完整解码日志：macOS **2,435通过/24跳过**，
+Ubuntu **2,431通过/28跳过**，各5项stress未选、13条既有fork warning；静态、M0、Go golden、
+构建/安装冒烟及Ubuntu生产依赖一致性检查均成功。见[CI记录](r3-clock-correction-20261101/ci.json)
+及[精确run身份](r3-clock-correction-20261101/ci-run.json)。CI绑定运行时`30e8a4a`；后续文档交付
+提交不冒用该CI身份，运行时/测试内容相同。独立复审仍未执行；P3不标记验收通过。
+
+剩余问题的正式回归及原对照可直接复跑（全部离线、临时测试根）：
+
+```bash
+.venv/bin/python -m pytest -q tests/integration/test_p3_rpi_clock.py \
+  tests/integration/test_p3_review_corrections.py tests/unit/test_p3_availability.py
+PYTHONPATH=. .venv/bin/python docs/milestones/P3/review-20261101/reproduce_rpi_clock.py
+```
+
+## 本次修正前的独立复审结论（保留）
+
+**复审状态：R1、R2独立复审关闭；R3剩余一项，P3暂不通过。**
 [2026-11-01复审](review-20261101.md)确认`41abdbb`修复了原审查反例，
 52项相关检查通过，修正提交及交付HEAD `1243b99`双平台CI成功。
 R3原快速恢复漏记已修好，但正常RPI消息仍会提前清除尚未结束的时钟不确定状态：

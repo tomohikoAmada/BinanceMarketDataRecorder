@@ -1,4 +1,24 @@
-# Current handoff: P3-R1/R2 closed; R3 has one remaining correction — 2026-11-01
+# Current handoff: remaining P3-R3 correction delivered; re-review pending — 2026-11-01
+
+Runtime `30e8a4a` fixes RPI callbacks closing an active clock-uncertainty gap. Current
+completion time must reach the known boundary, even for queued pre-reversal messages;
+frame/snapshot recovery shares the monitor's WS writer/connection/error/sequence checks
+and leaves dormant sources alone. The same known-clock guard protects REST success
+callbacks. Immediate sequence-gap recording, Raw and the original journal stay intact.
+
+Fourteen new regressions pass (old runtime: eleven failures/three passing controls), with
+66 related P3 checks and unchanged reviewer probes. Both original clock-reproduction
+cases now retain ten seconds unknown, with recovery after the boundary. See the
+[P3 result](milestones/P3/README.md): local2,435 tests and exact30e8a4a CI macOS2,435 /
+Ubuntu2,431 tests plus static/contract/build/install checks pass; full decoded logs and
+run head SHA are retained. Subsequent documentation delivery leaves runtime/tests unchanged.
+
+Next: independently re-review this remaining correction. P3 stays **NOT ACCEPTED**;
+R1/R2 and P0–P2 remain closed. Keep Draft PR #89 and the unmerged branch; do not merge,
+delete it, start P4 or perform production operations. No VPS/production data or real
+external volume was accessed. Prior independent review and candidate evidence follow.
+
+# Prior handoff: P3-R1/R2 closed; R3 has one remaining correction — 2026-11-01
 
 [Independent re-review](milestones/P3/review-20261101.md) of runtime `41abdbb` and
 delivery HEAD `1243b99` closes P3-R1 and P3-R2. The original short RPI gap is now

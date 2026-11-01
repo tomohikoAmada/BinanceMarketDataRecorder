@@ -1,5 +1,14 @@
 # Current Production State
 
+2026-11-01 author correction candidate `30e8a4a`: the remaining P3-R3 RPI clock
+uncertainty is preserved through valid frame/snapshot callbacks; queued pre-reversal
+frames and other still-active source conditions cannot authorize early recovery.
+REST success callbacks also respect the known clock boundary. New regressions and
+unchanged reviewer probes pass; see [current P3 result](milestones/P3/README.md) for
+validation/CI. Independent re-review remains pending, **P3 NOT ACCEPTED**. Draft PR #89
+and its branch are retained. No merge, P4, deployment or production operation occurred;
+production readiness remains **NO**. Historical host observations are unchanged.
+
 2026-11-01 independent re-review: **P3-R1/R2 CLOSED; P3-R3 still OPEN**.
 The [review](milestones/P3/review-20261101.md) verifies the original fixes at
 `41abdbb` / delivery HEAD `1243b99`, but reproduces premature closure of active

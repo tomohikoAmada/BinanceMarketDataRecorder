@@ -1,5 +1,17 @@
 # Risk Register
 
+## Remaining P3-R3 correction candidate — 2026-11-01
+
+Runtime `30e8a4a` protects the full known clock-uncertainty interval from valid RPI
+frame/snapshot callbacks and delayed pre-reversal persistence. Recovery also respects
+writer progress, connection/error and lifecycle conditions; REST success uses the same
+known-clock boundary. Fourteen formal regressions and unchanged reviewer probes pass;
+both ten-second clock cases now preserve ten seconds unknown. See the
+[P3 result](milestones/P3/README.md) for validation and exact-commit CI evidence.
+This is author correction evidence; P3-R3 still awaits independent re-review. P3 remains
+NOT ACCEPTED and R-078 stays open. No new runtime scope, Raw format, fault framework,
+historical audit, production qualification or operation is authorized.
+
 ## Current P3 re-review — 2026-11-01
 
 [Independent re-review](milestones/P3/review-20261101.md) closes P3-R1 and P3-R2

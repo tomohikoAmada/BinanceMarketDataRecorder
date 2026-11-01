@@ -1,5 +1,17 @@
 # Binance Market Data Recorder Agent Contract
 
+Current author correction November1, 2026: runtime 30e8a4a implements the remaining
+P3-R3 clock/source-availability correction; see the [P3 result](docs/milestones/P3/README.md).
+Valid RPI messages/snapshots retain the full known clock-uncertainty interval, including
+queued pre-reversal frames; writer/disconnection/error/dormancy conditions still block
+recovery. REST success callbacks also respect known clock uncertainty. Fourteen new
+regressions, 66 related checks and the 2,435-test local suite pass; exact-commit CI
+passes with full logs: macOS 2,435 / Ubuntu 2,431 tests and all steps succeed.
+This is a correction candidate, not independent closure. P3 remains NOT ACCEPTED until
+re-review; keep Draft PR #89 / codex/p3-recovery-background, without merge, branch deletion,
+P4 or production operations. R1/R2 and P0–P2 stay closed; retained review evidence below
+is unchanged.
+
 Current independent re-review November1, 2026: P3-R1 and P3-R2 are CLOSED at
 41abdbb / delivery HEAD 1243b99. The original P3-R3 fast-recovery cases also pass,
 but P3-R3 remains OPEN: a valid RPI persistence callback clears an active
