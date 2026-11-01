@@ -1,5 +1,7 @@
 # Current Production State
 
+P4 current correction: the first timed `8bdae20` C window started at2026-11-01T12:13:18.836073348Z, then was normally stopped after a sustained source-journal backlog reached52,997. Its874 new sealed files all pass independent v2 verification; it earns no2h/24h qualification. Capture metrics were also missing from the selected path (archive metrics existed). The bounded journal drain and existing capture-metrics callbacks are being corrected in P4 before a new candidate/window. Original service/deployment remains inactive/disabled and preserved. See the single P4 result for the latest active run; older preparation paragraphs below retain their timestamps.
+
 2026-11-01 current P4 task: owner authorized the real GreenCloud BTC 2h/24h work. [P4 preparation](milestones/P4/README.md) retains two attempts with no formal T0. Both independent P4 capture units are stopped, runtime-only/static with no boot enablement; the original Recorder remains inactive/disabled. Their new-file verification is complete (45/45 and337/337), no errors. Normal archive tasks were active. Initial-release dated ADL omission is now explicitly owner approved under ADR-0057. New candidate preparation is in progress; no P4 duration or production qualification is earned. Earlier statements below describe their original review context, not this new authorization.
 
 2026-11-01 independent closure: **P0–P3 ACCEPTED; P4–P6 not started**.

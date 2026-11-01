@@ -10,18 +10,20 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import time
 from collections import Counter
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
 from binance_market_data_recorder.metrics.continuity import continuity_report
 from binance_market_data_recorder.storage.catalog import Catalog
 
-ROOT = Path("/var/lib/binance-market-data-recorder/p4-20261101-btc-b")
+ROOT = Path("/var/lib/binance-market-data-recorder/p4-20261101-btc-c")
 EVIDENCE = ROOT / "evidence"
-UNIT = "binance-market-data-p4b-btc.service"
-ARCHIVE = "binance-market-data-p4b-archive.service"
+UNIT = "binance-market-data-p4c-btc.service"
+ARCHIVE = "binance-market-data-p4c-archive.service"
 
 
 def publish(name: str, value: Any) -> None:
@@ -59,6 +61,8 @@ def sample() -> dict[str, Any]:
     with Catalog.open_live_read_only(ROOT / "state/catalog.sqlite") as catalog:
         availability = catalog.source_availability()
         verification = catalog.raw_verification_status()
+        storage_id = json.loads((EVIDENCE / "storage-registration.json").read_text())["storage_id"]
+        archive = catalog.archive_aggregate(storage_id)
     unit = dict(
         line.split("=", 1)
         for line in systemctl(
@@ -82,12 +86,22 @@ def sample() -> dict[str, Any]:
             "TasksCurrent",
         ).splitlines()
     )
+    memory = {}
+    # The unit/state checks below retain a terminal process observation.
+    with suppress(FileNotFoundError):
+        memory = dict(
+            line.split(":", 1)
+            for line in Path(f"/proc/{unit['MainPID']}/status").read_text().splitlines()
+            if line.startswith(("VmRSS:", "VmHWM:", "VmSwap:", "RssAnon:"))
+        )
     return {
         "utc_ns": time.time_ns(),
         "boottime_ns": time.clock_gettime_ns(int(vars(time)["CLOCK_BOOTTIME"])),
         "unit": unit,
         "service": state,
         "verification": verification,
+        "archive": archive,
+        "process_memory": memory,
         "disk_free": shutil.disk_usage(ROOT).free,
         "archive_disk_free": shutil.disk_usage("/srv/recorder-data").free,
         "host_cpu": Path("/proc/stat").read_text().splitlines()[0],
@@ -142,6 +156,14 @@ def checkpoint(freeze: dict[str, Any], start: int, end: int, label: str) -> dict
         for s in report["sources"]
         if s["source_id"] not in dormant and (s["status"] != "OBSERVED" or s["coverage"] < 0.995)
     ]
+    live = json.loads((ROOT / "state/service_state.json").read_text())
+    scope_issues = [
+        p
+        for p in live["selected_asset_coverage"]["products"]
+        if p["capture_status"]
+        not in {"ADMITTED", "EXPIRED", "DELIVERED", "SETTLED", "CLOSE", "DELISTED"}
+        and not p["capture_status"].startswith("INACTIVE_AT_DISCOVERY:")
+    ]
     enrolled = verification["enrolled_files"]
     assert isinstance(enrolled, int)
     result = {
@@ -149,7 +171,9 @@ def checkpoint(freeze: dict[str, Any], start: int, end: int, label: str) -> dict
         "predeclared_dormant_sources": sorted(dormant),
         "verification": verification,
         "failed_sources": failed,
+        "scope_issues": scope_issues,
         "continuity_and_verification_pass": not failed
+        and not scope_issues
         and enrolled > 0
         and verification["pending_files"] == 0
         and verification["failed_files"] == 0,
@@ -162,7 +186,7 @@ def checkpoint(freeze: dict[str, Any], start: int, end: int, label: str) -> dict
 
 def main() -> None:
     freeze = json.loads((EVIDENCE / "freeze.json").read_text())
-    config_path = Path("/opt/binance-market-data-recorder/p4-20261101-btc-b/recorder.toml")
+    config_path = Path("/opt/binance-market-data-recorder/p4-20261101-btc-c/recorder.toml")
     if hashlib.sha256(config_path.read_bytes()).hexdigest() != freeze["config_sha256"]:
         raise RuntimeError("P4 configuration changed after freeze")
     initial_boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
@@ -177,7 +201,34 @@ def main() -> None:
     identity = None
     checkpoints = iter((7200, 86400))
     target = next(checkpoints)
-    with (EVIDENCE / "samples.jsonl").open("x") as log:
+    resume = "--resume" in sys.argv
+    log_name = "samples.jsonl"
+    if resume:
+        if (EVIDENCE / "terminated.json").exists() or (EVIDENCE / "stopped.json").exists():
+            raise RuntimeError("P4 capture already terminated; cannot resume its window")
+        original = json.loads((EVIDENCE / "start.json").read_text())
+        start, start_boot = original["start_utc_ns"], original["start_boottime_ns"]
+        identity = tuple(original["identity"])
+        if original["boot_id"] != initial_boot:
+            raise RuntimeError("cannot resume across a boot boundary")
+        if (EVIDENCE / "2h-result.json").exists():
+            if not json.loads((EVIDENCE / "2h-result.json").read_text())[
+                "continuity_and_verification_pass"
+            ]:
+                raise RuntimeError("cannot resume a failed 2h checkpoint")
+            target = next(checkpoints)
+        resumed = time.time_ns()
+        log_name = f"samples-resume-{resumed}.jsonl"
+        publish(
+            f"observer-resume-{resumed}.json",
+            {
+                "original_start_utc_ns": start,
+                "identity": identity,
+                "reason": "independent observer instrumentation; capture process/config unchanged",
+                "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            },
+        )
+    with (EVIDENCE / log_name).open("x") as log:
         while True:
             try:
                 current = sample()
@@ -228,7 +279,7 @@ def main() -> None:
                             "boot_id": initial_boot,
                         },
                     )
-                    systemctl("stop", "binance-market-data-p4b-prep-stop.timer")
+                    systemctl("stop", "binance-market-data-p4c-prep-stop.timer")
                 time.sleep(10)
                 continue
             if (

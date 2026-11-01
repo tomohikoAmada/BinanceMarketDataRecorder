@@ -6,6 +6,7 @@ import asyncio
 import json
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -15,6 +16,7 @@ from binance_market_data_recorder.binance.public_sources import (
     source_plan,
     source_selection_report,
 )
+from binance_market_data_recorder.metrics.model import MetricAggregate
 from binance_market_data_recorder.normalize.raw import iter_source_records, load_source_chunks
 from binance_market_data_recorder.storage.catalog import Catalog
 from binance_market_data_recorder.storage.layout import ensure_storage_layout
@@ -85,6 +87,17 @@ def test_taker_overlap_keeps_raw_and_evaluates_only_the_closed_window(
                 assert health.unavailable_since is not None
             for spool in owner.spools.values():
                 spool.close_and_seal()
+            owner.metrics.flush()
+            assert owner.metrics.failure_count == 0
+            batches = list(catalog.iter_metric_batches_through("2099-01-01"))
+            counters: dict[str, int] = {}
+            for batch in batches:
+                aggregate = MetricAggregate.from_document(batch["aggregate"])
+                for key, value in aggregate.counters.items():
+                    counters[key] = counters.get(key, 0) + value
+            assert counters["rest_responses"] == counters["raw_records_written"] == 1
+            assert counters["sealed_chunks"] == 1
+            assert counters.get("websocket_messages", 0) == 0
             saved = list(iter_source_records(load_source_chunks(layout=layout, catalog=catalog)[0]))
             assert len(saved) == 1
             record = json.loads(saved[0].envelope.raw_payload)
@@ -117,3 +130,45 @@ def test_dated_adl_exception_is_explicit_and_does_not_remove_perpetual_or_other_
     future = replace(dated, key=replace(dated.key, symbol="BTCUSDT_990625"))
     assert not any(s.family == "D28" for s in product_sources(future, config))
     assert any(s.family == "D28" for s in product_sources(future, SMALL))
+
+
+def test_btc_sized_availability_queue_drains_multiple_bounded_transactions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def scenario() -> None:
+        # Isolate the deterministic transaction/count bound from test-host I/O speed.
+        monkeypatch.setattr(
+            "binance_market_data_recorder.collector.coverage.AVAILABILITY_FLUSH_SECONDS", 60.0,
+        )
+        layout = ensure_storage_layout(tmp_path)
+        with Catalog(layout.catalog) as catalog:
+            owner = owner_at(tmp_path, catalog)
+            batch_sizes = []
+            persist = catalog.persist_source_availability
+
+            def measured(batch: list[dict[str, Any]]) -> None:
+                batch_sizes.append(len(batch))
+                persist(batch)
+
+            monkeypatch.setattr(catalog, "persist_source_availability", measured)
+            for i in range(2233):
+                owner.availability.valid(f"source-{i}", 1_800_000_000_000_000_000)
+            queued = len(owner.availability.pending)
+            await owner._flush_availability()
+            assert 1 < len(batch_sizes) <= 32
+            assert max(batch_sizes) <= 128
+            assert queued - len(owner.availability.pending) == sum(batch_sizes)
+            await owner._flush_availability(all_pending=True)
+            assert not owner.availability.pending
+            assert len(catalog.source_availability()) == 2233
+            assert all(s["unavailable_since_utc_ns"] is None
+                       for s in catalog.source_availability().values())
+            # A full ten-second checkpoint for all BTC sources must make progress
+            # without requiring capture/shutdown to drain the retained journal.
+            for i in range(2233):
+                owner.availability.valid(f"source-{i}", 1_800_000_011_000_000_000)
+            for _ in range(4):
+                await owner._flush_availability()
+            assert not owner.availability.pending
+
+    asyncio.run(scenario())

@@ -206,3 +206,8 @@ eligibility. Ending lifecycle eligibility still suspends immediately, without ma
 the clock healthy or extending the service interval while waiting for clock recovery. The
 review's original reproduction remains unchanged. Author checks are candidate evidence;
 independent re-review still owns P3 acceptance.
+
+
+## P4 measured scheduling correction — 2026-11-01
+
+The accepted interval/Raw/proof contracts remain. P4 observed that a single128-record transaction per outer capture pass cannot persist the2,233-source BTC journal at its checkpoint rate. The P4 candidate retains128 records per Catalog transaction, processes at most32 batches or100ms between batches per outer pass, and yields after every owned blocking call. Shutdown still drains all retained evidence. No journal coalescing, deleted gap, hidden unknown time or history audit is introduced. Selected capture also connects the existing physical-stream MetricsRecorder callbacks and ten-second/final flush, so normal reports include saved capture counts rather than archive-only counters. See the single P4 result for live evidence and the new candidate boundary.

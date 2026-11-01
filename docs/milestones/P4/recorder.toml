@@ -2,13 +2,14 @@
 # ADR-0055 omits only dated premium bars; perpetual and other sources retained.
 # D06 cadences unchanged from the accepted measured 2026-10-28 configuration.
 [recorder]
-data_root = "/var/lib/binance-market-data-recorder/p4-20261101-btc-b"
+data_root = "/var/lib/binance-market-data-recorder/p4-20261101-btc-c"
 network_proxy_mode = "direct"
 max_frame_bytes = 33554432
 [recorder.coverage]
 underlying_assets = ["BTC"]
 # Explicit prospective omission; official dated applicability remains UNKNOWN.
 capture_dated_premium_klines = false
+capture_dated_adl_risk = false
 recent_trades_interval_seconds = 30.0
 max_steady_derivative_weight_per_minute = 1000.0
 [recorder.coverage.recent_trades_intervals]

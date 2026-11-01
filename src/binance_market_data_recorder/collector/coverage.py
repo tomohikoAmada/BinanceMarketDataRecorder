@@ -44,6 +44,7 @@ from ..binance.websocket_common import run_owned_blocking_call
 from ..config import RecorderConfig
 from ..domain.event import EventEnvelope
 from ..domain.product import Product, ProductKey
+from ..metrics.recorder import MetricsRecorder
 from ..spool.stream import StreamSpool
 from ..spool.writer import RotationPolicy
 from ..storage.catalog import Catalog
@@ -51,6 +52,9 @@ from ..storage.layout import StorageLayout
 from ..supervisor.depth_continuity import DepthContinuity
 from ..supervisor.readiness import CORE_STREAMS, CollectorReadiness, ReadinessSnapshot
 from .availability import AvailabilityJournal
+
+AVAILABILITY_FLUSH_MAX_BATCHES = 32
+AVAILABILITY_FLUSH_SECONDS = 0.1
 
 
 @dataclass(slots=True)
@@ -311,6 +315,11 @@ class SelectedAssetCapture:
             instance_id,
         )
         self.layout, self.catalog = layout, catalog
+        self.metrics = MetricsRecorder(
+            catalog=catalog, data_root=layout.root, collector_instance_id=instance_id,
+            logger=logger,
+        )
+        self._last_metrics_flush = time.monotonic()
         self.coverage = config.coverage
         self.selection_started_utc_ns = time.time_ns()
         self._source_selection = source_selection_report((), self.coverage, ())
@@ -365,6 +374,21 @@ class SelectedAssetCapture:
     def spool(self, market: str, symbol: str, stream: str) -> StreamSpool:
         key = market, symbol, stream
         if key not in self.spools:
+            def observe_event(event: EventEnvelope, frame_bytes: int, queue_depth: int) -> None:
+                # Aggregate the physical Raw stream once; per-source health remains
+                # in the availability ledger. Do not parse combined JSON again.
+                self.metrics.safely_observe_written(
+                    event, raw_frame_bytes=frame_bytes, queue_depth=queue_depth,
+                )
+
+            def observe_operation(name: str, duration: int) -> None:
+                self.metrics.safely_observe_operation(
+                    market=market, stream=stream, name=name, duration_ns=duration,
+                )
+
+            def observe_seal(manifest: dict[str, object]) -> None:
+                self.metrics.safely_observe_seal(manifest)
+
             self.spools[key] = StreamSpool(
                 layout=self.layout,
                 catalog=self.catalog,
@@ -377,6 +401,9 @@ class SelectedAssetCapture:
                 rotation=RotationPolicy(self.config.rotation_seconds, self.config.rotation_bytes),
                 durability_interval_seconds=self.config.durability_interval_seconds,
                 max_frame_bytes=self.config.max_frame_bytes,
+                event_observer=observe_event,
+                operation_observer=observe_operation,
+                seal_observer=observe_seal,
             )
             self._spool_locks[key] = asyncio.Lock()
         return self.spools[key]
@@ -898,6 +925,10 @@ class SelectedAssetCapture:
             "config": self.coverage.model_dump(mode="json"),
             "continuity_qualified": False,
             "availability_journal_pending": len(self.availability.pending),
+            "capture_metrics": {
+                "failure_count": self.metrics.failure_count,
+                "last_error_type": self.metrics.last_error_type,
+            },
             "transport_progress": [
                 {"group_id": group.name, **collector.capture_progress()}
                 for collector, group in self._group_sources.items()
@@ -905,11 +936,19 @@ class SelectedAssetCapture:
         }
 
     async def _flush_availability(self, *, all_pending: bool = False) -> None:
+        deadline = time.monotonic() + AVAILABILITY_FLUSH_SECONDS
+        batches = 0
         while self.availability.pending:
             batch = self.availability.batch()
             await run_owned_blocking_call(self.catalog.persist_source_availability, batch)
             self.availability.acknowledge(len(batch))
-            if not all_pending:
+            batches += 1
+            # Preserve <=128 records per Catalog transaction and yield after
+            # every owned blocking call. One transaction per outer pass cannot
+            # keep up with even the 2,233-source BTC checkpoint rate.
+            if not all_pending and (
+                batches >= AVAILABILITY_FLUSH_MAX_BATCHES or time.monotonic() >= deadline
+            ):
                 break
 
     def _writer_stalls(self, now: int) -> dict[tuple[str, str, str, str], int]:
@@ -1013,6 +1052,9 @@ class SelectedAssetCapture:
                         or now - self._last_monitor_utc_ns >= 1_000_000_000):
                     self._observe_availability(now)
                 await self._flush_availability()
+                if time.monotonic() - self._last_metrics_flush >= 10:
+                    await run_owned_blocking_call(self.metrics.safely_flush)
+                    self._last_metrics_flush = time.monotonic()
                 for key, task in list(self.polls.items()):
                     if task.done():
                         task.result()
@@ -1089,6 +1131,7 @@ class SelectedAssetCapture:
                     cleanup_error = exc
             try:
                 await self._flush_availability(all_pending=True)
+                await run_owned_blocking_call(self.metrics.safely_flush)
             except BaseException as exc:
                 cleanup_error = exc
             for client in self.clients.values():

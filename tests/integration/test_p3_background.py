@@ -20,6 +20,7 @@ from binance_market_data_recorder.binance.usdm.websocket import (
 from binance_market_data_recorder.collector.coverage import SelectedAssetCapture
 from binance_market_data_recorder.config import RecorderConfig
 from binance_market_data_recorder.domain.event import EventEnvelope
+from binance_market_data_recorder.metrics.model import MetricAggregate
 from binance_market_data_recorder.metrics.report import DailyReporter
 from binance_market_data_recorder.normalize import Normalizer
 from binance_market_data_recorder.normalize.raw import iter_source_records, load_source_chunks
@@ -166,6 +167,13 @@ def test_receive_and_normal_drain_continue_with_all_background_consumers(tmp_pat
                 for record in iter_source_records(chunk)
             ]
             assert restored == expected
+            owner.metrics.flush()
+            metrics = list(catalog.iter_metric_batches_through("2099-01-01"))
+            written = sum(MetricAggregate.from_document(row["aggregate"]).counters.get(
+                              "raw_records_written", 0)
+                          for row in metrics if row["stream"] == group.name)
+            assert written == len(restored)
+            assert owner.metrics.failure_count == 0
             assert not list(fixture.layout.active.glob("*.partial"))
             assert verify_new(fixture.layout, catalog)["pending_files"] == 0
 

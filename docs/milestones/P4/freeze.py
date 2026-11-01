@@ -59,9 +59,12 @@ def main() -> None:
     frozen = {
         "schema_version": "p4-run-freeze.v1",
         "frozen_at_utc_ns": now,
-        "source_git_sha": "ff865cd2c24cd9b8e41d5088725d9fd166cbafff",
+        "source_git_sha": "8bdae2005b0311dac4615bcecffd56c8a3cb211c",
         "config_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
         "config": config.model_dump(mode="json"),
+        "installed_artifact": json.loads(
+            (config_path.parent / "installed-identity.json").read_text()
+        ),
         "products": [p.public_dict() for p in products],
         "directory_products": [p.public_dict() for p in directory.products.values()],
         "sources": [s.public_dict() for s in plan],
