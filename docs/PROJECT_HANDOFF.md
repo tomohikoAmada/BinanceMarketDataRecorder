@@ -1,4 +1,20 @@
-# Current handoff: P3 review requires corrections — 2026-10-30
+# Current handoff: P3 correction candidate awaits re-review — 2026-11-01
+
+Runtime correction `41abdbb` addresses P3-R1–R3; [P3 result](milestones/P3/README.md)
+records the new formal regressions, unchanged original reproduction and exact-commit
+validation/CI: local2,421 tests and exact41abdbb macOS2,421/Ubuntu2,417 tests pass;
+CI static/contract/build/install steps and decoded logs are verified. Correctness fixes cover durable forced/intent/recovery flags, v2 proof
+selection for the bounded existing queue, pending-write timing after idle, and immediate
+RPI fault/valid-bridge recovery. Historical Raw, old proofs, prior review and P2 scope
+remain intact. No additional recovery loop or history-wide Raw verification was added.
+
+P3 remains **NOT ACCEPTED until independent re-review closes it**. Author correction
+checkboxes are distinct from that acceptance gate. Keep Draft PR #89 and its unmerged
+branch; do not merge, delete the branch, start P4 or perform production operations.
+No VPS/production data or real external volume was accessed. The earlier handoff and
+review below are retained evidence of the original candidate.
+
+# Prior handoff: P3 review requires corrections — 2026-10-30
 
 [Independent review](milestones/P3/review-20261030.md) of b72761a/8df01c8 finds
 P3-R1 (durable gap flags omitted from verification), P3-R2 (idle time counted as

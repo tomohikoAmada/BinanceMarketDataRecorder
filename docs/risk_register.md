@@ -1,5 +1,14 @@
 # Risk Register
 
+## P3 correction candidate — 2026-11-01
+
+Runtime `41abdbb` corrects P3-R1–R3 with 17 new regressions and the unchanged original
+reproductions. v2 proofs include durable sealing/recovery controls; existing v1 queue
+entries require bounded revalidation without rewriting old proofs or enrolling old
+history. Sparse writer timing and immediate RPI gap recovery have explicit boundaries.
+See the [P3 record](milestones/P3/README.md). These are author corrections, not independent
+closure: P3 remains NOT ACCEPTED and R-078/production qualification remain open.
+
 ## P3 independent review blockers — 2026-10-30
 
 [Review and reproductions](milestones/P3/review-20261030.md) establish three current

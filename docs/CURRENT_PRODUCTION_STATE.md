@@ -1,5 +1,10 @@
 # Current Production State
 
+2026-11-01: P3-R1–R3 correction candidate `41abdbb` is on Draft PR #89.
+The [P3 correction record](milestones/P3/README.md) distinguishes author validation
+from pending independent acceptance. P3 remains NOT ACCEPTED; no production operation
+or P4 run was performed. Main/installed production state is not changed by this work.
+
 2026-10-30: P0–P2 are accepted under the approved initial-release scope;
 [P3 development](milestones/P3/README.md) is delivered and locally validated, but
 [independent review](milestones/P3/review-20261030.md) leaves P3 NOT ACCEPTED with

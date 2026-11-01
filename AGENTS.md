@@ -1,5 +1,11 @@
 # Binance Market Data Recorder Agent Contract
 
+Current correction candidate November1, 2026: 41abdbb implements P3-R1–R3 and
+17 formal regressions; see the [P3 result](docs/milestones/P3/README.md). Author
+validation/CI evidence does not close independent re-review. P3 remains NOT ACCEPTED;
+retain Draft PR #89 and codex/p3-recovery-background, without merge/branch deletion
+or P4/production operations. The October30 findings below remain the original review.
+
 Current independent review October30, 2026: P3 is NOT ACCEPTED. Review of
 b72761a/8df01c8 reproduces P3-R1 (verifier ignores durable manifest-only gap flags),
 P3-R2 (sparse-stream idle time miscounted as writer stall), and P3-R3 (RPI gap

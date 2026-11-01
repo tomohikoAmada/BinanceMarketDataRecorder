@@ -1,9 +1,49 @@
 # P3：恢复与后台任务不再互相拖累
 
 **当前状态：P3独立审查暂不通过。** [2026-10-30审查](review-20261030.md)发现
-P3-R1–R3，均有可重复反例；修正列在计划P3节。已独立复跑2,404项全仓及35项P3测试，
+P3-R1–R3，原反例保留；2026-11-01修正候选与验证见下节，独立复审仍待完成。已独立复跑2,404项全仓及35项P3测试，
 通过不等于覆盖上述缺陷。保留[Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)
 供团队修正。下文是作者原交付记录，不作为独立验收或P4启动依据。
+
+## 2026-11-01：P3-R1–R3修正候选
+
+修正提交 `41abdbb11aed07c9107305735726640cf5a6b8a3` 已在原分支推送，
+[Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)保留。
+P3仍为 **NOT ACCEPTED，待独立复审**；本轮作者修正不是独立验收，也不启动P4。
+
+- **P3-R1**：v2 verifier在同一操作内读取当前chunk的SEALING强制flags/intent及
+  RECOVERED证据，联合Raw连接边界校验manifest，回读结束再核对控制快照。
+  有记录及零记录文件丢失必要缺口都失败；正确不完整文件仍通过。v2证明绑定控制证据，
+  不增加Raw读取或内容哈希。v1证明正文/ID保持不变，版本不匹配的已入队文件按原批次
+  预算复核；只增版本标量列，不回填或全历史扫描。只读旧schema仍能报告待验证。
+- **P3-R2**：取当前pending起点与期间last-write进展的较晚边界。空闲后仅等待0.1秒
+  保持健康；超过10秒的真实等待仍打开原连接组缺口，恢复后保留区间，其他连接组不受影响。
+- **P3-R3**：RPI在持久化回调中先记录不可靠，再尝试已有快照；快照/后续帧只有在
+  现有序列桥可靠、源已连接且无错误时记录恢复。旧快照不能关闭缺口；恢复边界不能早于
+  上一次已观察边界。没有另起恢复循环，Raw原文及普通盘口行为不变。
+
+新增17项正式回归。首批12项在修正前 **9失败/3通过**，见
+[原代码失败摘要](corrections-20261101/pre-fix-regression-summary.txt)；
+普通盘口及近期写进展是保留对照。新增测试还覆盖独立forced/intent/recovery三种证据、
+控制读后变更/无效格式、v1证明与schema升级兼容，不以重复全历史审计替代修正。
+
+[未改动的原审查程序](review-20261030/reproduce.py)在修正后的
+[完整输出](corrections-20261101/reproductions.json)显示：两种误标完整manifest均
+`verified=0/failed=1`；稀疏流0.1秒待写的不可用时间为0；RPI保留200,000,001ns缺口，
+普通盘口对照仍为900,000,000ns。RPI多出的1ns来自该原复现的启动边界，正式受控时钟
+测试将窗口从首个有效点开始，分别精确核对100ms/200ms恢复区间和保存原文。
+
+本机完整套件 **2,421通过/24跳过/5 stress未选**；17项新增回归及相关46项检查通过。
+Ruff、356文件strict mypy、M0、Go golden、sdist/wheel及新wheel的v2校验命令冒烟通过。
+修正提交的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41279023391)
+已核对完成及解码日志：macOS **2,421通过/24跳过**、Ubuntu **2,417通过/28跳过**，
+各5项stress未选、13条既有fork警告；静态、M0、Go golden、构建/安装及Linux生产依赖一致性
+步骤全部成功。精确CI提交是`41abdbb`，后续文档提交不冒用该CI提交身份。详见
+[修正验证记录](corrections-20261101/checks.json)；原交付及独立审查的日志/结论不改写。
+修正后仍需独立复审闭合，生产readiness保持NO。未访问VPS、启停生产服务、读取生产数据，
+也未写入真实外卷；未合并或清理分支。
+
+## 原交付记录（保留）
 
 2026-10-30，本机开发交付。起点为合并 P2 的 main `ec46e32`，工作分支
 `codex/p3-recovery-background`。用户本轮授权完成 P3；未连接 VPS、部署、启停生产服务，

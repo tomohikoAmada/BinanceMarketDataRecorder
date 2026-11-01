@@ -1,0 +1,72 @@
+{
+  "probes": [
+    {
+      "finding": "P3-R1",
+      "record_count": 1,
+      "valid_control_verified": 1,
+      "after_false_complete_verified": 0,
+      "after_false_complete_failed": 1,
+      "catalog_sealing_evidence": {
+        "seal_forced_flags": [
+          "reconnect_gap"
+        ],
+        "seal_intent": {
+          "required_forced_flags": [
+            "reconnect_gap"
+          ]
+        },
+        "verified_frames": 1
+      },
+      "expected": "Reject missing durable reconnect flags; never publish VERIFIED.",
+      "finding_reproduced": false
+    },
+    {
+      "finding": "P3-R1",
+      "record_count": 0,
+      "valid_control_verified": 1,
+      "after_false_complete_verified": 0,
+      "after_false_complete_failed": 1,
+      "catalog_sealing_evidence": {
+        "seal_forced_flags": [
+          "reconnect_gap"
+        ],
+        "seal_intent": {
+          "required_forced_flags": [
+            "reconnect_gap"
+          ]
+        },
+        "verified_frames": 0
+      },
+      "expected": "Reject missing durable reconnect flags; never publish VERIFIED.",
+      "finding_reproduced": false
+    },
+    {
+      "finding": "P3-R2",
+      "pending_seconds": 0.1,
+      "reason": null,
+      "unavailable_seconds": 0.0,
+      "expected": "No writer stall after only 0.1s pending; quiet time stays healthy.",
+      "finding_reproduced": false
+    },
+    {
+      "finding": "P3-R3",
+      "stream": "diff_depth",
+      "sequence_failure_observed": true,
+      "recovered_before_monitor": true,
+      "unavailable_ns": 900000000,
+      "coverage": 0.91,
+      "expected": "Retain the observed sequence failure even when recovery is quick.",
+      "finding_reproduced": false
+    },
+    {
+      "finding": "P3-R3",
+      "stream": "rpi_depth",
+      "sequence_failure_observed": true,
+      "recovered_before_monitor": true,
+      "unavailable_ns": 200000001,
+      "coverage": 0.9799999999,
+      "expected": "Retain the observed sequence failure even when recovery is quick.",
+      "finding_reproduced": false
+    }
+  ]
+}
