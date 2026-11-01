@@ -1,4 +1,117 @@
-# Current handoff: P2 accepted; P3 next — 2026-10-29
+# Current handoff: P3 accepted; P4 next, not started — 2026-11-01
+
+[Independent closure](milestones/P3/review-20261101.md#r3-independent-closure) of
+runtime `30e8a4a` and delivery HEAD `30ebbd6` closes P3-R3 without a new blocking
+finding. R1/R2 and P0–P2 remain closed. Independent 66-test and unchanged clock/original
+probe checks pass, including exact ten-second unknown intervals, recovery after the
+boundary, source blockers and retained fast-recovery behavior. Runtime and delivery
+HEAD CI/full logs each confirm macOS 2,435 / Ubuntu 2,431 tests and all engineering steps.
+
+P3 is **ACCEPTED** and the plan's completed items are checked. The owner authorized
+merging PR #89 and safely removing its remote branch after ancestry confirmation;
+preserve unrelated local worktrees. The remaining work starts at P4's BTC full-scope
+2h/24h observation with normal background tasks, then P5/P6 as planned. These runs
+have not started. This review performs no deployment, VPS/service or production-data
+operation and grants no capacity/99.5% credit. Retained NOT ACCEPTED/Draft instructions
+below are historical; use this current status for the next development handoff.
+
+# Prior handoff: remaining P3-R3 correction delivered; re-review pending — 2026-11-01
+
+Runtime `30e8a4a` fixes RPI callbacks closing an active clock-uncertainty gap. Current
+completion time must reach the known boundary, even for queued pre-reversal messages;
+frame/snapshot recovery shares the monitor's WS writer/connection/error/sequence checks
+and leaves dormant sources alone. The same known-clock guard protects REST success
+callbacks. Immediate sequence-gap recording, Raw and the original journal stay intact.
+
+Fourteen new regressions pass (old runtime: eleven failures/three passing controls), with
+66 related P3 checks and unchanged reviewer probes. Both original clock-reproduction
+cases now retain ten seconds unknown, with recovery after the boundary. See the
+[P3 result](milestones/P3/README.md): local2,435 tests and exact30e8a4a CI macOS2,435 /
+Ubuntu2,431 tests plus static/contract/build/install checks pass; full decoded logs and
+run head SHA are retained. Subsequent documentation delivery leaves runtime/tests unchanged.
+
+Next: independently re-review this remaining correction. P3 stays **NOT ACCEPTED**;
+R1/R2 and P0–P2 remain closed. Keep Draft PR #89 and the unmerged branch; do not merge,
+delete it, start P4 or perform production operations. No VPS/production data or real
+external volume was accessed. Prior independent review and candidate evidence follow.
+
+# Prior handoff: P3-R1/R2 closed; R3 has one remaining correction — 2026-11-01
+
+[Independent re-review](milestones/P3/review-20261101.md) of runtime `41abdbb` and
+delivery HEAD `1243b99` closes P3-R1 and P3-R2. The original short RPI gap is now
+retained, but the new immediate recovery callback clears an active clock-uncertainty
+gap before its boundary ends. In the controlled ten-second window, the no-callback
+control retains ten seconds unknown; valid RPI callbacks retain only 0.01 seconds.
+
+Team next: complete the remaining **P3-R3** checkbox in the
+[P3 plan](production_milestone_plan.md#p3恢复与后台任务不再互相拖累).
+Immediate sequence recovery must respect existing source availability conditions.
+Add the clock-uncertainty regression, preserve the original quick-recovery assertions,
+and verify normal recovery after the uncertainty ends. Reuse the existing state and
+journal; no new fault framework, historical audit or data-format change is required.
+
+The 52 independent targeted checks and original probes pass, as do Ruff, mypy and M0.
+Exact runtime CI/logs confirm macOS 2,421 / Ubuntu 2,417 tests; delivery HEAD dual-platform CI
+also succeeds. These checks miss the newly reproduced remaining case. P3 stays
+**NOT ACCEPTED**. Retain Draft PR #89 and its branch for correction and independent
+re-review; R1/R2 and P0–P2 stay closed. No merge, branch deletion, P4 or production
+operation occurred. Historical candidate/validation records below remain unchanged.
+
+# Prior handoff: P3 correction candidate awaits re-review — 2026-11-01
+
+Runtime correction `41abdbb` addresses P3-R1–R3; [P3 result](milestones/P3/README.md)
+records the new formal regressions, unchanged original reproduction and exact-commit
+validation/CI: local2,421 tests and exact41abdbb macOS2,421/Ubuntu2,417 tests pass;
+CI static/contract/build/install steps and decoded logs are verified. Correctness fixes cover durable forced/intent/recovery flags, v2 proof
+selection for the bounded existing queue, pending-write timing after idle, and immediate
+RPI fault/valid-bridge recovery. Historical Raw, old proofs, prior review and P2 scope
+remain intact. No additional recovery loop or history-wide Raw verification was added.
+
+P3 remains **NOT ACCEPTED until independent re-review closes it**. Author correction
+checkboxes are distinct from that acceptance gate. Keep Draft PR #89 and its unmerged
+branch; do not merge, delete the branch, start P4 or perform production operations.
+No VPS/production data or real external volume was accessed. The earlier handoff and
+review below are retained evidence of the original candidate.
+
+# Prior handoff: P3 review requires corrections — 2026-10-30
+
+[Independent review](milestones/P3/review-20261030.md) of b72761a/8df01c8 finds
+P3-R1 (durable gap flags omitted from verification), P3-R2 (idle time counted as
+writer stall), and P3-R3 (brief RPI gaps missed by periodic monitoring).
+All three have offline reproductions. The independent 2,404-test full suite and
+35 P3 checks pass but do not cover these failures. P3 is NOT ACCEPTED.
+Corrective checkboxes are in the production plan's P3 section, using P3-R1–R3 IDs;
+historical P2 acceptance remains unchanged.
+Continue corrections on Draft PR #89 / codex/p3-recovery-background. Do not merge,
+delete the unmerged branch, or advance to P4 before fixes and independent re-review.
+No production operation was performed.
+
+The local implementation handoff below is retained as delivery history, not acceptance.
+
+# Prior handoff: P3 local delivery; P4 proposed next — 2026-10-30
+
+The user authorized P3 development. [P3 result](milestones/P3/README.md) and
+[ADR-0056](adr/0056-source-recovery-and-bounded-background-verification.md) describe
+durable per-source gaps/recovery, the independent new-file queue/proofs, bounded
+report/verifier children and archive I/O, reserve safety for all configurations,
+compatible restricted normalization and measured same-boundary readback reuse.
+See the result/check record for commands, exact local checks and limitations.
+
+P0–P2 acceptance is unchanged; do not repeat their history audits. P3 is a local
+development delivery, not VPS capacity, dual-platform CI or production qualification.
+The next phase is P4's explicitly authorized BTC full-scope 2h/24h run with normal
+background work. No VPS, deployment, production service/data or real external volume
+was accessed in P3. P4–P6 have not started; production readiness remains NO.
+
+The ADR-0055 exception and unknown official dated-premium applicability remain;
+issue #585 is nonblocking follow-up. Preserve historical failures and original readers.
+Qualification freezes expected source IDs/configuration; diagnostic discovery-only
+reports cannot hide sources that never appeared. Freeze verifier enrollment high-water
+at checkpoints and finish that pending boundary while capture continues.
+
+Prior P2 handoffs below are retained history, not instructions to reopen closed work.
+
+# Prior handoff: P2 accepted; P3 next — 2026-10-29
 
 [Independent R5 review](milestones/P2/review-20261029.md#r5-independent-closure)
 accepts correction 1c1785c and delivery HEAD 464ed56. Controlled writer timing covers

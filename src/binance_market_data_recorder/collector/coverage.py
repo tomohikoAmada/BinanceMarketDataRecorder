@@ -50,6 +50,7 @@ from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout
 from ..supervisor.depth_continuity import DepthContinuity
 from ..supervisor.readiness import CORE_STREAMS, CollectorReadiness, ReadinessSnapshot
+from .availability import AvailabilityJournal
 
 
 @dataclass(slots=True)
@@ -64,13 +65,19 @@ class SourceState:
     connected: bool = False
     failures: int = 0
     dormant: bool = False
+    response_deadline_utc_ns: int | None = None
+    publication_status: str = "NOT_APPLICABLE"
+    publication_time_ms: int | None = None
     recent_trades: RecentTradesCompactor | None = None
     sequence_reliable: bool | None = None
     completed_deliveries: set[int] = field(default_factory=set)
+    availability: dict[str, object] = field(default_factory=dict)
 
     def public_dict(self, now: int) -> dict[str, object]:
         source = self.source
-        deadline = (self.last_success or self.first_due) + int((source.cadence_seconds + 10) * 1e9)
+        deadline = self.response_deadline_utc_ns or (
+            (self.last_success or self.first_due) + int((source.cadence_seconds + 10) * 1e9)
+        )
         status = (
             "DORMANT_LIFECYCLE"
             if self.dormant
@@ -99,9 +106,14 @@ class SourceState:
             "success_deadline_utc_ns": deadline,
             "cadence_seconds": source.cadence_seconds,
             "priority": source.priority,
-            "data_freshness_evaluated": False,
+            "data_freshness_evaluated": source.lifecycle in {"closed_bar", "after_delivery"}
+            or source.endpoint.startswith("/futures/data/"),
+            "publication_status": self.publication_status,
+            "publication_time_ms": self.publication_time_ms,
             "continuity_qualified": False,
             "sequence_reliable": self.sequence_reliable,
+            "availability": self.availability,
+            "consecutive_failures": self.failures,
         }
 
 
@@ -158,6 +170,10 @@ class ProductCapture:
             state.error = (
                 "MalformedWebSocketPayload" if "malformed" in logical.capture_flags else None
             )
+        if state is not None and state.error is not None:
+            self.owner.availability.failure(
+                "/".join(state.source.key), logical.receive_time_utc_ns, state.error
+            )
         if logical.stream in CORE_STREAMS:
             self.readiness.observe_persisted(logical)
             if (
@@ -168,11 +184,22 @@ class ProductCapture:
                     self.readiness.observe_snapshot_persisted(self.snapshot)
                 if not self.readiness.snapshot().orderbook_synchronized:
                     self.owner.request_snapshot(self.product)
+            if (logical.stream == "diff_depth" and state is not None
+                    and not self.readiness.snapshot().orderbook_synchronized):
+                self.owner.availability.unavailable(
+                    "/".join(state.source.key), logical.receive_time_utc_ns,
+                    "DEPTH_RESYNC_PENDING",
+                )
         if logical.stream == "rpi_depth":
             if "malformed" in logical.capture_flags:
                 self.rpi.invalidate(logical.receive_time_utc_ns)
             else:
                 self.rpi.offer(logical.model_copy(update={"stream": "diff_depth"}))
+            # Observe the known fault before a cached/new snapshot can bridge it.
+            if not self.rpi.is_reliable and state is not None:
+                self.owner.availability.unavailable(
+                    "/".join(state.source.key), logical.receive_time_utc_ns, "DEPTH_RESYNC_PENDING"
+                )
             if self.rpi.bootstrap_buffer_overflowed:
                 self.rpi = DepthContinuity(
                     self.product.key.market,
@@ -184,8 +211,7 @@ class ProductCapture:
                 self.rpi.synchronize(self.rpi_snapshot)
             if not self.rpi.is_reliable:
                 self.owner.request_snapshot(self.product, rpi=True)
-            if state is not None:
-                state.sequence_reliable = self.rpi.is_reliable
+            self._observe_rpi_health(logical.receive_time_utc_ns)
         if logical.source_sequence.get("sourceStream") == "server_shutdown":
             self.owner.request_snapshot(self.product)
 
@@ -193,14 +219,44 @@ class ProductCapture:
         if envelope.stream == "rpi_depth_snapshot":
             self.rpi_snapshot = envelope.model_copy(update={"stream": "depth_snapshot"})
             self.rpi.synchronize(self.rpi_snapshot)
+            self._observe_rpi_health(envelope.receive_time_utc_ns)
             return
         self.snapshot = logical_envelope(envelope)
         self.readiness.observe_snapshot_persisted(self.snapshot)
+
+    def _observe_rpi_health(self, received_at: int) -> None:
+        state = self.source_states.get("rpi_depth")
+        if state is None:
+            return
+        state.sequence_reliable = self.rpi.is_reliable
+        # A bridge repairs sequence continuity, not other source unavailability.
+        if self.rpi.is_reliable and not state.dormant:
+            key = "/".join(state.source.key)
+            now = time.time_ns()
+            # A frame received before a clock reversal may persist afterwards.
+            # Its receive time cannot end uncertainty in the current wall clock.
+            if now < self.owner._clock_unreliable_until:
+                return
+            completed_at = max(received_at, now)
+            health = self.owner.availability.sources.get(key)
+            if health is not None and (
+                completed_at < health.observed_at or health.unavailable_since is None
+            ):
+                return
+            # Do not scan writer groups for every healthy persisted frame.
+            stalled = self.owner._writer_stalls(completed_at)
+            reason, since = self.owner._ws_unavailability(state, completed_at, stalled)
+            if reason is None:
+                self.owner.availability.valid(key, completed_at)
+            else:
+                self.owner.availability.unavailable(key, completed_at, reason, since=since)
 
     def lifecycle(self, group: StreamGroup, event: str) -> None:
         for source in group.sources:
             state = self.owner.sources[source.key]
             state.connected = event == "connected"
+            if event != "connected":
+                self.owner.availability.failure("/".join(source.key), time.time_ns(), event)
             if source.stream in CORE_STREAMS:
                 if event == "connected":
                     self.readiness.observe_connected(source.stream)
@@ -231,7 +287,7 @@ class ProductCapture:
                     group, self.product, self.persisted, partial(self.lifecycle, group)
                 )
                 self.groups.append(collector)
-                tasks.create_task(collector.run(stop))
+                tasks.create_task(self.owner.run_group(collector, stop))
             await stop.wait()
 
 
@@ -277,6 +333,10 @@ class SelectedAssetCapture:
         self._changed = asyncio.Event()
         self._stop: asyncio.Event | None = None
         self._discovery_lock = asyncio.Lock()
+        self.availability = AvailabilityJournal(instance_id)
+        self._last_monitor_utc_ns: int | None = None
+        self._clock_unreliable_until: int = 0
+        self._group_sources: dict[UsdMStreamCollector, StreamGroup] = {}
         self._wire_started: set[tuple[str, str, str, str]] = set()
         self._snapshot_after: dict[tuple[str, str, str, str], float] = {}
         for venue in ("spot", "usdm", "coinm"):
@@ -426,7 +486,14 @@ class SelectedAssetCapture:
             envelope_observer=observed,
             lifecycle_observer=lifecycle,
         )
+        self._group_sources[collector] = group
         return collector
+
+    async def run_group(self, collector: UsdMStreamCollector, stop: asyncio.Event) -> None:
+        try:
+            await collector.run(stop)
+        finally:
+            self._group_sources.pop(collector, None)
 
     def _observe_shared(self, group: StreamGroup, envelope: EventEnvelope) -> None:
         stream = envelope.source_sequence.get("sourceStream")
@@ -439,6 +506,10 @@ class SelectedAssetCapture:
                     "MalformedWebSocketPayload" if "malformed" in envelope.capture_flags else None
                 )
                 state.count += 1
+                if state.error is not None:
+                    self.availability.failure(
+                        "/".join(source.key), envelope.receive_time_utc_ns, state.error
+                    )
         if stream == "contract_info":
             # Lifecycle events trigger an authoritative directory refresh; never guess rules.
             for venue in ("usdm", "coinm"):
@@ -448,6 +519,8 @@ class SelectedAssetCapture:
     def _shared_lifecycle(self, group: StreamGroup, event: str) -> None:
         for source in group.sources:
             self.sources[source.key].connected = event == "connected"
+            if event != "connected":
+                self.availability.failure("/".join(source.key), time.time_ns(), event)
 
     async def reconcile(self, venue: str, document: dict[str, Any]) -> None:
         async with self._discovery_lock:
@@ -571,7 +644,7 @@ class SelectedAssetCapture:
                             partial(self._observe_shared, group),
                             partial(self._shared_lifecycle, group),
                         )
-                        tasks.create_task(collector.run(child_stop))
+                        tasks.create_task(self.run_group(collector, child_stop))
                     await child_stop.wait()
 
             self.shared_tasks[key] = asyncio.create_task(run_shared(tuple(sources), stop))
@@ -607,14 +680,24 @@ class SelectedAssetCapture:
         source = state.source
         await shared_request_budget().acquire(source.charges)
         state.last_attempt = time.time_ns()
+        eligible_since = state.first_due
+        if source.lifecycle == "after_delivery":
+            delivery_times = [p.delivery_time_ms * 1_000_000
+                for p in self.directory.products.values()
+                if p.key.symbol in source.products and p.delivery_time_ms is not None
+                and p.delivery_time_ms * 1_000_000 <= state.last_attempt
+                and p.delivery_time_ms not in state.completed_deliveries]
+            eligible_since = max(eligible_since, min(delivery_times, default=state.last_attempt))
+        self.availability.ensure("/".join(source.key), eligible_since)
         self._wire_started.add(source.key)
+        parameters = self._parameters(source)
         result = await run_owned_blocking_call(
             capture_public_response,
             source,
             self.clients[source.venue_market].request,
             collector_instance_id=self.instance_id,
             collector_version=self.version,
-            parameters=self._parameters(source),
+            parameters=parameters,
             recent_trades=state.recent_trades,
         )
         # A known rejection closes new admission before any storage await.
@@ -654,8 +737,18 @@ class SelectedAssetCapture:
         await self.persist_rest(result.envelope)
         state.count += 1
         state.error = result.error
+        if result.error is not None:
+            self.availability.failure(
+                "/".join(source.key), time.time_ns(), result.error,
+                since=state.last_attempt,
+            )
         if result.valid:
             previous_success = state.last_success
+            if "sequence_gap" in result.envelope.capture_flags:
+                self.availability.failure(
+                    "/".join(source.key), result.envelope.receive_time_utc_ns,
+                    "OBSERVED_SEQUENCE_GAP", since=previous_success or state.first_due,
+                )
             state.last_success = result.envelope.receive_time_utc_ns
             state.failures = 0
             state.next_due = (
@@ -667,8 +760,16 @@ class SelectedAssetCapture:
                 rows = result.document
                 interval = str(dict(source.parameters)["interval"])
                 now_ms = time.time_ns() // 1_000_000
+                state.publication_status = "PENDING"
                 if rows:
                     latest_close = max(row[6] for row in rows)
+                    state.publication_time_ms = latest_close
+                    # Query endTime names the native period requested by the existing
+                    # source adapter. Do not credit an older closed bar as that period.
+                    if latest_close >= parameters["endTime"]:
+                        state.publication_status = "CURRENT"
+                    else:
+                        state.error = "DataPublicationStale"
                     if interval == "1M":
                         from datetime import UTC, datetime
 
@@ -684,7 +785,32 @@ class SelectedAssetCapture:
                     delay = (next_close - now_ms) / 1000 + 1
                     state.next_due = time.monotonic() + (max(1, delay) if delay >= 0 else 60)
                 else:
+                    state.error = "DataPublicationPending"
                     state.next_due = time.monotonic() + 60
+            if source.endpoint.startswith("/futures/data/") and source.family != "D31":
+                rows = result.document
+                timestamps = (
+                    [row.get("timestamp") for row in rows] if isinstance(rows, list) else []
+                )
+                if not isinstance(rows, list):
+                    state.error = "DataPeriodShapeUnknown"
+                    state.publication_status = "UNKNOWN"
+                elif any(not isinstance(value, int) or isinstance(value, bool)
+                       or not parameters["startTime"] <= value <= parameters["endTime"]
+                       for value in timestamps):
+                    state.error = "DataOutsideRequestedPeriod"
+                    state.publication_status = "STALE"
+                else:
+                    state.publication_status = (
+                        "EMPTY_EVALUATED_QUERY_WINDOW" if not rows else "CURRENT"
+                    )
+                    state.publication_time_ms = max(timestamps, default=None)
+            if source.cadence_seconds:
+                state.response_deadline_utc_ns = (
+                    time.time_ns() + int((max(0, state.next_due - time.monotonic()) + 10) * 1e9)
+                    if source.lifecycle == "closed_bar" else
+                    result.envelope.receive_time_utc_ns + int((source.cadence_seconds + 10) * 1e9)
+                )
             if source.family == "D31":
                 rows = result.document if isinstance(result.document, list) else [result.document]
                 state.completed_deliveries.update(row["deliveryTime"] for row in rows)
@@ -698,6 +824,21 @@ class SelectedAssetCapture:
                 if not state.dormant:
                     state.last_success = previous_success
                     state.error = "DeliveryPublicationPending"
+                    state.publication_status = "PENDING"
+                else:
+                    state.publication_status = "CURRENT"
+            completed_at = time.time_ns()
+            if state.error is None and (state.response_deadline_utc_ns is None
+                                        or completed_at <= state.response_deadline_utc_ns):
+                if completed_at >= self._clock_unreliable_until:
+                    self.availability.valid("/".join(source.key), completed_at)
+                if state.dormant:
+                    self.availability.suspend("/".join(source.key), completed_at)
+            elif state.error is not None:
+                self.availability.failure(
+                    "/".join(source.key), completed_at, state.error,
+                    since=previous_success or state.first_due,
+                )
             if source.stream == "exchange_info":
                 await self.reconcile(source.venue_market, result.document)
         else:
@@ -732,13 +873,118 @@ class SelectedAssetCapture:
             else [],
             "config": self.coverage.model_dump(mode="json"),
             "continuity_qualified": False,
+            "availability_journal_pending": len(self.availability.pending),
         }
+
+    async def _flush_availability(self, *, all_pending: bool = False) -> None:
+        while self.availability.pending:
+            batch = self.availability.batch()
+            await run_owned_blocking_call(self.catalog.persist_source_availability, batch)
+            self.availability.acknowledge(len(batch))
+            if not all_pending:
+                break
+
+    def _writer_stalls(self, now: int) -> dict[tuple[str, str, str, str], int]:
+        stalled: dict[tuple[str, str, str, str], int] = {}
+        for collector, group in self._group_sources.items():
+            progress = collector.capture_progress()
+            pending = progress["pending_since_utc_ns"]
+            last_write = progress["last_write_utc_ns"]
+            boundary = (
+                max(pending, last_write)
+                if pending is not None and last_write is not None else pending
+            )
+            if pending is not None and boundary is not None and now - boundary > 10_000_000_000:
+                stalled.update((source.key, boundary) for source in group.sources)
+        return stalled
+
+    def _ws_unavailability(
+        self, state: SourceState, now: int, stalled: dict[tuple[str, str, str, str], int]
+    ) -> tuple[str | None, int | None]:
+        """Use the same current blockers for monitor and immediate RPI recovery."""
+        source = state.source
+        if now < self._clock_unreliable_until:
+            return "CLOCK_DISCONTINUITY", None
+        if not state.connected:
+            return "DISCONNECTED", None
+        if source.key in stalled:
+            return "WRITER_STALLED", stalled[source.key]
+        if state.error is not None:
+            return state.error, None
+        if source.stream == "diff_depth":
+            product = self.collectors.get(ProductKey(source.market, source.symbol))
+            if product is None or not product.readiness_snapshot().orderbook_synchronized:
+                return "DEPTH_RESYNC_PENDING", None
+        elif source.stream == "rpi_depth" and state.sequence_reliable is not True:
+            return "DEPTH_RESYNC_PENDING", None
+        return None, None
+
+    def _observe_availability(self, now: int) -> None:
+        stalled = self._writer_stalls(now)
+        previous = self._last_monitor_utc_ns
+        if previous is not None and now < previous:
+            self._clock_unreliable_until = max(self._clock_unreliable_until, previous)
+        self._last_monitor_utc_ns = now
+        for state in self.sources.values():
+            source = state.source
+            key = "/".join(source.key)
+            if state.dormant and key not in self.availability.sources and (
+                key not in self.availability.previous
+                or self.availability.previous[key].get("dormant")
+            ):
+                state.availability = {"lifecycle": "DORMANT", "source_id": key}
+                continue
+            health = self.availability.ensure(
+                key, now if source.lifecycle == "after_delivery" else state.first_due
+            )
+            if state.dormant:
+                self.availability.suspend(key, now)
+                # End eligibility explicitly; do not reinterpret earlier gaps as health.
+                state.availability = {**health.public_dict(now), "lifecycle": "DORMANT"}
+                continue
+            self.availability.resume(key, now)
+            if now < self._clock_unreliable_until:
+                self.availability.unavailable(key, now, "CLOCK_DISCONTINUITY")
+                state.availability = health.public_dict(now)
+                continue
+            if previous is not None and (now < previous or now - previous > 5_000_000_000):
+                self.availability.unavailable(key, now, "MONITORING_UNKNOWN", since=previous)
+            reason = None
+            since = None
+            if source.transport == "ws":
+                reason, since = self._ws_unavailability(state, now, stalled)
+            else:
+                deadline = state.response_deadline_utc_ns or (
+                    (state.last_success or state.first_due) + int(
+                        (source.cadence_seconds + 10) * 1e9
+                    )
+                )
+                if state.error:
+                    reason = state.error
+                elif state.last_success is None:
+                    reason = "FIRST_RESPONSE_PENDING"
+                elif source.cadence_seconds and now > deadline:
+                    reason, since = "RESPONSE_DEADLINE_EXCEEDED", deadline
+            if reason is not None:
+                self.availability.unavailable(key, now, reason, since=since)
+            else:
+                self.availability.valid(key, now)
+            state.availability = health.public_dict(now)
 
     async def run(self, stop: asyncio.Event) -> None:
         self._stop = stop
+        terminal_error: BaseException | None = None
         try:
+            self.availability.previous = await run_owned_blocking_call(
+                self.catalog.source_availability
+            )
             while not stop.is_set():
                 self._changed.clear()
+                now = time.time_ns()
+                if (self._last_monitor_utc_ns is None or now < self._last_monitor_utc_ns
+                        or now - self._last_monitor_utc_ns >= 1_000_000_000):
+                    self._observe_availability(now)
+                await self._flush_availability()
                 for key, task in list(self.polls.items()):
                     if task.done():
                         task.result()
@@ -746,7 +992,11 @@ class SelectedAssetCapture:
                         del self.polls[key]
                 for product_key, product_task in self.product_tasks.items():
                     if product_task.done() and not self.product_stops[product_key].is_set():
-                        product_task.result()
+                        try:
+                            product_task.result()
+                        except BaseException as exc:
+                            self.failures[product_key] = exc
+                            raise
                         raise RuntimeError("product capture returned before retirement")
                 for shared_task in self.shared_tasks.values():
                     if shared_task.done():
@@ -777,9 +1027,24 @@ class SelectedAssetCapture:
                             await run_owned_blocking_call(spool.drain_all)
                 with suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), timeout=0.1)
+        except BaseException as exc:
+            terminal_error = exc
+            raise
         finally:
             for child_stop in (*self.product_stops.values(), *self.shared_stops.values()):
                 child_stop.set()
+            cleanup_error: BaseException | None = None
+            stopped_at = time.time_ns()
+            try:
+                for state in self.sources.values():
+                    if not state.dormant:
+                        self.availability.unavailable(
+                            "/".join(state.source.key), stopped_at,
+                            "SERVICE_STOPPED" if terminal_error is None else
+                            "SERVICE_FAILED:" + type(terminal_error).__name__,
+                        )
+            except BaseException as exc:
+                cleanup_error = exc
             for source_key, poll_task in self.polls.items():
                 if source_key not in self._wire_started:
                     poll_task.cancel()
@@ -789,12 +1054,15 @@ class SelectedAssetCapture:
                 *self.polls.values(),
                 return_exceptions=True,
             )
-            cleanup_error: BaseException | None = None
             for spool in self.spools.values():
                 try:
                     await run_owned_blocking_call(spool.close_and_seal)
                 except BaseException as exc:
                     cleanup_error = exc
+            try:
+                await self._flush_availability(all_pending=True)
+            except BaseException as exc:
+                cleanup_error = exc
             for client in self.clients.values():
                 client.close()
             for result in results:

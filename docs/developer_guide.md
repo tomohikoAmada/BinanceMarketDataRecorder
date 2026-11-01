@@ -7,9 +7,9 @@ and [ADR-0051](adr/0051-production-continuity-and-incremental-verification.md).
 The V5 flow below documents legacy tools/artifacts; it is not the new production
 procedure and does not impose historical baseline scans or private approval helpers.
 P1 implements the shorter capture path under [ADR-0052](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md);
-P2 now supplies expanded coverage and compatible public observations, with acceptance
-blockers recorded in its result; P3 still supplies durable source monitoring and background
-verification before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
+P2 supplies accepted expanded coverage and compatible public observations.
+[P3](milestones/P3/README.md) supplies durable source monitoring, bounded independent
+new-file verification and compatible selected normalization before P4. Frozen evidence Python under docs/reviews, docs/milestone_acceptance and
 docs/research is excluded from lint mutation; live source/tests/tools and P0's new
 benchmark remain checked. Historical scripts are evidence, not runtime dependencies.
 
@@ -151,10 +151,10 @@ For a V5 change, a useful focused selection is:
 python -m pytest -q tests/unit/test_acceptance_v5_*.py tests/integration/test_acceptance_v5_*.py
 ```
 
-The preceding V5 state is retained history. Current development has completed
-[P1](milestones/P1/README.md); P2 market coverage is next. Historical full-corpus
-audit cost does not impose a new P2 prerequisite: P0–P6 qualification uses ADR-0051,
-with P3 durable new-file verification still pending. Use [handoff](PROJECT_HANDOFF.md).
+The preceding V5 state is retained history. P0–P2 are accepted and P3 local delivery
+is recorded in its result. Historical full-corpus audit cost does not impose a new
+qualification prerequisite: P0–P6 use ADR-0051 and P3's durable new-file queue.
+Use [handoff](PROJECT_HANDOFF.md) for the next phase.
 
 ## P2 selected-asset capture
 
@@ -169,7 +169,7 @@ Source plans are saved with directory operational events. New payloads and their
 logical readers are in `binance/public_websocket.py`, `public_rest.py` and
 `rest_representation.py`; ADR-0054 describes their compatibility boundary.
 No credentials, consumer dependency or new network service is required.
-P2 is not yet fully accepted: read its result before attempting qualification.
+P2 is accepted under ADR-0055. P3 local delivery is not P4–P6 qualification.
 
 ### P2 measured polling and independent daily supplement
 
@@ -191,3 +191,20 @@ Use `run` for the same explicit request, and existing backfill status/verify for
 results. The path is separate from the live service; no automatic all-history job.
 The bounded reader/conflict helper is `backfill/daily_trades.py`; original Spot and
 BTCUSDT historical profiles remain available with their existing formats.
+
+## P3 recovery and background processing
+
+`collector/availability.py` and `metrics/continuity.py` maintain per-source interval
+evidence without receive-loop Catalog I/O. `service/verification.py`,
+`service/verification_worker.py` and the additive Catalog queue/results verify only
+new sealed chunks in a separate owned process. `spool/readback.py` shares one full
+compressed read for both identities and optional independent frame/statistics checks.
+The service keeps capacity monitoring active for ordinary configurations too.
+
+Run `verify status`, `verify new`, and `report continuity` using the command examples
+in [P3](milestones/P3/README.md). Select `normalize run --product`, `--start/--end`,
+`--chunk-id`, or `--sealed-since-utc-ns` when building needed consumer data.
+No normalization timer is installed. New restricted manifests carry
+`normalization-input-selection.v1`; the public replay reader verifies the bound
+selection while unrestricted old build IDs stay unchanged. Read ADR-0056 before
+changing verification reuse or interpreting the monitoring results as qualification.

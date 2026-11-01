@@ -1,0 +1,53 @@
+........................................................................ [  2%]
+..........................................................s............. [  5%]
+..............................s.....................................ssss [  8%]
+sssssss.sssssss......................................................... [ 11%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+...s..........s..............................................ss......... [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 62%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 91%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+....................................................                     [100%]
+=============================== warnings summary ===============================
+tests/fault_injection/test_archive_kill9.py: 5 warnings
+tests/fault_injection/test_catalog_snapshot.py: 8 warnings
+  /Users/amada/.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=24264) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/integration/test_binance_public_rest.py:13: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public API smoke
+SKIPPED [1] tests/integration/test_developer_preview_live.py:29: set BINANCE_MARKET_RECORDER_PREVIEW_SMOKE=1 for the public preview smoke
+SKIPPED [10] tests/integration/test_m19_backfill_online.py:30: set BINANCE_MARKET_RECORDER_ONLINE=1 for official backfill smoke
+SKIPPED [1] tests/integration/test_m19_backfill_online.py:48: set BINANCE_MARKET_RECORDER_ONLINE=1 for official backfill smoke
+SKIPPED [1] tests/integration/test_m19_public_data_online.py:25: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public M19 smoke
+SKIPPED [6] tests/integration/test_m19_public_data_online.py:35: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public M19 smoke
+SKIPPED [1] tests/integration/test_spot_live.py:17: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public Spot smoke
+SKIPPED [1] tests/integration/test_spot_usdm_live.py:21: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public combined smoke
+SKIPPED [1] tests/integration/test_usdm_side_data_live.py:27: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public side-data smoke
+SKIPPED [1] tests/integration/test_usdm_side_data_live.py:40: set BINANCE_MARKET_RECORDER_ONLINE=1 for unsigned public side-data smoke
+2404 passed, 24 skipped, 5 deselected, 13 warnings in 188.42s (0:03:08)

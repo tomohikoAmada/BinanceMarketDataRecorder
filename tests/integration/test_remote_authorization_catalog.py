@@ -124,6 +124,12 @@ def test_pre_m22_writable_upgrade_is_additive_and_preserves_rows(tmp_path: Path)
     assert after_tables - before_tables == {
         "remote_archive_transactions",
         "remote_archive_events",
+        # P3 adds durable monitoring and new-file verification, without rewriting rows.
+        "raw_verification_queue",
+        "raw_verification_results",
+        "source_availability",
+        "source_availability_gaps",
+        "source_availability_lifecycle",
     }
 
 

@@ -1,0 +1,155 @@
+{
+  "finding": "P3-R3 residual",
+  "cases": [
+    {
+      "frames_during_uncertainty": false,
+      "expected_unknown_ns": 10000000000,
+      "actual_unknown_ns": 10000000000,
+      "coverage": 0.0,
+      "unavailable_intervals": [
+        [
+          1800000000000000000,
+          1800000010000000000
+        ]
+      ],
+      "observations": [
+        {
+          "second": 0,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 1,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 2,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 3,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 4,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 5,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 6,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 7,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 8,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 9,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        }
+      ],
+      "finding_reproduced": false
+    },
+    {
+      "frames_during_uncertainty": true,
+      "expected_unknown_ns": 10000000000,
+      "actual_unknown_ns": 10000000000,
+      "coverage": 0.0,
+      "unavailable_intervals": [
+        [
+          1800000000000000000,
+          1800000010000000000
+        ]
+      ],
+      "observations": [
+        {
+          "second": 0,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 1,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 2,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 3,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 4,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 5,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 6,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 7,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 8,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        },
+        {
+          "second": 9,
+          "clock_still_unreliable": true,
+          "before_callback_reason": "CLOCK_DISCONTINUITY",
+          "after_callback_reason": "CLOCK_DISCONTINUITY"
+        }
+      ],
+      "finding_reproduced": false
+    }
+  ]
+}

@@ -188,7 +188,32 @@ def _build_identity(document: Mapping[str, object]) -> str:
         identity["dedup_version"] = dedup_version
     elif dedup_version != "normalized-dedup.v1":
         raise ReplayCatalogError("unsupported normalized dedup version")
-    return _sha256_json(identity)
+    source_build_id = _sha256_json(identity)
+    if "input_selection" not in document:
+        return source_build_id
+    selection = _object(document["input_selection"], "input_selection")
+    if (set(selection) != {
+            "schema_version", "products", "start_utc_ns", "end_utc_ns", "checkpoint_scope"
+        } or selection.get("schema_version") != "normalization-input-selection.v1"
+            or selection.get("checkpoint_scope") != "none" or checkpoints):
+        raise ReplayCatalogError("unsupported normalization input selection")
+    for bound in ("start_utc_ns", "end_utc_ns"):
+        value = selection[bound]
+        if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
+            raise ReplayCatalogError("normalization time bound must be an integer")
+    start, end = selection["start_utc_ns"], selection["end_utc_ns"]
+    if start is not None and end is not None and start >= end:
+        raise ReplayCatalogError("normalization input range is reversed")
+    products = selection["products"]
+    if products is not None and (
+        not isinstance(products, list)
+        or any(not isinstance(pair, list) or len(pair) != 2
+               or any(not isinstance(value, str) or not value for value in pair)
+               for pair in products)
+        or products != sorted(products)
+    ):
+        raise ReplayCatalogError("normalization product selection is malformed")
+    return _sha256_json({"source_build_id": source_build_id, "input_selection": selection})
 
 
 def _summary(document: Mapping[str, object], dataset_version: str) -> BuildSummary:

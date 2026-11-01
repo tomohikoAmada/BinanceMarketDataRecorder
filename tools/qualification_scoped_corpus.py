@@ -140,6 +140,16 @@ def select_catalog(source: Path, root: Path, boundary: Mapping[str, Any]) -> dic
                 "DELETE FROM remote_archive_transactions WHERE chunk_id NOT IN "
                 "(SELECT chunk_id FROM selected_chunks)"
             )
+        # P3's additive per-chunk rows follow the same copied-corpus membership.
+        # Prune children first; never mutate the source Catalog or disable foreign keys.
+        for table in ("raw_verification_queue", "raw_verification_results"):
+            if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+            ).fetchone():
+                db.execute(
+                    f"DELETE FROM {table} WHERE chunk_id NOT IN "
+                    "(SELECT chunk_id FROM selected_chunks)"
+                )
         for table in ("archive_transactions", "chunk_transitions", "chunks"):
             db.execute(
                 f"DELETE FROM {table} WHERE chunk_id NOT IN (SELECT chunk_id FROM selected_chunks)"

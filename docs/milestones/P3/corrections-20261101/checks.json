@@ -1,0 +1,112 @@
+{
+  "schema_version": "p3-correction-checks.v1",
+  "date": "2026-11-01",
+  "source_commit": "41abdbb11aed07c9107305735726640cf5a6b8a3",
+  "base_commit": "ff103fb07c45c284a9f14254001afa00a7f34dec",
+  "scope": "P3-R1/R2/R3 author correction candidate; independent re-review pending; P3 NOT ACCEPTED",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "python": "3.12.14",
+  "new_regressions": 17,
+  "initial_pre_fix_regressions": {
+    "cases": 12,
+    "failed": 9,
+    "passed_controls": 3,
+    "evidence": "pre-fix-regression-summary.txt"
+  },
+  "original_review_reproduction": {
+    "evidence": "reproductions.json",
+    "modified": false,
+    "all_findings_reproduced": false,
+    "rpi_unavailable_ns": 200000001,
+    "ordinary_depth_control_ns": 900000000,
+    "sparse_pending_seconds": 0.1,
+    "sparse_unavailable_seconds": 0.0
+  },
+  "checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "passed": 2421,
+      "skipped": 24,
+      "stress_deselected": 5,
+      "warnings": 13,
+      "seconds": 189.05,
+      "status": "PASS",
+      "log": "pytest-41abdbb.txt"
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/test_p3_review_corrections.py tests/integration/test_p3_verification.py tests/integration/test_p3_background.py tests/unit/test_p3_availability.py",
+      "passed": 46,
+      "seconds": 2.37,
+      "status": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check .",
+      "status": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m mypy",
+      "status": "PASS",
+      "checked_files": 356
+    },
+    {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "status": "PASS"
+    },
+    {
+      "command": "go run tools/verify_raw_chunk_golden.go",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m build --no-isolation",
+      "status": "PASS",
+      "artifacts": [
+        "sdist",
+        "wheel"
+      ]
+    },
+    {
+      "command": "Fresh wheel isolated --target install; verify imports from target, raw-independent.v2, verify status/new on a temporary root",
+      "status": "PASS"
+    }
+  ],
+  "ci": {
+    "run_id": 41279023391,
+    "url": "https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/41279023391",
+    "status": "PASS",
+    "queried_commit": "41abdbb11aed07c9107305735726640cf5a6b8a3",
+    "evidence": "ci.json",
+    "macos": {
+      "passed": 2421,
+      "skipped": 24,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 362.84,
+      "log": "macos-41abdbb.txt.gz"
+    },
+    "ubuntu": {
+      "passed": 2417,
+      "skipped": 28,
+      "deselected": 5,
+      "warnings": 13,
+      "seconds": 301.94,
+      "log": "ubuntu-41abdbb.txt.gz"
+    }
+  },
+  "not_run": [
+    "Online public API smoke (transport/source scope unchanged)",
+    "New stress, soak or sudden power-loss campaign",
+    "VPS deployment, production data/real external volume access",
+    "Independent acceptance review"
+  ],
+  "historical_evidence": "Original P2 acceptance, b72761a/8df01c8 delivery and ff103fb review artifacts are unchanged",
+  "operations": {
+    "draft_pr": 89,
+    "merged": false,
+    "branch_deleted": false,
+    "production_operations": false
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "schema_version": "p3-local-validation.v1",
+  "date": "2026-10-30",
+  "runtime_code_commit": "b72761a1b5eb6ee52d1b3a473079ac5d5b5ef23a",
+  "development_base": "ec46e32ebd1a74e042e6e66f5f9bdaa7a60958b9",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "python": "3.12.14",
+  "scope": "Offline local P3 development delivery; production qualification remains NO",
+  "checks": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "status": "PASS",
+      "passed": 2404,
+      "skipped": 24,
+      "deselected_stress": 5,
+      "warnings": 13,
+      "elapsed_seconds": 188.42,
+      "log": "pytest-b72761a.txt",
+      "code_commit": "b72761a1b5eb6ee52d1b3a473079ac5d5b5ef23a"
+    },
+    {
+      "command": ".venv/bin/python -m pytest -q tests/integration/test_p3_background.py tests/integration/test_p3_consumers.py tests/integration/test_p3_verification.py tests/unit/test_p3_availability.py tests/unit/test_p3_capacity.py",
+      "status": "PASS",
+      "passed": 35,
+      "elapsed_seconds": 2.43
+    },
+    {
+      "command": ".venv/bin/python -m ruff check .",
+      "status": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m mypy",
+      "status": "PASS",
+      "source_files": 355
+    },
+    {
+      "command": ".venv/bin/python tests/verify_m0_contracts.py",
+      "status": "PASS"
+    },
+    {
+      "command": "go run tools/verify_raw_chunk_golden.go",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check / git diff --cached --check",
+      "status": "PASS"
+    },
+    {
+      "command": ".venv/bin/python -m build --no-isolation",
+      "status": "PASS",
+      "artifacts": [
+        "sdist",
+        "wheel"
+      ],
+      "code_commit": "b72761a1b5eb6ee52d1b3a473079ac5d5b5ef23a"
+    },
+    {
+      "command": "Install wheel with pip --no-index --no-deps --target a fresh temporary directory; assert imports resolve there",
+      "status": "PASS",
+      "commands": [
+        "--version",
+        "verify status",
+        "verify new",
+        "normalize run --product spot:BTCUSDT --start 2026-10-29 --end 2026-10-30",
+        "report continuity --start-utc-ns ... --end-utc-ns ... --source-id usdm/BTCUSDT/open_interest/rest"
+      ],
+      "data_root": "fresh temporary internal test root"
+    },
+    {
+      "command": ".venv/bin/python tools/benchmark_p3_processing.py --output <new-path>",
+      "status": "PASS",
+      "evidence": "processing-comparison.json",
+      "boundary": "identical-input local warm-cache readback/digest microcomparison; not all-feature/VPS performance"
+    }
+  ],
+  "compatibility_corrections": [
+    "Preserve missing-artifact versus invalid-artifact recovery classification.",
+    "Legacy parser fixture accepts the optional shared digest argument while retaining its old timestamp semantics.",
+    "Legacy writable migration expects the explicit additive P3 tables without modifying old rows.",
+    "Copied qualification corpora prune additive per-chunk child rows before parent chunks, preserving foreign keys and the source Catalog.",
+    "Repeated verifier failures retain the first exact immutable event while updating retry/error state in the queue."
+  ],
+  "not_run": [
+    "Online Binance smoke: opt-in and unchanged transport scope.",
+    "New stress/power-loss campaigns: outside P3 scope; existing default fault regressions remain included.",
+    "Dual-platform CI, Linux ARM64 execution, representative VPS CPU/throughput/disk-growth measurements and P4-P6 timed runs."
+  ],
+  "operations": {
+    "vps_access": false,
+    "deployment": false,
+    "production_service_changes": false,
+    "production_data_access": false,
+    "real_external_volume_writes": false,
+    "remote_push_or_pr": false
+  }
+}

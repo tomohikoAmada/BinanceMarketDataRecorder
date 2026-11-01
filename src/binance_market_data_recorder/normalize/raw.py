@@ -14,7 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import BinaryIO
 
@@ -30,12 +30,11 @@ from ..spool.format import (
     decode_envelope,
 )
 from ..spool.seal import MANIFEST_SCHEMA_VERSION, validate_sealed_artifact
-from ..storage.catalog import ArchiveState, Catalog
+from ..storage.catalog import Catalog
 from ..storage.layout import StorageLayout
-
-
-class RawSourceError(RuntimeError):
-    """A selected immutable Raw source cannot be verified or decoded."""
+from ..storage.source_location import RawSourceError as RawSourceError
+from ..storage.source_location import archived_artifact as _external_artifact
+from ..storage.source_location import safe_relative as _safe_relative
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +55,16 @@ class SourceRecord:
     chunk: SourceChunk
     ordinal: int
     envelope: EventEnvelope
+    _payload_digest: str | None = field(default=None, init=False, compare=False, repr=False)
+
+    @property
+    def payload_sha256(self) -> str:
+        if self._payload_digest is None:
+            object.__setattr__(
+                self, "_payload_digest", hashlib.sha256(self.envelope.raw_payload).hexdigest()
+            )
+        assert self._payload_digest is not None
+        return self._payload_digest
 
 
 def _sha256_file(path: Path) -> str:
@@ -66,51 +75,22 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _safe_relative(base: Path, value: object) -> Path:
-    if not isinstance(value, str) or not value:
-        raise RawSourceError("manifest contains an invalid relative path")
-    candidate = (base / value).resolve()
-    try:
-        candidate.relative_to(base.resolve())
-    except ValueError as exc:
-        raise RawSourceError("manifest path escapes its Recorder root") from exc
-    return candidate
-
-
-def _external_artifact(
-    *,
-    chunk_id: str,
-    catalog: Catalog,
-    external_roots: Mapping[str, Path],
-) -> Path | None:
-    transaction = catalog.archive_transaction_for_chunk(chunk_id)
-    if transaction is None:
-        return None
-    state = ArchiveState(str(transaction["state"]))
-    if state not in {
-        ArchiveState.VERIFIED,
-        ArchiveState.LOCAL_DELETE_PENDING,
-        ArchiveState.LOCAL_DELETED,
-    }:
-        return None
-    storage_id = str(transaction["storage_id"])
-    root = external_roots.get(storage_id)
-    if root is None:
-        return None
-    return _safe_relative(root.resolve(), transaction["target_relative_path"])
-
-
 def load_source_chunks(
     *,
     layout: StorageLayout,
     catalog: Catalog,
     external_roots: Mapping[str, Path] | None = None,
+    products: frozenset[tuple[str, str]] | None = None,
+    start_utc_ns: int | None = None,
+    end_utc_ns: int | None = None,
+    manifest_paths: list[Path] | None = None,
 ) -> list[SourceChunk]:
     """Load every Raw manifest and fail if any corresponding content is unavailable."""
 
     roots = {} if external_roots is None else external_roots
     chunks: list[SourceChunk] = []
-    for manifest_path in sorted(layout.manifests.glob("*.manifest.json")):
+    paths = layout.manifests.glob("*.manifest.json") if manifest_paths is None else manifest_paths
+    for manifest_path in sorted(paths):
         try:
             manifest_bytes = manifest_path.read_bytes()
             decoded = json.loads(manifest_bytes)
@@ -131,6 +111,14 @@ def load_source_chunks(
             for value in (uncompressed_hash, stored_hash)
         ) or not isinstance(chunk_id, str):
             raise RawSourceError(f"invalid Raw identity in {manifest_path.name}")
+        if products is not None and (decoded.get("market"), decoded.get("symbol")) not in products:
+            continue
+        times = decoded.get("receive_time_utc_range_ns", {})
+        first, last = times.get("min"), times.get("max")
+        if start_utc_ns is not None and isinstance(last, int) and last < start_utc_ns:
+            continue
+        if end_utc_ns is not None and isinstance(first, int) and first >= end_utc_ns:
+            continue
         artifact = _safe_relative(layout.root, decoded.get("relative_path"))
         if not artifact.is_file():
             external = _external_artifact(

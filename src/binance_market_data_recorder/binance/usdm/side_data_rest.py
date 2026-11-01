@@ -7,7 +7,6 @@ import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from importlib.metadata import version
 from itertools import pairwise
 from typing import Any, Protocol, runtime_checkable
 from uuid import uuid4
@@ -31,6 +30,7 @@ from ...network import ProxyPolicy
 from .rest import (
     USDM_REST_BASE_URL,
     USDM_SDK_DISTRIBUTION,
+    USDM_SDK_VERSION,
     retry_boundary,
     safe_provenance_headers,
 )
@@ -735,7 +735,7 @@ def capture_rest_side_data(
         "transport": {
             "kind": "official_sdk_parsed_model",
             "package": USDM_SDK_DISTRIBUTION,
-            "version": version(USDM_SDK_DISTRIBUTION),
+            "version": USDM_SDK_VERSION,
             "raw_http_body_available": False,
         },
     }

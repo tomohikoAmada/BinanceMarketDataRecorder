@@ -45,6 +45,7 @@ from ..storage.catalog import Catalog, ChunkState
 from ..storage.layout import StorageLayout, fsync_directory
 from .evidence import _VerifiedChunkEvidence
 from .format import scan_chunk
+from .readback import ArtifactReadback, read_artifact
 
 if TYPE_CHECKING:
     from .writer import RawChunkWriter
@@ -226,21 +227,13 @@ def _compress(source_path: Path, target_partial: Path, source_size: int) -> tupl
     return source_bytes, stored_bytes
 
 
-def _decompressed_identity(path: Path) -> tuple[int, str]:
-    digest = hashlib.sha256()
-    byte_count = 0
-    decompressor = zstandard.ZstdDecompressor()
+def _artifact_identity(
+    path: Path, *, bytes_per_second: int | None = None,
+) -> ArtifactReadback:
     try:
-        with (
-            path.open("rb", buffering=0) as compressed,
-            decompressor.stream_reader(compressed) as reader,
-        ):
-            while block := reader.read(READ_BUFFER_BYTES):
-                digest.update(block)
-                byte_count += len(block)
-    except (OSError, zstandard.ZstdError) as exc:
+        return read_artifact(path, bytes_per_second=bytes_per_second)
+    except (OSError, ValueError, zstandard.ZstdError) as exc:
         raise SealError(f"cannot validate compressed artifact {path}: {exc}") from exc
-    return byte_count, digest.hexdigest()
 
 
 def _deployment_ids(flags: frozenset[str]) -> set[str]:
@@ -287,12 +280,13 @@ def _manifest(
     layout: StorageLayout,
     sealed: Path,
     *,
+    readback: ArtifactReadback,
     recovery: dict[str, object] | None,
     forced_flags: frozenset[str] = frozenset(),
 ) -> dict[str, object]:
     statistics = evidence.statistics.mutable_copy()
-    stored_sha256 = _sha256_file(sealed)
-    stored_bytes = sealed.stat().st_size
+    stored_sha256 = readback.stored_sha256
+    stored_bytes = readback.stored_bytes
     capture_flags = set(statistics.capture_flags)
     if recovery is not None:
         capture_flags.add("recovered_tail")
@@ -501,7 +495,9 @@ def _seal_verified(
     sealed = layout.sealed / f"{verified.header.chunk_id.hex}.bmdr.zst"
     target_partial = sealed.with_suffix(sealed.suffix + ".partial")
     if sealed.exists():
-        decompressed_bytes, decompressed_sha256 = _decompressed_identity(sealed)
+        readback = _artifact_identity(sealed)
+        decompressed_bytes = readback.uncompressed_bytes
+        decompressed_sha256 = readback.uncompressed_sha256
         if (
             decompressed_bytes != verified.file_size
             or decompressed_sha256 != verified.uncompressed_sha256
@@ -515,7 +511,9 @@ def _seal_verified(
         )
         if consumed_bytes != verified.file_size:
             raise SealError("compressor source byte count mismatch")
-        decompressed_bytes, decompressed_sha256 = _decompressed_identity(target_partial)
+        readback = _artifact_identity(target_partial)
+        decompressed_bytes = readback.uncompressed_bytes
+        decompressed_sha256 = readback.uncompressed_sha256
         if decompressed_bytes != verified.file_size:
             raise SealError("compressed readback size mismatch")
         if decompressed_sha256 != verified.uncompressed_sha256:
@@ -528,6 +526,7 @@ def _seal_verified(
         verified,
         layout,
         sealed,
+        readback=readback,
         recovery=recovery_evidence,
         forced_flags=forced_flags,
     )
@@ -646,15 +645,23 @@ def parse_strict_manifest_bytes(
     return {str(key): value for key, value in document.items()}
 
 
-def validate_sealed_artifact(sealed: Path, manifest: dict[str, object]) -> None:
+def validate_sealed_artifact(
+    sealed: Path, manifest: dict[str, object], *, bytes_per_second: int | None = None,
+) -> None:
     """Validate stored and decompressed Raw byte identities."""
 
+    # Keep a missing-path failure distinguishable from corrupt existing bytes.
     if sealed.stat().st_size != manifest["stored_bytes"]:
         raise SealError("sealed size mismatch")
-    if _sha256_file(sealed) != manifest["stored_sha256"]:
+    readback = (
+        _artifact_identity(sealed, bytes_per_second=bytes_per_second)
+        if bytes_per_second else _artifact_identity(sealed)
+    )
+    if readback.stored_bytes != manifest["stored_bytes"]:
+        raise SealError("sealed size mismatch")
+    if readback.stored_sha256 != manifest["stored_sha256"]:
         raise SealError("sealed SHA-256 mismatch")
-    decompressed_bytes, decompressed_sha256 = _decompressed_identity(sealed)
-    if decompressed_bytes != manifest["uncompressed_bytes"]:
+    if readback.uncompressed_bytes != manifest["uncompressed_bytes"]:
         raise SealError("sealed decompressed size mismatch")
-    if decompressed_sha256 != manifest["uncompressed_sha256"]:
+    if readback.uncompressed_sha256 != manifest["uncompressed_sha256"]:
         raise SealError("sealed decompressed SHA-256 mismatch")

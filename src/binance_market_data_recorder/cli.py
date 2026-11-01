@@ -231,6 +231,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     daily = report_commands.add_parser("daily", help="write and show a UTC daily report")
     daily.add_argument("--date", help="UTC date in YYYY-MM-DD; defaults to current UTC day")
+    verification = commands.add_parser("verify", help="independent newly sealed Raw verification")
+    verification_actions = verification.add_subparsers(dest="verify_command", required=True)
+    verification_actions.add_parser("status", help="show durable new-file backlog")
+    verify_new_command = verification_actions.add_parser(
+        "new", help="verify one bounded pending batch"
+    )
+    verify_new_command.add_argument("--chunk-id", action="append", default=[])
+    verify_new_command.add_argument("--through-utc-ns", type=int)
+    verify_new_command.add_argument("--max-files", type=int, default=32)
+    verify_new_command.add_argument("--max-bytes", type=int, default=512 * 1024 * 1024)
+    verify_new_command.add_argument("--max-seconds", type=float, default=30)
+    continuity = report_commands.add_parser("continuity", help="per-source availability intervals")
+    continuity.add_argument("--start-utc-ns", type=int, required=True)
+    continuity.add_argument("--end-utc-ns", type=int, required=True)
+    continuity.add_argument("--source-id", action="append")
     recovery_command = commands.add_parser("recovery", help="startup recovery diagnostics")
     recovery_commands = recovery_command.add_subparsers(
         dest="recovery_command",
@@ -249,7 +264,12 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         parser_class=_ArgumentParser,
     )
-    normalize_commands.add_parser("run", help="build from every verified Raw chunk")
+    normalize_run = normalize_commands.add_parser("run", help="build selected verified Raw inputs")
+    normalize_run.add_argument("--product", action="append", default=[], help="market:symbol")
+    normalize_run.add_argument("--start", help="inclusive UTC receive date YYYY-MM-DD")
+    normalize_run.add_argument("--end", help="inclusive UTC receive date YYYY-MM-DD")
+    normalize_run.add_argument("--sealed-since-utc-ns", type=int)
+    normalize_run.add_argument("--chunk-id", action="append", default=[])
     normalize_commands.add_parser("status", help="inspect normalized build manifests")
     storage_command = commands.add_parser("storage", help="inspect registered external folders")
     storage_commands = storage_command.add_subparsers(
@@ -1278,6 +1298,54 @@ def main(argv: Sequence[str] | None = None) -> int:
                 stream=sys.stderr,
             )
             return 2
+    if command == "verify":
+        from .service.verification import verify_new
+
+        layout = ensure_storage_layout(loaded.config.data_root)
+        try:
+            with Catalog(layout.catalog) as catalog:
+                if args.verify_command == "status":
+                    result = catalog.raw_verification_status()
+                else:
+                    verification_roots: dict[str, Path] = {}
+                    try:
+                        targets = StorageRegistry(
+                            catalog=catalog, volumes=_volume_adapter()
+                        ).statuses()
+                        for verification_target in targets:
+                            if verification_target["state"] in {"READY", "LOW_SPACE"}:
+                                verification_roots[str(verification_target["storage_id"])] = Path(
+                                    str(verification_target["resolved_path"])
+                                )
+                    except (OSError, PlatformVolumeError):
+                        pass
+                    for chunk_id in args.chunk_id:
+                        catalog.enroll_raw_verification(chunk_id)
+                    result = verify_new(
+                        layout, catalog, max_files=args.max_files, max_bytes=args.max_bytes,
+                        max_seconds=args.max_seconds, external_roots=verification_roots,
+                        through_utc_ns=args.through_utc_ns,
+                    )
+        except (OSError, RuntimeError, ValueError) as exc:
+            _write_json({"error": "verification_error", "message": str(exc)}, stream=sys.stderr)
+            return 2
+        _write_json({"command": f"verify.{args.verify_command}", **result})
+        return 2 if result.get("failed_files") else 0
+    if command == "report" and args.report_command == "continuity":
+        from .metrics.continuity import continuity_report
+
+        try:
+            layout = StorageLayout.from_root(loaded.config.data_root)
+            with Catalog.open_live_read_only(layout.catalog) as catalog:
+                result = continuity_report(
+                    catalog, start=args.start_utc_ns, end=args.end_utc_ns,
+                    source_ids=args.source_id,
+                )
+        except (OSError, RuntimeError, ValueError) as exc:
+            _write_json({"error": "continuity_error", "message": str(exc)}, stream=sys.stderr)
+            return 2
+        _write_json({"command": "report.continuity", **result})
+        return 0
     if command == "report" and getattr(args, "report_command", None) == "daily":
         selected_date = getattr(args, "date", None) or datetime.now(UTC).date().isoformat()
         catalog_path = loaded.config.data_root / "state" / "catalog.sqlite"
@@ -1377,10 +1445,42 @@ def main(argv: Sequence[str] | None = None) -> int:
                         and isinstance(storage_id, str)
                     ):
                         external_roots[storage_id] = Path(resolved)
+                selected_products: set[tuple[str, str]] = set()
+                for value in args.product:
+                    market, separator, symbol = value.partition(":")
+                    if not separator or not market or not symbol:
+                        raise ValueError("--product must be market:symbol")
+                    selected_products.add((market, symbol))
+                start_ns = (
+                    int(datetime.strptime(args.start, "%Y-%m-%d")
+                        .replace(tzinfo=UTC).timestamp() * 1e9)
+                    if args.start else None
+                )
+                end_ns = (
+                    int(datetime.strptime(args.end, "%Y-%m-%d")
+                        .replace(tzinfo=UTC).timestamp() * 1e9)
+                    + 86_400_000_000_000 if args.end else None
+                )
+                selected_manifests: list[Path] | None = None
+                if args.sealed_since_utc_ns is not None:
+                    selected_manifests = [layout.root / path for path in
+                        catalog.sealed_manifests_since(args.sealed_since_utc_ns)]
+                if args.chunk_id:
+                    requested_paths = []
+                    for chunk_id in args.chunk_id:
+                        chunk = catalog.chunk(chunk_id)
+                        if chunk is None or not isinstance(chunk["manifest_path"], str):
+                            raise ValueError(f"chunk is not sealed: {chunk_id}")
+                        requested_paths.append(layout.root / chunk["manifest_path"])
+                    selected_manifests = requested_paths if selected_manifests is None else [
+                        path for path in requested_paths if path in selected_manifests
+                    ]
                 normalization_result = Normalizer(
                     layout=layout,
                     catalog=catalog,
                     external_roots=external_roots,
+                    products=frozenset(selected_products) if selected_products else None,
+                    start_utc_ns=start_ns, end_utc_ns=end_ns, manifest_paths=selected_manifests,
                 ).run()
         except (NormalizationError, OSError, ValueError) as exc:
             _write_json(

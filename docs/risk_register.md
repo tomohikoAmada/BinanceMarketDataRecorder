@@ -1,5 +1,69 @@
 # Risk Register
 
+## Current P3 closure — 2026-11-01
+
+[Independent closure](milestones/P3/review-20261101.md#r3-independent-closure)
+accepts runtime `30e8a4a` and delivery HEAD `30ebbd6`; P3-R3 is CLOSED and P3 is
+ACCEPTED. Both ten-second controls retain the full unknown interval, and normal
+recovery, other source conditions and lifecycle completion remain correct. Independent
+66-test/probe checks and both commits' dual-platform CI/full logs pass. No new blocking
+finding; R1/R2 and P0–P2 remain closed. R-078 remains OPEN: actual VPS capacity,
+background throughput and per-source 99.5% qualification still require P4–P6. No
+production operation occurred, and historical failure evidence remains unchanged.
+
+## Prior remaining P3-R3 correction candidate — 2026-11-01
+
+Runtime `30e8a4a` protects the full known clock-uncertainty interval from valid RPI
+frame/snapshot callbacks and delayed pre-reversal persistence. Recovery also respects
+writer progress, connection/error and lifecycle conditions; REST success uses the same
+known-clock boundary. Fourteen formal regressions and unchanged reviewer probes pass;
+both ten-second clock cases now preserve ten seconds unknown. See the
+[P3 result](milestones/P3/README.md) for validation and exact-commit CI evidence.
+This is author correction evidence; P3-R3 still awaits independent re-review. P3 remains
+NOT ACCEPTED and R-078 stays open. No new runtime scope, Raw format, fault framework,
+historical audit, production qualification or operation is authorized.
+
+## Prior P3 re-review — 2026-11-01
+
+[Independent re-review](milestones/P3/review-20261101.md) closes P3-R1 and P3-R2
+and confirms the original P3-R3 quick-recovery fix. **P3-R3 remains OPEN** because
+a valid RPI persistence callback clears still-active CLOCK_DISCONTINUITY evidence.
+The ten-second offline control retains the full unknown interval; valid callbacks
+leave only 0.01 seconds unknown and report 99.9% coverage. This is a fixture result,
+not production qualification. Keep the remaining task in P3; preserve immediate
+sequence-gap recording while respecting existing source availability conditions.
+P3 remains NOT ACCEPTED, PR #89 stays Draft, and R-078 remains open. No new scope,
+data-format, fault-framework or whole-history verification requirement is introduced.
+
+## Prior P3 correction candidate — 2026-11-01
+
+Runtime `41abdbb` corrects P3-R1–R3 with 17 new regressions and the unchanged original
+reproductions. v2 proofs include durable sealing/recovery controls; existing v1 queue
+entries require bounded revalidation without rewriting old proofs or enrolling old
+history. Sparse writer timing and immediate RPI gap recovery have explicit boundaries.
+See the [P3 record](milestones/P3/README.md). These are author corrections, not independent
+closure: P3 remains NOT ACCEPTED and R-078/production qualification remain open.
+
+## Original P3 independent review blockers — 2026-10-30
+
+[Review and reproductions](milestones/P3/review-20261030.md) established three original
+defects: manifest-only reconnect evidence can be lost yet verified, sparse-stream
+idle time can be counted as writer failure, and quickly recovered RPI gaps can be
+omitted from continuity. P3 is not accepted. Existing tests passing does not close
+these findings. Fixes are tracked as P3-R1–R3 in the plan's P3 section;
+historical P2 acceptance and scope remain unchanged. Keep PR #89 Draft.
+
+## Current P3 delivery — 2026-10-30
+
+[P3](milestones/P3/README.md) implements durable source intervals, independent bounded
+new-file verification, normal-background isolation, ordinary-profile reserve stops
+and compatible selected consumer builds. Local tests/measurements do not close R-078.
+P4–P6 still require actual VPS growth/archive-throughput/backlog and per-source99.5%
+results. A verifier unable to access an already retired archive keeps that file
+pending/failed; receipt metadata cannot replace frame validation. Reports need the
+frozen expected source set, and unknown monitoring tails remain unavailable.
+
+
 ## Current P2 scope exception — 2026-10-29
 
 - The owner approved an initial-release omission of only U/C dated premium-index bars;
@@ -26,7 +90,7 @@
   and Catalog gap assertions remain; production code and old failure evidence are
   unchanged. See [closure](milestones/P2/review-20261029.md#r5-independent-closure).
 - R1/R4 and the initial-release implementation stay accepted. P2 is ACCEPTED with no new
-  blocking correction. P3/production have not started, and capacity/99.5% qualification
+  blocking correction. P3 local delivery is recorded above; production has not started, and capacity/99.5% qualification
   remain future work. Historical unapproved/unsent and mandatory-official-reply statements
   below describe earlier states.
 

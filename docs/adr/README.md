@@ -57,3 +57,5 @@ link both records.
 - [ADR-0054: Selected-asset capture and public observations](0054-selected-asset-capture-and-public-observations.md) — P2 product/shared identities, combined exact WS payloads, single REST representations, bounded D06 overlap removal, and compatible readers.
 
 - [ADR-0055: Initial-production dated premium exception](0055-initial-production-dated-premium-exception.md) — owner-approved omission of only USD-M/COIN-M dated premium-index bars; implementation/review pending in P2, official clarification tracked separately.
+
+- [ADR-0056: Source recovery and bounded background verification](0056-source-recovery-and-bounded-background-verification.md) — P3 durable source intervals, new-file queue/proofs, worker budgets, same-boundary readback reuse and compatible restricted normalization.

@@ -216,6 +216,10 @@ class UsdMStreamCollector:
         self._boundary_connection_id: str | None = None
         self._boundary_detected_at_utc_ns: int | None = None
         self._connection_receipt_count = 0
+        self._received_total = 0
+        self._persisted_total = 0
+        self._pending_since_utc_ns: int | None = None
+        self._last_write_utc_ns: int | None = None
         self._last_writer_batch_size = 0
         self._last_writer_drain_ns = 0
         self._max_writer_drain_ns = 0
@@ -310,6 +314,9 @@ class UsdMStreamCollector:
         receive_time_utc_ns = self.utc_clock_ns()
         receive_monotonic_ns = self.monotonic_clock_ns()
         payload = message.encode() if isinstance(message, str) else message
+        if self._received_total == self._persisted_total:
+            self._pending_since_utc_ns = receive_time_utc_ns
+        self._received_total += 1
         return ReceivedFrame(
             raw_payload=payload,
             connection_id=connection_id,
@@ -718,7 +725,19 @@ class UsdMStreamCollector:
         self._max_writer_drain_ns = max(self._max_writer_drain_ns, drain_duration)
         if drained != len(batch):
             raise RuntimeError("USD-M Raw spool did not drain the complete writer batch")
+        self._persisted_total += len(persisted)
+        self._last_write_utc_ns = self.utc_clock_ns()
+        if self._received_total == self._persisted_total:
+            self._pending_since_utc_ns = None
         return persisted
+
+    def capture_progress(self) -> dict[str, int | None]:
+        """Event-loop-owned counters; observing a busy writer never takes its lock."""
+        return {
+            "received_frames": self._received_total, "persisted_frames": self._persisted_total,
+            "pending_since_utc_ns": self._pending_since_utc_ns,
+            "last_write_utc_ns": self._last_write_utc_ns,
+        }
 
     async def _write_until_done(self, producer_done: asyncio.Event) -> None:
         while not producer_done.is_set() or not self._receipts.empty():
