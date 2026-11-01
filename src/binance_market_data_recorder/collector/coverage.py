@@ -195,6 +195,11 @@ class ProductCapture:
                 self.rpi.invalidate(logical.receive_time_utc_ns)
             else:
                 self.rpi.offer(logical.model_copy(update={"stream": "diff_depth"}))
+            # Observe the known fault before a cached/new snapshot can bridge it.
+            if not self.rpi.is_reliable and state is not None:
+                self.owner.availability.unavailable(
+                    "/".join(state.source.key), logical.receive_time_utc_ns, "DEPTH_RESYNC_PENDING"
+                )
             if self.rpi.bootstrap_buffer_overflowed:
                 self.rpi = DepthContinuity(
                     self.product.key.market,
@@ -206,8 +211,7 @@ class ProductCapture:
                 self.rpi.synchronize(self.rpi_snapshot)
             if not self.rpi.is_reliable:
                 self.owner.request_snapshot(self.product, rpi=True)
-            if state is not None:
-                state.sequence_reliable = self.rpi.is_reliable
+            self._observe_rpi_health(logical.receive_time_utc_ns)
         if logical.source_sequence.get("sourceStream") == "server_shutdown":
             self.owner.request_snapshot(self.product)
 
@@ -215,9 +219,23 @@ class ProductCapture:
         if envelope.stream == "rpi_depth_snapshot":
             self.rpi_snapshot = envelope.model_copy(update={"stream": "depth_snapshot"})
             self.rpi.synchronize(self.rpi_snapshot)
+            self._observe_rpi_health(envelope.receive_time_utc_ns)
             return
         self.snapshot = logical_envelope(envelope)
         self.readiness.observe_snapshot_persisted(self.snapshot)
+
+    def _observe_rpi_health(self, received_at: int) -> None:
+        state = self.source_states.get("rpi_depth")
+        if state is None:
+            return
+        state.sequence_reliable = self.rpi.is_reliable
+        # Only a persisted, snapshot-backed bridge on a live source closes the gap.
+        if self.rpi.is_reliable and state.connected and state.error is None:
+            key = "/".join(state.source.key)
+            completed_at = max(received_at, time.time_ns())
+            health = self.owner.availability.sources.get(key)
+            if health is None or completed_at >= health.observed_at:
+                self.owner.availability.valid(key, completed_at)
 
     def lifecycle(self, group: StreamGroup, event: str) -> None:
         for source in group.sources:
@@ -856,7 +874,11 @@ class SelectedAssetCapture:
         for collector, group in self._group_sources.items():
             progress = collector.capture_progress()
             pending = progress["pending_since_utc_ns"]
-            boundary = progress["last_write_utc_ns"] or pending
+            last_write = progress["last_write_utc_ns"]
+            boundary = (
+                max(pending, last_write)
+                if pending is not None and last_write is not None else pending
+            )
             if pending is not None and boundary is not None and now - boundary > 10_000_000_000:
                 stalled.update((source.key, boundary) for source in group.sources)
         previous = self._last_monitor_utc_ns

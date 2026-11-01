@@ -10,15 +10,52 @@ from pathlib import Path
 from ..spool.readback import file_signature, read_artifact
 from ..spool.seal import (
     INCOMPLETE_FLAGS,
+    RECONNECT_GAP_FLAG,
+    RECONNECT_INTENT_SCHEMA_V2,
+    SEAL_INTENT_EVIDENCE_KEY,
     _boundary_local_evidence_safe,
+    durable_forced_flags,
     parse_strict_manifest_bytes,
 )
-from ..storage.catalog import Catalog
+from ..storage.catalog import RAW_VERIFICATION_VERSION, Catalog, ChunkState
 from ..storage.layout import StorageLayout
 from ..storage.source_location import archived_artifact, safe_relative
 from .lock import ServiceAlreadyRunning, ServiceProcessLock
 
-VERIFIER_VERSION = "raw-independent.v1"
+VERIFIER_VERSION = RAW_VERIFICATION_VERSION
+
+
+def _durable_evidence(catalog: Catalog, chunk_id: str) -> dict[str, object]:
+    # These are indexed, chunk-local control reads, never a stream/history scan.
+    return {
+        "sealing": catalog.latest_transition_evidence(chunk_id, ChunkState.SEALING),
+        "recovery": catalog.latest_transition_evidence(chunk_id, ChunkState.RECOVERED),
+    }
+
+
+def _required_flags(control: dict[str, object], manifest: dict[str, object]) -> set[str]:
+    sealing = control["sealing"]
+    assert sealing is None or isinstance(sealing, dict)
+    flags = set(durable_forced_flags(sealing or {}))
+    intent = (sealing or {}).get(SEAL_INTENT_EVIDENCE_KEY)
+    if intent is not None:
+        if not isinstance(intent, dict):
+            raise ValueError("malformed durable seal intent")
+        if "intent_schema" in intent and intent["intent_schema"] != RECONNECT_INTENT_SCHEMA_V2:
+            raise ValueError("unsupported durable seal intent schema")
+        required = intent.get("required_forced_flags")
+        if not isinstance(required, list) or not all(isinstance(f, str) and f for f in required):
+            raise ValueError("malformed durable seal intent flags")
+        for name in ("market", "symbol", "stream"):
+            if name in intent and intent[name] != manifest[name]:
+                raise ValueError(f"durable seal intent {name} mismatch")
+        flags.update(required)
+    recovery = control["recovery"]
+    if manifest["recovered"] != (recovery is not None) or manifest["recovery"] != recovery:
+        raise ValueError("manifest contradicts durable recovery evidence")
+    if recovery is not None:
+        flags.add("recovered_tail")
+    return flags
 
 
 def verify_chunk(
@@ -32,6 +69,8 @@ def verify_chunk(
     manifest = parse_strict_manifest_bytes(
         manifest_bytes, path=manifest_path, recorder_root=layout.root
     )
+    control = _durable_evidence(catalog, str(row["chunk_id"]))
+    required_flags = _required_flags(control, manifest)
     for key in (
         "chunk_id",
         "record_count",
@@ -101,9 +140,13 @@ def verify_chunk(
             raise ValueError(f"Raw {key} statistics mismatch")
     flags = manifest["capture_flags"]
     assert isinstance(flags, list)
-    if not stats.capture_flags <= set(flags):
-        raise ValueError("Raw capture flags missing from manifest")
-    if stats.capture_flags & INCOMPLETE_FLAGS and manifest["complete"]:
+    required_flags.update(stats.capture_flags)
+    if (len(stats.connection_ids) > 1 and not required_flags & INCOMPLETE_FLAGS
+            and not _boundary_local_evidence_safe(scan.connection_transitions)):
+        required_flags.add(RECONNECT_GAP_FLAG)
+    if not required_flags <= set(flags):
+        raise ValueError("Raw or durable capture flags missing from manifest")
+    if required_flags & INCOMPLETE_FLAGS and manifest["complete"]:
         raise ValueError("incomplete Raw marked complete")
     if (
         len(stats.connection_ids) > 1
@@ -115,6 +158,8 @@ def verify_chunk(
         raise ValueError("artifact changed after readback")
     if manifest_path.read_bytes() != manifest_bytes:
         raise ValueError("manifest changed during verification")
+    if _durable_evidence(catalog, str(row["chunk_id"])) != control:
+        raise ValueError("durable seal/recovery evidence changed during verification")
     return {
         "chunk_id": row["chunk_id"],
         "manifest_path": row["manifest_path"],
@@ -123,6 +168,7 @@ def verify_chunk(
         "verified_at_utc_ns": time.time_ns(),
         "artifact_path": str(artifact),
         "result": "VERIFIED",
+        "durable_evidence": control,
         **{
             key: manifest[key]
             for key in (

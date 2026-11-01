@@ -44,6 +44,8 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, cast
 
+RAW_VERIFICATION_VERSION = "raw-independent.v2"
+
 
 class ChunkState(StrEnum):
     ACTIVE = "ACTIVE"
@@ -511,7 +513,8 @@ class Catalog:
             CREATE TABLE IF NOT EXISTS raw_verification_results (
                 result_id TEXT PRIMARY KEY,
                 chunk_id TEXT NOT NULL REFERENCES chunks(chunk_id),
-                evidence_json TEXT NOT NULL
+                evidence_json TEXT NOT NULL,
+                verifier_version TEXT
             );
             CREATE TABLE IF NOT EXISTS chunk_transitions (
                 transition_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -655,6 +658,12 @@ class Catalog:
             );
             """
         )
+        if "verifier_version" not in self.table_columns("raw_verification_results"):
+            # Metadata-only upgrade. Existing proof bodies/IDs are never rewritten;
+            # NULL records require bounded revalidation by the corrected verifier.
+            self._connection.execute(
+                "ALTER TABLE raw_verification_results ADD COLUMN verifier_version TEXT"
+            )
         self._create_current_operational_events(self._connection)
         self._create_current_side_data_cursors(self._connection)
 
@@ -4650,12 +4659,15 @@ class Catalog:
         self, *, now: int, limit: int = 32, through_utc_ns: int | None = None,
     ) -> list[dict[str, Any]]:
         with self._lock:
+            version = self._verification_version_sql()
             rows = self._connection.execute(
                 "SELECT c.*, q.enrolled_at_utc_ns FROM raw_verification_queue q "
-                "JOIN chunks c USING(chunk_id) WHERE q.verified_result_id IS NULL "
+                "JOIN chunks c USING(chunk_id) "
+                "LEFT JOIN raw_verification_results r ON r.result_id=q.verified_result_id "
+                f"WHERE COALESCE({version}=?,0)=0 "
                 "AND q.next_attempt_utc_ns <= ? AND (? IS NULL OR q.enrolled_at_utc_ns <= ?) "
                 "ORDER BY q.enrolled_at_utc_ns, c.chunk_id LIMIT ?",
-                (now, through_utc_ns, through_utc_ns, limit),
+                (RAW_VERIFICATION_VERSION, now, through_utc_ns, through_utc_ns, limit),
             ).fetchall()
         return [dict(row) for row in rows]
 
@@ -4668,7 +4680,7 @@ class Catalog:
             if evidence is None:
                 connection.execute(
                     "UPDATE raw_verification_queue SET attempts=attempts+1, last_error=?, "
-                    "next_attempt_utc_ns=? WHERE chunk_id=? AND verified_result_id IS NULL",
+                    "next_attempt_utc_ns=?, verified_result_id=NULL WHERE chunk_id=?",
                     (error, now + 60_000_000_000, chunk_id),
                 )
                 return
@@ -4685,13 +4697,21 @@ class Catalog:
                 f"{evidence['verified_at_utc_ns']}"
             )
             connection.execute(
-                "INSERT OR IGNORE INTO raw_verification_results VALUES (?, ?, ?)",
-                (result_id, chunk_id, json.dumps(dict(evidence), sort_keys=True)),
+                "INSERT OR IGNORE INTO raw_verification_results "
+                "(result_id, chunk_id, evidence_json, verifier_version) VALUES (?, ?, ?, ?)",
+                (result_id, chunk_id, json.dumps(dict(evidence), sort_keys=True),
+                 evidence["verifier_version"]),
             )
             connection.execute(
                 "UPDATE raw_verification_queue SET verified_result_id=?, attempts=attempts+1, "
                 "last_error=NULL WHERE chunk_id=?", (result_id, chunk_id),
             )
+
+    def _verification_version_sql(self) -> str:
+        # Read-only observers may see the old schema before its writer upgrades it.
+        # Never parse every historical proof JSON just to report/choose pending work.
+        return ("r.verifier_version"
+                if "verifier_version" in self.table_columns("raw_verification_results") else "NULL")
 
     def raw_verification_status(self, *, through_utc_ns: int | None = None) -> dict[str, object]:
         with self._lock:
@@ -4700,32 +4720,41 @@ class Catalog:
             ).fetchone()
             if present is None:
                 return {"status": "NOT_ENROLLED", "pending_files": 0, "verified_files": 0}
+            # Reuse only the current verifier's proof. Prior v1 results remain
+            # immutable, while their already-enrolled files re-enter bounded work.
+            version = self._verification_version_sql()
+            observations = (
+                "WITH observations AS (SELECT q.*, c.stored_bytes, "
+                f"COALESCE({version}=?,0) "
+                "AS current_proof "
+                "FROM raw_verification_queue q JOIN chunks c USING(chunk_id) "
+                "LEFT JOIN raw_verification_results r ON r.result_id=q.verified_result_id "
+                "WHERE (? IS NULL OR q.enrolled_at_utc_ns<=?)) "
+            )
+            parameters = (RAW_VERIFICATION_VERSION, through_utc_ns, through_utc_ns)
             row = self._connection.execute(
-                "SELECT COUNT(*) AS enrolled_files, "
-                "COALESCE(SUM(q.verified_result_id IS NOT NULL),0) AS verified_files, "
-                "COALESCE(SUM(q.verified_result_id IS NULL),0) AS pending_files, "
-                "COALESCE(SUM(q.verified_result_id IS NULL AND q.last_error IS NOT NULL),0) "
-                "AS failed_files, "
-                "COALESCE(SUM(CASE WHEN q.verified_result_id IS NULL THEN c.stored_bytes END),0) "
+                observations + "SELECT COUNT(*) AS enrolled_files, "
+                "COALESCE(SUM(current_proof),0) AS verified_files, "
+                "COALESCE(SUM(NOT current_proof),0) AS pending_files, "
+                "COALESCE(SUM(NOT current_proof AND last_error IS NOT NULL),0) AS failed_files, "
+                "COALESCE(SUM(CASE WHEN NOT current_proof THEN stored_bytes END),0) "
                 "AS pending_stored_bytes, "
-                "MIN(CASE WHEN q.verified_result_id IS NULL THEN q.enrolled_at_utc_ns END) "
-                "AS oldest_pending_utc_ns FROM raw_verification_queue q "
-                "JOIN chunks c USING(chunk_id) WHERE (? IS NULL OR q.enrolled_at_utc_ns<=?)",
-                (through_utc_ns, through_utc_ns),
+                "MIN(CASE WHEN NOT current_proof THEN enrolled_at_utc_ns END) "
+                "AS oldest_pending_utc_ns FROM observations", parameters,
             ).fetchone()
             high_water = self._connection.execute(
                 "SELECT MAX(enrolled_at_utc_ns) FROM raw_verification_queue"
             ).fetchone()[0]
             failures = self._connection.execute(
-                "SELECT chunk_id, last_error, attempts FROM raw_verification_queue "
-                "WHERE verified_result_id IS NULL AND last_error IS NOT NULL "
-                "AND (? IS NULL OR enrolled_at_utc_ns<=?) ORDER BY enrolled_at_utc_ns LIMIT 16",
-                (through_utc_ns, through_utc_ns),
+                observations + "SELECT chunk_id, last_error, attempts FROM observations "
+                "WHERE NOT current_proof AND last_error IS NOT NULL "
+                "ORDER BY enrolled_at_utc_ns LIMIT 16", parameters,
             ).fetchall()
         return {
             "status": "PENDING" if row["pending_files"] else "CAUGHT_UP", **dict(row),
             "failures": [dict(item) for item in failures],
             "through_utc_ns": through_utc_ns, "enrollment_high_water_utc_ns": high_water,
+            "verifier_version": RAW_VERIFICATION_VERSION,
             "oldest_pending_age_seconds": (
                 max(0, time.time_ns() - row["oldest_pending_utc_ns"]) / 1e9
                 if row["oldest_pending_utc_ns"] is not None else 0
@@ -4957,6 +4986,7 @@ class Catalog:
 
     def table_columns(self, table: str) -> set[str]:
         if table not in {
+            "raw_verification_results",
             "chunks",
             "chunk_transitions",
             "quarantined_artifacts",

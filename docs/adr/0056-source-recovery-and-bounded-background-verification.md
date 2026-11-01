@@ -140,3 +140,38 @@ See [P3 result](../milestones/P3/README.md) for deterministic recovery/fault/bac
 regressions, same-input local CPU/I/O/allocation comparison and validation commands.
 Actual VPS throughput, daily growth, sustained backlog and99.5% continuity belong to
 P4–P6; local fixtures do not certify them.
+
+## P3-R1–R3 correction candidate — 2026-11-01
+
+Independent review of the initial implementation is NOT ACCEPTED; see the retained
+[P3 review](../milestones/P3/review-20261030.md). This correction does not change
+source selection, network cadences, Raw or archive/deletion contracts.
+
+The verifier is now `raw-independent.v2`. It freezes the current chunk's SEALING
+forced flags/intent and RECOVERED evidence, derives required incomplete flags with
+Raw connection boundaries, rejects contradictory manifests, and checks the control
+snapshot again after reading. The proof includes that exact control snapshot;
+no extra Raw pass or new content digest is added. Correct incomplete and empty
+boundary files remain verifiable without relabelling them complete.
+
+A nullable scalar `verifier_version` is added to `raw_verification_results` for
+queue/status selection without repeatedly decoding historical proof JSON. Old
+proof IDs/bodies stay immutable; read-only old schemas are observable without
+migration. A writer adds only the column, without backfill or Raw inventory. Old
+or missing verifier versions count as pending and are rechecked within the existing
+enrolled queue's file/byte/time budgets. No pre-P3 historical files are enrolled.
+A failed recheck retains the old proof and failure evidence but cannot reuse the
+old proof as current verification. A successful recheck appends a v2 proof.
+
+Writer-stall timing uses the later of the current pending-write start and completed
+write progress. A prior idle write cannot start/backdate the pending interval.
+RPI persistence records loss of sequence reliability before any snapshot repair;
+valid persisted snapshots or subsequent frames close the journal interval only
+when the existing bridge is reliable and the source is connected/error-free.
+A recovery boundary cannot precede the last observed source boundary. Periodic
+monitoring remains a fallback and ordinary diff-depth behavior is unchanged.
+
+Formal regressions include both recorded/empty manifest layouts, forced/intent/
+recovery authorities, changed authority during readback, v1 queue/schema compatibility,
+sparse idle/short-wait versus real stalls, group isolation and snapshot-backed RPI
+recovery wholly between monitor passes. Independent re-review remains the P3 gate.
