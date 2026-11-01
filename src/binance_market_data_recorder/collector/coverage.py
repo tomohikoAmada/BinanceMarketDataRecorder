@@ -229,13 +229,27 @@ class ProductCapture:
         if state is None:
             return
         state.sequence_reliable = self.rpi.is_reliable
-        # Only a persisted, snapshot-backed bridge on a live source closes the gap.
-        if self.rpi.is_reliable and state.connected and state.error is None:
+        # A bridge repairs sequence continuity, not other source unavailability.
+        if self.rpi.is_reliable and not state.dormant:
             key = "/".join(state.source.key)
-            completed_at = max(received_at, time.time_ns())
+            now = time.time_ns()
+            # A frame received before a clock reversal may persist afterwards.
+            # Its receive time cannot end uncertainty in the current wall clock.
+            if now < self.owner._clock_unreliable_until:
+                return
+            completed_at = max(received_at, now)
             health = self.owner.availability.sources.get(key)
-            if health is None or completed_at >= health.observed_at:
+            if health is not None and (
+                completed_at < health.observed_at or health.unavailable_since is None
+            ):
+                return
+            # Do not scan writer groups for every healthy persisted frame.
+            stalled = self.owner._writer_stalls(completed_at)
+            reason, since = self.owner._ws_unavailability(state, completed_at, stalled)
+            if reason is None:
                 self.owner.availability.valid(key, completed_at)
+            else:
+                self.owner.availability.unavailable(key, completed_at, reason, since=since)
 
     def lifecycle(self, group: StreamGroup, event: str) -> None:
         for source in group.sources:
@@ -814,8 +828,9 @@ class SelectedAssetCapture:
                 else:
                     state.publication_status = "CURRENT"
             completed_at = time.time_ns()
-            if state.error is None and (state.response_deadline_utc_ns is None
-                                        or completed_at <= state.response_deadline_utc_ns):
+            if (state.error is None and completed_at >= self._clock_unreliable_until
+                    and (state.response_deadline_utc_ns is None
+                         or completed_at <= state.response_deadline_utc_ns)):
                 self.availability.valid("/".join(source.key), completed_at)
                 if state.dormant:
                     self.availability.suspend("/".join(source.key), completed_at)
@@ -869,7 +884,7 @@ class SelectedAssetCapture:
             if not all_pending:
                 break
 
-    def _observe_availability(self, now: int) -> None:
+    def _writer_stalls(self, now: int) -> dict[tuple[str, str, str, str], int]:
         stalled: dict[tuple[str, str, str, str], int] = {}
         for collector, group in self._group_sources.items():
             progress = collector.capture_progress()
@@ -881,6 +896,31 @@ class SelectedAssetCapture:
             )
             if pending is not None and boundary is not None and now - boundary > 10_000_000_000:
                 stalled.update((source.key, boundary) for source in group.sources)
+        return stalled
+
+    def _ws_unavailability(
+        self, state: SourceState, now: int, stalled: dict[tuple[str, str, str, str], int]
+    ) -> tuple[str | None, int | None]:
+        """Use the same current blockers for monitor and immediate RPI recovery."""
+        source = state.source
+        if now < self._clock_unreliable_until:
+            return "CLOCK_DISCONTINUITY", None
+        if not state.connected:
+            return "DISCONNECTED", None
+        if source.key in stalled:
+            return "WRITER_STALLED", stalled[source.key]
+        if state.error is not None:
+            return state.error, None
+        if source.stream == "diff_depth":
+            product = self.collectors.get(ProductKey(source.market, source.symbol))
+            if product is None or not product.readiness_snapshot().orderbook_synchronized:
+                return "DEPTH_RESYNC_PENDING", None
+        elif source.stream == "rpi_depth" and state.sequence_reliable is not True:
+            return "DEPTH_RESYNC_PENDING", None
+        return None, None
+
+    def _observe_availability(self, now: int) -> None:
+        stalled = self._writer_stalls(now)
         previous = self._last_monitor_utc_ns
         if previous is not None and now < previous:
             self._clock_unreliable_until = max(self._clock_unreliable_until, previous)
@@ -912,18 +952,7 @@ class SelectedAssetCapture:
             reason = None
             since = None
             if source.transport == "ws":
-                if not state.connected:
-                    reason = "DISCONNECTED"
-                elif source.key in stalled:
-                    reason, since = "WRITER_STALLED", stalled[source.key]
-                elif state.error is not None:
-                    reason = state.error
-                elif source.stream == "diff_depth":
-                    product = self.collectors.get(ProductKey(source.market, source.symbol))
-                    if product is None or not product.readiness_snapshot().orderbook_synchronized:
-                        reason = "DEPTH_RESYNC_PENDING"
-                elif source.stream == "rpi_depth" and state.sequence_reliable is not True:
-                    reason = "DEPTH_RESYNC_PENDING"
+                reason, since = self._ws_unavailability(state, now, stalled)
             else:
                 deadline = state.response_deadline_utc_ns or (
                     (state.last_success or state.first_due) + int(

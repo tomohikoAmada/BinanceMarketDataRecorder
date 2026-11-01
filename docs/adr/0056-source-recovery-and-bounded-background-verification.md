@@ -2,10 +2,10 @@
 
 Status: implementation candidate; independent re-review NOT ACCEPTED, 2026-11-01.
 [Re-review](../milestones/P3/review-20261101.md) closes P3-R1/R2 and confirms the
-original short RPI interval fix. P3-R3 still requires immediate RPI recovery to respect
-active clock uncertainty; valid messages must not invent healthy time while that
-boundary remains active. The intended behavior below is unchanged; the remaining
-correction is tracked in the plan's P3 section. The
+original short RPI interval fix. The remaining P3-R3 clock-uncertainty correction is
+implemented in the candidate below and still requires independent re-review. Valid
+messages must not invent healthy time while that boundary remains active. The
+intended availability contract is unchanged; the plan's P3 section tracks acceptance. The
 [original review](../milestones/P3/review-20261030.md) remains historical evidence.
 Implements ADR-0051/0053; no production
 qualification, transport scope change or archive deletion authorization is granted.
@@ -178,3 +178,29 @@ Formal regressions include both recorded/empty manifest layouts, forced/intent/
 recovery authorities, changed authority during readback, v1 queue/schema compatibility,
 sparse idle/short-wait versus real stalls, group isolation and snapshot-backed RPI
 recovery wholly between monitor passes. Independent re-review remains the P3 gate.
+
+## P3-R3 clock-uncertainty correction candidate — 2026-11-01
+
+The re-review's remaining correction keeps the same availability contract. RPI frame
+and snapshot persistence callbacks update sequence reliability immediately, but a
+reliable bridge cannot by itself authorize source recovery. They share the monitor's
+existing WS connection, writer-stall, payload-error and sequence checks, and preserve
+lifecycle dormancy. Known clock uncertainty is checked against the current completion
+wall clock before considering the receive boundary: a queued frame received before
+a reversal cannot clear the still-active uncertainty after that reversal. At the
+known clock boundary, a valid frame, snapshot or monitor can recover normally if no
+other condition remains. Immediate sequence-fault recording is unchanged.
+
+The same inspection found that a successful REST persistence callback could also
+bypass known clock uncertainty; its existing success/deadline check now also requires
+the clock boundary to have ended. Failure persistence, counters, scheduling and
+lifecycle suspension remain owned by the existing paths. No new fault state, journal,
+clock framework, hash, Raw/schema change or recovery loop is introduced.
+
+Healthy RPI callbacks leave periodic journal checkpoints to the monitor. Only an
+open/startup gap needs recovery evaluation; clock-blocked callbacks return without
+scanning writer groups. Thirteen offline regressions cover clock controls, continuous
+valid messages and snapshots, simultaneous sequence repair, delayed persistence,
+writer stalls and the remaining source conditions, plus REST clock recovery. The
+review's original reproduction remains unchanged. Author checks are candidate evidence;
+independent re-review still owns P3 acceptance.
