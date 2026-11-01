@@ -15,10 +15,14 @@ See [current deployment state](docs/CURRENT_PRODUCTION_STATE.md) and the
 [developer handoff](docs/PROJECT_HANDOFF.md).
 
 The [current production milestone plan](docs/production_milestone_plan.md)
-replaces the retired plan as of October 26, 2026. It designs for at least ten
-assets and targets stable BTC/ETH production across Spot, USD-M and COIN-M
-perpetual/delivery markets, with 99.5% per-source continuity. [P0 review corrections are complete, including the remaining R2 classifier fix](docs/milestones/P0/review-20261026.md); retained boundaries have an appended v4 classification and the NON_STEADY profile remains diagnostic only. [P1 passed independent re-review, including its R1 fix](docs/milestones/P1/README.md); its local interleaved results and limits remain explicit. [P2 has passed independent acceptance](docs/milestones/P2/README.md) under the declared dated-premium exception. [P3 local development](docs/milestones/P3/README.md) adds source recovery evidence, bounded background verification and operation commands. P4–P6 and production qualification remain pending.
-Historical plans and acceptance evidence remain preserved.
+supersedes the earlier P0-P6 plan as of November 2026. Retaining the P0-P3
+foundations ([P0](docs/milestones/P0/review-20261026.md),
+[P1](docs/milestones/P1/README.md), [P2](docs/milestones/P2/README.md),
+[P3](docs/milestones/P3/README.md)) and [P4 diagnostic findings](docs/milestones/P4/README.md),
+the active roadmap (`M1` -> `M2` -> `M3` -> `M4`) resolves primary spool/SQLite/source/hot-path
+bottlenecks first (`M1`), removes over-engineering and legacy bloat (`M2`), converges
+local benchmarks (`M3`), and runs continuous `2h` -> `12h` -> `24h` qualification on
+the GreenCloud VPS (`M4`).
 
 The [pre-milestone research](docs/research/2026-10-26/README.md) compares reusable
 projects, describes the expanded Spot/USD-M/COIN-M scope, and links the first

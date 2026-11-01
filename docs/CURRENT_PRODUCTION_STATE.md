@@ -1,86 +1,25 @@
 # Current Production State
 
-P4 current correction: the first timed `8bdae20` C window started at2026-11-01T12:13:18.836073348Z, then was normally stopped after a sustained source-journal backlog reached52,997. Its874 new sealed files all pass independent v2 verification; it earns no2h/24h qualification. Capture metrics were also missing from the selected path (archive metrics existed). The bounded journal drain and existing capture-metrics callbacks are being corrected in P4 before a new candidate/window. Original service/deployment remains inactive/disabled and preserved. See the single P4 result for the latest active run; older preparation paragraphs below retain their timestamps.
+## Active Status (November 2026)
 
-2026-11-01 current P4 task: owner authorized the real GreenCloud BTC 2h/24h work. [P4 preparation](milestones/P4/README.md) retains two attempts with no formal T0. Both independent P4 capture units are stopped, runtime-only/static with no boot enablement; the original Recorder remains inactive/disabled. Their new-file verification is complete (45/45 and337/337), no errors. Normal archive tasks were active. Initial-release dated ADL omission is now explicitly owner approved under ADR-0057. New candidate preparation is in progress; no P4 duration or production qualification is earned. Earlier statements below describe their original review context, not this new authorization.
+- **Production Readiness**: **NO** (awaiting execution of the streamlined milestone plan `M1` → `M2` → `M3` → `M4` in [`production_milestone_plan.md`](production_milestone_plan.md)).
+- **Previous P0–P6 Plan**: Abolished and superseded by `M1`–`M4`.
+- **GreenCloud VPS (`greencloud-tokyo-01`) State**:
+  - Primary service `binance-market-data-recorder.service` remains `inactive` and `disabled` (`PID 0`, `NRestarts 0`).
+  - Temporary P4 diagnostic units (`p4-btc-recorder.service` and timers) were stopped cleanly after diagnostic runs; all 45, 337, and 874 sealed chunks across Runs A, B, and C passed independent `raw-independent.v2` verification with zero corruption.
 
-2026-11-01 independent closure: **P0–P3 ACCEPTED; P4–P6 not started**.
-[P3-R3 closure](milestones/P3/review-20261101.md#r3-independent-closure) accepts
-runtime `30e8a4a` and delivery HEAD `30ebbd6`; 66 related checks, original probes
-and both commits' dual-platform CI/full logs pass. No remaining P3 correction was found.
-The owner authorized PR #89 merge and ancestry-checked remote-branch cleanup.
-This acceptance does not deploy code or refresh installed-host observations; no VPS,
-service or production-data operation occurred. Production readiness remains **NO**
-until the actual P4–P6 runs and data verification qualify the selected configuration.
-The candidate and earlier review states below are retained history.
+## Summary of Retained Baseline & Diagnostic Findings (P0–P3 & P4-prep)
 
-2026-11-01 author correction candidate `30e8a4a`: the remaining P3-R3 RPI clock
-uncertainty is preserved through valid frame/snapshot callbacks; queued pre-reversal
-frames and other still-active source conditions cannot authorize early recovery.
-REST success callbacks also respect the known clock boundary. New regressions and
-unchanged reviewer probes pass; see [current P3 result](milestones/P3/README.md) for
-validation/CI. Independent re-review remains pending, **P3 NOT ACCEPTED**. Draft PR #89
-and its branch are retained. No merge, P4, deployment or production operation occurred;
-production readiness remains **NO**. Historical host observations are unchanged.
+1. **P4 Diagnostic Runs (2026-11-01, [`milestones/P4/README.md`](milestones/P4/README.md))**:
+   - **Run A (`f622a4c`)**: Exposed USD-M dated public ADL (`BTCUSDT_261225`, `BTCUSDT_270327`) returning HTTP `400 / -1121`. Owner approved initial-release omission of dated public ADL with `UNKNOWN` official applicability ([`ADR-0057`](adr/0057-initial-production-dated-adl-exception.md)).
+   - **Run B (`f622a4c`)**: Exposed `Catalog` single-lock starvation when draining `AvailabilityJournal` in large transactions.
+   - **Run C (`8bdae20`)**: Ran 55 minutes and was stopped cleanly when `AvailabilityJournal` pending rows reached `52,997` (because 2,233 healthy sources each emitted a checkpoint row every 10s while the bounded drain processed 64 rows/pass) and 80 active spools rotated every 60s (`874` sealed files in 55 minutes).
+2. **P3 Independent Closure (`30e8a4a` / `30ebbd6`, [`milestones/P3/review-20261101.md`](milestones/P3/review-20261101.md#r3-independent-closure))**:
+   - Accepted durable per-source availability intervals, clock-uncertainty boundary guards, and incremental new-file verification (`raw-independent.v2`).
+3. **P2 Independent Closure (`1c1785c` / `464ed56`, [`milestones/P2/review-20261029.md`](milestones/P2/review-20261029.md#r5-independent-closure))**:
+   - Accepted Spot/USD-M/COIN-M product discovery, single REST representations ([`ADR-0053`](adr/0053-single-rest-representation-and-required-information.md)), measured D06 live polling + daily trade supplement ([`ADR-0054`](adr/0054-d06-fixed-cadence-and-daily-trade-supplement.md)), synchronous `Retry-After` gate, and owner-approved omission of dated premium-index klines ([`ADR-0055`](adr/0055-initial-production-dated-premium-exception.md)).
+4. **P0 & P1 Baseline ([`milestones/P0/README.md`](milestones/P0/README.md), [`milestones/P1/README.md`](milestones/P1/README.md))**:
+   - P0 aligned development base `113cdb3` (merging `9e8ec37`/`d81e7d2` and `01d7421`) and recorded isolated VPS baseline against installed `20e57f3`.
+   - P1 delivered bounded vectored raw writes, long-lived receive loops, and sequence-only capture health ([`ADR-0052`](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md)) at `b292d0d`.
 
-2026-11-01 independent re-review: **P3-R1/R2 CLOSED; P3-R3 still OPEN**.
-The [review](milestones/P3/review-20261101.md) verifies the original fixes at
-`41abdbb` / delivery HEAD `1243b99`, but reproduces premature closure of active
-clock uncertainty by valid RPI callbacks. The remaining task is in the plan's P3
-section. P3 remains NOT ACCEPTED; Draft PR #89 and its branch remain open.
-No merge, deployment, production operation or P4 run occurred; production readiness
-is still **NO**. This review does not refresh observations of the installed host.
-
-Earlier 2026-11-01 candidate: P3-R1–R3 correction `41abdbb` is on Draft PR #89.
-The [P3 correction record](milestones/P3/README.md) distinguishes author validation
-from pending independent acceptance. P3 remains NOT ACCEPTED; no production operation
-or P4 run was performed. Main/installed production state is not changed by this work.
-
-2026-10-30: P0–P2 are accepted under the approved initial-release scope;
-[P3 development](milestones/P3/README.md) is delivered and locally validated, but
-[independent review](milestones/P3/review-20261030.md) leaves P3 NOT ACCEPTED with
-three reproduced gap/verification defects. Draft PR #89 is retained for fixes;
-main remains ec46e32. Corrective tasks are in the plan's P3 section.
-P4–P6 have not started; production readiness remains **NO**. P3 did not access the
-VPS or production services/data. The installed-source observations below are retained
-history, not a fresh host-state assertion.
-
-
-The [production plan](production_milestone_plan.md) governs future development.
-P0 aligns the development base with accepted remote main `01d7421`, after preserving
-user changes as `d81e7d2`; the merge base for new work is `113cdb3`.
-PR #86 merged as `004c1a6`, PR #87 as `43aab9f`. The [review](milestones/P0/review-20261026.md)
-accepts R1/R3/R4 and the [P0 measurements](milestones/P0/README.md); the remaining
-R2 classifier defect is corrected with 26 focused tests and an appended v4
-interpretation of the same boundaries. P0 corrections are complete.
-[Independent P1 re-review](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27)
-accepts fix b292d0d and P1's development deliverables; production qualification is still pending.
-At the retained P1 handoff, P2–P6 had not started. At that time GitHub had only main and there were
-no open PRs, so no branch/PR deletion was needed.
-P1 did not access the VPS, install a candidate, change service state, or touch
-production data. Its macOS fixture measurements do not update the installed
-source observation below or establish production qualification.
-
-The installed-source observation at 2026-10-26T08:41:57Z is in the
-[P0 environment evidence](milestones/P0/baseline/environment-final.json): Recorder
-inactive, disabled, PID 0, NRestarts 0; installed source `20e57f3` still matches all
-124 Python files, distinct from the selected development source. A new isolated
-v3 fixture and separate profile completed without deployment or service changes.
-The [2026-10-26T15:06:33Z observation](milestones/P0/corrections-20261026/benchmark/completion.json)
-again records inactive, disabled, PID 0, NRestarts 0; it is not a repeated installed-
-source audit. The [v4 classification](milestones/P0/corrections-20261026/r2-reclassification.json)
-remains STEADY for unprofiled and NON_STEADY for profile, with additional backlog
-reasons; producer results remain untouched. This R2 fix did not access the VPS or
-change production code/service state.
-The P0 benchmark uses an isolated source directory and fresh temporary data only.
-It does not deploy or start the production Recorder service.
-
-Historical N1/N2 durations, saved-data results and failures remain under their original
-criteria. They do not qualify BTC/ETH's expanded Spot/USD-M/COIN-M scope. Production
-readiness remains **NO**. R-078 stays open until the final configured 72h and data
-verification requirements pass.
-
-Old live checkpoints and pending private-helper reviews are preserved in
-[pre-P0 history](history/pre-P0-CURRENT_PRODUCTION_STATE.md) and
-[earlier history](CURRENT_PRODUCTION_STATE_HISTORY.md). Those pending private
-helpers are not dependencies of the production plan.
+Historical checkpoints prior to P0 are condensed in [`CURRENT_PRODUCTION_STATE_HISTORY.md`](CURRENT_PRODUCTION_STATE_HISTORY.md) and [`history/pre-P0-CURRENT_PRODUCTION_STATE.md`](history/pre-P0-CURRENT_PRODUCTION_STATE.md).

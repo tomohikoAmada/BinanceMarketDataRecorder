@@ -20,10 +20,10 @@ from typing import Any
 from binance_market_data_recorder.metrics.continuity import continuity_report
 from binance_market_data_recorder.storage.catalog import Catalog
 
-ROOT = Path("/var/lib/binance-market-data-recorder/p4-20261101-btc-c")
+ROOT = Path("/var/lib/binance-market-data-recorder/p4-20261101-btc-d")
 EVIDENCE = ROOT / "evidence"
-UNIT = "binance-market-data-p4c-btc.service"
-ARCHIVE = "binance-market-data-p4c-archive.service"
+UNIT = "binance-market-data-p4d-btc.service"
+ARCHIVE = "binance-market-data-p4d-archive.service"
 
 
 def publish(name: str, value: Any) -> None:
@@ -45,6 +45,8 @@ def sample() -> dict[str, Any]:
     # Catalog keeps source-local evidence. Do not replicate the static 2MiB
     # inventory and every healthy source in each 30-second resource sample.
     coverage = state["selected_asset_coverage"]
+    if coverage is None:
+        raise ValueError("selected capture is still assembling")
     state["selected_asset_coverage"] = {
         k: coverage[k]
         for k in (
@@ -52,6 +54,7 @@ def sample() -> dict[str, Any]:
             "directories_observed",
             "transport_progress",
             "availability_journal_pending",
+            "capture_metrics",
         )
     }
     for products in state["products"].values():
@@ -186,7 +189,7 @@ def checkpoint(freeze: dict[str, Any], start: int, end: int, label: str) -> dict
 
 def main() -> None:
     freeze = json.loads((EVIDENCE / "freeze.json").read_text())
-    config_path = Path("/opt/binance-market-data-recorder/p4-20261101-btc-c/recorder.toml")
+    config_path = Path("/opt/binance-market-data-recorder/p4-20261101-btc-d/recorder.toml")
     if hashlib.sha256(config_path.read_bytes()).hexdigest() != freeze["config_sha256"]:
         raise RuntimeError("P4 configuration changed after freeze")
     initial_boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
@@ -266,6 +269,8 @@ def main() -> None:
                     )
                     and expected <= states.keys()
                     and not (expected & current["unavailable"].keys())
+                    and state["selected_asset_coverage"]["availability_journal_pending"] <= 128
+                    and state["selected_asset_coverage"]["capture_metrics"]["failure_count"] == 0
                 )
                 if ready:
                     start, start_boot = current["utc_ns"], current["boottime_ns"]
@@ -279,7 +284,7 @@ def main() -> None:
                             "boot_id": initial_boot,
                         },
                     )
-                    systemctl("stop", "binance-market-data-p4c-prep-stop.timer")
+                    systemctl("stop", "binance-market-data-p4d-prep-stop.timer")
                 time.sleep(10)
                 continue
             if (

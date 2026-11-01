@@ -1,307 +1,166 @@
-# Recorder 生产上线 Milestone Plan
+# Binance Market Data Recorder — Production Milestone Plan (M1–M4)
 
-版本：2026-11-01 · 当前开发计划 · P0–P3独立验收通过，P3-R1–R3全部关闭。P4启动准备与实测修正中，P5–P6未开始，生产资格仍为NO。
+> **Status Notice (November 2026)**: The previous October 26 – November 1 `P0–P6` milestone plan has been **ABOLISHED and SUPERSEDED** by this streamlined Python engineering and VPS qualification plan (`M1` → `M2` → `M3` → `M4`).
+>
+> All valid technical deliverables and lessons from `P0–P3` and `P4` diagnostic runs (`Run A/B/C` on `greencloud-tokyo-01`) are retained as the baseline for `M1`–`M4`. No language rewrite (Go/Rust/C++) is performed; all bottlenecks are resolved by fixing architectural amplification, SQLite/spool I/O frequency, source duplication, and over-defensive redundancy in Python 3.12.
 
-**目标：按至少 10 个币种设计，先在 GreenCloud VPS 上让 BTC 和 ETH 稳定生产运行。** 记录所选标的在现货、U 本位 / 币本位永续及交割合约中的公开市场数据，供离线研究和回测；保留所需信息及精度，不把所有 HTTP 正文逐字节留存作为上线条件。期权暂缓。
+---
 
-研究用途目前未确定。Recorder 的采集范围独立于策略、因子和回测实现：尽可能保留不同的信息，资源不足时按信息不可替代性和采集成本取舍，不按猜测的研究需求提前删字段。
+## 1. Retained Baseline & Why the Previous Plan Was Superseded
 
-首版优先稳定保存基础数据，并尽可能保留其他独立公开信息。2026-10-29 owner明确接受仅暂缺U本位、币本位**交割合约的溢价指数K线**；永续继续采集，其他既定范围不变。完整目标继续保留，实际未采集项明确披露，不要求等待该指标的官方澄清才推进首版。见[ADR-0055](adr/0055-initial-production-dated-premium-exception.md)。
+### 1.1 Retained Foundation (Completed in P0–P3)
+- **P0 (`113cdb3` / `43aab9f`)**: Merged local workspace and remote `main`, inventoried Spot / USD-M / COIN-M public sources, and recorded the isolated VPS benchmark baseline.
+- **P1 (`b292d0d`, [`ADR-0052`](adr/0052-bounded-raw-batches-and-sequence-only-capture-health.md))**: Replaced per-frame full L2 orderbook reconstruction on the capture path with sequence-only continuity checks (`U/u/pu`), long-lived WebSocket receive tasks, and bounded vectored raw writes (`SpoolWriter.append_many`).
+- **P2 (`1c1785c` / `464ed56`, [`ADR-0053`](adr/0053-single-rest-representation-and-required-information.md), [`ADR-0054`](adr/0054-d06-fixed-cadence-and-daily-trade-supplement.md), [`ADR-0055`](adr/0055-initial-production-dated-premium-exception.md))**: Implemented multi-asset Spot/USD-M/COIN-M product discovery, single primary REST representations, measured D06 `historicalTrades` polling cadences (`2s` USDT / `3s` USDC / `30s` COIN-M) + independent daily trade file supplement, synchronous `Retry-After` gate ordering before persistence `await`, and owner-approved omission of dated premium-index klines ([issue #585](https://github.com/binance/binance-connector-python/issues/585)).
+- **P3 (`30e8a4a` / `30ebbd6`, [`ADR-0051`](adr/0051-production-continuity-and-incremental-verification.md), [`ADR-0056`](adr/0056-source-recovery-and-bounded-background-verification.md))**: Implemented per-source availability interval tracking, clock-discontinuity boundary guards, and incremental new-file verification (`raw-independent.v2`).
+- **ADR-0057 ([`ADR-0057`](adr/0057-initial-production-dated-adl-exception.md))**: Owner-approved initial-release omission of USD-M dated public `adlQuantile` (which returns HTTP `400 / -1121` on listed dated futures) with `UNKNOWN` official applicability.
 
-本计划替代旧 milestone 的开发顺序和未来验收流程。旧计划文件及兼容入口已退役，历史数据、失败记录和验收结论保留，不改写为本计划的通过记录。这里定义目标行为，不表示这些能力已经实现；发布的数据格式和存储契约的实际变更须随对应 milestone 明确记录。
+### 1.2 Root Causes Exposed by P4 Diagnostic Runs & Cross-Verification
+During the November 1 P4 diagnostic runs (`Run A/B/C`) on `greencloud-tokyo-01` and subsequent deep architectural profiling, four primary bottlenecks and three layers of over-engineering were identified:
 
-## 1. 已确定的取舍
+1. **60-Second Spool Rotation & Small-File Storm (`RotationPolicy.seconds = 60.0`)**:
+   - Single-asset BTC opens ~80 active spool writers (`SelectedAssetCapture`), rotating every 60 seconds and generating **~80 sealed `.zst` files + 80 `.json` manifests per minute** (`874` sealed chunks in 55 minutes during P4 Run C; projected **115,200 `.zst` files + 115,200 manifests = 230,400 files/day** for BTC alone, and >400,000 files/day for BTC+ETH).
+   - Every seal triggers synchronous SQLite `Catalog` transitions (`ACTIVE` → `SEALED`), Zstd compression, full decompression readback, dual SHA-256 digests, directory `fsync`, background subprocess verification, and archive copy/readback/delete transactions.
+2. **SQLite `Catalog` Write Amplification & `AvailabilityJournal` Backlog**:
+   - `Catalog` opens SQLite in WAL mode with `PRAGMA synchronous = FULL` under a single process-wide `threading.RLock()`, forcing OS `fsync` stalls on every small transaction while blocking concurrent async callers via `to_thread`.
+   - `AvailabilityJournal.valid()` enqueues a checkpoint row for **every healthy source** (`2,233` sources for BTC) every 10 seconds (`~223 rows/s`), while `flush_availability_journal()` drains only `64` rows per pass (`~6.4 rows/s`), causing the `52,997`-row backlog that halted P4 Run C after 55 minutes.
+3. **K-Line Source Explosion & Unretired Seed Sources (83% of All Sources)**:
+   - Out of `2,233` BTC sources, **1,845 (82.6%) are K-line sources** (`S11`, `S12`, `D21`, `D22`, `D23`).
+   - `S12` (`@kline_<interval>@+08:00`) subscribes to all 16 intervals across 15 Spot pairs (`240` WS streams + `240` REST seed sources = `480` sources), even though the **10 intervals that divide 8 hours** (`1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`) have identical bucket boundaries to UTC (`S11`).
+   - All `615` one-shot `kline_seed_*` REST sources remain in `SelectedAssetCapture.sources` permanently after completing their single startup request, getting scanned every 1 second by `_observe_availability()` and `due = sorted(...)`.
+4. **Per-Frame Hot-Path Overhead**:
+   - Every incoming frame runs strict Pydantic `EventEnvelope` validation, multiple `.model_copy()` allocations, and `_ImmutableEnvelopeSnapshot` deep copying (`_freeze_json_value`), while repeating 17 verbose ASCII keys in every frame's CBOR map (`582 B` metadata wrapper around a `140 B` `bookTicker` payload = `5.16x` uncompressed overhead).
+   - Every REST persistence call in `SelectedAssetCapture._persist_rest()` re-parses `result.envelope.raw_payload` via `json.loads()` and `json.dumps()` and hops threads through `run_owned_blocking_call` (`asyncio.create_task(asyncio.to_thread(...))` + `asyncio.shield`).
+5. **Over-Defensive Multi-Pass Verification & Codebase Bloat**:
+   - The same chunk is hashed during write (`_raw_digest` + per-frame `CRC32C`), compressed with Zstd checksum, immediately decompressed and hashed again in `seal_chunk_file()`, then decompressed and CBOR-re-encoded frame-by-frame (`_canonical_cbor(value) != body`) in a background `verification_worker` subprocess (`raw-independent.v2`), and hashed again during archive copy and deletion.
+   - Every startup calls `seal_capture_startup()` across all active writers, creating dozens of 0-record `.zst` chunks and manifests before any market data arrives.
+   - `src/` carries ~21,500+ lines of legacy single-symbol collectors (`SpotCollector`, `UsdMCollector`, `UsdMSideDataManager`), retired V5 acceptance harnesses (`service/acceptance*.py`), legacy reconnect auditors (`audit/reconnect_boundaries.py`, `spool/legacy_reconnect.py`), and a 5,106-line monolithic `Catalog` class.
 
-| 项目 | 本阶段决定 |
-| --- | --- |
-| 设计规模 | 至少 10 标的；配置、调度、限流、队列和存储不能写死为 BTC / ETH；10 不是 VPS 容量承诺 |
-| 首批上线 | BTC + ETH；保留此前确定的各自现货报价对及上述合约市场范围；没有该标的对应合约时标为交易所不提供，不能假造订阅 |
-| 连续性目标 | 用户选择 **99.5%**；短暂断线允许自动恢复，缺口必须保留；不以所有流平均值掩盖某条流不达标 |
-| 已保存数据 | 不允许静默损坏、静默丢弃或将未写入的数据报告为已持久化；正确性与连续性分别验收 |
-| 保存表示 | WS 继续单份保存应用层原文；REST 每个响应保存一种主体表示，原文或能保留所需字段的 SDK 模型均可。保留价格 / 数量精度、交易所 / 接收时间、产品身份、必要序列和缺口信息；明确表示与版本，SDK 输出不冒充原始 HTTP 正文。见 [ADR-0053](adr/0053-single-rest-representation-and-required-information.md) |
-| 信息与资源 | 53行覆盖清单继续作为完整目标；先去等价重复，再保独有事实及解释它所需的目录 / 时间 / 序列。资源受限配置明确少采哪些观察细节及原因；必需源不动态丢弃，测试后不删失败项 |
-| 首版明确暂缺 | 仅U/C交割的premium-index K线；永续premium及其他源保留。官方适用性仍未知，标为owner批准暂不采集，不能标成交易所不提供或覆盖成功。实现和验证留在P2；官方回复不是首版验收前置条件 |
-| 突然断电 | 用户选择本阶段暂不考虑；不新建掉电保障或断电测试专项。保留现有周期性 fsync 和正常停止排空，不推导成用户接受某个掉电丢失窗口，也不声称本阶段证明了掉电零丢失 |
-| 技术路线 | 优先精简当前实现，暂保留 Python、现有可靠网络库 / 合适的官方 REST SDK 和 Raw 存储能力；Python 版本、许可证不作为候选筛选门槛 |
-| 开源复用 | 借鉴 Cryptofeed 的解析前原文录制，CCXT / Nautilus 的市场身份与能力映射，HftBacktest 的短采集通路；不整仓引入交易框架。完整组件替换或 Rust 热点实现只在同等数据 / 正确性实测证明值得时采用 |
-| 测试方式 | 使用现有测试加少量针对改动的回归，以及真实 VPS 长跑；不建立新的通用故障注入 / 容量测试平台 |
-| 长跑顺序 | 1 币 2h 检查点 → 同次继续到 24h；2 币同样先 2h 再 24h；逐步扩容观察错误边界并降低负载；最终生产配置 48h 检查点 → 同次继续到 72h |
+---
 
-“所有公开数据”按交易所实际发布的信息家族定义。等价传输可以择一，独立字段 / 采样语义不能丢掉。现货按所选 base asset 找报价对，不扩张成所有以该币为 quote asset 的其他资产。全市场或按资产发布的数据只采一次，再关联各产品。不包括账户、订单、密钥接口；遇到必须认证的历史市场接口，明确列出限制和合法公开替代，不能悄悄把它算作已覆盖。
+## 2. New Milestone Plan Overview (`M1` → `M2` → `M3` → `M4`)
 
-2026-10-27 已确认：REST 不保证未知字段、JSON 排版或所有 HTTP 字节的留存；以覆盖清单中明确的所需字段及其语义为准。不能仅因为 SDK 没有建模，就把已经要求的字段静默删掉；关键 null / 缺失区别按该源语义保留。不为原文单独维护第二套 HTTP 接入，也不同时长期保存完整模型和 Base64 正文。具体表示变更在 P2 实现并验证旧记录可读；本次计划更新不重写历史文件或 P0 / P1 结果。
-
-### 信息优先级与资源不足时的顺序
-
-以下是面向未知研究用途的工程选择，依据和借鉴边界见 [源码及研究补充](research/2026-10-27/retention-and-overhead-review.md#7-源码与研究依据)。不建立自动打分器或运行中偷偷丢消息的降级系统。
-
-| 次序 | 处理方式 | 明确代价 |
-| --- | --- | --- |
-| 先消除等价重复 | REST只存一种主体；共享源只抓一次；同一次处理复用编码 / 摘要；批量写入 | 所需市场信息不减少；需要同输入核对，不能仅凭文件小就声称收益 |
-| 优先保住独有事实 | 各目标市场的产品 / 合约规则和状态、可获得的逐笔及聚合成交、盘口快照及差分、不能等价替代的报价，以及标记 / 指数价、资金费、OI、清算等独立发布 | 独有信息不能因低频或不便采集被归为可有可无；稀疏清算没有事件也属正常。所有接口仍受权限和实际发布范围限制 |
-| 再取舍重复观察细节 | 原生K线、滚动统计等仍保留为信息家族；资源不足时优先评估减少部分周期的未收盘更新、重叠REST列表的重复副本、超出有效发布频率的轮询 | 未收盘过程和收到它的时点确有信息，减少后必须披露。官方收盘值、不同价格类型 / 时区 / 连续合约语义不能笼统用本地聚合替代 |
-| 最后停止扩容 / 回落标的数 | 用真实资源观测确定有余量的配置，先保至少BTC / ETH各目标市场的数据连贯性 | 10标的是设计能力，不是这台VPS已获10标的生产认证 |
-
-P2在现有覆盖表中落实每源的优先级、保留字段、频率和可缩减的观察细节，不新增需求管理平台。首版配置采用上述已批准例外；其他源沿用既定范围。需要受限配置时，在下一次运行前明确记录源 / 周期 / 字段差异、预计收益与损失。最低范围仍含BTC / ETH各适用市场及上述独有事实，不能退化成两个USDT交易对。超出这里授权的缩减再与用户讨论；日常实现和已授权的资源配置不用逐项审批。
-
-P4–P6按冻结后的实际配置验收：最低必需源及所有启用源都按99.5%考核；事先声明未启用的观察细节及ADR-0055批准的暂缺项单列为未采集，不能称为全范围覆盖，运行中失败的源不能移出统计。改变配置后使用新窗口，不把少做工作造成的CPU下降算作代码优化。这样同时报告“采了多少种信息”和“这些源运行得多稳定”。
-
-## 2. 起点与已经完成的研究
-
-下列前三项是制定计划时的历史起点。P0已保留本地工作为d81e7d2，并将已接受远端01d7421合入113cdb3；当前唯一开发起点及安装包差异见[P0记录](milestones/P0/README.md)。原核心基准原封保留。
-
-- 本地基础：`9e8ec373a5e9e8bede36cd6f5ff9a21cd355fb3b`，存在用户和本轮文档未提交改动。
-- 已审查的远端 main：`01d74212793e2bf1895f903a01868d6832b0b2cb`，领先该本地基础 108 commits。后续开发需核对当时最新状态，不能在旧代码上重新修已解决的问题。
-- 2026-10-26 VPS 基准执行包：`20e57f30682e88b4090cc2f0da34aa26fca4de2e`，124 个安装源文件已逐一匹配。
-- [开源比较和架构研究](research/2026-10-26/README.md)已完成源码层面的候选比较，给出具体借鉴项；没有候选项目的同载荷性能胜出结论。
-- [首份基准与火焰图](research/2026-10-26/baseline/README.md)已经完成：1 / 2 / 10 币有限输入，共 9 轮、144,840 条 WS 原文核对通过。该结果不包含全部辅助接口、真实网络和尚未实现的新市场。
-- 原 N2 曾实际运行 24h，已保存数据核验通过，但旧监控指标约 99.34%，因此未被接受。它是诊断依据，不是本计划 BTC / ETH 全范围的生产通过证据。
-
-完整功能的稳态开销、市场覆盖和新连续性统计尚未得到证明。P0 补清基线口径；现有基准原封保留，不用优化后的结果冒充“最初版本”。
-
-## 3. 模块边界：让采集不必等待分析
-
-```mermaid
-flowchart LR
-  A[产品目录与订阅配置] --> B[WS / REST 接入]
-  B --> C[单份数据主体、接收时间、来源]
-  C --> D[有界队列与批量 Raw 写入]
-  D --> E[封存文件]
-  E --> F[独立校验与归档]
-  E --> G[离线重建、规范化、回放]
-  B --> H[轻量连接、序列与缺口状态]
-  D --> H
+```text
+M1: Primary Bottleneck Remediation (Spool Rotation, SQLite/Journal, K-Line Dedup, Hot-Path CPU)
+  -> M2: De-Overengineering & Codebase Consolidation (Verification Streamlining, Legacy Removal, Catalog Split)
+  -> M3: Local Benchmark & Stability Convergence (A/B Metrics, Regression Suite, Deployment Freeze)
+  -> M4: GreenCloud VPS Staged Qualification (Continuous 2h -> 12h -> 24h Run)
 ```
 
-模块是清楚的责任边界，不要求每个模块单独一个服务，更不按币种建立一堆进程。先保留一个采集进程和必要后台 worker，只有实测需要时再调整进程数量。
-
-| 模块 | 负责什么 | 现有代码落点，实施时以对齐后的版本为准 |
-| --- | --- | --- |
-| 产品与配置 | 标的 → 市场 / 报价币 / 合约 / 到期日；订阅清单；共享请求预算 | `domain/product.py`、`config.py`、`binance/*/exchange_info.py`、请求预算模块 |
-| 数据接入 | WS 原文；REST 单份原文或 SDK 模型及表示版本；真实接收时间、必要来源状态、连接生命周期与重连 | `binance/spot`、`binance/usdm`、新增必要 COIN-M 适配；`collector/*` |
-| Raw 写入 | 有界缓冲、批量追加、周期同步、轮换、正常停止排空 | `spool/*`、`domain/event.py`、`storage/catalog.py` |
-| 健康与恢复 | 按流标记缺口；恢复连接与必要快照；协调资源不足 | `supervisor/*`、`collector/resync.py`、`service/*`、轻量指标 |
-| 后台消费 | 校验、归档、容量清理策略、规范化、盘口重建和回放 | `archive/*`、`orderbook/*`、`normalize/*`、`replay/*`、`metrics/*` |
-
-不要求在落盘前完成完整盘口重建、报表或消费者计算。必要的流识别、接收时间、序列观察和缺口标记要保留；Raw 的质量标记可以按明确的版本契约用关联记录表达，不能伪装成原始消息本来带有这些字段。
-
-## 4. Milestone 总览
-
-| 阶段 | 交付结果 | 状态 | 依赖 |
-| --- | --- | --- | --- |
-| P0：对齐代码和验收口径 | 单一开发基线、完整覆盖清单、可比较的性能起点 | [完成，R2补充修正及v4分类已记录](milestones/P0/review-20261026.md#r2补充修正2026-10-27) | 无 |
-| P1：缩短原始数据写入路径 | 采集与计算分开，减少逐消息开销 | [完成，R1独立复审通过](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27) | P0 |
-| P2：补齐市场与数据覆盖 | 10 标的可配置，BTC / ETH 各指定市场按首版范围接入，完整目标与暂缺分别披露 | [完成，R5独立复审闭合](milestones/P2/review-20261029.md#r5-independent-closure) | P1 的接口稳定 |
-| P3：恢复、后台处理与运行工具 | 小故障能自动恢复，归档 / 校验不拖住采集 | [完成，R3独立复审闭合](milestones/P3/review-20261101.md#r3-independent-closure) | P1、P2 |
-| P4：单币验证 | 同一版本 / 配置从 2h 检查到完整 24h | [启动准备与实测修正中，尚无T0](milestones/P4/README.md) | P3 |
-| P5：双币与实际扩容 | BTC / ETH 24h，通过逐档增加标的了解余量 | 未开始 | P4 |
-| P6：最终长跑与生产交付 | 至少 BTC / ETH 连续 72h，48h 为中间检查点 | 未开始 | P5，最终配置确定 |
-
-每阶段只维护一份简短结果记录：版本 / 配置、做了什么、测试或数据证据、遗留问题、下阶段入口。没有实现和证据就不勾完成。新增子项保留在对应阶段内，不继续生成 Q8 重试 V2 / V3 一类无限延伸的计划层级。
-
-### P0：对齐代码和验收口径
-
-**状态：R1 / R3 / R4复审通过，R2剩余分类修正完成，P0通过。** [结果记录](milestones/P0/README.md)保留原始交付和测量；[PR #87复审](milestones/P0/review-20261026.md#pr-87-复审2026-10-26)记录一个已复现的稳态漏判。[v3基线](milestones/P0/corrections-20261026/README.md)的原分类仍为无profiler STEADY / profile NON_STEADY，原文件保留；[v4分类](milestones/P0/corrections-20261026/r2-reclassification.json)已追加，两轮状态保持；profile增加积压原因，仍不用于性能比较。P1交付见[结果记录](milestones/P1/README.md)。
-
-**工作：**
-
-- [x] 保留用户未提交工作，对齐已接受远端代码并记录选定提交与安装包对应关系。PR #86已合并至 `004c1a6`，原有工作和研究保留。
-- [x] 交付52个信息家族覆盖表（D11拆分后53行），列出市场、产品、源、频率、字段、共享范围、权限、去重、缺口与必须性；权限受限和未实现项明确列出。D11已按R4披露未解决的官方语义冲突，不能猜测采样规则。
-- [x] 固定配置与输入，交付现有功能的CPU / RSS / I/O / 调度测量及低频火焰图，与最初核心基准分列。两轮64,428条WS原文及数量核对已核实；R1 / R2已追加独立物理顺序检查及逐源窗口工作 / 尾部记录；旧文件不改写。
-- [x] 交付ADR-0051及相应合同，写明逐源99.5%连续性、独立的新文件校验与正常停止排空；旧操作指令移入历史。运行时落实仍按P1–P3推进。
-
-**P0修正的复审状态：**
-
-- [x] **R1：独立验证实际写入顺序。** 不先按帧接收时间重排再声称顺序正确；保留物理ordinal和明确的分片顺序。短回归覆盖同流2、1、3乱序应失败及正确跨分片应成功。
-- [x] **R2：修正有短暂回落的持续积压漏判。** v4保留同源窗口内的新高历史：至少两次新高且结束仍高于第一次新高则NON_STEADY，不因部分排空重置。`0 → 3 → 2 → 5 → 8`及终点小幅回落负例均判为NON_STEADY，有界波动恢复正例判为STEADY；26项定向回归保留逐源、逾期、fsync及尾部不改判规则。仅分类器变化，以已存五个边界追加两轮判定，未重跑VPS。
-- [x] **R3：复测不能覆盖旧日志。** 任何输出路径冲突须在写文件 / 启动进程前拒绝，或使用独占的新运行目录；验证重复运行时旧结果、日志及采样文件保持原样。
-- [x] **R4：更正D11清算快照说明。** 区分USD-M / COIN-M，披露官方参考页“最新”和USD-M changelog“最大”的冲突；保存原文，未解决前不据此假设完整清算或采样规则。
-- [x] **P0最终通过。** R1 / R3 / R4及已交付测量保留通过；R2剩余分类缺陷、定向回归及已存边界重新判定完成，见[R2闭合](milestones/P0/review-20261026.md#r2补充修正2026-10-27)与[检查记录](milestones/P0/corrections-20261026/r2-checks.json)。没有修改实际计数或计时协议，不重新采集。
-
-**通过：**开发起点唯一可复查；所有首版数据家族有明确归宿，无未说明的范围缺口；基准能按同口径复测；后续开发不再依赖旧计划的私人保护窗口和多轮签署程序。
-
-**2026-10-27 范围补充：**
-
-- [x] 按用户确认将REST验收从“所有正文逐字节留存”改为“单份主体、所需字段与精度完整、来源如实标注”，同步[覆盖表](milestones/P0/coverage.md)、[数据约定](data_contract.md#rest-retention-decision-2026-10-27)和[ADR-0053](adr/0053-single-rest-representation-and-required-information.md)。这是后续P2的设计约定，运行时改造尚未完成；P0 / P1原测量及已核验项保留，P1当前验收见独立复审。
-- [x] 记录研究用途与采集解耦、按独有信息 / 成本确定资源优先级，以及去除无实际用途的哈希和重复流程的原则；见同一ADR及[研究补充](research/2026-10-27/retention-and-overhead-review.md)。覆盖清单继续保留完整目标，后续配置和实现分别在P2 / P3落实；本项不是它们已开发完成的证明。
-- [x] 2026-10-28 owner已选择“按产品分配实时轮询频率＋官方日度逐笔文件独立延迟补充”。在[数据约定](data_contract.md#d06-live-and-delayed-supplement-decision-2026-10-28)及[ADR-0054补记](adr/0054-selected-asset-capture-and-public-observations.md#owner-decision-live-d06-and-daily-supplement-2026-10-28)明确批量来源、实际获取时间、字段/日期缺失及实时覆盖分开计算；实施与验收留在P2，不改历史证据或既有格式。
-
-本轮19项定向回归及新两轮有限输入各32,214条WS / 32,250条全源Raw通过独立物理顺序、原文和fsync计数核对，见[修正记录](milestones/P0/corrections-20261026/README.md)。采样运行仍如实标记非稳态；不因最终总数追平改判通过。
-
-**远端整理已核实：** PR #86 / #87已合并关闭，2026-10-26复审时GitHub已仅有main，head为 `43aab9f`，无需再次删除或重建分支。本轮直接同步现有main，不创建、删除或恢复旧分支；历史PR、标签、数据和其他本地worktree保留。
-
-### P1：缩短原始数据写入路径
-
-**状态：完成，修正提交b292d0d独立复审通过。** [闭合记录](milestones/P1/review-20261027.md#r1独立复审闭合2026-10-27)确认退役检查关闭原竞态，在手帧交接及writer错误传播保留；原三项复现和196项定向测试（含9项新增回归）复跑通过，双平台CI绑定修正提交。批量写、字节上限、序列健康边界及原本机测量保留通过。[原结果](milestones/P1/README.md)的writer本机固定输入中位墙钟减少11.82%；全功能两侧各有NON_STEADY且后台工作不同，不宣称整体CPU收益或VPS容量。当时P2尚未开始；当前状态见下一节。
-
-**工作：**
-
-- [x] 接入、Raw writer 与完整盘口计算分开；未知字段兼容，格式错误 / 过深JSON原文保留并标记；健康状态明确只评价序列接续。
-- [x] 实际采用有界`writev`和便携回退，复用metrics实例；交错同输入writer测量及相同文件字节支持保留这些改动。
-- [x] receipt / spool分别按条数和字节有界；追加与fsync进度分开；短写、失败、背压及既有正常排空回归通过。十标的fixture证据保留，不延伸为完整P2或VPS容量证明。
-- [x] 保留Raw v1、SQLite、现有reader及必要文件 / 归档保护，无历史全量转换。
-- [x] **R1：长寿命接收任务退役修正并复审通过。** Spot / USD-M在每次recv前检查retirement，检查到接收状态置位之间无调度点；退役不再因缓冲刚排空而等下一条消息。在手帧完成原有有界交接，停止和writer失败正常传播。[原离线复现](milestones/P1/reproduce_receive_retirement.py)及新增回归验证该边界，没有恢复逐帧创建多组Task或增加控制框架。
-- [x] R1已补9项短回归（原版3项失败、修正版全部通过），接收 / 背压 / 排空等定向集合196项通过；[修正记录](milestones/P1/review-20261027.md#r1修正交付2026-10-27)保留证据。
-- [x] 修正提交b292d0d的[双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40465389449)通过。
-- [x] 完成独立复审，P1整体通过，无新增待修正项。原writer及P0测量继续保留；本次未重跑VPS基准或生产长跑。GitHub已核实仅main、无open PR，无需删除分支；历史PR和证据保留。
-
-**通过：**同一输入 Raw 原文 / 来源时间 / 顺序信息无回归；采集不依赖完整盘口或报表结果；至少 10 标的离线配置与并发流可以运行且资源有界；优化前后按相同输入交错复测，给出变化与波动。没有实测收益的性能复杂化不保留，不承诺尚未测出的 CPU 降幅。
-
-### P2：补齐产品和数据范围
-
-**状态：P2整体通过，R5独立复审闭合，无新增P2待修正项。** [闭合记录](milestones/P2/review-20261029.md#r5-independent-closure)确认测试控制轮换时点，并严格验证三份/四份合法布局的原文、连接及缺口身份；独立复跑87项检查与两例驱动通过。1c1785c及交付HEAD 464ed56的双平台CI与日志均核实，macOS 2,369项、Ubuntu 2,366项通过。生产代码、配置和旧失败证据不改，R1/R4及首版范围保持接受。PR #88已合并为main `ec46e32`，对应远端分支已清理。官方适用性仍UNKNOWN，[issue #585](https://github.com/binance/binance-connector-python/issues/585)是非阻塞后续事项；生产长跑未开始。
-
-**历史证据保留：** [066c2c3证据复审](milestones/P2/review-20261028.md#review-066c2c3)及[权限补充](milestones/P2/r2-20261029-access/README.md)没有发现新的运行时缺陷，保留官方语义未知、失败样本及缺项影响；本次批准的是首版范围取舍，不将旧观测改为成功或官方不适用。
-
-**工作：**
-
-- [x] 产品身份显式区分 Spot、USD-M、COIN-M、永续 / 交割、symbol、pair、报价 / 保证金币、合约倍率与到期日。移除“所有合约都是 `st=1` 且 `ps=symbol`”之类范围假设。
-- [x] 按P0完整目标及ADR-0055首版例外落实BTC / ETH实际源清单；五类接入与53行映射完成，交割premium暂缺已显式落地并通过独立复审。其余源描述与修改前逐项相同；部分稀疏流未在短样本观察的限制继续披露。
-- [x] 全局目录和共享数据按实际 scope 复用，UM/CM 请求共用预算池；原生 bar 查询按发布周期安排；至少 10 标的配置与 fixture 已通过。这不证明完整配置的运行资格；R4闭合证据见下方。
-- [x] 实现选定标的下新合约、到期、下架和报价对变更的目录/调和路径；新产品的数量和订阅预算不足有显式状态，目录消失不冒充已下架。实际完整配置运行仍待资格验证。
-- [x] WS 继续单份保存应用层原始 payload。REST 每个响应选一种主体表示：已有且方便取得的正文，或能保留所需字段的 SDK 模型；不为逐字节保真另造 HTTP 接入，不同时保存完整模型和 Base64 正文。
-- [x] 在现有覆盖表逐源写明表示 / schema 与 SDK 版本、所需字段映射及已知不保留项。价格 / 数量精度、交易所时间、真实接收时间、产品身份、必要序列、空值语义和缺口信息不能因模型转换丢失；已要求但 SDK 未保留的字段需补齐接入或如实记未覆盖。
-- [x] 去掉现货盘口“完整模型 + Base64 原文”的重复保存，给变化的 payload 定义明确版本并适配现有读取、盘口接续和规范化路径；历史两种记录继续可读，不做全量历史转换。优先复用现有封装，只增加实际需要的表示分支，不建设可插拔存储框架。
-- [x] 用相同输入对照单份与现有双份的编码 CPU、压缩后字节数和所需字段结果；原文表示逐字节核对，模型表示逐字段核对精度 / 时间 / 身份 / 序列及已定义空值，验证新旧读取。SDK 导出 JSON 不自动视为压缩优化。
-- [x] 逐源落实上面的信息优先级与资源配置。K线的“收盘”是一个统计时间段结束，和交易所是否休市无关；保留原生信息家族，先测全部形成过程的成本，再决定受限配置减少哪些周期的中间更新。记录实际取舍，不等待某个策略来定义采集范围。
-- [x] D06保留最近成交采集能力；同输入比较完整响应与“新增 / 变化成交 + 每次轮询简要记录”。优先用市场 / 产品 / 原生成交ID及所保留字段直接比较，最近窗口缓存有界，不为每笔新增SHA或数据库查询。若确有收益，启用有版本的紧凑表示：保留首次观察时间、同ID变化、空 / 失败轮询、返回条数及ID / 时间边界，窗口越界如实记缺口；重启允许少量重复，不扫描历史去重。不能恢复每次返回列表的事实需披露；历史Raw及WS仍允许重复，不能用最大ID过滤掩盖迟到或变化记录。
-
-**本轮修正与剩余验收：**
-
-- [x] **P2-R4等待时长解释通过复审**：复用已有 Retry-After / 封禁截止时间解释，计算实际剩余等待。21项原回归及[原六例复现](milestones/P2/reproduce_rest_cooldown.py)通过；准入时序已在下项闭合。
-- [x] **P2-R4准入次序与无效头部处理通过独立复审，R4关闭。** f9aaeee在拒绝响应返回后的首次落盘等待之前同步启用原冷却，保留失败响应持久化、存储异常传播及在途请求收尾。独立复跑33项冷却回归、两组六例复现全部通过，覆盖Spot→Spot、UM↔CM、其他池独立、取消/存储失败和无效头部回退；原失败头部仍保存。见[闭合记录](milestones/P2/review-20261028.md#review-f9aaeee)。没有新限流框架，195762c的历史失败证据保留。
-- [x] **P2-R1方案方向**：owner于2026-10-28选择选项一，允许按产品分配实时轮询频率＋官方日度逐笔文件独立延迟补充。无需再确认同一方向；具体间隔依据测量确定，6秒仅为比较项。
-- [x] **P2-R1文件核验通过复审**：核对所选永续/交割产品的代表性日文件及日期可用性、字段、精度、时间单位和成交ID；17份已保留ZIP的校验和与10,267,636行窗口研究复算一致。两份缺文件、文件ID跳号和缺失的isRPITrade/现场接收时间如实保留，不承诺覆盖任意日期或全部事实。
-- [x] **P2-R1实时配置通过复审**：按[实测配置](milestones/P2/closeout-20261028/recorder.measured.toml)明确USDT永续2s、USDC永续3s、其他及新产品30s；库默认1s保留，原统一6s仅作比较。复算名义778.687 weight/min，独立读取147条已存样本与报告一致。披露有限窗口损失、启动/重试额外成本及准入上限；不是全功能或VPS容量证明。
-- [x] **P2-R1补充实现通过复审**：小型独立下载/导入限定产品及日期，复用文件级来源和必要校验；8份实际导入、123,773行与源CSV逐字段核对一致，真实获取时间保留。重复事实优先现场值，冲突保留双方；不修补实时覆盖率。旧导入兼容、精度、缺文件/字段、重叠及补充失败隔离的定向检查通过，无逐笔哈希或采集时全历史扫描。
-- [x] **P2-R2调查证据与澄清稿复审通过**：066c2c3的14次原生HTTP诊断、两份完整目录与8份官方来源摘要核对一致；8个交割仍TRADING但查询失败，4个永续对照成功，两个交割闭合时间段变体仍失败。权限补充显示匿名永续premium和同名交割盘口成功；官方交割适用规则仍未知。
-- [x] **P2-R2首版范围决定**：owner于2026-10-29明确批准仅暂缺U/C交割合约溢价指数K线，永续继续采集，其他范围不变。已同步ADR-0055、P0覆盖合同及数据约定；团队可直接实施，不再确认同一取舍。
-- [x] **P2-R2官方澄清已提交**：按owner授权将准备好的稿件提交为[binance/binance-connector-python#585](https://github.com/binance/binance-connector-python/issues/585)，已回读核对正文；[提交稿](milestones/P2/r2-20261028/binance-clarification-issue-body.md)留存。
-- [x] **P2-R2源选择与预算**：既有配置新增`capture_dated_premium_klines`，首版显式false、旧配置默认true。在源生成阶段仅跳过`um_delivery`/`cm_delivery`的premium K线，新发现交割产品沿用，无轮询/重试。其余源描述逐项相同，不影响永续或交割mark/index。保留目录复算4,781完整目标中选4,661源，另3目录，WS仍2,154；名义765.328366 weight/min。见[清单](milestones/P2/initial-production-20261029/source-selection.json)，这是范围取舍，不是CPU/VPS优化。
-- [x] **P2-R2覆盖与连续性说明**：现有status及目录事件增加`source_selection`，单列120项OWNER_APPROVED_UNCAPTURED/UNKNOWN及完整目标/已选数、配置生效UTC与实例身份。旧Raw、失败、目录证据和旧窗口不变；新配置用新实例/窗口，其他必需及启用源仍按99.5%验收，不宣称P2已具备连续性资格。
-- [x] **P2-R2定向验证**：10项新回归与71项受影响检查通过，覆盖交割无premium请求/重试、永续保留、其他源描述不变、十资产新身份、调和/预算准入/报告一致、历史失败仍原样可读。运行时代码13602c8的双平台CI及日志核对通过，见[CI记录](milestones/P2/initial-production-20261029/ci.json)。未重审R1历史或复跑闭合R4复现，未新增公开接口探测。
-- [ ] **官方适用性后续跟进（非首版验收门槛）**：有issue回复或新官方规则时核实实际边界，按事实补齐接入或记录不适用；未有依据前保留UNKNOWN，不使用其他价格/永续序列替代。不为等待回复新建自动轮询服务，也不阻止已批准首版范围的开发和验收。
-- [x] **195762c验证核实**：本机143项相关测试通过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40648496846)的日志确认macOS 2,344项、Linux 2,340项通过。新增R4时序复现未被这些既有测试覆盖。
-- [x] **f9aaeee验证核实**：独立复跑33项冷却及42项相关回归通过，1项在线测试按默认跳过；[同提交双平台CI](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/actions/runs/40707969755)日志确认macOS 2,356项、Linux 2,352项通过。本轮仅复审R4修正，R1证据保留，无新增生产资格。
-- [x] **首版范围独立复审完成**：58a3ca2与运行时13602c8的src tree相同；独立与44fa019源计划比较，恰少120项交割premium，其余源完全相同，已提交报告与复算一致，71项定向检查通过。范围实现通过，不重开R1/R4；后续R5闭合见下项。
-- [x] **P2-R5修正与本机验证**。测试writer时钟受控，shutdown及同fixture异常断线分别验证活跃尾文件/已轮换两种布局；按文件角色严格核对数量、完整性、精确原文/顺序、连接及Catalog缺口身份，不放宽为任意文件数。87项受影响检查和[两例shutdown回归](milestones/P2/r5-20261029/shutdown-layouts.json)通过；生产代码、协议及历史证据不改。保留[作者交付记录](milestones/P2/review-20261029.md#r5-correction-candidate)，独立闭合结论见下项。
-- [x] **R5修正提交CI核实**：1c1785c双平台CI通过，macOS 2,369通过/24跳过，Ubuntu 2,365通过/28跳过，各5项stress未选、13条warning；静态、合同、Go golden、构建/安装/CLI全部通过。见[CI记录](milestones/P2/r5-20261029/ci.json)。
-- [x] **R5独立复审通过，P2关闭**：审查1c1785c及464ed56，独立复跑87项相关检查和两例驱动通过，修正及最终HEAD双平台CI全部成功。测试保留严格语义，生产src tree不变，无新增待修正项。未重审已通过历史；官方回复继续非阻塞。按owner授权合并PR #88，确认分支内容进入main后安全清理远端分支。
-
-**通过：**覆盖表逐项关联实现及真实公开接口小样本 / 官方样例验证；无账户 / 密钥依赖；BTC / ETH 每个适用产品可发现、订阅、落盘、读取，配置可扩展至少10标的。最低必需信息已覆盖，完整目标中的缺失、交易所不提供、owner批准暂缺、资源缩减和等价去重项分别明确列出；ADR-0055例外落实后无需官方回复才能通过。REST模型保留全部已要求信息并核对；未知字段不作完整保留承诺，模型重编码不冒充原始HTTP正文。紧凑D06如启用，其观察 / 缺口语义及旧读取需验证；收益不足则保留单份完整响应，不为它阻塞上线。资格配置明确字段、周期和频率，不静默削减来通过99.5%。
-
-### P3：恢复与后台任务不再互相拖累
-
-**状态：完成，2026-11-01独立复审通过，P3-R1–R3全部关闭。**
-审查运行时`30e8a4a`及交付HEAD `30ebbd6`，独立复跑66项相关检查、原时钟对照和原五个探针通过；
-有、无RPI回调均保留完整10秒未知，边界结束后正常恢复，原快速恢复仍通过。
-两提交双平台CI及完整日志已核实；本轮无新增阻塞问题。详见[闭合记录](milestones/P3/review-20261101.md#r3-independent-closure)。
-[作者交付](milestones/P3/README.md)、[原审查](milestones/P3/review-20261030.md)与历史证据保留；没有部署或P4–P6时长信用。
-
-**工作：**
-
-- [x] 连接断开就退避重连；盘口序列断裂重新取得必要快照；辅助 REST 失败只影响对应源，现有Raw缺口保留。
-- [x] 逐源连续性修正通过独立复审。P3-R2空闲误计、R3快速恢复漏记及剩余时钟不确定区间均已关闭；即时恢复遵守既有源可用性条件，未扩大验收范围。
-- [x] 明确每流恢复职责和升级条件；同进程公共写入故障等确实影响多流时再扩大故障范围，避免一个低频接口报错便反复重启全部产品。
-- [x] 校验、归档、日报、规范化和回放不占用接收循环或长时间共享锁。限制后台并发和读写量，不能靠长跑时关闭正常归档、停掉宿主正常任务来拿到通过结果。
-- [x] 从现有工具收敛出启动 / 停止、状态、校验新数据、归档状态等稳定命令。阶段记录无需多个临时脚本或 AI 持续在线；SSH / 对话中断不应结束健康运行。
-- [x] 新文件独立校验在发布证明前核对Raw及既有持久缺口证据，拒绝错误完整标记；P3-R1独立复审通过，包含零记录边界、正确不完整文件及旧证明/旧schema兼容。
-- [x] 检查磁盘日增量、正常归档吞吐和可用空间。暂时无法归档可以有界积压并告警，接近实际安全储备时明确停采保护已有数据；未经验证和授权的唯一副本不能删除。P3交付既有观测入口与fixture回归，真实VPS日增量/持续吞吐随P4实际窗口记录。
-- [x] 用现有测试补最小的断连恢复、低频接口超时、写失败传播、正常停启 / 排空回归。暂不做突然断电专项或新的大故障平台。
-- [x] 清理实际调用链中无消费方、无完整性目的的哈希与重复验证。自然业务ID足够时不用摘要代替；保留的同一Raw摘要在一次解析内算一次，派生子记录复用。规范化字段有使用方时同步修改公开格式 / reader，不能直接删字段或用空值糊弄旧契约。不增加逐事件哈希链、依赖树哈希或全库验证。
-- [x] 合并封存 / 校验同一观察边界的重复顺序读取，在一次独立回读中完成必要的存储字节 / 解压内容摘要及统计。文件损坏检测、归档目标写后读回、必要的删除前核对保留；不把不同边界的验证误删成“重复”。同输入测CPU / I/O及异常行为，收益不成立不增加复杂实现。
-- [x] 规范化保持按需消费，不成为采集或封存的前置步骤，不默认在VPS周期扫描全部历史。实际需要运行时限制产品 / 日期或新增封存输入，不为未知研究预建全部派生数据和增量计算平台。
-- [x] 复用进程 / 请求内不变的版本和元数据，减少重复编码及查询。只在剖析证明值得时评估块级元数据；若需新Raw格式，显式版本并保留旧reader，不将重写Raw v1或迁移历史作为上线前提。
-
-**独立审查修正与复审待办（2026-11-01更新）：**
-
-前次`41abdbb`/`1243b99`复审关闭R1/R2并确认R3原快速恢复场景，52项相关检查及原探针通过；当时发现R3时钟剩余项。现对`30e8a4a`/`30ebbd6`完成独立复审，66项相关检查、原时钟对照和原探针通过，两个提交的macOS2,435项/Ubuntu2,431项CI及完整日志均已核实。下列勾选均表示对应范围已独立核实。
-
-P3没有剩余修正项；团队下一阶段为P4，尚未开始。详见[独立闭合](milestones/P3/review-20261101.md#r3-independent-closure)。按owner授权合并[PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)，确认全部提交进入main后安全清理其远端分支；P0–P2及首版范围不变。
-
-- [x] **P3-R1关闭：新文件校验核对持久缺口证据。** v2校验联合Raw、当前chunk的持久forced flags、seal intent和recovery证据，拒绝丢失缺口的错误完整manifest；有记录/零记录正反例、控制读后变化及旧证明/旧schema兼容通过。旧证明保留，已入队文件按既有预算复核，不增加全历史扫描或Raw读取。
-- [x] **P3-R2关闭：修正writer卡死的计时起点。** 以当前pending起点与期间last-write进展的较晚边界计时，空闲后0.1秒等待不误计此前空闲；真实卡死仍记缺口，恢复后保留区间，其他连接组不受影响。
-- [x] **P3-R3原场景通过：即时保留RPI序列缺口。** 同一监控周期内发生序列断裂及快照/后续帧恢复时，已用现有journal保留区间；正式受控回归核对100ms/200ms缺口、原文及序列标记，原反例也通过。
-- [x] **P3-R3关闭：时钟与源可用性修正独立复审通过。** `30e8a4a`先判断当前完成时钟，防止RPI消息/快照及延迟落盘的旧消息提前关闭已知时钟未知区间；恢复复用writer、连接、错误和休眠条件。REST成功回调遵守同一时钟边界，交割完成仍即时结束资格。14项新增回归随66项相关检查独立复跑通过，原时钟对照均保留10秒未知，边界结束后恢复及原快速恢复通过。复用原状态和journal，没有新增故障框架或哈希；证据见[独立闭合](milestones/P3/review-20261101.md#r3-independent-closure)。
-- [x] **P3复审闭合。** R1–R3全部关闭；运行时`30e8a4a`及交付HEAD `30ebbd6`双平台CI、完整日志及受影响检查已核实，无新增阻塞问题。P3开发交付通过，P4–P6生产验证未开始；不重复已通过的历史审计。
-
-**通过：**可恢复故障不需要人工反复介入；只影响应受影响的数据源；后台工作开启时仍能接收与写入；状态能直接解释“哪个源缺了多久、是否恢复、积压多少”；正常停止后文件可验证，重启能继续写且不覆盖旧数据。
-
-### P4：1 币从 2h 到 24h
-
-**2026-11-01：owner已授权本次实际P4运行，准备尝试与修正见[单一结果记录](milestones/P4/README.md)。尚无正式T0或时长通过。owner另批准首版暂缺USD-M交割公共ADL，适用性仍UNKNOWN，见[ADR-0057](adr/0057-initial-production-dated-adl-exception.md)；永续ADL及其他源保留。**
-
-**工作：**冻结一个可安装版本和BTC全部目标市场的实际覆盖配置，附与完整目标的差异，在真实GreenCloud环境运行，正常归档 / 校验 / 报告同时开启。事先固定合理的启动准备上限，准备失败要报告原因，不无限等待直到某次偶然全绿。
-
-**2h 检查点：**每条必需源按第 5 节判定；采集数据写入与新文件校验无异常；队列、RSS、磁盘与后台积压没有持续恶化。健康时保持同一进程继续。
-
-**24h 通过：**同一版本 / 配置的完整 24h 达标，跨日、计划连接轮换和正常归档都实际经历；仅把确实发生的路径标为已验证。24h 终点的后台校验可以继续完成，不要求先停采才能校验全部历史。
-
-### P5：BTC + ETH 与实际扩容
-
-**工作：**使用BTC + ETH全部目标市场的冻结覆盖配置再做2h检查点和完整24h，不把单币时长或旧N2时长转移过来；逐源列出实际启用及未采集项。
-
-双币 24h 通过后，按固定顺序增加标的，例如 3 → 4 → 6 → 8 → 10，再按需要扩展。每档先小规模观察，进入稳定观察的档位至少保留 2h 结果；遇到持续积压或明确写入 / 内存问题可以提前结束该档，保留已采数据和原因。不能为找极限而把机器故意推到 OOM 或满盘。
-
-记录产品数、消息 / 字节速率、CPU / steal、RSS、事件循环与写入延迟、队列、后台积压、错误类型和每源覆盖。随着订阅数增长，绝对错误次数自然可能增长，因此看覆盖与单位时间 / 消息的错误率，不只看日志条数。外部交易所 / 网络故障先归因，不据单个错误就宣布 CPU 极限。
-
-**通过：**BTC / ETH 自己的 24h 已达标；完成有证据的增币观察并回落到有余量的最终生产配置。边界是特定行情、覆盖范围和主机条件下的观察结果，不是永久容量。如果已测到 10 币仍无边界，只写“至少支持本次已测负载”，寻找更高上限作为后续工作，不阻塞至少双币上线。
-
-如果BTC / ETH自身的最低范围不能稳定运行，返回对应模块修复和定向复测。按第1节调整可缩减的观察细节须明确配置差异并开始新窗口；不能临时丢弃必需源、事后删除失败项或降低99.5%门槛。实测显示处理能力不足时再做局部替换 / Rust同输入对照，也不未经讨论用换VPS代替软件问题处理。
-
-### P6：48h / 72h 与生产交付
-
-**工作：**回到最终生产配置，至少包含BTC + ETH全部目标市场及最低必需信息，披露与完整目标的差异；从新的连续运行开始计时，48h检查后健康继续到72h。48h是同一72h长跑的检查点，不额外重复120h；扩容探索、旧版本和失败尝试时长不计入。
-
-**通过：**整个 72h 以及从本次开始时间分割的三个完整 24h 子窗口分别达到第 5 节条件；最后一个检查时所有必需源已恢复有效状态，没有因降级而悬空的长期缺口；待验证新文件补齐，归档能持续跟上。交付版本、完整配置、覆盖表、数据位置、状态 / 停启 / 回滚命令、资源观测、已知限制和排障入口。
-
-在至少双币 72h 完成且数据核验结束后才能标记“此配置可用于生产”。72h 后保持健康采集继续运行，记录转入生产的时间点；不为了生成报告先把服务停掉，再宣称它在生产持续运行。回滚只能使用对当前格式兼容的代码，不能回滚或覆盖已经产生的数据。
-
-## 5. 所有运行阶段共用的通过标准
-
-### A. 连续性：99.5%，按来源分别算
-
-`覆盖率 = 1 - 不可用及未知区间的并集时长 / 应提供服务的时长`。
-
-- 按每个必需产品 / 数据源分别计算，不把BTC的高流量或正常源平均进去掩盖ETH / 另一条源的失败。最低必需信息和冻结配置内全部启用源各按自身语义纳入；事先未启用的观察细节披露为未采集，不能测试后删失败项。
-- WS 使用连接 / 心跳、接收与持久化进度、序列缺口和恢复事件判断。安静行情或本来稀疏的清算流没有新事件不等于断线；连接还活着但写入卡死也不能算有效。
-- REST 按发布周期、预计成功期限、最近有效响应及数据时间定义新鲜度；明确合法的空响应与失败，不能拿旧值冒充新的成功。接口本身不提供或产品已正常到期的时间按预先定义的生命周期处理。
-- 从真实故障边界到恢复有效数据的边界计时，无法精确知道的区间保守计入未知。不要沿用“一个 30 秒采样失败就固定扣整段恢复时间”的粗糙口径，也不把监控失联时间算作健康。
-- 外部网络 / 交易所原因也如实进入覆盖结果；归因只影响修复方式，不在结果出来以后移出分母。没有持续完整事件序号的源不能证明捕获了交易所的每一条事件。
-- 99.5% 对应 2h 最多 36 秒、24h 最多 432 秒、48h 最多 864 秒、72h 最多 1296 秒不可用。长跑还检查从本次开始时间分割的各完整 24h 子窗口，避免把某一天集中故障平均掉。99.5% 不是允许悄悄丢掉 0.5% 的消息。
-
-### B. 已保存数据正确性：实际读取验证
-
-- 每个本次新封存文件由独立于 writer 的读取路径至少完整检查一次：能读、帧 / CRC / 数量 / 内容摘要一致，产品、时间与序列 / 缺口元数据可解释。尽量在一次顺序读取中合并检查，避免无意义的重复全扫描。
-- 固定 fixture 按声明的表示核对：WS / 原文型 REST 逐字节对照；模型型 REST 对照所需字段值、精度、时间、身份、序列和已定义空值语义，同时核对保存顺序与数量。历史基准保留原口径。真实交易所长跑没有独立全量真值时，只能证明已保存文件及可观测接收 / 队列 / 持久化计数的对应关系，不能把它称作所有交易所事件的 100% 捕获。
-- 正常停止时队列排空且同步。恢复后无法确认的尾部 / 缺口必须标明，不把损坏文件发布为正常数据。确定的数据损坏、静默丢弃或错误完成标记会阻止该版本上线。
-- 终点只补齐该运行尚未验证的新文件。旧历史文件不作为每次长跑的强制全量重审前提；保留原先的独立审计能力，出现具体问题时再针对性使用。
-- 归档仍保留写后实际读取验证和删除源副本的必要规则；不能因精简验收就取消真正的数据保全。新流程不再默认要求每阶段双重全历史扫描、重复证据复制及多轮模型签署；由 P0 的契约更新落实，旧验收记录不改。
-
-### C. 长期可持续：不能靠越积越多来通过
-
-- 正常运行不需人工反复重启；偶发错误自动恢复且计入覆盖。日志、诊断历史和队列有界，无 OOM、死锁、磁盘紧急停采或持续写入失败。
-- CPU 不设未经测量的“必须降到某百分比”承诺。结合套餐实际允许资源、CPU / steal、输入高峰、队列和延迟判断余量；低 CPU 但持续落后同样不通过。
-- RSS、待归档与待校验积压不持续增长；后台处理在整段观察中能赶上新增数据。依据实测日增量配置存储储备和告警，不能通过测试后才发现几天就写满盘。
-- 首版交付BTC / ETH各目标市场、明确覆盖配置的稳定性，不能仅用两个USDT产品替代；受限配置不能标成完整目标已覆盖，所有10币也不因此获得生产认证。
-
-### D. 失败以后只重做必要工作
-
-断线本身不立刻终止整个实验；是否通过由覆盖、恢复和数据结果决定。严重写入风险先停止受影响采集，保护文件。后台校验工具出错就修工具、继续检查原来那批文件，不因此重新采一整天。重复采集无法修复此前那段数据。
-
-源码 / 配置改变后，重做受影响测试，最终连续时长必须属于同一最终候选；保留此前结果，不拼接失败尝试凑足时长。只改说明文档、补结果链接或修离线报告展示，不自动让已完成的真实采集作废。
-
-## 6. 后续开发执行规则
-
-1. 从第一个未完成阶段开始；每次任务说明阶段、涉及模块和可交付结果，不重新讨论已确认范围。
-2. 先保护现有工作并核对代码版本；只做当前阶段需要的变化，避免顺手造新框架。
-3. 运行与变化相称的检查。无新改动 / 新失败时不反复全仓测试、重新审计或重新出同一份证明。
-4. 用一份阶段结果更新上表状态；完成后推进下阶段。具体协议 / 数据格式 / 归档承诺变更才需要相应短 ADR，普通修复不增加审批链。
-5. 遇到范围变化、无法满足双币目标的资源取舍、数据契约改变或需要改动用户其他系统时再请用户决定；日常实现选择由开发者完成。
-6. P0–P3已通过，当前没有P3剩余修正。2026-11-01 owner已在新任务中明确授权完成P4，包含计划内GreenCloud实际运行；此前仅复审/合并的限制不约束这次授权。P2范围与P3闭合结论保持，不重做历史审计；官方issue回复仍不是首版前置条件。日常已授权工作不逐项重复索要确认。
-
-不把 GUI、交易功能、多交易所、Kafka / Kubernetes、完整消费者平台、历史全量重算、突然断电专项或全语言重写作为本阶段的上线前置条件。
-
-同类资源取舍、源码与论文依据见 [2026-10-27 研究补充](research/2026-10-27/retention-and-overhead-review.md)。已批准方向落实在P2 / P3；格式改造和优化收益须以对应实测决定，不扩张成新的平台或无限验收层级。
-
-单币 24h、双币 24h、最终 72h 按上述安排至少需要 **120h 实际观察时间**，另加开发、扩容观察和必要修复；这是时长下限，不是承诺五天交付。旧运行不转移进新配置的这个下限。
+---
+
+## M1 — Primary Performance & Resource Bottleneck Remediation
+
+### Goal
+Eliminate the file-seal storm, SQLite `AvailabilityJournal` backlog, redundant K-line source explosion, and hot-path Python object churn so the Recorder runs with low, steady CPU and IOPS on a shared VPS.
+
+### Tasks
+- [ ] **M1.1 — Spool Rotation & Batching Policy (`spool/stream.py`, `config/models.py`)**:
+  - Change default `RotationPolicy.seconds` from `60.0` to `600.0`–`900.0` (10–15 minutes) with `max_bytes = 128 * 1024 * 1024` (128 MiB), while keeping `60.0` configurable for unit tests that explicitly test fast rotation.
+  - Retain deterministic per-stream rotation phase staggering (`rotation_phase_offset_ns`) so active writers never seal simultaneously at `T + 600s`.
+  - Expected impact: reduces sealed `.zst` + `.json` file creation, SQLite seal transactions, and archive file count by **90%–93%** (from ~230,400 files/day to ~15,000–23,000 files/day for BTC).
+- [ ] **M1.2 — SQLite `Catalog` & `AvailabilityJournal` Write De-Amplification (`storage/catalog.py`, `collector/availability.py`, `collector/coverage.py`)**:
+  - Change `Catalog` WAL mode pragma from `PRAGMA synchronous = FULL` to `PRAGMA synchronous = NORMAL` (and `PRAGMA temp_store = MEMORY`, `PRAGMA mmap_size = 268435456`), eliminating per-commit disk `fsync` stalls while preserving WAL crash consistency.
+  - Refactor `AvailabilityJournal`:
+    - **Do not** append per-source SQLite rows every 10 seconds when a source remains continuously `VALID` / healthy.
+    - Emit per-source `source_availability_journal` rows **only on state transitions** (`UNAVAILABLE` start, `RECOVERY` close, `FAILURE` observation, and `LIFECYCLE` start/stop).
+    - Track steady-state liveness across healthy sources via a single process-level high-water heartbeat timestamp (`capture_runtime_heartbeat` / `coverage_checkpoint`) updated once per monitor pass.
+  - Expected impact: reduces `AvailabilityJournal` SQLite row writes from **~223 rows/sec to <0.1 rows/sec** during normal operation, permanently eliminating the 52,997-row backlog observed in P4 Run C.
+- [ ] **M1.3 — K-Line Source Deduplication, Closed-Bar Persistence & One-Shot Seed Retirement (`binance/public_sources.py`, `collector/coverage.py`)**:
+  - In `S12` (`spot_kline_utc8`, `@kline_<interval>@+08:00`), remove the 10 sub-8h intervals whose bucket boundaries are mathematically identical to UTC (`S11`): `1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h`. Retain only the 6 intervals where `UTC+8` alignment differs from UTC (`6h, 12h, 1d, 3d, 1w, 1M`).
+  - **WebSocket K-Line Closed-Bar Filter (Owner Decision)**: For WebSocket K-line streams (`S11`, `S12`, `D21`, `D22`, `D23`), update in-memory source liveness/availability timestamps on every valid incoming WebSocket push (`k.x == False` or `k.x == True`) so long-interval streams (`4h`–`1M`) maintain continuous liveness proof, but **only persist closed K-line bars (`k.x == True`)** (with `1s`/`1m` configurable if real-time forming bars are ever desired). This eliminates >95% of redundant forming-bar disk writes and CBOR serializations while preserving full bar history and liveness monitoring.
+  - Once a one-shot `kline_seed_*` REST source completes its initial seed persisted response, transition it to a retired/completed set so it is no longer iterated every second in `SelectedAssetCapture._poll_rest_loop()` (`due = sorted(...)`) or `_observe_availability()`.
+  - Expected impact: immediately removes **300 redundant sources per asset** (`600` sources across `BTC + ETH`), removes **1,230 completed seed sources** (`BTC + ETH`) from the per-second scheduler loop, and cuts K-line frame persistence volume by **>95%**.
+- [ ] **M1.4 — Per-Frame Hot-Path CPU & Allocation Streamlining (Preserving Raw v1 Format Compatibility) (`domain/event.py`, `spool/writer.py`, `spool/format.py`, `collector/coverage.py`)**:
+  - **Preserve Raw v1 on-disk format 100%** (so all existing readers, Parquet normalizers, replay consumers, Go golden verifiers, and historical chunks remain 100% compatible without migration).
+  - Construct `EventEnvelope` on the hot capture path via `model_construct()` (or a lightweight `@dataclass(slots=True)`) and replace `.model_copy(update=...)` in `SpoolWriter.append_many()` with direct construction or fast field assignment before serialization.
+  - Remove `_ImmutableEnvelopeSnapshot` deep-copying (`_freeze_json_value`) on every frame; compute incremental seal statistics directly from the frame being serialized in `append_many()`.
+  - In `SelectedAssetCapture._persist_rest()`, pass pre-parsed metadata from `RestCaptureResult` instead of calling `json.loads(result.envelope.raw_payload.decode("utf-8"))` a second time, and batch REST persistence writes per poll cycle rather than hopping threads once per REST source.
+
+### M1 Acceptance Criteria
+- All unit and contract tests pass.
+- In a 10-minute local/synthetic BTC capture run:
+  - `AvailabilityJournal` pending backlog stays `0` (`<= 64` transient);
+  - SQLite transaction rate drops by `>90%`;
+  - Active scheduler loop excludes completed `kline_seed_*` sources and duplicate `S12` intervals;
+  - Hot-path per-frame CPU time in `hotpath_bench.py` / `compare.py` drops by `>= 40%`.
+
+---
+
+## M2 — De-Overengineering, Verification Simplification & Codebase Consolidation
+
+### Goal
+Remove redundant multi-pass verification/hashing, startup zero-frame file storms, and obsolete legacy modules so the codebase is low-coupling, high-cohesion, and maintainable.
+
+### Tasks
+- [ ] **M2.1 — Streamline Local Verification & Eliminate Redundant Re-Encoding (`spool/seal.py`, `spool/format.py`, `service/verification_worker.py`)**:
+  - In `spool/format.py` (`decode_frame`), remove the mandatory `_canonical_cbor(value) != body` re-encoding check on every read frame; `CRC32C` already guarantees frame byte integrity.
+  - Consolidate same-host seal verification: `seal_chunk_file()` already verifies the uncompressed digest, compresses with Zstd checksum, and verifies the compressed `.zst` output on seal. Make the incremental verifier (`raw-independent.v2`) verify compressed file size, SHA-256, Zstd frame integrity/CRC, and manifest metadata without re-encoding every frame's CBOR dictionary in a separate subprocess, or reuse the seal-time verification proof when the file descriptor/inode is unchanged.
+  - Keep full target readback and SHA-256 verification across trust boundaries (when archiving to an external volume or remote archive target).
+- [ ] **M2.2 — Eliminate Startup Zero-Frame Chunk Storms (`collector/coverage.py`, `spool/stream.py`)**:
+  - Replace `seal_capture_startup()`'s creation of empty 0-record `.zst` files + `.json` manifests across all 80 writers on startup with a single `Catalog` startup boundary record (`capture_startup` lifecycle event in SQLite), avoiding 80 empty `.zst` files on every service start.
+- [ ] **M2.3 — Unify Collector Architecture & Retire Obsolete Modules (`collector/`, `service/`, `spool/`, `audit/`)**:
+  - Decouple `SelectedAssetCapture` (`collector/coverage.py`) from `UsdMStreamCollector` so Spot, USD-M, and COIN-M WebSocket connections use a clean, market-agnostic `PublicWebSocketStream` transport without routing Spot/COIN-M through `binance/usdm/websocket.py`.
+  - Retire and remove dead/superseded code paths (while keeping public CLI entry points and contract-tested schemas intact):
+    - Legacy single-symbol collectors (`collector/spot.py`, `collector/usdm.py`, `collector/usdm_side.py`) after migrating any remaining unit test fixtures to the unified capture path;
+    - Retired V1–V5 whole-history online acceptance harnesses (`service/acceptance.py`, `service/acceptance_v5.py`, `service/acceptance_Qualification*`, `audit/reconnect_boundaries.py`, `spool/legacy_reconnect.py`).
+- [ ] **M2.4 — Modularize `Catalog` (`storage/catalog.py`)**:
+  - Split the 5,106-line `Catalog` class into focused repository mixins/modules under `storage/` (`chunks`, `availability`, `archive_tx`, `normalization`, `schema`) sharing the same SQLite WAL connection and lock, improving cohesion and readability without changing the SQLite schema.
+
+### M2 Acceptance Criteria
+- Zero 0-record `.zst` files created on clean startup.
+- Background verification CPU/I/O overhead reduced by `>80%` with all corruption/truncation fault-injection tests still failing closed.
+- Net reduction of `>= 15,000` lines of redundant/legacy source and test code, with `tests/verify_m0_contracts.py`, `ruff`, `mypy`, and the test suite passing.
+
+---
+
+## M3 — Local Benchmark & Pre-VPS Stability Convergence
+
+### Goal
+Prove with reproducible local A/B measurements and fault-injection tests that the `M1` + `M2` build achieves the expected resource reductions and 100% data integrity before deploying to the VPS.
+
+### Tasks
+- [ ] **M3.1 — Fixed-Input A/B Performance Benchmark**:
+  - Run `hotpath_bench.py` and the 1-asset (`BTC`) / 2-asset (`BTC` + `ETH`) local steady-state benchmark (`compare.py`), recording:
+    - Per-frame CPU (`μs/frame`) and memory allocation (`B/frame`);
+    - Sealed file count per hour and SQLite write transactions per minute;
+    - `AvailabilityJournal` max pending depth (`0` steady backlog);
+    - Peak RSS and background verifier CPU share.
+- [ ] **M3.2 — Data Integrity & Fault-Injection Regression Gate**:
+  - Verify mid-frame truncation (`SIGKILL` simulation), sequence-gap recording, `429/418` `Retry-After` shared-pool cooldown, clock-discontinuity interval accounting, and archive copy/readback/delete safety.
+- [ ] **M3.3 — Freeze VPS Deployment Configuration & Observation Scripts**:
+  - Update `docs/milestones/P4/recorder.toml` and `observe.py` for the streamlined `M1`+`M2` build, ensuring capture metrics, journal depth, RSS, CPU%, disk runway, and archive backlog are sampled cleanly without interfering with the live writer.
+
+### M3 Acceptance Criteria
+- Local A/B benchmark confirms `>= 85%` reduction in sealed files/hour and SQLite transactions/min, and `>= 40%` reduction in hot-path CPU.
+- Full test suite, `ruff check .`, `mypy`, and `python3.12 tests/verify_m0_contracts.py` pass on a clean worktree.
+
+---
+
+## M4 — GreenCloud VPS Staged Qualification (`BTC + ETH` Full Scope: `2h` → `12h` → `24h`)
+
+### Goal
+Deploy the frozen `M3` wheel to `greencloud-tokyo-01` configured directly for the target **`BTC + ETH` two-asset scope** (Spot quote pairs + USD-M perpetual/dated + COIN-M perpetual/dated) and qualify continuous real-network capture across **2 hours**, **12 hours**, and **24 hours** in one uninterrupted run with normal background verification and archiving enabled.
+
+### Tasks
+- [ ] **M4.1 — Preflight & `BTC + ETH` Deployment on `greencloud-tokyo-01`**:
+  - Verify host preflight (`systemctl is-active` / `is-enabled`, disk free space above reserve, runtime-only quiet-window mask of unattended apt upgrades so `apt-daily-upgrade` cannot restart systemd mid-run).
+  - Install the locked Python 3.12 wheel into an isolated environment with `selected_assets = ["BTC", "ETH"]` and record `T0` (`UTC`, `CLOCK_BOOTTIME`, `MainPID`, `InvocationID`).
+- [ ] **M4.2 — Stage 1: Continuous 2-Hour Checkpoint (`T0 + 2h`, `BTC + ETH`)**:
+  - Observe live `BTC + ETH` capture for 2 hours without stopping the service.
+  - Gate criteria at `2h`:
+    - Process `MainPID` and `InvocationID` unchanged (`NRestarts == 0`);
+    - `AvailabilityJournal` pending backlog `< 100` rows;
+    - Host average CPU within GreenCloud shared-KVM budget (`< 25%` sustained), RSS stable without unbounded growth, swap `0`;
+    - All sealed chunks verified with `0` corruptions/errors; archive backlog bounded;
+    - Per-source continuity `>= 99.5%` across `BTC + ETH` sources (or any external exchange/network gap honestly recorded and automatically recovered).
+- [ ] **M4.3 — Stage 2: Continuous 12-Hour Checkpoint (`T0 + 12h`, `BTC + ETH`)**:
+  - Keep the same `BTC + ETH` process running from `2h` through `12h`.
+  - Gate criteria at `12h`:
+    - Same `MainPID` (`NRestarts == 0`), flat RSS trajectory, zero SQLite/verifier/archive backlog accumulation, all sealed chunks verified, per-source continuity `>= 99.5%`.
+- [ ] **M4.4 — Stage 3: Continuous 24-Hour Qualification & Planned Rotation (`T0 + 24h`, `BTC + ETH`)**:
+  - Continue the same `BTC + ETH` process through `24h` (covering the UTC midnight boundary, 24-hour WebSocket planned session rotation, and daily trade supplement import).
+  - Gate criteria at `24h`:
+    - Clean 24-hour WebSocket session rotation with durable reconnect-boundary accounting;
+    - Daily report (`report daily`) and incremental verifier (`0` failed files, `0` unverified backlog) complete cleanly;
+    - Normal service stop/drain seals all active `.partial` files cleanly with `0` residual partial files.
