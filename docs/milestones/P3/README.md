@@ -1,15 +1,21 @@
 # P3：恢复与后台任务不再互相拖累
 
-**当前状态：P3独立审查暂不通过。** [2026-10-30审查](review-20261030.md)发现
-P3-R1–R3，原反例保留；2026-11-01修正候选与验证见下节，独立复审仍待完成。已独立复跑2,404项全仓及35项P3测试，
-通过不等于覆盖上述缺陷。保留[Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)
-供团队修正。下文是作者原交付记录，不作为独立验收或P4启动依据。
+**当前状态：R1、R2独立复审关闭；R3剩余一项，P3暂不通过。**
+[2026-11-01复审](review-20261101.md)确认`41abdbb`修复了原审查反例，
+52项相关检查通过，修正提交及交付HEAD `1243b99`双平台CI成功。
+R3原快速恢复漏记已修好，但正常RPI消息仍会提前清除尚未结束的时钟不确定状态：
+离线对照应保留10秒未知，实际仅保留0.01秒。复现程序、输出及最小修正要求见复审记录，
+待办已归入[计划P3](../../production_milestone_plan.md#p3恢复与后台任务不再互相拖累)。
+保留[Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)
+供团队继续修正R3；R1/R2无需重复关闭，P4未开始。
+[2026-10-30审查](review-20261030.md)和下文作者交付证据保留为历史记录。
 
 ## 2026-11-01：P3-R1–R3修正候选
 
 修正提交 `41abdbb11aed07c9107305735726640cf5a6b8a3` 已在原分支推送，
 [Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)保留。
-P3仍为 **NOT ACCEPTED，待独立复审**；本轮作者修正不是独立验收，也不启动P4。
+以下为作者修正交付时的记录；当时P3为 **NOT ACCEPTED，待独立复审**。
+最新独立结论见页首：R1/R2关闭，R3仍有剩余项，P4未启动。
 
 - **P3-R1**：v2 verifier在同一操作内读取当前chunk的SEALING强制flags/intent及
   RECOVERED证据，联合Raw连接边界校验manifest，回读结束再核对控制快照。
@@ -40,7 +46,7 @@ Ruff、356文件strict mypy、M0、Go golden、sdist/wheel及新wheel的v2校验
 各5项stress未选、13条既有fork警告；静态、M0、Go golden、构建/安装及Linux生产依赖一致性
 步骤全部成功。精确CI提交是`41abdbb`，后续文档提交不冒用该CI提交身份。详见
 [修正验证记录](corrections-20261101/checks.json)；原交付及独立审查的日志/结论不改写。
-修正后仍需独立复审闭合，生产readiness保持NO。未访问VPS、启停生产服务、读取生产数据，
+该交付当时仍需独立复审；当前剩余项见页首，生产readiness保持NO。未访问VPS、启停生产服务、读取生产数据，
 也未写入真实外卷；未合并或清理分支。
 
 ## 原交付记录（保留）

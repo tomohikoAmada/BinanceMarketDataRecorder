@@ -1,6 +1,18 @@
 # Risk Register
 
-## P3 correction candidate — 2026-11-01
+## Current P3 re-review — 2026-11-01
+
+[Independent re-review](milestones/P3/review-20261101.md) closes P3-R1 and P3-R2
+and confirms the original P3-R3 quick-recovery fix. **P3-R3 remains OPEN** because
+a valid RPI persistence callback clears still-active CLOCK_DISCONTINUITY evidence.
+The ten-second offline control retains the full unknown interval; valid callbacks
+leave only 0.01 seconds unknown and report 99.9% coverage. This is a fixture result,
+not production qualification. Keep the remaining task in P3; preserve immediate
+sequence-gap recording while respecting existing source availability conditions.
+P3 remains NOT ACCEPTED, PR #89 stays Draft, and R-078 remains open. No new scope,
+data-format, fault-framework or whole-history verification requirement is introduced.
+
+## Prior P3 correction candidate — 2026-11-01
 
 Runtime `41abdbb` corrects P3-R1–R3 with 17 new regressions and the unchanged original
 reproductions. v2 proofs include durable sealing/recovery controls; existing v1 queue
@@ -9,9 +21,9 @@ history. Sparse writer timing and immediate RPI gap recovery have explicit bound
 See the [P3 record](milestones/P3/README.md). These are author corrections, not independent
 closure: P3 remains NOT ACCEPTED and R-078/production qualification remain open.
 
-## P3 independent review blockers — 2026-10-30
+## Original P3 independent review blockers — 2026-10-30
 
-[Review and reproductions](milestones/P3/review-20261030.md) establish three current
+[Review and reproductions](milestones/P3/review-20261030.md) established three original
 defects: manifest-only reconnect evidence can be lost yet verified, sparse-stream
 idle time can be counted as writer failure, and quickly recovered RPI gaps can be
 omitted from continuity. P3 is not accepted. Existing tests passing does not close

@@ -1,12 +1,25 @@
 # Binance Market Data Recorder Agent Contract
 
-Current correction candidate November1, 2026: 41abdbb implements P3-R1–R3 and
+Current independent re-review November1, 2026: P3-R1 and P3-R2 are CLOSED at
+41abdbb / delivery HEAD 1243b99. The original P3-R3 fast-recovery cases also pass,
+but P3-R3 remains OPEN: a valid RPI persistence callback clears an active
+CLOCK_DISCONTINUITY before the known uncertainty boundary ends. The offline control
+retains 10 seconds unknown; valid RPI callbacks retain only 0.01 seconds (99.9% reported
+coverage). See [re-review and reproduction](docs/milestones/P3/review-20261101.md).
+Continue only this remaining correction in the plan's P3 section, preserving immediate
+sequence-gap recording while respecting existing source availability conditions.
+52 relevant tests and the original probes pass independently; runtime and delivery
+HEAD dual-platform CI pass but do not cover this case. P3 remains NOT ACCEPTED.
+Retain Draft PR #89 and codex/p3-recovery-background; no merge/branch deletion or
+P4/production operations. Do not reopen closed R1/R2 or accepted P0–P2 history.
+
+Prior correction candidate November1, 2026: 41abdbb implements P3-R1–R3 and
 17 formal regressions; see the [P3 result](docs/milestones/P3/README.md). Author
 validation/CI evidence does not close independent re-review. P3 remains NOT ACCEPTED;
 retain Draft PR #89 and codex/p3-recovery-background, without merge/branch deletion
 or P4/production operations. The October30 findings below remain the original review.
 
-Current independent review October30, 2026: P3 is NOT ACCEPTED. Review of
+Original independent review October30, 2026: P3 is NOT ACCEPTED. Review of
 b72761a/8df01c8 reproduces P3-R1 (verifier ignores durable manifest-only gap flags),
 P3-R2 (sparse-stream idle time miscounted as writer stall), and P3-R3 (RPI gap
 lost when recovery occurs between monitor passes). See
@@ -18,7 +31,7 @@ re-review; do not merge or clean the unmerged branch. P4–P6 have not started.
 No production operation is authorized by this review. The implementation delivery
 below remains historical candidate evidence, not P3 acceptance.
 
-Current implementation update October30, 2026: the owner explicitly authorized P3
+Prior implementation update October30, 2026: the owner explicitly authorized P3
 in this chat. P3 local development and verification are delivered under
 [ADR-0056](docs/adr/0056-source-recovery-and-bounded-background-verification.md) and the
 [single P3 result](docs/milestones/P3/README.md). P4 is next and has not started.

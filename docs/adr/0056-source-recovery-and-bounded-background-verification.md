@@ -1,10 +1,13 @@
 # ADR-0056: Source recovery evidence and bounded independent Raw verification
 
-Status: implementation candidate; independent review NOT ACCEPTED, 2026-10-30.
-[P3-R1–R3](../milestones/P3/review-20261030.md) identify missing durable-gap checks,
-incorrect idle-to-pending writer timing, and missed short RPI intervals. The intended
-behavior below remains required; corrections are tracked in the plan's P3 section
-per owner direction. Implements ADR-0051/0053; no production
+Status: implementation candidate; independent re-review NOT ACCEPTED, 2026-11-01.
+[Re-review](../milestones/P3/review-20261101.md) closes P3-R1/R2 and confirms the
+original short RPI interval fix. P3-R3 still requires immediate RPI recovery to respect
+active clock uncertainty; valid messages must not invent healthy time while that
+boundary remains active. The intended behavior below is unchanged; the remaining
+correction is tracked in the plan's P3 section. The
+[original review](../milestones/P3/review-20261030.md) remains historical evidence.
+Implements ADR-0051/0053; no production
 qualification, transport scope change or archive deletion authorization is granted.
 
 ## Recovery and observation boundary

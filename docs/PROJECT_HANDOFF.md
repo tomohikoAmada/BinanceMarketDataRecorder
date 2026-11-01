@@ -1,4 +1,26 @@
-# Current handoff: P3 correction candidate awaits re-review — 2026-11-01
+# Current handoff: P3-R1/R2 closed; R3 has one remaining correction — 2026-11-01
+
+[Independent re-review](milestones/P3/review-20261101.md) of runtime `41abdbb` and
+delivery HEAD `1243b99` closes P3-R1 and P3-R2. The original short RPI gap is now
+retained, but the new immediate recovery callback clears an active clock-uncertainty
+gap before its boundary ends. In the controlled ten-second window, the no-callback
+control retains ten seconds unknown; valid RPI callbacks retain only 0.01 seconds.
+
+Team next: complete the remaining **P3-R3** checkbox in the
+[P3 plan](production_milestone_plan.md#p3恢复与后台任务不再互相拖累).
+Immediate sequence recovery must respect existing source availability conditions.
+Add the clock-uncertainty regression, preserve the original quick-recovery assertions,
+and verify normal recovery after the uncertainty ends. Reuse the existing state and
+journal; no new fault framework, historical audit or data-format change is required.
+
+The 52 independent targeted checks and original probes pass, as do Ruff, mypy and M0.
+Exact runtime CI/logs confirm macOS 2,421 / Ubuntu 2,417 tests; delivery HEAD dual-platform CI
+also succeeds. These checks miss the newly reproduced remaining case. P3 stays
+**NOT ACCEPTED**. Retain Draft PR #89 and its branch for correction and independent
+re-review; R1/R2 and P0–P2 stay closed. No merge, branch deletion, P4 or production
+operation occurred. Historical candidate/validation records below remain unchanged.
+
+# Prior handoff: P3 correction candidate awaits re-review — 2026-11-01
 
 Runtime correction `41abdbb` addresses P3-R1–R3; [P3 result](milestones/P3/README.md)
 records the new formal regressions, unchanged original reproduction and exact-commit

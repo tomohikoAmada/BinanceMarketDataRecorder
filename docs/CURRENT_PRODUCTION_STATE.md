@@ -1,6 +1,14 @@
 # Current Production State
 
-2026-11-01: P3-R1–R3 correction candidate `41abdbb` is on Draft PR #89.
+2026-11-01 independent re-review: **P3-R1/R2 CLOSED; P3-R3 still OPEN**.
+The [review](milestones/P3/review-20261101.md) verifies the original fixes at
+`41abdbb` / delivery HEAD `1243b99`, but reproduces premature closure of active
+clock uncertainty by valid RPI callbacks. The remaining task is in the plan's P3
+section. P3 remains NOT ACCEPTED; Draft PR #89 and its branch remain open.
+No merge, deployment, production operation or P4 run occurred; production readiness
+is still **NO**. This review does not refresh observations of the installed host.
+
+Earlier 2026-11-01 candidate: P3-R1–R3 correction `41abdbb` is on Draft PR #89.
 The [P3 correction record](milestones/P3/README.md) distinguishes author validation
 from pending independent acceptance. P3 remains NOT ACCEPTED; no production operation
 or P4 run was performed. Main/installed production state is not changed by this work.
