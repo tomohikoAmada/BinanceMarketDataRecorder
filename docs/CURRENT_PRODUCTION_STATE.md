@@ -1,5 +1,15 @@
 # Current Production State
 
+2026-11-01 independent closure: **P0–P3 ACCEPTED; P4–P6 not started**.
+[P3-R3 closure](milestones/P3/review-20261101.md#r3-independent-closure) accepts
+runtime `30e8a4a` and delivery HEAD `30ebbd6`; 66 related checks, original probes
+and both commits' dual-platform CI/full logs pass. No remaining P3 correction was found.
+The owner authorized PR #89 merge and ancestry-checked remote-branch cleanup.
+This acceptance does not deploy code or refresh installed-host observations; no VPS,
+service or production-data operation occurred. Production readiness remains **NO**
+until the actual P4–P6 runs and data verification qualify the selected configuration.
+The candidate and earlier review states below are retained history.
+
 2026-11-01 author correction candidate `30e8a4a`: the remaining P3-R3 RPI clock
 uncertainty is preserved through valid frame/snapshot callbacks; queued pre-reversal
 frames and other still-active source conditions cannot authorize early recovery.

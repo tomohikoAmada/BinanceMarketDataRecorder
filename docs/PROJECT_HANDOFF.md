@@ -1,4 +1,21 @@
-# Current handoff: remaining P3-R3 correction delivered; re-review pending — 2026-11-01
+# Current handoff: P3 accepted; P4 next, not started — 2026-11-01
+
+[Independent closure](milestones/P3/review-20261101.md#r3-independent-closure) of
+runtime `30e8a4a` and delivery HEAD `30ebbd6` closes P3-R3 without a new blocking
+finding. R1/R2 and P0–P2 remain closed. Independent 66-test and unchanged clock/original
+probe checks pass, including exact ten-second unknown intervals, recovery after the
+boundary, source blockers and retained fast-recovery behavior. Runtime and delivery
+HEAD CI/full logs each confirm macOS 2,435 / Ubuntu 2,431 tests and all engineering steps.
+
+P3 is **ACCEPTED** and the plan's completed items are checked. The owner authorized
+merging PR #89 and safely removing its remote branch after ancestry confirmation;
+preserve unrelated local worktrees. The remaining work starts at P4's BTC full-scope
+2h/24h observation with normal background tasks, then P5/P6 as planned. These runs
+have not started. This review performs no deployment, VPS/service or production-data
+operation and grants no capacity/99.5% credit. Retained NOT ACCEPTED/Draft instructions
+below are historical; use this current status for the next development handoff.
+
+# Prior handoff: remaining P3-R3 correction delivered; re-review pending — 2026-11-01
 
 Runtime `30e8a4a` fixes RPI callbacks closing an active clock-uncertainty gap. Current
 completion time must reach the known boundary, even for queued pre-reversal messages;

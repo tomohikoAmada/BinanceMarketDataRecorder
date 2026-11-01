@@ -1,6 +1,17 @@
 # Risk Register
 
-## Remaining P3-R3 correction candidate — 2026-11-01
+## Current P3 closure — 2026-11-01
+
+[Independent closure](milestones/P3/review-20261101.md#r3-independent-closure)
+accepts runtime `30e8a4a` and delivery HEAD `30ebbd6`; P3-R3 is CLOSED and P3 is
+ACCEPTED. Both ten-second controls retain the full unknown interval, and normal
+recovery, other source conditions and lifecycle completion remain correct. Independent
+66-test/probe checks and both commits' dual-platform CI/full logs pass. No new blocking
+finding; R1/R2 and P0–P2 remain closed. R-078 remains OPEN: actual VPS capacity,
+background throughput and per-source 99.5% qualification still require P4–P6. No
+production operation occurred, and historical failure evidence remains unchanged.
+
+## Prior remaining P3-R3 correction candidate — 2026-11-01
 
 Runtime `30e8a4a` protects the full known clock-uncertainty interval from valid RPI
 frame/snapshot callbacks and delayed pre-reversal persistence. Recovery also respects
@@ -12,7 +23,7 @@ This is author correction evidence; P3-R3 still awaits independent re-review. P3
 NOT ACCEPTED and R-078 stays open. No new runtime scope, Raw format, fault framework,
 historical audit, production qualification or operation is authorized.
 
-## Current P3 re-review — 2026-11-01
+## Prior P3 re-review — 2026-11-01
 
 [Independent re-review](milestones/P3/review-20261101.md) closes P3-R1 and P3-R2
 and confirms the original P3-R3 quick-recovery fix. **P3-R3 remains OPEN** because

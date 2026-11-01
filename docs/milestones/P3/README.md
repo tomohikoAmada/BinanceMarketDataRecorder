@@ -1,6 +1,17 @@
 # P3：恢复与后台任务不再互相拖累
 
-**当前交付：R3剩余时钟问题已修正，P3仍待独立复审，NOT ACCEPTED。**
+**当前状态：P3独立验收通过，R1–R3全部关闭。**
+[独立闭合](review-20261101.md#r3-independent-closure)接受运行时`30e8a4a`和交付HEAD
+`30ebbd6`：66项相关检查、原时钟对照及原五个探针独立通过，两个提交双平台CI及完整日志
+已核实。RPI/REST成功不能提前关闭已知时钟未知区间，延迟落盘、writer/连接/错误/休眠及
+交割完成边界保留；没有新增阻塞问题。计划的剩余项已勾选，下一阶段P4尚未开始。
+本次通过不代表VPS容量或99.5%生产资格，没有部署或访问生产数据。
+按owner授权合并[PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)，
+确认所有提交进入main后安全清理其远端分支。以下作者候选及旧审查保留为历史记录。
+
+## 修正交付时状态（保留）
+
+**当时交付：R3剩余时钟问题已修正，P3仍待独立复审，NOT ACCEPTED。**
 修正提交 `30e8a4a3c7ffad8daa54a4daa2e9935aeeb4cdb2` 已推送至原分支，
 [PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)保持Draft。
 R1/R2已独立关闭，P0–P2与首版范围不变；未合并、删除分支、启动P4或执行生产操作。
@@ -68,7 +79,7 @@ R3原快速恢复漏记已修好，但正常RPI消息仍会提前清除尚未结
 修正提交 `41abdbb11aed07c9107305735726640cf5a6b8a3` 已在原分支推送，
 [Draft PR #89](https://github.com/tomohikoAmada/BinanceMarketDataRecorder/pull/89)保留。
 以下为作者修正交付时的记录；当时P3为 **NOT ACCEPTED，待独立复审**。
-最新独立结论见页首：R1/R2关闭，R3仍有剩余项，P4未启动。
+最新独立结论见页首；此节保留当时作者交付及验证，P4未启动。
 
 - **P3-R1**：v2 verifier在同一操作内读取当前chunk的SEALING强制flags/intent及
   RECOVERED证据，联合Raw连接边界校验manifest，回读结束再核对控制快照。

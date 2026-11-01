@@ -1,11 +1,11 @@
 # ADR-0056: Source recovery evidence and bounded independent Raw verification
 
-Status: implementation candidate; independent re-review NOT ACCEPTED, 2026-11-01.
-[Re-review](../milestones/P3/review-20261101.md) closes P3-R1/R2 and confirms the
-original short RPI interval fix. The remaining P3-R3 clock-uncertainty correction is
-implemented in the candidate below and still requires independent re-review. Valid
-messages must not invent healthy time while that boundary remains active. The
-intended availability contract is unchanged; the plan's P3 section tracks acceptance. The
+Status: implementation independently ACCEPTED, 2026-11-01.
+[Closure](../milestones/P3/review-20261101.md#r3-independent-closure) accepts runtime
+30e8a4a / delivery HEAD 30ebbd6 and closes P3-R1–R3. Valid RPI/REST callbacks preserve
+known clock uncertainty and other source availability conditions; ordinary recovery
+and completed-delivery eligibility remain intact. The availability contract is unchanged.
+The candidate sections below retain their original author-validation context. The
 [original review](../milestones/P3/review-20261030.md) remains historical evidence.
 Implements ADR-0051/0053; no production
 qualification, transport scope change or archive deletion authorization is granted.

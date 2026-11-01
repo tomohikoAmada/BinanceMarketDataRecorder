@@ -1,6 +1,20 @@
 # Binance Market Data Recorder Agent Contract
 
-Current author correction November1, 2026: runtime 30e8a4a implements the remaining
+Current independent closure November1, 2026: P3 is ACCEPTED. Review of runtime
+30e8a4a and delivery HEAD 30ebbd6 closes the remaining P3-R3 clock/source-availability
+correction, with no new blocking finding. Independent 66-test and unchanged clock/original
+probe checks pass; both commits' exact dual-platform CI and full logs are verified
+(macOS 2,435 / Ubuntu 2,431 tests, all steps successful). Both clock controls retain
+the full ten-second unknown interval; recovery after its end and original fast recovery
+remain correct. See [independent closure](docs/milestones/P3/review-20261101.md#r3-independent-closure).
+P0–P3 are closed; do not repeat their history audits. The owner authorizes merging
+PR #89 and deleting its remote branch only after confirming all commits are in main.
+Preserve unrelated local worktrees. P4 is next and has not started; this review does
+not authorize deployment, VPS/production data access or service operations, and does
+not establish capacity or 99.5% production qualification. Earlier NOT ACCEPTED/Draft
+directions below are retained historical states superseded by this closure.
+
+Prior author correction November1, 2026: runtime 30e8a4a implements the remaining
 P3-R3 clock/source-availability correction; see the [P3 result](docs/milestones/P3/README.md).
 Valid RPI messages/snapshots retain the full known clock-uncertainty interval, including
 queued pre-reversal frames; writer/disconnection/error/dormancy conditions still block
@@ -12,7 +26,7 @@ re-review; keep Draft PR #89 / codex/p3-recovery-background, without merge, bran
 P4 or production operations. R1/R2 and P0–P2 stay closed; retained review evidence below
 is unchanged.
 
-Current independent re-review November1, 2026: P3-R1 and P3-R2 are CLOSED at
+Prior independent re-review November1, 2026: P3-R1 and P3-R2 are CLOSED at
 41abdbb / delivery HEAD 1243b99. The original P3-R3 fast-recovery cases also pass,
 but P3-R3 remains OPEN: a valid RPI persistence callback clears an active
 CLOCK_DISCONTINUITY before the known uncertainty boundary ends. The offline control
