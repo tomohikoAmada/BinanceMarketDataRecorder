@@ -178,3 +178,50 @@ def test_scheduler_persists_repair_and_drains_on_stop(tmp_path: Path) -> None:
         assert json.loads(records[0].raw_payload)["response"]["model"] == [bar(60_000)]
 
     asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("fault", ["symbol", "missing_price", "bad_x", "invalid_json", "array"])
+def test_malformed_forming_frame_is_never_filtered(tmp_path: Path, fault: str) -> None:
+    capture, source, _ = repair_capture(tmp_path)
+    group = StreamGroup("", "", "test", (source,))
+    collector = capture.make_group(group, sample_product(), lambda e: None, lambda e: None)
+    data: Any = {
+        "e": "kline",
+        "E": 1000,
+        "s": "BTCUSDT",
+        "k": {
+            "t": 0,
+            "T": 59_999,
+            "s": "BTCUSDT",
+            "i": "1m",
+            "x": False,
+            "o": "1",
+            "c": "2",
+            "h": "2",
+            "l": "1",
+            "v": "10",
+        },
+    }
+    if fault == "symbol":
+        data["k"]["s"] = "ETHUSDT"
+    elif fault == "missing_price":
+        del data["k"]["c"]
+    elif fault == "bad_x":
+        data["k"]["x"] = "false"
+    elif fault == "array":
+        data = []
+    raw = json.dumps({"stream": group.wire_names[0], "data": data}).encode()
+    if fault == "invalid_json":
+        raw = b"{"
+    assert collector.envelope_factory is not None
+    envelope = collector.envelope_factory(
+        raw_payload=raw,
+        connection_id="test",
+        collector_instance_id="test",
+        collector_version="test",
+        receive_time_utc_ns=1_000_000_000,
+        receive_monotonic_ns=1,
+    )
+    assert envelope is not None and "malformed" in envelope.capture_flags
+    assert envelope.raw_payload == raw
+    assert capture.sources[source.key].forming_filtered_count == 0
